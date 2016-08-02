@@ -112,7 +112,6 @@ namespace storm {
         template<DdType LibraryType, typename ValueType>
         Bdd<LibraryType> Add<LibraryType, ValueType>::greaterOrEqual(Add<LibraryType, ValueType> const& other) const {
             return Bdd<LibraryType>(this->getDdManager(), internalAdd.greaterOrEqual(other), Dd<LibraryType>::joinMetaVariables(*this, other));
-
         }
 
         template<DdType LibraryType, typename ValueType>
@@ -129,7 +128,6 @@ namespace storm {
         template<DdType LibraryType, typename ValueType>
         Add<LibraryType, ValueType> Add<LibraryType, ValueType>::logxy(Add<LibraryType, ValueType> const& other) const {
             return Add<LibraryType, ValueType>(this->getDdManager(), internalAdd.logxy(other), Dd<LibraryType>::joinMetaVariables(*this, other));
-
         }
         
         template<DdType LibraryType, typename ValueType>

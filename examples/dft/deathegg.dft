@@ -1,0 +1,16 @@
+toplevel "DeathEgg";
+"DeathEgg" or "DeathEggProxy" "DeathEggServer" "CampusPowerDependency" "ProxyPowerDependency";
+"DeathEggServer" or "CampusNET" "DES_Disks";
+"DES_Disks" and "DES_Disks_RAID1" "DES_Disks_RAID2";
+"DES_Disks_RAID1" and "DES_Disk_1" "DES_Disk_2";
+"DES_Disks_RAID2" and "DES_Disk_3" "DES_Disk_4";
+"DeathEggProxy" lambda=0.01 dorm=0;
+"DES_Disk_1" lambda=0.01 dorm=0;
+"DES_Disk_2" lambda=0.01 dorm=0;
+"DES_Disk_3" lambda=0.01 dorm=0;
+"DES_Disk_4" lambda=0.01 dorm=0;
+"CampusPowerDependency" fdep "CampusPower" "DeathEggServer";
+"ProxyPowerDependency" fdep "ProxyPower" "DeathEggProxy";
+"CampusPower" lambda=0.01 dorm=0;
+"CampusNET" lambda=0.01 dorm=0;
+"ProxyPower" lambda=0.01 dorm=0;

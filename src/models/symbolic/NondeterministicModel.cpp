@@ -15,6 +15,7 @@ namespace storm {
                                                                           std::shared_ptr<storm::dd::DdManager<Type>> manager,
                                                                           storm::dd::Bdd<Type> reachableStates,
                                                                           storm::dd::Bdd<Type> initialStates,
+                                                                          storm::dd::Bdd<Type> deadlockStates,
                                                                           storm::dd::Add<Type, ValueType> transitionMatrix,
                                                                           std::set<storm::expressions::Variable> const& rowVariables,
                                                                           std::shared_ptr<storm::adapters::AddExpressionAdapter<Type, ValueType>> rowExpressionAdapter,
@@ -32,10 +33,10 @@ namespace storm {
             
             template<storm::dd::DdType Type, typename ValueType>
             uint_fast64_t NondeterministicModel<Type, ValueType>::getNumberOfChoices() const {
-                std::set<storm::expressions::Variable> rowAndNondeterminsmVariables;
-                std::set_union(this->getNondeterminismVariables().begin(), this->getNondeterminismVariables().end(), this->getRowVariables().begin(), this->getRowVariables().end(), std::inserter(rowAndNondeterminsmVariables, rowAndNondeterminsmVariables.begin()));
+                std::set<storm::expressions::Variable> rowAndNondeterminismVariables;
+                std::set_union(this->getNondeterminismVariables().begin(), this->getNondeterminismVariables().end(), this->getRowVariables().begin(), this->getRowVariables().end(), std::inserter(rowAndNondeterminismVariables, rowAndNondeterminismVariables.begin()));
                 
-                storm::dd::Add<Type, uint_fast64_t> tmp = this->getTransitionMatrix().notZero().existsAbstract(this->getColumnVariables()).template toAdd<uint_fast64_t>().sumAbstract(rowAndNondeterminsmVariables);
+                storm::dd::Add<Type, uint_fast64_t> tmp = this->getTransitionMatrix().notZero().existsAbstract(this->getColumnVariables()).template toAdd<uint_fast64_t>().sumAbstract(rowAndNondeterminismVariables);
                 return tmp.getValue();
             }
             

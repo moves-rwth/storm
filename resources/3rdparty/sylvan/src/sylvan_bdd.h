@@ -414,7 +414,7 @@ bdd_refs_sync(BDD result)
     return result;
 }
 
-#include "sylvan_bdd_storm.h"    
+#include "sylvan_bdd_storm.h"
     
 #ifdef __cplusplus
 }

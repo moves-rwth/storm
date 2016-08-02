@@ -4,6 +4,8 @@
 // Include config to know whether CARL is available or not.
 #include "storm-config.h"
 
+#include <boost/multiprecision/gmp.hpp>
+
 #ifdef STORM_HAVE_CARL
 
 #include <carl/numbers/numbers.h>
@@ -28,8 +30,8 @@ namespace carl {
         return h(p);
     }
 
-    template<typename Pol>
-    inline size_t hash_value(carl::RationalFunction<Pol> const& f)  {
+    template<typename Pol, bool AutoSimplify>
+    inline size_t hash_value(carl::RationalFunction<Pol, AutoSimplify> const& f)  {
         std::hash<Pol> h;
         return h(f.nominator()) ^ h(f.denominator());
     }
@@ -39,16 +41,28 @@ namespace carl {
         std::hash<Interval<Number>> h;
         return h(i);
     }
+
+}
+
+namespace cln {
+    inline size_t hash_value(cl_RA const& n) {
+        std::hash<cln::cl_RA> h;
+        return h(n);
+    }
 }
 
 namespace storm {
+#if defined STORM_HAVE_CLN && defined USE_CLN_NUMBERS
     typedef cln::cl_RA RationalNumber;
-    typedef carl::Variable Variable;
+#else
+    typedef mpq_class RationalNumber;
+#endif
+    typedef carl::Variable RationalFunctionVariable;
     typedef carl::MultivariatePolynomial<RationalNumber> RawPolynomial;
     typedef carl::FactorizedPolynomial<RawPolynomial> Polynomial;
     typedef carl::Relation CompareRelation;
     
-    typedef carl::RationalFunction<Polynomial> RationalFunction;
+    typedef carl::RationalFunction<Polynomial, true> RationalFunction;
     typedef carl::Interval<double> Interval;
     template<typename T> using ArithConstraint = carl::SimpleConstraint<T>;
 }

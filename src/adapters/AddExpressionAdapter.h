@@ -1,9 +1,11 @@
 #ifndef STORM_ADAPTERS_DDEXPRESSIONADAPTER_H_
 #define STORM_ADAPTERS_DDEXPRESSIONADAPTER_H_
 
+#include <memory>
+
 #include "src/storage/expressions/Variable.h"
 #include "src/storage/expressions/Expressions.h"
-#include "storage/expressions/ExpressionVisitor.h"
+#include "src/storage/expressions/ExpressionVisitor.h"
 
 #include "src/storage/dd/Add.h"
 #include "src/storage/dd/Bdd.h"
@@ -15,7 +17,7 @@ namespace storm {
         template<storm::dd::DdType Type, typename ValueType = double>
         class AddExpressionAdapter : public storm::expressions::ExpressionVisitor {
         public:
-            AddExpressionAdapter(std::shared_ptr<storm::dd::DdManager<Type>> ddManager, std::map<storm::expressions::Variable, storm::expressions::Variable> const& variableMapping);
+            AddExpressionAdapter(std::shared_ptr<storm::dd::DdManager<Type>> ddManager, std::shared_ptr<std::map<storm::expressions::Variable, storm::expressions::Variable>> const& variableMapping);
             
             storm::dd::Add<Type, ValueType> translateExpression(storm::expressions::Expression const& expression);
             storm::dd::Bdd<Type> translateBooleanExpression(storm::expressions::Expression const& expression);
@@ -36,7 +38,7 @@ namespace storm {
             std::shared_ptr<storm::dd::DdManager<Type>> ddManager;
             
             // This member maps the variables used in the expressions to the variables used by the DD manager.
-            std::map<storm::expressions::Variable, storm::expressions::Variable> variableMapping;
+            std::shared_ptr<std::map<storm::expressions::Variable, storm::expressions::Variable>> variableMapping;
         };
         
     } // namespace adapters

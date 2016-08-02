@@ -134,9 +134,23 @@ namespace storm {
                 this->identifiers_ = nullptr;
             }
         }
-        
+
+        void ExpressionParser::setIdentifierMapping(std::unordered_map<std::string, storm::expressions::Expression> const& identifierMapping) {
+            unsetIdentifierMapping();
+            this->createExpressions = true;
+            this->identifiers_ = new qi::symbols<char, storm::expressions::Expression>();
+            for (auto const& identifierExpressionPair : identifierMapping) {
+                this->identifiers_->add(identifierExpressionPair.first, identifierExpressionPair.second);
+            }
+            deleteIdentifierMapping = true;
+        }
+
         void ExpressionParser::unsetIdentifierMapping() {
             this->createExpressions = false;
+            if (deleteIdentifierMapping) {
+                delete this->identifiers_;
+                deleteIdentifierMapping = false;
+            }
             this->identifiers_ = nullptr;
         }
         
@@ -351,6 +365,26 @@ namespace storm {
                 return false;
             }
             return true;
+        }
+
+        storm::expressions::Expression ExpressionParser::parseFromString(std::string const& expressionString) const {
+            PositionIteratorType first(expressionString.begin());
+            PositionIteratorType iter = first;
+            PositionIteratorType last(expressionString.end());
+
+            // Create empty result;
+            storm::expressions::Expression result;
+
+            try {
+                // Start parsing.
+                bool succeeded = qi::phrase_parse(iter, last, *this, boost::spirit::ascii::space | qi::lit("//") >> *(qi::char_ - (qi::eol | qi::eoi)) >> (qi::eol | qi::eoi), result);
+                STORM_LOG_THROW(succeeded, storm::exceptions::WrongFormatException, "Could not parse expression.");
+                STORM_LOG_DEBUG("Parsed expression successfully.");
+            } catch (qi::expectation_failure<PositionIteratorType> const& e) {
+                STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, e.what_);
+            }
+
+            return result;
         }
     }
 }

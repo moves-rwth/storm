@@ -16,11 +16,9 @@ namespace storm {
                 enum class ReorderingTechnique { None, Random, RandomPivot, Sift, SiftConv, SymmetricSift, SymmetricSiftConv, GroupSift, GroupSiftConv, Win2, Win2Conv, Win3, Win3Conv, Win4, Win4Conv, Annealing, Genetic, Exact };
                 
                 /*!
-                 * Creates a new set of CUDD settings that is managed by the given manager.
-                 *
-                 * @param settingsManager The responsible manager.
+                 * Creates a new set of CUDD settings.
                  */
-                CuddSettings(storm::settings::SettingsManager& settingsManager);
+                CuddSettings();
                 
                 /*!
                  * Retrieves the precision that CUDD is supposed to use for distinguishing constants.

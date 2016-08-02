@@ -1,0 +1,30 @@
+mdp
+
+module one
+	x : [0 .. 2] init 0;
+
+	[a] x=0 -> (x'=1);
+	[] x>=0 -> (x'=2);
+	[done] x>=1 -> true;
+endmodule
+
+module two
+	y : [0 .. 2] init 0;
+
+	[b] y=0 -> (y'=1);
+	[] y>=0 -> (y'=2);
+	[done] y>=1 -> true;
+endmodule
+
+module three
+	z : [0 .. 2] init 0;
+
+	[a] z=0 -> (z'=1);
+	[] x=0&y=0&z=1 -> (z'=2);
+	[loop] z>=1 -> true;
+endmodule
+
+system
+	((one || two {b <- a}) / {a}) {done <- loop} || three
+endsystem
+

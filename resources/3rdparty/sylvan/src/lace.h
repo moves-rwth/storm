@@ -182,7 +182,7 @@ struct __lace_common_fields_only { TASK_COMMON_FIELDS(_Task) };
 #define LACE_COMMON_FIELD_SIZE sizeof(struct __lace_common_fields_only)
 
 typedef struct _Task {
-    TASK_COMMON_FIELDS(_Task)
+    TASK_COMMON_FIELDS(_Task);
     char p1[PAD(LACE_COMMON_FIELD_SIZE, P_SZ)];
     char d[LACE_TASKSIZE];
     char p2[PAD(ROUND(LACE_COMMON_FIELD_SIZE, P_SZ) + LACE_TASKSIZE, LINE_SIZE)];
@@ -207,22 +207,23 @@ typedef struct _Worker {
 } Worker;
 
 typedef struct _WorkerP {
-    Task *dq;        // same as dq
-    Task *split;     // same as dq+ts.ts.split
-    Task *end;       // dq+dq_size
-    Worker *_public;
-    size_t stack_trigger; // for stack overflow detection
-    int16_t worker;     // what is my worker id?
-    uint8_t allstolen; // my allstolen
-    volatile int enabled; // if this worker is enabled
+    Task *dq;                   // same as dq
+    Task *split;                // same as dq+ts.ts.split
+    Task *end;                  // dq+dq_size
+    Worker *_public;            // pointer to public Worker struct
+    size_t stack_trigger;       // for stack overflow detection
+    int16_t worker;             // what is my worker id?
+    int16_t pu;                 // my pu (for HWLOC)
+    uint8_t allstolen;          // my allstolen
+    volatile int8_t enabled;    // if this worker is enabled
 
 #if LACE_COUNT_EVENTS
-    uint64_t ctr[CTR_MAX]; // counters
+    uint64_t ctr[CTR_MAX];      // counters
     volatile uint64_t time;
     volatile int level;
 #endif
 
-    uint32_t seed; // my random seed (for lace_steal_random)
+    uint32_t seed;              // my random seed (for lace_steal_random)
 } WorkerP;
 
 #define LACE_TYPEDEF_CB(t, f, ...) typedef t (*f)(WorkerP *, Task *, ##__VA_ARGS__);
@@ -338,6 +339,7 @@ void lace_exit();
 #define NEWFRAME(f, ...)  ( WRAP(f##_NEWFRAME, ##__VA_ARGS__) )
 #define STEAL_RANDOM()    ( CALL(lace_steal_random) )
 #define LACE_WORKER_ID    ( __lace_worker->worker )
+#define LACE_WORKER_PU    ( __lace_worker->pu )
 
 /* Use LACE_ME to initialize Lace variables, in case you want to call multiple Lace tasks */
 #define LACE_ME WorkerP * __attribute__((unused)) __lace_worker = lace_get_worker(); Task * __attribute__((unused)) __lace_dq_head = lace_get_head(__lace_worker);
@@ -618,7 +620,7 @@ typedef struct _TD_##NAME {                                                     
 } TD_##NAME;                                                                          \
                                                                                       \
 /* If this line generates an error, please manually set the define LACE_TASKSIZE to a higher value */\
-typedef char assertion_failed_task_descriptor_out_of_bounds_##NAME[(sizeof(TD_##NAME)<=sizeof(Task)) ? 0 : -1];\
+typedef char assertion_failed_task_descriptor_out_of_bounds_##NAME[(sizeof(TD_##NAME)<=sizeof(Task)) ? 1 : -1];\
                                                                                       \
 void NAME##_WRAP(WorkerP *, Task *, TD_##NAME *);                                     \
 RTYPE NAME##_CALL(WorkerP *, Task * );                                                \
@@ -768,7 +770,7 @@ typedef struct _TD_##NAME {                                                     
 } TD_##NAME;                                                                          \
                                                                                       \
 /* If this line generates an error, please manually set the define LACE_TASKSIZE to a higher value */\
-typedef char assertion_failed_task_descriptor_out_of_bounds_##NAME[(sizeof(TD_##NAME)<=sizeof(Task)) ? 0 : -1];\
+typedef char assertion_failed_task_descriptor_out_of_bounds_##NAME[(sizeof(TD_##NAME)<=sizeof(Task)) ? 1 : -1];\
                                                                                       \
 void NAME##_WRAP(WorkerP *, Task *, TD_##NAME *);                                     \
 void NAME##_CALL(WorkerP *, Task * );                                                 \
@@ -921,7 +923,7 @@ typedef struct _TD_##NAME {                                                     
 } TD_##NAME;                                                                          \
                                                                                       \
 /* If this line generates an error, please manually set the define LACE_TASKSIZE to a higher value */\
-typedef char assertion_failed_task_descriptor_out_of_bounds_##NAME[(sizeof(TD_##NAME)<=sizeof(Task)) ? 0 : -1];\
+typedef char assertion_failed_task_descriptor_out_of_bounds_##NAME[(sizeof(TD_##NAME)<=sizeof(Task)) ? 1 : -1];\
                                                                                       \
 void NAME##_WRAP(WorkerP *, Task *, TD_##NAME *);                                     \
 RTYPE NAME##_CALL(WorkerP *, Task * , ATYPE_1 arg_1);                                 \
@@ -1071,7 +1073,7 @@ typedef struct _TD_##NAME {                                                     
 } TD_##NAME;                                                                          \
                                                                                       \
 /* If this line generates an error, please manually set the define LACE_TASKSIZE to a higher value */\
-typedef char assertion_failed_task_descriptor_out_of_bounds_##NAME[(sizeof(TD_##NAME)<=sizeof(Task)) ? 0 : -1];\
+typedef char assertion_failed_task_descriptor_out_of_bounds_##NAME[(sizeof(TD_##NAME)<=sizeof(Task)) ? 1 : -1];\
                                                                                       \
 void NAME##_WRAP(WorkerP *, Task *, TD_##NAME *);                                     \
 void NAME##_CALL(WorkerP *, Task * , ATYPE_1 arg_1);                                  \
@@ -1224,7 +1226,7 @@ typedef struct _TD_##NAME {                                                     
 } TD_##NAME;                                                                          \
                                                                                       \
 /* If this line generates an error, please manually set the define LACE_TASKSIZE to a higher value */\
-typedef char assertion_failed_task_descriptor_out_of_bounds_##NAME[(sizeof(TD_##NAME)<=sizeof(Task)) ? 0 : -1];\
+typedef char assertion_failed_task_descriptor_out_of_bounds_##NAME[(sizeof(TD_##NAME)<=sizeof(Task)) ? 1 : -1];\
                                                                                       \
 void NAME##_WRAP(WorkerP *, Task *, TD_##NAME *);                                     \
 RTYPE NAME##_CALL(WorkerP *, Task * , ATYPE_1 arg_1, ATYPE_2 arg_2);                  \
@@ -1374,7 +1376,7 @@ typedef struct _TD_##NAME {                                                     
 } TD_##NAME;                                                                          \
                                                                                       \
 /* If this line generates an error, please manually set the define LACE_TASKSIZE to a higher value */\
-typedef char assertion_failed_task_descriptor_out_of_bounds_##NAME[(sizeof(TD_##NAME)<=sizeof(Task)) ? 0 : -1];\
+typedef char assertion_failed_task_descriptor_out_of_bounds_##NAME[(sizeof(TD_##NAME)<=sizeof(Task)) ? 1 : -1];\
                                                                                       \
 void NAME##_WRAP(WorkerP *, Task *, TD_##NAME *);                                     \
 void NAME##_CALL(WorkerP *, Task * , ATYPE_1 arg_1, ATYPE_2 arg_2);                   \
@@ -1527,7 +1529,7 @@ typedef struct _TD_##NAME {                                                     
 } TD_##NAME;                                                                          \
                                                                                       \
 /* If this line generates an error, please manually set the define LACE_TASKSIZE to a higher value */\
-typedef char assertion_failed_task_descriptor_out_of_bounds_##NAME[(sizeof(TD_##NAME)<=sizeof(Task)) ? 0 : -1];\
+typedef char assertion_failed_task_descriptor_out_of_bounds_##NAME[(sizeof(TD_##NAME)<=sizeof(Task)) ? 1 : -1];\
                                                                                       \
 void NAME##_WRAP(WorkerP *, Task *, TD_##NAME *);                                     \
 RTYPE NAME##_CALL(WorkerP *, Task * , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3);   \
@@ -1677,7 +1679,7 @@ typedef struct _TD_##NAME {                                                     
 } TD_##NAME;                                                                          \
                                                                                       \
 /* If this line generates an error, please manually set the define LACE_TASKSIZE to a higher value */\
-typedef char assertion_failed_task_descriptor_out_of_bounds_##NAME[(sizeof(TD_##NAME)<=sizeof(Task)) ? 0 : -1];\
+typedef char assertion_failed_task_descriptor_out_of_bounds_##NAME[(sizeof(TD_##NAME)<=sizeof(Task)) ? 1 : -1];\
                                                                                       \
 void NAME##_WRAP(WorkerP *, Task *, TD_##NAME *);                                     \
 void NAME##_CALL(WorkerP *, Task * , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3);    \
@@ -1830,7 +1832,7 @@ typedef struct _TD_##NAME {                                                     
 } TD_##NAME;                                                                          \
                                                                                       \
 /* If this line generates an error, please manually set the define LACE_TASKSIZE to a higher value */\
-typedef char assertion_failed_task_descriptor_out_of_bounds_##NAME[(sizeof(TD_##NAME)<=sizeof(Task)) ? 0 : -1];\
+typedef char assertion_failed_task_descriptor_out_of_bounds_##NAME[(sizeof(TD_##NAME)<=sizeof(Task)) ? 1 : -1];\
                                                                                       \
 void NAME##_WRAP(WorkerP *, Task *, TD_##NAME *);                                     \
 RTYPE NAME##_CALL(WorkerP *, Task * , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4);\
@@ -1980,7 +1982,7 @@ typedef struct _TD_##NAME {                                                     
 } TD_##NAME;                                                                          \
                                                                                       \
 /* If this line generates an error, please manually set the define LACE_TASKSIZE to a higher value */\
-typedef char assertion_failed_task_descriptor_out_of_bounds_##NAME[(sizeof(TD_##NAME)<=sizeof(Task)) ? 0 : -1];\
+typedef char assertion_failed_task_descriptor_out_of_bounds_##NAME[(sizeof(TD_##NAME)<=sizeof(Task)) ? 1 : -1];\
                                                                                       \
 void NAME##_WRAP(WorkerP *, Task *, TD_##NAME *);                                     \
 void NAME##_CALL(WorkerP *, Task * , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4);\
@@ -2133,7 +2135,7 @@ typedef struct _TD_##NAME {                                                     
 } TD_##NAME;                                                                          \
                                                                                       \
 /* If this line generates an error, please manually set the define LACE_TASKSIZE to a higher value */\
-typedef char assertion_failed_task_descriptor_out_of_bounds_##NAME[(sizeof(TD_##NAME)<=sizeof(Task)) ? 0 : -1];\
+typedef char assertion_failed_task_descriptor_out_of_bounds_##NAME[(sizeof(TD_##NAME)<=sizeof(Task)) ? 1 : -1];\
                                                                                       \
 void NAME##_WRAP(WorkerP *, Task *, TD_##NAME *);                                     \
 RTYPE NAME##_CALL(WorkerP *, Task * , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4, ATYPE_5 arg_5);\
@@ -2283,7 +2285,7 @@ typedef struct _TD_##NAME {                                                     
 } TD_##NAME;                                                                          \
                                                                                       \
 /* If this line generates an error, please manually set the define LACE_TASKSIZE to a higher value */\
-typedef char assertion_failed_task_descriptor_out_of_bounds_##NAME[(sizeof(TD_##NAME)<=sizeof(Task)) ? 0 : -1];\
+typedef char assertion_failed_task_descriptor_out_of_bounds_##NAME[(sizeof(TD_##NAME)<=sizeof(Task)) ? 1 : -1];\
                                                                                       \
 void NAME##_WRAP(WorkerP *, Task *, TD_##NAME *);                                     \
 void NAME##_CALL(WorkerP *, Task * , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4, ATYPE_5 arg_5);\
@@ -2436,7 +2438,7 @@ typedef struct _TD_##NAME {                                                     
 } TD_##NAME;                                                                          \
                                                                                       \
 /* If this line generates an error, please manually set the define LACE_TASKSIZE to a higher value */\
-typedef char assertion_failed_task_descriptor_out_of_bounds_##NAME[(sizeof(TD_##NAME)<=sizeof(Task)) ? 0 : -1];\
+typedef char assertion_failed_task_descriptor_out_of_bounds_##NAME[(sizeof(TD_##NAME)<=sizeof(Task)) ? 1 : -1];\
                                                                                       \
 void NAME##_WRAP(WorkerP *, Task *, TD_##NAME *);                                     \
 RTYPE NAME##_CALL(WorkerP *, Task * , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4, ATYPE_5 arg_5, ATYPE_6 arg_6);\
@@ -2586,7 +2588,7 @@ typedef struct _TD_##NAME {                                                     
 } TD_##NAME;                                                                          \
                                                                                       \
 /* If this line generates an error, please manually set the define LACE_TASKSIZE to a higher value */\
-typedef char assertion_failed_task_descriptor_out_of_bounds_##NAME[(sizeof(TD_##NAME)<=sizeof(Task)) ? 0 : -1];\
+typedef char assertion_failed_task_descriptor_out_of_bounds_##NAME[(sizeof(TD_##NAME)<=sizeof(Task)) ? 1 : -1];\
                                                                                       \
 void NAME##_WRAP(WorkerP *, Task *, TD_##NAME *);                                     \
 void NAME##_CALL(WorkerP *, Task * , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4, ATYPE_5 arg_5, ATYPE_6 arg_6);\

@@ -9,6 +9,7 @@
 #include "src/storage/Decomposition.h"
 #include "src/storage/StateBlock.h"
 #include "src/storage/bisimulation/Partition.h"
+#include "src/solver/OptimizationDirection.h"
 
 #include "src/logic/Formulas.h"
 
@@ -36,7 +37,7 @@ namespace storm {
                 case BisimulationTypeChoice::Weak:
                     return BisimulationType::Weak;
                 case BisimulationTypeChoice::FromSettings:
-                    if (storm::settings::bisimulationSettings().isWeakBisimulationSet()) {
+                    if (storm::settings::getModule<storm::settings::modules::BisimulationSettings>().isWeakBisimulationSet()) {
                         return BisimulationType::Weak;
                     } else {
                         return BisimulationType::Strong;
@@ -79,7 +80,7 @@ namespace storm {
                  * derive a suitable initial partition.
                  * @param formulas The formulas that need to be preserved.
                  */
-                Options(ModelType const& model, std::vector<std::shared_ptr<const storm::logic::Formula>> const& formulas);
+                Options(ModelType const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas);
                 
                 /*!
                  * Changes the options in a way that the given formula is preserved.

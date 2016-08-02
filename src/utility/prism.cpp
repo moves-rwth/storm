@@ -9,62 +9,20 @@
 
 #include "src/exceptions/InvalidArgumentException.h"
 
+#include <boost/algorithm/string.hpp>
+
 namespace storm {
     namespace utility {
         namespace prism {
             
-            template<typename ValueType>
-            storm::prism::Program preprocessProgram(storm::prism::Program const& program, boost::optional<std::map<storm::expressions::Variable, storm::expressions::Expression>> const& constantDefinitions, boost::optional<std::set<std::string>> const& restrictedLabelSet, boost::optional<std::vector<storm::expressions::Expression>> const& expressionLabels) {
-                storm::prism::Program result;
-                
-                // Start by defining the undefined constants in the model.
-                if (constantDefinitions) {
-                    result = program.defineUndefinedConstants(constantDefinitions.get());
-                } else {
-                    result = program;
-                }
-                
-                // If the program still contains undefined constants and we are not in a parametric setting, assemble an appropriate error message.
-                if (!std::is_same<ValueType, storm::RationalFunction>::value && result.hasUndefinedConstants()) {
-                    std::vector<std::reference_wrapper<storm::prism::Constant const>> undefinedConstants = result.getUndefinedConstants();
-                    std::stringstream stream;
-                    bool printComma = false;
-                    for (auto const& constant : undefinedConstants) {
-                        if (printComma) {
-                            stream << ", ";
-                        } else {
-                            printComma = true;
-                        }
-                        stream << constant.get().getName() << " (" << constant.get().getType() << ")";
-                    }
-                    stream << ".";
-                    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Program still contains these undefined constants: " + stream.str());
-                } else if (std::is_same<ValueType, storm::RationalFunction>::value && !result.hasUndefinedConstantsOnlyInUpdateProbabilitiesAndRewards()) {
-                    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The program contains undefined constants that appear in some places other than update probabilities and reward value expressions, which is not admitted.");
-                }
-                
-                // If the set of labels we are supposed to built is restricted, we need to remove the other labels from the program.
-                if (restrictedLabelSet) {
-                    result.filterLabels(restrictedLabelSet.get());
-                }
-                
-                // Build new labels.
-                if (expressionLabels) {
-                    std::map<storm::expressions::Variable, storm::expressions::Expression> constantsSubstitution = result.getConstantsSubstitution();
-                    
-                    for (auto const& expression : expressionLabels.get()) {
-                        std::stringstream stream;
-                        stream << expression.substitute(constantsSubstitution);
-                        std::string name = stream.str();
-                        if (!result.hasLabel(name)) {
-                            result.addLabel(name, expression);
-                        }
-                    }
-                }
-                
-                // Now that the program is fixed, we we need to substitute all constants with their concrete value.
+            storm::prism::Program preprocess(storm::prism::Program const& program, std::map<storm::expressions::Variable, storm::expressions::Expression> const& constantDefinitions) {
+                storm::prism::Program result = program.defineUndefinedConstants(constantDefinitions);
                 result = result.substituteConstants();
                 return result;
+            }
+            
+            storm::prism::Program preprocess(storm::prism::Program const& program, std::string const& constantDefinitionString) {
+                return preprocess(program, parseConstantDefinitionString(program, constantDefinitionString));
             }
             
             std::map<storm::expressions::Variable, storm::expressions::Expression> parseConstantDefinitionString(storm::prism::Program const& program, std::string const& constantDefinitionString) {
@@ -124,10 +82,6 @@ namespace storm {
                 return constantDefinitions;
             }
             
-            template storm::prism::Program preprocessProgram<double>(storm::prism::Program const& program, boost::optional<std::map<storm::expressions::Variable, storm::expressions::Expression>> const& constantDefinitions, boost::optional<std::set<std::string>> const& restrictedLabelSet, boost::optional<std::vector<storm::expressions::Expression>> const& expressionLabels);
-
-            template storm::prism::Program preprocessProgram<storm::RationalFunction>(storm::prism::Program const& program, boost::optional<std::map<storm::expressions::Variable, storm::expressions::Expression>> const& constantDefinitions, boost::optional<std::set<std::string>> const& restrictedLabelSet, boost::optional<std::vector<storm::expressions::Expression>> const& expressionLabels);
-
         }
     }
 }

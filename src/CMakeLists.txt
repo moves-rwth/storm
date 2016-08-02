@@ -9,6 +9,7 @@ file(GLOB_RECURSE STORM_HEADERS_CLI ${PROJECT_SOURCE_DIR}/src/cli/*.h)
 file(GLOB_RECURSE STORM_SOURCES_WITHOUT_MAIN ${PROJECT_SOURCE_DIR}/src/*/*.cpp)
 file(GLOB_RECURSE STORM_SOURCES_CLI ${PROJECT_SOURCE_DIR}/src/cli/*.cpp)
 file(GLOB_RECURSE STORM_MAIN_FILE ${PROJECT_SOURCE_DIR}/src/storm.cpp)
+file(GLOB_RECURSE STORM_DFT_MAIN_FILE ${PROJECT_SOURCE_DIR}/src/storm-dyftee.cpp)
 file(GLOB_RECURSE STORM_ADAPTERS_FILES ${PROJECT_SOURCE_DIR}/src/adapters/*.h ${PROJECT_SOURCE_DIR}/src/adapters/*.cpp)
 file(GLOB_RECURSE STORM_BUILDER_FILES ${PROJECT_SOURCE_DIR}/src/builder/*.h ${PROJECT_SOURCE_DIR}/src/builder/*.cpp)
 file(GLOB_RECURSE STORM_GENERATOR_FILES ${PROJECT_SOURCE_DIR}/src/generator/*.h ${PROJECT_SOURCE_DIR}/src/generator/*.cpp)
@@ -34,10 +35,14 @@ file(GLOB STORM_PARSER_FILES ${PROJECT_SOURCE_DIR}/src/parser/*.h ${PROJECT_SOUR
 file(GLOB_RECURSE STORM_PARSER_PRISMPARSER_FILES ${PROJECT_SOURCE_DIR}/src/parser/prismparser/*.h ${PROJECT_SOURCE_DIR}/src/parser/prismparser/*.cpp)
 file(GLOB STORM_SETTINGS_FILES ${PROJECT_SOURCE_DIR}/src/settings/*.h ${PROJECT_SOURCE_DIR}/src/settings/*.cpp)
 file(GLOB STORM_SETTINGS_MODULES_FILES ${PROJECT_SOURCE_DIR}/src/settings/modules/*.h ${PROJECT_SOURCE_DIR}/src/settings/modules/*.cpp)
-file(GLOB_RECURSE STORM_SOLVER_FILES ${PROJECT_SOURCE_DIR}/src/solver/*.h ${PROJECT_SOURCE_DIR}/src/solver/*.cpp)
+file(GLOB STORM_SOLVER_FILES ${PROJECT_SOURCE_DIR}/src/solver/*.h ${PROJECT_SOURCE_DIR}/src/solver/*.cpp)
+file(GLOB STORM_SOLVER_STATEELIMINATION_FILES ${PROJECT_SOURCE_DIR}/src/solver/stateelimination/*.h ${PROJECT_SOURCE_DIR}/src/solver/stateelimination/*.cpp)
 file(GLOB STORM_STORAGE_FILES ${PROJECT_SOURCE_DIR}/src/storage/*.h ${PROJECT_SOURCE_DIR}/src/storage/*.cpp)
+file(GLOB STORM_STORAGE_JANI_FILES ${PROJECT_SOURCE_DIR}/src/storage/jani/*.h ${PROJECT_SOURCE_DIR}/src/storage/jani/*.cpp)
 file(GLOB STORM_STORAGE_BISIMULATION_FILES ${PROJECT_SOURCE_DIR}/src/storage/bisimulation/*.h ${PROJECT_SOURCE_DIR}/src/storage/bisimulation/*.cpp)
 file(GLOB STORM_STORAGE_DD_FILES ${PROJECT_SOURCE_DIR}/src/storage/dd/*.h ${PROJECT_SOURCE_DIR}/src/storage/dd/*.cpp)
+file(GLOB STORM_STORAGE_DFT_FILES ${PROJECT_SOURCE_DIR}/src/storage/dft/*.h ${PROJECT_SOURCE_DIR}/src/storage/dft/*.cpp)
+file(GLOB STORM_STORAGE_DFT_ELEMENTS_FILES ${PROJECT_SOURCE_DIR}/src/storage/dft/elements/*.h ${PROJECT_SOURCE_DIR}/src/storage/dft/elements/*.cpp)
 file(GLOB_RECURSE STORM_STORAGE_DD_CUDD_FILES ${PROJECT_SOURCE_DIR}/src/storage/dd/cudd/*.h ${PROJECT_SOURCE_DIR}/src/storage/dd/cudd/*.cpp)
 file(GLOB_RECURSE STORM_STORAGE_DD_SYLVAN_FILES ${PROJECT_SOURCE_DIR}/src/storage/dd/sylvan/*.h ${PROJECT_SOURCE_DIR}/src/storage/dd/sylvan/*.cpp)
 file(GLOB_RECURSE STORM_STORAGE_EXPRESSIONS_FILES ${PROJECT_SOURCE_DIR}/src/storage/expressions/*.h ${PROJECT_SOURCE_DIR}/src/storage/expressions/*.cpp)
@@ -55,10 +60,12 @@ list(REMOVE_ITEM STORM_LIB_SOURCES ${STORM_SOURCES_CLI})
 set(STORM_LIB_HEADERS ${STORM_HEADERS})
 list(REMOVE_ITEM STORM_LIB_HEADERS ${STORM_HEADERS_CLI})
 set(STORM_MAIN_SOURCES ${STORM_SOURCES_CLI} ${STORM_MAIN_FILE})
+set(STORM_DFT_MAIN_SOURCES ${STORM_SOURCES_CLI} ${STORM_DFT_MAIN_FILE})
 set(STORM_MAIN_HEADERS ${STORM_HEADERS_CLI})
 
 # Group the headers and sources
 source_group(main FILES ${STORM_MAIN_FILE})
+source_group(dft FILES ${STORM_DYFTTEE_FILE})
 source_group(adapters FILES ${STORM_ADAPTERS_FILES})
 source_group(builder FILES ${STORM_BUILDER_FILES})
 source_group(generator FILES ${STORM_GENERATOR_FILES})
@@ -86,6 +93,7 @@ source_group(parser\\prismparser FILES ${STORM_PARSER_PRISMPARSER_FILES})
 source_group(settings FILES ${STORM_SETTINGS_FILES})
 source_group(settings\\modules FILES ${STORM_SETTINGS_MODULES_FILES})
 source_group(solver FILES ${STORM_SOLVER_FILES})
+source_group(solver\\stateelimination FILES ${STORM_SOLVER_STATEELIMINATION_FILES})
 source_group(storage FILES ${STORM_STORAGE_FILES})
 source_group(storage\\bisimulation FILES ${STORM_STORAGE_BISIMULATION_FILES})
 source_group(storage\\dd FILES ${STORM_STORAGE_DD_FILES})
@@ -95,6 +103,9 @@ source_group(storage\\expressions FILES ${STORM_STORAGE_EXPRESSIONS_FILES})
 source_group(storage\\prism FILES ${STORM_STORAGE_PRISM_FILES})
 source_group(storage\\prism\\menu_games FILES ${STORM_STORAGE_PRISM_MENU_GAME_FILES})
 source_group(storage\\sparse FILES ${STORM_STORAGE_SPARSE_FILES})
+source_group(storage\\jani FILES ${STORM_STORAGE_JANI_FILES})
+source_group(storage\\dft FILES ${STORM_STORAGE_DFT_FILES})
+source_group(storage\\dft\\elements FILES ${STORM_STORAGE_DFT_ELEMENTS_FILES})
 source_group(utility FILES ${STORM_UTILITY_FILES})
 
 # Add custom additional include or link directories
@@ -114,13 +125,16 @@ endif(ADDITIONAL_LINK_DIRS)
 ##  All link_directories() calls MUST be made before this point               #
 ##                                                                            #
 ###############################################################################
-add_library(storm STATIC ${STORM_LIB_SOURCES} ${STORM_LIB_HEADERS}) # Adding headers for xcode
+add_library(storm SHARED ${STORM_LIB_SOURCES} ${STORM_LIB_HEADERS}) # Adding headers for xcode
 add_dependencies(storm sylvan)
 add_dependencies(storm resources)
 add_executable(storm-main ${STORM_MAIN_SOURCES} ${STORM_MAIN_HEADERS})
 target_link_libraries(storm-main storm) # Adding headers for xcode
 set_target_properties(storm-main PROPERTIES OUTPUT_NAME "storm")
 
+add_executable(storm-dft-main ${STORM_DFT_MAIN_SOURCES} ${STORM_MAIN_HEADERS})
+target_link_libraries(storm-dft-main storm) # Adding headers for xcode
+set_target_properties(storm-dft-main PROPERTIES OUTPUT_NAME "storm-dft")
 
 target_link_libraries(storm ${STORM_LINK_LIBRARIES})
 

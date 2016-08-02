@@ -293,7 +293,17 @@ namespace storm {
                 
                 virtual bool isSparseModel() const override;
                 
-                virtual bool isParametric() const override;
+                virtual bool supportsParameters() const override;
+                
+                /*!
+                 * Checks whether the model has parameters.
+                 * Performance warning: the worst-case complexity is linear in the number of transitions.
+                 *
+                 * @return True iff the model has parameters.
+                 */
+                virtual bool hasParameters() const override;
+                
+                virtual bool isExact() const override;
             protected:
 
                 RewardModelType & rewardModel(std::string const& rewardModelName);
@@ -332,7 +342,7 @@ namespace storm {
                  * @param out The stream the information is to be printed to.
                  */
                 void printRewardModelsInformationToStream(std::ostream& out) const;
-                
+                                
             private:
                 //  A matrix representing transition relation.
                 storm::storage::SparseMatrix<ValueType> transitionMatrix;
@@ -347,7 +357,9 @@ namespace storm {
                 boost::optional<std::vector<LabelSet>> choiceLabeling;
             };
             
-            std::set<storm::Variable> getProbabilityParameters(Model<storm::RationalFunction> const& model);
+#ifdef STORM_HAVE_CARL
+            std::set<storm::RationalFunctionVariable> getProbabilityParameters(Model<storm::RationalFunction> const& model);
+#endif
         } // namespace sparse
     } // namespace models
 } // namespace storm

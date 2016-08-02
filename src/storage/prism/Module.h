@@ -98,16 +98,17 @@ namespace storm {
             std::vector<storm::prism::IntegerVariable> const& getIntegerVariables() const;
 
             /*!
-             * Retrieves the set of all expression variables declared in this module.
+             * Retrieves all expression variables used by this module.
              *
-             * @return The set of all expression variables.
+             * @return The set of expression variables used by this module.
              */
             std::set<storm::expressions::Variable> getAllExpressionVariables() const;
             
             /*!
-             * Retrieves a set of expressions characterizing the legal ranges of all variables declared in the module.
+             * Retrieves a list of expressions that characterize the legal ranges of all variables declared by this
+             * module.
              *
-             * @return The expressions characterizing the legal ranges of all variables declared in the module.
+             * @return The list of expressions that characterize the legal ranges.
              */
             std::vector<storm::expressions::Expression> getAllRangeExpressions() const;
             

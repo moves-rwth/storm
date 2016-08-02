@@ -25,6 +25,13 @@ namespace storm {
             }
             
             template <typename ValueType, typename RewardModelType>
+            Ctmc<ValueType, RewardModelType>::Ctmc(storm::storage::SparseMatrix<ValueType> const& rateMatrix, std::vector<ValueType> const& exitRates, storm::models::sparse::StateLabeling const& stateLabeling,
+                                std::unordered_map<std::string, RewardModelType> const& rewardModels,
+                                boost::optional<std::vector<LabelSet>> const& optionalChoiceLabeling)
+            : DeterministicModel<ValueType, RewardModelType>(storm::models::ModelType::Ctmc, std::move(rateMatrix), std::move(stateLabeling), std::move(rewardModels), std::move(optionalChoiceLabeling)), exitRates(exitRates) {
+            }
+            
+            template <typename ValueType, typename RewardModelType>
             std::vector<ValueType> const& Ctmc<ValueType, RewardModelType>::getExitRateVector() const {
                 return exitRates;
             }
@@ -41,11 +48,11 @@ namespace storm {
             template class Ctmc<double>;
 
 #ifdef STORM_HAVE_CARL
-            template class Ctmc<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
+            template class Ctmc<storm::RationalNumber>;
 
+            template class Ctmc<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
             template class Ctmc<storm::RationalFunction>;
 #endif
-            
         } // namespace sparse
     } // namespace models
 } // namespace storm

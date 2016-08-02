@@ -1,4 +1,41 @@
 /**
+ * Generate SHA2 structural hashes.
+ * Hashes are independent of location.
+ * Mainly useful for debugging purposes.
+ */
+static void
+mtbdd_sha2_rec(MTBDD mtbdd, SHA256_CTX *ctx)
+{
+    if (mtbdd == sylvan_true || mtbdd == sylvan_false) {
+        SHA256_Update(ctx, (void*)&mtbdd, sizeof(MTBDD));
+        return;
+    }
+    
+    mtbddnode_t node = GETNODE(mtbdd);
+    if (mtbddnode_isleaf(node)) {
+        uint64_t val = mtbddnode_getvalue(node);
+        SHA256_Update(ctx, (void*)&val, sizeof(uint64_t));
+    } else if (mtbddnode_getmark(node) == 0) {
+        mtbddnode_setmark(node, 1);
+        uint32_t level = mtbddnode_getvariable(node);
+        if (MTBDD_STRIPMARK(mtbddnode_gethigh(node))) level |= 0x80000000;
+        SHA256_Update(ctx, (void*)&level, sizeof(uint32_t));
+        mtbdd_sha2_rec(mtbddnode_gethigh(node), ctx);
+        mtbdd_sha2_rec(mtbddnode_getlow(node), ctx);
+    }
+}
+
+void
+mtbdd_getsha(MTBDD mtbdd, char *target)
+{
+    SHA256_CTX ctx;
+    SHA256_Init(&ctx);
+    mtbdd_sha2_rec(mtbdd, &ctx);
+    if (mtbdd != sylvan_true && mtbdd != sylvan_false) mtbdd_unmark_rec(mtbdd);
+    SHA256_End(&ctx, target);
+}
+
+/**
  * Binary operation Times (for MTBDDs of same type)
  * Only for MTBDDs where either all leaves are Integer or Double.
  * If either operand is mtbdd_false (not defined),

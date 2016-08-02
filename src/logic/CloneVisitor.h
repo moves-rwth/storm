@@ -1,6 +1,8 @@
 #ifndef STORM_LOGIC_CLONEVISITOR_H_
 #define STORM_LOGIC_CLONEVISITOR_H_
 
+#include <memory>
+
 #include "src/logic/FormulaVisitor.h"
 
 namespace storm {

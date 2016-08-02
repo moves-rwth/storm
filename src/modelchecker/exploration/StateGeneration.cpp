@@ -7,7 +7,7 @@ namespace storm {
         namespace exploration_detail {
             
             template <typename StateType, typename ValueType>
-            StateGeneration<StateType, ValueType>::StateGeneration(storm::prism::Program const& program, storm::generator::VariableInformation const& variableInformation, ExplorationInformation<StateType, ValueType>& explorationInformation, storm::expressions::Expression const& conditionStateExpression, storm::expressions::Expression const& targetStateExpression) : generator(program, variableInformation, false), stateStorage(variableInformation.getTotalBitOffset(true)), conditionStateExpression(conditionStateExpression), targetStateExpression(targetStateExpression) {
+            StateGeneration<StateType, ValueType>::StateGeneration(storm::prism::Program const& program, ExplorationInformation<StateType, ValueType>& explorationInformation, storm::expressions::Expression const& conditionStateExpression, storm::expressions::Expression const& targetStateExpression) : generator(program), stateStorage(generator.getStateSize()), conditionStateExpression(conditionStateExpression), targetStateExpression(targetStateExpression) {
                 
                 stateToIdCallback = [&explorationInformation, this] (storm::generator::CompressedState const& state) -> StateType {
                     StateType newIndex = stateStorage.getNumberOfStates();

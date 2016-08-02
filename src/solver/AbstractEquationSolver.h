@@ -3,6 +3,7 @@
 
 #include <memory>
 #include "src/solver/TerminationCondition.h"
+#include <memory>
 
 namespace storm {
     namespace solver {

@@ -56,7 +56,10 @@ namespace storm {
         }
         
         template class StateBehavior<double>;
-        template class StateBehavior<storm::RationalFunction>;
 
+#ifdef STORM_HAVE_CARL
+        template class StateBehavior<storm::RationalNumber>;
+        template class StateBehavior<storm::RationalFunction>;
+#endif
     }
 }

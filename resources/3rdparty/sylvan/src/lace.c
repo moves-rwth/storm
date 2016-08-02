@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include <errno.h>
+#include <errno.h> // for errno
 #include <sched.h> // for sched_getaffinity
 #include <stdio.h>  // for fprintf
 #include <stdlib.h> // for memalign, malloc
@@ -276,6 +276,11 @@ lace_init_worker(int worker, size_t dq_size)
     w->split = w->dq;
     w->allstolen = 0;
     w->worker = worker;
+#if USE_HWLOC
+    w->pu = worker % n_pus;
+#else
+    w->pu = -1;
+#endif
     w->enabled = 1;
     if (workers_init[worker].stack != 0) {
         w->stack_trigger = ((size_t)workers_init[worker].stack) + workers_init[worker].stacksize/20;
@@ -584,9 +589,9 @@ lace_spawn_worker(int worker, size_t stacksize, void* (*fun)(void*), void* arg)
         exit(1);
     }
 #else
-    void *stack_location = mmap(NULL, stacksize + pagesize, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, 0, 0);
+    void *stack_location = mmap(NULL, stacksize + pagesize, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
     if (stack_location == MAP_FAILED) {
-        fprintf(stderr, "Lace error: Cannot allocate program stack, errno=%d!\n", errno);
+        fprintf(stderr, "Lace error: Cannot allocate program stack: %s!\n", strerror(errno));
         exit(1);
     }
 #endif

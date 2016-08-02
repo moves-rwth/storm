@@ -179,7 +179,11 @@ namespace storm {
             
             template<typename DataType>
             void Partition<DataType>::sortRange(storm::storage::sparse::state_type beginIndex, storm::storage::sparse::state_type endIndex, std::function<bool (storm::storage::sparse::state_type, storm::storage::sparse::state_type)> const& less, bool updatePositions) {
-                std::sort(this->states.begin() + beginIndex, this->states.begin() + endIndex, less);
+                //FIXME, TODO: Wrapping less argument in a lambda here, as clang and the GCC stdlib do not play nicely
+                // Pass 'less' directly to std::sort when this has been resolved (problem with clang 3.7, gcc 5.1)
+                std::sort(this->states.begin() + beginIndex, this->states.begin() + endIndex, 
+                    [&] (const storm::storage::sparse::state_type &a, storm::storage::sparse::state_type &b) { return less(a, b); }
+                );
                 
                 if (updatePositions) {
                     mapStatesToPositions(this->states.begin() + beginIndex, this->states.begin() + endIndex);

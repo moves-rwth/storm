@@ -16,7 +16,7 @@ namespace storm {
             typedef typename SparseDtmcModelType::RewardModelType RewardModelType;
                         
             explicit SparseDtmcPrctlModelChecker(SparseDtmcModelType const& model);
-            explicit SparseDtmcPrctlModelChecker(SparseDtmcModelType const& model, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory);
+            explicit SparseDtmcPrctlModelChecker(SparseDtmcModelType const& model, std::unique_ptr<storm::solver::LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory);
             
             // The implemented methods of the AbstractModelChecker interface.
             virtual bool canHandle(CheckTask<storm::logic::Formula> const& checkTask) const override;
@@ -34,7 +34,7 @@ namespace storm {
 
         private:
             // An object that is used for retrieving linear equation solvers.
-            std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<ValueType>> linearEquationSolverFactory;
+            std::unique_ptr<storm::solver::LinearEquationSolverFactory<ValueType>> linearEquationSolverFactory;
         };
         
     } // namespace modelchecker

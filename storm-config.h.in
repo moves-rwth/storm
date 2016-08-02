@@ -38,6 +38,9 @@
 // Whether support for parametric systems should be enabled
 #cmakedefine PARAMETRIC_SYSTEMS
 
+// Whether CLN is available and to be used (define/undef)
+#cmakedefine STORM_HAVE_CLN
+
 // Whether carl is available and to be used.
 #cmakedefine STORM_HAVE_CARL
 

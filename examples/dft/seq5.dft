@@ -1,0 +1,9 @@
+toplevel "A";
+"A" and "T1" "T2";
+"T1" pand "B1" "B2"; 
+"T2" pand "B3" "B4";
+"X" seq "B4" "B3";
+"B1" lambda=0.7 dorm=0.3;
+"B2" lambda=0.5 dorm=0.3;
+"B3" lambda=0.5 dorm=0.3;
+"B4" lambda=0.7 dorm=0.3;

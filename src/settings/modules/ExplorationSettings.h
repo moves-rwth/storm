@@ -19,11 +19,9 @@ namespace storm {
                 enum class NextStateHeuristic { DifferenceProbabilitySum, Probability, Uniform };
                 
                 /*!
-                 * Creates a new set of exploration settings that is managed by the given manager.
-                 *
-                 * @param settingsManager The responsible manager.
+                 * Creates a new set of exploration settings.
                  */
-                ExplorationSettings(storm::settings::SettingsManager& settingsManager);
+                ExplorationSettings();
                 
                 /*!
                  * Retrieves whether local precomputation is to be used.

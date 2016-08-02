@@ -40,7 +40,7 @@ namespace storm {
             return value1 < value2;
         }
         
-        ConstantsComparator<float>::ConstantsComparator() : precision(static_cast<float>(storm::settings::generalSettings().getPrecision())) {
+        ConstantsComparator<float>::ConstantsComparator() : precision(static_cast<float>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision())) {
             // Intentionally left empty.
         }
         
@@ -72,7 +72,7 @@ namespace storm {
             return std::abs(value1 - value2) < precision;
         }
         
-        ConstantsComparator<double>::ConstantsComparator() : precision(storm::settings::generalSettings().getPrecision()) {
+        ConstantsComparator<double>::ConstantsComparator() : precision(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision()) {
             // Intentionally left empty.
         }
         
@@ -114,6 +114,7 @@ namespace storm {
         template class ConstantsComparator<RationalFunction>;
         template class ConstantsComparator<Polynomial>;
         template class ConstantsComparator<Interval>;
+        template class ConstantsComparator<RationalNumber>;
 #endif
     }
 }

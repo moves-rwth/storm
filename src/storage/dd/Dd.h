@@ -116,14 +116,6 @@ namespace storm {
              */
             std::set<storm::expressions::Variable>& getContainedMetaVariables();
             
-        protected:
-            /*!
-             * Retrieves the (sorted) list of the variable indices of DD variables contained in this DD.
-             *
-             * @return The sorted list of variable indices.
-             */
-            std::vector<uint_fast64_t> getSortedVariableIndices() const;
-            
             /*!
              * Adds the given set of meta variables to the DD.
              *
@@ -151,6 +143,14 @@ namespace storm {
              * @param metaVariables The set of meta variables to remove.
              */
             void removeMetaVariables(std::set<storm::expressions::Variable> const& metaVariables);
+            
+        protected:
+            /*!
+             * Retrieves the (sorted) list of the variable indices of DD variables contained in this DD.
+             *
+             * @return The sorted list of variable indices.
+             */
+            std::vector<uint_fast64_t> getSortedVariableIndices() const;
             
             /*!
              * Creates a DD with the given manager and meta variables.

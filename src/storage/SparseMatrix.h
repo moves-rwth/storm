@@ -109,6 +109,9 @@ namespace storm {
              */
             MatrixEntry operator*(value_type factor) const;
             
+            bool operator==(MatrixEntry const& other) const;
+            bool operator!=(MatrixEntry const& other) const;
+            
             template<typename IndexTypePrime, typename ValueTypePrime>
             friend std::ostream& operator<<(std::ostream& out, MatrixEntry<IndexTypePrime, ValueTypePrime> const& entry);
         private:
@@ -291,6 +294,11 @@ namespace storm {
             // Stores the currently active row group. This is used for correctly constructing the row grouping of the
             // matrix.
             index_type currentRowGroup;
+            
+            /*!
+             * Fixes the matrix by sorting the columns to gain increasing order again.
+             */
+            void fixColumns();
         };
         
         /*!
@@ -640,6 +648,26 @@ namespace storm {
              */
             SparseMatrix restrictRows(storm::storage::BitVector const& rowsToKeep) const;
             
+            /**
+             * Compares two rows.
+             * @param i1 Index of first row
+             * @param i2 Index of second row
+             * @return True if the rows have identical entries.
+             */
+            bool compareRows(index_type i1, index_type i2) const;
+            
+            /*!
+             * Finds duplicate rows in a rowgroup.
+             */
+            BitVector duplicateRowsInRowgroups() const;
+            
+            /**
+             * Swaps the two rows.
+             * @param row1 Index of first row
+             * @param row2 Index of second row
+             */
+            void swapRows(index_type const& row1, index_type const& row2);
+            
             /*!
              * Selects exactly one row from each row group of this matrix and returns the resulting matrix.
              *
@@ -984,7 +1012,7 @@ namespace storm {
         };
         
 #ifdef STORM_HAVE_CARL
-        std::set<storm::Variable> getVariables(SparseMatrix<storm::RationalFunction> const& matrix);
+        std::set<storm::RationalFunctionVariable> getVariables(SparseMatrix<storm::RationalFunction> const& matrix);
 #endif
         
     } // namespace storage

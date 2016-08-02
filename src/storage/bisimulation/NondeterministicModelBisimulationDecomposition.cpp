@@ -74,7 +74,7 @@ namespace storm {
                 }
             }
             
-            for (auto state = 0; state < this->model.getNumberOfStates(); ++state) {
+            for (decltype(this->model.getNumberOfStates()) state = 0; state < this->model.getNumberOfStates(); ++state) {
                 updateOrderedQuotientDistributions(state);
             }
         }
@@ -248,7 +248,7 @@ namespace storm {
         template<typename ModelType>
         bool NondeterministicModelBisimulationDecomposition<ModelType>::checkQuotientDistributions() const {
             std::vector<uint_fast64_t> nondeterministicChoiceIndices = this->model.getTransitionMatrix().getRowGroupIndices();
-            for (auto state = 0; state < this->model.getNumberOfStates(); ++state) {
+            for (decltype(this->model.getNumberOfStates()) state = 0; state < this->model.getNumberOfStates(); ++state) {
                 for (auto choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice) {
                     storm::storage::Distribution<ValueType> distribution;
                     for (auto const& element : this->model.getTransitionMatrix().getRow(choice)) {
@@ -416,10 +416,10 @@ namespace storm {
         }
         
         template class NondeterministicModelBisimulationDecomposition<storm::models::sparse::Mdp<double>>;
-        
+
 #ifdef STORM_HAVE_CARL
+        template class NondeterministicModelBisimulationDecomposition<storm::models::sparse::Mdp<storm::RationalNumber>>;
         template class NondeterministicModelBisimulationDecomposition<storm::models::sparse::Mdp<storm::RationalFunction>>;
 #endif
-        
     }
 }

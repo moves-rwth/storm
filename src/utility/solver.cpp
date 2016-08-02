@@ -5,12 +5,8 @@
 #include "src/solver/SymbolicLinearEquationSolver.h"
 #include "src/solver/SymbolicMinMaxLinearEquationSolver.h"
 #include "src/solver/SymbolicGameSolver.h"
-#include "src/solver/NativeLinearEquationSolver.h"
-#include "src/solver/GmmxxLinearEquationSolver.h"
 #include "src/solver/GameSolver.h"
 
-#include "src/solver/NativeMinMaxLinearEquationSolver.h"
-#include "src/solver/GmmxxMinMaxLinearEquationSolver.h"
 #include "src/solver/TopologicalMinMaxLinearEquationSolver.h"
 
 #include "src/solver/GurobiLpSolver.h"
@@ -19,8 +15,7 @@
 #include "src/solver/Z3SmtSolver.h"
 #include "src/solver/MathsatSmtSolver.h"
 #include "src/settings/SettingsManager.h"
-#include "src/settings/modules/GeneralSettings.h"
-#include "src/settings/modules/NativeEquationSolverSettings.h"
+#include "src/settings/modules/CoreSettings.h"
 
 #include "src/exceptions/InvalidSettingsException.h"
 
@@ -45,102 +40,14 @@ namespace storm {
             }
             
             template<typename ValueType>
-            std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> LinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType> const& matrix) const {
-                storm::solver::EquationSolverType equationSolver = storm::settings::generalSettings().getEquationSolver();
-                switch (equationSolver) {
-                    case storm::solver::EquationSolverType::Gmmxx: return std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>>(new storm::solver::GmmxxLinearEquationSolver<ValueType>(matrix));
-                    case storm::solver::EquationSolverType::Native: return std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>>(new storm::solver::NativeLinearEquationSolver<ValueType>(matrix));
-                    default: return std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>>(new storm::solver::GmmxxLinearEquationSolver<ValueType>(matrix));
-                }
-            }
-            
-            template<typename ValueType>
-            std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> GmmxxLinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType> const& matrix) const {
-                return std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>>(new storm::solver::GmmxxLinearEquationSolver<ValueType>(matrix));
-            }
-            
-            template<typename ValueType>
-            NativeLinearEquationSolverFactory<ValueType>::NativeLinearEquationSolverFactory() {
-                switch (storm::settings::nativeEquationSolverSettings().getLinearEquationSystemMethod()) {
-                    case settings::modules::NativeEquationSolverSettings::LinearEquationMethod::Jacobi:
-                    this->method = storm::solver::NativeLinearEquationSolverSolutionMethod::Jacobi;
-                    break;
-                    case settings::modules::NativeEquationSolverSettings::LinearEquationMethod::GaussSeidel:
-                    this->method = storm::solver::NativeLinearEquationSolverSolutionMethod::GaussSeidel;
-                    case settings::modules::NativeEquationSolverSettings::LinearEquationMethod::SOR:
-                    this->method = storm::solver::NativeLinearEquationSolverSolutionMethod::SOR;
-                }
-                omega = storm::settings::nativeEquationSolverSettings().getOmega();
-            }
-            
-            template<typename ValueType>
-            NativeLinearEquationSolverFactory<ValueType>::NativeLinearEquationSolverFactory(typename storm::solver::NativeLinearEquationSolverSolutionMethod method, ValueType omega) : method(method), omega(omega) {
-                // Intentionally left empty.
-            }
-            
-            template<typename ValueType>
-            std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> NativeLinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType> const& matrix) const {
-                return std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>>(new storm::solver::NativeLinearEquationSolver<ValueType>(matrix, method));
-            }
-            
-            template<typename ValueType>
-            MinMaxLinearEquationSolverFactory<ValueType>::MinMaxLinearEquationSolverFactory(storm::solver::EquationSolverTypeSelection solver)
-            {
-                prefTech = storm::solver::MinMaxTechniqueSelection::FROMSETTINGS;
-                setSolverType(solver);
-            }
-            
-            template<typename ValueType>
-            MinMaxLinearEquationSolverFactory<ValueType>& MinMaxLinearEquationSolverFactory<ValueType>::setSolverType(storm::solver::EquationSolverTypeSelection solverTypeSel) {
-                if(solverTypeSel == storm::solver::EquationSolverTypeSelection::FROMSETTINGS) {
-                    this->solverType = storm::settings::generalSettings().getEquationSolver();
-                } else {
-                    this->solverType = storm::solver::convert(solverTypeSel);
-                }
-                return *this;
-            }
-            
-            template<typename ValueType>
-            MinMaxLinearEquationSolverFactory<ValueType>& MinMaxLinearEquationSolverFactory<ValueType>::setPreferredTechnique(storm::solver::MinMaxTechniqueSelection preferredTech) {
-                this->prefTech = preferredTech;
-                return *this;
-            }
-            
-            template<typename ValueType>
-            std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> MinMaxLinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType> const& matrix, bool trackScheduler) const {
-                std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> p1;
-                
-                switch (solverType) {
-                    case storm::solver::EquationSolverType::Gmmxx:
-                    {
-                        p1.reset(new storm::solver::GmmxxMinMaxLinearEquationSolver<ValueType>(matrix, this->prefTech));
-                        break;
-                    }
-                    case storm::solver::EquationSolverType::Native: 
-                    {
-                        p1.reset(new storm::solver::NativeMinMaxLinearEquationSolver<ValueType>(matrix, this->prefTech));
-                        break;
-                    }
-                    case storm::solver::EquationSolverType::Topological:
-                    {
-                        STORM_LOG_THROW(prefTech != storm::solver::MinMaxTechniqueSelection::PolicyIteration, storm::exceptions::NotImplementedException, "Policy iteration for topological solver is not supported.");
-                        p1.reset(new storm::solver::TopologicalMinMaxLinearEquationSolver<ValueType>(matrix));
-                        break;
-                    }
-                }
-                p1->setTrackScheduler(trackScheduler);
-                return p1;
-            }
-
-            template<typename ValueType>
             std::unique_ptr<storm::solver::GameSolver<ValueType>> GameSolverFactory<ValueType>::create(storm::storage::SparseMatrix<storm::storage::sparse::state_type> const& player1Matrix, storm::storage::SparseMatrix<ValueType> const& player2Matrix) const {
                 return std::unique_ptr<storm::solver::GameSolver<ValueType>>(new storm::solver::GameSolver<ValueType>(player1Matrix, player2Matrix));
             }
-
+            
             std::unique_ptr<storm::solver::LpSolver> LpSolverFactory::create(std::string const& name, storm::solver::LpSolverTypeSelection solvT) const {
                 storm::solver::LpSolverType t;
                 if(solvT == storm::solver::LpSolverTypeSelection::FROMSETTINGS) {
-                    t = storm::settings::generalSettings().getLpSolver();
+                    t = storm::settings::getModule<storm::settings::modules::CoreSettings>().getLpSolver();
                 } else {
                     t = convert(solvT);
                 }
@@ -157,7 +64,7 @@ namespace storm {
             std::unique_ptr<storm::solver::LpSolver> GlpkLpSolverFactory::create(std::string const& name) const {
                 return LpSolverFactory::create(name, storm::solver::LpSolverTypeSelection::Glpk);
             }
-
+            
             std::unique_ptr<storm::solver::LpSolver> GurobiLpSolverFactory::create(std::string const& name) const {
                 return LpSolverFactory::create(name, storm::solver::LpSolverTypeSelection::Gurobi);
             }
@@ -168,7 +75,7 @@ namespace storm {
             }
             
             std::unique_ptr<storm::solver::SmtSolver> SmtSolverFactory::create(storm::expressions::ExpressionManager& manager) const {
-                storm::solver::SmtSolverType smtSolverType = storm::settings::generalSettings().getSmtSolver();
+                storm::solver::SmtSolverType smtSolverType = storm::settings::getModule<storm::settings::modules::CoreSettings>().getSmtSolver();
                 switch (smtSolverType) {
                     case storm::solver::SmtSolverType::Z3: return std::unique_ptr<storm::solver::SmtSolver>(new storm::solver::Z3SmtSolver(manager));
                     case storm::solver::SmtSolverType::Mathsat: return std::unique_ptr<storm::solver::SmtSolver>(new storm::solver::MathsatSmtSolver(manager));
@@ -187,17 +94,13 @@ namespace storm {
                 std::unique_ptr<storm::utility::solver::SmtSolverFactory> factory(new MathsatSmtSolverFactory());
                 return factory->create(manager);
             }
-
+            
             template class SymbolicLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>;
             template class SymbolicLinearEquationSolverFactory<storm::dd::DdType::Sylvan, double>;
             template class SymbolicMinMaxLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>;
             template class SymbolicMinMaxLinearEquationSolverFactory<storm::dd::DdType::Sylvan, double>;
             template class SymbolicGameSolverFactory<storm::dd::DdType::CUDD, double>;
             template class SymbolicGameSolverFactory<storm::dd::DdType::Sylvan, double>;
-            template class LinearEquationSolverFactory<double>;
-            template class GmmxxLinearEquationSolverFactory<double>;
-            template class NativeLinearEquationSolverFactory<double>;
-            template class MinMaxLinearEquationSolverFactory<double>;
             template class GameSolverFactory<double>;
         }
     }

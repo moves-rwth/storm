@@ -31,6 +31,7 @@ namespace storm {
                  * @param manager The manager responsible for the decision diagrams.
                  * @param reachableStates A DD representing the reachable states.
                  * @param initialStates A DD representing the initial states of the model.
+                 * @param deadlockStates A DD representing the deadlock states of the model.
                  * @param transitionMatrix The matrix representing the transitions in the model.
                  * @param rowVariables The set of row meta variables used in the DDs.
                  * @param rowExpressionAdapter An object that can be used to translate expressions in terms of the row
@@ -46,6 +47,7 @@ namespace storm {
                 Mdp(std::shared_ptr<storm::dd::DdManager<Type>> manager,
                     storm::dd::Bdd<Type> reachableStates,
                     storm::dd::Bdd<Type> initialStates,
+                    storm::dd::Bdd<Type> deadlockStates,
                     storm::dd::Add<Type, ValueType> transitionMatrix,
                     std::set<storm::expressions::Variable> const& rowVariables,
                     std::shared_ptr<storm::adapters::AddExpressionAdapter<Type, ValueType>> rowExpressionAdapter,

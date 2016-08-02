@@ -4,7 +4,7 @@
 #include <exception>
 #include <sstream>
 
-#include "utility/OsDetection.h"
+#include "src/utility/OsDetection.h"
 
 namespace storm {
     namespace exceptions {

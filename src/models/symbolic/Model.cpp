@@ -21,6 +21,7 @@ namespace storm {
                                           std::shared_ptr<storm::dd::DdManager<Type>> manager,
                                           storm::dd::Bdd<Type> reachableStates,
                                           storm::dd::Bdd<Type> initialStates,
+                                          storm::dd::Bdd<Type> deadlockStates,
                                           storm::dd::Add<Type, ValueType> transitionMatrix,
                                           std::set<storm::expressions::Variable> const& rowVariables,
                                           std::shared_ptr<storm::adapters::AddExpressionAdapter<Type, ValueType>> rowExpressionAdapter,
@@ -29,7 +30,7 @@ namespace storm {
                                           std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs,
                                           std::map<std::string, storm::expressions::Expression> labelToExpressionMap,
                                           std::unordered_map<std::string, RewardModelType> const& rewardModels)
-            : ModelBase(modelType), manager(manager), reachableStates(reachableStates), initialStates(initialStates), transitionMatrix(transitionMatrix), rowVariables(rowVariables), rowExpressionAdapter(rowExpressionAdapter), columnVariables(columnVariables), columnExpressionAdapter(columnExpressionAdapter), rowColumnMetaVariablePairs(rowColumnMetaVariablePairs), labelToExpressionMap(labelToExpressionMap), rewardModels(rewardModels) {
+            : ModelBase(modelType), manager(manager), reachableStates(reachableStates), initialStates(initialStates), deadlockStates(deadlockStates), transitionMatrix(transitionMatrix), rowVariables(rowVariables), rowExpressionAdapter(rowExpressionAdapter), columnVariables(columnVariables), columnExpressionAdapter(columnExpressionAdapter), rowColumnMetaVariablePairs(rowColumnMetaVariablePairs), labelToExpressionMap(labelToExpressionMap), rewardModels(rewardModels) {
                 // Intentionally left empty.
             }
             
@@ -77,7 +78,12 @@ namespace storm {
             
             template<storm::dd::DdType Type, typename ValueType>
             bool Model<Type, ValueType>::hasLabel(std::string const& label) const {
-                return labelToExpressionMap.find(label) != labelToExpressionMap.end();
+                auto labelIt = labelToExpressionMap.find(label);
+                if (labelIt != labelToExpressionMap.end()) {
+                    return true;
+                } else {
+                    return label == "init" || label == "deadlock";
+                }
             }
             
             template<storm::dd::DdType Type, typename ValueType>

@@ -1,0 +1,6 @@
+param x;
+param y;
+toplevel "A";
+"A" pand "B" "C";
+"B" lambda=x dorm=0.3;
+"C" lambda=y dorm=0.3;

@@ -1037,4 +1037,3 @@ Sylvan::quitPackage()
 }
 
 #include "sylvan_obj_storm.cpp"
-

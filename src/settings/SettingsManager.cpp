@@ -14,19 +14,24 @@
 #include "src/exceptions/OptionParserException.h"
 #include "src/utility/storm-version.h"
 #include "src/settings/modules/GeneralSettings.h"
+#include "src/settings/modules/CoreSettings.h"
+#include "src/settings/modules/IOSettings.h"
 #include "src/settings/modules/DebugSettings.h"
 #include "src/settings/modules/CounterexampleGeneratorSettings.h"
 #include "src/settings/modules/CuddSettings.h"
 #include "src/settings/modules/SylvanSettings.h"
+#include "src/settings/modules/EigenEquationSolverSettings.h"
 #include "src/settings/modules/GmmxxEquationSolverSettings.h"
 #include "src/settings/modules/NativeEquationSolverSettings.h"
+#include "src/settings/modules/EliminationSettings.h"
+#include "src/settings/modules/MinMaxEquationSolverSettings.h"
 #include "src/settings/modules/BisimulationSettings.h"
 #include "src/settings/modules/GlpkSettings.h"
 #include "src/settings/modules/GurobiSettings.h"
 #include "src/settings/modules/ParametricSettings.h"
-#include "src/settings/modules/SparseDtmcEliminationModelCheckerSettings.h"
 #include "src/settings/modules/TopologicalValueIterationEquationSolverSettings.h"
 #include "src/settings/modules/ExplorationSettings.h"
+#include "src/settings/modules/ResourceSettings.h"
 #include "src/utility/macros.h"
 #include "src/settings/Option.h"
 
@@ -35,21 +40,6 @@ namespace storm {
     namespace settings {
         
         SettingsManager::SettingsManager() : modules(), longNameToOptions(), shortNameToOptions(), moduleOptions() {
-            // Register all known settings modules.
-            this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::GeneralSettings(*this)));
-            this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::DebugSettings(*this)));
-            this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::CounterexampleGeneratorSettings(*this)));
-            this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::CuddSettings(*this)));
-            this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::SylvanSettings(*this)));
-            this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::GmmxxEquationSolverSettings(*this)));
-            this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::NativeEquationSolverSettings(*this)));
-            this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::BisimulationSettings(*this)));
-            this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::GlpkSettings(*this)));
-			this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::GurobiSettings(*this)));
-			this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::TopologicalValueIterationEquationSolverSettings(*this)));
-            this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::ParametricSettings(*this)));
-            this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::SparseDtmcEliminationModelCheckerSettings(*this)));
-            this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::ExplorationSettings(*this)));
         }
         
         SettingsManager::~SettingsManager() {
@@ -60,6 +50,12 @@ namespace storm {
             static SettingsManager settingsManager;
             return settingsManager;
         }
+        
+        void SettingsManager::setName(std::string const& name, std::string const& executableName) {
+            this->name = name;
+            this->executableName = executableName;
+        }
+
         
         void SettingsManager::setFromCommandLine(int const argc, char const * const argv[]) {
             // We convert the arguments to a vector of strings and strip off the first element since it refers to the
@@ -74,11 +70,12 @@ namespace storm {
         
         void SettingsManager::setFromString(std::string const& commandLineString) {
             if (commandLineString.empty()) {
-                return;
+                this->setFromExplodedString({});
+            } else {
+                std::vector<std::string> argumentVector;
+                boost::split(argumentVector, commandLineString, boost::is_any_of("\t "));
+                this->setFromExplodedString(argumentVector);
             }
-            std::vector<std::string> argumentVector;
-            boost::split(argumentVector, commandLineString, boost::is_any_of("\t "));
-            this->setFromExplodedString(argumentVector);
         }
         
         void SettingsManager::setFromExplodedString(std::vector<std::string> const& commandLineArguments) {
@@ -136,8 +133,8 @@ namespace storm {
             }
 
             // Include the options from a possibly specified configuration file, but don't overwrite existing settings.
-            if (storm::settings::generalSettings().isConfigSet()) {
-                this->setFromConfigurationFile(storm::settings::generalSettings().getConfigFilename());
+            if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isConfigSet()) {
+                this->setFromConfigurationFile(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getConfigFilename());
             }
             
             // Finally, check whether all modules are okay with the current settings.
@@ -171,7 +168,7 @@ namespace storm {
         }
         
         void SettingsManager::printHelp(std::string const& hint) const {
-            STORM_PRINT("usage: storm [options]" << std::endl << std::endl);
+            STORM_PRINT("usage: " << executableName << " [options]" << std::endl << std::endl);
             
             if (hint == "all") {
                 // Find longest option name.
@@ -494,64 +491,38 @@ namespace storm {
             return SettingsManager::manager();
         }
         
-        storm::settings::modules::GeneralSettings const& generalSettings() {
-            return dynamic_cast<storm::settings::modules::GeneralSettings const&>(manager().getModule(storm::settings::modules::GeneralSettings::moduleName));
+        storm::settings::modules::CoreSettings& mutableCoreSettings() {
+            return dynamic_cast<storm::settings::modules::CoreSettings&>(mutableManager().getModule(storm::settings::modules::CoreSettings::moduleName));
         }
         
-        storm::settings::modules::GeneralSettings& mutableGeneralSettings() {
-            return dynamic_cast<storm::settings::modules::GeneralSettings&>(storm::settings::SettingsManager::manager().getModule(storm::settings::modules::GeneralSettings::moduleName));
+        storm::settings::modules::IOSettings& mutableIOSettings() {
+            return dynamic_cast<storm::settings::modules::IOSettings&>(mutableManager().getModule(storm::settings::modules::IOSettings::moduleName));
         }
         
-        storm::settings::modules::DebugSettings const& debugSettings()  {
-            return dynamic_cast<storm::settings::modules::DebugSettings const&>(manager().getModule(storm::settings::modules::DebugSettings::moduleName));
-        }
-        
-        storm::settings::modules::CounterexampleGeneratorSettings const& counterexampleGeneratorSettings() {
-            return dynamic_cast<storm::settings::modules::CounterexampleGeneratorSettings const&>(manager().getModule(storm::settings::modules::CounterexampleGeneratorSettings::moduleName));
-        }
-        
-        storm::settings::modules::CuddSettings const& cuddSettings() {
-            return dynamic_cast<storm::settings::modules::CuddSettings const&>(manager().getModule(storm::settings::modules::CuddSettings::moduleName));
+        void initializeAll(std::string const& name, std::string const& executableName) {
+            storm::settings::mutableManager().setName(name, executableName);
+            
+            // Register all known settings modules.
+            storm::settings::addModule<storm::settings::modules::GeneralSettings>();
+            storm::settings::addModule<storm::settings::modules::IOSettings>();
+            storm::settings::addModule<storm::settings::modules::CoreSettings>();
+            storm::settings::addModule<storm::settings::modules::DebugSettings>();
+            storm::settings::addModule<storm::settings::modules::CounterexampleGeneratorSettings>();
+            storm::settings::addModule<storm::settings::modules::CuddSettings>();
+            storm::settings::addModule<storm::settings::modules::SylvanSettings>();
+            storm::settings::addModule<storm::settings::modules::GmmxxEquationSolverSettings>();
+            storm::settings::addModule<storm::settings::modules::EigenEquationSolverSettings>();
+            storm::settings::addModule<storm::settings::modules::NativeEquationSolverSettings>();
+            storm::settings::addModule<storm::settings::modules::EliminationSettings>();
+            storm::settings::addModule<storm::settings::modules::MinMaxEquationSolverSettings>();
+            storm::settings::addModule<storm::settings::modules::BisimulationSettings>();
+            storm::settings::addModule<storm::settings::modules::GlpkSettings>();
+            storm::settings::addModule<storm::settings::modules::GurobiSettings>();
+            storm::settings::addModule<storm::settings::modules::TopologicalValueIterationEquationSolverSettings>();
+            storm::settings::addModule<storm::settings::modules::ParametricSettings>();
+            storm::settings::addModule<storm::settings::modules::ExplorationSettings>();
+            storm::settings::addModule<storm::settings::modules::ResourceSettings>();
         }
 
-        storm::settings::modules::SylvanSettings const& sylvanSettings() {
-            return dynamic_cast<storm::settings::modules::SylvanSettings const&>(manager().getModule(storm::settings::modules::SylvanSettings::moduleName));
-        }
-        
-        storm::settings::modules::GmmxxEquationSolverSettings const& gmmxxEquationSolverSettings() {
-            return dynamic_cast<storm::settings::modules::GmmxxEquationSolverSettings const&>(manager().getModule(storm::settings::modules::GmmxxEquationSolverSettings::moduleName));
-        }
-        
-        storm::settings::modules::NativeEquationSolverSettings const& nativeEquationSolverSettings() {
-            return dynamic_cast<storm::settings::modules::NativeEquationSolverSettings const&>(manager().getModule(storm::settings::modules::NativeEquationSolverSettings::moduleName));
-        }
-        
-        storm::settings::modules::BisimulationSettings const& bisimulationSettings() {
-            return dynamic_cast<storm::settings::modules::BisimulationSettings const&>(manager().getModule(storm::settings::modules::BisimulationSettings::moduleName));
-        }
-        
-        storm::settings::modules::GlpkSettings const& glpkSettings() {
-            return dynamic_cast<storm::settings::modules::GlpkSettings const&>(manager().getModule(storm::settings::modules::GlpkSettings::moduleName));
-        }
-        
-        storm::settings::modules::GurobiSettings const& gurobiSettings() {
-            return dynamic_cast<storm::settings::modules::GurobiSettings const&>(manager().getModule(storm::settings::modules::GurobiSettings::moduleName));
-		}
-
-		storm::settings::modules::TopologicalValueIterationEquationSolverSettings const& topologicalValueIterationEquationSolverSettings() {
-			return dynamic_cast<storm::settings::modules::TopologicalValueIterationEquationSolverSettings const&>(manager().getModule(storm::settings::modules::TopologicalValueIterationEquationSolverSettings::moduleName));
-		}
-        
-        storm::settings::modules::ParametricSettings const& parametricSettings() {
-            return dynamic_cast<storm::settings::modules::ParametricSettings const&>(manager().getModule(storm::settings::modules::ParametricSettings::moduleName));
-        }
-
-        storm::settings::modules::SparseDtmcEliminationModelCheckerSettings const& sparseDtmcEliminationModelCheckerSettings() {
-            return dynamic_cast<storm::settings::modules::SparseDtmcEliminationModelCheckerSettings const&>(manager().getModule(storm::settings::modules::SparseDtmcEliminationModelCheckerSettings::moduleName));
-        }
-        
-        storm::settings::modules::ExplorationSettings const& explorationSettings() {
-            return dynamic_cast<storm::settings::modules::ExplorationSettings const&>(manager().getModule(storm::settings::modules::ExplorationSettings::moduleName));
-        }
     }
 }

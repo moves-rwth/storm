@@ -13,11 +13,9 @@ namespace storm {
             class GlpkSettings : public ModuleSettings {
             public:
                 /*!
-                 * Creates a new set of glpk settings that is managed by the given manager.
-                 *
-                 * @param settingsManager The responsible manager.
+                 * Creates a new set of glpk settings.
                  */
-                GlpkSettings(storm::settings::SettingsManager& settingsManager);
+                GlpkSettings();
                 
                 /*!
                  * Retrieves whether the output option was set.

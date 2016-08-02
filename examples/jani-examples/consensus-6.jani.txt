@@ -1,0 +1,27 @@
+﻿Peak memory usage: 530 MB
+Analysis results for consensus-6.jani
+
++ State space exploration
+  States:      2345194
+  Transitions: 9418584
+  Branches:    13891248
+  Time:        8.7 s
+  Rate:        270964 states/s
+
++ C1
+  Result:                       True
+  Time for min. prob. 0 states: 1.6 s
+  Time for min. prob. 1 states: 0.1 s
+  Time:                         1.7 s
+  Min. probability:             1
+
++ C2
+  Probability:                  0.395776147642961
+  Time for min. prob. 0 states: 2.0 s
+  Time for min. prob. 1 states: 0.1 s
+  Time:                         125.8 s
+
+  + Value iteration
+    Final error: 9.96634356860147E-07
+    Iterations:  2137
+    Time:        123.8 s

@@ -50,20 +50,20 @@ TEST(GameSolverTest, Solve) {
 
     // Now solve the game with different strategies for the players.
     solver->solveGame(storm::OptimizationDirection::Minimize, storm::OptimizationDirection::Minimize, result, b);
-    EXPECT_NEAR(0, result[0], storm::settings::nativeEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(0, result[0], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
 
     result = std::vector<double>(4);
 
     solver->solveGame(storm::OptimizationDirection::Minimize, storm::OptimizationDirection::Maximize, result, b);
-    EXPECT_NEAR(0.5, result[0], storm::settings::nativeEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(0.5, result[0], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
 
     result = std::vector<double>(4);
 
     solver->solveGame(storm::OptimizationDirection::Maximize, storm::OptimizationDirection::Minimize, result, b);
-    EXPECT_NEAR(0.2, result[0], storm::settings::nativeEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(0.2, result[0], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
 
     result = std::vector<double>(4);
 
     solver->solveGame(storm::OptimizationDirection::Maximize, storm::OptimizationDirection::Maximize, result, b);
-    EXPECT_NEAR(0.99999892625817599, result[0], storm::settings::nativeEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(0.99999892625817599, result[0], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
 }

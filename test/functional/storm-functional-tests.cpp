@@ -9,6 +9,7 @@
 #include "src/settings/SettingsManager.h"
 
 int main(int argc, char* argv[]) {
+	storm::settings::initializeAll("StoRM (Functional) Testing Suite", "storm-functional-tests");
 	std::cout << "StoRM (Functional) Testing Suite" << std::endl;
 	
 	testing::InitGoogleTest(&argc, argv);

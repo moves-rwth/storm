@@ -4,6 +4,8 @@
 #include "src/utility/macros.h"
 #include "src/storage/expressions/ExpressionManager.h"
 
+#include <cmath>
+
 namespace storm {
     namespace dd {
         template<typename ValueType>

@@ -19,11 +19,9 @@ namespace storm {
                 enum class ConvergenceCriterion { Absolute, Relative };
                 
                 /*!
-                 * Creates a new set of native equation solver settings that is managed by the given manager.
-                 *
-                 * @param settingsManager The responsible manager.
+                 * Creates a new set of native equation solver settings.
                  */
-                NativeEquationSolverSettings(storm::settings::SettingsManager& settingsManager);
+                NativeEquationSolverSettings();
                 
                 /*!
                  * Retrieves whether the linear equation system technique has been set.
