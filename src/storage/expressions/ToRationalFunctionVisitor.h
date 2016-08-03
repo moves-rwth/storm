@@ -10,6 +10,7 @@
 namespace storm {
     namespace expressions {
 
+#ifdef STORM_HAVE_CARL
         template<typename RationalFunctionType>
         class ToRationalFunctionVisitor : public ExpressionVisitor {
         public:
@@ -45,6 +46,7 @@ namespace storm {
             // The cache that is used in case the underlying type needs a cache.
             std::shared_ptr<carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>>> cache;
         };
+#endif
     }
 }
 

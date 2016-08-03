@@ -28,7 +28,7 @@ namespace storm {
         }
         
         std::string const& LabelOrExpression::getLabel() const {
-            return boost::get<std::string const&>(labelOrExpression);
+            return boost::get<std::string>(labelOrExpression);
         }
         
         bool LabelOrExpression::isExpression() const {
@@ -36,7 +36,7 @@ namespace storm {
         }
         
         storm::expressions::Expression const& LabelOrExpression::getExpression() const {
-            return boost::get<storm::expressions::Expression const&>(labelOrExpression);
+            return boost::get<storm::expressions::Expression>(labelOrExpression);
         }
         
         NextStateGeneratorOptions::NextStateGeneratorOptions(bool buildAllRewardModels, bool buildAllLabels) : buildAllRewardModels(buildAllRewardModels), buildAllLabels(buildAllLabels), buildChoiceLabels(false) {
@@ -303,8 +303,10 @@ namespace storm {
         }
 
         template class NextStateGenerator<double>;
+
+#ifdef STORM_HAVE_CARL
         template class NextStateGenerator<storm::RationalNumber>;
         template class NextStateGenerator<storm::RationalFunction>;
-        
+#endif
     }
 }

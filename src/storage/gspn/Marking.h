@@ -3,6 +3,7 @@
 
 #include <cmath>
 #include <map>
+#include <memory>
 #include "src/storage/BitVector.h"
 
 namespace storm {

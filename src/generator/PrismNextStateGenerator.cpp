@@ -77,7 +77,11 @@ namespace storm {
         template<typename ValueType, typename StateType>
         void PrismNextStateGenerator<ValueType, StateType>::checkValid(storm::prism::Program const& program) {
             // If the program still contains undefined constants and we are not in a parametric setting, assemble an appropriate error message.
+#ifdef STORM_HAVE_CARL
             if (!std::is_same<ValueType, storm::RationalFunction>::value && program.hasUndefinedConstants()) {
+#else
+            if (program.hasUndefinedConstants()) {
+#endif
                 std::vector<std::reference_wrapper<storm::prism::Constant const>> undefinedConstants = program.getUndefinedConstants();
                 std::stringstream stream;
                 bool printComma = false;
@@ -91,9 +95,13 @@ namespace storm {
                 }
                 stream << ".";
                 STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Program still contains these undefined constants: " + stream.str());
-            } else if (std::is_same<ValueType, storm::RationalFunction>::value && !program.hasUndefinedConstantsOnlyInUpdateProbabilitiesAndRewards()) {
+            }
+
+#ifdef STORM_HAVE_CARL
+            else if (std::is_same<ValueType, storm::RationalFunction>::value && !program.hasUndefinedConstantsOnlyInUpdateProbabilitiesAndRewards()) {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The program contains undefined constants that appear in some places other than update probabilities and reward value expressions, which is not admitted.");
             }
+#endif
         }
         
         template<typename ValueType, typename StateType>
@@ -561,7 +569,10 @@ namespace storm {
         }
                 
         template class PrismNextStateGenerator<double>;
+
+#ifdef STORM_HAVE_CARL
         template class PrismNextStateGenerator<storm::RationalNumber>;
         template class PrismNextStateGenerator<storm::RationalFunction>;
+#endif
     }
 }

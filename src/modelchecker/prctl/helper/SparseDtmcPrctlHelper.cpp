@@ -401,8 +401,11 @@ namespace storm {
             }
             
             template class SparseDtmcPrctlHelper<double>;
+
+#ifdef STORM_HAVE_CARL
             template class SparseDtmcPrctlHelper<storm::RationalNumber>;
             template class SparseDtmcPrctlHelper<storm::RationalFunction>;
+#endif
         }
     }
 }

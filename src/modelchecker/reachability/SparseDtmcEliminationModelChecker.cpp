@@ -986,7 +986,10 @@ namespace storm {
         }
         
         template class SparseDtmcEliminationModelChecker<storm::models::sparse::Dtmc<double>>;
+
+#ifdef STORM_HAVE_CARL
         template class SparseDtmcEliminationModelChecker<storm::models::sparse::Dtmc<storm::RationalNumber>>;
         template class SparseDtmcEliminationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>>;
+#endif
     } // namespace modelchecker
 } // namespace storm

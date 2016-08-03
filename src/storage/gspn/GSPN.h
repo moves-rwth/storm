@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <vector>
+#include <memory>
 
 #include "src/storage/gspn/ImmediateTransition.h"
 #include "src/storage/gspn/Marking.h"

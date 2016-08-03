@@ -146,7 +146,10 @@ namespace storm {
         }
         
         template class SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>>;
+
+#ifdef STORM_HAVE_CARL
         template class SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<storm::RationalNumber>>;
         template class SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>>;
+#endif
     }
 }
