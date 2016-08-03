@@ -141,7 +141,7 @@ uint64_t storm_rational_function_hash(storm_rational_function_ptr const a, uint6
 
 	size_t hash = carl::hash_value(srf_a);
 
-#ifdef
+#ifdef DEBUG_STORM_FUNCTION_WRAPPER
 	std::cout << "storm_rational_function_hash of value " << srf_a << " is " << hash << std::endl;
 #endif
 
@@ -183,14 +183,12 @@ int storm_rational_function_is_zero(storm_rational_function_ptr a) {
 storm_rational_function_ptr storm_rational_function_get_zero() {
 	static storm::RationalFunction zeroFunction(0);
 	LOG_I("getZero")
-	//return new storm::RationalFunction(0);
 	return (storm_rational_function_ptr)(&zeroFunction);
 }
 
 storm_rational_function_ptr storm_rational_function_get_one() {
 	static storm::RationalFunction oneFunction(1);
 	LOG_I("getOne")
-	//return new storm::RationalFunction(1);
 	return (storm_rational_function_ptr)(&oneFunction);
 }
 
