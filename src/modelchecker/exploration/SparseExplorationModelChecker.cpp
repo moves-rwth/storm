@@ -40,14 +40,14 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
-        bool SparseExplorationModelChecker<ValueType, StateType>::canHandle(CheckTask<storm::logic::Formula> const& checkTask) const {
+        bool SparseExplorationModelChecker<ValueType, StateType>::canHandle(CheckTask<storm::logic::Formula, ValueType> const& checkTask) const {
             storm::logic::Formula const& formula = checkTask.getFormula();
             storm::logic::FragmentSpecification fragment = storm::logic::reachability();
             return formula.isInFragment(fragment) && checkTask.isOnlyInitialStatesRelevantSet();
         }
         
         template<typename ValueType, typename StateType>
-        std::unique_ptr<CheckResult> SparseExplorationModelChecker<ValueType, StateType>::computeUntilProbabilities(CheckTask<storm::logic::UntilFormula> const& checkTask) {
+        std::unique_ptr<CheckResult> SparseExplorationModelChecker<ValueType, StateType>::computeUntilProbabilities(CheckTask<storm::logic::UntilFormula, ValueType> const& checkTask) {
             storm::logic::UntilFormula const& untilFormula = checkTask.getFormula();
             storm::logic::Formula const& conditionFormula = untilFormula.getLeftSubformula();
             storm::logic::Formula const& targetFormula = untilFormula.getRightSubformula();

@@ -31,16 +31,16 @@ namespace storm {
         using namespace exploration_detail;
         
         template<typename ValueType, typename StateType = uint32_t>
-        class SparseExplorationModelChecker : public AbstractModelChecker {
+        class SparseExplorationModelChecker : public AbstractModelChecker<ValueType> {
         public:
             typedef StateType ActionType;
             typedef std::vector<std::pair<StateType, ActionType>> StateActionStack;
             
             SparseExplorationModelChecker(storm::prism::Program const& program);
             
-            virtual bool canHandle(CheckTask<storm::logic::Formula> const& checkTask) const override;
+            virtual bool canHandle(CheckTask<storm::logic::Formula, ValueType> const& checkTask) const override;
             
-            virtual std::unique_ptr<CheckResult> computeUntilProbabilities(CheckTask<storm::logic::UntilFormula> const& checkTask) override;
+            virtual std::unique_ptr<CheckResult> computeUntilProbabilities(CheckTask<storm::logic::UntilFormula, ValueType> const& checkTask) override;
             
         private:
             std::tuple<StateType, ValueType, ValueType> performExploration(StateGeneration<StateType, ValueType>& stateGeneration, ExplorationInformation<StateType, ValueType>& explorationInformation) const;

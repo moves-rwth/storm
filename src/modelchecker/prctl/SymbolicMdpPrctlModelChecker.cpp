@@ -32,13 +32,13 @@ namespace storm {
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        bool SymbolicMdpPrctlModelChecker<DdType, ValueType>::canHandle(CheckTask<storm::logic::Formula> const& checkTask) const {
+        bool SymbolicMdpPrctlModelChecker<DdType, ValueType>::canHandle(CheckTask<storm::logic::Formula, ValueType> const& checkTask) const {
             storm::logic::Formula const& formula = checkTask.getFormula();
             return formula.isInFragment(storm::logic::prctl().setLongRunAverageRewardFormulasAllowed(false));
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        std::unique_ptr<CheckResult> SymbolicMdpPrctlModelChecker<DdType, ValueType>::computeUntilProbabilities(CheckTask<storm::logic::UntilFormula> const& checkTask) {
+        std::unique_ptr<CheckResult> SymbolicMdpPrctlModelChecker<DdType, ValueType>::computeUntilProbabilities(CheckTask<storm::logic::UntilFormula, ValueType> const& checkTask) {
             storm::logic::UntilFormula const& pathFormula = checkTask.getFormula();
             STORM_LOG_THROW(checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidPropertyException, "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
             std::unique_ptr<CheckResult> leftResultPointer = this->check(pathFormula.getLeftSubformula());
@@ -49,7 +49,7 @@ namespace storm {
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        std::unique_ptr<CheckResult> SymbolicMdpPrctlModelChecker<DdType, ValueType>::computeGloballyProbabilities(CheckTask<storm::logic::GloballyFormula> const& checkTask) {
+        std::unique_ptr<CheckResult> SymbolicMdpPrctlModelChecker<DdType, ValueType>::computeGloballyProbabilities(CheckTask<storm::logic::GloballyFormula, ValueType> const& checkTask) {
             storm::logic::GloballyFormula const& pathFormula = checkTask.getFormula();
             STORM_LOG_THROW(checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidArgumentException, "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
             std::unique_ptr<CheckResult> subResultPointer = this->check(pathFormula.getSubformula());
@@ -58,7 +58,7 @@ namespace storm {
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        std::unique_ptr<CheckResult> SymbolicMdpPrctlModelChecker<DdType, ValueType>::computeNextProbabilities(CheckTask<storm::logic::NextFormula> const& checkTask) {
+        std::unique_ptr<CheckResult> SymbolicMdpPrctlModelChecker<DdType, ValueType>::computeNextProbabilities(CheckTask<storm::logic::NextFormula, ValueType> const& checkTask) {
             storm::logic::NextFormula const& pathFormula = checkTask.getFormula();
             STORM_LOG_THROW(checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidPropertyException, "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
             std::unique_ptr<CheckResult> subResultPointer = this->check(pathFormula.getSubformula());
@@ -67,7 +67,7 @@ namespace storm {
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        std::unique_ptr<CheckResult> SymbolicMdpPrctlModelChecker<DdType, ValueType>::computeBoundedUntilProbabilities(CheckTask<storm::logic::BoundedUntilFormula> const& checkTask) {
+        std::unique_ptr<CheckResult> SymbolicMdpPrctlModelChecker<DdType, ValueType>::computeBoundedUntilProbabilities(CheckTask<storm::logic::BoundedUntilFormula, ValueType> const& checkTask) {
             storm::logic::BoundedUntilFormula const& pathFormula = checkTask.getFormula();
             STORM_LOG_THROW(checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidArgumentException, "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
             STORM_LOG_THROW(pathFormula.hasDiscreteTimeBound(), storm::exceptions::InvalidPropertyException, "Formula needs to have a discrete time bound.");
@@ -79,7 +79,7 @@ namespace storm {
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        std::unique_ptr<CheckResult> SymbolicMdpPrctlModelChecker<DdType, ValueType>::computeCumulativeRewards(storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::CumulativeRewardFormula> const& checkTask) {
+        std::unique_ptr<CheckResult> SymbolicMdpPrctlModelChecker<DdType, ValueType>::computeCumulativeRewards(storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::CumulativeRewardFormula, ValueType> const& checkTask) {
             storm::logic::CumulativeRewardFormula const& rewardPathFormula = checkTask.getFormula();
             STORM_LOG_THROW(checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidArgumentException, "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
             STORM_LOG_THROW(rewardPathFormula.hasDiscreteTimeBound(), storm::exceptions::InvalidPropertyException, "Formula needs to have a discrete time bound.");
@@ -87,7 +87,7 @@ namespace storm {
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        std::unique_ptr<CheckResult> SymbolicMdpPrctlModelChecker<DdType, ValueType>::computeInstantaneousRewards(storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::InstantaneousRewardFormula> const& checkTask) {
+        std::unique_ptr<CheckResult> SymbolicMdpPrctlModelChecker<DdType, ValueType>::computeInstantaneousRewards(storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::InstantaneousRewardFormula, ValueType> const& checkTask) {
             storm::logic::InstantaneousRewardFormula const& rewardPathFormula = checkTask.getFormula();
             STORM_LOG_THROW(checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidArgumentException, "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
             STORM_LOG_THROW(rewardPathFormula.hasDiscreteTimeBound(), storm::exceptions::InvalidPropertyException, "Formula needs to have a discrete time bound.");
@@ -95,7 +95,7 @@ namespace storm {
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        std::unique_ptr<CheckResult> SymbolicMdpPrctlModelChecker<DdType, ValueType>::computeReachabilityRewards(storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::EventuallyFormula> const& checkTask) {
+        std::unique_ptr<CheckResult> SymbolicMdpPrctlModelChecker<DdType, ValueType>::computeReachabilityRewards(storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) {
             storm::logic::EventuallyFormula const& eventuallyFormula = checkTask.getFormula();
             STORM_LOG_THROW(checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidPropertyException, "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
             std::unique_ptr<CheckResult> subResultPointer = this->check(eventuallyFormula.getSubformula());

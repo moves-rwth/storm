@@ -17,61 +17,55 @@
 
 namespace storm {
     namespace modelchecker {
-        template<storm::dd::DdType Type, typename ValueType>
-        SymbolicPropositionalModelChecker<Type, ValueType>::SymbolicPropositionalModelChecker(storm::models::symbolic::Model<Type, ValueType> const& model) : model(model) {
+        template<typename ModelType>
+        SymbolicPropositionalModelChecker<ModelType>::SymbolicPropositionalModelChecker(storm::models::symbolic::Model<DdType, ValueType> const& model) : model(model) {
             // Intentionally left empty.
         }
         
-        template<storm::dd::DdType Type, typename ValueType>
-        bool SymbolicPropositionalModelChecker<Type, ValueType>::canHandle(CheckTask<storm::logic::Formula> const& checkTask) const {
+        template<typename ModelType>
+        bool SymbolicPropositionalModelChecker<ModelType>::canHandle(CheckTask<storm::logic::Formula, ValueType> const& checkTask) const {
             storm::logic::Formula const& formula = checkTask.getFormula();
             return formula.isInFragment(storm::logic::propositional());
         }
         
-        template<storm::dd::DdType Type, typename ValueType>
-        std::unique_ptr<CheckResult> SymbolicPropositionalModelChecker<Type, ValueType>::checkBooleanLiteralFormula(CheckTask<storm::logic::BooleanLiteralFormula> const& checkTask) {
+        template<typename ModelType>
+        std::unique_ptr<CheckResult> SymbolicPropositionalModelChecker<ModelType>::checkBooleanLiteralFormula(CheckTask<storm::logic::BooleanLiteralFormula, ValueType> const& checkTask) {
             storm::logic::BooleanLiteralFormula const& stateFormula = checkTask.getFormula();
             if (stateFormula.isTrueFormula()) {
-                return std::unique_ptr<CheckResult>(new SymbolicQualitativeCheckResult<Type>(model.getReachableStates(), model.getReachableStates()));
+                return std::unique_ptr<CheckResult>(new SymbolicQualitativeCheckResult<DdType>(model.getReachableStates(), model.getReachableStates()));
             } else {
-                return std::unique_ptr<CheckResult>(new SymbolicQualitativeCheckResult<Type>(model.getReachableStates(), model.getManager().getBddZero()));
+                return std::unique_ptr<CheckResult>(new SymbolicQualitativeCheckResult<DdType>(model.getReachableStates(), model.getManager().getBddZero()));
             }
         }
         
-        template<storm::dd::DdType Type, typename ValueType>
-        std::unique_ptr<CheckResult> SymbolicPropositionalModelChecker<Type, ValueType>::checkAtomicLabelFormula(CheckTask<storm::logic::AtomicLabelFormula> const& checkTask) {
+        template<typename ModelType>
+        std::unique_ptr<CheckResult> SymbolicPropositionalModelChecker<ModelType>::checkAtomicLabelFormula(CheckTask<storm::logic::AtomicLabelFormula, ValueType> const& checkTask) {
             storm::logic::AtomicLabelFormula const& stateFormula = checkTask.getFormula();
             STORM_LOG_THROW(model.hasLabel(stateFormula.getLabel()), storm::exceptions::InvalidPropertyException, "The property refers to unknown label '" << stateFormula.getLabel() << "'.");
-            return std::unique_ptr<CheckResult>(new SymbolicQualitativeCheckResult<Type>(model.getReachableStates(), model.getStates(stateFormula.getLabel())));
+            return std::unique_ptr<CheckResult>(new SymbolicQualitativeCheckResult<DdType>(model.getReachableStates(), model.getStates(stateFormula.getLabel())));
         }
         
-        template<storm::dd::DdType Type, typename ValueType>
-        std::unique_ptr<CheckResult> SymbolicPropositionalModelChecker<Type, ValueType>::checkAtomicExpressionFormula(CheckTask<storm::logic::AtomicExpressionFormula> const& checkTask) {
+        template<typename ModelType>
+        std::unique_ptr<CheckResult> SymbolicPropositionalModelChecker<ModelType>::checkAtomicExpressionFormula(CheckTask<storm::logic::AtomicExpressionFormula, ValueType> const& checkTask) {
             storm::logic::AtomicExpressionFormula const& stateFormula = checkTask.getFormula();
-            return std::unique_ptr<CheckResult>(new SymbolicQualitativeCheckResult<Type>(model.getReachableStates(), model.getStates(stateFormula.getExpression())));
+            return std::unique_ptr<CheckResult>(new SymbolicQualitativeCheckResult<DdType>(model.getReachableStates(), model.getStates(stateFormula.getExpression())));
         }
         
-        template<storm::dd::DdType Type, typename ValueType>
-        storm::models::symbolic::Model<Type, ValueType> const& SymbolicPropositionalModelChecker<Type, ValueType>::getModel() const {
+        template<typename ModelType>
+        storm::models::symbolic::Model<Type, ValueType> const& SymbolicPropositionalModelChecker<ModelType>::getModel() const {
             return model;
         }
-        
-        template<storm::dd::DdType Type, typename ValueType>
-        template<typename ModelType>
-        ModelType const& SymbolicPropositionalModelChecker<Type, ValueType>::getModelAs() const {
-            return dynamic_cast<ModelType const&>(model);
-        }
+
         
         // Explicitly instantiate the template class.
-        template storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD, double> const& SymbolicPropositionalModelChecker<storm::dd::DdType::CUDD, double>::getModelAs() const;
-        template storm::models::symbolic::Ctmc<storm::dd::DdType::CUDD, double> const& SymbolicPropositionalModelChecker<storm::dd::DdType::CUDD, double>::getModelAs() const;
-        template storm::models::symbolic::Mdp<storm::dd::DdType::CUDD, double> const& SymbolicPropositionalModelChecker<storm::dd::DdType::CUDD, double>::getModelAs() const;
-        template class SymbolicPropositionalModelChecker<storm::dd::DdType::CUDD, double>;
 
-        template storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, double> const& SymbolicPropositionalModelChecker<storm::dd::DdType::Sylvan, double>::getModelAs() const;
-        template storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, double> const& SymbolicPropositionalModelChecker<storm::dd::DdType::Sylvan, double>::getModelAs() const;
-        template storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan, double> const& SymbolicPropositionalModelChecker<storm::dd::DdType::Sylvan, double>::getModelAs() const;
-        template class SymbolicPropositionalModelChecker<storm::dd::DdType::Sylvan, double>;
+
+        template class SymbolicPropositionalModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD, double>>;
+        template class SymbolicPropositionalModelChecker<storm::models::symbolic::Ctmc<storm::dd::DdType::CUDD, double>>;
+        template class SymbolicPropositionalModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD, double>>;
+        template class SymbolicPropositionalModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, double>>;
+        template class SymbolicPropositionalModelChecker<storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, double>>;
+        template class SymbolicPropositionalModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan, double>>;
 
     }
 }

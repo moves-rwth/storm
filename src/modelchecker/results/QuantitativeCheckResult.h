@@ -5,11 +5,12 @@
 
 namespace storm {
     namespace modelchecker {
+        template<typename ValueType>
         class QuantitativeCheckResult : public CheckResult {
         public:
             virtual ~QuantitativeCheckResult() = default;
             
-            virtual std::unique_ptr<CheckResult> compareAgainstBound(storm::logic::ComparisonType comparisonType, double bound) const;
+            virtual std::unique_ptr<CheckResult> compareAgainstBound(storm::logic::ComparisonType comparisonType, ValueType const& bound) const;
             
             virtual void oneMinus() = 0;
             

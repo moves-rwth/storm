@@ -11,6 +11,7 @@ namespace storm {
     namespace modelchecker {
         // Forward-declare the existing subclasses.
         class QualitativeCheckResult;
+        template<typename ValueType>
         class QuantitativeCheckResult;
         class ExplicitQualitativeCheckResult;
         
@@ -55,9 +56,11 @@ namespace storm {
             QualitativeCheckResult& asQualitativeCheckResult();
             QualitativeCheckResult const& asQualitativeCheckResult() const;
 
-            QuantitativeCheckResult& asQuantitativeCheckResult();
-            QuantitativeCheckResult const& asQuantitativeCheckResult() const;
-            
+            template<typename ValueType>
+            QuantitativeCheckResult<ValueType>& asQuantitativeCheckResult();
+            template<typename ValueType>
+            QuantitativeCheckResult<ValueType> const& asQuantitativeCheckResult() const;
+
             ExplicitQualitativeCheckResult& asExplicitQualitativeCheckResult();
             ExplicitQualitativeCheckResult const& asExplicitQualitativeCheckResult() const;
             

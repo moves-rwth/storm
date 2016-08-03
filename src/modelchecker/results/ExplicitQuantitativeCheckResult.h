@@ -14,7 +14,7 @@
 namespace storm {
     namespace modelchecker {
         template<typename ValueType>
-        class ExplicitQuantitativeCheckResult : public QuantitativeCheckResult {
+        class ExplicitQuantitativeCheckResult : public QuantitativeCheckResult<ValueType> {
         public:
             typedef std::vector<ValueType> vector_type;
             typedef std::map<storm::storage::sparse::state_type, ValueType> map_type;
