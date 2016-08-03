@@ -18,7 +18,7 @@
 namespace storm {
     namespace modelchecker {
         template<typename ModelType>
-        SymbolicPropositionalModelChecker<ModelType>::SymbolicPropositionalModelChecker(storm::models::symbolic::Model<DdType, ValueType> const& model) : model(model) {
+        SymbolicPropositionalModelChecker<ModelType>::SymbolicPropositionalModelChecker(ModelType const& model) : model(model) {
             // Intentionally left empty.
         }
         
@@ -52,7 +52,7 @@ namespace storm {
         }
         
         template<typename ModelType>
-        storm::models::symbolic::Model<Type, ValueType> const& SymbolicPropositionalModelChecker<ModelType>::getModel() const {
+        ModelType const& SymbolicPropositionalModelChecker<ModelType>::getModel() const {
             return model;
         }
 

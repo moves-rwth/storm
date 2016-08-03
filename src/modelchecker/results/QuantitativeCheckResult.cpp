@@ -10,12 +10,12 @@ namespace storm {
     namespace modelchecker {
 
         template<typename ValueType>
-        std::unique_ptr<CheckResult> QuantitativeCheckResult<ValueType>::compareAgainstBound(storm::logic::ComparisonType comparisonType, double bound) const {
+        std::unique_ptr<CheckResult> QuantitativeCheckResult<ValueType>::compareAgainstBound(storm::logic::ComparisonType comparisonType, ValueType const& bound) const {
             STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Unable to perform comparison against bound on the check result.");
         }
 
         template<typename ValueType>
-        bool QuantitativeCheckResult::isQuantitative() const {
+        bool QuantitativeCheckResult<ValueType>::isQuantitative() const {
             return true;
         }
 
@@ -23,6 +23,7 @@ namespace storm {
 
 #ifdef STORM_HAVE_CARL
         template class QuantitativeCheckResult<RationalNumber>;
+        template class QuantitativeCheckResult<RationalFunction>;
 #endif
     }
 }

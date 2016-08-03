@@ -17,11 +17,14 @@ namespace storm {
     
     
     namespace modelchecker {
-        template<storm::dd::DdType DdType, typename ValueType>
-        class HybridMdpPrctlModelChecker : public SymbolicPropositionalModelChecker<DdType, ValueType> {
+        template<typename ModelType>
+        class HybridMdpPrctlModelChecker : public SymbolicPropositionalModelChecker<ModelType> {
         public:
-            explicit HybridMdpPrctlModelChecker(storm::models::symbolic::Mdp<DdType, ValueType> const& model);
-            explicit HybridMdpPrctlModelChecker(storm::models::symbolic::Mdp<DdType, ValueType> const& model, std::unique_ptr<storm::solver::MinMaxLinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory);
+            typedef typename ModelType::ValueType ValueType;
+            static const storm::dd::DdType DdType = ModelType::DdType;
+
+            explicit HybridMdpPrctlModelChecker(ModelType const& model);
+            explicit HybridMdpPrctlModelChecker(ModelType const& model, std::unique_ptr<storm::solver::MinMaxLinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory);
             
             // The implemented methods of the AbstractModelChecker interface.
             virtual bool canHandle(CheckTask<storm::logic::Formula, ValueType> const& checkTask) const override;
@@ -32,10 +35,7 @@ namespace storm {
             virtual std::unique_ptr<CheckResult> computeCumulativeRewards(storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::CumulativeRewardFormula, ValueType> const& checkTask) override;
             virtual std::unique_ptr<CheckResult> computeInstantaneousRewards(storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::InstantaneousRewardFormula, ValueType> const& checkTask) override;
             virtual std::unique_ptr<CheckResult> computeReachabilityRewards(storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) override;
-            
-        protected:
-            storm::models::symbolic::Mdp<DdType, ValueType> const& getModel() const override;
-            
+
         private:
             // An object that is used for retrieving linear equation solvers.
             std::unique_ptr<storm::solver::MinMaxLinearEquationSolverFactory<ValueType>> linearEquationSolverFactory;

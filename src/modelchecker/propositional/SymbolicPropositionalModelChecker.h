@@ -20,6 +20,7 @@ namespace storm {
         public:
             typedef typename ModelType::ValueType ValueType;
             static const storm::dd::DdType DdType = ModelType::DdType;
+
             explicit SymbolicPropositionalModelChecker(ModelType const& model);
             
             // The implemented methods of the AbstractModelChecker interface.

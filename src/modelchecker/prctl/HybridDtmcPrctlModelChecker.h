@@ -10,11 +10,14 @@
 namespace storm {
     namespace modelchecker {
         
-        template<storm::dd::DdType DdType, typename ValueType>
-        class HybridDtmcPrctlModelChecker : public SymbolicPropositionalModelChecker<DdType, ValueType> {
+        template<typename ModelType>
+        class HybridDtmcPrctlModelChecker : public SymbolicPropositionalModelChecker<ModelType> {
         public:
-            explicit HybridDtmcPrctlModelChecker(storm::models::symbolic::Dtmc<DdType, ValueType> const& model);
-            explicit HybridDtmcPrctlModelChecker(storm::models::symbolic::Dtmc<DdType, ValueType> const& model, std::unique_ptr<storm::solver::LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory);
+            typedef typename ModelType::ValueType ValueType;
+            static const storm::dd::DdType DdType = ModelType::DdType;
+
+            explicit HybridDtmcPrctlModelChecker(ModelType const& model);
+            explicit HybridDtmcPrctlModelChecker(ModelType const& model, std::unique_ptr<storm::solver::LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory);
             
             // The implemented methods of the AbstractModelChecker interface.
             virtual bool canHandle(CheckTask<storm::logic::Formula, ValueType> const& checkTask) const override;
@@ -27,9 +30,6 @@ namespace storm {
             virtual std::unique_ptr<CheckResult> computeReachabilityRewards(storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) override;
             virtual std::unique_ptr<CheckResult> computeLongRunAverageProbabilities(CheckTask<storm::logic::StateFormula, ValueType> const& checkTask) override;
 
-        protected:
-            storm::models::symbolic::Dtmc<DdType, ValueType> const& getModel() const override;
-            
         private:
             // An object that is used for retrieving linear equation solvers.
             std::unique_ptr<storm::solver::LinearEquationSolverFactory<ValueType>> linearEquationSolverFactory;

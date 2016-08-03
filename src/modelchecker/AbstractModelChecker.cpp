@@ -12,8 +12,13 @@
 #include "src/models/sparse/Dtmc.h"
 #include "src/models/sparse/Ctmc.h"
 #include "src/models/sparse/Mdp.h"
+#include "src/models/symbolic/Dtmc.h"
+#include "src/models/symbolic/Ctmc.h"
+#include "src/models/symbolic/Mdp.h"
 #include "src/models/sparse/MarkovAutomaton.h"
 #include "src/models/sparse/StandardRewardModel.h"
+#include "src/storage/dd/Add.h"
+#include "src/storage/dd/Bdd.h"
 
 namespace storm {
     namespace modelchecker {
@@ -275,7 +280,10 @@ namespace storm {
             return subResult;
         }
 
+        ///////////////////////////////////////////////
         // Explicitly instantiate the template class.
+        ///////////////////////////////////////////////
+        // Sparse
         template class AbstractModelChecker<storm::models::sparse::Model<double>>;
         template class AbstractModelChecker<storm::models::sparse::Dtmc<double>>;
         template class AbstractModelChecker<storm::models::sparse::Ctmc<double>>;
@@ -297,5 +305,12 @@ namespace storm {
         template class AbstractModelChecker<storm::models::sparse::Mdp<storm::RationalFunction>>;
         template class AbstractModelChecker<storm::models::sparse::MarkovAutomaton<storm::RationalFunction>>;
 #endif
+        // DD
+        template class AbstractModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD, double>>;
+        template class AbstractModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, double>>;
+        template class AbstractModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD, double>>;
+        template class AbstractModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan, double>>;
+        template class AbstractModelChecker<storm::models::symbolic::Ctmc<storm::dd::DdType::CUDD, double>>;
+        template class AbstractModelChecker<storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, double>>;
     }
 }

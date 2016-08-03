@@ -30,9 +30,10 @@ namespace storm {
         
         using namespace exploration_detail;
         
-        template<typename ValueType, typename StateType = uint32_t>
-        class SparseExplorationModelChecker : public AbstractModelChecker<ValueType> {
+        template<typename ModelType, typename StateType = uint32_t>
+        class SparseExplorationModelChecker : public AbstractModelChecker<ModelType> {
         public:
+            typedef typename ModelType::ValueType ValueType;
             typedef StateType ActionType;
             typedef std::vector<std::pair<StateType, ActionType>> StateActionStack;
             
