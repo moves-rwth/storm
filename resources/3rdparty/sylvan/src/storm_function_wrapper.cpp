@@ -17,6 +17,9 @@
 
 void storm_rational_function_init(storm_rational_function_ptr* a) {
 	LOG_I("init")
+#ifdef DEBUG_STORM_FUNCTION_WRAPPER
+	std::cout << "storm_rational_function_init - ptr of old = " << *a << ", value = " << *((storm::RationalFunction*)(*a)) << std::endl;
+#endif
 	storm_rational_function_ptr srf_ptr = new storm::RationalFunction(*((storm::RationalFunction*)(*a)));
 	
 	if (srf_ptr == nullptr) {
@@ -25,6 +28,9 @@ void storm_rational_function_init(storm_rational_function_ptr* a) {
 	}
 
 	*a = srf_ptr;
+#ifdef DEBUG_STORM_FUNCTION_WRAPPER
+	std::cout << "storm_rational_function_init - ptr of new = " << *a << ", value = " << *((storm::RationalFunction*)(*a)) << std::endl;
+#endif
 	LOG_O("init")
 }
 
@@ -45,6 +51,11 @@ int storm_rational_function_equals(storm_rational_function_ptr a, storm_rational
 	if (srf_a == srf_b) {
 		result = 1;
 	}
+
+#ifdef DEBUG_STORM_FUNCTION_WRAPPER
+	std::cout << "storm_rational_function_equals called with ptr = " << a << " value a = " << srf_a << " and ptr = " << b << " value b = " << srf_b << " result = " << result << "." << std::endl;
+#endif
+
 	return result;
 }
 
@@ -129,6 +140,11 @@ uint64_t storm_rational_function_hash(storm_rational_function_ptr const a, uint6
 	storm::RationalFunction& srf_a = *(storm::RationalFunction*)a;
 
 	size_t hash = carl::hash_value(srf_a);
+
+#ifdef
+	std::cout << "storm_rational_function_hash of value " << srf_a << " is " << hash << std::endl;
+#endif
+
 	uint64_t result = hash ^ seed;
 
 	LOG_O("hash")
