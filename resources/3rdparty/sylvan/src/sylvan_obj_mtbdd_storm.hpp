@@ -8,6 +8,28 @@
      */
     Mtbdd Divide(const Mtbdd &other) const;
     
+#if defined(SYLVAN_HAVE_CARL) || defined(STORM_HAVE_CARL)
+	/**
+     * @brief Computes f + g for Rational Functions
+     */
+    Mtbdd PlusRF(const Mtbdd &other) const;
+
+    /**
+     * @brief Computes f * g for Rational Functions
+     */
+    Mtbdd TimesRF(const Mtbdd &other) const;
+	
+	/**
+     * @brief Computes f - g for Rational Functions
+     */
+    Mtbdd MinusRF(const Mtbdd &other) const;
+
+    /**
+     * @brief Computes f / g for Rational Functions
+     */
+    Mtbdd DivideRF(const Mtbdd &other) const;
+#endif
+	
     Bdd NotZero() const;
     
     Bdd Equals(const Mtbdd& other) const;

@@ -2,17 +2,13 @@
 #define SYLVAN_STORM_FUNCTION_WRAPPER_H
 
 #include <stdint.h>
+#include <stdio.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef struct {
-	void* storm_rational_function;
-} storm_rational_function_ptr_struct;
-typedef storm_rational_function_ptr_struct storm_rational_function_t[1];
-typedef storm_rational_function_ptr_struct* storm_rational_function_ptr;
-
+typedef void* storm_rational_function_ptr;
 
 // equals, plus, minus, divide, times, create, destroy
 void storm_rational_function_init(storm_rational_function_ptr* a);
@@ -28,6 +24,11 @@ int storm_rational_function_is_zero(storm_rational_function_ptr a);
 
 storm_rational_function_ptr storm_rational_function_get_zero();
 storm_rational_function_ptr storm_rational_function_get_one();
+
+void print_storm_rational_function(storm_rational_function_ptr a);
+void print_storm_rational_function_to_file(storm_rational_function_ptr a, FILE* out);
+
+int storm_rational_function_is_zero(storm_rational_function_ptr a);
 
 #ifdef __cplusplus
 }

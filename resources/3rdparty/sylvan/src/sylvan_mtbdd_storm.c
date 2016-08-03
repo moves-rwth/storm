@@ -97,6 +97,12 @@ TASK_IMPL_2(MTBDD, mtbdd_op_divide, MTBDD*, pa, MTBDD*, pb)
             MTBDD result = mtbdd_fraction(nom_a, denom_a);
             return result;
         }
+#if defined(SYLVAN_HAVE_CARL) || defined(STORM_HAVE_CARL)
+		else if (mtbddnode_gettype(na) == SYLVAN_STORM_RATIONAL_FUNCTION_TYPE_ID && mtbddnode_gettype(nb) == SYLVAN_STORM_RATIONAL_FUNCTION_TYPE_ID) {
+			printf("ERROR mtbdd_op_divide type SYLVAN_STORM_RATIONAL_FUNCTION_TYPE_ID");
+			assert(0);
+		}
+#endif
     }
     
     return mtbdd_invalid;
@@ -140,6 +146,12 @@ TASK_IMPL_2(MTBDD, mtbdd_op_equals, MTBDD*, pa, MTBDD*, pb)
             if (nom_a == nom_b && denom_a == denom_b) return mtbdd_true;
             return mtbdd_false;
         }
+#if defined(SYLVAN_HAVE_CARL) || defined(STORM_HAVE_CARL)
+		else if (mtbddnode_gettype(na) == SYLVAN_STORM_RATIONAL_FUNCTION_TYPE_ID && mtbddnode_gettype(nb) == SYLVAN_STORM_RATIONAL_FUNCTION_TYPE_ID) {
+			printf("ERROR mtbdd_op_equals type SYLVAN_STORM_RATIONAL_FUNCTION_TYPE_ID");
+			assert(0);
+		}
+#endif
     }
     
     if (a < b) {
@@ -187,6 +199,12 @@ TASK_IMPL_2(MTBDD, mtbdd_op_less, MTBDD*, pa, MTBDD*, pb)
             uint64_t denom_b = val_b&0xffffffff;
             return nom_a * denom_b < nom_b * denom_a ? mtbdd_true : mtbdd_false;
         }
+#if defined(SYLVAN_HAVE_CARL) || defined(STORM_HAVE_CARL)
+		else if (mtbddnode_gettype(na) == SYLVAN_STORM_RATIONAL_FUNCTION_TYPE_ID && mtbddnode_gettype(nb) == SYLVAN_STORM_RATIONAL_FUNCTION_TYPE_ID) {
+			printf("ERROR mtbdd_op_less type SYLVAN_STORM_RATIONAL_FUNCTION_TYPE_ID");
+			assert(0);
+		}
+#endif
     }
     
     return mtbdd_invalid;
@@ -230,6 +248,12 @@ TASK_IMPL_2(MTBDD, mtbdd_op_less_or_equal, MTBDD*, pa, MTBDD*, pb)
             nom_b *= denom_a;
             return nom_a <= nom_b ? mtbdd_true : mtbdd_false;
         }
+#if defined(SYLVAN_HAVE_CARL) || defined(STORM_HAVE_CARL)
+		else if (mtbddnode_gettype(na) == SYLVAN_STORM_RATIONAL_FUNCTION_TYPE_ID && mtbddnode_gettype(nb) == SYLVAN_STORM_RATIONAL_FUNCTION_TYPE_ID) {
+			printf("ERROR mtbdd_op_less_or_equal type SYLVAN_STORM_RATIONAL_FUNCTION_TYPE_ID");
+			assert(0);
+		}
+#endif
     }
     
     return mtbdd_invalid;
@@ -261,6 +285,12 @@ TASK_IMPL_2(MTBDD, mtbdd_op_pow, MTBDD*, pa, MTBDD*, pb)
         } else if (mtbddnode_gettype(na) == 2 && mtbddnode_gettype(nb) == 2) {
             assert(0);
         }
+#if defined(SYLVAN_HAVE_CARL) || defined(STORM_HAVE_CARL)
+		else if (mtbddnode_gettype(na) == SYLVAN_STORM_RATIONAL_FUNCTION_TYPE_ID && mtbddnode_gettype(nb) == SYLVAN_STORM_RATIONAL_FUNCTION_TYPE_ID) {
+			printf("ERROR mtbdd_op_pow type SYLVAN_STORM_RATIONAL_FUNCTION_TYPE_ID");
+			assert(0);
+		}
+#endif
     }
     
     return mtbdd_invalid;
@@ -292,6 +322,12 @@ TASK_IMPL_2(MTBDD, mtbdd_op_mod, MTBDD*, pa, MTBDD*, pb)
         } else if (mtbddnode_gettype(na) == 2 && mtbddnode_gettype(nb) == 2) {
             assert(0);
         }
+#if defined(SYLVAN_HAVE_CARL) || defined(STORM_HAVE_CARL)
+		else if (mtbddnode_gettype(na) == SYLVAN_STORM_RATIONAL_FUNCTION_TYPE_ID && mtbddnode_gettype(nb) == SYLVAN_STORM_RATIONAL_FUNCTION_TYPE_ID) {
+			printf("ERROR mtbdd_op_mod type SYLVAN_STORM_RATIONAL_FUNCTION_TYPE_ID");
+			assert(0);
+		}
+#endif
     }
     
     return mtbdd_invalid;
@@ -323,6 +359,12 @@ TASK_IMPL_2(MTBDD, mtbdd_op_logxy, MTBDD*, pa, MTBDD*, pb)
         } else if (mtbddnode_gettype(na) == 2 && mtbddnode_gettype(nb) == 2) {
             assert(0);
         }
+#if defined(SYLVAN_HAVE_CARL) || defined(STORM_HAVE_CARL)
+		else if (mtbddnode_gettype(na) == SYLVAN_STORM_RATIONAL_FUNCTION_TYPE_ID && mtbddnode_gettype(nb) == SYLVAN_STORM_RATIONAL_FUNCTION_TYPE_ID) {
+			printf("ERROR mtbdd_op_logxy type SYLVAN_STORM_RATIONAL_FUNCTION_TYPE_ID");
+			assert(0);
+		}
+#endif
     }
     
     return mtbdd_invalid;
@@ -345,6 +387,11 @@ TASK_IMPL_2(MTBDD, mtbdd_op_not_zero, MTBDD, a, size_t, v)
         } else if (mtbddnode_gettype(na) == 2) {
             return mtbdd_getnumer(a) != 0 ? mtbdd_true : mtbdd_false;
         }
+#if defined(SYLVAN_HAVE_CARL) || defined(STORM_HAVE_CARL)
+		else if (mtbddnode_gettype(na) == SYLVAN_STORM_RATIONAL_FUNCTION_TYPE_ID) {
+			return storm_rational_function_is_zero((storm_rational_function_ptr)mtbdd_getvalue(a)) == 0 ? mtbdd_true : mtbdd_false;
+		}
+#endif
     }
     
     // Ugly hack to get rid of the error "unused variable v" (because there is no version of uapply without a parameter).
@@ -377,6 +424,12 @@ TASK_IMPL_2(MTBDD, mtbdd_op_floor, MTBDD, a, size_t, v)
             MTBDD result = mtbdd_fraction(mtbdd_getnumer(a) / mtbdd_getdenom(a), 1);
             return result;
         }
+#if defined(SYLVAN_HAVE_CARL) || defined(STORM_HAVE_CARL)
+		else if (mtbddnode_gettype(na) == SYLVAN_STORM_RATIONAL_FUNCTION_TYPE_ID) {
+			printf("ERROR mtbdd_op_floor type SYLVAN_STORM_RATIONAL_FUNCTION_TYPE_ID");
+			assert(0);
+		}
+#endif
     }
     
     // Ugly hack to get rid of the error "unused variable v" (because there is no version of uapply without a parameter).
@@ -409,6 +462,12 @@ TASK_IMPL_2(MTBDD, mtbdd_op_ceil, MTBDD, a, size_t, v)
             MTBDD result = mtbdd_fraction(mtbdd_getnumer(a) / mtbdd_getdenom(a) + 1, 1);
             return result;
         }
+#if defined(SYLVAN_HAVE_CARL) || defined(STORM_HAVE_CARL)
+		else if (mtbddnode_gettype(na) == SYLVAN_STORM_RATIONAL_FUNCTION_TYPE_ID) {
+			printf("ERROR mtbdd_op_ceil type SYLVAN_STORM_RATIONAL_FUNCTION_TYPE_ID");
+			assert(0);
+		}
+#endif
     }
 
     // Ugly hack to get rid of the error "unused variable v" (because there is no version of uapply without a parameter).
@@ -474,6 +533,11 @@ TASK_IMPL_2(double, mtbdd_non_zero_count, MTBDD, dd, size_t, nvars)
         } else if (mtbddnode_gettype(na) == 2) {
             return mtbdd_getnumer(dd) != 0 ? powl(2.0L, nvars) : 0.0;
         }
+#if defined(SYLVAN_HAVE_CARL) || defined(STORM_HAVE_CARL)
+		else if (mtbddnode_gettype(na) == SYLVAN_STORM_RATIONAL_FUNCTION_TYPE_ID) {
+			return storm_rational_function_is_zero((storm_rational_function_ptr)mtbdd_getvalue(dd)) == 0 ? powl(2.0L, nvars) : 0.0;
+		}
+#endif
     }
     
     /* Perhaps execute garbage collection */
@@ -506,6 +570,11 @@ int mtbdd_iszero(MTBDD dd) {
     } else if (mtbdd_gettype(dd) == 2) {
         return mtbdd_getnumer(dd) == 0;
     }
+#if defined(SYLVAN_HAVE_CARL) || defined(STORM_HAVE_CARL)
+	else if (mtbdd_gettype(dd) == SYLVAN_STORM_RATIONAL_FUNCTION_TYPE_ID) {
+		return storm_rational_function_is_zero((storm_rational_function_ptr)mtbdd_getvalue(dd)) == 1 ? 1 : 0;
+	}
+#endif
     return 0;
 }
 

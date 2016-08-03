@@ -142,28 +142,39 @@ TEST(SylvanDd, RationalFunctionIdentityTest) {
     EXPECT_EQ(10ul, identity.getLeafCount());
     EXPECT_EQ(21ul, identity.getNodeCount());
 }
-
 #endif
 
 TEST(SylvanDd, RangeTest) {
     std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
     std::pair<storm::expressions::Variable, storm::expressions::Variable> x;
     ASSERT_NO_THROW(x = manager->addMetaVariable("x", 1, 9));
-    
+
     storm::dd::Bdd<storm::dd::DdType::Sylvan> range;
     ASSERT_NO_THROW(range = manager->getRange(x.first));
-    
+ 
     EXPECT_EQ(9ul, range.getNonZeroCount());
     EXPECT_EQ(1ul, range.getLeafCount());
     EXPECT_EQ(5ul, range.getNodeCount());
 }
 
-TEST(SylvanDd, IdentityTest) {
+TEST(SylvanDd, DoubleIdentityTest) {
     std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
     std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 1, 9);
-    
+
     storm::dd::Add<storm::dd::DdType::Sylvan, double> identity;
     ASSERT_NO_THROW(identity = manager->getIdentity<double>(x.first));
+
+    EXPECT_EQ(9ul, identity.getNonZeroCount());
+    EXPECT_EQ(10ul, identity.getLeafCount());
+    EXPECT_EQ(21ul, identity.getNodeCount());
+}
+
+TEST(SylvanDd, UintIdentityTest) {
+    std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
+    std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 1, 9);
+
+    storm::dd::Add<storm::dd::DdType::Sylvan, uint_fast64_t> identity;
+    ASSERT_NO_THROW(identity = manager->getIdentity<uint_fast64_t>(x.first));
 
     EXPECT_EQ(9ul, identity.getNonZeroCount());
     EXPECT_EQ(10ul, identity.getLeafCount());

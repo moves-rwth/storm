@@ -10,6 +10,7 @@
 #include "src/adapters/CarlAdapter.h"
 
 #include <cmath>
+#include <iostream>
 
 namespace storm {
     namespace dd {
@@ -105,21 +106,6 @@ namespace storm {
             }
             return result;
         }
-        
-#ifdef STORM_HAVE_CARL
-		template<>
-		template<>
-        Add<DdType::Sylvan, storm::RationalFunction> DdManager<DdType::Sylvan>::getIdentity(storm::expressions::Variable const& variable) const {
-            storm::dd::DdMetaVariable<DdType::Sylvan> const& metaVariable = this->getMetaVariable(variable);
-            
-            Add<DdType::Sylvan, storm::RationalFunction> result = this->getAddZero<storm::RationalFunction>();
-            for (int_fast64_t value = metaVariable.getLow(); value <= metaVariable.getHigh(); ++value) {
-				storm::RationalFunction constantFunction(value);
-                result += this->getEncoding(variable, value).template toAdd<storm::RationalFunction>() * this->getConstant(constantFunction);
-            }
-            return result;
-        }
-#endif
 		
         template<DdType LibraryType>
         std::pair<storm::expressions::Variable, storm::expressions::Variable> DdManager<LibraryType>::addMetaVariable(std::string const& name, int_fast64_t low, int_fast64_t high) {

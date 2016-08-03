@@ -609,9 +609,8 @@ Mtbdd::doubleTerminal(double value)
 Mtbdd
 Mtbdd::stormRationalFunctionTerminal(storm::RationalFunction const& value)
 {
-	storm_rational_function_ptr_struct functionStruct;
-	functionStruct.storm_rational_function = (void*)(&value);
-    return mtbdd_storm_rational_function(&functionStruct);
+	storm_rational_function_ptr ptr = (storm_rational_function_ptr)(&value);
+    return mtbdd_storm_rational_function(ptr);
 }
 #endif
 
@@ -1039,6 +1038,7 @@ void
 Sylvan::initMtbdd()
 {
     sylvan_init_mtbdd();
+	sylvan_storm_rational_function_init();
 }
 
 void

@@ -16,6 +16,36 @@ Bdd::toStormRationalFunctionMtbdd() const {
     LACE_ME;
     return mtbdd_bool_to_storm_rational_function(bdd);
 }
+
+Mtbdd
+Mtbdd::PlusRF(const Mtbdd &other) const
+{
+    LACE_ME;
+    return sylvan_storm_rational_function_plus(mtbdd, other.mtbdd);
+}
+
+
+Mtbdd
+Mtbdd::TimesRF(const Mtbdd &other) const
+{
+    LACE_ME;
+    return sylvan_storm_rational_function_times(mtbdd, other.mtbdd);
+}
+
+Mtbdd
+Mtbdd::MinusRF(const Mtbdd &other) const
+{
+    LACE_ME;
+    return sylvan_storm_rational_function_minus(mtbdd, other.mtbdd);
+}
+
+Mtbdd
+Mtbdd::DivideRF(const Mtbdd &other) const
+{
+    LACE_ME;
+    return sylvan_storm_rational_function_divide(mtbdd, other.mtbdd);
+}
+
 #endif
 
 Mtbdd

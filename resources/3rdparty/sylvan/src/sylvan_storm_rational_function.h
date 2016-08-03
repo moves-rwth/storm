@@ -12,6 +12,8 @@
 
 #if defined(SYLVAN_HAVE_CARL) || defined(STORM_HAVE_CARL)
 
+#define SYLVAN_STORM_RATIONAL_FUNCTION_TYPE_ID (3)
+
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
@@ -29,7 +31,7 @@ uint32_t sylvan_storm_rational_function_get_type();
 /**
  * Create storm::RationalFunction leaf
  */
-MTBDD mtbdd_storm_rational_function(storm_rational_function_t val);
+MTBDD mtbdd_storm_rational_function(storm_rational_function_ptr val);
 
 /**
  * Monad that converts Boolean to a storm::RationalFunction MTBDD, translate terminals true to 1 and to 0 otherwise;

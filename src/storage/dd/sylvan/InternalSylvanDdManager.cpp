@@ -1,6 +1,7 @@
 #include "src/storage/dd/sylvan/InternalSylvanDdManager.h"
 
 #include <cmath>
+#include <iostream>
 
 #include "src/settings/SettingsManager.h"
 #include "src/settings/modules/SylvanSettings.h"
@@ -83,12 +84,7 @@ namespace storm {
 #ifdef STORM_HAVE_CARL
 		template<>
 		InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalDdManager<DdType::Sylvan>::getAddOne() const {
-			storm::RationalFunction rationalFunction = storm::utility::one<storm::RationalFunction>();
-			storm_rational_function_ptr_struct helperStruct;
-			helperStruct.storm_rational_function = (void*)(&rationalFunction);
-			uint64_t value = (uint64_t)&helperStruct;
-
-			return InternalAdd<DdType::Sylvan, storm::RationalFunction>(this, sylvan::Mtbdd::terminal(sylvan_storm_rational_function_get_type(), value));
+			return InternalAdd<DdType::Sylvan, storm::RationalFunction>(this, sylvan::Mtbdd::stormRationalFunctionTerminal(storm::utility::one<storm::RationalFunction>()));
 		}
 #endif
         
@@ -109,12 +105,7 @@ namespace storm {
 #ifdef STORM_HAVE_CARL
 		template<>
 		InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalDdManager<DdType::Sylvan>::getAddZero() const {
-			storm::RationalFunction rationalFunction = storm::utility::zero<storm::RationalFunction>();
-			storm_rational_function_ptr_struct helperStruct;
-			helperStruct.storm_rational_function = (void*)(&rationalFunction);
-			uint64_t value = (uint64_t)&helperStruct;
-
-			return InternalAdd<DdType::Sylvan, storm::RationalFunction>(this, sylvan::Mtbdd::terminal(sylvan_storm_rational_function_get_type(), value));
+			return InternalAdd<DdType::Sylvan, storm::RationalFunction>(this, sylvan::Mtbdd::stormRationalFunctionTerminal(storm::utility::zero<storm::RationalFunction>()));
 		}
 #endif
         

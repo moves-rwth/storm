@@ -15,6 +15,18 @@
 
 #include <storm_function_wrapper.h>
 
+#undef SYLVAN_STORM_RATIONAL_FUNCTION_DEBUG
+
+#ifdef SYLVAN_STORM_RATIONAL_FUNCTION_DEBUG
+int depth = 0;
+
+#define LOG_I(funcName) do { for (int i = 0; i < depth; ++i) { printf(" "); } ++depth; printf("Entering function " funcName "\n"); } while (0 != 0);
+#define LOG_O(funcName) do { --depth; for (int i = 0; i < depth; ++i) { printf(" "); } printf("Leaving function " funcName "\n"); } while (0 != 0);
+#else
+#define LOG_I(funcName)
+#define LOG_O(funcName)
+#endif
+
 /**
  * helper function for hash
  */
@@ -29,42 +41,73 @@ rotl64(uint64_t x, int8_t r)
 static uint64_t
 sylvan_storm_rational_function_hash(const uint64_t v, const uint64_t seed)
 {
+	LOG_I("i-hash")
     /* Hash the storm::RationalFunction in pointer v */
     
-	storm_rational_function_ptr x = (storm_rational_function_ptr)(size_t)v;
+	storm_rational_function_ptr x = (storm_rational_function_ptr)v;
 
-	return storm_rational_function_hash(x, seed);
+	uint64_t hash = storm_rational_function_hash(x, seed);
+
+#ifdef SYLVAN_STORM_RATIONAL_FUNCTION_DEBUG
+	printf("Hashing ptr %p with contents ", x);
+	print_storm_rational_function(x);
+	printf(" with seed %zu, hash = %zu\n", seed, hash);
+#endif
+
+	LOG_O("i-hash")
+	return hash;
 }
 
 static int
 sylvan_storm_rational_function_equals(const uint64_t left, const uint64_t right)
 {
+	LOG_I("i-equals")
     /* This function is called by the unique table when comparing a new
        leaf with an existing leaf */
 	storm_rational_function_ptr a = (storm_rational_function_ptr)(size_t)left;
 	storm_rational_function_ptr b = (storm_rational_function_ptr)(size_t)right;
 
     /* Just compare x and y */
-    return (storm_rational_function_equals(a, b) == 0) ? 1 : 0;
+	int result = storm_rational_function_equals(a, b);
+	
+	LOG_O("i-equals")
+    return result;
 }
 
 static void
 sylvan_storm_rational_function_create(uint64_t *val)
 {
-	printf("sylvan_storm_rational_function_create(val = %zu)\n", *val);
+	LOG_I("i-create")
+	
+#ifdef SYLVAN_STORM_RATIONAL_FUNCTION_DEBUG
+	void* tmp = (void*)*val;
+	printf("sylvan_storm_rational_function_create(ptr = %p, value = ", tmp);
+	print_storm_rational_function(*((storm_rational_function_ptr*)(size_t)val));
+	printf(")\n");
+#endif
+	
     /* This function is called by the unique table when a leaf does not yet exist.
        We make a copy, which will be stored in the hash table. */
 	storm_rational_function_ptr* x = (storm_rational_function_ptr*)(size_t)val;
 	storm_rational_function_init(x);
+	
+#ifdef SYLVAN_STORM_RATIONAL_FUNCTION_DEBUG
+	tmp = (void*)*val;
+	printf("sylvan_storm_rational_function_create_2(ptr = %p)\n", tmp);
+#endif
+	
+	LOG_O("i-create")
 }
 
 static void
 sylvan_storm_rational_function_destroy(uint64_t val)
 {
+	LOG_I("i-destroy")
     /* This function is called by the unique table
        when a leaf is removed during garbage collection. */
 	storm_rational_function_ptr x = (storm_rational_function_ptr)(size_t)val;
 	storm_rational_function_destroy(x);
+	LOG_O("i-destroy")
 }
 
 static uint32_t sylvan_storm_rational_function_type;
@@ -78,6 +121,12 @@ sylvan_storm_rational_function_init()
 {
     /* Register custom leaf 3 */
     sylvan_storm_rational_function_type = mtbdd_register_custom_leaf(sylvan_storm_rational_function_hash, sylvan_storm_rational_function_equals, sylvan_storm_rational_function_create, sylvan_storm_rational_function_destroy);
+	
+	if (SYLVAN_STORM_RATIONAL_FUNCTION_TYPE_ID != sylvan_storm_rational_function_type) {
+		printf("ERROR - ERROR - ERROR\nThe Sylvan Type ID is NOT correct.\nIt was assumed to be %u, but it is actually %u!\nYou NEED to fix this by changing the macro \"SYLVAN_STORM_RATIONAL_FUNCTION_TYPE_ID\" and recompiling StoRM!\n\n", SYLVAN_STORM_RATIONAL_FUNCTION_TYPE_ID, sylvan_storm_rational_function_type);
+		assert(0);
+	}	
+	
 	CACHE_STORM_RATIONAL_FUNCTION_AND_EXISTS = cache_next_opid();
 }
 
@@ -89,11 +138,21 @@ uint32_t sylvan_storm_rational_function_get_type() {
  * Create storm::RationalFunction leaf
  */
 MTBDD
-mtbdd_storm_rational_function(storm_rational_function_t val)
+mtbdd_storm_rational_function(storm_rational_function_ptr val)
 {
+	LOG_I("i-mtbdd_")
 	uint64_t terminalValue = (uint64_t)val;
-	printf("mtbdd_storm_rational_function(val = %zu)\n", terminalValue);
-	return mtbdd_makeleaf(sylvan_storm_rational_function_type, terminalValue);
+	
+#ifdef SYLVAN_STORM_RATIONAL_FUNCTION_DEBUG
+	printf("mtbdd_storm_rational_function(ptr = %p, value = ", val);
+	print_storm_rational_function(val);
+	printf(")\n");
+#endif
+	
+	MTBDD result = mtbdd_makeleaf(sylvan_storm_rational_function_type, terminalValue);
+	
+	LOG_O("i-mtbdd_")
+	return result;
 }
 
 /**
@@ -101,21 +160,30 @@ mtbdd_storm_rational_function(storm_rational_function_t val)
  */
 TASK_IMPL_2(MTBDD, mtbdd_op_bool_to_storm_rational_function, MTBDD, a, size_t, v)
 {
+	LOG_I("task_impl_2 to_srf")
 	if (a == mtbdd_false) {
-		return mtbdd_storm_rational_function(storm_rational_function_get_zero());
+		storm_rational_function_ptr srf_zero = storm_rational_function_get_zero();
+		MTBDD result = mtbdd_storm_rational_function(srf_zero);
+		LOG_O("task_impl_2 to_srf - ZERO")
+		return result;
 	}
 	if (a == mtbdd_true) {
-		return mtbdd_storm_rational_function(storm_rational_function_get_one());
+		storm_rational_function_ptr srf_one = storm_rational_function_get_one();
+		MTBDD result = mtbdd_storm_rational_function(srf_one);
+		LOG_O("task_impl_2 to_srf - ONE")
+		return result;
 	}
     
     // Ugly hack to get rid of the error "unused variable v" (because there is no version of uapply without a parameter).
     (void)v;
-    
+	
+    LOG_O("task_impl_2 to_srf - INVALID")
     return mtbdd_invalid;
 }
 
 TASK_IMPL_1(MTBDD, mtbdd_bool_to_storm_rational_function, MTBDD, dd)
 {
+	LOG_I("task_impl_1 to_srf")
     return mtbdd_uapply(dd, TASK(mtbdd_op_bool_to_storm_rational_function), 0);
 }
 
@@ -125,6 +193,7 @@ TASK_IMPL_1(MTBDD, mtbdd_bool_to_storm_rational_function, MTBDD, dd)
  */
 TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_plus, MTBDD*, pa, MTBDD*, pb)
 {
+	LOG_I("task_impl_2 op_plus")
     MTBDD a = *pa, b = *pb;
 
     /* Check for partial functions */
@@ -159,7 +228,8 @@ TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_plus, MTBDD*, pa, MTBDD*, p
  */
 TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_minus, MTBDD*, pa, MTBDD*, pb)
 {
-    MTBDD a = *pa, b = *pb;
+    LOG_I("task_impl_2 op_minus")
+	MTBDD a = *pa, b = *pb;
 
     /* Check for partial functions */
     if (a == mtbdd_false) return sylvan_storm_rational_function_neg(b);
@@ -188,6 +258,7 @@ TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_minus, MTBDD*, pa, MTBDD*, 
  */
 TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_times, MTBDD*, pa, MTBDD*, pb)
 {
+	LOG_I("task_impl_2 op_times")
     MTBDD a = *pa, b = *pb;
 
     /* Check for partial functions and for Boolean (filter) */
@@ -202,7 +273,7 @@ TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_times, MTBDD*, pa, MTBDD*, 
 		storm_rational_function_ptr ma = (storm_rational_function_ptr)mtbdd_getvalue(a);
 		storm_rational_function_ptr mb = (storm_rational_function_ptr)mtbdd_getvalue(b);
 
-		storm_rational_function_ptr mres = storm_rational_function_times(ma, mb);
+		storm_rational_function_ptr mres = storm_rational_function_times(ma, mb);		
 		MTBDD res = mtbdd_storm_rational_function(mres);
 
 		// TODO: Delete mres?
@@ -225,6 +296,7 @@ TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_times, MTBDD*, pa, MTBDD*, 
  */
 TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_divide, MTBDD*, pa, MTBDD*, pb)
 {
+	LOG_I("task_impl_2 op_divide")
     MTBDD a = *pa, b = *pb;
 
     /* Check for partial functions */
@@ -254,6 +326,7 @@ TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_divide, MTBDD*, pa, MTBDD*,
 
 TASK_IMPL_3(MTBDD, sylvan_storm_rational_function_abstract_op_plus, MTBDD, a, MTBDD, b, int, k)
 {
+	LOG_I("task_impl_3 abstract_op_plus")
     if (k==0) {
         return mtbdd_apply(a, b, TASK(sylvan_storm_rational_function_op_plus));
     } else {
@@ -269,6 +342,7 @@ TASK_IMPL_3(MTBDD, sylvan_storm_rational_function_abstract_op_plus, MTBDD, a, MT
 
 TASK_IMPL_3(MTBDD, sylvan_storm_rational_function_abstract_op_times, MTBDD, a, MTBDD, b, int, k)
 {
+	LOG_I("task_impl_3 abstract_op_times")
     if (k==0) {
         return mtbdd_apply(a, b, TASK(sylvan_storm_rational_function_op_times));
     } else {
@@ -287,6 +361,7 @@ TASK_IMPL_3(MTBDD, sylvan_storm_rational_function_abstract_op_times, MTBDD, a, M
  */
 TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_neg, MTBDD, dd, size_t, p)
 {
+	LOG_I("task_impl_2 op_neg")
     /* Handle partial functions */
     if (dd == mtbdd_false) return mtbdd_false;
 
