@@ -154,6 +154,7 @@ namespace storm {
             std::unique_ptr<LinearEquationSolver<ValueType>> selectSolver(MatrixType&& matrix) const;
         };
         
+#ifdef STORM_HAVE_CARL
         template<>
         class GeneralLinearEquationSolverFactory<storm::RationalNumber> : public LinearEquationSolverFactory<storm::RationalNumber> {
         public:
@@ -179,7 +180,7 @@ namespace storm {
             template<typename MatrixType>
             std::unique_ptr<LinearEquationSolver<storm::RationalFunction>> selectSolver(MatrixType&& matrix) const;
         };
-        
+#endif
     } // namespace solver
 } // namespace storm
 

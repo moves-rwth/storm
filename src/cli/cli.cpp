@@ -228,9 +228,17 @@ namespace storm {
                 }
                 
                 if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isParametricSet()) {
+#ifdef STORM_HAVE_CARL
                     buildAndCheckSymbolicModel<storm::RationalFunction>(preprocessedProgram, preprocessedFormulas, true);
+#else
+                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "No parameters are supported in this build.");
+#endif
                 } else if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isExactSet()) {
+#ifdef STORM_HAVE_CARL
                     buildAndCheckSymbolicModel<storm::RationalNumber>(preprocessedProgram, preprocessedFormulas, true);
+#else
+                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "No exact numbers are supported in this build.");
+#endif
                 } else {
                     buildAndCheckSymbolicModel<double>(preprocessedProgram, preprocessedFormulas, true);
                 }

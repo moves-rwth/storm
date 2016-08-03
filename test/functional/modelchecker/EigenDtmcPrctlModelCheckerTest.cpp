@@ -60,6 +60,7 @@ TEST(EigenDtmcPrctlModelCheckerTest, Die) {
     EXPECT_NEAR(11.0 / 3.0, quantitativeResult4[0], storm::settings::getModule<storm::settings::modules::EigenEquationSolverSettings>().getPrecision());
 }
 
+#ifdef STORM_HAVE_CARL
 TEST(EigenDtmcPrctlModelCheckerTest, Die_RationalNumber) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/die.pm");
     
@@ -159,7 +160,7 @@ TEST(EigenDtmcPrctlModelCheckerTest, Die_RationalFunction) {
     
     EXPECT_EQ(storm::RationalNumber(11) / storm::RationalNumber(3), quantitativeResult4[0].evaluate(instantiation));
 }
-
+#endif
 
 TEST(EigenDtmcPrctlModelCheckerTest, Crowds) {
     std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser<>::parseModel(STORM_CPP_BASE_PATH "/examples/dtmc/crowds/crowds5_5.tra", STORM_CPP_BASE_PATH "/examples/dtmc/crowds/crowds5_5.lab", "", "");

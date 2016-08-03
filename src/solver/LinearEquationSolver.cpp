@@ -121,6 +121,7 @@ namespace storm {
             return std::make_unique<GeneralLinearEquationSolverFactory<ValueType>>(*this);
         }
         
+#ifdef STORM_HAVE_CARL
         std::unique_ptr<LinearEquationSolver<storm::RationalNumber>> GeneralLinearEquationSolverFactory<storm::RationalNumber>::create(storm::storage::SparseMatrix<storm::RationalNumber> const& matrix) const {
             return selectSolver(matrix);
         }
@@ -162,18 +163,22 @@ namespace storm {
         std::unique_ptr<LinearEquationSolverFactory<storm::RationalFunction>> GeneralLinearEquationSolverFactory<storm::RationalFunction>::clone() const {
             return std::make_unique<GeneralLinearEquationSolverFactory<storm::RationalFunction>>(*this);
         }
+#endif
 
         template class LinearEquationSolver<double>;
+        template class LinearEquationSolverFactory<double>;
+        template class GeneralLinearEquationSolverFactory<double>;
+
+#ifdef STORM_HAVE_CARL
         template class LinearEquationSolver<storm::RationalNumber>;
         template class LinearEquationSolver<storm::RationalFunction>;
 
-        template class LinearEquationSolverFactory<double>;
         template class LinearEquationSolverFactory<storm::RationalNumber>;
         template class LinearEquationSolverFactory<storm::RationalFunction>;
         
-        template class GeneralLinearEquationSolverFactory<double>;
         template class GeneralLinearEquationSolverFactory<storm::RationalNumber>;
         template class GeneralLinearEquationSolverFactory<storm::RationalFunction>;
+#endif
 
     }
 }

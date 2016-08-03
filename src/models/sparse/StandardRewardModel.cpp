@@ -318,6 +318,7 @@ namespace storm {
             template class StandardRewardModel<float>;
             template std::ostream& operator<<<float>(std::ostream& out, StandardRewardModel<float> const& rewardModel);
 
+#ifdef STORM_HAVE_CARL
             template std::vector<storm::RationalNumber> StandardRewardModel<storm::RationalNumber>::getTotalRewardVector(uint_fast64_t numberOfRows, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::storage::BitVector const& filter) const;
             template std::vector<storm::RationalNumber> StandardRewardModel<storm::RationalNumber>::getTotalRewardVector(storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix) const;
             template std::vector<storm::RationalNumber> StandardRewardModel<storm::RationalNumber>::getTotalRewardVector(storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, std::vector<storm::RationalNumber> const& weights) const;
@@ -346,6 +347,7 @@ namespace storm {
             template void StandardRewardModel<storm::Interval>::reduceToStateBasedRewards(storm::storage::SparseMatrix<double> const& transitionMatrix, bool reduceToStateRewards);
             template class StandardRewardModel<storm::Interval>;
             template std::ostream& operator<<<storm::Interval>(std::ostream& out, StandardRewardModel<storm::Interval> const& rewardModel);
+#endif
         }
         
     }

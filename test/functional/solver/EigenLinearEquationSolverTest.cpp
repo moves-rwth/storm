@@ -64,6 +64,7 @@ TEST(EigenLinearEquationSolver, SparseLU) {
     ASSERT_LT(std::abs(x[2] - (-1)), storm::settings::getModule<storm::settings::modules::EigenEquationSolverSettings>().getPrecision());
 }
 
+#ifdef STORM_HAVE_CARL
 TEST(EigenLinearEquationSolver, SparseLU_RationalNumber) {
     ASSERT_NO_THROW(storm::storage::SparseMatrixBuilder<storm::RationalNumber> builder);
     storm::storage::SparseMatrixBuilder<storm::RationalNumber> builder;
@@ -115,6 +116,7 @@ TEST(EigenLinearEquationSolver, SparseLU_RationalFunction) {
     ASSERT_TRUE(x[1] == storm::RationalFunction(3));
     ASSERT_TRUE(x[2] == storm::RationalFunction(-1));
 }
+#endif
 
 TEST(EigenLinearEquationSolver, DGMRES) {
     ASSERT_NO_THROW(storm::storage::SparseMatrixBuilder<double> builder);
