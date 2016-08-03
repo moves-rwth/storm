@@ -8,7 +8,7 @@ ExternalProject_Add(
         DOWNLOAD_COMMAND ""
         SOURCE_DIR ${STORM_3RDPARTY_SOURCE_DIR}/cudd-3.0.0
         PREFIX ${STORM_3RDPARTY_BINARY_DIR}/cudd-3.0.0
-        UPDATE_COMMAND ${AUTORECONF}
+        PATCH_COMMAND ${AUTORECONF}
         CONFIGURE_COMMAND ${STORM_3RDPARTY_SOURCE_DIR}/cudd-3.0.0/configure  --enable-shared   --enable-obj --prefix=${STORM_3RDPARTY_BINARY_DIR}/cudd-3.0.0 --libdir=${STORM_3RDPARTY_BINARY_DIR}/cudd-3.0.0/lib CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER}
         BUILD_COMMAND make "CFLAGS=-O2 -w"
         INSTALL_COMMAND make install
