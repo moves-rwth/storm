@@ -1,9 +1,8 @@
-#ifndef STORM_STORAGE_PRISM_MENU_GAMES_ABSTRACTMODULE_H_
-#define STORM_STORAGE_PRISM_MENU_GAMES_ABSTRACTMODULE_H_
+#pragma once
 
 #include "src/storage/dd/DdType.h"
 
-#include "src/storage/prism/menu_games/AbstractCommand.h"
+#include "src/abstraction/prism/AbstractCommand.h"
 
 #include "src/storage/expressions/Expression.h"
 
@@ -13,13 +12,15 @@ namespace storm {
     namespace prism {
         // Forward-declare concrete module class.
         class Module;
+    }
+    
+    namespace abstraction {
+        template <storm::dd::DdType DdType, typename ValueType>
+        struct AbstractionDdInformation;
         
-        namespace menu_games {
-            template <storm::dd::DdType DdType, typename ValueType>
-            struct AbstractionDdInformation;
-            
-            struct AbstractionExpressionInformation;
-            
+        struct AbstractionExpressionInformation;
+
+        namespace prism {
             template <storm::dd::DdType DdType, typename ValueType>
             class AbstractModule {
             public:
@@ -65,10 +66,8 @@ namespace storm {
                 std::vector<AbstractCommand<DdType, ValueType>> commands;
                 
                 // The concrete module this abstract module refers to.
-                std::reference_wrapper<Module const> module;
+                std::reference_wrapper<storm::prism::Module const> module;
             };
         }
     }
 }
-
-#endif /* STORM_STORAGE_PRISM_MENU_GAMES_ABSTRACTMODULE_H_ */

@@ -1,13 +1,12 @@
-#ifndef STORM_STORAGE_PRISM_MENU_GAMES_ABSTRACTPROGRAM_H_
-#define STORM_STORAGE_PRISM_MENU_GAMES_ABSTRACTPROGRAM_H_
+#pragma once
 
 #include "src/storage/dd/DdType.h"
 
-#include "src/storage/prism/menu_games/AbstractionDdInformation.h"
-#include "src/storage/prism/menu_games/AbstractionExpressionInformation.h"
-#include "src/storage/prism/menu_games/StateSetAbstractor.h"
-#include "src/storage/prism/menu_games/AbstractModule.h"
-#include "src/storage/prism/menu_games/MenuGame.h"
+#include "src/abstraction/AbstractionDdInformation.h"
+#include "src/abstraction/AbstractionExpressionInformation.h"
+#include "src/abstraction/StateSetAbstractor.h"
+#include "src/abstraction/MenuGame.h"
+#include "src/abstraction/prism/AbstractModule.h"
 
 #include "src/storage/expressions/Expression.h"
 
@@ -28,8 +27,10 @@ namespace storm {
     namespace prism {
         // Forward-declare concrete Program class.
         class Program;
-        
-        namespace menu_games {
+    }
+    
+    namespace abstraction {
+        namespace prism {
             
             template <storm::dd::DdType DdType, typename ValueType>
             class AbstractProgram {
@@ -43,7 +44,7 @@ namespace storm {
                  * @param smtSolverFactory A factory that is to be used for creating new SMT solvers.
                  * @param addAllGuards A flag that indicates whether all guards of the program should be added to the initial set of predicates.
                  */
-                AbstractProgram(storm::expressions::ExpressionManager& expressionManager, storm::prism::Program const& program, std::vector<storm::expressions::Expression> const& initialPredicates, std::unique_ptr<storm::utility::solver::SmtSolverFactory>&& smtSolverFactory = std::unique_ptr<storm::utility::solver::SmtSolverFactory>(new storm::utility::solver::SmtSolverFactory()), bool addAllGuards = false);
+                AbstractProgram(storm::expressions::ExpressionManager& expressionManager, storm::prism::Program const& program, std::vector<storm::expressions::Expression> const& initialPredicates, std::unique_ptr<storm::utility::solver::SmtSolverFactory>&& smtSolverFactory = std::make_unique<storm::utility::solver::SmtSolverFactory>(), bool addAllGuards = false);
                 
                 /*!
                  * Uses the current set of predicates to derive the abstract menu game in the form of an ADD.
@@ -99,7 +100,7 @@ namespace storm {
                 std::vector<AbstractModule<DdType, ValueType>> modules;
                 
                 // The concrete program this abstract program refers to.
-                std::reference_wrapper<Program const> program;
+                std::reference_wrapper<storm::prism::Program const> program;
                 
                 // A state-set abstractor used to determine the initial states of the abstraction.
                 StateSetAbstractor<DdType, ValueType> initialStateAbstractor;
@@ -119,5 +120,3 @@ namespace storm {
         }
     }
 }
-
-#endif /* STORM_STORAGE_PRISM_MENU_GAMES_ABSTRACTPROGRAM_H_ */

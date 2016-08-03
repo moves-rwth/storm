@@ -1,12 +1,11 @@
-#ifndef STORM_STORAGE_PRISM_MENU_GAMES_ABSTRACTCOMMAND_H_
-#define STORM_STORAGE_PRISM_MENU_GAMES_ABSTRACTCOMMAND_H_
+#pragma once
 
 #include <memory>
 #include <vector>
 #include <set>
 #include <map>
 
-#include "src/storage/prism/menu_games/LocalExpressionInformation.h"
+#include "src/abstraction/LocalExpressionInformation.h"
 
 #include "src/storage/dd/DdType.h"
 #include "src/storage/expressions/Expression.h"
@@ -32,13 +31,15 @@ namespace storm {
         // Forward-declare concrete command and assignment classes.
         class Command;
         class Assignment;
+    }
+    
+    namespace abstraction {
+        template <storm::dd::DdType DdType, typename ValueType>
+        struct AbstractionDdInformation;
         
-        namespace menu_games {
-            template <storm::dd::DdType DdType, typename ValueType>
-            struct AbstractionDdInformation;
-            
-            struct AbstractionExpressionInformation;
-            
+        struct AbstractionExpressionInformation;
+
+        namespace prism {
             template <storm::dd::DdType DdType, typename ValueType>
             class AbstractCommand {
             public:
@@ -162,7 +163,7 @@ namespace storm {
                 AbstractionDdInformation<DdType, ValueType> const& ddInformation;
                 
                 // The concrete command this abstract command refers to.
-                std::reference_wrapper<Command const> command;
+                std::reference_wrapper<storm::prism::Command const> command;
                 
                 // The local expression-related information.
                 LocalExpressionInformation localExpressionInformation;
@@ -180,5 +181,3 @@ namespace storm {
         }
     }
 }
-
-#endif /* STORM_STORAGE_PRISM_MENU_GAMES_ABSTRACTCOMMAND_H_ */

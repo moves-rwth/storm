@@ -1,4 +1,4 @@
-#include "src/storage/prism/menu_games/AbstractProgram.h"
+#include "src/abstraction/prism/AbstractProgram.h"
 
 #include "src/storage/prism/Program.h"
 
@@ -13,8 +13,8 @@
 #include "src/exceptions/InvalidArgumentException.h"
 
 namespace storm {
-    namespace prism {
-        namespace menu_games {
+    namespace abstraction {
+        namespace prism {
             
             template <storm::dd::DdType DdType, typename ValueType>
             AbstractProgram<DdType, ValueType>::AbstractProgram(storm::expressions::ExpressionManager& expressionManager, storm::prism::Program const& program, std::vector<storm::expressions::Expression> const& initialPredicates, std::unique_ptr<storm::utility::solver::SmtSolverFactory>&& smtSolverFactory, bool addAllGuards) : smtSolverFactory(std::move(smtSolverFactory)), ddInformation(std::make_shared<storm::dd::DdManager<DdType>>()), expressionInformation(expressionManager, initialPredicates, program.getAllExpressionVariables(), program.getAllRangeExpressions()), modules(), program(program), initialStateAbstractor(expressionInformation, ddInformation, {program.getInitialConstruct().getInitialStatesExpression()}, *this->smtSolverFactory), addedAllGuards(addAllGuards), bottomStateAbstractor(expressionInformation, ddInformation, program.getAllGuards(true), *this->smtSolverFactory), currentGame(nullptr) {
@@ -69,7 +69,7 @@ namespace storm {
                     modules.emplace_back(module, expressionInformation, ddInformation, *this->smtSolverFactory);
                 }
                 
-                // Finally, retrieve the command-update probability ADD, so we can multiply it with the abstraction BDD later.
+                // Retrieve the command-update probability ADD, so we can multiply it with the abstraction BDD later.
                 commandUpdateProbabilitiesAdd = modules.front().getCommandUpdateProbabilitiesAdd();
                 
                 // Finally, we build the game the first time.
@@ -176,7 +176,6 @@ namespace storm {
                 std::set<storm::expressions::Variable> allNondeterminismVariables = usedPlayer2Variables;
                 allNondeterminismVariables.insert(ddInformation.commandDdVariable);
                 
-                // FIXME: no deadlock states guaranteed?
                 return std::unique_ptr<MenuGame<DdType, ValueType>>(new MenuGame<DdType, ValueType>(ddInformation.manager, reachableStates, initialStates, ddInformation.manager->getBddZero(), transitionMatrix, bottomStates, ddInformation.sourceVariables, ddInformation.successorVariables, ddInformation.predicateDdVariables, {ddInformation.commandDdVariable}, usedPlayer2Variables, allNondeterminismVariables, ddInformation.updateDdVariable, ddInformation.expressionToBddMap));
             }
             

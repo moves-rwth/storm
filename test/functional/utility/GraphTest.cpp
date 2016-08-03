@@ -193,7 +193,7 @@ TEST(GraphTest, SymbolicProb01MinMax_Sylvan) {
 
 #ifdef STORM_HAVE_MSAT
 
-#include "src/storage/prism/menu_games/AbstractProgram.h"
+#include "src/abstraction/prism/AbstractProgram.h"
 
 #include "src/storage/expressions/Expression.h"
 
@@ -207,9 +207,9 @@ TEST(GraphTest, SymbolicProb01StochasticGameDieSmall) {
     
     initialPredicates.push_back(manager.getVariableExpression("s") < manager.integer(3));
     
-    storm::prism::menu_games::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program.getManager(), program, initialPredicates, std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>(), false);
+    storm::abstraction::prism::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program.getManager(), program, initialPredicates, std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>(), false);
     
-    storm::prism::menu_games::MenuGame<storm::dd::DdType::CUDD, double> game = abstractProgram.getAbstractGame();
+    storm::abstraction::MenuGame<storm::dd::DdType::CUDD, double> game = abstractProgram.getAbstractGame();
     
     // The target states are those states where !(s < 3).
     storm::dd::Bdd<storm::dd::DdType::CUDD> targetStates = game.getStates(initialPredicates[0], true);
@@ -343,9 +343,9 @@ TEST(GraphTest, SymbolicProb01StochasticGameTwoDice) {
     initialPredicates.push_back(manager.getVariableExpression("d2") == manager.integer(5));
     initialPredicates.push_back(manager.getVariableExpression("d2") == manager.integer(6));
     
-    storm::prism::menu_games::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program.getManager(), program, initialPredicates, std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>(), false);
+    storm::abstraction::prism::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program.getManager(), program, initialPredicates, std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>(), false);
     
-    storm::prism::menu_games::MenuGame<storm::dd::DdType::CUDD, double> game = abstractProgram.getAbstractGame();
+    storm::abstraction::MenuGame<storm::dd::DdType::CUDD, double> game = abstractProgram.getAbstractGame();
     
     // The target states are those states where s1 == 7 & s2 == 7 & d1 + d2 == 1.
     storm::dd::Bdd<storm::dd::DdType::CUDD> targetStates = game.getStates(initialPredicates[7], false) && game.getStates(initialPredicates[22], false) && game.getStates(initialPredicates[9], false) && game.getStates(initialPredicates[24], false);
@@ -512,9 +512,9 @@ TEST(GraphTest, SymbolicProb01StochasticGameWlan) {
     initialPredicates.push_back(manager.getVariableExpression("bc2") == manager.integer(0));
     initialPredicates.push_back(manager.getVariableExpression("bc2") == manager.integer(1));
     
-    storm::prism::menu_games::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program.getManager(), program, initialPredicates, std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>(), false);
+    storm::abstraction::prism::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program.getManager(), program, initialPredicates, std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>(), false);
     
-    storm::prism::menu_games::MenuGame<storm::dd::DdType::CUDD, double> game = abstractProgram.getAbstractGame();
+    storm::abstraction::MenuGame<storm::dd::DdType::CUDD, double> game = abstractProgram.getAbstractGame();
     
     // The target states are those states where col == 2.
     storm::dd::Bdd<storm::dd::DdType::CUDD> targetStates = game.getStates(initialPredicates[2], false);

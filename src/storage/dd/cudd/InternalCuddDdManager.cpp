@@ -6,7 +6,7 @@
 namespace storm {
     namespace dd {
         
-        InternalDdManager<DdType::CUDD>::InternalDdManager() : cuddManager(), reorderingTechnique(CUDD_REORDER_NONE) {
+        InternalDdManager<DdType::CUDD>::InternalDdManager() : cuddManager(), reorderingTechnique(CUDD_REORDER_NONE), numberOfDdVariables(0) {
             this->cuddManager.SetMaxMemory(static_cast<unsigned long>(storm::settings::getModule<storm::settings::modules::CuddSettings>().getMaximalMemory() * 1024ul * 1024ul));
             this->cuddManager.SetEpsilon(storm::settings::getModule<storm::settings::modules::CuddSettings>().getConstantPrecision());
             

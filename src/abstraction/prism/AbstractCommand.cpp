@@ -1,9 +1,9 @@
-#include "src/storage/prism/menu_games/AbstractCommand.h"
+#include "src/abstraction/prism/AbstractCommand.h"
 
 #include <boost/iterator/transform_iterator.hpp>
 
-#include "src/storage/prism/menu_games/AbstractionExpressionInformation.h"
-#include "src/storage/prism/menu_games/AbstractionDdInformation.h"
+#include "src/abstraction/AbstractionExpressionInformation.h"
+#include "src/abstraction/AbstractionDdInformation.h"
 
 #include "src/storage/dd/DdManager.h"
 #include "src/storage/dd/Add.h"
@@ -15,8 +15,8 @@
 #include "src/utility/macros.h"
 
 namespace storm {
-    namespace prism {
-        namespace menu_games {
+    namespace abstraction {
+        namespace prism {
             template <storm::dd::DdType DdType, typename ValueType>
             AbstractCommand<DdType, ValueType>::AbstractCommand(storm::prism::Command const& command, AbstractionExpressionInformation& globalExpressionInformation, AbstractionDdInformation<DdType, ValueType> const& ddInformation, storm::utility::solver::SmtSolverFactory const& smtSolverFactory) : smtSolver(smtSolverFactory.create(globalExpressionInformation.getManager())), globalExpressionInformation(globalExpressionInformation), ddInformation(ddInformation), command(command), localExpressionInformation(globalExpressionInformation.getVariables()), relevantPredicatesAndVariables(), cachedDd(std::make_pair(ddInformation.manager->getBddZero(), 0)), decisionVariables() {
 

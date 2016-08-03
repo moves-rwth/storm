@@ -1,5 +1,4 @@
-#ifndef STORM_PRISM_MENU_GAMES_MENUGAME_H_
-#define STORM_PRISM_MENU_GAMES_MENUGAME_H_
+#pragma once
 
 #include <map>
 
@@ -8,9 +7,8 @@
 #include "src/utility/OsDetection.h"
 
 namespace storm {
-    namespace prism {
-        namespace menu_games {
-            
+    namespace abstraction {
+        
             /*!
              * This class represents a discrete-time stochastic two-player game.
              */
@@ -21,11 +19,8 @@ namespace storm {
                 
                 MenuGame(MenuGame<Type, ValueType> const& other) = default;
                 MenuGame& operator=(MenuGame<Type, ValueType> const& other) = default;
-                
-#ifndef WINDOWS
                 MenuGame(MenuGame<Type, ValueType>&& other) = default;
                 MenuGame& operator=(MenuGame<Type, ValueType>&& other) = default;
-#endif
                 
                 /*!
                  * Constructs a model from the given data.
@@ -102,8 +97,5 @@ namespace storm {
                 storm::dd::Bdd<Type> bottomStates;
             };
             
-        } // namespace menu_games
-    } // namespace prism
-} // namespace storm
-
-#endif /* STORM_PRISM_MENU_GAMES_MENUGAME_H_ */
+    }
+}

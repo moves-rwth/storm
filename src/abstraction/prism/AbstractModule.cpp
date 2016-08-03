@@ -1,7 +1,7 @@
-#include "src/storage/prism/menu_games/AbstractModule.h"
+#include "src/abstraction/prism/AbstractModule.h"
 
-#include "src/storage/prism/menu_games/AbstractionExpressionInformation.h"
-#include "src/storage/prism/menu_games/AbstractionDdInformation.h"
+#include "src/abstraction/AbstractionExpressionInformation.h"
+#include "src/abstraction/AbstractionDdInformation.h"
 
 #include "src/storage/dd/DdManager.h"
 #include "src/storage/dd/Add.h"
@@ -9,8 +9,8 @@
 #include "src/storage/prism/Module.h"
 
 namespace storm {
-    namespace prism {
-        namespace menu_games {
+    namespace abstraction {
+        namespace prism {
             
             template <storm::dd::DdType DdType, typename ValueType>
             AbstractModule<DdType, ValueType>::AbstractModule(storm::prism::Module const& module, AbstractionExpressionInformation& expressionInformation, AbstractionDdInformation<DdType, ValueType> const& ddInformation, storm::utility::solver::SmtSolverFactory const& smtSolverFactory) : smtSolverFactory(smtSolverFactory), ddInformation(ddInformation), commands(), module(module) {
