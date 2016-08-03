@@ -2,6 +2,7 @@
 #define	STORM_LOGIC_BOUND_H_
 
 #include "src/logic/ComparisonType.h"
+#include "src/utility/constants.h"
 
 namespace storm {
     namespace logic {
@@ -9,6 +10,11 @@ namespace storm {
         struct Bound {
             Bound(ComparisonType comparisonType, ValueType const& threshold) : comparisonType(comparisonType), threshold(threshold) {
                 // Intentionally left empty.
+            }
+
+            template<typename OtherValueType>
+            Bound<OtherValueType> convertToOtherValueType() const {
+                return Bound<OtherValueType>(comparisonType, storm::utility::convertNumber<OtherValueType>(threshold));
             }
             
             ComparisonType comparisonType;

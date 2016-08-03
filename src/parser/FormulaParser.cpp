@@ -478,7 +478,7 @@ namespace storm {
         
         storm::logic::OperatorInformation FormulaParserGrammar::createOperatorInformation(boost::optional<storm::OptimizationDirection> const& optimizationDirection, boost::optional<storm::logic::ComparisonType> const& comparisonType, boost::optional<double> const& threshold) const {
             if (comparisonType && threshold) {
-                return storm::logic::OperatorInformation(optimizationDirection, storm::logic::Bound<double>(comparisonType.get(), threshold.get()));
+                return storm::logic::OperatorInformation(optimizationDirection, storm::logic::Bound<RationalNumber>(comparisonType.get(), storm::utility::convertNumber<RationalNumber>(threshold.get())));
             } else {
                 return storm::logic::OperatorInformation(optimizationDirection, boost::none);
             }

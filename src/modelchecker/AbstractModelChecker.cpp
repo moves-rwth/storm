@@ -213,7 +213,7 @@ namespace storm {
             
             if (stateFormula.hasBound()) {
                 STORM_LOG_THROW(result->isQuantitative(), storm::exceptions::InvalidOperationException, "Unable to perform comparison operation on non-quantitative result.");
-                return result->asQuantitativeCheckResult<ValueType>().compareAgainstBound(stateFormula.getComparisonType(), stateFormula.getThreshold());
+                return result->asQuantitativeCheckResult<ValueType>().compareAgainstBound(stateFormula.getComparisonType(), stateFormula.getThresholdAs<ValueType>());
             } else {
                 return result;
             }
