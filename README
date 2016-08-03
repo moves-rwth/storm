@@ -19,3 +19,6 @@ make storm-dft-main
 
 # To get a list of all available arguments run
 ./src/storm-dft --help
+
+# Example for DFT to Petri net translation
+./src/storm-dft -dft ../examples/dft/and.dft --gspn

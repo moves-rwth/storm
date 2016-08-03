@@ -39,6 +39,34 @@ namespace storm {
                                  be written to the console.
                  */
                 void writeGspn(bool toFile);
+				
+				/*
+				 * Draw a Petri net Basic Event.
+				 * 
+				 * @param name The name of the Basic Event.
+				 * 
+				 * @param activated If true, the Basic Event is activated. If false, the Basic Event
+				 * 				is inactive, i.e. in a nested SPARE.
+				 * 
+				 * @param activeFailureRate The failure rate of the Basic Event, if it is activated.
+				 * 
+				 * @pparam passiveFailureRate The failure rate of the Basic Event, if it is not activated.
+				 */
+				void drawBE(std::string name, bool activated, double activeFailureRate, double passiveFailureRate);
+				
+				/*
+				 * Draw a Petri net AND.
+				 * 
+				 * @param name The name of the AND.
+				 */
+				void drawAND(std::string name);
+				
+				/*
+				 * Draw a Petri net OR.
+				 * 
+				 * @param name The name of the OR.
+				 */
+				void drawOR(std::string name, std::size_t numberOfChildren);
             };
         }
     }
