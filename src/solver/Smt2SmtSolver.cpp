@@ -115,7 +115,7 @@ namespace storm {
             writeCommand("( assert " + expressionAdapter->translateExpression(constraint) + " )", true);
         }
         
-        void Smt2SmtSolver::add(storm::Variable const& guard, typename storm::ArithConstraint<storm::Polynomial> const& constraint){
+        void Smt2SmtSolver::add(storm::RationalFunctionVariable const& guard, typename storm::ArithConstraint<storm::Polynomial> const& constraint){
             STORM_LOG_THROW((guard.getType()==carl::VariableType::VT_BOOL), storm::exceptions::IllegalArgumentException, "Tried to add a guarded constraint, but the guard is not of type bool.");
             //if some of the occurring variables are not declared yet, we will have to (including the guard!).
             std::set<storm::Variable> variables = constraint.lhs().gatherVariables();
@@ -128,7 +128,7 @@ namespace storm {
             writeCommand("( assert (=> " + guardName + " " + expressionAdapter->translateExpression(constraint) + " ) )", true);
         }
         
-        void Smt2SmtSolver::add(const storm::Variable& variable, bool value){
+        void Smt2SmtSolver::add(const storm::RationalFunctionVariable& variable, bool value){
             STORM_LOG_THROW((variable.getType()==carl::VariableType::VT_BOOL), storm::exceptions::IllegalArgumentException, "Tried to add a constraint that consists of a non-boolean variable.");
             std::set<storm::Variable> variableSet;
             variableSet.insert(variable);

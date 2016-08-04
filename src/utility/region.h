@@ -27,7 +27,7 @@ namespace storm {
             //Obtain the correct type for Variables and Coefficients out of a given Function type
 #ifdef STORM_HAVE_CARL
             template<typename FunctionType>
-            using VariableType    = typename std::conditional<(std::is_same<FunctionType, storm::RationalFunction>::value), storm::Variable, std::nullptr_t>::type;
+            using VariableType    = typename std::conditional<(std::is_same<FunctionType, storm::RationalFunction>::value), storm::RationalFunctionVariable, std::nullptr_t>::type;
             template<typename FunctionType>
             using CoefficientType = typename std::conditional<(std::is_same<FunctionType, storm::RationalFunction>::value), storm::RationalFunction::CoeffType, std::nullptr_t>::type;
 #else

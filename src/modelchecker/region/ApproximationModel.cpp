@@ -1,9 +1,3 @@
-/* 
- * File:   ApproximationModel.cpp
- * Author: tim
- * 
- * Created on August 7, 2015, 9:29 AM
- */
 #include <stdint.h>
 
 #include "src/modelchecker/region/ApproximationModel.h"
@@ -81,7 +75,7 @@ namespace storm {
                 filter.set(this->solverData.initialStateIndex, true);
                 this->solverData.player1Goal = std::make_unique<storm::solver::BoundedGoal<ConstantType>>(
                             storm::logic::isLowerBound(formula->getComparisonType()) ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize,
-                            formula->getBound(),
+                            formula->getBound().convertToOtherValueType<ConstantType>(),
                             filter
                         );
             }                
@@ -386,7 +380,7 @@ namespace storm {
                 }
                 if(this->typeOfParametricModel == storm::models::ModelType::Dtmc){
                     //Invoke mdp model checking
-                    std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ConstantType>> solver = storm::solver::configureMinMaxLinearEquationSolver(player2Goal, storm::utility::solver::MinMaxLinearEquationSolverFactory<double>(), this->matrixData.matrix);
+                    std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ConstantType>> solver = storm::solver::configureMinMaxLinearEquationSolver(player2Goal, storm::solver::GeneralMinMaxLinearEquationSolverFactory<double>(), this->matrixData.matrix);
                     solver->setTerminationCondition(std::move(terminationCondition));
                     storm::utility::policyguessing::solveMinMaxLinearEquationSystem(*solver,
                                 this->solverData.result, this->vectorData.vector,

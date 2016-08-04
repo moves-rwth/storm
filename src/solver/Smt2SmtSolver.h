@@ -60,10 +60,10 @@ namespace storm {
             void add(typename storm::ArithConstraint<storm::RawPolynomial> const& constraint);
             
             // adds the given carl constraint that is guarded by the given guard. The guard should have type 'bool'
-            void add(storm::Variable const& guard, typename storm::ArithConstraint<storm::Polynomial> const& constraint);
+            void add(storm::RationalFunctionVariable const& guard, typename storm::ArithConstraint<storm::Polynomial> const& constraint);
             
             // asserts that the given variable has the given value. The variable should have type 'bool'
-            void add(storm::Variable const& variable, bool value);
+            void add(storm::RationalFunctionVariable const& variable, bool value);
 #endif
 
             virtual CheckResult check() override;

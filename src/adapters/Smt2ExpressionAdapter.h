@@ -129,10 +129,10 @@ namespace storm {
             /*! Checks whether the variables in the given set are already declared and creates them if necessary
              *  @param variables the set of variables to check
              */
-            std::vector<std::string> const checkForUndeclaredVariables(std::set<storm::Variable> const& variables){
+            std::vector<std::string> const checkForUndeclaredVariables(std::set<storm::RationalFunctionVariable> const& variables){
                 std::vector<std::string> result;
                 carl::VariablePool& vPool = carl::VariablePool::getInstance();
-                for (storm::Variable const& variableToCheck : variables){
+                for (storm::RationalFunctionVariable const& variableToCheck : variables){
                     std::string const& variableString = vPool.getName(variableToCheck, useReadableVarNames);
                     // first check if this variable is already declared
                     bool alreadyDeclared=false;
@@ -170,7 +170,7 @@ namespace storm {
             
         private:
             // The manager that can be used to build expressions.
-            storm::expressions::ExpressionManager& manager;
+            //storm::expressions::ExpressionManager& manager;
             // A flag to decide whether readable var names should be used instead of intern representation
             bool useReadableVarNames;
             // the declared variables for the different scopes

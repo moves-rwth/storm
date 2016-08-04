@@ -13,6 +13,8 @@
 #include "src/settings/SettingsManager.h"
 #include "src/settings/modules/RegionSettings.h"
 #include "src/solver/OptimizationDirection.h"
+#include "src/solver/stateelimination/PrioritizedStateEliminator.h"
+#include "src/solver/stateelimination/StaticStatePriorityQueue.h"
 #include "src/storage/sparse/StateType.h"
 #include "src/storage/FlexibleSparseMatrix.h"
 #include "src/utility/constants.h"
@@ -102,9 +104,13 @@ namespace storm {
                 //The states that we consider to eliminate
                 storm::storage::BitVector considerToEliminate(submatrix.getRowGroupCount(), true);
                 considerToEliminate.set(initialState, false);
+
+
+                std::vector<uint64_t> statesToEliminate;
                 for (auto const& state : considerToEliminate) {
-                    bool eliminateThisState=true;
-                    if(submatrix.getRowGroupSize(state) == 1){
+                    bool eliminateThisState=false;
+                    if(submatrix.getRowGroupSize(state) == 1) {
+                        eliminateThisState=true;
                          //state is deterministic. Check if outgoing transitions are constant
                         for(auto const& entry : submatrix.getRowGroup(state)){
                             if(!storm::utility::isConstant(entry.getValue())){
@@ -115,21 +121,20 @@ namespace storm {
                         if(!storm::utility::isConstant(oneStepProbabilities[submatrix.getRowGroupIndices()[state]])){
                             eliminateThisState=false;
                         }
-                    } else {
-                        eliminateThisState = false;
                     }
-                    if(eliminateThisState){
-                        storm::storage::FlexibleSparseMatrix<ParametricType>::eliminateState(flexibleTransitions, oneStepProbabilities, state, submatrix.getRowGroupIndices()[state], flexibleBackwardTransitions, noStateRewards);
-                        subsystem.set(state,false);
+                    if(eliminateThisState) {
+                        subsystem.set(state, false);
+                        statesToEliminate.push_back(state);
                     }
                 }
+                storm::solver::stateelimination::PrioritizedStateEliminator<ParametricType>(flexibleTransitions, flexibleBackwardTransitions, statesToEliminate, oneStepProbabilities);
                 STORM_LOG_DEBUG("Eliminated " << subsystem.size() - subsystem.getNumberOfSetBits() << " of " << subsystem.size() << " states that had constant outgoing transitions.");
 
                 //Build the simple model
                 STORM_LOG_DEBUG("Building the resulting simplified model.");
                 //The matrix. The flexibleTransitions matrix might have empty rows where states have been eliminated.
                 //The new matrix should not have such rows. We therefore leave them out, but we have to change the indices of the states accordingly.
-                std::vector<storm::storage::sparse::state_type> newStateIndexMap(flexibleTransitions.getNumberOfRows(), flexibleTransitions.getNumberOfRows()); //initialize with some illegal index 
+                std::vector<storm::storage::sparse::state_type> newStateIndexMap(flexibleTransitions.getRowCount(), flexibleTransitions.getRowCount()); //initialize with some illegal index
                 storm::storage::sparse::state_type newStateIndex=0;
                 for(auto const& state : subsystem){
                     newStateIndexMap[state]=newStateIndex;
@@ -148,7 +153,7 @@ namespace storm {
                         ParametricType missingProbability=storm::utility::region::getNewFunction<ParametricType, CoefficientType>(storm::utility::one<CoefficientType>());
                         //go through columns:
                         for(auto& entry: flexibleTransitions.getRow(oldRow)){ 
-                            STORM_LOG_THROW(newStateIndexMap[entry.getColumn()]!=flexibleTransitions.getNumberOfRows(), storm::exceptions::UnexpectedException, "There is a transition to a state that should have been eliminated.");
+                            STORM_LOG_THROW(newStateIndexMap[entry.getColumn()]!=flexibleTransitions.getRowCount(), storm::exceptions::UnexpectedException, "There is a transition to a state that should have been eliminated.");
                             missingProbability-=entry.getValue();
                             matrixBuilder.addNextValue(curRow,newStateIndexMap[entry.getColumn()], storm::utility::simplify(entry.getValue()));
                         }

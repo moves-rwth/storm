@@ -145,7 +145,7 @@ namespace storm {
                     //The resulting subregion is the smallest region containing vertex and splittingPoint.
                     VariableSubstitutionType subLower, subUpper;
                     for(auto variableBound : this->lowerBoundaries){
-                        Variable variable = variableBound.first;
+                        VariableType variable = variableBound.first;
                         auto vertexEntry=vertex.find(variable);
                         auto splittingPointEntry=splittingPoint.find(variable);
                         subLower.insert(typename VariableSubstitutionType::value_type(variable, std::min(vertexEntry->second, splittingPointEntry->second)));
@@ -281,17 +281,17 @@ namespace storm {
 
                 template<typename ParametricType>
                 std::vector<ParameterRegion<ParametricType>> ParameterRegion<ParametricType>::getRegionsFromSettings(){
-                    STORM_LOG_THROW(storm::settings::regionSettings().isRegionsSet() || storm::settings::regionSettings().isRegionFileSet(), storm::exceptions::InvalidSettingsException, "Tried to obtain regions from the settings but no regions are specified.");
-                    STORM_LOG_THROW(!(storm::settings::regionSettings().isRegionsSet() && storm::settings::regionSettings().isRegionFileSet()), storm::exceptions::InvalidSettingsException, "Regions are specified via file AND cmd line. Only one option is allowed.");
+                    STORM_LOG_THROW(storm::settings::getModule<storm::settings::modules::RegionSettings>().isRegionsSet() ||storm::settings::getModule<storm::settings::modules::RegionSettings>().isRegionFileSet(), storm::exceptions::InvalidSettingsException, "Tried to obtain regions from the settings but no regions are specified.");
+                    STORM_LOG_THROW(!(storm::settings::getModule<storm::settings::modules::RegionSettings>().isRegionsSet() && storm::settings::getModule<storm::settings::modules::RegionSettings>().isRegionFileSet()), storm::exceptions::InvalidSettingsException, "Regions are specified via file AND cmd line. Only one option is allowed.");
 
                     std::string regionsString;
-                    if(storm::settings::regionSettings().isRegionsSet()){
-                        regionsString = storm::settings::regionSettings().getRegionsFromCmdLine();
+                    if(storm::settings::getModule<storm::settings::modules::RegionSettings>().isRegionsSet()){
+                        regionsString = storm::settings::getModule<storm::settings::modules::RegionSettings>().getRegionsFromCmdLine();
                     }
                     else{
                         //if we reach this point we can assume that the region is given as a file.
-                        STORM_LOG_THROW(storm::parser::MappedFile::fileExistsAndIsReadable(storm::settings::regionSettings().getRegionFilePath().c_str()), storm::exceptions::InvalidSettingsException, "The path to the file in which the regions are specified is not valid.");
-                        storm::parser::MappedFile mf(storm::settings::regionSettings().getRegionFilePath().c_str());
+                        STORM_LOG_THROW(storm::parser::MappedFile::fileExistsAndIsReadable(storm::settings::getModule<storm::settings::modules::RegionSettings>().getRegionFilePath().c_str()), storm::exceptions::InvalidSettingsException, "The path to the file in which the regions are specified is not valid.");
+                        storm::parser::MappedFile mf(storm::settings::getModule<storm::settings::modules::RegionSettings>().getRegionFilePath().c_str());
                         regionsString = std::string(mf.getData(),mf.getDataSize());
                     }
                     return parseMultipleRegions(regionsString);

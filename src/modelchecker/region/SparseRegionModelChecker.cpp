@@ -24,7 +24,6 @@
 #include "src/exceptions/InvalidSettingsException.h"
 #include "src/exceptions/NotImplementedException.h"
 #include "src/exceptions/UnexpectedException.h"
-#include "utility/ConversionHelper.h"
 #include "modelchecker/results/CheckResult.h"
 #include "modelchecker/results/ExplicitQuantitativeCheckResult.h"
 
@@ -134,11 +133,11 @@ namespace storm {
                 
                 //Check if the approximation and the sampling model needs to be computed
                 if(!this->isResultConstant()){
-                    if(this->isApproximationApplicable && storm::settings::regionSettings().doApprox()){
+                    if(this->isApproximationApplicable && storm::settings::getModule<storm::settings::modules::RegionSettings>().doApprox()){
                         initializeApproximationModel(*this->getSimpleModel(), this->getSimpleFormula());
                     }
-                    if(storm::settings::regionSettings().getSampleMode()==storm::settings::modules::RegionSettings::SampleMode::INSTANTIATE ||
-                            (!storm::settings::regionSettings().doSample() && storm::settings::regionSettings().getApproxMode()==storm::settings::modules::RegionSettings::ApproxMode::TESTFIRST)){
+                    if(storm::settings::getModule<storm::settings::modules::RegionSettings>().getSampleMode()==storm::settings::modules::RegionSettings::SampleMode::INSTANTIATE ||
+                            (!storm::settings::getModule<storm::settings::modules::RegionSettings>().doSample() && storm::settings::getModule<storm::settings::modules::RegionSettings>().getApproxMode()==storm::settings::modules::RegionSettings::ApproxMode::TESTFIRST)){
                         initializeSamplingModel(*this->getSimpleModel(), this->getSimpleFormula());
                     }
                 } else if (this->isResultConstant() && this->constantResult.get() == storm::utility::region::convertNumber<ConstantType>(-1.0)){
@@ -241,10 +240,10 @@ namespace storm {
 
                 //switches for the different steps.
                 bool done=false;
-                STORM_LOG_WARN_COND( (!storm::settings::regionSettings().doApprox() || this->isApproximationApplicable), "the approximation is only correct if the model has only linear functions (more precisely: linear in a single parameter, i.e., functions like p*q are okay). As this is not the case, approximation is deactivated");
-                bool doApproximation=storm::settings::regionSettings().doApprox() && this->isApproximationApplicable;
-                bool doSampling=storm::settings::regionSettings().doSample();
-                bool doSmt=storm::settings::regionSettings().doSmt();
+                STORM_LOG_WARN_COND( (!storm::settings::getModule<storm::settings::modules::RegionSettings>().doApprox() || this->isApproximationApplicable), "the approximation is only correct if the model has only linear functions (more precisely: linear in a single parameter, i.e., functions like p*q are okay). As this is not the case, approximation is deactivated");
+                bool doApproximation=storm::settings::getModule<storm::settings::modules::RegionSettings>().doApprox() && this->isApproximationApplicable;
+                bool doSampling=storm::settings::getModule<storm::settings::modules::RegionSettings>().doSample();
+                bool doSmt=storm::settings::getModule<storm::settings::modules::RegionSettings>().doSmt();
 
                 if(this->isResultConstant()){
                     STORM_LOG_DEBUG("Checking a region although the result is constant, i.e., independent of the region. This makes sense none.");
@@ -317,7 +316,7 @@ namespace storm {
                 bool proveAllSat;
                 switch (region.getCheckResult()){
                     case RegionCheckResult::UNKNOWN: 
-                        switch(storm::settings::regionSettings().getApproxMode()){
+                        switch(storm::settings::getModule<storm::settings::modules::RegionSettings>().getApproxMode()){
                             case storm::settings::modules::RegionSettings::ApproxMode::TESTFIRST:
                                 //Sample a single point to know whether we should try to prove ALLSAT or ALLVIOLATED
                                 checkPoint(region,region.getSomePoint(), false);

@@ -155,7 +155,7 @@ namespace storm {
                 STORM_LOG_DEBUG("Building the resulting simplified model.");
                 //The matrix. The flexibleTransitions matrix might have empty rows where states have been eliminated.
                 //The new matrix should not have such rows. We therefore leave them out, but we have to change the indices of the states accordingly.
-                std::vector<storm::storage::sparse::state_type> newStateIndexMap(flexibleTransitions.getNumberOfRows(), flexibleTransitions.getNumberOfRows()); //initialize with some illegal index to easily check if a transition leads to an unselected state
+                std::vector<storm::storage::sparse::state_type> newStateIndexMap(flexibleTransitions.getRowCount(), flexibleTransitions.getRowCount()); //initialize with some illegal index to easily check if a transition leads to an unselected state
                 storm::storage::sparse::state_type newStateIndex=0;
                 for(auto const& state : subsystem){
                     newStateIndexMap[state]=newStateIndex;
@@ -171,7 +171,7 @@ namespace storm {
                     ParametricType missingProbability=storm::utility::region::getNewFunction<ParametricType, CoefficientType>(storm::utility::one<CoefficientType>());
                     //go through columns:
                     for(auto& entry: flexibleTransitions.getRow(oldStateIndex)){ 
-                        STORM_LOG_THROW(newStateIndexMap[entry.getColumn()]!=flexibleTransitions.getNumberOfRows(), storm::exceptions::UnexpectedException, "There is a transition to a state that should have been eliminated.");
+                        STORM_LOG_THROW(newStateIndexMap[entry.getColumn()]!=flexibleTransitions.getRowCount(), storm::exceptions::UnexpectedException, "There is a transition to a state that should have been eliminated.");
                         missingProbability-=entry.getValue();
                         matrixBuilder.addNextValue(newStateIndexMap[oldStateIndex],newStateIndexMap[entry.getColumn()], storm::utility::simplify(entry.getValue()));
                     }
@@ -236,8 +236,8 @@ namespace storm {
                     simpleFormula = std::shared_ptr<storm::logic::OperatorFormula>(new storm::logic::ProbabilityOperatorFormula(eventuallyFormula, storm::logic::OperatorInformation(boost::none, this->getSpecifiedFormula()->getBound())));
                 }
                 //Check if the reachability function needs to be computed
-                if((storm::settings::regionSettings().getSmtMode()==storm::settings::modules::RegionSettings::SmtMode::FUNCTION) || 
-                        (storm::settings::regionSettings().getSampleMode()==storm::settings::modules::RegionSettings::SampleMode::EVALUATE)){
+                if((storm::settings::getModule<storm::settings::modules::RegionSettings>().getSmtMode()==storm::settings::modules::RegionSettings::SmtMode::FUNCTION) ||
+                        (storm::settings::getModule<storm::settings::modules::RegionSettings>().getSampleMode()==storm::settings::modules::RegionSettings::SampleMode::EVALUATE)){
                     this->computeReachabilityFunction(*(this->getSimpleModel())->template as<storm::models::sparse::Dtmc<ParametricType>>());
                 }
             }
@@ -428,8 +428,8 @@ namespace storm {
             template<typename ParametricSparseModelType, typename ConstantType>
             bool SparseDtmcRegionModelChecker<ParametricSparseModelType, ConstantType>::checkPoint(ParameterRegion<ParametricType>& region, std::map<VariableType, CoefficientType>const& point, bool favorViaFunction) {
                 bool valueInBoundOfFormula;
-                if((storm::settings::regionSettings().getSampleMode()==storm::settings::modules::RegionSettings::SampleMode::EVALUATE) ||
-                        (!storm::settings::regionSettings().doSample() && favorViaFunction)){
+                if((storm::settings::getModule<storm::settings::modules::RegionSettings>().getSampleMode()==storm::settings::modules::RegionSettings::SampleMode::EVALUATE) ||
+                        (!storm::settings::getModule<storm::settings::modules::RegionSettings>().doSample() && favorViaFunction)){
                     //evaluate the reachability function
                     valueInBoundOfFormula = this->valueIsInBoundOfFormula(this->evaluateReachabilityFunction(point));
                 }
@@ -485,7 +485,7 @@ namespace storm {
 
             template<typename ParametricSparseModelType, typename ConstantType>
             bool SparseDtmcRegionModelChecker<ParametricSparseModelType, ConstantType>::checkSmt(ParameterRegion<ParametricType>& region) {
-                STORM_LOG_THROW((storm::settings::regionSettings().getSmtMode()==storm::settings::modules::RegionSettings::SmtMode::FUNCTION), storm::exceptions::NotImplementedException, "Selected SMT mode has not been implemented.");
+                STORM_LOG_THROW((storm::settings::getModule<storm::settings::modules::RegionSettings>().getSmtMode()==storm::settings::modules::RegionSettings::SmtMode::FUNCTION), storm::exceptions::NotImplementedException, "Selected SMT mode has not been implemented.");
                 if (region.getCheckResult()==RegionCheckResult::UNKNOWN){
                     //Sampling needs to be done (on a single point)
                     checkPoint(region,region.getSomePoint(), true);

@@ -15,7 +15,8 @@ namespace storm {
                 typedef typename std::shared_ptr<StatePriorityQueue> PriorityQueuePointer;
 
                 PrioritizedStateEliminator(storm::storage::FlexibleSparseMatrix<ValueType>& transitionMatrix, storm::storage::FlexibleSparseMatrix<ValueType>& backwardTransitions, PriorityQueuePointer priorityQueue, std::vector<ValueType>& stateValues);
-                
+                PrioritizedStateEliminator(storm::storage::FlexibleSparseMatrix<ValueType>& transitionMatrix, storm::storage::FlexibleSparseMatrix<ValueType>& backwardTransitions, std::vector<storm::storage::sparse::state_type> const& statesToEliminate, std::vector<ValueType>& stateValues);
+
                 // Instantiaton of virtual methods.
                 void updateValue(storm::storage::sparse::state_type const& state, ValueType const& loopProbability) override;
                 void updatePredecessor(storm::storage::sparse::state_type const& predecessor, ValueType const& probability, storm::storage::sparse::state_type const& state) override;

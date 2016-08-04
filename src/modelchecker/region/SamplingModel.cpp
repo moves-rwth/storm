@@ -89,7 +89,7 @@ namespace storm {
                 filter.set(this->solverData.initialStateIndex, true);
                 this->solverData.solveGoal = std::make_unique<storm::solver::BoundedGoal<ConstantType>>(
                             storm::logic::isLowerBound(formula->getComparisonType()) ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize,
-                            formula->getBound(),
+                            formula->getBound().convertToOtherValueType<ConstantType>(),
                             filter
                         );
             }
@@ -127,7 +127,7 @@ namespace storm {
                 if(this->typeOfParametricModel == storm::models::ModelType::Dtmc){
                     storm::storage::SparseMatrix<ConstantType> submatrix = instantiatedModel.getTransitionMatrix().getSubmatrix(true, this->maybeStates, this->maybeStates, true);
                     submatrix.convertToEquationSystem();
-                    std::unique_ptr<storm::solver::LinearEquationSolver<ConstantType>> solver = storm::utility::solver::LinearEquationSolverFactory<ConstantType>().create(submatrix);
+                    std::unique_ptr<storm::solver::LinearEquationSolver<ConstantType>> solver = storm::solver::GeneralLinearEquationSolverFactory<ConstantType>().create(submatrix);
                     std::vector<ConstantType> b;
                     if(this->computeRewards){
                         b.resize(submatrix.getRowCount());
@@ -135,10 +135,10 @@ namespace storm {
                     } else {
                         b = instantiatedModel.getTransitionMatrix().getConstrainedRowSumVector(this->maybeStates, this->targetStates);
                     }
-                    solver->solveEquationSystem(this->solverData.result, b);
+                    solver->solveEquations(this->solverData.result, b);
                 } else if(this->typeOfParametricModel == storm::models::ModelType::Mdp){
                     storm::storage::SparseMatrix<ConstantType> submatrix = instantiatedModel.getTransitionMatrix().getSubmatrix(true, this->maybeStates, this->maybeStates, false);
-                    std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ConstantType>> solver = storm::utility::solver::MinMaxLinearEquationSolverFactory<ConstantType>().create(submatrix);
+                    std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ConstantType>> solver = storm::solver::GeneralMinMaxLinearEquationSolverFactory<ConstantType>().create(submatrix);
                     std::vector<ConstantType> b = instantiatedModel.getTransitionMatrix().getConstrainedRowGroupSumVector(this->maybeStates, this->targetStates);
                     storm::storage::BitVector targetChoices(b.size(), false);
                     for(std::size_t i = 0; i<b.size(); ++i){
