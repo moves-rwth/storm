@@ -127,7 +127,8 @@ namespace storm {
                         statesToEliminate.push_back(state);
                     }
                 }
-                storm::solver::stateelimination::PrioritizedStateEliminator<ParametricType>(flexibleTransitions, flexibleBackwardTransitions, statesToEliminate, oneStepProbabilities);
+                storm::solver::stateelimination::PrioritizedStateEliminator<ParametricType> eliminator(flexibleTransitions, flexibleBackwardTransitions, statesToEliminate, oneStepProbabilities);
+                eliminator.eliminateAll();
                 STORM_LOG_DEBUG("Eliminated " << subsystem.size() - subsystem.getNumberOfSetBits() << " of " << subsystem.size() << " states that had constant outgoing transitions.");
 
                 //Build the simple model

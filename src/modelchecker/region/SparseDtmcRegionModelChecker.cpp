@@ -14,6 +14,7 @@
 #include "src/settings/SettingsManager.h"
 #include "src/settings/modules/RegionSettings.h"
 #include "src/solver/OptimizationDirection.h"
+#include "src/solver/stateelimination/MultiValueStateEliminator.h"
 #include "src/storage/sparse/StateType.h"
 #include "src/storage/FlexibleSparseMatrix.h"
 #include "src/utility/constants.h"
@@ -114,6 +115,8 @@ namespace storm {
                 //The states that we consider to eliminate
                 storm::storage::BitVector considerToEliminate(submatrix.getRowCount(), true);
                 considerToEliminate.set(initialState, false);
+
+                std::vector<storm::storage::sparse::state_type> statesToEliminate;
                 for (auto const& state : considerToEliminate) {
                     bool eliminateThisState=true;
                     for(auto const& entry : flexibleTransitions.getRow(state)){
@@ -145,9 +148,17 @@ namespace storm {
                         }
                     }
                     if(eliminateThisState){
-                        storm::storage::FlexibleSparseMatrix<ParametricType>::eliminateState(flexibleTransitions, oneStepProbabilities, state, flexibleBackwardTransitions, stateRewards);
                         subsystem.set(state,false);
+                        statesToEliminate.push_back(state);
                     }
+
+                }
+                if(stateRewards) {
+                    storm::solver::stateelimination::MultiValueStateEliminator<ParametricType> eliminator(flexibleTransitions, flexibleBackwardTransitions, statesToEliminate, oneStepProbabilities, stateRewards.get());
+                    eliminator.eliminateAll();
+                } else {
+                    storm::solver::stateelimination::PrioritizedStateEliminator<ParametricType> eliminator(flexibleTransitions, flexibleBackwardTransitions, statesToEliminate, oneStepProbabilities);
+                    eliminator.eliminateAll();
                 }
                 STORM_LOG_DEBUG("Eliminated " << subsystem.size() - subsystem.getNumberOfSetBits() << " of " << subsystem.size() << " states that had constant outgoing transitions.");
 

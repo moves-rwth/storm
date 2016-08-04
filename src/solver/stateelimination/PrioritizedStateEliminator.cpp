@@ -34,6 +34,25 @@ namespace storm {
             void PrioritizedStateEliminator<ValueType>::updatePriority(storm::storage::sparse::state_type const& state) {
                 priorityQueue->update(state);
             }
+
+            template<typename ValueType>
+            void PrioritizedStateEliminator<ValueType>::eliminateAll(bool removeForwardTransitions) {
+                while (priorityQueue->hasNext()) {
+                    storm::storage::sparse::state_type state = priorityQueue->pop();
+                    this->eliminateState(priorityQueue->pop(), removeForwardTransitions);
+                    if (removeForwardTransitions) {
+                        clearStateValues(state);
+                    }
+#ifdef STORM_DEV
+                    STORM_LOG_ASSERT(checkConsistent(transitionMatrix, backwardTransitions), "The forward and backward transition matrices became inconsistent.");
+#endif
+                }
+            }
+
+            template<typename ValueType>
+            void PrioritizedStateEliminator<ValueType>::clearStateValues(storm::storage::sparse::state_type const &state) {
+                stateValues[state] = storm::utility::zero<ValueType>();
+            }
             
             template class PrioritizedStateEliminator<double>;
 
