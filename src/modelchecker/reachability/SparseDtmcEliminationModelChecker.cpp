@@ -18,7 +18,7 @@
 
 #include "src/logic/FragmentSpecification.h"
 
-#include "src/solver/stateelimination/LongRunAverageEliminator.h"
+#include "src/solver/stateelimination/MultiValueStateEliminator.h"
 #include "src/solver/stateelimination/ConditionalStateEliminator.h"
 #include "src/solver/stateelimination/PrioritizedStateEliminator.h"
 #include "src/solver/stateelimination/StaticStatePriorityQueue.h"
@@ -226,7 +226,7 @@ namespace storm {
             
             // First, we eliminate all states in BSCCs (except for the representative states).
             std::shared_ptr<StatePriorityQueue> priorityQueue = createStatePriorityQueue(distanceBasedPriorities, flexibleMatrix, flexibleBackwardTransitions, stateValues, regularStatesInBsccs);
-            storm::solver::stateelimination::LongRunAverageEliminator<ValueType> stateEliminator(flexibleMatrix, flexibleBackwardTransitions, priorityQueue, stateValues, averageTimeInStates);
+            storm::solver::stateelimination::MultiValueStateEliminator<ValueType> stateEliminator(flexibleMatrix, flexibleBackwardTransitions, priorityQueue, stateValues, averageTimeInStates);
             
             while (priorityQueue->hasNext()) {
                 storm::storage::sparse::state_type state = priorityQueue->pop();
