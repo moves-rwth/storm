@@ -14,7 +14,7 @@
 namespace storm {
     namespace modelchecker {
         template<typename ValueType>
-        class ExplicitQuantitativeCheckResult : public QuantitativeCheckResult {
+        class ExplicitQuantitativeCheckResult : public QuantitativeCheckResult<ValueType> {
         public:
             typedef std::vector<ValueType> vector_type;
             typedef std::map<storm::storage::sparse::state_type, ValueType> map_type;
@@ -37,7 +37,7 @@ namespace storm {
             ValueType& operator[](storm::storage::sparse::state_type state);
             ValueType const& operator[](storm::storage::sparse::state_type state) const;
 
-            virtual std::unique_ptr<CheckResult> compareAgainstBound(storm::logic::ComparisonType comparisonType, double bound) const override;
+            virtual std::unique_ptr<CheckResult> compareAgainstBound(storm::logic::ComparisonType comparisonType, ValueType const& bound) const override;
             
             virtual bool isExplicit() const override;
             virtual bool isResultForAllStates() const override;

@@ -9,7 +9,7 @@
 namespace storm {
     namespace modelchecker {
         template<storm::dd::DdType Type, typename ValueType = double>
-        class SymbolicQuantitativeCheckResult : public QuantitativeCheckResult {
+        class SymbolicQuantitativeCheckResult : public QuantitativeCheckResult<ValueType> {
         public:
             SymbolicQuantitativeCheckResult() = default;
             SymbolicQuantitativeCheckResult(storm::dd::Bdd<Type> const& reachableStates, storm::dd::Add<Type, ValueType> const& values);
@@ -21,8 +21,9 @@ namespace storm {
             SymbolicQuantitativeCheckResult& operator=(SymbolicQuantitativeCheckResult&& other) = default;
 #endif
             
-            virtual std::unique_ptr<CheckResult> compareAgainstBound(storm::logic::ComparisonType comparisonType, double bound) const override;
-            
+            virtual std::unique_ptr<CheckResult> compareAgainstBound(storm::logic::ComparisonType comparisonType, ValueType const& bound) const override;
+
+
             virtual bool isSymbolic() const override;
             virtual bool isResultForAllStates() const override;
             

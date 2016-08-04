@@ -11,7 +11,8 @@
 #include "src/utility/constants.h"
 
 namespace storm {
-    namespace logic {        
+    namespace logic {
+
         struct OperatorInformation {
             OperatorInformation(boost::optional<storm::solver::OptimizationDirection> const& optimizationDirection = boost::none, boost::optional<Bound<RationalNumber>> const& bound = boost::none);
 
