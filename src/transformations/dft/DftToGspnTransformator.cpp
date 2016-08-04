@@ -1,5 +1,6 @@
 #include "src/transformations/dft/DftToGspnTransformator.h"
 #include "src/exceptions/NotImplementedException.h"
+#include <memory>
 
 namespace storm {
     namespace transformations {
@@ -76,22 +77,22 @@ namespace storm {
 					// Check which type the element is and call the corresponding drawing-function.
 					switch (dftElement->type()) {
 						case storm::storage::DFTElementType::AND:
-							drawAND(dftElement->name()); 
+							drawAND(std::static_pointer_cast<storm::storage::DFTAnd<ValueType> const>(dftElement));
 							break;
 						case storm::storage::DFTElementType::OR:
-							drawOR(dftElement->name(), 2); // TODO: set parameters correctly.
+							drawOR(std::static_pointer_cast<storm::storage::DFTOr<ValueType> const>(dftElement));
 							break;
 						case storm::storage::DFTElementType::VOT:
-							STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "The transformation of a VOT is not yet implemented.");
+							drawVOT(std::static_pointer_cast<storm::storage::DFTVot<ValueType> const>(dftElement));
 							break;
 						case storm::storage::DFTElementType::PAND:
-							STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "The transformation of a PAND is not yet implemented.");
+							drawPAND(std::static_pointer_cast<storm::storage::DFTPand<ValueType> const>(dftElement));
 							break;
 						case storm::storage::DFTElementType::SPARE:
-							STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "The transformation of a SPARE is not yet implemented.");
+							drawSPARE(std::static_pointer_cast<storm::storage::DFTSpare<ValueType> const>(dftElement));
 							break;
 						case storm::storage::DFTElementType::POR:
-							STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "The transformation of a POR is not yet implemented.");
+							drawPOR(std::static_pointer_cast<storm::storage::DFTPor<ValueType> const>(dftElement));
 							break;
 						case storm::storage::DFTElementType::SEQ:
 							STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "The transformation of a SEQ is not yet implemented.");
@@ -100,7 +101,7 @@ namespace storm {
 							STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "The transformation of a MUTEX is not yet implemented.");
 							break;
 						case storm::storage::DFTElementType::BE:
-							drawBE(dftElement->name(), true, 0.5, 0.25); // TODO: set parameters correctly.
+							drawBE(std::static_pointer_cast<storm::storage::DFTBE<ValueType> const>(dftElement));
 							break;
 						case storm::storage::DFTElementType::CONSTF:
 							STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "The transformation of a CONSTF is not yet implemented.");
@@ -123,6 +124,92 @@ namespace storm {
             }
             
             template <typename ValueType>
+            void DftToGspnTransformator<ValueType>::drawBE(std::shared_ptr<storm::storage::DFTBE<ValueType> const> dftBE) {
+				storm::gspn::Place placeBEActivated;
+				placeBEActivated.setName(dftBE->name() + "_activated");
+				placeBEActivated.setNumberOfInitialTokens(false ? 1 : 0); // TODO: How can I check if BE is activated?
+				mGspn.addPlace(placeBEActivated);
+				
+				storm::gspn::Place placeBEFailed;
+				placeBEFailed.setName(dftBE->name() + "_failed");
+				placeBEFailed.setNumberOfInitialTokens(0);
+				mGspn.addPlace(placeBEFailed);
+				
+				storm::gspn::TimedTransition<double> timedTransitionActiveFailure;
+				timedTransitionActiveFailure.setName(dftBE->name() + "_activeFailing");
+				timedTransitionActiveFailure.setPriority(1);
+				timedTransitionActiveFailure.setRate(dftBE->activeFailureRate());
+				timedTransitionActiveFailure.setInputArcMultiplicity(placeBEActivated, 1);
+				timedTransitionActiveFailure.setInhibitionArcMultiplicity(placeBEFailed, 1);
+				timedTransitionActiveFailure.setOutputArcMultiplicity(placeBEActivated, 1);
+				timedTransitionActiveFailure.setOutputArcMultiplicity(placeBEFailed, 1);
+				mGspn.addTimedTransition(timedTransitionActiveFailure);
+				
+				storm::gspn::TimedTransition<double> timedTransitionPassiveFailure;
+				timedTransitionPassiveFailure.setName(dftBE->name() + "_passiveFailing");
+				timedTransitionPassiveFailure.setPriority(1);
+				timedTransitionPassiveFailure.setRate(dftBE->passiveFailureRate());
+				timedTransitionPassiveFailure.setInhibitionArcMultiplicity(placeBEActivated, 1);
+				timedTransitionPassiveFailure.setInhibitionArcMultiplicity(placeBEFailed, 1);
+				timedTransitionPassiveFailure.setOutputArcMultiplicity(placeBEFailed, 1);
+				mGspn.addTimedTransition(timedTransitionPassiveFailure);
+			}
+			
+			template <typename ValueType>
+            void DftToGspnTransformator<ValueType>::drawAND(std::shared_ptr<storm::storage::DFTAnd<ValueType> const> dftAnd) {
+				storm::gspn::Place placeANDFailed;
+				placeANDFailed.setName(dftAnd->name() + "_failed");
+				placeANDFailed.setNumberOfInitialTokens(0);
+				mGspn.addPlace(placeANDFailed);
+				
+				storm::gspn::ImmediateTransition<storm::gspn::GSPN::WeightType> immediateTransitionANDFailing;
+				immediateTransitionANDFailing.setName(dftAnd->name() + "_failing");
+				immediateTransitionANDFailing.setPriority(1);
+				immediateTransitionANDFailing.setWeight(0.0);
+				immediateTransitionANDFailing.setInhibitionArcMultiplicity(placeANDFailed, 1);
+				immediateTransitionANDFailing.setOutputArcMultiplicity(placeANDFailed, 1);
+				mGspn.addImmediateTransition(immediateTransitionANDFailing);
+			}
+
+			template <typename ValueType>
+            void DftToGspnTransformator<ValueType>::drawOR(std::shared_ptr<storm::storage::DFTOr<ValueType> const> dftOr) {
+				storm::gspn::Place placeORFailed;
+				placeORFailed.setName(dftOr->name() + "_failed");
+				placeORFailed.setNumberOfInitialTokens(0);
+				mGspn.addPlace(placeORFailed);
+				
+				for (std::size_t i = 0; i < dftOr->nrChildren(); i++) {
+					storm::gspn::ImmediateTransition<storm::gspn::GSPN::WeightType> immediateTransitionORFailing;
+					immediateTransitionORFailing.setName(dftOr->name() + std::to_string((int)i) + "_failing");
+					immediateTransitionORFailing.setPriority(1);
+					immediateTransitionORFailing.setWeight(0.0);
+					immediateTransitionORFailing.setInhibitionArcMultiplicity(placeORFailed, 1);
+					immediateTransitionORFailing.setOutputArcMultiplicity(placeORFailed, 1);
+					mGspn.addImmediateTransition(immediateTransitionORFailing);
+				}
+			}
+			
+			template <typename ValueType>
+            void DftToGspnTransformator<ValueType>::drawVOT(std::shared_ptr<storm::storage::DFTVot<ValueType> const> dftVot) {
+				STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "The transformation of a VOT is not yet implemented.");
+			}
+
+			template <typename ValueType>
+            void DftToGspnTransformator<ValueType>::drawPAND(std::shared_ptr<storm::storage::DFTPand<ValueType> const> dftPand) {
+				STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "The transformation of a PAND is not yet implemented.");
+			}
+			
+			template <typename ValueType>
+            void DftToGspnTransformator<ValueType>::drawSPARE(std::shared_ptr<storm::storage::DFTSpare<ValueType> const> dftSpare) {
+				STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "The transformation of a SPARE is not yet implemented.");
+			}
+			
+			template <typename ValueType>
+            void DftToGspnTransformator<ValueType>::drawPOR(std::shared_ptr<storm::storage::DFTPor<ValueType> const> dftPor) {
+				STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "The transformation of a POR is not yet implemented.");
+			}
+			
+			template <typename ValueType>
             void DftToGspnTransformator<ValueType>::writeGspn(bool toFile) {
                 if (toFile) {
                     // Writing to file
@@ -135,73 +222,7 @@ namespace storm {
                     mGspn.writeDotToStream(std::cout);
                 }
             }
-            
-            template <typename ValueType>
-            void DftToGspnTransformator<ValueType>::drawBE(std::string name, bool activated, double activeFailureRate, double passiveFailureRate) {
-				storm::gspn::Place placeBEActivated;
-				placeBEActivated.setName(name + "_activated");
-				placeBEActivated.setNumberOfInitialTokens(activated ? 1 : 0);
-				mGspn.addPlace(placeBEActivated);
-				
-				storm::gspn::Place placeBEFailed;
-				placeBEFailed.setName(name + "_failed");
-				placeBEFailed.setNumberOfInitialTokens(0);
-				mGspn.addPlace(placeBEFailed);
-				
-				storm::gspn::TimedTransition<double> timedTransitionActiveFailure;
-				timedTransitionActiveFailure.setName(name + "_activeFailure");
-				timedTransitionActiveFailure.setPriority(1);
-				timedTransitionActiveFailure.setRate(activeFailureRate);
-				timedTransitionActiveFailure.setInputArcMultiplicity(placeBEActivated, 1);
-				timedTransitionActiveFailure.setInhibitionArcMultiplicity(placeBEFailed, 1);
-				timedTransitionActiveFailure.setOutputArcMultiplicity(placeBEActivated, 1);
-				timedTransitionActiveFailure.setOutputArcMultiplicity(placeBEFailed, 1);
-				mGspn.addTimedTransition(timedTransitionActiveFailure);
-				
-				storm::gspn::TimedTransition<double> timedTransitionPassiveFailure;
-				timedTransitionPassiveFailure.setName(name + "_passiveFailure");
-				timedTransitionPassiveFailure.setPriority(1);
-				timedTransitionPassiveFailure.setRate(passiveFailureRate);
-				timedTransitionPassiveFailure.setInhibitionArcMultiplicity(placeBEActivated, 1);
-				timedTransitionPassiveFailure.setInhibitionArcMultiplicity(placeBEFailed, 1);
-				timedTransitionPassiveFailure.setOutputArcMultiplicity(placeBEFailed, 1);
-				mGspn.addTimedTransition(timedTransitionPassiveFailure);
-			}
 			
-			template <typename ValueType>
-            void DftToGspnTransformator<ValueType>::drawAND(std::string name) {
-				storm::gspn::Place placeANDFailed;
-				placeANDFailed.setName(name + "_failed");
-				placeANDFailed.setNumberOfInitialTokens(0);
-				mGspn.addPlace(placeANDFailed);
-				
-				storm::gspn::ImmediateTransition<storm::gspn::GSPN::WeightType> immediateTransitionANDFailing;
-				immediateTransitionANDFailing.setName(name + "_failing");
-				immediateTransitionANDFailing.setPriority(1);
-				immediateTransitionANDFailing.setWeight(0.0);
-				immediateTransitionANDFailing.setInhibitionArcMultiplicity(placeANDFailed, 1);
-				immediateTransitionANDFailing.setOutputArcMultiplicity(placeANDFailed, 1);
-				mGspn.addImmediateTransition(immediateTransitionANDFailing);
-			}
-
-			template <typename ValueType>
-            void DftToGspnTransformator<ValueType>::drawOR(std::string name, std::size_t numberOfChildren) {
-				storm::gspn::Place placeORFailed;
-				placeORFailed.setName(name + "_failed");
-				placeORFailed.setNumberOfInitialTokens(0);
-				mGspn.addPlace(placeORFailed);
-				
-				for (std::size_t i = 0; i < numberOfChildren; i++) {
-					storm::gspn::ImmediateTransition<storm::gspn::GSPN::WeightType> immediateTransitionORFailing;
-					immediateTransitionORFailing.setName(name + std::to_string((int)i) + "_failing");
-					immediateTransitionORFailing.setPriority(1);
-					immediateTransitionORFailing.setWeight(0.0);
-					immediateTransitionORFailing.setInhibitionArcMultiplicity(placeORFailed, 1);
-					immediateTransitionORFailing.setOutputArcMultiplicity(placeORFailed, 1);
-					mGspn.addImmediateTransition(immediateTransitionORFailing);
-				}
-			}
-
             // Explicitly instantiate the class.
             template class DftToGspnTransformator<double>;
 

@@ -43,30 +43,51 @@ namespace storm {
 				/*
 				 * Draw a Petri net Basic Event.
 				 * 
-				 * @param name The name of the Basic Event.
-				 * 
-				 * @param activated If true, the Basic Event is activated. If false, the Basic Event
-				 * 				is inactive, i.e. in a nested SPARE.
-				 * 
-				 * @param activeFailureRate The failure rate of the Basic Event, if it is activated.
-				 * 
-				 * @pparam passiveFailureRate The failure rate of the Basic Event, if it is not activated.
+				 * @param dftBE The Basic Event.
 				 */
-				void drawBE(std::string name, bool activated, double activeFailureRate, double passiveFailureRate);
+				void drawBE(std::shared_ptr<storm::storage::DFTBE<ValueType> const> dftBE);
 				
 				/*
 				 * Draw a Petri net AND.
 				 * 
-				 * @param name The name of the AND.
+				 * @param dftAnd The AND gate.
 				 */
-				void drawAND(std::string name);
+				void drawAND(std::shared_ptr<storm::storage::DFTAnd<ValueType> const> dftAnd);
 				
 				/*
 				 * Draw a Petri net OR.
 				 * 
-				 * @param name The name of the OR.
+				 * @param dftOr The OR gate.
 				 */
-				void drawOR(std::string name, std::size_t numberOfChildren);
+				void drawOR(std::shared_ptr<storm::storage::DFTOr<ValueType> const> dftOr);
+				
+				/*
+				 * Draw a Petri net VOT.
+				 * 
+				 * @param dftVot The VOT gate.
+				 */
+				void drawVOT(std::shared_ptr<storm::storage::DFTVot<ValueType> const> dftVot);
+				
+				/*
+				 * Draw a Petri net PAND.
+				 * 
+				 * @param dftPand The PAND gate.
+				 */
+				void drawPAND(std::shared_ptr<storm::storage::DFTPand<ValueType> const> dftPand);
+				
+				/*
+				 * Draw a Petri net SPARE.
+				 * 
+				 * @param dftSpare The SPARE gate.
+				 */
+				void drawSPARE(std::shared_ptr<storm::storage::DFTSpare<ValueType> const> dftSpare);
+				
+				/*
+				 * Draw a Petri net POR.
+				 * 
+				 * @param dftPor The POR gate.
+				 */
+				void drawPOR(std::shared_ptr<storm::storage::DFTPor<ValueType> const> dftPor);
             };
         }
     }

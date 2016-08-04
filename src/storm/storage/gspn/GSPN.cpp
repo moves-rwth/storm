@@ -131,61 +131,82 @@ namespace storm {
 
         void GSPN::writeDotToStream(std::ostream& outStream) const {
             outStream << "digraph " << this->getName() << " {" << std::endl;
-
+            
             // print places with initial marking (not printed is the capacity)
             outStream << "\t" << "node [shape=ellipse]" << std::endl;
             for (auto& place : this->getPlaces()) {
                 outStream << "\t" << place.getName() << " [label=\"" << place.getName() << "(" << place.getNumberOfInitialTokens();
-                outStream << ")";
-                if(place.hasRestrictedCapacity()) {
-                    outStream << "c " << place.getCapacity();
-                }
-                
-                outStream << "\"];" << std::endl;
+                outStream << ")\"];" << std::endl;
             }
-
+            
             // print transitions with weight/rate
             outStream << "\t" << "node [shape=box]" << std::endl;
+            
             for (auto& trans : this->getImmediateTransitions()) {
-                outStream << "\t" << trans.getName() << " [fontcolor=white, style=filled, fillcolor=black, label=\"" << trans.getName() << "\"];" << std::endl;
+                outStream << "\t" << trans->getName() << " [fontcolor=white, style=filled, fillcolor=black, label=\"" << trans->getName() << "\"];" << std::endl;
             }
-
+            
             for (auto& trans : this->getTimedTransitions()) {
-                outStream << "\t" << trans.getName() << " [label=\"" << trans.getName();
-                outStream << " (" << trans.getRate() << ")\"];" << std::endl;
+                outStream << "\t" << trans->getName() << " [label=\"" << trans->getName();
+                outStream << "(" << trans->getRate() << ")\"];" << std::endl;
             }
-
+            
             // print arcs
             for (auto& trans : this->getImmediateTransitions()) {
-
-                for (auto const& inEntry : trans.getInputPlaces()) {
-                    outStream << "\t" << places.at(inEntry.first).getName() << " -> " << trans.getName() << "[label=\"" << inEntry.second << "\"];" << std::endl;
+                auto it = trans->getInputPlacesCBegin();
+                while (it != trans->getInputPlacesCEnd()) {
+                    outStream << "\t" << (**it).getName() << " -> " << trans->getName() << "[label=\"" <<
+                    ((trans->getInputArcMultiplicity(**it) == 1) ? "" : std::to_string(trans->getInputArcMultiplicity(**it)))
+                    << "\"];" << std::endl;
+                    
+                    ++it;
                 }
-
-                for (auto const& inhEntry : trans.getInhibitionPlaces()) {
-                    outStream << "\t" << places.at(inhEntry.first).getName() << " -> " << trans.getName() << "[arrowhead=\"dot\", label=\"" << inhEntry.second << "\"];" << std::endl;
+                
+                it = trans->getInhibitionPlacesCBegin();
+                while (it != trans->getInhibitionPlacesCEnd()) {
+                    outStream << "\t" << (**it).getName() << " -> " << trans->getName() << "[arrowhead=\"dot\", label=\"" <<
+                    ((trans->getInhibitionArcMultiplicity(**it) == 1) ? "" : std::to_string(trans->getInhibitionArcMultiplicity(**it)))
+                    << "\"];" << std::endl;
+                    ++it;
                 }
-
-                for (auto const& outEntry : trans.getOutputPlaces()) {
-                    outStream << "\t" << trans.getName() << " -> " << places.at(outEntry.first).getName() << "[label=\"" << outEntry.second << "\"];" << std::endl;
+                
+                it = trans->getOutputPlacesCBegin();
+                while (it != trans->getOutputPlacesCEnd()) {
+                    outStream << "\t" << trans->getName() << " -> " << (**it).getName() << "[label=\"" <<
+                    ((trans->getOutputArcMultiplicity(**it) == 1) ? "" : std::to_string(trans->getOutputArcMultiplicity(**it)))
+                    << "\"];" << std::endl;
+                    ++it;
                 }
             }
-
+            
             for (auto& trans : this->getTimedTransitions()) {
-                for (auto const& inEntry : trans.getInputPlaces()) {
-                    outStream << "\t" << places.at(inEntry.first).getName() << " -> " << trans.getName() << "[label=\"" << inEntry.second << "\"];" << std::endl;
+                auto it = trans->getInputPlacesCBegin();
+                while (it != trans->getInputPlacesCEnd()) {
+                    outStream << "\t" << (**it).getName() << " -> " << trans->getName() << "[label=\"" <<
+                    ((trans->getInputArcMultiplicity(**it) == 1) ? "" : std::to_string(trans->getInputArcMultiplicity(**it)))
+                    << "\"];" << std::endl;
+                    ++it;
                 }
                 
-                for (auto const& inhEntry : trans.getInhibitionPlaces()) {
-                    outStream << "\t" << places.at(inhEntry.first).getName() << " -> " << trans.getName() << "[arrowhead=\"dot\", label=\"" << inhEntry.second << "\"];" << std::endl;
+                it = trans->getInhibitionPlacesCBegin();
+                while (it != trans->getInhibitionPlacesCEnd()) {
+                    outStream << "\t" << (**it).getName() << " -> " << trans->getName() << "[arrowhead=\"dot\", label=\"" <<
+                    ((trans->getInhibitionArcMultiplicity(**it) == 1) ? "" : std::to_string(trans->getInhibitionArcMultiplicity(**it)))
+                    << "\"];" << std::endl;
+                    ++it;
                 }
                 
-                for (auto const& outEntry : trans.getOutputPlaces()) {
-                    outStream << "\t" << trans.getName() << " -> " << places.at(outEntry.first).getName() << "[label=\"" << outEntry.second << "\"];" << std::endl;
+                it = trans->getOutputPlacesCBegin();
+                while (it != trans->getOutputPlacesCEnd()) {
+                    outStream << "\t" << trans->getName() << " -> " << (**it).getName() << "[label=\"" <<
+                    ((trans->getOutputArcMultiplicity(**it) == 1) ? "" : std::to_string(trans->getOutputArcMultiplicity(**it)))
+                    << "\"];" << std::endl;
+                    ++it;
                 }
             }
-
+            
             outStream << "}" << std::endl;
+
         }
         
         void GSPN::setName(std::string const& name) {
