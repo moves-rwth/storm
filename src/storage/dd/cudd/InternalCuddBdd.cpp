@@ -416,8 +416,8 @@ namespace storm {
             }
         }
         
-        std::vector<storm::expressions::Expression> InternalBdd<DdType::CUDD>::toExpression(storm::expressions::ExpressionManager& manager, std::unordered_map<uint_fast64_t, storm::expressions::Expression> const& indexToExpressionMap) const {
-            std::vector<storm::expressions::Expression> result;
+        std::pair<std::vector<storm::expressions::Expression>, std::unordered_map<uint_fast64_t, storm::expressions::Variable>> InternalBdd<DdType::CUDD>::toExpression(storm::expressions::ExpressionManager& manager) const {
+            std::pair<std::vector<storm::expressions::Expression>, std::unordered_map<uint_fast64_t, storm::expressions::Variable>> result;
             
             // Create (and maintain) a mapping from the DD nodes to a counter that says the how-many-th node (within the
             // nodes of equal index) the node was.
@@ -428,19 +428,19 @@ namespace storm {
             bool negated = Cudd_Regular(this->getCuddDdNode()) != this->getCuddDdNode();
             
             // Translate from the top node downwards.
-            storm::expressions::Variable topVariable = this->toExpressionRec(Cudd_Regular(this->getCuddDdNode()), ddManager->getCuddManager(), manager, result, countIndexToVariablePair, nodeToCounterMap, nextCounterForIndex, indexToExpressionMap);
+            storm::expressions::Variable topVariable = this->toExpressionRec(Cudd_Regular(this->getCuddDdNode()), ddManager->getCuddManager(), manager, result.first, result.second, countIndexToVariablePair, nodeToCounterMap, nextCounterForIndex);
             
             // Create the final expression.
             if (negated) {
-                result.push_back(!topVariable);
+                result.first.push_back(!topVariable);
             } else {
-                result.push_back(topVariable);
+                result.first.push_back(topVariable);
             }
             
             return result;
         }
         
-        storm::expressions::Variable InternalBdd<DdType::CUDD>::toExpressionRec(DdNode const* dd, cudd::Cudd const& ddManager, storm::expressions::ExpressionManager& manager, std::vector<storm::expressions::Expression>& expressions, std::unordered_map<std::pair<uint_fast64_t, uint_fast64_t>, storm::expressions::Variable>& countIndexToVariablePair, std::unordered_map<DdNode const*, uint_fast64_t>& nodeToCounterMap, std::vector<uint_fast64_t>& nextCounterForIndex, std::unordered_map<uint_fast64_t, storm::expressions::Expression> const& indexToExpressionMap) {
+        storm::expressions::Variable InternalBdd<DdType::CUDD>::toExpressionRec(DdNode const* dd, cudd::Cudd const& ddManager, storm::expressions::ExpressionManager& manager, std::vector<storm::expressions::Expression>& expressions, std::unordered_map<uint_fast64_t, storm::expressions::Variable>& indexToVariableMap, std::unordered_map<std::pair<uint_fast64_t, uint_fast64_t>, storm::expressions::Variable>& countIndexToVariablePair, std::unordered_map<DdNode const*, uint_fast64_t>& nodeToCounterMap, std::vector<uint_fast64_t>& nextCounterForIndex) {
             STORM_LOG_ASSERT(dd == Cudd_Regular(dd), "Expected non-negated BDD node.");
             
             // First, try to look up the current node if it's not a terminal node.
@@ -453,41 +453,47 @@ namespace storm {
             }
             
             // If the node was not yet encountered, we create a variable and associate it with the appropriate expression.
-            storm::expressions::Variable newVariable = manager.declareFreshBooleanVariable();
+            storm::expressions::Variable newNodeVariable = manager.declareFreshBooleanVariable();
             
             // Since we want to reuse the variable whenever possible, we insert the appropriate entries in the hash table.
             if (!Cudd_IsConstant_const(dd)) {
                 // If we are dealing with a non-terminal node, we count it as a new node with this index.
                 nodeToCounterMap[dd] = nextCounterForIndex[Cudd_NodeReadIndex(dd)];
-                countIndexToVariablePair[std::make_pair(nextCounterForIndex[Cudd_NodeReadIndex(dd)], Cudd_NodeReadIndex(dd))] = newVariable;
+                countIndexToVariablePair[std::make_pair(nextCounterForIndex[Cudd_NodeReadIndex(dd)], Cudd_NodeReadIndex(dd))] = newNodeVariable;
                 ++nextCounterForIndex[Cudd_NodeReadIndex(dd)];
             } else {
                 // If it's a terminal node, it is the one leaf and there's no need to keep track of a counter for this level.
                 nodeToCounterMap[dd] = 0;
-                countIndexToVariablePair[std::make_pair(0, Cudd_NodeReadIndex(dd))] = newVariable;
+                countIndexToVariablePair[std::make_pair(0, Cudd_NodeReadIndex(dd))] = newNodeVariable;
             }
             
             // In the terminal case, we can only have a one since we are considering non-negated nodes only.
             if (dd == Cudd_ReadOne(ddManager.getManager())) {
                 // Push the expression that enforces that the new variable is true.
-                expressions.push_back(storm::expressions::iff(manager.boolean(true), newVariable));
+                expressions.push_back(storm::expressions::iff(manager.boolean(true), newNodeVariable));
             } else {
                 // In the non-terminal case, we recursively translate the children nodes and then construct and appropriate ite-expression.
                 DdNode const* t = Cudd_T_const(dd);
                 DdNode const* e = Cudd_E_const(dd);
                 DdNode const* T = Cudd_Regular(t);
                 DdNode const* E = Cudd_Regular(e);
-                storm::expressions::Variable thenVariable = toExpressionRec(T, ddManager, manager, expressions, countIndexToVariablePair, nodeToCounterMap, nextCounterForIndex, indexToExpressionMap);
-                storm::expressions::Variable elseVariable = toExpressionRec(E, ddManager, manager, expressions, countIndexToVariablePair, nodeToCounterMap, nextCounterForIndex, indexToExpressionMap);
+                storm::expressions::Variable thenVariable = toExpressionRec(T, ddManager, manager, expressions, indexToVariableMap, countIndexToVariablePair, nodeToCounterMap, nextCounterForIndex);
+                storm::expressions::Variable elseVariable = toExpressionRec(E, ddManager, manager, expressions, indexToVariableMap, countIndexToVariablePair, nodeToCounterMap, nextCounterForIndex);
                 
                 // Create the appropriate expression.
-                auto expressionIt = indexToExpressionMap.find(Cudd_NodeReadIndex(dd));
-                STORM_LOG_ASSERT(expressionIt != indexToExpressionMap.end(), "Unable to find expression for variable index.");
-                expressions.push_back(storm::expressions::iff(newVariable, storm::expressions::ite(expressionIt->second, t == T ? thenVariable : !thenVariable, e == E ? elseVariable : !elseVariable)));
+                auto indexVariable = indexToVariableMap.find(Cudd_NodeReadIndex(dd));
+                storm::expressions::Variable levelVariable;
+                if (indexVariable == indexToVariableMap.end()) {
+                    levelVariable = manager.declareFreshBooleanVariable();
+                    indexToVariableMap[Cudd_NodeReadIndex(dd)] = levelVariable;
+                } else {
+                    levelVariable = indexVariable->second;
+                }
+                expressions.push_back(storm::expressions::iff(newNodeVariable, storm::expressions::ite(levelVariable, t == T ? thenVariable : !thenVariable, e == E ? elseVariable : !elseVariable)));
             }
             
             // Return the variable for this node.
-            return newVariable;
+            return newNodeVariable;
         }
         
         template InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::fromVector(InternalDdManager<DdType::CUDD> const* ddManager, std::vector<double> const& values, Odd const& odd, std::vector<uint_fast64_t> const& sortedDdVariableIndices, std::function<bool (double const&)> const& filter);

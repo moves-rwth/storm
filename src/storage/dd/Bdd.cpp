@@ -269,8 +269,8 @@ namespace storm {
         }
         
         template<DdType LibraryType>
-        std::vector<storm::expressions::Expression> Bdd<LibraryType>::toExpression(storm::expressions::ExpressionManager& manager, std::unordered_map<uint_fast64_t, storm::expressions::Expression> const& indexToExpressionMap) const {
-            return internalBdd.toExpression(manager, indexToExpressionMap);
+        std::pair<std::vector<storm::expressions::Expression>, std::unordered_map<uint_fast64_t, storm::expressions::Variable>> Bdd<LibraryType>::toExpression(storm::expressions::ExpressionManager& manager) const {
+            return internalBdd.toExpression(manager);
         }
         
         template<DdType LibraryType>

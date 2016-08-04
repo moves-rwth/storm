@@ -389,8 +389,8 @@ namespace storm {
             }
         }
         
-        std::vector<storm::expressions::Expression> InternalBdd<DdType::Sylvan>::toExpression(storm::expressions::ExpressionManager& manager, std::unordered_map<uint_fast64_t, storm::expressions::Expression> const& indexToExpressionMap) const {
-            std::vector<storm::expressions::Expression> result;
+        std::pair<std::vector<storm::expressions::Expression>, std::unordered_map<uint_fast64_t, storm::expressions::Variable>> InternalBdd<DdType::Sylvan>::toExpression(storm::expressions::ExpressionManager& manager) const {
+            std::pair<std::vector<storm::expressions::Expression>, std::unordered_map<uint_fast64_t, storm::expressions::Variable>> result;
             
             // Create (and maintain) a mapping from the DD nodes to a counter that says the how-many-th node (within the
             // nodes of equal index) the node was.
@@ -401,19 +401,19 @@ namespace storm {
             bool negated = bdd_isnegated(this->getSylvanBdd().GetBDD());
             
             // Translate from the top node downwards.
-            storm::expressions::Variable topVariable = this->toExpressionRec(bdd_regular(this->getSylvanBdd().GetBDD()), manager, result, countIndexToVariablePair, nodeToCounterMap, nextCounterForIndex, indexToExpressionMap);
+            storm::expressions::Variable topVariable = this->toExpressionRec(bdd_regular(this->getSylvanBdd().GetBDD()), manager, result.first, result.second, countIndexToVariablePair, nodeToCounterMap, nextCounterForIndex);
             
             // Create the final expression.
             if (negated) {
-                result.push_back(!topVariable);
+                result.first.push_back(!topVariable);
             } else {
-                result.push_back(topVariable);
+                result.first.push_back(topVariable);
             }
             
             return result;
         }
         
-        storm::expressions::Variable InternalBdd<DdType::Sylvan>::toExpressionRec(BDD dd, storm::expressions::ExpressionManager& manager, std::vector<storm::expressions::Expression>& expressions, std::unordered_map<std::pair<uint_fast64_t, uint_fast64_t>, storm::expressions::Variable>& countIndexToVariablePair, std::unordered_map<BDD, uint_fast64_t>& nodeToCounterMap, std::vector<uint_fast64_t>& nextCounterForIndex, std::unordered_map<uint_fast64_t, storm::expressions::Expression> const& indexToExpressionMap) {
+        storm::expressions::Variable InternalBdd<DdType::Sylvan>::toExpressionRec(BDD dd, storm::expressions::ExpressionManager& manager, std::vector<storm::expressions::Expression>& expressions, std::unordered_map<uint_fast64_t, storm::expressions::Variable>& indexToVariableMap, std::unordered_map<std::pair<uint_fast64_t, uint_fast64_t>, storm::expressions::Variable>& countIndexToVariablePair, std::unordered_map<BDD, uint_fast64_t>& nodeToCounterMap, std::vector<uint_fast64_t>& nextCounterForIndex) {
             STORM_LOG_ASSERT(!bdd_isnegated(dd), "Expected non-negated BDD node.");
             
             // First, try to look up the current node if it's not a terminal node.
@@ -426,26 +426,26 @@ namespace storm {
             }
             
             // If the node was not yet encountered, we create a variable and associate it with the appropriate expression.
-            storm::expressions::Variable newVariable = manager.declareFreshBooleanVariable();
+            storm::expressions::Variable newNodeVariable = manager.declareFreshBooleanVariable();
             
             // Since we want to reuse the variable whenever possible, we insert the appropriate entries in the hash table.
             if (!bdd_isterminal(dd)) {
                 // If we are dealing with a non-terminal node, we count it as a new node with this index.
                 nodeToCounterMap[dd] = nextCounterForIndex[sylvan_var(dd)];
-                countIndexToVariablePair[std::make_pair(nextCounterForIndex[sylvan_var(dd)], sylvan_var(dd))] = newVariable;
+                countIndexToVariablePair[std::make_pair(nextCounterForIndex[sylvan_var(dd)], sylvan_var(dd))] = newNodeVariable;
                 ++nextCounterForIndex[sylvan_var(dd)];
             } else {
                 // If it's a terminal node, it is the one leaf and there's no need to keep track of a counter for this level.
                 nodeToCounterMap[dd] = 0;
-                countIndexToVariablePair[std::make_pair(0, sylvan_var(dd))] = newVariable;
+                countIndexToVariablePair[std::make_pair(0, sylvan_var(dd))] = newNodeVariable;
             }
             
             // In the terminal case, we can only have a one since we are considering non-negated nodes only.
             if (bdd_isterminal(dd)) {
                 if (dd == sylvan_true) {
-                    expressions.push_back(storm::expressions::iff(manager.boolean(true), newVariable));
+                    expressions.push_back(storm::expressions::iff(manager.boolean(true), newNodeVariable));
                 } else {
-                    expressions.push_back(storm::expressions::iff(manager.boolean(false), newVariable));
+                    expressions.push_back(storm::expressions::iff(manager.boolean(false), newNodeVariable));
                 }
             } else {
                 // In the non-terminal case, we recursively translate the children nodes and then construct and appropriate ite-expression.
@@ -453,17 +453,24 @@ namespace storm {
                 BDD e = sylvan_low(dd);
                 BDD T = bdd_regular(t);
                 BDD E = bdd_regular(e);
-                storm::expressions::Variable thenVariable = toExpressionRec(T, manager, expressions, countIndexToVariablePair, nodeToCounterMap, nextCounterForIndex, indexToExpressionMap);
-                storm::expressions::Variable elseVariable = toExpressionRec(E, manager, expressions, countIndexToVariablePair, nodeToCounterMap, nextCounterForIndex, indexToExpressionMap);
+                storm::expressions::Variable thenVariable = toExpressionRec(T, manager, expressions, indexToVariableMap, countIndexToVariablePair, nodeToCounterMap, nextCounterForIndex);
+                storm::expressions::Variable elseVariable = toExpressionRec(E, manager, expressions, indexToVariableMap, countIndexToVariablePair, nodeToCounterMap, nextCounterForIndex);
                 
                 // Create the appropriate expression.
-                auto expressionIt = indexToExpressionMap.find(sylvan_var(dd));
-                STORM_LOG_ASSERT(expressionIt != indexToExpressionMap.end(), "Unable to find expression for variable index.");
-                expressions.push_back(storm::expressions::iff(newVariable, storm::expressions::ite(expressionIt->second, t == T ? thenVariable : !thenVariable, e == E ? elseVariable : !elseVariable)));
+                // Create the appropriate expression.
+                auto indexVariable = indexToVariableMap.find(sylvan_var(dd));
+                storm::expressions::Variable levelVariable;
+                if (indexVariable == indexToVariableMap.end()) {
+                    levelVariable = manager.declareFreshBooleanVariable();
+                    indexToVariableMap[sylvan_var(dd)] = levelVariable;
+                } else {
+                    levelVariable = indexVariable->second;
+                }
+                expressions.push_back(storm::expressions::iff(newNodeVariable, storm::expressions::ite(levelVariable, t == T ? thenVariable : !thenVariable, e == E ? elseVariable : !elseVariable)));
             }
             
             // Return the variable for this node.
-            return newVariable;
+            return newNodeVariable;
         }
         
         template InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::fromVector(InternalDdManager<DdType::Sylvan> const* ddManager, std::vector<double> const& values, Odd const& odd, std::vector<uint_fast64_t> const& sortedDdVariableIndices, std::function<bool (double const&)> const& filter);

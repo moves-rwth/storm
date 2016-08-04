@@ -133,11 +133,19 @@ namespace storm {
             // Create a new backtracking point before adding the constraint.
             smtSolver->push();
             
-            // Then add the constraint.
-            std::vector<storm::expressions::Expression> result = constraint.toExpression(globalExpressionInformation.getManager(), ddInformation.bddVariableIndexToPredicateMap);
+            // Create the constraint.
+            std::pair<std::vector<storm::expressions::Expression>, std::unordered_map<uint_fast64_t, storm::expressions::Variable>> result = constraint.toExpression(globalExpressionInformation.getManager());
             
-            for (auto const& expression : result) {
+            // Then add the constraint.
+            for (auto const& expression : result.first) {
                 smtSolver->add(expression);
+            }
+            
+            // Finally associate the level variables with the predicates.
+            for (auto const& indexVariablePair : result.second) {
+                auto predicateIt = ddInformation.bddVariableIndexToPredicateMap.find(indexVariablePair.first);
+                STORM_LOG_ASSERT(predicateIt != ddInformation.bddVariableIndexToPredicateMap.end(), "Missing predicate for DD variable.");
+                smtSolver->add(storm::expressions::iff(indexVariablePair.second, predicateIt->second));
             }
         }
         

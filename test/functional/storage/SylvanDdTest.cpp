@@ -426,12 +426,5 @@ TEST(SylvanDd, BddToExpressionTest) {
     storm::expressions::Variable c = manager->declareBooleanVariable("c");
     storm::expressions::Variable d = manager->declareBooleanVariable("d");
     
-    std::unordered_map<uint_fast64_t, storm::expressions::Expression> indexToExpressionMap;
-    indexToExpressionMap[0] = c;
-    indexToExpressionMap[2] = d;
-    auto result = bdd.toExpression(*manager, indexToExpressionMap);
-    
-    for (auto const& expression : result) {
-        std::cout << expression << std::endl;
-    }
+    auto result = bdd.toExpression(*manager);
 }
