@@ -355,10 +355,9 @@ namespace storm {
              * @param manager The manager that is used to build the expression and, in particular, create new variables in.
              * @param indexToExpressionMap A mapping from indices (of DD variables) to expressions with which they are
              * to be replaced.
-             * @return A pair consisting of the created expressions and a mapping from pairs (i, j) to variables such
-             * that the i-th variable of level j is represented by the mapped-to variable.
+             * @return A list of expressions that is equivalent to the function represented by the BDD.
              */
-            std::pair<std::vector<storm::expressions::Expression>, std::unordered_map<std::pair<uint_fast64_t, uint_fast64_t>, storm::expressions::Variable>> toExpression(storm::expressions::ExpressionManager& manager, std::unordered_map<uint_fast64_t, storm::expressions::Expression> const& indexToExpressionMap) const;
+            std::vector<storm::expressions::Expression> toExpression(storm::expressions::ExpressionManager& manager, std::unordered_map<uint_fast64_t, storm::expressions::Expression> const& indexToExpressionMap) const;
             
             /*!
              * Creates an ODD based on the current BDD.
@@ -465,8 +464,24 @@ namespace storm {
             template<typename ValueType>
             static void filterExplicitVectorRec(DdNode const* dd, cudd::Cudd const& manager, uint_fast64_t currentLevel, bool complement, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, uint_fast64_t currentOffset, storm::dd::Odd const& odd, std::vector<ValueType>& result, uint_fast64_t& currentIndex, std::vector<ValueType> const& values);
             
-            storm::expressions::Variable toExpressionRec(DdNode const* dd, storm::expressions::ExpressionManager& manager, std::vector<storm::expressions::Expression>& expressions, std::unordered_map<std::pair<uint_fast64_t, uint_fast64_t>, storm::expressions::Variable>& countIndexToVariablePair, std::unordered_map<DdNode const*, uint_fast64_t>& nodeToCounterMap, std::vector<uint_fast64_t>& nextCounterForIndex, std::unordered_map<uint_fast64_t, storm::expressions::Expression> const& indexToExpressionMap) const;
-            
+            /*!
+             * Creates a vector of expressions that represent the function of the given BDD node.
+             *
+             *
+             * @param dd The current node of the BDD.
+             * @param ddManager The manager responsible for the BDD.
+             * @param manager The expression manager over which to build the expressions.
+             * @param countIndexToVariablePair A mapping of (count, variable index) pairs to a pair of expression variables
+             * such that entry (i, j) is mapped to a variable that represents the i-th node labeled with variable j (counting
+             * from left to right).
+             * @param nodeToCounterMap A mapping from DD nodes to a number j such that the DD node was the j-th node
+             * visited with the same variable index as the given node.
+             * @param nextCounterForIndex A vector storing a mapping from variable indices to a counter that indicates
+             * how many nodes with the given variable index have been seen before.
+             * @param indexToExpressionMap A mapping of variable indices to the expressions they are to be replaced with.
+             */
+            static storm::expressions::Variable toExpressionRec(DdNode const* dd, cudd::Cudd const& ddManager, storm::expressions::ExpressionManager& manager, std::vector<storm::expressions::Expression>& expressions, std::unordered_map<std::pair<uint_fast64_t, uint_fast64_t>, storm::expressions::Variable>& countIndexToVariablePair, std::unordered_map<DdNode const*, uint_fast64_t>& nodeToCounterMap, std::vector<uint_fast64_t>& nextCounterForIndex, std::unordered_map<uint_fast64_t, storm::expressions::Expression> const& indexToExpressionMap);
+
             InternalDdManager<DdType::CUDD> const* ddManager;
             
             cudd::BDD cuddBdd;

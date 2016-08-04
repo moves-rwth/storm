@@ -57,6 +57,7 @@ namespace storm {
             }
             
             template class AbstractModule<storm::dd::DdType::CUDD, double>;
+            template class AbstractModule<storm::dd::DdType::Sylvan, double>;
         }
     }
 }

@@ -61,6 +61,7 @@ namespace storm {
         }
         
         template class MenuGame<storm::dd::DdType::CUDD, double>;
+        template class MenuGame<storm::dd::DdType::Sylvan, double>;
         
     }
 }

@@ -41,14 +41,7 @@ namespace storm {
         void AbstractionDdInformation<DdType, ValueType>::addPredicate(storm::expressions::Expression const& predicate) {
             std::stringstream stream;
             stream << predicate;
-            std::pair<storm::expressions::Variable, storm::expressions::Variable> newMetaVariable;
-            
-            // Create the new predicate variable below all other predicate variables.
-            if (predicateDdVariables.empty()) {
-                newMetaVariable = manager->addMetaVariable(stream.str());
-            } else {
-                newMetaVariable = manager->addMetaVariable(stream.str(), std::make_pair(storm::dd::MetaVariablePosition::Below, predicateDdVariables.back().second));
-            }
+            std::pair<storm::expressions::Variable, storm::expressions::Variable> newMetaVariable = manager->addMetaVariable(stream.str());
             
             predicateDdVariables.push_back(newMetaVariable);
             predicateBdds.emplace_back(manager->getEncoding(newMetaVariable.first, 1), manager->getEncoding(newMetaVariable.second, 1));
@@ -92,6 +85,7 @@ namespace storm {
         }
         
         template struct AbstractionDdInformation<storm::dd::DdType::CUDD, double>;
+        template struct AbstractionDdInformation<storm::dd::DdType::Sylvan, double>;
         
     }
 }

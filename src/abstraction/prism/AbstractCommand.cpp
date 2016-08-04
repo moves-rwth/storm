@@ -306,6 +306,7 @@ namespace storm {
             }
             
             template class AbstractCommand<storm::dd::DdType::CUDD, double>;
+            template class AbstractCommand<storm::dd::DdType::Sylvan, double>;
         }
     }
 }

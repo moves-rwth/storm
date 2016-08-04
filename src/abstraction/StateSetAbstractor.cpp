@@ -134,9 +134,9 @@ namespace storm {
             smtSolver->push();
             
             // Then add the constraint.
-            std::pair<std::vector<storm::expressions::Expression>, std::unordered_map<std::pair<uint_fast64_t, uint_fast64_t>, storm::expressions::Variable>> result = constraint.toExpression(globalExpressionInformation.getManager(), ddInformation.bddVariableIndexToPredicateMap);
+            std::vector<storm::expressions::Expression> result = constraint.toExpression(globalExpressionInformation.getManager(), ddInformation.bddVariableIndexToPredicateMap);
             
-            for (auto const& expression : result.first) {
+            for (auto const& expression : result) {
                 smtSolver->add(expression);
             }
         }
@@ -150,5 +150,6 @@ namespace storm {
         }
         
         template class StateSetAbstractor<storm::dd::DdType::CUDD, double>;
+        template class StateSetAbstractor<storm::dd::DdType::Sylvan, double>;
     }
 }

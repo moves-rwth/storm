@@ -181,9 +181,9 @@ namespace storm {
             
             template <storm::dd::DdType DdType, typename ValueType>
             storm::dd::Bdd<DdType> AbstractProgram<DdType, ValueType>::getReachableStates(storm::dd::Bdd<DdType> const& initialStates, storm::dd::Bdd<DdType> const& transitionRelation) {
-                storm::dd::Bdd<storm::dd::DdType::CUDD> frontier = initialStates;
+                storm::dd::Bdd<DdType> frontier = initialStates;
 
-                storm::dd::Bdd<storm::dd::DdType::CUDD> reachableStates = initialStates;
+                storm::dd::Bdd<DdType> reachableStates = initialStates;
                 uint_fast64_t reachabilityIteration = 0;
                 while (!frontier.isZero()) {
                     ++reachabilityIteration;
@@ -199,6 +199,7 @@ namespace storm {
             
             // Explicitly instantiate the class.
             template class AbstractProgram<storm::dd::DdType::CUDD, double>;
+            template class AbstractProgram<storm::dd::DdType::Sylvan, double>;
             
         }
     }

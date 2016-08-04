@@ -291,10 +291,9 @@ namespace storm {
              * @param manager The manager that is used to build the expression and, in particular, create new variables in.
              * @param indexToExpressionMap A mapping from indices (of DD variables) to expressions with which they are
              * to be replaced.
-             * @return A pair consisting of the created expressions and a mapping from pairs (i, j) to variables such
-             * that the i-th variable of level j is represented by the mapped-to variable.
+             * @return A list of expressions representing the function of the BDD.
              */
-            std::pair<std::vector<storm::expressions::Expression>, std::unordered_map<std::pair<uint_fast64_t, uint_fast64_t>, storm::expressions::Variable>> toExpression(storm::expressions::ExpressionManager& manager, std::unordered_map<uint_fast64_t, storm::expressions::Expression> const& indexToExpressionMap) const;
+            std::vector<storm::expressions::Expression> toExpression(storm::expressions::ExpressionManager& manager, std::unordered_map<uint_fast64_t, storm::expressions::Expression> const& indexToExpressionMap) const;
             
             virtual Bdd<LibraryType> getSupport() const override;
             

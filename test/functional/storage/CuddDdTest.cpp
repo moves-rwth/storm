@@ -429,7 +429,7 @@ TEST(CuddDd, BddToExpressionTest) {
     indexToExpressionMap[2] = d;
     auto result = bdd.toExpression(*manager, indexToExpressionMap);
     
-    for (auto const& expression : result.first) {
+    for (auto const& expression : result) {
         std::cout << expression << std::endl;
     }
 }
