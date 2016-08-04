@@ -12,10 +12,10 @@ namespace storm {
                 // Intentionally left empty.
             }
 
-            //template<typename OtherValueType>
-            //Bound<OtherValueType> convertToOtherValueType() const {
-            //    return Bound<OtherValueType>(comparisonType, storm::utility::convertNumber<OtherValueType>(threshold));
-            //}
+            template<typename OtherValueType>
+            Bound<OtherValueType> convertToOtherValueType() const {
+                return Bound<OtherValueType>(comparisonType, storm::utility::convertNumber<OtherValueType>(threshold));
+            }
             
             ComparisonType comparisonType;
             ValueType threshold;

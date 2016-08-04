@@ -165,6 +165,11 @@ namespace storm {
         RationalFunction convertNumber(double const& number){
             return RationalFunction(carl::rationalize<RationalNumber>(number));
         }
+
+        template<>
+        RationalFunction convertNumber(RationalNumber const& number) {
+            return RationalFunction(number);
+        }
         
         template<>
         storm::RationalNumber abs(storm::RationalNumber const& number) {
