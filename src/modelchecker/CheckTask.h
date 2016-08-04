@@ -45,7 +45,7 @@ namespace storm {
                     
                     if (operatorFormula.hasBound()) {
                         if (onlyInitialStatesRelevant) {
-                            this->bound = operatorFormula.getBound();
+                            this->bound = operatorFormula.getBound().convertToOtherValueType<ValueType>();
                         }
 
                         if (!optimizationDirection) {
@@ -58,7 +58,7 @@ namespace storm {
                     storm::logic::ProbabilityOperatorFormula const& probabilityOperatorFormula = formula.asProbabilityOperatorFormula();
                     
                     if (probabilityOperatorFormula.hasBound()) {
-                        if (probabilityOperatorFormula.getThreshold() == storm::utility::zero<ValueType>() || probabilityOperatorFormula.getThreshold() == storm::utility::one<ValueType>()) {
+                        if (storm::utility::isZero(probabilityOperatorFormula.getThreshold()) || storm::utility::isOne(probabilityOperatorFormula.getThreshold())) {
                             this->qualitative = true;
                         }
                     }
@@ -67,7 +67,7 @@ namespace storm {
                     this->rewardModel = rewardOperatorFormula.getOptionalRewardModelName();
                     
                     if (rewardOperatorFormula.hasBound()) {
-                        if (rewardOperatorFormula.getThreshold() == storm::utility::zero<ValueType>()) {
+                        if (storm::utility::isZero(rewardOperatorFormula.getThreshold())) {
                             this->qualitative = true;
                         }
                     }

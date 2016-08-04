@@ -1762,7 +1762,7 @@ namespace storm {
                 STORM_LOG_THROW(probabilityOperator.getSubformula().isUntilFormula() || probabilityOperator.getSubformula().isEventuallyFormula(), storm::exceptions::InvalidPropertyException, "Path formula is required to be of the form 'phi U psi' for counterexample generation.");
                 
                 bool strictBound = comparisonType == storm::logic::ComparisonType::Less;
-                double threshold = probabilityOperator.getThreshold();
+                double threshold = probabilityOperator.getThresholdAs<double>();
                 
                 storm::storage::BitVector phiStates;
                 storm::storage::BitVector psiStates;

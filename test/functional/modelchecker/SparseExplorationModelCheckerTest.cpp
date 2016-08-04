@@ -9,6 +9,8 @@
 
 #include "src/settings/SettingsManager.h"
 #include "src/settings/modules/ExplorationSettings.h"
+#include "src/models/sparse/Mdp.h"
+#include "src/models/sparse/StandardRewardModel.h"
 
 TEST(SparseExplorationModelCheckerTest, Dice) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/two_dice.nm");
@@ -16,7 +18,7 @@ TEST(SparseExplorationModelCheckerTest, Dice) {
     // A parser that we use for conveniently constructing the formulas.
     storm::parser::FormulaParser formulaParser;
 
-    storm::modelchecker::SparseExplorationModelChecker<double, uint32_t> checker(program);
+    storm::modelchecker::SparseExplorationModelChecker<storm::models::sparse::Mdp<double>, uint32_t> checker(program);
     
     std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("Pmin=? [F \"two\"]");
     
@@ -67,8 +69,8 @@ TEST(SparseExplorationModelCheckerTest, AsynchronousLeader) {
     
     // A parser that we use for conveniently constructing the formulas.
     storm::parser::FormulaParser formulaParser;
-    
-    storm::modelchecker::SparseExplorationModelChecker<double, uint32_t> checker(program);
+
+    storm::modelchecker::SparseExplorationModelChecker<storm::models::sparse::Mdp<double>, uint32_t> checker(program);
     
     std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("Pmin=? [F \"elected\"]");
     
