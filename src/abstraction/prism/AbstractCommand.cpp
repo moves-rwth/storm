@@ -11,6 +11,8 @@
 #include "src/storage/prism/Command.h"
 #include "src/storage/prism/Update.h"
 
+#include "src/storage/expressions/ExpressionEvaluator.h"
+
 #include "src/utility/solver.h"
 #include "src/utility/macros.h"
 
@@ -72,8 +74,10 @@ namespace storm {
                 
                 // Create a mapping from source state DDs to their distributions.
                 std::unordered_map<storm::dd::Bdd<DdType>, std::vector<storm::dd::Bdd<DdType>>> sourceToDistributionsMap;
-                uint_fast64_t modelCounter = 0;
-                smtSolver->allSat(decisionVariables, [&sourceToDistributionsMap,this,&modelCounter] (storm::solver::SmtSolver::ModelReference const& model) { sourceToDistributionsMap[getSourceStateBdd(model)].push_back(getDistributionBdd(model)); return true; } );
+                smtSolver->allSat(decisionVariables, [&sourceToDistributionsMap,this] (storm::solver::SmtSolver::ModelReference const& model) {
+                    sourceToDistributionsMap[getSourceStateBdd(model)].push_back(getDistributionBdd(model));
+                    return true;
+                });
                 
                 // Now we search for the maximal number of choices of player 2 to determine how many DD variables we
                 // need to encode the nondeterminism.
@@ -102,9 +106,7 @@ namespace storm {
                     STORM_LOG_ASSERT(!resultBdd.isZero(), "The BDD must not be empty.");
                 }
                 
-                STORM_LOG_ASSERT(sourceToDistributionsMap.empty() || !resultBdd.isZero(), "The BDD must not be empty, if there were distributions.");
                 resultBdd &= computeMissingIdentities();
-                STORM_LOG_ASSERT(sourceToDistributionsMap.empty() || !resultBdd.isZero(), "The BDD must not be empty, if there were distributions.");
                 resultBdd &= ddInformation.manager->getEncoding(ddInformation.commandDdVariable, command.get().getGlobalIndex());
                 STORM_LOG_ASSERT(sourceToDistributionsMap.empty() || !resultBdd.isZero(), "The BDD must not be empty, if there were distributions.");
                 
@@ -294,9 +296,10 @@ namespace storm {
             
             template <storm::dd::DdType DdType, typename ValueType>
             storm::dd::Add<DdType, ValueType> AbstractCommand<DdType, ValueType>::getCommandUpdateProbabilitiesAdd() const {
+                storm::expressions::ExpressionEvaluator<ValueType> evaluator(globalExpressionInformation.getManager());
                 storm::dd::Add<DdType, ValueType> result = ddInformation.manager->template getAddZero<ValueType>();
                 for (uint_fast64_t updateIndex = 0; updateIndex < command.get().getNumberOfUpdates(); ++updateIndex) {
-                    result += ddInformation.manager->getEncoding(ddInformation.updateDdVariable, updateIndex).template toAdd<ValueType>() * ddInformation.manager->getConstant(command.get().getUpdate(updateIndex).getLikelihoodExpression().evaluateAsDouble());
+                    result += ddInformation.manager->getEncoding(ddInformation.updateDdVariable, updateIndex).template toAdd<ValueType>() * ddInformation.manager->getConstant(evaluator.asRational(command.get().getUpdate(updateIndex).getLikelihoodExpression()));
                 }
                 result *= ddInformation.manager->getEncoding(ddInformation.commandDdVariable, command.get().getGlobalIndex()).template toAdd<ValueType>();
                 return result;
