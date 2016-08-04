@@ -31,7 +31,6 @@
 #include "src/settings/modules/Smt2SmtSolverSettings.h"
 #include "src/settings/modules/ParametricSettings.h"
 #include "src/settings/modules/RegionSettings.h"
-#include "src/settings/modules/SparseDtmcEliminationModelCheckerSettings.h"
 #include "src/settings/modules/TopologicalValueIterationEquationSolverSettings.h"
 #include "src/settings/modules/ExplorationSettings.h"
 #include "src/utility/macros.h"

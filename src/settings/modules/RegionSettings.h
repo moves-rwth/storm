@@ -22,7 +22,7 @@ namespace storm {
                  *
                  * @param settingsManager The responsible manager.
                  */
-                RegionSettings(storm::settings::SettingsManager& settingsManager);
+                RegionSettings();
 
                 /*!
                  * Retrieves whether the regions are specified in a file.

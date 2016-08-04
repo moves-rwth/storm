@@ -17,7 +17,7 @@ namespace storm {
                  *
                  * @param settingsManager The responsible manager.
                  */
-                Smt2SmtSolverSettings(storm::settings::SettingsManager& settingsManager);
+                Smt2SmtSolverSettings();
                 
                 /*!
                  * Retrieves whether the solver command has been set.

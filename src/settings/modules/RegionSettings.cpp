@@ -19,7 +19,7 @@ namespace storm {
             const std::string RegionSettings::smtmodeOptionName = "smtmode";
             const std::string RegionSettings::refinementOptionName = "refinement";
             
-            RegionSettings::RegionSettings(storm::settings::SettingsManager& settingsManager) : ModuleSettings(settingsManager, moduleName), modesModified(false) {
+            RegionSettings::RegionSettings() : ModuleSettings(moduleName), modesModified(false) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, regionfileOptionName, true, "Specifies the regions via a file. Format: 0.3<=p<=0.4,0.2<=q<=0.5; 0.6<=p<=0.7,0.8<=q<=0.9")
                             .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The file from which to read the regions.")
                                 .addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
