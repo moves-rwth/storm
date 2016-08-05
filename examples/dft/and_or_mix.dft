@@ -1,0 +1,9 @@
+toplevel "A";
+"A" and "B" "C";
+"B" or "BE1" "BE2";
+"C" and "BE3" "D";
+"D" or "BE1" "BE4";
+"BE1" lambda=0.5 dorm=0.3;
+"BE2" lambda=0.5 dorm=0.3;
+"BE3" lambda=0.5 dorm=0.3;
+"BE4" lambda=0.5 dorm=0.3;

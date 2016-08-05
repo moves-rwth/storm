@@ -8,7 +8,7 @@ namespace storm {
 
             template <typename ValueType>
             DftToGspnTransformator<ValueType>::DftToGspnTransformator(storm::storage::DFT<ValueType> const& dft) : mDft(dft) {
-                // Intentionally left empty
+                // Intentionally left empty.
             }
 
             template <typename ValueType>
@@ -16,60 +16,21 @@ namespace storm {
                 mGspn = storm::gspn::GSPN();
 				mGspn.setName("DftToGspnTransformation");
 		
-				/*
-				// Testing place.
-				storm::gspn::Place place;
-				place.setName("Left");
-				place.setID(0);
-				place.setNumberOfInitialTokens(2);
-				mGspn.addPlace(place);
+				// TODO: Do I need to check if every DFT element has an unique name?
+				// TODO: GSPN elements are picked by their name in method drawGSPNConnections(), so this might cause problems...
 				
-				storm::gspn::Place place2;
-				place2.setName("Right");
-				place2.setID(1);
-				place2.setNumberOfInitialTokens(0);
-				mGspn.addPlace(place2);
+				// Loop through every DFT element and draw them as a GSPN.
+				drawGSPNElements();
 				
-				// Testing transition.
-				storm::gspn::ImmediateTransition<storm::gspn::GSPN::WeightType> immediateTransition;
-				immediateTransition.setName("ImmediateTransition");
-				immediateTransition.setPriority(2);
-				immediateTransition.setWeight(0.0);
-				immediateTransition.setInputArcMultiplicity(place, 1);
-				immediateTransition.setOutputArcMultiplicity(place2, 1);
-				mGspn.addImmediateTransition(immediateTransition);
-				
-				storm::gspn::TimedTransition<double> timedTransition;
-				timedTransition.setName("TimedTransition");
-				timedTransition.setPriority(1);
-				timedTransition.setRate(0.3);
-				timedTransition.setInhibitionArcMultiplicity(place2, 1);
-				timedTransition.setOutputArcMultiplicity(place, 1);
-				mGspn.addTimedTransition(timedTransition);
-				
-				// Testing DFT.
-				std::cout << "-------------------------------------------------------------------------" << std::endl;
-				std::cout << "Number of elements in DFT: " << mDft.nrElements() << std::endl;
-				std::cout << "Number of basic elements in DFT: " << mDft.nrBasicElements() << std::endl;
-				std::cout << "Toplevel index of DFT: " << mDft.getTopLevelIndex() << std::endl;
-				
-				for (std::size_t i = 0; i < mDft.nrElements(); i++) {
-					auto dftElement = mDft.getElement(i);
-					std::cout << "Index: " << i 
-					<< " Gate: " << dftElement->isGate() 
-					<< " Dependency: " << dftElement->isDependency() 
-					<< " Restriction: " << dftElement->isRestriction()
-					<< " String: " << dftElement->toString() 
-					<< " Name: " << dftElement->name() << std::endl;
-					
-					auto parents = dftElement->parentIds();
-					for (std::size_t j = 0; j < parents.size(); j++) {
-					std::cout << "Parents of " << j << ": " << parents[j] << std::endl;
-					}
-				}
-				std::cout << "-------------------------------------------------------------------------" << std::endl;
-				*/
+				// When all DFT elements are drawn, draw the connections between them.
+				drawGSPNConnections();
 		
+				// Write GSPN to file.
+				writeGspn(true);
+            }
+            
+			template <typename ValueType>
+            void DftToGspnTransformator<ValueType>::drawGSPNElements() {
 				// Loop through every DFT element and draw them as a GSPN.
 				for (std::size_t i = 0; i < mDft.nrElements(); i++) {
 					auto dftElement = mDft.getElement(i);
@@ -117,11 +78,7 @@ namespace storm {
 							break;
 					}
 				}
-		
-				// Output.
-				writeGspn(true);
-				writeGspn(false);
-            }
+			}
             
             template <typename ValueType>
             void DftToGspnTransformator<ValueType>::drawBE(std::shared_ptr<storm::storage::DFTBE<ValueType> const> dftBE) {
@@ -178,9 +135,10 @@ namespace storm {
 				placeORFailed.setNumberOfInitialTokens(0);
 				mGspn.addPlace(placeORFailed);
 				
+				auto children = dftOr->children();
 				for (std::size_t i = 0; i < dftOr->nrChildren(); i++) {
 					storm::gspn::ImmediateTransition<storm::gspn::GSPN::WeightType> immediateTransitionORFailing;
-					immediateTransitionORFailing.setName(dftOr->name() + std::to_string((int)i) + "_failing");
+					immediateTransitionORFailing.setName(dftOr->name() + "_" + children[i]->name() + "_failing");
 					immediateTransitionORFailing.setPriority(1);
 					immediateTransitionORFailing.setWeight(0.0);
 					immediateTransitionORFailing.setInhibitionArcMultiplicity(placeORFailed, 1);
@@ -207,6 +165,70 @@ namespace storm {
 			template <typename ValueType>
             void DftToGspnTransformator<ValueType>::drawPOR(std::shared_ptr<storm::storage::DFTPor<ValueType> const> dftPor) {
 				STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "The transformation of a POR is not yet implemented.");
+			}
+			
+			template <typename ValueType>
+            void DftToGspnTransformator<ValueType>::drawGSPNConnections() {
+				// Check for every element, if they have parents (all will have at least 1, except the top event). 
+				for (std::size_t i = 0; i < mDft.nrElements(); i++) {
+					auto child = mDft.getElement(i);
+					auto parents = child->parentIds();
+					
+					// Draw a connection to every parent.
+					for (std::size_t j = 0; j < parents.size(); j++) {						
+						// Check the type of the parent and act accordingly (every parent gate has different entry points...).
+						switch (mDft.getElement(parents[j])->type()) {
+							case storm::storage::DFTElementType::AND:
+							{
+								auto andEntry = mGspn.getImmediateTransition(mDft.getElement(parents[j])->name() + "_failing");
+								auto childExit = mGspn.getPlace(child->name() + "_failed");
+								if (andEntry.first && childExit.first) { // Only add arcs if the objects have been found.
+									andEntry.second->setInputArcMultiplicity(childExit.second, 1);
+									andEntry.second->setOutputArcMultiplicity(childExit.second, 1);
+								}
+								break;
+							}
+							case storm::storage::DFTElementType::OR:
+							{
+								auto orEntry = mGspn.getImmediateTransition(mDft.getElement(parents[j])->name() + "_" + child->name() + "_failing");
+								auto childExit = mGspn.getPlace(child->name() + "_failed");
+								if (orEntry.first && childExit.first) { // Only add arcs if the objects have been found.
+									orEntry.second->setInputArcMultiplicity(childExit.second, 1);
+									orEntry.second->setOutputArcMultiplicity(childExit.second, 1);
+								}
+								break;
+							}
+							case storm::storage::DFTElementType::VOT:
+								break;
+							case storm::storage::DFTElementType::PAND:
+								break;
+							case storm::storage::DFTElementType::SPARE:
+								break;
+							case storm::storage::DFTElementType::POR:
+								break;
+							case storm::storage::DFTElementType::SEQ:
+								break;
+							case storm::storage::DFTElementType::MUTEX:
+								break;
+							case storm::storage::DFTElementType::BE:
+							{
+								// The parent is never a Basic Event.
+								break;
+							}
+							case storm::storage::DFTElementType::CONSTF:
+								break;
+							case storm::storage::DFTElementType::CONSTS:
+								break;
+							case storm::storage::DFTElementType::PDEP:
+								break;
+							default:
+							{
+								STORM_LOG_ASSERT(false, "DFT type unknown.");
+								break;
+							}
+						}
+					}
+				}
 			}
 			
 			template <typename ValueType>

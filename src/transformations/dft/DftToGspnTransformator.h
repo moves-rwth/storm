@@ -41,6 +41,16 @@ namespace storm {
                 void writeGspn(bool toFile);
 				
 				/*
+				 * Draw all elements of the GSPN.
+				 */
+				void drawGSPNElements();
+				
+				/*
+				 * Draw the connections between the elements of the GSPN.
+				 */
+				void drawGSPNConnections();
+				
+				/*
 				 * Draw a Petri net Basic Event.
 				 * 
 				 * @param dftBE The Basic Event.
