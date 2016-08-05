@@ -91,7 +91,7 @@ namespace storm {
         void Smt2SmtSolver::add(storm::RationalFunction const& leftHandSide, storm::CompareRelation const& relation, storm::RationalFunction const& rightHandSide) {
             STORM_LOG_THROW(useCarlExpressions, storm::exceptions::IllegalFunctionCallException, "This solver was initialized without allowing carl expressions");
             //if some of the occurring variables are not declared yet, we will have to.
-            std::set<storm::Variable> variables;
+            std::set<storm::RationalFunctionVariable> variables;
             leftHandSide.gatherVariables(variables);
             rightHandSide.gatherVariables(variables);
             std::vector<std::string> const varDeclarations = expressionAdapter->checkForUndeclaredVariables(variables);
@@ -107,7 +107,7 @@ namespace storm {
         
         void Smt2SmtSolver::add(storm::ArithConstraint<storm::RawPolynomial> const& constraint) {
             //if some of the occurring variables are not declared yet, we will have to.
-            std::set<storm::Variable> variables = constraint.lhs().gatherVariables();
+            std::set<storm::RationalFunctionVariable> variables = constraint.lhs().gatherVariables();
             std::vector<std::string> const varDeclarations = expressionAdapter->checkForUndeclaredVariables(variables);
             for (auto declaration : varDeclarations){
                 writeCommand(declaration, true);
@@ -118,7 +118,7 @@ namespace storm {
         void Smt2SmtSolver::add(storm::RationalFunctionVariable const& guard, typename storm::ArithConstraint<storm::Polynomial> const& constraint){
             STORM_LOG_THROW((guard.getType()==carl::VariableType::VT_BOOL), storm::exceptions::IllegalArgumentException, "Tried to add a guarded constraint, but the guard is not of type bool.");
             //if some of the occurring variables are not declared yet, we will have to (including the guard!).
-            std::set<storm::Variable> variables = constraint.lhs().gatherVariables();
+            std::set<storm::RationalFunctionVariable> variables = constraint.lhs().gatherVariables();
             variables.insert(guard);
             std::vector<std::string> const varDeclarations = expressionAdapter->checkForUndeclaredVariables(variables);
             for (auto declaration : varDeclarations){
@@ -130,7 +130,7 @@ namespace storm {
         
         void Smt2SmtSolver::add(const storm::RationalFunctionVariable& variable, bool value){
             STORM_LOG_THROW((variable.getType()==carl::VariableType::VT_BOOL), storm::exceptions::IllegalArgumentException, "Tried to add a constraint that consists of a non-boolean variable.");
-            std::set<storm::Variable> variableSet;
+            std::set<storm::RationalFunctionVariable> variableSet;
             variableSet.insert(variable);
             std::vector<std::string> const varDeclarations = expressionAdapter->checkForUndeclaredVariables(variableSet);
             for (auto declaration : varDeclarations){
@@ -184,7 +184,7 @@ namespace storm {
 #endif
 
         void Smt2SmtSolver::init() {
-            if (storm::settings::smt2SmtSolverSettings().isSolverCommandSet()){
+            if (storm::settings::getModule<storm::settings::modules::Smt2SmtSolverSettings>().isSolverCommandSet()){
 #ifdef WINDOWS
                 STORM_LOG_WARN("opening a thread for the smt solver is not implemented on Windows. Hence, no actual solving will be done")
 #else
@@ -193,7 +193,7 @@ namespace storm {
                 
                 //for executing the solver we will need the path to the executable file as well as the arguments as a char* array
                 //where the first argument is the path to the executable file and the last is NULL
-                const std::string cmdString = storm::settings::smt2SmtSolverSettings().getSolverCommand();
+                const std::string cmdString = storm::settings::getModule<storm::settings::modules::Smt2SmtSolverSettings>().getSolverCommand();
                 std::vector<std::string> solverCommandVec;
                 boost::split(solverCommandVec, cmdString, boost::is_any_of("\t "));
                 char** solverArgs = new char* [solverCommandVec.size()+1];
@@ -243,9 +243,9 @@ namespace storm {
                 STORM_LOG_WARN("No SMT-LIBv2 Solver Command specified, which means that no actual SMT solving can be done");
             }
 
-            if (storm::settings::smt2SmtSolverSettings().isExportSmtLibScriptSet()){
+            if (storm::settings::getModule<storm::settings::modules::Smt2SmtSolverSettings>().isExportSmtLibScriptSet()){
                 STORM_LOG_DEBUG("The SMT-LIBv2 commands are exportet to the given file");
-                commandFile.open(storm::settings::smt2SmtSolverSettings().getExportSmtLibScriptPath(), std::ios::trunc);
+                commandFile.open(storm::settings::getModule<storm::settings::modules::Smt2SmtSolverSettings>().getExportSmtLibScriptPath(), std::ios::trunc);
                 isCommandFileOpen=commandFile.is_open();
                 STORM_LOG_THROW(isCommandFileOpen, storm::exceptions::InvalidArgumentException, "The file where the smt2commands should be written to could not be opened");
             }

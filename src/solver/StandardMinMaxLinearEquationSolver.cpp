@@ -84,15 +84,17 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void StandardMinMaxLinearEquationSolver<ValueType>::solveEquations(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+        bool StandardMinMaxLinearEquationSolver<ValueType>::solveEquations(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             switch (this->getSettings().getSolutionMethod()) {
-                case StandardMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::ValueIteration: solveEquationsValueIteration(dir, x, b); break;
-                case StandardMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::PolicyIteration: solveEquationsPolicyIteration(dir, x, b); break;
+                case StandardMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::ValueIteration:
+                    return solveEquationsValueIteration(dir, x, b);
+                case StandardMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::PolicyIteration:
+                    return solveEquationsPolicyIteration(dir, x, b);
             }
         }
         
         template<typename ValueType>
-        void StandardMinMaxLinearEquationSolver<ValueType>::solveEquationsPolicyIteration(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+        bool StandardMinMaxLinearEquationSolver<ValueType>::solveEquationsPolicyIteration(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             // Create the initial scheduler.
             std::vector<storm::storage::sparse::state_type> scheduler(this->A.getRowGroupCount());
             
@@ -163,6 +165,12 @@ namespace storm {
             if (this->isTrackSchedulerSet()) {
                 this->scheduler = std::make_unique<storm::storage::TotalScheduler>(std::move(scheduler));
             }
+
+            if(status == Status::Converged || status == Status::TerminatedEarly) {
+                return true;
+            } else{
+                return false;
+            }
         }
         
         template<typename ValueType>
@@ -181,7 +189,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void StandardMinMaxLinearEquationSolver<ValueType>::solveEquationsValueIteration(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+        bool StandardMinMaxLinearEquationSolver<ValueType>::solveEquationsValueIteration(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory->create(A);
             bool allocatedAuxMemory = !this->hasAuxMemory(MinMaxLinearEquationSolverOperation::SolveEquations);
             if (allocatedAuxMemory) {
@@ -224,6 +232,12 @@ namespace storm {
             // If we allocated auxiliary memory, we need to dispose of it now.
             if (allocatedAuxMemory) {
                 this->deallocateAuxMemory(MinMaxLinearEquationSolverOperation::SolveEquations);
+            }
+
+            if(status == Status::Converged || status == Status::TerminatedEarly) {
+                return true;
+            } else{
+                return false;
             }
         }
         

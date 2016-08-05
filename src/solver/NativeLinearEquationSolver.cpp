@@ -102,7 +102,7 @@ namespace storm {
 
         
         template<typename ValueType>
-        void NativeLinearEquationSolver<ValueType>::solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+        bool NativeLinearEquationSolver<ValueType>::solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             bool allocatedAuxStorage = !this->hasAuxMemory(LinearEquationSolverOperation::SolveEquations);
             if (allocatedAuxStorage) {
                 this->allocateAuxMemory(LinearEquationSolverOperation::SolveEquations);
@@ -174,7 +174,7 @@ namespace storm {
                 if (allocatedAuxStorage) {
                     this->deallocateAuxMemory(LinearEquationSolverOperation::SolveEquations);
                 }
-                return converged;
+                return iterationCount < this->getSettings().getMaximalNumberOfIterations();
             }
 
 

@@ -102,18 +102,7 @@ namespace storm {
             virtual bool deallocateAuxMemory(LinearEquationSolverOperation operation) const override;
             virtual bool reallocateAuxMemory(LinearEquationSolverOperation operation) const override;
             virtual bool hasAuxMemory(LinearEquationSolverOperation operation) const override;
-            
-            virtual void setPrecision(double precision) override{
-                this->precision = precision;
-            }
-            
-            virtual void setIterations(uint_fast64_t maximalNumberOfIterations) override{
-                this->maximalNumberOfIterations = maximalNumberOfIterations;
-            }
-            
-            virtual void setRelative(bool relative) override{
-                this->relative = relative;
-            }
+
             
         private:
             /*!

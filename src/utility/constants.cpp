@@ -50,12 +50,7 @@ namespace storm {
         bool isZero(storm::RationalNumber const& a) {
             return carl::isZero(a);
         }
-        
-        template<>
-        storm::RationalNumber infinity() {
-            // FIXME: this should be treated more properly.
-            return storm::RationalNumber(-1);
-        }
+
         
         template<>
         bool isOne(storm::RationalFunction const& a) {
@@ -277,7 +272,7 @@ namespace storm {
         template bool isOne(storm::RationalNumber const& value);
         template bool isZero(storm::RationalNumber const& value);
         template bool isConstant(storm::RationalNumber const& value);
-        
+
         template storm::RationalNumber one();
         template storm::RationalNumber zero();
         template storm::RationalNumber infinity();
@@ -308,10 +303,6 @@ namespace storm {
         template RationalFunction simplify(RationalFunction value);
         template RationalFunction& simplify(RationalFunction& value);
         template RationalFunction&& simplify(RationalFunction&& value);
-
-        template RationalNumber one();
-        template RationalNumber zero();
-        template RationalNumber infinity();
         
         template Polynomial one();
         template Polynomial zero();
