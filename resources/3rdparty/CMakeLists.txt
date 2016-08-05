@@ -16,11 +16,11 @@ mark_as_advanced(AUTORECONF)
 #############################################################
 
 
-
+# Do not take a branch, needs internet connection.
 ExternalProject_Add(
         l3pp
         GIT_REPOSITORY https://github.com/hbruintjes/l3pp.git
-        GIT_TAG master
+        GIT_TAG e4f8d7fe6c328849aff34d2dfd6fd592c14070d5
         SOURCE_DIR ${STORM_3RDPARTY_SOURCE_DIR}/l3pp
         CONFIGURE_COMMAND ""
         BUILD_COMMAND ""
