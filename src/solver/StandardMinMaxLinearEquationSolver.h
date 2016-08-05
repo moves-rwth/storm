@@ -47,7 +47,9 @@ namespace storm {
             virtual bool allocateAuxMemory(MinMaxLinearEquationSolverOperation operation) const override;
             virtual bool deallocateAuxMemory(MinMaxLinearEquationSolverOperation operation) const override;
             virtual bool hasAuxMemory(MinMaxLinearEquationSolverOperation operation) const override;
-            
+
+            virtual ValueType getPrecision() const override;
+            virtual bool getRelative() const override;
         private:
             bool solveEquationsPolicyIteration(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
             bool solveEquationsValueIteration(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;

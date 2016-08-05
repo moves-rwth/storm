@@ -1,9 +1,3 @@
-/* 
- * File:   Regions.cpp
- * Author: Tim Quatmann
- * 
- * Created on November 16, 2015,
- */
 #include <stdint.h>
 
 #include "src/utility/policyguessing.h"
@@ -11,6 +5,7 @@
 #include "src/utility/macros.h"
 #include "src/utility/solver.h"
 #include "src/solver/LinearEquationSolver.h"
+#include "src/solver/GmmxxLinearEquationSolver.h"
 #include "graph.h"
 #include "ConstantsComparator.h"
 
@@ -58,6 +53,7 @@ namespace storm {
             
             template <typename ValueType>
             void solveMinMaxLinearEquationSystem( storm::solver::MinMaxLinearEquationSolver<ValueType>& solver,
+                                                  storm::storage::SparseMatrix<ValueType> const& A,
                                     std::vector<ValueType>& x,
                                     std::vector<ValueType> const& b,
                                     OptimizationDirection goal,
@@ -68,18 +64,18 @@ namespace storm {
                 storm::storage::SparseMatrix<ValueType> inducedA;
                 std::vector<ValueType> inducedB;
                 storm::storage::BitVector probGreater0States;
-                getInducedEquationSystem(solver, b, scheduler, targetChoices, inducedA, inducedB, probGreater0States);
+                getInducedEquationSystem(A, b, scheduler, targetChoices, inducedA, inducedB, probGreater0States);
                 solveLinearEquationSystem(inducedA, x, inducedB, probGreater0States, prob0Value, solver.getPrecision(), solver.getRelative());
                 
                 solver.setTrackScheduler();
                 bool resultCorrect = false;
                 while(!resultCorrect){
-                    solver.solveEquationSystem(goal, x, b);
-                    scheduler = solver.getScheduler();
+                    solver.solveEquations(goal, x, b);
+                    scheduler = std::move(*solver.getScheduler());
                     
                     //Check if the Scheduler makes choices that lead to states from which no target state is reachable ("prob0"-states). 
-                    getInducedEquationSystem(solver, b, scheduler, targetChoices, inducedA, inducedB, probGreater0States);
-                    resultCorrect = checkAndFixScheduler(solver, x, b, scheduler, targetChoices, inducedA, inducedB, probGreater0States);
+                    getInducedEquationSystem(A, b, scheduler, targetChoices, inducedA, inducedB, probGreater0States);
+                    resultCorrect = checkAndFixScheduler(A, x, b, scheduler, targetChoices, solver.getPrecision(), solver.getRelative(), inducedA, inducedB, probGreater0States);
                     
                     if(!resultCorrect){
                         //If the Scheduler could not be fixed, it indicates that our guessed values were to high.
@@ -128,7 +124,7 @@ namespace storm {
             
             
             template <typename ValueType>
-            void getInducedEquationSystem(storm::solver::MinMaxLinearEquationSolver<ValueType> const& solver,
+            void getInducedEquationSystem(storm::storage::SparseMatrix<ValueType> const& A,
                                             std::vector<ValueType> const& b,
                                             storm::storage::TotalScheduler const& scheduler,
                                             storm::storage::BitVector const& targetChoices,
@@ -136,19 +132,19 @@ namespace storm {
                                             std::vector<ValueType>& inducedB,
                                             storm::storage::BitVector& probGreater0States
                                         ){
-                uint_fast64_t numberOfStates = solver.getMatrix().getRowGroupCount();
+                uint_fast64_t numberOfStates = A.getRowGroupCount();
                 
                 //Get the matrix A, vector b, and the targetStates induced by the Scheduler
                 std::vector<storm::storage::sparse::state_type> selectedRows(numberOfStates);
                 for(uint_fast64_t stateIndex = 0; stateIndex < numberOfStates; ++stateIndex){
                     selectedRows[stateIndex] = (scheduler.getChoice(stateIndex));
                 }
-                inducedA = solver.getMatrix().selectRowsFromRowGroups(selectedRows, false);
+                inducedA = A.selectRowsFromRowGroups(selectedRows, false);
                 inducedB = std::vector<ValueType>(numberOfStates);
-                storm::utility::vector::selectVectorValues<ValueType>(inducedB, selectedRows, solver.getMatrix().getRowGroupIndices(), b);
+                storm::utility::vector::selectVectorValues<ValueType>(inducedB, selectedRows, A.getRowGroupIndices(), b);
                 storm::storage::BitVector inducedTarget(numberOfStates, false);
                 for (uint_fast64_t state = 0; state < numberOfStates; ++state){
-                    if(targetChoices.get(solver.getMatrix().getRowGroupIndices()[state] + scheduler.getChoice(state))){
+                    if(targetChoices.get(A.getRowGroupIndices()[state] + scheduler.getChoice(state))){
                         inducedTarget.set(state);
                     }
                 }
@@ -173,21 +169,24 @@ namespace storm {
                 storm::utility::vector::selectVectorValues(subX, probGreater0States, x);
                 std::vector<ValueType> subB(probGreater0States.getNumberOfSetBits());
                 storm::utility::vector::selectVectorValues(subB, probGreater0States, b);
-                std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> linEqSysSolver = storm::utility::solver::LinearEquationSolverFactory<ValueType>().create(eqSysA);
-                linEqSysSolver->setRelative(relative);
-                linEqSysSolver->setIterations(500);
+
+                std::unique_ptr<storm::solver::GmmxxLinearEquationSolver<ValueType>> linEqSysSolver(static_cast<storm::solver::GmmxxLinearEquationSolver<ValueType>*>(storm::solver::GmmxxLinearEquationSolverFactory<ValueType>().create(eqSysA).release()));
+                auto& eqSettings = linEqSysSolver->getSettings();
+                eqSettings.setRelativeTerminationCriterion(relative);
+                eqSettings.setMaximalNumberOfIterations(500);
                 std::size_t iterations = 0;
                 std::vector<ValueType> copyX(subX.size());
-                ValueType newPrecision = precision;
+                ValueType precisionChangeFactor = storm::utility::one<ValueType>();
                 do {
-                    linEqSysSolver->setPrecision(newPrecision);
-                    if(!linEqSysSolver->solveEquationSystem(subX, subB)){
+                    eqSettings.setPrecision(eqSettings.getPrecision() * precisionChangeFactor);
+                    if(!linEqSysSolver->solveEquations(subX, subB)){
               //          break; //Solver did not converge.. so we have to go on with the current solution.
                     }
                     subA.multiplyWithVector(subX,copyX);
                     storm::utility::vector::addVectors(copyX, subB, copyX); // = Ax + b
                     ++iterations;
-                    newPrecision *= 0.5;
+
+                    precisionChangeFactor = storm::utility::convertNumber<ValueType>(0.5);
                 } while(!storm::utility::vector::equalModuloPrecision(subX, copyX, precision*0.5, relative) && iterations<60);
                 
                 STORM_LOG_WARN_COND(iterations<60, "Solving linear equation system did not yield a precise result");
@@ -286,11 +285,12 @@ namespace storm {
             }
             
             template <typename ValueType>
-            bool checkAndFixScheduler(storm::solver::MinMaxLinearEquationSolver<ValueType> const& solver,
+            bool checkAndFixScheduler(storm::storage::SparseMatrix<ValueType> const& A,
                                     std::vector<ValueType> const& x,
                                     std::vector<ValueType> const& b,
                                     storm::storage::TotalScheduler& scheduler,
                                     storm::storage::BitVector const& targetChoices,
+                                      ValueType const& precision, bool relative,
                                     storm::storage::SparseMatrix<ValueType>& inducedA,
                                     std::vector<ValueType>& inducedB,
                                     storm::storage::BitVector& probGreater0States
@@ -309,18 +309,18 @@ namespace storm {
                      * We do this unil the Scheduler does not change anymore
                      */
                     schedulerChanged = false;
-                    for(uint_fast64_t state=0; state < solver.getMatrix().getRowGroupCount(); ++state){
-                        uint_fast64_t rowGroupIndex = solver.getMatrix().getRowGroupIndices()[state];
+                    for(uint_fast64_t state=0; state < A.getRowGroupCount(); ++state){
+                        uint_fast64_t rowGroupIndex = A.getRowGroupIndices()[state];
                         //Check 1.: The current choice does not lead to target
                         if(!probGreater0States.get(state)){
                             //1. Is satisfied. Check 2.: There is another choice that leads to target
                             ValueType choiceValue = x[state];
-                            for(uint_fast64_t otherChoice = 0; otherChoice < solver.getMatrix().getRowGroupSize(state); ++otherChoice){
+                            for(uint_fast64_t otherChoice = 0; otherChoice < A.getRowGroupSize(state); ++otherChoice){
                                 if(otherChoice == scheduler.getChoice(state)) continue;
-                                if(rowLeadsToTarget(rowGroupIndex + otherChoice, solver.getMatrix(), targetChoices, probGreater0States)){
+                                if(rowLeadsToTarget(rowGroupIndex + otherChoice, A, targetChoices, probGreater0States)){
                                     //2. is satisfied. Check 3. The value of that choice is equal to the value of the choice given by the Scheduler
-                                    ValueType otherValue = solver.getMatrix().multiplyRowWithVector(rowGroupIndex + otherChoice, x) + b[rowGroupIndex + otherChoice];
-                                    if(storm::utility::vector::equalModuloPrecision(choiceValue, otherValue, solver.getPrecision(), !solver.getRelative())){
+                                    ValueType otherValue = A.multiplyRowWithVector(rowGroupIndex + otherChoice, x) + b[rowGroupIndex + otherChoice];
+                                    if(storm::utility::vector::equalModuloPrecision(choiceValue, otherValue, precision, !relative)){
                                         //3. is satisfied.
                                         scheduler.setChoice(state, otherChoice);
                                         probGreater0States.set(state);
@@ -333,7 +333,7 @@ namespace storm {
                     }
                     
                     //update probGreater0States and equation system
-                    getInducedEquationSystem(solver, b, scheduler, targetChoices, inducedA, inducedB, probGreater0States);
+                    getInducedEquationSystem(A, b, scheduler, targetChoices, inducedA, inducedB, probGreater0States);
                     if(probGreater0States.getNumberOfSetBits() == probGreater0States.size()){
                         return true;
                     }
@@ -355,12 +355,13 @@ namespace storm {
                             );
             
             template void solveMinMaxLinearEquationSystem<double>( storm::solver::MinMaxLinearEquationSolver<double>& solver,
-                                std::vector<double>& x,
-                                std::vector<double> const& b,
-                                OptimizationDirection goal,
-                                storm::storage::TotalScheduler& scheduler,
-                                storm::storage::BitVector const& targetChoices,
-                                double const& prob0Value
+                                                                   storm::storage::SparseMatrix<double> const& A,
+                                                                   std::vector<double>& x,
+                                                                   std::vector<double> const& b,
+                                                                   OptimizationDirection goal,
+                                                                   storm::storage::TotalScheduler& Scheduler,
+                                                                   storm::storage::BitVector const& targetChoices,
+                                                                   double const& prob0Value
                             );
             
             template void getInducedEquationSystem<double>(storm::solver::GameSolver<double> const& solver,
@@ -373,7 +374,7 @@ namespace storm {
                                                     storm::storage::BitVector& probGreater0States
                             );
             
-            template void getInducedEquationSystem<double>(storm::solver::MinMaxLinearEquationSolver<double> const& solver,
+            template void getInducedEquationSystem<double>(storm::storage::SparseMatrix<double>const& A,
                                             std::vector<double> const& b,
                                             storm::storage::TotalScheduler const& scheduler,
                                             storm::storage::BitVector const& targetChoices,
@@ -402,11 +403,13 @@ namespace storm {
                                             storm::storage::BitVector& probGreater0States
                                         );
             
-            template bool checkAndFixScheduler<double>(storm::solver::MinMaxLinearEquationSolver<double> const& solver,
+            template bool checkAndFixScheduler<double>(storm::storage::SparseMatrix<double> const& A,
                                     std::vector<double> const& x,
                                     std::vector<double> const& b,
                                     storm::storage::TotalScheduler& scheduler,
                                     storm::storage::BitVector const& targetChoices,
+                                                       double const& precision,
+                                                       bool relative,
                                     storm::storage::SparseMatrix<double>& inducedA,
                                     std::vector<double>& inducedB,
                                     storm::storage::BitVector& probGreater0States

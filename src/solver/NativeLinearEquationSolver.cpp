@@ -98,7 +98,12 @@ namespace storm {
             localA.reset();
             this->A = &A;
         }
-        
+
+        template<typename ValueType>
+        void NativeLinearEquationSolver<ValueType>::setMatrix(storm::storage::SparseMatrix<ValueType>&& A) {
+            localA = std::make_unique<storm::storage::SparseMatrix<ValueType>>(std::move(A));
+            this->A = localA.get();
+        }
 
         
         template<typename ValueType>

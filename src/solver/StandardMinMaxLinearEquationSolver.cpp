@@ -187,7 +187,19 @@ namespace storm {
                 return false;
             }
         }
-        
+
+        template<typename ValueType>
+        ValueType StandardMinMaxLinearEquationSolver<ValueType>::getPrecision() const {
+            return this->getSettings().getPrecision();
+        }
+
+        template<typename ValueType>
+        bool StandardMinMaxLinearEquationSolver<ValueType>::getRelative() const {
+            return this->getSettings().getRelativeTerminationCriterion();
+        }
+
+
+
         template<typename ValueType>
         bool StandardMinMaxLinearEquationSolver<ValueType>::solveEquationsValueIteration(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory->create(A);

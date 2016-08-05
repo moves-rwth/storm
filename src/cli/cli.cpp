@@ -227,8 +227,7 @@ namespace storm {
                 for (auto const& formula : formulas) {
                     preprocessedFormulas.emplace_back(formula->substitute(constantsSubstitution));
                 }
-                std::vector<std::shared_ptr<storm::logic::Formula const>> formulas(parsedFormulas.begin(), parsedFormulas.end());
-                
+
                 if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isParametricSet()) {
 #ifdef STORM_HAVE_CARL
                     buildAndCheckSymbolicModel<storm::RationalFunction>(preprocessedProgram, preprocessedFormulas, true);

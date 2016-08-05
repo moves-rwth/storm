@@ -103,7 +103,7 @@ namespace storm {
             virtual bool reallocateAuxMemory(LinearEquationSolverOperation operation) const override;
             virtual bool hasAuxMemory(LinearEquationSolverOperation operation) const override;
 
-            
+
         private:
             /*!
              * Solves the linear equation system A*x = b given by the parameters using the Jacobi method.

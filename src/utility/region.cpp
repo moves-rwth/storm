@@ -1,10 +1,3 @@
-/* 
- * File:   Regions.cpp
- * Author: Tim Quatmann
- * 
- * Created on May 13, 2015, 12:54 PM
- */
-
 #include <string>
 
 #include "src/utility/region.h"
@@ -72,14 +65,14 @@ namespace storm {
             }
             
             template<>
-            storm::Variable getVariableFromString<storm::Variable>(std::string variableString){
-                storm::Variable const& var = carl::VariablePool::getInstance().findVariableWithName(variableString);
+            storm::RationalFunctionVariable getVariableFromString<storm::RationalFunctionVariable>(std::string variableString){
+                storm::RationalFunctionVariable const& var = carl::VariablePool::getInstance().findVariableWithName(variableString);
                 STORM_LOG_THROW(var!=carl::Variable::NO_VARIABLE, storm::exceptions::IllegalArgumentException, "Variable '" + variableString + "' could not be found.");
                 return var;
             }
             
             template<>
-            storm::Variable getNewVariable<storm::Variable>(std::string variableName, VariableSort sort){
+            storm::RationalFunctionVariable getNewVariable<storm::RationalFunctionVariable>(std::string variableName, VariableSort sort){
                 carl::VariableType carlVarType;
                 switch(sort){
                     case VariableSort::VS_BOOL:
@@ -95,7 +88,7 @@ namespace storm {
                         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "The given variable sort is not implemented");
                 }
                 
-                storm::Variable const& var = carl::VariablePool::getInstance().findVariableWithName(variableName);
+                storm::RationalFunctionVariable const& var = carl::VariablePool::getInstance().findVariableWithName(variableName);
                 if(var!=carl::Variable::NO_VARIABLE){
                     STORM_LOG_THROW(var.getType()==carlVarType, storm::exceptions::IllegalArgumentException, "Tried to create a new variable but the name " << variableName << " is already in use for a variable of a different sort.");
                     return var;
@@ -105,7 +98,7 @@ namespace storm {
             }
                       
             template<>
-            std::string getVariableName<storm::Variable>(storm::Variable variable){
+            std::string getVariableName<storm::RationalFunctionVariable>(storm::RationalFunctionVariable variable){
                 return carl::VariablePool::getInstance().getName(variable);
             }
                         
@@ -136,7 +129,7 @@ namespace storm {
             }
             
             template<>
-            void addGuardedConstraintToSmtSolver<storm::solver::Smt2SmtSolver, storm::RationalFunction, storm::Variable>(std::shared_ptr<storm::solver::Smt2SmtSolver> solver,storm::Variable const& guard, storm::RationalFunction const& leftHandSide, storm::logic::ComparisonType relation, storm::RationalFunction const& rightHandSide){
+            void addGuardedConstraintToSmtSolver<storm::solver::Smt2SmtSolver, storm::RationalFunction, storm::RationalFunctionVariable>(std::shared_ptr<storm::solver::Smt2SmtSolver> solver,storm::RationalFunctionVariable const& guard, storm::RationalFunction const& leftHandSide, storm::logic::ComparisonType relation, storm::RationalFunction const& rightHandSide){
                 STORM_LOG_THROW(guard.getType()==carl::VariableType::VT_BOOL, storm::exceptions::IllegalArgumentException, "Tried to add a constraint to the solver whose guard is not of type bool");
                 storm::CompareRelation compRel;
                 switch (relation){
@@ -161,7 +154,7 @@ namespace storm {
             }
             
             template<>
-            void addParameterBoundsToSmtSolver<storm::solver::Smt2SmtSolver, storm::Variable, storm::RationalNumber>(std::shared_ptr<storm::solver::Smt2SmtSolver> solver, storm::Variable const& variable, storm::logic::ComparisonType relation, storm::RationalNumber const& bound){
+            void addParameterBoundsToSmtSolver<storm::solver::Smt2SmtSolver, storm::RationalFunctionVariable, storm::RationalNumber>(std::shared_ptr<storm::solver::Smt2SmtSolver> solver, storm::RationalFunctionVariable const& variable, storm::logic::ComparisonType relation, storm::RationalNumber const& bound){
                 storm::CompareRelation compRel;
                 switch (relation){
                     case storm::logic::ComparisonType::Greater:
@@ -185,7 +178,7 @@ namespace storm {
             }
             
             template<>
-            void addBoolVariableToSmtSolver<storm::solver::Smt2SmtSolver, storm::Variable>(std::shared_ptr<storm::solver::Smt2SmtSolver> solver,storm::Variable const& variable, bool value){
+            void addBoolVariableToSmtSolver<storm::solver::Smt2SmtSolver, storm::RationalFunctionVariable>(std::shared_ptr<storm::solver::Smt2SmtSolver> solver,storm::RationalFunctionVariable const& variable, bool value){
                 STORM_LOG_THROW(variable.getType()==carl::VariableType::VT_BOOL, storm::exceptions::IllegalArgumentException, "Tried to add a constraint to the solver that is a non boolean variable. Only boolean variables are allowed");
                 solver->add(variable, value);
             }
@@ -197,7 +190,7 @@ namespace storm {
             }
             
             template<>
-            storm::RationalFunction getNewFunction<storm::RationalFunction, storm::Variable>(storm::Variable initialValue) {
+            storm::RationalFunction getNewFunction<storm::RationalFunction, storm::RationalFunctionVariable>(storm::RationalFunctionVariable initialValue) {
                 std::shared_ptr<carl::Cache<carl::PolynomialFactorizationPair<storm::RawPolynomial>>> cache(new carl::Cache<carl::PolynomialFactorizationPair<storm::RawPolynomial>>());
                 return storm::RationalFunction(storm::RationalFunction::PolyType(storm::RationalFunction::PolyType::PolyType(initialValue), cache));
             }

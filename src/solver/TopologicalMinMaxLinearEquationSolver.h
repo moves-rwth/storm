@@ -36,6 +36,9 @@ namespace storm {
             
             virtual void repeatedMultiply(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType>* b, uint_fast64_t n) const override;
 
+            virtual ValueType getPrecision() const override;
+            virtual bool getRelative() const override;
+
         private:
             storm::storage::SparseMatrix<ValueType> const& A;
             double precision;

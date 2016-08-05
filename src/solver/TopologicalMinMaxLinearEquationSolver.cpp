@@ -422,6 +422,16 @@ namespace storm {
 #endif
 			return result;
 		}
+
+		template<typename ValueType>
+		ValueType TopologicalMinMaxLinearEquationSolver<ValueType>::getPrecision() const {
+			return this->precision;
+		}
+
+		template<typename ValueType>
+		bool TopologicalMinMaxLinearEquationSolver<ValueType>::getRelative() const {
+			return this->relative;
+		}
         
         template<typename ValueType>
         void TopologicalMinMaxLinearEquationSolver<ValueType>::repeatedMultiply(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType>* b, uint_fast64_t n) const {

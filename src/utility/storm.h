@@ -408,17 +408,12 @@ namespace storm {
         // Program and formula
         storm::prism::Program program = parseProgram(programFilePath);
         program.checkValidity();
-        std::vector<std::shared_ptr<storm::logic::Formula>> parsedFormulas = parseFormulasForProgram(formulaString, program);
-        std::vector<std::shared_ptr<const storm::logic::Formula>> formulas(parsedFormulas.begin(), parsedFormulas.end());
+        std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = parseFormulasForProgram(formulaString, program);;
         if(formulas.size()!=1){
             STORM_LOG_ERROR("The given formulaString does not specify exactly one formula");
             return false;
         }
-        // Parametric model
-        typename storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options options = storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options(*formulas[0]);
-        options.addConstantDefinitionsFromString(program, constantsString);
-        options.preserveFormula(*formulas[0]);
-        std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model = storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>(program, options).translate()->as<storm::models::sparse::Model<storm::RationalFunction>>();
+        std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model = buildSparseModel<storm::RationalFunction>(program, formulas);
         // Preprocessing and ModelChecker
         if(model->isOfType(storm::models::ModelType::Dtmc)){
             preprocessModel<storm::models::sparse::Dtmc<storm::RationalFunction>>(model,formulas);
@@ -447,7 +442,7 @@ namespace storm {
      * @return true iff the specified formula is satisfied (i.e., iff the reachability value is within the bound of the formula)
      */
     inline bool checkSamplingPoint(std::shared_ptr<storm::modelchecker::region::AbstractSparseRegionModelChecker<storm::RationalFunction, double>> regionModelChecker,
-                                   std::map<storm::Variable, storm::RationalNumber> const& point){
+                                   std::map<storm::RationalFunctionVariable, storm::RationalNumber> const& point){
         return regionModelChecker->valueIsInBoundOfFormula(regionModelChecker->getReachabilityValue(point));
     }
 
@@ -467,8 +462,8 @@ namespace storm {
      * proveAllSat=false, return=false ==> the approximative value IS within the bound of the formula (either the approximation is too bad or there are points in the region that satisfy the property)
      */
     inline bool checkRegionApproximation(std::shared_ptr<storm::modelchecker::region::AbstractSparseRegionModelChecker<storm::RationalFunction, double>> regionModelChecker,
-                                         std::map<storm::Variable, storm::RationalNumber> const& lowerBoundaries,
-                                         std::map<storm::Variable, storm::RationalNumber> const& upperBoundaries,
+                                         std::map<storm::RationalFunctionVariable, storm::RationalNumber> const& lowerBoundaries,
+                                         std::map<storm::RationalFunctionVariable, storm::RationalNumber> const& upperBoundaries,
                                          bool proveAllSat){
         storm::modelchecker::region::ParameterRegion<storm::RationalFunction> region(lowerBoundaries, upperBoundaries);
         return regionModelChecker->checkRegionWithApproximation(region, proveAllSat);

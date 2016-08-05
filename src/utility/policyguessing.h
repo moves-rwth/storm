@@ -70,8 +70,8 @@ namespace storm {
              * To ensure a unique solution, we need to filter out the "prob0"-states.
              * To identify these states and set the result for them correctly, it is necessary to know whether rewards or probabilities are to be computed
              *
-
              * @param solver the solver that contains the matrix
+             * @param A The matrix itself
              * @param x The initial guess of the solution.
              * @param b The vector to add after matrix-vector multiplication.
              * @param goal Sets whether we want to minimize or maximize.
@@ -82,6 +82,7 @@ namespace storm {
              */
             template<typename ValueType>
             void solveMinMaxLinearEquationSystem( storm::solver::MinMaxLinearEquationSolver<ValueType>& solver,
+                                                  storm::storage::SparseMatrix<ValueType> const& A,
                                     std::vector<ValueType>& x,
                                     std::vector<ValueType> const& b,
                                     OptimizationDirection goal,
@@ -125,7 +126,7 @@ namespace storm {
              * Note that, depending on the schedulers, the qualitative properties of the graph defined by inducedA
              * might be different to the original graph.
              * 
-             * @param solver the solver that contains the matrix
+             * @param A the matrix
              * @param b The vector in which to select the entries of the right hand side
              * @param Scheduler A Scheduler that selects rows in every rowgroup.
              * @param targetChoices marks the choices in the player2 matrix that have a positive probability to lead to a target state
@@ -135,7 +136,7 @@ namespace storm {
              * @return Induced A, b and targets
              */
             template<typename ValueType>
-            void getInducedEquationSystem(storm::solver::MinMaxLinearEquationSolver<ValueType> const& solver,
+            void getInducedEquationSystem(storm::storage::SparseMatrix<ValueType> const& A,
                                             std::vector<ValueType> const& b,
                                             storm::storage::TotalScheduler const& scheduler,
                                             storm::storage::BitVector const& targetChoices,
@@ -210,22 +211,23 @@ namespace storm {
              * 
              * If the schedulers are changed, they are updated accordingly (as well as the given inducedA, inducedB and probGreater0States)
              * 
-             * @param solver the solver that contains the two player matrices
+             * @param A the matrix
              * @param x the solution vector (the result from value iteration)
              * @param b The vector in which to select the entries of the right hand side
              * @param Scheduler A Scheduler that selects rows in every rowgroup.
              * @param targetChoices marks the choices in the player2 matrix that have a positive probability to lead to a target state
              * @param inducedA the Matrix for the equation system
-             * @param inducedB the Vector for the equation system
-             * @param probGreater0States marks the  states which have a positive probability to lead to a target state
+            * @param probGreater0States marks the  states which have a positive probability to lead to a target state
              * @return true iff there are no more prob0-states. Also changes the given schedulers accordingly
              */
             template<typename ValueType>
-            bool checkAndFixScheduler(storm::solver::MinMaxLinearEquationSolver<ValueType> const& solver,
+            bool checkAndFixScheduler(storm::storage::SparseMatrix<ValueType> const& A,
                                     std::vector<ValueType> const& x,
                                     std::vector<ValueType> const& b,
                                     storm::storage::TotalScheduler& Scheduler,
                                     storm::storage::BitVector const& targetChoices,
+                                      ValueType const& precision,
+                                      bool relative,
                                     storm::storage::SparseMatrix<ValueType>& inducedA,
                                     std::vector<ValueType>& inducedB,
                                     storm::storage::BitVector& probGreater0States

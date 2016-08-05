@@ -382,7 +382,7 @@ namespace storm {
                     //Invoke mdp model checking
                     std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ConstantType>> solver = storm::solver::configureMinMaxLinearEquationSolver(player2Goal, storm::solver::GeneralMinMaxLinearEquationSolverFactory<double>(), this->matrixData.matrix);
                     solver->setTerminationCondition(std::move(terminationCondition));
-                    storm::utility::policyguessing::solveMinMaxLinearEquationSystem(*solver,
+                    storm::utility::policyguessing::solveMinMaxLinearEquationSystem(*solver, this->matrixData.matrix,
                                 this->solverData.result, this->vectorData.vector,
                                 player2Goal.direction(),
                                 scheduler,

@@ -166,7 +166,7 @@ namespace storm {
                                                                                                                                               ));
                         }
                     }
-                    storm::utility::policyguessing::solveMinMaxLinearEquationSystem(*solver,
+                    storm::utility::policyguessing::solveMinMaxLinearEquationSystem(*solver,submatrix,
                                         this->solverData.result, b,
                                         this->solverData.solveGoal->direction(),
                                         this->solverData.lastScheduler,

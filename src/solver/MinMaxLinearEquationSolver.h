@@ -96,7 +96,7 @@ namespace storm {
              * Sets whether schedulers are generated when solving equation systems. If the argument is false, the currently
              * stored scheduler (if any) is deleted.
              */
-            void setTrackScheduler(bool trackScheduler);
+            void setTrackScheduler(bool trackScheduler = true);
 
             /*!
              * Retrieves whether this solver is set to generate schedulers.
@@ -119,6 +119,18 @@ namespace storm {
              * any more (i.e. it is illegal to call this method again until a new scheduler has been generated).
              */
             std::unique_ptr<storm::storage::TotalScheduler> getScheduler();
+
+            /**
+             * Gets the precision after which the solver takes two numbers as equal.
+             *
+             * @see getRelative()
+             */
+            virtual ValueType getPrecision() const = 0;
+
+            /**
+             *  Gets whether the precision is taken to be absolute or relative
+             */
+            virtual bool getRelative() const = 0;
 
             // Methods related to allocating/freeing auxiliary storage.
 

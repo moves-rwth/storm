@@ -27,7 +27,7 @@ namespace storm {
             virtual ~LinearEquationSolver() {
                 // Intentionally left empty.
             }
-            
+
             virtual void setMatrix(storm::storage::SparseMatrix<ValueType> const& A) = 0;
             virtual void setMatrix(storm::storage::SparseMatrix<ValueType>&& A) = 0;
 

@@ -49,12 +49,12 @@ TEST(SparseMdpRegionModelCheckerTest, two_dice_Prob) {
     EXPECT_TRUE(storm::checkRegionApproximation(modelchecker, allVioRegion.getLowerBoundaries(), allVioRegion.getUpperBoundaries(), false));
     
     //Remaining tests..
-    EXPECT_NEAR(0.1666665285, modelchecker->getReachabilityValue(allSatRegion.getLowerBoundaries()), storm::settings::generalSettings().getPrecision());
-    EXPECT_NEAR(0.1666665529, modelchecker->getReachabilityValue(allSatRegion.getUpperBoundaries()),  storm::settings::generalSettings().getPrecision());
-    EXPECT_NEAR(0.1716553235, modelchecker->getReachabilityValue(exBothRegion.getLowerBoundaries()), storm::settings::generalSettings().getPrecision());
-    EXPECT_NEAR(0.1709666953, modelchecker->getReachabilityValue(exBothRegion.getUpperBoundaries()),  storm::settings::generalSettings().getPrecision());
-    EXPECT_NEAR(0.1826972576, modelchecker->getReachabilityValue(allVioRegion.getLowerBoundaries()), storm::settings::generalSettings().getPrecision());
-    EXPECT_NEAR(0.1964429282, modelchecker->getReachabilityValue(allVioRegion.getUpperBoundaries()),  storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(0.1666665285, modelchecker->getReachabilityValue(allSatRegion.getLowerBoundaries()), storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
+    EXPECT_NEAR(0.1666665529, modelchecker->getReachabilityValue(allSatRegion.getUpperBoundaries()),  storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
+    EXPECT_NEAR(0.1716553235, modelchecker->getReachabilityValue(exBothRegion.getLowerBoundaries()), storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
+    EXPECT_NEAR(0.1709666953, modelchecker->getReachabilityValue(exBothRegion.getUpperBoundaries()),  storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
+    EXPECT_NEAR(0.1826972576, modelchecker->getReachabilityValue(allVioRegion.getLowerBoundaries()), storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
+    EXPECT_NEAR(0.1964429282, modelchecker->getReachabilityValue(allVioRegion.getUpperBoundaries()),  storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
     //test approximative method
     storm::settings::mutableRegionSettings().modifyModes(storm::settings::modules::RegionSettings::ApproxMode::TESTFIRST, storm::settings::modules::RegionSettings::SampleMode::INSTANTIATE, storm::settings::modules::RegionSettings::SmtMode::OFF);
     ASSERT_TRUE(storm::settings::regionSettings().doApprox());
@@ -89,12 +89,12 @@ TEST(SparseMdpRegionModelCheckerTest, coin_Prob) {
     EXPECT_TRUE(modelchecker->checkFormulaOnSamplingPoint(allSatRegion.getSomePoint()));
     EXPECT_FALSE(modelchecker->checkFormulaOnSamplingPoint(allVioRegion.getSomePoint()));
 
-    EXPECT_NEAR(0.95128124239, modelchecker->getReachabilityValue(allSatRegion.getLowerBoundaries()), storm::settings::generalSettings().getPrecision());
-    EXPECT_NEAR(0.26787251126, modelchecker->getReachabilityValue(allSatRegion.getUpperBoundaries()),  storm::settings::generalSettings().getPrecision());
-    EXPECT_NEAR(0.41880006098, modelchecker->getReachabilityValue(exBothRegion.getLowerBoundaries()), storm::settings::generalSettings().getPrecision());
-    EXPECT_NEAR(0.01535089684, modelchecker->getReachabilityValue(exBothRegion.getUpperBoundaries()),  storm::settings::generalSettings().getPrecision());
-    EXPECT_NEAR(0.24952791523, modelchecker->getReachabilityValue(allVioRegion.getLowerBoundaries()), storm::settings::generalSettings().getPrecision());
-    EXPECT_NEAR(0.01711494956, modelchecker->getReachabilityValue(allVioRegion.getUpperBoundaries()),  storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(0.95128124239, modelchecker->getReachabilityValue(allSatRegion.getLowerBoundaries()), storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
+    EXPECT_NEAR(0.26787251126, modelchecker->getReachabilityValue(allSatRegion.getUpperBoundaries()),  storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
+    EXPECT_NEAR(0.41880006098, modelchecker->getReachabilityValue(exBothRegion.getLowerBoundaries()), storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
+    EXPECT_NEAR(0.01535089684, modelchecker->getReachabilityValue(exBothRegion.getUpperBoundaries()),  storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
+    EXPECT_NEAR(0.24952791523, modelchecker->getReachabilityValue(allVioRegion.getLowerBoundaries()), storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
+    EXPECT_NEAR(0.01711494956, modelchecker->getReachabilityValue(allVioRegion.getUpperBoundaries()),  storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
    
     //test approximative method
     storm::settings::mutableRegionSettings().modifyModes(storm::settings::modules::RegionSettings::ApproxMode::TESTFIRST, storm::settings::modules::RegionSettings::SampleMode::INSTANTIATE, storm::settings::modules::RegionSettings::SmtMode::OFF);
