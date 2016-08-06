@@ -43,9 +43,6 @@ namespace storm {
                     if (removeForwardTransitions) {
                         clearStateValues(state);
                     }
-#ifdef STORM_DEV
-                    STORM_LOG_ASSERT(checkConsistent(transitionMatrix, backwardTransitions), "The forward and backward transition matrices became inconsistent.");
-#endif
                 }
             }
 
