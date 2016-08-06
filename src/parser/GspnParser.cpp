@@ -23,6 +23,7 @@ namespace storm {
                 xercesc::XMLPlatformUtils::Initialize();
             }
             catch (xercesc::XMLException const& toCatch) {
+                // Error occurred during the initialization process. Abort parsing since it is not possible.
                 STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Failed to initialize xercesc\n");
             }
 
@@ -42,21 +43,28 @@ namespace storm {
             }
             catch (xercesc::XMLException const& toCatch) {
                 auto message = xercesc::XMLString::transcode(toCatch.getMessage());
+                // Error occurred while parsing the file. Abort constructing the gspn since the input file is not valid
+                // or the parser run into a problem.
                 STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, message);
                 xercesc::XMLString::release(&message);
             }
             catch (const xercesc::DOMException& toCatch) {
                 auto message = xercesc::XMLString::transcode(toCatch.msg);
+                // Error occurred while parsing the file. Abort constructing the gspn since the input file is not valid
+                // or the parser run into a problem.
                 STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, message);
                 xercesc::XMLString::release(&message);
             }
             catch (...) {
+                // Error occurred while parsing the file. Abort constructing the gspn since the input file is not valid
+                // or the parser run into a problem.
                 STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Failed to parse pnml file.\n");
             }
 
             // build gspn by traversing the DOM object
             parser->getDocument()->normalizeDocument();
             xercesc::DOMElement* elementRoot = parser->getDocument()->getDocumentElement();
+            // If the top-level node is not a "pnml" node, then throw an exception.
             STORM_LOG_THROW(getName(elementRoot).compare("pnml") == 0, storm::exceptions::UnexpectedException, "Failed to identify the root element.\n");
             traversePnmlElement(elementRoot);
 
@@ -74,6 +82,8 @@ namespace storm {
                 auto attr = element->getAttributes()->item(i);
                 auto name = getName(attr);
 
+                // Found node or attribute which is at the moment nod handled by this parser.
+                // Notify the user and continue the parsing.
                 STORM_PRINT_AND_LOG("unknown attribute (node=pnml): " + name + "\n");
             }
 
@@ -87,6 +97,8 @@ namespace storm {
                 } else if (std::all_of(name.begin(), name.end(), isspace)) {
                     // ignore node (contains only whitespace)
                 } else {
+                    // Found node or attribute which is at the moment nod handled by this parser.
+                    // Notify the user and continue the parsing.
                     STORM_PRINT_AND_LOG("unknown child (node=pnml): " + name + "\n");
                 }
             }
@@ -101,6 +113,8 @@ namespace storm {
                 if (name.compare("id") == 0) {
                     gspn.setName(XMLtoString(attr->getNodeValue()));
                 } else {
+                    // Found node or attribute which is at the moment nod handled by this parser.
+                    // Notify the user and continue the parsing.
                     STORM_PRINT_AND_LOG("unknown attribute (node=" + XMLtoString(node->getNodeName()) + "): " + name + "\n");
                 }
             }
@@ -123,6 +137,8 @@ namespace storm {
                 } else if (std::all_of(name.begin(), name.end(), isspace)) {
                     // ignore node (contains only whitespace)
                 } else {
+                    // Found node or attribute which is at the moment nod handled by this parser.
+                    // Notify the user and continue the parsing.
                     STORM_PRINT_AND_LOG("unknown child (node=" + XMLtoString(node->getNodeName()) + "): " + name + "\n");
                 }
             }
@@ -142,6 +158,8 @@ namespace storm {
                 if (name.compare("id") == 0) {
                     placeName = XMLtoString(attr->getNodeValue());
                 } else {
+                    // Found node or attribute which is at the moment nod handled by this parser.
+                    // Notify the user and continue the parsing.
                     STORM_PRINT_AND_LOG("unknown attribute (node=place): " + name + "\n");
                 }
             }
@@ -163,6 +181,8 @@ namespace storm {
                            name.compare("graphics") == 0) {
                     // ignore these tags
                 } else {
+                    // Found node or attribute which is at the moment nod handled by this parser.
+                    // Notify the user and continue the parsing.
                     STORM_PRINT_AND_LOG("unknown child (node=place): " + name + "\n");
                 }
             }
@@ -171,10 +191,14 @@ namespace storm {
             storm::gspn::Place place;
             place.setName(placeName);
             if (!numberOfInitialTokens.first) {
+                // no information about the number of initial tokens is found
+                // use the default number of initial tokens
                 STORM_PRINT_AND_LOG("unknown numberOfInitialTokens (place=" + placeName + ")\n");
             }
             place.setNumberOfInitialTokens(numberOfInitialTokens.second);
             if (!capacity.first) {
+                // no information about the capacity is found
+                // use default capacity
                 STORM_PRINT_AND_LOG("unknown capacity (place=" + placeName + ")\n");
             }
             place.setCapacity(capacity.second);
@@ -188,7 +212,7 @@ namespace storm {
             std::pair<bool, bool> timed(false, defaultTransitionType);
             std::pair<bool, std::string> value(false, defaultTransitionValue);
             std::string id;
-            uint_fast64_t priority;
+            uint_fast64_t priority = defaultPriority;
 
             // parse attributes
             for (uint_fast64_t i = 0; i < node->getAttributes()->getLength(); ++i) {
@@ -198,6 +222,8 @@ namespace storm {
                 if (name.compare("id") == 0) {
                     id = XMLtoString(attr->getNodeValue());
                 } else {
+                    // Found node or attribute which is at the moment nod handled by this parser.
+                    // Notify the user and continue the parsing.
                     STORM_PRINT_AND_LOG("unknown attribute (node=transition): " + name + "\n");
                 }
             }
@@ -222,18 +248,25 @@ namespace storm {
                            name.compare("orientation") == 0) {
                     // ignore these tags
                 } else {
+                    // Found node or attribute which is at the moment nod handled by this parser.
+                    // Notify the user and continue the parsing.
                     STORM_PRINT_AND_LOG("unknown child (node=transition): " + name + "\n");
                 }
             }
 
             // build transition and add it to the gspn
             if (!timed.first) {
-                STORM_PRINT_AND_LOG("unknown transition type (transition=" + id + ")\n");
+                // found unknown transition type
+                // abort parsing
+                STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "unknown transition type (transition=" + id + ")\n");
+                return;
             }
 
             if (timed.second) {
                 storm::gspn::TimedTransition<storm::gspn::GSPN::RateType> transition;
                 if (!value.first) {
+                    // no information about the rate is found
+                    // abort the parsing
                     STORM_LOG_THROW(false, storm::exceptions::UnexpectedException ,"unknown transition rate (transition=" + id + ")\n");
                 }
                 transition.setRate(std::stod(value.second));
@@ -243,6 +276,8 @@ namespace storm {
             } else {
                 storm::gspn::ImmediateTransition<storm::gspn::GSPN::WeightType> transition;
                 if (!value.first) {
+                    // no information about the weight is found
+                    // continue with the default weight
                     STORM_PRINT_AND_LOG("unknown transition weight (transition=" + id + ")\n");
                 }
                 transition.setWeight(std::stod(value.second));
@@ -274,6 +309,8 @@ namespace storm {
                 } else if (name.compare("id") == 0) {
                     id = XMLtoString(attr->getNodeValue());
                 } else {
+                    // Found node or attribute which is at the moment nod handled by this parser.
+                    // Notify the user and continue the parsing.
                     STORM_PRINT_AND_LOG("unknown attribute (node=arc): " + name + "\n");
                 }
             }
@@ -295,18 +332,26 @@ namespace storm {
                            name.compare("tagged") == 0) {
                     // ignore these tags
                 } else {
+                    // Found node or attribute which is at the moment nod handled by this parser.
+                    // Notify the user and continue the parsing.
                     STORM_PRINT_AND_LOG("unknown child (node=arc): " + name + "\n");
                 }
             }
 
             // check if all necessary information where stored in the pnml file
             if (!source.first) {
+                // could not find start of the arc
+                // abort parsing
                 STORM_LOG_THROW(false, storm::exceptions::UnexpectedException ,"unknown arc source (arc=" + id + ")\n");
             }
             if (!target.first) {
+                // could not find the target of the arc
+                // abort parsing
                 STORM_LOG_THROW(false, storm::exceptions::UnexpectedException ,"unknown arc target (arc=" + id + ")\n");
             }
             if (!multiplicity.first) {
+                // no information about the multiplicity of the arc
+                // continue and use the default multiplicity
                 STORM_PRINT_AND_LOG("unknown multiplicity (node=arc): " + id + "\n");
             }
 
@@ -316,7 +361,9 @@ namespace storm {
                 auto trans = gspn.getTransition(target.second);
                 if (true == place.first && true == trans.first) {
                     if (!type.first) {
-                        STORM_PRINT_AND_LOG("unknown arc type (arc=" + id + ")\n");
+                        // no arc type found
+                        // abport parsing
+                        STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "unknown arc type (arc=" + id + ")\n");
                     }
 
                     // incoming arc
@@ -325,6 +372,8 @@ namespace storm {
                     } else if (type.second.compare("inhibition") == 0) {
                         trans.second->setInhibitionArcMultiplicity(place.second, multiplicity.second);
                     } else {
+                        // unknown arc type
+                        // abort parsing
                         STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "unknown arc type (arc=" + id + ")\n");
                     }
                     return;
@@ -340,6 +389,7 @@ namespace storm {
                 }
             }
 
+            // if we reach this line we could not find the corresponding place or transition
             STORM_LOG_THROW(false, storm::exceptions::UnexpectedException ,"unknown arc source or target (arc=" + id + ")\n");
         }
 
@@ -356,6 +406,8 @@ namespace storm {
                     return XMLtoString(node->getNodeName());
                 }
                 default: {
+                    // Found node or attribute which is at the moment nod handled by this parser.
+                    // Notify the user and continue the parsing.
                     STORM_PRINT_AND_LOG("unknown node type \n");
                     return "";
                 }
@@ -378,6 +430,8 @@ namespace storm {
                 } else if (name.compare("graphics") == 0) {
                     // ignore these tags
                 } else {
+                    // Found node or attribute which is at the moment nod handled by this parser.
+                    // Notify the user and continue the parsing.
                     STORM_PRINT_AND_LOG("unknown child (node=initialMarking): " + name + "\n");
                 }
             }
@@ -400,6 +454,8 @@ namespace storm {
                 } else if (std::all_of(name.begin(), name.end(), isspace)) {
                     // ignore node (contains only whitespace)
                 } else {
+                    // Found node or attribute which is at the moment nod handled by this parser.
+                    // Notify the user and continue the parsing.
                     STORM_PRINT_AND_LOG("unknown child (node=capacity): " + name + "\n");
                 }
             }
@@ -422,6 +478,8 @@ namespace storm {
                 } else if (std::all_of(name.begin(), name.end(), isspace)) {
                     // ignore node (contains only whitespace)
                 } else {
+                    // Found node or attribute which is at the moment nod handled by this parser.
+                    // Notify the user and continue the parsing.
                     STORM_PRINT_AND_LOG("unknown child (node=inscription): " + name + "\n");
                 }
             }
@@ -439,6 +497,8 @@ namespace storm {
                 } else  if (std::all_of(name.begin(), name.end(), isspace)) {
                     // ignore node (contains only whitespace)
                 } else {
+                    // Found node or attribute which is at the moment nod handled by this parser.
+                    // Notify the user and continue the parsing.
                     STORM_PRINT_AND_LOG("unknown child (node=rate): " + name + "\n");
                 }
             }
@@ -455,6 +515,8 @@ namespace storm {
                 } else  if (std::all_of(name.begin(), name.end(), isspace)) {
                     // ignore node (contains only whitespace)
                 } else {
+                    // Found node or attribute which is at the moment nod handled by this parser.
+                    // Notify the user and continue the parsing.
                     STORM_PRINT_AND_LOG("unknown child (node=timed): " + name + "\n");
                 }
             }
@@ -468,6 +530,8 @@ namespace storm {
                 if (name.compare("value") == 0) {
                     return XMLtoString(attr->getNodeValue());
                 } else {
+                    // Found node or attribute which is at the moment nod handled by this parser.
+                    // Notify the user and continue the parsing.
                     STORM_PRINT_AND_LOG("unknown child (node=type): " + name + "\n");
                 }
             }
@@ -490,6 +554,8 @@ namespace storm {
                 } else if (name.compare("graphics") == 0) {
                     // ignore these tags
                 } else {
+                    // Found node or attribute which is at the moment nod handled by this parser.
+                    // Notify the user and continue the parsing.
                     STORM_PRINT_AND_LOG("unknown child (node=priority): " + name + "\n");
                 }
             }
