@@ -36,8 +36,8 @@ namespace storm {
         namespace region {
 
             template<typename ParametricSparseModelType, typename ConstantType>
-            SparseDtmcRegionModelChecker<ParametricSparseModelType, ConstantType>::SparseDtmcRegionModelChecker(std::shared_ptr<ParametricSparseModelType> model) : 
-                    SparseRegionModelChecker<ParametricSparseModelType, ConstantType>(model){
+            SparseDtmcRegionModelChecker<ParametricSparseModelType, ConstantType>::SparseDtmcRegionModelChecker(std::shared_ptr<ParametricSparseModelType> model, SparseRegionModelCheckerSettings const& settings) :
+                    SparseRegionModelChecker<ParametricSparseModelType, ConstantType>(model, settings){
                 //intentionally left empty
             }
 
@@ -247,8 +247,8 @@ namespace storm {
                     simpleFormula = std::shared_ptr<storm::logic::OperatorFormula>(new storm::logic::ProbabilityOperatorFormula(eventuallyFormula, storm::logic::OperatorInformation(boost::none, this->getSpecifiedFormula()->getBound())));
                 }
                 //Check if the reachability function needs to be computed
-                if((storm::settings::getModule<storm::settings::modules::RegionSettings>().getSmtMode()==storm::settings::modules::RegionSettings::SmtMode::FUNCTION) ||
-                        (storm::settings::getModule<storm::settings::modules::RegionSettings>().getSampleMode()==storm::settings::modules::RegionSettings::SampleMode::EVALUATE)){
+                if((this->getSettings().getSmtMode()==storm::settings::modules::RegionSettings::SmtMode::FUNCTION) ||
+                        (this->getSettings().getSampleMode()==storm::settings::modules::RegionSettings::SampleMode::EVALUATE)){
                     this->computeReachabilityFunction(*(this->getSimpleModel())->template as<storm::models::sparse::Dtmc<ParametricType>>());
                 }
             }
@@ -439,8 +439,8 @@ namespace storm {
             template<typename ParametricSparseModelType, typename ConstantType>
             bool SparseDtmcRegionModelChecker<ParametricSparseModelType, ConstantType>::checkPoint(ParameterRegion<ParametricType>& region, std::map<VariableType, CoefficientType>const& point, bool favorViaFunction) {
                 bool valueInBoundOfFormula;
-                if((storm::settings::getModule<storm::settings::modules::RegionSettings>().getSampleMode()==storm::settings::modules::RegionSettings::SampleMode::EVALUATE) ||
-                        (!storm::settings::getModule<storm::settings::modules::RegionSettings>().doSample() && favorViaFunction)){
+                if((this->getSettings().getSampleMode()==storm::settings::modules::RegionSettings::SampleMode::EVALUATE) ||
+                        (!this->getSettings().doSample() && favorViaFunction)){
                     //evaluate the reachability function
                     valueInBoundOfFormula = this->valueIsInBoundOfFormula(this->evaluateReachabilityFunction(point));
                 }
@@ -496,7 +496,7 @@ namespace storm {
 
             template<typename ParametricSparseModelType, typename ConstantType>
             bool SparseDtmcRegionModelChecker<ParametricSparseModelType, ConstantType>::checkSmt(ParameterRegion<ParametricType>& region) {
-                STORM_LOG_THROW((storm::settings::getModule<storm::settings::modules::RegionSettings>().getSmtMode()==storm::settings::modules::RegionSettings::SmtMode::FUNCTION), storm::exceptions::NotImplementedException, "Selected SMT mode has not been implemented.");
+                STORM_LOG_THROW((this->getSettings().getSmtMode()==storm::settings::modules::RegionSettings::SmtMode::FUNCTION), storm::exceptions::NotImplementedException, "Selected SMT mode has not been implemented.");
                 if (region.getCheckResult()==RegionCheckResult::UNKNOWN){
                     //Sampling needs to be done (on a single point)
                     checkPoint(region,region.getSomePoint(), true);

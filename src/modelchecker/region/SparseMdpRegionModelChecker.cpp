@@ -36,8 +36,8 @@ namespace storm {
         namespace region {
 
             template<typename ParametricSparseModelType, typename ConstantType>
-            SparseMdpRegionModelChecker<ParametricSparseModelType, ConstantType>::SparseMdpRegionModelChecker(std::shared_ptr<ParametricSparseModelType> model) : 
-                    SparseRegionModelChecker<ParametricSparseModelType, ConstantType>(model){
+            SparseMdpRegionModelChecker<ParametricSparseModelType, ConstantType>::SparseMdpRegionModelChecker(std::shared_ptr<ParametricSparseModelType> model, SparseRegionModelCheckerSettings const& settings) :
+                    SparseRegionModelChecker<ParametricSparseModelType, ConstantType>(model, settings){
                 STORM_LOG_THROW(model->isOfType(storm::models::ModelType::Mdp), storm::exceptions::InvalidArgumentException, "Tried to create an mdp region model checker for a model that is not an mdp");
             }
 

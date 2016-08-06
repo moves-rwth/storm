@@ -1,10 +1,3 @@
-/* 
- * File:   SparseRegionModelChecker.cpp
- * Author: tim
- * 
- * Created on September 9, 2015, 12:34 PM
- */
-
 #include "src/modelchecker/region/SparseRegionModelChecker.h"
 
 #include "src/adapters/CarlAdapter.h"
@@ -30,11 +23,42 @@
 namespace storm {
     namespace modelchecker {
         namespace region {
-                                
+
+            SparseRegionModelCheckerSettings::SparseRegionModelCheckerSettings(storm::settings::modules::RegionSettings::SampleMode const& sampleM,
+                                                storm::settings::modules::RegionSettings::ApproxMode const& appM,
+                                                storm::settings::modules::RegionSettings::SmtMode    const& smtM) : sampleMode(sampleM), approxMode(appM), smtMode(smtM) {
+                // Intentionally left empty
+            }
+
+            storm::settings::modules::RegionSettings::ApproxMode SparseRegionModelCheckerSettings::getApproxMode() const {
+                return this->approxMode;
+            }
+
+            storm::settings::modules::RegionSettings::SampleMode SparseRegionModelCheckerSettings::getSampleMode() const {
+                return this->sampleMode;
+            }
+
+            storm::settings::modules::RegionSettings::SmtMode SparseRegionModelCheckerSettings::getSmtMode() const {
+                return this->smtMode;
+            }
+
+            bool SparseRegionModelCheckerSettings::doApprox() const {
+                return getApproxMode() != storm::settings::modules::RegionSettings::ApproxMode::OFF;
+            }
+
+            bool SparseRegionModelCheckerSettings::doSample() const {
+                return getSampleMode() != storm::settings::modules::RegionSettings::SampleMode::OFF;
+            }
+
+            bool SparseRegionModelCheckerSettings::doSmt() const {
+                return getSmtMode() != storm::settings::modules::RegionSettings::SmtMode::OFF;
+            }
+
             template<typename ParametricSparseModelType, typename ConstantType>
-            SparseRegionModelChecker<ParametricSparseModelType, ConstantType>::SparseRegionModelChecker(std::shared_ptr<ParametricSparseModelType> model) : 
+            SparseRegionModelChecker<ParametricSparseModelType, ConstantType>::SparseRegionModelChecker(std::shared_ptr<ParametricSparseModelType> model, SparseRegionModelCheckerSettings const& settings) :
                     model(model),
-                    specifiedFormula(nullptr){
+                    specifiedFormula(nullptr),
+                    settings(settings) {
                 STORM_LOG_THROW(model->getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::InvalidArgumentException, "Model is required to have exactly one initial state.");
             }
 
@@ -82,6 +106,19 @@ namespace storm {
             std::shared_ptr<storm::logic::OperatorFormula> const& SparseRegionModelChecker<ParametricSparseModelType, ConstantType>::getSimpleFormula() const {
                 return this->simpleFormula;
             }
+
+//            template<typename ParametricSparseModelType, typename ConstantType>
+//            SparseRegionModelCheckerSettings& SparseRegionModelChecker<ParametricSparseModelType, ConstantType>::getSettings() {
+//                return this->settings;
+//            };
+
+            template<typename ParametricSparseModelType, typename ConstantType>
+            SparseRegionModelCheckerSettings const& SparseRegionModelChecker<ParametricSparseModelType, ConstantType>::getSettings() const {
+                return this->settings;
+            };
+
+
+
 
             template<typename ParametricSparseModelType, typename ConstantType>
             void SparseRegionModelChecker<ParametricSparseModelType, ConstantType>::specifyFormula(std::shared_ptr<const storm::logic::Formula> formula) {
@@ -133,11 +170,11 @@ namespace storm {
                 
                 //Check if the approximation and the sampling model needs to be computed
                 if(!this->isResultConstant()){
-                    if(this->isApproximationApplicable && storm::settings::getModule<storm::settings::modules::RegionSettings>().doApprox()){
+                    if(this->isApproximationApplicable && settings.doApprox()){
                         initializeApproximationModel(*this->getSimpleModel(), this->getSimpleFormula());
                     }
-                    if(storm::settings::getModule<storm::settings::modules::RegionSettings>().getSampleMode()==storm::settings::modules::RegionSettings::SampleMode::INSTANTIATE ||
-                            (!storm::settings::getModule<storm::settings::modules::RegionSettings>().doSample() && storm::settings::getModule<storm::settings::modules::RegionSettings>().getApproxMode()==storm::settings::modules::RegionSettings::ApproxMode::TESTFIRST)){
+                    if(settings.getSampleMode()==storm::settings::modules::RegionSettings::SampleMode::INSTANTIATE ||
+                            (!settings.doSample() && settings.getApproxMode()==storm::settings::modules::RegionSettings::ApproxMode::TESTFIRST)){
                         initializeSamplingModel(*this->getSimpleModel(), this->getSimpleFormula());
                     }
                 } else if (this->isResultConstant() && this->constantResult.get() == storm::utility::region::convertNumber<ConstantType>(-1.0)){
@@ -240,10 +277,10 @@ namespace storm {
 
                 //switches for the different steps.
                 bool done=false;
-                STORM_LOG_WARN_COND( (!storm::settings::getModule<storm::settings::modules::RegionSettings>().doApprox() || this->isApproximationApplicable), "the approximation is only correct if the model has only linear functions (more precisely: linear in a single parameter, i.e., functions like p*q are okay). As this is not the case, approximation is deactivated");
-                bool doApproximation=storm::settings::getModule<storm::settings::modules::RegionSettings>().doApprox() && this->isApproximationApplicable;
-                bool doSampling=storm::settings::getModule<storm::settings::modules::RegionSettings>().doSample();
-                bool doSmt=storm::settings::getModule<storm::settings::modules::RegionSettings>().doSmt();
+                STORM_LOG_WARN_COND( (!settings.doApprox() || this->isApproximationApplicable), "the approximation is only correct if the model has only linear functions (more precisely: linear in a single parameter, i.e., functions like p*q are okay). As this is not the case, approximation is deactivated");
+                bool doApproximation=settings.doApprox() && this->isApproximationApplicable;
+                bool doSampling=settings.doSample();
+                bool doSmt=settings.doSmt();
 
                 if(this->isResultConstant()){
                     STORM_LOG_DEBUG("Checking a region although the result is constant, i.e., independent of the region. This makes sense none.");
@@ -316,7 +353,7 @@ namespace storm {
                 bool proveAllSat;
                 switch (region.getCheckResult()){
                     case RegionCheckResult::UNKNOWN: 
-                        switch(storm::settings::getModule<storm::settings::modules::RegionSettings>().getApproxMode()){
+                        switch(this->settings.getApproxMode()){
                             case storm::settings::modules::RegionSettings::ApproxMode::TESTFIRST:
                                 //Sample a single point to know whether we should try to prove ALLSAT or ALLVIOLATED
                                 checkPoint(region,region.getSomePoint(), false);

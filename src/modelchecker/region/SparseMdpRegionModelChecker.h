@@ -19,7 +19,7 @@ namespace storm {
                 typedef typename storm::utility::region::VariableType<ParametricType> VariableType;
                 typedef typename storm::utility::region::CoefficientType<ParametricType> CoefficientType;
 
-                explicit SparseMdpRegionModelChecker(std::shared_ptr<ParametricSparseModelType> model);
+                SparseMdpRegionModelChecker(std::shared_ptr<ParametricSparseModelType> model, SparseRegionModelCheckerSettings const& settings);
 
                 virtual ~SparseMdpRegionModelChecker();
 

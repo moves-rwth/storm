@@ -19,7 +19,7 @@ namespace storm {
             const std::string RegionSettings::smtmodeOptionName = "smtmode";
             const std::string RegionSettings::refinementOptionName = "refinement";
             
-            RegionSettings::RegionSettings() : ModuleSettings(moduleName), modesModified(false) {
+            RegionSettings::RegionSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, regionfileOptionName, true, "Specifies the regions via a file. Format: 0.3<=p<=0.4,0.2<=q<=0.5; 0.6<=p<=0.7,0.8<=q<=0.9")
                             .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The file from which to read the regions.")
                                 .addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
@@ -58,9 +58,6 @@ namespace storm {
             }
             
             RegionSettings::ApproxMode RegionSettings::getApproxMode() const {
-                if(this->modesModified) {
-                    return this->approxMode;
-                }
                 std::string modeString= this->getOption(approxmodeOptionName).getArgumentByName("mode").getValueAsString();
                 if(modeString=="off"){
                     return ApproxMode::OFF;
@@ -79,14 +76,7 @@ namespace storm {
                 return ApproxMode::OFF;
             }
 
-            bool RegionSettings::doApprox() const {
-                return getApproxMode()!=ApproxMode::OFF;
-            }
-            
             RegionSettings::SampleMode RegionSettings::getSampleMode() const {
-                if (this->modesModified){
-                    return this->sampleMode;
-                }
                 std::string modeString= this->getOption(samplemodeOptionName).getArgumentByName("mode").getValueAsString();
                 if(modeString=="off"){
                     return SampleMode::OFF;
@@ -101,15 +91,8 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "The sample mode '" << modeString << "' is not valid");
                 return SampleMode::OFF;
             }
-
-            bool RegionSettings::doSample() const {
-                return getSampleMode()!=SampleMode::OFF;
-            }
             
             RegionSettings::SmtMode RegionSettings::getSmtMode() const {
-                if(this->modesModified){
-                    return this->smtMode;
-                }
                 std::string modeString= this->getOption(smtmodeOptionName).getArgumentByName("mode").getValueAsString();
                 if(modeString=="off"){
                     return SmtMode::OFF;
@@ -124,22 +107,8 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "The smt mode '" << modeString << "' is not valid");
                 return SmtMode::OFF;
             }
-            
-            bool RegionSettings::doSmt() const {
-                return getSmtMode()!=SmtMode::OFF;
-            }
-            
-            void RegionSettings::modifyModes(ApproxMode const& approxMode, SampleMode const& sampleMode, SmtMode const& smtMode) {
-                this->approxMode = approxMode;
-                this->sampleMode = sampleMode;
-                this->smtMode = smtMode;
-                this->modesModified=true;
-            }
-            
-            void RegionSettings::resetModes() {
-                this->modesModified=false;
-            }
-            
+
+
             bool RegionSettings::doRefinement() const{
                 return this->getOption(refinementOptionName).getHasOptionBeenSet();
             }

@@ -409,18 +409,20 @@ namespace storm {
         storm::prism::Program program = parseProgram(programFilePath);
         program.checkValidity();
         std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = parseFormulasForProgram(formulaString, program);;
-        if(formulas.size()!=1){
+        if(formulas.size()!=1) {
             STORM_LOG_ERROR("The given formulaString does not specify exactly one formula");
             return false;
         }
         std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model = buildSparseModel<storm::RationalFunction>(program, formulas);
+        auto const& regionSettings = storm::settings::getModule<storm::settings::modules::RegionSettings>();
+        storm::modelchecker::region::SparseRegionModelCheckerSettings settings(regionSettings.getSampleMode(), regionSettings.getApproxMode(), regionSettings.getSmtMode());
         // Preprocessing and ModelChecker
         if(model->isOfType(storm::models::ModelType::Dtmc)){
             preprocessModel<storm::models::sparse::Dtmc<storm::RationalFunction>>(model,formulas);
-            regionModelChecker = std::make_shared<storm::modelchecker::region::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>>(model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>());
+            regionModelChecker = std::make_shared<storm::modelchecker::region::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>>(model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>(), settings);
         } else if (model->isOfType(storm::models::ModelType::Mdp)){
             preprocessModel<storm::models::sparse::Mdp<storm::RationalFunction>>(model,formulas);
-            regionModelChecker = std::make_shared<storm::modelchecker::region::SparseMdpRegionModelChecker<storm::models::sparse::Mdp<storm::RationalFunction>, double>>(model->as<storm::models::sparse::Mdp<storm::RationalFunction>>());
+            regionModelChecker = std::make_shared<storm::modelchecker::region::SparseMdpRegionModelChecker<storm::models::sparse::Mdp<storm::RationalFunction>, double>>(model->as<storm::models::sparse::Mdp<storm::RationalFunction>>(),  settings);
         } else {
             STORM_LOG_ERROR("The type of the given model is not supported (only Dtmcs or Mdps are supported");
             return false;

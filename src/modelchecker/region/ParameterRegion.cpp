@@ -1,10 +1,3 @@
-/* 
- * File:   ParameterRegion.cpp
- * Author: tim
- * 
- * Created on August 10, 2015, 1:51 PM
- */
-
 #include "src/modelchecker/region/ParameterRegion.h"
 
 #include "src/utility/region.h"

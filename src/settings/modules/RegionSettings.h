@@ -52,42 +52,16 @@ namespace storm {
                 ApproxMode getApproxMode() const;
                 
                 /*!
-                 * Returns whether to use approximation
-                 */
-                bool doApprox() const;
-                
-                /*!
                  * Returns the mode in which Sampling should be used
                  */
                 SampleMode getSampleMode() const;
-                
-                /*!
-                 * Returns whether to use Sampling
-                 */
-                bool doSample() const;
                 
                 /*!
                  * Returns the mode in which SMT solving should be used
                  */
                 SmtMode getSmtMode() const;
 
-                /*!
-                 * Returns whether to use SMT Solving
-                 */
-                bool doSmt() const;
-                
-                /*!
-                 * Sets the modes accordingly. Great for debugging purposes.
-                 * Use resetModes() to switch back to the modes specified by the settings
-                 */
-                void modifyModes(ApproxMode const& approxMode, SampleMode const& sampleMode, SmtMode const& smtMode);
-                
-                /*!
-                 * Resets the modes to the ones specified by the settings.
-                 * This is useful if the modes have been altered by setModes(...)
-                 */
-                void resetModes();
-                    
+
                 bool doRefinement() const;
                 double getRefinementThreshold() const;
                 
@@ -102,11 +76,6 @@ namespace storm {
                 const static std::string samplemodeOptionName;
                 const static std::string smtmodeOptionName;
                 const static std::string refinementOptionName;
-                
-                bool modesModified;
-                ApproxMode approxMode;
-                SampleMode sampleMode;
-                SmtMode smtMode;
             };
 
         } // namespace modules

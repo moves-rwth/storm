@@ -1,12 +1,4 @@
-/* 
- * File:   SparseRegionModelChecker.h
- * Author: tim
- *
- * Created on September 9, 2015, 12:34 PM
- */
-
-#ifndef STORM_MODELCHECKER_REGION_SPARSEREGIONMODELCHECKER_H
-#define	STORM_MODELCHECKER_REGION_SPARSEREGIONMODELCHECKER_H
+#pragma once
 
 #include <ostream>
 #include <boost/optional.hpp>
@@ -23,9 +15,31 @@
 #include "src/models/sparse/Mdp.h"
 #include "src/logic/Formulas.h"
 
+#include "src/settings/modules/RegionSettings.h"
+
 namespace storm {
     namespace modelchecker{
         namespace region{
+
+            class SparseRegionModelCheckerSettings {
+            public:
+                SparseRegionModelCheckerSettings(storm::settings::modules::RegionSettings::SampleMode const& sampleM,
+                                                 storm::settings::modules::RegionSettings::ApproxMode const& appM,
+                                                 storm::settings::modules::RegionSettings::SmtMode    const& smtM);
+
+                storm::settings::modules::RegionSettings::SampleMode getSampleMode() const;
+                storm::settings::modules::RegionSettings::ApproxMode getApproxMode() const;
+                storm::settings::modules::RegionSettings::SmtMode    getSmtMode() const;
+
+                bool doApprox() const;
+                bool doSmt() const;
+                bool doSample() const;
+            private:
+                storm::settings::modules::RegionSettings::SampleMode sampleMode;
+                storm::settings::modules::RegionSettings::ApproxMode approxMode;
+                storm::settings::modules::RegionSettings::SmtMode    smtMode;
+            };
+
             template<typename ParametricSparseModelType, typename ConstantType>
             class SparseRegionModelChecker : public AbstractSparseRegionModelChecker<typename ParametricSparseModelType::ValueType, ConstantType> {
             public:
@@ -34,7 +48,7 @@ namespace storm {
                 typedef typename storm::utility::region::VariableType<ParametricType> VariableType;
                 typedef typename storm::utility::region::CoefficientType<ParametricType> CoefficientType;
 
-                explicit SparseRegionModelChecker(std::shared_ptr<ParametricSparseModelType> model);
+                SparseRegionModelChecker(std::shared_ptr<ParametricSparseModelType> model, SparseRegionModelCheckerSettings const& settings);
 
                 virtual ~SparseRegionModelChecker();
                 
@@ -137,6 +151,9 @@ namespace storm {
                  * Returns the formula that has been specified upon initialization of this
                  */
                 std::shared_ptr<storm::logic::OperatorFormula> const& getSpecifiedFormula() const;
+
+                //SparseRegionModelCheckerSettings& getSettings();
+                SparseRegionModelCheckerSettings const& getSettings() const;
 
             protected:
                 
@@ -244,6 +261,10 @@ namespace storm {
                 std::shared_ptr<SamplingModel<ParametricSparseModelType, ConstantType>> samplingModel;
                 // a flag that is true iff the resulting reachability function is constant
                 boost::optional<ConstantType> constantResult;
+
+                SparseRegionModelCheckerSettings settings;
+
+
                 
                 // runtimes and other information for statistics. 
                 uint_fast64_t numOfCheckedRegions;
@@ -269,6 +290,3 @@ namespace storm {
         } //namespace region
     } //namespace modelchecker
 } //namespace storm
-
-#endif	/* STORM_MODELCHECKER_REGION_SPARSEREGIONMODELCHECKER_H */
-
