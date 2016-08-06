@@ -28,6 +28,7 @@ TEST(SparseDtmcRegionModelCheckerTest, Brp_Prob) {
     auto const& regionSettings = storm::settings::getModule<storm::settings::modules::RegionSettings>();
     storm::modelchecker::region::SparseRegionModelCheckerSettings settings(regionSettings.getSampleMode(), regionSettings.getApproxMode(), regionSettings.getSmtMode());
     auto dtmcModelchecker = std::make_shared<storm::modelchecker::region::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>>(model, settings);
+    dtmcModelchecker->specifyFormula(formulas[0]);
 
     //start testing
     auto allSatRegion=storm::modelchecker::region::ParameterRegion<storm::RationalFunction>::parseRegion("0.7<=pL<=0.9,0.75<=pK<=0.95");
@@ -53,7 +54,7 @@ TEST(SparseDtmcRegionModelCheckerTest, Brp_Prob) {
     //test approximative method
     settings = storm::modelchecker::region::SparseRegionModelCheckerSettings(storm::settings::modules::RegionSettings::SampleMode::INSTANTIATE, storm::settings::modules::RegionSettings::ApproxMode::TESTFIRST,  storm::settings::modules::RegionSettings::SmtMode::OFF);
     dtmcModelchecker = std::make_shared<storm::modelchecker::region::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>>(model, settings);
-
+    dtmcModelchecker->specifyFormula(formulas[0]);
     ASSERT_TRUE(settings.doApprox());
     ASSERT_TRUE(settings.doSample());
     ASSERT_FALSE(settings.doSmt());
@@ -71,6 +72,7 @@ TEST(SparseDtmcRegionModelCheckerTest, Brp_Prob) {
 
     settings = storm::modelchecker::region::SparseRegionModelCheckerSettings(storm::settings::modules::RegionSettings::SampleMode::EVALUATE, storm::settings::modules::RegionSettings::ApproxMode::OFF,  storm::settings::modules::RegionSettings::SmtMode::FUNCTION);
     dtmcModelchecker = std::make_shared<storm::modelchecker::region::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>>(model, settings);
+    dtmcModelchecker->specifyFormula(formulas[0]);
     ASSERT_FALSE(settings.doApprox());
     ASSERT_TRUE(settings.doSample());
     ASSERT_TRUE(settings.doSmt());
@@ -95,7 +97,7 @@ TEST(SparseDtmcRegionModelCheckerTest, Brp_Rew) {
     auto const& regionSettings = storm::settings::getModule<storm::settings::modules::RegionSettings>();
     storm::modelchecker::region::SparseRegionModelCheckerSettings settings(regionSettings.getSampleMode(), regionSettings.getApproxMode(), regionSettings.getSmtMode());
     auto dtmcModelchecker = std::make_shared<storm::modelchecker::region::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>>(model, settings);
-
+    dtmcModelchecker->specifyFormula(formulas[0]);
     //start testing
     auto allSatRegion=storm::modelchecker::region::ParameterRegion<storm::RationalFunction>::parseRegion("0.7<=pK<=0.875,0.75<=TOMsg<=0.95");
     auto exBothRegion=storm::modelchecker::region::ParameterRegion<storm::RationalFunction>::parseRegion("0.6<=pK<=0.9,0.5<=TOMsg<=0.95");
@@ -125,7 +127,7 @@ TEST(SparseDtmcRegionModelCheckerTest, Brp_Rew) {
     //test approximative method
     settings = storm::modelchecker::region::SparseRegionModelCheckerSettings(storm::settings::modules::RegionSettings::SampleMode::INSTANTIATE, storm::settings::modules::RegionSettings::ApproxMode::TESTFIRST,  storm::settings::modules::RegionSettings::SmtMode::OFF);
     dtmcModelchecker = std::make_shared<storm::modelchecker::region::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>>(model, settings);
-
+    dtmcModelchecker->specifyFormula(formulas[0]);
     ASSERT_TRUE(dtmcModelchecker->getSettings().doApprox());
     ASSERT_TRUE(dtmcModelchecker->getSettings().doSample());
     ASSERT_FALSE(dtmcModelchecker->getSettings().doSmt());
@@ -149,6 +151,7 @@ TEST(SparseDtmcRegionModelCheckerTest, Brp_Rew) {
     auto allVioRegionSmt=storm::modelchecker::region::ParameterRegion<storm::RationalFunction>::parseRegion("0.1<=pK<=0.3,0.2<=TOMsg<=0.3");
     settings = storm::modelchecker::region::SparseRegionModelCheckerSettings(storm::settings::modules::RegionSettings::SampleMode::EVALUATE, storm::settings::modules::RegionSettings::ApproxMode::OFF,  storm::settings::modules::RegionSettings::SmtMode::FUNCTION);
     dtmcModelchecker = std::make_shared<storm::modelchecker::region::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>>(model, settings);
+    dtmcModelchecker->specifyFormula(formulas[0]);
     ASSERT_FALSE(dtmcModelchecker->getSettings().doApprox());
     ASSERT_TRUE(dtmcModelchecker->getSettings().doSample());
     ASSERT_TRUE(dtmcModelchecker->getSettings().doSmt());
@@ -165,7 +168,7 @@ TEST(SparseDtmcRegionModelCheckerTest, Brp_Rew) {
     auto exBothHardRegionSmtApp=storm::modelchecker::region::ParameterRegion<storm::RationalFunction>::parseRegion("0.5<=pK<=0.75,0.3<=TOMsg<=0.4"); //this region has a local maximum!
     settings = storm::modelchecker::region::SparseRegionModelCheckerSettings(storm::settings::modules::RegionSettings::SampleMode::EVALUATE, storm::settings::modules::RegionSettings::ApproxMode::TESTFIRST, storm::settings::modules::RegionSettings::SmtMode::FUNCTION);
     dtmcModelchecker = std::make_shared<storm::modelchecker::region::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>>(model, settings);
-
+    dtmcModelchecker->specifyFormula(formulas[0]);
     ASSERT_TRUE(dtmcModelchecker->getSettings().doApprox());
     ASSERT_TRUE(dtmcModelchecker->getSettings().doSample());
     ASSERT_TRUE(dtmcModelchecker->getSettings().doSmt());
@@ -186,7 +189,7 @@ TEST(SparseDtmcRegionModelCheckerTest, Brp_Rew_Infty) {
     auto const& regionSettings = storm::settings::getModule<storm::settings::modules::RegionSettings>();
     storm::modelchecker::region::SparseRegionModelCheckerSettings settings(regionSettings.getSampleMode(), regionSettings.getApproxMode(), regionSettings.getSmtMode());
     auto dtmcModelchecker = std::make_shared<storm::modelchecker::region::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>>(model, settings);
-
+    dtmcModelchecker->specifyFormula(formulas[0]);
     //start testing
     auto allSatRegion=storm::modelchecker::region::ParameterRegion<storm::RationalFunction>::parseRegion("");
     
@@ -206,6 +209,7 @@ TEST(SparseDtmcRegionModelCheckerTest, Brp_Rew_Infty) {
     auto allSatRegionSmt=storm::modelchecker::region::ParameterRegion<storm::RationalFunction>::parseRegion("");
     settings = storm::modelchecker::region::SparseRegionModelCheckerSettings(storm::settings::modules::RegionSettings::SampleMode::EVALUATE, storm::settings::modules::RegionSettings::ApproxMode::OFF,  storm::settings::modules::RegionSettings::SmtMode::FUNCTION);
     dtmcModelchecker = std::make_shared<storm::modelchecker::region::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>>(model, settings);
+    dtmcModelchecker->specifyFormula(formulas[0]);
     ASSERT_FALSE(dtmcModelchecker->getSettings().doApprox());
     ASSERT_TRUE(dtmcModelchecker->getSettings().doSample());
     ASSERT_TRUE(dtmcModelchecker->getSettings().doSmt());
@@ -227,7 +231,7 @@ TEST(SparseDtmcRegionModelCheckerTest, Brp_Rew_4Par) {
     auto const& regionSettings = storm::settings::getModule<storm::settings::modules::RegionSettings>();
     storm::modelchecker::region::SparseRegionModelCheckerSettings settings(regionSettings.getSampleMode(), regionSettings.getApproxMode(), regionSettings.getSmtMode());
     auto dtmcModelchecker = std::make_shared<storm::modelchecker::region::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>>(model, settings);
-
+    dtmcModelchecker->specifyFormula(formulas[0]);
     //start testing
     auto allSatRegion=storm::modelchecker::region::ParameterRegion<storm::RationalFunction>::parseRegion("0.7<=pK<=0.9,0.6<=pL<=0.85,0.9<=TOMsg<=0.95,0.85<=TOAck<=0.9");
     auto exBothRegion=storm::modelchecker::region::ParameterRegion<storm::RationalFunction>::parseRegion("0.1<=pK<=0.7,0.2<=pL<=0.8,0.15<=TOMsg<=0.65,0.3<=TOAck<=0.9");
@@ -262,6 +266,7 @@ TEST(SparseDtmcRegionModelCheckerTest, Brp_Rew_4Par) {
     auto allVioRegionSmt=storm::modelchecker::region::ParameterRegion<storm::RationalFunction>::parseRegion("0.1<=pK<=0.4,0.2<=pL<=0.3,0.15<=TOMsg<=0.3,0.1<=TOAck<=0.2");
     settings = storm::modelchecker::region::SparseRegionModelCheckerSettings(storm::settings::modules::RegionSettings::SampleMode::EVALUATE, storm::settings::modules::RegionSettings::ApproxMode::OFF,  storm::settings::modules::RegionSettings::SmtMode::FUNCTION);
     dtmcModelchecker = std::make_shared<storm::modelchecker::region::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>>(model, settings);
+    dtmcModelchecker->specifyFormula(formulas[0]);
     ASSERT_FALSE(dtmcModelchecker->getSettings().doApprox());
     ASSERT_TRUE(dtmcModelchecker->getSettings().doSample());
     ASSERT_TRUE(dtmcModelchecker->getSettings().doSmt());
@@ -287,7 +292,7 @@ TEST(SparseDtmcRegionModelCheckerTest, Crowds_Prob) {
     auto const& regionSettings = storm::settings::getModule<storm::settings::modules::RegionSettings>();
     storm::modelchecker::region::SparseRegionModelCheckerSettings settings(regionSettings.getSampleMode(), regionSettings.getApproxMode(), regionSettings.getSmtMode());
     auto dtmcModelchecker = std::make_shared<storm::modelchecker::region::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>>(model, settings);
-
+    dtmcModelchecker->specifyFormula(formulas[0]);
     //start testing
     auto allSatRegion=storm::modelchecker::region::ParameterRegion<storm::RationalFunction>::parseRegion("0.1<=PF<=0.75,0.15<=badC<=0.2");
     auto exBothRegion=storm::modelchecker::region::ParameterRegion<storm::RationalFunction>::parseRegion("0.75<=PF<=0.8,0.2<=badC<=0.3");
@@ -336,6 +341,7 @@ TEST(SparseDtmcRegionModelCheckerTest, Crowds_Prob) {
     auto allVioHardRegionSmt=storm::modelchecker::region::ParameterRegion<storm::RationalFunction>::parseRegion("0.8<=PF<=0.95,0.2<=badC<=0.9");
     settings = storm::modelchecker::region::SparseRegionModelCheckerSettings(storm::settings::modules::RegionSettings::SampleMode::EVALUATE, storm::settings::modules::RegionSettings::ApproxMode::OFF,  storm::settings::modules::RegionSettings::SmtMode::FUNCTION);
     dtmcModelchecker = std::make_shared<storm::modelchecker::region::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>>(model, settings);
+    dtmcModelchecker->specifyFormula(formulas[0]);
     ASSERT_FALSE(dtmcModelchecker->getSettings().doApprox());
     ASSERT_TRUE(dtmcModelchecker->getSettings().doSample());
     ASSERT_TRUE(dtmcModelchecker->getSettings().doSmt());
@@ -352,6 +358,7 @@ TEST(SparseDtmcRegionModelCheckerTest, Crowds_Prob) {
     auto allVioHardRegionSmtApp=storm::modelchecker::region::ParameterRegion<storm::RationalFunction>::parseRegion("0.8<=PF<=0.95,0.2<=badC<=0.9");
     settings = storm::modelchecker::region::SparseRegionModelCheckerSettings(storm::settings::modules::RegionSettings::SampleMode::EVALUATE, storm::settings::modules::RegionSettings::ApproxMode::TESTFIRST, storm::settings::modules::RegionSettings::SmtMode::FUNCTION);
     dtmcModelchecker = std::make_shared<storm::modelchecker::region::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>>(model, settings);
+    dtmcModelchecker->specifyFormula(formulas[0]);
     ASSERT_TRUE(dtmcModelchecker->getSettings().doApprox());
     ASSERT_TRUE(dtmcModelchecker->getSettings().doSample());
     ASSERT_TRUE(dtmcModelchecker->getSettings().doSmt());
@@ -372,7 +379,7 @@ TEST(SparseDtmcRegionModelCheckerTest, Crowds_Prob_1Par) {
     auto const& regionSettings = storm::settings::getModule<storm::settings::modules::RegionSettings>();
     storm::modelchecker::region::SparseRegionModelCheckerSettings settings(regionSettings.getSampleMode(), regionSettings.getApproxMode(), regionSettings.getSmtMode());
     auto dtmcModelchecker = std::make_shared<storm::modelchecker::region::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>>(model, settings);
-
+    dtmcModelchecker->specifyFormula(formulas[0]);
     //start testing
     auto allSatRegion=storm::modelchecker::region::ParameterRegion<storm::RationalFunction>::parseRegion("0.9<=PF<=0.99");
     auto exBothRegion=storm::modelchecker::region::ParameterRegion<storm::RationalFunction>::parseRegion("0.8<=PF<=0.9");
@@ -393,6 +400,7 @@ TEST(SparseDtmcRegionModelCheckerTest, Crowds_Prob_1Par) {
     //test approximative method
     settings = storm::modelchecker::region::SparseRegionModelCheckerSettings(storm::settings::modules::RegionSettings::SampleMode::INSTANTIATE, storm::settings::modules::RegionSettings::ApproxMode::TESTFIRST,  storm::settings::modules::RegionSettings::SmtMode::OFF);
     dtmcModelchecker = std::make_shared<storm::modelchecker::region::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>>(model, settings);
+    dtmcModelchecker->specifyFormula(formulas[0]);
     ASSERT_TRUE(dtmcModelchecker->getSettings().doApprox());
     ASSERT_TRUE(dtmcModelchecker->getSettings().doSample());
     ASSERT_FALSE(dtmcModelchecker->getSettings().doSmt());
@@ -433,7 +441,7 @@ TEST(SparseDtmcRegionModelCheckerTest, Crowds_Prob_Const) {
     auto const& regionSettings = storm::settings::getModule<storm::settings::modules::RegionSettings>();
     storm::modelchecker::region::SparseRegionModelCheckerSettings settings(regionSettings.getSampleMode(), regionSettings.getApproxMode(), regionSettings.getSmtMode());
     auto dtmcModelchecker = std::make_shared<storm::modelchecker::region::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>>(model, settings);
-
+    dtmcModelchecker->specifyFormula(formulas[0]);
     //start testing
     auto allSatRegion=storm::modelchecker::region::ParameterRegion<storm::RationalFunction>::parseRegion("");
     
@@ -447,6 +455,7 @@ TEST(SparseDtmcRegionModelCheckerTest, Crowds_Prob_Const) {
     //test approximative method
     settings = storm::modelchecker::region::SparseRegionModelCheckerSettings(storm::settings::modules::RegionSettings::SampleMode::INSTANTIATE, storm::settings::modules::RegionSettings::ApproxMode::TESTFIRST,  storm::settings::modules::RegionSettings::SmtMode::OFF);
     dtmcModelchecker = std::make_shared<storm::modelchecker::region::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>>(model, settings);
+    dtmcModelchecker->specifyFormula(formulas[0]);
     ASSERT_TRUE(dtmcModelchecker->getSettings().doApprox());
     ASSERT_TRUE(dtmcModelchecker->getSettings().doSample());
     ASSERT_FALSE(dtmcModelchecker->getSettings().doSmt());
@@ -457,6 +466,7 @@ TEST(SparseDtmcRegionModelCheckerTest, Crowds_Prob_Const) {
     auto allSatRegionSmt=storm::modelchecker::region::ParameterRegion<storm::RationalFunction>::parseRegion("");
     settings = storm::modelchecker::region::SparseRegionModelCheckerSettings(storm::settings::modules::RegionSettings::SampleMode::EVALUATE, storm::settings::modules::RegionSettings::ApproxMode::OFF,  storm::settings::modules::RegionSettings::SmtMode::FUNCTION);
     dtmcModelchecker = std::make_shared<storm::modelchecker::region::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>>(model, settings);
+    dtmcModelchecker->specifyFormula(formulas[0]);
     ASSERT_FALSE(dtmcModelchecker->getSettings().doApprox());
     ASSERT_TRUE(dtmcModelchecker->getSettings().doSample());
     ASSERT_TRUE(dtmcModelchecker->getSettings().doSmt());
