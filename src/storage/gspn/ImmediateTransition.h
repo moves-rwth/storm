@@ -2,6 +2,7 @@
 #define STORM_STORAGE_GSPN_IMMEDIATETRANSITION_H_
 
 #include "src/storage/gspn/Transition.h"
+#include "src/utility/constants.h"
 
 namespace storm {
     namespace gspn {
@@ -25,8 +26,15 @@ namespace storm {
             WeightType getWeight() const {
                 return this->weight;
             }
+
+            /**
+             * True iff no weight is attached.
+             */
+            bool noWeightAttached() {
+                return storm::utility::isZero(weight);
+            }
         private:
-            // the weight of the transition
+            // the weight of the transition. Must be positive, if zero, then no weight is attached.
            WeightType weight;
         };
     }

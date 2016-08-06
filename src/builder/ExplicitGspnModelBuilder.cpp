@@ -185,7 +185,7 @@ namespace storm {
             std::vector<std::shared_ptr<storm::gspn::ImmediateTransition<double>>> weightedTransitions;
 
             for (auto& trans : enabledImmediateTransitions) {
-                if (trans->getWeight() == 0) {
+                if (trans->noWeightAttached()) {
                     decltype(weightedTransitions) singleton;
                     singleton.push_back(trans);
                     result.push_back(singleton);

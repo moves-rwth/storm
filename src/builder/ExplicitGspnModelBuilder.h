@@ -1,12 +1,12 @@
 #ifndef STORM_BUILDER_EXPLICITGSPNMODELBUILDER_H_
 #define STORM_BUILDER_EXPLICITGSPNMODELBUILDER_H_
 
-#include <String>
+#include <string>
 
 #include "src/models/sparse/MarkovAutomaton.h"
 #include "src/models/sparse/StandardRewardModel.h"
-#include "src/storage/Bitvector.h"
-#include "src/storage/BitvectorHashMap.h"
+#include "src/storage/BitVector.h"
+#include "src/storage/BitVectorHashMap.h"
 #include "src/storage/gspn/GSPN.h"
 #include "src/storage/gspn/ImmediateTransition.h"
 #include "src/storage/gspn/TimedTransition.h"

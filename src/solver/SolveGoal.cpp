@@ -51,8 +51,9 @@ namespace storm {
         template std::unique_ptr<storm::solver::LinearEquationSolver<double>> configureLinearEquationSolver(BoundedGoal<double> const& goal, storm::solver::LinearEquationSolverFactory<double> const& factory, storm::storage::SparseMatrix<double> const&  matrix);
         template std::unique_ptr<storm::solver::LinearEquationSolver<double>> configureLinearEquationSolver(SolveGoal const& goal, storm::solver::LinearEquationSolverFactory<double> const& factory, storm::storage::SparseMatrix<double> const&  matrix);
 
+#ifdef STORM_HAVE_CARL
         template std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<storm::RationalNumber>> configureMinMaxLinearEquationSolver(BoundedGoal<storm::RationalNumber> const& goal, storm::solver::MinMaxLinearEquationSolverFactory<storm::RationalNumber> const& factory, storm::storage::SparseMatrix<storm::RationalNumber> const& matrix);
         template std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<storm::RationalNumber>> configureMinMaxLinearEquationSolver(SolveGoal const& goal, storm::solver::MinMaxLinearEquationSolverFactory<storm::RationalNumber> const& factory, storm::storage::SparseMatrix<storm::RationalNumber> const&  matrix);
-
+#endif
     }
 }

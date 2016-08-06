@@ -35,6 +35,7 @@ namespace storm {
             std::unordered_map<storm::expressions::Variable, storm::expressions::Expression> variableToExpressionMap;
         };
         
+#ifdef STORM_HAVE_CARL
         template<>
         class ExpressionEvaluator<RationalNumber> : public ExpressionEvaluatorWithVariableToExpressionMap<RationalNumber> {
         public:
@@ -58,6 +59,7 @@ namespace storm {
             // A visitor that can be used to translate expressions to rational functions.
             mutable ToRationalFunctionVisitor<RationalFunction> rationalFunctionVisitor;
         };
+#endif
     }
 }
 

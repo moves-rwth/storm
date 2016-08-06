@@ -312,7 +312,11 @@ namespace storm {
             
             template<typename ValueType, typename RewardModelType>
             bool Model<ValueType, RewardModelType>::supportsParameters() const {
+#ifdef STORM_HAVE_CARL
                 return std::is_same<ValueType, storm::RationalFunction>::value;
+#else
+		return false;
+#endif
             }
             
             template<typename ValueType, typename RewardModelType>
@@ -346,18 +350,21 @@ namespace storm {
                 return this->rewardModels;
             }
             
+#ifdef STORM_HAVE_CARL
             std::set<storm::RationalFunctionVariable> getProbabilityParameters(Model<storm::RationalFunction> const& model) {
                 return storm::storage::getVariables(model.getTransitionMatrix());
             }
+#endif
             
             template class Model<double>;
             template class Model<float>;
 
+#ifdef STORM_HAVE_CARL
             template class Model<storm::RationalNumber>;
 
             template class Model<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
             template class Model<storm::RationalFunction>;
-            
+#endif
         }
     }
 }

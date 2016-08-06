@@ -40,6 +40,7 @@ namespace storm {
             uint_fast64_t restart;
         };
         
+#ifdef STORM_HAVE_CARL
         template<>
         class EigenLinearEquationSolverSettings<storm::RationalNumber> {
         public:
@@ -51,6 +52,7 @@ namespace storm {
         public:
             EigenLinearEquationSolverSettings();
         };
+#endif
         
         /*!
          * A class that uses the Eigen library to implement the LinearEquationSolver interface.

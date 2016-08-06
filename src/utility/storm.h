@@ -220,6 +220,7 @@ namespace storm {
         }
     }
 
+#ifdef STORM_HAVE_CARL
     template<>
     inline void generateCounterexample(storm::prism::Program const& program, std::shared_ptr<storm::models::sparse::Model<storm::RationalNumber>> model, std::shared_ptr<storm::logic::Formula const> const& formula) {
         STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unable to generate counterexample for parametric model.");
@@ -229,6 +230,7 @@ namespace storm {
     inline void generateCounterexample(storm::prism::Program const& program, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model, std::shared_ptr<storm::logic::Formula const> const& formula) {
         STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unable to generate counterexample for parametric model.");
     }
+#endif
     
     template<typename ValueType>
     void generateCounterexamples(storm::prism::Program const& program, std::shared_ptr<storm::models::sparse::Model<ValueType>> model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
@@ -332,6 +334,7 @@ namespace storm {
 
     }
     
+#ifdef STORM_HAVE_CARL
     template<>
     inline std::unique_ptr<storm::modelchecker::CheckResult> verifySparseModel(std::shared_ptr<storm::models::sparse::Model<storm::RationalNumber>> model, std::shared_ptr<storm::logic::Formula const> const& formula, bool onlyInitialStatesRelevant) {
         storm::modelchecker::CheckTask<storm::logic::Formula> task(*formula, onlyInitialStatesRelevant);
@@ -349,7 +352,6 @@ namespace storm {
         return result;
     }
     
-#ifdef STORM_HAVE_CARL
     inline void exportParametricResultToFile(storm::RationalFunction const& result, storm::models::sparse::Dtmc<storm::RationalFunction>::ConstraintCollector const& constraintCollector, std::string const& path) {
         std::ofstream filestream;
         filestream.open(path);
