@@ -109,9 +109,7 @@ namespace storm {
                 }
 
             }
-
-            std::cout << "print matrix:" << std::endl;
-            std::cout << matrix << std::endl;
+            
             //auto labeling = getStateLabeling();
 
             return storm::models::sparse::MarkovAutomaton<double>(matrix, labeling, markovianStates, exitRates);
