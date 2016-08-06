@@ -521,6 +521,7 @@ namespace storm {
             storm::settings::addModule<storm::settings::modules::GurobiSettings>();
             storm::settings::addModule<storm::settings::modules::TopologicalValueIterationEquationSolverSettings>();
             storm::settings::addModule<storm::settings::modules::ParametricSettings>();
+            storm::settings::addModule<storm::settings::modules::RegionSettings>();
             storm::settings::addModule<storm::settings::modules::ExplorationSettings>();
         }
 
