@@ -66,7 +66,7 @@ namespace storm {
 
                         addRowForTimedTransitions(enabledTimedTransitions, currentMarking, accRate);
                     } else {
-                        markovianStates.set(currentRowIndex, 0);
+                        markovianStates.set(currentRowIndex, 1);
                     }
                 }
                 ++currentRowIndex;
@@ -110,6 +110,8 @@ namespace storm {
 
             }
 
+            std::cout << "print matrix:" << std::endl;
+            std::cout << matrix << std::endl;
             //auto labeling = getStateLabeling();
 
             return storm::models::sparse::MarkovAutomaton<double>(matrix, labeling, markovianStates, exitRates);
