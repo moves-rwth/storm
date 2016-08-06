@@ -39,7 +39,7 @@ namespace storm {
             void PrioritizedStateEliminator<ValueType>::eliminateAll(bool removeForwardTransitions) {
                 while (priorityQueue->hasNext()) {
                     storm::storage::sparse::state_type state = priorityQueue->pop();
-                    this->eliminateState(priorityQueue->pop(), removeForwardTransitions);
+                    this->eliminateState(state, removeForwardTransitions);
                     if (removeForwardTransitions) {
                         clearStateValues(state);
                     }
