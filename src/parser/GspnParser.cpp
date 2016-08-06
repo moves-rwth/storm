@@ -188,6 +188,7 @@ namespace storm {
             std::pair<bool, bool> timed(false, defaultTransitionType);
             std::pair<bool, std::string> value(false, defaultTransitionValue);
             std::string id;
+            uint_fast64_t priority;
 
             // parse attributes
             for (uint_fast64_t i = 0; i < node->getAttributes()->getLength(); ++i) {
@@ -207,11 +208,13 @@ namespace storm {
                 auto name = getName(child);
 
                 if (name.compare("rate") == 0) {
-                    value.first =true;
+                    value.first = true;
                     value.second = traverseTransitionValue(child);
                 } else if (name.compare("timed") == 0) {
                     timed.first = true;
                     timed.second = traverseTransitionType(child);
+                } else if (name.compare("priority") == 0) {
+                    priority = traversePriority(child);
                 } else if (std::all_of(name.begin(), name.end(), isspace)) {
                     // ignore node (contains only whitespace)
                 } else if (name.compare("graphics") == 0 ||
@@ -235,6 +238,7 @@ namespace storm {
                 }
                 transition.setRate(std::stod(value.second));
                 transition.setName(id);
+                transition.setPriority(priority);
                 gspn.addTimedTransition(transition);
             } else {
                 storm::gspn::ImmediateTransition<storm::gspn::GSPN::WeightType> transition;
@@ -243,6 +247,7 @@ namespace storm {
                 }
                 transition.setWeight(std::stod(value.second));
                 transition.setName(id);
+                transition.setPriority(priority);
                 gspn.addImmediateTransition(transition);
             }
         }
@@ -467,6 +472,28 @@ namespace storm {
                 }
             }
             return defaultArcType;
+        }
+
+        uint_fast64_t GspnParser::traversePriority(xercesc::DOMNode const* const node) {
+            uint_fast64_t result = defaultPriority;
+            for (uint_fast64_t i = 0; i < node->getChildNodes()->getLength(); ++i) {
+                auto child = node->getChildNodes()->item(i);
+                auto name = getName(child);
+                if (name.compare("text") == 0) {
+                    result = std::stoull(getName(child->getFirstChild()));
+                } else if (name.compare("value") == 0) {
+                    auto value = getName(child->getFirstChild());
+                    value = value.substr(std::string("Default,").length());
+                    result = std::stoull(value);
+                } else if (std::all_of(name.begin(), name.end(), isspace)) {
+                    // ignore node (contains only whitespace)
+                } else if (name.compare("graphics") == 0) {
+                    // ignore these tags
+                } else {
+                    STORM_PRINT_AND_LOG("unknown child (node=priority): " + name + "\n");
+                }
+            }
+            return result;
         }
 
         std::string GspnParser::XMLtoString(const XMLCh *xmlString) {

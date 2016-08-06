@@ -74,6 +74,9 @@
 			<timed>
 				<value>true</value>
 			</timed>
+			<priority>
+			    <text>2</text>
+			</priority>
 		</transition>
 		<arc id="arc1" source="p1" target="t1">
 			<inscription>

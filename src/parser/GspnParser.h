@@ -109,6 +109,13 @@ namespace storm {
              */
             std::string traverseArcType(xercesc::DOMNode const* const node);
 
+            /**
+             * Traverse a priority node.
+             * @param node The priority node.
+             * @return Returns the priority of the transition.
+             */
+            uint_fast64_t traversePriority(xercesc::DOMNode const* const node);
+
             /*!
              * Gives the name of the current node.
              *
@@ -148,6 +155,9 @@ namespace storm {
 
             // default multiplicity for arcs
             uint_fast64_t defaultMultiplicity = 1;
+
+            //default priority for transitions
+            uint_fast64_t defaultPriority = 0;
         };
     }
 }
