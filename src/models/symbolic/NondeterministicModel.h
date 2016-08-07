@@ -80,19 +80,27 @@ namespace storm {
                  */
                 storm::dd::Bdd<Type> const& getIllegalMask() const;
                 
+                /*!
+                 * Retrieves a BDD characterizing the illegal successors for each choice.
+                 *
+                 * @return A BDD characterizing the illegal successors for each choice.
+                 */
+                storm::dd::Bdd<Type> getIllegalSuccessorMask() const;
+                
                 virtual void printModelInformationToStream(std::ostream& out) const override;
                 
             protected:
             
                 virtual void printDdVariableInformationToStream(std::ostream& out) const override;
+
+                // A mask that characterizes all illegal nondeterministic choices.
+                storm::dd::Bdd<Type> illegalMask;
                 
             private:
                 
                 // The meta variables encoding the nondeterminism in the model.
                 std::set<storm::expressions::Variable> nondeterminismVariables;
                 
-                // A mask that characterizes all legal nondeterministic choices.
-                storm::dd::Bdd<Type> illegalMask;
             };
             
         } // namespace symbolic

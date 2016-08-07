@@ -25,11 +25,10 @@ namespace storm {
                                                                           std::set<storm::expressions::Variable> const& nondeterminismVariables,
                                                                           std::map<std::string, storm::expressions::Expression> labelToExpressionMap,
                                                                           std::unordered_map<std::string, RewardModelType> const& rewardModels)
-            : Model<Type>(modelType, manager, reachableStates, initialStates, deadlockStates, transitionMatrix, rowVariables, rowExpressionAdapter, columnVariables, columnExpressionAdapter, rowColumnMetaVariablePairs, labelToExpressionMap, rewardModels), nondeterminismVariables(nondeterminismVariables) {
+            : Model<Type, ValueType>(modelType, manager, reachableStates, initialStates, deadlockStates, transitionMatrix, rowVariables, rowExpressionAdapter, columnVariables, columnExpressionAdapter, rowColumnMetaVariablePairs, labelToExpressionMap, rewardModels), nondeterminismVariables(nondeterminismVariables) {
                 
                 // Prepare the mask of illegal nondeterministic choices.
-                illegalMask = transitionMatrix.notZero().existsAbstract(this->getColumnVariables());
-                illegalMask = !illegalMask && reachableStates;
+                illegalMask = !(transitionMatrix.notZero().existsAbstract(this->getColumnVariables())) && reachableStates;
             }
             
             template<storm::dd::DdType Type, typename ValueType>
@@ -52,6 +51,12 @@ namespace storm {
             }
             
             template<storm::dd::DdType Type, typename ValueType>
+            storm::dd::Bdd<Type> NondeterministicModel<Type, ValueType>::getIllegalSuccessorMask() const {
+                storm::dd::Bdd<Type> transitionMatrixBdd = this->getTransitionMatrix().notZero();
+                return !transitionMatrixBdd && transitionMatrixBdd.existsAbstract(this->getColumnVariables());
+            }
+            
+            template<storm::dd::DdType Type, typename ValueType>
             void NondeterministicModel<Type, ValueType>::printModelInformationToStream(std::ostream& out) const {
                 this->printModelInformationHeaderToStream(out);
                 out << "Choices: \t" << this->getNumberOfChoices() << std::endl;
@@ -64,7 +69,7 @@ namespace storm {
                 for (auto const& metaVariable : this->getNondeterminismVariables()) {
                     nondeterminismVariableCount += this->getManager().getMetaVariable(metaVariable).getNumberOfDdVariables();
                 }
-                Model<Type>::printDdVariableInformationToStream(out);
+                Model<Type, ValueType>::printDdVariableInformationToStream(out);
                 out << ", nondeterminism: " << this->getNondeterminismVariables().size() << " meta variables (" << nondeterminismVariableCount << " DD variables)";
             }
             

@@ -6,9 +6,11 @@
 #include "src/settings/modules/DebugSettings.h"
 #include "src/settings/modules/IOSettings.h"
 #include "src/settings/modules/CoreSettings.h"
+#include "src/settings/modules/ResourceSettings.h"
 #include "src/exceptions/OptionParserException.h"
 
 #include "src/utility/storm-version.h"
+#include "src/utility/resources.h"
 
 // Includes for the linked libraries and versions header.
 #ifdef STORM_HAVE_INTELTBB
@@ -175,26 +177,34 @@ namespace storm {
                 return false;
             }
             
-            if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isHelpSet()) {
+            storm::settings::modules::GeneralSettings const& general = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
+            storm::settings::modules::ResourceSettings const& resources = storm::settings::getModule<storm::settings::modules::ResourceSettings>();
+            storm::settings::modules::DebugSettings const& debug = storm::settings::getModule<storm::settings::modules::DebugSettings>();
+            
+            if (general.isHelpSet()) {
                 storm::settings::manager().printHelp(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getHelpModuleName());
                 return false;
             }
+            // If we were given a time limit, we put it in place now.
+            if (resources.isTimeoutSet()) {
+                storm::utility::resources::setCPULimit(resources.getTimeoutInSeconds());
+            }
             
-            if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isVersionSet()) {
+            if (general.isVersionSet()) {
                 storm::settings::manager().printVersion();
                 return false;
             }
             
-            if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isVerboseSet()) {
+            if (general.isVerboseSet()) {
                 storm::utility::setLogLevel(l3pp::LogLevel::INFO);
             }
-            if (storm::settings::getModule<storm::settings::modules::DebugSettings>().isDebugSet()) {
+            if (debug.isDebugSet()) {
                 storm::utility::setLogLevel(l3pp::LogLevel::DEBUG);
             }
-            if (storm::settings::getModule<storm::settings::modules::DebugSettings>().isTraceSet()) {
+            if (debug.isTraceSet()) {
                  storm::utility::setLogLevel(l3pp::LogLevel::TRACE);
             }
-            if (storm::settings::getModule<storm::settings::modules::DebugSettings>().isLogfileSet()) {
+            if (debug.isLogfileSet()) {
                 storm::utility::initializeFileLogging();
             }
             return true;

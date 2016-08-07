@@ -196,6 +196,14 @@ namespace storm {
             bool isFalse() const;
             
             /*!
+             * Checks whether the two expressions are the same. Note that this does not check for syntactical or even
+             * semantical equivalence, but only returns true if both are the very same expressions.
+             *
+             * @return True iff the two expressions are the same.
+             */
+            bool areSame(storm::expressions::Expression const& other) const;
+            
+            /*!
              * Retrieves whether this expression is a relation expression, i.e., an expression that has a relation
              * (equal, not equal, less, less or equal, etc.) as its top-level operator.
              *
@@ -357,14 +365,22 @@ namespace storm {
     }
 }
 
-//specialize 
 namespace std {
-	template<>
-	struct less < storm::expressions::Expression > {
+	template <>
+	struct less <storm::expressions::Expression> {
 		bool operator()(const storm::expressions::Expression& lhs, const storm::expressions::Expression& rhs) const {
 			return lhs.getBaseExpressionPointer() < rhs.getBaseExpressionPointer();
 		}
 	};
+}
+
+namespace std {
+    template <>
+    struct hash <storm::expressions::Expression> {
+        size_t operator()(const storm::expressions::Expression& expr) const {
+            return reinterpret_cast<size_t>(expr.getBaseExpressionPointer().get());
+        }
+    };
 }
 
 #endif /* STORM_STORAGE_EXPRESSIONS_EXPRESSION_H_ */

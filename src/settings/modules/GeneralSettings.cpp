@@ -28,8 +28,6 @@ namespace storm {
             const std::string GeneralSettings::configOptionShortName = "c";
             const std::string GeneralSettings::propertyOptionName = "prop";
             const std::string GeneralSettings::propertyOptionShortName = "prop";
-            const std::string GeneralSettings::timeoutOptionName = "timeout";
-            const std::string GeneralSettings::timeoutOptionShortName = "t";
             const std::string GeneralSettings::bisimulationOptionName = "bisimulation";
             const std::string GeneralSettings::bisimulationOptionShortName = "bisim";
             const std::string GeneralSettings::parametricOptionName = "parametric";
@@ -47,8 +45,6 @@ namespace storm {
 
                 this->addOption(storm::settings::OptionBuilder(moduleName, propertyOptionName, false, "Specifies the formulas to be checked on the model.").setShortName(propertyOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("formula or filename", "The formula or the file containing the formulas.").build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, timeoutOptionName, false, "If given, computation will abort after the timeout has been reached.").setShortName(timeoutOptionShortName)
-                                .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("time", "The number of seconds after which to timeout.").setDefaultValueUnsignedInteger(0).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, bisimulationOptionName, false, "Sets whether to perform bisimulation minimization.").setShortName(bisimulationOptionShortName).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, parametricOptionName, false, "Sets whether to enable parametric model checking.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, exactOptionName, false, "Sets whether to enable exact model checking.").build());
@@ -89,15 +85,7 @@ namespace storm {
             std::string GeneralSettings::getProperty() const {
                 return this->getOption(propertyOptionName).getArgumentByName("formula or filename").getValueAsString();
             }
-            
-            bool GeneralSettings::isTimeoutSet() const {
-                return this->getOption(timeoutOptionName).getHasOptionBeenSet();
-            }
-            
-            uint_fast64_t GeneralSettings::getTimeoutInSeconds() const {
-                return this->getOption(timeoutOptionName).getArgumentByName("time").getValueAsUnsignedInteger();
-            }
-            
+                                    
             bool GeneralSettings::isBisimulationSet() const {
                 return this->getOption(bisimulationOptionName).getHasOptionBeenSet();
             }

@@ -6,6 +6,9 @@
 #include <functional>
 #include <memory>
 
+#include "src/storage/expressions/ExpressionManager.h"
+#include "src/storage/expressions/Expression.h"
+
 #include "src/storage/dd/DdType.h"
 #include "src/storage/dd/InternalBdd.h"
 #include "src/storage/dd/InternalAdd.h"
@@ -209,6 +212,15 @@ namespace storm {
             InternalBdd<DdType::CUDD> existsAbstract(InternalBdd<DdType::CUDD> const& cube) const;
             
             /*!
+             * Similar to <code>existsAbstract</code>, but does not abstract but rather picks a valuation for the
+             * variables of the given cube such that for this valuation, there exists a valuation (of the other
+             * variables) that that make the function evaluate to true.
+             *
+             * @param cube The cube from which to 'abstract'.
+             */
+            InternalBdd<DdType::CUDD> existsAbstractRepresentative(InternalBdd<DdType::CUDD> const& cube) const;
+
+            /*!
              * Universally abstracts from the given cube.
              *
              * @param cube The cube from which to abstract.
@@ -305,6 +317,13 @@ namespace storm {
             uint_fast64_t getIndex() const;
             
             /*!
+             * Retrieves the level of the topmost variable in the BDD.
+             *
+             * @return The level of the topmost variable in BDD.
+             */
+            uint_fast64_t getLevel() const;
+            
+            /*!
              * Exports the BDD to the given file in the dot format.
              *
              * @param filename The name of the file to which the BDD is to be exported.
@@ -331,6 +350,15 @@ namespace storm {
             storm::storage::BitVector toVector(storm::dd::Odd const& rowOdd, std::vector<uint_fast64_t> const& ddVariableIndices) const;
             
             /*!
+             * Translates the function the BDD is representing to a set of expressions that characterize the function.
+             *
+             * @param manager The manager that is used to build the expression and, in particular, create new variables in.
+             * @return A list of expressions representing the function of the BDD and a mapping of DD variable indices to
+             * the variables that represent these variables in the expressions.
+             */
+            std::pair<std::vector<storm::expressions::Expression>, std::unordered_map<uint_fast64_t, storm::expressions::Variable>> toExpression(storm::expressions::ExpressionManager& manager) const;
+            
+            /*!
              * Creates an ODD based on the current BDD.
              *
              * @param ddVariableIndices The indices of the DD variables contained in this BDD.
@@ -348,6 +376,8 @@ namespace storm {
              */
             template<typename ValueType>
             void filterExplicitVector(Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<ValueType> const& sourceValues, std::vector<ValueType>& targetValues) const;
+            
+            friend struct std::hash<storm::dd::InternalBdd<storm::dd::DdType::CUDD>>;
             
         private:
             /*!
@@ -398,7 +428,7 @@ namespace storm {
             // Declare a hash functor that is used for the unique tables in the construction process of ODDs.
             class HashFunctor {
             public:
-                std::size_t operator()(std::pair<DdNode*, bool> const& key) const;
+                std::size_t operator()(std::pair<DdNode const*, bool> const& key) const;
             };
             
             /*!
@@ -414,7 +444,7 @@ namespace storm {
              * ODD nodes for the same DD and level unique.
              * @return A pointer to the constructed ODD for the given arguments.
              */
-            static std::shared_ptr<Odd> createOddRec(DdNode* dd, cudd::Cudd const& manager, uint_fast64_t currentLevel, bool complement, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<std::unordered_map<std::pair<DdNode*, bool>, std::shared_ptr<Odd>, HashFunctor>>& uniqueTableForLevels);
+            static std::shared_ptr<Odd> createOddRec(DdNode const* dd, cudd::Cudd const& manager, uint_fast64_t currentLevel, bool complement, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<std::unordered_map<std::pair<DdNode const*, bool>, std::shared_ptr<Odd>, HashFunctor>>& uniqueTableForLevels);
             
             /*!
              * Adds the selected values the target vector.
@@ -431,13 +461,42 @@ namespace storm {
              * @param values The value vector from which to select the values.
              */
             template<typename ValueType>
-            static void filterExplicitVectorRec(DdNode* dd, cudd::Cudd const& manager, uint_fast64_t currentLevel, bool complement, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, uint_fast64_t currentOffset, storm::dd::Odd const& odd, std::vector<ValueType>& result, uint_fast64_t& currentIndex, std::vector<ValueType> const& values);
+            static void filterExplicitVectorRec(DdNode const* dd, cudd::Cudd const& manager, uint_fast64_t currentLevel, bool complement, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, uint_fast64_t currentOffset, storm::dd::Odd const& odd, std::vector<ValueType>& result, uint_fast64_t& currentIndex, std::vector<ValueType> const& values);
             
+            /*!
+             * Creates a vector of expressions that represent the function of the given BDD node.
+             *
+             *
+             * @param dd The current node of the BDD.
+             * @param ddManager The manager responsible for the BDD.
+             * @param manager The expression manager over which to build the expressions.
+             * @param expressions The list of expressions to fill during the translation.
+             * @param indexToVariableMap A mapping of variable indices to expression variables that are associated with
+             * the respective node level of the BDD.
+             * @param countIndexToVariablePair A mapping of (count, variable index) pairs to a pair of expression variables
+             * such that entry (i, j) is mapped to a variable that represents the i-th node labeled with variable j (counting
+             * from left to right).
+             * @param nodeToCounterMap A mapping from DD nodes to a number j such that the DD node was the j-th node
+             * visited with the same variable index as the given node.
+             * @param nextCounterForIndex A vector storing a mapping from variable indices to a counter that indicates
+             * how many nodes with the given variable index have been seen before.
+             */
+            static storm::expressions::Variable toExpressionRec(DdNode const* dd, cudd::Cudd const& ddManager, storm::expressions::ExpressionManager& manager, std::vector<storm::expressions::Expression>& expressions, std::unordered_map<uint_fast64_t, storm::expressions::Variable>& indexToVariableMap, std::unordered_map<std::pair<uint_fast64_t, uint_fast64_t>, storm::expressions::Variable>& countIndexToVariablePair, std::unordered_map<DdNode const*, uint_fast64_t>& nodeToCounterMap, std::vector<uint_fast64_t>& nextCounterForIndex);
+
             InternalDdManager<DdType::CUDD> const* ddManager;
             
             cudd::BDD cuddBdd;
         };
     }
+}
+
+namespace std {
+    template<>
+    struct hash<storm::dd::InternalBdd<storm::dd::DdType::CUDD>> {
+        std::size_t operator()(storm::dd::InternalBdd<storm::dd::DdType::CUDD> const& key) const {
+            return reinterpret_cast<std::size_t>(key.cuddBdd.getNode());
+        }
+    };
 }
 
 #endif /* STORM_STORAGE_DD_CUDD_INTERNALCUDDBDD_H_ */

@@ -281,6 +281,11 @@ namespace storm {
         }
         
         template<typename ValueType>
+        uint_fast64_t InternalAdd<DdType::CUDD, ValueType>::getLevel() const {
+            return static_cast<uint_fast64_t>(ddManager->getCuddManager().ReadPerm(this->getIndex()));
+        }
+        
+        template<typename ValueType>
         void InternalAdd<DdType::CUDD, ValueType>::exportToDot(std::string const& filename, std::vector<std::string> const& ddVariableNamesAsStrings) const {
             // Build the name input of the DD.
             std::vector<char*> ddNames;

@@ -2659,6 +2659,24 @@ ADD::MaxAbstract(const ADD& cube) const
 } // ADD::MaxAbstract
 
 ADD
+ADD::MinAbstractRepresentative(const ADD& cube) const
+{
+    DdManager *mgr = checkSameManager(cube);
+    DdNode *result = Cudd_addMinAbstractRepresentative(mgr, node, cube.node);
+    checkReturnValue(result);
+    return ADD(p, result);
+} // ADD::MinRepresentative
+
+ADD
+ADD::MaxAbstractRepresentative(const ADD& cube) const
+{
+    DdManager *mgr = checkSameManager(cube);
+    DdNode *result = Cudd_addMaxAbstractRepresentative(mgr, node, cube.node);
+    checkReturnValue(result);
+    return ADD(p, result);
+} // ADD::MaxRepresentative
+
+ADD
 ADD::Plus(
   const ADD& g) const
 {
@@ -3485,6 +3503,14 @@ BDD::ExistAbstract(
 
 } // BDD::ExistAbstract
 
+BDD
+BDD::ExistAbstractRepresentative(const BDD& cube) const {
+    DdManager *mgr = checkSameManager(cube);
+    DdNode *result;
+    result = Cudd_bddExistAbstractRepresentative(mgr, node, cube.node);
+    checkReturnValue(result);
+    return BDD(p, result);
+} // BDD::ExistAbstractRepresentative
 
 BDD
 BDD::XorExistAbstract(

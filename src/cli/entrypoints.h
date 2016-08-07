@@ -3,8 +3,6 @@
 
 #include "src/utility/storm.h"
 
-#include "src/exceptions/NotImplementedException.h"
-
 namespace storm {
     namespace cli {
 
@@ -49,8 +47,19 @@ namespace storm {
 #endif
 
         template<storm::dd::DdType DdType>
-        void verifySymbolicModelWithAbstractionRefinementEngine(storm::prism::Program const& program, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool onlyInitialStatesRelevant = false) {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Abstraction Refinement is not yet implemented.");
+        void verifySymbolicModelWithAbstractionRefinementEngine(storm::prism::Program const& program, std::vector<std::shared_ptr<const storm::logic::Formula>> const& formulas, bool onlyInitialStatesRelevant = false) {
+            typedef double ValueType;
+            for (auto const& formula : formulas) {
+                std::cout << std::endl << "Model checking property: " << *formula << " ...";
+                std::unique_ptr<storm::modelchecker::CheckResult> result(storm::verifyProgramWithAbstractionRefinementEngine<DdType, ValueType>(program, formula, onlyInitialStatesRelevant));
+                if (result) {
+                    std::cout << " done." << std::endl;
+                    std::cout << "Result (initial states): ";
+                    std::cout << *result << std::endl;
+                } else {
+                    std::cout << " skipped, because the modelling formalism is currently unsupported." << std::endl;
+                }
+            }
         }
         
         template<typename ValueType>

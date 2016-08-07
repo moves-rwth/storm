@@ -12,6 +12,8 @@
 #include "src/models/sparse/DeterministicModel.h"
 #include "src/storage/dd/DdType.h"
 
+#include "src/solver/OptimizationDirection.h"
+
 namespace storm {
     namespace storage {
         class BitVector;
@@ -29,6 +31,9 @@ namespace storm {
             
             template<storm::dd::DdType Type, typename ValueType>
             class NondeterministicModel;
+            
+            template<storm::dd::DdType Type, typename ValueType>
+            class StochasticTwoPlayerGame;
         }
         
     }
@@ -516,6 +521,43 @@ namespace storm {
             
             template <storm::dd::DdType Type, typename ValueType = double>
             std::pair<storm::dd::Bdd<Type>, storm::dd::Bdd<Type>> performProb01Min(storm::models::symbolic::NondeterministicModel<Type, ValueType> const& model, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates);
+
+            template <storm::dd::DdType Type>
+            struct GameProb01Result {
+                GameProb01Result(storm::dd::Bdd<Type> const& states, boost::optional<storm::dd::Bdd<Type>> const& player1Strategy = boost::none, boost::optional<storm::dd::Bdd<Type>> const& player2Strategy = boost::none) : states(states), player1Strategy(player1Strategy), player2Strategy(player2Strategy) {
+                    // Intentionally left empty.
+                }
+                
+                storm::dd::Bdd<Type> states;
+                boost::optional<storm::dd::Bdd<Type>> player1Strategy;
+                boost::optional<storm::dd::Bdd<Type>> player2Strategy;
+            };
+            
+            /*!
+             * Computes the set of states that have probability 0 given the strategies of the two players.
+             *
+             * @param model The (symbolic) model for which to compute the set of states.
+             * @param transitionMatrix The transition matrix of the model as a BDD.
+             * @param phiStates The BDD containing all phi states of the model.
+             * @param psiStates The BDD containing all psi states of the model.
+             * @param produceStrategies A flag indicating whether strategies should be produced. Note that the strategies
+             * are only produced in case the choices of the player are not irrelevant.
+             */
+            template <storm::dd::DdType Type, typename ValueType>
+            GameProb01Result<Type> performProb0(storm::models::symbolic::StochasticTwoPlayerGame<Type, ValueType> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool produceStrategies = false);
+            
+            /*!
+             * Computes the set of states that have probability 1 given the strategies of the two players.
+             *
+             * @param model The (symbolic) model for which to compute the set of states.
+             * @param transitionMatrix The transition matrix of the model as a BDD.
+             * @param phiStates The BDD containing all phi states of the model.
+             * @param psiStates The BDD containing all psi states of the model.
+             * @param produceStrategies A flag indicating whether strategies should be produced. Note that the strategies
+             * are only produced in case the choices of the player are not irrelevant.
+             */
+            template <storm::dd::DdType Type, typename ValueType>
+            GameProb01Result<Type> performProb1(storm::models::symbolic::StochasticTwoPlayerGame<Type, ValueType> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategybool, bool produceStrategies = false);
             
             /*!
              * Performs a topological sort of the states of the system according to the given transitions.
@@ -524,7 +566,7 @@ namespace storm {
              * @return A vector of indices that is a topological sort of the states.
              */
             template <typename T>
-            std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<T> const& matrix) ;
+            std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<T> const& matrix);
             
             /*!
              * A class needed to compare the distances for two states in the Dijkstra search.

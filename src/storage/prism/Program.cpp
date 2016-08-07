@@ -349,7 +349,7 @@ namespace storm {
         std::vector<IntegerVariable> const& Program::getGlobalIntegerVariables() const {
             return this->globalIntegerVariables;
         }
-        
+
         std::set<storm::expressions::Variable> Program::getAllExpressionVariables() const {
             std::set<storm::expressions::Variable> result;
             
@@ -391,7 +391,7 @@ namespace storm {
         bool Program::globalIntegerVariableExists(std::string const& variableName) const {
             return this->globalIntegerVariableToIndexMap.count(variableName) > 0;
         }
-        
+
         BooleanVariable const& Program::getGlobalBooleanVariable(std::string const& variableName) const {
             auto const& nameIndexPair = this->globalBooleanVariableToIndexMap.find(variableName);
             STORM_LOG_THROW(nameIndexPair != this->globalBooleanVariableToIndexMap.end(), storm::exceptions::OutOfRangeException, "Unknown boolean variable '" << variableName << "'.");
@@ -555,6 +555,16 @@ namespace storm {
         
         std::vector<Label> const& Program::getLabels() const {
             return this->labels;
+        }
+        
+        std::vector<storm::expressions::Expression> Program::getAllGuards(bool negated) const {
+            std::vector<storm::expressions::Expression> allGuards;
+            for (auto const& module : modules) {
+                for (auto const& command : module.getCommands()) {
+                    allGuards.push_back(negated ? !command.getGuardExpression() : command.getGuardExpression());
+                }
+            }
+            return allGuards;
         }
         
         storm::expressions::Expression const& Program::getLabelExpression(std::string const& label) const {

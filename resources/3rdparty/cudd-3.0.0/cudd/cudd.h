@@ -515,6 +515,7 @@ extern int Cudd_zddVarsFromBddVars(DdManager *dd, int multiplicity);
 extern unsigned int Cudd_ReadMaxIndex(void);
 extern DdNode * Cudd_addConst(DdManager *dd, CUDD_VALUE_TYPE c);
 extern int Cudd_IsConstant(DdNode *node);
+extern int Cudd_IsConstant_const(DdNode const *node);
 extern int Cudd_IsNonConstant(DdNode *f);
 extern DdNode * Cudd_T(DdNode *node);
 extern DdNode * Cudd_E(DdNode *node);
@@ -667,6 +668,8 @@ extern DdNode * Cudd_addUnivAbstract(DdManager *manager, DdNode *f, DdNode *cube
 extern DdNode * Cudd_addOrAbstract(DdManager *manager, DdNode *f, DdNode *cube);
 extern DdNode * Cudd_addMinAbstract(DdManager * manager, DdNode * f, DdNode * cube);
 extern DdNode * Cudd_addMaxAbstract(DdManager * manager, DdNode * f, DdNode * cube);
+extern DdNode * Cudd_addMinAbstractRepresentative(DdManager * manager, DdNode * f, DdNode * cube);
+extern DdNode * Cudd_addMaxAbstractRepresentative(DdManager * manager, DdNode * f, DdNode * cube);
 extern DdNode * Cudd_addApply(DdManager *dd, DD_AOP op, DdNode *f, DdNode *g);
 extern DdNode * Cudd_addPlus(DdManager *dd, DdNode **f, DdNode **g);
 extern DdNode * Cudd_addTimes(DdManager *dd, DdNode **f, DdNode **g);
@@ -740,6 +743,7 @@ extern DdNode * Cudd_RemapOverApprox(DdManager *dd, DdNode *f, int numVars, int 
 extern DdNode * Cudd_BiasedUnderApprox(DdManager *dd, DdNode *f, DdNode *b, int numVars, int threshold, double quality1, double quality0);
 extern DdNode * Cudd_BiasedOverApprox(DdManager *dd, DdNode *f, DdNode *b, int numVars, int threshold, double quality1, double quality0);
 extern DdNode * Cudd_bddExistAbstract(DdManager *manager, DdNode *f, DdNode *cube);
+extern DdNode * Cudd_bddExistAbstractRepresentative(DdManager *manager, DdNode *f, DdNode *cube);
 extern DdNode * Cudd_bddExistAbstractLimit(DdManager * manager, DdNode * f, DdNode * cube, unsigned int limit);
 extern DdNode * Cudd_bddXorExistAbstract(DdManager *manager, DdNode *f, DdNode *g, DdNode *cube);
 extern DdNode * Cudd_bddUnivAbstract(DdManager *manager, DdNode *f, DdNode *cube);

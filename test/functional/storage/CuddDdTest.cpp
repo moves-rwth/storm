@@ -5,6 +5,8 @@
 #include "src/storage/dd/Add.h"
 #include "src/storage/dd/Odd.h"
 #include "src/storage/dd/DdMetaVariable.h"
+#include "src/storage/expressions/ExpressionManager.h"
+#include "src/storage/expressions/Expression.h"
 #include "src/settings/SettingsManager.h"
 
 #include "src/storage/SparseMatrix.h"
@@ -407,4 +409,20 @@ TEST(CuddDd, BddOddTest) {
     EXPECT_EQ(9ul, matrix.getRowGroupCount());
     EXPECT_EQ(9ul, matrix.getColumnCount());
     EXPECT_EQ(106ul, matrix.getNonzeroEntryCount());
- }
+}
+
+TEST(CuddDd, BddToExpressionTest) {
+    std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::CUDD>> ddManager(new storm::dd::DdManager<storm::dd::DdType::CUDD>());
+    std::pair<storm::expressions::Variable, storm::expressions::Variable> a = ddManager->addMetaVariable("a");
+    std::pair<storm::expressions::Variable, storm::expressions::Variable> b = ddManager->addMetaVariable("b");
+    
+    storm::dd::Bdd<storm::dd::DdType::CUDD> bdd = ddManager->getBddOne();
+    bdd &= ddManager->getEncoding(a.first, 1);
+    bdd |= ddManager->getEncoding(b.first, 0);
+    
+    std::shared_ptr<storm::expressions::ExpressionManager> manager = std::make_shared<storm::expressions::ExpressionManager>();
+    storm::expressions::Variable c = manager->declareBooleanVariable("c");
+    storm::expressions::Variable d = manager->declareBooleanVariable("d");
+    
+    auto result = bdd.toExpression(*manager);
+}

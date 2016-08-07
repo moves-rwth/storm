@@ -125,12 +125,20 @@ namespace storm {
 			return InternalAdd<DdType::Sylvan, storm::RationalFunction>(this, sylvan::Mtbdd::stormRationalFunctionTerminal(value));
 		}
 #endif
+		
+        std::pair<InternalBdd<DdType::Sylvan>, InternalBdd<DdType::Sylvan>> InternalDdManager<DdType::Sylvan>::createNewDdVariablePair(boost::optional<uint_fast64_t> const& position) {
+            STORM_LOG_THROW(!position, storm::exceptions::NotSupportedException, "The manager does not support ordered insertion.");
+		}
 
         std::pair<InternalBdd<DdType::Sylvan>, InternalBdd<DdType::Sylvan>> InternalDdManager<DdType::Sylvan>::createNewDdVariablePair() {
             InternalBdd<DdType::Sylvan> first = InternalBdd<DdType::Sylvan>(this, sylvan::Bdd::bddVar(nextFreeVariableIndex));
             InternalBdd<DdType::Sylvan> second = InternalBdd<DdType::Sylvan>(this, sylvan::Bdd::bddVar(nextFreeVariableIndex + 1));
             nextFreeVariableIndex += 2;
             return std::make_pair(first, second);
+        }
+        
+        bool InternalDdManager<DdType::Sylvan>::supportsOrderedInsertion() const {
+            return false;
         }
         
         void InternalDdManager<DdType::Sylvan>::allowDynamicReordering(bool value) {
@@ -144,7 +152,11 @@ namespace storm {
         void InternalDdManager<DdType::Sylvan>::triggerReordering() {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation is not supported by sylvan.");
         }
-                
+        
+        uint_fast64_t InternalDdManager<DdType::Sylvan>::getNumberOfDdVariables() const {
+            return nextFreeVariableIndex;
+        }
+        
         template InternalAdd<DdType::Sylvan, double> InternalDdManager<DdType::Sylvan>::getAddOne() const;
         template InternalAdd<DdType::Sylvan, uint_fast64_t> InternalDdManager<DdType::Sylvan>::getAddOne() const;
 #ifdef STORM_HAVE_CARL

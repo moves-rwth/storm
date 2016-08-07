@@ -441,11 +441,18 @@ namespace storm {
             bool isConstant() const;
             
             /*!
-             * Retrieves the index of the topmost variable in the DD.
+             * Retrieves the index of the topmost variable in the ADD.
              *
-             * @return The index of the topmost variable in DD.
+             * @return The index of the topmost variable in ADD.
              */
-            virtual uint_fast64_t getIndex() const;
+            uint_fast64_t getIndex() const;
+            
+            /*!
+             * Retrieves the level of the topmost variable in the ADD.
+             *
+             * @return The level of the topmost variable in ADD.
+             */
+            uint_fast64_t getLevel() const;
             
             /*!
              * Exports the DD to the given file in the dot format.

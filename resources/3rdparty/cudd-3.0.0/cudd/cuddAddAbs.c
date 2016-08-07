@@ -281,6 +281,78 @@ Cudd_addMaxAbstract(
     
 } /* end of Cudd_addMaxAbstract */
 
+/**Function********************************************************************
+ 
+ Synopsis    [Just like Cudd_addMinAbstract, but instead of abstracting the
+ variables in the given cube, picks a unique representative that realizes th
+ minimal function value.]
+ 
+ Description [Returns the resulting ADD if successful; NULL otherwise.]
+ 
+ SideEffects [None]
+ 
+ SeeAlso     [Cudd_addMaxAbstractRepresentative]
+ 
+ Note: Added by Christian Dehnert 8/5/14
+ 
+ ******************************************************************************/
+DdNode *
+Cudd_addMinAbstractRepresentative(
+                                  DdManager * manager,
+                                  DdNode * f,
+                                  DdNode * cube)
+{
+    DdNode *res;
+    
+    if (addCheckPositiveCube(manager, cube) == 0) {
+        (void) fprintf(manager->err,"Error: Can only abstract cubes");
+        return(NULL);
+    }
+    
+    do {
+        manager->reordered = 0;
+        res = cuddAddMinAbstractRepresentativeRecur(manager, f, cube);
+    } while (manager->reordered == 1);
+    return(res);
+    
+} /* end of Cudd_addMinRepresentative */
+
+/**Function********************************************************************
+ 
+ Synopsis    [Just like Cudd_addMaxAbstract, but instead of abstracting the
+ variables in the given cube, picks a unique representative that realizes th
+ maximal function value.]
+ 
+ Description [Returns the resulting ADD if successful; NULL otherwise.]
+ 
+ SideEffects [None]
+ 
+ SeeAlso     [Cudd_addMinAbstractRepresentative]
+ 
+ Note: Added by Christian Dehnert 8/5/14
+ 
+ ******************************************************************************/
+DdNode *
+Cudd_addMaxAbstractRepresentative(
+                                  DdManager * manager,
+                                  DdNode * f,
+                                  DdNode * cube)
+{
+    DdNode *res;
+    
+    if (addCheckPositiveCube(manager, cube) == 0) {
+        (void) fprintf(manager->err,"Error: Can only abstract cubes");
+        return(NULL);
+    }
+    
+    do {
+        manager->reordered = 0;
+        res = cuddAddMaxAbstractRepresentativeRecur(manager, f, cube);
+    } while (manager->reordered == 1);
+    return(res);
+    
+} /* end of Cudd_addMaxRepresentative */
+
 /*---------------------------------------------------------------------------*/
 /* Definition of internal functions                                          */
 /*---------------------------------------------------------------------------*/
@@ -774,6 +846,389 @@ cuddAddMaxAbstractRecur(
 /* Definition of static functions                                            */
 /*---------------------------------------------------------------------------*/
 
+/**Function********************************************************************
+ 
+ Synopsis    [Performs the recursive step of Cudd_addMinAbstractRepresentative.]
+ 
+ Description [Performs the recursive step of Cudd_addMinAbstractRepresentative.
+ Returns the ADD obtained by picking a representative over the variables in
+ the given cube for all other valuations. Returns the resulting ADD if successful;
+ NULL otherwise.]
+ 
+ SideEffects [None]
+ 
+ SeeAlso     []
+ 
+ ******************************************************************************/
+DdNode *
+cuddAddMinAbstractRepresentativeRecur(
+                                      DdManager * manager,
+                                      DdNode * f,
+                                      DdNode * cube)
+{
+    DdNode	*T, *E, *res, *res1, *res2, *zero, *one, *res1Inf, *res2Inf, *left, *right, *tmp, *tmp2;
+    
+    zero = DD_ZERO(manager);
+    one = DD_ONE(manager);
+    
+    /* Cube is guaranteed to be a cube at this point. */
+    if (cuddIsConstant(f)) {
+        if (cuddIsConstant(cube)) {
+            return(one);
+        } else {
+            return(cube);
+        }
+    }
+    
+    /* Abstract a variable that does not appear in f. */
+    if (cuddI(manager,f->index) > cuddI(manager,cube->index)) {
+        res = cuddAddMinAbstractRepresentativeRecur(manager, f, cuddT(cube));
+        if (res == NULL) {
+            return(NULL);
+        }
+        
+        // Fill in the missing variables to make representative unique.
+        cuddRef(res);
+        cuddRef(zero);
+        res1 = cuddUniqueInter(manager, (int) cube->index, zero, res);
+        if (res1 == NULL) {
+            Cudd_RecursiveDeref(manager,res);
+            Cudd_RecursiveDeref(manager,zero);
+            return(NULL);
+        }
+        Cudd_RecursiveDeref(manager, res);
+        cuddDeref(zero);
+       	return(res1);
+    }
+    
+    if ((res = cuddCacheLookup2(manager, Cudd_addMinAbstractRepresentative, f, cube)) != NULL) {
+        return(res);
+    }
+    
+    
+    E = cuddE(f);
+    T = cuddT(f);
+    
+    /* If the two indices are the same, so are their levels. */
+    if (f->index == cube->index) {
+        res1 = cuddAddMinAbstractRepresentativeRecur(manager, E, cuddT(cube));
+        if (res1 == NULL) {
+            return(NULL);
+        }
+        cuddRef(res1);
+        
+        res2 = cuddAddMinAbstractRepresentativeRecur(manager, T, cuddT(cube));
+        if (res2 == NULL) {
+            Cudd_RecursiveDeref(manager, res1);
+            return(NULL);
+        }
+        cuddRef(res2);
+        
+        left = cuddAddMinAbstractRecur(manager, E, cuddT(cube));
+        if (left == NULL) {
+            Cudd_RecursiveDeref(manager, res1);
+            Cudd_RecursiveDeref(manager, res2);
+            return(NULL);
+        }
+        cuddRef(left);
+        right = cuddAddMinAbstractRecur(manager, T, cuddT(cube));
+        if (right == NULL) {
+            Cudd_RecursiveDeref(manager, res1);
+            Cudd_RecursiveDeref(manager, res2);
+            Cudd_RecursiveDeref(manager, left);
+            return(NULL);
+        }
+        cuddRef(right);
+        
+        tmp = cuddAddApplyRecur(manager, Cudd_addLessThanEquals, left, right);
+        if (tmp == NULL) {
+            Cudd_RecursiveDeref(manager,res1);
+            Cudd_RecursiveDeref(manager,res2);
+            Cudd_RecursiveDeref(manager,left);
+            Cudd_RecursiveDeref(manager,right);
+            return(NULL);
+        }
+        cuddRef(tmp);
+        
+        Cudd_RecursiveDeref(manager, left);
+        Cudd_RecursiveDeref(manager, right);
+        
+        cuddRef(zero);
+        res1Inf = cuddAddIteRecur(manager, tmp, res1, zero);
+        if (res1Inf == NULL) {
+            Cudd_RecursiveDeref(manager,res1);
+            Cudd_RecursiveDeref(manager,res2);
+            Cudd_RecursiveDeref(manager,tmp);
+            cuddDeref(zero);
+            return(NULL);
+        }
+        cuddRef(res1Inf);
+        Cudd_RecursiveDeref(manager,res1);
+        cuddDeref(zero);
+        
+        tmp2 = cuddAddCmplRecur(manager,tmp);
+        if (tmp2 == NULL) {
+            Cudd_RecursiveDeref(manager,res2);
+            Cudd_RecursiveDeref(manager,left);
+            Cudd_RecursiveDeref(manager,right);
+            Cudd_RecursiveDeref(manager,tmp);
+            return(NULL);
+        }
+        cuddRef(tmp2);
+        Cudd_RecursiveDeref(manager,tmp);
+        
+        cuddRef(zero);
+        res2Inf = cuddAddIteRecur(manager, tmp2, res2, zero);
+        if (res2Inf == NULL) {
+            Cudd_RecursiveDeref(manager,res2);
+            Cudd_RecursiveDeref(manager,res1Inf);
+            Cudd_RecursiveDeref(manager,tmp2);
+            cuddDeref(zero);
+            return(NULL);
+        }
+        cuddRef(res2Inf);
+        Cudd_RecursiveDeref(manager,res2);
+        Cudd_RecursiveDeref(manager,tmp2);
+        cuddDeref(zero);
+
+//        Originally:
+//        res = (res1Inf == res2Inf) ? res1Inf : cuddUniqueInter(manager, (int) f->index, res2Inf, res1Inf);
+        cuddRef(zero);
+        res = (res1Inf == res2Inf) ? cuddUniqueInter(manager, (int) f->index, zero, res1Inf) : cuddUniqueInter(manager, (int) f->index, res2Inf, res1Inf);
+        cuddDeref(zero);
+        
+        if (res == NULL) {
+            Cudd_RecursiveDeref(manager,res1Inf);
+            Cudd_RecursiveDeref(manager,res2Inf);
+            return(NULL);
+        }
+        cuddRef(res);
+        Cudd_RecursiveDeref(manager,res1Inf);
+        Cudd_RecursiveDeref(manager,res2Inf);
+        cuddCacheInsert2(manager, Cudd_addMinAbstractRepresentative, f, cube, res);
+        cuddDeref(res);
+        return(res);
+    }
+    else { /* if (cuddI(manager,f->index) < cuddI(manager,cube->index)) */
+        res1 = cuddAddMinAbstractRepresentativeRecur(manager, E, cube);
+        if (res1 == NULL) return(NULL);
+        cuddRef(res1);
+        res2 = cuddAddMinAbstractRepresentativeRecur(manager, T, cube);
+        if (res2 == NULL) {
+            Cudd_RecursiveDeref(manager,res1);
+            return(NULL);
+        }
+        cuddRef(res2);
+        
+        cuddRef(zero);
+        res = (res1 == res2) ? cuddUniqueInter(manager, (int) f->index, zero, res1) : cuddUniqueInter(manager, (int) f->index, res2, res1);
+        cuddDeref(zero);
+        if (res == NULL) {
+            Cudd_RecursiveDeref(manager,res1);
+            Cudd_RecursiveDeref(manager,res2);
+            return(NULL);
+        }
+        cuddDeref(res1);
+        cuddDeref(res2);
+        cuddCacheInsert2(manager, Cudd_addMinAbstractRepresentative, f, cube, res);
+        return(res);
+    }
+    
+} /* end of cuddAddMinAbstractRepresentativeRecur */
+
+/**Function********************************************************************
+ 
+ Synopsis    [Performs the recursive step of Cudd_addMaxAbstractRepresentative.]
+ 
+ Description [Performs the recursive step of Cudd_addMaxAbstractRepresentative.
+ Returns the ADD obtained by picking a representative over the variables in
+ the given cube for all other valuations. Returns the resulting ADD if successful;
+ NULL otherwise.]
+ 
+ SideEffects [None]
+ 
+ SeeAlso     []
+ 
+ ******************************************************************************/
+DdNode *
+cuddAddMaxAbstractRepresentativeRecur(
+                                      DdManager * manager,
+                                      DdNode * f,
+                                      DdNode * cube)
+{
+    DdNode	*T, *E, *res, *res1, *res2, *zero, *one, *res1Inf, *res2Inf, *left, *right, *tmp, *tmp2;
+    
+    zero = DD_ZERO(manager);
+    one = DD_ONE(manager);
+    
+    /* Cube is guaranteed to be a cube at this point. */
+    if (cuddIsConstant(f)) {
+        if (cuddIsConstant(cube)) {
+            return(one);
+        } else {
+            return(cube);
+        }
+    }
+    
+    /* Abstract a variable that does not appear in f. */
+    if (cuddI(manager,f->index) > cuddI(manager,cube->index)) {
+        res = cuddAddMaxAbstractRepresentativeRecur(manager, f, cuddT(cube));
+        
+        if (res == NULL) {
+            return(NULL);
+        }
+        
+        // Fill in the missing variables to make representative unique.
+        cuddRef(res);
+        cuddRef(zero);
+        res1 = cuddUniqueInter(manager, (int) cube->index, zero, res);
+        if (res1 == NULL) {
+            Cudd_RecursiveDeref(manager, res);
+            Cudd_RecursiveDeref(manager,zero);
+            return(NULL);
+        }
+        Cudd_RecursiveDeref(manager,res);
+        Cudd_RecursiveDeref(manager,zero);
+       	return(res1);
+    }
+    
+    if ((res = cuddCacheLookup2(manager, Cudd_addMaxAbstractRepresentative, f, cube)) != NULL) {
+        return(res);
+    }
+    
+    
+    E = cuddE(f);
+    T = cuddT(f);
+    
+    /* If the two indices are the same, so are their levels. */
+    if (f->index == cube->index) {
+        res1 = cuddAddMaxAbstractRepresentativeRecur(manager, E, cuddT(cube));
+        if (res1 == NULL) {
+            return(NULL);
+        }
+        cuddRef(res1);
+        
+        res2 = cuddAddMaxAbstractRepresentativeRecur(manager, T, cuddT(cube));
+        if (res2 == NULL) {
+            Cudd_RecursiveDeref(manager, res1);
+            return(NULL);
+        }
+        cuddRef(res2);
+        
+        left = cuddAddMaxAbstractRecur(manager, E, cuddT(cube));
+        if (left == NULL) {
+            Cudd_RecursiveDeref(manager, res1);
+            Cudd_RecursiveDeref(manager, res2);
+            return(NULL);
+        }
+        cuddRef(left);
+        right = cuddAddMaxAbstractRecur(manager, T, cuddT(cube));
+        if (right == NULL) {
+            Cudd_RecursiveDeref(manager, res1);
+            Cudd_RecursiveDeref(manager, res2);
+            Cudd_RecursiveDeref(manager, left);
+            return(NULL);
+        }
+        cuddRef(right);
+        
+        tmp = cuddAddApplyRecur(manager, Cudd_addGreaterThanEquals, left, right);
+        if (tmp == NULL) {
+            Cudd_RecursiveDeref(manager,res1);
+            Cudd_RecursiveDeref(manager,res2);
+            Cudd_RecursiveDeref(manager,left);
+            Cudd_RecursiveDeref(manager,right);
+            return(NULL);
+        }
+        cuddRef(tmp);
+        
+        Cudd_RecursiveDeref(manager, left);
+        Cudd_RecursiveDeref(manager, right);
+        
+        cuddRef(zero);
+        res1Inf = cuddAddIteRecur(manager, tmp, res1, zero);
+        if (res1Inf == NULL) {
+            Cudd_RecursiveDeref(manager,res1);
+            Cudd_RecursiveDeref(manager,res2);
+            Cudd_RecursiveDeref(manager,tmp);
+            cuddDeref(zero);
+            return(NULL);
+        }
+        cuddRef(res1Inf);
+        Cudd_RecursiveDeref(manager,res1);
+        cuddDeref(zero);
+        
+        tmp2 = cuddAddCmplRecur(manager,tmp);
+        if (tmp2 == NULL) {
+            Cudd_RecursiveDeref(manager,res2);
+            Cudd_RecursiveDeref(manager,left);
+            Cudd_RecursiveDeref(manager,right);
+            Cudd_RecursiveDeref(manager,tmp);
+            return(NULL);
+        }
+        cuddRef(tmp2);
+        Cudd_RecursiveDeref(manager,tmp);
+        
+        cuddRef(zero);
+        res2Inf = cuddAddIteRecur(manager, tmp2, res2, zero);
+        if (res2Inf == NULL) {
+            Cudd_RecursiveDeref(manager,res2);
+            Cudd_RecursiveDeref(manager,res1Inf);
+            Cudd_RecursiveDeref(manager,tmp2);
+            cuddDeref(zero);
+            return(NULL);
+        }
+        cuddRef(res2Inf);
+        Cudd_RecursiveDeref(manager,res2);
+        Cudd_RecursiveDeref(manager,tmp2);
+        cuddDeref(zero);
+
+//        Orignally
+//        res = (res1Inf == res2Inf) ? res1Inf : cuddUniqueInter(manager, (int) f->index, res2Inf, res1Inf);
+        
+        cuddRef(zero);
+        res = (res1Inf == res2Inf) ? cuddUniqueInter(manager, (int) f->index, zero, res1Inf) : cuddUniqueInter(manager, (int) f->index, res2Inf, res1Inf);
+        cuddDeref(zero);
+
+        if (res == NULL) {
+            Cudd_RecursiveDeref(manager,res1Inf);
+            Cudd_RecursiveDeref(manager,res2Inf);
+            return(NULL);
+        }
+        cuddRef(res);
+        Cudd_RecursiveDeref(manager,res1Inf);
+        Cudd_RecursiveDeref(manager,res2Inf);
+        cuddCacheInsert2(manager, Cudd_addMaxAbstractRepresentative, f, cube, res);
+        cuddDeref(res);
+        return(res);
+    }
+    else { /* if (cuddI(manager,f->index) < cuddI(manager,cube->index)) */
+        res1 = cuddAddMaxAbstractRepresentativeRecur(manager, E, cube);
+        if (res1 == NULL) return(NULL);
+        cuddRef(res1);
+        res2 = cuddAddMaxAbstractRepresentativeRecur(manager, T, cube);
+        if (res2 == NULL) {
+            Cudd_RecursiveDeref(manager,res1);
+            return(NULL);
+        }
+        cuddRef(res2);
+        cuddRef(zero);
+        res = (res1 == res2) ? cuddUniqueInter(manager, (int) f->index, zero, res1) : cuddUniqueInter(manager, (int) f->index, res2, res1);
+        cuddDeref(zero);
+        if (res == NULL) {
+            Cudd_RecursiveDeref(manager,res1);
+            Cudd_RecursiveDeref(manager,res2);
+            return(NULL);
+        }
+        cuddDeref(res1);
+        cuddDeref(res2);
+        cuddCacheInsert2(manager, Cudd_addMaxAbstractRepresentative, f, cube, res);
+        return(res);
+    }
+} /* end of cuddAddMaxAbstractRepresentativeRecur */
+
+/*---------------------------------------------------------------------------*/
+/* Definition of static functions                                            */
+/*---------------------------------------------------------------------------*/
 
 /**
   @brief Checks whether cube is an %ADD representing the product

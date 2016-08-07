@@ -5,6 +5,7 @@
 #include "src/utility/macros.h"
 #include "src/utility/constants.h"
 #include "src/exceptions/InvalidArgumentException.h"
+#include "src/exceptions/NotSupportedException.h"
 
 #include "storm-config.h"
 #include "src/adapters/CarlAdapter.h"
@@ -108,7 +109,13 @@ namespace storm {
         }
 		
         template<DdType LibraryType>
-        std::pair<storm::expressions::Variable, storm::expressions::Variable> DdManager<LibraryType>::addMetaVariable(std::string const& name, int_fast64_t low, int_fast64_t high) {
+        Bdd<LibraryType> DdManager<LibraryType>::getCube(storm::expressions::Variable const& variable) const {
+            storm::dd::DdMetaVariable<LibraryType> const& metaVariable = this->getMetaVariable(variable);
+            return metaVariable.getCube();
+        }
+        
+        template<DdType LibraryType>
+        std::pair<storm::expressions::Variable, storm::expressions::Variable> DdManager<LibraryType>::addMetaVariable(std::string const& name, int_fast64_t low, int_fast64_t high, boost::optional<std::pair<MetaVariablePosition, storm::expressions::Variable>> const& position) {
             // Check whether the variable name is legal.
             STORM_LOG_THROW(name != "" && name.back() != '\'', storm::exceptions::InvalidArgumentException, "Illegal name of meta variable: '" << name << "'.");
             
@@ -119,6 +126,19 @@ namespace storm {
             STORM_LOG_THROW(high >= low, storm::exceptions::InvalidArgumentException, "Illegal empty range for meta variable.");
             
             std::size_t numberOfBits = static_cast<std::size_t>(std::ceil(std::log2(high - low + 1)));
+            
+            // If a specific position was requested, we compute it now.
+            boost::optional<uint_fast64_t> level;
+            if (position) {
+                storm::dd::DdMetaVariable<LibraryType> beforeVariable = this->getMetaVariable(position.get().second);
+                level = position.get().first == MetaVariablePosition::Above ? std::numeric_limits<uint_fast64_t>::max() : std::numeric_limits<uint_fast64_t>::min();
+                for (auto const& ddVariable : beforeVariable.getDdVariables()) {
+                    level = position.get().first == MetaVariablePosition::Above ? std::min(level.get(), ddVariable.getLevel()) : std::max(level.get(), ddVariable.getLevel());
+                }
+                if (position.get().first == MetaVariablePosition::Below) {
+                    ++level.get();
+                }
+            }
             
             // For the case where low and high coincide, we need to have a single bit.
             if (numberOfBits == 0) {
@@ -131,9 +151,15 @@ namespace storm {
             std::vector<Bdd<LibraryType>> variables;
             std::vector<Bdd<LibraryType>> variablesPrime;
             for (std::size_t i = 0; i < numberOfBits; ++i) {
-                auto ddVariablePair = internalDdManager.createNewDdVariablePair();
+                auto ddVariablePair = internalDdManager.createNewDdVariablePair(level);
                 variables.emplace_back(Bdd<LibraryType>(*this, ddVariablePair.first, {unprimed}));
                 variablesPrime.emplace_back(Bdd<LibraryType>(*this, ddVariablePair.second, {primed}));
+                
+                // If we are inserting the variable at a specific level, we need to prepare the level for the next pair
+                // of variables.
+                if (level) {
+                    level.get() += 2;
+                }
             }
 
             metaVariableMap.emplace(unprimed, DdMetaVariable<LibraryType>(name, low, high, variables));
@@ -143,19 +169,33 @@ namespace storm {
         }
         
         template<DdType LibraryType>
-        std::pair<storm::expressions::Variable, storm::expressions::Variable> DdManager<LibraryType>::addMetaVariable(std::string const& name) {
+        std::pair<storm::expressions::Variable, storm::expressions::Variable> DdManager<LibraryType>::addMetaVariable(std::string const& name, boost::optional<std::pair<MetaVariablePosition, storm::expressions::Variable>> const& position) {
             // Check whether the variable name is legal.
             STORM_LOG_THROW(name != "" && name.back() != '\'', storm::exceptions::InvalidArgumentException, "Illegal name of meta variable: '" << name << "'.");
             
             // Check whether a meta variable already exists.
             STORM_LOG_THROW(!this->hasMetaVariable(name), storm::exceptions::InvalidArgumentException, "A meta variable '" << name << "' already exists.");
             
+            // If a specific position was requested, we compute it now.
+            boost::optional<uint_fast64_t> level;
+            if (position) {
+                STORM_LOG_THROW(this->supportsOrderedInsertion(), storm::exceptions::NotSupportedException, "Cannot add meta variable at position, because the manager does not support ordered insertion.");
+                storm::dd::DdMetaVariable<LibraryType> beforeVariable = this->getMetaVariable(position.get().second);
+                level = position.get().first == MetaVariablePosition::Above ? std::numeric_limits<uint_fast64_t>::max() : std::numeric_limits<uint_fast64_t>::min();
+                for (auto const& ddVariable : beforeVariable.getDdVariables()) {
+                    level = position.get().first == MetaVariablePosition::Above ? std::min(level.get(), ddVariable.getLevel()) : std::max(level.get(), ddVariable.getLevel());
+                }
+                if (position.get().first == MetaVariablePosition::Below) {
+                    ++level.get();
+                }
+            }
+            
             storm::expressions::Variable unprimed = manager->declareBooleanVariable(name);
             storm::expressions::Variable primed = manager->declareBooleanVariable(name + "'");
             
             std::vector<Bdd<LibraryType>> variables;
             std::vector<Bdd<LibraryType>> variablesPrime;
-            auto ddVariablePair = internalDdManager.createNewDdVariablePair();
+            auto ddVariablePair = internalDdManager.createNewDdVariablePair(level);
             variables.emplace_back(Bdd<LibraryType>(*this, ddVariablePair.first, {unprimed}));
             variablesPrime.emplace_back(Bdd<LibraryType>(*this, ddVariablePair.second, {primed}));
             
@@ -192,6 +232,11 @@ namespace storm {
         template<DdType LibraryType>
         bool DdManager<LibraryType>::hasMetaVariable(std::string const& metaVariableName) const {
             return manager->hasVariable(metaVariableName);
+        }
+        
+        template<DdType LibraryType>
+        bool DdManager<LibraryType>::supportsOrderedInsertion() const {
+            return internalDdManager.supportsOrderedInsertion();
         }
         
         template<DdType LibraryType>

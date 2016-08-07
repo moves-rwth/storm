@@ -1,6 +1,8 @@
 #ifndef STORM_UTILITY_SOLVER_H_
 #define STORM_UTILITY_SOLVER_H_
 
+#include <iostream>
+
 #include <set>
 #include <vector>
 #include <memory>
@@ -122,7 +124,7 @@ namespace storm {
             public:
                 virtual std::unique_ptr<storm::solver::SmtSolver> create(storm::expressions::ExpressionManager& manager) const;
             };
-
+            
             class MathsatSmtSolverFactory : public SmtSolverFactory {
             public:
                 virtual std::unique_ptr<storm::solver::SmtSolver> create(storm::expressions::ExpressionManager& manager) const;

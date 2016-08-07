@@ -356,6 +356,11 @@ namespace storm {
         }
         
         template<DdType LibraryType, typename ValueType>
+        uint_fast64_t Add<LibraryType, ValueType>::getLevel() const {
+            return internalAdd.getLevel();
+        }
+        
+        template<DdType LibraryType, typename ValueType>
         std::vector<ValueType> Add<LibraryType, ValueType>::toVector() const {
             return this->toVector(this->createOdd());
         }

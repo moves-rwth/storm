@@ -525,3 +525,19 @@ TEST(SylvanDd, BddOddTest) {
     EXPECT_EQ(9ul, matrix.getColumnCount());
     EXPECT_EQ(106ul, matrix.getNonzeroEntryCount());
 }
+
+TEST(SylvanDd, BddToExpressionTest) {
+    std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> ddManager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
+    std::pair<storm::expressions::Variable, storm::expressions::Variable> a = ddManager->addMetaVariable("a");
+    std::pair<storm::expressions::Variable, storm::expressions::Variable> b = ddManager->addMetaVariable("b");
+    
+    storm::dd::Bdd<storm::dd::DdType::Sylvan> bdd = ddManager->getBddOne();
+    bdd &= ddManager->getEncoding(a.first, 1);
+    bdd |= ddManager->getEncoding(b.first, 0);
+    
+    std::shared_ptr<storm::expressions::ExpressionManager> manager = std::make_shared<storm::expressions::ExpressionManager>();
+    storm::expressions::Variable c = manager->declareBooleanVariable("c");
+    storm::expressions::Variable d = manager->declareBooleanVariable("d");
+    
+    auto result = bdd.toExpression(*manager);
+}

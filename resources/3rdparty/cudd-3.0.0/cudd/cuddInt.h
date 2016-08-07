@@ -1063,6 +1063,8 @@ extern DdNode * cuddAddUnivAbstractRecur(DdManager *manager, DdNode *f, DdNode *
 extern DdNode * cuddAddOrAbstractRecur(DdManager *manager, DdNode *f, DdNode *cube);
 extern DdNode * cuddAddMinAbstractRecur (DdManager *manager, DdNode *f, DdNode *cube);
 extern DdNode * cuddAddMaxAbstractRecur (DdManager *manager, DdNode *f, DdNode *cube);
+extern DdNode * cuddAddMinAbstractRepresentativeRecur(DdManager * manager, DdNode * f, DdNode * cube);
+extern DdNode * cuddAddMaxAbstractRepresentativeRecur(DdManager * manager, DdNode * f, DdNode * cube);
 extern DdNode * cuddAddApplyRecur(DdManager *dd, DdNode * (*)(DdManager *, DdNode **, DdNode **), DdNode *f, DdNode *g);
 extern DdNode * cuddAddMonadicApplyRecur(DdManager * dd, DdNode * (*op)(DdManager *, DdNode *), DdNode * f);
 extern DdNode * cuddAddScalarInverseRecur(DdManager *dd, DdNode *f, DdNode *epsilon);
@@ -1076,6 +1078,7 @@ extern DdNode * cuddBiasedUnderApprox(DdManager *dd, DdNode *f, DdNode *b, int n
 extern DdNode * cuddBddAndAbstractRecur(DdManager *manager, DdNode *f, DdNode *g, DdNode *cube);
 extern int cuddAnnealing(DdManager *table, int lower, int upper);
 extern DdNode * cuddBddExistAbstractRecur(DdManager *manager, DdNode *f, DdNode *cube);
+extern DdNode * cuddBddExistAbstractRepresentativeRecur(DdManager *manager, DdNode *f, DdNode *cube);
 extern DdNode * cuddBddXorExistAbstractRecur(DdManager *manager, DdNode *f, DdNode *g, DdNode *cube);
 extern DdNode * cuddBddBooleanDiffRecur(DdManager *manager, DdNode *f, DdNode *var);
 extern DdNode * cuddBddIteRecur(DdManager *dd, DdNode *f, DdNode *g, DdNode *h);

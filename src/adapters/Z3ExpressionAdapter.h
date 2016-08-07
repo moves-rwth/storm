@@ -47,6 +47,7 @@ namespace storm {
             z3::expr translateExpression(storm::expressions::Variable const& variable);
             
             storm::expressions::Expression translateExpression(z3::expr const& expr);
+            
             /*!
              * Finds the counterpart to the given z3 variable declaration.
              *
@@ -82,6 +83,7 @@ namespace storm {
              * @param variable The variable for which to create a Z3 counterpart.
              */
             z3::expr createVariable(storm::expressions::Variable const& variable);
+            
             // The manager that can be used to build expressions.
             storm::expressions::ExpressionManager& manager;
 

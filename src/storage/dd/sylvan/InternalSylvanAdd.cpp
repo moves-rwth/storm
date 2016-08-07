@@ -468,6 +468,11 @@ namespace storm {
         }
         
         template<typename ValueType>
+        uint_fast64_t InternalAdd<DdType::Sylvan, ValueType>::getLevel() const {
+            return this->getIndex();
+        }
+        
+        template<typename ValueType>
         void InternalAdd<DdType::Sylvan, ValueType>::exportToDot(std::string const& filename, std::vector<std::string> const& ddVariableNamesAsStrings) const {
             // Open the file, dump the DD and close it again.
             FILE* filePointer = fopen(filename.c_str() , "w");

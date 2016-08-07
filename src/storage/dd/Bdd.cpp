@@ -126,6 +126,12 @@ namespace storm {
             Bdd<LibraryType> cube = getCube(this->getDdManager(), metaVariables);
             return Bdd<LibraryType>(this->getDdManager(), internalBdd.existsAbstract(cube), Dd<LibraryType>::subtractMetaVariables(*this, cube));
         }
+        
+        template<DdType LibraryType>
+        Bdd<LibraryType> Bdd<LibraryType>::existsAbstractRepresentative(std::set<storm::expressions::Variable> const& metaVariables) const {
+            Bdd<LibraryType> cube = getCube(this->getDdManager(), metaVariables);
+            return Bdd<LibraryType>(this->getDdManager(), internalBdd.existsAbstractRepresentative(cube), this->getContainedMetaVariables());
+        }
 
         template<DdType LibraryType>
         Bdd<LibraryType> Bdd<LibraryType>::universalAbstract(std::set<storm::expressions::Variable> const& metaVariables) const {
@@ -266,6 +272,11 @@ namespace storm {
         }
         
         template<DdType LibraryType>
+        std::pair<std::vector<storm::expressions::Expression>, std::unordered_map<uint_fast64_t, storm::expressions::Variable>> Bdd<LibraryType>::toExpression(storm::expressions::ExpressionManager& manager) const {
+            return internalBdd.toExpression(manager);
+        }
+        
+        template<DdType LibraryType>
         Bdd<LibraryType> Bdd<LibraryType>::getSupport() const {
             return Bdd<LibraryType>(this->getDdManager(), internalBdd.getSupport(), this->getContainedMetaVariables());
         }
@@ -292,6 +303,11 @@ namespace storm {
         template<DdType LibraryType>
         uint_fast64_t Bdd<LibraryType>::getIndex() const {
             return internalBdd.getIndex();
+        }
+        
+        template<DdType LibraryType>
+        uint_fast64_t Bdd<LibraryType>::getLevel() const {
+            return internalBdd.getLevel();
         }
         
         template<DdType LibraryType>

@@ -7,9 +7,11 @@
 #include "src/storage/dd/sylvan/SylvanAddIterator.h"
 
 #include "src/storage/BitVector.h"
+#include "src/storage/PairHash.h"
 
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidOperationException.h"
+#include "src/exceptions/NotSupportedException.h"
 
 #include "src/adapters/CarlAdapter.h"
 
@@ -163,6 +165,10 @@ namespace storm {
             return InternalBdd<DdType::Sylvan>(ddManager, this->sylvanBdd.ExistAbstract(cube.sylvanBdd));
         }
         
+        InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::existsAbstractRepresentative(InternalBdd<DdType::Sylvan> const& cube) const {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "This operation is currently not supported by sylvan.");
+        }
+        
         InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::universalAbstract(InternalBdd<DdType::Sylvan> const& cube) const {
             return InternalBdd<DdType::Sylvan>(ddManager, this->sylvanBdd.UnivAbstract(cube.sylvanBdd));
         }
@@ -223,6 +229,10 @@ namespace storm {
         
         uint_fast64_t InternalBdd<DdType::Sylvan>::getIndex() const {
             return static_cast<uint_fast64_t>(this->sylvanBdd.TopVar());
+        }
+        
+        uint_fast64_t InternalBdd<DdType::Sylvan>::getLevel() const {
+            return this->getIndex();
         }
         
         void InternalBdd<DdType::Sylvan>::exportToDot(std::string const& filename, std::vector<std::string> const& ddVariableNamesAsStrings) const {
@@ -391,6 +401,90 @@ namespace storm {
                 filterExplicitVectorRec(bdd_regular(elseDdNode), currentLevel + 1, elseComplemented, maxLevel, ddVariableIndices, currentOffset, odd.getElseSuccessor(), result, currentIndex, values);
                 filterExplicitVectorRec(bdd_regular(thenDdNode), currentLevel + 1, thenComplemented, maxLevel, ddVariableIndices, currentOffset + odd.getElseOffset(), odd.getThenSuccessor(), result, currentIndex, values);
             }
+        }
+        
+        std::pair<std::vector<storm::expressions::Expression>, std::unordered_map<uint_fast64_t, storm::expressions::Variable>> InternalBdd<DdType::Sylvan>::toExpression(storm::expressions::ExpressionManager& manager) const {
+            std::pair<std::vector<storm::expressions::Expression>, std::unordered_map<uint_fast64_t, storm::expressions::Variable>> result;
+            
+            // Create (and maintain) a mapping from the DD nodes to a counter that says the how-many-th node (within the
+            // nodes of equal index) the node was.
+            std::unordered_map<BDD, uint_fast64_t> nodeToCounterMap;
+            std::vector<uint_fast64_t> nextCounterForIndex(ddManager->getNumberOfDdVariables(), 0);
+            std::unordered_map<std::pair<uint_fast64_t, uint_fast64_t>, storm::expressions::Variable> countIndexToVariablePair;
+            
+            bool negated = bdd_isnegated(this->getSylvanBdd().GetBDD());
+            
+            // Translate from the top node downwards.
+            storm::expressions::Variable topVariable = this->toExpressionRec(bdd_regular(this->getSylvanBdd().GetBDD()), manager, result.first, result.second, countIndexToVariablePair, nodeToCounterMap, nextCounterForIndex);
+            
+            // Create the final expression.
+            if (negated) {
+                result.first.push_back(!topVariable);
+            } else {
+                result.first.push_back(topVariable);
+            }
+            
+            return result;
+        }
+        
+        storm::expressions::Variable InternalBdd<DdType::Sylvan>::toExpressionRec(BDD dd, storm::expressions::ExpressionManager& manager, std::vector<storm::expressions::Expression>& expressions, std::unordered_map<uint_fast64_t, storm::expressions::Variable>& indexToVariableMap, std::unordered_map<std::pair<uint_fast64_t, uint_fast64_t>, storm::expressions::Variable>& countIndexToVariablePair, std::unordered_map<BDD, uint_fast64_t>& nodeToCounterMap, std::vector<uint_fast64_t>& nextCounterForIndex) {
+            STORM_LOG_ASSERT(!bdd_isnegated(dd), "Expected non-negated BDD node.");
+            
+            // First, try to look up the current node if it's not a terminal node.
+            auto nodeCounterIt = nodeToCounterMap.find(dd);
+            if (nodeCounterIt != nodeToCounterMap.end()) {
+                // If we have found the node, this means we can look up the counter-index pair and get the corresponding variable.
+                auto variableIt = countIndexToVariablePair.find(std::make_pair(nodeCounterIt->second, sylvan_var(dd)));
+                STORM_LOG_ASSERT(variableIt != countIndexToVariablePair.end(), "Unable to find node.");
+                return variableIt->second;
+            }
+            
+            // If the node was not yet encountered, we create a variable and associate it with the appropriate expression.
+            storm::expressions::Variable newNodeVariable = manager.declareFreshBooleanVariable();
+            
+            // Since we want to reuse the variable whenever possible, we insert the appropriate entries in the hash table.
+            if (!bdd_isterminal(dd)) {
+                // If we are dealing with a non-terminal node, we count it as a new node with this index.
+                nodeToCounterMap[dd] = nextCounterForIndex[sylvan_var(dd)];
+                countIndexToVariablePair[std::make_pair(nextCounterForIndex[sylvan_var(dd)], sylvan_var(dd))] = newNodeVariable;
+                ++nextCounterForIndex[sylvan_var(dd)];
+            } else {
+                // If it's a terminal node, it is the one leaf and there's no need to keep track of a counter for this level.
+                nodeToCounterMap[dd] = 0;
+                countIndexToVariablePair[std::make_pair(0, sylvan_var(dd))] = newNodeVariable;
+            }
+            
+            // In the terminal case, we can only have a one since we are considering non-negated nodes only.
+            if (bdd_isterminal(dd)) {
+                if (dd == sylvan_true) {
+                    expressions.push_back(storm::expressions::iff(manager.boolean(true), newNodeVariable));
+                } else {
+                    expressions.push_back(storm::expressions::iff(manager.boolean(false), newNodeVariable));
+                }
+            } else {
+                // In the non-terminal case, we recursively translate the children nodes and then construct and appropriate ite-expression.
+                BDD t = sylvan_high(dd);
+                BDD e = sylvan_low(dd);
+                BDD T = bdd_regular(t);
+                BDD E = bdd_regular(e);
+                storm::expressions::Variable thenVariable = toExpressionRec(T, manager, expressions, indexToVariableMap, countIndexToVariablePair, nodeToCounterMap, nextCounterForIndex);
+                storm::expressions::Variable elseVariable = toExpressionRec(E, manager, expressions, indexToVariableMap, countIndexToVariablePair, nodeToCounterMap, nextCounterForIndex);
+                
+                // Create the appropriate expression.
+                // Create the appropriate expression.
+                auto indexVariable = indexToVariableMap.find(sylvan_var(dd));
+                storm::expressions::Variable levelVariable;
+                if (indexVariable == indexToVariableMap.end()) {
+                    levelVariable = manager.declareFreshBooleanVariable();
+                    indexToVariableMap[sylvan_var(dd)] = levelVariable;
+                } else {
+                    levelVariable = indexVariable->second;
+                }
+                expressions.push_back(storm::expressions::iff(newNodeVariable, storm::expressions::ite(levelVariable, t == T ? thenVariable : !thenVariable, e == E ? elseVariable : !elseVariable)));
+            }
+            
+            // Return the variable for this node.
+            return newNodeVariable;
         }
         
         template InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::fromVector(InternalDdManager<DdType::Sylvan> const* ddManager, std::vector<double> const& values, Odd const& odd, std::vector<uint_fast64_t> const& sortedDdVariableIndices, std::function<bool (double const&)> const& filter);

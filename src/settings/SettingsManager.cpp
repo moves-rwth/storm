@@ -31,6 +31,7 @@
 #include "src/settings/modules/ParametricSettings.h"
 #include "src/settings/modules/TopologicalValueIterationEquationSolverSettings.h"
 #include "src/settings/modules/ExplorationSettings.h"
+#include "src/settings/modules/ResourceSettings.h"
 #include "src/utility/macros.h"
 #include "src/settings/Option.h"
 
@@ -520,6 +521,7 @@ namespace storm {
             storm::settings::addModule<storm::settings::modules::TopologicalValueIterationEquationSolverSettings>();
             storm::settings::addModule<storm::settings::modules::ParametricSettings>();
             storm::settings::addModule<storm::settings::modules::ExplorationSettings>();
+            storm::settings::addModule<storm::settings::modules::ResourceSettings>();
         }
 
     }
