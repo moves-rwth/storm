@@ -72,6 +72,8 @@ namespace storm {
             //////////
             static const bool defaultVariableTransient;
 
+            static const std::set<std::string> unsupportedOpstrings;
+
         };
     }
 }

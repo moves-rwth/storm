@@ -20,6 +20,8 @@ namespace storm {
         // Defaults
         ////////////
         const bool JaniParser::defaultVariableTransient = false;
+        const std::set<std::string> JaniParser::unsupportedOpstrings({"sin", "cos", "tan", "cot", "sec", "csc", "asin", "acos", "atan", "acot", "asec", "acsc",
+                                                         "sinh", "cosh", "tanh", "coth", "sech", "csch", "asinh", "acosh", "atanh", "asinh", "acosh"});
 
 
         std::string getString(json const& structure, std::string const& errorInfo) {
@@ -475,7 +477,10 @@ namespace storm {
                         ensureNumericalType(arguments[1], opstring, 1, scopeDescription);
                         // TODO implement
                         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "log operation is not yet implemented");
-                    }  else {
+                    }  else if (unsupportedOpstrings.count(opstring) > 0){
+                        STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Opstring " + opstring + " is not supported by storm");
+
+                    } else {
                         STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Unknown operator " << opstring << " in  " << scopeDescription << ".");
                     }
                 }
