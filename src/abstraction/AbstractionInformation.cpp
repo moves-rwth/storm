@@ -1,5 +1,8 @@
 #include "src/abstraction/AbstractionInformation.h"
 
+#include "src/storage/expressions/Expression.h"
+#include "src/storage/expressions/ExpressionManager.h"
+
 namespace storm {
     namespace abstraction {
 

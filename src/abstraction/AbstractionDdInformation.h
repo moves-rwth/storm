@@ -5,8 +5,10 @@
 #include <set>
 #include <map>
 #include <unordered_map>
+#include <cstdint>
 
 #include "src/storage/dd/DdType.h"
+#include "src/storage/expressions/Expression.h"
 #include "src/storage/expressions/Variable.h"
 
 namespace storm {
@@ -17,11 +19,7 @@ namespace storm {
         template <storm::dd::DdType DdType>
         class Bdd;
     }
-    
-    namespace expressions {
-        class Expression;
-    }
-    
+
     namespace abstraction {
         
         template <storm::dd::DdType DdType, typename ValueType>

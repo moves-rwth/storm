@@ -3,7 +3,6 @@
 #include <sstream>
 
 #include "src/storage/expressions/ExpressionManager.h"
-#include "src/storage/expressions/Expression.h"
 
 #include "src/storage/dd/DdManager.h"
 #include "src/storage/dd/Bdd.h"

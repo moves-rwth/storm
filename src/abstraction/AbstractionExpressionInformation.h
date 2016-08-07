@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <set>
+#include <cstdint>
 
 namespace storm {
     namespace expressions {

@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <set>
+#include <cstdint>
 
 #include "src/storage/dd/DdType.h"
 
