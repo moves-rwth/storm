@@ -10,7 +10,7 @@ namespace storm {
             /*!
              * Creates a boolean variable.
              */
-            BooleanVariable(std::string const& name, storm::expressions::Variable const& variable);
+            BooleanVariable(std::string const& name, storm::expressions::Variable const& variable, bool transient=false);
             
             virtual bool isBooleanVariable() const override;
         };

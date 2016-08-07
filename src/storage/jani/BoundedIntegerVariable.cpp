@@ -3,10 +3,15 @@
 namespace storm {
     namespace jani {
         
+        BoundedIntegerVariable::BoundedIntegerVariable(std::string const& name, storm::expressions::Variable const& variable, bool transient, storm::expressions::Expression const& lowerBound, storm::expressions::Expression const& upperBound) : Variable(name, variable, transient), lowerBound(lowerBound), upperBound(upperBound) {
+            // Intentionally left empty.
+        }
+
         BoundedIntegerVariable::BoundedIntegerVariable(std::string const& name, storm::expressions::Variable const& variable, storm::expressions::Expression const& lowerBound, storm::expressions::Expression const& upperBound) : Variable(name, variable), lowerBound(lowerBound), upperBound(upperBound) {
             // Intentionally left empty.
         }
-        
+
+
         storm::expressions::Expression const& BoundedIntegerVariable::getLowerBound() const {
             return lowerBound;
         }

@@ -16,9 +16,19 @@
 namespace storm {
     namespace parser {
 
+        ////////////
+        // Defaults
+        ////////////
+        const bool JaniParser::defaultVariableTransient = false;
+
 
         std::string getString(json const& structure, std::string const& errorInfo) {
             STORM_LOG_THROW(structure.is_string(), storm::exceptions::InvalidJaniException, "Expected a string in " << errorInfo << ", got '" << structure.dump() << "'");
+            return structure.front();
+        }
+
+        bool getBoolean(json const& structure, std::string const& errorInfo) {
+            STORM_LOG_THROW(structure.is_boolean(), storm::exceptions::InvalidJaniException, "Expected a Boolean in " << errorInfo << ", got " << structure.dump() << "'");
             return structure.front();
         }
 
@@ -189,6 +199,13 @@ namespace storm {
             // TODO check existance of name.
             // TODO store prefix in variable.
             std::string exprManagerName = pref + name;
+            bool transientVar = defaultVariableTransient; // Default value for variables.
+            size_t tvarcount = variableStructure.count("transient");
+            STORM_LOG_THROW(tvarcount <= 1, storm::exceptions::InvalidJaniException, "Multiple definitions of transient not allowed in variable '" + name  + "' (scope: " + scopeDescription + ")  ");
+            if(tvarcount == 1) {
+                transientVar = getBoolean(variableStructure.at("transient"), "transient-attribute in variable '" + name  + "' (scope: " + scopeDescription + ")  ");
+            }
+
             STORM_LOG_THROW(variableStructure.count("type") == 1, storm::exceptions::InvalidJaniException, "Variable '" + name + "' (scope: " + scopeDescription + ") must have a (single) type-declaration.");
 
             if(variableStructure.at("type").is_object()) {
@@ -207,7 +224,7 @@ namespace storm {
                     if(basictype == "int") {
                         STORM_LOG_THROW(lowerboundExpr.hasIntegerType(), storm::exceptions::InvalidJaniException, "Lower bound for bounded integer variable " << name << "(scope: " << scopeDescription << ") must be integer-typed");
                         STORM_LOG_THROW(upperboundExpr.hasIntegerType(), storm::exceptions::InvalidJaniException, "Upper bound for bounded integer variable " << name << "(scope: " << scopeDescription << ") must be integer-typed");
-                        return std::make_shared<storm::jani::BoundedIntegerVariable>(name, expressionManager->declareIntegerVariable(exprManagerName), lowerboundExpr, upperboundExpr);
+                        return std::make_shared<storm::jani::BoundedIntegerVariable>(name, expressionManager->declareIntegerVariable(exprManagerName), transientVar, lowerboundExpr, upperboundExpr);
                     } else {
                         STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Unsupported base " << basictype << " for bounded variable " << name << "(scope: " << scopeDescription << ") ");
                     }
@@ -220,9 +237,9 @@ namespace storm {
                     // expressionManager->declareRationalVariable(name);
                     // TODO something.
                 } else if(variableStructure.at("type") == "bool") {
-                    return std::make_shared<storm::jani::BooleanVariable>(name, expressionManager->declareBooleanVariable(exprManagerName));
+                    return std::make_shared<storm::jani::BooleanVariable>(name, expressionManager->declareBooleanVariable(exprManagerName), transientVar);
                 } else if(variableStructure.at("type") == "int") {
-                    return std::make_shared<storm::jani::UnboundedIntegerVariable>(name, expressionManager->declareIntegerVariable(exprManagerName));
+                    return std::make_shared<storm::jani::UnboundedIntegerVariable>(name, expressionManager->declareIntegerVariable(exprManagerName), transientVar);
                 } else {
                     // TODO clocks.
                     STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Unknown type description " << variableStructure.at("type").dump()  << " for Variable '" << name << "' (scope: " << scopeDescription << ")");

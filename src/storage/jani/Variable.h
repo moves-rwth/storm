@@ -18,7 +18,7 @@ namespace storm {
             /*!
              * Creates a new variable.
              */
-            Variable(std::string const& name, storm::expressions::Variable const& variable);
+            Variable(std::string const& name, storm::expressions::Variable const& variable, bool transient = false);
             
             /*!
              * Retrieves the associated expression variable
@@ -34,6 +34,8 @@ namespace storm {
             virtual bool isBooleanVariable() const;
             virtual bool isBoundedIntegerVariable() const;
             virtual bool isUnboundedIntegerVariable() const;
+
+            virtual bool isTransientVariable() const;
             
             // Methods to get the variable as a different type.
             BooleanVariable& asBooleanVariable();
@@ -49,6 +51,9 @@ namespace storm {
             
             // The expression variable associated with this variable.
             storm::expressions::Variable variable;
+
+            /// Whether this is a transient variable.
+            bool transient;
         };
         
     }

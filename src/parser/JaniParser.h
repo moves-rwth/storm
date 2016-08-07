@@ -67,6 +67,10 @@ namespace storm {
             std::shared_ptr<storm::expressions::ExpressionManager> expressionManager;
 
 
+            //////////
+            //   Default values -- assumptions from JANI.
+            //////////
+            static const bool defaultVariableTransient;
 
         };
     }

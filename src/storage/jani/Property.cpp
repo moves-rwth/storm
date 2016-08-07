@@ -15,7 +15,7 @@ namespace storm {
             return this->comment;
         }
 
-        std::shared_ptr<storm::logic::Formula const> Property::getFormula() const {
+        std::shared_ptr<storm::logic::Formula const> const& Property::getFormula() const {
             return this->formula;
         }
 

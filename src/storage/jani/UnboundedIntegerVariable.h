@@ -10,7 +10,7 @@ namespace storm {
             /*!
              * Creates an unbounded integer variable.
              */
-            UnboundedIntegerVariable(std::string const& name, storm::expressions::Variable const& variable);
+            UnboundedIntegerVariable(std::string const& name, storm::expressions::Variable const& variable, bool transient=false);
             
             virtual bool isUnboundedIntegerVariable() const override;
         };

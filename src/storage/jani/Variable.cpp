@@ -7,7 +7,7 @@
 namespace storm {
     namespace jani {
         
-        Variable::Variable(std::string const& name, storm::expressions::Variable const& variable) : name(name), variable(variable) {
+        Variable::Variable(std::string const& name, storm::expressions::Variable const& variable, bool transient) : name(name), variable(variable), transient(transient) {
             // Intentionally left empty.
         }
         
@@ -29,6 +29,10 @@ namespace storm {
         
         bool Variable::isUnboundedIntegerVariable() const {
             return false;
+        }
+
+        bool Variable::isTransientVariable() const {
+            return transient;
         }
         
         BooleanVariable& Variable::asBooleanVariable() {
