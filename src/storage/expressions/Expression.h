@@ -367,18 +367,23 @@ namespace storm {
 
 namespace std {
 	template <>
-	struct less <storm::expressions::Expression> {
-		bool operator()(const storm::expressions::Expression& lhs, const storm::expressions::Expression& rhs) const {
+	struct less<storm::expressions::Expression> {
+		bool operator()(storm::expressions::Expression const& lhs, storm::expressions::Expression const& rhs) const {
 			return lhs.getBaseExpressionPointer() < rhs.getBaseExpressionPointer();
 		}
 	};
-}
 
-namespace std {
     template <>
-    struct hash <storm::expressions::Expression> {
-        size_t operator()(const storm::expressions::Expression& expr) const {
-            return reinterpret_cast<size_t>(expr.getBaseExpressionPointer().get());
+    struct hash<storm::expressions::Expression> {
+        size_t operator()(storm::expressions::Expression const& e) const {
+            return reinterpret_cast<size_t>(e.getBaseExpressionPointer().get());
+        }
+    };
+
+    template <>
+    struct equal_to<storm::expressions::Expression> {
+        bool operator()(storm::expressions::Expression const& e1, storm::expressions::Expression const& e2) const {
+            return e1.areSame(e2);
         }
     };
 }

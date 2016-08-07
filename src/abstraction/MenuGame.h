@@ -37,7 +37,7 @@ namespace storm {
                  * @param player1Variables The meta variables used to encode the nondeterministic choices of player 1.
                  * @param player2Variables The meta variables used to encode the nondeterministic choices of player 2.
                  * @param allNondeterminismVariables The meta variables used to encode the nondeterminism in the model.
-                 * @param updateVariable The variable used to encode the different updates of the probabilistic program.
+                 * @param probabilisticBranchingVariables The variables used to encode probabilistic branching.
                  * @param expressionToBddMap A mapping from expressions (used) in the abstraction to the BDDs encoding
                  * them.
                  */
@@ -53,7 +53,7 @@ namespace storm {
                          std::set<storm::expressions::Variable> const& player1Variables,
                          std::set<storm::expressions::Variable> const& player2Variables,
                          std::set<storm::expressions::Variable> const& allNondeterminismVariables,
-                         storm::expressions::Variable const& updateVariable,
+                         std::set<storm::expressions::Variable> const& probabilisticBranchingVariables,
                          std::map<storm::expressions::Expression, storm::dd::Bdd<Type>> const& expressionToBddMap);
                 
                 virtual storm::dd::Bdd<Type> getStates(std::string const& label) const override;
@@ -87,8 +87,8 @@ namespace storm {
                 virtual bool hasLabel(std::string const& label) const override;
                 
             private:
-                // The meta variable used to encode the updates.
-                storm::expressions::Variable updateVariable;
+                // The meta variables used to probabilistic branching.
+                std::set<storm::expressions::Variable> probabilisticBranchingVariables;
                 
                 // A mapping from expressions that were used in the abstraction process to the the BDDs representing them.
                 std::map<storm::expressions::Expression, storm::dd::Bdd<Type>> expressionToBddMap;

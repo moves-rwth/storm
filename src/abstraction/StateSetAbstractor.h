@@ -28,16 +28,13 @@ namespace storm {
     }
     
     namespace abstraction {
-        template <storm::dd::DdType DdType, typename ValueType>
-        class AbstractionDdInformation;
-        
-        class AbstractionExpressionInformation;
+        template <storm::dd::DdType DdType>
+        class AbstractionInformation;
         
         template <storm::dd::DdType DdType, typename ValueType>
         class StateSetAbstractor {
         public:
-            // Provide a no-op default constructor.
-            StateSetAbstractor() = default;
+            StateSetAbstractor(AbstractionInformation<DdType>& abstractionInformation);
             
             StateSetAbstractor(StateSetAbstractor const& other) = default;
             StateSetAbstractor& operator=(StateSetAbstractor const& other) = default;
@@ -50,13 +47,12 @@ namespace storm {
             /*!
              * Creates a state set abstractor.
              *
-             * @param expressionInformation The expression-related information including the manager and the predicates.
-             * @param ddInformation The DD-related information including the manager.
+             * @param abstractionInformation An object storing information about the abstraction such as predicates and BDDs.
              * @param statePredicates A set of predicates that have to hold in the concrete states this abstractor is
              * supposed to abstract.
              * @param smtSolverFactory A factory that can create new SMT solvers.
              */
-            StateSetAbstractor(AbstractionExpressionInformation& expressionInformation, AbstractionDdInformation<DdType, ValueType> const& ddInformation, std::vector<storm::expressions::Expression> const& statePredicates, storm::utility::solver::SmtSolverFactory const& smtSolverFactory);
+            StateSetAbstractor(AbstractionInformation<DdType>& abstractionInformation, std::vector<storm::expressions::Expression> const& statePredicates, storm::utility::solver::SmtSolverFactory const& smtSolverFactory);
             
             /*!
              * Refines the abstractor by making the given predicates new abstract predicates.
@@ -110,14 +106,25 @@ namespace storm {
              */
             storm::dd::Bdd<DdType> getStateBdd(storm::solver::SmtSolver::ModelReference const& model) const;
             
+            /*!
+             * Retrieves the abstraction information.
+             *
+             * @return The abstraction information.
+             */
+            AbstractionInformation<DdType>& getAbstractionInformation();
+
+            /*!
+             * Retrieves the abstraction information.
+             *
+             * @return The abstraction information.
+             */
+            AbstractionInformation<DdType> const& getAbstractionInformation() const;
+            
             // The SMT solver used for abstracting the set of states.
             std::unique_ptr<storm::solver::SmtSolver> smtSolver;
             
-            // The global expression-related information.
-            AbstractionExpressionInformation& globalExpressionInformation;
-            
-            // The DD-related information.
-            AbstractionDdInformation<DdType, ValueType> const& ddInformation;
+            // The abstraction-related information.
+            std::reference_wrapper<AbstractionInformation<DdType>> abstractionInformation;
             
             // The local expression-related information.
             LocalExpressionInformation localExpressionInformation;

@@ -2,16 +2,13 @@
 
 #include <boost/iterator/transform_iterator.hpp>
 
-#include "src/abstraction/AbstractionExpressionInformation.h"
-#include "src/abstraction/AbstractionDdInformation.h"
+#include "src/abstraction/AbstractionInformation.h"
 
 #include "src/storage/dd/DdManager.h"
 #include "src/storage/dd/Add.h"
 
 #include "src/storage/prism/Command.h"
 #include "src/storage/prism/Update.h"
-
-#include "src/storage/expressions/ExpressionEvaluator.h"
 
 #include "src/utility/solver.h"
 #include "src/utility/macros.h"
@@ -20,32 +17,32 @@ namespace storm {
     namespace abstraction {
         namespace prism {
             template <storm::dd::DdType DdType, typename ValueType>
-            AbstractCommand<DdType, ValueType>::AbstractCommand(storm::prism::Command const& command, AbstractionExpressionInformation& globalExpressionInformation, AbstractionDdInformation<DdType, ValueType> const& ddInformation, storm::utility::solver::SmtSolverFactory const& smtSolverFactory) : smtSolver(smtSolverFactory.create(globalExpressionInformation.getManager())), globalExpressionInformation(globalExpressionInformation), ddInformation(ddInformation), command(command), localExpressionInformation(globalExpressionInformation.getVariables()), relevantPredicatesAndVariables(), cachedDd(std::make_pair(ddInformation.manager->getBddZero(), 0)), decisionVariables() {
+            AbstractCommand<DdType, ValueType>::AbstractCommand(storm::prism::Command const& command, AbstractionInformation<DdType>& abstractionInformation, storm::utility::solver::SmtSolverFactory const& smtSolverFactory) : smtSolver(smtSolverFactory.create(abstractionInformation.getExpressionManager())), abstractionInformation(abstractionInformation), command(command), localExpressionInformation(abstractionInformation.getVariables()), evaluator(abstractionInformation.getExpressionManager()), relevantPredicatesAndVariables(), cachedDd(std::make_pair(abstractionInformation.getDdManager().getBddZero(), 0)), decisionVariables() {
 
                 // Make the second component of relevant predicates have the right size.
                 relevantPredicatesAndVariables.second.resize(command.getNumberOfUpdates());
                 
-                // Assert all range expressions to enforce legal variable values.
-                for (auto const& rangeExpression : globalExpressionInformation.getRangeExpressions()) {
-                    smtSolver->add(rangeExpression);
+                // Assert all constraints to enforce legal variable values.
+                for (auto const& constraint : abstractionInformation.getConstraints()) {
+                    smtSolver->add(constraint);
                 }
                 
                 // Assert the guard of the command.
                 smtSolver->add(command.getGuardExpression());
 
                 // Refine the command based on all initial predicates.
-                std::vector<uint_fast64_t> allPredicateIndices(globalExpressionInformation.getNumberOfPredicates());
-                for (auto index = 0; index < globalExpressionInformation.getNumberOfPredicates(); ++index) {
+                std::vector<uint_fast64_t> allPredicateIndices(abstractionInformation.getNumberOfPredicates());
+                for (auto index = 0; index < abstractionInformation.getNumberOfPredicates(); ++index) {
                     allPredicateIndices[index] = index;
                 }
                 this->refine(allPredicateIndices);
             }
-            
+                        
             template <storm::dd::DdType DdType, typename ValueType>
             void AbstractCommand<DdType, ValueType>::refine(std::vector<uint_fast64_t> const& predicates) {
                 // Add all predicates to the variable partition.
                 for (auto predicateIndex : predicates) {
-                    localExpressionInformation.addExpression(globalExpressionInformation.getPredicateByIndex(predicateIndex), predicateIndex);
+                    localExpressionInformation.addExpression(this->getAbstractionInformation().getPredicateByIndex(predicateIndex), predicateIndex);
                 }
                 
                 STORM_LOG_TRACE("Current variable partition is: " << localExpressionInformation);
@@ -89,15 +86,15 @@ namespace storm {
                 uint_fast64_t numberOfVariablesNeeded = static_cast<uint_fast64_t>(std::ceil(std::log2(maximalNumberOfChoices)));
                 
                 // Finally, build overall result.
-                storm::dd::Bdd<DdType> resultBdd = ddInformation.manager->getBddZero();
+                storm::dd::Bdd<DdType> resultBdd = this->getAbstractionInformation().getDdManager().getBddZero();
                 uint_fast64_t sourceStateIndex = 0;
                 for (auto const& sourceDistributionsPair : sourceToDistributionsMap) {
                     STORM_LOG_ASSERT(!sourceDistributionsPair.first.isZero(), "The source BDD must not be empty.");
                     STORM_LOG_ASSERT(!sourceDistributionsPair.second.empty(), "The distributions must not be empty.");
-                    storm::dd::Bdd<DdType> allDistributions = ddInformation.manager->getBddZero();
+                    storm::dd::Bdd<DdType> allDistributions = this->getAbstractionInformation().getDdManager().getBddZero();
                     uint_fast64_t distributionIndex = 0;
                     for (auto const& distribution : sourceDistributionsPair.second) {
-                        allDistributions |= distribution && ddInformation.encodeDistributionIndex(numberOfVariablesNeeded, distributionIndex);
+                        allDistributions |= distribution && this->getAbstractionInformation().encodePlayer2Choice(distributionIndex, numberOfVariablesNeeded);
                         ++distributionIndex;
                         STORM_LOG_ASSERT(!allDistributions.isZero(), "The BDD must not be empty.");
                     }
@@ -107,7 +104,7 @@ namespace storm {
                 }
                 
                 resultBdd &= computeMissingIdentities();
-                resultBdd &= ddInformation.manager->getEncoding(ddInformation.commandDdVariable, command.get().getGlobalIndex());
+                resultBdd &= this->getAbstractionInformation().encodePlayer1Choice(command.get().getGlobalIndex(), this->getAbstractionInformation().getPlayer1VariableCount());
                 STORM_LOG_ASSERT(sourceToDistributionsMap.empty() || !resultBdd.isZero(), "The BDD must not be empty, if there were distributions.");
                 
                 // Cache the result.
@@ -175,9 +172,9 @@ namespace storm {
             template <storm::dd::DdType DdType, typename ValueType>
             void AbstractCommand<DdType, ValueType>::addMissingPredicates(std::pair<std::set<uint_fast64_t>, std::vector<std::set<uint_fast64_t>>> const& newRelevantPredicates) {
                 // Determine and add new relevant source predicates.
-                std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>> newSourceVariables = AbstractionDdInformation<DdType, ValueType>::declareNewVariables(globalExpressionInformation.getManager(), relevantPredicatesAndVariables.first, newRelevantPredicates.first);
+                std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>> newSourceVariables = this->getAbstractionInformation().declareNewVariables(relevantPredicatesAndVariables.first, newRelevantPredicates.first);
                 for (auto const& element : newSourceVariables) {
-                    smtSolver->add(storm::expressions::iff(element.first, globalExpressionInformation.getPredicateByIndex(element.second)));
+                    smtSolver->add(storm::expressions::iff(element.first, this->getAbstractionInformation().getPredicateByIndex(element.second)));
                     decisionVariables.push_back(element.first);
                 }
                 
@@ -187,9 +184,9 @@ namespace storm {
                 
                 // Do the same for every update.
                 for (uint_fast64_t index = 0; index < command.get().getNumberOfUpdates(); ++index) {
-                    std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>> newSuccessorVariables = AbstractionDdInformation<DdType, ValueType>::declareNewVariables(globalExpressionInformation.getManager(), relevantPredicatesAndVariables.second[index], newRelevantPredicates.second[index]);
+                    std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>> newSuccessorVariables = this->getAbstractionInformation().declareNewVariables(relevantPredicatesAndVariables.second[index], newRelevantPredicates.second[index]);
                     for (auto const& element : newSuccessorVariables) {
-                        smtSolver->add(storm::expressions::iff(element.first, globalExpressionInformation.getPredicateByIndex(element.second).substitute(command.get().getUpdate(index).getAsVariableToExpressionMap())));
+                        smtSolver->add(storm::expressions::iff(element.first, this->getAbstractionInformation().getPredicateByIndex(element.second).substitute(command.get().getUpdate(index).getAsVariableToExpressionMap())));
                         decisionVariables.push_back(element.first);
                     }
                     
@@ -201,12 +198,12 @@ namespace storm {
             template <storm::dd::DdType DdType, typename ValueType>
             storm::dd::Bdd<DdType> AbstractCommand<DdType, ValueType>::getSourceStateBdd(storm::solver::SmtSolver::ModelReference const& model) const {
                 STORM_LOG_TRACE("Building source state BDD.");
-                storm::dd::Bdd<DdType> result = ddInformation.manager->getBddOne();
+                storm::dd::Bdd<DdType> result = this->getAbstractionInformation().getDdManager().getBddOne();
                 for (auto const& variableIndexPair : relevantPredicatesAndVariables.first) {
                     if (model.getBooleanValue(variableIndexPair.first)) {
-                        result &= ddInformation.predicateBdds[variableIndexPair.second].first;
+                        result &= this->getAbstractionInformation().encodePredicateAsSource(variableIndexPair.second);
                     } else {
-                        result &= !ddInformation.predicateBdds[variableIndexPair.second].first;
+                        result &= !this->getAbstractionInformation().encodePredicateAsSource(variableIndexPair.second);
                     }
                 }
                 
@@ -217,19 +214,19 @@ namespace storm {
             template <storm::dd::DdType DdType, typename ValueType>
             storm::dd::Bdd<DdType> AbstractCommand<DdType, ValueType>::getDistributionBdd(storm::solver::SmtSolver::ModelReference const& model) const {
                 STORM_LOG_TRACE("Building distribution BDD.");
-                storm::dd::Bdd<DdType> result = ddInformation.manager->getBddZero();
+                storm::dd::Bdd<DdType> result = this->getAbstractionInformation().getDdManager().getBddZero();
                 
                 for (uint_fast64_t updateIndex = 0; updateIndex < command.get().getNumberOfUpdates(); ++updateIndex) {
-                    storm::dd::Bdd<DdType> updateBdd = ddInformation.manager->getBddOne();
+                    storm::dd::Bdd<DdType> updateBdd = this->getAbstractionInformation().getDdManager().getBddOne();
 
                     // Translate block variables for this update into a successor block.
                     for (auto const& variableIndexPair : relevantPredicatesAndVariables.second[updateIndex]) {
                         if (model.getBooleanValue(variableIndexPair.first)) {
-                            updateBdd &= ddInformation.predicateBdds[variableIndexPair.second].second;
+                            updateBdd &= this->getAbstractionInformation().encodePredicateAsSuccessor(variableIndexPair.second);
                         } else {
-                            updateBdd &= !ddInformation.predicateBdds[variableIndexPair.second].second;
+                            updateBdd &= !this->getAbstractionInformation().encodePredicateAsSuccessor(variableIndexPair.second);
                         }
-                        updateBdd &= ddInformation.manager->getEncoding(ddInformation.updateDdVariable, updateIndex);
+                        updateBdd &= this->getAbstractionInformation().encodeProbabilisticChoice(updateIndex, this->getAbstractionInformation().getProbabilisticBranchingVariableCount());
                     }
                     
                     result |= updateBdd;
@@ -248,7 +245,7 @@ namespace storm {
             
             template <storm::dd::DdType DdType, typename ValueType>
             storm::dd::Bdd<DdType> AbstractCommand<DdType, ValueType>::computeMissingUpdateIdentities() const {
-                storm::dd::Bdd<DdType> result = ddInformation.manager->getBddZero();
+                storm::dd::Bdd<DdType> result = this->getAbstractionInformation().getDdManager().getBddZero();
                 for (uint_fast64_t updateIndex = 0; updateIndex < command.get().getNumberOfUpdates(); ++updateIndex) {
                     // Compute the identities that are missing for this update.
                     auto firstIt = relevantPredicatesAndVariables.first.begin();
@@ -258,17 +255,17 @@ namespace storm {
                     
                     // Go through all relevant source predicates. This is guaranteed to be a superset of the set of
                     // relevant successor predicates for any update.
-                    storm::dd::Bdd<DdType> updateIdentity = ddInformation.manager->getBddOne();
+                    storm::dd::Bdd<DdType> updateIdentity = this->getAbstractionInformation().getDdManager().getBddOne();
                     for (; firstIt != firstIte; ++firstIt) {
                         // If the predicates do not match, there is a predicate missing, so we need to add its identity.
                         if (secondIt == secondIte || firstIt->second != secondIt->second) {
-                            updateIdentity &= ddInformation.predicateIdentities[firstIt->second];
+                            updateIdentity &= this->getAbstractionInformation().getPredicateIdentity(firstIt->second);
                         } else if (secondIt != secondIte) {
                             ++secondIt;
                         }
                     }
                     
-                    result |= updateIdentity && ddInformation.manager->getEncoding(ddInformation.updateDdVariable, updateIndex);
+                    result |= updateIdentity && this->getAbstractionInformation().encodeProbabilisticChoice(updateIndex, this->getAbstractionInformation().getProbabilisticBranchingVariableCount());
                 }
                 return result;
             }
@@ -278,10 +275,10 @@ namespace storm {
                 auto relevantIt = relevantPredicatesAndVariables.first.begin();
                 auto relevantIte = relevantPredicatesAndVariables.first.end();
                 
-                storm::dd::Bdd<DdType> result = ddInformation.manager->getBddOne();
-                for (uint_fast64_t predicateIndex = 0; predicateIndex < globalExpressionInformation.getNumberOfPredicates(); ++predicateIndex) {
+                storm::dd::Bdd<DdType> result = this->getAbstractionInformation().getDdManager().getBddOne();
+                for (uint_fast64_t predicateIndex = 0; predicateIndex < this->getAbstractionInformation().getNumberOfPredicates(); ++predicateIndex) {
                     if (relevantIt == relevantIte || relevantIt->second != predicateIndex) {
-                        result &= ddInformation.predicateIdentities[predicateIndex];
+                        result &= this->getAbstractionInformation().getPredicateIdentity(predicateIndex);
                     } else {
                         ++relevantIt;
                     }
@@ -296,13 +293,22 @@ namespace storm {
             
             template <storm::dd::DdType DdType, typename ValueType>
             storm::dd::Add<DdType, ValueType> AbstractCommand<DdType, ValueType>::getCommandUpdateProbabilitiesAdd() const {
-                storm::expressions::ExpressionEvaluator<ValueType> evaluator(globalExpressionInformation.getManager());
-                storm::dd::Add<DdType, ValueType> result = ddInformation.manager->template getAddZero<ValueType>();
+                storm::dd::Add<DdType, ValueType> result = this->getAbstractionInformation().getDdManager().template getAddZero<ValueType>();
                 for (uint_fast64_t updateIndex = 0; updateIndex < command.get().getNumberOfUpdates(); ++updateIndex) {
-                    result += ddInformation.manager->getEncoding(ddInformation.updateDdVariable, updateIndex).template toAdd<ValueType>() * ddInformation.manager->getConstant(evaluator.asRational(command.get().getUpdate(updateIndex).getLikelihoodExpression()));
+                    result += this->getAbstractionInformation().encodeProbabilisticChoice(updateIndex, this->getAbstractionInformation().getProbabilisticBranchingVariableCount()).template toAdd<ValueType>() * this->getAbstractionInformation().getDdManager().getConstant(evaluator.asRational(command.get().getUpdate(updateIndex).getLikelihoodExpression()));
                 }
-                result *= ddInformation.manager->getEncoding(ddInformation.commandDdVariable, command.get().getGlobalIndex()).template toAdd<ValueType>();
+                result *= this->getAbstractionInformation().encodePlayer2Choice(command.get().getGlobalIndex(), this->getAbstractionInformation().getPlayer2VariableCount()).template toAdd<ValueType>();
                 return result;
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
+            AbstractionInformation<DdType> const& AbstractCommand<DdType, ValueType>::getAbstractionInformation() const {
+                return abstractionInformation.get();
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
+            AbstractionInformation<DdType>& AbstractCommand<DdType, ValueType>::getAbstractionInformation() {
+                return abstractionInformation.get();
             }
             
             template class AbstractCommand<storm::dd::DdType::CUDD, double>;

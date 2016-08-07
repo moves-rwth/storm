@@ -7,6 +7,8 @@
 
 #include "src/abstraction/LocalExpressionInformation.h"
 
+#include "src/storage/expressions/ExpressionEvaluator.h"
+
 #include "src/storage/dd/DdType.h"
 #include "src/storage/expressions/Expression.h"
 
@@ -34,11 +36,9 @@ namespace storm {
     }
     
     namespace abstraction {
-        template <storm::dd::DdType DdType, typename ValueType>
-        struct AbstractionDdInformation;
+        template <storm::dd::DdType DdType>
+        class AbstractionInformation;
         
-        struct AbstractionExpressionInformation;
-
         namespace prism {
             template <storm::dd::DdType DdType, typename ValueType>
             class AbstractCommand {
@@ -47,11 +47,10 @@ namespace storm {
                  * Constructs an abstract command from the given command and the initial predicates.
                  *
                  * @param command The concrete command for which to build the abstraction.
-                 * @param expressionInformation The expression-related information including the manager and the predicates.
-                 * @param ddInformation The DD-related information including the manager.
+                 * @param abstractionInformation An object holding information about the abstraction such as predicates and BDDs.
                  * @param smtSolverFactory A factory that is to be used for creating new SMT solvers.
                  */
-                AbstractCommand(storm::prism::Command const& command, AbstractionExpressionInformation& expressionInformation, AbstractionDdInformation<DdType, ValueType> const& ddInformation, storm::utility::solver::SmtSolverFactory const& smtSolverFactory);
+                AbstractCommand(storm::prism::Command const& command, AbstractionInformation<DdType>& abstractionInformation, storm::utility::solver::SmtSolverFactory const& smtSolverFactory);
                 
                 /*!
                  * Refines the abstract command with the given predicates.
@@ -146,6 +145,20 @@ namespace storm {
                 storm::dd::Bdd<DdType> computeMissingUpdateIdentities() const;
                 
                 /*!
+                 * Retrieves the abstraction information object.
+                 *
+                 * @return The abstraction information object.
+                 */
+                AbstractionInformation<DdType> const& getAbstractionInformation() const;
+
+                /*!
+                 * Retrieves the abstraction information object.
+                 *
+                 * @return The abstraction information object.
+                 */
+                AbstractionInformation<DdType>& getAbstractionInformation();
+                
+                /*!
                  * Computes the globally missing state identities.
                  *
                  * @return A BDD that represents the global state identities for predicates that are irrelevant for the
@@ -156,17 +169,17 @@ namespace storm {
                 // An SMT responsible for this abstract command.
                 std::unique_ptr<storm::solver::SmtSolver> smtSolver;
 
-                // The global expression-related information.
-                AbstractionExpressionInformation& globalExpressionInformation;
-                
-                // The DD-related information.
-                AbstractionDdInformation<DdType, ValueType> const& ddInformation;
+                // The abstraction-related information.
+                std::reference_wrapper<AbstractionInformation<DdType>> abstractionInformation;
                 
                 // The concrete command this abstract command refers to.
                 std::reference_wrapper<storm::prism::Command const> command;
                 
                 // The local expression-related information.
                 LocalExpressionInformation localExpressionInformation;
+                
+                // The evaluator used to translate the probability expressions.
+                storm::expressions::ExpressionEvaluator<ValueType> evaluator;
                 
                 // The currently relevant source/successor predicates and the corresponding variables.
                 std::pair<std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>>, std::vector<std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>>>> relevantPredicatesAndVariables;

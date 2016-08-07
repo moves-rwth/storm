@@ -1,7 +1,6 @@
 #include "src/abstraction/StateSetAbstractor.h"
 
-#include "src/abstraction/AbstractionExpressionInformation.h"
-#include "src/abstraction/AbstractionDdInformation.h"
+#include "src/abstraction/AbstractionInformation.h"
 
 #include "src/storage/dd/DdManager.h"
 
@@ -12,11 +11,16 @@ namespace storm {
     namespace abstraction {
         
         template <storm::dd::DdType DdType, typename ValueType>
-        StateSetAbstractor<DdType, ValueType>::StateSetAbstractor(AbstractionExpressionInformation& globalExpressionInformation, AbstractionDdInformation<DdType, ValueType> const& ddInformation, std::vector<storm::expressions::Expression> const& statePredicates, storm::utility::solver::SmtSolverFactory const& smtSolverFactory) : smtSolver(smtSolverFactory.create(globalExpressionInformation.getManager())), globalExpressionInformation(globalExpressionInformation), ddInformation(ddInformation), localExpressionInformation(globalExpressionInformation.getVariables()), relevantPredicatesAndVariables(), concretePredicateVariables(), needsRecomputation(false), cachedBdd(ddInformation.manager->getBddZero()), constraint(ddInformation.manager->getBddOne()) {
+        StateSetAbstractor<DdType, ValueType>::StateSetAbstractor(AbstractionInformation<DdType>& abstractionInformation) : smtSolver(nullptr), abstractionInformation(abstractionInformation), localExpressionInformation(), relevantPredicatesAndVariables(), concretePredicateVariables(), decisionVariables(), needsRecomputation(false), cachedBdd(), constraint() {
+            // Intentionally left empty.
+        }
+        
+        template <storm::dd::DdType DdType, typename ValueType>
+        StateSetAbstractor<DdType, ValueType>::StateSetAbstractor(AbstractionInformation<DdType>& abstractionInformation, std::vector<storm::expressions::Expression> const& statePredicates, storm::utility::solver::SmtSolverFactory const& smtSolverFactory) : smtSolver(smtSolverFactory.create(abstractionInformation.getExpressionManager())), abstractionInformation(abstractionInformation), localExpressionInformation(abstractionInformation.getExpressionVariables()), relevantPredicatesAndVariables(), concretePredicateVariables(), needsRecomputation(false), cachedBdd(abstractionInformation.getDdManager().getBddZero()), constraint(abstractionInformation.getDdManager().getBddOne()) {
             
-            // Assert all range expressions to enforce legal variable values.
-            for (auto const& rangeExpression : globalExpressionInformation.getRangeExpressions()) {
-                smtSolver->add(rangeExpression);
+            // Assert all constraints to enforce legal variable values.
+            for (auto const& constraint : abstractionInformation.getConstraints()) {
+                smtSolver->add(constraint);
             }
             
             // Assert all state predicates.
@@ -30,8 +34,8 @@ namespace storm {
             }
             
             // Refine the command based on all initial predicates.
-            std::vector<uint_fast64_t> allPredicateIndices(globalExpressionInformation.getPredicates().size());
-            for (auto index = 0; index < globalExpressionInformation.getPredicates().size(); ++index) {
+            std::vector<uint_fast64_t> allPredicateIndices(abstractionInformation.getNumberOfPredicates());
+            for (auto index = 0; index < abstractionInformation.getNumberOfPredicates(); ++index) {
                 allPredicateIndices[index] = index;
             }
             this->refine(allPredicateIndices);
@@ -39,10 +43,10 @@ namespace storm {
         
         template <storm::dd::DdType DdType, typename ValueType>
         void StateSetAbstractor<DdType, ValueType>::addMissingPredicates(std::set<uint_fast64_t> const& newRelevantPredicateIndices) {
-            std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>> newPredicateVariables = AbstractionDdInformation<DdType, ValueType>::declareNewVariables(globalExpressionInformation.getManager(), relevantPredicatesAndVariables, newRelevantPredicateIndices);
+            std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>> newPredicateVariables = this->getAbstractionInformation().declareNewVariables(relevantPredicatesAndVariables, newRelevantPredicateIndices);
             
             for (auto const& element : newPredicateVariables) {
-                smtSolver->add(storm::expressions::iff(element.first, globalExpressionInformation.getPredicates()[element.second]));
+                smtSolver->add(storm::expressions::iff(element.first, this->getAbstractionInformation().getPredicateByIndex(element.second)));
                 decisionVariables.push_back(element.first);
             }
             
@@ -54,7 +58,7 @@ namespace storm {
         void StateSetAbstractor<DdType, ValueType>::refine(std::vector<uint_fast64_t> const& newPredicates) {
             // Make the partition aware of the new predicates, which may make more predicates relevant to the abstraction.
             for (auto const& predicateIndex : newPredicates) {
-                localExpressionInformation.addExpression(globalExpressionInformation.getPredicateByIndex(predicateIndex), predicateIndex);
+                localExpressionInformation.addExpression(this->getAbstractionInformation().getPredicateByIndex(predicateIndex), predicateIndex);
             }
             needsRecomputation = true;
         }
@@ -71,12 +75,12 @@ namespace storm {
         template <storm::dd::DdType DdType, typename ValueType>
         storm::dd::Bdd<DdType> StateSetAbstractor<DdType, ValueType>::getStateBdd(storm::solver::SmtSolver::ModelReference const& model) const {
             STORM_LOG_TRACE("Building source state BDD.");
-            storm::dd::Bdd<DdType> result = ddInformation.manager->getBddOne();
+            storm::dd::Bdd<DdType> result = this->getAbstractionInformation().getDdManager().getBddOne();
             for (auto const& variableIndexPair : relevantPredicatesAndVariables) {
                 if (model.getBooleanValue(variableIndexPair.first)) {
-                    result &= ddInformation.predicateBdds[variableIndexPair.second].first;
+                    result &= this->getAbstractionInformation().encodePredicateAsSource(variableIndexPair.second);
                 } else {
-                    result &= !ddInformation.predicateBdds[variableIndexPair.second].first;
+                    result &= !this->getAbstractionInformation().encodePredicateAsSource(variableIndexPair.second);
                 }
             }
             return result;
@@ -108,7 +112,7 @@ namespace storm {
             
             STORM_LOG_TRACE("Recomputing BDD for state set abstraction.");
             
-            storm::dd::Bdd<DdType> result = ddInformation.manager->getBddZero();
+            storm::dd::Bdd<DdType> result = this->getAbstractionInformation().getDdManager().getBddZero();
             uint_fast64_t modelCounter = 0;
             smtSolver->allSat(decisionVariables, [&result,this,&modelCounter] (storm::solver::SmtSolver::ModelReference const& model) { result |= getStateBdd(model); return true; } );
             
@@ -134,7 +138,7 @@ namespace storm {
             smtSolver->push();
             
             // Create the constraint.
-            std::pair<std::vector<storm::expressions::Expression>, std::unordered_map<uint_fast64_t, storm::expressions::Variable>> result = constraint.toExpression(globalExpressionInformation.getManager());
+            std::pair<std::vector<storm::expressions::Expression>, std::unordered_map<uint_fast64_t, storm::expressions::Variable>> result = constraint.toExpression(this->getAbstractionInformation().getExpressionManager());
             
             // Then add the constraint.
             for (auto const& expression : result.first) {
@@ -143,9 +147,7 @@ namespace storm {
             
             // Finally associate the level variables with the predicates.
             for (auto const& indexVariablePair : result.second) {
-                auto predicateIt = ddInformation.bddVariableIndexToPredicateMap.find(indexVariablePair.first);
-                STORM_LOG_ASSERT(predicateIt != ddInformation.bddVariableIndexToPredicateMap.end(), "Missing predicate for DD variable.");
-                smtSolver->add(storm::expressions::iff(indexVariablePair.second, predicateIt->second));
+                smtSolver->add(storm::expressions::iff(indexVariablePair.second, this->getAbstractionInformation().getPredicateForDdVariableIndex(indexVariablePair.first)));
             }
         }
         
@@ -155,6 +157,16 @@ namespace storm {
                 this->recomputeCachedBdd();
             }
             return cachedBdd;
+        }
+        
+        template <storm::dd::DdType DdType, typename ValueType>
+        AbstractionInformation<DdType>& StateSetAbstractor<DdType, ValueType>::getAbstractionInformation() {
+            return abstractionInformation.get();
+        }
+        
+        template <storm::dd::DdType DdType, typename ValueType>
+        AbstractionInformation<DdType> const& StateSetAbstractor<DdType, ValueType>::getAbstractionInformation() const {
+            return abstractionInformation.get();
         }
         
         template class StateSetAbstractor<storm::dd::DdType::CUDD, double>;
