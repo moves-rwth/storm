@@ -28,6 +28,11 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
+            AbstractModule<DdType, ValueType>::~AbstractModule() {
+                std::cout << "destructing abs module at " << this << std::endl;
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
             std::pair<storm::dd::Bdd<DdType>, uint_fast64_t> AbstractModule<DdType, ValueType>::getAbstractBdd() {
                 // First, we retrieve the abstractions of all commands.
                 std::vector<std::pair<storm::dd::Bdd<DdType>, uint_fast64_t>> commandDdsAndUsedOptionVariableCounts;
@@ -39,20 +44,25 @@ namespace storm {
                 
                 // Then, we build the module BDD by adding the single command DDs. We need to make sure that all command
                 // DDs use the same amount DD variable encoding the choices of player 2.
-                storm::dd::Bdd<DdType> result = abstractionInformation.getDdManager().getBddZero();
+                storm::dd::Bdd<DdType> result = this->getAbstractionInformation().getDdManager().getBddZero();
                 for (auto const& commandDd : commandDdsAndUsedOptionVariableCounts) {
-                    result |= commandDd.first && abstractionInformation.getPlayer2ZeroCube(maximalNumberOfUsedOptionVariables, commandDd.second);
+                    result |= commandDd.first && this->getAbstractionInformation().getPlayer2ZeroCube(maximalNumberOfUsedOptionVariables, commandDd.second);
                 }
                 return std::make_pair(result, maximalNumberOfUsedOptionVariables);
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
             storm::dd::Add<DdType, ValueType> AbstractModule<DdType, ValueType>::getCommandUpdateProbabilitiesAdd() const {
-                storm::dd::Add<DdType, ValueType> result = abstractionInformation.getDdManager().template getAddZero<ValueType>();
+                storm::dd::Add<DdType, ValueType> result = this->getAbstractionInformation().getDdManager().template getAddZero<ValueType>();
                 for (auto const& command : commands) {
                     result += command.getCommandUpdateProbabilitiesAdd();
                 }
                 return result;
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
+            AbstractionInformation<DdType> const& AbstractModule<DdType, ValueType>::getAbstractionInformation() const {
+                return abstractionInformation.get();
             }
             
             template class AbstractModule<storm::dd::DdType::CUDD, double>;

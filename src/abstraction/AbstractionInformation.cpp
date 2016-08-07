@@ -9,7 +9,7 @@ namespace storm {
     namespace abstraction {
 
         template<storm::dd::DdType DdType>
-        AbstractionInformation<DdType>::AbstractionInformation(storm::expressions::ExpressionManager& expressionManager, std::shared_ptr<storm::dd::DdManager<DdType>> ddManager) : expressionManager(expressionManager), ddManager(ddManager) {
+        AbstractionInformation<DdType>::AbstractionInformation(storm::expressions::ExpressionManager& expressionManager, std::shared_ptr<storm::dd::DdManager<DdType>> ddManager) : expressionManager(expressionManager), ddManager(ddManager), allPredicateIdentities(ddManager->getBddZero()) {
             // Intentionally left empty.
         }
         

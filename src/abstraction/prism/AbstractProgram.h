@@ -45,6 +45,12 @@ namespace storm {
                  */
                 AbstractProgram(storm::expressions::ExpressionManager& expressionManager, storm::prism::Program const& program, std::vector<storm::expressions::Expression> const& initialPredicates, std::unique_ptr<storm::utility::solver::SmtSolverFactory>&& smtSolverFactory = std::make_unique<storm::utility::solver::SmtSolverFactory>(), bool addAllGuards = false);
                 
+                AbstractProgram(AbstractProgram const&) = default;
+                AbstractProgram& operator=(AbstractProgram const&) = default;
+                AbstractProgram(AbstractProgram&&) = default;
+                AbstractProgram& operator=(AbstractProgram&&) = default;
+                ~AbstractProgram();
+                
                 /*!
                  * Uses the current set of predicates to derive the abstract menu game in the form of an ADD.
                  *

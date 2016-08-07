@@ -34,8 +34,6 @@ namespace storm {
         template <storm::dd::DdType DdType, typename ValueType>
         class StateSetAbstractor {
         public:
-            StateSetAbstractor(AbstractionInformation<DdType>& abstractionInformation);
-            
             StateSetAbstractor(StateSetAbstractor const& other) = default;
             StateSetAbstractor& operator=(StateSetAbstractor const& other) = default;
             
@@ -48,11 +46,12 @@ namespace storm {
              * Creates a state set abstractor.
              *
              * @param abstractionInformation An object storing information about the abstraction such as predicates and BDDs.
+             * @param allVariables All variables that appear in the predicates.
              * @param statePredicates A set of predicates that have to hold in the concrete states this abstractor is
              * supposed to abstract.
              * @param smtSolverFactory A factory that can create new SMT solvers.
              */
-            StateSetAbstractor(AbstractionInformation<DdType>& abstractionInformation, std::vector<storm::expressions::Expression> const& statePredicates, storm::utility::solver::SmtSolverFactory const& smtSolverFactory);
+            StateSetAbstractor(AbstractionInformation<DdType>& abstractionInformation, std::set<storm::expressions::Variable> const& allVariables, std::vector<storm::expressions::Expression> const& statePredicates, storm::utility::solver::SmtSolverFactory const& smtSolverFactory);
             
             /*!
              * Refines the abstractor by making the given predicates new abstract predicates.

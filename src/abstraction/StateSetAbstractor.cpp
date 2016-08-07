@@ -11,12 +11,7 @@ namespace storm {
     namespace abstraction {
         
         template <storm::dd::DdType DdType, typename ValueType>
-        StateSetAbstractor<DdType, ValueType>::StateSetAbstractor(AbstractionInformation<DdType>& abstractionInformation) : smtSolver(nullptr), abstractionInformation(abstractionInformation), localExpressionInformation(), relevantPredicatesAndVariables(), concretePredicateVariables(), decisionVariables(), needsRecomputation(false), cachedBdd(), constraint() {
-            // Intentionally left empty.
-        }
-        
-        template <storm::dd::DdType DdType, typename ValueType>
-        StateSetAbstractor<DdType, ValueType>::StateSetAbstractor(AbstractionInformation<DdType>& abstractionInformation, std::vector<storm::expressions::Expression> const& statePredicates, storm::utility::solver::SmtSolverFactory const& smtSolverFactory) : smtSolver(smtSolverFactory.create(abstractionInformation.getExpressionManager())), abstractionInformation(abstractionInformation), localExpressionInformation(abstractionInformation.getExpressionVariables()), relevantPredicatesAndVariables(), concretePredicateVariables(), needsRecomputation(false), cachedBdd(abstractionInformation.getDdManager().getBddZero()), constraint(abstractionInformation.getDdManager().getBddOne()) {
+        StateSetAbstractor<DdType, ValueType>::StateSetAbstractor(AbstractionInformation<DdType>& abstractionInformation, std::set<storm::expressions::Variable> const& allVariables, std::vector<storm::expressions::Expression> const& statePredicates, storm::utility::solver::SmtSolverFactory const& smtSolverFactory) : smtSolver(smtSolverFactory.create(abstractionInformation.getExpressionManager())), abstractionInformation(abstractionInformation), localExpressionInformation(allVariables), relevantPredicatesAndVariables(), concretePredicateVariables(), needsRecomputation(false), cachedBdd(abstractionInformation.getDdManager().getBddZero()), constraint(abstractionInformation.getDdManager().getBddOne()) {
             
             // Assert all constraints to enforce legal variable values.
             for (auto const& constraint : abstractionInformation.getConstraints()) {

@@ -31,6 +31,13 @@ namespace storm {
                  */
                 AbstractModule(storm::prism::Module const& module, AbstractionInformation<DdType>& abstractionInformation, storm::utility::solver::SmtSolverFactory const& smtSolverFactory);
                 
+                AbstractModule(AbstractModule const&) = delete;
+                AbstractModule& operator=(AbstractModule const&) = delete;
+                AbstractModule(AbstractModule&&) = default;
+                AbstractModule& operator=(AbstractModule&&) = default;
+                
+                ~AbstractModule();
+                
                 /*!
                  * Refines the abstract module with the given predicates.
                  *
@@ -53,11 +60,18 @@ namespace storm {
                 storm::dd::Add<DdType, ValueType> getCommandUpdateProbabilitiesAdd() const;
                 
             private:
+                /*!
+                 * Retrieves the abstraction information.
+                 *
+                 * @return The abstraction information.
+                 */
+                AbstractionInformation<DdType> const& getAbstractionInformation() const;
+                
                 // A factory that can be used to create new SMT solvers.
                 storm::utility::solver::SmtSolverFactory const& smtSolverFactory;
                 
                 // The DD-related information.
-                AbstractionInformation<DdType> const& abstractionInformation;
+                std::reference_wrapper<AbstractionInformation<DdType> const> abstractionInformation;
                 
                 // The abstract commands of the abstract module.
                 std::vector<AbstractCommand<DdType, ValueType>> commands;

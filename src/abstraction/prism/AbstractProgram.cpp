@@ -17,11 +17,16 @@ namespace storm {
         namespace prism {
             
             template <storm::dd::DdType DdType, typename ValueType>
+            AbstractProgram<DdType, ValueType>::~AbstractProgram() {
+                std::cout << "destructing abs program" << std::endl;
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
             AbstractProgram<DdType, ValueType>::AbstractProgram(storm::expressions::ExpressionManager& expressionManager, storm::prism::Program const& program,
                                                                 std::vector<storm::expressions::Expression> const& initialPredicates,
                                                                 std::unique_ptr<storm::utility::solver::SmtSolverFactory>&& smtSolverFactory,
                                                                 bool addAllGuards)
-            : program(program), smtSolverFactory(std::move(smtSolverFactory)), modules(), abstractionInformation(expressionManager), initialStateAbstractor(), addedAllGuards(addAllGuards), bottomStateAbstractor(), currentGame(nullptr) {
+            : program(program), smtSolverFactory(std::move(smtSolverFactory)), modules(), abstractionInformation(expressionManager), initialStateAbstractor(abstractionInformation, program.getAllExpressionVariables(), {program.getInitialConstruct().getInitialStatesExpression()}, *this->smtSolverFactory), addedAllGuards(addAllGuards), bottomStateAbstractor(abstractionInformation, program.getAllExpressionVariables(), program.getAllGuards(true), *this->smtSolverFactory), currentGame(nullptr) {
                 
                 // For now, we assume that there is a single module. If the program has more than one module, it needs
                 // to be flattened before the procedure.
@@ -50,7 +55,7 @@ namespace storm {
                     totalNumberOfCommands += module.getNumberOfCommands();
                 }
                 
-                // NOTE: currently we assume that 100 player 2variables suffice, which corresponds to 2^100 possible
+                // NOTE: currently we assume that 100 player 2 variables suffice, which corresponds to 2^100 possible
                 // choices. If for some reason this should not be enough, we could grow this vector dynamically, but
                 // odds are that it's impossible to treat such models in any event.
                 abstractionInformation.createEncodingVariables(static_cast<uint_fast64_t>(std::ceil(std::log2(totalNumberOfCommands))), 100, static_cast<uint_fast64_t>(std::ceil(std::log2(maximalUpdateCount))));
@@ -67,18 +72,16 @@ namespace storm {
                 
                 // For each module of the concrete program, we create an abstract counterpart.
                 for (auto const& module : program.getModules()) {
-                    modules.emplace_back(module, abstractionInformation, *this->smtSolverFactory);
+                    this->modules.emplace_back(module, abstractionInformation, *this->smtSolverFactory);
                 }
                 
                 // Retrieve the command-update probability ADD, so we can multiply it with the abstraction BDD later.
                 commandUpdateProbabilitiesAdd = modules.front().getCommandUpdateProbabilitiesAdd();
                 
-                // Create the state set abstractors.
-                initialStateAbstractor = storm::abstraction::StateSetAbstractor<DdType, ValueType>(abstractionInformation, {program.getInitialConstruct().getInitialStatesExpression()}, *this->smtSolverFactory);
-                bottomStateAbstractor = storm::abstraction::StateSetAbstractor<DdType, ValueType>(abstractionInformation, program.getAllGuards(true), *this->smtSolverFactory);
-                
                 // Finally, we build the game the first time.
                 currentGame = buildGame();
+                
+                std::cout << "abs module at " << &modules.front() << std::endl;
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
@@ -153,7 +156,7 @@ namespace storm {
                 if (!deadlockStates.isZero()) {
                     deadlockTransitions = (deadlockStates && abstractionInformation.getAllPredicateIdentities() && abstractionInformation.encodePlayer1Choice(0, abstractionInformation.getPlayer1VariableCount()) && abstractionInformation.encodePlayer2Choice(0, gameBdd.second) && abstractionInformation.encodeProbabilisticChoice(0, abstractionInformation.getProbabilisticBranchingVariableCount())).template toAdd<ValueType>();
                 }
-                
+
                 // Construct the transition matrix by cutting away the transitions of unreachable states.
                 storm::dd::Add<DdType> transitionMatrix = (gameBdd.first && reachableStates).template toAdd<ValueType>() * commandUpdateProbabilitiesAdd + deadlockTransitions;
             
@@ -161,7 +164,7 @@ namespace storm {
                 
                 std::set<storm::expressions::Variable> allNondeterminismVariables = usedPlayer2Variables;
                 allNondeterminismVariables.insert(abstractionInformation.getPlayer1Variables().begin(), abstractionInformation.getPlayer1Variables().end());
-                
+
                 return std::make_unique<MenuGame<DdType, ValueType>>(abstractionInformation.getDdManagerAsSharedPointer(), reachableStates, initialStates, abstractionInformation.getDdManager().getBddZero(), transitionMatrix, bottomStates, abstractionInformation.getSourceVariables(), abstractionInformation.getSuccessorVariables(), abstractionInformation.getSourceSuccessorVariablePairs(), std::set<storm::expressions::Variable>(abstractionInformation.getPlayer1Variables().begin(), abstractionInformation.getPlayer1Variables().end()), usedPlayer2Variables, allNondeterminismVariables, std::set<storm::expressions::Variable>(abstractionInformation.getProbabilisticBranchingVariables().begin(), abstractionInformation.getProbabilisticBranchingVariables().end()), abstractionInformation.getPredicateToBddMap());
             }
             
