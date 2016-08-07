@@ -139,7 +139,11 @@ int main(const int argc, const char** argv) {
         
         // From this point on we are ready to carry out the actual computations.
         if (parametric) {
+#ifdef STORM_HAVE_CARL
             analyzeDFT<storm::RationalFunction>(dftSettings.getDftFilename(), pctlFormula, dftSettings.useSymmetryReduction(), allowModular && dftSettings.useModularisation(), !dftSettings.isDisableDC() );
+#else
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Parameters are not supported in this build.");
+#endif
         } else {
             analyzeDFT<double>(dftSettings.getDftFilename(), pctlFormula, dftSettings.useSymmetryReduction(), allowModular && dftSettings.useModularisation(), !dftSettings.isDisableDC());
         }

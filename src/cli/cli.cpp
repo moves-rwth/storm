@@ -186,14 +186,13 @@ namespace storm {
             }
             
             if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isVerboseSet()) {
-                STORM_GLOBAL_LOGLEVEL_INFO();
+                storm::utility::setLogLevel(l3pp::LogLevel::INFO);
             }
             if (storm::settings::getModule<storm::settings::modules::DebugSettings>().isDebugSet()) {
-                STORM_GLOBAL_LOGLEVEL_DEBUG();
-                
+                storm::utility::setLogLevel(l3pp::LogLevel::DEBUG);
             }
             if (storm::settings::getModule<storm::settings::modules::DebugSettings>().isTraceSet()) {
-                STORM_GLOBAL_LOGLEVEL_TRACE();
+                 storm::utility::setLogLevel(l3pp::LogLevel::TRACE);
             }
             if (storm::settings::getModule<storm::settings::modules::DebugSettings>().isLogfileSet()) {
                 storm::utility::initializeFileLogging();
@@ -229,9 +228,17 @@ namespace storm {
                 }
                 
                 if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isParametricSet()) {
+#ifdef STORM_HAVE_CARL
                     buildAndCheckSymbolicModel<storm::RationalFunction>(preprocessedProgram, preprocessedFormulas, true);
+#else
+                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "No parameters are supported in this build.");
+#endif
                 } else if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isExactSet()) {
+#ifdef STORM_HAVE_CARL
                     buildAndCheckSymbolicModel<storm::RationalNumber>(preprocessedProgram, preprocessedFormulas, true);
+#else
+                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "No exact numbers are supported in this build.");
+#endif
                 } else {
                     buildAndCheckSymbolicModel<double>(preprocessedProgram, preprocessedFormulas, true);
                 }

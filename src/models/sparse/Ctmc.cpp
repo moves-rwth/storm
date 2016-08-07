@@ -46,11 +46,13 @@ namespace storm {
             }
             
             template class Ctmc<double>;
+
+#ifdef STORM_HAVE_CARL
             template class Ctmc<storm::RationalNumber>;
 
             template class Ctmc<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
             template class Ctmc<storm::RationalFunction>;
-            
+#endif
         } // namespace sparse
     } // namespace models
 } // namespace storm

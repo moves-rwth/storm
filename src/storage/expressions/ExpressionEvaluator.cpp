@@ -30,6 +30,7 @@ namespace storm {
             this->variableToExpressionMap[variable] = this->getManager().rational(value);
         }
 
+#ifdef STORM_HAVE_CARL
         ExpressionEvaluator<RationalNumber>::ExpressionEvaluator(storm::expressions::ExpressionManager const& manager) : ExpressionEvaluatorWithVariableToExpressionMap<RationalNumber>(manager) {
             // Intentionally left empty.
         }
@@ -50,5 +51,6 @@ namespace storm {
         
         template class ExpressionEvaluatorWithVariableToExpressionMap<RationalNumber>;
         template class ExpressionEvaluatorWithVariableToExpressionMap<RationalFunction>;
+#endif
     }
 }

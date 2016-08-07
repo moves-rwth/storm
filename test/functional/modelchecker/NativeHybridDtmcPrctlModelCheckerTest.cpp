@@ -19,7 +19,7 @@
 
 #include "src/settings/modules/NativeEquationSolverSettings.h"
 
-TEST(NativeHybridDtmcPrctlModelCheckerTest, Die_Cudd) {
+TEST(NativeHybridDtmcPrctlModelCheckerTest, Die_CUDD) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/die.pm");
     
     // A parser that we use for conveniently constructing the formulas.
@@ -41,7 +41,7 @@ TEST(NativeHybridDtmcPrctlModelCheckerTest, Die_Cudd) {
     
     std::shared_ptr<storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD>> dtmc = model->as<storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD>>();
     
-    storm::modelchecker::HybridDtmcPrctlModelChecker<storm::dd::DdType::CUDD, double> checker(*dtmc, std::make_unique<storm::solver::NativeLinearEquationSolverFactory<double>>());
+    storm::modelchecker::HybridDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD, double>> checker(*dtmc, std::make_unique<storm::solver::NativeLinearEquationSolverFactory<double>>());
     
     std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"one\"]");
     
@@ -102,7 +102,7 @@ TEST(NativeHybridDtmcPrctlModelCheckerTest, Die_Sylvan) {
     
     std::shared_ptr<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan>> dtmc = model->as<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan>>();
     
-    storm::modelchecker::HybridDtmcPrctlModelChecker<storm::dd::DdType::Sylvan, double> checker(*dtmc, std::make_unique<storm::solver::NativeLinearEquationSolverFactory<double>>());
+    storm::modelchecker::HybridDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, double>> checker(*dtmc, std::make_unique<storm::solver::NativeLinearEquationSolverFactory<double>>());
     
     std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"one\"]");
     
@@ -141,7 +141,7 @@ TEST(NativeHybridDtmcPrctlModelCheckerTest, Die_Sylvan) {
     EXPECT_NEAR(3.6666646003723145, quantitativeResult4.getMax(), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
 }
 
-TEST(NativeHybridDtmcPrctlModelCheckerTest, Crowds_Cudd) {
+TEST(NativeHybridDtmcPrctlModelCheckerTest, Crowds_CUDD) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/crowds-5-5.pm");
     
     // A parser that we use for conveniently constructing the formulas.
@@ -155,7 +155,7 @@ TEST(NativeHybridDtmcPrctlModelCheckerTest, Crowds_Cudd) {
     
     std::shared_ptr<storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD>> dtmc = model->as<storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD>>();
     
-    storm::modelchecker::HybridDtmcPrctlModelChecker<storm::dd::DdType::CUDD, double> checker(*dtmc, std::make_unique<storm::solver::NativeLinearEquationSolverFactory<double>>());
+    storm::modelchecker::HybridDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD, double>> checker(*dtmc, std::make_unique<storm::solver::NativeLinearEquationSolverFactory<double>>());
     
     std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"observe0Greater1\"]");
     
@@ -199,7 +199,7 @@ TEST(NativeHybridDtmcPrctlModelCheckerTest, Crowds_Sylvan) {
     
     std::shared_ptr<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan>> dtmc = model->as<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan>>();
     
-    storm::modelchecker::HybridDtmcPrctlModelChecker<storm::dd::DdType::Sylvan, double> checker(*dtmc, std::make_unique<storm::solver::NativeLinearEquationSolverFactory<double>>());
+    storm::modelchecker::HybridDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, double>> checker(*dtmc, std::make_unique<storm::solver::NativeLinearEquationSolverFactory<double>>());
     
     std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"observe0Greater1\"]");
     
@@ -229,7 +229,7 @@ TEST(NativeHybridDtmcPrctlModelCheckerTest, Crowds_Sylvan) {
     EXPECT_NEAR(0.32153900158185761, quantitativeResult3.getMax(), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
 }
 
-TEST(NativeHybridDtmcPrctlModelCheckerTest, SynchronousLeader_Cudd) {
+TEST(NativeHybridDtmcPrctlModelCheckerTest, SynchronousLeader_CUDD) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/leader-3-5.pm");
     
     // A parser that we use for conveniently constructing the formulas.
@@ -251,7 +251,7 @@ TEST(NativeHybridDtmcPrctlModelCheckerTest, SynchronousLeader_Cudd) {
     
     std::shared_ptr<storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD>> dtmc = model->as<storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD>>();
     
-    storm::modelchecker::HybridDtmcPrctlModelChecker<storm::dd::DdType::CUDD, double> checker(*dtmc, std::make_unique<storm::solver::NativeLinearEquationSolverFactory<double>>());
+    storm::modelchecker::HybridDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD, double>> checker(*dtmc, std::make_unique<storm::solver::NativeLinearEquationSolverFactory<double>>());
     
     std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"elected\"]");
     
@@ -303,7 +303,7 @@ TEST(NativeHybridDtmcPrctlModelCheckerTest, SynchronousLeader_Sylvan) {
     
     std::shared_ptr<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan>> dtmc = model->as<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan>>();
     
-    storm::modelchecker::HybridDtmcPrctlModelChecker<storm::dd::DdType::Sylvan, double> checker(*dtmc, std::make_unique<storm::solver::NativeLinearEquationSolverFactory<double>>());
+    storm::modelchecker::HybridDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, double>> checker(*dtmc, std::make_unique<storm::solver::NativeLinearEquationSolverFactory<double>>());
     
     std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"elected\"]");
     

@@ -2,6 +2,7 @@
 
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidArgumentException.h"
+#include "src/exceptions/NotSupportedException.h"
 
 namespace storm {
     namespace expressions {
@@ -52,7 +53,7 @@ namespace storm {
         
         template<typename RationalNumberType>
         boost::any ToRationalNumberVisitor<RationalNumberType>::visit(BinaryRelationExpression const& expression) {
-            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression cannot be translated into a rational function.");
+            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression cannot be translated into a rational number.");
         }
         
         template<typename RationalNumberType>
@@ -62,30 +63,39 @@ namespace storm {
         
         template<typename RationalNumberType>
         boost::any ToRationalNumberVisitor<RationalNumberType>::visit(UnaryBooleanFunctionExpression const& expression) {
-            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression cannot be translated into a rational function.");
+            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression cannot be translated into a rational number.");
         }
         
         template<typename RationalNumberType>
         boost::any ToRationalNumberVisitor<RationalNumberType>::visit(UnaryNumericalFunctionExpression const& expression) {
-            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression cannot be translated into a rational function.");
+            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression cannot be translated into a rational number.");
         }
         
         template<typename RationalNumberType>
         boost::any ToRationalNumberVisitor<RationalNumberType>::visit(BooleanLiteralExpression const& expression) {
-            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression cannot be translated into a rational function.");
+            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression cannot be translated into a rational number.");
         }
         
         template<typename RationalNumberType>
         boost::any ToRationalNumberVisitor<RationalNumberType>::visit(IntegerLiteralExpression const& expression) {
+#ifdef STORM_HAVE_CARL
             return RationalNumberType(carl::rationalize<storm::RationalNumber>(static_cast<size_t>(expression.getValue())));
+#else
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Rational numbers are not supported in this build.");
+#endif
         }
         
         template<typename RationalNumberType>
         boost::any ToRationalNumberVisitor<RationalNumberType>::visit(DoubleLiteralExpression const& expression) {
+#ifdef STORM_HAVE_CARL
             return RationalNumberType(carl::rationalize<storm::RationalNumber>(expression.getValue()));
+#else
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Rational numbers are not supported in this build.");
+#endif
         }
         
+#ifdef STORM_HAVE_CARL
         template class ToRationalNumberVisitor<storm::RationalNumber>;
-        
+#endif
     }
 }

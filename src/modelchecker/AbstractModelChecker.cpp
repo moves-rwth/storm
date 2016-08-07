@@ -9,9 +9,22 @@
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/exceptions/InternalTypeErrorException.h"
 
+#include "src/models/sparse/Dtmc.h"
+#include "src/models/sparse/Ctmc.h"
+#include "src/models/sparse/Mdp.h"
+#include "src/models/symbolic/Dtmc.h"
+#include "src/models/symbolic/Ctmc.h"
+#include "src/models/symbolic/Mdp.h"
+#include "src/models/sparse/MarkovAutomaton.h"
+#include "src/models/sparse/StandardRewardModel.h"
+#include "src/storage/dd/Add.h"
+#include "src/storage/dd/Bdd.h"
+
 namespace storm {
     namespace modelchecker {
-        std::unique_ptr<CheckResult> AbstractModelChecker::check(CheckTask<storm::logic::Formula> const& checkTask) {
+
+        template<typename ModelType>
+        std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::check(CheckTask<storm::logic::Formula, ValueType> const& checkTask) {
             storm::logic::Formula const& formula = checkTask.getFormula();
             STORM_LOG_THROW(this->canHandle(checkTask), storm::exceptions::InvalidArgumentException, "The model checker is not able to check the formula '" << formula << "'.");
             if (formula.isStateFormula()) {
@@ -19,8 +32,9 @@ namespace storm {
             }
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The given formula '" << formula << "' is invalid.");
         }
-        
-        std::unique_ptr<CheckResult> AbstractModelChecker::computeProbabilities(CheckTask<storm::logic::Formula> const& checkTask) {
+
+        template<typename ModelType>
+        std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeProbabilities(CheckTask<storm::logic::Formula, ValueType> const& checkTask) {
             storm::logic::Formula const& formula = checkTask.getFormula();
             if (formula.isBoundedUntilFormula()) {
                 return this->computeBoundedUntilProbabilities(checkTask.substituteFormula(formula.asBoundedUntilFormula()));
@@ -37,34 +51,41 @@ namespace storm {
             }
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The given formula '" << formula << "' is invalid.");
         }
-        
-        std::unique_ptr<CheckResult> AbstractModelChecker::computeBoundedUntilProbabilities(CheckTask<storm::logic::BoundedUntilFormula> const& checkTask) {
+
+        template<typename ModelType>
+        std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeBoundedUntilProbabilities(CheckTask<storm::logic::BoundedUntilFormula, ValueType> const& checkTask) {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker does not support the formula: " << checkTask.getFormula() << ".");
         }
-        
-        std::unique_ptr<CheckResult> AbstractModelChecker::computeConditionalProbabilities(CheckTask<storm::logic::ConditionalFormula> const& checkTask) {
+
+        template<typename ModelType>
+        std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeConditionalProbabilities(CheckTask<storm::logic::ConditionalFormula, ValueType> const& checkTask) {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker does not support the formula: " << checkTask.getFormula() << ".");
         }
-        
-        std::unique_ptr<CheckResult> AbstractModelChecker::computeReachabilityProbabilities(CheckTask<storm::logic::EventuallyFormula> const& checkTask) {
+
+        template<typename ModelType>
+        std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeReachabilityProbabilities(CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) {
             storm::logic::EventuallyFormula const& pathFormula = checkTask.getFormula();
             storm::logic::UntilFormula newFormula(storm::logic::Formula::getTrueFormula(), pathFormula.getSubformula().asSharedPointer());
             return this->computeUntilProbabilities(checkTask.substituteFormula(newFormula));
         }
-        
-        std::unique_ptr<CheckResult> AbstractModelChecker::computeGloballyProbabilities(CheckTask<storm::logic::GloballyFormula> const& checkTask) {
+
+        template<typename ModelType>
+        std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeGloballyProbabilities(CheckTask<storm::logic::GloballyFormula, ValueType> const& checkTask) {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker does not support the formula: " << checkTask.getFormula() << ".");
         }
-        
-        std::unique_ptr<CheckResult> AbstractModelChecker::computeNextProbabilities(CheckTask<storm::logic::NextFormula> const& checkTask) {
+
+        template<typename ModelType>
+        std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeNextProbabilities(CheckTask<storm::logic::NextFormula, ValueType> const& checkTask) {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker does not support the formula: " << checkTask.getFormula() << ".");
         }
-        
-        std::unique_ptr<CheckResult> AbstractModelChecker::computeUntilProbabilities(CheckTask<storm::logic::UntilFormula> const& checkTask) {
+
+        template<typename ModelType>
+        std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeUntilProbabilities(CheckTask<storm::logic::UntilFormula, ValueType> const& checkTask) {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker does not support the formula: " << checkTask.getFormula() << ".");
         }
-        
-        std::unique_ptr<CheckResult> AbstractModelChecker::computeRewards(storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::Formula> const& checkTask) {
+
+        template<typename ModelType>
+        std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeRewards(storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::Formula, ValueType> const& checkTask) {
             storm::logic::Formula const& rewardFormula = checkTask.getFormula();
             if (rewardFormula.isCumulativeRewardFormula()) {
                 return this->computeCumulativeRewards(rewardMeasureType, checkTask.substituteFormula(rewardFormula.asCumulativeRewardFormula()));
@@ -79,44 +100,53 @@ namespace storm {
             }
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The given formula '" << rewardFormula << "' is invalid.");
         }
-        
-        std::unique_ptr<CheckResult> AbstractModelChecker::computeConditionalRewards(storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::ConditionalFormula> const& checkTask) {
+
+        template<typename ModelType>
+        std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeConditionalRewards(storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::ConditionalFormula, ValueType> const& checkTask) {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker does not support the formula: " << checkTask.getFormula() << ".");
         }
-        
-        std::unique_ptr<CheckResult> AbstractModelChecker::computeCumulativeRewards(storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::CumulativeRewardFormula> const& checkTask) {
+
+        template<typename ModelType>
+        std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeCumulativeRewards(storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::CumulativeRewardFormula, ValueType> const& checkTask) {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker does not support the formula: " << checkTask.getFormula() << ".");
         }
-        
-        std::unique_ptr<CheckResult> AbstractModelChecker::computeInstantaneousRewards(storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::InstantaneousRewardFormula> const& checkTask) {
+
+        template<typename ModelType>
+        std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeInstantaneousRewards(storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::InstantaneousRewardFormula, ValueType> const& checkTask) {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker does not support the formula: " << checkTask.getFormula() << ".");
         }
-        
-        std::unique_ptr<CheckResult> AbstractModelChecker::computeReachabilityRewards(storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::EventuallyFormula> const& checkTask) {
+
+        template<typename ModelType>
+        std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeReachabilityRewards(storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker does not support the formula: " << checkTask.getFormula() << ".");
         }
-        
-        std::unique_ptr<CheckResult> AbstractModelChecker::computeLongRunAverageRewards(storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::LongRunAverageRewardFormula> const& checkTask) {
+
+        template<typename ModelType>
+        std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeLongRunAverageRewards(storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::LongRunAverageRewardFormula, ValueType> const& checkTask) {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker does not support the formula: " << checkTask.getFormula() << ".");
         }
-        
-        std::unique_ptr<CheckResult> AbstractModelChecker::computeLongRunAverageProbabilities(CheckTask<storm::logic::StateFormula> const& checkTask) {
+
+        template<typename ModelType>
+        std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeLongRunAverageProbabilities(CheckTask<storm::logic::StateFormula, ValueType> const& checkTask) {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker does not support the formula: " << checkTask.getFormula() << ".");
         }
-        
-        std::unique_ptr<CheckResult> AbstractModelChecker::computeTimes(storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::Formula> const& checkTask) {
+
+        template<typename ModelType>
+        std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeTimes(storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::Formula, ValueType> const& checkTask) {
             storm::logic::Formula const& timeFormula = checkTask.getFormula();
             if (timeFormula.isReachabilityTimeFormula()) {
                 return this->computeReachabilityTimes(rewardMeasureType, checkTask.substituteFormula(timeFormula.asReachabilityTimeFormula()));
             }
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker does not support the formula: " << checkTask.getFormula() << ".");
         }
-        
-        std::unique_ptr<CheckResult> AbstractModelChecker::computeReachabilityTimes(storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::EventuallyFormula> const& checkTask) {
+
+        template<typename ModelType>
+        std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeReachabilityTimes(storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker does not support the formula: " << checkTask.getFormula() << ".");
         }
-        
-        std::unique_ptr<CheckResult> AbstractModelChecker::checkStateFormula(CheckTask<storm::logic::StateFormula> const& checkTask) {
+
+        template<typename ModelType>
+        std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::checkStateFormula(CheckTask<storm::logic::StateFormula, ValueType> const& checkTask) {
             storm::logic::StateFormula const& stateFormula = checkTask.getFormula();
             if (stateFormula.isBinaryBooleanStateFormula()) {
                 return this->checkBinaryBooleanStateFormula(checkTask.substituteFormula(stateFormula.asBinaryBooleanStateFormula()));
@@ -141,24 +171,27 @@ namespace storm {
             }
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The given formula '" << stateFormula << "' is invalid.");
         }
-        
-        std::unique_ptr<CheckResult> AbstractModelChecker::checkAtomicExpressionFormula(CheckTask<storm::logic::AtomicExpressionFormula> const& checkTask) {
+
+        template<typename ModelType>
+        std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::checkAtomicExpressionFormula(CheckTask<storm::logic::AtomicExpressionFormula, ValueType> const& checkTask) {
             storm::logic::AtomicExpressionFormula const& stateFormula = checkTask.getFormula();
             std::stringstream stream;
             stream << stateFormula.getExpression();
             return this->checkAtomicLabelFormula(checkTask.substituteFormula(storm::logic::AtomicLabelFormula(stream.str())));
         }
-        
-        std::unique_ptr<CheckResult> AbstractModelChecker::checkAtomicLabelFormula(CheckTask<storm::logic::AtomicLabelFormula> const& checkTask) {
+
+        template<typename ModelType>
+        std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::checkAtomicLabelFormula(CheckTask<storm::logic::AtomicLabelFormula, ValueType> const& checkTask) {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker does not support the formula: " << checkTask.getFormula() << ".");
         }
-        
-        std::unique_ptr<CheckResult> AbstractModelChecker::checkBinaryBooleanStateFormula(CheckTask<storm::logic::BinaryBooleanStateFormula> const& checkTask) {
+
+        template<typename ModelType>
+        std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::checkBinaryBooleanStateFormula(CheckTask<storm::logic::BinaryBooleanStateFormula, ValueType> const& checkTask) {
             storm::logic::BinaryBooleanStateFormula const& stateFormula = checkTask.getFormula();
             STORM_LOG_THROW(stateFormula.getLeftSubformula().isStateFormula() && stateFormula.getRightSubformula().isStateFormula(), storm::exceptions::InvalidArgumentException, "The given formula is invalid.");
             
-            std::unique_ptr<CheckResult> leftResult = this->check(checkTask.substituteFormula<storm::logic::Formula>(stateFormula.getLeftSubformula().asStateFormula()));
-            std::unique_ptr<CheckResult> rightResult = this->check(checkTask.substituteFormula<storm::logic::Formula>(stateFormula.getRightSubformula().asStateFormula()));
+            std::unique_ptr<CheckResult> leftResult = this->check(checkTask.template substituteFormula<storm::logic::Formula>(stateFormula.getLeftSubformula().asStateFormula()));
+            std::unique_ptr<CheckResult> rightResult = this->check(checkTask.template substituteFormula<storm::logic::Formula>(stateFormula.getRightSubformula().asStateFormula()));
             
             STORM_LOG_THROW(leftResult->isQualitative() && rightResult->isQualitative(), storm::exceptions::InternalTypeErrorException, "Expected qualitative results.");
             
@@ -172,36 +205,40 @@ namespace storm {
             
             return leftResult;
         }
-        
-        std::unique_ptr<CheckResult> AbstractModelChecker::checkBooleanLiteralFormula(CheckTask<storm::logic::BooleanLiteralFormula> const& checkTask) {
+
+        template<typename ModelType>
+        std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::checkBooleanLiteralFormula(CheckTask<storm::logic::BooleanLiteralFormula, ValueType> const& checkTask) {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker does not support the formula: " << checkTask.getFormula() << ".");
         }
-        
-        std::unique_ptr<CheckResult> AbstractModelChecker::checkProbabilityOperatorFormula(CheckTask<storm::logic::ProbabilityOperatorFormula> const& checkTask) {
+
+        template<typename ModelType>
+        std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::checkProbabilityOperatorFormula(CheckTask<storm::logic::ProbabilityOperatorFormula, ValueType> const& checkTask) {
             storm::logic::ProbabilityOperatorFormula const& stateFormula = checkTask.getFormula();
             std::unique_ptr<CheckResult> result = this->computeProbabilities(checkTask.substituteFormula(stateFormula.getSubformula()));
             
             if (stateFormula.hasBound()) {
                 STORM_LOG_THROW(result->isQuantitative(), storm::exceptions::InvalidOperationException, "Unable to perform comparison operation on non-quantitative result.");
-                return result->asQuantitativeCheckResult().compareAgainstBound(stateFormula.getComparisonType(), stateFormula.getThreshold());
+                return result->asQuantitativeCheckResult<ValueType>().compareAgainstBound(stateFormula.getComparisonType(), stateFormula.getThresholdAs<ValueType>());
             } else {
                 return result;
             }
         }
-        
-        std::unique_ptr<CheckResult> AbstractModelChecker::checkRewardOperatorFormula(CheckTask<storm::logic::RewardOperatorFormula> const& checkTask) {
+
+        template<typename ModelType>
+        std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::checkRewardOperatorFormula(CheckTask<storm::logic::RewardOperatorFormula, ValueType> const& checkTask) {
             storm::logic::RewardOperatorFormula const& stateFormula = checkTask.getFormula();
             std::unique_ptr<CheckResult> result = this->computeRewards(stateFormula.getMeasureType(), checkTask.substituteFormula(stateFormula.getSubformula()));
             
             if (checkTask.isBoundSet()) {
                 STORM_LOG_THROW(result->isQuantitative(), storm::exceptions::InvalidOperationException, "Unable to perform comparison operation on non-quantitative result.");
-                return result->asQuantitativeCheckResult().compareAgainstBound(checkTask.getBoundComparisonType(), checkTask.getBoundThreshold());
+                return result->asQuantitativeCheckResult<ValueType>().compareAgainstBound(checkTask.getBoundComparisonType(), checkTask.getBoundThreshold());
             } else {
                 return result;
             }
         }
-        
-		std::unique_ptr<CheckResult> AbstractModelChecker::checkTimeOperatorFormula(CheckTask<storm::logic::TimeOperatorFormula> const& checkTask) {
+
+        template<typename ModelType>
+		std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::checkTimeOperatorFormula(CheckTask<storm::logic::TimeOperatorFormula, ValueType> const& checkTask) {
             storm::logic::TimeOperatorFormula const& stateFormula = checkTask.getFormula();
 			STORM_LOG_THROW(stateFormula.getSubformula().isReachabilityTimeFormula(), storm::exceptions::InvalidArgumentException, "The given formula is invalid.");
             
@@ -209,13 +246,14 @@ namespace storm {
             
             if (checkTask.isBoundSet()) {
                 STORM_LOG_THROW(result->isQuantitative(), storm::exceptions::InvalidOperationException, "Unable to perform comparison operation on non-quantitative result.");
-                return result->asQuantitativeCheckResult().compareAgainstBound(checkTask.getBoundComparisonType(), checkTask.getBoundThreshold());
+                return result->asQuantitativeCheckResult<ValueType>().compareAgainstBound(checkTask.getBoundComparisonType(), checkTask.getBoundThreshold());
             } else {
                 return result;
             }
         }
-        
-		std::unique_ptr<CheckResult> AbstractModelChecker::checkLongRunAverageOperatorFormula(CheckTask<storm::logic::LongRunAverageOperatorFormula> const& checkTask) {
+
+        template<typename ModelType>
+		std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::checkLongRunAverageOperatorFormula(CheckTask<storm::logic::LongRunAverageOperatorFormula, ValueType> const& checkTask) {
             storm::logic::LongRunAverageOperatorFormula const& stateFormula = checkTask.getFormula();
 			STORM_LOG_THROW(stateFormula.getSubformula().isStateFormula(), storm::exceptions::InvalidArgumentException, "The given formula is invalid.");
             
@@ -223,15 +261,16 @@ namespace storm {
             
             if (checkTask.isBoundSet()) {
                 STORM_LOG_THROW(result->isQuantitative(), storm::exceptions::InvalidOperationException, "Unable to perform comparison operation on non-quantitative result.");
-                return result->asQuantitativeCheckResult().compareAgainstBound(checkTask.getBoundComparisonType(), checkTask.getBoundThreshold());
+                return result->asQuantitativeCheckResult<ValueType>().compareAgainstBound(checkTask.getBoundComparisonType(), checkTask.getBoundThreshold());
             } else {
                 return result;
             }
         }
         
-        std::unique_ptr<CheckResult> AbstractModelChecker::checkUnaryBooleanStateFormula(CheckTask<storm::logic::UnaryBooleanStateFormula> const& checkTask) {
+        template<typename ModelType>
+        std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::checkUnaryBooleanStateFormula(CheckTask<storm::logic::UnaryBooleanStateFormula, ValueType> const& checkTask) {
             storm::logic::UnaryBooleanStateFormula const& stateFormula = checkTask.getFormula();
-            std::unique_ptr<CheckResult> subResult = this->check(checkTask.substituteFormula<storm::logic::Formula>(stateFormula.getSubformula()));
+            std::unique_ptr<CheckResult> subResult = this->check(checkTask.template substituteFormula<storm::logic::Formula>(stateFormula.getSubformula()));
             STORM_LOG_THROW(subResult->isQualitative(), storm::exceptions::InternalTypeErrorException, "Expected qualitative result.");
             if (stateFormula.isNot()) {
                 subResult->asQualitativeCheckResult().complement();
@@ -240,5 +279,38 @@ namespace storm {
             }
             return subResult;
         }
+
+        ///////////////////////////////////////////////
+        // Explicitly instantiate the template class.
+        ///////////////////////////////////////////////
+        // Sparse
+        template class AbstractModelChecker<storm::models::sparse::Model<double>>;
+        template class AbstractModelChecker<storm::models::sparse::Dtmc<double>>;
+        template class AbstractModelChecker<storm::models::sparse::Ctmc<double>>;
+        template class AbstractModelChecker<storm::models::sparse::Mdp<double>>;
+        template class AbstractModelChecker<storm::models::sparse::MarkovAutomaton<double>>;
+
+#ifdef STORM_HAVE_CARL
+        template class AbstractModelChecker<storm::models::sparse::Mdp<double, storm::models::sparse::StandardRewardModel<storm::Interval>>>;
+
+        template class AbstractModelChecker<storm::models::sparse::Model<storm::RationalNumber>>;
+        template class AbstractModelChecker<storm::models::sparse::Dtmc<storm::RationalNumber>>;
+        template class AbstractModelChecker<storm::models::sparse::Ctmc<storm::RationalNumber>>;
+        template class AbstractModelChecker<storm::models::sparse::Mdp<storm::RationalNumber>>;
+        template class AbstractModelChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>;
+
+        template class AbstractModelChecker<storm::models::sparse::Model<storm::RationalFunction>>;
+        template class AbstractModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>>;
+        template class AbstractModelChecker<storm::models::sparse::Ctmc<storm::RationalFunction>>;
+        template class AbstractModelChecker<storm::models::sparse::Mdp<storm::RationalFunction>>;
+        template class AbstractModelChecker<storm::models::sparse::MarkovAutomaton<storm::RationalFunction>>;
+#endif
+        // DD
+        template class AbstractModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD, double>>;
+        template class AbstractModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, double>>;
+        template class AbstractModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD, double>>;
+        template class AbstractModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan, double>>;
+        template class AbstractModelChecker<storm::models::symbolic::Ctmc<storm::dd::DdType::CUDD, double>>;
+        template class AbstractModelChecker<storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, double>>;
     }
 }

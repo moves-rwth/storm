@@ -220,6 +220,7 @@ namespace storm {
         }
     }
 
+#ifdef STORM_HAVE_CARL
     template<>
     inline void generateCounterexample(storm::prism::Program const& program, std::shared_ptr<storm::models::sparse::Model<storm::RationalNumber>> model, std::shared_ptr<storm::logic::Formula const> const& formula) {
         STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unable to generate counterexample for parametric model.");
@@ -229,6 +230,7 @@ namespace storm {
     inline void generateCounterexample(storm::prism::Program const& program, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model, std::shared_ptr<storm::logic::Formula const> const& formula) {
         STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unable to generate counterexample for parametric model.");
     }
+#endif
     
     template<typename ValueType>
     void generateCounterexamples(storm::prism::Program const& program, std::shared_ptr<storm::models::sparse::Model<ValueType>> model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
@@ -262,7 +264,7 @@ namespace storm {
     }
 
     template<typename ValueType>
-    std::unique_ptr<storm::modelchecker::CheckResult> verifySparseDtmc(std::shared_ptr<storm::models::sparse::Dtmc<ValueType>> dtmc, storm::modelchecker::CheckTask<storm::logic::Formula> const& task) {
+    std::unique_ptr<storm::modelchecker::CheckResult> verifySparseDtmc(std::shared_ptr<storm::models::sparse::Dtmc<ValueType>> dtmc, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
         std::unique_ptr<storm::modelchecker::CheckResult> result;
         if (storm::settings::getModule<storm::settings::modules::CoreSettings>().getEquationSolver() == storm::solver::EquationSolverType::Elimination && storm::settings::getModule<storm::settings::modules::EliminationSettings>().isUseDedicatedModelCheckerSet()) {
             storm::modelchecker::SparseDtmcEliminationModelChecker<storm::models::sparse::Dtmc<ValueType>> modelchecker(*dtmc);
@@ -283,7 +285,7 @@ namespace storm {
     }
     
     template<typename ValueType>
-    std::unique_ptr<storm::modelchecker::CheckResult> verifySparseCtmc(std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> ctmc, storm::modelchecker::CheckTask<storm::logic::Formula> const& task) {
+    std::unique_ptr<storm::modelchecker::CheckResult> verifySparseCtmc(std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> ctmc, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
         std::unique_ptr<storm::modelchecker::CheckResult> result;
         storm::modelchecker::SparseCtmcCslModelChecker<storm::models::sparse::Ctmc<ValueType>> modelchecker(*ctmc);
         if (modelchecker.canHandle(task)) {
@@ -295,7 +297,7 @@ namespace storm {
     }
 
     template<typename ValueType>
-    std::unique_ptr<storm::modelchecker::CheckResult> verifySparseMdp(std::shared_ptr<storm::models::sparse::Mdp<ValueType>> mdp, storm::modelchecker::CheckTask<storm::logic::Formula> const& task) {
+    std::unique_ptr<storm::modelchecker::CheckResult> verifySparseMdp(std::shared_ptr<storm::models::sparse::Mdp<ValueType>> mdp, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
         std::unique_ptr<storm::modelchecker::CheckResult> result;
         storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ValueType>> modelchecker(*mdp);
         if (modelchecker.canHandle(task)) {
@@ -308,7 +310,7 @@ namespace storm {
 
     template<typename ValueType>
     std::unique_ptr<storm::modelchecker::CheckResult> verifySparseModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> model, std::shared_ptr<storm::logic::Formula const> const& formula, bool onlyInitialStatesRelevant = false) {
-        storm::modelchecker::CheckTask<storm::logic::Formula> task(*formula, onlyInitialStatesRelevant);
+        storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> task(*formula, onlyInitialStatesRelevant);
 
         std::unique_ptr<storm::modelchecker::CheckResult> result;
         if (model->getType() == storm::models::ModelType::Dtmc) {
@@ -332,9 +334,10 @@ namespace storm {
 
     }
     
+#ifdef STORM_HAVE_CARL
     template<>
     inline std::unique_ptr<storm::modelchecker::CheckResult> verifySparseModel(std::shared_ptr<storm::models::sparse::Model<storm::RationalNumber>> model, std::shared_ptr<storm::logic::Formula const> const& formula, bool onlyInitialStatesRelevant) {
-        storm::modelchecker::CheckTask<storm::logic::Formula> task(*formula, onlyInitialStatesRelevant);
+        storm::modelchecker::CheckTask<storm::logic::Formula, RationalNumber> task(*formula, onlyInitialStatesRelevant);
 
         std::unique_ptr<storm::modelchecker::CheckResult> result;
         if (model->getType() == storm::models::ModelType::Dtmc) {
@@ -349,7 +352,6 @@ namespace storm {
         return result;
     }
     
-#ifdef STORM_HAVE_CARL
     inline void exportParametricResultToFile(storm::RationalFunction const& result, storm::models::sparse::Dtmc<storm::RationalFunction>::ConstraintCollector const& constraintCollector, std::string const& path) {
         std::ofstream filestream;
         filestream.open(path);
@@ -368,7 +370,7 @@ namespace storm {
 
     template<>
     inline std::unique_ptr<storm::modelchecker::CheckResult> verifySparseModel(std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model, std::shared_ptr<storm::logic::Formula const> const& formula, bool onlyInitialStatesRelevant) {
-        storm::modelchecker::CheckTask<storm::logic::Formula> task(*formula, onlyInitialStatesRelevant);
+        storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction> task(*formula, onlyInitialStatesRelevant);
 
         std::unique_ptr<storm::modelchecker::CheckResult> result;
         if (model->getType() == storm::models::ModelType::Dtmc) {
@@ -392,19 +394,19 @@ namespace storm {
         storm::modelchecker::CheckTask<storm::logic::Formula> task(*formula, onlyInitialStatesRelevant);
         if (model->getType() == storm::models::ModelType::Dtmc) {
             std::shared_ptr<storm::models::symbolic::Dtmc<DdType>> dtmc = model->template as<storm::models::symbolic::Dtmc<DdType>>();
-            storm::modelchecker::HybridDtmcPrctlModelChecker<DdType, double> modelchecker(*dtmc);
+            storm::modelchecker::HybridDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<DdType>> modelchecker(*dtmc);
             if (modelchecker.canHandle(task)) {
                 result = modelchecker.check(task);
             }
         } else if (model->getType() == storm::models::ModelType::Ctmc) {
             std::shared_ptr<storm::models::symbolic::Ctmc<DdType>> ctmc = model->template as<storm::models::symbolic::Ctmc<DdType>>();
-            storm::modelchecker::HybridCtmcCslModelChecker<DdType, double> modelchecker(*ctmc);
+            storm::modelchecker::HybridCtmcCslModelChecker<storm::models::symbolic::Ctmc<DdType>> modelchecker(*ctmc);
             if (modelchecker.canHandle(task)) {
                 result = modelchecker.check(task);
             }
         } else if (model->getType() == storm::models::ModelType::Mdp) {
             std::shared_ptr<storm::models::symbolic::Mdp<DdType>> mdp = model->template as<storm::models::symbolic::Mdp<DdType>>();
-            storm::modelchecker::HybridMdpPrctlModelChecker<DdType, double> modelchecker(*mdp);
+            storm::modelchecker::HybridMdpPrctlModelChecker<storm::models::symbolic::Mdp<DdType>> modelchecker(*mdp);
             if (modelchecker.canHandle(task)) {
                 result = modelchecker.check(task);
             }
@@ -421,13 +423,13 @@ namespace storm {
         storm::modelchecker::CheckTask<storm::logic::Formula> task(*formula, onlyInitialStatesRelevant);
         if (model->getType() == storm::models::ModelType::Dtmc) {
             std::shared_ptr<storm::models::symbolic::Dtmc<DdType>> dtmc = model->template as<storm::models::symbolic::Dtmc<DdType>>();
-            storm::modelchecker::SymbolicDtmcPrctlModelChecker<DdType, double> modelchecker(*dtmc);
+            storm::modelchecker::SymbolicDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<DdType>> modelchecker(*dtmc);
             if (modelchecker.canHandle(task)) {
                 result = modelchecker.check(task);
             }
         } else if (model->getType() == storm::models::ModelType::Mdp) {
             std::shared_ptr<storm::models::symbolic::Mdp<DdType>> mdp = model->template as<storm::models::symbolic::Mdp<DdType>>();
-            storm::modelchecker::SymbolicMdpPrctlModelChecker<DdType, double> modelchecker(*mdp);
+            storm::modelchecker::SymbolicMdpPrctlModelChecker<storm::models::symbolic::Mdp<DdType>> modelchecker(*mdp);
             if (modelchecker.canHandle(task)) {
                 result = modelchecker.check(task);
             }
