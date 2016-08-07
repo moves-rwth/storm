@@ -1,4 +1,6 @@
 #include "src/storage/gspn/GSPN.h"
+#include <src/utility/macros.h>
+#include <boost/lexical_cast.hpp>
 
 namespace storm {
     namespace gspn {
@@ -11,7 +13,6 @@ namespace storm {
         }
 
         void GSPN::addPlace(Place const& place) {
-            //TODO check whether the name or id is already used by an place
             this->places.push_back(place);
         }
 
@@ -161,6 +162,156 @@ namespace storm {
 
         std::string const& GSPN::getName() const {
             return this->name;
+        }
+
+        bool GSPN::isValid() const {
+            bool result = true;
+            result |= testPlaces();
+            result |= testTransitions();
+
+            return result;
+        }
+
+        bool GSPN::testPlaces() const {
+            std::vector<std::string> namesOfPlaces;
+            std::vector<uint_fast64_t> idsOfPlaces;
+            bool result = true;
+
+            for (auto const& place : this->getPlaces()) {
+
+                if (std::find(namesOfPlaces.begin(), namesOfPlaces.end(), place.getName()) != namesOfPlaces.end()) {
+                    STORM_PRINT_AND_LOG("duplicates states with the name \"" + place.getName() + "\"\n")
+                    result = false;
+                }
+
+                if (std::find(idsOfPlaces.begin(), idsOfPlaces.end(), place.getID()) != idsOfPlaces.end()) {
+                    STORM_PRINT_AND_LOG("duplicates states with the id \"" + boost::lexical_cast<std::string>(place.getID()) + "\"\n")
+                    result = false;
+                }
+
+                if (place.getNumberOfInitialTokens() > place.getNumberOfInitialTokens()) {
+                    STORM_PRINT_AND_LOG("number of initial tokens is greater than the capacity for place \"" + place.getName() + "\"\n")
+                    result = false;
+                }
+            }
+
+            return result;
+        }
+
+        bool GSPN::testTransitions() const {
+            bool result = true;
+
+            for (auto const& transition : this->getImmediateTransitions()) {
+                if (transition->getInputPlacesCBegin() == transition->getInputPlacesCEnd() &&
+                    transition->getInhibitionPlacesCBegin() == transition->getInhibitionPlacesCEnd()) {
+                    STORM_PRINT_AND_LOG("transition \"" + transition->getName() + "\" has no input or inhibition place\n")
+                    result = false;
+                }
+
+                if (transition->getOutputPlacesCBegin() == transition->getOutputPlacesCEnd()) {
+                    STORM_PRINT_AND_LOG("transition \"" + transition->getName() + "\" has no output place\n")
+                    result = false;
+                }
+            }
+
+            for (auto const& transition : this->getTimedTransitions()) {
+                if (transition->getInputPlacesCBegin() == transition->getInputPlacesCEnd() &&
+                    transition->getInhibitionPlacesCBegin() == transition->getInhibitionPlacesCEnd()) {
+                    STORM_PRINT_AND_LOG("transition \"" + transition->getName() + "\" has no input or inhibition place\n")
+                    result = false;
+                }
+
+                if (transition->getOutputPlacesCBegin() == transition->getOutputPlacesCEnd()) {
+                    STORM_PRINT_AND_LOG("transition \"" + transition->getName() + "\" has no output place\n")
+                    result = false;
+                }
+            }
+
+            //test if places exists in the gspn
+            for (auto const& transition : this->getImmediateTransitions()) {
+                for (auto it = transition->getInputPlacesCBegin(); it != transition->getInputPlacesCEnd(); ++it) {
+                    bool foundPlace = false;
+                    for (auto const& place : places) {
+                        if (place.getName() == (*it)->getName()) {
+                            foundPlace = true;
+                        }
+                    }
+                    if (!foundPlace) {
+                        STORM_PRINT_AND_LOG("input place \"" + (*it)->getName() + "\" of transition \"" + transition->getName() + "\" was not found \n")
+                        result = false;
+                    }
+                }
+
+                for (auto it = transition->getInhibitionPlacesCBegin(); it != transition->getInhibitionPlacesCEnd(); ++it) {
+                    bool foundPlace = false;
+                    for (auto const& place : places) {
+                        if (place.getName() == (*it)->getName()) {
+                            foundPlace = true;
+                        }
+                    }
+                    if (!foundPlace) {
+                        STORM_PRINT_AND_LOG("inhibition place \"" + (*it)->getName() + "\" of transition \"" + transition->getName() + "\" was not found \n")
+                        result = false;
+                    }
+                }
+
+                for (auto it = transition->getOutputPlacesCBegin(); it != transition->getOutputPlacesCEnd(); ++it) {
+                    bool foundPlace = false;
+                    for (auto const& place : places) {
+                        if (place.getName() == (*it)->getName()) {
+                            foundPlace = true;
+                        }
+                    }
+                    if (!foundPlace) {
+                        STORM_PRINT_AND_LOG("output place \"" + (*it)->getName() + "\" of transition \"" + transition->getName() + "\" was not found \n")
+                        result = false;
+                    }
+                }
+            }
+
+            for (auto const& transition : this->getTimedTransitions()) {
+                for (auto it = transition->getInputPlacesCBegin(); it != transition->getInputPlacesCEnd(); ++it) {
+                    bool foundPlace = false;
+                    for (auto const& place : places) {
+                        if (place.getName() == (*it)->getName()) {
+                            foundPlace = true;
+                        }
+                    }
+                    if (!foundPlace) {
+                        STORM_PRINT_AND_LOG("input place \"" + (*it)->getName() + "\" of transition \"" + transition->getName() + "\" was not found \n")
+                        result = false;
+                    }
+                }
+
+                for (auto it = transition->getInhibitionPlacesCBegin(); it != transition->getInhibitionPlacesCEnd(); ++it) {
+                    bool foundPlace = false;
+                    for (auto const& place : places) {
+                        if (place.getName() == (*it)->getName()) {
+                            foundPlace = true;
+                        }
+                    }
+                    if (!foundPlace) {
+                        STORM_PRINT_AND_LOG("inhibition place \"" + (*it)->getName() + "\" of transition \"" + transition->getName() + "\" was not found \n")
+                        result = false;
+                    }
+                }
+
+                for (auto it = transition->getOutputPlacesCBegin(); it != transition->getOutputPlacesCEnd(); ++it) {
+                    bool foundPlace = false;
+                    for (auto const& place : places) {
+                        if (place.getName() == (*it)->getName()) {
+                            foundPlace = true;
+                        }
+                    }
+                    if (!foundPlace) {
+                        STORM_PRINT_AND_LOG("output place \"" + (*it)->getName() + "\" of transition \"" + transition->getName() + "\" was not found \n")
+                        result = false;
+                    }
+                }
+            }
+
+
+            return result;
         }
     }
 }

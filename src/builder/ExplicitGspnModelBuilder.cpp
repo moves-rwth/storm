@@ -109,7 +109,7 @@ namespace storm {
                 }
 
             }
-            
+
             //auto labeling = getStateLabeling();
 
             return storm::models::sparse::MarkovAutomaton<double>(matrix, labeling, markovianStates, exitRates);

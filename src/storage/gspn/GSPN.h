@@ -133,7 +133,33 @@ namespace storm {
              * @return The name.
              */
             std::string const& getName() const;
+
+            /*!
+             * Performe some checks
+             * - testPlaces()
+             * - testTransitions()
+             *
+             * @return true if no errors are found
+             */
+            bool isValid() const;
         private:
+            /*!
+             * Test
+             *  - if places are unique (ids and names)
+             *  - if the capacity is greater than the number of initial tokens
+             *
+             * @return true if no errors found
+             */
+            bool testPlaces() const;
+
+            /*!
+             * Test
+             * - if transition have at least on input/inhibitor and one output place
+             *
+             * @return true if no errors found
+             */
+            bool testTransitions() const;
+
             // set containing all immediate transitions
             std::vector<std::shared_ptr<storm::gspn::ImmediateTransition<WeightType>>> immediateTransitions;
 
