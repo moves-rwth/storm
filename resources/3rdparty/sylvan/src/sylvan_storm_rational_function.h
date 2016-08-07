@@ -92,6 +92,13 @@ TASK_DECL_2(MTBDD, sylvan_storm_rational_function_op_neg, MTBDD, size_t)
  */
 #define sylvan_storm_rational_function_neg(a) mtbdd_uapply(a, TASK(sylvan_storm_rational_function_op_neg), 0);
 
+/**
+ * Multiply <a> and <b>, and abstract variables <vars> using summation.
+ * This is similar to the "and_exists" operation in BDDs.
+ */
+TASK_DECL_3(MTBDD, sylvan_storm_rational_function_and_exists, MTBDD, MTBDD, MTBDD);
+#define sylvan_storm_rational_function_and_exists(a, b, vars) CALL(sylvan_storm_rational_function_and_exists, a, b, vars)
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

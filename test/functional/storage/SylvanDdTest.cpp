@@ -11,6 +11,9 @@
 
 #include "src/storage/SparseMatrix.h"
 
+#include <memory>
+#include <iostream>
+
 TEST(SylvanDd, Constants) {
     std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
     storm::dd::Add<storm::dd::DdType::Sylvan, double> zero;
@@ -106,6 +109,40 @@ TEST(SylvanDd, RationalFunctionConstants) {
     EXPECT_EQ(0ul, two.getNonZeroCount());
     EXPECT_EQ(1ul, two.getLeafCount());
     EXPECT_EQ(1ul, two.getNodeCount());
+	
+	// The cache that is used in case the underlying type needs a cache.
+	std::shared_ptr<carl::Cache<carl::PolynomialFactorizationPair<storm::RawPolynomial>>> cache = std::make_shared<carl::Cache<carl::PolynomialFactorizationPair<storm::RawPolynomial>>>();
+	
+	storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> function;
+	carl::Variable x = carl::freshRealVariable("x");
+	carl::Variable y = carl::freshRealVariable("y");
+	carl::Variable z = carl::freshRealVariable("z");
+	
+	storm::RationalFunction constantOne(1);
+
+	storm::RationalFunction variableX = storm::RationalFunction(typename storm::RationalFunction::PolyType(typename storm::RationalFunction::PolyType::PolyType(x), cache));
+	storm::RationalFunction variableY = storm::RationalFunction(typename storm::RationalFunction::PolyType(typename storm::RationalFunction::PolyType::PolyType(y), cache));
+	storm::RationalFunction variableZ = storm::RationalFunction(typename storm::RationalFunction::PolyType(typename storm::RationalFunction::PolyType::PolyType(z), cache));
+	
+	storm::RationalFunction constantOneDivTwo(constantOne / constantTwo);
+	storm::RationalFunction tmpFunctionA(constantOneDivTwo);
+	tmpFunctionA *= variableZ;
+	tmpFunctionA /= variableY;
+	storm::RationalFunction tmpFunctionB(variableX);
+	tmpFunctionB *= variableY;
+	
+	
+	//storm::RationalFunction rationalFunction(two * x + x*y + constantOneDivTwo * z / y);
+	storm::RationalFunction rationalFunction(constantTwo);
+	rationalFunction *= variableX;
+	rationalFunction += tmpFunctionB;
+	rationalFunction += tmpFunctionA;
+	
+    ASSERT_NO_THROW(function = manager->template getConstant<storm::RationalFunction>(rationalFunction));
+    
+    EXPECT_EQ(0ul, function.getNonZeroCount());
+    EXPECT_EQ(1ul, function.getLeafCount());
+    EXPECT_EQ(1ul, function.getNodeCount());
 }
 
 TEST(SylvanDd, RationalFunctionEncodingTest) {

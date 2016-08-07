@@ -10,7 +10,7 @@
 
 #include <sylvan.h>
 #include <sylvan_common.h>
-/*#include <sylvan_mtbdd_int.h>*/
+#include <sylvan_mtbdd_int.h>
 #include <sylvan_storm_rational_function.h>
 
 #include <storm_function_wrapper.h>
@@ -162,14 +162,12 @@ TASK_IMPL_2(MTBDD, mtbdd_op_bool_to_storm_rational_function, MTBDD, a, size_t, v
 {
 	LOG_I("task_impl_2 to_srf")
 	if (a == mtbdd_false) {
-		storm_rational_function_ptr srf_zero = storm_rational_function_get_zero();
-		MTBDD result = mtbdd_storm_rational_function(srf_zero);
+		MTBDD result = mtbdd_storm_rational_function(storm_rational_function_get_zero());
 		LOG_O("task_impl_2 to_srf - ZERO")
 		return result;
 	}
 	if (a == mtbdd_true) {
-		storm_rational_function_ptr srf_one = storm_rational_function_get_one();
-		MTBDD result = mtbdd_storm_rational_function(srf_one);
+		MTBDD result = mtbdd_storm_rational_function(storm_rational_function_get_one());
 		LOG_O("task_impl_2 to_srf - ONE")
 		return result;
 	}
@@ -183,7 +181,6 @@ TASK_IMPL_2(MTBDD, mtbdd_op_bool_to_storm_rational_function, MTBDD, a, size_t, v
 
 TASK_IMPL_1(MTBDD, mtbdd_bool_to_storm_rational_function, MTBDD, dd)
 {
-	LOG_I("task_impl_1 to_srf")
     return mtbdd_uapply(dd, TASK(mtbdd_op_bool_to_storm_rational_function), 0);
 }
 
@@ -378,4 +375,83 @@ TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_neg, MTBDD, dd, size_t, p)
 
     return mtbdd_invalid;
     (void)p;
+}
+
+/**
+ * Multiply <a> and <b>, and abstract variables <vars> using summation.
+ * This is similar to the "and_exists" operation in BDDs.
+ */
+TASK_IMPL_3(MTBDD, sylvan_storm_rational_function_and_exists, MTBDD, a, MTBDD, b, MTBDD, v)
+{
+    /* Check terminal cases */
+
+    /* If v == true, then <vars> is an empty set */
+    if (v == mtbdd_true) return mtbdd_apply(a, b, TASK(sylvan_storm_rational_function_op_times));
+
+    /* Try the times operator on a and b */
+    MTBDD result = CALL(sylvan_storm_rational_function_op_times, &a, &b);
+    if (result != mtbdd_invalid) {
+        /* Times operator successful, store reference (for garbage collection) */
+        mtbdd_refs_push(result);
+        /* ... and perform abstraction */
+        result = mtbdd_abstract(result, v, TASK(sylvan_storm_rational_function_abstract_op_plus));
+        mtbdd_refs_pop(1);
+        /* Note that the operation cache is used in mtbdd_abstract */
+        return result;
+    }
+
+    /* Maybe perform garbage collection */
+    sylvan_gc_test();
+
+    /* Check cache. Note that we do this now, since the times operator might swap a and b (commutative) */
+    if (cache_get3(CACHE_STORM_RATIONAL_FUNCTION_AND_EXISTS, a, b, v, &result)) return result;
+
+    /* Now, v is not a constant, and either a or b is not a constant */
+
+    /* Get top variable */
+    int la = mtbdd_isleaf(a);
+    int lb = mtbdd_isleaf(b);
+    mtbddnode_t na = la ? 0 : GETNODE(a);
+    mtbddnode_t nb = lb ? 0 : GETNODE(b);
+    uint32_t va = la ? 0xffffffff : mtbddnode_getvariable(na);
+    uint32_t vb = lb ? 0xffffffff : mtbddnode_getvariable(nb);
+    uint32_t var = va < vb ? va : vb;
+
+    mtbddnode_t nv = GETNODE(v);
+    uint32_t vv = mtbddnode_getvariable(nv);
+
+    if (vv < var) {
+        /* Recursive, then abstract result */
+        result = CALL(sylvan_storm_rational_function_and_exists, a, b, node_gethigh(v, nv));
+        mtbdd_refs_push(result);
+        result = mtbdd_apply(result, result, TASK(sylvan_storm_rational_function_op_plus));
+        mtbdd_refs_pop(1);
+    } else {
+        /* Get cofactors */
+        MTBDD alow, ahigh, blow, bhigh;
+        alow  = (!la && va == var) ? node_getlow(a, na)  : a;
+        ahigh = (!la && va == var) ? node_gethigh(a, na) : a;
+        blow  = (!lb && vb == var) ? node_getlow(b, nb)  : b;
+        bhigh = (!lb && vb == var) ? node_gethigh(b, nb) : b;
+
+        if (vv == var) {
+            /* Recursive, then abstract result */
+            mtbdd_refs_spawn(SPAWN(sylvan_storm_rational_function_and_exists, ahigh, bhigh, node_gethigh(v, nv)));
+            MTBDD low = mtbdd_refs_push(CALL(sylvan_storm_rational_function_and_exists, alow, blow, node_gethigh(v, nv)));
+            MTBDD high = mtbdd_refs_push(mtbdd_refs_sync(SYNC(sylvan_storm_rational_function_and_exists)));
+            result = CALL(mtbdd_apply, low, high, TASK(sylvan_storm_rational_function_op_plus));
+            mtbdd_refs_pop(2);
+        } else /* vv > v */ {
+            /* Recursive, then create node */
+            mtbdd_refs_spawn(SPAWN(sylvan_storm_rational_function_and_exists, ahigh, bhigh, v));
+            MTBDD low = mtbdd_refs_push(CALL(sylvan_storm_rational_function_and_exists, alow, blow, v));
+            MTBDD high = mtbdd_refs_sync(SYNC(sylvan_storm_rational_function_and_exists));
+            mtbdd_refs_pop(1);
+            result = mtbdd_makenode(var, low, high);
+        }
+    }
+
+    /* Store in cache */
+    cache_put3(CACHE_STORM_RATIONAL_FUNCTION_AND_EXISTS, a, b, v, result);
+    return result;
 }
