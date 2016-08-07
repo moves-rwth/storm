@@ -1,5 +1,6 @@
 #include "JaniParser.h"
 #include "src/storage/jani/Model.h"
+#include "src/storage/jani/Property.h"
 #include "src/exceptions/FileIoException.h"
 #include "src/exceptions/InvalidJaniException.h"
 #include "src/exceptions/NotImplementedException.h"
@@ -29,13 +30,13 @@ namespace storm {
         }
 
 
-        storm::jani::Model JaniParser::parse(std::string const& path) {
+        std::pair<storm::jani::Model, std::vector<storm::jani::Property>> JaniParser::parse(std::string const& path) {
             JaniParser parser;
             parser.readFile(path);
             return parser.parseModel();
         }
 
-        JaniParser::JaniParser(std::string &jsonstring) {
+        JaniParser::JaniParser(std::string const& jsonstring) {
             parsedStructure = json::parse(jsonstring);
         }
 
@@ -55,7 +56,7 @@ namespace storm {
             file.close();
         }
 
-        storm::jani::Model JaniParser::parseModel() {
+        std::pair<storm::jani::Model, std::vector<storm::jani::Property>> JaniParser::parseModel(bool parseProperties) {
             //jani-version
             STORM_LOG_THROW(parsedStructure.count("jani-version") == 1, storm::exceptions::InvalidJaniException, "Jani-version must be given exactly once.");
             uint64_t version = getUnsignedInt(parsedStructure.at("jani-version"), "jani version");
@@ -92,8 +93,27 @@ namespace storm {
             }
             STORM_LOG_THROW(parsedStructure.count("system") == 1, storm::exceptions::InvalidJaniException, "Exactly one system description must be given");
             //std::shared_ptr<storm::jani::Composition> composition = parseComposition(parsedStructure.at("system"));
+            STORM_LOG_THROW(parsedStructure.count("properties") <= 1, storm::exceptions::InvalidJaniException, "At most one list of properties can be given");
+            STORM_LOG_THROW(parsedStructure.at("properties").is_array(), storm::exceptions::InvalidJaniException, "Properties should be an array");
+            PropertyVector properties;
+            if(parseProperties) {
+                for(auto const& propertyEntry : parsedStructure.at("properties")) {
+                    properties.push_back(this->parseProperty(propertyEntry));
+                }
+            }
+            return {model, properties};
+        }
 
-            return model;
+
+        storm::jani::Property JaniParser::parseProperty(json const& propertyStructure) {
+            STORM_LOG_THROW(propertyStructure.count("name") ==  1, storm::exceptions::InvalidJaniException, "Property must have a name");
+            // TODO check unique name
+            std::string name = getString(propertyStructure.at("name"), "property-name");
+            std::string comment = "";
+            if(propertyStructure.count("comment") > 0) {
+                comment = getString(propertyStructure.at("comment"), "comment for property named '" + name + "'.");
+            }
+
         }
 
         std::shared_ptr<storm::jani::Constant> JaniParser::parseConstant(json const& constantStructure, std::string const& scopeDescription) {

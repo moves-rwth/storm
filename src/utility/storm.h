@@ -42,6 +42,7 @@
 #include "src/parser/AutoParser.h"
 
 #include "src/storage/jani/Model.h"
+#include "src/storage/jani/Property.h"
 
 // Headers of builders.
 #include "src/builder/ExplicitModelBuilder.h"
@@ -92,7 +93,7 @@ namespace storm {
         return storm::parser::AutoParser<>::parseModel(transitionsFile, labelingFile, stateRewardsFile ? stateRewardsFile.get() : "", transitionRewardsFile ? transitionRewardsFile.get() : "", choiceLabelingFile ? choiceLabelingFile.get() : "" );
     }
 
-    storm::jani::Model parseModel(std::string const& path);
+    std::pair<storm::jani::Model, std::vector<storm::jani::Property>> parseJaniModel(std::string const& path);
     storm::prism::Program parseProgram(std::string const& path);
     std::vector<std::shared_ptr<storm::logic::Formula const>> parseFormulasForExplicit(std::string const& inputString);
     std::vector<std::shared_ptr<storm::logic::Formula const>> parseFormulasForProgram(std::string const& inputString, storm::prism::Program const& program);

@@ -5,7 +5,7 @@
 #include "src/parser/PrismParser.h"
 #include "src/parser/FormulaParser.h"
 #include "src/utility/macros.h"
-
+#include "src/storage/jani/Property.h"
 
 namespace storm {
    
@@ -15,12 +15,12 @@ namespace storm {
         return program;
     }
 
-    storm::jani::Model parseJaniModel(std::string const& path) {
-        storm::jani::Model model = storm::parser::JaniParser::parse(path);
-        if(!model.checkValidity(true)) {
+    std::pair<storm::jani::Model, std::vector<storm::jani::Property>> parseJaniModel(std::string const& path) {
+        std::pair<storm::jani::Model, std::vector<storm::jani::Property>> modelAndFormulae = storm::parser::JaniParser::parse(path);
+        if(!modelAndFormulae.first.checkValidity(true)) {
             STORM_LOG_THROW(false, storm::exceptions::FileIoException, "Jani file parsing yields invalid model.");
         }
-        return model;
+        return modelAndFormulae;
     }
 
     /**
