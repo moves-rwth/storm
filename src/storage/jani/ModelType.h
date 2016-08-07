@@ -5,7 +5,9 @@
 namespace storm {
     namespace jani {
         
-        enum class ModelType {UNDEFINED = 0, DTMC = 1, CTMC = 2, MDP = 3, CTMDP = 4, MA = 5, PTA = 6, STA = 7};
+        enum class ModelType {UNDEFINED = 0, LTS=1, DTMC = 2, CTMC = 3, MDP = 4,
+                            CTMDP = 5, MA = 6, TA = 7, PTA = 8, STA = 9,
+                            HA = 10, PHA = 11, SHA = 12};
 
         ModelType getModelType(std::string const& input);
         std::ostream& operator<<(std::ostream& stream, ModelType const& type);
