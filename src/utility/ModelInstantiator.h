@@ -55,7 +55,10 @@ namespace storm {
                  */
                 ConstantSparseModelType const& instantiate(std::map<VariableType, CoefficientType>const& valuation);
                 
-
+                /*!
+                 *  Check validity
+                 */
+                void checkValid() const;
             private:
                 /*!
                  * Initializes the instantiatedModel with dummy data by considering the model-specific ingredients.

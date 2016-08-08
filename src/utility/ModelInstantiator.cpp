@@ -150,6 +150,13 @@ namespace storm {
                 return *this->instantiatedModel;
             }
         
+        template<typename ParametricSparseModelType, typename ConstantSparseModelType>
+        void ModelInstantiator<ParametricSparseModelType, ConstantSparseModelType>::checkValid() const {
+            for(auto& functions : this->functions) {
+                
+            }
+        }
+        
 #ifdef STORM_HAVE_CARL
             template class ModelInstantiator<storm::models::sparse::Dtmc<storm::RationalFunction>, storm::models::sparse::Dtmc<double>>;
             template class ModelInstantiator<storm::models::sparse::Mdp<storm::RationalFunction>, storm::models::sparse::Mdp<double>>;
