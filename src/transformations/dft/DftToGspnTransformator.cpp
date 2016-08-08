@@ -65,10 +65,10 @@ namespace storm {
 							drawBE(std::static_pointer_cast<storm::storage::DFTBE<ValueType> const>(dftElement));
 							break;
 						case storm::storage::DFTElementType::CONSTF:
-							STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "The transformation of a CONSTF is not yet implemented.");
+							drawCONSTF(dftElement);
 							break;
 						case storm::storage::DFTElementType::CONSTS:
-							STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "The transformation of a CONSTS is not yet implemented.");
+							drawCONSTS(dftElement);
 							break;
 						case storm::storage::DFTElementType::PDEP:
 							STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "The transformation of a PDEP is not yet implemented.");
@@ -88,7 +88,7 @@ namespace storm {
 				mGspn.addPlace(placeBEActivated);
 				
 				storm::gspn::Place placeBEFailed;
-				placeBEFailed.setName(dftBE->name() + "_failed");
+				placeBEFailed.setName(dftBE->name() + STR_FAILED);
 				placeBEFailed.setNumberOfInitialTokens(0);
 				mGspn.addPlace(placeBEFailed);
 				
@@ -115,12 +115,12 @@ namespace storm {
 			template <typename ValueType>
             void DftToGspnTransformator<ValueType>::drawAND(std::shared_ptr<storm::storage::DFTAnd<ValueType> const> dftAnd) {
 				storm::gspn::Place placeANDFailed;
-				placeANDFailed.setName(dftAnd->name() + "_failed");
+				placeANDFailed.setName(dftAnd->name() + STR_FAILED);
 				placeANDFailed.setNumberOfInitialTokens(0);
 				mGspn.addPlace(placeANDFailed);
 				
 				storm::gspn::ImmediateTransition<storm::gspn::GSPN::WeightType> immediateTransitionANDFailing;
-				immediateTransitionANDFailing.setName(dftAnd->name() + "_failing");
+				immediateTransitionANDFailing.setName(dftAnd->name() + STR_FAILING);
 				immediateTransitionANDFailing.setPriority(1);
 				immediateTransitionANDFailing.setWeight(0.0);
 				immediateTransitionANDFailing.setInhibitionArcMultiplicity(placeANDFailed, 1);
@@ -131,14 +131,14 @@ namespace storm {
 			template <typename ValueType>
             void DftToGspnTransformator<ValueType>::drawOR(std::shared_ptr<storm::storage::DFTOr<ValueType> const> dftOr) {
 				storm::gspn::Place placeORFailed;
-				placeORFailed.setName(dftOr->name() + "_failed");
+				placeORFailed.setName(dftOr->name() + STR_FAILED);
 				placeORFailed.setNumberOfInitialTokens(0);
 				mGspn.addPlace(placeORFailed);
 				
 				auto children = dftOr->children();
 				for (std::size_t i = 0; i < dftOr->nrChildren(); i++) {
 					storm::gspn::ImmediateTransition<storm::gspn::GSPN::WeightType> immediateTransitionORFailing;
-					immediateTransitionORFailing.setName(dftOr->name() + "_" + children[i]->name() + "_failing");
+					immediateTransitionORFailing.setName(dftOr->name() + "_" + children[i]->name() + STR_FAILING);
 					immediateTransitionORFailing.setPriority(1);
 					immediateTransitionORFailing.setWeight(0.0);
 					immediateTransitionORFailing.setInhibitionArcMultiplicity(placeORFailed, 1);
@@ -153,18 +153,65 @@ namespace storm {
 			}
 
 			template <typename ValueType>
-            void DftToGspnTransformator<ValueType>::drawPAND(std::shared_ptr<storm::storage::DFTPand<ValueType> const> dftPand) {
-				STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "The transformation of a PAND is not yet implemented.");
+            void DftToGspnTransformator<ValueType>::drawPAND(std::shared_ptr<storm::storage::DFTPand<ValueType> const> dftPand) {				
+				storm::gspn::Place placePANDFailed;
+				placePANDFailed.setName(dftPand->name() + STR_FAILED);
+				placePANDFailed.setNumberOfInitialTokens(0);
+				mGspn.addPlace(placePANDFailed);
+				
+				storm::gspn::Place placePANDFailsave;
+				placePANDFailsave.setName(dftPand->name() + "_failsave");
+				placePANDFailsave.setNumberOfInitialTokens(0);
+				mGspn.addPlace(placePANDFailsave);
+				
+				storm::gspn::ImmediateTransition<storm::gspn::GSPN::WeightType> immediateTransitionPANDFailing;
+				immediateTransitionPANDFailing.setName(dftPand->name() + STR_FAILING);
+				immediateTransitionPANDFailing.setPriority(1);
+				immediateTransitionPANDFailing.setWeight(0.0);
+				immediateTransitionPANDFailing.setInhibitionArcMultiplicity(placePANDFailed, 1);
+				immediateTransitionPANDFailing.setInhibitionArcMultiplicity(placePANDFailsave, 1);
+				immediateTransitionPANDFailing.setOutputArcMultiplicity(placePANDFailed, 1);
+				mGspn.addImmediateTransition(immediateTransitionPANDFailing);
+				
+				storm::gspn::ImmediateTransition<storm::gspn::GSPN::WeightType> immediateTransitionPANDFailsave;
+				immediateTransitionPANDFailsave.setName(dftPand->name() + "_failsaving");
+				immediateTransitionPANDFailsave.setPriority(1);
+				immediateTransitionPANDFailsave.setWeight(0.0);
+				immediateTransitionPANDFailsave.setInhibitionArcMultiplicity(placePANDFailsave, 1);
+				immediateTransitionPANDFailsave.setOutputArcMultiplicity(placePANDFailsave, 1);
+				mGspn.addImmediateTransition(immediateTransitionPANDFailsave);
+				
+				// TODO: Are PANDs with more than two children possible?
 			}
 			
 			template <typename ValueType>
             void DftToGspnTransformator<ValueType>::drawSPARE(std::shared_ptr<storm::storage::DFTSpare<ValueType> const> dftSpare) {
 				STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "The transformation of a SPARE is not yet implemented.");
+				// TODO: What are the codewords for SPAREs in a *.dft file? hsp, wsp and csp?
 			}
 			
 			template <typename ValueType>
             void DftToGspnTransformator<ValueType>::drawPOR(std::shared_ptr<storm::storage::DFTPor<ValueType> const> dftPor) {
 				STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "The transformation of a POR is not yet implemented.");
+			}
+			
+			template <typename ValueType>
+            void DftToGspnTransformator<ValueType>::drawCONSTF(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftConstF) {
+				storm::gspn::Place placeCONSTFFailed;
+				placeCONSTFFailed.setName(dftConstF->name() + STR_FAILED);
+				placeCONSTFFailed.setNumberOfInitialTokens(1);
+				mGspn.addPlace(placeCONSTFFailed);
+				// TODO: What is the codeword for CONSTF in a *.dft file?
+			}
+			
+			template <typename ValueType>
+            void DftToGspnTransformator<ValueType>::drawCONSTS(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftConstS) {
+				storm::gspn::Place placeCONSTSFailed;
+				placeCONSTSFailed.setName(dftConstS->name() + STR_FAILED);
+				placeCONSTSFailed.setNumberOfInitialTokens(0);
+				placeCONSTSFailed.setCapacity(0); // It cannot contain a token, because it cannot fail.
+				mGspn.addPlace(placeCONSTSFailed);
+				// TODO: What is the codeword for CONSTS in a *.dft file?
 			}
 			
 			template <typename ValueType>
@@ -180,8 +227,8 @@ namespace storm {
 						switch (mDft.getElement(parents[j])->type()) {
 							case storm::storage::DFTElementType::AND:
 							{
-								auto andEntry = mGspn.getImmediateTransition(mDft.getElement(parents[j])->name() + "_failing");
-								auto childExit = mGspn.getPlace(child->name() + "_failed");
+								auto andEntry = mGspn.getImmediateTransition(mDft.getElement(parents[j])->name() + STR_FAILING);
+								auto childExit = mGspn.getPlace(child->name() + STR_FAILED);
 								if (andEntry.first && childExit.first) { // Only add arcs if the objects have been found.
 									andEntry.second->setInputArcMultiplicity(childExit.second, 1);
 									andEntry.second->setOutputArcMultiplicity(childExit.second, 1);
@@ -190,8 +237,8 @@ namespace storm {
 							}
 							case storm::storage::DFTElementType::OR:
 							{
-								auto orEntry = mGspn.getImmediateTransition(mDft.getElement(parents[j])->name() + "_" + child->name() + "_failing");
-								auto childExit = mGspn.getPlace(child->name() + "_failed");
+								auto orEntry = mGspn.getImmediateTransition(mDft.getElement(parents[j])->name() + "_" + child->name() + STR_FAILING);
+								auto childExit = mGspn.getPlace(child->name() + STR_FAILED);
 								if (orEntry.first && childExit.first) { // Only add arcs if the objects have been found.
 									orEntry.second->setInputArcMultiplicity(childExit.second, 1);
 									orEntry.second->setOutputArcMultiplicity(childExit.second, 1);
@@ -201,7 +248,29 @@ namespace storm {
 							case storm::storage::DFTElementType::VOT:
 								break;
 							case storm::storage::DFTElementType::PAND:
+							{
+								auto children =  std::static_pointer_cast<storm::storage::DFTPand<ValueType> const>(mDft.getElement(parents[j]))->children();
+								auto pandEntry = mGspn.getImmediateTransition(mDft.getElement(parents[j])->name() + STR_FAILING);
+								auto pandEntry2 = mGspn.getImmediateTransition(mDft.getElement(parents[j])->name() + "_failsaving");
+								auto childExit = mGspn.getPlace(child->name() + STR_FAILED);
+								
+								if (pandEntry.first && pandEntry2.first && childExit.first) { // Only add arcs if the objects have been found.
+									if (children[0] == child) { // Current element is primary child.
+										pandEntry.second->setInputArcMultiplicity(childExit.second, 1);
+										pandEntry.second->setOutputArcMultiplicity(childExit.second, 1);
+										pandEntry2.second->setInhibitionArcMultiplicity(childExit.second, 1);
+										
+									}
+									else if (children[1] == child) { // Current element is secondary child.
+										pandEntry.second->setInputArcMultiplicity(childExit.second, 1);
+										pandEntry.second->setOutputArcMultiplicity(childExit.second, 1);
+										pandEntry2.second->setInputArcMultiplicity(childExit.second, 1);
+										pandEntry2.second->setOutputArcMultiplicity(childExit.second, 1);
+									}
+								}
+								
 								break;
+							}
 							case storm::storage::DFTElementType::SPARE:
 								break;
 							case storm::storage::DFTElementType::POR:
@@ -212,13 +281,19 @@ namespace storm {
 								break;
 							case storm::storage::DFTElementType::BE:
 							{
-								// The parent is never a Basic Event.
+								// The parent is never a Basic Event (Except for SPAREs?).
 								break;
 							}
 							case storm::storage::DFTElementType::CONSTF:
+							{
+								// The parent is never a Basic Event (Except for SPAREs?).
 								break;
+							}
 							case storm::storage::DFTElementType::CONSTS:
+							{
+								// The parent is never a Basic Event (Except for SPAREs?).
 								break;
+							}
 							case storm::storage::DFTElementType::PDEP:
 								break;
 							default:

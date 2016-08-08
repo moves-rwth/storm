@@ -31,6 +31,9 @@ namespace storm {
 
                 storm::storage::DFT<ValueType> const& mDft;
                 storm::gspn::GSPN mGspn;
+				
+				static constexpr const char* STR_FAILING = "_failing";			// Name standard for transitions that point towards a place, which in turn indicates the failure of a gate.
+				static constexpr const char* STR_FAILED = "_failed";			// Name standard for place which indicates the failure of a gate.
                 
                 /*!
                  * Write Gspn to file or console.
@@ -98,6 +101,20 @@ namespace storm {
 				 * @param dftPor The POR gate.
 				 */
 				void drawPOR(std::shared_ptr<storm::storage::DFTPor<ValueType> const> dftPor);
+				
+				/*
+				 * Draw a Petri net CONSTF (Constant Failure, a Basic Event that has already failed).
+				 * 
+				 * @param dftPor The CONSTF Basic Event.
+				 */
+				void drawCONSTF(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftConstF);
+				
+				/*
+				 * Draw a Petri net CONSTS (Constant Save, a Basic Event that cannot fail).
+				 * 
+				 * @param dftPor The CONSTS Basic Event.
+				 */
+				void drawCONSTS(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftConstS);
             };
         }
     }
