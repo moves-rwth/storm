@@ -235,16 +235,30 @@ namespace storm {
             
             reportStatus(status, iterations);
             
+            
             // If we performed an odd number of iterations, we need to swap the x and currentX, because the newest result
             // is currently stored in currentX, but x is the output vector.
             if (currentX == auxiliarySolvingVectorMemory.get()) {
                 std::swap(x, *currentX);
             }
             
+            // If requested, we store the scheduler for retrieval.
+            if (this->isTrackSchedulerSet()) {
+                if(iterations==0){ //may happen due to custom termination condition. Then we need to compute x'= A*x+b
+                    solver->multiply(x, &b, *auxiliarySolvingMultiplyMemory);
+                }
+                std::vector<storm::storage::sparse::state_type> choices(this->A.getRowGroupCount());
+                // Reduce the multiplyResult and keep track of the choices made
+                storm::utility::vector::reduceVectorMinOrMax(dir, *auxiliarySolvingMultiplyMemory, x, this->A.getRowGroupIndices(), &choices);
+                this->scheduler = std::make_unique<storm::storage::TotalScheduler>(std::move(choices));
+            }
             // If we allocated auxiliary memory, we need to dispose of it now.
             if (allocatedAuxMemory) {
                 this->deallocateAuxMemory(MinMaxLinearEquationSolverOperation::SolveEquations);
             }
+            
+           
+            
 
             if(status == Status::Converged || status == Status::TerminatedEarly) {
                 return true;
