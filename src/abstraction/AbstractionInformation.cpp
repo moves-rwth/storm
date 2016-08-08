@@ -9,7 +9,7 @@ namespace storm {
     namespace abstraction {
 
         template<storm::dd::DdType DdType>
-        AbstractionInformation<DdType>::AbstractionInformation(storm::expressions::ExpressionManager& expressionManager, std::shared_ptr<storm::dd::DdManager<DdType>> ddManager) : expressionManager(expressionManager), ddManager(ddManager), allPredicateIdentities(ddManager->getBddZero()) {
+        AbstractionInformation<DdType>::AbstractionInformation(storm::expressions::ExpressionManager& expressionManager, std::shared_ptr<storm::dd::DdManager<DdType>> ddManager) : expressionManager(expressionManager), ddManager(ddManager), allPredicateIdentities(ddManager->getBddOne()) {
             // Intentionally left empty.
         }
         
@@ -133,21 +133,21 @@ namespace storm {
             STORM_LOG_THROW(player1Variables.empty() && player2Variables.empty() && probabilisticBranchingVariables.empty(), storm::exceptions::InvalidOperationException, "Variables have already been created.");
             
             for (uint64_t index = 0; index < player1VariableCount; ++index) {
-                storm::expressions::Variable newVariable = ddManager->addMetaVariable("pl1" + std::to_string(index)).first;
+                storm::expressions::Variable newVariable = ddManager->addMetaVariable("pl1_" + std::to_string(index)).first;
                 player1Variables.push_back(newVariable);
                 player1VariableBdds.push_back(ddManager->getEncoding(newVariable, 1));
             }
             STORM_LOG_DEBUG("Created " << player1VariableCount << " player 1 variables.");
 
             for (uint64_t index = 0; index < player2VariableCount; ++index) {
-                storm::expressions::Variable newVariable = ddManager->addMetaVariable("pl2" + std::to_string(index)).first;
+                storm::expressions::Variable newVariable = ddManager->addMetaVariable("pl2_" + std::to_string(index)).first;
                 player2Variables.push_back(newVariable);
                 player2VariableBdds.push_back(ddManager->getEncoding(newVariable, 1));
             }
             STORM_LOG_DEBUG("Created " << player2VariableCount << " player 2 variables.");
 
             for (uint64_t index = 0; index < probabilisticBranchingVariableCount; ++index) {
-                storm::expressions::Variable newVariable = ddManager->addMetaVariable("pb" + std::to_string(index)).first;
+                storm::expressions::Variable newVariable = ddManager->addMetaVariable("pb_" + std::to_string(index)).first;
                 probabilisticBranchingVariables.push_back(newVariable);
                 probabilisticBranchingVariableBdds.push_back(ddManager->getEncoding(newVariable, 1));
             }
@@ -172,7 +172,7 @@ namespace storm {
         template<storm::dd::DdType DdType>
         storm::dd::Bdd<DdType> AbstractionInformation<DdType>::getPlayer2ZeroCube(uint_fast64_t numberOfVariables, uint_fast64_t offset) const {
             storm::dd::Bdd<DdType> result = ddManager->getBddOne();
-            for (uint_fast64_t index = offset; index < numberOfVariables - offset; ++index) {
+            for (uint_fast64_t index = offset; index < numberOfVariables; ++index) {
                 result &= player2VariableBdds[index];
             }
             STORM_LOG_ASSERT(!result.isZero(), "Zero cube must not be zero.");
@@ -185,13 +185,28 @@ namespace storm {
         }
         
         template<storm::dd::DdType DdType>
+        std::set<storm::expressions::Variable> AbstractionInformation<DdType>::getPlayer1VariableSet(uint_fast64_t count) const {
+            return std::set<storm::expressions::Variable>(player1Variables.begin(), player1Variables.begin() + count);
+        }
+        
+        template<storm::dd::DdType DdType>
         std::vector<storm::expressions::Variable> const& AbstractionInformation<DdType>::getPlayer2Variables() const {
             return player2Variables;
         }
         
         template<storm::dd::DdType DdType>
+        std::set<storm::expressions::Variable> AbstractionInformation<DdType>::getPlayer2VariableSet(uint_fast64_t count) const {
+            return std::set<storm::expressions::Variable>(player2Variables.begin(), player2Variables.begin() + count);
+        }
+        
+        template<storm::dd::DdType DdType>
         std::vector<storm::expressions::Variable> const& AbstractionInformation<DdType>::getProbabilisticBranchingVariables() const {
             return probabilisticBranchingVariables;
+        }
+        
+        template<storm::dd::DdType DdType>
+        std::set<storm::expressions::Variable> AbstractionInformation<DdType>::getProbabilisticBranchingVariableSet(uint_fast64_t count) const {
+            return std::set<storm::expressions::Variable>(probabilisticBranchingVariables.begin(), probabilisticBranchingVariables.begin() + count);
         }
         
         template<storm::dd::DdType DdType>

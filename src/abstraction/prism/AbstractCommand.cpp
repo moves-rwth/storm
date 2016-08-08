@@ -297,7 +297,7 @@ namespace storm {
                 for (uint_fast64_t updateIndex = 0; updateIndex < command.get().getNumberOfUpdates(); ++updateIndex) {
                     result += this->getAbstractionInformation().encodeProbabilisticChoice(updateIndex, this->getAbstractionInformation().getProbabilisticBranchingVariableCount()).template toAdd<ValueType>() * this->getAbstractionInformation().getDdManager().getConstant(evaluator.asRational(command.get().getUpdate(updateIndex).getLikelihoodExpression()));
                 }
-                result *= this->getAbstractionInformation().encodePlayer2Choice(command.get().getGlobalIndex(), this->getAbstractionInformation().getPlayer2VariableCount()).template toAdd<ValueType>();
+                result *= this->getAbstractionInformation().encodePlayer1Choice(command.get().getGlobalIndex(), this->getAbstractionInformation().getPlayer1VariableCount()).template toAdd<ValueType>();
                 return result;
             }
             

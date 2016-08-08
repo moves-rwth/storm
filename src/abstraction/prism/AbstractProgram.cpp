@@ -17,16 +17,11 @@ namespace storm {
         namespace prism {
             
             template <storm::dd::DdType DdType, typename ValueType>
-            AbstractProgram<DdType, ValueType>::~AbstractProgram() {
-                std::cout << "destructing abs program" << std::endl;
-            }
-            
-            template <storm::dd::DdType DdType, typename ValueType>
             AbstractProgram<DdType, ValueType>::AbstractProgram(storm::expressions::ExpressionManager& expressionManager, storm::prism::Program const& program,
                                                                 std::vector<storm::expressions::Expression> const& initialPredicates,
                                                                 std::unique_ptr<storm::utility::solver::SmtSolverFactory>&& smtSolverFactory,
                                                                 bool addAllGuards)
-            : program(program), smtSolverFactory(std::move(smtSolverFactory)), modules(), abstractionInformation(expressionManager), initialStateAbstractor(abstractionInformation, program.getAllExpressionVariables(), {program.getInitialConstruct().getInitialStatesExpression()}, *this->smtSolverFactory), addedAllGuards(addAllGuards), bottomStateAbstractor(abstractionInformation, program.getAllExpressionVariables(), program.getAllGuards(true), *this->smtSolverFactory), currentGame(nullptr) {
+            : program(program), smtSolverFactory(std::move(smtSolverFactory)), abstractionInformation(expressionManager), modules(), initialStateAbstractor(abstractionInformation, program.getAllExpressionVariables(), {program.getInitialConstruct().getInitialStatesExpression()}, *this->smtSolverFactory), addedAllGuards(addAllGuards), bottomStateAbstractor(abstractionInformation, program.getAllExpressionVariables(), program.getAllGuards(true), *this->smtSolverFactory), currentGame(nullptr) {
                 
                 // For now, we assume that there is a single module. If the program has more than one module, it needs
                 // to be flattened before the procedure.
@@ -38,6 +33,8 @@ namespace storm {
                 }
                 for (auto const& range : this->program.get().getAllRangeExpressions()) {
                     abstractionInformation.addConstraint(range);
+                    initialStateAbstractor.constrain(range);
+                    bottomStateAbstractor.constrain(range);
                 }
                 
                 uint_fast64_t totalNumberOfCommands = 0;
@@ -61,13 +58,14 @@ namespace storm {
                 abstractionInformation.createEncodingVariables(static_cast<uint_fast64_t>(std::ceil(std::log2(totalNumberOfCommands))), 100, static_cast<uint_fast64_t>(std::ceil(std::log2(maximalUpdateCount))));
                 
                 // Now that we have created all other DD variables, we create the DD variables for the predicates.
+                std::vector<uint_fast64_t> allPredicateIndices;
                 if (addAllGuards) {
                     for (auto const& guard : allGuards) {
-                        abstractionInformation.addPredicate(guard);
+                        allPredicateIndices.push_back(abstractionInformation.addPredicate(guard));
                     }
                 }
                 for (auto const& predicate : initialPredicates) {
-                    abstractionInformation.addPredicate(predicate);
+                    allPredicateIndices.push_back(abstractionInformation.addPredicate(predicate));
                 }
                 
                 // For each module of the concrete program, we create an abstract counterpart.
@@ -75,13 +73,15 @@ namespace storm {
                     this->modules.emplace_back(module, abstractionInformation, *this->smtSolverFactory);
                 }
                 
+                // Refine the state abstractors using the initial predicates.
+                initialStateAbstractor.refine(allPredicateIndices);
+                bottomStateAbstractor.refine(allPredicateIndices);
+                
                 // Retrieve the command-update probability ADD, so we can multiply it with the abstraction BDD later.
                 commandUpdateProbabilitiesAdd = modules.front().getCommandUpdateProbabilitiesAdd();
                 
                 // Finally, we build the game the first time.
                 currentGame = buildGame();
-                
-                std::cout << "abs module at " << &modules.front() << std::endl;
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
@@ -129,15 +129,17 @@ namespace storm {
                 std::pair<storm::dd::Bdd<DdType>, uint_fast64_t> gameBdd = modules.front().getAbstractBdd();
 
                 // Construct a set of all unnecessary variables, so we can abstract from it.
-                std::set<storm::expressions::Variable> variablesToAbstract(abstractionInformation.getPlayer1Variables().begin(), abstractionInformation.getPlayer1Variables().end());
-                variablesToAbstract.insert(abstractionInformation.getPlayer2Variables().begin(), abstractionInformation.getPlayer2Variables().end());
-                variablesToAbstract.insert(abstractionInformation.getProbabilisticBranchingVariables().begin(), abstractionInformation.getProbabilisticBranchingVariables().begin() + gameBdd.second);
-
+                std::set<storm::expressions::Variable> variablesToAbstract(abstractionInformation.getPlayer1VariableSet(abstractionInformation.getPlayer1VariableCount()));
+                auto player2Variables = abstractionInformation.getPlayer2VariableSet(gameBdd.second);
+                variablesToAbstract.insert(player2Variables.begin(), player2Variables.end());
+                auto probBranchingVariables = abstractionInformation.getProbabilisticBranchingVariableSet(abstractionInformation.getProbabilisticBranchingVariableCount());
+                variablesToAbstract.insert(probBranchingVariables.begin(), probBranchingVariables.end());
+                
                 // Do a reachability analysis on the raw transition relation.
                 storm::dd::Bdd<DdType> transitionRelation = gameBdd.first.existsAbstract(variablesToAbstract);
                 storm::dd::Bdd<DdType> initialStates = initialStateAbstractor.getAbstractStates();
                 storm::dd::Bdd<DdType> reachableStates = this->getReachableStates(initialStates, transitionRelation);
-
+                
                 // Determine the bottom states.
                 storm::dd::Bdd<DdType> bottomStates;
                 if (addedAllGuards) {

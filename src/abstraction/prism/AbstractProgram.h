@@ -49,7 +49,6 @@ namespace storm {
                 AbstractProgram& operator=(AbstractProgram const&) = default;
                 AbstractProgram(AbstractProgram&&) = default;
                 AbstractProgram& operator=(AbstractProgram&&) = default;
-                ~AbstractProgram();
                 
                 /*!
                  * Uses the current set of predicates to derive the abstract menu game in the form of an ADD.
@@ -98,12 +97,12 @@ namespace storm {
                 // A factory that can be used to create new SMT solvers.
                 std::unique_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory;
                 
+                // An object containing all information about the abstraction like predicates and the corresponding DDs.
+                AbstractionInformation<DdType> abstractionInformation;
+                
                 // The abstract modules of the abstract program.
                 std::vector<AbstractModule<DdType, ValueType>> modules;
                 
-                // An object containing all information about the abstraction like predicates and the corresponding DDs.
-                AbstractionInformation<DdType> abstractionInformation;
-
                 // A state-set abstractor used to determine the initial states of the abstraction.
                 StateSetAbstractor<DdType, ValueType> initialStateAbstractor;
                 

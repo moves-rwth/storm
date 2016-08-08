@@ -28,11 +28,6 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            AbstractModule<DdType, ValueType>::~AbstractModule() {
-                std::cout << "destructing abs module at " << this << std::endl;
-            }
-            
-            template <storm::dd::DdType DdType, typename ValueType>
             std::pair<storm::dd::Bdd<DdType>, uint_fast64_t> AbstractModule<DdType, ValueType>::getAbstractBdd() {
                 // First, we retrieve the abstractions of all commands.
                 std::vector<std::pair<storm::dd::Bdd<DdType>, uint_fast64_t>> commandDdsAndUsedOptionVariableCounts;

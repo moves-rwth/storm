@@ -61,6 +61,14 @@ namespace storm {
             void refine(std::vector<uint_fast64_t> const& newPredicateIndices);
             
             /*!
+             * Constrains the abstract states with the given expression.
+             * Note that all constaints must be added before the abstractor is used to retrieve the abstract states.
+             *
+             * @param constraint The constraint to add.
+             */
+            void constrain(storm::expressions::Expression const& constraint);
+            
+            /*!
              * Constraints the abstract states with the given BDD.
              *
              * @param newConstraint The BDD used as the constraint.

@@ -31,12 +31,10 @@ namespace storm {
                  */
                 AbstractModule(storm::prism::Module const& module, AbstractionInformation<DdType>& abstractionInformation, storm::utility::solver::SmtSolverFactory const& smtSolverFactory);
                 
-                AbstractModule(AbstractModule const&) = delete;
-                AbstractModule& operator=(AbstractModule const&) = delete;
+                AbstractModule(AbstractModule const&) = default;
+                AbstractModule& operator=(AbstractModule const&) = default;
                 AbstractModule(AbstractModule&&) = default;
                 AbstractModule& operator=(AbstractModule&&) = default;
-                
-                ~AbstractModule();
                 
                 /*!
                  * Refines the abstract module with the given predicates.

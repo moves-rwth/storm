@@ -215,6 +215,14 @@ namespace storm {
             std::vector<storm::expressions::Variable> const& getPlayer1Variables() const;
             
             /*!
+             * Retrieves the set of player 1 variables.
+             *
+             * @param count The number of player 1 variables to include.
+             * @return The set of player 1 variables.
+             */
+            std::set<storm::expressions::Variable> getPlayer1VariableSet(uint_fast64_t count) const;
+            
+            /*!
              * Retrieves the number of player 1 variables.
              *
              * @return The number of player 1 variables.
@@ -236,11 +244,27 @@ namespace storm {
             std::size_t getPlayer2VariableCount() const;
 
             /*!
+             * Retrieves the set of player 2 variables.
+             *
+             * @param count The number of player 2 variables to include.
+             * @return The set of player 2 variables.
+             */
+            std::set<storm::expressions::Variable> getPlayer2VariableSet(uint_fast64_t count) const;
+
+            /*!
              * Retrieves the meta variables associated with the probabilistic branching.
              *
              * @return The meta variables associated with the probabilistic branching.
              */
             std::vector<storm::expressions::Variable> const& getProbabilisticBranchingVariables() const;
+
+            /*!
+             * Retrieves the set of probabilistic branching variables.
+             *
+             * @param count The number of probabilistic branching variables to include.
+             * @return The set of probabilistic branching variables.
+             */
+            std::set<storm::expressions::Variable> getProbabilisticBranchingVariableSet(uint_fast64_t count) const;
 
             /*!
              * Retrieves the number of probabilistic branching variables.
