@@ -8,7 +8,7 @@ namespace storm {
         namespace prism {
             
             template <storm::dd::DdType DdType, typename ValueType>
-            PrismMenuGameAbstractor<DdType, ValueType>::PrismMenuGameAbstractor(storm::expressions::ExpressionManager& expressionManager, storm::prism::Program const& program, std::vector<storm::expressions::Expression> const& initialPredicates, std::unique_ptr<storm::utility::solver::SmtSolverFactory>&& smtSolverFactory) : abstractProgram(expressionManager, program, initialPredicates, std::move(smtSolverFactory), storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isAddAllGuardsSet()) {
+            PrismMenuGameAbstractor<DdType, ValueType>::PrismMenuGameAbstractor(storm::expressions::ExpressionManager& expressionManager, storm::prism::Program const& program, std::vector<storm::expressions::Expression> const& initialPredicates, storm::utility::solver::SmtSolverFactory const& smtSolverFactory) : abstractProgram(expressionManager, program, initialPredicates, std::move(smtSolverFactory), storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isAddAllGuardsSet()) {
                 // Intentionally left empty.
             }
             

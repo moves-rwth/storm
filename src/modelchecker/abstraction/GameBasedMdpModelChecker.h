@@ -21,7 +21,7 @@ namespace storm {
              * @param program The program that implicitly specifies the model to check.
              * @param smtSolverFactory A factory used to create SMT solver when necessary.
              */
-            explicit GameBasedMdpModelChecker(storm::prism::Program const& program, std::unique_ptr<storm::utility::solver::SmtSolverFactory>&& smtSolverFactory = std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>());
+            explicit GameBasedMdpModelChecker(storm::expressions::ExpressionManager& expressionManager, storm::prism::Program const& program, std::unique_ptr<storm::utility::solver::SmtSolverFactory>&& smtSolverFactory = std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>());
             
             virtual ~GameBasedMdpModelChecker() override;
                         
@@ -41,6 +41,9 @@ namespace storm {
             // The preprocessed program that contains only one module and otherwhise corresponds to the semantics of the
             // original program.
             storm::prism::Program preprocessedProgram;
+            
+            /// The expression manager over which to build expressions during the abstraction.
+            storm::expressions::ExpressionManager& expressionManager;
             
             // A factory that is used for creating SMT solvers when needed.
             std::unique_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory;

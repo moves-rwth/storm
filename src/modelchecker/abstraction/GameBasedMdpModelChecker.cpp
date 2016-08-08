@@ -1,6 +1,10 @@
 #include "src/modelchecker/abstraction/GameBasedMdpModelChecker.h"
 
+#include "src/models/symbolic/StandardRewardModel.h"
+
 #include "src/storage/expressions/ExpressionManager.h"
+
+#include "src/abstraction/prism/PrismMenuGameAbstractor.h"
 
 #include "src/logic/FragmentSpecification.h"
 
@@ -14,7 +18,7 @@
 namespace storm {
     namespace modelchecker {
         template<storm::dd::DdType Type, typename ValueType>
-        GameBasedMdpModelChecker<Type, ValueType>::GameBasedMdpModelChecker(storm::prism::Program const& program, std::unique_ptr<storm::utility::solver::SmtSolverFactory>&& smtSolverFactory) : originalProgram(program), smtSolverFactory(std::move(smtSolverFactory)) {
+        GameBasedMdpModelChecker<Type, ValueType>::GameBasedMdpModelChecker(storm::expressions::ExpressionManager& expressionManager, storm::prism::Program const& program, std::unique_ptr<storm::utility::solver::SmtSolverFactory>&& smtSolverFactory) : originalProgram(program), expressionManager(expressionManager), smtSolverFactory(std::move(smtSolverFactory)) {
             STORM_LOG_THROW(program.getModelType() == storm::prism::Program::ModelType::DTMC || program.getModelType() == storm::prism::Program::ModelType::MDP, storm::exceptions::NotSupportedException, "Currently only DTMCs/MDPs are supported by the game-based model checker.");
                         
             // Start by preparing the program. That is, we flatten the modules if there is more than one.
@@ -52,6 +56,13 @@ namespace storm {
         template<storm::dd::DdType Type, typename ValueType>
         std::unique_ptr<CheckResult> GameBasedMdpModelChecker<Type, ValueType>::performGameBasedAbstractionRefinement(CheckTask<storm::logic::Formula> const& checkTask, storm::expressions::Expression const& constraintExpression, storm::expressions::Expression const& targetStateExpression) {
             STORM_LOG_THROW(checkTask.isOnlyInitialStatesRelevantSet(), storm::exceptions::InvalidPropertyException, "The game-based abstraction refinement model checker can only compute the result for the initial states.");
+
+            std::vector<storm::expressions::Expression> initialPredicates;
+            initialPredicates.push_back(targetStateExpression);
+            if (!constraintExpression.isTrue() && !constraintExpression.isFalse()) {
+                initialPredicates.push_back(constraintExpression);
+            }
+            storm::abstraction::prism::PrismMenuGameAbstractor<Type, ValueType> abstractor(expressionManager, preprocessedProgram, initialPredicates, *smtSolverFactory);
             
             // 1. build initial abstraction based on the the constraint expression (if not 'true') and the target state expression.
             

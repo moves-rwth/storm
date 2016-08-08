@@ -11,7 +11,7 @@ namespace storm {
             template <storm::dd::DdType DdType, typename ValueType>
             class PrismMenuGameAbstractor : public MenuGameAbstractor<DdType, ValueType> {
             public:
-                PrismMenuGameAbstractor(storm::expressions::ExpressionManager& expressionManager, storm::prism::Program const& program, std::vector<storm::expressions::Expression> const& initialPredicates, std::unique_ptr<storm::utility::solver::SmtSolverFactory>&& smtSolverFactory = std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>());
+                PrismMenuGameAbstractor(storm::expressions::ExpressionManager& expressionManager, storm::prism::Program const& program, std::vector<storm::expressions::Expression> const& initialPredicates, storm::utility::solver::SmtSolverFactory const& smtSolverFactory);
                 
                 virtual storm::abstraction::MenuGame<DdType, ValueType> abstract() override;
                 virtual void refine(std::vector<storm::expressions::Expression> const& predicates) override;

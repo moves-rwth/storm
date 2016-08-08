@@ -7,6 +7,8 @@
 #include "src/abstraction/MenuGame.h"
 #include "src/abstraction/prism/AbstractModule.h"
 
+#include "src/storage/dd/Add.h"
+
 #include "src/storage/expressions/Expression.h"
 
 namespace storm {
