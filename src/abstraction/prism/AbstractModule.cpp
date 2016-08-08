@@ -1,7 +1,6 @@
 #include "src/abstraction/prism/AbstractModule.h"
 
-#include "src/abstraction/AbstractionExpressionInformation.h"
-#include "src/abstraction/AbstractionDdInformation.h"
+#include "src/abstraction/AbstractionInformation.h"
 
 #include "src/storage/dd/DdManager.h"
 #include "src/storage/dd/Add.h"
@@ -13,11 +12,11 @@ namespace storm {
         namespace prism {
             
             template <storm::dd::DdType DdType, typename ValueType>
-            AbstractModule<DdType, ValueType>::AbstractModule(storm::prism::Module const& module, AbstractionExpressionInformation& expressionInformation, AbstractionDdInformation<DdType, ValueType> const& ddInformation, storm::utility::solver::SmtSolverFactory const& smtSolverFactory) : smtSolverFactory(smtSolverFactory), ddInformation(ddInformation), commands(), module(module) {
+            AbstractModule<DdType, ValueType>::AbstractModule(storm::prism::Module const& module, AbstractionInformation<DdType>& abstractionInformation, storm::utility::solver::SmtSolverFactory const& smtSolverFactory) : smtSolverFactory(smtSolverFactory), abstractionInformation(abstractionInformation), commands(), module(module) {
                 
                 // For each concrete command, we create an abstract counterpart.
                 for (auto const& command : module.getCommands()) {
-                    commands.emplace_back(command, expressionInformation, ddInformation, smtSolverFactory);
+                    commands.emplace_back(command, abstractionInformation, smtSolverFactory);
                 }
             }
             
@@ -40,20 +39,25 @@ namespace storm {
                 
                 // Then, we build the module BDD by adding the single command DDs. We need to make sure that all command
                 // DDs use the same amount DD variable encoding the choices of player 2.
-                storm::dd::Bdd<DdType> result = ddInformation.manager->getBddZero();
+                storm::dd::Bdd<DdType> result = this->getAbstractionInformation().getDdManager().getBddZero();
                 for (auto const& commandDd : commandDdsAndUsedOptionVariableCounts) {
-                    result |= commandDd.first && ddInformation.getMissingOptionVariableCube(commandDd.second, maximalNumberOfUsedOptionVariables);
+                    result |= commandDd.first && this->getAbstractionInformation().getPlayer2ZeroCube(maximalNumberOfUsedOptionVariables, commandDd.second);
                 }
                 return std::make_pair(result, maximalNumberOfUsedOptionVariables);
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
             storm::dd::Add<DdType, ValueType> AbstractModule<DdType, ValueType>::getCommandUpdateProbabilitiesAdd() const {
-                storm::dd::Add<DdType, ValueType> result = ddInformation.manager->template getAddZero<ValueType>();
+                storm::dd::Add<DdType, ValueType> result = this->getAbstractionInformation().getDdManager().template getAddZero<ValueType>();
                 for (auto const& command : commands) {
                     result += command.getCommandUpdateProbabilitiesAdd();
                 }
                 return result;
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
+            AbstractionInformation<DdType> const& AbstractModule<DdType, ValueType>::getAbstractionInformation() const {
+                return abstractionInformation.get();
             }
             
             template class AbstractModule<storm::dd::DdType::CUDD, double>;

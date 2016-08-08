@@ -2,8 +2,7 @@
 
 #include "src/storage/dd/DdType.h"
 
-#include "src/abstraction/AbstractionDdInformation.h"
-#include "src/abstraction/AbstractionExpressionInformation.h"
+#include "src/abstraction/AbstractionInformation.h"
 #include "src/abstraction/StateSetAbstractor.h"
 #include "src/abstraction/MenuGame.h"
 #include "src/abstraction/prism/AbstractModule.h"
@@ -46,6 +45,11 @@ namespace storm {
                  */
                 AbstractProgram(storm::expressions::ExpressionManager& expressionManager, storm::prism::Program const& program, std::vector<storm::expressions::Expression> const& initialPredicates, std::unique_ptr<storm::utility::solver::SmtSolverFactory>&& smtSolverFactory = std::make_unique<storm::utility::solver::SmtSolverFactory>(), bool addAllGuards = false);
                 
+                AbstractProgram(AbstractProgram const&) = default;
+                AbstractProgram& operator=(AbstractProgram const&) = default;
+                AbstractProgram(AbstractProgram&&) = default;
+                AbstractProgram& operator=(AbstractProgram&&) = default;
+                
                 /*!
                  * Uses the current set of predicates to derive the abstract menu game in the form of an ADD.
                  *
@@ -87,20 +91,17 @@ namespace storm {
                  */
                 std::unique_ptr<MenuGame<DdType, ValueType>> buildGame();
                 
+                // The concrete program this abstract program refers to.
+                std::reference_wrapper<storm::prism::Program const> program;
+
                 // A factory that can be used to create new SMT solvers.
                 std::unique_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory;
                 
-                // A struct containing all DD-related information like variables and managers.
-                AbstractionDdInformation<DdType, ValueType> ddInformation;
-                
-                // A struct containing all expression-related information like variables, managers and the predicates.
-                AbstractionExpressionInformation expressionInformation;
+                // An object containing all information about the abstraction like predicates and the corresponding DDs.
+                AbstractionInformation<DdType> abstractionInformation;
                 
                 // The abstract modules of the abstract program.
                 std::vector<AbstractModule<DdType, ValueType>> modules;
-                
-                // The concrete program this abstract program refers to.
-                std::reference_wrapper<storm::prism::Program const> program;
                 
                 // A state-set abstractor used to determine the initial states of the abstraction.
                 StateSetAbstractor<DdType, ValueType> initialStateAbstractor;
