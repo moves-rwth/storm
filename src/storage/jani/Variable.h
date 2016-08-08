@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <string>
+#include <boost/optional.hpp>
 
 #include "src/storage/expressions/Variable.h"
 #include "src/storage/expressions/Expression.h"
@@ -16,7 +17,12 @@ namespace storm {
         class Variable {
         public:
             /*!
-             * Creates a new variable.
+             * Creates a new variable with initial value construct
+             */
+            Variable(std::string const& name, storm::expressions::Variable const& variable, storm::expressions::Expression const& init, bool transient = false);
+
+            /*!
+             * Creates a new variable without initial value construct.
              */
             Variable(std::string const& name, storm::expressions::Variable const& variable, bool transient = false);
             
@@ -29,6 +35,20 @@ namespace storm {
              * Retrieves the name of the variable.
              */
             std::string const& getName() const;
+
+            /*!
+             * Retrieves whether an initial expression is set.
+             */
+            bool hasInitExpression() const;
+
+            /*!
+             * Retrieves the initial expression
+             * Should only be called if an initial expression is set for this variable.
+             *
+             * @see hasInitExpression()
+             */
+            storm::expressions::Expression const& getInitExpression() const;
+
                         
             // Methods to determine the type of the variable.
             virtual bool isBooleanVariable() const;
@@ -54,6 +74,9 @@ namespace storm {
 
             /// Whether this is a transient variable.
             bool transient;
+
+            /// Expression for initial values
+            boost::optional<storm::expressions::Expression> init;
         };
         
     }

@@ -207,7 +207,16 @@ namespace storm {
             if(tvarcount == 1) {
                 transientVar = getBoolean(variableStructure.at("transient"), "transient-attribute in variable '" + name  + "' (scope: " + scopeDescription + ")  ");
             }
+            size_t initvalcount = variableStructure.count("initial-value");
+            if(transientVar) {
+                STORM_LOG_THROW(initvalcount == 1, storm::exceptions::InvalidJaniException, "Initial value must be given once for transient variable '" + name + "' (scope: " + scopeDescription + ")  "+ name + "' (scope: " + scopeDescription + ")  ");
+            } else {
+                STORM_LOG_THROW(initvalcount <= 1, storm::exceptions::InvalidJaniException, "Initial value can be given at most one for variable " + name + "' (scope: " + scopeDescription + ")");
+            }
+            boost::optional<storm::expressions::Expression> initValue;
+            if(initvalcount == 1) {
 
+            }
             STORM_LOG_THROW(variableStructure.count("type") == 1, storm::exceptions::InvalidJaniException, "Variable '" + name + "' (scope: " + scopeDescription + ") must have a (single) type-declaration.");
 
             if(variableStructure.at("type").is_object()) {

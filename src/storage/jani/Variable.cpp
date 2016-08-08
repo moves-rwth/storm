@@ -6,11 +6,16 @@
 
 namespace storm {
     namespace jani {
-        
-        Variable::Variable(std::string const& name, storm::expressions::Variable const& variable, bool transient) : name(name), variable(variable), transient(transient) {
+
+        Variable::Variable(std::string const& name, storm::expressions::Variable const& variable, storm::expressions::Expression const& init, bool transient) : name(name), variable(variable),  transient(transient), init(init) {
             // Intentionally left empty.
         }
-        
+
+        Variable::Variable(std::string const& name, storm::expressions::Variable const& variable, bool transient) : name(name), variable(variable), transient(transient), init() {
+            // Intentionally left empty.
+        }
+
+
         storm::expressions::Variable const& Variable::getExpressionVariable() const {
             return variable;
         }
@@ -33,6 +38,14 @@ namespace storm {
 
         bool Variable::isTransientVariable() const {
             return transient;
+        }
+
+        bool Variable::hasInitExpression() const {
+            return static_cast<bool>(init);
+        }
+
+        storm::expressions::Expression const& Variable::getInitExpression() const {
+            return this->init.get();
         }
         
         BooleanVariable& Variable::asBooleanVariable() {
