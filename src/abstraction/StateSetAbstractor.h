@@ -8,6 +8,7 @@
 
 #include "src/storage/dd/DdType.h"
 
+#include "src/utility/solver.h"
 #include "src/solver/SmtSolver.h"
 
 #include "src/abstraction/LocalExpressionInformation.h"
@@ -51,7 +52,7 @@ namespace storm {
              * supposed to abstract.
              * @param smtSolverFactory A factory that can create new SMT solvers.
              */
-            StateSetAbstractor(AbstractionInformation<DdType>& abstractionInformation, std::set<storm::expressions::Variable> const& allVariables, std::vector<storm::expressions::Expression> const& statePredicates, storm::utility::solver::SmtSolverFactory const& smtSolverFactory);
+            StateSetAbstractor(AbstractionInformation<DdType>& abstractionInformation, std::set<storm::expressions::Variable> const& allVariables, std::vector<storm::expressions::Expression> const& statePredicates, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
             
             /*!
              * Refines the abstractor by making the given predicates new abstract predicates.

@@ -20,11 +20,11 @@ namespace storm {
         namespace prism {
             
             template <storm::dd::DdType DdType, typename ValueType>
-            AbstractProgram<DdType, ValueType>::AbstractProgram(storm::expressions::ExpressionManager& expressionManager, storm::prism::Program const& program,
+            AbstractProgram<DdType, ValueType>::AbstractProgram(storm::prism::Program const& program,
                                                                 std::vector<storm::expressions::Expression> const& initialPredicates,
-                                                                std::unique_ptr<storm::utility::solver::SmtSolverFactory>&& smtSolverFactory,
+                                                                std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory,
                                                                 bool addAllGuards)
-            : program(program), smtSolverFactory(std::move(smtSolverFactory)), abstractionInformation(expressionManager), modules(), initialStateAbstractor(abstractionInformation, program.getAllExpressionVariables(), {program.getInitialConstruct().getInitialStatesExpression()}, *this->smtSolverFactory), addedAllGuards(addAllGuards), bottomStateAbstractor(abstractionInformation, program.getAllExpressionVariables(), program.getAllGuards(true), *this->smtSolverFactory), currentGame(nullptr) {
+            : program(program), smtSolverFactory(smtSolverFactory), abstractionInformation(program.getManager()), modules(), initialStateAbstractor(abstractionInformation, program.getAllExpressionVariables(), {program.getInitialConstruct().getInitialStatesExpression()}, this->smtSolverFactory), addedAllGuards(addAllGuards), bottomStateAbstractor(abstractionInformation, program.getAllExpressionVariables(), program.getAllGuards(true), this->smtSolverFactory), currentGame(nullptr) {
                 
                 // For now, we assume that there is a single module. If the program has more than one module, it needs
                 // to be flattened before the procedure.

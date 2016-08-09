@@ -7,6 +7,8 @@
 #include "src/abstraction/MenuGame.h"
 #include "src/abstraction/prism/AbstractModule.h"
 
+#include "src/storage/dd/Add.h"
+
 #include "src/storage/expressions/Expression.h"
 
 namespace storm {
@@ -43,7 +45,7 @@ namespace storm {
                  * @param smtSolverFactory A factory that is to be used for creating new SMT solvers.
                  * @param addAllGuards A flag that indicates whether all guards of the program should be added to the initial set of predicates.
                  */
-                AbstractProgram(storm::expressions::ExpressionManager& expressionManager, storm::prism::Program const& program, std::vector<storm::expressions::Expression> const& initialPredicates, std::unique_ptr<storm::utility::solver::SmtSolverFactory>&& smtSolverFactory = std::make_unique<storm::utility::solver::SmtSolverFactory>(), bool addAllGuards = false);
+                AbstractProgram(storm::prism::Program const& program, std::vector<storm::expressions::Expression> const& initialPredicates, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>(), bool addAllGuards = false);
                 
                 AbstractProgram(AbstractProgram const&) = default;
                 AbstractProgram& operator=(AbstractProgram const&) = default;
@@ -95,7 +97,7 @@ namespace storm {
                 std::reference_wrapper<storm::prism::Program const> program;
 
                 // A factory that can be used to create new SMT solvers.
-                std::unique_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory;
+                std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory;
                 
                 // An object containing all information about the abstraction like predicates and the corresponding DDs.
                 AbstractionInformation<DdType> abstractionInformation;

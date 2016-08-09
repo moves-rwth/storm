@@ -1231,7 +1231,7 @@ namespace storm {
             return Program(this->manager, modelType, newConstants, getGlobalBooleanVariables(), getGlobalIntegerVariables(), getFormulas(), newModules, getActionNameToIndexMapping(), getRewardModels(), getLabels(), getInitialConstruct(), this->getOptionalSystemCompositionConstruct());
         }
         
-        Program Program::flattenModules(std::unique_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory) const {
+        Program Program::flattenModules(std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory) const {
             // If the current program has only one module, we can simply return a copy.
             if (this->getNumberOfModules() == 1) {
                 return Program(*this);
@@ -1512,11 +1512,7 @@ namespace storm {
             return this->indexToActionMap.rbegin()->first;
         }
         
-        storm::expressions::ExpressionManager const& Program::getManager() const {
-            return *this->manager;
-        }
-        
-        storm::expressions::ExpressionManager& Program::getManager() {
+        storm::expressions::ExpressionManager& Program::getManager() const {
             return *this->manager;
         }
         
