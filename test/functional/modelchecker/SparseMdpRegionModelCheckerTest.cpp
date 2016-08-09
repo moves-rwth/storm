@@ -19,6 +19,8 @@ TEST(SparseMdpRegionModelCheckerTest, two_dice_Prob) {
     std::string programFile = STORM_CPP_BASE_PATH "/examples/pmdp/two_dice/two_dice.nm";
     std::string formulaFile = STORM_CPP_BASE_PATH "/examples/pmdp/two_dice/two_dice.prctl"; //P<=0.17 [F \"doubles\" ]";
     std::string constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
+    
+    carl::VariablePool::getInstance().clear();
 
     storm::prism::Program program = storm::parseProgram(programFile);
     std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::parseFormulasForProgram(formulaFile, program);
@@ -26,7 +28,7 @@ TEST(SparseMdpRegionModelCheckerTest, two_dice_Prob) {
     auto const& regionSettings = storm::settings::getModule<storm::settings::modules::RegionSettings>();
     storm::modelchecker::region::SparseRegionModelCheckerSettings settings(regionSettings.getSampleMode(), regionSettings.getApproxMode(), regionSettings.getSmtMode());
     auto mdpModelchecker = std::make_shared<storm::modelchecker::region::SparseMdpRegionModelChecker<storm::models::sparse::Mdp<storm::RationalFunction>, double>>(model, settings);
-
+    mdpModelchecker->specifyFormula(formulas[0]);
 
     
     auto allSatRegion=storm::modelchecker::region::ParameterRegion<storm::RationalFunction>::parseRegion("0.495<=p1<=0.5,0.5<=p2<=0.505");
@@ -64,7 +66,8 @@ TEST(SparseMdpRegionModelCheckerTest, two_dice_Prob) {
     //test approximative method
     settings = storm::modelchecker::region::SparseRegionModelCheckerSettings(storm::settings::modules::RegionSettings::SampleMode::INSTANTIATE, storm::settings::modules::RegionSettings::ApproxMode::TESTFIRST, storm::settings::modules::RegionSettings::SmtMode::OFF);
     mdpModelchecker = std::make_shared<storm::modelchecker::region::SparseMdpRegionModelChecker<storm::models::sparse::Mdp<storm::RationalFunction>, double>>(model, settings);
-
+    mdpModelchecker->specifyFormula(formulas[0]);
+    
     ASSERT_TRUE(mdpModelchecker->getSettings().doApprox());
     ASSERT_TRUE(mdpModelchecker->getSettings().doSample());
     ASSERT_FALSE(mdpModelchecker->getSettings().doSmt());
@@ -84,6 +87,8 @@ TEST(SparseMdpRegionModelCheckerTest, coin_Prob) {
     std::string programFile = STORM_CPP_BASE_PATH "/examples/pmdp/coin2/coin2_2.pm";
     std::string formulaAsString = "P>0.25 [F \"finished\"&\"all_coins_equal_1\" ]";
     std::string constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
+    
+    carl::VariablePool::getInstance().clear();
 
     storm::prism::Program program = storm::parseProgram(programFile);
     std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::parseFormulasForProgram(formulaAsString, program);
@@ -91,7 +96,8 @@ TEST(SparseMdpRegionModelCheckerTest, coin_Prob) {
     auto const& regionSettings = storm::settings::getModule<storm::settings::modules::RegionSettings>();
     storm::modelchecker::region::SparseRegionModelCheckerSettings settings(regionSettings.getSampleMode(), regionSettings.getApproxMode(), regionSettings.getSmtMode());
     auto mdpModelchecker = std::make_shared<storm::modelchecker::region::SparseMdpRegionModelChecker<storm::models::sparse::Mdp<storm::RationalFunction>, double>>(model, settings);
-
+    mdpModelchecker->specifyFormula(formulas[0]);
+    
     //start testing
     auto allSatRegion=storm::modelchecker::region::ParameterRegion<storm::RationalFunction>::parseRegion("0.3<=p1<=0.45,0.2<=p2<=0.54");
     auto exBothRegion=storm::modelchecker::region::ParameterRegion<storm::RationalFunction>::parseRegion("0.4<=p1<=0.65,0.5<=p2<=0.7");
@@ -110,6 +116,7 @@ TEST(SparseMdpRegionModelCheckerTest, coin_Prob) {
     //test approximative method
     settings = storm::modelchecker::region::SparseRegionModelCheckerSettings(storm::settings::modules::RegionSettings::SampleMode::INSTANTIATE, storm::settings::modules::RegionSettings::ApproxMode::TESTFIRST, storm::settings::modules::RegionSettings::SmtMode::OFF);
     mdpModelchecker = std::make_shared<storm::modelchecker::region::SparseMdpRegionModelChecker<storm::models::sparse::Mdp<storm::RationalFunction>, double>>(model, settings);
+    mdpModelchecker->specifyFormula(formulas[0]);
     ASSERT_TRUE(mdpModelchecker->getSettings().doApprox());
     ASSERT_TRUE(mdpModelchecker->getSettings().doSample());
     ASSERT_FALSE(mdpModelchecker->getSettings().doSmt());
