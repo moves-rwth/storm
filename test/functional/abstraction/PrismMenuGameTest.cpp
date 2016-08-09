@@ -24,7 +24,7 @@ TEST(PrismMenuGame, DieAbstractionTest_Cudd) {
     
     initialPredicates.push_back(manager.getVariableExpression("s") < manager.integer(3));
     
-    storm::abstraction::prism::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program.getManager(), program, initialPredicates, std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>(), false);
+    storm::abstraction::prism::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program, initialPredicates, std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>(), false);
     
     storm::abstraction::MenuGame<storm::dd::DdType::CUDD, double> game = abstractProgram.getAbstractGame();
     
@@ -41,7 +41,7 @@ TEST(PrismMenuGame, DieAbstractionTest_Sylvan) {
     
     initialPredicates.push_back(manager.getVariableExpression("s") < manager.integer(3));
     
-    storm::abstraction::prism::AbstractProgram<storm::dd::DdType::Sylvan, double> abstractProgram(program.getManager(), program, initialPredicates, std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>(), false);
+    storm::abstraction::prism::AbstractProgram<storm::dd::DdType::Sylvan, double> abstractProgram(program, initialPredicates, std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>(), false);
     
     storm::abstraction::MenuGame<storm::dd::DdType::Sylvan, double> game = abstractProgram.getAbstractGame();
     
@@ -58,7 +58,7 @@ TEST(PrismMenuGame, DieAbstractionAndRefinementTest_Cudd) {
     
     initialPredicates.push_back(manager.getVariableExpression("s") < manager.integer(3));
     
-    storm::abstraction::prism::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program.getManager(), program, initialPredicates, std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>(), false);
+    storm::abstraction::prism::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program, initialPredicates, std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>(), false);
     
     ASSERT_NO_THROW(abstractProgram.refine({manager.getVariableExpression("s") == manager.integer(7)}));
 
@@ -77,7 +77,7 @@ TEST(PrismMenuGame, DieAbstractionAndRefinementTest_Sylvan) {
     
     initialPredicates.push_back(manager.getVariableExpression("s") < manager.integer(3));
     
-    storm::abstraction::prism::AbstractProgram<storm::dd::DdType::Sylvan, double> abstractProgram(program.getManager(), program, initialPredicates, std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>(), false);
+    storm::abstraction::prism::AbstractProgram<storm::dd::DdType::Sylvan, double> abstractProgram(program, initialPredicates, std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>(), false);
     
     ASSERT_NO_THROW(abstractProgram.refine({manager.getVariableExpression("s") == manager.integer(7)}));
     
@@ -111,7 +111,7 @@ TEST(PrismMenuGame, DieFullAbstractionTest_Cudd) {
     initialPredicates.push_back(manager.getVariableExpression("d") == manager.integer(5));
     initialPredicates.push_back(manager.getVariableExpression("d") == manager.integer(6));
 
-    storm::abstraction::prism::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program.getManager(), program, initialPredicates, std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>(), false);
+    storm::abstraction::prism::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program, initialPredicates, std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>(), false);
     
     storm::abstraction::MenuGame<storm::dd::DdType::CUDD, double> game = abstractProgram.getAbstractGame();
     
@@ -143,7 +143,7 @@ TEST(PrismMenuGame, DieFullAbstractionTest_Sylvan) {
     initialPredicates.push_back(manager.getVariableExpression("d") == manager.integer(5));
     initialPredicates.push_back(manager.getVariableExpression("d") == manager.integer(6));
     
-    storm::abstraction::prism::AbstractProgram<storm::dd::DdType::Sylvan, double> abstractProgram(program.getManager(), program, initialPredicates, std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>(), false);
+    storm::abstraction::prism::AbstractProgram<storm::dd::DdType::Sylvan, double> abstractProgram(program, initialPredicates, std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>(), false);
     
     storm::abstraction::MenuGame<storm::dd::DdType::Sylvan, double> game = abstractProgram.getAbstractGame();
     
@@ -161,7 +161,7 @@ TEST(PrismMenuGame, CrowdsAbstractionTest_Cudd) {
     
     initialPredicates.push_back(manager.getVariableExpression("phase") < manager.integer(3));
     
-    storm::abstraction::prism::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program.getManager(), program, initialPredicates, std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>(), false);
+    storm::abstraction::prism::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program, initialPredicates, std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>(), false);
     
     storm::abstraction::MenuGame<storm::dd::DdType::CUDD, double> game = abstractProgram.getAbstractGame();
     
@@ -179,7 +179,7 @@ TEST(PrismMenuGame, CrowdsAbstractionTest_Sylvan) {
     
     initialPredicates.push_back(manager.getVariableExpression("phase") < manager.integer(3));
     
-    storm::abstraction::prism::AbstractProgram<storm::dd::DdType::Sylvan, double> abstractProgram(program.getManager(), program, initialPredicates, std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>(), false);
+    storm::abstraction::prism::AbstractProgram<storm::dd::DdType::Sylvan, double> abstractProgram(program, initialPredicates, std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>(), false);
     
     storm::abstraction::MenuGame<storm::dd::DdType::Sylvan, double> game = abstractProgram.getAbstractGame();
     
@@ -197,7 +197,7 @@ TEST(PrismMenuGame, CrowdsAbstractionAndRefinementTest_Cudd) {
     
     initialPredicates.push_back(manager.getVariableExpression("phase") < manager.integer(3));
     
-    storm::abstraction::prism::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program.getManager(), program, initialPredicates, std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>(), false);
+    storm::abstraction::prism::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program, initialPredicates, std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>(), false);
     
     ASSERT_NO_THROW(abstractProgram.refine({manager.getVariableExpression("observe0") + manager.getVariableExpression("observe1") + manager.getVariableExpression("observe2") + manager.getVariableExpression("observe3") + manager.getVariableExpression("observe4") <= manager.getVariableExpression("runCount")}));
     
@@ -217,7 +217,7 @@ TEST(PrismMenuGame, CrowdsAbstractionAndRefinementTest_Sylvan) {
     
     initialPredicates.push_back(manager.getVariableExpression("phase") < manager.integer(3));
     
-    storm::abstraction::prism::AbstractProgram<storm::dd::DdType::Sylvan, double> abstractProgram(program.getManager(), program, initialPredicates, std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>(), false);
+    storm::abstraction::prism::AbstractProgram<storm::dd::DdType::Sylvan, double> abstractProgram(program, initialPredicates, std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>(), false);
     
     ASSERT_NO_THROW(abstractProgram.refine({manager.getVariableExpression("observe0") + manager.getVariableExpression("observe1") + manager.getVariableExpression("observe2") + manager.getVariableExpression("observe3") + manager.getVariableExpression("observe4") <= manager.getVariableExpression("runCount")}));
     
@@ -291,7 +291,7 @@ TEST(PrismMenuGame, CrowdsFullAbstractionTest_Cudd) {
     initialPredicates.push_back(manager.getVariableExpression("lastSeen") == manager.integer(3));
     initialPredicates.push_back(manager.getVariableExpression("lastSeen") == manager.integer(4));
     
-    storm::abstraction::prism::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program.getManager(), program, initialPredicates, std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>(), false);
+    storm::abstraction::prism::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program, initialPredicates, std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>(), false);
     
     storm::abstraction::MenuGame<storm::dd::DdType::CUDD, double> game = abstractProgram.getAbstractGame();
     
@@ -363,7 +363,7 @@ TEST(PrismMenuGame, CrowdsFullAbstractionTest_Sylvan) {
     initialPredicates.push_back(manager.getVariableExpression("lastSeen") == manager.integer(3));
     initialPredicates.push_back(manager.getVariableExpression("lastSeen") == manager.integer(4));
     
-    storm::abstraction::prism::AbstractProgram<storm::dd::DdType::Sylvan, double> abstractProgram(program.getManager(), program, initialPredicates, std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>(), false);
+    storm::abstraction::prism::AbstractProgram<storm::dd::DdType::Sylvan, double> abstractProgram(program, initialPredicates, std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>(), false);
     
     storm::abstraction::MenuGame<storm::dd::DdType::Sylvan, double> game = abstractProgram.getAbstractGame();
     
@@ -375,7 +375,7 @@ TEST(PrismMenuGame, CrowdsFullAbstractionTest_Sylvan) {
 TEST(PrismMenuGame, TwoDiceAbstractionTest_Cudd) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/two_dice.nm");
     program = program.substituteConstants();
-    program = program.flattenModules(std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>());
+    program = program.flattenModules(std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
     
     std::vector<storm::expressions::Expression> initialPredicates;
     storm::expressions::ExpressionManager& manager = program.getManager();
@@ -383,7 +383,7 @@ TEST(PrismMenuGame, TwoDiceAbstractionTest_Cudd) {
     initialPredicates.push_back(manager.getVariableExpression("s1") < manager.integer(3));
     initialPredicates.push_back(manager.getVariableExpression("s2") == manager.integer(0));
     
-    storm::abstraction::prism::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program.getManager(), program, initialPredicates, std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>(), false);
+    storm::abstraction::prism::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program, initialPredicates, std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>(), false);
     
     storm::abstraction::MenuGame<storm::dd::DdType::CUDD, double> game = abstractProgram.getAbstractGame();
     
@@ -395,7 +395,7 @@ TEST(PrismMenuGame, TwoDiceAbstractionTest_Cudd) {
 TEST(PrismMenuGame, TwoDiceAbstractionTest_Sylvan) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/two_dice.nm");
     program = program.substituteConstants();
-    program = program.flattenModules(std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>());
+    program = program.flattenModules(std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
     
     std::vector<storm::expressions::Expression> initialPredicates;
     storm::expressions::ExpressionManager& manager = program.getManager();
@@ -403,7 +403,7 @@ TEST(PrismMenuGame, TwoDiceAbstractionTest_Sylvan) {
     initialPredicates.push_back(manager.getVariableExpression("s1") < manager.integer(3));
     initialPredicates.push_back(manager.getVariableExpression("s2") == manager.integer(0));
     
-    storm::abstraction::prism::AbstractProgram<storm::dd::DdType::Sylvan, double> abstractProgram(program.getManager(), program, initialPredicates, std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>(), false);
+    storm::abstraction::prism::AbstractProgram<storm::dd::DdType::Sylvan, double> abstractProgram(program, initialPredicates, std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>(), false);
     
     storm::abstraction::MenuGame<storm::dd::DdType::Sylvan, double> game = abstractProgram.getAbstractGame();
     
@@ -415,7 +415,7 @@ TEST(PrismMenuGame, TwoDiceAbstractionTest_Sylvan) {
 TEST(PrismMenuGame, TwoDiceAbstractionAndRefinementTest_Cudd) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/two_dice.nm");
     program = program.substituteConstants();
-    program = program.flattenModules(std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>());
+    program = program.flattenModules(std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
     
     std::vector<storm::expressions::Expression> initialPredicates;
     storm::expressions::ExpressionManager& manager = program.getManager();
@@ -423,7 +423,7 @@ TEST(PrismMenuGame, TwoDiceAbstractionAndRefinementTest_Cudd) {
     initialPredicates.push_back(manager.getVariableExpression("s1") < manager.integer(3));
     initialPredicates.push_back(manager.getVariableExpression("s2") == manager.integer(0));
     
-    storm::abstraction::prism::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program.getManager(), program, initialPredicates, std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>(), false);
+    storm::abstraction::prism::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program, initialPredicates, std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>(), false);
     
     ASSERT_NO_THROW(abstractProgram.refine({manager.getVariableExpression("d1") + manager.getVariableExpression("d2") == manager.integer(7)}));
 
@@ -437,7 +437,7 @@ TEST(PrismMenuGame, TwoDiceAbstractionAndRefinementTest_Cudd) {
 TEST(PrismMenuGame, TwoDiceAbstractionAndRefinementTest_Sylvan) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/two_dice.nm");
     program = program.substituteConstants();
-    program = program.flattenModules(std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>());
+    program = program.flattenModules(std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
     
     std::vector<storm::expressions::Expression> initialPredicates;
     storm::expressions::ExpressionManager& manager = program.getManager();
@@ -445,7 +445,7 @@ TEST(PrismMenuGame, TwoDiceAbstractionAndRefinementTest_Sylvan) {
     initialPredicates.push_back(manager.getVariableExpression("s1") < manager.integer(3));
     initialPredicates.push_back(manager.getVariableExpression("s2") == manager.integer(0));
     
-    storm::abstraction::prism::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program.getManager(), program, initialPredicates, std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>(), false);
+    storm::abstraction::prism::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program, initialPredicates, std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>(), false);
     
     ASSERT_NO_THROW(abstractProgram.refine({manager.getVariableExpression("d1") + manager.getVariableExpression("d2") == manager.integer(7)}));
     
@@ -459,7 +459,7 @@ TEST(PrismMenuGame, TwoDiceAbstractionAndRefinementTest_Sylvan) {
 TEST(PrismMenuGame, TwoDiceFullAbstractionTest_Cudd) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/two_dice.nm");
     program = program.substituteConstants();
-    program = program.flattenModules(std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>());
+    program = program.flattenModules(std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
     
     std::vector<storm::expressions::Expression> initialPredicates;
     storm::expressions::ExpressionManager& manager = program.getManager();
@@ -498,7 +498,7 @@ TEST(PrismMenuGame, TwoDiceFullAbstractionTest_Cudd) {
     initialPredicates.push_back(manager.getVariableExpression("d2") == manager.integer(5));
     initialPredicates.push_back(manager.getVariableExpression("d2") == manager.integer(6));
     
-    storm::abstraction::prism::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program.getManager(), program, initialPredicates, std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>(), false);
+    storm::abstraction::prism::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program, initialPredicates, std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>(), false);
     
     storm::abstraction::MenuGame<storm::dd::DdType::CUDD, double> game = abstractProgram.getAbstractGame();
     
@@ -510,7 +510,7 @@ TEST(PrismMenuGame, TwoDiceFullAbstractionTest_Cudd) {
 TEST(PrismMenuGame, TwoDiceFullAbstractionTest_Sylvan) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/two_dice.nm");
     program = program.substituteConstants();
-    program = program.flattenModules(std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>());
+    program = program.flattenModules(std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
     
     std::vector<storm::expressions::Expression> initialPredicates;
     storm::expressions::ExpressionManager& manager = program.getManager();
@@ -549,7 +549,7 @@ TEST(PrismMenuGame, TwoDiceFullAbstractionTest_Sylvan) {
     initialPredicates.push_back(manager.getVariableExpression("d2") == manager.integer(5));
     initialPredicates.push_back(manager.getVariableExpression("d2") == manager.integer(6));
     
-    storm::abstraction::prism::AbstractProgram<storm::dd::DdType::Sylvan, double> abstractProgram(program.getManager(), program, initialPredicates, std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>(), false);
+    storm::abstraction::prism::AbstractProgram<storm::dd::DdType::Sylvan, double> abstractProgram(program, initialPredicates, std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>(), false);
     
     storm::abstraction::MenuGame<storm::dd::DdType::Sylvan, double> game = abstractProgram.getAbstractGame();
     
@@ -561,7 +561,7 @@ TEST(PrismMenuGame, TwoDiceFullAbstractionTest_Sylvan) {
 TEST(PrismMenuGame, WlanAbstractionTest_Cudd) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/wlan0-2-4.nm");
     program = program.substituteConstants();
-    program = program.flattenModules(std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>());
+    program = program.flattenModules(std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
     
     std::vector<storm::expressions::Expression> initialPredicates;
     storm::expressions::ExpressionManager& manager = program.getManager();
@@ -570,7 +570,7 @@ TEST(PrismMenuGame, WlanAbstractionTest_Cudd) {
     initialPredicates.push_back(manager.getVariableExpression("bc1") == manager.integer(0));
     initialPredicates.push_back(manager.getVariableExpression("c1") == manager.getVariableExpression("c2"));
     
-    storm::abstraction::prism::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program.getManager(), program, initialPredicates, std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>(), false);
+    storm::abstraction::prism::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program, initialPredicates, std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>(), false);
     
     storm::abstraction::MenuGame<storm::dd::DdType::CUDD, double> game = abstractProgram.getAbstractGame();
     
@@ -582,7 +582,7 @@ TEST(PrismMenuGame, WlanAbstractionTest_Cudd) {
 TEST(PrismMenuGame, WlanAbstractionTest_Sylvan) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/wlan0-2-4.nm");
     program = program.substituteConstants();
-    program = program.flattenModules(std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>());
+    program = program.flattenModules(std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
     
     std::vector<storm::expressions::Expression> initialPredicates;
     storm::expressions::ExpressionManager& manager = program.getManager();
@@ -591,7 +591,7 @@ TEST(PrismMenuGame, WlanAbstractionTest_Sylvan) {
     initialPredicates.push_back(manager.getVariableExpression("bc1") == manager.integer(0));
     initialPredicates.push_back(manager.getVariableExpression("c1") == manager.getVariableExpression("c2"));
     
-    storm::abstraction::prism::AbstractProgram<storm::dd::DdType::Sylvan, double> abstractProgram(program.getManager(), program, initialPredicates, std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>(), false);
+    storm::abstraction::prism::AbstractProgram<storm::dd::DdType::Sylvan, double> abstractProgram(program, initialPredicates, std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>(), false);
     
     storm::abstraction::MenuGame<storm::dd::DdType::Sylvan, double> game = abstractProgram.getAbstractGame();
     
@@ -603,7 +603,7 @@ TEST(PrismMenuGame, WlanAbstractionTest_Sylvan) {
 TEST(PrismMenuGame, WlanAbstractionAndRefinementTest_Cudd) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/wlan0-2-4.nm");
     program = program.substituteConstants();
-    program = program.flattenModules(std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>());
+    program = program.flattenModules(std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
     
     std::vector<storm::expressions::Expression> initialPredicates;
     storm::expressions::ExpressionManager& manager = program.getManager();
@@ -612,7 +612,7 @@ TEST(PrismMenuGame, WlanAbstractionAndRefinementTest_Cudd) {
     initialPredicates.push_back(manager.getVariableExpression("bc1") == manager.integer(0));
     initialPredicates.push_back(manager.getVariableExpression("c1") == manager.getVariableExpression("c2"));
     
-    storm::abstraction::prism::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program.getManager(), program, initialPredicates, std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>(), false);
+    storm::abstraction::prism::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program, initialPredicates, std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>(), false);
     
     ASSERT_NO_THROW(abstractProgram.refine({manager.getVariableExpression("backoff1") < manager.integer(7)}));
 
@@ -626,7 +626,7 @@ TEST(PrismMenuGame, WlanAbstractionAndRefinementTest_Cudd) {
 TEST(PrismMenuGame, WlanAbstractionAndRefinementTest_Sylvan) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/wlan0-2-4.nm");
     program = program.substituteConstants();
-    program = program.flattenModules(std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>());
+    program = program.flattenModules(std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
     
     std::vector<storm::expressions::Expression> initialPredicates;
     storm::expressions::ExpressionManager& manager = program.getManager();
@@ -635,7 +635,7 @@ TEST(PrismMenuGame, WlanAbstractionAndRefinementTest_Sylvan) {
     initialPredicates.push_back(manager.getVariableExpression("bc1") == manager.integer(0));
     initialPredicates.push_back(manager.getVariableExpression("c1") == manager.getVariableExpression("c2"));
     
-    storm::abstraction::prism::AbstractProgram<storm::dd::DdType::Sylvan, double> abstractProgram(program.getManager(), program, initialPredicates, std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>(), false);
+    storm::abstraction::prism::AbstractProgram<storm::dd::DdType::Sylvan, double> abstractProgram(program, initialPredicates, std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>(), false);
     
     ASSERT_NO_THROW(abstractProgram.refine({manager.getVariableExpression("backoff1") < manager.integer(7)}));
     
@@ -649,7 +649,7 @@ TEST(PrismMenuGame, WlanAbstractionAndRefinementTest_Sylvan) {
 TEST(PrismMenuGame, WlanFullAbstractionTest_Cudd) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/wlan0-2-4.nm");
     program = program.substituteConstants();
-    program = program.flattenModules(std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>());
+    program = program.flattenModules(std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
     
     std::vector<storm::expressions::Expression> initialPredicates;
     storm::expressions::ExpressionManager& manager = program.getManager();
@@ -756,7 +756,7 @@ TEST(PrismMenuGame, WlanFullAbstractionTest_Cudd) {
     initialPredicates.push_back(manager.getVariableExpression("bc2") == manager.integer(0));
     initialPredicates.push_back(manager.getVariableExpression("bc2") == manager.integer(1));
     
-    storm::abstraction::prism::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program.getManager(), program, initialPredicates, std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>(), false);
+    storm::abstraction::prism::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program, initialPredicates, std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>(), false);
     
     storm::abstraction::MenuGame<storm::dd::DdType::CUDD, double> game = abstractProgram.getAbstractGame();
     
@@ -768,7 +768,7 @@ TEST(PrismMenuGame, WlanFullAbstractionTest_Cudd) {
 TEST(PrismMenuGame, WlanFullAbstractionTest_Sylvan) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/wlan0-2-4.nm");
     program = program.substituteConstants();
-    program = program.flattenModules(std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>());
+    program = program.flattenModules(std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
     
     std::vector<storm::expressions::Expression> initialPredicates;
     storm::expressions::ExpressionManager& manager = program.getManager();
@@ -875,7 +875,7 @@ TEST(PrismMenuGame, WlanFullAbstractionTest_Sylvan) {
     initialPredicates.push_back(manager.getVariableExpression("bc2") == manager.integer(0));
     initialPredicates.push_back(manager.getVariableExpression("bc2") == manager.integer(1));
     
-    storm::abstraction::prism::AbstractProgram<storm::dd::DdType::Sylvan, double> abstractProgram(program.getManager(), program, initialPredicates, std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>(), false);
+    storm::abstraction::prism::AbstractProgram<storm::dd::DdType::Sylvan, double> abstractProgram(program, initialPredicates, std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>(), false);
     
     storm::abstraction::MenuGame<storm::dd::DdType::Sylvan, double> game = abstractProgram.getAbstractGame();
     

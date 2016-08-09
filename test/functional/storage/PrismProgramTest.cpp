@@ -11,7 +11,7 @@ TEST(PrismProgramTest, FlattenModules) {
     storm::prism::Program result;
     ASSERT_NO_THROW(result = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/parser/prism/leader3.nm"));
 
-    std::unique_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory(new storm::utility::solver::MathsatSmtSolverFactory());
+    std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
     
     ASSERT_NO_THROW(result = result.flattenModules(smtSolverFactory));
     EXPECT_EQ(1, result.getNumberOfModules());
