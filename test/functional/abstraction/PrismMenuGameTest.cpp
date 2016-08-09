@@ -396,7 +396,7 @@ TEST(PrismMenuGame, CrowdsFullAbstractionTest_Sylvan) {
 TEST(PrismMenuGame, TwoDiceAbstractionTest_Cudd) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/two_dice.nm");
     program = program.substituteConstants();
-    program = program.flattenModules(std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>());
+    program = program.flattenModules(std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
     
     std::vector<storm::expressions::Expression> initialPredicates;
     storm::expressions::ExpressionManager& manager = program.getManager();
@@ -416,7 +416,7 @@ TEST(PrismMenuGame, TwoDiceAbstractionTest_Cudd) {
 TEST(PrismMenuGame, TwoDiceAbstractionTest_Sylvan) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/two_dice.nm");
     program = program.substituteConstants();
-    program = program.flattenModules(std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>());
+    program = program.flattenModules(std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
     
     std::vector<storm::expressions::Expression> initialPredicates;
     storm::expressions::ExpressionManager& manager = program.getManager();
@@ -436,7 +436,7 @@ TEST(PrismMenuGame, TwoDiceAbstractionTest_Sylvan) {
 TEST(PrismMenuGame, TwoDiceAbstractionAndRefinementTest_Cudd) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/two_dice.nm");
     program = program.substituteConstants();
-    program = program.flattenModules(std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>());
+    program = program.flattenModules(std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
     
     std::vector<storm::expressions::Expression> initialPredicates;
     storm::expressions::ExpressionManager& manager = program.getManager();
@@ -458,7 +458,7 @@ TEST(PrismMenuGame, TwoDiceAbstractionAndRefinementTest_Cudd) {
 TEST(PrismMenuGame, TwoDiceAbstractionAndRefinementTest_Sylvan) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/two_dice.nm");
     program = program.substituteConstants();
-    program = program.flattenModules(std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>());
+    program = program.flattenModules(std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
     
     std::vector<storm::expressions::Expression> initialPredicates;
     storm::expressions::ExpressionManager& manager = program.getManager();
@@ -480,7 +480,7 @@ TEST(PrismMenuGame, TwoDiceAbstractionAndRefinementTest_Sylvan) {
 TEST(PrismMenuGame, TwoDiceFullAbstractionTest_Cudd) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/two_dice.nm");
     program = program.substituteConstants();
-    program = program.flattenModules(std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>());
+    program = program.flattenModules(std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
     
     std::vector<storm::expressions::Expression> initialPredicates;
     storm::expressions::ExpressionManager& manager = program.getManager();
@@ -531,7 +531,7 @@ TEST(PrismMenuGame, TwoDiceFullAbstractionTest_Cudd) {
 TEST(PrismMenuGame, TwoDiceFullAbstractionTest_Sylvan) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/two_dice.nm");
     program = program.substituteConstants();
-    program = program.flattenModules(std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>());
+    program = program.flattenModules(std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
     
     std::vector<storm::expressions::Expression> initialPredicates;
     storm::expressions::ExpressionManager& manager = program.getManager();
@@ -582,7 +582,7 @@ TEST(PrismMenuGame, TwoDiceFullAbstractionTest_Sylvan) {
 TEST(PrismMenuGame, WlanAbstractionTest_Cudd) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/wlan0-2-4.nm");
     program = program.substituteConstants();
-    program = program.flattenModules(std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>());
+    program = program.flattenModules(std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
     
     std::vector<storm::expressions::Expression> initialPredicates;
     storm::expressions::ExpressionManager& manager = program.getManager();
@@ -603,7 +603,7 @@ TEST(PrismMenuGame, WlanAbstractionTest_Cudd) {
 TEST(PrismMenuGame, WlanAbstractionTest_Sylvan) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/wlan0-2-4.nm");
     program = program.substituteConstants();
-    program = program.flattenModules(std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>());
+    program = program.flattenModules(std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
     
     std::vector<storm::expressions::Expression> initialPredicates;
     storm::expressions::ExpressionManager& manager = program.getManager();
@@ -624,7 +624,7 @@ TEST(PrismMenuGame, WlanAbstractionTest_Sylvan) {
 TEST(PrismMenuGame, WlanAbstractionAndRefinementTest_Cudd) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/wlan0-2-4.nm");
     program = program.substituteConstants();
-    program = program.flattenModules(std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>());
+    program = program.flattenModules(std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
     
     std::vector<storm::expressions::Expression> initialPredicates;
     storm::expressions::ExpressionManager& manager = program.getManager();
@@ -647,7 +647,7 @@ TEST(PrismMenuGame, WlanAbstractionAndRefinementTest_Cudd) {
 TEST(PrismMenuGame, WlanAbstractionAndRefinementTest_Sylvan) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/wlan0-2-4.nm");
     program = program.substituteConstants();
-    program = program.flattenModules(std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>());
+    program = program.flattenModules(std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
     
     std::vector<storm::expressions::Expression> initialPredicates;
     storm::expressions::ExpressionManager& manager = program.getManager();
@@ -670,7 +670,7 @@ TEST(PrismMenuGame, WlanAbstractionAndRefinementTest_Sylvan) {
 TEST(PrismMenuGame, WlanFullAbstractionTest_Cudd) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/wlan0-2-4.nm");
     program = program.substituteConstants();
-    program = program.flattenModules(std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>());
+    program = program.flattenModules(std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
     
     std::vector<storm::expressions::Expression> initialPredicates;
     storm::expressions::ExpressionManager& manager = program.getManager();
@@ -789,7 +789,7 @@ TEST(PrismMenuGame, WlanFullAbstractionTest_Cudd) {
 TEST(PrismMenuGame, WlanFullAbstractionTest_Sylvan) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/wlan0-2-4.nm");
     program = program.substituteConstants();
-    program = program.flattenModules(std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>());
+    program = program.flattenModules(std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
     
     std::vector<storm::expressions::Expression> initialPredicates;
     storm::expressions::ExpressionManager& manager = program.getManager();

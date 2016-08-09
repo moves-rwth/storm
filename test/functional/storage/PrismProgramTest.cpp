@@ -8,20 +8,44 @@
 
 #ifdef STORM_HAVE_MSAT
 TEST(PrismProgramTest, FlattenModules) {
-    storm::prism::Program result;
-    ASSERT_NO_THROW(result = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/parser/prism/leader3.nm"));
+    storm::prism::Program program;
+    ASSERT_NO_THROW(program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/parser/prism/leader3.nm"));
 
-    std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory(new storm::utility::solver::MathsatSmtSolverFactory());
+    std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
     
-    ASSERT_NO_THROW(result = result.flattenModules(smtSolverFactory));
-    EXPECT_EQ(1, result.getNumberOfModules());
-    EXPECT_EQ(74, result.getModule(0).getNumberOfCommands());
+    ASSERT_NO_THROW(program = program.flattenModules(smtSolverFactory));
+    EXPECT_EQ(1, program.getNumberOfModules());
+    EXPECT_EQ(74, program.getModule(0).getNumberOfCommands());
 
-    ASSERT_NO_THROW(result = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/parser/prism/wlan0_collide.nm"));
+    ASSERT_NO_THROW(program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/parser/prism/wlan0_collide.nm"));
     
-    ASSERT_NO_THROW(result = result.flattenModules(smtSolverFactory));
-    EXPECT_EQ(1, result.getNumberOfModules());
-    EXPECT_EQ(180, result.getModule(0).getNumberOfCommands());
+    ASSERT_NO_THROW(program = program.flattenModules(smtSolverFactory));
+    EXPECT_EQ(1, program.getNumberOfModules());
+    EXPECT_EQ(180, program.getModule(0).getNumberOfCommands());
+
+    ASSERT_NO_THROW(program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/parser/prism/csma2_2.nm"));
+    
+    ASSERT_NO_THROW(program = program.flattenModules(smtSolverFactory));
+    EXPECT_EQ(1, program.getNumberOfModules());
+    EXPECT_EQ(71, program.getModule(0).getNumberOfCommands());
+
+    ASSERT_NO_THROW(program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/parser/prism/firewire.nm"));
+    
+    ASSERT_NO_THROW(program = program.flattenModules(smtSolverFactory));
+    EXPECT_EQ(1, program.getNumberOfModules());
+    EXPECT_EQ(5026, program.getModule(0).getNumberOfCommands());
+
+    ASSERT_NO_THROW(program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/parser/prism/coin2.nm"));
+    
+    ASSERT_NO_THROW(program = program.flattenModules(smtSolverFactory));
+    EXPECT_EQ(1, program.getNumberOfModules());
+    EXPECT_EQ(13, program.getModule(0).getNumberOfCommands());
+    
+    ASSERT_NO_THROW(program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/parser/prism/two_dice.nm"));
+    
+    ASSERT_NO_THROW(program = program.flattenModules(smtSolverFactory));
+    EXPECT_EQ(1, program.getNumberOfModules());
+    EXPECT_EQ(16, program.getModule(0).getNumberOfCommands());
 }
 #endif
 
