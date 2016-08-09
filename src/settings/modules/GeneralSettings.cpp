@@ -33,7 +33,9 @@ namespace storm {
             const std::string GeneralSettings::bisimulationOptionName = "bisimulation";
             const std::string GeneralSettings::bisimulationOptionShortName = "bisim";
             const std::string GeneralSettings::parametricOptionName = "parametric";
+            const std::string GeneralSettings::parametricRegionOptionName = "parametricRegion";
             const std::string GeneralSettings::exactOptionName = "exact";
+
 
             GeneralSettings::GeneralSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, helpOptionName, false, "Shows all available options, arguments and descriptions.").setShortName(helpOptionShortName)
@@ -49,6 +51,8 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("formula or filename", "The formula or the file containing the formulas.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, timeoutOptionName, false, "If given, computation will abort after the timeout has been reached.").setShortName(timeoutOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("time", "The number of seconds after which to timeout.").setDefaultValueUnsignedInteger(0).build()).build());
+
+                this->addOption(storm::settings::OptionBuilder(moduleName, parametricRegionOptionName, false, "Sets whether to use the parametric Region engine.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, bisimulationOptionName, false, "Sets whether to perform bisimulation minimization.").setShortName(bisimulationOptionShortName).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, parametricOptionName, false, "Sets whether to enable parametric model checking.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, exactOptionName, false, "Sets whether to enable exact model checking.").build());
@@ -105,6 +109,11 @@ namespace storm {
             bool GeneralSettings::isParametricSet() const {
                 return this->getOption(parametricOptionName).getHasOptionBeenSet();
             }
+
+            bool GeneralSettings::isParametricRegionSet() const {
+                return this->getOption(parametricRegionOptionName).getHasOptionBeenSet();
+            }
+
 
             bool GeneralSettings::isExactSet() const {
                 return this->getOption(exactOptionName).getHasOptionBeenSet();

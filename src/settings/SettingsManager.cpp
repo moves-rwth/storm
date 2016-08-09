@@ -28,7 +28,9 @@
 #include "src/settings/modules/BisimulationSettings.h"
 #include "src/settings/modules/GlpkSettings.h"
 #include "src/settings/modules/GurobiSettings.h"
+#include "src/settings/modules/Smt2SmtSolverSettings.h"
 #include "src/settings/modules/ParametricSettings.h"
+#include "src/settings/modules/RegionSettings.h"
 #include "src/settings/modules/TopologicalValueIterationEquationSolverSettings.h"
 #include "src/settings/modules/ExplorationSettings.h"
 #include "src/utility/macros.h"
@@ -55,7 +57,7 @@ namespace storm {
             this->executableName = executableName;
         }
 
-        
+
         void SettingsManager::setFromCommandLine(int const argc, char const * const argv[]) {
             // We convert the arguments to a vector of strings and strip off the first element since it refers to the
             // name of the program.
@@ -500,7 +502,7 @@ namespace storm {
         
         void initializeAll(std::string const& name, std::string const& executableName) {
             storm::settings::mutableManager().setName(name, executableName);
-            
+
             // Register all known settings modules.
             storm::settings::addModule<storm::settings::modules::GeneralSettings>();
             storm::settings::addModule<storm::settings::modules::IOSettings>();
@@ -519,6 +521,8 @@ namespace storm {
             storm::settings::addModule<storm::settings::modules::GurobiSettings>();
             storm::settings::addModule<storm::settings::modules::TopologicalValueIterationEquationSolverSettings>();
             storm::settings::addModule<storm::settings::modules::ParametricSettings>();
+            storm::settings::addModule<storm::settings::modules::RegionSettings>();
+            storm::settings::addModule<storm::settings::modules::Smt2SmtSolverSettings>();
             storm::settings::addModule<storm::settings::modules::ExplorationSettings>();
         }
 

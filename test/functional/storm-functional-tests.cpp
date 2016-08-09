@@ -35,6 +35,9 @@ int main(int argc, char* argv[]) {
 #ifndef STORM_HAVE_INTELTBB
 	untestedModules.push_back("Intel TBB");
 #endif
+#ifndef STORM_HAVE_CARL
+	untestedModules.push_back("Carl");
+#endif
 	
 	if (result == 0) {
 		if (untestedModules.empty()) {

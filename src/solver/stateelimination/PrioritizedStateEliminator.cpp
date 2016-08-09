@@ -5,10 +5,17 @@
 #include "src/utility/macros.h"
 #include "src/utility/constants.h"
 
+#include "StaticStatePriorityQueue.h"
+
 namespace storm {
     namespace solver {
         namespace stateelimination {
-            
+
+            template<typename ValueType>
+            PrioritizedStateEliminator<ValueType>::PrioritizedStateEliminator(storm::storage::FlexibleSparseMatrix<ValueType>& transitionMatrix, storm::storage::FlexibleSparseMatrix<ValueType>& backwardTransitions, std::vector<storm::storage::sparse::state_type> const& statesToEliminate, std::vector<ValueType>& stateValues)
+            : PrioritizedStateEliminator(transitionMatrix, backwardTransitions, std::make_shared<StaticStatePriorityQueue>(statesToEliminate), stateValues)
+            {}
+
             template<typename ValueType>
             PrioritizedStateEliminator<ValueType>::PrioritizedStateEliminator(storm::storage::FlexibleSparseMatrix<ValueType>& transitionMatrix, storm::storage::FlexibleSparseMatrix<ValueType>& backwardTransitions, PriorityQueuePointer priorityQueue, std::vector<ValueType>& stateValues) : StateEliminator<ValueType>(transitionMatrix, backwardTransitions), priorityQueue(priorityQueue), stateValues(stateValues) {
             }
@@ -26,6 +33,22 @@ namespace storm {
             template<typename ValueType>
             void PrioritizedStateEliminator<ValueType>::updatePriority(storm::storage::sparse::state_type const& state) {
                 priorityQueue->update(state);
+            }
+
+            template<typename ValueType>
+            void PrioritizedStateEliminator<ValueType>::eliminateAll(bool removeForwardTransitions) {
+                while (priorityQueue->hasNext()) {
+                    storm::storage::sparse::state_type state = priorityQueue->pop();
+                    this->eliminateState(state, removeForwardTransitions);
+                    if (removeForwardTransitions) {
+                        clearStateValues(state);
+                    }
+                }
+            }
+
+            template<typename ValueType>
+            void PrioritizedStateEliminator<ValueType>::clearStateValues(storm::storage::sparse::state_type const &state) {
+                stateValues[state] = storm::utility::zero<ValueType>();
             }
             
             template class PrioritizedStateEliminator<double>;

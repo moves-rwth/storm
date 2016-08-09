@@ -113,6 +113,22 @@ namespace storm {
                  */
                 bool isParametricSet() const;
 
+                
+                /*!
+                 * Retrieves whether the option enabling parametric region model checking is set.
+                 *
+                 * @return True iff the option was set.
+                 */
+                bool isParametricRegionSet() const;
+
+                /*!
+                 * Retrieves whether a min/max equation solving technique has been set.
+                 *
+                 * @return True iff an equation solving technique has been set.
+                 */
+                bool isMinMaxEquationSolvingTechniqueSet() const;
+
+
                 /*!
                  * Retrieves whether the option enabling exact model checking is set.
                  *
@@ -144,6 +160,9 @@ namespace storm {
                 static const std::string bisimulationOptionName;
                 static const std::string bisimulationOptionShortName;
                 static const std::string parametricOptionName;
+
+                static const std::string parametricRegionOptionName;
+
                 static const std::string exactOptionName;
             };
 

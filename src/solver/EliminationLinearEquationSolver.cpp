@@ -56,7 +56,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void EliminationLinearEquationSolver<ValueType>::solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+        bool EliminationLinearEquationSolver<ValueType>::solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             // FIXME: This solver will not work for all input systems. More concretely, the current implementation will
             // not work for systems that have a 0 on the diagonal. This is not a restriction of this technique in general
             // but arbitrary matrices require pivoting, which is not currently implemented.
@@ -108,6 +108,8 @@ namespace storm {
             if (localA) {
                 localA->convertToEquationSystem();
             };
+
+            return true;
         }
         
         template<typename ValueType>

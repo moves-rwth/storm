@@ -33,7 +33,7 @@ namespace storm {
         }
                 
         template<typename ValueType>
-		void TopologicalMinMaxLinearEquationSolver<ValueType>::solveEquations(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+		bool TopologicalMinMaxLinearEquationSolver<ValueType>::solveEquations(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
 			
 #ifdef GPU_USE_FLOAT
 #define __FORCE_FLOAT_CALCULATION true
@@ -49,12 +49,12 @@ namespace storm {
 				std::vector<float> new_x = storm::utility::vector::toValueType<float>(x);
 				std::vector<float> const new_b = storm::utility::vector::toValueType<float>(b);
 
-				newSolver.solveEquations(dir, new_x, new_b);
+				bool callConverged = newSolver.solveEquations(dir, new_x, new_b);
 
 				for (size_t i = 0, size = new_x.size(); i < size; ++i) {
 					x.at(i) = new_x.at(i);
 				}
-				return;
+				return callConverged;
 			}
 			
 			// For testing only
@@ -280,6 +280,8 @@ namespace storm {
 				} else {
 					STORM_LOG_WARN("Iterative solver did not converged after " << currentMaxLocalIterations << " iterations.");
 				}
+
+				return converged;
 			}
         }
 
@@ -419,6 +421,16 @@ namespace storm {
 				}
 #endif
 			return result;
+		}
+
+		template<typename ValueType>
+		ValueType TopologicalMinMaxLinearEquationSolver<ValueType>::getPrecision() const {
+			return this->precision;
+		}
+
+		template<typename ValueType>
+		bool TopologicalMinMaxLinearEquationSolver<ValueType>::getRelative() const {
+			return this->relative;
 		}
         
         template<typename ValueType>

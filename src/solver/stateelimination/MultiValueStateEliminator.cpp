@@ -10,7 +10,12 @@ namespace storm {
             MultiValueStateEliminator<ValueType>::MultiValueStateEliminator(storm::storage::FlexibleSparseMatrix<ValueType>& transitionMatrix, storm::storage::FlexibleSparseMatrix<ValueType>& backwardTransitions, PriorityQueuePointer priorityQueue, std::vector<ValueType>& stateValues, std::vector<ValueType>& additionalStateValuesVector) : PrioritizedStateEliminator<ValueType>(transitionMatrix, backwardTransitions, priorityQueue, stateValues), additionalStateValues({std::ref(additionalStateValuesVector)}) {
 
             }
-            
+
+            template<typename ValueType>
+            MultiValueStateEliminator<ValueType>::MultiValueStateEliminator(storm::storage::FlexibleSparseMatrix<ValueType>& transitionMatrix, storm::storage::FlexibleSparseMatrix<ValueType>& backwardTransitions, std::vector<storm::storage::sparse::state_type> const& statesToEliminate, std::vector<ValueType>& stateValues, std::vector<ValueType>& additionalStateValuesVector) : PrioritizedStateEliminator<ValueType>(transitionMatrix, backwardTransitions, statesToEliminate, stateValues), additionalStateValues({std::ref(additionalStateValuesVector)}) {
+
+            }
+
             template<typename ValueType>
             void MultiValueStateEliminator<ValueType>::updateValue(storm::storage::sparse::state_type const& state, ValueType const& loopProbability) {
                 this->stateValues[state] = storm::utility::simplify(loopProbability * this->stateValues[state]);
@@ -24,6 +29,14 @@ namespace storm {
                 this->stateValues[predecessor] = storm::utility::simplify(this->stateValues[predecessor] + storm::utility::simplify(probability * this->stateValues[state]));
                 for(auto additionalStateValueVectorRef : additionalStateValues) {
                     additionalStateValueVectorRef.get()[predecessor] = storm::utility::simplify(additionalStateValueVectorRef.get()[predecessor] + storm::utility::simplify(probability * additionalStateValueVectorRef.get()[state]));
+                }
+            }
+
+            template<typename ValueType>
+            void MultiValueStateEliminator<ValueType>::clearStateValues(storm::storage::sparse::state_type const& state) {
+                super::clearStateValues(state);
+                for(auto additionStateValueVectorRef : additionalStateValues) {
+                    additionStateValueVectorRef.get()[state] = storm::utility::zero<ValueType>();
                 }
             }
             
