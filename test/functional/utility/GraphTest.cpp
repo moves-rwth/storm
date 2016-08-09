@@ -207,7 +207,7 @@ TEST(GraphTest, SymbolicProb01StochasticGameDieSmall) {
     
     initialPredicates.push_back(manager.getVariableExpression("s") < manager.integer(3));
     
-    storm::abstraction::prism::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program.getManager(), program, initialPredicates, std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>(), false);
+    storm::abstraction::prism::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program, initialPredicates, std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>(), false);
     
     storm::abstraction::MenuGame<storm::dd::DdType::CUDD, double> game = abstractProgram.getAbstractGame();
     
@@ -343,7 +343,7 @@ TEST(GraphTest, SymbolicProb01StochasticGameTwoDice) {
     initialPredicates.push_back(manager.getVariableExpression("d2") == manager.integer(5));
     initialPredicates.push_back(manager.getVariableExpression("d2") == manager.integer(6));
     
-    storm::abstraction::prism::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program.getManager(), program, initialPredicates, std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>(), false);
+    storm::abstraction::prism::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program, initialPredicates, std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>(), false);
     
     storm::abstraction::MenuGame<storm::dd::DdType::CUDD, double> game = abstractProgram.getAbstractGame();
     
@@ -512,7 +512,7 @@ TEST(GraphTest, SymbolicProb01StochasticGameWlan) {
     initialPredicates.push_back(manager.getVariableExpression("bc2") == manager.integer(0));
     initialPredicates.push_back(manager.getVariableExpression("bc2") == manager.integer(1));
     
-    storm::abstraction::prism::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program.getManager(), program, initialPredicates, std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>(), false);
+    storm::abstraction::prism::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program, initialPredicates, std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>(), false);
     
     storm::abstraction::MenuGame<storm::dd::DdType::CUDD, double> game = abstractProgram.getAbstractGame();
     
