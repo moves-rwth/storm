@@ -318,6 +318,9 @@ namespace storm {
                 std::string ident = expressionStructure.get<std::string>();
                 return storm::expressions::Expression(getVariableOrConstantExpression(ident, scopeDescription, localVars));
             } else if(expressionStructure.is_object()) {
+                if(expressionStructure.count("distribution") == 1) {
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Distributions are not supported by storm expressions, cannot import " << expressionStructure.dump() << " in  " << scopeDescription << ".");
+                }
                 if(expressionStructure.count("op") == 1) {
                     std::string opstring = getString(expressionStructure.at("op"), scopeDescription);
                     std::vector<storm::expressions::Expression> arguments = {};
