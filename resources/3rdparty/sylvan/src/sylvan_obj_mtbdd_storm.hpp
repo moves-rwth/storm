@@ -28,6 +28,8 @@
      * @brief Computes f / g for Rational Functions
      */
     Mtbdd DivideRF(const Mtbdd &other) const;
+	
+	Mtbdd AbstractPlusRF(const BddSet &variables) const;
 #endif
 	
     Bdd NotZero() const;

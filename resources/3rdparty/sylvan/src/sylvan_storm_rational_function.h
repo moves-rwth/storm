@@ -99,6 +99,11 @@ TASK_DECL_2(MTBDD, sylvan_storm_rational_function_op_neg, MTBDD, size_t)
 TASK_DECL_3(MTBDD, sylvan_storm_rational_function_and_exists, MTBDD, MTBDD, MTBDD);
 #define sylvan_storm_rational_function_and_exists(a, b, vars) CALL(sylvan_storm_rational_function_and_exists, a, b, vars)
 
+/**
+ * Abstract the variables in <v> from <a> by taking the sum of all values
+ */
+#define sylvan_storm_rational_function_abstract_plus(dd, v) mtbdd_abstract(dd, v, TASK(sylvan_storm_rational_function_abstract_op_plus))
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

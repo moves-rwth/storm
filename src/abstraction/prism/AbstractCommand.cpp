@@ -13,6 +13,9 @@
 #include "src/utility/solver.h"
 #include "src/utility/macros.h"
 
+#include "storm-config.h"
+#include "src/adapters/CarlAdapter.h"
+
 namespace storm {
     namespace abstraction {
         namespace prism {
@@ -32,7 +35,7 @@ namespace storm {
 
                 // Refine the command based on all initial predicates.
                 std::vector<uint_fast64_t> allPredicateIndices(abstractionInformation.getNumberOfPredicates());
-                for (auto index = 0; index < abstractionInformation.getNumberOfPredicates(); ++index) {
+                for (decltype(abstractionInformation.getNumberOfPredicates()) index = 0; index < abstractionInformation.getNumberOfPredicates(); ++index) {
                     allPredicateIndices[index] = index;
                 }
                 this->refine(allPredicateIndices);
@@ -313,6 +316,9 @@ namespace storm {
             
             template class AbstractCommand<storm::dd::DdType::CUDD, double>;
             template class AbstractCommand<storm::dd::DdType::Sylvan, double>;
+#ifdef STORM_HAVE_CARL
+			template class AbstractCommand<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+#endif
         }
     }
 }

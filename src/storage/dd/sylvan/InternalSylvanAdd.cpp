@@ -297,7 +297,7 @@ namespace storm {
 #ifdef STORM_HAVE_CARL
 		template<>
         InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalAdd<DdType::Sylvan, storm::RationalFunction>::sumAbstract(InternalBdd<DdType::Sylvan> const& cube) const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented: sumAbstract");
+            return InternalAdd<DdType::Sylvan, storm::RationalFunction>(ddManager, this->sylvanMtbdd.AbstractPlusRF(cube.sylvanBdd));
         }
 #endif
 

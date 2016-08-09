@@ -12,6 +12,9 @@
 #include "src/exceptions/WrongFormatException.h"
 #include "src/exceptions/InvalidArgumentException.h"
 
+#include "storm-config.h"
+#include "src/adapters/CarlAdapter.h"
+
 namespace storm {
     namespace abstraction {
         namespace prism {
@@ -160,7 +163,7 @@ namespace storm {
                 }
 
                 // Construct the transition matrix by cutting away the transitions of unreachable states.
-                storm::dd::Add<DdType> transitionMatrix = (gameBdd.first && reachableStates).template toAdd<ValueType>() * commandUpdateProbabilitiesAdd + deadlockTransitions;
+                storm::dd::Add<DdType, ValueType> transitionMatrix = (gameBdd.first && reachableStates).template toAdd<ValueType>() * commandUpdateProbabilitiesAdd + deadlockTransitions;
             
                 std::set<storm::expressions::Variable> usedPlayer2Variables(abstractionInformation.getPlayer2Variables().begin(), abstractionInformation.getPlayer2Variables().begin() + gameBdd.second);
                 
@@ -191,7 +194,9 @@ namespace storm {
             // Explicitly instantiate the class.
             template class AbstractProgram<storm::dd::DdType::CUDD, double>;
             template class AbstractProgram<storm::dd::DdType::Sylvan, double>;
-            
+#ifdef STORM_HAVE_CARL
+			template class AbstractProgram<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+#endif
         }
     }
 }

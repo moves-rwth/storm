@@ -46,6 +46,11 @@ Mtbdd::DivideRF(const Mtbdd &other) const
     return sylvan_storm_rational_function_divide(mtbdd, other.mtbdd);
 }
 
+Mtbdd Mtbdd::AbstractPlusRF(const BddSet &variables) const {
+	LACE_ME;
+    return sylvan_storm_rational_function_abstract_plus(mtbdd, variables.set.bdd);
+}
+
 #endif
 
 Mtbdd

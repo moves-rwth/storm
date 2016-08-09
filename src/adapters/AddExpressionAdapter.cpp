@@ -8,6 +8,9 @@
 #include "src/storage/dd/Add.h"
 #include "src/storage/dd/Bdd.h"
 
+#include "storm-config.h"
+#include "src/adapters/CarlAdapter.h"
+
 namespace storm {
     namespace adapters {
         
@@ -201,6 +204,8 @@ namespace storm {
         // Explicitly instantiate the symbolic expression adapter
         template class AddExpressionAdapter<storm::dd::DdType::CUDD, double>;
         template class AddExpressionAdapter<storm::dd::DdType::Sylvan, double>;
-        
+#ifdef STORM_HAVE_CARL
+		template class AddExpressionAdapter<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+#endif
     } // namespace adapters
 } // namespace storm
