@@ -546,7 +546,7 @@ namespace storm {
              * @param smtSolverFactory an SMT solver factory to use. If none is given, the default one is used.
              * @return The resulting program.
              */
-            Program flattenModules(std::unique_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory = std::unique_ptr<storm::utility::solver::SmtSolverFactory>(new storm::utility::solver::SmtSolverFactory())) const;
+            Program flattenModules(std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory = std::shared_ptr<storm::utility::solver::SmtSolverFactory>(new storm::utility::solver::SmtSolverFactory())) const;
             
             friend std::ostream& operator<<(std::ostream& stream, Program const& program);
             
@@ -555,14 +555,7 @@ namespace storm {
              *
              * @return The manager responsible for the expressions of this program.
              */
-            storm::expressions::ExpressionManager const& getManager() const;
-
-            /*!
-             * Retrieves the manager responsible for the expressions of this program.
-             *
-             * @return The manager responsible for the expressions of this program.
-             */
-            storm::expressions::ExpressionManager& getManager();
+            storm::expressions::ExpressionManager& getManager() const;
 
             /*!
              *

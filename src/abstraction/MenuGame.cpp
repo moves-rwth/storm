@@ -5,6 +5,7 @@
 
 #include "src/storage/dd/Bdd.h"
 #include "src/storage/dd/Add.h"
+#include "src/storage/dd/DdManager.h"
 
 #include "src/models/symbolic/StandardRewardModel.h"
 
@@ -41,6 +42,11 @@ namespace storm {
         
         template<storm::dd::DdType Type, typename ValueType>
         storm::dd::Bdd<Type> MenuGame<Type, ValueType>::getStates(storm::expressions::Expression const& expression, bool negated) const {
+            if (expression.isTrue()) {
+                return this->getReachableStates();
+            } else if (expression.isFalse()) {
+                return this->getManager().getBddZero();
+            }
             auto it = expressionToBddMap.find(expression);
             STORM_LOG_THROW(it != expressionToBddMap.end(), storm::exceptions::InvalidArgumentException, "The given expression was not used in the abstraction process and can therefore not be retrieved.");
             if (negated) {

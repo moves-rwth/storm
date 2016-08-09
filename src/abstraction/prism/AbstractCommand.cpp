@@ -32,7 +32,7 @@ namespace storm {
 
                 // Refine the command based on all initial predicates.
                 std::vector<uint_fast64_t> allPredicateIndices(abstractionInformation.getNumberOfPredicates());
-                for (auto index = 0; index < abstractionInformation.getNumberOfPredicates(); ++index) {
+                for (uint_fast64_t index = 0; index < abstractionInformation.getNumberOfPredicates(); ++index) {
                     allPredicateIndices[index] = index;
                 }
                 this->refine(allPredicateIndices);

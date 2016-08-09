@@ -10,6 +10,11 @@
 #include "src/storage/dd/DdType.h"
 
 namespace storm {
+    namespace abstraction {
+        template<storm::dd::DdType Type, typename ValueType>
+        class MenuGame;
+    }
+    
     namespace modelchecker {
         template<storm::dd::DdType Type, typename ValueType>
         class GameBasedMdpModelChecker : public AbstractModelChecker {
@@ -21,7 +26,7 @@ namespace storm {
              * @param program The program that implicitly specifies the model to check.
              * @param smtSolverFactory A factory used to create SMT solver when necessary.
              */
-            explicit GameBasedMdpModelChecker(storm::expressions::ExpressionManager& expressionManager, storm::prism::Program const& program, std::unique_ptr<storm::utility::solver::SmtSolverFactory>&& smtSolverFactory = std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>());
+            explicit GameBasedMdpModelChecker(storm::prism::Program const& program, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
             
             virtual ~GameBasedMdpModelChecker() override;
                         
@@ -33,6 +38,8 @@ namespace storm {
         private:
             std::unique_ptr<CheckResult> performGameBasedAbstractionRefinement(CheckTask<storm::logic::Formula> const& checkTask, storm::expressions::Expression const& constraintExpression, storm::expressions::Expression const& targetStateExpression);
             
+            void computeProb01States(storm::OptimizationDirection player1Direction, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::expressions::Expression const& constraintExpression, storm::expressions::Expression const& targetStateExpression);
+            
             storm::expressions::Expression getExpression(storm::logic::Formula const& formula);
             
             // The original program that was used to create this model checker.
@@ -42,11 +49,8 @@ namespace storm {
             // original program.
             storm::prism::Program preprocessedProgram;
             
-            /// The expression manager over which to build expressions during the abstraction.
-            storm::expressions::ExpressionManager& expressionManager;
-            
             // A factory that is used for creating SMT solvers when needed.
-            std::unique_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory;
+            std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory;
         };
     }
 }

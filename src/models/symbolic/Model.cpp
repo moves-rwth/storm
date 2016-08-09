@@ -72,6 +72,11 @@ namespace storm {
             
             template<storm::dd::DdType Type, typename ValueType>
             storm::dd::Bdd<Type> Model<Type, ValueType>::getStates(storm::expressions::Expression const& expression) const {
+                if (expression.isTrue()) {
+                    return this->getReachableStates();
+                } else if (expression.isFalse()) {
+                    return manager->getBddZero();
+                }
                 STORM_LOG_THROW(rowExpressionAdapter != nullptr, storm::exceptions::InvalidOperationException, "Cannot create BDD for expression without expression adapter.");
                 return rowExpressionAdapter->translateExpression(expression).toBdd() && this->reachableStates;
             }
