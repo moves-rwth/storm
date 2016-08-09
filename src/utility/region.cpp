@@ -4,7 +4,7 @@
 #include "src/utility/constants.h"
 #include "src/utility/macros.h"
 #include "src/settings/SettingsManager.h"
-#include "src/solver/Smt2SmtSolver.h"
+#include "src/solver/SmtlibSmtSolver.h"
 #include "src/exceptions/IllegalArgumentException.h"
 #include "src/exceptions/NotImplementedException.h"
 
@@ -129,7 +129,7 @@ namespace storm {
             }
             
             template<>
-            void addGuardedConstraintToSmtSolver<storm::solver::Smt2SmtSolver, storm::RationalFunction, storm::RationalFunctionVariable>(std::shared_ptr<storm::solver::Smt2SmtSolver> solver,storm::RationalFunctionVariable const& guard, storm::RationalFunction const& leftHandSide, storm::logic::ComparisonType relation, storm::RationalFunction const& rightHandSide){
+            void addGuardedConstraintToSmtSolver<storm::solver::SmtlibSmtSolver, storm::RationalFunction, storm::RationalFunctionVariable>(std::shared_ptr<storm::solver::SmtlibSmtSolver> solver, storm::RationalFunctionVariable const& guard, storm::RationalFunction const& leftHandSide, storm::logic::ComparisonType relation, storm::RationalFunction const& rightHandSide){
                 STORM_LOG_THROW(guard.getType()==carl::VariableType::VT_BOOL, storm::exceptions::IllegalArgumentException, "Tried to add a constraint to the solver whose guard is not of type bool");
                 storm::CompareRelation compRel;
                 switch (relation){
@@ -154,7 +154,7 @@ namespace storm {
             }
             
             template<>
-            void addParameterBoundsToSmtSolver<storm::solver::Smt2SmtSolver, storm::RationalFunctionVariable, storm::RationalNumber>(std::shared_ptr<storm::solver::Smt2SmtSolver> solver, storm::RationalFunctionVariable const& variable, storm::logic::ComparisonType relation, storm::RationalNumber const& bound){
+            void addParameterBoundsToSmtSolver<storm::solver::SmtlibSmtSolver, storm::RationalFunctionVariable, storm::RationalNumber>(std::shared_ptr<storm::solver::SmtlibSmtSolver> solver, storm::RationalFunctionVariable const& variable, storm::logic::ComparisonType relation, storm::RationalNumber const& bound){
                 storm::CompareRelation compRel;
                 switch (relation){
                     case storm::logic::ComparisonType::Greater:
@@ -178,7 +178,7 @@ namespace storm {
             }
             
             template<>
-            void addBoolVariableToSmtSolver<storm::solver::Smt2SmtSolver, storm::RationalFunctionVariable>(std::shared_ptr<storm::solver::Smt2SmtSolver> solver,storm::RationalFunctionVariable const& variable, bool value){
+            void addBoolVariableToSmtSolver<storm::solver::SmtlibSmtSolver, storm::RationalFunctionVariable>(std::shared_ptr<storm::solver::SmtlibSmtSolver> solver, storm::RationalFunctionVariable const& variable, bool value){
                 STORM_LOG_THROW(variable.getType()==carl::VariableType::VT_BOOL, storm::exceptions::IllegalArgumentException, "Tried to add a constraint to the solver that is a non boolean variable. Only boolean variables are allowed");
                 solver->add(variable, value);
             }

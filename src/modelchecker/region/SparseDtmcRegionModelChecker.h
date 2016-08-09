@@ -6,7 +6,7 @@
 #include "src/models/sparse/StandardRewardModel.h"
 #include "src/models/sparse/Dtmc.h"
 #include "src/utility/region.h"
-#include "src/solver/Smt2SmtSolver.h"
+#include "src/solver/SmtlibSmtSolver.h"
 
 namespace storm {
     namespace modelchecker {
@@ -119,7 +119,7 @@ namespace storm {
                 std::shared_ptr<ParametricType> reachabilityFunction;
                 
                 // the smt solver that is used to prove properties with the help of the reachabilityFunction
-                std::shared_ptr<storm::solver::Smt2SmtSolver> smtSolver;
+                std::shared_ptr<storm::solver::SmtlibSmtSolver> smtSolver;
 
             };
         } //namespace region

@@ -7,7 +7,7 @@
     #include <errno.h>
 #endif
 
-#include "src/solver/Smt2SmtSolver.h"
+#include "src/solver/SmtlibSmtSolver.h"
 
 #include "src/settings/SettingsManager.h"
 #include "src/settings/modules/Smt2SmtSolverSettings.h"
@@ -23,23 +23,23 @@
 namespace storm {
     namespace solver {
 
-        Smt2SmtSolver::Smt2ModelReference::Smt2ModelReference(storm::expressions::ExpressionManager const& manager, storm::adapters::Smt2ExpressionAdapter& expressionAdapter) : ModelReference(manager), expressionAdapter(expressionAdapter){
+        SmtlibSmtSolver::SmtlibModelReference::SmtlibModelReference(storm::expressions::ExpressionManager const& manager, storm::adapters::Smt2ExpressionAdapter& expressionAdapter) : ModelReference(manager), expressionAdapter(expressionAdapter){
             // Intentionally left empty.
         }
 
-        bool Smt2SmtSolver::Smt2ModelReference::getBooleanValue(storm::expressions::Variable const& variable) const {
+        bool SmtlibSmtSolver::SmtlibModelReference::getBooleanValue(storm::expressions::Variable const& variable) const {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "functionality not (yet) implemented");
         }
 
-        int_fast64_t Smt2SmtSolver::Smt2ModelReference::getIntegerValue(storm::expressions::Variable const& variable) const {
+        int_fast64_t SmtlibSmtSolver::SmtlibModelReference::getIntegerValue(storm::expressions::Variable const& variable) const {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "functionality not (yet) implemented");
         }
 
-        double Smt2SmtSolver::Smt2ModelReference::getRationalValue(storm::expressions::Variable const& variable) const {
+        double SmtlibSmtSolver::SmtlibModelReference::getRationalValue(storm::expressions::Variable const& variable) const {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "functionality not (yet) implemented");
         }
 
-        Smt2SmtSolver::Smt2SmtSolver(storm::expressions::ExpressionManager& manager, bool useCarlExpressions) : SmtSolver(manager), isCommandFileOpen(false), expressionAdapter(nullptr), lastCheckAssumptions(false), lastResult(CheckResult::Unknown), useCarlExpressions(useCarlExpressions) {
+        SmtlibSmtSolver::SmtlibSmtSolver(storm::expressions::ExpressionManager& manager, bool useCarlExpressions) : SmtSolver(manager), isCommandFileOpen(false), expressionAdapter(nullptr), useCarlExpressions(useCarlExpressions) {
 #ifndef STORM_HAVE_CARL
             STORM_LOG_THROW(!useCarlExpressions, storm::exceptions::IllegalArgumentException, "Tried to use carl expressions but storm is not linked with CARL");
 #endif
@@ -50,7 +50,7 @@ namespace storm {
             init();
         }
 
-        Smt2SmtSolver::~Smt2SmtSolver() {
+        SmtlibSmtSolver::~SmtlibSmtSolver() {
             writeCommand("( exit )", false); //do not wait for success because it does not matter at this point and may cause problems if the solver is not running properly
 #ifndef WINDOWS
             if(processIdOfSolver!=0){
@@ -63,32 +63,32 @@ namespace storm {
 #endif
         }
 
-        void Smt2SmtSolver::push() {
+        void SmtlibSmtSolver::push() {
             expressionAdapter->increaseScope();
             writeCommand("( push 1 ) ", true);
         }
 
-        void Smt2SmtSolver::pop() {
+        void SmtlibSmtSolver::pop() {
             expressionAdapter->decreaseScope();
             writeCommand("( pop 1 ) ", true);
         }
 
-        void Smt2SmtSolver::pop(uint_fast64_t n) {
+        void SmtlibSmtSolver::pop(uint_fast64_t n) {
             expressionAdapter->decreaseScope(n);
             writeCommand("( pop " + std::to_string(n) + " ) ", true);
         }
 
-        void Smt2SmtSolver::reset() {
+        void SmtlibSmtSolver::reset() {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "functionality not (yet) implemented");
         }
 
-        void Smt2SmtSolver::add(storm::expressions::Expression const& assertion) {
+        void SmtlibSmtSolver::add(storm::expressions::Expression const& assertion) {
             STORM_LOG_THROW(!useCarlExpressions, storm::exceptions::IllegalFunctionCallException, "This solver was initialized without allowing carl expressions");
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "functionality not (yet) implemented");
         }
 
 #ifdef STORM_HAVE_CARL        
-        void Smt2SmtSolver::add(storm::RationalFunction const& leftHandSide, storm::CompareRelation const& relation, storm::RationalFunction const& rightHandSide) {
+        void SmtlibSmtSolver::add(storm::RationalFunction const& leftHandSide, storm::CompareRelation const& relation, storm::RationalFunction const& rightHandSide) {
             STORM_LOG_THROW(useCarlExpressions, storm::exceptions::IllegalFunctionCallException, "This solver was initialized without allowing carl expressions");
             //if some of the occurring variables are not declared yet, we will have to.
             std::set<storm::RationalFunctionVariable> variables;
@@ -101,11 +101,11 @@ namespace storm {
             writeCommand("( assert " + expressionAdapter->translateExpression(leftHandSide, relation, rightHandSide) + " )", true);
         }
         
-        void Smt2SmtSolver::add(storm::ArithConstraint<storm::RationalFunction> const& constraint) {
+        void SmtlibSmtSolver::add(storm::ArithConstraint<storm::RationalFunction> const& constraint) {
             add(constraint.lhs(), constraint.rel());
         }
         
-        void Smt2SmtSolver::add(storm::ArithConstraint<storm::RawPolynomial> const& constraint) {
+        void SmtlibSmtSolver::add(storm::ArithConstraint<storm::RawPolynomial> const& constraint) {
             //if some of the occurring variables are not declared yet, we will have to.
             std::set<storm::RationalFunctionVariable> variables = constraint.lhs().gatherVariables();
             std::vector<std::string> const varDeclarations = expressionAdapter->checkForUndeclaredVariables(variables);
@@ -115,7 +115,7 @@ namespace storm {
             writeCommand("( assert " + expressionAdapter->translateExpression(constraint) + " )", true);
         }
         
-        void Smt2SmtSolver::add(storm::RationalFunctionVariable const& guard, typename storm::ArithConstraint<storm::Polynomial> const& constraint){
+        void SmtlibSmtSolver::add(storm::RationalFunctionVariable const& guard, typename storm::ArithConstraint<storm::Polynomial> const& constraint){
             STORM_LOG_THROW((guard.getType()==carl::VariableType::VT_BOOL), storm::exceptions::IllegalArgumentException, "Tried to add a guarded constraint, but the guard is not of type bool.");
             //if some of the occurring variables are not declared yet, we will have to (including the guard!).
             std::set<storm::RationalFunctionVariable> variables = constraint.lhs().gatherVariables();
@@ -128,7 +128,7 @@ namespace storm {
             writeCommand("( assert (=> " + guardName + " " + expressionAdapter->translateExpression(constraint) + " ) )", true);
         }
         
-        void Smt2SmtSolver::add(const storm::RationalFunctionVariable& variable, bool value){
+        void SmtlibSmtSolver::add(const storm::RationalFunctionVariable& variable, bool value){
             STORM_LOG_THROW((variable.getType()==carl::VariableType::VT_BOOL), storm::exceptions::IllegalArgumentException, "Tried to add a constraint that consists of a non-boolean variable.");
             std::set<storm::RationalFunctionVariable> variableSet;
             variableSet.insert(variable);
@@ -147,7 +147,7 @@ namespace storm {
         
 #endif
 
-        SmtSolver::CheckResult Smt2SmtSolver::check() {
+        SmtSolver::CheckResult SmtlibSmtSolver::check() {
             writeCommand("( check-sat )", false);
 #ifdef WINDOWS
                 STORM_LOG_WARN("SMT-LIBv2 Solver can not be started on Windows as this is not yet implemented. Assume that the check-result is \"unknown\"");
@@ -172,18 +172,18 @@ namespace storm {
 #endif
         }
 
-        SmtSolver::CheckResult Smt2SmtSolver::checkWithAssumptions(std::set<storm::expressions::Expression> const& assumptions) {
+        SmtSolver::CheckResult SmtlibSmtSolver::checkWithAssumptions(std::set<storm::expressions::Expression> const& assumptions) {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "functionality not (yet) implemented");
         }
 
 #ifndef WINDOWS
 
-        SmtSolver::CheckResult Smt2SmtSolver::checkWithAssumptions(std::initializer_list<storm::expressions::Expression> const& assumptions) {
+        SmtSolver::CheckResult SmtlibSmtSolver::checkWithAssumptions(std::initializer_list<storm::expressions::Expression> const& assumptions) {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "functionality not (yet) implemented");
         }
 #endif
 
-        void Smt2SmtSolver::init() {
+        void SmtlibSmtSolver::init() {
             if (storm::settings::getModule<storm::settings::modules::Smt2SmtSolverSettings>().isSolverCommandSet()){
 #ifdef WINDOWS
                 STORM_LOG_WARN("opening a thread for the smt solver is not implemented on Windows. Hence, no actual solving will be done")
@@ -256,11 +256,11 @@ namespace storm {
             //writeCommand("( get-info :name )");
         }
 
-        bool Smt2SmtSolver::isNeedsRestart() const {
+        bool SmtlibSmtSolver::isNeedsRestart() const {
             return this->needsRestart;
         }
 
-        void Smt2SmtSolver::writeCommand(std::string smt2Command, bool expectSuccess) {
+        void SmtlibSmtSolver::writeCommand(std::string smt2Command, bool expectSuccess) {
             if (isCommandFileOpen) {
                 commandFile << smt2Command << std::endl;
             }
@@ -280,7 +280,7 @@ namespace storm {
 #endif
         }
         
-        std::vector<std::string> Smt2SmtSolver::readSolverOutput(bool waitForOutput){
+        std::vector<std::string> SmtlibSmtSolver::readSolverOutput(bool waitForOutput){
 #ifndef WINDOWS
             if (processIdOfSolver==0){
                 STORM_LOG_DEBUG("failed to read solver output as the solver is not running");
@@ -332,7 +332,7 @@ namespace storm {
 #endif
         }
         
-        void Smt2SmtSolver::checkForErrorMessage(const std::string message){
+        void SmtlibSmtSolver::checkForErrorMessage(const std::string message){
             size_t errorOccurrance = message.find("error");
             //do not throw an exception for timeout or memout errors
             if(message.find("timeout")!=std::string::npos){

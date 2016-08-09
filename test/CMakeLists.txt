@@ -3,7 +3,7 @@
 file(GLOB STORM_FUNCTIONAL_TEST_MAIN_FILE ${STORM_CPP_TESTS_BASE_PATH}/functional/storm-functional-tests.cpp)
 file(GLOB_RECURSE STORM_FUNCTIONAL_TEST_FILES ${STORM_CPP_TESTS_BASE_PATH}/functional/*.h ${STORM_CPP_TESTS_BASE_PATH}/functional/*.cpp)
 
-source_group(functional-test FILES ${STORM_FUNCTIONAL_TEST_FILES})
+register_source_groups_from_filestructure("${STORM_FUNCTIONAL_TEST_FILES}")
 
 add_executable(storm-functional-tests ${STORM_FUNCTIONAL_TEST_MAIN_FILE} ${STORM_FUNCTIONAL_TEST_FILES})
 target_link_libraries(storm-functional-tests storm)

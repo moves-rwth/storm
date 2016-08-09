@@ -13,7 +13,7 @@ namespace storm {
             class Smt2SmtSolverSettings : public ModuleSettings {
             public:
                 /*!
-                 * Creates a new set of Smt2SmtSolver settings that is managed by the given manager.
+                 * Creates a new set of SmtlibSmtSolver settings that is managed by the given manager.
                  *
                  * @param settingsManager The responsible manager.
                  */

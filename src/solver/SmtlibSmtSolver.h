@@ -17,12 +17,12 @@ namespace storm {
          * It is also possible to export the SMT2 script for later use.
          * @note The parsing of the solver responses is a little bit crude and might cause bugs (e.g., if a variable name has the infix "error")
          */
-        class Smt2SmtSolver : public SmtSolver {
+        class SmtlibSmtSolver : public SmtSolver {
         public:
 
-            class Smt2ModelReference : public SmtSolver::ModelReference {
+            class SmtlibModelReference : public SmtSolver::ModelReference {
             public:
-                Smt2ModelReference(storm::expressions::ExpressionManager const& manager, storm::adapters::Smt2ExpressionAdapter& expressionAdapter);
+                SmtlibModelReference(storm::expressions::ExpressionManager const& manager, storm::adapters::Smt2ExpressionAdapter& expressionAdapter);
                 virtual bool getBooleanValue(storm::expressions::Variable const& variable) const override;
                 virtual int_fast64_t getIntegerValue(storm::expressions::Variable const& variable) const override;
                 virtual double getRationalValue(storm::expressions::Variable const& variable) const override;
@@ -39,8 +39,8 @@ namespace storm {
              * In addition to storm expressions, this solver also allows carl expressions (but not both to not confuse variables).
              * Hence, there is a flag to chose between the two
              */
-            Smt2SmtSolver(storm::expressions::ExpressionManager& manager, bool useCarlExpressions = false);
-            virtual ~Smt2SmtSolver();
+            SmtlibSmtSolver(storm::expressions::ExpressionManager& manager, bool useCarlExpressions = false);
+            virtual ~SmtlibSmtSolver();
 
             virtual void push() override;
 
@@ -141,10 +141,10 @@ namespace storm {
             std::unique_ptr<storm::adapters::Smt2ExpressionAdapter> expressionAdapter;
 
             // A flag storing whether the last call to a check method provided aussumptions.
-            bool lastCheckAssumptions;
+            //bool lastCheckAssumptions;
 
             // The last result that was returned by any of the check methods.
-            CheckResult lastResult;
+            //CheckResult lastResult;
             
             // A flag that states whether we want to use carl expressions.
             bool useCarlExpressions;

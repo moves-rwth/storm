@@ -25,26 +25,7 @@ set(STORM_MAIN_HEADERS ${STORM_HEADERS_CLI})
 
 file(GLOB_RECURSE ALL_FILES ${PROJECT_SOURCE_DIR}/src/*.h ${PROJECT_SOURCE_DIR}/src/*.cpp)
 
-foreach(FILE ${ALL_FILES}) 
-  get_filename_component(PARENT_DIR "${FILE}" PATH)
-	
-  # skip src or include and changes /'s to \\'s
-  string(REPLACE ${PROJECT_SOURCE_DIR} "" PARENT_DIR "${PARENT_DIR}")
-  message(${PARENT_DIR})
-  string(REGEX REPLACE "(\\./)?(src|include)/?" "" GROUP "${PARENT_DIR}")
-  string(REPLACE "/" "\\" GROUP "${GROUP}")
-  
-
-  # group into "Source Files" and "Header Files"
-  # if ("${FILE}" MATCHES ".*\\.cpp")
-  #   set(GROUP "Source Files\\${GROUP}")
-  # elseif("${FILE}" MATCHES ".*\\.h")
-  #   set(GROUP "Header Files\\${GROUP}")
-  # endif()
-
-  source_group("${GROUP}" FILES "${FILE}")
-endforeach()
-
+register_source_groups_from_filestructure("${ALL_FILES}")
 # Add custom additional include or link directories
 if (ADDITIONAL_INCLUDE_DIRS)
 	message(STATUS "StoRM - Using additional include directories ${ADDITIONAL_INCLUDE_DIRS}")

@@ -44,7 +44,7 @@ if (NOT CMAKE_SCRIPT_MODE_FILE)
 	cmake_policy(POP)
 endif()
 
-set (COTIRE_CMAKE_MODULE_FILE "${CMAKE_CURRENT_LIST_FILE}")
+set (COTIRE_CMAKE_MODULE_FILE "cotire.cmake")
 set (COTIRE_CMAKE_MODULE_VERSION "1.3.4")
 
 include(CMakeParseArguments)
@@ -89,7 +89,7 @@ endfunction()
 function (cotire_get_source_file_extension _sourceFile _extVar)
 	# get_filename_component returns extension from first occurrence of . in file name
 	# this function computes the extension from last occurrence of . in file name
-	string (FIND "${_sourceFile}" "." _index REVERSE)
+	string (FIND "${_sourceFile}" ".." _index REVERSE)
 	if (_index GREATER -1)
 		math (EXPR _index "${_index} + 1")
 		string (SUBSTRING "${_sourceFile}" ${_index} -1 _sourceExt)
@@ -476,7 +476,7 @@ function (cotire_get_target_compile_definitions _config _language _directory _ta
 	string (TOUPPER "${_config}" _upperConfig)
 	set (_configDefinitions "")
 	# CMAKE_INTDIR for multi-configuration build systems
-	if (NOT "${CMAKE_CFG_INTDIR}" STREQUAL ".")
+	if (NOT "${CMAKE_CFG_INTDIR}" STREQUAL "..")
 		list (APPEND _configDefinitions "CMAKE_INTDIR=\"${_config}\"")
 	endif()
 	# target export define symbol
@@ -815,10 +815,10 @@ endmacro()
 function (cotire_parse_includes _language _scanOutput _ignoredIncudeDirs _honoredIncudeDirs _ignoredExtensions _selectedIncludesVar _unparsedLinesVar)
 	if (WIN32)
 		# prevent CMake macro invocation errors due to backslash characters in Windows paths
-		string (REPLACE "\\" "/" _scanOutput "${_scanOutput}")
+		string (REPLACE "\\" "." _scanOutput "${_scanOutput}")
 	endif()
 	# canonize slashes
-	string (REPLACE "//" "/" _scanOutput "${_scanOutput}")
+	string (REPLACE "//" "." _scanOutput "${_scanOutput}")
 	# prevent semicolon from being interpreted as a line separator
 	string (REPLACE ";" "\\;" _scanOutput "${_scanOutput}")
 	# then separate lines
@@ -954,7 +954,7 @@ function (cotire_scan_includes _includesVar)
 		# cl.exe messes with the output streams unless the environment variable VS_UNICODE_OUTPUT is cleared
 		unset (ENV{VS_UNICODE_OUTPUT})
 	endif()
-	execute_process(COMMAND ${_cmd} WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+	execute_process(COMMAND ${_cmd} WORKING_DIRECTORY ".."
 		RESULT_VARIABLE _result OUTPUT_QUIET ERROR_VARIABLE _output)
 	if (_result)
 		message (STATUS "Result ${_result} scanning includes of ${_existingSourceFiles}.")
@@ -1453,7 +1453,7 @@ function (cotire_precompile_prefix_header _prefixFile _pchFile _hostFile)
 		# cl.exe messes with the output streams unless the environment variable VS_UNICODE_OUTPUT is cleared
 		unset (ENV{VS_UNICODE_OUTPUT})
 	endif()
-	execute_process(COMMAND ${_cmd} WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" RESULT_VARIABLE _result)
+	execute_process(COMMAND ${_cmd} WORKING_DIRECTORY ".." RESULT_VARIABLE _result)
 	if (_result)
 		message (FATAL_ERROR "Error ${_result} precompiling ${_prefixFile}.")
 	endif()
@@ -2278,7 +2278,7 @@ function (cotire_setup_unity_build_target _languages _configurations _targetSour
 			endif()
 			# if cotire is applied to a target which has not been added in the current source dir,
 			# non-existing files cannot be referenced from the unity build target (this is a CMake restriction)
-			if (NOT "${_targetSourceDir}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
+			if (NOT "${_targetSourceDir}" STREQUAL "..")
 				set (_nonExistingFiles "")
 				foreach (_file ${_unityTargetSources})
 					if (NOT EXISTS "${_file}")
@@ -2419,7 +2419,7 @@ function (cotire_target _target)
 	set(_multiValueArgs LANGUAGES CONFIGURATIONS)
 	cmake_parse_arguments(_option "${_options}" "${_oneValueArgs}" "${_multiValueArgs}" ${ARGN})
 	if (NOT _option_SOURCE_DIR)
-		set (_option_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+		set (_option_SOURCE_DIR "..")
 	endif()
 	if (NOT _option_BINARY_DIR)
 		set (_option_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}")
@@ -2562,7 +2562,7 @@ function (cotire)
 	cmake_parse_arguments(_option "${_options}" "${_oneValueArgs}" "${_multiValueArgs}" ${ARGN})
 	set (_targets ${_option_UNPARSED_ARGUMENTS})
 	if (NOT _option_SOURCE_DIR)
-		set (_option_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+		set (_option_SOURCE_DIR "..")
 	endif()
 	if (NOT _option_BINARY_DIR)
 		set (_option_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}")

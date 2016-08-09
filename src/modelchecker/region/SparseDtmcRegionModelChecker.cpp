@@ -595,7 +595,7 @@ namespace storm {
                 STORM_LOG_DEBUG("Initializing the Smt Solver");
 
                 storm::expressions::ExpressionManager manager; //this manager will do nothing as we will use carl expressions..
-                this->smtSolver = std::shared_ptr<storm::solver::Smt2SmtSolver>(new storm::solver::Smt2SmtSolver(manager, true));
+                this->smtSolver = std::shared_ptr<storm::solver::SmtlibSmtSolver>(new storm::solver::SmtlibSmtSolver(manager, true));
 
                 ParametricType bound= storm::utility::region::convertNumber<ParametricType>(this->getSpecifiedFormulaBound());
 

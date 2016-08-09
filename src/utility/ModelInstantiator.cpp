@@ -152,9 +152,7 @@ namespace storm {
         
         template<typename ParametricSparseModelType, typename ConstantSparseModelType>
         void ModelInstantiator<ParametricSparseModelType, ConstantSparseModelType>::checkValid() const {
-            for(auto& functions : this->functions) {
-                
-            }
+            // TODO write some checks
         }
         
 #ifdef STORM_HAVE_CARL
