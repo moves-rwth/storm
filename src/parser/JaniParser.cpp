@@ -262,19 +262,29 @@ namespace storm {
                             initVal = expressionManager->boolean(defaultBooleanInitialValue);
                         } else {
                             initVal = parseExpression(variableStructure.at("initial-value"), "Initial value for variable " + name + " (scope: " + scopeDescription + ") ");
+                            STORM_LOG_THROW(initVal.get().hasIntegerType(), storm::exceptions::InvalidJaniException, "Initial value for integer variable " + name + "(scope " + scopeDescription + ") should be a Boolean");
                         }
                         return std::make_shared<storm::jani::BooleanVariable>(name, expressionManager->declareBooleanVariable(exprManagerName), initVal.get(), transientVar);
                     }
                     return std::make_shared<storm::jani::BooleanVariable>(name, expressionManager->declareBooleanVariable(exprManagerName), transientVar);
                 } else if(variableStructure.at("type") == "int") {
+                    if(initvalcount == 1) {
+                        if(variableStructure.at("initial-value").is_null()) {
+                            initVal = expressionManager->integer(defaultIntegerInitialValue);
+                        } else {
+                            initVal = parseExpression(variableStructure.at("initial-value"), "Initial value for variable " + name + " (scope: " + scopeDescription + ") ");
+                            STORM_LOG_THROW(initVal.get().hasIntegerType(), storm::exceptions::InvalidJaniException, "Initial value for integer variable " + name + "(scope " + scopeDescription + ") should be an integer");
+                        }
+                        return std::make_shared<storm::jani::UnboundedIntegerVariable>(name, expressionManager->declareIntegerVariable(exprManagerName), initVal.get(), transientVar);
+                    }
                     return std::make_shared<storm::jani::UnboundedIntegerVariable>(name, expressionManager->declareIntegerVariable(exprManagerName), transientVar);
                 } else {
                     // TODO clocks.
-                    STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Unknown type description " << variableStructure.at("type").dump()  << " for Variable '" << name << "' (scope: " << scopeDescription << ")");
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Unknown type description " << variableStructure.at("type").dump()  << " for variable '" << name << "' (scope: " << scopeDescription << ")");
                 }
             }
 
-            STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Unknown type description, " << variableStructure.at("type").dump()  << " for Variable '" << name << "' (scope: " << scopeDescription << ")");
+            STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Unknown type description, " << variableStructure.at("type").dump()  << " for variable '" << name << "' (scope: " << scopeDescription << ")");
         }
 
         /**

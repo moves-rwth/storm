@@ -3,6 +3,10 @@
 namespace storm {
     namespace jani {
         
+        UnboundedIntegerVariable::UnboundedIntegerVariable(std::string const& name, storm::expressions::Variable const& variable, storm::expressions::Expression const& initValue, bool transient) : Variable(name, variable, initValue, transient) {
+            // Intentionally left empty.
+        }
+        
         UnboundedIntegerVariable::UnboundedIntegerVariable(std::string const& name, storm::expressions::Variable const& variable, bool transient) : Variable(name, variable, transient) {
             // Intentionally left empty.
         }
