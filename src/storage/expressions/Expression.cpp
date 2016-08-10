@@ -321,8 +321,7 @@ namespace storm {
 
         Expression sign(Expression const& first) {
             STORM_LOG_THROW(first.hasNumericalType(), storm::exceptions::InvalidTypeException, "Sign is only defined for numerical operands");
-            // TODO implement (via Ite?)
-            STORM_LOG_ERROR("Not yet implemented");
+            return ite(first < 0, -first, first);
         }
 
         Expression truncate(Expression const& first) {
