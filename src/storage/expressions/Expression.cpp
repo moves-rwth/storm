@@ -316,18 +316,17 @@ namespace storm {
 
         Expression abs(Expression const& first) {
             STORM_LOG_THROW(first.hasNumericalType(), storm::exceptions::InvalidTypeException, "Abs is only defined for numerical operands");
-            return ite(first < first.getManager().integer(0), -first, first);
+            return ite(first < 0, -first, first);
         }
 
         Expression sign(Expression const& first) {
             STORM_LOG_THROW(first.hasNumericalType(), storm::exceptions::InvalidTypeException, "Sign is only defined for numerical operands");
-            return ite(first < 0, -first, first);
+            return ite(first > 0, first.getManager().integer(1), ite(first < 0, first.getManager().integer(0), first.getManager().integer(0)));
         }
 
         Expression truncate(Expression const& first) {
             STORM_LOG_THROW(first.hasNumericalType(), storm::exceptions::InvalidTypeException, "Truncate is only defined for numerical operands");
-            // TODO implement (via Ite?)
-            STORM_LOG_ERROR("Not yet implemented");
+            return ite(first < 0, floor(first), ceil(first));
         }
 
         Expression disjunction(std::vector<storm::expressions::Expression> const& expressions) {
