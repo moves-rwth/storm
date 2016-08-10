@@ -1511,6 +1511,7 @@ namespace storm {
         }
         
         storm::jani::Model Program::toJani(bool allVariablesGlobal) const {
+#if 0
             // Start by creating an empty JANI model.
             storm::jani::ModelType modelType;
             switch (this->getModelType()) {
@@ -1639,7 +1640,7 @@ namespace storm {
                     for (auto const& update : command.getUpdates()) {
                         std::vector<storm::jani::Assignment> assignments;
                         for (auto const& assignment : update.getAssignments()) {
-                            assignments.push_back(storm::jani::Assignment(assignment.getVariable(), assignment.getExpression()));
+                            assignments.push_back(storm::jani::Assignment(assignment.getVariable().getName(), assignment.getExpression()));
                         }
                         
                         if (rateExpression) {
@@ -1668,6 +1669,7 @@ namespace storm {
             janiModel.finalize();
             
             return janiModel;
+#endif
         }
         
         std::ostream& operator<<(std::ostream& out, Program::ModelType const& type) {

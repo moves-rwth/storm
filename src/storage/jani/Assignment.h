@@ -1,6 +1,8 @@
 #pragma once
 
-#include "src/storage/expressions/Variable.h"
+#include <functional>
+
+#include "src/storage/jani/Variable.h"
 #include "src/storage/expressions/Expression.h"
 
 namespace storm {
@@ -11,8 +13,13 @@ namespace storm {
             /*!
              * Creates an assignment of the given expression to the given variable.
              */
-            Assignment(storm::expressions::Variable const& variable, storm::expressions::Expression const& expression);
+            Assignment(storm::jani::Variable const& variable, storm::expressions::Expression const& expression);
             
+            /*!
+             * Retrieves the expression variable that is written in this assignment.
+             */
+            storm::jani::Variable const& getVariable() const;
+                
             /*!
              * Retrieves the expression variable that is written in this assignment.
              */
@@ -28,11 +35,16 @@ namespace storm {
              */
             void setAssignedExpression(storm::expressions::Expression const& expression);
 
+            /**
+             * Retrieves whether the assignment assigns to a transient variable.
+             */
+            bool isTransientAssignment() const;
+            
             friend std::ostream& operator<<(std::ostream& stream, Assignment const& assignment);
             
         private:
             // The variable being assigned.
-            storm::expressions::Variable variable;
+            std::reference_wrapper<storm::jani::Variable const> variable;
             
             // The expression that is being assigned to the variable.
             storm::expressions::Expression expression;

@@ -3,12 +3,16 @@
 namespace storm  {
     namespace jani {
         
-        Assignment::Assignment(storm::expressions::Variable const& variable, storm::expressions::Expression const& expression) : variable(variable), expression(expression) {
+        Assignment::Assignment(storm::jani::Variable const& variable, storm::expressions::Expression const& expression) : variable(variable), expression(expression) {
             // Intentionally left empty.
         }
         
+        storm::jani::Variable const& Assignment::getVariable() const {
+            return variable.get();
+        }
+        
         storm::expressions::Variable const& Assignment::getExpressionVariable() const {
-            return variable;
+            return variable.get().getExpressionVariable();
         }
         
         storm::expressions::Expression const& Assignment::getAssignedExpression() const {
@@ -19,8 +23,12 @@ namespace storm  {
             this->expression = expression;
         }
         
+        bool Assignment::isTransientAssignment() const {
+            return this->variable.get().isTransientVariable();
+        }
+        
         std::ostream& operator<<(std::ostream& stream, Assignment const& assignment) {
-            stream << assignment.getExpressionVariable().getName() << " := " << assignment.getAssignedExpression();
+            stream << assignment.getVariable().getName() << " := " << assignment.getAssignedExpression();
             return stream;
         }
         
