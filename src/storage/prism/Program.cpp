@@ -7,8 +7,6 @@
 #include "src/storage/expressions/ExpressionManager.h"
 #include "src/settings/SettingsManager.h"
 #include "src/settings/modules/IOSettings.h"
-#include "src/utility/macros.h"
-#include "src/utility/solver.h"
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/exceptions/OutOfRangeException.h"
 #include "src/exceptions/WrongFormatException.h"
@@ -17,6 +15,10 @@
 #include "src/solver/SmtSolver.h"
 
 #include "src/storage/jani/Model.h"
+
+#include "src/utility/macros.h"
+#include "src/utility/solver.h"
+#include "src/utility/vector.h"
 
 #include "src/storage/prism/CompositionVisitor.h"
 #include "src/storage/prism/Compositions.h"
@@ -1360,7 +1362,10 @@ namespace storm {
                         solver->add(atLeastOneCommandFromModule);
                     }
                     
-                    // Now we are in a position to start the enumeration over all command variables.
+                    // Now we are in a position to start the enumeration over all command variables. While doing so, we
+                    // keep track of previously seen command combinations, because the AllSat procedures are not
+                    // always guaranteed to only provide distinct models.
+                    std::unordered_set<std::vector<uint_fast64_t>, storm::utility::vector::VectorHash<uint_fast64_t>> seenCommandCombinations;
                     solver->allSat(allCommandVariables, [&] (storm::solver::SmtSolver::ModelReference& modelReference) -> bool {
                         // Now we need to reconstruct the chosen commands from the valuation of the command variables.
                         std::vector<std::vector<std::reference_wrapper<Command const>>> chosenCommands(possibleCommands.size());
@@ -1382,12 +1387,19 @@ namespace storm {
                         
                         bool movedAtLeastOneIterator = false;
                         std::vector<std::reference_wrapper<Command const>> commandCombination(chosenCommands.size(), chosenCommands.front().front());
+                        std::vector<uint_fast64_t> commandCombinationIndices(iterators.size());
                         do {
                             for (uint_fast64_t index = 0; index < iterators.size(); ++index) {
                                 commandCombination[index] = *iterators[index];
+                                commandCombinationIndices[index] = commandCombination[index].get().getGlobalIndex();
                             }
                             
-                            newCommands.push_back(synchronizeCommands(nextCommandIndex, actionIndex, nextUpdateIndex, indexToActionMap.find(actionIndex)->second, commandCombination));
+                            // Only add the command combination if it was not previously seen.
+                            auto seenIt = seenCommandCombinations.find(commandCombinationIndices);
+                            if (seenIt == seenCommandCombinations.end()) {
+                                newCommands.push_back(synchronizeCommands(nextCommandIndex, actionIndex, nextUpdateIndex, indexToActionMap.find(actionIndex)->second, commandCombination));
+                                seenCommandCombinations.insert(commandCombinationIndices);
+                            }
                             
                             // Move the counters appropriately.
                             ++nextCommandIndex;
