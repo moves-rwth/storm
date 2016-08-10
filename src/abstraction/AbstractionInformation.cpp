@@ -129,44 +129,44 @@ namespace storm {
         }
         
         template<storm::dd::DdType DdType>
-        void AbstractionInformation<DdType>::createEncodingVariables(uint64_t player1VariableCount, uint64_t player2VariableCount, uint64_t probabilisticBranchingVariableCount) {
-            STORM_LOG_THROW(player1Variables.empty() && player2Variables.empty() && probabilisticBranchingVariables.empty(), storm::exceptions::InvalidOperationException, "Variables have already been created.");
+        void AbstractionInformation<DdType>::createEncodingVariables(uint64_t player1VariableCount, uint64_t player2VariableCount, uint64_t auxVariableCount) {
+            STORM_LOG_THROW(player1Variables.empty() && player2Variables.empty() && auxVariables.empty(), storm::exceptions::InvalidOperationException, "Variables have already been created.");
             
             for (uint64_t index = 0; index < player1VariableCount; ++index) {
-                storm::expressions::Variable newVariable = ddManager->addMetaVariable("pl1_" + std::to_string(index)).first;
+                storm::expressions::Variable newVariable = ddManager->addMetaVariable("pl1." + std::to_string(index)).first;
                 player1Variables.push_back(newVariable);
                 player1VariableBdds.push_back(ddManager->getEncoding(newVariable, 1));
             }
             STORM_LOG_DEBUG("Created " << player1VariableCount << " player 1 variables.");
 
             for (uint64_t index = 0; index < player2VariableCount; ++index) {
-                storm::expressions::Variable newVariable = ddManager->addMetaVariable("pl2_" + std::to_string(index)).first;
+                storm::expressions::Variable newVariable = ddManager->addMetaVariable("pl2." + std::to_string(index)).first;
                 player2Variables.push_back(newVariable);
                 player2VariableBdds.push_back(ddManager->getEncoding(newVariable, 1));
             }
             STORM_LOG_DEBUG("Created " << player2VariableCount << " player 2 variables.");
 
-            for (uint64_t index = 0; index < probabilisticBranchingVariableCount; ++index) {
-                storm::expressions::Variable newVariable = ddManager->addMetaVariable("pb_" + std::to_string(index)).first;
-                probabilisticBranchingVariables.push_back(newVariable);
-                probabilisticBranchingVariableBdds.push_back(ddManager->getEncoding(newVariable, 1));
+            for (uint64_t index = 0; index < auxVariableCount; ++index) {
+                storm::expressions::Variable newVariable = ddManager->addMetaVariable("aux_" + std::to_string(index)).first;
+                auxVariables.push_back(newVariable);
+                auxVariableBdds.push_back(ddManager->getEncoding(newVariable, 1));
             }
-            STORM_LOG_DEBUG("Created " << probabilisticBranchingVariableCount << " probabilistic branching variables.");
+            STORM_LOG_DEBUG("Created " << auxVariableCount << " auxiliary variables.");
         }
         
         template<storm::dd::DdType DdType>
         storm::dd::Bdd<DdType> AbstractionInformation<DdType>::encodePlayer1Choice(uint_fast64_t index, uint_fast64_t numberOfVariables) const {
-            return encodeChoice(index, numberOfVariables, player1VariableBdds);
+            return encodeChoice(index, 0, numberOfVariables, player1VariableBdds);
         }
         
         template<storm::dd::DdType DdType>
         storm::dd::Bdd<DdType> AbstractionInformation<DdType>::encodePlayer2Choice(uint_fast64_t index, uint_fast64_t numberOfVariables) const {
-            return encodeChoice(index, numberOfVariables, player2VariableBdds);
+            return encodeChoice(index, 0, numberOfVariables, player2VariableBdds);
         }
         
         template<storm::dd::DdType DdType>
-        storm::dd::Bdd<DdType> AbstractionInformation<DdType>::encodeProbabilisticChoice(uint_fast64_t index, uint_fast64_t numberOfVariables) const {
-            return encodeChoice(index, numberOfVariables, probabilisticBranchingVariableBdds);
+        storm::dd::Bdd<DdType> AbstractionInformation<DdType>::encodeAux(uint_fast64_t index, uint_fast64_t offset, uint_fast64_t numberOfVariables) const {
+            return encodeChoice(index, offset, numberOfVariables, auxVariableBdds);
         }
         
         template<storm::dd::DdType DdType>
@@ -200,13 +200,13 @@ namespace storm {
         }
         
         template<storm::dd::DdType DdType>
-        std::vector<storm::expressions::Variable> const& AbstractionInformation<DdType>::getProbabilisticBranchingVariables() const {
-            return probabilisticBranchingVariables;
+        std::vector<storm::expressions::Variable> const& AbstractionInformation<DdType>::getAuxVariables() const {
+            return auxVariables;
         }
         
         template<storm::dd::DdType DdType>
-        std::set<storm::expressions::Variable> AbstractionInformation<DdType>::getProbabilisticBranchingVariableSet(uint_fast64_t count) const {
-            return std::set<storm::expressions::Variable>(probabilisticBranchingVariables.begin(), probabilisticBranchingVariables.begin() + count);
+        std::set<storm::expressions::Variable> AbstractionInformation<DdType>::getAuxVariableSet(uint_fast64_t offset, uint_fast64_t count) const {
+            return std::set<storm::expressions::Variable>(auxVariables.begin() + offset, auxVariables.begin() + offset + count);
         }
         
         template<storm::dd::DdType DdType>
@@ -235,8 +235,8 @@ namespace storm {
         }
         
         template<storm::dd::DdType DdType>
-        std::size_t AbstractionInformation<DdType>::getProbabilisticBranchingVariableCount() const {
-            return probabilisticBranchingVariables.size();
+        std::size_t AbstractionInformation<DdType>::getAuxVariableCount() const {
+            return auxVariables.size();
         }
         
         template<storm::dd::DdType DdType>
@@ -298,13 +298,14 @@ namespace storm {
         }
         
         template<storm::dd::DdType DdType>
-        storm::dd::Bdd<DdType> AbstractionInformation<DdType>::encodeChoice(uint_fast64_t index, uint_fast64_t numberOfVariables, std::vector<storm::dd::Bdd<DdType>> const& variables) const {
+        storm::dd::Bdd<DdType> AbstractionInformation<DdType>::encodeChoice(uint_fast64_t index, uint_fast64_t offset, uint_fast64_t numberOfVariables, std::vector<storm::dd::Bdd<DdType>> const& variables) const {
             storm::dd::Bdd<DdType> result = ddManager->getBddOne();
-            for (uint_fast64_t bitIndex = 0; bitIndex < numberOfVariables; ++bitIndex) {
+            numberOfVariables += offset;
+            for (uint_fast64_t bitIndex = numberOfVariables; bitIndex > offset; --bitIndex) {
                 if ((index & 1) != 0) {
-                    result &= variables[bitIndex];
+                    result &= variables[bitIndex - 1];
                 } else {
-                    result &= !variables[bitIndex];
+                    result &= !variables[bitIndex - 1];
                 }
                 index >>= 1;
             }

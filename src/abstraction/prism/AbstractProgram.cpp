@@ -132,7 +132,7 @@ namespace storm {
                 std::set<storm::expressions::Variable> variablesToAbstract(abstractionInformation.getPlayer1VariableSet(abstractionInformation.getPlayer1VariableCount()));
                 auto player2Variables = abstractionInformation.getPlayer2VariableSet(gameBdd.second);
                 variablesToAbstract.insert(player2Variables.begin(), player2Variables.end());
-                auto probBranchingVariables = abstractionInformation.getProbabilisticBranchingVariableSet(abstractionInformation.getProbabilisticBranchingVariableCount());
+                auto probBranchingVariables = abstractionInformation.getAuxVariableSet(0, abstractionInformation.getAuxVariableCount());
                 variablesToAbstract.insert(probBranchingVariables.begin(), probBranchingVariables.end());
                 
                 // Do a reachability analysis on the raw transition relation.
@@ -156,7 +156,7 @@ namespace storm {
                 // If there are deadlock states, we fix them now.
                 storm::dd::Add<DdType, ValueType> deadlockTransitions = abstractionInformation.getDdManager().template getAddZero<ValueType>();
                 if (!deadlockStates.isZero()) {
-                    deadlockTransitions = (deadlockStates && abstractionInformation.getAllPredicateIdentities() && abstractionInformation.encodePlayer1Choice(0, abstractionInformation.getPlayer1VariableCount()) && abstractionInformation.encodePlayer2Choice(0, gameBdd.second) && abstractionInformation.encodeProbabilisticChoice(0, abstractionInformation.getProbabilisticBranchingVariableCount())).template toAdd<ValueType>();
+                    deadlockTransitions = (deadlockStates && abstractionInformation.getAllPredicateIdentities() && abstractionInformation.encodePlayer1Choice(0, abstractionInformation.getPlayer1VariableCount()) && abstractionInformation.encodePlayer2Choice(0, gameBdd.second) && abstractionInformation.encodeAux(0, 0, abstractionInformation.getAuxVariableCount())).template toAdd<ValueType>();
                 }
 
                 // Construct the transition matrix by cutting away the transitions of unreachable states.
@@ -167,7 +167,7 @@ namespace storm {
                 std::set<storm::expressions::Variable> allNondeterminismVariables = usedPlayer2Variables;
                 allNondeterminismVariables.insert(abstractionInformation.getPlayer1Variables().begin(), abstractionInformation.getPlayer1Variables().end());
 
-                return std::make_unique<MenuGame<DdType, ValueType>>(abstractionInformation.getDdManagerAsSharedPointer(), reachableStates, initialStates, abstractionInformation.getDdManager().getBddZero(), transitionMatrix, bottomStates, abstractionInformation.getSourceVariables(), abstractionInformation.getSuccessorVariables(), abstractionInformation.getSourceSuccessorVariablePairs(), std::set<storm::expressions::Variable>(abstractionInformation.getPlayer1Variables().begin(), abstractionInformation.getPlayer1Variables().end()), usedPlayer2Variables, allNondeterminismVariables, std::set<storm::expressions::Variable>(abstractionInformation.getProbabilisticBranchingVariables().begin(), abstractionInformation.getProbabilisticBranchingVariables().end()), abstractionInformation.getPredicateToBddMap());
+                return std::make_unique<MenuGame<DdType, ValueType>>(abstractionInformation.getDdManagerAsSharedPointer(), reachableStates, initialStates, abstractionInformation.getDdManager().getBddZero(), transitionMatrix, bottomStates, abstractionInformation.getSourceVariables(), abstractionInformation.getSuccessorVariables(), abstractionInformation.getSourceSuccessorVariablePairs(), std::set<storm::expressions::Variable>(abstractionInformation.getPlayer1Variables().begin(), abstractionInformation.getPlayer1Variables().end()), usedPlayer2Variables, allNondeterminismVariables, std::set<storm::expressions::Variable>(abstractionInformation.getAuxVariables().begin(), abstractionInformation.getAuxVariables().end()), abstractionInformation.getPredicateToBddMap());
             }
             
             template <storm::dd::DdType DdType, typename ValueType>

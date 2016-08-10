@@ -162,13 +162,13 @@ namespace storm {
             std::set<storm::expressions::Variable> const& getVariables() const;
             
             /*!
-             * Creates the given number of variables used to encode the choices of player 1/2 and probabilistic branching.
+             * Creates the given number of variables used to encode the choices of player 1/2 and auxiliary information.
              *
              * @param player1VariableCount The number of variables to use for encoding player 1 choices.
              * @param player2VariableCount The number of variables to use for encoding player 2 choices.
-             * @param probabilisticBranchingVariableCount The number of variables to use for encoding probabilistic branching.
+             * @param auxVariableCount The number of variables to use for encoding auxiliary information.
              */
-            void createEncodingVariables(uint64_t player1VariableCount, uint64_t player2VariableCount, uint64_t probabilisticBranchingVariableCount);
+            void createEncodingVariables(uint64_t player1VariableCount, uint64_t player2VariableCount, uint64_t auxVariableCount);
             
             /*!
              * Encodes the given index using the indicated player 1 variables.
@@ -192,10 +192,11 @@ namespace storm {
              * Encodes the given index using the indicated probabilistic branching variables.
              *
              * @param index The index to encode.
+             * @param offset The offset within the auxiliary variables at which to start encoding.
              * @param numberOfVariables The number of variables to use for encoding the index.
              * @return The index encoded as a BDD.
              */
-            storm::dd::Bdd<DdType> encodeProbabilisticChoice(uint_fast64_t index, uint_fast64_t numberOfVariables) const;
+            storm::dd::Bdd<DdType> encodeAux(uint_fast64_t index, uint_fast64_t offset, uint_fast64_t numberOfVariables) const;
             
             /*!
              * Retrieves the cube of player 2 variables in the given range [offset, numberOfVariables).
@@ -252,26 +253,27 @@ namespace storm {
             std::set<storm::expressions::Variable> getPlayer2VariableSet(uint_fast64_t count) const;
 
             /*!
-             * Retrieves the meta variables associated with the probabilistic branching.
+             * Retrieves the meta variables associated with auxiliary information.
              *
-             * @return The meta variables associated with the probabilistic branching.
+             * @return The meta variables associated with auxiliary information.
              */
-            std::vector<storm::expressions::Variable> const& getProbabilisticBranchingVariables() const;
+            std::vector<storm::expressions::Variable> const& getAuxVariables() const;
 
             /*!
-             * Retrieves the set of probabilistic branching variables.
+             * Retrieves the requested set of auxiliary variables.
              *
-             * @param count The number of probabilistic branching variables to include.
-             * @return The set of probabilistic branching variables.
+             * @param offset The offset at which to start gatherin the auxiliary variables.
+             * @param count The number of auxiliary variables to include.
+             * @return The set of auxiliary variables.
              */
-            std::set<storm::expressions::Variable> getProbabilisticBranchingVariableSet(uint_fast64_t count) const;
+            std::set<storm::expressions::Variable> getAuxVariableSet(uint_fast64_t offset, uint_fast64_t count) const;
 
             /*!
-             * Retrieves the number of probabilistic branching variables.
+             * Retrieves the number of auxiliary variables.
              *
-             * @return The number of probabilistic branching variables.
+             * @return The number of auxiliary variables.
              */
-            std::size_t getProbabilisticBranchingVariableCount() const;
+            std::size_t getAuxVariableCount() const;
             
             /*!
              * Retrieves the set of source meta variables.
@@ -354,10 +356,11 @@ namespace storm {
              * Encodes the given index with the given number of variables from the given variables.
              *
              * @param index The index to encode.
+             * @param offset The offset at which to start encoding.
              * @param numberOfVariables The total number of variables to use.
              * @param variables The BDDs of the variables to use to encode the index.
              */
-            storm::dd::Bdd<DdType> encodeChoice(uint_fast64_t index, uint_fast64_t numberOfVariables, std::vector<storm::dd::Bdd<DdType>> const& variables) const;
+            storm::dd::Bdd<DdType> encodeChoice(uint_fast64_t index, uint_fast64_t offset, uint_fast64_t numberOfVariables, std::vector<storm::dd::Bdd<DdType>> const& variables) const;
                         
             // The expression related data.
             
@@ -415,11 +418,11 @@ namespace storm {
             /// The BDDs associated with the meta variables of player 2.
             std::vector<storm::dd::Bdd<DdType>> player2VariableBdds;
             
-            /// Variables that can be used to encode the probabilistic branching.
-            std::vector<storm::expressions::Variable> probabilisticBranchingVariables;
+            /// Variables that can be used to encode auxiliary information.
+            std::vector<storm::expressions::Variable> auxVariables;
             
-            /// The BDDs associated with the meta variables encoding the probabilistic branching.
-            std::vector<storm::dd::Bdd<DdType>> probabilisticBranchingVariableBdds;
+            /// The BDDs associated with the meta variables encoding auxiliary information.
+            std::vector<storm::dd::Bdd<DdType>> auxVariableBdds;
         };
         
     }

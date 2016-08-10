@@ -226,7 +226,7 @@ namespace storm {
                         } else {
                             updateBdd &= !this->getAbstractionInformation().encodePredicateAsSuccessor(variableIndexPair.second);
                         }
-                        updateBdd &= this->getAbstractionInformation().encodeProbabilisticChoice(updateIndex, this->getAbstractionInformation().getProbabilisticBranchingVariableCount());
+                        updateBdd &= this->getAbstractionInformation().encodeAux(updateIndex, 0, this->getAbstractionInformation().getAuxVariableCount());
                     }
                     
                     result |= updateBdd;
@@ -265,7 +265,7 @@ namespace storm {
                         }
                     }
                     
-                    result |= updateIdentity && this->getAbstractionInformation().encodeProbabilisticChoice(updateIndex, this->getAbstractionInformation().getProbabilisticBranchingVariableCount());
+                    result |= updateIdentity && this->getAbstractionInformation().encodeAux(updateIndex, 0, this->getAbstractionInformation().getAuxVariableCount());
                 }
                 return result;
             }
@@ -295,7 +295,7 @@ namespace storm {
             storm::dd::Add<DdType, ValueType> AbstractCommand<DdType, ValueType>::getCommandUpdateProbabilitiesAdd() const {
                 storm::dd::Add<DdType, ValueType> result = this->getAbstractionInformation().getDdManager().template getAddZero<ValueType>();
                 for (uint_fast64_t updateIndex = 0; updateIndex < command.get().getNumberOfUpdates(); ++updateIndex) {
-                    result += this->getAbstractionInformation().encodeProbabilisticChoice(updateIndex, this->getAbstractionInformation().getProbabilisticBranchingVariableCount()).template toAdd<ValueType>() * this->getAbstractionInformation().getDdManager().getConstant(evaluator.asRational(command.get().getUpdate(updateIndex).getLikelihoodExpression()));
+                    result += this->getAbstractionInformation().encodeAux(updateIndex, 0, this->getAbstractionInformation().getAuxVariableCount()).template toAdd<ValueType>() * this->getAbstractionInformation().getDdManager().getConstant(evaluator.asRational(command.get().getUpdate(updateIndex).getLikelihoodExpression()));
                 }
                 result *= this->getAbstractionInformation().encodePlayer1Choice(command.get().getGlobalIndex(), this->getAbstractionInformation().getPlayer1VariableCount()).template toAdd<ValueType>();
                 return result;
