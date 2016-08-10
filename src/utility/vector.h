@@ -25,6 +25,18 @@ namespace storm {
     namespace utility {
         namespace vector {
 
+            template<typename ValueType>
+            struct VectorHash {
+                size_t operator()(std::vector<ValueType> const& vec) const {
+                    std::hash<ValueType> hasher;
+                    std::size_t seed = 0;
+                    for (ValueType const& element : vec) {
+                        seed ^= hasher(element) + 0x9e3779b9 + (seed<<6) + (seed>>2);
+                    }
+                    return seed;
+                }
+            };
+            
             /*!
              * Sets the provided values at the provided positions in the given vector.
              *
@@ -712,7 +724,7 @@ namespace storm {
              * @return String containing the representation of the vector.
              */
             template<typename ValueType>
-            std::string toString(std::vector<ValueType> vector) {
+            std::string toString(std::vector<ValueType> const& vector) {
                 std::stringstream stream;
                 stream << "vector (" << vector.size() << ") [ ";
                 if (!vector.empty()) {
