@@ -7,6 +7,11 @@ namespace storm {
             // Intentionally left empty.
         }
         
+        BooleanVariable::BooleanVariable(std::string const& name, storm::expressions::Variable const& variable, storm::expressions::Expression const& initValue, bool transient) : Variable(name, variable, initValue, transient) {
+            // Intentionally left empty.
+        }
+        
+        
         bool BooleanVariable::isBooleanVariable() const {
             return true;
         }

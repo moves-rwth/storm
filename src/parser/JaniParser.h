@@ -71,6 +71,9 @@ namespace storm {
             //   Default values -- assumptions from JANI.
             //////////
             static const bool defaultVariableTransient;
+            
+            static const bool defaultBooleanInitialValue;
+            static const int64_t defaultIntegerInitialValue;
 
             static const std::set<std::string> unsupportedOpstrings;
 

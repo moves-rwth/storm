@@ -20,6 +20,8 @@ namespace storm {
         // Defaults
         ////////////
         const bool JaniParser::defaultVariableTransient = false;
+        const bool JaniParser::defaultBooleanInitialValue = false;
+        const int64_t JaniParser::defaultIntegerInitialValue = 0;
         const std::set<std::string> JaniParser::unsupportedOpstrings({"sin", "cos", "tan", "cot", "sec", "csc", "asin", "acos", "atan", "acot", "asec", "acsc",
                                                          "sinh", "cosh", "tanh", "coth", "sech", "csch", "asinh", "acosh", "atanh", "asinh", "acosh"});
 
@@ -221,7 +223,7 @@ namespace storm {
                 if(kind == "bounded") {
                     // First do the bounds, that makes the code a bit more streamlined
                     STORM_LOG_THROW(variableStructure.at("type").count("lower-bound") == 1, storm::exceptions::InvalidJaniException, "For bounded type as in variable " << name << "(scope: " << scopeDescription << ") lower-bound must be given");
-                    storm::expressions::Expression lowerboundExpr = parseExpression(variableStructure.at("type").at("lower-bound"), "Lower bound for variable "+ name + " (scope: " + scopeDescription + ")");
+                    storm::expressions::Expression lowerboundExpr = parseExpression(variableStructure.at("type").at("lower-bound"), "Lower bound for variable " + name + " (scope: " + scopeDescription + ")");
                     assert(lowerboundExpr.isInitialized());
                     STORM_LOG_THROW(variableStructure.at("type").count("upper-bound") == 1, storm::exceptions::InvalidJaniException, "For bounded type as in variable " << name << "(scope: " << scopeDescription << ") upper-bound must be given");
                     storm::expressions::Expression upperboundExpr = parseExpression(variableStructure.at("type").at("upper-bound"), "Upper bound for variable "+ name + " (scope: " + scopeDescription + ")");
@@ -237,6 +239,9 @@ namespace storm {
                     }
                     std::string basictype = getString(variableStructure.at("type").at("base"), "base for bounded type as in variable " + name  + "(scope: " + scopeDescription + ") ");
                     if(basictype == "int") {
+                        if(initVal) {
+                            STORM_LOG_THROW(initVal.get().hasIntegerType(), storm::exceptions::InvalidJaniException, "Initial value for integer variable " + name + "(scope " + scopeDescription + ") should be an integer");
+                        }
                         STORM_LOG_THROW(lowerboundExpr.hasIntegerType(), storm::exceptions::InvalidJaniException, "Lower bound for bounded integer variable " << name << "(scope: " << scopeDescription << ") must be integer-typed");
                         STORM_LOG_THROW(upperboundExpr.hasIntegerType(), storm::exceptions::InvalidJaniException, "Upper bound for bounded integer variable " << name << "(scope: " << scopeDescription << ") must be integer-typed");
                         return storm::jani::makeBoundedIntegerVariable(name, expressionManager->declareIntegerVariable(exprManagerName), initVal, transientVar, lowerboundExpr, upperboundExpr);
@@ -252,6 +257,14 @@ namespace storm {
                     // expressionManager->declareRationalVariable(name);
                     // TODO something.
                 } else if(variableStructure.at("type") == "bool") {
+                    if(initvalcount == 1) {
+                        if(variableStructure.at("initial-value").is_null()) {
+                            initVal = expressionManager->boolean(defaultBooleanInitialValue);
+                        } else {
+                            initVal = parseExpression(variableStructure.at("initial-value"), "Initial value for variable " + name + " (scope: " + scopeDescription + ") ");
+                        }
+                        return std::make_shared<storm::jani::BooleanVariable>(name, expressionManager->declareBooleanVariable(exprManagerName), initVal.get(), transientVar);
+                    }
                     return std::make_shared<storm::jani::BooleanVariable>(name, expressionManager->declareBooleanVariable(exprManagerName), transientVar);
                 } else if(variableStructure.at("type") == "int") {
                     return std::make_shared<storm::jani::UnboundedIntegerVariable>(name, expressionManager->declareIntegerVariable(exprManagerName), transientVar);
