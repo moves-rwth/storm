@@ -9,11 +9,19 @@ namespace storm {
         class BoundedIntegerVariable : public Variable {
         public:
             /*!
-             * Creates a bounded integer variable.
+             * Creates a bounded integer variable with initial value.
+             */
+            BoundedIntegerVariable(std::string const& name, storm::expressions::Variable const& variable, storm::expressions::Expression const& initValue, bool transient, storm::expressions::Expression const& lowerBound, storm::expressions::Expression const& upperBound);
+            /*!
+             * Creates a bounded integer variable with transient set to false and an initial value.
+             */
+            BoundedIntegerVariable(std::string const& name, storm::expressions::Variable const& variable, storm::expressions::Expression const& initValue, storm::expressions::Expression const& lowerBound, storm::expressions::Expression const& upperBound);
+            /*!
+             * Creates a bounded integer variable without initial value.
              */
             BoundedIntegerVariable(std::string const& name, storm::expressions::Variable const& variable, bool transient, storm::expressions::Expression const& lowerBound, storm::expressions::Expression const& upperBound);
             /*!
-             * Creates a bounded integer variable with transient set to false.
+             * Creates a bounded integer variable with transient set to false and no initial value.
              */
             BoundedIntegerVariable(std::string const& name, storm::expressions::Variable const& variable, storm::expressions::Expression const& lowerBound, storm::expressions::Expression const& upperBound);
 
@@ -52,5 +60,9 @@ namespace storm {
             storm::expressions::Expression upperBound;
         };
         
+        /**
+         * Convenience function to call the appropriate constructor and retur a shared pointer to the variable.
+         */
+        std::shared_ptr<BoundedIntegerVariable> makeBoundedIntegerVariable(std::string const& name, storm::expressions::Variable const& variable, boost::optional<storm::expressions::Expression> initValue, bool transient, boost::optional<storm::expressions::Expression> lowerBound, boost::optional<storm::expressions::Expression> upperBound);
     }
 }

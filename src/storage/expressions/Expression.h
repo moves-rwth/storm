@@ -37,6 +37,10 @@ namespace storm {
             friend Expression operator>=(Expression const& first, Expression const& second);
             friend Expression operator<(Expression const& first, Expression const& second);
             friend Expression operator<=(Expression const& first, Expression const& second);
+            friend Expression operator>(Expression const& first, int64_t second);
+            friend Expression operator>=(Expression const& first, int64_t second);
+            friend Expression operator<(Expression const& first, int64_t second);
+            friend Expression operator<=(Expression const& first, int64_t second);
             friend Expression ite(Expression const& condition, Expression const& thenExpression, Expression const& elseExpression);
             friend Expression implies(Expression const& first, Expression const& second);
             friend Expression iff(Expression const& first, Expression const& second);
@@ -338,6 +342,10 @@ namespace storm {
         Expression operator>=(Expression const& first, Expression const& second);
         Expression operator<(Expression const& first, Expression const& second);
         Expression operator<=(Expression const& first, Expression const& second);
+        Expression operator>(Expression const& first, int64_t second);
+        Expression operator>=(Expression const& first, int64_t second);
+        Expression operator<(Expression const& first, int64_t second);
+        Expression operator<=(Expression const& first, int64_t second);
         Expression ite(Expression const& condition, Expression const& thenExpression, Expression const& elseExpression);
         Expression implies(Expression const& first, Expression const& second);
         Expression iff(Expression const& first, Expression const& second);
