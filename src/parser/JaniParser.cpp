@@ -564,7 +564,7 @@ namespace storm {
                 STORM_LOG_THROW(locEntry.count("name") == 1, storm::exceptions::InvalidJaniException, "Locations for automaton '" << name << "' must have exactly one name");
                 std::string locName = getString(locEntry.at("name"), "location of automaton " + name);
                 STORM_LOG_THROW(locIds.count(locName) == 0, storm::exceptions::InvalidJaniException, "Location with name '" + locName + "' already exists in automaton '" + name + "'");
-                
+                STORM_LOG_THROW(locEntry.count("invariant") > 0, storm::exceptions::InvalidJaniException, "Invariants in locations as in '" + locName + "' are not supported");
                 //STORM_LOG_THROW(locEntry.count("invariant") > 0 && !supportsInvariants(parentModel.getModelType()), storm::exceptions::InvalidJaniException, "Invariants are not supported in the model type " + to_string(parentModel.getModelType()));
                 std::vector<storm::jani::Assignment> transientAssignments;
                 for(auto const& transientValueEntry : locEntry.at("transient-values")) {
@@ -582,6 +582,12 @@ namespace storm {
             for(json const& initLocStruct : automatonStructure.at("initial-locations")) {
                 automaton.addInitialLocation(getString(initLocStruct, "Initial locations for automaton '" + name + "'."));
             }
+            STORM_LOG_THROW(automatonStructure.count("restrict-initial") < 2, storm::exceptions::InvalidJaniException, "Automaton '" << name << "' has multiple initial value restrictions");
+            storm::expressions::Expression initialValueRestriction = expressionManager->boolean(true);
+            if(automatonStructure.count("restrict-initial") > 0) {
+                initialValueRestriction  = parseExpression(automatonStructure.at("restrict-initial"), "Initial value restriction for automaton " + name);
+            }
+            automaton.setInitialStatesExpression(initialValueRestriction);
             uint64_t varDeclCount = automatonStructure.count("variables");
             STORM_LOG_THROW(varDeclCount < 2, storm::exceptions::InvalidJaniException, "Automaton '" << name << "' has more than one list of variables");
             std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> localVars;
