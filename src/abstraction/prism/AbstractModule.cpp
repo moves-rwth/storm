@@ -1,6 +1,7 @@
 #include "src/abstraction/prism/AbstractModule.h"
 
 #include "src/abstraction/AbstractionInformation.h"
+#include "src/abstraction/prism/GameBddResult.h"
 
 #include "src/storage/dd/DdManager.h"
 #include "src/storage/dd/Add.h"
@@ -12,11 +13,11 @@ namespace storm {
         namespace prism {
             
             template <storm::dd::DdType DdType, typename ValueType>
-            AbstractModule<DdType, ValueType>::AbstractModule(storm::prism::Module const& module, AbstractionInformation<DdType>& abstractionInformation, storm::utility::solver::SmtSolverFactory const& smtSolverFactory) : smtSolverFactory(smtSolverFactory), abstractionInformation(abstractionInformation), commands(), module(module) {
+            AbstractModule<DdType, ValueType>::AbstractModule(storm::prism::Module const& module, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool allGuardsAdded) : smtSolverFactory(smtSolverFactory), abstractionInformation(abstractionInformation), commands(), module(module) {
                 
                 // For each concrete command, we create an abstract counterpart.
                 for (auto const& command : module.getCommands()) {
-                    commands.emplace_back(command, abstractionInformation, smtSolverFactory);
+                    commands.emplace_back(command, abstractionInformation, smtSolverFactory, allGuardsAdded);
                 }
             }
             
@@ -28,22 +29,35 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            std::pair<storm::dd::Bdd<DdType>, uint_fast64_t> AbstractModule<DdType, ValueType>::getAbstractBdd() {
+            GameBddResult<DdType> AbstractModule<DdType, ValueType>::getAbstractBdd() {
                 // First, we retrieve the abstractions of all commands.
-                std::vector<std::pair<storm::dd::Bdd<DdType>, uint_fast64_t>> commandDdsAndUsedOptionVariableCounts;
+                std::vector<GameBddResult<DdType>> commandDdsAndUsedOptionVariableCounts;
                 uint_fast64_t maximalNumberOfUsedOptionVariables = 0;
+                uint_fast64_t nextFreePlayer2Index = 0;
                 for (auto& command : commands) {
                     commandDdsAndUsedOptionVariableCounts.push_back(command.getAbstractBdd());
-                    maximalNumberOfUsedOptionVariables = std::max(maximalNumberOfUsedOptionVariables, commandDdsAndUsedOptionVariableCounts.back().second);
+                    maximalNumberOfUsedOptionVariables = std::max(maximalNumberOfUsedOptionVariables, commandDdsAndUsedOptionVariableCounts.back().numberOfPlayer2Variables);
+                    nextFreePlayer2Index = std::max(nextFreePlayer2Index, commandDdsAndUsedOptionVariableCounts.back().nextFreePlayer2Index);
                 }
                 
                 // Then, we build the module BDD by adding the single command DDs. We need to make sure that all command
                 // DDs use the same amount DD variable encoding the choices of player 2.
                 storm::dd::Bdd<DdType> result = this->getAbstractionInformation().getDdManager().getBddZero();
                 for (auto const& commandDd : commandDdsAndUsedOptionVariableCounts) {
-                    result |= commandDd.first && this->getAbstractionInformation().getPlayer2ZeroCube(maximalNumberOfUsedOptionVariables, commandDd.second);
+                    result |= commandDd.bdd && this->getAbstractionInformation().getPlayer2ZeroCube(maximalNumberOfUsedOptionVariables, commandDd.numberOfPlayer2Variables);
                 }
-                return std::make_pair(result, maximalNumberOfUsedOptionVariables);
+                return GameBddResult<DdType>(result, maximalNumberOfUsedOptionVariables, nextFreePlayer2Index);
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
+            storm::dd::Bdd<DdType> AbstractModule<DdType, ValueType>::getBottomStateTransitions(storm::dd::Bdd<DdType> const& reachableStates, uint_fast64_t numberOfPlayer2Variables) {
+                storm::dd::Bdd<DdType> result = this->getAbstractionInformation().getDdManager().getBddZero();
+                
+                for (auto& command : commands) {
+                    result |= command.getBottomStateTransitions(reachableStates, numberOfPlayer2Variables);
+                }
+                
+                return result;
             }
             
             template <storm::dd::DdType DdType, typename ValueType>

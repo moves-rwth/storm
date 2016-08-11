@@ -17,7 +17,7 @@ namespace storm {
     namespace abstraction {
         namespace prism {
             template <storm::dd::DdType DdType, typename ValueType>
-            AbstractCommand<DdType, ValueType>::AbstractCommand(storm::prism::Command const& command, AbstractionInformation<DdType>& abstractionInformation, storm::utility::solver::SmtSolverFactory const& smtSolverFactory) : smtSolver(smtSolverFactory.create(abstractionInformation.getExpressionManager())), abstractionInformation(abstractionInformation), command(command), localExpressionInformation(abstractionInformation.getVariables()), evaluator(abstractionInformation.getExpressionManager()), relevantPredicatesAndVariables(), cachedDd(std::make_pair(abstractionInformation.getDdManager().getBddZero(), 0)), decisionVariables() {
+            AbstractCommand<DdType, ValueType>::AbstractCommand(storm::prism::Command const& command, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool guardIsPredicate) : smtSolver(smtSolverFactory->create(abstractionInformation.getExpressionManager())), abstractionInformation(abstractionInformation), command(command), localExpressionInformation(abstractionInformation.getVariables()), evaluator(abstractionInformation.getExpressionManager()), relevantPredicatesAndVariables(), cachedDd(abstractionInformation.getDdManager().getBddZero(), 0), decisionVariables(), guardIsPredicate(guardIsPredicate), bottomStateAbstractor(abstractionInformation, abstractionInformation.getExpressionVariables(), {!command.getGuardExpression()}, smtSolverFactory) {
 
                 // Make the second component of relevant predicates have the right size.
                 relevantPredicatesAndVariables.second.resize(command.getNumberOfUpdates());
@@ -25,6 +25,7 @@ namespace storm {
                 // Assert all constraints to enforce legal variable values.
                 for (auto const& constraint : abstractionInformation.getConstraints()) {
                     smtSolver->add(constraint);
+                    bottomStateAbstractor.constrain(constraint);
                 }
                 
                 // Assert the guard of the command.
@@ -36,8 +37,11 @@ namespace storm {
                     allPredicateIndices[index] = index;
                 }
                 this->refine(allPredicateIndices);
+                
+                // Refine the bottom state abstractor. 
+                bottomStateAbstractor.refine(allPredicateIndices);
             }
-                        
+            
             template <storm::dd::DdType DdType, typename ValueType>
             void AbstractCommand<DdType, ValueType>::refine(std::vector<uint_fast64_t> const& predicates) {
                 // Add all predicates to the variable partition.
@@ -55,7 +59,7 @@ namespace storm {
                 bool recomputeDd = this->relevantPredicatesChanged(newRelevantPredicates);
                 if (!recomputeDd) {
                     // If the new predicates are unrelated to the BDD of this command, we need to multiply their identities.
-                    cachedDd.first &= computeMissingGlobalIdentities();
+                    cachedDd.bdd &= computeMissingGlobalIdentities();
                 } else {
                     // If the DD needs recomputation, it is because of new relevant predicates, so we need to assert the appropriate clauses in the solver.
                     addMissingPredicates(newRelevantPredicates);
@@ -63,6 +67,10 @@ namespace storm {
                     // Finally recompute the cached BDD.
                     this->recomputeCachedBdd();
                 }
+                
+                // Refine bottom state abstractor.
+                // FIXME: Should this only be done if the other BDD needs recomputation? 
+                bottomStateAbstractor.refine(predicates);
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
@@ -83,7 +91,9 @@ namespace storm {
                     maximalNumberOfChoices = std::max(maximalNumberOfChoices, static_cast<uint_fast64_t>(sourceDistributionsPair.second.size()));
                 }
                 
-                uint_fast64_t numberOfVariablesNeeded = static_cast<uint_fast64_t>(std::ceil(std::log2(maximalNumberOfChoices)));
+                // We now compute how many variables we need to encode the choices. We add one to the maximal number of
+                // choices to
+                uint_fast64_t numberOfVariablesNeeded = static_cast<uint_fast64_t>(std::ceil(std::log2(maximalNumberOfChoices + 1)));
                 
                 // Finally, build overall result.
                 storm::dd::Bdd<DdType> resultBdd = this->getAbstractionInformation().getDdManager().getBddZero();
@@ -108,7 +118,7 @@ namespace storm {
                 STORM_LOG_ASSERT(sourceToDistributionsMap.empty() || !resultBdd.isZero(), "The BDD must not be empty, if there were distributions.");
                 
                 // Cache the result.
-                cachedDd = std::make_pair(resultBdd, numberOfVariablesNeeded);
+                cachedDd = GameBddResult<DdType>(resultBdd, numberOfVariablesNeeded, maximalNumberOfChoices);
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
@@ -287,7 +297,7 @@ namespace storm {
             }
 
             template <storm::dd::DdType DdType, typename ValueType>
-            std::pair<storm::dd::Bdd<DdType>, uint_fast64_t> AbstractCommand<DdType, ValueType>::getAbstractBdd() {
+            GameBddResult<DdType> AbstractCommand<DdType, ValueType>::getAbstractBdd() {
                 return cachedDd;
             }
             

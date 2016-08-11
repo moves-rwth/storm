@@ -19,6 +19,10 @@ namespace storm {
         class AbstractionInformation;
         
         namespace prism {
+            template<storm::dd::DdType DdType>
+            struct GameBddResult;
+            
+            
             template <storm::dd::DdType DdType, typename ValueType>
             class AbstractModule {
             public:
@@ -28,8 +32,9 @@ namespace storm {
                  * @param module The concrete module for which to build the abstraction.
                  * @param abstractionInformation An object holding information about the abstraction such as predicates and BDDs.
                  * @param smtSolverFactory A factory that is to be used for creating new SMT solvers.
+                 * @param allGuardsAdded A flag indicating whether all guards of the program were added.
                  */
-                AbstractModule(storm::prism::Module const& module, AbstractionInformation<DdType>& abstractionInformation, storm::utility::solver::SmtSolverFactory const& smtSolverFactory);
+                AbstractModule(storm::prism::Module const& module, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>(), bool allGuardsAdded = false);
                 
                 AbstractModule(AbstractModule const&) = default;
                 AbstractModule& operator=(AbstractModule const&) = default;
@@ -48,7 +53,16 @@ namespace storm {
                  *
                  * @return The abstraction of the module in the form of a BDD together with how many option variables were used.
                  */
-                std::pair<storm::dd::Bdd<DdType>, uint_fast64_t> getAbstractBdd();
+                GameBddResult<DdType> getAbstractBdd();
+                
+                /*!
+                 * Retrieves the transitions to bottom states of this module.
+                 *
+                 * @param reachableStates A BDD representing the reachable states.
+                 * @param numberOfPlayer2Variables The number of variables used to encode the choices of player 2.
+                 * @return The bottom state transitions in the form of a BDD.
+                 */
+                storm::dd::Bdd<DdType> getBottomStateTransitions(storm::dd::Bdd<DdType> const& reachableStates, uint_fast64_t numberOfPlayer2Variables);
                 
                 /*!
                  * Retrieves an ADD that maps the encodings of commands and their updates to their probabilities.
@@ -66,7 +80,7 @@ namespace storm {
                 AbstractionInformation<DdType> const& getAbstractionInformation() const;
                 
                 // A factory that can be used to create new SMT solvers.
-                storm::utility::solver::SmtSolverFactory const& smtSolverFactory;
+                std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory;
                 
                 // The DD-related information.
                 std::reference_wrapper<AbstractionInformation<DdType> const> abstractionInformation;

@@ -6,6 +6,8 @@
 #include <map>
 
 #include "src/abstraction/LocalExpressionInformation.h"
+#include "src/abstraction/StateSetAbstractor.h"
+#include "src/abstraction/prism/GameBddResult.h"
 
 #include "src/storage/expressions/ExpressionEvaluator.h"
 
@@ -40,6 +42,9 @@ namespace storm {
         class AbstractionInformation;
         
         namespace prism {
+            template<storm::dd::DdType DdType>
+            struct GameBddResult;
+            
             template <storm::dd::DdType DdType, typename ValueType>
             class AbstractCommand {
             public:
@@ -49,8 +54,9 @@ namespace storm {
                  * @param command The concrete command for which to build the abstraction.
                  * @param abstractionInformation An object holding information about the abstraction such as predicates and BDDs.
                  * @param smtSolverFactory A factory that is to be used for creating new SMT solvers.
+                 * @param guardIsPredicate A flag indicating whether the guard of the command was added as a predicate.
                  */
-                AbstractCommand(storm::prism::Command const& command, AbstractionInformation<DdType>& abstractionInformation, storm::utility::solver::SmtSolverFactory const& smtSolverFactory);
+                AbstractCommand(storm::prism::Command const& command, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool guardIsPredicate = false);
                 
                 /*!
                  * Refines the abstract command with the given predicates.
@@ -65,7 +71,7 @@ namespace storm {
                  * @return The abstraction of the command in the form of a BDD together with the number of DD variables
                  * used to encode the choices of player 2.
                  */
-                std::pair<storm::dd::Bdd<DdType>, uint_fast64_t> getAbstractBdd();
+                GameBddResult<DdType> getAbstractBdd();
                 
                 /*!
                  * Retrieves an ADD that maps the encoding of the command and its updates to their probabilities.
@@ -186,10 +192,17 @@ namespace storm {
                 
                 // The most recent result of a call to computeDd. If nothing has changed regarding the relevant
                 // predicates, this result may be reused.
-                std::pair<storm::dd::Bdd<DdType>, uint_fast64_t> cachedDd;
+                GameBddResult<DdType> cachedDd;
                 
                 // All relevant decision variables over which to perform AllSat.
                 std::vector<storm::expressions::Variable> decisionVariables;
+                
+                // A flag indicating whether the guard of the command was added as a predicate. If this is true, there
+                // is no need to compute bottom states.
+                bool guardIsPredicate;
+                
+                // A state-set abstractor used to determine the bottom states if not all guards were added.
+                StateSetAbstractor<DdType, ValueType> bottomStateAbstractor;
             };
         }
     }
