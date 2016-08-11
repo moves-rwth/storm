@@ -30,7 +30,9 @@ int main(const int argc, const char** argv) {
         auto endtime = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endtime-starttime);
         auto durationSec = std::chrono::duration_cast<std::chrono::seconds>(endtime-starttime);
-        std::cout << "OVERALL RUNTIME: " << duration.count() << " ms. ( approx " << durationSec.count() << " seconds)." << std::endl;
+        if(storm::settings::getModule<storm::settings::modules::IOSettings>().isPrintTimingsSet()) {
+            std::cout << "Overal runtime: " << duration.count() << " ms. ( approx " << durationSec.count() << " seconds)." << std::endl;
+        }
         return 0;
     } catch (storm::exceptions::BaseException const& exception) {
         STORM_LOG_ERROR("An exception caused Storm to terminate. The message of the exception is: " << exception.what());

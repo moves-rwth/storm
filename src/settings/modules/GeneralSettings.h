@@ -127,6 +127,13 @@ namespace storm {
                  * @return True iff an equation solving technique has been set.
                  */
                 bool isMinMaxEquationSolvingTechniqueSet() const;
+                
+                /*!
+                 * Retrieves whether timings should be printed after running
+                 *
+                 * @return True iff the option was set.
+                 */
+                bool isPrintTimingsSet() const;
 
 
                 /*!
@@ -146,6 +153,8 @@ namespace storm {
                 // Define the string names of the options as constants.
                 static const std::string helpOptionName;
                 static const std::string helpOptionShortName;
+                static const std::string printTimingsOptionName;
+                static const std::string printTimingsOptionShortName;
                 static const std::string versionOptionName;
                 static const std::string verboseOptionName;
                 static const std::string verboseOptionShortName;
