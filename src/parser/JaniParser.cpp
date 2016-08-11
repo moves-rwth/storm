@@ -321,7 +321,7 @@ namespace storm {
             STORM_LOG_THROW(expr.hasNumericalType(), storm::exceptions::InvalidJaniException, "Operator " << opstring << " expects argument " + std::to_string(argNr) + " to be numerical in " << errorInfo << ".");
         }
 
-        storm::jani::Variable getLValue(std::string const& ident, storm::jani::VariableSet const& globalVars, storm::jani::VariableSet const& localVars, std::string const& scopeDescription) {
+        storm::jani::Variable const& getLValue(std::string const& ident, storm::jani::VariableSet const& globalVars, storm::jani::VariableSet const& localVars, std::string const& scopeDescription) {
             if(localVars.hasVariable(ident)) {
                 return globalVars.getVariable(ident);
             } else if(globalVars.hasVariable(ident)) {
@@ -570,7 +570,7 @@ namespace storm {
                 for(auto const& transientValueEntry : locEntry.at("transient-values")) {
                     STORM_LOG_THROW(transientValueEntry.count("ref") == 1, storm::exceptions::InvalidJaniException, "Transient values in location " << locName << " need exactly one ref that is assigned to");
                     STORM_LOG_THROW(transientValueEntry.count("value") == 1, storm::exceptions::InvalidJaniException, "Transient values in location " << locName << " need exactly one assigned value");
-                    storm::jani::Variable lhs = getLValue(transientValueEntry.at("ref"), parentModel.getGlobalVariables(), automaton.getVariables(), "LHS of assignment in location " + locName + " (automaton '" + name + "')");
+                    storm::jani::Variable const& lhs = getLValue(transientValueEntry.at("ref"), parentModel.getGlobalVariables(), automaton.getVariables(), "LHS of assignment in location " + locName + " (automaton '" + name + "')");
                     STORM_LOG_THROW(lhs.isTransientVariable(), storm::exceptions::InvalidJaniException, "Assigned non-transient variable " + lhs.getName() + " in location " + locName + " (automaton: '" + name + "')");
                     storm::expressions::Expression rhs = parseExpression(transientValueEntry.at("value"), "Assignment of variable " + lhs.getName() + " in location " + locName + " (automaton: '" + name + "')");
                     transientAssignments.emplace_back(lhs, rhs);
@@ -624,20 +624,18 @@ namespace storm {
                 }
                 // guard
                 STORM_LOG_THROW(edgeEntry.count("guard") <= 1, storm::exceptions::InvalidJaniException, "Guard can be given at most once in edge from '" << sourceLoc << "' in automaton '" << name << "'");
-                storm::expressions::Expression guardExpr;
+                storm::expressions::Expression guardExpr = expressionManager->boolean(true);
                 if(edgeEntry.count("guard") == 1) {
                     STORM_LOG_THROW(edgeEntry.at("guard").count("exp") == 1, storm::exceptions::InvalidJaniException, "Guard  in edge from '" + sourceLoc + "' in automaton '" + name + "' must have one expression");
                     guardExpr = parseExpression(edgeEntry.at("guard").at("exp"), "guard expression in edge from '" + sourceLoc + "' in automaton '" + name + "'", localVars);
                     STORM_LOG_THROW(guardExpr.hasBooleanType(), storm::exceptions::InvalidJaniException, "Guard " << guardExpr << " does not have Boolean type.");
-                } else {
-                    guardExpr = expressionManager->boolean(true);
                 }
                 assert(guardExpr.isInitialized());
                 STORM_LOG_THROW(edgeEntry.count("destinations") == 1, storm::exceptions::InvalidJaniException, "A single list of destinations must be given in edge from '" << sourceLoc << "' in automaton '" << name << "'");
                 std::vector<storm::jani::EdgeDestination> edgeDestinations;
                 for(auto const& destEntry : edgeEntry.at("destinations")) {
                     // target location
-                    STORM_LOG_THROW(edgeEntry.count("location") == 1, storm::exceptions::InvalidJaniException, "Each destination in edge from '" << sourceLoc << "' in automaton '" << name << "' must have a source");
+                    STORM_LOG_THROW(edgeEntry.count("location") == 1, storm::exceptions::InvalidJaniException, "Each destination in edge from '" << sourceLoc << "' in automaton '" << name << "' must have a target location");
                     std::string targetLoc = getString(edgeEntry.at("location"), "target location for edge from '" + sourceLoc + "' in automaton '" + name + "'");
                     STORM_LOG_THROW(locIds.count(targetLoc) == 1, storm::exceptions::InvalidJaniException, "Target of edge has unknown location '" << targetLoc << "' in automaton '" << name << "'.");
                     // probability
@@ -660,12 +658,12 @@ namespace storm {
                         // ref
                         STORM_LOG_THROW(assignmentEntry.count("ref") == 1, storm::exceptions::InvalidJaniException, "Assignment in edge from '" << sourceLoc << "' to '" << targetLoc << "' in automaton '" << name << "'  must have one ref field");
                         std::string refstring = getString(assignmentEntry.at("ref"), "assignment in edge from '" + sourceLoc + "' to '" + targetLoc + "' in automaton '" + name + "'");
-
-                        // TODO check types
+                        storm::jani::Variable const& lhs = getLValue(refstring, parentModel.getGlobalVariables(), automaton.getVariables(), "Assignment variable in edge from '" + sourceLoc + "' to '" + targetLoc + "' in automaton '" + name + "'");
                         // value
                         STORM_LOG_THROW(assignmentEntry.count("value") == 1, storm::exceptions::InvalidJaniException, "Assignment in edge from '" << sourceLoc << "' to '" << targetLoc << "' in automaton '" << name << "'  must have one value field");
                         storm::expressions::Expression assignmentExpr = parseExpression(assignmentEntry.at("value"), "assignment in edge from '" + sourceLoc + "' to '" + targetLoc + "' in automaton '" + name + "'");
-                        assignments.emplace_back(getLValue(refstring, parentModel.getGlobalVariables(), automaton.getVariables(), "Assignment variable in edge from '" + sourceLoc + "' to '" + targetLoc + "' in automaton '" + name + "'"), assignmentExpr);
+                        // TODO check types
+                        assignments.emplace_back(lhs, assignmentExpr);
                     }
                     edgeDestinations.emplace_back(locIds.at(targetLoc), probExpr, assignments);
                 }
