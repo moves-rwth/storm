@@ -90,7 +90,7 @@ namespace storm {
                 }
                 
                 // We now compute how many variables we need to encode the choices. We add one to the maximal number of
-                // choices to
+                // choices to account for a possible transition to a bottom state.
                 uint_fast64_t numberOfVariablesNeeded = static_cast<uint_fast64_t>(std::ceil(std::log2(maximalNumberOfChoices + 1)));
                 
                 // Finally, build overall result.
@@ -241,7 +241,7 @@ namespace storm {
                         } else {
                             updateBdd &= !this->getAbstractionInformation().encodePredicateAsSuccessor(variableIndexPair.second);
                         }
-                        updateBdd &= this->getAbstractionInformation().encodeAux(updateIndex, 1, this->getAbstractionInformation().getAuxVariableCount());
+                        updateBdd &= this->getAbstractionInformation().encodeAux(updateIndex, 0, this->getAbstractionInformation().getAuxVariableCount());
                     }
                     
                     result |= updateBdd;
@@ -280,7 +280,7 @@ namespace storm {
                         }
                     }
                     
-                    result |= updateIdentity && this->getAbstractionInformation().encodeAux(updateIndex, 1, this->getAbstractionInformation().getAuxVariableCount());
+                    result |= updateIdentity && this->getAbstractionInformation().encodeAux(updateIndex, 0, this->getAbstractionInformation().getAuxVariableCount());
                 }
                 return result;
             }
@@ -316,13 +316,13 @@ namespace storm {
                 result.states = bottomStateAbstractor.getAbstractStates();
                 
                 // Now equip all these states with an actual transition to a bottom state.
-                result.transitions = result.states && this->getAbstractionInformation().getAllPredicateIdentities();
+                result.transitions = result.states && this->getAbstractionInformation().getAllPredicateIdentities() && this->getAbstractionInformation().getBottomStateBdd(false, false);
+                
+                // Mark the states as bottom states.
+                result.states &= this->getAbstractionInformation().getBottomStateBdd(true, false);
                 
                 // Add the command encoding and the next free player 2 encoding.
-                result.transitions &= this->getAbstractionInformation().encodePlayer1Choice(command.get().getGlobalIndex(), this->getAbstractionInformation().getPlayer1VariableCount()) && this->getAbstractionInformation().encodePlayer2Choice(cachedDd.nextFreePlayer2Index, cachedDd.numberOfPlayer2Variables);
-                
-                result.states.template toAdd<ValueType>().exportToDot("bottom_" + std::to_string(command.get().getGlobalIndex()) + ".dot");
-                result.transitions.template toAdd<ValueType>().exportToDot("bottom_trans_" + std::to_string(command.get().getGlobalIndex()) + ".dot");
+                result.transitions &= this->getAbstractionInformation().encodePlayer1Choice(command.get().getGlobalIndex(), this->getAbstractionInformation().getPlayer1VariableCount()) && this->getAbstractionInformation().encodePlayer2Choice(cachedDd.nextFreePlayer2Index, cachedDd.numberOfPlayer2Variables) && this->getAbstractionInformation().encodeAux(0, 0, this->getAbstractionInformation().getAuxVariableCount());
                 
                 return result;
             }
@@ -331,7 +331,7 @@ namespace storm {
             storm::dd::Add<DdType, ValueType> AbstractCommand<DdType, ValueType>::getCommandUpdateProbabilitiesAdd() const {
                 storm::dd::Add<DdType, ValueType> result = this->getAbstractionInformation().getDdManager().template getAddZero<ValueType>();
                 for (uint_fast64_t updateIndex = 0; updateIndex < command.get().getNumberOfUpdates(); ++updateIndex) {
-                    result += this->getAbstractionInformation().encodeAux(updateIndex, 1, this->getAbstractionInformation().getAuxVariableCount()).template toAdd<ValueType>() * this->getAbstractionInformation().getDdManager().getConstant(evaluator.asRational(command.get().getUpdate(updateIndex).getLikelihoodExpression()));
+                    result += this->getAbstractionInformation().encodeAux(updateIndex, 0, this->getAbstractionInformation().getAuxVariableCount()).template toAdd<ValueType>() * this->getAbstractionInformation().getDdManager().getConstant(evaluator.asRational(command.get().getUpdate(updateIndex).getLikelihoodExpression()));
                 }
                 result *= this->getAbstractionInformation().encodePlayer1Choice(command.get().getGlobalIndex(), this->getAbstractionInformation().getPlayer1VariableCount()).template toAdd<ValueType>();
                 return result;

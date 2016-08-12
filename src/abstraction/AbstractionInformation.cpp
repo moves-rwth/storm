@@ -152,6 +152,10 @@ namespace storm {
                 auxVariableBdds.push_back(ddManager->getEncoding(newVariable, 1));
             }
             STORM_LOG_DEBUG("Created " << auxVariableCount << " auxiliary variables.");
+            
+            bottomStateVariables = ddManager->addMetaVariable("bot");
+            bottomStateBdds = std::make_pair(ddManager->getEncoding(bottomStateVariables.first, 1), ddManager->getEncoding(bottomStateVariables.second, 1));
+            extendedPredicateDdVariables.push_back(bottomStateVariables);
         }
         
         template<storm::dd::DdType DdType>
@@ -205,6 +209,11 @@ namespace storm {
         }
         
         template<storm::dd::DdType DdType>
+        storm::expressions::Variable const& AbstractionInformation<DdType>::getAuxVariable(uint_fast64_t index) const {
+            return auxVariables[index];
+        }
+        
+        template<storm::dd::DdType DdType>
         std::set<storm::expressions::Variable> AbstractionInformation<DdType>::getAuxVariableSet(uint_fast64_t start, uint_fast64_t end) const {
             return std::set<storm::expressions::Variable>(auxVariables.begin() + start, auxVariables.begin() + end);
         }
@@ -253,6 +262,37 @@ namespace storm {
         template<storm::dd::DdType DdType>
         std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& AbstractionInformation<DdType>::getSourceSuccessorVariablePairs() const {
             return predicateDdVariables;
+        }
+        
+        template<storm::dd::DdType DdType>
+        std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& AbstractionInformation<DdType>::getExtendedSourceSuccessorVariablePairs() const {
+            return extendedPredicateDdVariables;
+        }
+        
+        template<storm::dd::DdType DdType>
+        storm::expressions::Variable const& AbstractionInformation<DdType>::getBottomStateVariable(bool source) const {
+            if (source) {
+                return bottomStateVariables.first;
+            } else {
+                return bottomStateVariables.second;
+            }
+        }
+        
+        template<storm::dd::DdType DdType>
+        storm::dd::Bdd<DdType> AbstractionInformation<DdType>::getBottomStateBdd(bool source, bool negated) const {
+            if (source) {
+                if (negated) {
+                    return !bottomStateBdds.first;
+                } else {
+                    return bottomStateBdds.first;
+                }
+            } else {
+                if (negated) {
+                    return !bottomStateBdds.second;
+                } else {
+                    return bottomStateBdds.second;
+                }
+            }
         }
         
         template<storm::dd::DdType DdType>

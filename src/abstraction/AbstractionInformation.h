@@ -258,6 +258,14 @@ namespace storm {
              * @return The meta variables associated with auxiliary information.
              */
             std::vector<storm::expressions::Variable> const& getAuxVariables() const;
+            
+            /*!
+             * Retrieves the auxiliary variable with the given index.
+             *
+             * @param index The index of the auxiliary variable to retrieve.
+             * @return The auxiliary variable with the given index.
+             */
+            storm::expressions::Variable const& getAuxVariable(uint_fast64_t index) const;
 
             /*!
              * Retrieves the requested set of auxiliary variables.
@@ -309,6 +317,30 @@ namespace storm {
              * @return The meta variable pairs for all predicates.
              */
             std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& getSourceSuccessorVariablePairs() const;
+
+            /*!
+             * Retrieves the meta variables pairs for all predicates together with the meta variables marking the bottom states.
+             *
+             * @return The meta variable pairs for all predicates and bottom states.
+             */
+            std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& getExtendedSourceSuccessorVariablePairs() const;
+
+            /*!
+             * Retrieves the meta variable marking the bottom states.
+             *
+             * @param source A flag indicating whether the source or successor meta variable is to be returned.
+             * @return The meta variable marking the bottom states.
+             */
+            storm::expressions::Variable const& getBottomStateVariable(bool source) const;
+            
+            /*!
+             * Retrieves the BDD that can be used to mark the bottom states.
+             *
+             * @param source A flag indicating whether the source or successor BDD is to be returned.
+             * @param negated A flag indicating whether the BDD should encode the bottom states or the non-bottom states.
+             * @return The BDD that can be used to mark bottom states.
+             */
+            storm::dd::Bdd<DdType> getBottomStateBdd(bool source, bool negated) const;
             
             /*!
              * Retrieves the BDD for the predicate with the given index over the source variables.
@@ -388,6 +420,9 @@ namespace storm {
             /// The DD variables corresponding to the predicates.
             std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> predicateDdVariables;
             
+            /// The DD variables corresponding to the predicates together with the DD variables marking the bottom states.
+            std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> extendedPredicateDdVariables;
+            
             /// The set of all source variables.
             std::set<storm::expressions::Variable> sourceVariables;
             
@@ -402,6 +437,12 @@ namespace storm {
             
             /// A BDD that represents the identity of all predicate variables.
             storm::dd::Bdd<DdType> allPredicateIdentities;
+            
+            /// A meta variable pair that marks bottom states.
+            std::pair<storm::expressions::Variable, storm::expressions::Variable> bottomStateVariables;
+            
+            /// The BDDs associated with the bottom state variable pair.
+            std::pair<storm::dd::Bdd<DdType>, storm::dd::Bdd<DdType>> bottomStateBdds;
             
             /// A mapping from DD variable indices to the predicate index they represent.
             std::unordered_map<uint_fast64_t, uint_fast64_t> ddVariableIndexToPredicateIndexMap;

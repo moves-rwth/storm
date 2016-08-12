@@ -45,7 +45,7 @@ namespace storm {
                 // DDs use the same amount DD variable encoding the choices of player 2.
                 storm::dd::Bdd<DdType> result = this->getAbstractionInformation().getDdManager().getBddZero();
                 for (auto const& commandDd : commandDdsAndUsedOptionVariableCounts) {
-                    result |= commandDd.bdd && this->getAbstractionInformation().getPlayer2ZeroCube(maximalNumberOfUsedOptionVariables, commandDd.numberOfPlayer2Variables);
+                    result |= commandDd.bdd && this->getAbstractionInformation().getPlayer2ZeroCube(commandDd.numberOfPlayer2Variables, maximalNumberOfUsedOptionVariables);
                 }
                 return GameBddResult<DdType>(result, maximalNumberOfUsedOptionVariables, nextFreePlayer2Index);
             }
