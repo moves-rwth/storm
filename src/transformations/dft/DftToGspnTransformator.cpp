@@ -15,9 +15,6 @@ namespace storm {
             void DftToGspnTransformator<ValueType>::transform() {
                 mGspn = storm::gspn::GSPN();
 				mGspn.setName("DftToGspnTransformation");
-		
-				// TODO: Do I need to check if every DFT element has an unique name?
-				// TODO: GSPN elements are picked by their name in method drawGSPNConnections(), so this might cause problems...
 				
 				// Loop through every DFT element and draw them as a GSPN.
 				drawGSPNElements();
@@ -84,7 +81,7 @@ namespace storm {
             void DftToGspnTransformator<ValueType>::drawBE(std::shared_ptr<storm::storage::DFTBE<ValueType> const> dftBE) {
 				storm::gspn::Place placeBEActivated;
 				placeBEActivated.setName(dftBE->name() + "_activated");
-				placeBEActivated.setNumberOfInitialTokens(false ? 1 : 0); // TODO: How can I check if BE is activated?
+				placeBEActivated.setNumberOfInitialTokens(false ? 1 : 0); // TODO: Check if BE is spare child of a SPARE.
 				mGspn.addPlace(placeBEActivated);
 				
 				storm::gspn::Place placeBEFailed;
@@ -149,7 +146,21 @@ namespace storm {
 			
 			template <typename ValueType>
             void DftToGspnTransformator<ValueType>::drawVOT(std::shared_ptr<storm::storage::DFTVot<ValueType> const> dftVot) {
-				STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "The transformation of a VOT is not yet implemented.");
+				storm::gspn::Place placeVOTFailed;
+				placeVOTFailed.setName(dftVot->name() + STR_FAILED);
+				placeVOTFailed.setNumberOfInitialTokens(0);
+				mGspn.addPlace(placeVOTFailed);
+				
+				// Calculate, how many immediate transitions are necessary and draw the needed number.
+				for (int i = 0; i < calculateBinomialCoefficient(dftVot->nrChildren(), dftVot->threshold()); i++) {
+					storm::gspn::ImmediateTransition<storm::gspn::GSPN::WeightType> immediateTransitionVOTFailing;
+					immediateTransitionVOTFailing.setName(dftVot->name() + "_" + std::to_string(i) + STR_FAILING);
+					immediateTransitionVOTFailing.setPriority(1);
+					immediateTransitionVOTFailing.setWeight(0.0);
+					immediateTransitionVOTFailing.setInhibitionArcMultiplicity(placeVOTFailed, 1);
+					immediateTransitionVOTFailing.setOutputArcMultiplicity(placeVOTFailed, 1);
+					mGspn.addImmediateTransition(immediateTransitionVOTFailing);
+				}
 			}
 
 			template <typename ValueType>
@@ -180,14 +191,11 @@ namespace storm {
 				immediateTransitionPANDFailsave.setInhibitionArcMultiplicity(placePANDFailsave, 1);
 				immediateTransitionPANDFailsave.setOutputArcMultiplicity(placePANDFailsave, 1);
 				mGspn.addImmediateTransition(immediateTransitionPANDFailsave);
-				
-				// TODO: Are PANDs with more than two children possible?
 			}
 			
 			template <typename ValueType>
             void DftToGspnTransformator<ValueType>::drawSPARE(std::shared_ptr<storm::storage::DFTSpare<ValueType> const> dftSpare) {
 				STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "The transformation of a SPARE is not yet implemented.");
-				// TODO: What are the codewords for SPAREs in a *.dft file? hsp, wsp and csp?
 			}
 			
 			template <typename ValueType>
@@ -201,7 +209,8 @@ namespace storm {
 				placeCONSTFFailed.setName(dftConstF->name() + STR_FAILED);
 				placeCONSTFFailed.setNumberOfInitialTokens(1);
 				mGspn.addPlace(placeCONSTFFailed);
-				// TODO: What is the codeword for CONSTF in a *.dft file?
+				
+				// TODO: Not tested because there is no corresponding DFT element yet.
 			}
 			
 			template <typename ValueType>
@@ -211,7 +220,8 @@ namespace storm {
 				placeCONSTSFailed.setNumberOfInitialTokens(0);
 				placeCONSTSFailed.setCapacity(0); // It cannot contain a token, because it cannot fail.
 				mGspn.addPlace(placeCONSTSFailed);
-				// TODO: What is the codeword for CONSTS in a *.dft file?
+				
+				// TODO: Not tested because there is no corresponding DFT element yet.
 			}
 			
 			template <typename ValueType>
@@ -246,7 +256,25 @@ namespace storm {
 								break;
 							}
 							case storm::storage::DFTElementType::VOT:
+							{
+								auto childExit = mGspn.getPlace(child->name() + STR_FAILED);
+								if (childExit.first) {
+									// Get all associations of the child to all immediate transitions of the VOTE.
+									auto children = std::static_pointer_cast<storm::storage::DFTVot<ValueType> const>(mDft.getElement(parents[j]))->children();
+									auto associations = getVOTEEntryAssociation(child->id(), 
+										std::static_pointer_cast<storm::storage::DFTVot<ValueType> const>(mDft.getElement(parents[j]))->threshold(), children);
+									
+									// Draw.
+									for (std::size_t k = 0; k < associations.size(); k++) {
+										auto voteEntry = mGspn.getImmediateTransition(mDft.getElement(parents[j])->name() + "_" + std::to_string(associations[k]) + STR_FAILING);
+										if (voteEntry.first) {
+											voteEntry.second->setInputArcMultiplicity(childExit.second, 1);
+											voteEntry.second->setOutputArcMultiplicity(childExit.second, 1);
+										}
+									}
+								}
 								break;
+							}
 							case storm::storage::DFTElementType::PAND:
 							{
 								auto children =  std::static_pointer_cast<storm::storage::DFTPand<ValueType> const>(mDft.getElement(parents[j]))->children();
@@ -303,6 +331,61 @@ namespace storm {
 							}
 						}
 					}
+				}
+			}
+			
+			template <typename ValueType>
+            int DftToGspnTransformator<ValueType>::calculateBinomialCoefficient(int n, int k) {
+				STORM_LOG_ASSERT(n >= k, "k is not allowed to be larger than n.");
+				
+				return factorialFunction(n) / ( factorialFunction(n - k) * factorialFunction(k) );
+            }
+            
+           	template <typename ValueType>
+            int DftToGspnTransformator<ValueType>::factorialFunction(int n) {
+				return (n == 1 || n == 0) ? 1 : factorialFunction(n - 1) * n;
+            }
+            
+           	template <typename ValueType>
+            std::vector<int> DftToGspnTransformator<ValueType>::getVOTEEntryAssociation(int childId, int threshold, std::vector<std::shared_ptr<storm::storage::DFTElement<ValueType>>> children) {
+				// Fetch all ids of the children.
+				std::vector<int> childrenIds(children.size());
+				for (std::size_t i = 0; i < children.size(); i++) {
+					childrenIds[i] = children[i]->id();
+				}
+				
+				// Get all subsets of the 'children' of size 'threshold'.
+				std::vector<int> subsets(threshold);
+				std::vector<int> output;
+				combinationUtil(output, childrenIds, subsets, 0, children.size() - 1, 0, threshold);
+				
+				// Check which subset contains the id 'childId' and add the subset-number to the association.
+				std::vector<int> associations;
+				for (std::size_t i = 0; i < output.size(); i++) {
+					if (childId == output[i]) {
+						associations.push_back(i / threshold);
+					}
+				}
+				
+				return associations;
+            }
+            
+            template <typename ValueType>
+            void DftToGspnTransformator<ValueType>::combinationUtil(std::vector<int> &output, std::vector<int> childrenIds, std::vector<int> subsets, int start, int end, int index, int threshold)
+			{
+				if (index == threshold)
+				{
+					for (int j = 0; j < threshold; j++) {
+						output.push_back(subsets[j]);
+					}
+					
+					return;
+				}
+			
+				for (int i = start; i <= end && end - i + 1 >= threshold - index; i++)
+				{
+					subsets[index] = childrenIds[i];
+					combinationUtil(output, childrenIds, subsets, i + 1, end, index + 1, threshold);
 				}
 			}
 			
