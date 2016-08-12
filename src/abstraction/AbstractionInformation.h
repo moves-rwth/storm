@@ -174,29 +174,29 @@ namespace storm {
              * Encodes the given index using the indicated player 1 variables.
              *
              * @param index The index to encode.
-             * @param numberOfVariables The number of variables to use for encoding the index.
+             * @param end The index of the variable past the end of the range that is used to encode the index.
              * @return The index encoded as a BDD.
              */
-            storm::dd::Bdd<DdType> encodePlayer1Choice(uint_fast64_t index, uint_fast64_t numberOfVariables) const;
+            storm::dd::Bdd<DdType> encodePlayer1Choice(uint_fast64_t index, uint_fast64_t end) const;
             
             /*!
              * Encodes the given index using the indicated player 2 variables.
              *
              * @param index The index to encode.
-             * @param numberOfVariables The number of variables to use for encoding the index.
+             * @param end The index of the variable past the end of the range that is used to encode the index.
              * @return The index encoded as a BDD.
              */
-            storm::dd::Bdd<DdType> encodePlayer2Choice(uint_fast64_t index, uint_fast64_t numberOfVariables) const;
+            storm::dd::Bdd<DdType> encodePlayer2Choice(uint_fast64_t index, uint_fast64_t end) const;
 
             /*!
              * Encodes the given index using the indicated probabilistic branching variables.
              *
              * @param index The index to encode.
-             * @param offset The offset within the auxiliary variables at which to start encoding.
-             * @param numberOfVariables The number of variables to use for encoding the index.
+             * @param start The index of the first variable of the range that is used to encode the index.
+             * @param end The index of the variable past the end of the range that is used to encode the index.
              * @return The index encoded as a BDD.
              */
-            storm::dd::Bdd<DdType> encodeAux(uint_fast64_t index, uint_fast64_t offset, uint_fast64_t numberOfVariables) const;
+            storm::dd::Bdd<DdType> encodeAux(uint_fast64_t index, uint_fast64_t start, uint_fast64_t end) const;
             
             /*!
              * Retrieves the cube of player 2 variables in the given range [offset, numberOfVariables).
@@ -262,11 +262,11 @@ namespace storm {
             /*!
              * Retrieves the requested set of auxiliary variables.
              *
-             * @param offset The offset at which to start gatherin the auxiliary variables.
-             * @param count The number of auxiliary variables to include.
+             * @param start The index of the first auxiliary variable to include.
+             * @param end The index of the auxiliary variable past the end of the range to include.
              * @return The set of auxiliary variables.
              */
-            std::set<storm::expressions::Variable> getAuxVariableSet(uint_fast64_t offset, uint_fast64_t count) const;
+            std::set<storm::expressions::Variable> getAuxVariableSet(uint_fast64_t start, uint_fast64_t end) const;
 
             /*!
              * Retrieves the number of auxiliary variables.
@@ -356,11 +356,11 @@ namespace storm {
              * Encodes the given index with the given number of variables from the given variables.
              *
              * @param index The index to encode.
-             * @param offset The offset at which to start encoding.
-             * @param numberOfVariables The total number of variables to use.
+             * @param start The index of the first variable to use for the encoding.
+             * @param end The index of the variable past the end of the range to use for the encoding.
              * @param variables The BDDs of the variables to use to encode the index.
              */
-            storm::dd::Bdd<DdType> encodeChoice(uint_fast64_t index, uint_fast64_t offset, uint_fast64_t numberOfVariables, std::vector<storm::dd::Bdd<DdType>> const& variables) const;
+            storm::dd::Bdd<DdType> encodeChoice(uint_fast64_t index, uint_fast64_t start, uint_fast64_t end, std::vector<storm::dd::Bdd<DdType>> const& variables) const;
                         
             // The expression related data.
             

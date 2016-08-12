@@ -17,11 +17,13 @@ namespace storm {
     namespace abstraction {
         template <storm::dd::DdType DdType>
         class AbstractionInformation;
+
+        template<storm::dd::DdType DdType>
+        struct BottomStateResult;
         
         namespace prism {
             template<storm::dd::DdType DdType>
             struct GameBddResult;
-            
             
             template <storm::dd::DdType DdType, typename ValueType>
             class AbstractModule {
@@ -60,9 +62,9 @@ namespace storm {
                  *
                  * @param reachableStates A BDD representing the reachable states.
                  * @param numberOfPlayer2Variables The number of variables used to encode the choices of player 2.
-                 * @return The bottom state transitions in the form of a BDD.
+                 * @return The bottom states and the necessary transitions.
                  */
-                storm::dd::Bdd<DdType> getBottomStateTransitions(storm::dd::Bdd<DdType> const& reachableStates, uint_fast64_t numberOfPlayer2Variables);
+                BottomStateResult<DdType> getBottomStateTransitions(storm::dd::Bdd<DdType> const& reachableStates, uint_fast64_t numberOfPlayer2Variables);
                 
                 /*!
                  * Retrieves an ADD that maps the encodings of commands and their updates to their probabilities.

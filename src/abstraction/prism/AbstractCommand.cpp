@@ -3,6 +3,7 @@
 #include <boost/iterator/transform_iterator.hpp>
 
 #include "src/abstraction/AbstractionInformation.h"
+#include "src/abstraction/BottomStateResult.h"
 
 #include "src/storage/dd/DdManager.h"
 #include "src/storage/dd/Add.h"
@@ -17,7 +18,7 @@ namespace storm {
     namespace abstraction {
         namespace prism {
             template <storm::dd::DdType DdType, typename ValueType>
-            AbstractCommand<DdType, ValueType>::AbstractCommand(storm::prism::Command const& command, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool guardIsPredicate) : smtSolver(smtSolverFactory->create(abstractionInformation.getExpressionManager())), abstractionInformation(abstractionInformation), command(command), localExpressionInformation(abstractionInformation.getVariables()), evaluator(abstractionInformation.getExpressionManager()), relevantPredicatesAndVariables(), cachedDd(abstractionInformation.getDdManager().getBddZero(), 0), decisionVariables(), guardIsPredicate(guardIsPredicate), bottomStateAbstractor(abstractionInformation, abstractionInformation.getExpressionVariables(), {!command.getGuardExpression()}, smtSolverFactory) {
+            AbstractCommand<DdType, ValueType>::AbstractCommand(storm::prism::Command const& command, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool guardIsPredicate) : smtSolver(smtSolverFactory->create(abstractionInformation.getExpressionManager())), abstractionInformation(abstractionInformation), command(command), localExpressionInformation(abstractionInformation.getVariables()), evaluator(abstractionInformation.getExpressionManager()), relevantPredicatesAndVariables(), cachedDd(abstractionInformation.getDdManager().getBddZero(), 0, 0), decisionVariables(), guardIsPredicate(guardIsPredicate), abstractGuard(abstractionInformation.getDdManager().getBddZero()), bottomStateAbstractor(abstractionInformation, abstractionInformation.getExpressionVariables(), {!command.getGuardExpression()}, smtSolverFactory) {
 
                 // Make the second component of relevant predicates have the right size.
                 relevantPredicatesAndVariables.second.resize(command.getNumberOfUpdates());
@@ -37,9 +38,6 @@ namespace storm {
                     allPredicateIndices[index] = index;
                 }
                 this->refine(allPredicateIndices);
-                
-                // Refine the bottom state abstractor. 
-                bottomStateAbstractor.refine(allPredicateIndices);
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
@@ -97,8 +95,15 @@ namespace storm {
                 
                 // Finally, build overall result.
                 storm::dd::Bdd<DdType> resultBdd = this->getAbstractionInformation().getDdManager().getBddZero();
+                if (!guardIsPredicate) {
+                    abstractGuard = this->getAbstractionInformation().getDdManager().getBddZero();
+                }
                 uint_fast64_t sourceStateIndex = 0;
                 for (auto const& sourceDistributionsPair : sourceToDistributionsMap) {
+                    if (!guardIsPredicate) {
+                        abstractGuard |= sourceDistributionsPair.first;
+                    }
+                    
                     STORM_LOG_ASSERT(!sourceDistributionsPair.first.isZero(), "The source BDD must not be empty.");
                     STORM_LOG_ASSERT(!sourceDistributionsPair.second.empty(), "The distributions must not be empty.");
                     storm::dd::Bdd<DdType> allDistributions = this->getAbstractionInformation().getDdManager().getBddZero();
@@ -236,7 +241,7 @@ namespace storm {
                         } else {
                             updateBdd &= !this->getAbstractionInformation().encodePredicateAsSuccessor(variableIndexPair.second);
                         }
-                        updateBdd &= this->getAbstractionInformation().encodeAux(updateIndex, 0, this->getAbstractionInformation().getAuxVariableCount());
+                        updateBdd &= this->getAbstractionInformation().encodeAux(updateIndex, 1, this->getAbstractionInformation().getAuxVariableCount());
                     }
                     
                     result |= updateBdd;
@@ -275,7 +280,7 @@ namespace storm {
                         }
                     }
                     
-                    result |= updateIdentity && this->getAbstractionInformation().encodeAux(updateIndex, 0, this->getAbstractionInformation().getAuxVariableCount());
+                    result |= updateIdentity && this->getAbstractionInformation().encodeAux(updateIndex, 1, this->getAbstractionInformation().getAuxVariableCount());
                 }
                 return result;
             }
@@ -302,10 +307,31 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
+            BottomStateResult<DdType> AbstractCommand<DdType, ValueType>::getBottomStateTransitions(storm::dd::Bdd<DdType> const& reachableStates, uint_fast64_t numberOfPlayer2Variables) {
+                BottomStateResult<DdType> result(this->getAbstractionInformation().getDdManager().getBddZero(), this->getAbstractionInformation().getDdManager().getBddZero());
+
+                // Use the state abstractor to compute the set of abstract states that has this command enabled but
+                // still has a transition to a bottom state.
+                bottomStateAbstractor.constrain(reachableStates && abstractGuard);
+                result.states = bottomStateAbstractor.getAbstractStates();
+                
+                // Now equip all these states with an actual transition to a bottom state.
+                result.transitions = result.states && this->getAbstractionInformation().getAllPredicateIdentities();
+                
+                // Add the command encoding and the next free player 2 encoding.
+                result.transitions &= this->getAbstractionInformation().encodePlayer1Choice(command.get().getGlobalIndex(), this->getAbstractionInformation().getPlayer1VariableCount()) && this->getAbstractionInformation().encodePlayer2Choice(cachedDd.nextFreePlayer2Index, cachedDd.numberOfPlayer2Variables);
+                
+                result.states.template toAdd<ValueType>().exportToDot("bottom_" + std::to_string(command.get().getGlobalIndex()) + ".dot");
+                result.transitions.template toAdd<ValueType>().exportToDot("bottom_trans_" + std::to_string(command.get().getGlobalIndex()) + ".dot");
+                
+                return result;
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
             storm::dd::Add<DdType, ValueType> AbstractCommand<DdType, ValueType>::getCommandUpdateProbabilitiesAdd() const {
                 storm::dd::Add<DdType, ValueType> result = this->getAbstractionInformation().getDdManager().template getAddZero<ValueType>();
                 for (uint_fast64_t updateIndex = 0; updateIndex < command.get().getNumberOfUpdates(); ++updateIndex) {
-                    result += this->getAbstractionInformation().encodeAux(updateIndex, 0, this->getAbstractionInformation().getAuxVariableCount()).template toAdd<ValueType>() * this->getAbstractionInformation().getDdManager().getConstant(evaluator.asRational(command.get().getUpdate(updateIndex).getLikelihoodExpression()));
+                    result += this->getAbstractionInformation().encodeAux(updateIndex, 1, this->getAbstractionInformation().getAuxVariableCount()).template toAdd<ValueType>() * this->getAbstractionInformation().getDdManager().getConstant(evaluator.asRational(command.get().getUpdate(updateIndex).getLikelihoodExpression()));
                 }
                 result *= this->getAbstractionInformation().encodePlayer1Choice(command.get().getGlobalIndex(), this->getAbstractionInformation().getPlayer1VariableCount()).template toAdd<ValueType>();
                 return result;

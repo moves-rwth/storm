@@ -1,6 +1,7 @@
 #include "src/abstraction/prism/AbstractModule.h"
 
 #include "src/abstraction/AbstractionInformation.h"
+#include "src/abstraction/BottomStateResult.h"
 #include "src/abstraction/prism/GameBddResult.h"
 
 #include "src/storage/dd/DdManager.h"
@@ -50,11 +51,13 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            storm::dd::Bdd<DdType> AbstractModule<DdType, ValueType>::getBottomStateTransitions(storm::dd::Bdd<DdType> const& reachableStates, uint_fast64_t numberOfPlayer2Variables) {
-                storm::dd::Bdd<DdType> result = this->getAbstractionInformation().getDdManager().getBddZero();
+            BottomStateResult<DdType> AbstractModule<DdType, ValueType>::getBottomStateTransitions(storm::dd::Bdd<DdType> const& reachableStates, uint_fast64_t numberOfPlayer2Variables) {
+                BottomStateResult<DdType> result(this->getAbstractionInformation().getDdManager().getBddZero(), this->getAbstractionInformation().getDdManager().getBddZero());
                 
                 for (auto& command : commands) {
-                    result |= command.getBottomStateTransitions(reachableStates, numberOfPlayer2Variables);
+                    BottomStateResult<DdType> commandBottomStateResult = command.getBottomStateTransitions(reachableStates, numberOfPlayer2Variables);
+                    result.states |= commandBottomStateResult.states;
+                    result.transitions |= commandBottomStateResult.transitions;
                 }
                 
                 return result;

@@ -40,7 +40,10 @@ namespace storm {
     namespace abstraction {
         template <storm::dd::DdType DdType>
         class AbstractionInformation;
-        
+
+        template <storm::dd::DdType DdType>
+        class BottomStateResult;
+
         namespace prism {
             template<storm::dd::DdType DdType>
             struct GameBddResult;
@@ -73,6 +76,15 @@ namespace storm {
                  */
                 GameBddResult<DdType> getAbstractBdd();
                 
+                /*!
+                 * Retrieves the transitions to bottom states of this command.
+                 *
+                 * @param reachableStates A BDD representing the reachable states.
+                 * @param numberOfPlayer2Variables The number of variables used to encode the choices of player 2.
+                 * @return The bottom state transitions in the form of a BDD.
+                 */
+                BottomStateResult<DdType> getBottomStateTransitions(storm::dd::Bdd<DdType> const& reachableStates, uint_fast64_t numberOfPlayer2Variables);
+
                 /*!
                  * Retrieves an ADD that maps the encoding of the command and its updates to their probabilities.
                  *
@@ -200,6 +212,10 @@ namespace storm {
                 // A flag indicating whether the guard of the command was added as a predicate. If this is true, there
                 // is no need to compute bottom states.
                 bool guardIsPredicate;
+                
+                // The abstract guard of the command. This is only used if the guard is not a predicate, because it can
+                // then be used to constrain the bottom state abstractor.
+                storm::dd::Bdd<DdType> abstractGuard;
                 
                 // A state-set abstractor used to determine the bottom states if not all guards were added.
                 StateSetAbstractor<DdType, ValueType> bottomStateAbstractor;

@@ -155,24 +155,24 @@ namespace storm {
         }
         
         template<storm::dd::DdType DdType>
-        storm::dd::Bdd<DdType> AbstractionInformation<DdType>::encodePlayer1Choice(uint_fast64_t index, uint_fast64_t numberOfVariables) const {
-            return encodeChoice(index, 0, numberOfVariables, player1VariableBdds);
+        storm::dd::Bdd<DdType> AbstractionInformation<DdType>::encodePlayer1Choice(uint_fast64_t index, uint_fast64_t end) const {
+            return encodeChoice(index, 0, end, player1VariableBdds);
         }
         
         template<storm::dd::DdType DdType>
-        storm::dd::Bdd<DdType> AbstractionInformation<DdType>::encodePlayer2Choice(uint_fast64_t index, uint_fast64_t numberOfVariables) const {
-            return encodeChoice(index, 0, numberOfVariables, player2VariableBdds);
+        storm::dd::Bdd<DdType> AbstractionInformation<DdType>::encodePlayer2Choice(uint_fast64_t index, uint_fast64_t end) const {
+            return encodeChoice(index, 0, end, player2VariableBdds);
         }
         
         template<storm::dd::DdType DdType>
-        storm::dd::Bdd<DdType> AbstractionInformation<DdType>::encodeAux(uint_fast64_t index, uint_fast64_t offset, uint_fast64_t numberOfVariables) const {
-            return encodeChoice(index, offset, numberOfVariables, auxVariableBdds);
+        storm::dd::Bdd<DdType> AbstractionInformation<DdType>::encodeAux(uint_fast64_t index, uint_fast64_t start, uint_fast64_t end) const {
+            return encodeChoice(index, start, end, auxVariableBdds);
         }
         
         template<storm::dd::DdType DdType>
-        storm::dd::Bdd<DdType> AbstractionInformation<DdType>::getPlayer2ZeroCube(uint_fast64_t numberOfVariables, uint_fast64_t offset) const {
+        storm::dd::Bdd<DdType> AbstractionInformation<DdType>::getPlayer2ZeroCube(uint_fast64_t start, uint_fast64_t end) const {
             storm::dd::Bdd<DdType> result = ddManager->getBddOne();
-            for (uint_fast64_t index = offset; index < numberOfVariables; ++index) {
+            for (uint_fast64_t index = start; index < end; ++index) {
                 result &= player2VariableBdds[index];
             }
             STORM_LOG_ASSERT(!result.isZero(), "Zero cube must not be zero.");
@@ -205,8 +205,8 @@ namespace storm {
         }
         
         template<storm::dd::DdType DdType>
-        std::set<storm::expressions::Variable> AbstractionInformation<DdType>::getAuxVariableSet(uint_fast64_t offset, uint_fast64_t count) const {
-            return std::set<storm::expressions::Variable>(auxVariables.begin() + offset, auxVariables.begin() + offset + count);
+        std::set<storm::expressions::Variable> AbstractionInformation<DdType>::getAuxVariableSet(uint_fast64_t start, uint_fast64_t end) const {
+            return std::set<storm::expressions::Variable>(auxVariables.begin() + start, auxVariables.begin() + end);
         }
         
         template<storm::dd::DdType DdType>
@@ -298,10 +298,9 @@ namespace storm {
         }
         
         template<storm::dd::DdType DdType>
-        storm::dd::Bdd<DdType> AbstractionInformation<DdType>::encodeChoice(uint_fast64_t index, uint_fast64_t offset, uint_fast64_t numberOfVariables, std::vector<storm::dd::Bdd<DdType>> const& variables) const {
+        storm::dd::Bdd<DdType> AbstractionInformation<DdType>::encodeChoice(uint_fast64_t index, uint_fast64_t start, uint_fast64_t end, std::vector<storm::dd::Bdd<DdType>> const& variables) const {
             storm::dd::Bdd<DdType> result = ddManager->getBddOne();
-            numberOfVariables += offset;
-            for (uint_fast64_t bitIndex = numberOfVariables; bitIndex > offset; --bitIndex) {
+            for (uint_fast64_t bitIndex = end; bitIndex > start; --bitIndex) {
                 if ((index & 1) != 0) {
                     result &= variables[bitIndex - 1];
                 } else {
