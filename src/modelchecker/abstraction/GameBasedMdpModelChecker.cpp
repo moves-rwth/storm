@@ -98,13 +98,18 @@ namespace storm {
             game.getTransitionMatrix().exportToDot("trans.dot");
             bottomStatesBdd.template toAdd<ValueType>().exportToDot("bottom.dot");
             
-            // Start by computing the states with probability 0/1 for the case in which player 2 minimizes.
-            storm::utility::graph::GameProb01Result<Type> prob0Min = storm::utility::graph::performProb0(game, transitionMatrixBdd, game.getStates(constraintExpression), game.getStates(targetStateExpression), player1Direction, storm::OptimizationDirection::Minimize, true);
-            storm::utility::graph::GameProb01Result<Type> prob1Min = storm::utility::graph::performProb1(game, transitionMatrixBdd, game.getStates(constraintExpression), game.getStates(targetStateExpression), player1Direction, storm::OptimizationDirection::Minimize, true);
+            storm::dd::Bdd<Type> targetStates = game.getStates(targetStateExpression);
+            if (player1Direction == storm::OptimizationDirection::Minimize) {
+                targetStates |= game.getBottomStates();
+            }
             
-            // Now compute the states with probability 0/1 for the case in which player 2 maximizes.
-            storm::utility::graph::GameProb01Result<Type> prob0Max = storm::utility::graph::performProb0(game, transitionMatrixBdd, game.getStates(constraintExpression), game.getStates(targetStateExpression), player1Direction, storm::OptimizationDirection::Maximize, true);
-            storm::utility::graph::GameProb01Result<Type> prob1Max = storm::utility::graph::performProb1(game, transitionMatrixBdd, game.getStates(constraintExpression), game.getStates(targetStateExpression), player1Direction, storm::OptimizationDirection::Maximize, true);
+            // Start by computing the states with probability 0/1 when player 2 minimizes.
+            storm::utility::graph::GameProb01Result<Type> prob0Min = storm::utility::graph::performProb0(game, transitionMatrixBdd, game.getStates(constraintExpression), targetStates, player1Direction, storm::OptimizationDirection::Minimize, true);
+            storm::utility::graph::GameProb01Result<Type> prob1Min = storm::utility::graph::performProb1(game, transitionMatrixBdd, game.getStates(constraintExpression), targetStates, player1Direction, storm::OptimizationDirection::Minimize, true);
+            
+            // Now compute the states with probability 0/1 when player 2 maximizes.
+            storm::utility::graph::GameProb01Result<Type> prob0Max = storm::utility::graph::performProb0(game, transitionMatrixBdd, game.getStates(constraintExpression), targetStates, player1Direction, storm::OptimizationDirection::Maximize, true);
+            storm::utility::graph::GameProb01Result<Type> prob1Max = storm::utility::graph::performProb1(game, transitionMatrixBdd, game.getStates(constraintExpression), targetStates, player1Direction, storm::OptimizationDirection::Maximize, true);
             
             STORM_LOG_DEBUG("Min: " << prob0Min.states.getNonZeroCount() << " no states, " << prob1Min.states.getNonZeroCount() << " yes states.");
             STORM_LOG_DEBUG("Max: " << prob0Max.states.getNonZeroCount() << " no states, " << prob1Max.states.getNonZeroCount() << " yes states.");
