@@ -28,7 +28,6 @@ namespace storm {
                                             std::set<storm::expressions::Variable> const& probabilisticBranchingVariables,
                                             std::map<storm::expressions::Expression, storm::dd::Bdd<Type>> const& expressionToBddMap) : storm::models::symbolic::StochasticTwoPlayerGame<Type>(manager, reachableStates, initialStates, deadlockStates, transitionMatrix.sumAbstract(probabilisticBranchingVariables), rowVariables, nullptr, columnVariables, nullptr, rowColumnMetaVariablePairs, player1Variables, player2Variables, allNondeterminismVariables), probabilisticBranchingVariables(probabilisticBranchingVariables), expressionToBddMap(expressionToBddMap), bottomStates(bottomStates) {
             // Intentionally left empty.
-            this->getTransitionMatrix().exportToDot("trans.dot");
         }
         
         template<storm::dd::DdType Type, typename ValueType>

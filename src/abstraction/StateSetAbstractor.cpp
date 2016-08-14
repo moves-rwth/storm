@@ -125,8 +125,6 @@ namespace storm {
             // Create a new backtracking point before adding the constraint.
             smtSolver->push();
             
-            constraint.template toAdd<ValueType>().exportToDot("constraint.dot");
-            
             // Create the constraint.
             std::pair<std::vector<storm::expressions::Expression>, std::unordered_map<uint_fast64_t, storm::expressions::Variable>> result = constraint.toExpression(this->getAbstractionInformation().getExpressionManager());
             
