@@ -26,6 +26,14 @@ namespace storm {
              */
             DoubleLiteralExpression(ExpressionManager const& manager, std::string const& valueAsString);
 
+            /*!
+             * Creates an double literal expression with the rational value.
+             *
+             * @param manager The manager responsible for this expression.
+             * @param value The rational number that is the value of this literal expression.
+             */
+            DoubleLiteralExpression(ExpressionManager const& manager, storm::RationalNumber const& value);
+
             // Instantiate constructors and assignments with their default implementations.
             DoubleLiteralExpression(DoubleLiteralExpression const& other) = default;
             DoubleLiteralExpression& operator=(DoubleLiteralExpression const& other) = delete;

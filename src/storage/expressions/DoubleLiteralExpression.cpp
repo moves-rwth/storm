@@ -14,6 +14,10 @@ namespace storm {
             // Intentionally left empty.
         }
         
+        DoubleLiteralExpression::DoubleLiteralExpression(ExpressionManager const& manager, storm::RationalNumber const& value) : BaseExpression(manager, manager.getRationalType()), value(value) {
+            // Intentionally left empty.
+        }
+        
         double DoubleLiteralExpression::evaluateAsDouble(Valuation const* valuation) const {
             return this->getValueAsDouble();
         }
