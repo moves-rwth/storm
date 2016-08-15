@@ -3,7 +3,6 @@
 #include "src/storage/dd/DdType.h"
 
 #include "src/abstraction/AbstractionInformation.h"
-#include "src/abstraction/StateSetAbstractor.h"
 #include "src/abstraction/MenuGame.h"
 #include "src/abstraction/prism/AbstractModule.h"
 
@@ -110,9 +109,6 @@ namespace storm {
                 
                 // A flag that stores whether all guards were added (which is relevant for determining the bottom states).
                 bool addedAllGuards;
-
-                // A state-set abstractor used to determine the bottom states if not all guards were added.
-                StateSetAbstractor<DdType, ValueType> bottomStateAbstractor;
                 
                 // An ADD characterizing the probabilities of commands and their updates.
                 storm::dd::Add<DdType, ValueType> commandUpdateProbabilitiesAdd;

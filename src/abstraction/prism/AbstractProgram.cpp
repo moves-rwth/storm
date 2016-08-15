@@ -1,5 +1,7 @@
 #include "src/abstraction/prism/AbstractProgram.h"
 
+#include "src/abstraction/BottomStateResult.h"
+
 #include "src/storage/prism/Program.h"
 
 #include "src/storage/dd/DdManager.h"
@@ -24,7 +26,7 @@ namespace storm {
                                                                 std::vector<storm::expressions::Expression> const& initialPredicates,
                                                                 std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory,
                                                                 bool addAllGuards)
-            : program(program), smtSolverFactory(smtSolverFactory), abstractionInformation(program.getManager()), modules(), initialStateAbstractor(abstractionInformation, program.getAllExpressionVariables(), {program.getInitialConstruct().getInitialStatesExpression()}, this->smtSolverFactory), addedAllGuards(addAllGuards), bottomStateAbstractor(abstractionInformation, program.getAllExpressionVariables(), program.getAllGuards(true), this->smtSolverFactory), currentGame(nullptr) {
+            : program(program), smtSolverFactory(smtSolverFactory), abstractionInformation(program.getManager()), modules(), initialStateAbstractor(abstractionInformation, program.getAllExpressionVariables(), {program.getInitialConstruct().getInitialStatesExpression()}, this->smtSolverFactory), addedAllGuards(addAllGuards), currentGame(nullptr) {
                 
                 // For now, we assume that there is a single module. If the program has more than one module, it needs
                 // to be flattened before the procedure.
@@ -37,7 +39,6 @@ namespace storm {
                 for (auto const& range : this->program.get().getAllRangeExpressions()) {
                     abstractionInformation.addConstraint(range);
                     initialStateAbstractor.constrain(range);
-                    bottomStateAbstractor.constrain(range);
                 }
                 
                 uint_fast64_t totalNumberOfCommands = 0;
@@ -73,12 +74,11 @@ namespace storm {
                 
                 // For each module of the concrete program, we create an abstract counterpart.
                 for (auto const& module : program.getModules()) {
-                    this->modules.emplace_back(module, abstractionInformation, *this->smtSolverFactory);
+                    this->modules.emplace_back(module, abstractionInformation, this->smtSolverFactory, addAllGuards);
                 }
                 
-                // Refine the state abstractors using the initial predicates.
+                // Refine the initial state abstractors using the initial predicates.
                 initialStateAbstractor.refine(allPredicateIndices);
-                bottomStateAbstractor.refine(allPredicateIndices);
                 
                 // Retrieve the command-update probability ADD, so we can multiply it with the abstraction BDD later.
                 commandUpdateProbabilitiesAdd = modules.front().getCommandUpdateProbabilitiesAdd();
@@ -106,10 +106,7 @@ namespace storm {
                 
                 // Refine initial state abstractor.
                 initialStateAbstractor.refine(newPredicateIndices);
-                
-                // Refine bottom state abstractor.
-                bottomStateAbstractor.refine(newPredicateIndices);
-                
+                                
                 // Finally, we rebuild the game.
                 currentGame = buildGame();
             }
@@ -129,48 +126,65 @@ namespace storm {
             template <storm::dd::DdType DdType, typename ValueType>
             std::unique_ptr<MenuGame<DdType, ValueType>> AbstractProgram<DdType, ValueType>::buildGame() {
                 // As long as there is only one module, we only build its game representation.
-                std::pair<storm::dd::Bdd<DdType>, uint_fast64_t> gameBdd = modules.front().getAbstractBdd();
+                GameBddResult<DdType> game = modules.front().getAbstractBdd();
 
                 // Construct a set of all unnecessary variables, so we can abstract from it.
                 std::set<storm::expressions::Variable> variablesToAbstract(abstractionInformation.getPlayer1VariableSet(abstractionInformation.getPlayer1VariableCount()));
-                auto player2Variables = abstractionInformation.getPlayer2VariableSet(gameBdd.second);
+                auto player2Variables = abstractionInformation.getPlayer2VariableSet(game.numberOfPlayer2Variables);
                 variablesToAbstract.insert(player2Variables.begin(), player2Variables.end());
-                auto probBranchingVariables = abstractionInformation.getProbabilisticBranchingVariableSet(abstractionInformation.getProbabilisticBranchingVariableCount());
-                variablesToAbstract.insert(probBranchingVariables.begin(), probBranchingVariables.end());
+                auto auxVariables = abstractionInformation.getAuxVariableSet(0, abstractionInformation.getAuxVariableCount());
+                variablesToAbstract.insert(auxVariables.begin(), auxVariables.end());
                 
                 // Do a reachability analysis on the raw transition relation.
-                storm::dd::Bdd<DdType> transitionRelation = gameBdd.first.existsAbstract(variablesToAbstract);
+                storm::dd::Bdd<DdType> transitionRelation = game.bdd.existsAbstract(variablesToAbstract);
                 storm::dd::Bdd<DdType> initialStates = initialStateAbstractor.getAbstractStates();
                 storm::dd::Bdd<DdType> reachableStates = this->getReachableStates(initialStates, transitionRelation);
                 
-                // Determine the bottom states.
-                storm::dd::Bdd<DdType> bottomStates;
-                if (addedAllGuards) {
-                    bottomStates = abstractionInformation.getDdManager().getBddZero();
-                } else {
-                    bottomStateAbstractor.constrain(reachableStates);
-                    bottomStates = bottomStateAbstractor.getAbstractStates();
-                }
-                
-                // Find the deadlock states in the model.
+                // Find the deadlock states in the model. Note that this does not find the 'deadlocks' in bottom states,
+                // as the bottom states are not contained in the reachable states.
                 storm::dd::Bdd<DdType> deadlockStates = transitionRelation.existsAbstract(abstractionInformation.getSuccessorVariables());
                 deadlockStates = reachableStates && !deadlockStates;
                 
                 // If there are deadlock states, we fix them now.
                 storm::dd::Add<DdType, ValueType> deadlockTransitions = abstractionInformation.getDdManager().template getAddZero<ValueType>();
                 if (!deadlockStates.isZero()) {
-                    deadlockTransitions = (deadlockStates && abstractionInformation.getAllPredicateIdentities() && abstractionInformation.encodePlayer1Choice(0, abstractionInformation.getPlayer1VariableCount()) && abstractionInformation.encodePlayer2Choice(0, gameBdd.second) && abstractionInformation.encodeProbabilisticChoice(0, abstractionInformation.getProbabilisticBranchingVariableCount())).template toAdd<ValueType>();
+                    deadlockTransitions = (deadlockStates && abstractionInformation.getAllPredicateIdentities() && abstractionInformation.encodePlayer1Choice(0, abstractionInformation.getPlayer1VariableCount()) && abstractionInformation.encodePlayer2Choice(0, game.numberOfPlayer2Variables) && abstractionInformation.encodeAux(0, 0, abstractionInformation.getAuxVariableCount())).template toAdd<ValueType>();
                 }
 
+                // Compute bottom states and the appropriate transitions if necessary.
+                BottomStateResult<DdType> bottomStateResult(abstractionInformation.getDdManager().getBddZero(), abstractionInformation.getDdManager().getBddZero());
+                bool hasBottomStates = false;
+                if (!addedAllGuards) {
+                    bottomStateResult = modules.front().getBottomStateTransitions(reachableStates, game.numberOfPlayer2Variables);
+                    hasBottomStates = !bottomStateResult.states.isZero();
+                }
+                
                 // Construct the transition matrix by cutting away the transitions of unreachable states.
-                storm::dd::Add<DdType, ValueType> transitionMatrix = (gameBdd.first && reachableStates).template toAdd<ValueType>() * commandUpdateProbabilitiesAdd + deadlockTransitions;
+                storm::dd::Add<DdType, ValueType> transitionMatrix = (game.bdd && reachableStates).template toAdd<ValueType>() * commandUpdateProbabilitiesAdd + deadlockTransitions;
+                
+                // If there are bottom states, we need to mark all other states as non-bottom now.
+                if (hasBottomStates) {
+                    transitionMatrix *= (abstractionInformation.getBottomStateBdd(true, true) && abstractionInformation.getBottomStateBdd(false, true)).template toAdd<ValueType>();
+                    transitionMatrix += bottomStateResult.transitions.template toAdd<ValueType>();
+                    reachableStates &= abstractionInformation.getBottomStateBdd(true, true);
+                    reachableStates |= bottomStateResult.states;
+                }
             
-                std::set<storm::expressions::Variable> usedPlayer2Variables(abstractionInformation.getPlayer2Variables().begin(), abstractionInformation.getPlayer2Variables().begin() + gameBdd.second);
+                std::set<storm::expressions::Variable> usedPlayer2Variables(abstractionInformation.getPlayer2Variables().begin(), abstractionInformation.getPlayer2Variables().begin() + game.numberOfPlayer2Variables);
                 
                 std::set<storm::expressions::Variable> allNondeterminismVariables = usedPlayer2Variables;
                 allNondeterminismVariables.insert(abstractionInformation.getPlayer1Variables().begin(), abstractionInformation.getPlayer1Variables().end());
 
-                return std::make_unique<MenuGame<DdType, ValueType>>(abstractionInformation.getDdManagerAsSharedPointer(), reachableStates, initialStates, abstractionInformation.getDdManager().getBddZero(), transitionMatrix, bottomStates, abstractionInformation.getSourceVariables(), abstractionInformation.getSuccessorVariables(), abstractionInformation.getSourceSuccessorVariablePairs(), std::set<storm::expressions::Variable>(abstractionInformation.getPlayer1Variables().begin(), abstractionInformation.getPlayer1Variables().end()), usedPlayer2Variables, allNondeterminismVariables, std::set<storm::expressions::Variable>(abstractionInformation.getProbabilisticBranchingVariables().begin(), abstractionInformation.getProbabilisticBranchingVariables().end()), abstractionInformation.getPredicateToBddMap());
+                std::set<storm::expressions::Variable> allSourceVariables(abstractionInformation.getSourceVariables());
+                if (hasBottomStates) {
+                    allSourceVariables.insert(abstractionInformation.getBottomStateVariable(true));
+                }
+                std::set<storm::expressions::Variable> allSuccessorVariables(abstractionInformation.getSuccessorVariables());
+                if (hasBottomStates) {
+                    allSuccessorVariables.insert(abstractionInformation.getBottomStateVariable(false));
+                }
+                
+                return std::make_unique<MenuGame<DdType, ValueType>>(abstractionInformation.getDdManagerAsSharedPointer(), reachableStates, initialStates, abstractionInformation.getDdManager().getBddZero(), transitionMatrix, bottomStateResult.states, allSourceVariables, allSuccessorVariables, hasBottomStates ? abstractionInformation.getExtendedSourceSuccessorVariablePairs() : abstractionInformation.getSourceSuccessorVariablePairs(), std::set<storm::expressions::Variable>(abstractionInformation.getPlayer1Variables().begin(), abstractionInformation.getPlayer1Variables().end()), usedPlayer2Variables, allNondeterminismVariables, auxVariables, abstractionInformation.getPredicateToBddMap());
             }
             
             template <storm::dd::DdType DdType, typename ValueType>

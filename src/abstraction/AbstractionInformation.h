@@ -163,40 +163,41 @@ namespace storm {
             std::set<storm::expressions::Variable> const& getVariables() const;
             
             /*!
-             * Creates the given number of variables used to encode the choices of player 1/2 and probabilistic branching.
+             * Creates the given number of variables used to encode the choices of player 1/2 and auxiliary information.
              *
              * @param player1VariableCount The number of variables to use for encoding player 1 choices.
              * @param player2VariableCount The number of variables to use for encoding player 2 choices.
-             * @param probabilisticBranchingVariableCount The number of variables to use for encoding probabilistic branching.
+             * @param auxVariableCount The number of variables to use for encoding auxiliary information.
              */
-            void createEncodingVariables(uint64_t player1VariableCount, uint64_t player2VariableCount, uint64_t probabilisticBranchingVariableCount);
+            void createEncodingVariables(uint64_t player1VariableCount, uint64_t player2VariableCount, uint64_t auxVariableCount);
             
             /*!
              * Encodes the given index using the indicated player 1 variables.
              *
              * @param index The index to encode.
-             * @param numberOfVariables The number of variables to use for encoding the index.
+             * @param end The index of the variable past the end of the range that is used to encode the index.
              * @return The index encoded as a BDD.
              */
-            storm::dd::Bdd<DdType> encodePlayer1Choice(uint_fast64_t index, uint_fast64_t numberOfVariables) const;
+            storm::dd::Bdd<DdType> encodePlayer1Choice(uint_fast64_t index, uint_fast64_t end) const;
             
             /*!
              * Encodes the given index using the indicated player 2 variables.
              *
              * @param index The index to encode.
-             * @param numberOfVariables The number of variables to use for encoding the index.
+             * @param end The index of the variable past the end of the range that is used to encode the index.
              * @return The index encoded as a BDD.
              */
-            storm::dd::Bdd<DdType> encodePlayer2Choice(uint_fast64_t index, uint_fast64_t numberOfVariables) const;
+            storm::dd::Bdd<DdType> encodePlayer2Choice(uint_fast64_t index, uint_fast64_t end) const;
 
             /*!
              * Encodes the given index using the indicated probabilistic branching variables.
              *
              * @param index The index to encode.
-             * @param numberOfVariables The number of variables to use for encoding the index.
+             * @param start The index of the first variable of the range that is used to encode the index.
+             * @param end The index of the variable past the end of the range that is used to encode the index.
              * @return The index encoded as a BDD.
              */
-            storm::dd::Bdd<DdType> encodeProbabilisticChoice(uint_fast64_t index, uint_fast64_t numberOfVariables) const;
+            storm::dd::Bdd<DdType> encodeAux(uint_fast64_t index, uint_fast64_t start, uint_fast64_t end) const;
             
             /*!
              * Retrieves the cube of player 2 variables in the given range [offset, numberOfVariables).
@@ -253,26 +254,35 @@ namespace storm {
             std::set<storm::expressions::Variable> getPlayer2VariableSet(uint_fast64_t count) const;
 
             /*!
-             * Retrieves the meta variables associated with the probabilistic branching.
+             * Retrieves the meta variables associated with auxiliary information.
              *
-             * @return The meta variables associated with the probabilistic branching.
+             * @return The meta variables associated with auxiliary information.
              */
-            std::vector<storm::expressions::Variable> const& getProbabilisticBranchingVariables() const;
+            std::vector<storm::expressions::Variable> const& getAuxVariables() const;
+            
+            /*!
+             * Retrieves the auxiliary variable with the given index.
+             *
+             * @param index The index of the auxiliary variable to retrieve.
+             * @return The auxiliary variable with the given index.
+             */
+            storm::expressions::Variable const& getAuxVariable(uint_fast64_t index) const;
 
             /*!
-             * Retrieves the set of probabilistic branching variables.
+             * Retrieves the requested set of auxiliary variables.
              *
-             * @param count The number of probabilistic branching variables to include.
-             * @return The set of probabilistic branching variables.
+             * @param start The index of the first auxiliary variable to include.
+             * @param end The index of the auxiliary variable past the end of the range to include.
+             * @return The set of auxiliary variables.
              */
-            std::set<storm::expressions::Variable> getProbabilisticBranchingVariableSet(uint_fast64_t count) const;
+            std::set<storm::expressions::Variable> getAuxVariableSet(uint_fast64_t start, uint_fast64_t end) const;
 
             /*!
-             * Retrieves the number of probabilistic branching variables.
+             * Retrieves the number of auxiliary variables.
              *
-             * @return The number of probabilistic branching variables.
+             * @return The number of auxiliary variables.
              */
-            std::size_t getProbabilisticBranchingVariableCount() const;
+            std::size_t getAuxVariableCount() const;
             
             /*!
              * Retrieves the set of source meta variables.
@@ -308,6 +318,30 @@ namespace storm {
              * @return The meta variable pairs for all predicates.
              */
             std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& getSourceSuccessorVariablePairs() const;
+
+            /*!
+             * Retrieves the meta variables pairs for all predicates together with the meta variables marking the bottom states.
+             *
+             * @return The meta variable pairs for all predicates and bottom states.
+             */
+            std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& getExtendedSourceSuccessorVariablePairs() const;
+
+            /*!
+             * Retrieves the meta variable marking the bottom states.
+             *
+             * @param source A flag indicating whether the source or successor meta variable is to be returned.
+             * @return The meta variable marking the bottom states.
+             */
+            storm::expressions::Variable const& getBottomStateVariable(bool source) const;
+            
+            /*!
+             * Retrieves the BDD that can be used to mark the bottom states.
+             *
+             * @param source A flag indicating whether the source or successor BDD is to be returned.
+             * @param negated A flag indicating whether the BDD should encode the bottom states or the non-bottom states.
+             * @return The BDD that can be used to mark bottom states.
+             */
+            storm::dd::Bdd<DdType> getBottomStateBdd(bool source, bool negated) const;
             
             /*!
              * Retrieves the BDD for the predicate with the given index over the source variables.
@@ -355,10 +389,11 @@ namespace storm {
              * Encodes the given index with the given number of variables from the given variables.
              *
              * @param index The index to encode.
-             * @param numberOfVariables The total number of variables to use.
+             * @param start The index of the first variable to use for the encoding.
+             * @param end The index of the variable past the end of the range to use for the encoding.
              * @param variables The BDDs of the variables to use to encode the index.
              */
-            storm::dd::Bdd<DdType> encodeChoice(uint_fast64_t index, uint_fast64_t numberOfVariables, std::vector<storm::dd::Bdd<DdType>> const& variables) const;
+            storm::dd::Bdd<DdType> encodeChoice(uint_fast64_t index, uint_fast64_t start, uint_fast64_t end, std::vector<storm::dd::Bdd<DdType>> const& variables) const;
                         
             // The expression related data.
             
@@ -386,6 +421,9 @@ namespace storm {
             /// The DD variables corresponding to the predicates.
             std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> predicateDdVariables;
             
+            /// The DD variables corresponding to the predicates together with the DD variables marking the bottom states.
+            std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> extendedPredicateDdVariables;
+            
             /// The set of all source variables.
             std::set<storm::expressions::Variable> sourceVariables;
             
@@ -400,6 +438,12 @@ namespace storm {
             
             /// A BDD that represents the identity of all predicate variables.
             storm::dd::Bdd<DdType> allPredicateIdentities;
+            
+            /// A meta variable pair that marks bottom states.
+            std::pair<storm::expressions::Variable, storm::expressions::Variable> bottomStateVariables;
+            
+            /// The BDDs associated with the bottom state variable pair.
+            std::pair<storm::dd::Bdd<DdType>, storm::dd::Bdd<DdType>> bottomStateBdds;
             
             /// A mapping from DD variable indices to the predicate index they represent.
             std::unordered_map<uint_fast64_t, uint_fast64_t> ddVariableIndexToPredicateIndexMap;
@@ -416,11 +460,11 @@ namespace storm {
             /// The BDDs associated with the meta variables of player 2.
             std::vector<storm::dd::Bdd<DdType>> player2VariableBdds;
             
-            /// Variables that can be used to encode the probabilistic branching.
-            std::vector<storm::expressions::Variable> probabilisticBranchingVariables;
+            /// Variables that can be used to encode auxiliary information.
+            std::vector<storm::expressions::Variable> auxVariables;
             
-            /// The BDDs associated with the meta variables encoding the probabilistic branching.
-            std::vector<storm::dd::Bdd<DdType>> probabilisticBranchingVariableBdds;
+            /// The BDDs associated with the meta variables encoding auxiliary information.
+            std::vector<storm::dd::Bdd<DdType>> auxVariableBdds;
         };
         
     }
