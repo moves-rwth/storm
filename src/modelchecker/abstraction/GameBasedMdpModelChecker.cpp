@@ -95,8 +95,6 @@ namespace storm {
         void GameBasedMdpModelChecker<Type, ValueType>::computeProb01States(storm::OptimizationDirection player1Direction, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::expressions::Expression const& constraintExpression, storm::expressions::Expression const& targetStateExpression) {
             storm::dd::Bdd<Type> transitionMatrixBdd = game.getTransitionMatrix().toBdd();
             storm::dd::Bdd<Type> bottomStatesBdd = game.getBottomStates();
-            game.getTransitionMatrix().exportToDot("trans.dot");
-            bottomStatesBdd.template toAdd<ValueType>().exportToDot("bottom.dot");
             
             storm::dd::Bdd<Type> targetStates = game.getStates(targetStateExpression);
             if (player1Direction == storm::OptimizationDirection::Minimize) {
