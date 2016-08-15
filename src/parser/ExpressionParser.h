@@ -260,7 +260,7 @@ namespace storm {
             storm::expressions::Expression createMultExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2, bool& pass) const;
             storm::expressions::Expression createPowerExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2, bool& pass) const;
             storm::expressions::Expression createUnaryExpression(boost::optional<storm::expressions::OperatorType> const& operatorType, storm::expressions::Expression const& e1, bool& pass) const;
-            storm::expressions::Expression createDoubleLiteralExpression(storm::RationalNumber const& value, bool& pass) const;
+            storm::expressions::Expression createRationalLiteralExpression(storm::RationalNumber const& value, bool& pass) const;
             storm::expressions::Expression createIntegerLiteralExpression(int value, bool& pass) const;
             storm::expressions::Expression createMinimumMaximumExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2, bool& pass) const;
             storm::expressions::Expression createFloorCeilExpression(storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e1, bool& pass) const;

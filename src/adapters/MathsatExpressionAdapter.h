@@ -171,7 +171,7 @@ namespace storm {
                 return expression.getValue() ? msat_make_true(env) : msat_make_false(env);
 			}
 
-			virtual boost::any visit(expressions::DoubleLiteralExpression const& expression) override {
+			virtual boost::any visit(expressions::RationalLiteralExpression const& expression) override {
 				return msat_make_number(env, std::to_string(expression.getValueAsDouble()).c_str());
 			}
 

@@ -1,4 +1,4 @@
-#include "src/storage/expressions/DoubleLiteralExpression.h"
+#include "src/storage/expressions/RationalLiteralExpression.h"
 #include "src/storage/expressions/ExpressionManager.h"
 #include "src/storage/expressions/ExpressionVisitor.h"
 
@@ -6,47 +6,47 @@
 
 namespace storm {
     namespace expressions {
-        DoubleLiteralExpression::DoubleLiteralExpression(ExpressionManager const& manager, double value) : BaseExpression(manager, manager.getRationalType()), value(storm::utility::convertNumber<storm::RationalNumber>(value)) {
+        RationalLiteralExpression::RationalLiteralExpression(ExpressionManager const& manager, double value) : BaseExpression(manager, manager.getRationalType()), value(storm::utility::convertNumber<storm::RationalNumber>(value)) {
             // Intentionally left empty.
         }
         
-        DoubleLiteralExpression::DoubleLiteralExpression(ExpressionManager const& manager, std::string const& valueAsString) : BaseExpression(manager, manager.getRationalType()), value(storm::utility::convertNumber<storm::RationalNumber>(valueAsString)) {
+        RationalLiteralExpression::RationalLiteralExpression(ExpressionManager const& manager, std::string const& valueAsString) : BaseExpression(manager, manager.getRationalType()), value(storm::utility::convertNumber<storm::RationalNumber>(valueAsString)) {
             // Intentionally left empty.
         }
         
-        DoubleLiteralExpression::DoubleLiteralExpression(ExpressionManager const& manager, storm::RationalNumber const& value) : BaseExpression(manager, manager.getRationalType()), value(value) {
+        RationalLiteralExpression::RationalLiteralExpression(ExpressionManager const& manager, storm::RationalNumber const& value) : BaseExpression(manager, manager.getRationalType()), value(value) {
             // Intentionally left empty.
         }
         
-        double DoubleLiteralExpression::evaluateAsDouble(Valuation const* valuation) const {
+        double RationalLiteralExpression::evaluateAsDouble(Valuation const* valuation) const {
             return this->getValueAsDouble();
         }
         
-        bool DoubleLiteralExpression::isLiteral() const {
+        bool RationalLiteralExpression::isLiteral() const {
             return true;
         }
         
-        void DoubleLiteralExpression::gatherVariables(std::set<storm::expressions::Variable>& variables) const {
+        void RationalLiteralExpression::gatherVariables(std::set<storm::expressions::Variable>& variables) const {
             return;
 		}
         
-        std::shared_ptr<BaseExpression const> DoubleLiteralExpression::simplify() const {
+        std::shared_ptr<BaseExpression const> RationalLiteralExpression::simplify() const {
             return this->shared_from_this();
         }
         
-        boost::any DoubleLiteralExpression::accept(ExpressionVisitor& visitor) const {
+        boost::any RationalLiteralExpression::accept(ExpressionVisitor& visitor) const {
             return visitor.visit(*this);
         }
         
-        double DoubleLiteralExpression::getValueAsDouble() const {
+        double RationalLiteralExpression::getValueAsDouble() const {
             return storm::utility::convertNumber<double>(this->value);
         }
         
-        storm::RationalNumber DoubleLiteralExpression::getValue() const {
+        storm::RationalNumber RationalLiteralExpression::getValue() const {
             return this->value;
         }
         
-        void DoubleLiteralExpression::printToStream(std::ostream& stream) const {
+        void RationalLiteralExpression::printToStream(std::ostream& stream) const {
             stream << this->getValue();
         }
     }

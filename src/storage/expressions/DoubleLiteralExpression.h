@@ -1,5 +1,5 @@
-#ifndef STORM_STORAGE_EXPRESSIONS_DOUBLELITERALEXPRESSION_H_
-#define STORM_STORAGE_EXPRESSIONS_DOUBLELITERALEXPRESSION_H_
+#ifndef STORM_STORAGE_EXPRESSIONS_RationalLiteralExpression_H_
+#define STORM_STORAGE_EXPRESSIONS_RationalLiteralExpression_H_
 
 #include "src/storage/expressions/BaseExpression.h"
 #include "src/utility/OsDetection.h"
@@ -8,7 +8,7 @@
 
 namespace storm {
     namespace expressions {
-        class DoubleLiteralExpression : public BaseExpression {
+        class RationalLiteralExpression : public BaseExpression {
         public:
             /*!
              * Creates an double literal expression with the given value.
@@ -16,7 +16,7 @@ namespace storm {
              * @param manager The manager responsible for this expression.
              * @param value The value of the double literal.
              */
-            DoubleLiteralExpression(ExpressionManager const& manager, double value);
+            RationalLiteralExpression(ExpressionManager const& manager, double value);
 
             /*!
              * Creates an double literal expression with the value given as a string.
@@ -24,7 +24,7 @@ namespace storm {
              * @param manager The manager responsible for this expression.
              * @param value The string representation of the value of the literal.
              */
-            DoubleLiteralExpression(ExpressionManager const& manager, std::string const& valueAsString);
+            RationalLiteralExpression(ExpressionManager const& manager, std::string const& valueAsString);
 
             /*!
              * Creates an double literal expression with the rational value.
@@ -32,16 +32,16 @@ namespace storm {
              * @param manager The manager responsible for this expression.
              * @param value The rational number that is the value of this literal expression.
              */
-            DoubleLiteralExpression(ExpressionManager const& manager, storm::RationalNumber const& value);
+            RationalLiteralExpression(ExpressionManager const& manager, storm::RationalNumber const& value);
 
             // Instantiate constructors and assignments with their default implementations.
-            DoubleLiteralExpression(DoubleLiteralExpression const& other) = default;
-            DoubleLiteralExpression& operator=(DoubleLiteralExpression const& other) = delete;
+            RationalLiteralExpression(RationalLiteralExpression const& other) = default;
+            RationalLiteralExpression& operator=(RationalLiteralExpression const& other) = delete;
 #ifndef WINDOWS
-            DoubleLiteralExpression(DoubleLiteralExpression&&) = default;
-            DoubleLiteralExpression& operator=(DoubleLiteralExpression&&) = delete;
+            RationalLiteralExpression(RationalLiteralExpression&&) = default;
+            RationalLiteralExpression& operator=(RationalLiteralExpression&&) = delete;
 #endif
-            virtual ~DoubleLiteralExpression() = default;
+            virtual ~RationalLiteralExpression() = default;
             
             // Override base class methods.
             virtual double evaluateAsDouble(Valuation const* valuation = nullptr) const override;
@@ -75,4 +75,4 @@ namespace storm {
     }
 }
 
-#endif /* STORM_STORAGE_EXPRESSIONS_DOUBLELITERALEXPRESSION_H_ */
+#endif /* STORM_STORAGE_EXPRESSIONS_RationalLiteralExpression_H_ */

@@ -116,7 +116,7 @@ namespace storm {
         }
         
 		template<typename MapType>
-        boost::any SubstitutionVisitor<MapType>::visit(DoubleLiteralExpression const& expression) {
+        boost::any SubstitutionVisitor<MapType>::visit(RationalLiteralExpression const& expression) {
             return expression.getSharedPointer();
         }
         

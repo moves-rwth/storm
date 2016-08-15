@@ -93,7 +93,7 @@ namespace storm {
         }
         
         template<typename RationalFunctionType>
-        boost::any ToRationalFunctionVisitor<RationalFunctionType>::visit(DoubleLiteralExpression const& expression) {
+        boost::any ToRationalFunctionVisitor<RationalFunctionType>::visit(RationalLiteralExpression const& expression) {
             return storm::utility::convertNumber<storm::RationalFunction>(expression.getValue());
         }
 

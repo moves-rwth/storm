@@ -194,7 +194,7 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type, typename ValueType>
-        boost::any AddExpressionAdapter<Type, ValueType>::visit(storm::expressions::DoubleLiteralExpression const& expression) {
+        boost::any AddExpressionAdapter<Type, ValueType>::visit(storm::expressions::RationalLiteralExpression const& expression) {
             return ddManager->getConstant(static_cast<ValueType>(expression.getValueAsDouble()));
         }
         

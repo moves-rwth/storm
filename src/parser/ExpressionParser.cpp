@@ -61,7 +61,7 @@ namespace storm {
 			identifierExpression = identifier[qi::_val = phoenix::bind(&ExpressionParser::getIdentifierExpression, phoenix::ref(*this), qi::_1, allowBacktracking, qi::_pass)];
             identifierExpression.name("identifier expression");
             
-            literalExpression = trueFalse_[qi::_val = qi::_1] | rationalLiteral_[qi::_val = phoenix::bind(&ExpressionParser::createDoubleLiteralExpression, phoenix::ref(*this), qi::_1, qi::_pass)] | qi::int_[qi::_val = phoenix::bind(&ExpressionParser::createIntegerLiteralExpression, phoenix::ref(*this), qi::_1, qi::_pass)];
+            literalExpression = trueFalse_[qi::_val = qi::_1] | rationalLiteral_[qi::_val = phoenix::bind(&ExpressionParser::createRationalLiteralExpression, phoenix::ref(*this), qi::_1, qi::_pass)] | qi::int_[qi::_val = phoenix::bind(&ExpressionParser::createIntegerLiteralExpression, phoenix::ref(*this), qi::_1, qi::_pass)];
             literalExpression.name("literal expression");
             
             atomicExpression = floorCeilExpression | prefixPowerExpression | minMaxExpression | (qi::lit("(") >> expression >> qi::lit(")")) | literalExpression | identifierExpression;
@@ -323,7 +323,7 @@ namespace storm {
             return manager->boolean(false);
         }
                 
-        storm::expressions::Expression ExpressionParser::createDoubleLiteralExpression(storm::RationalNumber const& value, bool& pass) const {
+        storm::expressions::Expression ExpressionParser::createRationalLiteralExpression(storm::RationalNumber const& value, bool& pass) const {
             // If we are not supposed to accept double expressions, we reject it by setting pass to false.
             if (!this->acceptDoubleLiterals) {
                 pass = false;

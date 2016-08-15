@@ -97,7 +97,7 @@ namespace storm {
         }
         
         template<typename RationalNumberType>
-        boost::any ToRationalNumberVisitor<RationalNumberType>::visit(DoubleLiteralExpression const& expression) {
+        boost::any ToRationalNumberVisitor<RationalNumberType>::visit(RationalLiteralExpression const& expression) {
 #ifdef STORM_HAVE_CARL
             return expression.getValue();
 #else
