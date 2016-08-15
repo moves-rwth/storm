@@ -171,7 +171,7 @@ namespace storm {
 				mGspn.addPlace(placePANDFailed);
 				
 				storm::gspn::Place placePANDFailsave;
-				placePANDFailsave.setName(dftPand->name() + "_failsave");
+				placePANDFailsave.setName(dftPand->name() + STR_FAILSAVE);
 				placePANDFailsave.setNumberOfInitialTokens(0);
 				mGspn.addPlace(placePANDFailsave);
 				
@@ -185,12 +185,14 @@ namespace storm {
 				mGspn.addImmediateTransition(immediateTransitionPANDFailing);
 				
 				storm::gspn::ImmediateTransition<storm::gspn::GSPN::WeightType> immediateTransitionPANDFailsave;
-				immediateTransitionPANDFailsave.setName(dftPand->name() + "_failsaving");
+				immediateTransitionPANDFailsave.setName(dftPand->name() + STR_FAILSAVING);
 				immediateTransitionPANDFailsave.setPriority(1);
 				immediateTransitionPANDFailsave.setWeight(0.0);
 				immediateTransitionPANDFailsave.setInhibitionArcMultiplicity(placePANDFailsave, 1);
 				immediateTransitionPANDFailsave.setOutputArcMultiplicity(placePANDFailsave, 1);
 				mGspn.addImmediateTransition(immediateTransitionPANDFailsave);
+				
+				// TODO: Extend for more than 2 children.
 			}
 			
 			template <typename ValueType>
@@ -200,7 +202,34 @@ namespace storm {
 			
 			template <typename ValueType>
             void DftToGspnTransformator<ValueType>::drawPOR(std::shared_ptr<storm::storage::DFTPor<ValueType> const> dftPor) {
-				STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "The transformation of a POR is not yet implemented.");
+				storm::gspn::Place placePORFailed;
+				placePORFailed.setName(dftPor->name() + STR_FAILED);
+				placePORFailed.setNumberOfInitialTokens(0);
+				mGspn.addPlace(placePORFailed);
+				
+				storm::gspn::Place placePORFailsave;
+				placePORFailsave.setName(dftPor->name() + STR_FAILSAVE);
+				placePORFailsave.setNumberOfInitialTokens(0);
+				mGspn.addPlace(placePORFailsave);
+				
+				storm::gspn::ImmediateTransition<storm::gspn::GSPN::WeightType> immediateTransitionPORFailing;
+				immediateTransitionPORFailing.setName(dftPor->name() + STR_FAILING);
+				immediateTransitionPORFailing.setPriority(1);
+				immediateTransitionPORFailing.setWeight(0.0);
+				immediateTransitionPORFailing.setInhibitionArcMultiplicity(placePORFailed, 1);
+				immediateTransitionPORFailing.setInhibitionArcMultiplicity(placePORFailsave, 1);
+				immediateTransitionPORFailing.setOutputArcMultiplicity(placePORFailed, 1);
+				mGspn.addImmediateTransition(immediateTransitionPORFailing);
+				
+				storm::gspn::ImmediateTransition<storm::gspn::GSPN::WeightType> immediateTransitionPORFailsave;
+				immediateTransitionPORFailsave.setName(dftPor->name() + STR_FAILSAVING);
+				immediateTransitionPORFailsave.setPriority(1);
+				immediateTransitionPORFailsave.setWeight(0.0);
+				immediateTransitionPORFailsave.setInhibitionArcMultiplicity(placePORFailsave, 1);
+				immediateTransitionPORFailsave.setOutputArcMultiplicity(placePORFailsave, 1);
+				mGspn.addImmediateTransition(immediateTransitionPORFailsave);
+				
+				// TODO: Extend for more than 2 children.
 			}
 			
 			template <typename ValueType>
@@ -279,7 +308,7 @@ namespace storm {
 							{
 								auto children =  std::static_pointer_cast<storm::storage::DFTPand<ValueType> const>(mDft.getElement(parents[j]))->children();
 								auto pandEntry = mGspn.getImmediateTransition(mDft.getElement(parents[j])->name() + STR_FAILING);
-								auto pandEntry2 = mGspn.getImmediateTransition(mDft.getElement(parents[j])->name() + "_failsaving");
+								auto pandEntry2 = mGspn.getImmediateTransition(mDft.getElement(parents[j])->name() + STR_FAILSAVING);
 								auto childExit = mGspn.getPlace(child->name() + STR_FAILED);
 								
 								if (pandEntry.first && pandEntry2.first && childExit.first) { // Only add arcs if the objects have been found.
@@ -302,7 +331,27 @@ namespace storm {
 							case storm::storage::DFTElementType::SPARE:
 								break;
 							case storm::storage::DFTElementType::POR:
+							{
+								auto children =  std::static_pointer_cast<storm::storage::DFTPand<ValueType> const>(mDft.getElement(parents[j]))->children();
+								auto porEntry = mGspn.getImmediateTransition(mDft.getElement(parents[j])->name() + STR_FAILING);
+								auto porEntry2 = mGspn.getImmediateTransition(mDft.getElement(parents[j])->name() + STR_FAILSAVING);
+								auto childExit = mGspn.getPlace(child->name() + STR_FAILED);
+								
+								if (porEntry.first && porEntry2.first && childExit.first) { // Only add arcs if the objects have been found.
+									if (children[0] == child) { // Current element is primary child.
+										porEntry.second->setInputArcMultiplicity(childExit.second, 1);
+										porEntry.second->setOutputArcMultiplicity(childExit.second, 1);
+										porEntry2.second->setInhibitionArcMultiplicity(childExit.second, 1);
+										
+									}
+									else if (children[1] == child) { // Current element is secondary child.
+										porEntry2.second->setInputArcMultiplicity(childExit.second, 1);
+										porEntry2.second->setOutputArcMultiplicity(childExit.second, 1);
+									}
+								}
+								
 								break;
+							}
 							case storm::storage::DFTElementType::SEQ:
 								break;
 							case storm::storage::DFTElementType::MUTEX:
