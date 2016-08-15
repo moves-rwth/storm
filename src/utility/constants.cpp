@@ -115,6 +115,10 @@ namespace storm {
             return carl::isInteger(number);
         }
 
+        template<>
+        bool isInteger(storm::RationalFunction const& func) {
+            return storm::utility::isConstant(func) && storm::utility::isOne(func.denominator());
+        }
 #endif
         
         template<typename ValueType>
@@ -203,7 +207,12 @@ namespace storm {
         RationalFunction convertNumber(RationalNumber const& number) {
             return RationalFunction(number);
         }
-        
+
+        template<>
+        uint_fast64_t convertNumber(RationalFunction const& func) {
+            return carl::toInt<unsigned long>(func.nominatorAsNumber());
+        }
+
         template<>
         RationalNumber abs(storm::RationalNumber const& number) {
             return carl::abs(number);
