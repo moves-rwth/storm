@@ -261,7 +261,7 @@ namespace storm {
 								if (childExit.first) {
 									// Get all associations of the child to all immediate transitions of the VOTE.
 									auto children = std::static_pointer_cast<storm::storage::DFTVot<ValueType> const>(mDft.getElement(parents[j]))->children();
-									auto associations = getVOTEEntryAssociation(child->id(), 
+									auto associations = getVOTEEntryAssociation(parents[j], child->id(), 
 										std::static_pointer_cast<storm::storage::DFTVot<ValueType> const>(mDft.getElement(parents[j]))->threshold(), children);
 									
 									// Draw.
@@ -347,7 +347,7 @@ namespace storm {
             }
             
            	template <typename ValueType>
-            std::vector<int> DftToGspnTransformator<ValueType>::getVOTEEntryAssociation(int childId, int threshold, std::vector<std::shared_ptr<storm::storage::DFTElement<ValueType>>> children) {
+            std::vector<int> DftToGspnTransformator<ValueType>::getVOTEEntryAssociation(int parentId, int childId, int threshold, std::vector<std::shared_ptr<storm::storage::DFTElement<ValueType>>> children) {
 				// Fetch all ids of the children.
 				std::vector<int> childrenIds(children.size());
 				for (std::size_t i = 0; i < children.size(); i++) {
@@ -357,7 +357,15 @@ namespace storm {
 				// Get all subsets of the 'children' of size 'threshold'.
 				std::vector<int> subsets(threshold);
 				std::vector<int> output;
-				combinationUtil(output, childrenIds, subsets, 0, children.size() - 1, 0, threshold);
+				
+				// Check if output for this VOTE already exists. If yes, use it instead recalculating.
+				if (mVoteAssociations.find(parentId) == mVoteAssociations.end()) { // Could not find parentId in map.
+					combinationUtil(output, childrenIds, subsets, 0, children.size() - 1, 0, threshold);
+					mVoteAssociations.insert ( std::pair<int, std::vector<int> > (parentId, output) );
+				}
+				else { // Could find parentId in map, use already computed output.
+					output = mVoteAssociations.find(parentId)->second;
+				}
 				
 				// Check which subset contains the id 'childId' and add the subset-number to the association.
 				std::vector<int> associations;

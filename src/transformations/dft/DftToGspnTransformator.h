@@ -32,6 +32,8 @@ namespace storm {
                 storm::storage::DFT<ValueType> const& mDft;
                 storm::gspn::GSPN mGspn;
 				
+				std::map<int, std::vector<int> > mVoteAssociations; 			// Used to avoid multiple calculations for the same VOTE. 
+				
 				static constexpr const char* STR_FAILING = "_failing";			// Name standard for transitions that point towards a place, which in turn indicates the failure of a gate.
 				static constexpr const char* STR_FAILED = "_failed";			// Name standard for place which indicates the failure of a gate.
                 
@@ -143,13 +145,15 @@ namespace storm {
 				 * 'A' is contained in subset 0 and subset 1, so this method returns {0, 1}. 
 				 * This means that BE 'A' needs to be connected with the immediate transitions 'VOTE_0_failing' and 'VOTE_1_failing'.
 				 * 
+				 * @param parentId Id of the parent.
+				 * 
 				 * @param childId Id of the child.
 				 * 
 				 * @param threshold The threshold of the VOTE.
 				 * 
 				 * @param children All children of the VOTE.
 				 */
-				 std::vector<int> getVOTEEntryAssociation(int childId, int threshold, std::vector<std::shared_ptr<storm::storage::DFTElement<ValueType>>> children);
+				 std::vector<int> getVOTEEntryAssociation(int parentId, int childId, int threshold, std::vector<std::shared_ptr<storm::storage::DFTElement<ValueType>>> children);
 				 
 				 /*
 				  * Helper-method for getVOTEEntryAssociation().
