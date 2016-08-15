@@ -152,7 +152,7 @@ namespace storm {
         }
         
         boost::any LinearCoefficientVisitor::visit(DoubleLiteralExpression const& expression) {
-            return VariableCoefficients(expression.getValue());
+            return VariableCoefficients(expression.getValueAsDouble());
         }
     }
 }

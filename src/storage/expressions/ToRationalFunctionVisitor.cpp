@@ -2,6 +2,7 @@
 
 #include <sstream>
 
+#include "src/utility/constants.h"
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidArgumentException.h"
 
@@ -93,7 +94,7 @@ namespace storm {
         
         template<typename RationalFunctionType>
         boost::any ToRationalFunctionVisitor<RationalFunctionType>::visit(DoubleLiteralExpression const& expression) {
-            return RationalFunctionType(carl::rationalize<storm::RationalNumber>(expression.getValue()));
+            return storm::utility::convertNumber<storm::RationalFunction>(expression.getValue());
         }
 
         template class ToRationalFunctionVisitor<storm::RationalFunction>;
