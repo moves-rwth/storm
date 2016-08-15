@@ -1,3 +1,9 @@
+Bdd
+Bdd::ExistAbstractRepresentative(const BddSet& cube) const {
+	LACE_ME;
+    return sylvan_existsRepresentative(bdd, cube.set.bdd);
+}
+
 Mtbdd
 Bdd::toDoubleMtbdd() const {
     LACE_ME;

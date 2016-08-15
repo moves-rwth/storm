@@ -44,6 +44,54 @@ TEST(SylvanDd, Constants) {
     EXPECT_EQ(2, two.getMax());
 }
 
+TEST(SylvanDd, BddConstants) {
+    std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
+    storm::dd::Bdd<storm::dd::DdType::Sylvan> zero;
+    ASSERT_NO_THROW(zero = manager->getBddZero());
+    
+    EXPECT_EQ(0ul, zero.getNonZeroCount());
+    EXPECT_EQ(1ul, zero.getLeafCount());
+    EXPECT_EQ(1ul, zero.getNodeCount());
+    
+    storm::dd::Bdd<storm::dd::DdType::Sylvan> one;
+    ASSERT_NO_THROW(one = manager->getBddOne());
+    
+    EXPECT_EQ(0ul, one.getNonZeroCount());
+    EXPECT_EQ(1ul, one.getLeafCount());
+    EXPECT_EQ(1ul, one.getNodeCount());
+}
+
+TEST(SylvanDd, BddExistAbstractRepresentative) {
+    std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
+	std::pair<storm::expressions::Variable, storm::expressions::Variable> x;
+	std::pair<storm::expressions::Variable, storm::expressions::Variable> y;
+	std::pair<storm::expressions::Variable, storm::expressions::Variable> z;
+    ASSERT_NO_THROW(x = manager->addMetaVariable("x", 0, 1));
+	ASSERT_NO_THROW(y = manager->addMetaVariable("y", 0, 1));
+	ASSERT_NO_THROW(z = manager->addMetaVariable("z", 0, 1));
+	
+	storm::dd::Bdd<storm::dd::DdType::Sylvan> bddX = manager->getEncoding(x.first, 1);
+	//bddX.exportToDot("/opt/masterThesis/storm/build/tests_bdd_x.dot");
+	storm::dd::Bdd<storm::dd::DdType::Sylvan> bddY = manager->getEncoding(y.first, 0);
+	//bddY.exportToDot("/opt/masterThesis/storm/build/tests_bdd_y.dot");
+	storm::dd::Bdd<storm::dd::DdType::Sylvan> bddZ = manager->getEncoding(z.first, 0);
+	//bddZ.exportToDot("/opt/masterThesis/storm/build/tests_bdd_z.dot");
+	
+	storm::dd::Bdd<storm::dd::DdType::Sylvan> bddX1Y0Z0 = (bddX && bddY) && bddZ;
+	//bddX1Y0Z0.exportToDot("/opt/masterThesis/storm/build/tests_bddX1Y0Z0.dot");
+    
+    EXPECT_EQ(1ul, bddX1Y0Z0.getNonZeroCount());
+    EXPECT_EQ(1ul, bddX1Y0Z0.getLeafCount());
+    EXPECT_EQ(4ul, bddX1Y0Z0.getNodeCount());
+	
+	storm::dd::Bdd<storm::dd::DdType::Sylvan> representative_x = bddX1Y0Z0.existsAbstractRepresentative({x.first});
+	//representative_x.exportToDot("/opt/masterThesis/storm/build/tests_representative_x.dot");
+	storm::dd::Bdd<storm::dd::DdType::Sylvan> representative_y = bddX1Y0Z0.existsAbstractRepresentative({y.first});
+	//representative_y.exportToDot("/opt/masterThesis/storm/build/tests_representative_y.dot");
+	storm::dd::Bdd<storm::dd::DdType::Sylvan> representative_z = bddX1Y0Z0.existsAbstractRepresentative({z.first});
+	//representative_z.exportToDot("/opt/masterThesis/storm/build/tests_representative_z.dot");
+}
+
 TEST(SylvanDd, AddGetMetaVariableTest) {
     std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
     ASSERT_NO_THROW(manager->addMetaVariable("x", 1, 9));

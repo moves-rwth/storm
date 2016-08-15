@@ -161,7 +161,7 @@ namespace storm {
         }
         
         InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::existsAbstractRepresentative(InternalBdd<DdType::Sylvan> const& cube) const {
-            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "This operation is currently not supported by sylvan.");
+			return InternalBdd<DdType::Sylvan>(ddManager, this->sylvanBdd.ExistAbstractRepresentative(cube.sylvanBdd));
         }
         
         InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::universalAbstract(InternalBdd<DdType::Sylvan> const& cube) const {

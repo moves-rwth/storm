@@ -4,3 +4,4 @@
 	Mtbdd toStormRationalFunctionMtbdd() const;
 #endif
     Mtbdd Ite(Mtbdd const& thenDd, Mtbdd const& elseDd) const;
+	Bdd ExistAbstractRepresentative(const BddSet& cube) const;
