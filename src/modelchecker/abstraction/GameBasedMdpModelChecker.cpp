@@ -101,14 +101,28 @@ namespace storm {
                 targetStates |= game.getBottomStates();
             }
             
+            transitionMatrixBdd.template toAdd<ValueType>().exportToDot("transbdd.dot");
+            
             // Start by computing the states with probability 0/1 when player 2 minimizes.
             storm::utility::graph::GameProb01Result<Type> prob0Min = storm::utility::graph::performProb0(game, transitionMatrixBdd, game.getStates(constraintExpression), targetStates, player1Direction, storm::OptimizationDirection::Minimize, true);
-            storm::utility::graph::GameProb01Result<Type> prob1Min = storm::utility::graph::performProb1(game, transitionMatrixBdd, game.getStates(constraintExpression), targetStates, player1Direction, storm::OptimizationDirection::Minimize, true);
+            storm::utility::graph::GameProb01Result<Type> prob1Min = storm::utility::graph::performProb1(game, transitionMatrixBdd, game.getStates(constraintExpression), targetStates, player1Direction, storm::OptimizationDirection::Minimize, false);
             
             // Now compute the states with probability 0/1 when player 2 maximizes.
-            storm::utility::graph::GameProb01Result<Type> prob0Max = storm::utility::graph::performProb0(game, transitionMatrixBdd, game.getStates(constraintExpression), targetStates, player1Direction, storm::OptimizationDirection::Maximize, true);
+            storm::utility::graph::GameProb01Result<Type> prob0Max = storm::utility::graph::performProb0(game, transitionMatrixBdd, game.getStates(constraintExpression), targetStates, player1Direction, storm::OptimizationDirection::Maximize, false);
             storm::utility::graph::GameProb01Result<Type> prob1Max = storm::utility::graph::performProb1(game, transitionMatrixBdd, game.getStates(constraintExpression), targetStates, player1Direction, storm::OptimizationDirection::Maximize, true);
             
+//            STORM_LOG_ASSERT(prob0Min.hasPlayer1Strategy(), "Unable to proceed without strategy.");
+            STORM_LOG_ASSERT(prob0Min.hasPlayer2Strategy(), "Unable to proceed without strategy.");
+
+            STORM_LOG_ASSERT(prob1Max.hasPlayer1Strategy(), "Unable to proceed without strategy.");
+            STORM_LOG_ASSERT(prob1Max.hasPlayer2Strategy(), "Unable to proceed without strategy.");
+
+//            prob0Min.getPlayer1Strategy().template toAdd<ValueType>().exportToDot("prob0_min_pl1_strat.dot");
+            prob0Min.getPlayer2Strategy().template toAdd<ValueType>().exportToDot("prob0_min_pl2_strat.dot");
+
+            prob1Max.getPlayer1Strategy().template toAdd<ValueType>().exportToDot("prob1_max_pl1_strat.dot");
+            prob1Max.getPlayer2Strategy().template toAdd<ValueType>().exportToDot("prob1_max_pl2_strat.dot");
+
             STORM_LOG_DEBUG("Min: " << prob0Min.states.getNonZeroCount() << " no states, " << prob1Min.states.getNonZeroCount() << " yes states.");
             STORM_LOG_DEBUG("Max: " << prob0Max.states.getNonZeroCount() << " no states, " << prob1Max.states.getNonZeroCount() << " yes states.");
             

@@ -528,6 +528,26 @@ namespace storm {
                     // Intentionally left empty.
                 }
                 
+                bool hasPlayer1Strategy() const {
+                    return static_cast<bool>(player1Strategy);
+                }
+                
+                storm::dd::Bdd<Type> const& getPlayer1Strategy() {
+                    return player1Strategy.get();
+                }
+
+                bool hasPlayer2Strategy() const {
+                    return static_cast<bool>(player2Strategy);
+                }
+
+                storm::dd::Bdd<Type> const& getPlayer2Strategy() {
+                    return player2Strategy.get();
+                }
+
+                storm::dd::Bdd<Type> const& getStates() const {
+                    return states;
+                }
+
                 storm::dd::Bdd<Type> states;
                 boost::optional<storm::dd::Bdd<Type>> player1Strategy;
                 boost::optional<storm::dd::Bdd<Type>> player2Strategy;
