@@ -74,6 +74,13 @@ namespace storm {
                  */
                 void refine(std::vector<storm::expressions::Expression> const& predicates);
                 
+                /*!
+                 * Exports the current state of the abstraction in the dot format to the given file.
+                 *
+                 * @param filename The name of the file to which to write the dot output.
+                 */
+                void exportToDot(std::string const& filename) const;
+                
             private:
                 /*!
                  * Computes the reachable states of the transition relation.

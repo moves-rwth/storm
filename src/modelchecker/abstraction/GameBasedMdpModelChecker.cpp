@@ -70,9 +70,9 @@ namespace storm {
             
             storm::abstraction::prism::PrismMenuGameAbstractor<Type, ValueType> abstractor(preprocessedProgram, initialPredicates, smtSolverFactory);
             
-            
             // 1. build initial abstraction based on the the constraint expression (if not 'true') and the target state expression.
             storm::abstraction::MenuGame<Type, ValueType> game = abstractor.abstract();
+            abstractor.exportToDot("game.dot");
             STORM_LOG_DEBUG("Initial abstraction has " << game.getNumberOfStates() << " (player 1) states and " << game.getNumberOfTransitions() << " transitions.");
             
             // 2. solve the game wrt. to min/max as given by checkTask and min/max for the abstraction player to obtain two bounds.
@@ -95,22 +95,34 @@ namespace storm {
         void GameBasedMdpModelChecker<Type, ValueType>::computeProb01States(storm::OptimizationDirection player1Direction, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::expressions::Expression const& constraintExpression, storm::expressions::Expression const& targetStateExpression) {
             storm::dd::Bdd<Type> transitionMatrixBdd = game.getTransitionMatrix().toBdd();
             storm::dd::Bdd<Type> bottomStatesBdd = game.getBottomStates();
-            game.getTransitionMatrix().exportToDot("trans.dot");
-            bottomStatesBdd.template toAdd<ValueType>().exportToDot("bottom.dot");
             
             storm::dd::Bdd<Type> targetStates = game.getStates(targetStateExpression);
             if (player1Direction == storm::OptimizationDirection::Minimize) {
                 targetStates |= game.getBottomStates();
             }
+                        
+            transitionMatrixBdd.template toAdd<ValueType>().exportToDot("transbdd.dot");
             
             // Start by computing the states with probability 0/1 when player 2 minimizes.
             storm::utility::graph::GameProb01Result<Type> prob0Min = storm::utility::graph::performProb0(game, transitionMatrixBdd, game.getStates(constraintExpression), targetStates, player1Direction, storm::OptimizationDirection::Minimize, true);
-            storm::utility::graph::GameProb01Result<Type> prob1Min = storm::utility::graph::performProb1(game, transitionMatrixBdd, game.getStates(constraintExpression), targetStates, player1Direction, storm::OptimizationDirection::Minimize, true);
+            storm::utility::graph::GameProb01Result<Type> prob1Min = storm::utility::graph::performProb1(game, transitionMatrixBdd, game.getStates(constraintExpression), targetStates, player1Direction, storm::OptimizationDirection::Minimize, false);
             
             // Now compute the states with probability 0/1 when player 2 maximizes.
-            storm::utility::graph::GameProb01Result<Type> prob0Max = storm::utility::graph::performProb0(game, transitionMatrixBdd, game.getStates(constraintExpression), targetStates, player1Direction, storm::OptimizationDirection::Maximize, true);
+            storm::utility::graph::GameProb01Result<Type> prob0Max = storm::utility::graph::performProb0(game, transitionMatrixBdd, game.getStates(constraintExpression), targetStates, player1Direction, storm::OptimizationDirection::Maximize, false);
             storm::utility::graph::GameProb01Result<Type> prob1Max = storm::utility::graph::performProb1(game, transitionMatrixBdd, game.getStates(constraintExpression), targetStates, player1Direction, storm::OptimizationDirection::Maximize, true);
             
+//            STORM_LOG_ASSERT(prob0Min.hasPlayer1Strategy(), "Unable to proceed without strategy.");
+            STORM_LOG_ASSERT(prob0Min.hasPlayer2Strategy(), "Unable to proceed without strategy.");
+
+            STORM_LOG_ASSERT(prob1Max.hasPlayer1Strategy(), "Unable to proceed without strategy.");
+            STORM_LOG_ASSERT(prob1Max.hasPlayer2Strategy(), "Unable to proceed without strategy.");
+
+//            prob0Min.getPlayer1Strategy().template toAdd<ValueType>().exportToDot("prob0_min_pl1_strat.dot");
+            prob0Min.getPlayer2Strategy().template toAdd<ValueType>().exportToDot("prob0_min_pl2_strat.dot");
+
+            prob1Max.getPlayer1Strategy().template toAdd<ValueType>().exportToDot("prob1_max_pl1_strat.dot");
+            prob1Max.getPlayer2Strategy().template toAdd<ValueType>().exportToDot("prob1_max_pl2_strat.dot");
+
             STORM_LOG_DEBUG("Min: " << prob0Min.states.getNonZeroCount() << " no states, " << prob1Min.states.getNonZeroCount() << " yes states.");
             STORM_LOG_DEBUG("Max: " << prob0Max.states.getNonZeroCount() << " no states, " << prob1Max.states.getNonZeroCount() << " yes states.");
             

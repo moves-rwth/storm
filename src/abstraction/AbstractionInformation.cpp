@@ -51,6 +51,7 @@ namespace storm {
             std::pair<storm::expressions::Variable, storm::expressions::Variable> newMetaVariable = ddManager->addMetaVariable(stream.str());
             
             predicateDdVariables.push_back(newMetaVariable);
+            extendedPredicateDdVariables.push_back(newMetaVariable);
             predicateBdds.emplace_back(ddManager->getEncoding(newMetaVariable.first, 1), ddManager->getEncoding(newMetaVariable.second, 1));
             predicateIdentities.push_back(ddManager->getEncoding(newMetaVariable.first, 1).iff(ddManager->getEncoding(newMetaVariable.second, 1)));
             allPredicateIdentities &= predicateIdentities.back();
