@@ -222,9 +222,9 @@ namespace storm {
                     out << stateName.str();
                     out << " [ label=\"";
                     if (stateValue.first.getBooleanValue(abstractionInformation.getBottomStateVariable(true))) {
-                        out << "*";
+                        out << "*\", margin=0, width=0, height=0, shape=\"none";
                     } else {
-                        out << stateName.str();
+                        out << stateName.str() << "\", margin=0, width=0, height=0, shape=\"oval";
                     }
                     out << "\" ];" << std::endl;
                 }
@@ -249,7 +249,7 @@ namespace storm {
                         }
                     }
                     out << stateName.str() << "_" << index;
-                    out << " [ shape=\"square\", label=\"\" ];" << std::endl;
+                    out << " [ shape=\"square\", width=0, height=0, margin=0, label=\"" << index << "\" ];" << std::endl;
                     out << "\tpl1_" << stateName.str() << " -> " << "pl2_" << stateName.str() << "_" << index << " [ label=\"" << index << "\" ];" << std::endl;
                 }
                 
@@ -280,7 +280,7 @@ namespace storm {
                             index |= 1;
                         }                    }
                     out << stateName.str() << "_" << index;
-                    out << " [ shape=\"diamond\", label=\"\" ];" << std::endl;
+                    out << " [ shape=\"point\", label=\"\" ];" << std::endl;
                     out << "\tpl2_" << stateName.str() << " -> " << "plp_" << stateName.str() << "_" << index << " [ label=\"" << index << "\" ];" << std::endl;
                 }
                 
