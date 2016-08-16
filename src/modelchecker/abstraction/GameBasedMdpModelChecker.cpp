@@ -100,7 +100,7 @@ namespace storm {
             if (player1Direction == storm::OptimizationDirection::Minimize) {
                 targetStates |= game.getBottomStates();
             }
-            
+                        
             transitionMatrixBdd.template toAdd<ValueType>().exportToDot("transbdd.dot");
             
             // Start by computing the states with probability 0/1 when player 2 minimizes.

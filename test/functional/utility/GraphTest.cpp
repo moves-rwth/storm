@@ -258,7 +258,7 @@ TEST(GraphTest, SymbolicProb01StochasticGameDieSmall) {
     EXPECT_TRUE(nonProb0StatesWithStrategy.isZero());
     
     // Proceed by checking whether they select exactly one action in each state.
-    storm::dd::Add<storm::dd::DdType::CUDD, double> stateDistributionsUnderStrategies = (game.getTransitionMatrix() * result.player1Strategy.get().template toAdd<double>() * result.player2Strategy.get().template toAdd<double>()).sumAbstract(game.getColumnVariables());;
+    storm::dd::Add<storm::dd::DdType::CUDD, double> stateDistributionsUnderStrategies = (game.getTransitionMatrix() * result.player1Strategy.get().template toAdd<double>() * result.player2Strategy.get().template toAdd<double>()).sumAbstract(game.getColumnVariables());
     EXPECT_EQ(2, stateDistributionsUnderStrategies.getNonZeroCount());
     
     // Check that the number of distributions per state is one (or zero in the case where there are no prob0 states).
