@@ -21,6 +21,9 @@ namespace storm {
 				
 				// When all DFT elements are drawn, draw the connections between them.
 				drawGSPNConnections();
+				
+				// TODO: For sequences:
+				// drawGSPNRestrictions(); ?
 		
 				// Write GSPN to file.
 				writeGspn(true);
@@ -53,7 +56,7 @@ namespace storm {
 							drawPOR(std::static_pointer_cast<storm::storage::DFTPor<ValueType> const>(dftElement));
 							break;
 						case storm::storage::DFTElementType::SEQ:
-							STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "The transformation of a SEQ is not yet implemented.");
+							// No method call needed here. SEQ only consists of restrictions, which are handled later.
 							break;
 						case storm::storage::DFTElementType::MUTEX:
 							STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "The transformation of a MUTEX is not yet implemented.");
@@ -261,7 +264,7 @@ namespace storm {
 					auto parents = child->parentIds();
 					
 					// Draw a connection to every parent.
-					for (std::size_t j = 0; j < parents.size(); j++) {						
+					for (std::size_t j = 0; j < parents.size(); j++) {	
 						// Check the type of the parent and act accordingly (every parent gate has different entry points...).
 						switch (mDft.getElement(parents[j])->type()) {
 							case storm::storage::DFTElementType::AND:
@@ -353,7 +356,10 @@ namespace storm {
 								break;
 							}
 							case storm::storage::DFTElementType::SEQ:
+							{
+								// Sequences are realized with restrictions. Nothing to do here.
 								break;
+							}
 							case storm::storage::DFTElementType::MUTEX:
 								break;
 							case storm::storage::DFTElementType::BE:
