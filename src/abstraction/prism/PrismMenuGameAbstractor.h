@@ -16,6 +16,8 @@ namespace storm {
                 virtual storm::abstraction::MenuGame<DdType, ValueType> abstract() override;
                 virtual void refine(std::vector<storm::expressions::Expression> const& predicates) override;
 
+                void exportToDot(std::string const& filename) const;
+                
             private:
                 /// The abstract program that performs the actual abstraction.
                 AbstractProgram<DdType, ValueType> abstractProgram;

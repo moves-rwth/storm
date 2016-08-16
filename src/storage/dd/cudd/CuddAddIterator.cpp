@@ -117,7 +117,7 @@ namespace storm {
             // valuations later.
             for (auto const& metaVariable : *this->metaVariables) {
                 bool metaVariableAppearsInCube = false;
-                std::vector<std::tuple<storm::expressions::Variable, uint_fast64_t>> localRelenvantDontCareDdVariables;
+                std::vector<std::tuple<storm::expressions::Variable, uint_fast64_t>> localRelevantDontCareDdVariables;
                 auto const& ddMetaVariable = this->ddManager->getMetaVariable(metaVariable);
                 if (ddMetaVariable.getType() == MetaVariableType::Bool) {
                     if (this->cube[ddMetaVariable.getDdVariables().front().getIndex()] == 0) {
@@ -127,7 +127,8 @@ namespace storm {
                         metaVariableAppearsInCube = true;
                         currentValuation.setBooleanValue(metaVariable, true);
                     } else {
-                        localRelenvantDontCareDdVariables.push_back(std::make_tuple(metaVariable, 0));
+                        currentValuation.setBooleanValue(metaVariable, false);
+                        localRelevantDontCareDdVariables.push_back(std::make_tuple(metaVariable, 0));
                     }
                 } else {
                     int_fast64_t intValue = 0;
@@ -141,7 +142,7 @@ namespace storm {
                         } else {
                             // Temporarily leave bit unset so we can iterate trough the other option later.
                             // Add the bit to the relevant don't care bits.
-                            localRelenvantDontCareDdVariables.push_back(std::make_tuple(metaVariable, ddMetaVariable.getNumberOfDdVariables() - bitIndex - 1));
+                            localRelevantDontCareDdVariables.push_back(std::make_tuple(metaVariable, ddMetaVariable.getNumberOfDdVariables() - bitIndex - 1));
                         }
                     }
                     if (this->enumerateDontCareMetaVariables || metaVariableAppearsInCube) {
@@ -152,7 +153,7 @@ namespace storm {
                 // If all meta variables are to be enumerated or the meta variable appeared in the cube, we register the
                 // missing bits to later enumerate all possible valuations.
                 if (this->enumerateDontCareMetaVariables || metaVariableAppearsInCube) {
-                    relevantDontCareDdVariables.insert(relevantDontCareDdVariables.end(), localRelenvantDontCareDdVariables.begin(), localRelenvantDontCareDdVariables.end());
+                    relevantDontCareDdVariables.insert(relevantDontCareDdVariables.end(), localRelevantDontCareDdVariables.begin(), localRelevantDontCareDdVariables.end());
                 }
             }
             

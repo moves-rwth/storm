@@ -23,6 +23,11 @@ namespace storm {
             void PrismMenuGameAbstractor<DdType, ValueType>::refine(std::vector<storm::expressions::Expression> const& predicates) {
                 abstractProgram.refine(predicates);
             }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
+            void PrismMenuGameAbstractor<DdType, ValueType>::exportToDot(std::string const& filename) const {
+                abstractProgram.exportToDot(filename);
+            }
          
             template class PrismMenuGameAbstractor<storm::dd::DdType::CUDD, double>;
             template class PrismMenuGameAbstractor<storm::dd::DdType::Sylvan, double>;

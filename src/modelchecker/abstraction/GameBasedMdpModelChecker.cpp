@@ -70,9 +70,9 @@ namespace storm {
             
             storm::abstraction::prism::PrismMenuGameAbstractor<Type, ValueType> abstractor(preprocessedProgram, initialPredicates, smtSolverFactory);
             
-            
             // 1. build initial abstraction based on the the constraint expression (if not 'true') and the target state expression.
             storm::abstraction::MenuGame<Type, ValueType> game = abstractor.abstract();
+            abstractor.exportToDot("game.dot");
             STORM_LOG_DEBUG("Initial abstraction has " << game.getNumberOfStates() << " (player 1) states and " << game.getNumberOfTransitions() << " transitions.");
             
             // 2. solve the game wrt. to min/max as given by checkTask and min/max for the abstraction player to obtain two bounds.

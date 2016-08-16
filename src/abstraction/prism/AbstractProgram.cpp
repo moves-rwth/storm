@@ -202,6 +202,96 @@ namespace storm {
                 return reachableStates;
             }
             
+            template <storm::dd::DdType DdType, typename ValueType>
+            void AbstractProgram<DdType, ValueType>::exportToDot(std::string const& filename) const {
+                std::ofstream out(filename);
+                out << "digraph game {" << std::endl;
+                
+                // Create the player 1 nodes.
+                storm::dd::Add<DdType, ValueType> statesAsAdd = currentGame->getReachableStates().template toAdd<ValueType>();
+                for (auto stateValue : statesAsAdd) {
+                    out << "\tpl1_";
+                    std::stringstream stateName;
+                    for (auto const& var : currentGame->getRowVariables()) {
+                        if (stateValue.first.getBooleanValue(var)) {
+                            stateName << "1";
+                        } else {
+                            stateName << "0";
+                        }
+                    }
+                    out << stateName.str();
+                    out << " [ label=\"";
+                    if (stateValue.first.getBooleanValue(abstractionInformation.getBottomStateVariable(true))) {
+                        out << "*";
+                    } else {
+                        out << stateName.str();
+                    }
+                    out << "\" ];" << std::endl;
+                }
+                
+                // Create the nodes of the second player.
+                storm::dd::Add<DdType, ValueType> player2States = currentGame->getTransitionMatrix().toBdd().existsAbstract(currentGame->getColumnVariables()).existsAbstract(currentGame->getPlayer2Variables()).template toAdd<ValueType>();
+                for (auto stateValue : player2States) {
+                    out << "\tpl2_";
+                    std::stringstream stateName;
+                    for (auto const& var : currentGame->getRowVariables()) {
+                        if (stateValue.first.getBooleanValue(var)) {
+                            stateName << "1";
+                        } else {
+                            stateName << "0";
+                        }
+                    }
+                    uint_fast64_t index = 0;
+                    for (uint_fast64_t player1VariableIndex = 0; player1VariableIndex < abstractionInformation.getPlayer1VariableCount(); ++player1VariableIndex) {
+                        index <<= 1;
+                        if (stateValue.first.getBooleanValue(abstractionInformation.getPlayer1Variables()[player1VariableIndex])) {
+                            index |= 1;
+                        }
+                    }
+                    out << stateName.str() << "_" << index;
+                    out << " [ shape=\"square\", label=\"\" ];" << std::endl;
+                    out << "\tpl1_" << stateName.str() << " -> " << "pl2_" << stateName.str() << "_" << index << " [ label=\"" << index << "\" ];" << std::endl;
+                }
+                
+                // Create the nodes of the probabilistic player.
+                storm::dd::Add<DdType, ValueType> playerPStates = currentGame->getTransitionMatrix().toBdd().existsAbstract(currentGame->getColumnVariables()).template toAdd<ValueType>();
+                for (auto stateValue : playerPStates) {
+                    out << "\tplp_";
+                    std::stringstream stateName;
+                    for (auto const& var : currentGame->getRowVariables()) {
+                        if (stateValue.first.getBooleanValue(var)) {
+                            stateName << "1";
+                        } else {
+                            stateName << "0";
+                        }
+                    }
+                    uint_fast64_t index = 0;
+                    for (uint_fast64_t player1VariableIndex = 0; player1VariableIndex < abstractionInformation.getPlayer1VariableCount(); ++player1VariableIndex) {
+                        index <<= 1;
+                        if (stateValue.first.getBooleanValue(abstractionInformation.getPlayer1Variables()[player1VariableIndex])) {
+                            index |= 1;
+                        }
+                    }
+                    stateName << "_" << index;
+                    index = 0;
+                    for (uint_fast64_t player2VariableIndex = 0; player2VariableIndex < currentGame->getPlayer2Variables().size(); ++player2VariableIndex) {
+                        index <<= 1;
+                        if (stateValue.first.getBooleanValue(abstractionInformation.getPlayer2Variables()[player2VariableIndex])) {
+                            index |= 1;
+                        }                    }
+                    out << stateName.str() << "_" << index;
+                    out << " [ shape=\"diamond\", label=\"\" ];" << std::endl;
+                    out << "\tpl2_" << stateName.str() << " -> " << "plp_" << stateName.str() << "_" << index << " [ label=\"" << index << "\" ];" << std::endl;
+                }
+                
+//                for (auto stateValue : currentGame->getTransitionMatrix()) {
+//                    std::stringstream stateName;
+//
+//                }
+                
+                out << "}" << std::endl;
+            }
+            
             // Explicitly instantiate the class.
             template class AbstractProgram<storm::dd::DdType::CUDD, double>;
             template class AbstractProgram<storm::dd::DdType::Sylvan, double>;
