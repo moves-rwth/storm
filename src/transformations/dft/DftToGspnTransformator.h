@@ -58,6 +58,11 @@ namespace storm {
 				void drawGSPNConnections();
 				
 				/*
+				 * Draw restrictions between the elements of the GSPN (i.e. SEQ).
+				 */
+				void drawGSPNRestrictions();
+				
+				/*
 				 * Draw a Petri net Basic Event.
 				 * 
 				 * @param dftBE The Basic Event.

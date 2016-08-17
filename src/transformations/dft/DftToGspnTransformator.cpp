@@ -22,8 +22,8 @@ namespace storm {
 				// When all DFT elements are drawn, draw the connections between them.
 				drawGSPNConnections();
 				
-				// TODO: For sequences:
-				// drawGSPNRestrictions(); ?
+				// Draw restrictions into the GSPN (i.e. SEQ).
+				drawGSPNRestrictions(); 
 		
 				// Write GSPN to file.
 				writeGspn(true);
@@ -450,6 +450,44 @@ namespace storm {
 					subsets[index] = childrenIds[i];
 					combinationUtil(output, childrenIds, subsets, i + 1, end, index + 1, threshold);
 				}
+			}
+			
+			template <typename ValueType>
+            void DftToGspnTransformator<ValueType>::drawGSPNRestrictions() {
+				for (std::size_t i = 0; i < mDft.nrElements(); i++) {
+					auto dftElement = mDft.getElement(i);
+					
+					if (dftElement->isRestriction()) {
+						switch (dftElement->type()) {
+							case storm::storage::DFTElementType::SEQ:
+							{
+								auto children = mDft.getRestriction(i)->children();
+								
+								for (std::size_t j = 0; j < children.size() - 1; j++) {
+									auto suppressor = mGspn.getPlace(children[j]->name() + STR_FAILED);
+									auto suppressedActive = mGspn.getTimedTransition(children[j + 1]->name() + "_activeFailing");
+									auto suppressedPassive = mGspn.getTimedTransition(children[j + 1]->name() + "_passiveFailing");
+									
+									if (suppressor.first && suppressedActive.first && suppressedPassive.first) { // Only add arcs if the objects have been found.
+										suppressedActive.second->setInputArcMultiplicity(suppressor.second, 1);
+										suppressedActive.second->setOutputArcMultiplicity(suppressor.second, 1);
+										suppressedPassive.second->setInputArcMultiplicity(suppressor.second, 1);
+										suppressedPassive.second->setOutputArcMultiplicity(suppressor.second, 1);
+									}
+								}
+								break;
+							}
+							default:
+							{
+								// TODO: Are there other restrictions than SEQ?
+								break;
+							}
+						}
+					}
+				}
+				
+				// TODO: Check if children are BE or Elements. For BE, you must draw 2 arcs instead of 1 (supposedly)!
+				// TODO: Are SEQ restricted to BEs? If yes, above TODO can be ignored.
 			}
 			
 			template <typename ValueType>
