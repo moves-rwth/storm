@@ -614,7 +614,7 @@ cuddBddExistAbstractRepresentativeRecur(
         // FIXME
         if (res1 == one) {
             if (F->ref != 1) {
-                cuddCacheInsert2(manager, Cudd_bddExistAbstractRepresentative, f, cube, one);
+                cuddCacheInsert2(manager, Cudd_bddExistAbstractRepresentative, f, cube, Cudd_Not(cube));
             }
             return(Cudd_Not(cube));
         }
