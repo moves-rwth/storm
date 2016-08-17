@@ -68,27 +68,38 @@ TEST(CuddDd, BddExistAbstractRepresentative) {
 	ASSERT_NO_THROW(z = manager->addMetaVariable("z", 0, 1));
 	
 	storm::dd::Bdd<storm::dd::DdType::CUDD> bddX = manager->getEncoding(x.first, 1);
-	//bddX.exportToDot("/opt/masterThesis/storm/build/test_bdd_x.dot");
+	//bddX.template toAdd<double>().exportToDot("/opt/masterThesis/storm/build/test_cudd_add_x.dot");
 	storm::dd::Bdd<storm::dd::DdType::CUDD> bddY = manager->getEncoding(y.first, 0);
-	//bddY.exportToDot("/opt/masterThesis/storm/build/test_bdd_y.dot");
+	//bddY.template toAdd<double>().exportToDot("/opt/masterThesis/storm/build/test_cudd_add_y.dot");
 	storm::dd::Bdd<storm::dd::DdType::CUDD> bddZ = manager->getEncoding(z.first, 0);
-	//bddZ.exportToDot("/opt/masterThesis/storm/build/test_bdd_z.dot");
+	//bddZ.template toAdd<double>().exportToDot("/opt/masterThesis/storm/build/test_cudd_add_z.dot");
 	
 	storm::dd::Bdd<storm::dd::DdType::CUDD> bddX1Y0Z0 = (bddX && bddY) && bddZ;
-	//bddX1Y0Z0.exportToDot("/opt/masterThesis/storm/build/test_bddX1Y0Z0.dot");
+	//bddX1Y0Z0.template toAdd<double>().exportToDot("/opt/masterThesis/storm/build/test_cudd_bddX1Y0Z0.dot");
     
     EXPECT_EQ(1ul, bddX1Y0Z0.getNonZeroCount());
     EXPECT_EQ(1ul, bddX1Y0Z0.getLeafCount());
     EXPECT_EQ(4ul, bddX1Y0Z0.getNodeCount());
 	
 	storm::dd::Bdd<storm::dd::DdType::CUDD> representative_x = bddX1Y0Z0.existsAbstractRepresentative({x.first});
-	//representative_x.exportToDot("/opt/masterThesis/storm/build/test_representative_x.dot");
+	EXPECT_EQ(1ul, representative_x.getNonZeroCount());
+    EXPECT_EQ(1ul, representative_x.getLeafCount());
+    EXPECT_EQ(4ul, representative_x.getNodeCount());
+	EXPECT_TRUE(bddX1Y0Z0 == representative_x);
+	//representative_x.template toAdd<double>().exportToDot("/opt/masterThesis/storm/build/test_representativea_x.dot");
 	storm::dd::Bdd<storm::dd::DdType::CUDD> representative_y = bddX1Y0Z0.existsAbstractRepresentative({y.first});
-	//representative_y.exportToDot("/opt/masterThesis/storm/build/test_representative_y.dot");
+	EXPECT_EQ(1ul, representative_y.getNonZeroCount());
+    EXPECT_EQ(1ul, representative_y.getLeafCount());
+    EXPECT_EQ(4ul, representative_y.getNodeCount());
+	EXPECT_TRUE(bddX1Y0Z0 == representative_y);
+	//representative_y.template toAdd<double>().exportToDot("/opt/masterThesis/storm/build/test_representativea_y.dot");
 	storm::dd::Bdd<storm::dd::DdType::CUDD> representative_z = bddX1Y0Z0.existsAbstractRepresentative({z.first});
-	//representative_z.exportToDot("/opt/masterThesis/storm/build/test_representative_z.dot");
+	EXPECT_EQ(1ul, representative_z.getNonZeroCount());
+    EXPECT_EQ(1ul, representative_z.getLeafCount());
+    EXPECT_EQ(4ul, representative_z.getNodeCount());
+	EXPECT_TRUE(bddX1Y0Z0 == representative_z);
+	//representative_z.template toAdd<double>().exportToDot("/opt/masterThesis/storm/build/test_representativea_z.dot");
 }
-
 
 TEST(CuddDd, AddGetMetaVariableTest) {
     std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::CUDD>> manager(new storm::dd::DdManager<storm::dd::DdType::CUDD>());
