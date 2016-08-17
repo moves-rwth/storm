@@ -278,16 +278,46 @@ namespace storm {
                         index <<= 1;
                         if (stateValue.first.getBooleanValue(abstractionInformation.getPlayer2Variables()[player2VariableIndex])) {
                             index |= 1;
-                        }                    }
+                        }
+                    }
                     out << stateName.str() << "_" << index;
                     out << " [ shape=\"point\", label=\"\" ];" << std::endl;
                     out << "\tpl2_" << stateName.str() << " -> " << "plp_" << stateName.str() << "_" << index << " [ label=\"" << index << "\" ];" << std::endl;
                 }
                 
-//                for (auto stateValue : currentGame->getTransitionMatrix()) {
-//                    std::stringstream stateName;
-//
-//                }
+                for (auto stateValue : currentGame->getTransitionMatrix()) {
+                    std::stringstream sourceStateName;
+                    std::stringstream successorStateName;
+                    for (auto const& var : currentGame->getRowVariables()) {
+                        if (stateValue.first.getBooleanValue(var)) {
+                            sourceStateName << "1";
+                        } else {
+                            sourceStateName << "0";
+                        }
+                    }
+                    for (auto const& var : currentGame->getColumnVariables()) {
+                        if (stateValue.first.getBooleanValue(var)) {
+                            successorStateName << "1";
+                        } else {
+                            successorStateName << "0";
+                        }
+                    }
+                    uint_fast64_t pl1Index = 0;
+                    for (uint_fast64_t player1VariableIndex = 0; player1VariableIndex < abstractionInformation.getPlayer1VariableCount(); ++player1VariableIndex) {
+                        pl1Index <<= 1;
+                        if (stateValue.first.getBooleanValue(abstractionInformation.getPlayer1Variables()[player1VariableIndex])) {
+                            pl1Index |= 1;
+                        }
+                    }
+                    uint_fast64_t pl2Index = 0;
+                    for (uint_fast64_t player2VariableIndex = 0; player2VariableIndex < currentGame->getPlayer2Variables().size(); ++player2VariableIndex) {
+                        pl2Index <<= 1;
+                        if (stateValue.first.getBooleanValue(abstractionInformation.getPlayer2Variables()[player2VariableIndex])) {
+                            pl2Index |= 1;
+                        }
+                    }
+                    out << "\tplp_" << sourceStateName.str() << "_" << pl1Index << "_" << pl2Index << " -> pl1_" << successorStateName.str() << " [ label=\"" << stateValue.second << "\"];" << std::endl;
+                }
                 
                 out << "}" << std::endl;
             }
