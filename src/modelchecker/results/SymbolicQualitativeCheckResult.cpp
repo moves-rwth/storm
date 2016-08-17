@@ -6,7 +6,12 @@
 namespace storm {
     namespace modelchecker {
         template <storm::dd::DdType Type>
-        SymbolicQualitativeCheckResult<Type>::SymbolicQualitativeCheckResult(storm::dd::Bdd<Type> const& reachableStates, storm::dd::Bdd<Type> const& truthValues) : reachableStates(reachableStates), truthValues(truthValues) {
+        SymbolicQualitativeCheckResult<Type>::SymbolicQualitativeCheckResult(storm::dd::Bdd<Type> const& reachableStates, storm::dd::Bdd<Type> const& truthValues) : reachableStates(reachableStates), states(reachableStates), truthValues(truthValues) {
+            // Intentionally left empty.
+        }
+        
+        template <storm::dd::DdType Type>
+        SymbolicQualitativeCheckResult<Type>::SymbolicQualitativeCheckResult(storm::dd::Bdd<Type> const& reachableStates, storm::dd::Bdd<Type> const& states, storm::dd::Bdd<Type> const& truthValues) : reachableStates(reachableStates), states(states), truthValues(truthValues) {
             // Intentionally left empty.
         }
         
@@ -17,7 +22,7 @@ namespace storm {
 
         template <storm::dd::DdType Type>
         bool SymbolicQualitativeCheckResult<Type>::isResultForAllStates() const {
-            return true;
+            return reachableStates == states;
         }
         
         template <storm::dd::DdType Type>
@@ -51,10 +56,14 @@ namespace storm {
         
         template <storm::dd::DdType Type>
         std::ostream& SymbolicQualitativeCheckResult<Type>::writeToStream(std::ostream& out) const {
-            if (this->truthValues.isZero()) {
-                out << "[false]" << std::endl;
-            } else {
+            if (states == truthValues) {
                 out << "[true]" << std::endl;
+            } else {
+                if (truthValues.isZero()) {
+                    out << "[false]" << std::endl;
+                } else {
+                    out << "[true false]" << std::endl;
+                }
             }
             return out;
         }
@@ -62,6 +71,7 @@ namespace storm {
         template <storm::dd::DdType Type>
         void SymbolicQualitativeCheckResult<Type>::filter(QualitativeCheckResult const& filter) {
             STORM_LOG_THROW(filter.isSymbolicQualitativeCheckResult(), storm::exceptions::InvalidOperationException, "Cannot filter symbolic check result with non-symbolic filter.");
+            this->states &= filter.asSymbolicQualitativeCheckResult<Type>().getTruthValuesVector();;
             this->truthValues &= filter.asSymbolicQualitativeCheckResult<Type>().getTruthValuesVector();
         }
         

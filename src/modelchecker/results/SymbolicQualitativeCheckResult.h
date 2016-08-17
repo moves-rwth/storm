@@ -13,6 +13,7 @@ namespace storm {
         public:
             SymbolicQualitativeCheckResult() = default;
             SymbolicQualitativeCheckResult(storm::dd::Bdd<Type> const& reachableStates, storm::dd::Bdd<Type> const& truthValues);
+            SymbolicQualitativeCheckResult(storm::dd::Bdd<Type> const& reachableStates, storm::dd::Bdd<Type> const& states, storm::dd::Bdd<Type> const& truthValues);
             
             SymbolicQualitativeCheckResult(SymbolicQualitativeCheckResult const& other) = default;
             SymbolicQualitativeCheckResult& operator=(SymbolicQualitativeCheckResult const& other) = default;
@@ -39,6 +40,9 @@ namespace storm {
         private:
             // The set of all reachable states.
             storm::dd::Bdd<Type> reachableStates;
+            
+            // The states for which this check result contains a truth value.
+            storm::dd::Bdd<Type> states;
             
             // The values of the qualitative check result.
             storm::dd::Bdd<Type> truthValues;

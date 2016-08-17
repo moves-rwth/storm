@@ -1,14 +1,18 @@
 #include "src/modelchecker/abstraction/GameBasedMdpModelChecker.h"
 
+#include "src/modelchecker/results/SymbolicQuantitativeCheckResult.h"
+#include "src/modelchecker/results/SymbolicQualitativeCheckResult.h"
+
 #include "src/models/symbolic/StandardRewardModel.h"
 
 #include "src/storage/expressions/ExpressionManager.h"
+
+#include "src/storage/dd/DdManager.h"
 
 #include "src/abstraction/prism/PrismMenuGameAbstractor.h"
 
 #include "src/logic/FragmentSpecification.h"
 
-#include "src/utility/graph.h"
 #include "src/utility/macros.h"
 
 #include "src/exceptions/NotSupportedException.h"
@@ -18,6 +22,13 @@
 
 namespace storm {
     namespace modelchecker {
+        namespace detail {
+            template<storm::dd::DdType DdType>
+            GameProb01Result<DdType>::GameProb01Result(storm::utility::graph::GameProb01Result<DdType> const& prob0Min, storm::utility::graph::GameProb01Result<DdType> const& prob1Min, storm::utility::graph::GameProb01Result<DdType> const& prob0Max, storm::utility::graph::GameProb01Result<DdType> const& prob1Max) : min(std::make_pair(prob0Min, prob1Min)), max(std::make_pair(prob0Max, prob1Max)) {
+                // Intentionally left empty.
+            }
+        }
+        
         template<storm::dd::DdType Type, typename ValueType>
         GameBasedMdpModelChecker<Type, ValueType>::GameBasedMdpModelChecker(storm::prism::Program const& program, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory) : originalProgram(program), smtSolverFactory(smtSolverFactory) {
             STORM_LOG_THROW(program.getModelType() == storm::prism::Program::ModelType::DTMC || program.getModelType() == storm::prism::Program::ModelType::MDP, storm::exceptions::NotSupportedException, "Currently only DTMCs/MDPs are supported by the game-based model checker.");
@@ -54,10 +65,39 @@ namespace storm {
             return performGameBasedAbstractionRefinement(checkTask.substituteFormula<storm::logic::Formula>(pathFormula), originalProgram.getManager().boolean(true), getExpression(pathFormula.getSubformula()));
         }
         
+        template<typename ValueType>
+        bool getResultConsideringBound(ValueType const& value, storm::logic::Bound<ValueType> const& bound) {
+            if (storm::logic::isLowerBound(bound.comparisonType)) {
+                if (storm::logic::isStrict(bound.comparisonType)) {
+                    return value > bound.threshold;
+                } else {
+                    return value >= bound.threshold;
+                }
+            } else {
+                if (storm::logic::isStrict(bound.comparisonType)) {
+                    return value < bound.threshold;
+                } else {
+                    return value <= bound.threshold;
+                }
+            }
+        }
+        
+        template<storm::dd::DdType Type, typename ValueType>
+        std::unique_ptr<CheckResult> getResultAfterQualitativeCheck(CheckTask<storm::logic::Formula> const& checkTask, storm::dd::DdManager<Type> const& ddManager, storm::dd::Bdd<Type> const& reachableStates, storm::dd::Bdd<Type> const& initialStates, bool prob0) {
+            if (checkTask.isBoundSet()) {
+                bool result = getResultConsideringBound(prob0 ? storm::utility::zero<ValueType>() : storm::utility::one<ValueType>(), checkTask.getBound());
+                return std::make_unique<storm::modelchecker::SymbolicQualitativeCheckResult<Type>>(reachableStates, initialStates, result ? initialStates : ddManager.getBddZero());
+            } else {
+                return std::make_unique<storm::modelchecker::SymbolicQuantitativeCheckResult<Type>>(reachableStates, initialStates, prob0 ? ddManager.template getAddZero<ValueType>() : initialStates.template toAdd<ValueType>());
+            }
+        }
+        
         template<storm::dd::DdType Type, typename ValueType>
         std::unique_ptr<CheckResult> GameBasedMdpModelChecker<Type, ValueType>::performGameBasedAbstractionRefinement(CheckTask<storm::logic::Formula> const& checkTask, storm::expressions::Expression const& constraintExpression, storm::expressions::Expression const& targetStateExpression) {
             STORM_LOG_THROW(checkTask.isOnlyInitialStatesRelevantSet(), storm::exceptions::InvalidPropertyException, "The game-based abstraction refinement model checker can only compute the result for the initial states.");
 
+            // Optimization: do not compute both bounds if not necessary (e.g. if bound given and exceeded, etc.)
+            
             // Set up initial predicates.
             std::vector<storm::expressions::Expression> initialPredicates;
             initialPredicates.push_back(targetStateExpression);
@@ -72,13 +112,39 @@ namespace storm {
             
             // 1. build initial abstraction based on the the constraint expression (if not 'true') and the target state expression.
             storm::abstraction::MenuGame<Type, ValueType> game = abstractor.abstract();
-            abstractor.exportToDot("game.dot");
             STORM_LOG_DEBUG("Initial abstraction has " << game.getNumberOfStates() << " (player 1) states and " << game.getNumberOfTransitions() << " transitions.");
+
+            // 2. compute all states with probability 0/1 wrt. to the two different player 2 goals (min/max).
+            detail::GameProb01Result<Type> prob01 = computeProb01States(player1Direction, game, constraintExpression, targetStateExpression);
             
-            // 2. solve the game wrt. to min/max as given by checkTask and min/max for the abstraction player to obtain two bounds.
-            // Note that we have to deal with bottom states if not all guards were added in the beginning.
-            // Also note that it might be the case that not both bounds need to be computed if there is a bound given in checkTask.
-            computeProb01States(player1Direction, game, constraintExpression, targetStateExpression);
+            // 3. compute the states for which we know the result/for which we know there is more work to be done.
+            storm::dd::Bdd<Type> maybeMin = !(prob01.min.first.states || prob01.min.second.states) && game.getReachableStates();
+            storm::dd::Bdd<Type> maybeMax = !(prob01.max.first.states || prob01.max.second.states) && game.getReachableStates();
+            
+            // 4. if the initial states are not maybe states, then we can refine at this point.
+            storm::dd::Bdd<Type> initialMaybeStates = game.getInitialStates() && (maybeMin || maybeMax);
+            if (initialMaybeStates.isZero()) {
+                // In this case, we know the result for the initial states for both player 2 minimizing and maximizing.
+                
+                // If the result is 0 independent of the player 2 strategy, then we know the final result and can return it.
+                storm::dd::Bdd<Type> tmp = game.getInitialStates() && prob01.min.first.states && prob01.max.first.states;
+                if (tmp == game.getInitialStates()) {
+                    getResultAfterQualitativeCheck<Type, ValueType>(checkTask, game.getManager(), game.getReachableStates(), game.getInitialStates(), true);
+                }
+                
+                // If the result is 1 independent of the player 2 strategy, then we know the final result and can return it.
+                tmp = game.getInitialStates() && prob01.min.second.states && prob01.max.second.states;
+                if (tmp == game.getInitialStates()) {
+                    getResultAfterQualitativeCheck<Type, ValueType>(checkTask, game.getManager(), game.getReachableStates(), game.getInitialStates(), false);
+                }
+                
+                // If we get here, the initial states were all identified as prob0/1 states, but the value (0 or 1)
+                // depends on whether player 2 is minimizing or maximizing. Therefore, we need to find a place to refine.
+                
+                
+            }
+            
+            
             
 //            std::unique_ptr<storm::utility::solver::SymbolicGameSolverFactory<Type, ValueType>> gameSolverFactory = std::make_unique<storm::utility::solver::SymbolicGameSolverFactory<Type, ValueType>>();
 //            gameSolverFactory->create(game.getTransitionMatrix(), game.getReachableStates());
@@ -92,7 +158,7 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type, typename ValueType>
-        void GameBasedMdpModelChecker<Type, ValueType>::computeProb01States(storm::OptimizationDirection player1Direction, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::expressions::Expression const& constraintExpression, storm::expressions::Expression const& targetStateExpression) {
+        detail::GameProb01Result<Type> GameBasedMdpModelChecker<Type, ValueType>::computeProb01States(storm::OptimizationDirection player1Direction, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::expressions::Expression const& constraintExpression, storm::expressions::Expression const& targetStateExpression) {
             storm::dd::Bdd<Type> transitionMatrixBdd = game.getTransitionMatrix().toBdd();
             storm::dd::Bdd<Type> bottomStatesBdd = game.getBottomStates();
             
@@ -100,8 +166,6 @@ namespace storm {
             if (player1Direction == storm::OptimizationDirection::Minimize) {
                 targetStates |= game.getBottomStates();
             }
-                        
-            transitionMatrixBdd.template toAdd<ValueType>().exportToDot("transbdd.dot");
             
             // Start by computing the states with probability 0/1 when player 2 minimizes.
             storm::utility::graph::GameProb01Result<Type> prob0Min = storm::utility::graph::performProb0(game, transitionMatrixBdd, game.getStates(constraintExpression), targetStates, player1Direction, storm::OptimizationDirection::Minimize, true);
@@ -111,21 +175,10 @@ namespace storm {
             storm::utility::graph::GameProb01Result<Type> prob0Max = storm::utility::graph::performProb0(game, transitionMatrixBdd, game.getStates(constraintExpression), targetStates, player1Direction, storm::OptimizationDirection::Maximize, false);
             storm::utility::graph::GameProb01Result<Type> prob1Max = storm::utility::graph::performProb1(game, transitionMatrixBdd, game.getStates(constraintExpression), targetStates, player1Direction, storm::OptimizationDirection::Maximize, true);
             
-//            STORM_LOG_ASSERT(prob0Min.hasPlayer1Strategy(), "Unable to proceed without strategy.");
-            STORM_LOG_ASSERT(prob0Min.hasPlayer2Strategy(), "Unable to proceed without strategy.");
-
-            STORM_LOG_ASSERT(prob1Max.hasPlayer1Strategy(), "Unable to proceed without strategy.");
-            STORM_LOG_ASSERT(prob1Max.hasPlayer2Strategy(), "Unable to proceed without strategy.");
-
-//            prob0Min.getPlayer1Strategy().template toAdd<ValueType>().exportToDot("prob0_min_pl1_strat.dot");
-            prob0Min.getPlayer2Strategy().template toAdd<ValueType>().exportToDot("prob0_min_pl2_strat.dot");
-
-            prob1Max.getPlayer1Strategy().template toAdd<ValueType>().exportToDot("prob1_max_pl1_strat.dot");
-            prob1Max.getPlayer2Strategy().template toAdd<ValueType>().exportToDot("prob1_max_pl2_strat.dot");
-
             STORM_LOG_DEBUG("Min: " << prob0Min.states.getNonZeroCount() << " no states, " << prob1Min.states.getNonZeroCount() << " yes states.");
             STORM_LOG_DEBUG("Max: " << prob0Max.states.getNonZeroCount() << " no states, " << prob1Max.states.getNonZeroCount() << " yes states.");
             
+            return detail::GameProb01Result<Type>(prob0Min, prob1Min, prob0Max, prob1Max);
         }
         
         template<storm::dd::DdType Type, typename ValueType>

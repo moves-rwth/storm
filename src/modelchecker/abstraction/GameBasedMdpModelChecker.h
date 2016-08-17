@@ -3,11 +3,12 @@
 
 #include "src/modelchecker/AbstractModelChecker.h"
 
-#include "src/utility/solver.h"
-
 #include "src/storage/prism/Program.h"
 
 #include "src/storage/dd/DdType.h"
+
+#include "src/utility/solver.h"
+#include "src/utility/graph.h"
 
 namespace storm {
     namespace abstraction {
@@ -16,6 +17,17 @@ namespace storm {
     }
     
     namespace modelchecker {
+        namespace detail {
+            template<storm::dd::DdType Type>
+            struct GameProb01Result {
+            public:
+                GameProb01Result(storm::utility::graph::GameProb01Result<Type> const& prob0Min, storm::utility::graph::GameProb01Result<Type> const& prob1Min, storm::utility::graph::GameProb01Result<Type> const& prob0Max, storm::utility::graph::GameProb01Result<Type> const& prob1Max);
+                
+                std::pair<storm::utility::graph::GameProb01Result<Type>, storm::utility::graph::GameProb01Result<Type>> min;
+                std::pair<storm::utility::graph::GameProb01Result<Type>, storm::utility::graph::GameProb01Result<Type>> max;
+            };
+        }
+
         template<storm::dd::DdType Type, typename ValueType>
         class GameBasedMdpModelChecker : public AbstractModelChecker {
         public:
@@ -38,7 +50,7 @@ namespace storm {
         private:
             std::unique_ptr<CheckResult> performGameBasedAbstractionRefinement(CheckTask<storm::logic::Formula> const& checkTask, storm::expressions::Expression const& constraintExpression, storm::expressions::Expression const& targetStateExpression);
             
-            void computeProb01States(storm::OptimizationDirection player1Direction, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::expressions::Expression const& constraintExpression, storm::expressions::Expression const& targetStateExpression);
+            detail::GameProb01Result<Type> computeProb01States(storm::OptimizationDirection player1Direction, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::expressions::Expression const& constraintExpression, storm::expressions::Expression const& targetStateExpression);
             
             storm::expressions::Expression getExpression(storm::logic::Formula const& formula);
             
