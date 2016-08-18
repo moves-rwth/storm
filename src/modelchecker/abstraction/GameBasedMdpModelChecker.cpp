@@ -94,11 +94,14 @@ namespace storm {
         
         template<storm::dd::DdType Type, typename ValueType>
         void refineAfterQualitativeCheck(storm::abstraction::MenuGame<Type, ValueType> const& game, detail::GameProb01Result<Type> const& prob01, storm::dd::Bdd<Type> const& transitionMatrixBdd) {
-            // First, we have to find the pivot states.
-            storm::dd::Bdd<Type> playerPStates = transitionMatrixBdd.existsAbstract(game.getColumnVariables());
+            // First, we have to find the pivot state candidates. Start by constructing the reachable fragment of the
+            // state space *under both* strategy pairs.
+            storm::dd::Bdd<Type> pivotStateCandidates = transitionMatrixBdd.existsAbstract(game.getColumnVariables());
+            pivotStateCandidates &= prob01.min.first.getPlayer1Strategy() && prob01.min.first.getPlayer2Strategy() && prob01.max.first.getPlayer1Strategy() && prob01.max.first.getPlayer2Strategy();
+            pivotStateCandidates = pivotStateCandidates.existsAbstract(game.getNondeterminismVariables());
             
             
-//            playerPStates &= prob01.min.first.
+            std::cout << "found pivot state candidates" << std::endl;
         }
         
         template<storm::dd::DdType Type, typename ValueType>
