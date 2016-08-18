@@ -65,9 +65,9 @@ TEST(PrismMenuGame, DieAbstractionTest_SylvanWithRationalFunction) {
     
     storm::abstraction::MenuGame<storm::dd::DdType::Sylvan, storm::RationalFunction> game = abstractProgram.getAbstractGame();
     
-    EXPECT_EQ(10, game.getNumberOfTransitions());
-    EXPECT_EQ(2, game.getNumberOfStates());
-    EXPECT_EQ(0, game.getBottomStates().getNonZeroCount());
+    EXPECT_EQ(26, game.getNumberOfTransitions());
+    EXPECT_EQ(4, game.getNumberOfStates());
+    EXPECT_EQ(2, game.getBottomStates().getNonZeroCount());
 }
 #endif
 
