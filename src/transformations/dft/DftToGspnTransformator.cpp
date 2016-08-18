@@ -59,7 +59,7 @@ namespace storm {
 							// No method call needed here. SEQ only consists of restrictions, which are handled later.
 							break;
 						case storm::storage::DFTElementType::MUTEX:
-							STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "The transformation of a MUTEX is not yet implemented.");
+							drawMUTEX(dftElement);
 							break;
 						case storm::storage::DFTElementType::BE:
 							drawBE(std::static_pointer_cast<storm::storage::DFTBE<ValueType> const>(dftElement));
@@ -84,7 +84,7 @@ namespace storm {
             void DftToGspnTransformator<ValueType>::drawBE(std::shared_ptr<storm::storage::DFTBE<ValueType> const> dftBE) {
 				storm::gspn::Place placeBEActivated;
 				placeBEActivated.setName(dftBE->name() + "_activated");
-				placeBEActivated.setNumberOfInitialTokens(false ? 1 : 0); // TODO: Check if BE is spare child of a SPARE.
+				placeBEActivated.setNumberOfInitialTokens(true ? 1 : 0); // TODO: Check if BE is spare child of a SPARE.
 				mGspn.addPlace(placeBEActivated);
 				
 				storm::gspn::Place placeBEFailed;
@@ -236,6 +236,11 @@ namespace storm {
 			}
 			
 			template <typename ValueType>
+            void DftToGspnTransformator<ValueType>::drawMUTEX(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftMutex) {				
+				// TODO: Not implemented because there is no corresponding MUTEX element yet.
+			}
+			
+			template <typename ValueType>
             void DftToGspnTransformator<ValueType>::drawCONSTF(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftConstF) {
 				storm::gspn::Place placeCONSTFFailed;
 				placeCONSTFFailed.setName(dftConstF->name() + STR_FAILED);
@@ -361,7 +366,10 @@ namespace storm {
 								break;
 							}
 							case storm::storage::DFTElementType::MUTEX:
+							{
+								// MUTEX is not implemented yet. Nothing to do here.
 								break;
+							}
 							case storm::storage::DFTElementType::BE:
 							{
 								// The parent is never a Basic Event (Except for SPAREs?).
