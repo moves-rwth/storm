@@ -465,14 +465,31 @@ namespace storm {
 								
 								for (std::size_t j = 0; j < children.size() - 1; j++) {
 									auto suppressor = mGspn.getPlace(children[j]->name() + STR_FAILED);
-									auto suppressedActive = mGspn.getTimedTransition(children[j + 1]->name() + "_activeFailing");
-									auto suppressedPassive = mGspn.getTimedTransition(children[j + 1]->name() + "_passiveFailing");
 									
-									if (suppressor.first && suppressedActive.first && suppressedPassive.first) { // Only add arcs if the objects have been found.
-										suppressedActive.second->setInputArcMultiplicity(suppressor.second, 1);
-										suppressedActive.second->setOutputArcMultiplicity(suppressor.second, 1);
-										suppressedPassive.second->setInputArcMultiplicity(suppressor.second, 1);
-										suppressedPassive.second->setOutputArcMultiplicity(suppressor.second, 1);
+									switch (children[j + 1]->type()) {
+										case storm::storage::DFTElementType::BE: // If suppressed is a BE, add 2 arcs to timed transitions.
+										{
+											auto suppressedActive = mGspn.getTimedTransition(children[j + 1]->name() + "_activeFailing");
+											auto suppressedPassive = mGspn.getTimedTransition(children[j + 1]->name() + "_passiveFailing");
+											
+											if (suppressor.first && suppressedActive.first && suppressedPassive.first) { // Only add arcs if the objects have been found.
+												suppressedActive.second->setInputArcMultiplicity(suppressor.second, 1);
+												suppressedActive.second->setOutputArcMultiplicity(suppressor.second, 1);
+												suppressedPassive.second->setInputArcMultiplicity(suppressor.second, 1);
+												suppressedPassive.second->setOutputArcMultiplicity(suppressor.second, 1);
+											}
+											break;
+										}
+										default: // If supressed is not a BE, add single arc to immediate transition.
+										{
+											auto suppressed = mGspn.getImmediateTransition(children[j + 1]->name() + STR_FAILING);
+											
+											if (suppressor.first && suppressed.first) { // Only add arcs if the objects have been found.
+												suppressed.second->setInputArcMultiplicity(suppressor.second, 1);
+												suppressed.second->setOutputArcMultiplicity(suppressor.second, 1);
+											}
+											break;
+										}
 									}
 								}
 								break;
@@ -485,9 +502,6 @@ namespace storm {
 						}
 					}
 				}
-				
-				// TODO: Check if children are BE or Elements. For BE, you must draw 2 arcs instead of 1 (supposedly)!
-				// TODO: Are SEQ restricted to BEs? If yes, above TODO can be ignored.
 			}
 			
 			template <typename ValueType>
