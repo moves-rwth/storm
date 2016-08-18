@@ -93,6 +93,15 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type, typename ValueType>
+        void refineAfterQualitativeCheck(storm::abstraction::MenuGame<Type, ValueType> const& game, detail::GameProb01Result<Type> const& prob01, storm::dd::Bdd<Type> const& transitionMatrixBdd) {
+            // First, we have to find the pivot states.
+            storm::dd::Bdd<Type> playerPStates = transitionMatrixBdd.existsAbstract(game.getColumnVariables());
+            
+            
+//            playerPStates &= prob01.min.first.
+        }
+        
+        template<storm::dd::DdType Type, typename ValueType>
         std::unique_ptr<CheckResult> GameBasedMdpModelChecker<Type, ValueType>::performGameBasedAbstractionRefinement(CheckTask<storm::logic::Formula> const& checkTask, storm::expressions::Expression const& constraintExpression, storm::expressions::Expression const& targetStateExpression) {
             STORM_LOG_THROW(checkTask.isOnlyInitialStatesRelevantSet(), storm::exceptions::InvalidPropertyException, "The game-based abstraction refinement model checker can only compute the result for the initial states.");
 
@@ -114,8 +123,11 @@ namespace storm {
             storm::abstraction::MenuGame<Type, ValueType> game = abstractor.abstract();
             STORM_LOG_DEBUG("Initial abstraction has " << game.getNumberOfStates() << " (player 1) states and " << game.getNumberOfTransitions() << " transitions.");
 
+            // 1.5 build a BDD from the transition matrix for various later uses.
+            storm::dd::Bdd<Type> transitionMatrixBdd = game.getTransitionMatrix().toBdd();
+
             // 2. compute all states with probability 0/1 wrt. to the two different player 2 goals (min/max).
-            detail::GameProb01Result<Type> prob01 = computeProb01States(player1Direction, game, constraintExpression, targetStateExpression);
+            detail::GameProb01Result<Type> prob01 = computeProb01States(player1Direction, game, transitionMatrixBdd, constraintExpression, targetStateExpression);
             
             // 3. compute the states for which we know the result/for which we know there is more work to be done.
             storm::dd::Bdd<Type> maybeMin = !(prob01.min.first.states || prob01.min.second.states) && game.getReachableStates();
@@ -140,8 +152,7 @@ namespace storm {
                 
                 // If we get here, the initial states were all identified as prob0/1 states, but the value (0 or 1)
                 // depends on whether player 2 is minimizing or maximizing. Therefore, we need to find a place to refine.
-                
-                
+                refineAfterQualitativeCheck(game, prob01, transitionMatrixBdd);
             }
             
             
@@ -158,8 +169,7 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type, typename ValueType>
-        detail::GameProb01Result<Type> GameBasedMdpModelChecker<Type, ValueType>::computeProb01States(storm::OptimizationDirection player1Direction, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::expressions::Expression const& constraintExpression, storm::expressions::Expression const& targetStateExpression) {
-            storm::dd::Bdd<Type> transitionMatrixBdd = game.getTransitionMatrix().toBdd();
+        detail::GameProb01Result<Type> GameBasedMdpModelChecker<Type, ValueType>::computeProb01States(storm::OptimizationDirection player1Direction, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& transitionMatrixBdd, storm::expressions::Expression const& constraintExpression, storm::expressions::Expression const& targetStateExpression) {
             storm::dd::Bdd<Type> bottomStatesBdd = game.getBottomStates();
             
             storm::dd::Bdd<Type> targetStates = game.getStates(targetStateExpression);
@@ -168,12 +178,12 @@ namespace storm {
             }
             
             // Start by computing the states with probability 0/1 when player 2 minimizes.
-            storm::utility::graph::GameProb01Result<Type> prob0Min = storm::utility::graph::performProb0(game, transitionMatrixBdd, game.getStates(constraintExpression), targetStates, player1Direction, storm::OptimizationDirection::Minimize, true);
-            storm::utility::graph::GameProb01Result<Type> prob1Min = storm::utility::graph::performProb1(game, transitionMatrixBdd, game.getStates(constraintExpression), targetStates, player1Direction, storm::OptimizationDirection::Minimize, false);
+            storm::utility::graph::GameProb01Result<Type> prob0Min = storm::utility::graph::performProb0(game, transitionMatrixBdd, game.getStates(constraintExpression), targetStates, player1Direction, storm::OptimizationDirection::Minimize, true, true);
+            storm::utility::graph::GameProb01Result<Type> prob1Min = storm::utility::graph::performProb1(game, transitionMatrixBdd, game.getStates(constraintExpression), targetStates, player1Direction, storm::OptimizationDirection::Minimize, false, false);
             
             // Now compute the states with probability 0/1 when player 2 maximizes.
-            storm::utility::graph::GameProb01Result<Type> prob0Max = storm::utility::graph::performProb0(game, transitionMatrixBdd, game.getStates(constraintExpression), targetStates, player1Direction, storm::OptimizationDirection::Maximize, false);
-            storm::utility::graph::GameProb01Result<Type> prob1Max = storm::utility::graph::performProb1(game, transitionMatrixBdd, game.getStates(constraintExpression), targetStates, player1Direction, storm::OptimizationDirection::Maximize, true);
+            storm::utility::graph::GameProb01Result<Type> prob0Max = storm::utility::graph::performProb0(game, transitionMatrixBdd, game.getStates(constraintExpression), targetStates, player1Direction, storm::OptimizationDirection::Maximize, false, false);
+            storm::utility::graph::GameProb01Result<Type> prob1Max = storm::utility::graph::performProb1(game, transitionMatrixBdd, game.getStates(constraintExpression), targetStates, player1Direction, storm::OptimizationDirection::Maximize, true, true);
             
             STORM_LOG_DEBUG("Min: " << prob0Min.states.getNonZeroCount() << " no states, " << prob1Min.states.getNonZeroCount() << " yes states.");
             STORM_LOG_DEBUG("Max: " << prob0Max.states.getNonZeroCount() << " no states, " << prob1Max.states.getNonZeroCount() << " yes states.");

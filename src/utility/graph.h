@@ -568,11 +568,11 @@ namespace storm {
              * @param transitionMatrix The transition matrix of the model as a BDD.
              * @param phiStates The BDD containing all phi states of the model.
              * @param psiStates The BDD containing all psi states of the model.
-             * @param produceStrategies A flag indicating whether strategies should be produced. Note that the strategies
-             * are only produced in case the choices of the player are not irrelevant.
+             * @param producePlayer1Strategy A flag indicating whether the strategy of player 1 shall be produced.
+             * @param producePlayer2Strategy A flag indicating whether the strategy of player 2 shall be produced.
              */
             template <storm::dd::DdType Type, typename ValueType>
-            GameProb01Result<Type> performProb0(storm::models::symbolic::StochasticTwoPlayerGame<Type, ValueType> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool produceStrategies = false);
+            GameProb01Result<Type> performProb0(storm::models::symbolic::StochasticTwoPlayerGame<Type, ValueType> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool producePlayer1Strategy = false, bool producePlayer2Strategy = false);
             
             /*!
              * Computes the set of states that have probability 1 given the strategies of the two players.
@@ -581,11 +581,11 @@ namespace storm {
              * @param transitionMatrix The transition matrix of the model as a BDD.
              * @param phiStates The BDD containing all phi states of the model.
              * @param psiStates The BDD containing all psi states of the model.
-             * @param produceStrategies A flag indicating whether strategies should be produced. Note that the strategies
-             * are only produced in case the choices of the player are not irrelevant.
+             * @param producePlayer1Strategy A flag indicating whether the strategy of player 1 shall be produced.
+             * @param producePlayer2Strategy A flag indicating whether the strategy of player 2 shall be produced.
              */
             template <storm::dd::DdType Type, typename ValueType>
-            GameProb01Result<Type> performProb1(storm::models::symbolic::StochasticTwoPlayerGame<Type, ValueType> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategybool, bool produceStrategies = false);
+            GameProb01Result<Type> performProb1(storm::models::symbolic::StochasticTwoPlayerGame<Type, ValueType> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool producePlayer1Strategy = false, bool producePlayer2Strategy = false);
             
             /*!
              * Performs a topological sort of the states of the system according to the given transitions.
