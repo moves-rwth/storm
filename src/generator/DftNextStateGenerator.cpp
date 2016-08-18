@@ -2,38 +2,30 @@
 
 #include "src/utility/constants.h"
 #include "src/utility/macros.h"
-#include "src/exceptions/WrongFormatException.h"
+#include "src/exceptions/NotImplementedException.h"
 
 namespace storm {
     namespace generator {
         
         template<typename ValueType, typename StateType>
-        DftNextStateGenerator<ValueType, StateType>::DftNextStateGenerator(storm::storage::DFT<ValueType> const& dft) : mDft(dft), state(nullptr), comparator() {
+        DftNextStateGenerator<ValueType, StateType>::DftNextStateGenerator(storm::storage::DFT<ValueType> const& dft, storm::storage::DFTStateGenerationInfo const& stateGenerationInfo) : mDft(dft), mStateGenerationInfo(stateGenerationInfo), state(nullptr), comparator() {
             // Intentionally left empty.
         }
         
         template<typename ValueType, typename StateType>
         bool DftNextStateGenerator<ValueType, StateType>::isDeterministicModel() const {
-            assert(false);
-            return true;
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This functionality is not yet implemented.");
         }
         
         template<typename ValueType, typename StateType>
         std::vector<StateType> DftNextStateGenerator<ValueType, StateType>::getInitialStates(StateToIdCallback const& stateToIdCallback) {
-            // FIXME: This only works for models with exactly one initial state. We should make this more general.
-            /*CompressedState initialState(variableInformation.getTotalBitOffset());
-            
-            // We need to initialize the values of the variables to their initial value.
-            for (auto const& booleanVariable : variableInformation.booleanVariables) {
-                initialState.set(booleanVariable.bitOffset, booleanVariable.initialValue);
-            }
-            for (auto const& integerVariable : variableInformation.integerVariables) {
-                initialState.setFromInt(integerVariable.bitOffset, integerVariable.bitWidth, static_cast<uint_fast64_t>(integerVariable.initialValue - integerVariable.lowerBound));
-            }
+            DFTStatePointer initialState = std::make_shared<storm::storage::DFTState<ValueType>>(mDft, mStateGenerationInfo, 0);
 
-            // Register initial state and return it.
+            // Register initial state
             StateType id = stateToIdCallback(initialState);
-            return {id};*/
+
+            initialState->setId(id);
+            return {id};
         }
         
         template<typename ValueType, typename StateType>
@@ -43,14 +35,12 @@ namespace storm {
             
             // Also, we need to store a pointer to the state itself, because we need to be able to access it when expanding it.
             this->state = &state;*/
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This functionality is not yet implemented.");
         }
         
         template<typename ValueType, typename StateType>
         bool DftNextStateGenerator<ValueType, StateType>::satisfies(storm::expressions::Expression const& expression) const {
-           /* if (expression.isTrue()) {
-                return true;
-            }
-            return evaluator.asBool(expression);*/
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This functionality is not yet implemented.");
         }
         
         template<typename ValueType, typename StateType>
@@ -147,6 +137,7 @@ namespace storm {
             
             result.setExpanded();
             return result;*/
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This functionality is not yet implemented.");
         }
         
         

@@ -1,11 +1,11 @@
-#ifndef EXPLICITDFTMODELBUILDER_H
-#define	EXPLICITDFTMODELBUILDER_H
+#ifndef EXPLICITDFTMODELBUILDERAPPROX_H
+#define	EXPLICITDFTMODELBUILDERAPPROX_H
 
 #include <src/models/sparse/StateLabeling.h>
 #include <src/models/sparse/StandardRewardModel.h>
 #include <src/models/sparse/Model.h>
 #include <src/storage/SparseMatrix.h>
-#include <src/storage/BitVectorHashMap.h>
+#include "src/storage/sparse/StateStorage.h"
 #include <src/storage/dft/DFT.h>
 #include <src/storage/dft/SymmetricUnits.h>
 #include <boost/container/flat_set.hpp>
@@ -17,7 +17,7 @@ namespace storm {
     namespace builder {
 
         template<typename ValueType>
-        class ExplicitDFTModelBuilder {
+        class ExplicitDFTModelBuilderApprox {
 
             using DFTElementPointer = std::shared_ptr<storm::storage::DFTElement<ValueType>>;
             using DFTElementCPointer = std::shared_ptr<storm::storage::DFTElement<ValueType> const>;
@@ -46,18 +46,20 @@ namespace storm {
                 boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> choiceLabeling;
             };
             
-            const size_t INITIAL_BUCKETSIZE = 20000;
             const uint_fast64_t OFFSET_PSEUDO_STATE = UINT_FAST64_MAX / 2;
             
             storm::storage::DFT<ValueType> const& mDft;
             std::shared_ptr<storm::storage::DFTStateGenerationInfo> mStateGenerationInfo;
-            storm::storage::BitVectorHashMap<uint_fast64_t> mStates;
+            //TODO Matthias: remove when everything works
             std::vector<std::pair<uint_fast64_t, storm::storage::BitVector>> mPseudoStatesMapping; // vector of (id to concrete state, bitvector)
             size_t newIndex = 0;
             bool mergeFailedStates = true;
             bool enableDC = true;
             size_t failedIndex = 0;
             size_t initialStateIndex = 0;
+            
+            // Internal information about the states that were explored.
+            storm::storage::sparse::StateStorage<uint_fast64_t> stateStorage;
 
         public:
             struct LabelOptions {
@@ -66,10 +68,13 @@ namespace storm {
                 std::set<std::string> beLabels = {};
             };
             
-            ExplicitDFTModelBuilder(storm::storage::DFT<ValueType> const& dft, storm::storage::DFTIndependentSymmetries const& symmetries, bool enableDC);
+            ExplicitDFTModelBuilderApprox(storm::storage::DFT<ValueType> const& dft, storm::storage::DFTIndependentSymmetries const& symmetries, bool enableDC);
 
             std::shared_ptr<storm::models::sparse::Model<ValueType>> buildModel(LabelOptions const& labelOpts);
 
+            // TODO Matthias: only temporary used for avoiding crashing everything
+            std::shared_ptr<storm::models::sparse::Model<ValueType>> buildModelApprox(LabelOptions const& labelOpts);
+            
         private:
             std::pair<uint_fast64_t, bool> exploreStates(DFTStatePointer const& state, size_t& rowOffset, storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder, std::vector<uint_fast64_t>& markovianStates, std::vector<ValueType>& exitRates);
             
@@ -91,7 +96,10 @@ namespace storm {
             std::pair<bool, uint_fast64_t> checkForExploration(DFTStatePointer const& state);
 
         };
+        
+        template<typename ValueType>
+        bool belowThreshold(ValueType const& number);
     }
 }
 
-#endif	/* EXPLICITDFTMODELBUILDER_H */
+#endif	/* EXPLICITDFTMODELBUILDERAPPROX_H */

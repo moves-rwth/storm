@@ -1,12 +1,14 @@
 #pragma once
 
-#include "logic/Formula.h"
-#include "parser/DFTGalileoParser.h"
-#include "builder/ExplicitDFTModelBuilder.h"
-#include "modelchecker/results/CheckResult.h"
-#include "utility/storm.h"
-#include "storage/dft/DFTIsomorphism.h"
-#include "utility/bitoperations.h"
+#include "src/logic/Formula.h"
+#include "src/parser/DFTGalileoParser.h"
+#include "src/builder/ExplicitDFTModelBuilder.h"
+#include "src/builder/ExplicitDFTModelBuilderApprox.h"
+#include "src/modelchecker/results/CheckResult.h"
+#include "src/utility/storm.h"
+#include "src/storage/dft/DFTIsomorphism.h"
+#include "src/settings/modules/DFTSettings.h"
+#include "src/utility/bitoperations.h"
 
 
 #include <chrono>
@@ -149,9 +151,17 @@ private:
             
             // Building Markov Automaton
             STORM_LOG_INFO("Building Model...");
-            storm::builder::ExplicitDFTModelBuilder<ValueType> builder(dft, symmetries, enableDC);
-            typename storm::builder::ExplicitDFTModelBuilder<ValueType>::LabelOptions labeloptions; // TODO initialize this with the formula
-            std::shared_ptr<storm::models::sparse::Model<ValueType>> model = builder.buildModel(labeloptions);
+            std::shared_ptr<storm::models::sparse::Model<ValueType>> model;
+            // TODO Matthias: use only one builder if everything works again
+            if (storm::settings::getModule<storm::settings::modules::DFTSettings>().computeApproximation()) {
+                storm::builder::ExplicitDFTModelBuilderApprox<ValueType> builder(dft, symmetries, enableDC);
+                typename storm::builder::ExplicitDFTModelBuilderApprox<ValueType>::LabelOptions labeloptions; // TODO initialize this with the formula
+                model = builder.buildModel(labeloptions);
+            } else {
+                storm::builder::ExplicitDFTModelBuilder<ValueType> builder(dft, symmetries, enableDC);
+                typename storm::builder::ExplicitDFTModelBuilder<ValueType>::LabelOptions labeloptions; // TODO initialize this with the formula
+                model = builder.buildModel(labeloptions);
+            }
             //model->printModelInformationToStream(std::cout);
             STORM_LOG_INFO("No. states (Explored): " << model->getNumberOfStates());
             STORM_LOG_INFO("No. transitions (Explored): " << model->getNumberOfTransitions());
