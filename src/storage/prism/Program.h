@@ -661,14 +661,6 @@ namespace storm {
             
             // A mapping from variable names to the modules in which they were declared.
             std::map<std::string, uint_fast64_t> variableToModuleIndexMap;
-            
-            /**
-             * Takes the current program and replaces all modules. As we reuse the expression manager, we recommend to not use the original program any further.
-             * @param newModules the modules which replace the old modules.
-             * @param newConstants the constants which replace the old constants.
-             * @return A program with the new modules and constants.
-             */
-            Program replaceModulesAndConstantsInProgram(std::vector<Module> const& newModules, std::vector<Constant> const& newConstants);
         };
         
         std::ostream& operator<<(std::ostream& out, Program::ModelType const& type);
