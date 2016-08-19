@@ -734,6 +734,12 @@ namespace storm {
                 }
             }
             
+            // As we possibly delete some commands and some actions might be dropped from modules altogether, we need to
+            // maintain a list of actions that we need to remove in other modules. For example, if module A loses all [a]
+            // commands, we need to delete all [a] commands from all other modules as well. If we do not do that, we will
+            // remove the forced synchronization that was there before.
+            std::set<uint_fast64_t> actionIndicesToDelete;
+            
             // Now we can substitute the constants in all expressions appearing in the program.
             std::vector<BooleanVariable> newBooleanVariables;
             newBooleanVariables.reserve(this->getNumberOfGlobalBooleanVariables());
@@ -757,6 +763,9 @@ namespace storm {
             newModules.reserve(this->getNumberOfModules());
             for (auto const& module : this->getModules()) {
                 newModules.emplace_back(module.substitute(constantSubstitution));
+                
+                // Determine the set of action indices that have been deleted entirely.
+                std::set_difference(module.getSynchronizingActionIndices().begin(), module.getSynchronizingActionIndices().end(), newModules.back().getSynchronizingActionIndices().begin(), newModules.back().getSynchronizingActionIndices().end(), std::inserter(actionIndicesToDelete, actionIndicesToDelete.begin()));
             }
             
             std::vector<RewardModel> newRewardModels;
@@ -773,7 +782,37 @@ namespace storm {
                 newLabels.emplace_back(label.substitute(constantSubstitution));
             }
             
-            return Program(this->manager, this->getModelType(), newConstants, newBooleanVariables, newIntegerVariables, newFormulas, newModules, this->getActionNameToIndexMapping(), newRewardModels, newLabels, newInitialConstruct, this->getOptionalSystemCompositionConstruct());
+            // If we have to delete whole actions, do so now.
+            std::map<std::string, uint_fast64_t> newActionToIndexMap;
+            if (!actionIndicesToDelete.empty()) {
+                boost::container::flat_set<uint_fast64_t> actionsToKeep;
+                std::set_difference(this->getSynchronizingActionIndices().begin(), this->getSynchronizingActionIndices().end(), actionIndicesToDelete.begin(), actionIndicesToDelete.end(), std::inserter(actionsToKeep, actionsToKeep.begin()));
+                
+                // Insert the silent action as this is not contained in the synchronizing action indices.
+                actionsToKeep.insert(0);
+                
+                std::vector<Module> cleanedModules;
+                cleanedModules.reserve(this->getNumberOfModules());
+                for (auto const& module : newModules) {
+                    cleanedModules.emplace_back(module.restrictCommands(actionsToKeep));
+                }
+                newModules = std::move(cleanedModules);
+                
+                std::vector<RewardModel> cleanedRewardModels;
+                cleanedRewardModels.reserve(this->getNumberOfRewardModels());
+                for (auto const& rewardModel : newRewardModels) {
+                    cleanedRewardModels.emplace_back(rewardModel.restrictActionRelatedRewards(actionsToKeep));
+                }
+                newRewardModels = std::move(cleanedRewardModels);
+                
+                for (auto const& entry : this->getActionNameToIndexMapping()) {
+                    if (actionsToKeep.find(entry.second) != actionsToKeep.end()) {
+                        newActionToIndexMap.emplace(entry.first, entry.second);
+                    }
+                }
+            }
+            
+            return Program(this->manager, this->getModelType(), newConstants, newBooleanVariables, newIntegerVariables, newFormulas, newModules, actionIndicesToDelete.empty() ? this->getActionNameToIndexMapping() : newActionToIndexMap, newRewardModels, newLabels, newInitialConstruct, this->getOptionalSystemCompositionConstruct());
         }
         
         void Program::checkValidity(Program::ValidityCheckLevel lvl) const {
@@ -1153,17 +1192,19 @@ namespace storm {
         }
         
         Program Program::simplify() {
+            // Start by substituting the constants, because this will potentially erase some commands or even actions.
+            Program substitutedProgram = this->substituteConstants();
+            
             std::vector<Module> newModules;
-            std::vector<Constant> newConstants = this->getConstants();
-            for (auto const& module : this->getModules()) {
-                // Remove identity assignments from the updates
+            std::vector<Constant> newConstants = substitutedProgram.getConstants();
+            for (auto const& module : substitutedProgram.getModules()) {
+                // Remove identity assignments from the updates.
                 std::vector<Command> newCommands;
                 for (auto const& command : module.getCommands()) {
                     newCommands.emplace_back(command.removeIdentityAssignmentsFromUpdates());
                 }
                 
-                // Substitute Variables by Global constants if possible.
-                
+                // Substitute variables by global constants if possible.
                 std::map<storm::expressions::Variable, storm::expressions::Expression> booleanVars;
                 std::map<storm::expressions::Variable, storm::expressions::Expression> integerVars;
                 for (auto const& variable : module.getBooleanVariables()) {
@@ -1179,11 +1220,11 @@ namespace storm {
                         // Check all assignments.
                         for (auto const& assignment : update.getAssignments()) {
                             auto bit = booleanVars.find(assignment.getVariable());
-                            if(bit != booleanVars.end()) {
+                            if (bit != booleanVars.end()) {
                                 booleanVars.erase(bit);
                             } else {
                                 auto iit = integerVars.find(assignment.getVariable());
-                                if(iit != integerVars.end()) {
+                                if (iit != integerVars.end()) {
                                     integerVars.erase(iit);
                                 }
                             }
@@ -1192,31 +1233,30 @@ namespace storm {
                 }
                 
                 std::vector<storm::prism::BooleanVariable> newBVars;
-                for(auto const& variable : module.getBooleanVariables()) {
-                    if(booleanVars.count(variable.getExpressionVariable()) == 0) {
+                for (auto const& variable : module.getBooleanVariables()) {
+                    if (booleanVars.find(variable.getExpressionVariable()) == booleanVars.end()) {
                         newBVars.push_back(variable);
                     }
                 }
                 std::vector<storm::prism::IntegerVariable> newIVars;
-                for(auto const& variable : module.getIntegerVariables()) {
-                    if(integerVars.count(variable.getExpressionVariable()) == 0) {
+                for (auto const& variable : module.getIntegerVariables()) {
+                    if (integerVars.find(variable.getExpressionVariable()) == integerVars.end()) {
                         newIVars.push_back(variable);
                     }
                 }
                 
                 newModules.emplace_back(module.getName(), newBVars, newIVars, newCommands);
                 
-                for(auto const& entry : booleanVars) {
+                for (auto const& entry : booleanVars) {
                     newConstants.emplace_back(entry.first, entry.second);
                 }
                 
-                for(auto const& entry : integerVars) {
+                for (auto const& entry : integerVars) {
                     newConstants.emplace_back(entry.first, entry.second);
                 }
             }
             
-            return replaceModulesAndConstantsInProgram(newModules, newConstants).substituteConstants();
-            
+            return substitutedProgram.replaceModulesAndConstantsInProgram(newModules, newConstants);
         }
         
         Program Program::replaceModulesAndConstantsInProgram(std::vector<Module> const& newModules, std::vector<Constant> const& newConstants) {

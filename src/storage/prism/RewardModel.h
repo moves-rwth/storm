@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <boost/container/flat_set.hpp>
 
 #include "src/storage/prism/StateReward.h"
 #include "src/storage/prism/StateActionReward.h"
@@ -107,6 +108,14 @@ namespace storm {
              * @return True iff the given variables only appear in the expressions defining the reward value.
              */
             bool containsVariablesOnlyInRewardValueExpressions(std::set<storm::expressions::Variable> const& undefinedConstantVariables) const;
+            
+            /*!
+             * Restricts all action-related rewards of the reward model to the ones with an action index in the provided set.
+             *
+             * @param actionIndicesToKeep The set of action indices to keep.
+             * @return The resulting reward model.
+             */
+            RewardModel restrictActionRelatedRewards(boost::container::flat_set<uint_fast64_t> const& actionIndicesToKeep) const;
             
             friend std::ostream& operator<<(std::ostream& stream, RewardModel const& rewardModel);
 
