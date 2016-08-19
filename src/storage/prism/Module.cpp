@@ -216,7 +216,9 @@ namespace storm {
             }
             
             for (auto const& command : this->getCommands()) {
-                command.containsVariablesOnlyInUpdateProbabilities(undefinedConstantVariables);
+                if (!command.containsVariablesOnlyInUpdateProbabilities(undefinedConstantVariables)) {
+                    return false;
+                }
             }
             
             return true;

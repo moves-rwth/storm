@@ -230,7 +230,7 @@ namespace storm {
             // constants' variables is empty (except for the update probabilities).
             
             // Start by checking the defining expressions of all defined constants. If it contains a currently undefined
-            //constant, we need to mark the target constant as undefined as well.
+            // constant, we need to mark the target constant as undefined as well.
             for (auto const& constant : this->getConstants()) {
                 if (constant.isDefined()) {
                     if (constant.getExpression().containsVariable(undefinedConstantVariables)) {
@@ -266,7 +266,9 @@ namespace storm {
             
             // Proceed by checking each of the modules.
             for (auto const& module : this->getModules()) {
-                module.containsVariablesOnlyInUpdateProbabilities(undefinedConstantVariables);
+                if (!module.containsVariablesOnlyInUpdateProbabilities(undefinedConstantVariables)) {
+                    return false;
+                }
             }
             
             // Check the reward models.
