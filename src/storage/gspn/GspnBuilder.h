@@ -32,19 +32,19 @@ namespace storm {
 
             /**
              * Adds an immediate transition to the gspn.
-             * @param name The name must be unique for the gspn.
+             * @param id The id must be unique for the gspn.
              * @param priority The priority for the transtion.
              * @param weight The weight for the transition.
              */
-            void addImmediateTransition(std::string const& name, uint_fast64_t const& priority = 0, double const& weight = 0);
+            void addImmediateTransition(uint_fast64_t const& id, uint_fast64_t const& priority = 0, double const& weight = 0);
 
             /**
              * Adds an timed transition to the gspn.
-             * @param name The name must be unique for the gspn.
+             * @param id The name id be unique for the gspn.
              * @param priority The priority for the transtion.
              * @param weight The weight for the transition.
              */
-            void addTimedTransition(std::string const& name, uint_fast64_t const& priority = 0, double const& rate = 0);
+            void addTimedTransition(uint_fast64_t const &id, uint_fast64_t const &priority = 0, double const &rate = 0);
 
             /**
              * Adds an new input arc from a place to an transition.
@@ -52,7 +52,7 @@ namespace storm {
              * @param to The transtion to which the arc goes to.
              * @param multiplicity The multiplicity of the arc.
              */
-            void addInputArc(uint_fast64_t const& from, std::string const& to, uint_fast64_t const& multiplicity = 1);
+            void addInputArc(uint_fast64_t const &from, uint_fast64_t const &to, uint_fast64_t const &multiplicity = 1);
 
             /**
              * Adds an new input arc from a place to an transition.
@@ -60,7 +60,7 @@ namespace storm {
              * @param to The transtion to which the arc goes to.
              * @param multiplicity The multiplicity of the arc.
              */
-            void addInhibitionArc(uint_fast64_t const& from, std::string const& to, uint_fast64_t const& multiplicity = 1);
+            void addInhibitionArc(uint_fast64_t const& from, uint_fast64_t const& to, uint_fast64_t const& multiplicity = 1);
 
             /**
              * Adds an new input arc from a place to an transition.
@@ -68,7 +68,7 @@ namespace storm {
              * @param to The transtion to which the arc goes to.
              * @param multiplicity The multiplicity of the arc.
              */
-            void addOutputArc(uint_fast64_t const& from, std::string const& to, uint_fast64_t const& multiplicity = 1);
+            void addOutputArc(uint_fast64_t const& from, uint_fast64_t const& to, uint_fast64_t const& multiplicity = 1);
 
             /**
              *

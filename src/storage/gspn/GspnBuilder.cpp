@@ -22,28 +22,29 @@ namespace storm {
             gspn.addPlace(place);
         }
 
-        void GspnBuilder::addImmediateTransition(std::string const& name, uint_fast64_t const& priority, double const& weight) {
+        void GspnBuilder::addImmediateTransition(uint_fast64_t const& id, uint_fast64_t const& priority, double const& weight) {
             auto trans = storm::gspn::ImmediateTransition<double>();
-            trans.setName(name);
+            trans.setName(std::to_string(id));
             trans.setPriority(priority);
             trans.setWeight(weight);
 
             gspn.addImmediateTransition(trans);
         }
 
-        void GspnBuilder::addTimedTransition(std::string const& name, uint_fast64_t const& priority, double const& rate) {
+        void GspnBuilder::addTimedTransition(uint_fast64_t const &id, uint_fast64_t const &priority, double const &rate) {
             auto trans = storm::gspn::TimedTransition<double>();
-            trans.setName(name);
+            trans.setName(std::to_string(id));
             trans.setPriority(priority);
             trans.setRate(rate);
 
             gspn.addTimedTransition(trans);
         }
 
-        void GspnBuilder::addInputArc(uint_fast64_t const& from, std::string const& to, uint_fast64_t const& multiplicity) {
-            auto transPair = gspn.getTransition(to);
+        void GspnBuilder::addInputArc(uint_fast64_t const &from, uint_fast64_t const &to,
+                                      uint_fast64_t const &multiplicity) {
+            auto transPair = gspn.getTransition(std::to_string(to));
             if (!std::get<0>(transPair)) {
-                STORM_LOG_THROW(false, storm::exceptions::IllegalFunctionCallException, "The transition with the name \"" + to + "\" does not exist.");
+                STORM_LOG_THROW(false, storm::exceptions::IllegalFunctionCallException, "The transition with the name \"" + std::to_string(to) + "\" does not exist.");
             }
 
             auto placePair = gspn.getPlace(idToPlaceName.at(from));
@@ -54,10 +55,10 @@ namespace storm {
             std::get<1>(transPair)->setInputArcMultiplicity(std::get<1>(placePair), multiplicity);
         }
 
-        void GspnBuilder::addInhibitionArc(uint_fast64_t const& from, std::string const& to, uint_fast64_t const& multiplicity) {
-            auto transPair = gspn.getTransition(to);
+        void GspnBuilder::addInhibitionArc(uint_fast64_t const& from, uint_fast64_t const& to, uint_fast64_t const& multiplicity) {
+            auto transPair = gspn.getTransition(std::to_string(to));
             if (!std::get<0>(transPair)) {
-                STORM_LOG_THROW(false, storm::exceptions::IllegalFunctionCallException, "The transition with the name \"" + to + "\" does not exist.");
+                STORM_LOG_THROW(false, storm::exceptions::IllegalFunctionCallException, "The transition with the name \"" + std::to_string(to) + "\" does not exist.");
             }
 
             auto placePair = gspn.getPlace(idToPlaceName.at(from));
@@ -68,13 +69,13 @@ namespace storm {
             std::get<1>(transPair)->setInhibitionArcMultiplicity(std::get<1>(placePair), multiplicity);
         }
 
-        void GspnBuilder::addOutputArc(uint_fast64_t const& from, std::string const& to, uint_fast64_t const& multiplicity) {
-            auto transPair = gspn.getTransition(to);
+        void GspnBuilder::addOutputArc(uint_fast64_t const& from, uint_fast64_t const& to, uint_fast64_t const& multiplicity) {
+            auto transPair = gspn.getTransition(std::to_string(from));
             if (!std::get<0>(transPair)) {
-                STORM_LOG_THROW(false, storm::exceptions::IllegalFunctionCallException, "The transition with the name \"" + to + "\" does not exist.");
+                STORM_LOG_THROW(false, storm::exceptions::IllegalFunctionCallException, "The transition with the name \"" + std::to_string(to) + "\" does not exist.");
             }
 
-            auto placePair = gspn.getPlace(idToPlaceName.at(from));
+            auto placePair = gspn.getPlace(idToPlaceName.at(to));
             if (!std::get<0>(placePair)) {
                 STORM_LOG_THROW(false, storm::exceptions::IllegalFunctionCallException, "The place with the id \"" + std::to_string(from) + "\" does not exist.");
             }
