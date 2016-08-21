@@ -75,23 +75,24 @@ namespace storm {
                 void refine(std::vector<storm::expressions::Expression> const& predicates);
                 
                 /*!
+                 * Refines the abstract program using the pivot state, and player 1 choice. The refinement guarantees that
+                 * the two provided choices are not possible from the same pivot state using the given player 1 choice.
+                 *
+                 * @param pivotState The pivot state on which to base the refinement.
+                 * @param player1Choice The player 1 choice that needs to be refined.
+                 * @param lowerChoice The first of the two choices on which to base the refinement.
+                 * @param upperChoice The first of the two choices on which to base the refinement.
+                 */
+                void refine(storm::dd::Bdd<DdType> const& pivotState, storm::dd::Bdd<DdType> const& player1Choice, storm::dd::Bdd<DdType> const& lowerChoice, storm::dd::Bdd<DdType> const& upperChoice);
+                
+                /*!
                  * Exports the current state of the abstraction in the dot format to the given file.
                  *
                  * @param filename The name of the file to which to write the dot output.
                  */
                 void exportToDot(std::string const& filename) const;
                 
-            private:
-                /*!
-                 * Computes the reachable states of the transition relation.
-                 *
-                 * @param initialStates The BDD representing the initial states of the model.
-                 * @param transitionRelation The BDD representing the transition relation that does only contain state
-                 * and successor variables.
-                 * @return The BDD representing the reachable states.
-                 */
-                storm::dd::Bdd<DdType> getReachableStates(storm::dd::Bdd<DdType> const& initialStates, storm::dd::Bdd<DdType> const& transitionRelation);
-                
+            private:                
                 /*!
                  * Builds the stochastic game representing the abstraction of the program.
                  *

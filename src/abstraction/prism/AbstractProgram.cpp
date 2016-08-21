@@ -9,6 +9,7 @@
 
 #include "src/models/symbolic/StandardRewardModel.h"
 
+#include "src/utility/dd.h"
 #include "src/utility/macros.h"
 #include "src/utility/solver.h"
 #include "src/exceptions/WrongFormatException.h"
@@ -109,6 +110,33 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
+            void AbstractProgram<DdType, ValueType>::refine(storm::dd::Bdd<DdType> const& pivotState, storm::dd::Bdd<DdType> const& player1Choice, storm::dd::Bdd<DdType> const& lowerChoice, storm::dd::Bdd<DdType> const& upperChoice) {
+//                std::cout << "refining in program!" << std::endl;
+//                lowerChoice.template toAdd<ValueType>().exportToDot("lchoice.dot");
+//                upperChoice.template toAdd<ValueType>().exportToDot("uchoice.dot");
+//                player1Choice.template toAdd<ValueType>().exportToDot("pl1_choice.dot");
+//                pivotState.template toAdd<ValueType>().exportToDot("pivotstate.dot");
+                
+                // Decode the index of the command chosen by player 1.
+                storm::dd::Add<DdType, ValueType> player1ChoiceAsAdd = player1Choice.template toAdd<ValueType>();
+                auto pl1It = player1ChoiceAsAdd.begin();
+                uint_fast64_t commandIndex = abstractionInformation.decodePlayer1Choice((*pl1It).first, abstractionInformation.getPlayer1VariableCount());
+                
+                bool bottomSuccessor = !((abstractionInformation.getBottomStateBdd(false, false) && lowerChoice) || (abstractionInformation.getBottomStateBdd(false, false) && upperChoice)).isZero();
+                if (bottomSuccessor) {
+                    storm::abstraction::prism::AbstractCommand<DdType, ValueType>& abstractCommand = modules.front().getCommands()[commandIndex];
+                    abstractCommand.notifyGuardIsPredicate();
+                    storm::expressions::Expression newPredicate = abstractCommand.getConcreteCommand().getGuardExpression();
+                    STORM_LOG_DEBUG("Derived new predicate: " << newPredicate);
+                    this->refine({newPredicate});
+                } else {
+                    exit(-1);
+                }
+                
+                storm::dd::Add<DdType, ValueType> lowerChoiceAsAdd = lowerChoice.template toAdd<ValueType>();
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
             MenuGame<DdType, ValueType> AbstractProgram<DdType, ValueType>::getAbstractGame() {
                 STORM_LOG_ASSERT(currentGame != nullptr, "Game was not properly created.");
                 return *currentGame;
@@ -135,7 +163,7 @@ namespace storm {
                 // Do a reachability analysis on the raw transition relation.
                 storm::dd::Bdd<DdType> transitionRelation = game.bdd.existsAbstract(variablesToAbstract);
                 storm::dd::Bdd<DdType> initialStates = initialStateAbstractor.getAbstractStates();
-                storm::dd::Bdd<DdType> reachableStates = this->getReachableStates(initialStates, transitionRelation);
+                storm::dd::Bdd<DdType> reachableStates = storm::utility::dd::computeReachableStates(initialStates, transitionRelation, abstractionInformation.getSourceVariables(), abstractionInformation.getSuccessorVariables());
                 
                 // Find the deadlock states in the model. Note that this does not find the 'deadlocks' in bottom states,
                 // as the bottom states are not contained in the reachable states.
@@ -164,6 +192,7 @@ namespace storm {
                     transitionMatrix *= (abstractionInformation.getBottomStateBdd(true, true) && abstractionInformation.getBottomStateBdd(false, true)).template toAdd<ValueType>();
                     transitionMatrix += bottomStateResult.transitions.template toAdd<ValueType>();
                     reachableStates &= abstractionInformation.getBottomStateBdd(true, true);
+                    initialStates &= abstractionInformation.getBottomStateBdd(true, true);
                     reachableStates |= bottomStateResult.states;
                 }
             
@@ -183,25 +212,7 @@ namespace storm {
                 
                 return std::make_unique<MenuGame<DdType, ValueType>>(abstractionInformation.getDdManagerAsSharedPointer(), reachableStates, initialStates, abstractionInformation.getDdManager().getBddZero(), transitionMatrix, bottomStateResult.states, allSourceVariables, allSuccessorVariables, hasBottomStates ? abstractionInformation.getExtendedSourceSuccessorVariablePairs() : abstractionInformation.getSourceSuccessorVariablePairs(), std::set<storm::expressions::Variable>(abstractionInformation.getPlayer1Variables().begin(), abstractionInformation.getPlayer1Variables().end()), usedPlayer2Variables, allNondeterminismVariables, auxVariables, abstractionInformation.getPredicateToBddMap());
             }
-            
-            template <storm::dd::DdType DdType, typename ValueType>
-            storm::dd::Bdd<DdType> AbstractProgram<DdType, ValueType>::getReachableStates(storm::dd::Bdd<DdType> const& initialStates, storm::dd::Bdd<DdType> const& transitionRelation) {
-                storm::dd::Bdd<DdType> frontier = initialStates;
-
-                storm::dd::Bdd<DdType> reachableStates = initialStates;
-                uint_fast64_t reachabilityIteration = 0;
-                while (!frontier.isZero()) {
-                    ++reachabilityIteration;
-                    frontier = frontier.andExists(transitionRelation, abstractionInformation.getSourceVariables());
-                    frontier = frontier.swapVariables(abstractionInformation.getSourceSuccessorVariablePairs());
-                    frontier &= !reachableStates;
-                    reachableStates |= frontier;
-                    STORM_LOG_TRACE("Iteration " << reachabilityIteration << " of reachability analysis.");
-                }
-                
-                return reachableStates;
-            }
-            
+                        
             template <storm::dd::DdType DdType, typename ValueType>
             void AbstractProgram<DdType, ValueType>::exportToDot(std::string const& filename) const {
                 std::ofstream out(filename);
@@ -241,13 +252,7 @@ namespace storm {
                             stateName << "0";
                         }
                     }
-                    uint_fast64_t index = 0;
-                    for (uint_fast64_t player1VariableIndex = 0; player1VariableIndex < abstractionInformation.getPlayer1VariableCount(); ++player1VariableIndex) {
-                        index <<= 1;
-                        if (stateValue.first.getBooleanValue(abstractionInformation.getPlayer1Variables()[player1VariableIndex])) {
-                            index |= 1;
-                        }
-                    }
+                    uint_fast64_t index = abstractionInformation.decodePlayer1Choice(stateValue.first, abstractionInformation.getPlayer1VariableCount());
                     out << stateName.str() << "_" << index;
                     out << " [ shape=\"square\", width=0, height=0, margin=0, label=\"" << index << "\" ];" << std::endl;
                     out << "\tpl1_" << stateName.str() << " -> " << "pl2_" << stateName.str() << "_" << index << " [ label=\"" << index << "\" ];" << std::endl;
@@ -265,21 +270,9 @@ namespace storm {
                             stateName << "0";
                         }
                     }
-                    uint_fast64_t index = 0;
-                    for (uint_fast64_t player1VariableIndex = 0; player1VariableIndex < abstractionInformation.getPlayer1VariableCount(); ++player1VariableIndex) {
-                        index <<= 1;
-                        if (stateValue.first.getBooleanValue(abstractionInformation.getPlayer1Variables()[player1VariableIndex])) {
-                            index |= 1;
-                        }
-                    }
+                    uint_fast64_t index = abstractionInformation.decodePlayer1Choice(stateValue.first, abstractionInformation.getPlayer1VariableCount());
                     stateName << "_" << index;
-                    index = 0;
-                    for (uint_fast64_t player2VariableIndex = 0; player2VariableIndex < currentGame->getPlayer2Variables().size(); ++player2VariableIndex) {
-                        index <<= 1;
-                        if (stateValue.first.getBooleanValue(abstractionInformation.getPlayer2Variables()[player2VariableIndex])) {
-                            index |= 1;
-                        }
-                    }
+                    index = abstractionInformation.decodePlayer2Choice(stateValue.first, currentGame->getPlayer2Variables().size());
                     out << stateName.str() << "_" << index;
                     out << " [ shape=\"point\", label=\"\" ];" << std::endl;
                     out << "\tpl2_" << stateName.str() << " -> " << "plp_" << stateName.str() << "_" << index << " [ label=\"" << index << "\" ];" << std::endl;
@@ -302,20 +295,8 @@ namespace storm {
                             successorStateName << "0";
                         }
                     }
-                    uint_fast64_t pl1Index = 0;
-                    for (uint_fast64_t player1VariableIndex = 0; player1VariableIndex < abstractionInformation.getPlayer1VariableCount(); ++player1VariableIndex) {
-                        pl1Index <<= 1;
-                        if (stateValue.first.getBooleanValue(abstractionInformation.getPlayer1Variables()[player1VariableIndex])) {
-                            pl1Index |= 1;
-                        }
-                    }
-                    uint_fast64_t pl2Index = 0;
-                    for (uint_fast64_t player2VariableIndex = 0; player2VariableIndex < currentGame->getPlayer2Variables().size(); ++player2VariableIndex) {
-                        pl2Index <<= 1;
-                        if (stateValue.first.getBooleanValue(abstractionInformation.getPlayer2Variables()[player2VariableIndex])) {
-                            pl2Index |= 1;
-                        }
-                    }
+                    uint_fast64_t pl1Index = abstractionInformation.decodePlayer1Choice(stateValue.first, abstractionInformation.getPlayer1VariableCount());
+                    uint_fast64_t pl2Index = abstractionInformation.decodePlayer2Choice(stateValue.first, currentGame->getPlayer2Variables().size());
                     out << "\tplp_" << sourceStateName.str() << "_" << pl1Index << "_" << pl2Index << " -> pl1_" << successorStateName.str() << " [ label=\"" << stateValue.second << "\"];" << std::endl;
                 }
                 

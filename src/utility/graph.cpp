@@ -989,7 +989,6 @@ namespace storm {
                 // Create two sets of states. Those states for which we definitely know that their probability is 1 and
                 // those states that potentially have a probability of 1.
                 storm::dd::Bdd<Type> maybeStates = model.getReachableStates();
-                storm::dd::Bdd<Type> solution = psiStates;
 
                 // A flag that governs whether strategies are produced in the current iteration.
                 bool produceStrategiesInIteration = false;
@@ -1012,6 +1011,7 @@ namespace storm {
                         consideredPlayer2States = model.getManager().getBddZero();
                     }
                     
+                    storm::dd::Bdd<Type> solution = psiStates;
                     while (!solutionStatesDone) {
                         // Start by computing the transitions that have only maybe states as successors. Note that at
                         // this point, there may be illegal transitions.
@@ -1024,7 +1024,7 @@ namespace storm {
                         // The valid distributions are then those that emanate from phi states, stay completely in the
                         // maybe states and have at least one successor with probability 1.
                         storm::dd::Bdd<Type> valid = phiStates && distributionsStayingInMaybe && distributionsWithProb1Successor;
-                        
+
                         // Depending on the strategy of player 2, we need to check whether all choices are valid or
                         // there exists a valid choice.
                         if (player2Strategy == OptimizationDirection::Minimize) {
@@ -1088,11 +1088,13 @@ namespace storm {
                     ++maybeStateIterations;
                 }
                 
+                // From now on, the solution is stored in maybeStates (as it coincides with the previous solution).
+                
                 // If we were asked to produce strategies that do not need to pick a certain successor but are
                 // 'arbitrary', do so now.
                 bool strategiesToCompute = (producePlayer1Strategy && !player1StrategyBdd) || (producePlayer2Strategy && !player2StrategyBdd);
                 if (strategiesToCompute) {
-                    storm::dd::Bdd<Type> relevantStates = (transitionMatrix && solution).existsAbstract(model.getColumnVariables());
+                    storm::dd::Bdd<Type> relevantStates = (transitionMatrix && maybeStates).existsAbstract(model.getColumnVariables());
                     if (producePlayer2Strategy && !player2StrategyBdd) {
                         player2StrategyBdd = relevantStates.existsAbstractRepresentative(model.getPlayer2Variables());
                     }
@@ -1102,7 +1104,7 @@ namespace storm {
                     }
                 }
                 
-                return GameProb01Result<Type>(solution, player1StrategyBdd, player2StrategyBdd);
+                return GameProb01Result<Type>(maybeStates, player1StrategyBdd, player2StrategyBdd);
             }
             
             template <typename T>

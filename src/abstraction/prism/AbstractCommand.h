@@ -92,6 +92,19 @@ namespace storm {
                  */
                 storm::dd::Add<DdType, ValueType> getCommandUpdateProbabilitiesAdd() const;
                 
+                /*!
+                 * Retrieves the concrete command that is abstracted by this abstract command.
+                 *
+                 * @return The concrete command.
+                 */
+                storm::prism::Command const& getConcreteCommand() const;
+                
+                /*!
+                 * Notifies this abstract command that its guard is now a predicate. This affects the computation of the
+                 * bottom states.
+                 */
+                void notifyGuardIsPredicate();
+                
             private:
                 /*!
                  * Determines the relevant predicates for source as well as successor states wrt. to the given assignments

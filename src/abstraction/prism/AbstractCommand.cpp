@@ -338,6 +338,16 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
+            storm::prism::Command const& AbstractCommand<DdType, ValueType>::getConcreteCommand() const {
+                return command.get();
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
+            void AbstractCommand<DdType, ValueType>::notifyGuardIsPredicate() {
+                guardIsPredicate = true;
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
             AbstractionInformation<DdType> const& AbstractCommand<DdType, ValueType>::getAbstractionInformation() const {
                 return abstractionInformation.get();
             }

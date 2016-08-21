@@ -13,6 +13,7 @@
 
 #include "src/logic/FragmentSpecification.h"
 
+#include "src/utility/dd.h"
 #include "src/utility/macros.h"
 
 #include "src/exceptions/NotSupportedException.h"
@@ -92,16 +93,68 @@ namespace storm {
             }
         }
         
+        template<storm::dd::DdType Type>
+        storm::dd::Bdd<Type> pickPivotState(storm::dd::Bdd<Type> const& initialStates, storm::dd::Bdd<Type> const& transitions, std::set<storm::expressions::Variable> const& rowVariables, std::set<storm::expressions::Variable> const& columnVariables, storm::dd::Bdd<Type> const& pivotStates) {
+            // Perform a BFS and pick the first pivot state we encounter.
+            storm::dd::Bdd<Type> pivotState;
+            storm::dd::Bdd<Type> frontier = initialStates;
+            storm::dd::Bdd<Type> frontierPivotStates = frontier && pivotStates;
+
+            bool foundPivotState = !frontierPivotStates.isZero();
+            if (foundPivotState) {
+                pivotState = frontierPivotStates.existsAbstractRepresentative(rowVariables);
+            } else {
+                while (!foundPivotState) {
+                    frontier = frontier.relationalProduct(transitions, rowVariables, columnVariables);
+                    frontierPivotStates = frontier && pivotStates;
+                
+                    if (!frontierPivotStates.isZero()) {
+                        pivotState = frontierPivotStates.existsAbstractRepresentative(rowVariables);
+                        foundPivotState = true;
+                    }
+                }
+            }
+            
+            return pivotState;
+        }
+        
         template<storm::dd::DdType Type, typename ValueType>
-        void refineAfterQualitativeCheck(storm::abstraction::MenuGame<Type, ValueType> const& game, detail::GameProb01Result<Type> const& prob01, storm::dd::Bdd<Type> const& transitionMatrixBdd) {
+        void refineAfterQualitativeCheck(storm::abstraction::prism::PrismMenuGameAbstractor<Type, ValueType>& abstractor, storm::abstraction::MenuGame<Type, ValueType> const& game, detail::GameProb01Result<Type> const& prob01, storm::dd::Bdd<Type> const& transitionMatrixBdd) {
+            storm::dd::Bdd<Type> transitionsInIntersection = transitionMatrixBdd && prob01.min.first.getPlayer1Strategy() && prob01.min.first.getPlayer2Strategy() && prob01.max.second.getPlayer1Strategy() && prob01.max.second.getPlayer2Strategy();
+            
             // First, we have to find the pivot state candidates. Start by constructing the reachable fragment of the
             // state space *under both* strategy pairs.
-            storm::dd::Bdd<Type> pivotStateCandidates = transitionMatrixBdd.existsAbstract(game.getColumnVariables());
-            pivotStateCandidates &= prob01.min.first.getPlayer1Strategy() && prob01.min.first.getPlayer2Strategy() && prob01.max.first.getPlayer1Strategy() && prob01.max.first.getPlayer2Strategy();
-            pivotStateCandidates = pivotStateCandidates.existsAbstract(game.getNondeterminismVariables());
+            storm::dd::Bdd<Type> pivotStates = storm::utility::dd::computeReachableStates(game.getInitialStates(), transitionsInIntersection.existsAbstract(game.getNondeterminismVariables()), game.getRowVariables(), game.getColumnVariables());
             
+            // Then constrain this set by requiring that the two stratey pairs resolve the nondeterminism differently.
+            pivotStates &= (prob01.min.first.getPlayer1Strategy() && prob01.min.first.getPlayer2Strategy()).exclusiveOr(prob01.max.second.getPlayer1Strategy() && prob01.max.second.getPlayer2Strategy()).existsAbstract(game.getNondeterminismVariables());
+            STORM_LOG_ASSERT(!pivotStates.isZero(), "Unable to refine without pivot state candidates.");
             
-            std::cout << "found pivot state candidates" << std::endl;
+            // Now that we have the pivot state candidates, we need to pick one.
+            storm::dd::Bdd<Type> pivotState = pickPivotState<Type>(game.getInitialStates(), transitionsInIntersection, game.getRowVariables(), game.getColumnVariables(), pivotStates);
+            
+            // Compute the lower and the upper choice for the pivot state.
+            std::set<storm::expressions::Variable> variablesToAbstract = game.getNondeterminismVariables();
+            variablesToAbstract.insert(game.getRowVariables().begin(), game.getRowVariables().end());
+            storm::dd::Bdd<Type> lowerChoice = pivotState && game.getExtendedTransitionMatrix().toBdd() && prob01.min.first.getPlayer1Strategy();
+            storm::dd::Bdd<Type> lowerChoice1 = (lowerChoice && prob01.min.first.getPlayer2Strategy()).existsAbstract(variablesToAbstract);
+            storm::dd::Bdd<Type> lowerChoice2 = (lowerChoice && prob01.max.second.getPlayer2Strategy()).existsAbstract(variablesToAbstract);
+                        
+            bool lowerChoicesDifferent = !lowerChoice1.exclusiveOr(lowerChoice2).isZero();
+            if (lowerChoicesDifferent) {
+                abstractor.refine(pivotState, (pivotState && prob01.min.first.getPlayer1Strategy()).existsAbstract(game.getRowVariables()), lowerChoice1, lowerChoice2);
+            }
+            
+            storm::dd::Bdd<Type> upperChoice = pivotState && game.getExtendedTransitionMatrix().toBdd() && prob01.max.second.getPlayer1Strategy();
+            storm::dd::Bdd<Type> upperChoice1 = (upperChoice && prob01.min.first.getPlayer2Strategy()).existsAbstract(variablesToAbstract);
+            storm::dd::Bdd<Type> upperChoice2 = (upperChoice && prob01.max.second.getPlayer2Strategy()).existsAbstract(variablesToAbstract);
+            upperChoice1.template toAdd<ValueType>().exportToDot("uchoice1.dot");
+            upperChoice2.template toAdd<ValueType>().exportToDot("uchoice2.dot");
+
+            bool upperChoicesDifferent = !upperChoice1.exclusiveOr(upperChoice2).isZero();
+            if (upperChoicesDifferent) {
+                abstractor.refine(pivotState, (pivotState && prob01.max.second.getPlayer1Strategy()).existsAbstract(game.getRowVariables()), upperChoice1, upperChoice2);
+            }
         }
         
         template<storm::dd::DdType Type, typename ValueType>
@@ -155,7 +208,7 @@ namespace storm {
                 
                 // If we get here, the initial states were all identified as prob0/1 states, but the value (0 or 1)
                 // depends on whether player 2 is minimizing or maximizing. Therefore, we need to find a place to refine.
-                refineAfterQualitativeCheck(game, prob01, transitionMatrixBdd);
+                refineAfterQualitativeCheck(abstractor, game, prob01, transitionMatrixBdd);
             }
             
             
@@ -187,6 +240,7 @@ namespace storm {
             // Now compute the states with probability 0/1 when player 2 maximizes.
             storm::utility::graph::GameProb01Result<Type> prob0Max = storm::utility::graph::performProb0(game, transitionMatrixBdd, game.getStates(constraintExpression), targetStates, player1Direction, storm::OptimizationDirection::Maximize, false, false);
             storm::utility::graph::GameProb01Result<Type> prob1Max = storm::utility::graph::performProb1(game, transitionMatrixBdd, game.getStates(constraintExpression), targetStates, player1Direction, storm::OptimizationDirection::Maximize, true, true);
+            prob1Max.getPlayer1Strategy().template toAdd<ValueType>().exportToDot("prob1maxstrat.dot");
             
             STORM_LOG_ASSERT(prob0Min.hasPlayer1Strategy(), "Unable to proceed without strategy.");
             STORM_LOG_ASSERT(prob0Min.hasPlayer2Strategy(), "Unable to proceed without strategy.");

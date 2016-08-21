@@ -73,6 +73,16 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
+            std::vector<AbstractCommand<DdType, ValueType>> const& AbstractModule<DdType, ValueType>::getCommands() const {
+                return commands;
+            }
+
+            template <storm::dd::DdType DdType, typename ValueType>
+            std::vector<AbstractCommand<DdType, ValueType>>& AbstractModule<DdType, ValueType>::getCommands() {
+                return commands;
+            }
+
+            template <storm::dd::DdType DdType, typename ValueType>
             AbstractionInformation<DdType> const& AbstractModule<DdType, ValueType>::getAbstractionInformation() const {
                 return abstractionInformation.get();
             }
