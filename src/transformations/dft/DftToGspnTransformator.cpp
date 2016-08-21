@@ -16,6 +16,8 @@ namespace storm {
                 mGspn = storm::gspn::GSPN();
 				mGspn.setName("DftToGspnTransformation");
 				
+				// TODO: Reconsider priorities!
+				
 				// Loop through every DFT element and draw them as a GSPN.
 				drawGSPNElements();
 				
@@ -187,15 +189,15 @@ namespace storm {
 				immediateTransitionPANDFailing.setOutputArcMultiplicity(placePANDFailed, 1);
 				mGspn.addImmediateTransition(immediateTransitionPANDFailing);
 				
-				storm::gspn::ImmediateTransition<storm::gspn::GSPN::WeightType> immediateTransitionPANDFailsave;
-				immediateTransitionPANDFailsave.setName(dftPand->name() + STR_FAILSAVING);
-				immediateTransitionPANDFailsave.setPriority(1);
-				immediateTransitionPANDFailsave.setWeight(0.0);
-				immediateTransitionPANDFailsave.setInhibitionArcMultiplicity(placePANDFailsave, 1);
-				immediateTransitionPANDFailsave.setOutputArcMultiplicity(placePANDFailsave, 1);
-				mGspn.addImmediateTransition(immediateTransitionPANDFailsave);
-				
-				// TODO: Extend for more than 2 children.
+				for (std::size_t i = 0; i < dftPand->nrChildren() -1; i++) {
+					storm::gspn::ImmediateTransition<storm::gspn::GSPN::WeightType> immediateTransitionPANDFailsave;
+					immediateTransitionPANDFailsave.setName(dftPand->name() + "_" + std::to_string(i) + STR_FAILSAVING);
+					immediateTransitionPANDFailsave.setPriority(1);
+					immediateTransitionPANDFailsave.setWeight(0.0);
+					immediateTransitionPANDFailsave.setInhibitionArcMultiplicity(placePANDFailsave, 1);
+					immediateTransitionPANDFailsave.setOutputArcMultiplicity(placePANDFailsave, 1);
+					mGspn.addImmediateTransition(immediateTransitionPANDFailsave);
+				}
 			}
 			
 			template <typename ValueType>
@@ -313,22 +315,38 @@ namespace storm {
 							case storm::storage::DFTElementType::PAND:
 							{
 								auto children =  std::static_pointer_cast<storm::storage::DFTPand<ValueType> const>(mDft.getElement(parents[j]))->children();
-								auto pandEntry = mGspn.getImmediateTransition(mDft.getElement(parents[j])->name() + STR_FAILING);
-								auto pandEntry2 = mGspn.getImmediateTransition(mDft.getElement(parents[j])->name() + STR_FAILSAVING);
 								auto childExit = mGspn.getPlace(child->name() + STR_FAILED);
+								auto pandEntry = mGspn.getImmediateTransition(mDft.getElement(parents[j])->name() + STR_FAILING);
 								
-								if (pandEntry.first && pandEntry2.first && childExit.first) { // Only add arcs if the objects have been found.
+								if (childExit.first && pandEntry.first) { // Only add arcs if the objects have been found.
+									pandEntry.second->setInputArcMultiplicity(childExit.second, 1);
+									pandEntry.second->setOutputArcMultiplicity(childExit.second, 1);
+									
 									if (children[0] == child) { // Current element is primary child.
-										pandEntry.second->setInputArcMultiplicity(childExit.second, 1);
-										pandEntry.second->setOutputArcMultiplicity(childExit.second, 1);
-										pandEntry2.second->setInhibitionArcMultiplicity(childExit.second, 1);
+										auto pandEntry2 = mGspn.getImmediateTransition(mDft.getElement(parents[j])->name() + "_0" + STR_FAILSAVING);
 										
+										if (pandEntry2.first) {
+											pandEntry2.second->setInhibitionArcMultiplicity(childExit.second, 1);
+										}
 									}
-									else if (children[1] == child) { // Current element is secondary child.
-										pandEntry.second->setInputArcMultiplicity(childExit.second, 1);
-										pandEntry.second->setOutputArcMultiplicity(childExit.second, 1);
-										pandEntry2.second->setInputArcMultiplicity(childExit.second, 1);
-										pandEntry2.second->setOutputArcMultiplicity(childExit.second, 1);
+									else { // Current element is not the primary child.
+										for (std::size_t k = 1; k < children.size(); k++) {
+											if (children[k] == child) {
+												auto pandEntry2 = mGspn.getImmediateTransition(mDft.getElement(parents[j])->name() + "_" + std::to_string((k - 1)) + STR_FAILSAVING);
+												auto pandEntry3 = mGspn.getImmediateTransition(mDft.getElement(parents[j])->name() + "_" + std::to_string((k)) + STR_FAILSAVING);
+												
+												if (pandEntry2.first) {
+													pandEntry2.second->setInputArcMultiplicity(childExit.second, 1);
+													pandEntry2.second->setOutputArcMultiplicity(childExit.second, 1);
+												}
+												
+												if (pandEntry3.first) {
+													pandEntry3.second->setInhibitionArcMultiplicity(childExit.second, 1);
+												}
+												
+												continue;
+											}
+										}
 									}
 								}
 								
@@ -350,7 +368,7 @@ namespace storm {
 										porEntry2.second->setInhibitionArcMultiplicity(childExit.second, 1);
 										
 									}
-									else { // Current element is a child, that is not the primary child.
+									else { // Current element is not the primary child.
 										porEntry2.second->setInputArcMultiplicity(childExit.second, 1);
 										porEntry2.second->setOutputArcMultiplicity(childExit.second, 1);
 									}

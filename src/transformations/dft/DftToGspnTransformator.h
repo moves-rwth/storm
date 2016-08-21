@@ -91,7 +91,8 @@ namespace storm {
 				void drawVOT(std::shared_ptr<storm::storage::DFTVot<ValueType> const> dftVot);
 				
 				/*
-				 * Draw a Petri net PAND.
+				 * Draw a Petri net PAND. 
+				 * This PAND is inklusive (children are allowed to fail simultaneously and the PAND will fail nevertheless).
 				 * 
 				 * @param dftPand The PAND gate.
 				 */
@@ -106,6 +107,7 @@ namespace storm {
 				
 				/*
 				 * Draw a Petri net POR.
+				 * This POR is inklusive (children are allowed to fail simultaneously and the POR will fail nevertheless).
 				 * 
 				 * @param dftPor The POR gate.
 				 */
