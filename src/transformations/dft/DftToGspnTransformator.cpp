@@ -231,8 +231,6 @@ namespace storm {
 				immediateTransitionPORFailsave.setInhibitionArcMultiplicity(placePORFailsave, 1);
 				immediateTransitionPORFailsave.setOutputArcMultiplicity(placePORFailsave, 1);
 				mGspn.addImmediateTransition(immediateTransitionPORFailsave);
-				
-				// TODO: Extend for more than 2 children.
 			}
 			
 			template <typename ValueType>
@@ -352,7 +350,7 @@ namespace storm {
 										porEntry2.second->setInhibitionArcMultiplicity(childExit.second, 1);
 										
 									}
-									else if (children[1] == child) { // Current element is secondary child.
+									else { // Current element is a child, that is not the primary child.
 										porEntry2.second->setInputArcMultiplicity(childExit.second, 1);
 										porEntry2.second->setOutputArcMultiplicity(childExit.second, 1);
 									}
