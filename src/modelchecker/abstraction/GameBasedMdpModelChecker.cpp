@@ -199,7 +199,7 @@ namespace storm {
                 storm::dd::Bdd<Type> maybeMax = !(prob01.max.first.states || prob01.max.second.states) && game.getReachableStates();
                 
                 // 4. if the initial states are not maybe states, then we can refine at this point.
-                storm::dd::Bdd<Type> initialMaybeStates = game.getInitialStates() && (maybeMin || maybeMax);
+                storm::dd::Bdd<Type> initialMaybeStates = (game.getInitialStates() && maybeMin) || (game.getInitialStates() && maybeMax);
                 if (initialMaybeStates.isZero()) {
                     // In this case, we know the result for the initial states for both player 2 minimizing and maximizing.
                     STORM_LOG_TRACE("No initial state is a 'maybe' state. Refining abstraction based on qualitative check.");
@@ -221,7 +221,8 @@ namespace storm {
                     refineAfterQualitativeCheck(abstractor, game, prob01, transitionMatrixBdd);
                 } else {
                     
-                    // Do not numerically solve the game if there is a qualitative bound around.
+                    // If we can already answer the question, do not solve the game numerically.
+                    
                     
                     STORM_LOG_ASSERT(false, "Quantiative refinement not yet there. :)");
                 }
