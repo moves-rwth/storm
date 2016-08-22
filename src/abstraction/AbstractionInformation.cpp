@@ -54,6 +54,7 @@ namespace storm {
             allPredicateIdentities &= predicateIdentities.back();
             sourceVariables.insert(newMetaVariable.first);
             successorVariables.insert(newMetaVariable.second);
+            orderedSuccessorVariables.push_back(newMetaVariable.second);
             ddVariableIndexToPredicateIndexMap[predicateIdentities.back().getIndex()] = predicateIndex;
             return predicateIndex;
         }
@@ -247,6 +248,11 @@ namespace storm {
         template<storm::dd::DdType DdType>
         std::set<storm::expressions::Variable> const& AbstractionInformation<DdType>::getSuccessorVariables() const {
             return successorVariables;
+        }
+        
+        template<storm::dd::DdType DdType>
+        std::vector<storm::expressions::Variable> const& AbstractionInformation<DdType>::getOrderedSuccessorVariables() const {
+            return orderedSuccessorVariables;
         }
         
         template<storm::dd::DdType DdType>

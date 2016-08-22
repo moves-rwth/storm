@@ -2,6 +2,8 @@
 
 #include "src/abstraction/BottomStateResult.h"
 
+#include "src/storage/BitVector.h"
+
 #include "src/storage/prism/Program.h"
 
 #include "src/storage/dd/DdManager.h"
@@ -110,30 +112,80 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            void AbstractProgram<DdType, ValueType>::refine(storm::dd::Bdd<DdType> const& pivotState, storm::dd::Bdd<DdType> const& player1Choice, storm::dd::Bdd<DdType> const& lowerChoice, storm::dd::Bdd<DdType> const& upperChoice) {
-//                std::cout << "refining in program!" << std::endl;
-//                lowerChoice.template toAdd<ValueType>().exportToDot("lchoice.dot");
-//                upperChoice.template toAdd<ValueType>().exportToDot("uchoice.dot");
-//                player1Choice.template toAdd<ValueType>().exportToDot("pl1_choice.dot");
-//                pivotState.template toAdd<ValueType>().exportToDot("pivotstate.dot");
+            std::map<uint_fast64_t, storm::storage::BitVector> AbstractProgram<DdType, ValueType>::decodeChoiceToUpdateSuccessorMapping(storm::dd::Bdd<DdType> const& choice) const {
+                std::map<uint_fast64_t, storm::storage::BitVector> result;
                 
+                storm::dd::Add<DdType, ValueType> lowerChoiceAsAdd = choice.template toAdd<ValueType>();
+                for (auto const& successorValuePair : lowerChoiceAsAdd) {
+                    uint_fast64_t updateIndex = abstractionInformation.decodeAux(successorValuePair.first, 0, currentGame->getProbabilisticBranchingVariables().size());
+                    
+                    storm::storage::BitVector successor(abstractionInformation.getNumberOfPredicates());
+                    for (uint_fast64_t index = 0; index < abstractionInformation.getOrderedSuccessorVariables().size(); ++index) {
+                        auto const& successorVariable = abstractionInformation.getOrderedSuccessorVariables()[index];
+                        if (successorValuePair.first.getBooleanValue(successorVariable)) {
+                            successor.set(index);
+                        }
+                    }
+                    
+                    result[updateIndex] = successor;
+                }
+                return result;
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
+            void AbstractProgram<DdType, ValueType>::refine(storm::dd::Bdd<DdType> const& pivotState, storm::dd::Bdd<DdType> const& player1Choice, storm::dd::Bdd<DdType> const& lowerChoice, storm::dd::Bdd<DdType> const& upperChoice) {
                 // Decode the index of the command chosen by player 1.
                 storm::dd::Add<DdType, ValueType> player1ChoiceAsAdd = player1Choice.template toAdd<ValueType>();
                 auto pl1It = player1ChoiceAsAdd.begin();
                 uint_fast64_t commandIndex = abstractionInformation.decodePlayer1Choice((*pl1It).first, abstractionInformation.getPlayer1VariableCount());
+                storm::abstraction::prism::AbstractCommand<DdType, ValueType>& abstractCommand = modules.front().getCommands()[commandIndex];
+                storm::prism::Command const& concreteCommand = abstractCommand.getConcreteCommand();
+
+                // Check whether there are bottom states in the game and whether one of the choices actually picks the
+                // bottom state as the successor.
+                bool buttomStateSuccessor = false;
+                if (!currentGame->getBottomStates().isZero()) {
+                    buttomStateSuccessor = !((abstractionInformation.getBottomStateBdd(false, false) && lowerChoice) || (abstractionInformation.getBottomStateBdd(false, false) && upperChoice)).isZero();
+                }
                 
-                bool bottomSuccessor = !((abstractionInformation.getBottomStateBdd(false, false) && lowerChoice) || (abstractionInformation.getBottomStateBdd(false, false) && upperChoice)).isZero();
-                if (bottomSuccessor) {
-                    storm::abstraction::prism::AbstractCommand<DdType, ValueType>& abstractCommand = modules.front().getCommands()[commandIndex];
+                // If one of the choices picks the bottom state, the new predicate is based on the guard of the appropriate
+                // command (that is the player 1 choice).
+                if (buttomStateSuccessor) {
+                    STORM_LOG_DEBUG("One of the successors is a bottom state, taking a guard as a new predicate.");
                     abstractCommand.notifyGuardIsPredicate();
-                    storm::expressions::Expression newPredicate = abstractCommand.getConcreteCommand().getGuardExpression();
+                    storm::expressions::Expression newPredicate = concreteCommand.getGuardExpression();
                     STORM_LOG_DEBUG("Derived new predicate: " << newPredicate);
                     this->refine({newPredicate});
                 } else {
-                    exit(-1);
+                    STORM_LOG_DEBUG("No bottom state successor. Deriving a new predicate using weakest precondition.");
+                    
+                    // Decode both choices to explicit mappings.
+                    std::map<uint_fast64_t, storm::storage::BitVector> lowerChoiceUpdateToSuccessorMapping = decodeChoiceToUpdateSuccessorMapping(lowerChoice);
+                    std::map<uint_fast64_t, storm::storage::BitVector> upperChoiceUpdateToSuccessorMapping = decodeChoiceToUpdateSuccessorMapping(upperChoice);
+                    STORM_LOG_ASSERT(lowerChoiceUpdateToSuccessorMapping.size() == upperChoiceUpdateToSuccessorMapping.size(), "Mismatching sizes after decode.");
+
+                    // Now go through the mappings and find points of deviation. Currently, we take the first deviation.
+                    storm::expressions::Expression newPredicate;
+                    auto lowerIt = lowerChoiceUpdateToSuccessorMapping.begin();
+                    auto lowerIte = lowerChoiceUpdateToSuccessorMapping.end();
+                    auto upperIt = upperChoiceUpdateToSuccessorMapping.begin();
+                    for (; lowerIt != lowerIte; ++lowerIt, ++upperIt) {
+                        STORM_LOG_ASSERT(lowerIt->first == upperIt->first, "Update indices mismatch.");
+                        uint_fast64_t updateIndex = lowerIt->first;
+                        bool deviates = lowerIt->second != upperIt->second;
+                        if (deviates) {
+                            for (uint_fast64_t predicateIndex = 0; predicateIndex < lowerIt->second.size(); ++predicateIndex) {
+                                if (lowerIt->second.get(predicateIndex) != upperIt->second.get(predicateIndex)) {
+                                    // Now we know the point of the deviation (command, update, predicate).
+                                    newPredicate = abstractionInformation.getPredicateByIndex(predicateIndex).substitute(concreteCommand.getUpdate(updateIndex).getAsVariableToExpressionMap());
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    
+                    this->refine({newPredicate});
                 }
-                
-                storm::dd::Add<DdType, ValueType> lowerChoiceAsAdd = lowerChoice.template toAdd<ValueType>();
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
