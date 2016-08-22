@@ -29,7 +29,7 @@ namespace storm {
                                             std::set<storm::expressions::Variable> const& player2Variables,
                                             std::set<storm::expressions::Variable> const& allNondeterminismVariables,
                                             std::set<storm::expressions::Variable> const& probabilisticBranchingVariables,
-                                            std::map<storm::expressions::Expression, storm::dd::Bdd<Type>> const& expressionToBddMap) : storm::models::symbolic::StochasticTwoPlayerGame<Type, ValueType>(manager, reachableStates, initialStates, deadlockStates, transitionMatrix.sumAbstract(probabilisticBranchingVariables), rowVariables, nullptr, columnVariables, nullptr, rowColumnMetaVariablePairs, player1Variables, player2Variables, allNondeterminismVariables), probabilisticBranchingVariables(probabilisticBranchingVariables), expressionToBddMap(expressionToBddMap), bottomStates(bottomStates) {
+                                            std::map<storm::expressions::Expression, storm::dd::Bdd<Type>> const& expressionToBddMap) : storm::models::symbolic::StochasticTwoPlayerGame<Type, ValueType>(manager, reachableStates, initialStates, deadlockStates, transitionMatrix.sumAbstract(probabilisticBranchingVariables), rowVariables, nullptr, columnVariables, nullptr, rowColumnMetaVariablePairs, player1Variables, player2Variables, allNondeterminismVariables), extendedTransitionMatrix(transitionMatrix), probabilisticBranchingVariables(probabilisticBranchingVariables), expressionToBddMap(expressionToBddMap), bottomStates(bottomStates) {
             // Intentionally left empty.
         }
         
@@ -62,6 +62,16 @@ namespace storm {
         template<storm::dd::DdType Type, typename ValueType>
         storm::dd::Bdd<Type> MenuGame<Type, ValueType>::getBottomStates() const {
             return bottomStates;
+        }
+        
+        template<storm::dd::DdType Type, typename ValueType>
+        storm::dd::Add<Type, ValueType> const& MenuGame<Type, ValueType>::getExtendedTransitionMatrix() const {
+            return extendedTransitionMatrix;
+        }
+        
+        template<storm::dd::DdType Type, typename ValueType>
+        std::set<storm::expressions::Variable> const& MenuGame<Type, ValueType>::getProbabilisticBranchingVariables() const {
+            return probabilisticBranchingVariables;
         }
         
         template<storm::dd::DdType Type, typename ValueType>

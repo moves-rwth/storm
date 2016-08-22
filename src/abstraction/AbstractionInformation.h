@@ -149,6 +149,13 @@ namespace storm {
             storm::dd::Bdd<DdType> getPredicateSourceVariable(storm::expressions::Expression const& predicate) const;
             
             /*!
+             * Determines whether the given predicate is in the set of known predicates.
+             *
+             * @param predicate The predicate for which to query membership.
+             */
+            bool hasPredicate(storm::expressions::Expression const& predicate) const;
+            
+            /*!
              * Retrieves the number of predicates.
              *
              * @return The number of predicates.
@@ -181,6 +188,15 @@ namespace storm {
             storm::dd::Bdd<DdType> encodePlayer1Choice(uint_fast64_t index, uint_fast64_t end) const;
             
             /*!
+             * Decodes the player 1 choice in the given valuation.
+             *
+             * @param valuation The valuation to decode.
+             * @param end The index of the variable past the end of the range that is used to encode the index.
+             * @return The decoded player 1 choice.
+             */
+            uint_fast64_t decodePlayer1Choice(storm::expressions::Valuation const& valuation, uint_fast64_t end) const;
+            
+            /*!
              * Encodes the given index using the indicated player 2 variables.
              *
              * @param index The index to encode.
@@ -190,7 +206,16 @@ namespace storm {
             storm::dd::Bdd<DdType> encodePlayer2Choice(uint_fast64_t index, uint_fast64_t end) const;
 
             /*!
-             * Encodes the given index using the indicated probabilistic branching variables.
+             * Decodes the player 2 choice in the given valuation.
+             *
+             * @param valuation The valuation to decode.
+             * @param end The index of the variable past the end of the range that is used to encode the index.
+             * @return The decoded player 2 choice.
+             */
+            uint_fast64_t decodePlayer2Choice(storm::expressions::Valuation const& valuation, uint_fast64_t end) const;
+            
+            /*!
+             * Encodes the given index using the indicated auxiliary variables.
              *
              * @param index The index to encode.
              * @param start The index of the first variable of the range that is used to encode the index.
@@ -199,6 +224,16 @@ namespace storm {
              */
             storm::dd::Bdd<DdType> encodeAux(uint_fast64_t index, uint_fast64_t start, uint_fast64_t end) const;
             
+            /*!
+             * Decodes the auxiliary index in the given valuation.
+             *
+             * @param valuation The valuation to decode.
+             * @param start The index of the first variable of the range that is used to encode the index.
+             * @param end The index of the variable past the end of the range that is used to encode the index.
+             * @return The decoded auxiliary index.
+             */
+            uint_fast64_t decodeAux(storm::expressions::Valuation const& valuation, uint_fast64_t start, uint_fast64_t end) const;
+
             /*!
              * Retrieves the cube of player 2 variables in the given range [offset, numberOfVariables).
              *
@@ -299,6 +334,13 @@ namespace storm {
             std::set<storm::expressions::Variable> const& getSuccessorVariables() const;
 
             /*!
+             * Retrieves the ordered collection of successor meta variables.
+             *
+             * @return All successor meta variables.
+             */
+            std::vector<storm::expressions::Variable> const& getOrderedSuccessorVariables() const;
+            
+            /*!
              * Retrieves a BDD representing the identities of all predicates.
              *
              * @return All predicate identities.
@@ -392,16 +434,27 @@ namespace storm {
              * @param start The index of the first variable to use for the encoding.
              * @param end The index of the variable past the end of the range to use for the encoding.
              * @param variables The BDDs of the variables to use to encode the index.
+             * @return The BDD encoding the index.
              */
             storm::dd::Bdd<DdType> encodeChoice(uint_fast64_t index, uint_fast64_t start, uint_fast64_t end, std::vector<storm::dd::Bdd<DdType>> const& variables) const;
-                        
+
+            /*!
+             * Decodes the index encoded in the valuation using the given variables.
+             *
+             * @param valuation The valuation to decode.
+             * @param start The index of the first variable to use for the encoding.
+             * @param end The index of the variable past the end of the range to use for the encoding.
+             * @param variables The variables used to encode the index.
+             * @return The encoded index.
+             */
+            uint_fast64_t decodeChoice(storm::expressions::Valuation const& valuation, uint_fast64_t start, uint_fast64_t end, std::vector<storm::expressions::Variable> const& variables) const;
+
             // The expression related data.
             
             /// The manager responsible for the expressions of the program and the SMT solvers.
             std::reference_wrapper<storm::expressions::ExpressionManager> expressionManager;
             
             /// A mapping from predicates to their indices in the predicate list.
-            // FIXME: Does this properly store the expressions? What about equality checking?
             std::unordered_map<storm::expressions::Expression, uint64_t> predicateToIndexMap;
             
             /// The current set of predicates used in the abstraction.
@@ -427,8 +480,11 @@ namespace storm {
             /// The set of all source variables.
             std::set<storm::expressions::Variable> sourceVariables;
             
-            /// The set of all source variables.
+            /// The set of all successor variables.
             std::set<storm::expressions::Variable> successorVariables;
+            
+            /// An ordered collection of the successor variables.
+            std::vector<storm::expressions::Variable> orderedSuccessorVariables;
             
             /// The BDDs corresponding to the predicates.
             std::vector<std::pair<storm::dd::Bdd<DdType>, storm::dd::Bdd<DdType>>> predicateBdds;

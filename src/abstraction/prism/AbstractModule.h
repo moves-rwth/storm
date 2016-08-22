@@ -73,6 +73,20 @@ namespace storm {
                  */
                 storm::dd::Add<DdType, ValueType> getCommandUpdateProbabilitiesAdd() const;
                 
+                /*!
+                 * Retrieves the abstract commands of this abstract module.
+                 *
+                 * @return The abstract commands.
+                 */
+                std::vector<AbstractCommand<DdType, ValueType>> const& getCommands() const;
+
+                /*!
+                 * Retrieves the abstract commands of this abstract module.
+                 *
+                 * @return The abstract commands.
+                 */
+                std::vector<AbstractCommand<DdType, ValueType>>& getCommands();
+
             private:
                 /*!
                  * Retrieves the abstraction information.

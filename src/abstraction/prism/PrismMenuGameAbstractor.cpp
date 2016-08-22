@@ -25,6 +25,11 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
+            void PrismMenuGameAbstractor<DdType, ValueType>::refine(storm::dd::Bdd<DdType> const& pivotState, storm::dd::Bdd<DdType> const& player1Choice, storm::dd::Bdd<DdType> const& lowerChoice, storm::dd::Bdd<DdType> const& upperChoice) {
+                abstractProgram.refine(pivotState, player1Choice, lowerChoice, upperChoice);
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
             void PrismMenuGameAbstractor<DdType, ValueType>::exportToDot(std::string const& filename) const {
                 abstractProgram.exportToDot(filename);
             }

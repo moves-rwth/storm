@@ -50,7 +50,7 @@ namespace storm {
         private:
             std::unique_ptr<CheckResult> performGameBasedAbstractionRefinement(CheckTask<storm::logic::Formula> const& checkTask, storm::expressions::Expression const& constraintExpression, storm::expressions::Expression const& targetStateExpression);
             
-            detail::GameProb01Result<Type> computeProb01States(storm::OptimizationDirection player1Direction, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::expressions::Expression const& constraintExpression, storm::expressions::Expression const& targetStateExpression);
+            detail::GameProb01Result<Type> computeProb01States(storm::OptimizationDirection player1Direction, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& transitionMatrixBdd, storm::expressions::Expression const& constraintExpression, storm::expressions::Expression const& targetStateExpression);
             
             storm::expressions::Expression getExpression(storm::logic::Formula const& formula);
             

@@ -84,9 +84,28 @@ namespace storm {
                  */
                 storm::dd::Bdd<Type> getBottomStates() const;
                 
+                /*!
+                 * Retrieves the transition matrix extended by variables that encode additional information for the
+                 * probabilistic branching.
+                 *
+                 * @reutrn Th extended transition matrix.
+                 */
+                storm::dd::Add<Type, ValueType> const& getExtendedTransitionMatrix() const;
+                
+                /*!
+                 * Retrieves the variables used to encode additional information for the probabilistic branching in the
+                 * extended transition matrix.
+                 *
+                 * @return The probabilistic branching variables.
+                 */
+                std::set<storm::expressions::Variable> const& getProbabilisticBranchingVariables() const;
+                
                 virtual bool hasLabel(std::string const& label) const override;
                 
             private:
+                // The transition relation extended byt the probabilistic branching variables.
+                storm::dd::Add<Type, ValueType> extendedTransitionMatrix;
+                
                 // The meta variables used to probabilistic branching.
                 std::set<storm::expressions::Variable> probabilisticBranchingVariables;
                 

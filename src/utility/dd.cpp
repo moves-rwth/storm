@@ -27,7 +27,6 @@ namespace storm {
                         changed = true;
                     }
                     
-                    
                     reachableStates |= newReachableStates;
 
                     ++iteration;

@@ -924,7 +924,7 @@ namespace storm {
             }
             
             template <storm::dd::DdType Type, typename ValueType>
-            GameProb01Result<Type> performProb0(storm::models::symbolic::StochasticTwoPlayerGame<Type, ValueType> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool produceStrategies) {
+            GameProb01Result<Type> performProb0(storm::models::symbolic::StochasticTwoPlayerGame<Type, ValueType> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool producePlayer1Strategy, bool producePlayer2Strategy) {
 
                 // The solution set.
                 storm::dd::Bdd<Type> solution = psiStates;
@@ -966,13 +966,13 @@ namespace storm {
                 storm::dd::Bdd<Type> onlyProb0Successors = (transitionsBetweenProb0States || model.getIllegalSuccessorMask()).universalAbstract(model.getColumnVariables());
                 
                 boost::optional<storm::dd::Bdd<Type>> player2StrategyBdd;
-                if (produceStrategies && player2Strategy == OptimizationDirection::Minimize) {
+                if (producePlayer2Strategy) {
                     // Pick a distribution that has only prob0 successors.
                     player2StrategyBdd = onlyProb0Successors.existsAbstractRepresentative(model.getPlayer2Variables());
                 }
                 
                 boost::optional<storm::dd::Bdd<Type>> player1StrategyBdd;
-                if (produceStrategies && player1Strategy == OptimizationDirection::Minimize) {
+                if (producePlayer1Strategy) {
                     // Move from player 2 choices with only prob0 successors to player 1 choices with only prob 0 successors.
                     onlyProb0Successors = onlyProb0Successors.existsAbstract(model.getPlayer2Variables());
                     
@@ -984,12 +984,11 @@ namespace storm {
             }
             
             template <storm::dd::DdType Type, typename ValueType>
-            GameProb01Result<Type> performProb1(storm::models::symbolic::StochasticTwoPlayerGame<Type, ValueType> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool produceStrategies) {
+            GameProb01Result<Type> performProb1(storm::models::symbolic::StochasticTwoPlayerGame<Type, ValueType> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool producePlayer1Strategy, bool producePlayer2Strategy) {
                 
                 // Create two sets of states. Those states for which we definitely know that their probability is 1 and
                 // those states that potentially have a probability of 1.
                 storm::dd::Bdd<Type> maybeStates = model.getReachableStates();
-                storm::dd::Bdd<Type> solution = psiStates;
 
                 // A flag that governs whether strategies are produced in the current iteration.
                 bool produceStrategiesInIteration = false;
@@ -1012,6 +1011,7 @@ namespace storm {
                         consideredPlayer2States = model.getManager().getBddZero();
                     }
                     
+                    storm::dd::Bdd<Type> solution = psiStates;
                     while (!solutionStatesDone) {
                         // Start by computing the transitions that have only maybe states as successors. Note that at
                         // this point, there may be illegal transitions.
@@ -1024,7 +1024,7 @@ namespace storm {
                         // The valid distributions are then those that emanate from phi states, stay completely in the
                         // maybe states and have at least one successor with probability 1.
                         storm::dd::Bdd<Type> valid = phiStates && distributionsStayingInMaybe && distributionsWithProb1Successor;
-                        
+
                         // Depending on the strategy of player 2, we need to check whether all choices are valid or
                         // there exists a valid choice.
                         if (player2Strategy == OptimizationDirection::Minimize) {
@@ -1079,7 +1079,7 @@ namespace storm {
                         
                         // If we were asked to produce strategies, we propagate that by triggering another iteration.
                         // We only do this if at least one strategy will be produced.
-                        produceStrategiesInIteration = !produceStrategiesInIteration && produceStrategies && (player1Strategy == OptimizationDirection::Maximize || player2Strategy == OptimizationDirection::Maximize);
+                        produceStrategiesInIteration = !produceStrategiesInIteration && ((producePlayer1Strategy && player1Strategy == OptimizationDirection::Maximize) || (producePlayer2Strategy && player2Strategy == OptimizationDirection::Maximize));
                     } else {
                         // Otherwise, we use the current hypothesis for the states with probability 1 as the new maybe
                         // state set.
@@ -1088,7 +1088,23 @@ namespace storm {
                     ++maybeStateIterations;
                 }
                 
-                return GameProb01Result<Type>(solution, player1StrategyBdd, player2StrategyBdd);
+                // From now on, the solution is stored in maybeStates (as it coincides with the previous solution).
+                
+                // If we were asked to produce strategies that do not need to pick a certain successor but are
+                // 'arbitrary', do so now.
+                bool strategiesToCompute = (producePlayer1Strategy && !player1StrategyBdd) || (producePlayer2Strategy && !player2StrategyBdd);
+                if (strategiesToCompute) {
+                    storm::dd::Bdd<Type> relevantStates = (transitionMatrix && maybeStates).existsAbstract(model.getColumnVariables());
+                    if (producePlayer2Strategy && !player2StrategyBdd) {
+                        player2StrategyBdd = relevantStates.existsAbstractRepresentative(model.getPlayer2Variables());
+                    }
+                    if (producePlayer1Strategy && !player1StrategyBdd) {
+                        relevantStates = relevantStates.existsAbstract(model.getPlayer2Variables());
+                        player1StrategyBdd = relevantStates.existsAbstractRepresentative(model.getPlayer1Variables());
+                    }
+                }
+                
+                return GameProb01Result<Type>(maybeStates, player1StrategyBdd, player2StrategyBdd);
             }
             
             template <typename T>
@@ -1488,9 +1504,9 @@ namespace storm {
             
             template std::pair<storm::dd::Bdd<storm::dd::DdType::CUDD>, storm::dd::Bdd<storm::dd::DdType::CUDD>> performProb01Min(storm::models::symbolic::NondeterministicModel<storm::dd::DdType::CUDD, double> const& model, storm::dd::Bdd<storm::dd::DdType::CUDD> const& phiStates, storm::dd::Bdd<storm::dd::DdType::CUDD> const& psiStates);
             
-            template GameProb01Result<storm::dd::DdType::CUDD> performProb0(storm::models::symbolic::StochasticTwoPlayerGame<storm::dd::DdType::CUDD, double> const& model, storm::dd::Bdd<storm::dd::DdType::CUDD> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::CUDD> const& phiStates, storm::dd::Bdd<storm::dd::DdType::CUDD> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool produceStrategies);
+            template GameProb01Result<storm::dd::DdType::CUDD> performProb0(storm::models::symbolic::StochasticTwoPlayerGame<storm::dd::DdType::CUDD, double> const& model, storm::dd::Bdd<storm::dd::DdType::CUDD> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::CUDD> const& phiStates, storm::dd::Bdd<storm::dd::DdType::CUDD> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool producePlayer1Strategy, bool producePlayer2Strategy);
             
-            template GameProb01Result<storm::dd::DdType::CUDD> performProb1(storm::models::symbolic::StochasticTwoPlayerGame<storm::dd::DdType::CUDD, double> const& model, storm::dd::Bdd<storm::dd::DdType::CUDD> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::CUDD> const& phiStates, storm::dd::Bdd<storm::dd::DdType::CUDD> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool produceStrategies);
+            template GameProb01Result<storm::dd::DdType::CUDD> performProb1(storm::models::symbolic::StochasticTwoPlayerGame<storm::dd::DdType::CUDD, double> const& model, storm::dd::Bdd<storm::dd::DdType::CUDD> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::CUDD> const& phiStates, storm::dd::Bdd<storm::dd::DdType::CUDD> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool producePlayer1Strategy, bool producePlayer2Strategy);
 
             // Instantiations for Sylvan.
             
@@ -1520,9 +1536,9 @@ namespace storm {
             
             template std::pair<storm::dd::Bdd<storm::dd::DdType::Sylvan>, storm::dd::Bdd<storm::dd::DdType::Sylvan>> performProb01Min(storm::models::symbolic::NondeterministicModel<storm::dd::DdType::Sylvan, double> const& model, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& phiStates, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& psiStates);
 
-            template GameProb01Result<storm::dd::DdType::Sylvan> performProb0(storm::models::symbolic::StochasticTwoPlayerGame<storm::dd::DdType::Sylvan> const& model, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& phiStates, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool produceStrategies);
+            template GameProb01Result<storm::dd::DdType::Sylvan> performProb0(storm::models::symbolic::StochasticTwoPlayerGame<storm::dd::DdType::Sylvan> const& model, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& phiStates, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool producePlayer1Strategy, bool producePlayer2Strategy);
 
-            template GameProb01Result<storm::dd::DdType::Sylvan> performProb1(storm::models::symbolic::StochasticTwoPlayerGame<storm::dd::DdType::Sylvan> const& model, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& phiStates, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool produceStrategies);
+            template GameProb01Result<storm::dd::DdType::Sylvan> performProb1(storm::models::symbolic::StochasticTwoPlayerGame<storm::dd::DdType::Sylvan> const& model, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& phiStates, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool producePlayer1Strategy, bool producePlayer2Strategy);
 
         } // namespace graph
     } // namespace utility

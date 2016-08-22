@@ -542,15 +542,12 @@ cuddBddExistAbstractRepresentativeRecur(
         if (cube == one) {
 //            printf("return in preprocessing...\n");
             return one;
-        } else {
-//            printf("return in preprocessing...\n");
-            return cube;
         }
     } else if (cube == one) {
 //        printf("return in preprocessing...\n");
         return f;
     }
-    /* From now on, f and cube are non-constant. */
+    /* From now on, cube is non-constant, but f might be constant. */
     
 //    printf("F perm %i and cube perm %i\n", manager->perm[F->index], manager->perm[cube->index]);
     
@@ -591,27 +588,10 @@ cuddBddExistAbstractRepresentativeRecur(
     
     /* If the two indices are the same, so are their levels. */
     if (F->index == cube->index) {
-//        if (E == one) {
-//            cuddRef(zero);
-//            cuddRef(cuddT(cube));
-//            res1 = cuddUniqueInter(manager, (int) F->index, zero, cuddT(cube));
-//            cuddDeref(zero);
-//            cuddDeref(cuddT(cube));
-//            return res1;
-//        } else if (T == one) {
-//            cuddRef(zero);
-//            cuddRef(cuddT(cube));
-//            res1 = cuddUniqueInter(manager, (int) F->index, cuddT(cube), zero);
-//            cuddDeref(zero);
-//            cuddDeref(cuddT(cube));
-//            return res1;
-//        }
-        
         res1 = cuddBddExistAbstractRepresentativeRecur(manager, E, cuddT(cube));
         if (res1 == NULL) {
             return(NULL);
         }
-        // FIXME
         if (res1 == one) {
             if (F->ref != 1) {
                 cuddCacheInsert2(manager, Cudd_bddExistAbstractRepresentative, f, cube, Cudd_Not(cube));

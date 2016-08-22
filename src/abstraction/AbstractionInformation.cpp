@@ -57,6 +57,7 @@ namespace storm {
             allPredicateIdentities &= predicateIdentities.back();
             sourceVariables.insert(newMetaVariable.first);
             successorVariables.insert(newMetaVariable.second);
+            orderedSuccessorVariables.push_back(newMetaVariable.second);
             ddVariableIndexToPredicateIndexMap[predicateIdentities.back().getIndex()] = predicateIndex;
             return predicateIndex;
         }
@@ -123,6 +124,11 @@ namespace storm {
         }
         
         template<storm::dd::DdType DdType>
+        bool AbstractionInformation<DdType>::hasPredicate(storm::expressions::Expression const& predicate) const {
+            return predicateToIndexMap.find(predicate) != predicateToIndexMap.end();
+        }
+
+        template<storm::dd::DdType DdType>
         std::size_t AbstractionInformation<DdType>::getNumberOfPredicates() const {
             return predicates.size();
         }
@@ -168,15 +174,30 @@ namespace storm {
         }
         
         template<storm::dd::DdType DdType>
+        uint_fast64_t AbstractionInformation<DdType>::decodePlayer1Choice(storm::expressions::Valuation const& valuation, uint_fast64_t end) const {
+            return decodeChoice(valuation, 0, end, player1Variables);
+        }
+        
+        template<storm::dd::DdType DdType>
         storm::dd::Bdd<DdType> AbstractionInformation<DdType>::encodePlayer2Choice(uint_fast64_t index, uint_fast64_t end) const {
             return encodeChoice(index, 0, end, player2VariableBdds);
         }
-        
+
+        template<storm::dd::DdType DdType>
+        uint_fast64_t AbstractionInformation<DdType>::decodePlayer2Choice(storm::expressions::Valuation const& valuation, uint_fast64_t end) const {
+            return decodeChoice(valuation, 0, end, player2Variables);
+        }
+
         template<storm::dd::DdType DdType>
         storm::dd::Bdd<DdType> AbstractionInformation<DdType>::encodeAux(uint_fast64_t index, uint_fast64_t start, uint_fast64_t end) const {
             return encodeChoice(index, start, end, auxVariableBdds);
         }
         
+        template<storm::dd::DdType DdType>
+        uint_fast64_t AbstractionInformation<DdType>::decodeAux(storm::expressions::Valuation const& valuation, uint_fast64_t start, uint_fast64_t end) const {
+            return decodeChoice(valuation, start, end, auxVariables);
+        }
+
         template<storm::dd::DdType DdType>
         storm::dd::Bdd<DdType> AbstractionInformation<DdType>::getPlayer2ZeroCube(uint_fast64_t start, uint_fast64_t end) const {
             storm::dd::Bdd<DdType> result = ddManager->getBddOne();
@@ -230,6 +251,11 @@ namespace storm {
         template<storm::dd::DdType DdType>
         std::set<storm::expressions::Variable> const& AbstractionInformation<DdType>::getSuccessorVariables() const {
             return successorVariables;
+        }
+        
+        template<storm::dd::DdType DdType>
+        std::vector<storm::expressions::Variable> const& AbstractionInformation<DdType>::getOrderedSuccessorVariables() const {
+            return orderedSuccessorVariables;
         }
         
         template<storm::dd::DdType DdType>
@@ -353,6 +379,18 @@ namespace storm {
                 index >>= 1;
             }
             STORM_LOG_ASSERT(!result.isZero(), "BDD encoding must not be zero.");
+            return result;
+        }
+        
+        template<storm::dd::DdType DdType>
+        uint_fast64_t AbstractionInformation<DdType>::decodeChoice(storm::expressions::Valuation const& valuation, uint_fast64_t start, uint_fast64_t end, std::vector<storm::expressions::Variable> const& variables) const {
+            uint_fast64_t result = 0;
+            for (uint_fast64_t variableIndex = start; variableIndex < end; ++variableIndex) {
+                result <<= 1;
+                if (valuation.getBooleanValue(variables[variableIndex])) {
+                    result |= 1;
+                }
+            }
             return result;
         }
         
