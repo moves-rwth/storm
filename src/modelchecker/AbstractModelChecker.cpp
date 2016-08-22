@@ -17,6 +17,7 @@
 #include "src/models/symbolic/Mdp.h"
 #include "src/models/sparse/MarkovAutomaton.h"
 #include "src/models/sparse/StandardRewardModel.h"
+#include "src/models/sparse/StandardRewardModel.h"
 #include "src/storage/dd/Add.h"
 #include "src/storage/dd/Bdd.h"
 
