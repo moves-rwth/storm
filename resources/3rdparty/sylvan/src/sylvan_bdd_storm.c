@@ -80,24 +80,7 @@ TASK_IMPL_3(BDD, sylvan_existsRepresentative, BDD, a, BDD, variables, BDDVAR, pr
             return sylvan_invalid;
         }
         if (res1 == sylvan_true) {
-			BDD res = CALL(sylvan_existsRepresentative, a, _v, level);
-			if (res == sylvan_invalid) {
-				return sylvan_invalid;
-			}
-			sylvan_ref(res);
-
-			BDD res1 = sylvan_ite(sylvan_ithvar(vv), sylvan_false, res);
-
-			if (res1 == sylvan_invalid) {
-				sylvan_deref(res);
-				return sylvan_invalid;
-			}
-			sylvan_deref(res);
-
-			//printf("return after abstr. var that does not appear in f...\n");
-			return res1;
-			
-            //return sylvan_not(variables);
+			return sylvan_not(variables);
         }
         sylvan_ref(res1);
         

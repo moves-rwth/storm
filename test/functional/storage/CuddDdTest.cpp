@@ -91,7 +91,7 @@ TEST(CuddDd, BddExistAbstractRepresentative) {
 	storm::dd::Bdd<storm::dd::DdType::CUDD> representative_true_x = one.existsAbstractRepresentative({x.first});
 	EXPECT_EQ(0ul, representative_true_x.getNonZeroCount());
     EXPECT_EQ(1ul, representative_true_x.getLeafCount());
-    EXPECT_EQ(1ul, representative_true_x.getNodeCount());
+    EXPECT_EQ(2ul, representative_true_x.getNodeCount());
 	EXPECT_TRUE(representative_true_x == bddX0);
 
 	storm::dd::Bdd<storm::dd::DdType::CUDD> representative_true_xyz = one.existsAbstractRepresentative({x.first, y.first, z.first});

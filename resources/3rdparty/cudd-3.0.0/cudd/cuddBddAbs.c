@@ -542,12 +542,27 @@ cuddBddExistAbstractRepresentativeRecur(
         if (cube == one) {
 //            printf("return in preprocessing...\n");
             return one;
-        }
+        } else {
+			res = cuddBddExistAbstractRepresentativeRecur(manager, f, cuddT(cube));
+			if (res == NULL) {
+				return(NULL);
+			}
+			cuddRef(res);
+			
+			res1 = cuddBddIteRecur(manager, manager->vars[cube->index], zero, res);
+			if (res1 == NULL) {
+				Cudd_IterDerefBdd(manager,res);
+				Cudd_IterDerefBdd(manager,zero);
+				return(NULL);
+			}
+			cuddDeref(res);
+			return(res1);
+		}
     } else if (cube == one) {
 //        printf("return in preprocessing...\n");
         return f;
     }
-    /* From now on, cube is non-constant, but f might be constant. */
+    /* From now on, cube and f are non-constant. */
     
 //    printf("F perm %i and cube perm %i\n", manager->perm[F->index], manager->perm[cube->index]);
     
