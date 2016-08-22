@@ -135,6 +135,11 @@ namespace storm {
 				void drawCONSTS(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftConstS);
 				
 				/*
+				 * Draw a Petri net PDEP (FDEP is included with a firerate of 1).
+				 */
+				void drawPDEP(std::shared_ptr<storm::storage::DFTDependency<ValueType> const>(dftDependency));
+				
+				/*
 				 * Calculate the binomial coefficient:
 				 * n! / ( (n - k)! * k!)
 				 * 

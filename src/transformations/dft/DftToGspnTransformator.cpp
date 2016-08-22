@@ -73,7 +73,8 @@ namespace storm {
 							drawCONSTS(dftElement);
 							break;
 						case storm::storage::DFTElementType::PDEP:
-							STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "The transformation of a PDEP is not yet implemented.");
+							drawPDEP(std::static_pointer_cast<storm::storage::DFTDependency<ValueType> const>(dftElement));
+							//STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "The transformation of a PDEP is not yet implemented.");
 							break;
 						default:
 							STORM_LOG_ASSERT(false, "DFT type unknown.");
@@ -262,6 +263,18 @@ namespace storm {
 			}
 			
 			template <typename ValueType>
+            void DftToGspnTransformator<ValueType>::drawPDEP(std::shared_ptr<storm::storage::DFTDependency<ValueType> const>(dftDependency)) {
+				// TODO
+				// TODO
+				// TODO
+				
+				std::cout << "Name: " << dftDependency->name() << 
+					". NameTrigger: " << dftDependency->nameTrigger() << 
+					". NameDependent: " << dftDependency->nameDependent() << 
+					". Probability: " << dftDependency->probability() << std::endl;
+			}
+			
+			template <typename ValueType>
             void DftToGspnTransformator<ValueType>::drawGSPNConnections() {
 				// Check for every element, if they have parents (all will have at least 1, except the top event). 
 				for (std::size_t i = 0; i < mDft.nrElements(); i++) {
@@ -402,7 +415,12 @@ namespace storm {
 								break;
 							}
 							case storm::storage::DFTElementType::PDEP:
+							{
+								// TODO
+								// TODO
+								// TODO
 								break;
+							}
 							default:
 							{
 								STORM_LOG_ASSERT(false, "DFT type unknown.");
