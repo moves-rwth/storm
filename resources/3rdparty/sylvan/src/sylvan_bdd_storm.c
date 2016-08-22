@@ -16,7 +16,20 @@ TASK_IMPL_3(BDD, sylvan_existsRepresentative, BDD, a, BDD, variables, BDDVAR, pr
 				return sylvan_true;
 			} else {
 				//printf("return in preprocessing...3\n");
-				return variables;
+				BDD _v = sylvan_set_next(variables);
+				BDD res = CALL(sylvan_existsRepresentative, a, _v, prev_level);
+				if (res == sylvan_invalid) {
+					return sylvan_invalid;
+				}
+				sylvan_ref(res);
+
+				BDD res1 = sylvan_ite(sylvan_ithvar(bddnode_getvariable(GETNODE(variables))), sylvan_false, res);
+				if (res1 == sylvan_invalid) {
+					sylvan_deref(res);
+					return sylvan_invalid;
+				}
+				sylvan_deref(res);
+				return res1;
 			}
 		} else {
 			return a;
@@ -67,7 +80,24 @@ TASK_IMPL_3(BDD, sylvan_existsRepresentative, BDD, a, BDD, variables, BDDVAR, pr
             return sylvan_invalid;
         }
         if (res1 == sylvan_true) {
-            return sylvan_not(variables);
+			BDD res = CALL(sylvan_existsRepresentative, a, _v, level);
+			if (res == sylvan_invalid) {
+				return sylvan_invalid;
+			}
+			sylvan_ref(res);
+
+			BDD res1 = sylvan_ite(sylvan_ithvar(vv), sylvan_false, res);
+
+			if (res1 == sylvan_invalid) {
+				sylvan_deref(res);
+				return sylvan_invalid;
+			}
+			sylvan_deref(res);
+
+			//printf("return after abstr. var that does not appear in f...\n");
+			return res1;
+			
+            //return sylvan_not(variables);
         }
         sylvan_ref(res1);
         

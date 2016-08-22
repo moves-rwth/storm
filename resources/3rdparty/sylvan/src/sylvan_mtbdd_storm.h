@@ -71,14 +71,14 @@ TASK_DECL_1(MTBDD, mtbdd_not_zero, MTBDD)
 #define mtbdd_not_zero(dd) CALL(mtbdd_not_zero, dd)
 
 /**
- * Monad that floors all values Double and Fraction values.
+ * Monad that floors all Double and Fraction values.
  */
 TASK_DECL_2(MTBDD, mtbdd_op_floor, MTBDD, size_t)
 TASK_DECL_1(MTBDD, mtbdd_floor, MTBDD)
 #define mtbdd_floor(dd) CALL(mtbdd_floor, dd)
 
 /**
- * Monad that ceils all values Double and Fraction values.
+ * Monad that ceils all Double and Fraction values.
  */
 TASK_DECL_2(MTBDD, mtbdd_op_ceil, MTBDD, size_t)
 TASK_DECL_1(MTBDD, mtbdd_ceil, MTBDD)
@@ -109,3 +109,33 @@ int mtbdd_iszero(MTBDD);
 int mtbdd_isnonzero(MTBDD);
 
 #define mtbdd_regular(dd) (dd & ~mtbdd_complement)
+
+#define mtbdd_set_next(set) (mtbdd_gethigh(set))
+#define mtbdd_set_isempty(set) (set == mtbdd_true)
+
+/* Create a MTBDD representing just <var> or the negation of <var> */
+MTBDD mtbdd_ithvar(uint32_t var);
+
+/**
+ * Unary operation Complement.
+ * Supported domains: Integer, Real
+ */
+TASK_DECL_2(MTBDD, mtbdd_op_complement, MTBDD, size_t);
+
+/**
+ * Compute the complement of a.
+ */
+#define mtbdd_get_complement(a) mtbdd_uapply(a, TASK(mtbdd_op_complement), 0)
+
+/**
+ * Just like mtbdd_abstract_min, but instead of abstracting the variables in the given cube, picks a unique representative that realizes the minimal function value.
+ */
+TASK_DECL_3(MTBDD, mtbdd_minExistsRepresentative, MTBDD, MTBDD, uint32_t);
+#define mtbdd_minExistsRepresentative(a, vars) (CALL(mtbdd_minExistsRepresentative, a, vars, 0))
+
+/**
+ * Just like mtbdd_abstract_max but instead of abstracting the variables in the given cube, picks a unique representative that realizes the maximal function value.
+ */
+TASK_DECL_3(MTBDD, mtbdd_maxExistsRepresentative, MTBDD, MTBDD, uint32_t);
+#define mtbdd_maxExistsRepresentative(a, vars) (CALL(mtbdd_maxExistsRepresentative, a, vars, 0))
+

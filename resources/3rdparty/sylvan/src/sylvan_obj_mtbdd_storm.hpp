@@ -32,6 +32,16 @@
 	Mtbdd AbstractPlusRF(const BddSet &variables) const;
 #endif
 	
+	/**
+     * @brief Computes abstraction by minimum
+     */
+    Mtbdd AbstractMinRepresentative(const BddSet &variables) const;
+
+    /**
+     * @brief Computes abstraction by maximum
+     */
+    Mtbdd AbstractMaxRepresentative(const BddSet &variables) const;
+	
     Bdd NotZero() const;
     
     Bdd Equals(const Mtbdd& other) const;

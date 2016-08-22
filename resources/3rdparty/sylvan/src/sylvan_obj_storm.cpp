@@ -188,3 +188,16 @@ Mtbdd::GetShaHash() const {
     return std::string(buf);
 }
 
+Mtbdd
+Mtbdd::AbstractMinRepresentative(const BddSet &variables) const
+{
+    LACE_ME;
+    return mtbdd_minExistsRepresentative(mtbdd, variables.set.bdd);
+}
+
+Mtbdd
+Mtbdd::AbstractMaxRepresentative(const BddSet &variables) const
+{
+    LACE_ME;
+    return mtbdd_maxExistsRepresentative(mtbdd, variables.set.bdd);
+}

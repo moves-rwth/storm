@@ -63,16 +63,45 @@ TEST(SylvanDd, BddConstants) {
 
 TEST(SylvanDd, BddExistAbstractRepresentative) {
 	std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
+	
+	storm::dd::Bdd<storm::dd::DdType::Sylvan> zero;
+    ASSERT_NO_THROW(zero = manager->getBddZero());
+	storm::dd::Bdd<storm::dd::DdType::Sylvan> one;
+    ASSERT_NO_THROW(one = manager->getBddOne());
+	
 	std::pair<storm::expressions::Variable, storm::expressions::Variable> x;
 	std::pair<storm::expressions::Variable, storm::expressions::Variable> y;
 	std::pair<storm::expressions::Variable, storm::expressions::Variable> z;
 	ASSERT_NO_THROW(x = manager->addMetaVariable("x", 0, 1));
 	ASSERT_NO_THROW(y = manager->addMetaVariable("y", 0, 1));
 	ASSERT_NO_THROW(z = manager->addMetaVariable("z", 0, 1));
-
+	
+	storm::dd::Bdd<storm::dd::DdType::Sylvan> bddX0 = manager->getEncoding(x.first, 0);
 	storm::dd::Bdd<storm::dd::DdType::Sylvan> bddX1 = manager->getEncoding(x.first, 1);
 	storm::dd::Bdd<storm::dd::DdType::Sylvan> bddY0 = manager->getEncoding(y.first, 0);
+	storm::dd::Bdd<storm::dd::DdType::Sylvan> bddY1 = manager->getEncoding(y.first, 1);
 	storm::dd::Bdd<storm::dd::DdType::Sylvan> bddZ0 = manager->getEncoding(z.first, 0);
+	storm::dd::Bdd<storm::dd::DdType::Sylvan> bddZ1 = manager->getEncoding(z.first, 1);
+	
+	// Abstract from FALSE
+	storm::dd::Bdd<storm::dd::DdType::Sylvan> representative_false_x = zero.existsAbstractRepresentative({x.first});
+	EXPECT_EQ(0ul, representative_false_x.getNonZeroCount());
+    EXPECT_EQ(1ul, representative_false_x.getLeafCount());
+    EXPECT_EQ(1ul, representative_false_x.getNodeCount());
+	EXPECT_TRUE(representative_false_x == zero);
+	
+	// Abstract from TRUE
+	storm::dd::Bdd<storm::dd::DdType::Sylvan> representative_true_x = one.existsAbstractRepresentative({x.first});
+	EXPECT_EQ(0ul, representative_true_x.getNonZeroCount());
+    EXPECT_EQ(1ul, representative_true_x.getLeafCount());
+    EXPECT_EQ(2ul, representative_true_x.getNodeCount());
+	EXPECT_TRUE(representative_true_x == bddX0);
+	
+	storm::dd::Bdd<storm::dd::DdType::Sylvan> representative_true_xyz = one.existsAbstractRepresentative({x.first, y.first, z.first});
+	EXPECT_EQ(0ul, representative_true_xyz.getNonZeroCount());
+    EXPECT_EQ(1ul, representative_true_xyz.getLeafCount());
+    EXPECT_EQ(4ul, representative_true_xyz.getNodeCount());
+	EXPECT_TRUE(representative_true_xyz == ((bddX0 && bddY0) && bddZ0));
 
 	storm::dd::Bdd<storm::dd::DdType::Sylvan> bddX1Y0Z0 = (bddX1 && bddY0) && bddZ0;
 	EXPECT_EQ(1ul, bddX1Y0Z0.getNonZeroCount());
@@ -102,10 +131,6 @@ TEST(SylvanDd, BddExistAbstractRepresentative) {
 	EXPECT_EQ(1ul, representative_xyz.getLeafCount());
 	EXPECT_EQ(4ul, representative_xyz.getNodeCount());
 	EXPECT_TRUE(bddX1Y0Z0 == representative_xyz);
-
-	storm::dd::Bdd<storm::dd::DdType::Sylvan> bddX0 = manager->getEncoding(x.first, 0);
-	storm::dd::Bdd<storm::dd::DdType::Sylvan> bddY1 = manager->getEncoding(y.first, 1);
-	storm::dd::Bdd<storm::dd::DdType::Sylvan> bddZ1 = manager->getEncoding(z.first, 1);
 
 	storm::dd::Bdd<storm::dd::DdType::Sylvan> bddX0Y0Z0 = (bddX0 && bddY0) && bddZ0;
 	storm::dd::Bdd<storm::dd::DdType::Sylvan> bddX1Y1Z1 = (bddX1 && bddY1) && bddZ1;
