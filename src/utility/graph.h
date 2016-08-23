@@ -524,6 +524,7 @@ namespace storm {
 
             template <storm::dd::DdType Type>
             struct GameProb01Result {
+                GameProb01Result() = default;
                 GameProb01Result(storm::dd::Bdd<Type> const& states, boost::optional<storm::dd::Bdd<Type>> const& player1Strategy = boost::none, boost::optional<storm::dd::Bdd<Type>> const& player2Strategy = boost::none) : states(states), player1Strategy(player1Strategy), player2Strategy(player2Strategy) {
                     // Intentionally left empty.
                 }

@@ -21,6 +21,7 @@ namespace storm {
             template<storm::dd::DdType Type>
             struct GameProb01Result {
             public:
+                GameProb01Result() = default;
                 GameProb01Result(storm::utility::graph::GameProb01Result<Type> const& prob0Min, storm::utility::graph::GameProb01Result<Type> const& prob1Min, storm::utility::graph::GameProb01Result<Type> const& prob0Max, storm::utility::graph::GameProb01Result<Type> const& prob1Max);
                 
                 std::pair<storm::utility::graph::GameProb01Result<Type>, storm::utility::graph::GameProb01Result<Type>> min;
@@ -50,7 +51,7 @@ namespace storm {
         private:
             std::unique_ptr<CheckResult> performGameBasedAbstractionRefinement(CheckTask<storm::logic::Formula> const& checkTask, storm::expressions::Expression const& constraintExpression, storm::expressions::Expression const& targetStateExpression);
             
-            detail::GameProb01Result<Type> computeProb01States(storm::OptimizationDirection player1Direction, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& transitionMatrixBdd, storm::expressions::Expression const& constraintExpression, storm::expressions::Expression const& targetStateExpression);
+            std::pair<storm::utility::graph::GameProb01Result<Type>, storm::utility::graph::GameProb01Result<Type>> computeProb01States(storm::OptimizationDirection player1Direction, storm::OptimizationDirection player2Direction, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& transitionMatrixBdd, storm::dd::Bdd<Type> const& constraintStates, storm::dd::Bdd<Type> const& targetStates);
             
             storm::expressions::Expression getExpression(storm::logic::Formula const& formula);
             
