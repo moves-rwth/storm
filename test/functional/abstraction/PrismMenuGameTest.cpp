@@ -16,6 +16,8 @@
 
 #include "src/utility/solver.h"
 
+#include "src/adapters/CarlAdapter.h"
+
 TEST(PrismMenuGame, DieAbstractionTest_Cudd) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/die.pm");
 
@@ -49,6 +51,25 @@ TEST(PrismMenuGame, DieAbstractionTest_Sylvan) {
     EXPECT_EQ(4, game.getNumberOfStates());
     EXPECT_EQ(2, game.getBottomStates().getNonZeroCount());
 }
+
+#ifdef STORM_HAVE_CARL
+TEST(PrismMenuGame, DieAbstractionTest_SylvanWithRationalFunction) {
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/die.pm");
+    
+    std::vector<storm::expressions::Expression> initialPredicates;
+    storm::expressions::ExpressionManager& manager = program.getManager();
+    
+    initialPredicates.push_back(manager.getVariableExpression("s") < manager.integer(3));
+    
+    storm::abstraction::prism::AbstractProgram<storm::dd::DdType::Sylvan, storm::RationalFunction> abstractProgram(program, initialPredicates, std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>(), false);
+    
+    storm::abstraction::MenuGame<storm::dd::DdType::Sylvan, storm::RationalFunction> game = abstractProgram.getAbstractGame();
+    
+    EXPECT_EQ(26, game.getNumberOfTransitions());
+    EXPECT_EQ(4, game.getNumberOfStates());
+    EXPECT_EQ(2, game.getBottomStates().getNonZeroCount());
+}
+#endif
 
 TEST(PrismMenuGame, DieAbstractionAndRefinementTest_Cudd) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/die.pm");

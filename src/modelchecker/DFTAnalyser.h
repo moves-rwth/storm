@@ -122,7 +122,7 @@ private:
                 STORM_LOG_TRACE("Result for permutation:"<<permResult);
                 permutation = nextBitPermutation(permutation);
                 result += permResult;
-            } while(permutation < (1 << nrM) && permutation != 0);
+            } while(permutation < (static_cast<size_t>(1) << nrM) && permutation != 0);
         }
         if(invResults) {
             return storm::utility::one<ValueType>() - result;

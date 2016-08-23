@@ -549,7 +549,6 @@ cuddBddExistAbstractRepresentativeRecur(
             res1 = cuddUniqueInter(manager, (int) cube->index, zero, res);
             if (res1 == NULL) {
                 Cudd_IterDerefBdd(manager,res);
-                Cudd_IterDerefBdd(manager,zero);
                 return(NULL);
             }
             cuddDeref(res);
@@ -573,7 +572,6 @@ cuddBddExistAbstractRepresentativeRecur(
 
         if (res1 == NULL) {
             Cudd_IterDerefBdd(manager,res);
-            Cudd_IterDerefBdd(manager,zero);
             return(NULL);
         }
         cuddDeref(res);

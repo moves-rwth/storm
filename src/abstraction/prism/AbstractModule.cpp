@@ -9,6 +9,9 @@
 
 #include "src/storage/prism/Module.h"
 
+#include "storm-config.h"
+#include "src/adapters/CarlAdapter.h"
+
 namespace storm {
     namespace abstraction {
         namespace prism {
@@ -89,6 +92,9 @@ namespace storm {
             
             template class AbstractModule<storm::dd::DdType::CUDD, double>;
             template class AbstractModule<storm::dd::DdType::Sylvan, double>;
+#ifdef STORM_HAVE_CARL
+			template class AbstractModule<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+#endif
         }
     }
 }

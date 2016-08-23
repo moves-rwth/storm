@@ -2818,3 +2818,5 @@ TASK_IMPL_1(int, sylvan_test_isbdd, BDD, bdd)
     if (!SYNC(sylvan_test_isbdd_rec)) result = 0;
     return result;
 }
+
+#include "sylvan_bdd_storm.c"

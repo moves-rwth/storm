@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
+#include "src/adapters/CarlAdapter.h"
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/storage/dd/DdManager.h"
 #include "src/storage/dd/Add.h"
@@ -9,6 +10,9 @@
 #include "src/settings/SettingsManager.h"
 
 #include "src/storage/SparseMatrix.h"
+
+#include <memory>
+#include <iostream>
 
 TEST(SylvanDd, Constants) {
     std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
@@ -38,6 +42,125 @@ TEST(SylvanDd, Constants) {
     EXPECT_EQ(1ul, two.getNodeCount());
     EXPECT_EQ(2, two.getMin());
     EXPECT_EQ(2, two.getMax());
+}
+
+TEST(SylvanDd, BddConstants) {
+    std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
+    storm::dd::Bdd<storm::dd::DdType::Sylvan> zero;
+    ASSERT_NO_THROW(zero = manager->getBddZero());
+    
+    EXPECT_EQ(0ul, zero.getNonZeroCount());
+    EXPECT_EQ(1ul, zero.getLeafCount());
+    EXPECT_EQ(1ul, zero.getNodeCount());
+    
+    storm::dd::Bdd<storm::dd::DdType::Sylvan> one;
+    ASSERT_NO_THROW(one = manager->getBddOne());
+    
+    EXPECT_EQ(0ul, one.getNonZeroCount());
+    EXPECT_EQ(1ul, one.getLeafCount());
+    EXPECT_EQ(1ul, one.getNodeCount());
+}
+
+TEST(SylvanDd, BddExistAbstractRepresentative) {
+	std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
+	
+	storm::dd::Bdd<storm::dd::DdType::Sylvan> zero;
+    ASSERT_NO_THROW(zero = manager->getBddZero());
+	storm::dd::Bdd<storm::dd::DdType::Sylvan> one;
+    ASSERT_NO_THROW(one = manager->getBddOne());
+	
+	std::pair<storm::expressions::Variable, storm::expressions::Variable> x;
+	std::pair<storm::expressions::Variable, storm::expressions::Variable> y;
+	std::pair<storm::expressions::Variable, storm::expressions::Variable> z;
+	ASSERT_NO_THROW(x = manager->addMetaVariable("x", 0, 1));
+	ASSERT_NO_THROW(y = manager->addMetaVariable("y", 0, 1));
+	ASSERT_NO_THROW(z = manager->addMetaVariable("z", 0, 1));
+	
+	storm::dd::Bdd<storm::dd::DdType::Sylvan> bddX0 = manager->getEncoding(x.first, 0);
+	storm::dd::Bdd<storm::dd::DdType::Sylvan> bddX1 = manager->getEncoding(x.first, 1);
+	storm::dd::Bdd<storm::dd::DdType::Sylvan> bddY0 = manager->getEncoding(y.first, 0);
+	storm::dd::Bdd<storm::dd::DdType::Sylvan> bddY1 = manager->getEncoding(y.first, 1);
+	storm::dd::Bdd<storm::dd::DdType::Sylvan> bddZ0 = manager->getEncoding(z.first, 0);
+	storm::dd::Bdd<storm::dd::DdType::Sylvan> bddZ1 = manager->getEncoding(z.first, 1);
+	
+	// Abstract from FALSE
+	storm::dd::Bdd<storm::dd::DdType::Sylvan> representative_false_x = zero.existsAbstractRepresentative({x.first});
+	EXPECT_EQ(0ul, representative_false_x.getNonZeroCount());
+    EXPECT_EQ(1ul, representative_false_x.getLeafCount());
+    EXPECT_EQ(1ul, representative_false_x.getNodeCount());
+	EXPECT_TRUE(representative_false_x == zero);
+	
+	// Abstract from TRUE
+	storm::dd::Bdd<storm::dd::DdType::Sylvan> representative_true_x = one.existsAbstractRepresentative({x.first});
+	EXPECT_EQ(0ul, representative_true_x.getNonZeroCount());
+    EXPECT_EQ(1ul, representative_true_x.getLeafCount());
+    EXPECT_EQ(2ul, representative_true_x.getNodeCount());
+	EXPECT_TRUE(representative_true_x == bddX0);
+	
+	storm::dd::Bdd<storm::dd::DdType::Sylvan> representative_true_xyz = one.existsAbstractRepresentative({x.first, y.first, z.first});
+	EXPECT_EQ(0ul, representative_true_xyz.getNonZeroCount());
+    EXPECT_EQ(1ul, representative_true_xyz.getLeafCount());
+    EXPECT_EQ(4ul, representative_true_xyz.getNodeCount());
+	EXPECT_TRUE(representative_true_xyz == ((bddX0 && bddY0) && bddZ0));
+
+	storm::dd::Bdd<storm::dd::DdType::Sylvan> bddX1Y0Z0 = (bddX1 && bddY0) && bddZ0;
+	EXPECT_EQ(1ul, bddX1Y0Z0.getNonZeroCount());
+	EXPECT_EQ(1ul, bddX1Y0Z0.getLeafCount());
+	EXPECT_EQ(4ul, bddX1Y0Z0.getNodeCount());
+
+	storm::dd::Bdd<storm::dd::DdType::Sylvan> representative_x = bddX1Y0Z0.existsAbstractRepresentative({x.first});
+	EXPECT_EQ(1ul, representative_x.getNonZeroCount());
+	EXPECT_EQ(1ul, representative_x.getLeafCount());
+	EXPECT_EQ(4ul, representative_x.getNodeCount());
+	EXPECT_TRUE(bddX1Y0Z0 == representative_x);
+
+	storm::dd::Bdd<storm::dd::DdType::Sylvan> representative_y = bddX1Y0Z0.existsAbstractRepresentative({y.first});
+	EXPECT_EQ(1ul, representative_y.getNonZeroCount());
+	EXPECT_EQ(1ul, representative_y.getLeafCount());
+	EXPECT_EQ(4ul, representative_y.getNodeCount());
+	EXPECT_TRUE(bddX1Y0Z0 == representative_y);
+
+	storm::dd::Bdd<storm::dd::DdType::Sylvan> representative_z = bddX1Y0Z0.existsAbstractRepresentative({z.first});
+	EXPECT_EQ(1ul, representative_z.getNonZeroCount());
+	EXPECT_EQ(1ul, representative_z.getLeafCount());
+	EXPECT_EQ(4ul, representative_z.getNodeCount());
+	EXPECT_TRUE(bddX1Y0Z0 == representative_z);
+
+	storm::dd::Bdd<storm::dd::DdType::Sylvan> representative_xyz = bddX1Y0Z0.existsAbstractRepresentative({x.first, y.first, z.first});
+	EXPECT_EQ(1ul, representative_xyz.getNonZeroCount());
+	EXPECT_EQ(1ul, representative_xyz.getLeafCount());
+	EXPECT_EQ(4ul, representative_xyz.getNodeCount());
+	EXPECT_TRUE(bddX1Y0Z0 == representative_xyz);
+
+	storm::dd::Bdd<storm::dd::DdType::Sylvan> bddX0Y0Z0 = (bddX0 && bddY0) && bddZ0;
+	storm::dd::Bdd<storm::dd::DdType::Sylvan> bddX1Y1Z1 = (bddX1 && bddY1) && bddZ1;
+
+	storm::dd::Bdd<storm::dd::DdType::Sylvan> bddAllTrueOrAllFalse = bddX0Y0Z0 || bddX1Y1Z1;
+	//bddAllTrueOrAllFalse.template toAdd<double>().exportToDot("test_Sylvan_addAllTrueOrAllFalse.dot");
+
+	representative_x = bddAllTrueOrAllFalse.existsAbstractRepresentative({x.first});
+	EXPECT_EQ(2ul, representative_x.getNonZeroCount());
+	EXPECT_EQ(1ul, representative_x.getLeafCount());
+	EXPECT_EQ(5ul, representative_x.getNodeCount());
+	EXPECT_TRUE(bddAllTrueOrAllFalse == representative_x);
+
+	representative_y = bddAllTrueOrAllFalse.existsAbstractRepresentative({y.first});
+	EXPECT_EQ(2ul, representative_y.getNonZeroCount());
+	EXPECT_EQ(1ul, representative_y.getLeafCount());
+	EXPECT_EQ(5ul, representative_y.getNodeCount());
+	EXPECT_TRUE(bddAllTrueOrAllFalse == representative_y);
+
+	representative_z = bddAllTrueOrAllFalse.existsAbstractRepresentative({z.first});
+	EXPECT_EQ(2ul, representative_z.getNonZeroCount());
+	EXPECT_EQ(1ul, representative_z.getLeafCount());
+	EXPECT_EQ(5ul, representative_z.getNodeCount());
+	EXPECT_TRUE(bddAllTrueOrAllFalse == representative_z);
+
+	representative_xyz = bddAllTrueOrAllFalse.existsAbstractRepresentative({x.first, y.first, z.first});
+	EXPECT_EQ(1ul, representative_xyz.getNonZeroCount());
+	EXPECT_EQ(1ul, representative_xyz.getLeafCount());
+	EXPECT_EQ(4ul, representative_xyz.getNodeCount());
+	EXPECT_TRUE(bddX0Y0Z0 == representative_xyz);
 }
 
 TEST(SylvanDd, AddGetMetaVariableTest) {
@@ -80,25 +203,134 @@ TEST(SylvanDd, EncodingTest) {
     EXPECT_EQ(2ul, add.getLeafCount());
 }
 
+#ifdef STORM_HAVE_CARL
+TEST(SylvanDd, RationalFunctionConstants) {
+    std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
+    storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> zero;
+    ASSERT_NO_THROW(zero = manager->template getAddZero<storm::RationalFunction>());
+    
+    EXPECT_EQ(0ul, zero.getNonZeroCount());
+    EXPECT_EQ(1ul, zero.getLeafCount());
+    EXPECT_EQ(1ul, zero.getNodeCount());
+    
+    storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> one;
+    ASSERT_NO_THROW(one = manager->template getAddOne<storm::RationalFunction>());
+    
+    EXPECT_EQ(0ul, one.getNonZeroCount());
+    EXPECT_EQ(1ul, one.getLeafCount());
+    EXPECT_EQ(1ul, one.getNodeCount());
+    
+    storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> two;
+	storm::RationalFunction constantTwo(2);
+	
+    ASSERT_NO_THROW(two = manager->template getConstant<storm::RationalFunction>(constantTwo));
+    
+    EXPECT_EQ(0ul, two.getNonZeroCount());
+    EXPECT_EQ(1ul, two.getLeafCount());
+    EXPECT_EQ(1ul, two.getNodeCount());
+	
+	// The cache that is used in case the underlying type needs a cache.
+	std::shared_ptr<carl::Cache<carl::PolynomialFactorizationPair<storm::RawPolynomial>>> cache = std::make_shared<carl::Cache<carl::PolynomialFactorizationPair<storm::RawPolynomial>>>();
+	
+	storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> function;
+	carl::Variable x = carl::freshRealVariable("x");
+	carl::Variable y = carl::freshRealVariable("y");
+	carl::Variable z = carl::freshRealVariable("z");
+	
+	storm::RationalFunction constantOne(1);
+
+	storm::RationalFunction variableX = storm::RationalFunction(typename storm::RationalFunction::PolyType(typename storm::RationalFunction::PolyType::PolyType(x), cache));
+	storm::RationalFunction variableY = storm::RationalFunction(typename storm::RationalFunction::PolyType(typename storm::RationalFunction::PolyType::PolyType(y), cache));
+	storm::RationalFunction variableZ = storm::RationalFunction(typename storm::RationalFunction::PolyType(typename storm::RationalFunction::PolyType::PolyType(z), cache));
+	
+	storm::RationalFunction constantOneDivTwo(constantOne / constantTwo);
+	storm::RationalFunction tmpFunctionA(constantOneDivTwo);
+	tmpFunctionA *= variableZ;
+	tmpFunctionA /= variableY;
+	storm::RationalFunction tmpFunctionB(variableX);
+	tmpFunctionB *= variableY;
+	
+	
+	//storm::RationalFunction rationalFunction(two * x + x*y + constantOneDivTwo * z / y);
+	storm::RationalFunction rationalFunction(constantTwo);
+	rationalFunction *= variableX;
+	rationalFunction += tmpFunctionB;
+	rationalFunction += tmpFunctionA;
+	
+    ASSERT_NO_THROW(function = manager->template getConstant<storm::RationalFunction>(rationalFunction));
+    
+    EXPECT_EQ(0ul, function.getNonZeroCount());
+    EXPECT_EQ(1ul, function.getLeafCount());
+    EXPECT_EQ(1ul, function.getNodeCount());
+}
+
+TEST(SylvanDd, RationalFunctionEncodingTest) {
+    std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
+    std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 1, 9);
+    
+    storm::dd::Bdd<storm::dd::DdType::Sylvan> encoding;
+    ASSERT_THROW(encoding = manager->getEncoding(x.first, 0), storm::exceptions::InvalidArgumentException);
+    ASSERT_THROW(encoding = manager->getEncoding(x.first, 10), storm::exceptions::InvalidArgumentException);
+    ASSERT_NO_THROW(encoding = manager->getEncoding(x.first, 4));
+    EXPECT_EQ(1ul, encoding.getNonZeroCount());
+    
+    // As a BDD, this DD has one only leaf, because there does not exist a 0-leaf, and (consequently) one node less
+    // than the MTBDD.
+    EXPECT_EQ(5ul, encoding.getNodeCount());
+    EXPECT_EQ(1ul, encoding.getLeafCount());
+    
+    storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> add;
+    ASSERT_NO_THROW(add = encoding.template toAdd<storm::RationalFunction>());
+
+    // As an MTBDD, the 0-leaf is there, so the count is actually 2 and the node count is 6.
+    EXPECT_EQ(6ul, add.getNodeCount());
+    EXPECT_EQ(2ul, add.getLeafCount());
+}
+
+TEST(SylvanDd, RationalFunctionIdentityTest) {
+    std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
+    std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 1, 9);
+    
+    storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> identity;
+    ASSERT_NO_THROW(identity = manager->getIdentity<storm::RationalFunction>(x.first));
+
+    EXPECT_EQ(9ul, identity.getNonZeroCount());
+    EXPECT_EQ(10ul, identity.getLeafCount());
+    EXPECT_EQ(21ul, identity.getNodeCount());
+}
+#endif
+
 TEST(SylvanDd, RangeTest) {
     std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
     std::pair<storm::expressions::Variable, storm::expressions::Variable> x;
     ASSERT_NO_THROW(x = manager->addMetaVariable("x", 1, 9));
-    
+
     storm::dd::Bdd<storm::dd::DdType::Sylvan> range;
     ASSERT_NO_THROW(range = manager->getRange(x.first));
-    
+ 
     EXPECT_EQ(9ul, range.getNonZeroCount());
     EXPECT_EQ(1ul, range.getLeafCount());
     EXPECT_EQ(5ul, range.getNodeCount());
 }
 
-TEST(SylvanDd, IdentityTest) {
+TEST(SylvanDd, DoubleIdentityTest) {
     std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
     std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 1, 9);
-    
+
     storm::dd::Add<storm::dd::DdType::Sylvan, double> identity;
     ASSERT_NO_THROW(identity = manager->getIdentity<double>(x.first));
+
+    EXPECT_EQ(9ul, identity.getNonZeroCount());
+    EXPECT_EQ(10ul, identity.getLeafCount());
+    EXPECT_EQ(21ul, identity.getNodeCount());
+}
+
+TEST(SylvanDd, UintIdentityTest) {
+    std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
+    std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 1, 9);
+
+    storm::dd::Add<storm::dd::DdType::Sylvan, uint_fast64_t> identity;
+    ASSERT_NO_THROW(identity = manager->getIdentity<uint_fast64_t>(x.first));
 
     EXPECT_EQ(9ul, identity.getNonZeroCount());
     EXPECT_EQ(10ul, identity.getLeafCount());

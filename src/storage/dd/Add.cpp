@@ -12,6 +12,9 @@
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidArgumentException.h"
 
+#include "storm-config.h"
+#include "src/adapters/CarlAdapter.h"
+
 namespace storm {
     namespace dd {
         template<DdType LibraryType, typename ValueType>
@@ -771,5 +774,8 @@ namespace storm {
 
         template class Add<storm::dd::DdType::Sylvan, double>;
         template class Add<storm::dd::DdType::Sylvan, uint_fast64_t>;
+#ifdef STORM_HAVE_CARL
+		template class Add<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+#endif
     }
 }

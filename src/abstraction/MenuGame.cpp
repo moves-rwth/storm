@@ -9,6 +9,9 @@
 
 #include "src/models/symbolic/StandardRewardModel.h"
 
+#include "storm-config.h"
+#include "src/adapters/CarlAdapter.h"
+
 namespace storm {
     namespace abstraction {
         
@@ -26,7 +29,7 @@ namespace storm {
                                             std::set<storm::expressions::Variable> const& player2Variables,
                                             std::set<storm::expressions::Variable> const& allNondeterminismVariables,
                                             std::set<storm::expressions::Variable> const& probabilisticBranchingVariables,
-                                            std::map<storm::expressions::Expression, storm::dd::Bdd<Type>> const& expressionToBddMap) : storm::models::symbolic::StochasticTwoPlayerGame<Type>(manager, reachableStates, initialStates, deadlockStates, transitionMatrix.sumAbstract(probabilisticBranchingVariables), rowVariables, nullptr, columnVariables, nullptr, rowColumnMetaVariablePairs, player1Variables, player2Variables, allNondeterminismVariables), extendedTransitionMatrix(transitionMatrix), probabilisticBranchingVariables(probabilisticBranchingVariables), expressionToBddMap(expressionToBddMap), bottomStates(bottomStates) {
+                                            std::map<storm::expressions::Expression, storm::dd::Bdd<Type>> const& expressionToBddMap) : storm::models::symbolic::StochasticTwoPlayerGame<Type, ValueType>(manager, reachableStates, initialStates, deadlockStates, transitionMatrix.sumAbstract(probabilisticBranchingVariables), rowVariables, nullptr, columnVariables, nullptr, rowColumnMetaVariablePairs, player1Variables, player2Variables, allNondeterminismVariables), extendedTransitionMatrix(transitionMatrix), probabilisticBranchingVariables(probabilisticBranchingVariables), expressionToBddMap(expressionToBddMap), bottomStates(bottomStates) {
             // Intentionally left empty.
         }
         
@@ -78,7 +81,9 @@ namespace storm {
         
         template class MenuGame<storm::dd::DdType::CUDD, double>;
         template class MenuGame<storm::dd::DdType::Sylvan, double>;
-        
+#ifdef STORM_HAVE_CARL
+		template class MenuGame<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+#endif
     }
 }
 

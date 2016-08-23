@@ -6,6 +6,9 @@
 
 #include "src/models/symbolic/StandardRewardModel.h"
 
+#include "storm-config.h"
+#include "src/adapters/CarlAdapter.h"
+
 namespace storm {
     namespace models {
         namespace symbolic {
@@ -76,7 +79,9 @@ namespace storm {
             // Explicitly instantiate the template class.
             template class NondeterministicModel<storm::dd::DdType::CUDD, double>;
             template class NondeterministicModel<storm::dd::DdType::Sylvan, double>;
-            
+#ifdef STORM_HAVE_CARL
+			template class NondeterministicModel<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+#endif
         } // namespace symbolic
     } // namespace models
 } // namespace storm

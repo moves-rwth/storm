@@ -10,6 +10,9 @@
 
 #include <cmath>
 
+#include "src/adapters/CarlAdapter.h"
+#include "storm-config.h"
+
 namespace storm {
     namespace dd {
         template<typename ValueType>
@@ -187,5 +190,8 @@ namespace storm {
         
         template class AddIterator<DdType::Sylvan, double>;
         template class AddIterator<DdType::Sylvan, uint_fast64_t>;
+#ifdef STORM_HAVE_CARL
+		template class AddIterator<DdType::Sylvan, storm::RationalFunction>;
+#endif
     }
 }

@@ -5,6 +5,9 @@
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidOperationException.h"
 
+#include "src/storage/expressions/Expression.h"
+#include "src/storage/expressions/ExpressionManager.h"
+
 namespace storm {
     namespace abstraction {
 

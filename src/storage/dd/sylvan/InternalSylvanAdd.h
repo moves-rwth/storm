@@ -13,6 +13,9 @@
 
 #include "src/storage/expressions/Variable.h"
 
+#include "src/adapters/CarlAdapter.h"
+#include "storm-config.h"
+
 namespace storm {
     namespace storage {
         template<typename T>
@@ -662,6 +665,15 @@ namespace storm {
              * @return The sylvan node for the given value.
              */
             static MTBDD getLeaf(uint_fast64_t value);
+
+#ifdef STORM_HAVE_CARL
+			/*!
+			* Retrieves the sylvan representation of the given storm::RatíonalFunction value.
+			*
+			* @return The sylvan node for the given value.
+			*/
+			static MTBDD getLeaf(storm::RationalFunction const& value);
+#endif
             
             /*!
              * Retrieves the value of the given node (that must be a leaf).

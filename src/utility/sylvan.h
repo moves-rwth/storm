@@ -12,6 +12,7 @@
 #pragma GCC diagnostic ignored "-Wpedantic"
 
 #include "sylvan_obj.hpp"
+#include "sylvan_storm_rational_function.h"
 
 #pragma GCC diagnostic pop
 #pragma clang diagnostic pop
