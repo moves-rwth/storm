@@ -3154,6 +3154,66 @@ ADD::GreaterThanOrEqual(const ADD& g) const
         
 } // ADD::GreaterThanOrEqual
 
+ADD
+ADD::EqualsBdd(const ADD& g) const
+{
+    DdManager *mgr = checkSameManager(g);
+    DdNode *result = Cudd_addApply(mgr, Cudd_addToBddEquals, node, g.node);
+    checkReturnValue(result);
+    return ADD(p, result);
+        
+} // ADD::EqualsBdd
+    
+ADD
+ADD::NotEqualsBdd(const ADD& g) const
+{
+    DdManager *mgr = checkSameManager(g);
+    DdNode *result = Cudd_addApply(mgr, Cudd_addToBddNotEquals, node, g.node);
+    checkReturnValue(result);
+    return ADD(p, result);
+    
+} // ADD::NotEqualsBdd
+    
+ADD
+ADD::LessThanBdd(const ADD& g) const
+{
+    DdManager *mgr = checkSameManager(g);
+    DdNode *result = Cudd_addApply(mgr, Cudd_addToBddLessThan, node, g.node);
+    checkReturnValue(result);
+    return ADD(p, result);
+        
+} // ADD::LessThanBdd
+    
+ADD
+ADD::LessThanOrEqualBdd(const ADD& g) const
+{
+    DdManager *mgr = checkSameManager(g);
+    DdNode *result = Cudd_addApply(mgr, Cudd_addToBddLessThanEquals, node, g.node);
+    checkReturnValue(result);
+    return ADD(p, result);
+        
+} // ADD::LessThanOrEqualBdd
+    
+ADD
+ADD::GreaterThanBdd(const ADD& g) const
+{
+    DdManager *mgr = checkSameManager(g);
+    DdNode *result = Cudd_addApply(mgr, Cudd_addToBddGreaterThan, node, g.node);
+    checkReturnValue(result);
+    return ADD(p, result);
+        
+} // ADD::GreaterThanBdd
+    
+ADD
+ADD::GreaterThanOrEqualBdd(const ADD& g) const
+{
+    DdManager *mgr = checkSameManager(g);
+    DdNode *result = Cudd_addApply(mgr, Cudd_addToBddGreaterThanEquals, node, g.node);
+    checkReturnValue(result);
+    return ADD(p, result);
+        
+} // ADD::GreaterThanOrEqualBdd
+    
 BDD
 BDD::AndAbstract(
   const BDD& g,

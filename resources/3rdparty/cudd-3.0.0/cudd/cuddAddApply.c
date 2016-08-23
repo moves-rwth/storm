@@ -817,6 +817,38 @@ Cudd_addEquals(
     
 } /* end of Cudd_addEquals */
 
+/**Function********************************************************************
+ 
+ Synopsis    [1 if f==g; 0 otherwise.]
+ 
+ Description [Returns NULL if not a terminal case; f op g otherwise,
+ where f op g is 1 if f==g; 0 otherwise.]
+ 
+ SideEffects [None]
+ 
+ SeeAlso     [Cudd_addApply]
+ 
+ Added 23/08/2016 by Christian Dehnert
+ 
+ ******************************************************************************/
+DdNode *
+Cudd_addToBddEquals(
+               DdManager * dd,
+               DdNode ** f,
+               DdNode ** g)
+{
+    DdNode *F, *G;
+    
+    F = *f; G = *g;
+    if (F == G) return(DD_ONE(dd));
+    if (cuddIsConstant(F) && cuddIsConstant(G)) return(Cudd_Not(DD_ONE(dd)));
+    if (F > G) { /* swap f and g */
+        *f = G;
+        *g = F;
+    }
+    return(NULL);
+    
+} /* end of Cudd_addToBddEquals */
 
 /**Function********************************************************************
  
@@ -851,6 +883,39 @@ Cudd_addNotEquals(
 
 /**Function********************************************************************
  
+ Synopsis    [1 if f!=g; 0 otherwise.]
+ 
+ Description [Returns NULL if not a terminal case; f op g otherwise,
+ where f op g is 1 if f!=g; 0 otherwise.]
+ 
+ SideEffects [None]
+ 
+ SeeAlso     [Cudd_addApply]
+ 
+ Added 23/08/2016 by Christian Dehnert
+
+ ******************************************************************************/
+DdNode *
+Cudd_addToBddNotEquals(
+                  DdManager * dd,
+                  DdNode ** f,
+                  DdNode ** g)
+{
+    DdNode *F, *G;
+    
+    F = *f; G = *g;
+    if (F == G) return(Cudd_Not(DD_ONE(dd)));
+    if (cuddIsConstant(F) && cuddIsConstant(G)) return(DD_ONE(dd));
+    if (F > G) { /* swap f and g */
+        *f = G;
+        *g = F;
+    }
+    return(NULL);
+    
+} /* end of Cudd_addToBddNotEquals */
+
+/**Function********************************************************************
+ 
  Synopsis    [1 if f>g; 0 otherwise.]
  
  Description [Returns NULL if not a terminal case; f op g otherwise,
@@ -877,6 +942,37 @@ Cudd_addGreaterThan(
     return(NULL);
     
 } /* end of Cudd_addGreaterThan */
+
+/**Function********************************************************************
+ 
+ Synopsis    [1 if f>g; 0 otherwise.]
+ 
+ Description [Returns NULL if not a terminal case; f op g otherwise,
+ where f op g is 1 if f>g; 0 otherwise.]
+ 
+ SideEffects [None]
+ 
+ SeeAlso     [Cudd_addApply]
+ 
+ Added 23/08/2016 by Christian Dehnert
+
+ ******************************************************************************/
+DdNode *
+Cudd_addToBddGreaterThan(
+                    DdManager * dd,
+                    DdNode ** f,
+                    DdNode ** g)
+{
+    DdNode *F, *G;
+    
+    F = *f; G = *g;
+    if (F == G) return(Cudd_Not(DD_ONE(dd)));
+    if (cuddIsConstant(F) && cuddIsConstant(G)) {
+        if (cuddV(F)>cuddV(G)) return (DD_ONE(dd)); else return (Cudd_Not(DD_ONE(dd)));
+    }
+    return(NULL);
+    
+} /* end of Cudd_addToBddGreaterThan */
 
 
 /**Function********************************************************************
@@ -908,6 +1004,36 @@ Cudd_addGreaterThanEquals(
     
 } /* end of Cudd_addGreaterThanEquals */
 
+/**Function********************************************************************
+ 
+ Synopsis    [1 if f>=g; 0 otherwise.]
+ 
+ Description [Returns NULL if not a terminal case; f op g otherwise,
+ where f op g is 1 if f>=g; 0 otherwise.]
+ 
+ SideEffects [None]
+ 
+ SeeAlso     [Cudd_addApply]
+ 
+ Added 23/08/2016 by Christian Dehnert
+
+ ******************************************************************************/
+DdNode *
+Cudd_addToBddGreaterThanEquals(
+                          DdManager * dd,
+                          DdNode ** f,
+                          DdNode ** g)
+{
+    DdNode *F, *G;
+    
+    F = *f; G = *g;
+    if (F == G) return(DD_ONE(dd));
+    if (cuddIsConstant(F) && cuddIsConstant(G)) {
+        if (cuddV(F)>=cuddV(G)) return (DD_ONE(dd)); else return (Cudd_Not(DD_ONE(dd)));
+    }
+    return(NULL);
+    
+} /* end of Cudd_addToBddGreaterThanEquals */
 
 /**Function********************************************************************
  
@@ -938,6 +1064,36 @@ Cudd_addLessThan(
     
 } /* end of Cudd_addLessThan */
 
+/**Function********************************************************************
+ 
+ Synopsis    [1 if f<g; 0 otherwise.]
+ 
+ Description [Returns NULL if not a terminal case; f op g otherwise,
+ where f op g is 1 if f<g; 0 otherwise.]
+ 
+ SideEffects [None]
+ 
+ SeeAlso     [Cudd_addApply]
+ 
+ Added 23/08/2016 by Christian Dehnert
+
+ ******************************************************************************/
+DdNode *
+Cudd_addToBddLessThan(
+                 DdManager * dd,
+                 DdNode ** f,
+                 DdNode ** g)
+{
+    DdNode *F, *G;
+    
+    F = *f; G = *g;
+    if (F == G) return(Cudd_Not(DD_ONE(dd)));
+    if (cuddIsConstant(F) && cuddIsConstant(G)) {
+        if (cuddV(F)<cuddV(G)) return (DD_ONE(dd)); else return (Cudd_Not(DD_ONE(dd)));
+    }
+    return(NULL);
+    
+} /* end of Cudd_addToBddLessThan */
 
 /**Function********************************************************************
  
@@ -967,6 +1123,37 @@ Cudd_addLessThanEquals(
     return(NULL);
     
 } /* end of Cudd_addLessThanEquals */
+
+/**Function********************************************************************
+ 
+ Synopsis    [1 if f<=g; 0 otherwise.]
+ 
+ Description [Returns NULL if not a terminal case; f op g otherwise,
+ where f op g is 1 if f<=g; 0 otherwise.]
+ 
+ SideEffects [None]
+ 
+ SeeAlso     [Cudd_addApply]
+ 
+ Added 23/08/2016 by Christian Dehnert
+
+ ******************************************************************************/
+DdNode *
+Cudd_addToBddLessThanEquals(
+                       DdManager * dd,
+                       DdNode ** f,
+                       DdNode ** g)
+{
+    DdNode *F, *G;
+    
+    F = *f; G = *g;
+    if (F == G) return(DD_ONE(dd));
+    if (cuddIsConstant(F) && cuddIsConstant(G)) {
+        if (cuddV(F)<=cuddV(G)) return (DD_ONE(dd)); else return (Cudd_Not(DD_ONE(dd)));
+    }
+    return(NULL);
+    
+} /* end of Cudd_addToBddLessThanEquals */
 
 /**Function********************************************************************
  

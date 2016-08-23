@@ -203,7 +203,7 @@ namespace storm {
                 }
                 
                 // Likewise, if all bits are set, we can avoid the computation and set.
-                if ((~psiStates).empty()) {
+                if (psiStates.full()) {
                     return std::vector<ValueType>(numberOfStates, storm::utility::one<ValueType>());
                 }
                 

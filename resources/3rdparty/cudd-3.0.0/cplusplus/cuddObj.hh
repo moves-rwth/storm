@@ -376,6 +376,12 @@ public:
     ADD LessThanOrEqual(const ADD& g) const;
     ADD GreaterThan(const ADD& g) const;
     ADD GreaterThanOrEqual(const ADD& g) const;
+    BDD EqualsBdd(const ADD& g) const;
+    BDD NotEqualsBdd(const ADD& g) const;
+    BDD LessThanBdd(const ADD& g) const;
+    BDD LessThanOrEqualBdd(const ADD& g) const;
+    BDD GreaterThanBdd(const ADD& g) const;
+    BDD GreaterThanOrEqualBdd(const ADD& g) const;
     BDD BddThreshold(CUDD_VALUE_TYPE value) const;
     BDD BddStrictThreshold(CUDD_VALUE_TYPE value) const;
     BDD BddInterval(CUDD_VALUE_TYPE lower, CUDD_VALUE_TYPE upper) const;
