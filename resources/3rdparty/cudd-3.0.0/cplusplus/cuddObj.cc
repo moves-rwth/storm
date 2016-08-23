@@ -3158,7 +3158,7 @@ BDD
 ADD::EqualsBdd(const ADD& g) const
 {
     DdManager *mgr = checkSameManager(g);
-    DdNode *result = Cudd_addApply(mgr, Cudd_addToBddEquals, node, g.node);
+    DdNode *result = Cudd_addToBddApply(mgr, Cudd_addToBddEquals, node, g.node);
     checkReturnValue(result);
     return BDD(p, result);
         
@@ -3168,7 +3168,7 @@ BDD
 ADD::NotEqualsBdd(const ADD& g) const
 {
     DdManager *mgr = checkSameManager(g);
-    DdNode *result = Cudd_addApply(mgr, Cudd_addToBddNotEquals, node, g.node);
+    DdNode *result = Cudd_addToBddApply(mgr, Cudd_addToBddNotEquals, node, g.node);
     checkReturnValue(result);
     return BDD(p, result);
     
@@ -3178,7 +3178,7 @@ BDD
 ADD::LessThanBdd(const ADD& g) const
 {
     DdManager *mgr = checkSameManager(g);
-    DdNode *result = Cudd_addApply(mgr, Cudd_addToBddLessThan, node, g.node);
+    DdNode *result = Cudd_addToBddApply(mgr, Cudd_addToBddLessThan, node, g.node);
     checkReturnValue(result);
     return BDD(p, result);
         
@@ -3188,7 +3188,7 @@ BDD
 ADD::LessThanOrEqualBdd(const ADD& g) const
 {
     DdManager *mgr = checkSameManager(g);
-    DdNode *result = Cudd_addApply(mgr, Cudd_addToBddLessThanEquals, node, g.node);
+    DdNode *result = Cudd_addToBddApply(mgr, Cudd_addToBddLessThanEquals, node, g.node);
     checkReturnValue(result);
     return BDD(p, result);
         
@@ -3198,7 +3198,7 @@ BDD
 ADD::GreaterThanBdd(const ADD& g) const
 {
     DdManager *mgr = checkSameManager(g);
-    DdNode *result = Cudd_addApply(mgr, Cudd_addToBddGreaterThan, node, g.node);
+    DdNode *result = Cudd_addToBddApply(mgr, Cudd_addToBddGreaterThan, node, g.node);
     checkReturnValue(result);
     return BDD(p, result);
         

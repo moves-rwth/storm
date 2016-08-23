@@ -117,6 +117,41 @@ Cudd_addApply(
 
 } /* end of Cudd_addApply */
 
+/**
+ @brief Applies op to the corresponding discriminants of f and g and produces a BDD as a result.
+ 
+ @return a pointer to the result if succssful; NULL otherwise.
+ 
+ @sideeffect None
+ 
+ @see Cudd_addMonadicApply Cudd_addPlus Cudd_addTimes
+ Cudd_addThreshold Cudd_addSetNZ Cudd_addDivide Cudd_addMinus Cudd_addMinimum
+ Cudd_addMaximum Cudd_addOneZeroMaximum Cudd_addDiff Cudd_addAgreement
+ Cudd_addOr Cudd_addNand Cudd_addNor Cudd_addXor Cudd_addXnor
+ 
+ added 23/08/2016 by Christian Dehnert
+ 
+ */
+DdNode *
+Cudd_addToBddApply(
+              DdManager * dd /**< manager */,
+              DD_AOP op /**< operator */,
+              DdNode * f /**< first operand */,
+              DdNode * g /**< second operand */)
+{
+    DdNode *res;
+    
+    do {
+        dd->reordered = 0;
+        res = cuddAddToBddApplyRecur(dd,op,f,g);
+    } while (dd->reordered == 1);
+    if (dd->errorCode == CUDD_TIMEOUT_EXPIRED && dd->timeoutHandler) {
+        dd->timeoutHandler(dd, dd->tohArg);
+    }
+    
+    return(res);
+    
+} /* end of Cudd_addToBddApply */
 
 /**
   @brief Integer and floating point addition.
@@ -1361,6 +1396,99 @@ cuddAddApplyRecur(
 
 } /* end of cuddAddApplyRecur */
 
+/**
+ @brief Performs the recursive step of Cudd_addToBddApply.
+ 
+ @return a pointer to the result if successful; NULL otherwise.
+ 
+ @sideeffect None
+ 
+ @see cuddAddMonadicApplyRecur
+ 
+ added 23/08/2016 by Christian Dehnert
+ 
+ */
+DdNode *
+cuddAddToBddApplyRecur(
+                  DdManager * dd,
+                  DD_AOP op,
+                  DdNode * f,
+                  DdNode * g)
+{
+    DdNode *res,
+	   *fv, *fvn, *gv, *gvn,
+	   *T, *E;
+    int ford, gord;
+    unsigned int index;
+    DD_CTFP cacheOp;
+    
+    /* Check terminal cases. Op may swap f and g to increase the
+     * cache hit rate.
+     */
+    statLine(dd);
+    res = (*op)(dd,&f,&g);
+    if (res != NULL) return(res);
+    
+    /* Check cache. */
+    cacheOp = (DD_CTFP) op;
+    res = cuddCacheLookup2(dd,cacheOp,f,g);
+    if (res != NULL) return(res);
+    
+    checkWhetherToGiveUp(dd);
+    
+    /* Recursive step. */
+    ford = cuddI(dd,f->index);
+    gord = cuddI(dd,g->index);
+    if (ford <= gord) {
+        index = f->index;
+        fv = cuddT(f);
+        fvn = cuddE(f);
+    } else {
+        index = g->index;
+        fv = fvn = f;
+    }
+    if (gord <= ford) {
+        gv = cuddT(g);
+        gvn = cuddE(g);
+    } else {
+        gv = gvn = g;
+    }
+    
+    T = cuddAddApplyRecur(dd,op,fv,gv);
+    if (T == NULL) return(NULL);
+    cuddRef(T);
+    
+    E = cuddAddApplyRecur(dd,op,fvn,gvn);
+    if (E == NULL) {
+        Cudd_IterDerefBdd(dd,T);
+        return(NULL);
+    }
+    cuddRef(E);
+    
+    int complT = Cudd_IsComplement(T);
+    
+    if (T == E) {
+        res = T;
+    } else {
+        res = cuddUniqueInter(dd,(int)index,Cudd_Regular(T),complT ? Cudd_Not(E) : E);
+        if (complT) {
+            res = Cudd_Not(res);
+        }
+    }
+    if (res == NULL) {
+        Cudd_IterDerefBdd(dd, T);
+        Cudd_IterDerefBdd(dd, E);
+        return(NULL);
+    }
+    cuddDeref(T);
+    cuddDeref(E);
+    
+    /* Store result. */
+    cuddCacheInsert2(dd,cacheOp,f,g,res);
+    
+    return(res);
+    
+} /* end of cuddAddToBddApplyRecur */
 
 /**
   @brief Performs the recursive step of Cudd_addMonadicApply.

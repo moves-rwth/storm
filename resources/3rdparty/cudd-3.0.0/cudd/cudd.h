@@ -671,6 +671,7 @@ extern DdNode * Cudd_addMaxAbstract(DdManager * manager, DdNode * f, DdNode * cu
 extern DdNode * Cudd_addMinAbstractRepresentative(DdManager * manager, DdNode * f, DdNode * cube);
 extern DdNode * Cudd_addMaxAbstractRepresentative(DdManager * manager, DdNode * f, DdNode * cube);
 extern DdNode * Cudd_addApply(DdManager *dd, DD_AOP op, DdNode *f, DdNode *g);
+extern DdNode * Cudd_addToBddApply(DdManager *dd, DD_AOP op, DdNode *f, DdNode *g);
 extern DdNode * Cudd_addPlus(DdManager *dd, DdNode **f, DdNode **g);
 extern DdNode * Cudd_addTimes(DdManager *dd, DdNode **f, DdNode **g);
 extern DdNode * Cudd_addThreshold(DdManager *dd, DdNode **f, DdNode **g);
