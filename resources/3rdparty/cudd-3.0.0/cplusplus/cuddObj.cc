@@ -566,7 +566,7 @@ BDD::operator+(
   const BDD& other) const
 {
     DdManager *mgr = checkSameManager(other);
-    DdNode *result = Cudd_bddOr(mgr,node,other.node);
+    DdNode *result = 	(mgr,node,other.node);
     checkReturnValue(result);
     return BDD(p, result);
 
@@ -3154,63 +3154,63 @@ ADD::GreaterThanOrEqual(const ADD& g) const
         
 } // ADD::GreaterThanOrEqual
 
-ADD
+BDD
 ADD::EqualsBdd(const ADD& g) const
 {
     DdManager *mgr = checkSameManager(g);
     DdNode *result = Cudd_addApply(mgr, Cudd_addToBddEquals, node, g.node);
     checkReturnValue(result);
-    return ADD(p, result);
+    return BDD(p, result);
         
 } // ADD::EqualsBdd
     
-ADD
+BDD
 ADD::NotEqualsBdd(const ADD& g) const
 {
     DdManager *mgr = checkSameManager(g);
     DdNode *result = Cudd_addApply(mgr, Cudd_addToBddNotEquals, node, g.node);
     checkReturnValue(result);
-    return ADD(p, result);
+    return BDD(p, result);
     
 } // ADD::NotEqualsBdd
     
-ADD
+BDD
 ADD::LessThanBdd(const ADD& g) const
 {
     DdManager *mgr = checkSameManager(g);
     DdNode *result = Cudd_addApply(mgr, Cudd_addToBddLessThan, node, g.node);
     checkReturnValue(result);
-    return ADD(p, result);
+    return BDD(p, result);
         
 } // ADD::LessThanBdd
     
-ADD
+BDD
 ADD::LessThanOrEqualBdd(const ADD& g) const
 {
     DdManager *mgr = checkSameManager(g);
     DdNode *result = Cudd_addApply(mgr, Cudd_addToBddLessThanEquals, node, g.node);
     checkReturnValue(result);
-    return ADD(p, result);
+    return BDD(p, result);
         
 } // ADD::LessThanOrEqualBdd
     
-ADD
+BDD
 ADD::GreaterThanBdd(const ADD& g) const
 {
     DdManager *mgr = checkSameManager(g);
     DdNode *result = Cudd_addApply(mgr, Cudd_addToBddGreaterThan, node, g.node);
     checkReturnValue(result);
-    return ADD(p, result);
+    return BDD(p, result);
         
 } // ADD::GreaterThanBdd
     
-ADD
+BDD
 ADD::GreaterThanOrEqualBdd(const ADD& g) const
 {
     DdManager *mgr = checkSameManager(g);
     DdNode *result = Cudd_addApply(mgr, Cudd_addToBddGreaterThanEquals, node, g.node);
     checkReturnValue(result);
-    return ADD(p, result);
+    return BDD(p, result);
         
 } // ADD::GreaterThanOrEqualBdd
     

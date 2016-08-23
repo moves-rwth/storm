@@ -178,6 +178,9 @@ namespace storm {
                         variableToColumnMetaVariableMap->emplace(booleanVariable.getExpressionVariable(), variablePair.second);
                         
                         storm::dd::Bdd<Type> variableIdentity = manager->template getIdentity<ValueType>(variablePair.first).equals(manager->template getIdentity<ValueType>(variablePair.second)) && manager->getRange(variablePair.first) && manager->getRange(variablePair.second);
+                        std::cout << "got here " << variableIdentity.isOne() << variableIdentity.isZero() << std::endl;
+                        variableIdentity.exportToDot("id_bdd.dot");
+                        variableIdentity.template toAdd<ValueType>().exportToDot("id_add.dot");
                         variableToIdentityMap.emplace(booleanVariable.getExpressionVariable(), variableIdentity.template toAdd<ValueType>());
                         moduleIdentity &= variableIdentity;
                         moduleRange &= manager->getRange(variablePair.first);
