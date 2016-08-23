@@ -58,6 +58,11 @@ namespace storm {
 				void drawGSPNConnections();
 				
 				/*
+				 * Draw functional/probability dependencies into the GSPN.
+				 */
+				void drawGSPNDependencies();
+				
+				/*
 				 * Draw restrictions between the elements of the GSPN (i.e. SEQ).
 				 */
 				void drawGSPNRestrictions();
@@ -112,13 +117,6 @@ namespace storm {
 				 * @param dftPor The POR gate.
 				 */
 				void drawPOR(std::shared_ptr<storm::storage::DFTPor<ValueType> const> dftPor);
-				
-				/*
-				 * Draw a Petri net MUTEX.
-				 * 
-				 * @param dftMutex The MUTEX gate.
-				 */
-				void drawMUTEX(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftMutex);
 				
 				/*
 				 * Draw a Petri net CONSTF (Constant Failure, a Basic Event that has already failed).

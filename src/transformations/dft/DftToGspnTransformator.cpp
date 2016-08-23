@@ -24,7 +24,10 @@ namespace storm {
 				// When all DFT elements are drawn, draw the connections between them.
 				drawGSPNConnections();
 				
-				// Draw restrictions into the GSPN (i.e. SEQ).
+				// Draw functional/probability dependencies into the GSPN.
+				drawGSPNDependencies();
+				
+				// Draw restrictions into the GSPN (i.e. SEQ or MUTEX).
 				drawGSPNRestrictions(); 
 		
 				// Write GSPN to file.
@@ -61,7 +64,7 @@ namespace storm {
 							// No method call needed here. SEQ only consists of restrictions, which are handled later.
 							break;
 						case storm::storage::DFTElementType::MUTEX:
-							drawMUTEX(dftElement);
+							// No method call needed here. MUTEX only consists of restrictions, which are handled later.
 							break;
 						case storm::storage::DFTElementType::BE:
 							drawBE(std::static_pointer_cast<storm::storage::DFTBE<ValueType> const>(dftElement));
@@ -237,11 +240,6 @@ namespace storm {
 			}
 			
 			template <typename ValueType>
-            void DftToGspnTransformator<ValueType>::drawMUTEX(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftMutex) {				
-				// TODO: Not implemented because there is no corresponding MUTEX element yet.
-			}
-			
-			template <typename ValueType>
             void DftToGspnTransformator<ValueType>::drawCONSTF(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftConstF) {
 				storm::gspn::Place placeCONSTFFailed;
 				placeCONSTFFailed.setName(dftConstF->name() + STR_FAILED);
@@ -264,14 +262,23 @@ namespace storm {
 			
 			template <typename ValueType>
             void DftToGspnTransformator<ValueType>::drawPDEP(std::shared_ptr<storm::storage::DFTDependency<ValueType> const>(dftDependency)) {
-				// TODO
-				// TODO
-				// TODO
-				
-				std::cout << "Name: " << dftDependency->name() << 
-					". NameTrigger: " << dftDependency->nameTrigger() << 
-					". NameDependent: " << dftDependency->nameDependent() << 
-					". Probability: " << dftDependency->probability() << std::endl;
+				// Only draw dependency, if it wasn't drawn before.
+				std::string gateName = dftDependency->name().substr(0, dftDependency->name().find("_"));
+				auto exists = mGspn.getPlace(gateName + STR_FAILED);
+				if (!exists.first) {
+					storm::gspn::Place placeDEPFailed;
+					placeDEPFailed.setName(gateName + STR_FAILED);
+					placeDEPFailed.setNumberOfInitialTokens(0);
+					mGspn.addPlace(placeDEPFailed);
+					
+					storm::gspn::TimedTransition<double> timedTransitionDEPFailure;
+					timedTransitionDEPFailure.setName(gateName + STR_FAILING);
+					timedTransitionDEPFailure.setPriority(1);
+					timedTransitionDEPFailure.setRate(dftDependency->probability());
+					timedTransitionDEPFailure.setOutputArcMultiplicity(placeDEPFailed, 1);
+					timedTransitionDEPFailure.setInhibitionArcMultiplicity(placeDEPFailed, 1);
+					mGspn.addTimedTransition(timedTransitionDEPFailure);
+				}
 			}
 			
 			template <typename ValueType>
@@ -416,9 +423,7 @@ namespace storm {
 							}
 							case storm::storage::DFTElementType::PDEP:
 							{
-								// TODO
-								// TODO
-								// TODO
+								// The parent is never a DEP. Hence the connections must be drawn somewhere else.
 								break;
 							}
 							default:
@@ -495,6 +500,35 @@ namespace storm {
 			}
 			
 			template <typename ValueType>
+            void DftToGspnTransformator<ValueType>::drawGSPNDependencies() {
+				for (std::size_t i = 0; i < mDft.nrElements(); i++) {
+					auto dftElement = mDft.getElement(i);
+					
+					if (dftElement->isDependency()) {
+						std::string gateName = dftElement->name().substr(0, dftElement->name().find("_"));
+						auto depEntry = mGspn.getTimedTransition(gateName + STR_FAILING);
+						auto trigger = mGspn.getPlace(std::static_pointer_cast<storm::storage::DFTDependency<ValueType> const>(dftElement)->nameTrigger() + STR_FAILED);
+						
+						if (depEntry.first && trigger.first) { // Only add arcs if the objects have been found.
+							if (!depEntry.second->existsInputArc(trigger.second)) {
+								depEntry.second->setInputArcMultiplicity(trigger.second, 1);
+							}
+							if (!depEntry.second->existsOutputArc(trigger.second)){
+								depEntry.second->setOutputArcMultiplicity(trigger.second, 1);
+							}
+						}
+						
+						auto dependent = mGspn.getPlace(std::static_pointer_cast<storm::storage::DFTDependency<ValueType> const>(dftElement)->nameDependent() + STR_FAILED);
+						
+						if (dependent.first) { // Only add arcs if the objects have been found.
+							depEntry.second->setOutputArcMultiplicity(dependent.second, 1);
+						}
+					}
+				}
+				// TODO: Does the DEP has a parent?
+			}
+			
+			template <typename ValueType>
             void DftToGspnTransformator<ValueType>::drawGSPNRestrictions() {
 				for (std::size_t i = 0; i < mDft.nrElements(); i++) {
 					auto dftElement = mDft.getElement(i);
@@ -539,6 +573,7 @@ namespace storm {
 							default:
 							{
 								// TODO: Are there other restrictions than SEQ?
+								// TODO: There is: MUTEX.
 								break;
 							}
 						}

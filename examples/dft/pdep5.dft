@@ -1,0 +1,5 @@
+toplevel "A";
+"A" and "B" "C";
+"PDEP" pdep=0.2 "B" "C";
+"B" lambda=0.5 dorm=0;
+"C" lambda=0.5 dorm=0;
