@@ -1003,27 +1003,25 @@ cuddAddMinAbstractRepresentativeRecur(
     logicalZero = Cudd_Not(one);
     
     /* Cube is guaranteed to be a cube at this point. */
+    if (cuddIsConstant(cube)) {
+        return one;
+    }
     if (cuddIsConstant(f)) {
-        if (cuddIsConstant(cube)) {
-            return one;
-        } else {
-            res = cuddBddExistAbstractRepresentativeRecur(manager, f, cuddT(cube));
-            if (res == NULL) {
-                return(NULL);
-            }
-            cuddRef(res);
-            
-            // We build in the negation ourselves.
-            res1 = cuddUniqueInter(manager, (int) cube->index, one, Cudd_Not(res));
-            if (res1 == NULL) {
-                Cudd_IterDerefBdd(manager,res);
-                return(NULL);
-            }
-            res1 = Cudd_Not(res1);
-            cuddDeref(res);
-            return(res1);
-
+        res = cuddBddExistAbstractRepresentativeRecur(manager, f, cuddT(cube));
+        if (res == NULL) {
+            return(NULL);
         }
+        cuddRef(res);
+            
+        // We build in the negation ourselves.
+        res1 = cuddUniqueInter(manager, (int) cube->index, one, Cudd_Not(res));
+        if (res1 == NULL) {
+            Cudd_IterDerefBdd(manager,res);
+            return(NULL);
+        }
+        res1 = Cudd_Not(res1);
+        cuddDeref(res);
+        return(res1);
     }
     
     /* Abstract a variable that does not appear in f. */
@@ -1191,27 +1189,26 @@ cuddAddMaxAbstractRepresentativeRecur(
     logicalZero = Cudd_Not(one);
     
     /* Cube is guaranteed to be a cube at this point. */
+    if (cuddIsConstant(cube)) {
+        return one;
+    }
     if (cuddIsConstant(f)) {
-        if (cuddIsConstant(cube)) {
-            return one;
-        } else {
-            res = cuddBddExistAbstractRepresentativeRecur(manager, f, cuddT(cube));
-            if (res == NULL) {
-                return(NULL);
-            }
-            cuddRef(res);
-            
-            // We build in the negation ourselves.
-            res1 = cuddUniqueInter(manager, (int) cube->index, one, Cudd_Not(res));
-            if (res1 == NULL) {
-                Cudd_IterDerefBdd(manager,res);
-                return(NULL);
-            }
-            res1 = Cudd_Not(res1);
-            cuddDeref(res);
-            return(res1);
-            
+        res = cuddBddExistAbstractRepresentativeRecur(manager, f, cuddT(cube));
+        if (res == NULL) {
+            return(NULL);
         }
+        cuddRef(res);
+        
+        // We build in the negation ourselves.
+        res1 = cuddUniqueInter(manager, (int) cube->index, one, Cudd_Not(res));
+        if (res1 == NULL) {
+            Cudd_IterDerefBdd(manager,res);
+            return(NULL);
+        }
+        res1 = Cudd_Not(res1);
+        cuddDeref(res);
+        return(res1);
+            
     }
     
     /* Abstract a variable that does not appear in f. */
