@@ -3208,7 +3208,7 @@ BDD
 ADD::GreaterThanOrEqualBdd(const ADD& g) const
 {
     DdManager *mgr = checkSameManager(g);
-    DdNode *result = Cudd_addApply(mgr, Cudd_addToBddGreaterThanEquals, node, g.node);
+    DdNode *result = Cudd_addToBddApply(mgr, Cudd_addToBddGreaterThanEquals, node, g.node);
     checkReturnValue(result);
     return BDD(p, result);
         

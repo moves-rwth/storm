@@ -123,7 +123,6 @@ namespace storm {
         template<DdType LibraryType, typename ValueType>
         Add<LibraryType, ValueType> Add<LibraryType, ValueType>::mod(Add<LibraryType, ValueType> const& other) const {
             return Add<LibraryType, ValueType>(this->getDdManager(), internalAdd.mod(other), Dd<LibraryType>::joinMetaVariables(*this, other));
-
         }
         
         template<DdType LibraryType, typename ValueType>

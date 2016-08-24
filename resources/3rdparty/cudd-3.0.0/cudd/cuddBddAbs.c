@@ -546,11 +546,15 @@ cuddBddExistAbstractRepresentativeRecur(
             }
             cuddRef(res);
             
-            res1 = cuddUniqueInter(manager, (int) cube->index, zero, res);
+//            res1 = cuddUniqueInter(manager, (int) cube->index, zero, res);
+            
+            // We now build in the necessary negation ourselves.
+            res1 = cuddUniqueInter(manager, (int) cube->index, one, Cudd_Not(res));
             if (res1 == NULL) {
                 Cudd_IterDerefBdd(manager,res);
                 return(NULL);
             }
+            res1 = Cudd_Not(res1);
             cuddDeref(res);
             return(res1);
         }
@@ -568,12 +572,15 @@ cuddBddExistAbstractRepresentativeRecur(
         }
         cuddRef(res);
         
-        res1 = cuddUniqueInter(manager, (int) cube->index, zero, res);
+//        res1 = cuddUniqueInter(manager, (int) cube->index, zero, res);
 
+        // We now build in the necessary negation ourselves.
+        res1 = cuddUniqueInter(manager, (int) cube->index, one, Cudd_Not(res));
         if (res1 == NULL) {
             Cudd_IterDerefBdd(manager,res);
             return(NULL);
         }
+        res1 = Cudd_Not(res1);
         cuddDeref(res);
 
        	return(res1);
@@ -644,12 +651,15 @@ cuddBddExistAbstractRepresentativeRecur(
         Cudd_IterDerefBdd(manager,left);
         
         assert(res1Inf != res2Inf);
-        res = cuddUniqueInter(manager, (int) F->index, res2Inf, res1Inf);
-
+        int compl = Cudd_IsComplement(res2Inf);
+        res = cuddUniqueInter(manager, (int) F->index, Cudd_Regular(res2Inf), compl ? Cudd_Not(res1Inf) : res1Inf);
         if (res == NULL) {
             Cudd_IterDerefBdd(manager,res1Inf);
             Cudd_IterDerefBdd(manager,res2Inf);
             return(NULL);
+        }
+        if (compl) {
+            res = Cudd_Not(res);
         }
         cuddRef(res);
 
@@ -675,11 +685,15 @@ cuddBddExistAbstractRepresentativeRecur(
         
         /* ITE takes care of possible complementation of res1 and of the
          ** case in which res1 == res2. */
-        res = cuddUniqueInter(manager, (int)F->index, res2, res1);
+        int compl = Cudd_IsComplement(res2);
+        res = cuddUniqueInter(manager, (int)F->index, Cudd_Regular(res2), compl ? Cudd_Not(res1) : res1);
         if (res == NULL) {
             Cudd_IterDerefBdd(manager, res1);
             Cudd_IterDerefBdd(manager, res2);
             return(NULL);
+        }
+        if (compl) {
+            res = Cudd_Not(res);
         }
         cuddDeref(res1);
         cuddDeref(res2);

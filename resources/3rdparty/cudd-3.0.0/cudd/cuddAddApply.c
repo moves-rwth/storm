@@ -1454,11 +1454,11 @@ cuddAddToBddApplyRecur(
         gv = gvn = g;
     }
     
-    T = cuddAddApplyRecur(dd,op,fv,gv);
+    T = cuddAddToBddApplyRecur(dd,op,fv,gv);
     if (T == NULL) return(NULL);
     cuddRef(T);
     
-    E = cuddAddApplyRecur(dd,op,fvn,gvn);
+    E = cuddAddToBddApplyRecur(dd,op,fvn,gvn);
     if (E == NULL) {
         Cudd_IterDerefBdd(dd,T);
         return(NULL);
@@ -1480,12 +1480,14 @@ cuddAddToBddApplyRecur(
         Cudd_IterDerefBdd(dd, E);
         return(NULL);
     }
+    cuddRef(res);
     cuddDeref(T);
     cuddDeref(E);
     
     /* Store result. */
     cuddCacheInsert2(dd,cacheOp,f,g,res);
     
+    cuddDeref(res);
     return(res);
     
 } /* end of cuddAddToBddApplyRecur */

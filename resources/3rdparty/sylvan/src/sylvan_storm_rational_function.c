@@ -31,11 +31,11 @@ int depth = 0;
  * helper function for hash
  */
 #ifndef rotl64
-static inline uint64_t
-rotl64(uint64_t x, int8_t r)
-{
-    return ((x<<r) | (x>>(64-r)));
-}
+//static inline uint64_t
+//rotl64(uint64_t x, int8_t r)
+//{
+//    return ((x<<r) | (x>>(64-r)));
+//}
 #endif
 
 static uint64_t
