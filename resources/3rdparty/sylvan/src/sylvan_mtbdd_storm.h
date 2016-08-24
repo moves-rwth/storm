@@ -110,6 +110,7 @@ int mtbdd_isnonzero(MTBDD);
 
 #define mtbdd_regular(dd) (dd & ~mtbdd_complement)
 
+#define GETNODE_BDD(bdd) ((bddnode_t)llmsset_index_to_ptr(nodes, bdd&0x000000ffffffffff))
 #define mtbdd_set_next(set) (mtbdd_gethigh(set))
 #define mtbdd_set_isempty(set) (set == mtbdd_true)
 
@@ -130,12 +131,12 @@ TASK_DECL_2(MTBDD, mtbdd_op_complement, MTBDD, size_t);
 /**
  * Just like mtbdd_abstract_min, but instead of abstracting the variables in the given cube, picks a unique representative that realizes the minimal function value.
  */
-TASK_DECL_3(MTBDD, mtbdd_minExistsRepresentative, MTBDD, MTBDD, uint32_t);
+TASK_DECL_3(BDD, mtbdd_minExistsRepresentative, MTBDD, MTBDD, uint32_t);
 #define mtbdd_minExistsRepresentative(a, vars) (CALL(mtbdd_minExistsRepresentative, a, vars, 0))
 
 /**
  * Just like mtbdd_abstract_max but instead of abstracting the variables in the given cube, picks a unique representative that realizes the maximal function value.
  */
-TASK_DECL_3(MTBDD, mtbdd_maxExistsRepresentative, MTBDD, MTBDD, uint32_t);
+TASK_DECL_3(BDD, mtbdd_maxExistsRepresentative, MTBDD, MTBDD, uint32_t);
 #define mtbdd_maxExistsRepresentative(a, vars) (CALL(mtbdd_maxExistsRepresentative, a, vars, 0))
 

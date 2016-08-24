@@ -90,7 +90,7 @@ TASK_DECL_2(MTBDD, sylvan_storm_rational_function_op_neg, MTBDD, size_t)
 /**
  * Compute -a
  */
-#define sylvan_storm_rational_function_neg(a) mtbdd_uapply(a, TASK(sylvan_storm_rational_function_op_neg), 0);
+#define sylvan_storm_rational_function_neg(a) mtbdd_uapply(a, TASK(sylvan_storm_rational_function_op_neg), 0)
 
 /**
  * Multiply <a> and <b>, and abstract variables <vars> using summation.
@@ -103,6 +103,25 @@ TASK_DECL_3(MTBDD, sylvan_storm_rational_function_and_exists, MTBDD, MTBDD, MTBD
  * Abstract the variables in <v> from <a> by taking the sum of all values
  */
 #define sylvan_storm_rational_function_abstract_plus(dd, v) mtbdd_abstract(dd, v, TASK(sylvan_storm_rational_function_abstract_op_plus))
+
+/**
+ * Functionality regarding the replacement of leaves in MTBDDs.
+ *
+ * uint64_t mtbdd_getvalue
+ * uint32_t mtbdd_gettype
+ * void* custom context ptr
+ */
+typedef MTBDD (*mtbddLeaveReplacementFunction)(uint64_t, uint32_t, void*);
+
+/**
+ * Operation "replace" for one storm::RationalFunction MTBDD
+ */
+TASK_DECL_2(MTBDD, sylvan_storm_rational_function_op_replace_leaves, MTBDD, void*)
+
+/**
+ * Compute the MTBDD that arises from a after calling the mtbddLeaveReplacementFunction on each leaf.
+ */
+#define sylvan_storm_rational_function_replace_leaves(a, func, ctx) mtbdd_uapply(a, TASK(sylvan_storm_rational_function_op_replace_leaves), ctx)
 
 #ifdef __cplusplus
 }

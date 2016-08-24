@@ -378,6 +378,23 @@ TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_neg, MTBDD, dd, size_t, p)
 }
 
 /**
+ * Operation "replace leaves" for one storm::RationalFunction MTBDD
+ */
+TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_replace_leaves, MTBDD, dd, void*, context)
+{
+	LOG_I("task_impl_2 op_replace")
+    /* Handle partial functions */
+    if (dd == mtbdd_false) return mtbdd_false;
+
+    /* Compute result for leaf */
+    if (mtbdd_isleaf(dd)) {
+		return storm_rational_function_leaf_parameter_replacement(mtbdd_getvalue(dd), mtbdd_gettype(dd), context);
+    }
+
+    return mtbdd_invalid;
+}
+
+/**
  * Multiply <a> and <b>, and abstract variables <vars> using summation.
  * This is similar to the "and_exists" operation in BDDs.
  */
@@ -411,13 +428,13 @@ TASK_IMPL_3(MTBDD, sylvan_storm_rational_function_and_exists, MTBDD, a, MTBDD, b
     /* Get top variable */
     int la = mtbdd_isleaf(a);
     int lb = mtbdd_isleaf(b);
-    mtbddnode_t na = la ? 0 : GETNODE(a);
-    mtbddnode_t nb = lb ? 0 : GETNODE(b);
+    mtbddnode_t na = la ? 0 : MTBDD_GETNODE(a);
+    mtbddnode_t nb = lb ? 0 : MTBDD_GETNODE(b);
     uint32_t va = la ? 0xffffffff : mtbddnode_getvariable(na);
     uint32_t vb = lb ? 0xffffffff : mtbddnode_getvariable(nb);
     uint32_t var = va < vb ? va : vb;
 
-    mtbddnode_t nv = GETNODE(v);
+    mtbddnode_t nv = MTBDD_GETNODE(v);
     uint32_t vv = mtbddnode_getvariable(nv);
 
     if (vv < var) {

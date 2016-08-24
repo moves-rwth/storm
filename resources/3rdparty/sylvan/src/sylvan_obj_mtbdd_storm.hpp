@@ -35,12 +35,12 @@
 	/**
      * @brief Computes abstraction by minimum
      */
-    Mtbdd AbstractMinRepresentative(const BddSet &variables) const;
+    Bdd AbstractMinRepresentative(const BddSet &variables) const;
 
     /**
      * @brief Computes abstraction by maximum
      */
-    Mtbdd AbstractMaxRepresentative(const BddSet &variables) const;
+    Bdd AbstractMaxRepresentative(const BddSet &variables) const;
 	
     Bdd NotZero() const;
     

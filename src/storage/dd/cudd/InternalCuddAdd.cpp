@@ -9,6 +9,7 @@
 
 #include "src/utility/constants.h"
 #include "src/utility/macros.h"
+#include "src/exceptions/NotImplementedException.h"
 
 namespace storm {
     namespace dd {
@@ -145,6 +146,12 @@ namespace storm {
         InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::minAbstract(InternalBdd<DdType::CUDD> const& cube) const {
             return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd().MinAbstract(cube.toAdd<ValueType>().getCuddAdd()));
         }
+		
+		template<typename ValueType>
+        InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::minAbstractRepresentative(InternalBdd<DdType::CUDD> const& cube) const {
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented: minAbstractRepresentative");
+			//return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd().MinAbstractRepresentative(cube.toAdd<ValueType>().getCuddAdd()));
+        }
         
         template<typename ValueType>
         InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::minAbstractExcept0(InternalBdd<DdType::CUDD> const& cube) const {
@@ -154,6 +161,12 @@ namespace storm {
         template<typename ValueType>
         InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::maxAbstract(InternalBdd<DdType::CUDD> const& cube) const {
             return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd().MaxAbstract(cube.toAdd<ValueType>().getCuddAdd()));
+        }
+		
+		template<typename ValueType>
+        InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::maxAbstractRepresentative(InternalBdd<DdType::CUDD> const& cube) const {
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented: maxAbstractRepresentative");
+			//return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd().MinAbstractRepresentative(cube.toAdd<ValueType>().getCuddAdd()));
         }
         
         template<typename ValueType>

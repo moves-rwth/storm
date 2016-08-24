@@ -268,13 +268,27 @@ namespace storm {
              * @param cube The cube from which to abstract.
              */
             InternalAdd<DdType::Sylvan, ValueType> minAbstractExcept0(InternalBdd<DdType::Sylvan> const& cube) const;
-
+			
+			/*!
+             * Min-abstracts from the given cube and returns a representative.
+             *
+             * @param cube The cube from which to abstract.
+             */
+            InternalBdd<DdType::Sylvan> minAbstractRepresentative(InternalBdd<DdType::Sylvan> const& cube) const;
+            
             /*!
              * Max-abstracts from the given cube.
              *
              * @param cube The cube from which to abstract.
              */
             InternalAdd<DdType::Sylvan, ValueType> maxAbstract(InternalBdd<DdType::Sylvan> const& cube) const;
+			
+			/*!
+             * Max-abstracts from the given cube and returns a representative.
+             *
+             * @param cube The cube from which to abstract.
+             */
+            InternalBdd<DdType::Sylvan> maxAbstractRepresentative(InternalBdd<DdType::Sylvan> const& cube) const;
             
             /*!
              * Checks whether the current and the given ADD represent the same function modulo some given precision.
