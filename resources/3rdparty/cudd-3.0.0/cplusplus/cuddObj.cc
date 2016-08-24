@@ -2667,22 +2667,22 @@ ADD::MaxAbstract(const ADD& cube) const
     return ADD(p, result);
 } // ADD::MaxAbstract
 
-ADD
+BDD
 ADD::MinAbstractRepresentative(const ADD& cube) const
 {
     DdManager *mgr = checkSameManager(cube);
     DdNode *result = Cudd_addMinAbstractRepresentative(mgr, node, cube.node);
     checkReturnValue(result);
-    return ADD(p, result);
+    return BDD(p, result);
 } // ADD::MinRepresentative
 
-ADD
+BDD
 ADD::MaxAbstractRepresentative(const ADD& cube) const
 {
     DdManager *mgr = checkSameManager(cube);
     DdNode *result = Cudd_addMaxAbstractRepresentative(mgr, node, cube.node);
     checkReturnValue(result);
-    return ADD(p, result);
+    return BDD(p, result);
 } // ADD::MaxRepresentative
 
 ADD

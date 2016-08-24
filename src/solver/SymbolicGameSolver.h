@@ -68,12 +68,21 @@ namespace storm {
              */
             virtual storm::dd::Add<Type, ValueType> solveGame(OptimizationDirection player1Goal, OptimizationDirection player2Goal, storm::dd::Add<Type, ValueType> const& x, storm::dd::Add<Type, ValueType> const& b) const;
         
+            // Setters that enable the generation of the players' strategies.
+            void setGeneratePlayer1Strategy(bool value);
+            void setGeneratePlayer2Strategy(bool value);
+            void setGeneratePlayerStrategies(bool value);
+            
+            // Getters to retrieve the players' strategies. Only legal if they were generated.
+            storm::dd::Bdd<Type> const& getPlayer1Strategy() const;
+            storm::dd::Bdd<Type> const& getPlayer2Strategy() const;
+
         protected:
             // The matrix defining the coefficients of the linear equation system.
-            storm::dd::Add<Type, ValueType> const& gameMatrix;
+            storm::dd::Add<Type, ValueType> A;
             
             // A BDD characterizing all rows of the equation system.
-            storm::dd::Bdd<Type> const& allRows;
+            storm::dd::Bdd<Type> allRows;
             
             // An ADD that can be used to compensate for the illegal choices of player 1.
             storm::dd::Add<Type> illegalPlayer1Mask;
@@ -82,19 +91,32 @@ namespace storm {
             storm::dd::Add<Type> illegalPlayer2Mask;
 
             // The row variables.
-            std::set<storm::expressions::Variable> const& rowMetaVariables;
+            std::set<storm::expressions::Variable> rowMetaVariables;
             
             // The column variables.
-            std::set<storm::expressions::Variable> const& columnMetaVariables;
+            std::set<storm::expressions::Variable> columnMetaVariables;
             
             // The pairs of meta variables used for renaming.
-            std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs;
+            std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> rowColumnMetaVariablePairs;
             
             // The player 1 variables.
-            std::set<storm::expressions::Variable> const& player1Variables;
+            std::set<storm::expressions::Variable> player1Variables;
             
             // The player 2 variables.
-            std::set<storm::expressions::Variable> const& player2Variables;
+            std::set<storm::expressions::Variable> player2Variables;
+            
+            // A flag indicating whether a player 1 is to be generated.
+            bool generatePlayer1Strategy;
+
+            // A player 1 strategy if one was generated.
+            boost::optional<storm::dd::Bdd<Type>> player1Strategy;
+            
+            // A flag indicating whether a player 2 is to be generated.
+            bool generatePlayer2Strategy;
+
+            // A player 1 strategy if one was generated.
+            boost::optional<storm::dd::Bdd<Type>> player2Strategy;
+
         };
         
     } // namespace solver
