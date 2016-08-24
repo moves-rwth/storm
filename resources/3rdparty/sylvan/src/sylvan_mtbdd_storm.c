@@ -1,3 +1,5 @@
+#include <sylvan_bdd_int.h>
+
 /**
  * Generate SHA2 structural hashes.
  * Hashes are independent of location.
@@ -11,7 +13,7 @@ mtbdd_sha2_rec(MTBDD mtbdd, SHA256_CTX *ctx)
         return;
     }
     
-    mtbddnode_t node = GETNODE(mtbdd);
+    mtbddnode_t node = MTBDD_GETNODE(mtbdd);
     if (mtbddnode_isleaf(node)) {
         uint64_t val = mtbddnode_getvalue(node);
         SHA256_Update(ctx, (void*)&val, sizeof(uint64_t));
@@ -48,8 +50,8 @@ TASK_IMPL_2(MTBDD, mtbdd_op_divide, MTBDD*, pa, MTBDD*, pb)
     
     // Do not handle Boolean MTBDDs...
     
-    mtbddnode_t na = GETNODE(a);
-    mtbddnode_t nb = GETNODE(b);
+    mtbddnode_t na = MTBDD_GETNODE(a);
+    mtbddnode_t nb = MTBDD_GETNODE(b);
     
     if (mtbddnode_isleaf(na) && mtbddnode_isleaf(nb)) {
         uint64_t val_a = mtbddnode_getvalue(na);
@@ -120,8 +122,8 @@ TASK_IMPL_2(MTBDD, mtbdd_op_equals, MTBDD*, pa, MTBDD*, pb)
     if (a == mtbdd_false && b == mtbdd_false) return mtbdd_true;
     if (a == mtbdd_true && b == mtbdd_true) return mtbdd_true;
     
-    mtbddnode_t na = GETNODE(a);
-    mtbddnode_t nb = GETNODE(b);
+    mtbddnode_t na = MTBDD_GETNODE(a);
+    mtbddnode_t nb = MTBDD_GETNODE(b);
     
     if (mtbddnode_isleaf(na) && mtbddnode_isleaf(nb)) {
         uint64_t val_a = mtbddnode_getvalue(na);
@@ -174,8 +176,8 @@ TASK_IMPL_2(MTBDD, mtbdd_op_less, MTBDD*, pa, MTBDD*, pb)
     if (a == mtbdd_false && b == mtbdd_false) return mtbdd_true;
     if (a == mtbdd_true && b == mtbdd_true) return mtbdd_true;
     
-    mtbddnode_t na = GETNODE(a);
-    mtbddnode_t nb = GETNODE(b);
+    mtbddnode_t na = MTBDD_GETNODE(a);
+    mtbddnode_t nb = MTBDD_GETNODE(b);
     
     if (mtbddnode_isleaf(na) && mtbddnode_isleaf(nb)) {
         uint64_t val_a = mtbddnode_getvalue(na);
@@ -222,8 +224,8 @@ TASK_IMPL_2(MTBDD, mtbdd_op_less_or_equal, MTBDD*, pa, MTBDD*, pb)
     if (a == mtbdd_false && b == mtbdd_false) return mtbdd_true;
     if (a == mtbdd_true && b == mtbdd_true) return mtbdd_true;
     
-    mtbddnode_t na = GETNODE(a);
-    mtbddnode_t nb = GETNODE(b);
+    mtbddnode_t na = MTBDD_GETNODE(a);
+    mtbddnode_t nb = MTBDD_GETNODE(b);
     
     if (mtbddnode_isleaf(na) && mtbddnode_isleaf(nb)) {
         uint64_t val_a = mtbddnode_getvalue(na);
@@ -269,8 +271,8 @@ TASK_IMPL_2(MTBDD, mtbdd_op_pow, MTBDD*, pa, MTBDD*, pb)
 {
     MTBDD a = *pa, b = *pb;
     
-    mtbddnode_t na = GETNODE(a);
-    mtbddnode_t nb = GETNODE(b);
+    mtbddnode_t na = MTBDD_GETNODE(a);
+    mtbddnode_t nb = MTBDD_GETNODE(b);
     
     if (mtbddnode_isleaf(na) && mtbddnode_isleaf(nb)) {
         uint64_t val_a = mtbddnode_getvalue(na);
@@ -306,8 +308,8 @@ TASK_IMPL_2(MTBDD, mtbdd_op_mod, MTBDD*, pa, MTBDD*, pb)
 {
     MTBDD a = *pa, b = *pb;
     
-    mtbddnode_t na = GETNODE(a);
-    mtbddnode_t nb = GETNODE(b);
+    mtbddnode_t na = MTBDD_GETNODE(a);
+    mtbddnode_t nb = MTBDD_GETNODE(b);
     
     if (mtbddnode_isleaf(na) && mtbddnode_isleaf(nb)) {
         uint64_t val_a = mtbddnode_getvalue(na);
@@ -343,8 +345,8 @@ TASK_IMPL_2(MTBDD, mtbdd_op_logxy, MTBDD*, pa, MTBDD*, pb)
 {
     MTBDD a = *pa, b = *pb;
     
-    mtbddnode_t na = GETNODE(a);
-    mtbddnode_t nb = GETNODE(b);
+    mtbddnode_t na = MTBDD_GETNODE(a);
+    mtbddnode_t nb = MTBDD_GETNODE(b);
     
     if (mtbddnode_isleaf(na) && mtbddnode_isleaf(nb)) {
         uint64_t val_a = mtbddnode_getvalue(na);
@@ -377,7 +379,7 @@ TASK_IMPL_2(MTBDD, mtbdd_op_not_zero, MTBDD, a, size_t, v)
     if (a == mtbdd_true) return mtbdd_true;
     
     // a != constant
-    mtbddnode_t na = GETNODE(a);
+    mtbddnode_t na = MTBDD_GETNODE(a);
     
     if (mtbddnode_isleaf(na)) {
         if (mtbddnode_gettype(na) == 0) {
@@ -412,7 +414,7 @@ TASK_IMPL_2(MTBDD, mtbdd_op_floor, MTBDD, a, size_t, v)
     if (a == mtbdd_true) return mtbdd_true;
     
     // a != constant
-    mtbddnode_t na = GETNODE(a);
+    mtbddnode_t na = MTBDD_GETNODE(a);
     
     if (mtbddnode_isleaf(na)) {
         if (mtbddnode_gettype(na) == 0) {
@@ -450,7 +452,7 @@ TASK_IMPL_2(MTBDD, mtbdd_op_ceil, MTBDD, a, size_t, v)
     if (a == mtbdd_true) return mtbdd_true;
     
     // a != constant
-    mtbddnode_t na = GETNODE(a);
+    mtbddnode_t na = MTBDD_GETNODE(a);
     
     if (mtbddnode_isleaf(na)) {
         if (mtbddnode_gettype(na) == 0) {
@@ -523,7 +525,7 @@ TASK_IMPL_2(double, mtbdd_non_zero_count, MTBDD, dd, size_t, nvars)
     /* Trivial cases */
     if (dd == mtbdd_false) return 0.0;
 
-    mtbddnode_t na = GETNODE(dd);
+    mtbddnode_t na = MTBDD_GETNODE(dd);
     
     if (mtbdd_isleaf(dd)) {
         if (mtbddnode_gettype(na) == 0) {
@@ -593,7 +595,7 @@ TASK_IMPL_2(MTBDD, mtbdd_op_complement, MTBDD, a, size_t, k)
     if (a == mtbdd_false) return mtbdd_false;
 
     // a != constant
-    mtbddnode_t na = GETNODE(a);
+    mtbddnode_t na = MTBDD_GETNODE(a);
 
     if (mtbddnode_isleaf(na)) {
         if (mtbddnode_gettype(na) == 0) {
@@ -626,42 +628,42 @@ TASK_IMPL_2(MTBDD, mtbdd_op_complement, MTBDD, a, size_t, k)
     (void)k; // unused variable
 }
 
-TASK_IMPL_3(MTBDD, mtbdd_minExistsRepresentative, MTBDD, a, MTBDD, variables, uint32_t, prev_level) {
-	MTBDD zero = mtbdd_false;
+TASK_IMPL_3(BDD, mtbdd_minExistsRepresentative, MTBDD, a, BDD, variables, BDDVAR, prev_level) {
+	BDD zero = sylvan_false;
     
 	/* Maybe perform garbage collection */
     sylvan_gc_test();
 	
     /* Cube is guaranteed to be a cube at this point. */
     if (mtbdd_isleaf(a)) {
-        if (mtbdd_set_isempty(variables)) {
-            return a; // FIXME?
+        if (sylvan_set_isempty(variables)) {
+            return sylvan_true; // FIXME?
         } else {
             return variables;
         }
     }
 	
-	mtbddnode_t na = GETNODE(a);
+	mtbddnode_t na = MTBDD_GETNODE(a);
 	uint32_t va = mtbddnode_getvariable(na);
-	mtbddnode_t nv = GETNODE(variables);
-	uint32_t vv = mtbddnode_getvariable(nv);
+	bddnode_t nv = BDD_GETNODE(variables);
+	BDDVAR vv = bddnode_getvariable(nv);
 
     /* Abstract a variable that does not appear in a. */
     if (va > vv) {
-		MTBDD _v = mtbdd_set_next(variables);
-        MTBDD res = CALL(mtbdd_minExistsRepresentative, a, _v, va);
-        if (res == mtbdd_invalid) {
-            return mtbdd_invalid;
+		BDD _v = sylvan_set_next(variables);
+        BDD res = CALL(mtbdd_minExistsRepresentative, a, _v, va);
+        if (res == sylvan_invalid) {
+            return sylvan_invalid;
         }
         
         // Fill in the missing variables to make representative unique.
-        mtbdd_ref(res);
-        MTBDD res1 = mtbdd_ite(mtbdd_ithvar(vv), zero, res);
-        if (res1 == mtbdd_invalid) {
-            mtbdd_deref(res);
-            return mtbdd_invalid;
+        sylvan_ref(res);
+        BDD res1 = sylvan_ite(sylvan_ithvar(vv), zero, res);
+        if (res1 == sylvan_invalid) {
+            sylvan_deref(res);
+            return sylvan_invalid;
         }
-        mtbdd_deref(res);
+        sylvan_deref(res);
        	return res1;
     }
     
@@ -676,120 +678,120 @@ TASK_IMPL_3(MTBDD, mtbdd_minExistsRepresentative, MTBDD, a, MTBDD, variables, ui
     
     /* If the two indices are the same, so are their levels. */
     if (va == vv) {
-		MTBDD _v = mtbdd_set_next(variables);
-        MTBDD res1 = CALL(mtbdd_minExistsRepresentative, E, _v, va);
-        if (res1 == mtbdd_invalid) {
-            return mtbdd_invalid;
+		BDD _v = sylvan_set_next(variables);
+        BDD res1 = CALL(mtbdd_minExistsRepresentative, E, _v, va);
+        if (res1 == sylvan_invalid) {
+            return sylvan_invalid;
         }
-        mtbdd_ref(res1);
+        sylvan_ref(res1);
         
-        MTBDD res2 = CALL(mtbdd_minExistsRepresentative, T, _v, va);
-        if (res2 == mtbdd_invalid) {
-            mtbdd_deref(res1);
-            return mtbdd_invalid;
+        BDD res2 = CALL(mtbdd_minExistsRepresentative, T, _v, va);
+        if (res2 == sylvan_invalid) {
+            sylvan_deref(res1);
+            return sylvan_invalid;
         }
-        mtbdd_ref(res2);
+        sylvan_ref(res2);
         
         MTBDD left = mtbdd_abstract_min(E, _v);
         if (left == mtbdd_invalid) {
-            mtbdd_deref(res1);
-			mtbdd_deref(res2);
-            return mtbdd_invalid;
+            sylvan_deref(res1);
+			sylvan_deref(res2);
+            return sylvan_invalid;
         }
         mtbdd_ref(left);
 		
         MTBDD right = mtbdd_abstract_min(T, _v);
         if (right == mtbdd_invalid) {
-            mtbdd_deref(res1);
-			mtbdd_deref(res2);
+            sylvan_deref(res1);
+			sylvan_deref(res2);
 			mtbdd_deref(left);
-            return mtbdd_invalid;
+            return sylvan_invalid;
         }
         mtbdd_ref(right);
         
-        MTBDD tmp = mtbdd_less_or_equal_as_bdd(left, right);
-        if (tmp == mtbdd_invalid) {
-            mtbdd_deref(res1);
-			mtbdd_deref(res2);
+        BDD tmp = mtbdd_less_or_equal_as_bdd(left, right);
+        if (tmp == sylvan_invalid) {
+            sylvan_deref(res1);
+			sylvan_deref(res2);
 			mtbdd_deref(left);
 			mtbdd_deref(right);
-            return mtbdd_invalid;
+            return sylvan_invalid;
         }
-        mtbdd_ref(tmp);
+        sylvan_ref(tmp);
         
         mtbdd_deref(left);
 		mtbdd_deref(right);
         
-        MTBDD res1Inf = mtbdd_ite(tmp, res1, zero);
-        if (res1Inf == mtbdd_invalid) {
-            mtbdd_deref(res1);
-			mtbdd_deref(res2);
-			mtbdd_deref(tmp);
-            return mtbdd_invalid;
+        BDD res1Inf = sylvan_ite(tmp, res1, zero);
+        if (res1Inf == sylvan_invalid) {
+            sylvan_deref(res1);
+			sylvan_deref(res2);
+			sylvan_deref(tmp);
+            return sylvan_invalid;
         }
-        mtbdd_ref(res1Inf);
-        mtbdd_deref(res1);
+        sylvan_ref(res1Inf);
+        sylvan_deref(res1);
         
-        MTBDD tmp2 = mtbdd_get_complement(tmp);
-        if (tmp2 == mtbdd_invalid) {
-			mtbdd_deref(res2);
+        BDD tmp2 = sylvan_not(tmp);
+        if (tmp2 == sylvan_invalid) {
+			sylvan_deref(res2);
 			mtbdd_deref(left);
 			mtbdd_deref(right);
-			mtbdd_deref(tmp);
-            return mtbdd_invalid;
+			sylvan_deref(tmp);
+            return sylvan_invalid;
         }
-        mtbdd_ref(tmp2);
-        mtbdd_deref(tmp);
+        sylvan_ref(tmp2);
+        sylvan_deref(tmp);
         
-        MTBDD res2Inf = mtbdd_ite(tmp2, res2, zero);
-        if (res2Inf == mtbdd_invalid) {
-            mtbdd_deref(res2);
-            mtbdd_deref(res1Inf);
-            mtbdd_deref(tmp2);
-            return mtbdd_invalid;
+        BDD res2Inf = sylvan_ite(tmp2, res2, zero);
+        if (res2Inf == sylvan_invalid) {
+            sylvan_deref(res2);
+            sylvan_deref(res1Inf);
+            sylvan_deref(tmp2);
+            return sylvan_invalid;
         }
-        mtbdd_ref(res2Inf);
-        mtbdd_deref(res2);
-        mtbdd_deref(tmp2);
+        sylvan_ref(res2Inf);
+        sylvan_deref(res2);
+        sylvan_deref(tmp2);
 
-        MTBDD res = (res1Inf == res2Inf) ? mtbdd_ite(mtbdd_ithvar(va), zero, res1Inf) : mtbdd_ite(mtbdd_ithvar(va), res2Inf, res1Inf);
+        BDD res = (res1Inf == res2Inf) ? sylvan_ite(sylvan_ithvar(va), zero, res1Inf) : sylvan_ite(sylvan_ithvar(va), res2Inf, res1Inf);
 
-        if (res == mtbdd_invalid) {
-            mtbdd_deref(res1Inf);
-            mtbdd_deref(res2Inf);
-            return mtbdd_invalid;
+        if (res == sylvan_invalid) {
+            sylvan_deref(res1Inf);
+            sylvan_deref(res2Inf);
+            return sylvan_invalid;
         }
-        mtbdd_ref(res);
-        mtbdd_deref(res1Inf);
-        mtbdd_deref(res2Inf);
+        sylvan_ref(res);
+        sylvan_deref(res1Inf);
+        sylvan_deref(res2Inf);
         
 		/* TODO: Caching here. */
 		//cuddCacheInsert2(manager, Cudd_addMinAbstractRepresentative, f, cube, res);
 		
-        mtbdd_deref(res);
+        sylvan_deref(res);
         return res;
     }
     else { /* if (cuddI(manager,f->index) < cuddI(manager,cube->index)) */
-		MTBDD res1 = CALL(mtbdd_minExistsRepresentative, E, variables, va);
-        if (res1 == mtbdd_invalid) {
-			return mtbdd_invalid;
+		BDD res1 = CALL(mtbdd_minExistsRepresentative, E, variables, va);
+        if (res1 == sylvan_invalid) {
+			return sylvan_invalid;
 		}
-        mtbdd_ref(res1);
-        MTBDD res2 = CALL(mtbdd_minExistsRepresentative, T, variables, va);
-        if (res2 == mtbdd_invalid) {
-            mtbdd_deref(res1);
-            return mtbdd_invalid;
+        sylvan_ref(res1);
+        BDD res2 = CALL(mtbdd_minExistsRepresentative, T, variables, va);
+        if (res2 == sylvan_invalid) {
+            sylvan_deref(res1);
+            return sylvan_invalid;
         }
-        mtbdd_ref(res2);
+        sylvan_ref(res2);
 
-        MTBDD res = (res1 == res2) ? mtbdd_ite(mtbdd_ithvar(va), zero, res1) : mtbdd_ite(mtbdd_ithvar(va), res2, res1);
-        if (res == mtbdd_invalid) {
-            mtbdd_deref(res1);
-            mtbdd_deref(res2);
-            return mtbdd_invalid;
+        BDD res = (res1 == res2) ? sylvan_ite(sylvan_ithvar(va), zero, res1) : sylvan_ite(sylvan_ithvar(va), res2, res1);
+        if (res == sylvan_invalid) {
+            sylvan_deref(res1);
+            sylvan_deref(res2);
+            return sylvan_invalid;
         }
-        mtbdd_deref(res1);
-        mtbdd_deref(res2);
+        sylvan_deref(res1);
+        sylvan_deref(res2);
 		/* TODO: Caching here. */
         //cuddCacheInsert2(manager, Cudd_addMinAbstractRepresentative, f, cube, res);
         return res;
@@ -799,7 +801,7 @@ TASK_IMPL_3(MTBDD, mtbdd_minExistsRepresentative, MTBDD, a, MTBDD, variables, ui
 	(void)prev_level;
 }
 
-TASK_IMPL_3(MTBDD, mtbdd_maxExistsRepresentative, MTBDD, a, MTBDD, variables, uint32_t, prev_level) {
+TASK_IMPL_3(BDD, mtbdd_maxExistsRepresentative, MTBDD, a, MTBDD, variables, uint32_t, prev_level) {
 	(void)variables;
 	(void)prev_level;
 	return a;	

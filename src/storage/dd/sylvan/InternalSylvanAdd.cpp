@@ -305,6 +305,11 @@ namespace storm {
         InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::minAbstract(InternalBdd<DdType::Sylvan> const& cube) const {
             return InternalAdd<DdType::Sylvan, ValueType>(ddManager, this->sylvanMtbdd.AbstractMin(cube.sylvanBdd));
         }
+		
+		template<typename ValueType>
+        InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, ValueType>::minAbstractRepresentative(InternalBdd<DdType::Sylvan> const& cube) const {
+            return InternalBdd<DdType::Sylvan>(ddManager, this->sylvanMtbdd.AbstractMinRepresentative(cube.sylvanBdd));
+        }
 
 #ifdef STORM_HAVE_CARL
 		template<>
@@ -316,6 +321,11 @@ namespace storm {
         template<typename ValueType>
         InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::maxAbstract(InternalBdd<DdType::Sylvan> const& cube) const {
             return InternalAdd<DdType::Sylvan, ValueType>(ddManager, this->sylvanMtbdd.AbstractMax(cube.sylvanBdd));
+        }
+		
+		template<typename ValueType>
+        InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, ValueType>::maxAbstractRepresentative(InternalBdd<DdType::Sylvan> const& cube) const {
+            return InternalBdd<DdType::Sylvan>(ddManager, this->sylvanMtbdd.AbstractMaxRepresentative(cube.sylvanBdd));
         }
 
 #ifdef STORM_HAVE_CARL

@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <sylvan.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,6 +30,8 @@ void print_storm_rational_function(storm_rational_function_ptr a);
 void print_storm_rational_function_to_file(storm_rational_function_ptr a, FILE* out);
 
 int storm_rational_function_is_zero(storm_rational_function_ptr a);
+
+MTBDD storm_rational_function_leaf_parameter_replacement(uint64_t node_value, uint32_t node_type, void* context);
 
 #ifdef __cplusplus
 }

@@ -164,11 +164,23 @@ namespace storm {
             Bdd<LibraryType> cube = Bdd<LibraryType>::getCube(this->getDdManager(), metaVariables);
             return Add<LibraryType, ValueType>(this->getDdManager(), internalAdd.minAbstract(cube), Dd<LibraryType>::subtractMetaVariables(*this, cube));
         }
+		
+		template<DdType LibraryType, typename ValueType>
+        Bdd<LibraryType> Add<LibraryType, ValueType>::minAbstractRepresentative(std::set<storm::expressions::Variable> const& metaVariables) const {
+            Bdd<LibraryType> cube = Bdd<LibraryType>::getCube(this->getDdManager(), metaVariables);
+            return Bdd<LibraryType>(this->getDdManager(), internalAdd.minAbstractRepresentative(cube), this->getContainedMetaVariables());
+        }
         
         template<DdType LibraryType, typename ValueType>
         Add<LibraryType, ValueType> Add<LibraryType, ValueType>::maxAbstract(std::set<storm::expressions::Variable> const& metaVariables) const {
             Bdd<LibraryType> cube = Bdd<LibraryType>::getCube(this->getDdManager(), metaVariables);
             return Add<LibraryType, ValueType>(this->getDdManager(), internalAdd.maxAbstract(cube), Dd<LibraryType>::subtractMetaVariables(*this, cube));
+        }
+		
+		template<DdType LibraryType, typename ValueType>
+        Bdd<LibraryType> Add<LibraryType, ValueType>::maxAbstractRepresentative(std::set<storm::expressions::Variable> const& metaVariables) const {
+            Bdd<LibraryType> cube = Bdd<LibraryType>::getCube(this->getDdManager(), metaVariables);
+            return Bdd<LibraryType>(this->getDdManager(), internalAdd.maxAbstractRepresentative(cube), this->getContainedMetaVariables());
         }
 
         template<DdType LibraryType, typename ValueType>

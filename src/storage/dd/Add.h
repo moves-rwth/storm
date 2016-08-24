@@ -257,12 +257,30 @@ namespace storm {
              */
             Add<LibraryType, ValueType> minAbstract(std::set<storm::expressions::Variable> const& metaVariables) const;
             
+			/*!
+             * Similar to <code>minAbstract</code>, but does not abstract from the variables but rather picks a
+             * valuation of each of the meta variables "to abstract from" such that for this valuation, there exists a
+             * valuation (of the other variables) that make the function evaluate to the minimal value.
+             *
+             * @param metaVariables The meta variables from which to abstract.
+             */
+            Bdd<LibraryType> minAbstractRepresentative(std::set<storm::expressions::Variable> const& metaVariables) const;
+			
             /*!
              * Max-abstracts from the given meta variables.
              *
              * @param metaVariables The meta variables from which to abstract.
              */
             Add<LibraryType, ValueType> maxAbstract(std::set<storm::expressions::Variable> const& metaVariables) const;
+			
+			/*!
+             * Similar to <code>maxAbstract</code>, but does not abstract from the variables but rather picks a
+             * valuation of each of the meta variables "to abstract from" such that for this valuation, there exists a
+             * valuation (of the other variables) that make the function evaluate to the maximal value.
+             *
+             * @param metaVariables The meta variables from which to abstract.
+             */
+            Bdd<LibraryType> maxAbstractRepresentative(std::set<storm::expressions::Variable> const& metaVariables) const;
             
             /*!
              * Checks whether the current and the given ADD represent the same function modulo some given precision.

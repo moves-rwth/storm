@@ -4,6 +4,7 @@
 #include <iostream>
 #include <sstream>
 #include "src/adapters/CarlAdapter.h"
+#include "sylvan_storm_rational_function.h"
 
 #undef DEBUG_STORM_FUNCTION_WRAPPER
 
@@ -203,4 +204,18 @@ void print_storm_rational_function_to_file(storm_rational_function_ptr a, FILE* 
 	ss << srf_a;
 	std::string s = ss.str();
 	fprintf(out, "%s", s.c_str());
+}
+
+MTBDD storm_rational_function_leaf_parameter_replacement(uint64_t node_value, uint32_t node_type, void* context) {
+	if (node_type != sylvan_storm_rational_function_get_type()) {
+		//
+	} else {
+		//
+	}
+	
+	(void)node_value;
+	(void)node_type;
+	(void)context;
+	
+	return mtbdd_invalid;
 }
