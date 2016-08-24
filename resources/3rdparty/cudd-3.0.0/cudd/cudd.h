@@ -667,6 +667,7 @@ extern DdNode * Cudd_addExistAbstract(DdManager *manager, DdNode *f, DdNode *cub
 extern DdNode * Cudd_addUnivAbstract(DdManager *manager, DdNode *f, DdNode *cube);
 extern DdNode * Cudd_addOrAbstract(DdManager *manager, DdNode *f, DdNode *cube);
 extern DdNode * Cudd_addMinAbstract(DdManager * manager, DdNode * f, DdNode * cube);
+extern DdNode * Cudd_addMinExcept0Abstract(DdManager * manager, DdNode * f, DdNode * cube);
 extern DdNode * Cudd_addMaxAbstract(DdManager * manager, DdNode * f, DdNode * cube);
 extern DdNode * Cudd_addMinAbstractRepresentative(DdManager * manager, DdNode * f, DdNode * cube);
 extern DdNode * Cudd_addMaxAbstractRepresentative(DdManager * manager, DdNode * f, DdNode * cube);
@@ -679,6 +680,7 @@ extern DdNode * Cudd_addSetNZ(DdManager *dd, DdNode **f, DdNode **g);
 extern DdNode * Cudd_addDivide(DdManager *dd, DdNode **f, DdNode **g);
 extern DdNode * Cudd_addMinus(DdManager *dd, DdNode **f, DdNode **g);
 extern DdNode * Cudd_addMinimum(DdManager *dd, DdNode **f, DdNode **g);
+extern DdNode * Cudd_addMinimumExcept0(DdManager *dd, DdNode **f, DdNode **g);
 extern DdNode * Cudd_addMaximum(DdManager *dd, DdNode **f, DdNode **g);
 extern DdNode * Cudd_addOneZeroMaximum(DdManager *dd, DdNode **f, DdNode **g);
 extern DdNode * Cudd_addDiff(DdManager *dd, DdNode **f, DdNode **g);

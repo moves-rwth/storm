@@ -305,11 +305,23 @@ namespace storm {
         InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::minAbstract(InternalBdd<DdType::Sylvan> const& cube) const {
             return InternalAdd<DdType::Sylvan, ValueType>(ddManager, this->sylvanMtbdd.AbstractMin(cube.sylvanBdd));
         }
-
+        
 #ifdef STORM_HAVE_CARL
 		template<>
         InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalAdd<DdType::Sylvan, storm::RationalFunction>::minAbstract(InternalBdd<DdType::Sylvan> const& cube) const {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented: minAbstract");
+        }
+#endif
+        
+        template<typename ValueType>
+        InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::minAbstractExcept0(InternalBdd<DdType::Sylvan> const& cube) const {
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented: minAbstractExcept0");
+        }
+
+#ifdef STORM_HAVE_CARL
+        template<>
+        InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalAdd<DdType::Sylvan, storm::RationalFunction>::minAbstractExcept0(InternalBdd<DdType::Sylvan> const& cube) const {
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented: minAbstractExcept0");
         }
 #endif
 

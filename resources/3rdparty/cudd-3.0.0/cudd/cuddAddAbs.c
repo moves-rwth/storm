@@ -246,6 +246,44 @@ Cudd_addMinAbstract(
 /**Function********************************************************************
  
  Synopsis    [Abstracts all the variables in cube from the
+ ADD f by taking the minimum.]
+ 
+ Description [Abstracts all the variables in cube from the ADD f
+ by taking the minimum over all possible values taken by the
+ variables.  Returns the abstracted ADD if successful; NULL
+ otherwise.]
+ 
+ SideEffects [None]
+ 
+ SeeAlso     [Cudd_addUnivAbstract Cudd_addExistAbstract]
+ 
+ Note: Added by Christian Dehnert 24/08/2016
+ 
+ ******************************************************************************/
+DdNode *
+Cudd_addMinExcept0Abstract(
+                    DdManager * manager,
+                    DdNode * f,
+                    DdNode * cube)
+{
+    DdNode *res;
+    
+    if (addCheckPositiveCube(manager, cube) == 0) {
+        (void) fprintf(manager->err,"Error: Can only abstract cubes");
+        return(NULL);
+    }
+    
+    do {
+        manager->reordered = 0;
+        res = cuddAddMinExcept0AbstractRecur(manager, f, cube);
+    } while (manager->reordered == 1);
+    return(res);
+    
+} /* end of Cudd_addMinExcept0Abstract */
+
+/**Function********************************************************************
+ 
+ Synopsis    [Abstracts all the variables in cube from the
  ADD f by taking the maximum.]
  
  Description [Abstracts all the variables in cube from the ADD f
@@ -750,6 +788,98 @@ cuddAddMinAbstractRecur(
     
 } /* end of cuddAddMinAbstractRecur */
 
+/**Function********************************************************************
+ 
+ Synopsis    [Performs the recursive step of Cudd_addMinAbstract.]
+ 
+ Description [Performs the recursive step of Cudd_addMinAbstract.
+ Returns the ADD obtained by abstracting the variables of cube from f,
+ if successful; NULL otherwise.]
+ 
+ SideEffects [None]
+ 
+ SeeAlso     []
+ 
+ added 24/08/2016 by Christian Dehnert
+ 
+ ******************************************************************************/
+DdNode *
+cuddAddMinExcept0AbstractRecur(
+                        DdManager * manager,
+                        DdNode * f,
+                        DdNode * cube)
+{
+    DdNode	*T, *E, *res, *res1, *res2, *zero;
+    
+    zero = DD_ZERO(manager);
+    
+    /* Cube is guaranteed to be a cube at this point. */
+    if (f == zero || cuddIsConstant(cube)) {
+        return(f);
+    }
+    
+    /* Abstract a variable that does not appear in f. */
+    if (cuddI(manager,f->index) > cuddI(manager,cube->index)) {
+        res = cuddAddMinAbstractRecur(manager, f, cuddT(cube));
+       	return(res);
+    }
+    
+    if ((res = cuddCacheLookup2(manager, Cudd_addMinAbstract, f, cube)) != NULL) {
+        return(res);
+    }
+    
+    
+    T = cuddT(f);
+    E = cuddE(f);
+    
+    /* If the two indices are the same, so are their levels. */
+    if (f->index == cube->index) {
+        res1 = cuddAddMinAbstractRecur(manager, T, cuddT(cube));
+        if (res1 == NULL) return(NULL);
+        cuddRef(res1);
+        res2 = cuddAddMinAbstractRecur(manager, E, cuddT(cube));
+        if (res2 == NULL) {
+            Cudd_RecursiveDeref(manager,res1);
+            return(NULL);
+        }
+        cuddRef(res2);
+        res = cuddAddApplyRecur(manager, Cudd_addMinimumExcept0, res1, res2);
+        if (res == NULL) {
+            Cudd_RecursiveDeref(manager,res1);
+            Cudd_RecursiveDeref(manager,res2);
+            return(NULL);
+        }
+        cuddRef(res);
+        Cudd_RecursiveDeref(manager,res1);
+        Cudd_RecursiveDeref(manager,res2);
+        cuddCacheInsert2(manager, Cudd_addMinAbstract, f, cube, res);
+        cuddDeref(res);
+        return(res);
+    }
+    else { /* if (cuddI(manager,f->index) < cuddI(manager,cube->index)) */
+        res1 = cuddAddMinAbstractRecur(manager, T, cube);
+        if (res1 == NULL) return(NULL);
+        cuddRef(res1);
+        res2 = cuddAddMinAbstractRecur(manager, E, cube);
+        if (res2 == NULL) {
+            Cudd_RecursiveDeref(manager,res1);
+            return(NULL);
+        }
+        cuddRef(res2);
+        res = (res1 == res2) ? res1 :
+        cuddUniqueInter(manager, (int) f->index, res1, res2);
+        if (res == NULL) {
+            Cudd_RecursiveDeref(manager,res1);
+            Cudd_RecursiveDeref(manager,res2);
+            return(NULL);
+        }
+        cuddDeref(res1);
+        cuddDeref(res2);
+        cuddCacheInsert2(manager, Cudd_addMinAbstract, f, cube, res);
+        return(res);
+    }
+    
+} /* end of cuddAddMinAbstractRecur */
 
 /**Function********************************************************************
  

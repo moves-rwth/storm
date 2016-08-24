@@ -147,6 +147,11 @@ namespace storm {
         }
         
         template<typename ValueType>
+        InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::minAbstractExcept0(InternalBdd<DdType::CUDD> const& cube) const {
+            return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd().MinAbstractExcept0(cube.toAdd<ValueType>().getCuddAdd()));
+        }
+        
+        template<typename ValueType>
         InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::maxAbstract(InternalBdd<DdType::CUDD> const& cube) const {
             return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd().MaxAbstract(cube.toAdd<ValueType>().getCuddAdd()));
         }

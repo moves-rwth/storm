@@ -334,6 +334,7 @@ public:
     ADD UnivAbstract(const ADD& cube) const;
     ADD OrAbstract(const ADD& cube) const;
     ADD MinAbstract(const ADD& cube) const;
+    ADD MinAbstractExcept0(const ADD& cube) const;
     ADD MaxAbstract(const ADD& cube) const;
     ADD MinAbstractRepresentative(const ADD& cube) const;
     ADD MaxAbstractRepresentative(const ADD& cube) const;

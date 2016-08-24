@@ -256,7 +256,14 @@ namespace storm {
              * @param metaVariables The meta variables from which to abstract.
              */
             Add<LibraryType, ValueType> minAbstract(std::set<storm::expressions::Variable> const& metaVariables) const;
-            
+
+            /*!
+             * Min-abstracts from the given meta variables but treats 0 as the largest possible value.
+             *
+             * @param metaVariables The meta variables from which to abstract.
+             */
+            Add<LibraryType, ValueType> minAbstractExcept0(std::set<storm::expressions::Variable> const& metaVariables) const;
+
             /*!
              * Max-abstracts from the given meta variables.
              *

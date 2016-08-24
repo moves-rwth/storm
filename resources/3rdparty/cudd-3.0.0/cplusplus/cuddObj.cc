@@ -2648,7 +2648,16 @@ ADD::MinAbstract(const ADD& cube) const
     checkReturnValue(result);
     return ADD(p, result);
 } // ADD::MinAbstract
-    
+
+ADD
+ADD::MinAbstractExcept0(const ADD& cube) const
+{
+    DdManager *mgr = checkSameManager(cube);
+    DdNode *result = Cudd_addMinExcept0Abstract(mgr, node, cube.node);
+    checkReturnValue(result);
+    return ADD(p, result);
+} // ADD::MinAbstractExcept0
+
 ADD
 ADD::MaxAbstract(const ADD& cube) const
 {

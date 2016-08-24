@@ -1062,6 +1062,7 @@ extern DdNode * cuddAddExistAbstractRecur(DdManager *manager, DdNode *f, DdNode 
 extern DdNode * cuddAddUnivAbstractRecur(DdManager *manager, DdNode *f, DdNode *cube);
 extern DdNode * cuddAddOrAbstractRecur(DdManager *manager, DdNode *f, DdNode *cube);
 extern DdNode * cuddAddMinAbstractRecur (DdManager *manager, DdNode *f, DdNode *cube);
+extern DdNode * cuddAddMinExcept0AbstractRecur (DdManager *manager, DdNode *f, DdNode *cube);
 extern DdNode * cuddAddMaxAbstractRecur (DdManager *manager, DdNode *f, DdNode *cube);
 extern DdNode * cuddAddMinAbstractRepresentativeRecur(DdManager * manager, DdNode * f, DdNode * cube);
 extern DdNode * cuddAddMaxAbstractRepresentativeRecur(DdManager * manager, DdNode * f, DdNode * cube);

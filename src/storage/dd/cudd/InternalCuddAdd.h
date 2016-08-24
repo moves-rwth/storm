@@ -259,7 +259,14 @@ namespace storm {
              * @param cube The cube from which to abstract.
              */
             InternalAdd<DdType::CUDD, ValueType> minAbstract(InternalBdd<DdType::CUDD> const& cube) const;
-            
+
+            /*!
+             * Min-abstracts from the given cube, but treats 0 as the largest possible value.
+             *
+             * @param cube The cube from which to abstract.
+             */
+            InternalAdd<DdType::CUDD, ValueType> minAbstractExcept0(InternalBdd<DdType::CUDD> const& cube) const;
+
             /*!
              * Max-abstracts from the given cube.
              *

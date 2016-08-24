@@ -406,6 +406,53 @@ Cudd_addMinimum(
 
 } /* end of Cudd_addMinimum */
 
+/**
+ @brief Integer and floating point min.
+ 
+ @details Integer and floating point min for Cudd_addApply.
+ 
+ @return NULL if not a terminal case; min(f,g) otherwise.
+ 
+ @sideeffect None
+ 
+ @see Cudd_addApply
+ 
+ added 24/08/2016
+ 
+ */
+DdNode *
+Cudd_addMinimumExcept0(
+                DdManager * dd,
+                DdNode ** f,
+                DdNode ** g)
+{
+    DdNode *F, *G;
+    
+    F = *f; G = *g;
+    if (F == DD_ZERO(dd)) return(G);
+    if (G == DD_ZERO(dd)) return(F);
+    if (F == DD_PLUS_INFINITY(dd)) return(G);
+    if (G == DD_PLUS_INFINITY(dd)) return(F);
+    if (F == G) return(F);
+#if 0
+    /* These special cases probably do not pay off. */
+    if (F == DD_MINUS_INFINITY(dd)) return(F);
+    if (G == DD_MINUS_INFINITY(dd)) return(G);
+#endif
+    if (cuddIsConstant(F) && cuddIsConstant(G)) {
+        if (cuddV(F) <= cuddV(G)) {
+            return(F);
+        } else {
+            return(G);
+        }
+    }
+    if (F > G) { /* swap f and g */
+        *f = G;
+        *g = F;
+    }
+    return(NULL);
+    
+} /* end of Cudd_addMinimumExcept0 */
 
 /**
   @brief Integer and floating point max.

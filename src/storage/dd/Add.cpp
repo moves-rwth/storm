@@ -163,6 +163,12 @@ namespace storm {
         }
         
         template<DdType LibraryType, typename ValueType>
+        Add<LibraryType, ValueType> Add<LibraryType, ValueType>::minAbstractExcept0(std::set<storm::expressions::Variable> const& metaVariables) const {
+            Bdd<LibraryType> cube = Bdd<LibraryType>::getCube(this->getDdManager(), metaVariables);
+            return Add<LibraryType, ValueType>(this->getDdManager(), internalAdd.minAbstractExcept0(cube), Dd<LibraryType>::subtractMetaVariables(*this, cube));
+        }
+        
+        template<DdType LibraryType, typename ValueType>
         Add<LibraryType, ValueType> Add<LibraryType, ValueType>::maxAbstract(std::set<storm::expressions::Variable> const& metaVariables) const {
             Bdd<LibraryType> cube = Bdd<LibraryType>::getCube(this->getDdManager(), metaVariables);
             return Add<LibraryType, ValueType>(this->getDdManager(), internalAdd.maxAbstract(cube), Dd<LibraryType>::subtractMetaVariables(*this, cube));

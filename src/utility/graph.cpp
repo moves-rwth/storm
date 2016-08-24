@@ -955,7 +955,7 @@ namespace storm {
                     solution = tmp;
                     ++iterations;
                 }
-
+                
                 // Since we have determined the inverse of the desired set, we need to complement it now.
                 solution = !solution && model.getReachableStates();
 

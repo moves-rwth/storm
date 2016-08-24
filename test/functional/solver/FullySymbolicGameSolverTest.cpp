@@ -35,7 +35,14 @@ TEST(FullySymbolicGameSolverTest, Solve_Cudd) {
     matrix += manager->getEncoding(state.first, 1).template toAdd<double>() * manager->getEncoding(state.second, 1).template toAdd<double>() * manager->getEncoding(pl1.first, 1).template toAdd<double>() * manager->getEncoding(pl2.first, 1).template toAdd<double>() * manager->getConstant<double>(1);
     
     std::unique_ptr<storm::utility::solver::SymbolicGameSolverFactory<storm::dd::DdType::CUDD, double>> solverFactory(new storm::utility::solver::SymbolicGameSolverFactory<storm::dd::DdType::CUDD, double>());
-    std::unique_ptr<storm::solver::SymbolicGameSolver<storm::dd::DdType::CUDD>> solver = solverFactory->create(matrix, allRows, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs, player1Variables,player2Variables);
+
+    storm::dd::Bdd<storm::dd::DdType::CUDD> tmp = matrix.toBdd().existsAbstract({state.second});
+    storm::dd::Bdd<storm::dd::DdType::CUDD> illegalPlayer2Mask = !tmp && manager->getRange(state.first);
+    storm::dd::Bdd<storm::dd::DdType::CUDD> illegalPlayer1Mask = tmp.existsAbstract({pl2.first});
+    illegalPlayer2Mask &= illegalPlayer1Mask;
+    illegalPlayer1Mask &= !illegalPlayer1Mask && manager->getRange(state.first);
+    
+    std::unique_ptr<storm::solver::SymbolicGameSolver<storm::dd::DdType::CUDD>> solver = solverFactory->create(matrix, allRows, illegalPlayer1Mask, illegalPlayer2Mask, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs, player1Variables, player2Variables);
     
     // Create solution and target state vector.
     storm::dd::Add<storm::dd::DdType::CUDD, double> x = manager->template getAddZero<double>();
@@ -93,7 +100,14 @@ TEST(FullySymbolicGameSolverTest, Solve_Sylvan) {
     matrix += manager->getEncoding(state.first, 1).template toAdd<double>() * manager->getEncoding(state.second, 1).template toAdd<double>() * manager->getEncoding(pl1.first, 1).template toAdd<double>() * manager->getEncoding(pl2.first, 1).template toAdd<double>() * manager->getConstant<double>(1);
     
     std::unique_ptr<storm::utility::solver::SymbolicGameSolverFactory<storm::dd::DdType::Sylvan, double>> solverFactory(new storm::utility::solver::SymbolicGameSolverFactory<storm::dd::DdType::Sylvan, double>());
-    std::unique_ptr<storm::solver::SymbolicGameSolver<storm::dd::DdType::Sylvan>> solver = solverFactory->create(matrix, allRows, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs, player1Variables,player2Variables);
+    
+    storm::dd::Bdd<storm::dd::DdType::Sylvan> tmp = matrix.toBdd().existsAbstract({state.second});
+    storm::dd::Bdd<storm::dd::DdType::Sylvan> illegalPlayer2Mask = !tmp && manager->getRange(state.first);
+    storm::dd::Bdd<storm::dd::DdType::Sylvan> illegalPlayer1Mask = tmp.existsAbstract({pl2.first});
+    illegalPlayer2Mask &= illegalPlayer1Mask;
+    illegalPlayer1Mask &= !illegalPlayer1Mask && manager->getRange(state.first);
+
+    std::unique_ptr<storm::solver::SymbolicGameSolver<storm::dd::DdType::Sylvan>> solver = solverFactory->create(matrix, allRows, illegalPlayer1Mask, illegalPlayer2Mask, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs, player1Variables,player2Variables);
     
     // Create solution and target state vector.
     storm::dd::Add<storm::dd::DdType::Sylvan, double> x = manager->template getAddZero<double>();

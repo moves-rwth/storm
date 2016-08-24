@@ -154,13 +154,13 @@ namespace storm {
                 // If one of the choices picks the bottom state, the new predicate is based on the guard of the appropriate
                 // command (that is the player 1 choice).
                 if (buttomStateSuccessor) {
-                    STORM_LOG_DEBUG("One of the successors is a bottom state, taking a guard as a new predicate.");
+                    STORM_LOG_TRACE("One of the successors is a bottom state, taking a guard as a new predicate.");
                     abstractCommand.notifyGuardIsPredicate();
                     storm::expressions::Expression newPredicate = concreteCommand.getGuardExpression();
-                    STORM_LOG_DEBUG("Derived new predicate: " << newPredicate);
+                    STORM_LOG_TRACE("Derived new predicate: " << newPredicate);
                     this->refine({newPredicate});
                 } else {
-                    STORM_LOG_DEBUG("No bottom state successor. Deriving a new predicate using weakest precondition.");
+                    STORM_LOG_TRACE("No bottom state successor. Deriving a new predicate using weakest precondition.");
                     
                     // Decode both choices to explicit mappings.
                     std::map<uint_fast64_t, storm::storage::BitVector> lowerChoiceUpdateToSuccessorMapping = decodeChoiceToUpdateSuccessorMapping(lowerChoice);
@@ -187,7 +187,14 @@ namespace storm {
                         }
                     }
                     
+                    STORM_LOG_TRACE("Derived new predicate: " << newPredicate);
+                    
                     this->refine({newPredicate});
+                }
+                
+                STORM_LOG_TRACE("Current set of predicates:");
+                for (auto const& predicate : abstractionInformation.getPredicates()) {
+                    STORM_LOG_TRACE(predicate);
                 }
             }
             
