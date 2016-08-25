@@ -1005,10 +1005,14 @@ namespace storm {
                     
                     // If we are to produce strategies in this iteration, we prepare some storage.
                     if (produceStrategiesInIteration) {
-                        player1StrategyBdd = model.getManager().getBddZero();
-                        consideredPlayer1States = model.getManager().getBddZero();
-                        player2StrategyBdd = model.getManager().getBddZero();
-                        consideredPlayer2States = model.getManager().getBddZero();
+                        if (player1Strategy == storm::OptimizationDirection::Maximize) {
+                            player1StrategyBdd = model.getManager().getBddZero();
+                            consideredPlayer1States = model.getManager().getBddZero();
+                        }
+                        if (player2Strategy == storm::OptimizationDirection::Maximize) {
+                            player2StrategyBdd = model.getManager().getBddZero();
+                            consideredPlayer2States = model.getManager().getBddZero();
+                        }
                     }
                     
                     storm::dd::Bdd<Type> solution = psiStates;

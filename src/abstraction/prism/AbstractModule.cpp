@@ -12,6 +12,8 @@
 #include "storm-config.h"
 #include "src/adapters/CarlAdapter.h"
 
+#include "src/utility/macros.h"
+
 namespace storm {
     namespace abstraction {
         namespace prism {
@@ -27,7 +29,9 @@ namespace storm {
             
             template <storm::dd::DdType DdType, typename ValueType>
             void AbstractModule<DdType, ValueType>::refine(std::vector<uint_fast64_t> const& predicates) {
-                for (auto& command : commands) {
+                for (uint_fast64_t index = 0; index < commands.size(); ++index) {
+                    STORM_LOG_TRACE("Refining command with index " << index << ".");
+                    AbstractCommand<DdType, ValueType>& command = commands[index];
                     command.refine(predicates);
                 }
             }

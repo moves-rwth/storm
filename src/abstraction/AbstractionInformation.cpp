@@ -202,7 +202,7 @@ namespace storm {
         storm::dd::Bdd<DdType> AbstractionInformation<DdType>::getPlayer2ZeroCube(uint_fast64_t start, uint_fast64_t end) const {
             storm::dd::Bdd<DdType> result = ddManager->getBddOne();
             for (uint_fast64_t index = start; index < end; ++index) {
-                result &= player2VariableBdds[index];
+                result &= !player2VariableBdds[index];
             }
             STORM_LOG_ASSERT(!result.isZero(), "Zero cube must not be zero.");
             return result;

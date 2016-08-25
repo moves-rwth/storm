@@ -313,6 +313,11 @@ namespace storm {
             BottomStateResult<DdType> AbstractCommand<DdType, ValueType>::getBottomStateTransitions(storm::dd::Bdd<DdType> const& reachableStates, uint_fast64_t numberOfPlayer2Variables) {
                 BottomStateResult<DdType> result(this->getAbstractionInformation().getDdManager().getBddZero(), this->getAbstractionInformation().getDdManager().getBddZero());
 
+                // If the guard of this command is a predicate, there are not bottom states/transitions.
+                if (guardIsPredicate) {
+                    return result;
+                }
+                
                 // Use the state abstractor to compute the set of abstract states that has this command enabled but
                 // still has a transition to a bottom state.
                 bottomStateAbstractor.constrain(reachableStates && abstractGuard);
@@ -325,7 +330,7 @@ namespace storm {
                 result.states &= this->getAbstractionInformation().getBottomStateBdd(true, false);
                 
                 // Add the command encoding and the next free player 2 encoding.
-                result.transitions &= this->getAbstractionInformation().encodePlayer1Choice(command.get().getGlobalIndex(), this->getAbstractionInformation().getPlayer1VariableCount()) && this->getAbstractionInformation().encodePlayer2Choice(cachedDd.nextFreePlayer2Index, cachedDd.numberOfPlayer2Variables) && this->getAbstractionInformation().encodeAux(0, 0, this->getAbstractionInformation().getAuxVariableCount());
+                result.transitions &= this->getAbstractionInformation().encodePlayer1Choice(command.get().getGlobalIndex(), this->getAbstractionInformation().getPlayer1VariableCount()) && this->getAbstractionInformation().encodePlayer2Choice(cachedDd.nextFreePlayer2Index, numberOfPlayer2Variables) && this->getAbstractionInformation().encodeAux(0, 0, this->getAbstractionInformation().getAuxVariableCount());
                 
                 return result;
             }

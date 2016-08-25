@@ -195,11 +195,11 @@ namespace storm {
         
         template<storm::dd::DdType Type, typename ValueType>
         void refineAfterQualitativeCheck(storm::abstraction::prism::PrismMenuGameAbstractor<Type, ValueType>& abstractor, storm::abstraction::MenuGame<Type, ValueType> const& game, detail::GameProb01Result<Type> const& prob01, storm::dd::Bdd<Type> const& transitionMatrixBdd) {
-            storm::dd::Bdd<Type> transitionsInIntersection = transitionMatrixBdd && prob01.min.first.getPlayer1Strategy() && prob01.min.first.getPlayer2Strategy() && prob01.max.second.getPlayer1Strategy() && prob01.max.second.getPlayer2Strategy();
+            storm::dd::Bdd<Type> transitionsInIntersection = (transitionMatrixBdd && prob01.min.first.getPlayer1Strategy() && prob01.min.first.getPlayer2Strategy() && prob01.max.second.getPlayer1Strategy() && prob01.max.second.getPlayer2Strategy()).existsAbstract(game.getNondeterminismVariables());
             
             // First, we have to find the pivot state candidates. Start by constructing the reachable fragment of the
             // state space *under both* strategy pairs.
-            storm::dd::Bdd<Type> pivotStates = storm::utility::dd::computeReachableStates(game.getInitialStates(), transitionsInIntersection.existsAbstract(game.getNondeterminismVariables()), game.getRowVariables(), game.getColumnVariables());
+            storm::dd::Bdd<Type> pivotStates = storm::utility::dd::computeReachableStates(game.getInitialStates(), transitionsInIntersection, game.getRowVariables(), game.getColumnVariables());
             
             // Then constrain this set by requiring that the two stratey pairs resolve the nondeterminism differently.
             pivotStates &= (prob01.min.first.getPlayer1Strategy() && prob01.min.first.getPlayer2Strategy()).exclusiveOr(prob01.max.second.getPlayer1Strategy() && prob01.max.second.getPlayer2Strategy()).existsAbstract(game.getNondeterminismVariables());
@@ -214,17 +214,19 @@ namespace storm {
             storm::dd::Bdd<Type> lowerChoice = pivotState && game.getExtendedTransitionMatrix().toBdd() && prob01.min.first.getPlayer1Strategy();
             storm::dd::Bdd<Type> lowerChoice1 = (lowerChoice && prob01.min.first.getPlayer2Strategy()).existsAbstract(variablesToAbstract);
             storm::dd::Bdd<Type> lowerChoice2 = (lowerChoice && prob01.max.second.getPlayer2Strategy()).existsAbstract(variablesToAbstract);
-                        
+            
             bool lowerChoicesDifferent = !lowerChoice1.exclusiveOr(lowerChoice2).isZero();
             if (lowerChoicesDifferent) {
+                STORM_LOG_TRACE("Refining based on lower choice.");
                 abstractor.refine(pivotState, (pivotState && prob01.min.first.getPlayer1Strategy()).existsAbstract(game.getRowVariables()), lowerChoice1, lowerChoice2);
             } else {
                 storm::dd::Bdd<Type> upperChoice = pivotState && game.getExtendedTransitionMatrix().toBdd() && prob01.max.second.getPlayer1Strategy();
                 storm::dd::Bdd<Type> upperChoice1 = (upperChoice && prob01.min.first.getPlayer2Strategy()).existsAbstract(variablesToAbstract);
                 storm::dd::Bdd<Type> upperChoice2 = (upperChoice && prob01.max.second.getPlayer2Strategy()).existsAbstract(variablesToAbstract);
-                
+
                 bool upperChoicesDifferent = !upperChoice1.exclusiveOr(upperChoice2).isZero();
                 if (upperChoicesDifferent) {
+                    STORM_LOG_TRACE("Refining based on upper choice.");
                     abstractor.refine(pivotState, (pivotState && prob01.max.second.getPlayer1Strategy()).existsAbstract(game.getRowVariables()), upperChoice1, upperChoice2);
                 } else {
                     STORM_LOG_ASSERT(false, "Did not find choices from which to derive predicates.");
@@ -317,13 +319,8 @@ namespace storm {
                 storm::dd::Bdd<Type> maybeMin = !(prob01.min.first.states || prob01.min.second.states) && game.getReachableStates();
                 storm::dd::Bdd<Type> maybeMax = !(prob01.max.first.states || prob01.max.second.states) && game.getReachableStates();
                 
-                maybeMin.template toAdd<ValueType>().exportToDot("maybemin.dot");
-                maybeMax.template toAdd<ValueType>().exportToDot("maybemax.dot");
-                game.getInitialStates().template toAdd<ValueType>().exportToDot("init.dot");
-                
                 // 4. if the initial states are not maybe states, then we can refine at this point.
                 storm::dd::Bdd<Type> initialMaybeStates = (game.getInitialStates() && maybeMin) || (game.getInitialStates() && maybeMax);
-                initialMaybeStates.template toAdd<ValueType>().exportToDot("initmaybe.dot");
                 if (initialMaybeStates.isZero()) {
                     // In this case, we know the result for the initial states for both player 2 minimizing and maximizing.
                     STORM_LOG_TRACE("No initial state is a 'maybe' state. Refining abstraction based on qualitative check.");
@@ -404,10 +401,10 @@ namespace storm {
             storm::utility::graph::GameProb01Result<Type> prob0 = storm::utility::graph::performProb0(game, transitionMatrixBdd, constraintStates, targetStates, player1Direction, player2Direction, player2Direction == storm::OptimizationDirection::Minimize, player2Direction == storm::OptimizationDirection::Minimize);
             storm::utility::graph::GameProb01Result<Type> prob1 = storm::utility::graph::performProb1(game, transitionMatrixBdd, constraintStates, targetStates, player1Direction, player2Direction, player2Direction == storm::OptimizationDirection::Maximize, player2Direction == storm::OptimizationDirection::Maximize);
             
-            STORM_LOG_ASSERT(player2Direction != storm::OptimizationDirection::Minimize || prob0.hasPlayer1Strategy(), "Unable to proceed without strategy.");
-            STORM_LOG_ASSERT(player2Direction != storm::OptimizationDirection::Minimize || prob0.hasPlayer2Strategy(), "Unable to proceed without strategy.");
-            STORM_LOG_ASSERT(player2Direction != storm::OptimizationDirection::Maximize || prob1.hasPlayer1Strategy(), "Unable to proceed without strategy.");
-            STORM_LOG_ASSERT(player2Direction != storm::OptimizationDirection::Maximize || prob1.hasPlayer2Strategy(), "Unable to proceed without strategy.");
+            STORM_LOG_ASSERT(player2Direction != storm::OptimizationDirection::Minimize || (prob0.hasPlayer1Strategy() && !prob0.getPlayer1Strategy().isZero()), "Unable to proceed without strategy.");
+            STORM_LOG_ASSERT(player2Direction != storm::OptimizationDirection::Minimize || (prob0.hasPlayer2Strategy() && !prob0.getPlayer2Strategy().isZero()), "Unable to proceed without strategy.");
+            STORM_LOG_ASSERT(player2Direction != storm::OptimizationDirection::Maximize || (prob1.hasPlayer1Strategy() && !prob1.getPlayer1Strategy().isZero()), "Unable to proceed without strategy.");
+            STORM_LOG_ASSERT(player2Direction != storm::OptimizationDirection::Maximize || (prob1.hasPlayer2Strategy() && !prob1.getPlayer2Strategy().isZero()), "Unable to proceed without strategy.");
 
             STORM_LOG_TRACE("Player 1: " << player1Direction << ", player 2: " << player2Direction << ": " << prob0.states.getNonZeroCount() << " 'no' states, " << prob1.states.getNonZeroCount() << " 'yes' states.");
             return std::make_pair(prob0, prob1);
