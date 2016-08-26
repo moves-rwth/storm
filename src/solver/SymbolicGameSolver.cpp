@@ -25,7 +25,7 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type, typename ValueType>
-        storm::dd::Add<Type, ValueType> SymbolicGameSolver<Type, ValueType>::solveGame(OptimizationDirection player1Goal, OptimizationDirection player2Goal, storm::dd::Add<Type, ValueType> const& x, storm::dd::Add<Type, ValueType> const& b) {
+        storm::dd::Add<Type, ValueType> SymbolicGameSolver<Type, ValueType>::solveGame(OptimizationDirection player1Goal, OptimizationDirection player2Goal, storm::dd::Add<Type, ValueType> const& x, storm::dd::Add<Type, ValueType> const& b, boost::optional<storm::dd::Bdd<Type>> const& basePlayer1Strategy, boost::optional<storm::dd::Bdd<Type>> const& basePlayer2Strategy) {
             // Set up the environment.
             storm::dd::Add<Type, ValueType> xCopy = x;
             uint_fast64_t iterations = 0;
@@ -33,12 +33,24 @@ namespace storm {
 
             // Prepare some data storage in case we need to generate strategies.
             if (generatePlayer1Strategy) {
-                player1Strategy = A.getDdManager().getBddZero();
+                if (basePlayer1Strategy) {
+                    player1Strategy = basePlayer1Strategy.get();
+                } else {
+                    player1Strategy = A.getDdManager().getBddZero();
+                }
             }
             boost::optional<storm::dd::Add<Type, ValueType>> previousPlayer2Values;
             if (generatePlayer2Strategy) {
-                previousPlayer2Values = A.getDdManager().template getAddZero<ValueType>();
-                player2Strategy = A.getDdManager().getBddZero();
+                if (basePlayer2Strategy) {
+                    player2Strategy = basePlayer2Strategy.get();
+
+                    // If we are required to generate a player 2 strategy based on another one that is not the zero strategy,
+                    // we need to determine the values, because only then we can update the strategy only if necessary.
+                    previousPlayer2Values = ((this->A * player2Strategy.get().template toAdd<ValueType>()).multiplyMatrix(x.swapVariables(this->rowColumnMetaVariablePairs), this->columnMetaVariables) + b).sumAbstract(this->player2Variables);
+                } else {
+                    player2Strategy = A.getDdManager().getBddZero();
+                    previousPlayer2Values = A.getDdManager().template getAddZero<ValueType>();
+                }
             }
             
             do {
@@ -54,7 +66,7 @@ namespace storm {
                     if (generatePlayer2Strategy) {
                         // Update only the choices that strictly improved the value.
                         storm::dd::Bdd<Type> maxChoices = tmp.maxAbstractRepresentative(this->player2Variables);
-                        player2Strategy = newValues.greater(previousPlayer2Values.get()).ite(maxChoices, player2Strategy.get());
+                        player2Strategy.get() = newValues.greater(previousPlayer2Values.get()).ite(maxChoices, player2Strategy.get());
                         previousPlayer2Values = newValues;
                     }
                     
@@ -71,16 +83,12 @@ namespace storm {
                 }
 
                 if (player1Goal == storm::OptimizationDirection::Maximize) {
-                    tmp.exportToDot("pl1_val_" + std::to_string(iterations) + ".dot");
                     storm::dd::Add<Type, ValueType> newValues = tmp.maxAbstract(this->player1Variables);
                     
-                    newValues.exportToDot("pl1_valabs_" + std::to_string(iterations) + ".dot");
                     if (generatePlayer1Strategy) {
                         // Update only the choices that strictly improved the value.
                         storm::dd::Bdd<Type> maxChoices = tmp.maxAbstractRepresentative(this->player1Variables);
-                        maxChoices.template toAdd<ValueType>().exportToDot("pl1_choices_" + std::to_string(iterations) + ".dot");
                         player1Strategy = newValues.greater(xCopy).ite(maxChoices, player1Strategy.get());
-                        player1Strategy.get().template toAdd<ValueType>().exportToDot("pl1_" + std::to_string(iterations) + ".dot");
                     }
                     
                     tmp = newValues;
