@@ -149,8 +149,7 @@ namespace storm {
 		
 		template<typename ValueType>
         InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::minAbstractRepresentative(InternalBdd<DdType::CUDD> const& cube) const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented: minAbstractRepresentative");
-			//return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd().MinAbstractRepresentative(cube.toAdd<ValueType>().getCuddAdd()));
+			return InternalBdd<DdType::CUDD>(ddManager, this->getCuddAdd().MinAbstractRepresentative(cube.toAdd<ValueType>().getCuddAdd()));
         }
         
         template<typename ValueType>
