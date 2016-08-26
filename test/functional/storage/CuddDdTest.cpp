@@ -196,27 +196,23 @@ TEST(CuddDd, AddMinExistAbstractRepresentative) {
         + ((bddX0 && (bddY1 && bddZ0)).template toAdd<double>() * manager->template getConstant<double>(0.5))
         + ((bddX0 && (bddY0 && bddZ1)).template toAdd<double>() * manager->template getConstant<double>(1.0))
         + ((bddX0 && (bddY0 && bddZ0)).template toAdd<double>() * manager->template getConstant<double>(0.0));
-	complexAdd.exportToDot("test_CUDD_complexAdd.dot");
 	
 	// Abstract from FALSE
-	std::cout << "Before FALSE" << std::endl;
 	storm::dd::Bdd<storm::dd::DdType::CUDD> representative_false_x = addZero.minAbstractRepresentative({x.first});
 	EXPECT_EQ(0ul, representative_false_x.getNonZeroCount());
     EXPECT_EQ(1ul, representative_false_x.getLeafCount());
     EXPECT_EQ(2ul, representative_false_x.getNodeCount());
 	EXPECT_TRUE(representative_false_x == bddX0);
-	representative_false_x.exportToDot("test_CUDD_representative_false_x.dot");
-	bddX0.exportToDot("test_CUDD_bddX0.dot");
+//	representative_false_x.exportToDot("test_CUDD_representative_false_x.dot");
+//	bddX0.exportToDot("test_CUDD_bddX0.dot");
 
 	// Abstract from TRUE
-	std::cout << "Before TRUE" << std::endl;
 	storm::dd::Bdd<storm::dd::DdType::CUDD> representative_true_x = addOne.minAbstractRepresentative({x.first});
 	EXPECT_EQ(0ul, representative_true_x.getNonZeroCount());
     EXPECT_EQ(1ul, representative_true_x.getLeafCount());
     EXPECT_EQ(2ul, representative_true_x.getNodeCount());
 	EXPECT_TRUE(representative_true_x == bddX0);
 	
-	std::cout << "Before TRUE xyz" << std::endl;
 	storm::dd::Bdd<storm::dd::DdType::CUDD> representative_true_xyz = addOne.minAbstractRepresentative({x.first, y.first, z.first});
 	EXPECT_EQ(0ul, representative_true_xyz.getNonZeroCount());
     EXPECT_EQ(1ul, representative_true_xyz.getLeafCount());
@@ -224,7 +220,6 @@ TEST(CuddDd, AddMinExistAbstractRepresentative) {
 	EXPECT_TRUE(representative_true_xyz == ((bddX0 && bddY0) && bddZ0));
 	
 	// Abstract x
-	std::cout << "Before x" << std::endl;
 	storm::dd::Bdd<storm::dd::DdType::CUDD> representative_complex_x = complexAdd.minAbstractRepresentative({x.first});
 	storm::dd::Bdd<storm::dd::DdType::CUDD> comparison_complex_x = (
 	     ((bddX0 && (bddY0 && bddZ0)))
@@ -236,11 +231,10 @@ TEST(CuddDd, AddMinExistAbstractRepresentative) {
     EXPECT_EQ(1ul, representative_complex_x.getLeafCount());
     EXPECT_EQ(3ul, representative_complex_x.getNodeCount());
 	EXPECT_TRUE(representative_complex_x == comparison_complex_x);
-	representative_complex_x.template toAdd<double>().exportToDot("test_CUDD_representative_complex_x.dot");
-	comparison_complex_x.template toAdd<double>().exportToDot("test_CUDD_comparison_complex_x.dot");
+//	representative_complex_x.template toAdd<double>().exportToDot("test_CUDD_representative_complex_x.dot");
+//	comparison_complex_x.template toAdd<double>().exportToDot("test_CUDD_comparison_complex_x.dot");
 	
 	// Abstract y
-	std::cout << "Before y" << std::endl;
 	storm::dd::Bdd<storm::dd::DdType::CUDD> representative_complex_y = complexAdd.minAbstractRepresentative({y.first});
 	storm::dd::Bdd<storm::dd::DdType::CUDD> comparison_complex_y = (
 	     ((bddX0 && (bddY0 && bddZ0)))
@@ -252,11 +246,10 @@ TEST(CuddDd, AddMinExistAbstractRepresentative) {
     EXPECT_EQ(1ul, representative_complex_y.getLeafCount());
     EXPECT_EQ(5ul, representative_complex_y.getNodeCount());
 	EXPECT_TRUE(representative_complex_y == comparison_complex_y);
-	representative_complex_y.template toAdd<double>().exportToDot("test_CUDD_representative_complex_y.dot");
-	comparison_complex_y.template toAdd<double>().exportToDot("test_CUDD_comparison_complex_y.dot");
+//	representative_complex_y.template toAdd<double>().exportToDot("test_CUDD_representative_complex_y.dot");
+//	comparison_complex_y.template toAdd<double>().exportToDot("test_CUDD_comparison_complex_y.dot");
 	
 	// Abstract z
-	std::cout << "Before z" << std::endl;
 	storm::dd::Bdd<storm::dd::DdType::CUDD> representative_complex_z = complexAdd.minAbstractRepresentative({z.first});
 	storm::dd::Bdd<storm::dd::DdType::CUDD> comparison_complex_z = (
 	     ((bddX0 && (bddY0 && bddZ0)))
@@ -264,23 +257,23 @@ TEST(CuddDd, AddMinExistAbstractRepresentative) {
 	  || ((bddX1 && (bddY0 && bddZ0)))
 	  || ((bddX1 && (bddY1 && bddZ1)))
 	);
-	EXPECT_EQ(0ul, representative_complex_z.getNonZeroCount());
+	EXPECT_EQ(4ul, representative_complex_z.getNonZeroCount());
     EXPECT_EQ(1ul, representative_complex_z.getLeafCount());
-    EXPECT_EQ(2ul, representative_complex_z.getNodeCount());
+    EXPECT_EQ(4ul, representative_complex_z.getNodeCount());
 	EXPECT_TRUE(representative_complex_z == comparison_complex_z);
-	representative_complex_z.template toAdd<double>().exportToDot("test_CUDD_representative_complex_z.dot");
-	comparison_complex_z.template toAdd<double>().exportToDot("test_CUDD_comparison_complex_z.dot");
+//    representative_complex_z.exportToDot("test_CUDD_representative_complex_z_bdd.dot");
+//	representative_complex_z.template toAdd<double>().exportToDot("test_CUDD_representative_complex_z.dot");
+//	comparison_complex_z.template toAdd<double>().exportToDot("test_CUDD_comparison_complex_z.dot");
 	
 	// Abstract x, y, z
-	std::cout << "Before x, y, z" << std::endl;
 	storm::dd::Bdd<storm::dd::DdType::CUDD> representative_complex_xyz = complexAdd.minAbstractRepresentative({x.first, y.first, z.first});
 	storm::dd::Bdd<storm::dd::DdType::CUDD> comparison_complex_xyz = (bddX0 && (bddY0 && bddZ0));
 	EXPECT_EQ(1ul, representative_complex_xyz.getNonZeroCount());
     EXPECT_EQ(1ul, representative_complex_xyz.getLeafCount());
     EXPECT_EQ(4ul, representative_complex_xyz.getNodeCount());
 	EXPECT_TRUE(representative_complex_xyz == comparison_complex_xyz);
-	representative_complex_xyz.template toAdd<double>().exportToDot("test_CUDD_representative_complex_xyz.dot");
-	comparison_complex_xyz.template toAdd<double>().exportToDot("test_CUDD_representative_complex_xyz.dot");
+//	representative_complex_xyz.template toAdd<double>().exportToDot("test_CUDD_representative_complex_xyz.dot");
+//	comparison_complex_xyz.template toAdd<double>().exportToDot("test_CUDD_representative_complex_xyz.dot");
 }
 
 TEST(CuddDd, AddGetMetaVariableTest) {

@@ -1106,7 +1106,7 @@ cuddAddMinAbstractRepresentativeRecur(
         cuddRef(res1Inf);
         Cudd_IterDerefBdd(manager,res1);
         
-        res2Inf = cuddBddIteRecur(manager, Cudd_Not(tmp), res2, logicalZero);
+        res2Inf = cuddBddIteRecur(manager, tmp, logicalZero, res2);
         Cudd_IterDerefBdd(manager,tmp);
         if (res2Inf == NULL) {
             Cudd_IterDerefBdd(manager,res2);
@@ -1144,8 +1144,8 @@ cuddAddMinAbstractRepresentativeRecur(
         }
         cuddRef(res2);
         
-        int compl = (res1 == res2) ? 1 : Cudd_IsComplement(res2);
-        res = (res1 == res2) ? cuddUniqueInter(manager, (int) f->index, one, Cudd_Not(res1)) : cuddUniqueInter(manager, (int) f->index, Cudd_Regular(res2), Cudd_Not(res1));
+        int compl = (res1 == res2) ? 0 : Cudd_IsComplement(res2);
+        res = (res1 == res2) ? res1 : cuddUniqueInter(manager, (int) f->index, Cudd_Regular(res2), compl ? Cudd_Not(res1) : res1);
         if (res == NULL) {
             Cudd_IterDerefBdd(manager,res1);
             Cudd_IterDerefBdd(manager,res2);
@@ -1296,7 +1296,7 @@ cuddAddMaxAbstractRepresentativeRecur(
         Cudd_IterDerefBdd(manager,res1);
         
         cuddRef(zero);
-        res2Inf = cuddBddIteRecur(manager, Cudd_Not(tmp), res2, logicalZero);
+        res2Inf = cuddBddIteRecur(manager, tmp, logicalZero, res2);
         if (res2Inf == NULL) {
             Cudd_IterDerefBdd(manager,res2);
             Cudd_IterDerefBdd(manager,res1Inf);
@@ -1335,8 +1335,8 @@ cuddAddMaxAbstractRepresentativeRecur(
         }
         cuddRef(res2);
         
-        int compl = (res1 == res2) ? 1 : Cudd_IsComplement(res2);
-        res = (res1 == res2) ? cuddUniqueInter(manager, (int) f->index, one, Cudd_Not(res1)) : cuddUniqueInter(manager, (int) f->index, Cudd_Regular(res2), compl ? Cudd_Not(res1) : res1);
+        int compl = (res1 == res2) ? 0 : Cudd_IsComplement(res2);
+        res = (res1 == res2) ? res1 : cuddUniqueInter(manager, (int) f->index, Cudd_Regular(res2), compl ? Cudd_Not(res1) : res1);
         if (res == NULL) {
             Cudd_IterDerefBdd(manager,res1);
             Cudd_IterDerefBdd(manager,res2);
