@@ -1007,7 +1007,7 @@ cuddAddMinAbstractRepresentativeRecur(
         return one;
     }
     if (cuddIsConstant(f)) {
-        res = cuddBddExistAbstractRepresentativeRecur(manager, f, cuddT(cube));
+        res = cuddAddMinAbstractRepresentativeRecur(manager, f, cuddT(cube));
         if (res == NULL) {
             return(NULL);
         }
@@ -1193,7 +1193,7 @@ cuddAddMaxAbstractRepresentativeRecur(
         return one;
     }
     if (cuddIsConstant(f)) {
-        res = cuddBddExistAbstractRepresentativeRecur(manager, f, cuddT(cube));
+        res = cuddAddMaxAbstractRepresentativeRecur(manager, f, cuddT(cube));
         if (res == NULL) {
             return(NULL);
         }

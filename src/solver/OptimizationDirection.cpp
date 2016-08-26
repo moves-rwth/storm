@@ -31,7 +31,7 @@ namespace storm {
         }
         
         std::ostream& operator<<(std::ostream& out, OptimizationDirection d) {
-            return d == OptimizationDirection::Minimize ? out << "Minimize" : out << "Maximize";
+            return d == OptimizationDirection::Minimize ? out << "minimize" : out << "maximize";
         } 
     }
 }

@@ -180,7 +180,7 @@ namespace storm {
                             for (uint_fast64_t predicateIndex = 0; predicateIndex < lowerIt->second.size(); ++predicateIndex) {
                                 if (lowerIt->second.get(predicateIndex) != upperIt->second.get(predicateIndex)) {
                                     // Now we know the point of the deviation (command, update, predicate).
-                                    newPredicate = abstractionInformation.getPredicateByIndex(predicateIndex).substitute(concreteCommand.getUpdate(updateIndex).getAsVariableToExpressionMap());
+                                    newPredicate = abstractionInformation.getPredicateByIndex(predicateIndex).substitute(concreteCommand.getUpdate(updateIndex).getAsVariableToExpressionMap()).simplify();
                                     break;
                                 }
                             }

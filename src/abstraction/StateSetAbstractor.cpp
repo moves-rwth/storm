@@ -65,7 +65,6 @@ namespace storm {
         
         template <storm::dd::DdType DdType, typename ValueType>
         storm::dd::Bdd<DdType> StateSetAbstractor<DdType, ValueType>::getStateBdd(storm::solver::SmtSolver::ModelReference const& model) const {
-            STORM_LOG_TRACE("Building source state BDD.");
             storm::dd::Bdd<DdType> result = this->getAbstractionInformation().getDdManager().getBddOne();
             for (auto const& variableIndexPair : relevantPredicatesAndVariables) {
                 if (model.getBooleanValue(variableIndexPair.first)) {
@@ -81,8 +80,6 @@ namespace storm {
         void StateSetAbstractor<DdType, ValueType>::recomputeCachedBdd() {
             // Now check whether we need to recompute the cached BDD.
             std::set<uint_fast64_t> newRelevantPredicateIndices = localExpressionInformation.getRelatedExpressions(concretePredicateVariables);
-            STORM_LOG_TRACE("Found " << newRelevantPredicateIndices.size() << " relevant predicates in abstractor.");
-            
             // Since the number of relevant predicates is monotonic, we can simply check for the size here.
             STORM_LOG_ASSERT(newRelevantPredicateIndices.size() >= relevantPredicatesAndVariables.size(), "Illegal size of relevant predicates.");
             bool recomputeBdd = newRelevantPredicateIndices.size() > relevantPredicatesAndVariables.size();

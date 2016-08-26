@@ -66,12 +66,12 @@ namespace storm {
              * @param b The vector to add after matrix-vector multiplication.
              * @return The solution vector.
              */
-            virtual storm::dd::Add<Type, ValueType> solveGame(OptimizationDirection player1Goal, OptimizationDirection player2Goal, storm::dd::Add<Type, ValueType> const& x, storm::dd::Add<Type, ValueType> const& b) const;
+            virtual storm::dd::Add<Type, ValueType> solveGame(OptimizationDirection player1Goal, OptimizationDirection player2Goal, storm::dd::Add<Type, ValueType> const& x, storm::dd::Add<Type, ValueType> const& b);
         
             // Setters that enable the generation of the players' strategies.
             void setGeneratePlayer1Strategy(bool value);
             void setGeneratePlayer2Strategy(bool value);
-            void setGeneratePlayerStrategies(bool value);
+            void setGeneratePlayersStrategies(bool value);
             
             // Getters to retrieve the players' strategies. Only legal if they were generated.
             storm::dd::Bdd<Type> const& getPlayer1Strategy() const;

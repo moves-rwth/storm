@@ -21,7 +21,7 @@ namespace storm {
     namespace abstraction {
         namespace prism {
             template <storm::dd::DdType DdType, typename ValueType>
-            AbstractCommand<DdType, ValueType>::AbstractCommand(storm::prism::Command const& command, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool guardIsPredicate) : smtSolver(smtSolverFactory->create(abstractionInformation.getExpressionManager())), abstractionInformation(abstractionInformation), command(command), localExpressionInformation(abstractionInformation.getVariables()), evaluator(abstractionInformation.getExpressionManager()), relevantPredicatesAndVariables(), cachedDd(abstractionInformation.getDdManager().getBddZero(), 0, 0), decisionVariables(), guardIsPredicate(guardIsPredicate), abstractGuard(abstractionInformation.getDdManager().getBddZero()), bottomStateAbstractor(abstractionInformation, abstractionInformation.getExpressionVariables(), {!command.getGuardExpression()}, smtSolverFactory) {
+            AbstractCommand<DdType, ValueType>::AbstractCommand(storm::prism::Command const& command, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool guardIsPredicate) : smtSolver(smtSolverFactory->create(abstractionInformation.getExpressionManager())), abstractionInformation(abstractionInformation), command(command), localExpressionInformation(abstractionInformation.getVariables()), evaluator(abstractionInformation.getExpressionManager()), relevantPredicatesAndVariables(), cachedDd(abstractionInformation.getDdManager().getBddZero(), 0), decisionVariables(), guardIsPredicate(guardIsPredicate), abstractGuard(abstractionInformation.getDdManager().getBddZero()), bottomStateAbstractor(abstractionInformation, abstractionInformation.getExpressionVariables(), {!command.getGuardExpression()}, smtSolverFactory) {
 
                 // Make the second component of relevant predicates have the right size.
                 relevantPredicatesAndVariables.second.resize(command.getNumberOfUpdates());
@@ -109,8 +109,9 @@ namespace storm {
                     
                     STORM_LOG_ASSERT(!sourceDistributionsPair.first.isZero(), "The source BDD must not be empty.");
                     STORM_LOG_ASSERT(!sourceDistributionsPair.second.empty(), "The distributions must not be empty.");
+                    // We start with the distribution index of 1, becase 0 is reserved for a potential bottom choice.
+                    uint_fast64_t distributionIndex = 1;
                     storm::dd::Bdd<DdType> allDistributions = this->getAbstractionInformation().getDdManager().getBddZero();
-                    uint_fast64_t distributionIndex = 0;
                     for (auto const& distribution : sourceDistributionsPair.second) {
                         allDistributions |= distribution && this->getAbstractionInformation().encodePlayer2Choice(distributionIndex, numberOfVariablesNeeded);
                         ++distributionIndex;
@@ -126,7 +127,7 @@ namespace storm {
                 STORM_LOG_ASSERT(sourceToDistributionsMap.empty() || !resultBdd.isZero(), "The BDD must not be empty, if there were distributions.");
                 
                 // Cache the result.
-                cachedDd = GameBddResult<DdType>(resultBdd, numberOfVariablesNeeded, maximalNumberOfChoices);
+                cachedDd = GameBddResult<DdType>(resultBdd, numberOfVariablesNeeded);
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
@@ -215,7 +216,6 @@ namespace storm {
             
             template <storm::dd::DdType DdType, typename ValueType>
             storm::dd::Bdd<DdType> AbstractCommand<DdType, ValueType>::getSourceStateBdd(storm::solver::SmtSolver::ModelReference const& model) const {
-                STORM_LOG_TRACE("Building source state BDD.");
                 storm::dd::Bdd<DdType> result = this->getAbstractionInformation().getDdManager().getBddOne();
                 for (auto const& variableIndexPair : relevantPredicatesAndVariables.first) {
                     if (model.getBooleanValue(variableIndexPair.first)) {
@@ -231,7 +231,6 @@ namespace storm {
             
             template <storm::dd::DdType DdType, typename ValueType>
             storm::dd::Bdd<DdType> AbstractCommand<DdType, ValueType>::getDistributionBdd(storm::solver::SmtSolver::ModelReference const& model) const {
-                STORM_LOG_TRACE("Building distribution BDD.");
                 storm::dd::Bdd<DdType> result = this->getAbstractionInformation().getDdManager().getBddZero();
                 
                 for (uint_fast64_t updateIndex = 0; updateIndex < command.get().getNumberOfUpdates(); ++updateIndex) {
@@ -330,7 +329,7 @@ namespace storm {
                 result.states &= this->getAbstractionInformation().getBottomStateBdd(true, false);
                 
                 // Add the command encoding and the next free player 2 encoding.
-                result.transitions &= this->getAbstractionInformation().encodePlayer1Choice(command.get().getGlobalIndex(), this->getAbstractionInformation().getPlayer1VariableCount()) && this->getAbstractionInformation().encodePlayer2Choice(cachedDd.nextFreePlayer2Index, numberOfPlayer2Variables) && this->getAbstractionInformation().encodeAux(0, 0, this->getAbstractionInformation().getAuxVariableCount());
+                result.transitions &= this->getAbstractionInformation().encodePlayer1Choice(command.get().getGlobalIndex(), this->getAbstractionInformation().getPlayer1VariableCount()) && this->getAbstractionInformation().encodePlayer2Choice(0, numberOfPlayer2Variables) && this->getAbstractionInformation().encodeAux(0, 0, this->getAbstractionInformation().getAuxVariableCount());
                 
                 return result;
             }

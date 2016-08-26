@@ -109,6 +109,13 @@ namespace storm {
                  * @return The manager responsible for the DDs that represent this model.
                  */
                 storm::dd::DdManager<Type>& getManager();
+
+                /*!
+                 * Retrieves the manager responsible for the DDs that represent this model.
+                 *
+                 * @return The manager responsible for the DDs that represent this model.
+                 */
+                std::shared_ptr<storm::dd::DdManager<Type>> const& getManagerAsSharedPointer() const;
                 
                 /*!
                  * Retrieves the reachable states of the model.

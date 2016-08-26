@@ -58,6 +58,11 @@ namespace storm {
             }
             
             template<storm::dd::DdType Type, typename ValueType>
+            std::shared_ptr<storm::dd::DdManager<Type>> const& Model<Type, ValueType>::getManagerAsSharedPointer() const {
+                return manager;
+            }
+            
+            template<storm::dd::DdType Type, typename ValueType>
             storm::dd::Bdd<Type> const& Model<Type, ValueType>::getReachableStates() const {
                 return reachableStates;
             }

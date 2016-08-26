@@ -41,11 +41,9 @@ namespace storm {
                 // First, we retrieve the abstractions of all commands.
                 std::vector<GameBddResult<DdType>> commandDdsAndUsedOptionVariableCounts;
                 uint_fast64_t maximalNumberOfUsedOptionVariables = 0;
-                uint_fast64_t nextFreePlayer2Index = 0;
                 for (auto& command : commands) {
                     commandDdsAndUsedOptionVariableCounts.push_back(command.getAbstractBdd());
                     maximalNumberOfUsedOptionVariables = std::max(maximalNumberOfUsedOptionVariables, commandDdsAndUsedOptionVariableCounts.back().numberOfPlayer2Variables);
-                    nextFreePlayer2Index = std::max(nextFreePlayer2Index, commandDdsAndUsedOptionVariableCounts.back().nextFreePlayer2Index);
                 }
                 
                 // Then, we build the module BDD by adding the single command DDs. We need to make sure that all command
@@ -54,7 +52,7 @@ namespace storm {
                 for (auto const& commandDd : commandDdsAndUsedOptionVariableCounts) {
                     result |= commandDd.bdd && this->getAbstractionInformation().getPlayer2ZeroCube(commandDd.numberOfPlayer2Variables, maximalNumberOfUsedOptionVariables);
                 }
-                return GameBddResult<DdType>(result, maximalNumberOfUsedOptionVariables, nextFreePlayer2Index);
+                return GameBddResult<DdType>(result, maximalNumberOfUsedOptionVariables);
             }
             
             template <storm::dd::DdType DdType, typename ValueType>

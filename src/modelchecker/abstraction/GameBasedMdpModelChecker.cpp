@@ -195,18 +195,19 @@ namespace storm {
         
         template<storm::dd::DdType Type, typename ValueType>
         void refineAfterQualitativeCheck(storm::abstraction::prism::PrismMenuGameAbstractor<Type, ValueType>& abstractor, storm::abstraction::MenuGame<Type, ValueType> const& game, detail::GameProb01Result<Type> const& prob01, storm::dd::Bdd<Type> const& transitionMatrixBdd) {
-            storm::dd::Bdd<Type> transitionsInIntersection = (transitionMatrixBdd && prob01.min.first.getPlayer1Strategy() && prob01.min.first.getPlayer2Strategy() && prob01.max.second.getPlayer1Strategy() && prob01.max.second.getPlayer2Strategy()).existsAbstract(game.getNondeterminismVariables());
-            
-            // First, we have to find the pivot state candidates. Start by constructing the reachable fragment of the
-            // state space *under both* strategy pairs.
-            storm::dd::Bdd<Type> pivotStates = storm::utility::dd::computeReachableStates(game.getInitialStates(), transitionsInIntersection, game.getRowVariables(), game.getColumnVariables());
-            
-            // Then constrain this set by requiring that the two stratey pairs resolve the nondeterminism differently.
-            pivotStates &= (prob01.min.first.getPlayer1Strategy() && prob01.min.first.getPlayer2Strategy()).exclusiveOr(prob01.max.second.getPlayer1Strategy() && prob01.max.second.getPlayer2Strategy()).existsAbstract(game.getNondeterminismVariables());
+            // Build the fragment of states that is reachable by any combination of the player 1 and player 2 strategies.
+            storm::dd::Bdd<Type> reachableTransitions = prob01.min.first.getPlayer2Strategy() || prob01.max.second.getPlayer2Strategy();
+            reachableTransitions = (prob01.min.first.getPlayer1Strategy() && reachableTransitions) || (prob01.max.second.getPlayer1Strategy() && reachableTransitions);
+            reachableTransitions &= transitionMatrixBdd;
+            reachableTransitions = reachableTransitions.existsAbstract(game.getNondeterminismVariables());
+            storm::dd::Bdd<Type> pivotStates = storm::utility::dd::computeReachableStates(game.getInitialStates(), reachableTransitions, game.getRowVariables(), game.getColumnVariables());
+
+            // Then constrain these states by the requirement that for either the lower or upper player 1 choice the player 2 choices must be different.
+            pivotStates &= ((prob01.min.first.getPlayer1Strategy() || prob01.max.second.getPlayer1Strategy()) && (prob01.min.first.getPlayer2Strategy().exclusiveOr(prob01.max.second.getPlayer2Strategy()))).existsAbstract(game.getNondeterminismVariables());
             STORM_LOG_ASSERT(!pivotStates.isZero(), "Unable to refine without pivot state candidates.");
             
             // Now that we have the pivot state candidates, we need to pick one.
-            storm::dd::Bdd<Type> pivotState = pickPivotState<Type>(game.getInitialStates(), transitionsInIntersection, game.getRowVariables(), game.getColumnVariables(), pivotStates);
+            storm::dd::Bdd<Type> pivotState = pickPivotState<Type>(game.getInitialStates(), reachableTransitions, game.getRowVariables(), game.getColumnVariables(), pivotStates);
             
             // Compute the lower and the upper choice for the pivot state.
             std::set<storm::expressions::Variable> variablesToAbstract = game.getNondeterminismVariables();
@@ -235,7 +236,22 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type, typename ValueType>
-        storm::dd::Add<Type, ValueType> solveMaybeStates(storm::OptimizationDirection const& player1Direction, storm::OptimizationDirection const& player2Direction, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& maybeStates, storm::dd::Bdd<Type> const& prob1States, boost::optional<storm::dd::Add<Type, ValueType>> startVector = boost::none) {
+        struct MaybeStateResult {
+            MaybeStateResult() = default;
+            
+            MaybeStateResult(storm::dd::Add<Type, ValueType> const& values, storm::dd::Bdd<Type> const& player1Strategy, storm::dd::Bdd<Type> const& player2Strategy) : values(values), player1Strategy(player1Strategy), player2Strategy(player2Strategy) {
+                // Intentionally left empty.
+            }
+            
+            storm::dd::Add<Type, ValueType> values;
+            storm::dd::Bdd<Type> player1Strategy;
+            storm::dd::Bdd<Type> player2Strategy;
+        };
+        
+        template<storm::dd::DdType Type, typename ValueType>
+        MaybeStateResult<Type, ValueType> solveMaybeStates(storm::OptimizationDirection const& player1Direction, storm::OptimizationDirection const& player2Direction, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& maybeStates, storm::dd::Bdd<Type> const& prob1States, boost::optional<MaybeStateResult<Type, ValueType>> startInfo = boost::none) {
+            
+            STORM_LOG_TRACE("Performing quantative solution step. Player 1: " << player1Direction << ", player 2: " << player2Direction << ".");
             
             // Compute the ingredients of the equation system.
             storm::dd::Add<Type, ValueType> maybeStatesAdd = maybeStates.template toAdd<ValueType>();
@@ -248,14 +264,28 @@ namespace storm {
             submatrix *= maybeStatesAdd.swapVariables(game.getRowColumnMetaVariablePairs());
 
             // Cut the starting vector to the maybe states of this query.
-            if (startVector) {
-                startVector.get() *= maybeStatesAdd;
+            storm::dd::Add<Type, ValueType> startVector;
+            if (startInfo) {
+                startVector = startInfo.get().values * maybeStatesAdd;
+            } else {
+                startVector = game.getManager().template getAddZero<ValueType>();
             }
             
             // Create the solver and solve the equation system.
             storm::utility::solver::SymbolicGameSolverFactory<Type, ValueType> solverFactory;
             std::unique_ptr<storm::solver::SymbolicGameSolver<Type, ValueType>> solver = solverFactory.create(submatrix, maybeStates, game.getIllegalPlayer1Mask(), game.getIllegalPlayer2Mask(), game.getRowVariables(), game.getColumnVariables(), game.getRowColumnMetaVariablePairs(), game.getPlayer1Variables(), game.getPlayer2Variables());
-            return solver->solveGame(player1Direction, player2Direction, startVector ? startVector.get() : game.getManager().template getAddZero<ValueType>(), subvector);
+            solver->setGeneratePlayersStrategies(true);
+            auto values = solver->solveGame(player1Direction, player2Direction, startVector, subvector);
+            storm::dd::Bdd<Type> player1Strategy = solver->getPlayer1Strategy();
+            storm::dd::Bdd<Type> player2Strategy = solver->getPlayer2Strategy();
+            
+            // If we were given a starting point, we fix the strategies now. That is, we only deviate from the 
+            if (startInfo) {
+                player1Strategy = values.greater(startInfo.get().values).ite(player1Strategy, startInfo.get().player1Strategy);
+                player1Strategy = values.greater(startInfo.get().values).ite(player1Strategy, startInfo.get().player1Strategy);
+            }
+            
+            return MaybeStateResult<Type, ValueType>(values, player1Strategy, player2Strategy);
         }
         
         template<storm::dd::DdType Type, typename ValueType>
@@ -285,9 +315,8 @@ namespace storm {
             }
             
             storm::abstraction::prism::PrismMenuGameAbstractor<Type, ValueType> abstractor(preprocessedProgram, initialPredicates, smtSolverFactory);
-            
             for (uint_fast64_t iterations = 0; iterations < 10000; ++iterations) {
-                STORM_LOG_TRACE("Starting iteration " << iterations);
+                STORM_LOG_TRACE("Starting iteration " << iterations << ".");
                 abstractor.exportToDot("game" + std::to_string(iterations) + ".dot");
 
                 // 1. build initial abstraction based on the the constraint expression (if not 'true') and the target state expression.
@@ -351,13 +380,16 @@ namespace storm {
                     storm::dd::Add<Type, ValueType> initialStatesAdd = game.getInitialStates().template toAdd<ValueType>();
 
                     ValueType minValue = (prob01.min.second.states && game.getInitialStates()) == game.getInitialStates() ? storm::utility::one<ValueType>() : storm::utility::zero<ValueType>();
+                    MaybeStateResult<Type, ValueType> minMaybeStateResult;
                     if (!maybeMin.isZero()) {
-                        minResult += solveMaybeStates(player1Direction, storm::OptimizationDirection::Minimize, game, maybeMin, prob01.min.second.states);
+                        minMaybeStateResult = solveMaybeStates(player1Direction, storm::OptimizationDirection::Minimize, game, maybeMin, prob01.min.second.states);
+                        minResult += minMaybeStateResult.values;
                         storm::dd::Add<Type, ValueType> initialStateMin = initialStatesAdd * minResult;
-                        STORM_LOG_ASSERT(initialStateMin.getNonZeroCount() == 1, "Wrong number of results for initial states.");
+                        // Here we can only require a non-zero count of *at most* one, because the result may actually be 0.
+                        STORM_LOG_ASSERT(initialStateMin.getNonZeroCount() <= 1, "Wrong number of results for initial states.");
                         minValue = initialStateMin.getMax();
                     }
-                    STORM_LOG_TRACE("Obtained quantitative lower bound " << minValue);
+                    STORM_LOG_TRACE("Obtained quantitative lower bound " << minValue << ".");
                     
                     // Check whether we can abort the computation because of the lower value.
                     result = checkForResultAfterQuantitativeCheck<ValueType>(checkTask, storm::OptimizationDirection::Minimize, minValue);
@@ -366,13 +398,18 @@ namespace storm {
                     }
                     
                     ValueType maxValue = (prob01.max.second.states && game.getInitialStates()) == game.getInitialStates() ? storm::utility::one<ValueType>() : storm::utility::zero<ValueType>();
+                    MaybeStateResult<Type, ValueType> maxMaybeStateResult;
                     if (!maybeMax.isZero()) {
-                        maxResult += solveMaybeStates(player1Direction, storm::OptimizationDirection::Maximize, game, maybeMax, prob01.max.second.states, boost::optional<storm::dd::Add<Type, ValueType>>(minResult));
+                        // FIXME: fix strategy: only change if improved.
+                        maxMaybeStateResult = solveMaybeStates(player1Direction, storm::OptimizationDirection::Maximize, game, maybeMax, prob01.max.second.states, boost::optional<MaybeStateResult<Type, ValueType>>(minMaybeStateResult));
+                        maxResult += maxMaybeStateResult.values;
                         storm::dd::Add<Type, ValueType> initialStateMax = (initialStatesAdd * maxResult);
+                        // Unlike in the min-case, we can require a non-zero count of 1 here, because if the max was in
+                        // fact 0, the result would be 0, which would have been detected earlier by the graph algorithms.
                         STORM_LOG_ASSERT(initialStateMax.getNonZeroCount() == 1, "Wrong number of results for initial states.");
                         maxValue = initialStateMax.getMax();
                     }
-                    STORM_LOG_TRACE("Obtained quantitative upper bound " << minValue);
+                    STORM_LOG_TRACE("Obtained quantitative upper bound " << minValue << ".");
 
                     // Check whether we can abort the computation because of the upper value.
                     result = checkForResultAfterQuantitativeCheck<ValueType>(checkTask, storm::OptimizationDirection::Maximize, maxValue);
@@ -386,6 +423,9 @@ namespace storm {
                     if (result) {
                         return result;
                     }
+
+                    // If we arrived at this point, it means that we have all qualitative and quantitative information
+                    // about the game, but we could not yet answer the query. In this case, we need to refine.
                     
                     STORM_LOG_ASSERT(false, "Quantiative refinement not yet there. :)");
                 }
