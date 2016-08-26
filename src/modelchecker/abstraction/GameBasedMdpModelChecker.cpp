@@ -409,7 +409,7 @@ namespace storm {
                         STORM_LOG_ASSERT(initialStateMax.getNonZeroCount() == 1, "Wrong number of results for initial states.");
                         maxValue = initialStateMax.getMax();
                     }
-                    STORM_LOG_TRACE("Obtained quantitative upper bound " << minValue << ".");
+                    STORM_LOG_TRACE("Obtained quantitative upper bound " << maxValue << ".");
 
                     // Check whether we can abort the computation because of the upper value.
                     result = checkForResultAfterQuantitativeCheck<ValueType>(checkTask, storm::OptimizationDirection::Maximize, maxValue);
