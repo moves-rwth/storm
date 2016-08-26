@@ -635,13 +635,126 @@ TASK_IMPL_3(BDD, mtbdd_minExistsRepresentative, MTBDD, a, BDD, variables, BDDVAR
     sylvan_gc_test();
 	
     /* Cube is guaranteed to be a cube at this point. */
+	printf("Entered method.\n");
     if (mtbdd_isleaf(a)) {
+		printf("is leaf\n");
         if (sylvan_set_isempty(variables)) {
+			printf("set is empty\n");
             return sylvan_true; // FIXME?
         } else {
-            return variables;
+			printf("have variables.\n");
+			BDD _v = sylvan_set_next(variables);
+			BDD res = CALL(mtbdd_minExistsRepresentative, a, _v, prev_level);
+			if (res == sylvan_invalid) {
+				return sylvan_invalid;
+			}
+			sylvan_ref(res);
+
+			BDD res1 = sylvan_ite(sylvan_ithvar(bddnode_getvariable(BDD_GETNODE(variables))), sylvan_false, res);
+			if (res1 == sylvan_invalid) {
+				sylvan_deref(res);
+				return sylvan_invalid;
+			}
+			sylvan_deref(res);
+			return res1;
         }
-    }
+    } else if (sylvan_set_isempty(variables)) {
+		mtbddnode_t na = MTBDD_GETNODE(a);
+		uint32_t va = mtbddnode_getvariable(na);
+		MTBDD E = mtbdd_getlow(a);
+		MTBDD T = mtbdd_gethigh(a);
+		BDD res1 = CALL(mtbdd_minExistsRepresentative, E, variables, va);
+        if (res1 == sylvan_invalid) {
+            return sylvan_invalid;
+        }
+        sylvan_ref(res1);
+        
+        BDD res2 = CALL(mtbdd_minExistsRepresentative, T, variables, va);
+        if (res2 == sylvan_invalid) {
+            sylvan_deref(res1);
+            return sylvan_invalid;
+        }
+        sylvan_ref(res2);
+        
+        MTBDD left = mtbdd_abstract_min(E, variables);
+        if (left == mtbdd_invalid) {
+            sylvan_deref(res1);
+			sylvan_deref(res2);
+            return sylvan_invalid;
+        }
+        mtbdd_ref(left);
+		
+        MTBDD right = mtbdd_abstract_min(T, variables);
+        if (right == mtbdd_invalid) {
+            sylvan_deref(res1);
+			sylvan_deref(res2);
+			mtbdd_deref(left);
+            return sylvan_invalid;
+        }
+        mtbdd_ref(right);
+        
+        BDD tmp = mtbdd_less_or_equal_as_bdd(left, right);
+        if (tmp == sylvan_invalid) {
+            sylvan_deref(res1);
+			sylvan_deref(res2);
+			mtbdd_deref(left);
+			mtbdd_deref(right);
+            return sylvan_invalid;
+        }
+        sylvan_ref(tmp);
+        
+        mtbdd_deref(left);
+		mtbdd_deref(right);
+        
+        BDD res1Inf = sylvan_ite(tmp, res1, zero);
+        if (res1Inf == sylvan_invalid) {
+            sylvan_deref(res1);
+			sylvan_deref(res2);
+			sylvan_deref(tmp);
+            return sylvan_invalid;
+        }
+        sylvan_ref(res1Inf);
+        sylvan_deref(res1);
+        
+        BDD tmp2 = sylvan_not(tmp);
+        if (tmp2 == sylvan_invalid) {
+			sylvan_deref(res2);
+			mtbdd_deref(left);
+			mtbdd_deref(right);
+			sylvan_deref(tmp);
+            return sylvan_invalid;
+        }
+        sylvan_ref(tmp2);
+        sylvan_deref(tmp);
+        
+        BDD res2Inf = sylvan_ite(tmp2, res2, zero);
+        if (res2Inf == sylvan_invalid) {
+            sylvan_deref(res2);
+            sylvan_deref(res1Inf);
+            sylvan_deref(tmp2);
+            return sylvan_invalid;
+        }
+        sylvan_ref(res2Inf);
+        sylvan_deref(res2);
+        sylvan_deref(tmp2);
+
+        BDD res = (res1Inf == res2Inf) ? sylvan_ite(sylvan_ithvar(va), zero, res1Inf) : sylvan_ite(sylvan_ithvar(va), res2Inf, res1Inf);
+
+        if (res == sylvan_invalid) {
+            sylvan_deref(res1Inf);
+            sylvan_deref(res2Inf);
+            return sylvan_invalid;
+        }
+        sylvan_ref(res);
+        sylvan_deref(res1Inf);
+        sylvan_deref(res2Inf);
+        
+		/* TODO: Caching here. */
+		//cuddCacheInsert2(manager, Cudd_addMinAbstractRepresentative, f, cube, res);
+		
+        sylvan_deref(res);
+        return res;
+	}
 	
 	mtbddnode_t na = MTBDD_GETNODE(a);
 	uint32_t va = mtbddnode_getvariable(na);
@@ -650,6 +763,7 @@ TASK_IMPL_3(BDD, mtbdd_minExistsRepresentative, MTBDD, a, BDD, variables, BDDVAR
 
     /* Abstract a variable that does not appear in a. */
     if (va > vv) {
+		printf("va > vv\n");
 		BDD _v = sylvan_set_next(variables);
         BDD res = CALL(mtbdd_minExistsRepresentative, a, _v, va);
         if (res == sylvan_invalid) {
@@ -678,6 +792,7 @@ TASK_IMPL_3(BDD, mtbdd_minExistsRepresentative, MTBDD, a, BDD, variables, BDDVAR
     
     /* If the two indices are the same, so are their levels. */
     if (va == vv) {
+		printf("va == vv\n");
 		BDD _v = sylvan_set_next(variables);
         BDD res1 = CALL(mtbdd_minExistsRepresentative, E, _v, va);
         if (res1 == sylvan_invalid) {
@@ -771,7 +886,8 @@ TASK_IMPL_3(BDD, mtbdd_minExistsRepresentative, MTBDD, a, BDD, variables, BDDVAR
         sylvan_deref(res);
         return res;
     }
-    else { /* if (cuddI(manager,f->index) < cuddI(manager,cube->index)) */
+    else { /* if (va < vv) */
+		printf("va < vv\n");
 		BDD res1 = CALL(mtbdd_minExistsRepresentative, E, variables, va);
         if (res1 == sylvan_invalid) {
 			return sylvan_invalid;
@@ -796,9 +912,6 @@ TASK_IMPL_3(BDD, mtbdd_minExistsRepresentative, MTBDD, a, BDD, variables, BDDVAR
         //cuddCacheInsert2(manager, Cudd_addMinAbstractRepresentative, f, cube, res);
         return res;
     }
-	
-	// Prevent unused variable warning
-	(void)prev_level;
 }
 
 TASK_IMPL_3(BDD, mtbdd_maxExistsRepresentative, MTBDD, a, MTBDD, variables, uint32_t, prev_level) {
