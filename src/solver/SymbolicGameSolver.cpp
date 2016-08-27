@@ -46,7 +46,7 @@ namespace storm {
 
                     // If we are required to generate a player 2 strategy based on another one that is not the zero strategy,
                     // we need to determine the values, because only then we can update the strategy only if necessary.
-                    previousPlayer2Values = ((this->A * player2Strategy.get().template toAdd<ValueType>()).multiplyMatrix(x.swapVariables(this->rowColumnMetaVariablePairs), this->columnMetaVariables) + b).sumAbstract(this->player2Variables);
+                    previousPlayer2Values = (player2Strategy.get().template toAdd<ValueType>() * (this->A.multiplyMatrix(x.swapVariables(this->rowColumnMetaVariablePairs), this->columnMetaVariables) + b)).sumAbstract(this->player2Variables);
                 } else {
                     player2Strategy = A.getDdManager().getBddZero();
                     previousPlayer2Values = A.getDdManager().template getAddZero<ValueType>();

@@ -249,12 +249,14 @@ namespace storm {
                 // Construct the transition matrix by cutting away the transitions of unreachable states.
                 storm::dd::Add<DdType, ValueType> transitionMatrix = (game.bdd && reachableStates).template toAdd<ValueType>() * commandUpdateProbabilitiesAdd + deadlockTransitions;
                 
-                // If there are bottom states, we need to mark all other states as non-bottom now.
+                // Extend the current game information with the 'non-bottom' tag before potentially adding bottom state transitions.
+                transitionMatrix *= (abstractionInformation.getBottomStateBdd(true, true) && abstractionInformation.getBottomStateBdd(false, true)).template toAdd<ValueType>();
+                reachableStates &= abstractionInformation.getBottomStateBdd(true, true);
+                initialStates &= abstractionInformation.getBottomStateBdd(true, true);
+                
+                // If there are bottom transitions, exnted the transition matrix and reachable states now. 
                 if (hasBottomStates) {
-                    transitionMatrix *= (abstractionInformation.getBottomStateBdd(true, true) && abstractionInformation.getBottomStateBdd(false, true)).template toAdd<ValueType>();
                     transitionMatrix += bottomStateResult.transitions.template toAdd<ValueType>();
-                    reachableStates &= abstractionInformation.getBottomStateBdd(true, true);
-                    initialStates &= abstractionInformation.getBottomStateBdd(true, true);
                     reachableStates |= bottomStateResult.states;
                 }
             
@@ -264,15 +266,11 @@ namespace storm {
                 allNondeterminismVariables.insert(abstractionInformation.getPlayer1Variables().begin(), abstractionInformation.getPlayer1Variables().end());
 
                 std::set<storm::expressions::Variable> allSourceVariables(abstractionInformation.getSourceVariables());
-                if (hasBottomStates) {
-                    allSourceVariables.insert(abstractionInformation.getBottomStateVariable(true));
-                }
+                allSourceVariables.insert(abstractionInformation.getBottomStateVariable(true));
                 std::set<storm::expressions::Variable> allSuccessorVariables(abstractionInformation.getSuccessorVariables());
-                if (hasBottomStates) {
-                    allSuccessorVariables.insert(abstractionInformation.getBottomStateVariable(false));
-                }
+                allSuccessorVariables.insert(abstractionInformation.getBottomStateVariable(false));
                 
-                return std::make_unique<MenuGame<DdType, ValueType>>(abstractionInformation.getDdManagerAsSharedPointer(), reachableStates, initialStates, abstractionInformation.getDdManager().getBddZero(), transitionMatrix, bottomStateResult.states, allSourceVariables, allSuccessorVariables, hasBottomStates ? abstractionInformation.getExtendedSourceSuccessorVariablePairs() : abstractionInformation.getSourceSuccessorVariablePairs(), std::set<storm::expressions::Variable>(abstractionInformation.getPlayer1Variables().begin(), abstractionInformation.getPlayer1Variables().end()), usedPlayer2Variables, allNondeterminismVariables, auxVariables, abstractionInformation.getPredicateToBddMap());
+                return std::make_unique<MenuGame<DdType, ValueType>>(abstractionInformation.getDdManagerAsSharedPointer(), reachableStates, initialStates, abstractionInformation.getDdManager().getBddZero(), transitionMatrix, bottomStateResult.states, allSourceVariables, allSuccessorVariables, abstractionInformation.getExtendedSourceSuccessorVariablePairs(), std::set<storm::expressions::Variable>(abstractionInformation.getPlayer1Variables().begin(), abstractionInformation.getPlayer1Variables().end()), usedPlayer2Variables, allNondeterminismVariables, auxVariables, abstractionInformation.getPredicateToBddMap());
             }
                         
             template <storm::dd::DdType DdType, typename ValueType>

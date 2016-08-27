@@ -234,6 +234,48 @@ namespace storm {
                 }
             }
         }
+
+        template<storm::dd::DdType Type, typename ValueType>
+        void refineAfterQuantitativeCheck(storm::abstraction::prism::PrismMenuGameAbstractor<Type, ValueType>& abstractor, storm::abstraction::MenuGame<Type, ValueType> const& game, std::pair<storm::dd::Bdd<Type>, storm::dd::Bdd<Type>> const& minStrategyPair, std::pair<storm::dd::Bdd<Type>, storm::dd::Bdd<Type>> const& maxStrategyPair, storm::dd::Bdd<Type> const& transitionMatrixBdd) {
+            // Build the fragment of states that is reachable by any combination of the player 1 and player 2 strategies.
+            storm::dd::Bdd<Type> reachableTransitions = minStrategyPair.second || maxStrategyPair.second;
+            reachableTransitions = (minStrategyPair.first && reachableTransitions) || (maxStrategyPair.first && reachableTransitions);
+            reachableTransitions &= transitionMatrixBdd;
+            reachableTransitions = reachableTransitions.existsAbstract(game.getNondeterminismVariables());
+            storm::dd::Bdd<Type> pivotStates = storm::utility::dd::computeReachableStates(game.getInitialStates(), reachableTransitions, game.getRowVariables(), game.getColumnVariables());
+            
+            // Then constrain these states by the requirement that for either the lower or upper player 1 choice the player 2 choices must be different.
+            pivotStates &= ((minStrategyPair.first || maxStrategyPair.first) && (minStrategyPair.second.exclusiveOr(maxStrategyPair.second))).existsAbstract(game.getNondeterminismVariables());
+            STORM_LOG_ASSERT(!pivotStates.isZero(), "Unable to refine without pivot state candidates.");
+            
+            // Now that we have the pivot state candidates, we need to pick one.
+            storm::dd::Bdd<Type> pivotState = pickPivotState<Type>(game.getInitialStates(), reachableTransitions, game.getRowVariables(), game.getColumnVariables(), pivotStates);
+            
+            // Compute the lower and the upper choice for the pivot state.
+            std::set<storm::expressions::Variable> variablesToAbstract = game.getNondeterminismVariables();
+            variablesToAbstract.insert(game.getRowVariables().begin(), game.getRowVariables().end());
+            storm::dd::Bdd<Type> lowerChoice = pivotState && game.getExtendedTransitionMatrix().toBdd() && minStrategyPair.first;
+            storm::dd::Bdd<Type> lowerChoice1 = (lowerChoice && minStrategyPair.second).existsAbstract(variablesToAbstract);
+            storm::dd::Bdd<Type> lowerChoice2 = (lowerChoice && maxStrategyPair.second).existsAbstract(variablesToAbstract);
+            
+            bool lowerChoicesDifferent = !lowerChoice1.exclusiveOr(lowerChoice2).isZero();
+            if (lowerChoicesDifferent) {
+                STORM_LOG_TRACE("Refining based on lower choice.");
+                abstractor.refine(pivotState, (pivotState && minStrategyPair.first).existsAbstract(game.getRowVariables()), lowerChoice1, lowerChoice2);
+            } else {
+                storm::dd::Bdd<Type> upperChoice = pivotState && game.getExtendedTransitionMatrix().toBdd() && maxStrategyPair.first;
+                storm::dd::Bdd<Type> upperChoice1 = (upperChoice && minStrategyPair.second).existsAbstract(variablesToAbstract);
+                storm::dd::Bdd<Type> upperChoice2 = (upperChoice && maxStrategyPair.second).existsAbstract(variablesToAbstract);
+                
+                bool upperChoicesDifferent = !upperChoice1.exclusiveOr(upperChoice2).isZero();
+                if (upperChoicesDifferent) {
+                    STORM_LOG_TRACE("Refining based on upper choice.");
+                    abstractor.refine(pivotState, (pivotState && maxStrategyPair.first).existsAbstract(game.getRowVariables()), upperChoice1, upperChoice2);
+                } else {
+                    STORM_LOG_ASSERT(false, "Did not find choices from which to derive predicates.");
+                }
+            }
+        }
         
         template<storm::dd::DdType Type, typename ValueType>
         struct MaybeStateResult {
@@ -275,17 +317,8 @@ namespace storm {
             storm::utility::solver::SymbolicGameSolverFactory<Type, ValueType> solverFactory;
             std::unique_ptr<storm::solver::SymbolicGameSolver<Type, ValueType>> solver = solverFactory.create(submatrix, maybeStates, game.getIllegalPlayer1Mask(), game.getIllegalPlayer2Mask(), game.getRowVariables(), game.getColumnVariables(), game.getRowColumnMetaVariablePairs(), game.getPlayer1Variables(), game.getPlayer2Variables());
             solver->setGeneratePlayersStrategies(true);
-            auto values = solver->solveGame(player1Direction, player2Direction, startVector, subvector);
-            storm::dd::Bdd<Type> player1Strategy = solver->getPlayer1Strategy();
-            storm::dd::Bdd<Type> player2Strategy = solver->getPlayer2Strategy();
-            
-            // If we were given a starting point, we fix the strategies now. That is, we only deviate from the 
-            if (startInfo) {
-                player1Strategy = values.greater(startInfo.get().values).ite(player1Strategy, startInfo.get().player1Strategy);
-                player1Strategy = values.greater(startInfo.get().values).ite(player1Strategy, startInfo.get().player1Strategy);
-            }
-            
-            return MaybeStateResult<Type, ValueType>(values, player1Strategy, player2Strategy);
+            auto values = solver->solveGame(player1Direction, player2Direction, startVector, subvector, startInfo ? boost::make_optional(startInfo.get().player1Strategy) : boost::none, startInfo ? boost::make_optional(startInfo.get().player2Strategy) : boost::none);
+            return MaybeStateResult<Type, ValueType>(values, solver->getPlayer1Strategy(), solver->getPlayer2Strategy());
         }
         
         template<storm::dd::DdType Type, typename ValueType>
@@ -380,13 +413,13 @@ namespace storm {
                     storm::dd::Add<Type, ValueType> initialStatesAdd = game.getInitialStates().template toAdd<ValueType>();
 
                     ValueType minValue = (prob01.min.second.states && game.getInitialStates()) == game.getInitialStates() ? storm::utility::one<ValueType>() : storm::utility::zero<ValueType>();
-                    MaybeStateResult<Type, ValueType> minMaybeStateResult;
+                    MaybeStateResult<Type, ValueType> minMaybeStateResult(game.getManager().template getAddZero<ValueType>(), game.getManager().getBddZero(), game.getManager().getBddZero());
                     if (!maybeMin.isZero()) {
                         minMaybeStateResult = solveMaybeStates(player1Direction, storm::OptimizationDirection::Minimize, game, maybeMin, prob01.min.second.states);
                         minResult += minMaybeStateResult.values;
                         storm::dd::Add<Type, ValueType> initialStateMin = initialStatesAdd * minResult;
                         // Here we can only require a non-zero count of *at most* one, because the result may actually be 0.
-                        STORM_LOG_ASSERT(initialStateMin.getNonZeroCount() <= 1, "Wrong number of results for initial states.");
+                        STORM_LOG_ASSERT(initialStateMin.getNonZeroCount() <= 1, "Wrong number of results for initial states. Expected <= 1, but got " << initialStateMin.getNonZeroCount() << ".");
                         minValue = initialStateMin.getMax();
                     }
                     STORM_LOG_TRACE("Obtained quantitative lower bound " << minValue << ".");
@@ -398,15 +431,14 @@ namespace storm {
                     }
                     
                     ValueType maxValue = (prob01.max.second.states && game.getInitialStates()) == game.getInitialStates() ? storm::utility::one<ValueType>() : storm::utility::zero<ValueType>();
-                    MaybeStateResult<Type, ValueType> maxMaybeStateResult;
+                    MaybeStateResult<Type, ValueType> maxMaybeStateResult(game.getManager().template getAddZero<ValueType>(), game.getManager().getBddZero(), game.getManager().getBddZero());
                     if (!maybeMax.isZero()) {
-                        // FIXME: fix strategy: only change if improved.
-                        maxMaybeStateResult = solveMaybeStates(player1Direction, storm::OptimizationDirection::Maximize, game, maybeMax, prob01.max.second.states, boost::optional<MaybeStateResult<Type, ValueType>>(minMaybeStateResult));
+                        maxMaybeStateResult = solveMaybeStates(player1Direction, storm::OptimizationDirection::Maximize, game, maybeMax, prob01.max.second.states, boost::make_optional(minMaybeStateResult));
                         maxResult += maxMaybeStateResult.values;
                         storm::dd::Add<Type, ValueType> initialStateMax = (initialStatesAdd * maxResult);
                         // Unlike in the min-case, we can require a non-zero count of 1 here, because if the max was in
                         // fact 0, the result would be 0, which would have been detected earlier by the graph algorithms.
-                        STORM_LOG_ASSERT(initialStateMax.getNonZeroCount() == 1, "Wrong number of results for initial states.");
+                        STORM_LOG_ASSERT(initialStateMax.getNonZeroCount() == 1, "Wrong number of results for initial states. Expected 1, but got " << initialStateMax.getNonZeroCount() << ".");
                         maxValue = initialStateMax.getMax();
                     }
                     STORM_LOG_TRACE("Obtained quantitative upper bound " << maxValue << ".");
@@ -427,7 +459,13 @@ namespace storm {
                     // If we arrived at this point, it means that we have all qualitative and quantitative information
                     // about the game, but we could not yet answer the query. In this case, we need to refine.
                     
-                    STORM_LOG_ASSERT(false, "Quantiative refinement not yet there. :)");
+                    // Start by extending the quantitative strategies by the qualitative ones.
+                    minMaybeStateResult.player1Strategy |= prob01.min.first.getPlayer1Strategy() || prob01.min.second.getPlayer1Strategy();
+                    minMaybeStateResult.player2Strategy |= prob01.min.first.getPlayer2Strategy() || prob01.min.second.getPlayer2Strategy();
+                    maxMaybeStateResult.player1Strategy |= prob01.max.first.getPlayer1Strategy() || prob01.max.second.getPlayer1Strategy();
+                    maxMaybeStateResult.player2Strategy |= prob01.max.first.getPlayer2Strategy() || prob01.max.second.getPlayer2Strategy();
+                    
+                    refineAfterQuantitativeCheck(abstractor, game, std::make_pair(minMaybeStateResult.player1Strategy, minMaybeStateResult.player2Strategy), std::make_pair(maxMaybeStateResult.player1Strategy, maxMaybeStateResult.player2Strategy), transitionMatrixBdd);
                 }
             }
 
@@ -438,15 +476,18 @@ namespace storm {
         template<storm::dd::DdType Type, typename ValueType>
         std::pair<storm::utility::graph::GameProb01Result<Type>, storm::utility::graph::GameProb01Result<Type>> GameBasedMdpModelChecker<Type, ValueType>::computeProb01States(storm::OptimizationDirection player1Direction, storm::OptimizationDirection player2Direction, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& transitionMatrixBdd, storm::dd::Bdd<Type> const& constraintStates, storm::dd::Bdd<Type> const& targetStates) {
             // Compute the states with probability 0/1.
-            storm::utility::graph::GameProb01Result<Type> prob0 = storm::utility::graph::performProb0(game, transitionMatrixBdd, constraintStates, targetStates, player1Direction, player2Direction, player2Direction == storm::OptimizationDirection::Minimize, player2Direction == storm::OptimizationDirection::Minimize);
-            storm::utility::graph::GameProb01Result<Type> prob1 = storm::utility::graph::performProb1(game, transitionMatrixBdd, constraintStates, targetStates, player1Direction, player2Direction, player2Direction == storm::OptimizationDirection::Maximize, player2Direction == storm::OptimizationDirection::Maximize);
+//            storm::utility::graph::GameProb01Result<Type> prob0 = storm::utility::graph::performProb0(game, transitionMatrixBdd, constraintStates, targetStates, player1Direction, player2Direction, player2Direction == storm::OptimizationDirection::Minimize, player2Direction == storm::OptimizationDirection::Minimize);
+//            storm::utility::graph::GameProb01Result<Type> prob1 = storm::utility::graph::performProb1(game, transitionMatrixBdd, constraintStates, targetStates, player1Direction, player2Direction, player2Direction == storm::OptimizationDirection::Maximize, player2Direction == storm::OptimizationDirection::Maximize);
+            storm::utility::graph::GameProb01Result<Type> prob0 = storm::utility::graph::performProb0(game, transitionMatrixBdd, constraintStates, targetStates, player1Direction, player2Direction, true, true);
+            storm::utility::graph::GameProb01Result<Type> prob1 = storm::utility::graph::performProb1(game, transitionMatrixBdd, constraintStates, targetStates, player1Direction, player2Direction, true, true);
             
-            STORM_LOG_ASSERT(player2Direction != storm::OptimizationDirection::Minimize || (prob0.hasPlayer1Strategy() && !prob0.getPlayer1Strategy().isZero()), "Unable to proceed without strategy.");
-            STORM_LOG_ASSERT(player2Direction != storm::OptimizationDirection::Minimize || (prob0.hasPlayer2Strategy() && !prob0.getPlayer2Strategy().isZero()), "Unable to proceed without strategy.");
-            STORM_LOG_ASSERT(player2Direction != storm::OptimizationDirection::Maximize || (prob1.hasPlayer1Strategy() && !prob1.getPlayer1Strategy().isZero()), "Unable to proceed without strategy.");
-            STORM_LOG_ASSERT(player2Direction != storm::OptimizationDirection::Maximize || (prob1.hasPlayer2Strategy() && !prob1.getPlayer2Strategy().isZero()), "Unable to proceed without strategy.");
+            STORM_LOG_ASSERT(player2Direction != storm::OptimizationDirection::Minimize || (prob0.hasPlayer1Strategy() && (prob0.states.isZero() || !prob0.getPlayer1Strategy().isZero())), "Unable to proceed without strategy.");
+            STORM_LOG_ASSERT(player2Direction != storm::OptimizationDirection::Minimize || (prob0.hasPlayer2Strategy() && (prob0.states.isZero() || !prob0.getPlayer2Strategy().isZero())), "Unable to proceed without strategy.");
+            STORM_LOG_ASSERT(player2Direction != storm::OptimizationDirection::Maximize || (prob1.hasPlayer1Strategy() && (prob1.states.isZero() || !prob1.getPlayer1Strategy().isZero())), "Unable to proceed without strategy.");
+            STORM_LOG_ASSERT(player2Direction != storm::OptimizationDirection::Maximize || (prob1.hasPlayer2Strategy() && (prob1.states.isZero() || !prob1.getPlayer2Strategy().isZero())), "Unable to proceed without strategy.");
 
             STORM_LOG_TRACE("Player 1: " << player1Direction << ", player 2: " << player2Direction << ": " << prob0.states.getNonZeroCount() << " 'no' states, " << prob1.states.getNonZeroCount() << " 'yes' states.");
+            
             return std::make_pair(prob0, prob1);
         }
         
