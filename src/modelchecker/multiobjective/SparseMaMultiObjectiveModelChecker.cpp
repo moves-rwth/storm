@@ -65,5 +65,6 @@ namespace storm {
         
                 
         template class SparseMaMultiObjectiveModelChecker<storm::models::sparse::MarkovAutomaton<double>>;
+    //    template class SparseMaMultiObjectiveModelChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>;
     }
 }

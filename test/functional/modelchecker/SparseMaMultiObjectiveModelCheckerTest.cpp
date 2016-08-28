@@ -9,13 +9,14 @@
 #include "src/modelchecker/results/ParetoCurveCheckResult.h"
 #include "src/models/sparse/MarkovAutomaton.h"
 #include "src/storage/geometry/Polytope.h"
+#include "src/storage/geometry/Hyperrectangle.h"
 #include "src/settings/modules/GeneralSettings.h"
 #include "src/settings/SettingsManager.h"
 #include "src/utility/storm.h"
 
 
-
-TEST(SparseMdpMultiObjectiveModelCheckerTest, server) {
+/* Rationals for MAs not supported at this point
+TEST(SparseMaMultiObjectiveModelCheckerTest, serverRationalNumbers) {
     
     std::string programFile = STORM_CPP_BASE_PATH "/examples/multiobjective/ma/server/server.ma";
     std::string formulasAsString = "multi(Tmax=? [ F \"error\" ], Pmax=? [ F \"processB\" ]) "; // pareto
@@ -26,9 +27,9 @@ TEST(SparseMdpMultiObjectiveModelCheckerTest, server) {
     program.checkValidity();
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::parseFormulasForProgram(formulasAsString, program);
     storm::generator::NextStateGeneratorOptions options(formulas);
-    std::shared_ptr<storm::models::sparse::MarkovAutomaton<double>> ma = storm::builder::ExplicitModelBuilder<double>(program, options).build()->as<storm::models::sparse::MarkovAutomaton<double>>();
+    std::shared_ptr<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>> ma = storm::builder::ExplicitModelBuilder<storm::RationalNumber>(program, options).build()->as<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>();
     
-    storm::modelchecker::SparseMaMultiObjectiveModelChecker<storm::models::sparse::MarkovAutomaton<double>> checker(*ma);
+    storm::modelchecker::SparseMaMultiObjectiveModelChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>> checker(*ma);
     
     std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(storm::modelchecker::CheckTask<storm::logic::Formula>(*formulas[0], true));
     ASSERT_TRUE(result->isParetoCurveCheckResult());
@@ -42,6 +43,38 @@ TEST(SparseMdpMultiObjectiveModelCheckerTest, server) {
     auto expectedAchievableValues = storm::storage::geometry::Polytope<storm::RationalNumber>::createDownwardClosure(std::vector<std::vector<storm::RationalNumber>>({p,q}));
     EXPECT_TRUE(expectedAchievableValues->contains(result->asParetoCurveCheckResult<storm::RationalNumber>().getUnderApproximation()));
     EXPECT_TRUE(result->asParetoCurveCheckResult<storm::RationalNumber>().getUnderApproximation()->contains(expectedAchievableValues));
+    
+}*/
+
+
+TEST(SparseMaMultiObjectiveModelCheckerTest, server) {
+    
+    std::string programFile = STORM_CPP_BASE_PATH "/examples/multiobjective/ma/server/server.ma";
+    std::string formulasAsString = "multi(Tmax=? [ F \"error\" ], Pmax=? [ F \"processB\" ]) "; // pareto
+    //  formulasAsString += "; \n multi(..)";
+    
+    // programm, model,  formula
+    storm::prism::Program program = storm::parseProgram(programFile);
+    program.checkValidity();
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::parseFormulasForProgram(formulasAsString, program);
+    storm::generator::NextStateGeneratorOptions options(formulas);
+    std::shared_ptr<storm::models::sparse::MarkovAutomaton<double>> ma = storm::builder::ExplicitModelBuilder<double>(program, options).build()->as<storm::models::sparse::MarkovAutomaton<double>>();
+    
+    storm::modelchecker::SparseMaMultiObjectiveModelChecker<storm::models::sparse::MarkovAutomaton<double>> checker(*ma);
+    
+    std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(storm::modelchecker::CheckTask<storm::logic::Formula>(*formulas[0], true));
+    ASSERT_TRUE(result->isParetoCurveCheckResult());
+    
+    std::vector<double> p = {11.0/6.0, 1.0/2.0};
+    std::vector<double> q = {29.0/18.0, 2.0/3.0};
+    auto expectedAchievableValues = storm::storage::geometry::Polytope<double>::createDownwardClosure(std::vector<std::vector<double>>({p,q}));
+    // due to precision issues, we enlarge one of the polytopes before checking containement
+    std::vector<double> lb = {-storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision(), -storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision()};
+    std::vector<double> ub = {storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision(), storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision()};
+    auto bloatingBox = storm::storage::geometry::Hyperrectangle<double>(lb,ub).asPolytope();
+    
+    EXPECT_TRUE(expectedAchievableValues->minkowskiSum(bloatingBox)->contains(result->asParetoCurveCheckResult<double>().getUnderApproximation()));
+    EXPECT_TRUE(result->asParetoCurveCheckResult<double>().getUnderApproximation()->minkowskiSum(bloatingBox)->contains(expectedAchievableValues));
     
 }
 
