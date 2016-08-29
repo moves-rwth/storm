@@ -89,6 +89,12 @@ namespace storm {
             
             return xCopy;
         }
+
+        template<storm::dd::DdType DdType, typename ValueType>
+        ValueType const& SymbolicMinMaxLinearEquationSolver<DdType, ValueType>::getPrecision() const {
+            return precision;
+        }
+
         
         template class SymbolicMinMaxLinearEquationSolver<storm::dd::DdType::CUDD, double>;
         template class SymbolicMinMaxLinearEquationSolver<storm::dd::DdType::Sylvan, double>;

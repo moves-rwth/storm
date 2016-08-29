@@ -94,6 +94,7 @@ namespace storm {
             return restart;
         }
         
+#ifdef STORM_HAVE_CARL
         EigenLinearEquationSolverSettings<storm::RationalNumber>::EigenLinearEquationSolverSettings() {
             // Intentionally left empty.
         }
@@ -101,6 +102,7 @@ namespace storm {
         EigenLinearEquationSolverSettings<storm::RationalFunction>::EigenLinearEquationSolverSettings() {
             // Intentionally left empty.
         }
+#endif
 
         template<typename ValueType>
         EigenLinearEquationSolver<ValueType>::EigenLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, EigenLinearEquationSolverSettings<ValueType> const& settings) : eigenA(storm::adapters::EigenAdapter::toEigenSparseMatrix<ValueType>(A)), settings(settings) {
@@ -125,7 +127,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void EigenLinearEquationSolver<ValueType>::solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+        bool EigenLinearEquationSolver<ValueType>::solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             // Map the input vectors to Eigen's format.
             auto eigenX = Eigen::Matrix<ValueType, Eigen::Dynamic, 1>::Map(x.data(), x.size());
             auto eigenB = Eigen::Matrix<ValueType, Eigen::Dynamic, 1>::Map(b.data(), b.size());
@@ -144,18 +146,21 @@ namespace storm {
                         solver.setTolerance(this->getSettings().getPrecision());
                         solver.setMaxIterations(this->getSettings().getMaximalNumberOfIterations());
                         eigenX = solver.solveWithGuess(eigenB, eigenX);
+                        return solver.info() == Eigen::ComputationInfo::Success;
                     } else if (preconditioner == EigenLinearEquationSolverSettings<ValueType>::Preconditioner::Diagonal) {
                         Eigen::BiCGSTAB<Eigen::SparseMatrix<ValueType>, Eigen::DiagonalPreconditioner<ValueType>> solver;
                         solver.setTolerance(this->getSettings().getPrecision());
                         solver.setMaxIterations(this->getSettings().getMaximalNumberOfIterations());
                         solver.compute(*this->eigenA);
                         eigenX = solver.solveWithGuess(eigenB, eigenX);
+                        return solver.info() == Eigen::ComputationInfo::Success;
                     } else {
                         Eigen::BiCGSTAB<Eigen::SparseMatrix<ValueType>, Eigen::IdentityPreconditioner> solver;
                         solver.setTolerance(this->getSettings().getPrecision());
                         solver.setMaxIterations(this->getSettings().getMaximalNumberOfIterations());
                         solver.compute(*this->eigenA);
                         eigenX = solver.solveWithGuess(eigenB, eigenX);
+                        return solver.info() == Eigen::ComputationInfo::Success;
                     }
                 } else if (solutionMethod == EigenLinearEquationSolverSettings<ValueType>::SolutionMethod::DGMRES) {
                     if (preconditioner == EigenLinearEquationSolverSettings<ValueType>::Preconditioner::Ilu) {
@@ -165,6 +170,7 @@ namespace storm {
                         solver.set_restart(this->getSettings().getNumberOfIterationsUntilRestart());
                         solver.compute(*this->eigenA);
                         eigenX = solver.solveWithGuess(eigenB, eigenX);
+                        return solver.info() == Eigen::ComputationInfo::Success;
                     } else if (preconditioner == EigenLinearEquationSolverSettings<ValueType>::Preconditioner::Diagonal) {
                         Eigen::DGMRES<Eigen::SparseMatrix<ValueType>, Eigen::DiagonalPreconditioner<ValueType>> solver;
                         solver.setTolerance(this->getSettings().getPrecision());
@@ -172,6 +178,7 @@ namespace storm {
                         solver.set_restart(this->getSettings().getNumberOfIterationsUntilRestart());
                         solver.compute(*this->eigenA);
                         eigenX = solver.solveWithGuess(eigenB, eigenX);
+                        return solver.info() == Eigen::ComputationInfo::Success;
                     } else {
                         Eigen::DGMRES<Eigen::SparseMatrix<ValueType>, Eigen::IdentityPreconditioner> solver;
                         solver.setTolerance(this->getSettings().getPrecision());
@@ -179,6 +186,7 @@ namespace storm {
                         solver.set_restart(this->getSettings().getNumberOfIterationsUntilRestart());
                         solver.compute(*this->eigenA);
                         eigenX = solver.solveWithGuess(eigenB, eigenX);
+                        return solver.info() == Eigen::ComputationInfo::Success;
                     }
                 } else if (solutionMethod == EigenLinearEquationSolverSettings<ValueType>::SolutionMethod::GMRES) {
                     if (preconditioner == EigenLinearEquationSolverSettings<ValueType>::Preconditioner::Ilu) {
@@ -188,6 +196,7 @@ namespace storm {
                         solver.set_restart(this->getSettings().getNumberOfIterationsUntilRestart());
                         solver.compute(*this->eigenA);
                         eigenX = solver.solveWithGuess(eigenB, eigenX);
+                        return solver.info() == Eigen::ComputationInfo::Success;
                     } else if (preconditioner == EigenLinearEquationSolverSettings<ValueType>::Preconditioner::Diagonal) {
                         Eigen::GMRES<Eigen::SparseMatrix<ValueType>, Eigen::DiagonalPreconditioner<ValueType>> solver;
                         solver.setTolerance(this->getSettings().getPrecision());
@@ -195,6 +204,7 @@ namespace storm {
                         solver.set_restart(this->getSettings().getNumberOfIterationsUntilRestart());
                         solver.compute(*this->eigenA);
                         eigenX = solver.solveWithGuess(eigenB, eigenX);
+                        return solver.info() == Eigen::ComputationInfo::Success;
                     } else {
                         Eigen::GMRES<Eigen::SparseMatrix<ValueType>, Eigen::IdentityPreconditioner> solver;
                         solver.setTolerance(this->getSettings().getPrecision());
@@ -202,9 +212,11 @@ namespace storm {
                         solver.set_restart(this->getSettings().getNumberOfIterationsUntilRestart());
                         solver.compute(*this->eigenA);
                         eigenX = solver.solveWithGuess(eigenB, eigenX);
+                        return solver.info() == Eigen::ComputationInfo::Success;
                     }
                 }
             }
+            return false;
         }
         
         template<typename ValueType>
@@ -255,10 +267,10 @@ namespace storm {
             return eigenA->cols();
         }
         
-        // Specialization form storm::RationalNumber
-        
+#ifdef STORM_HAVE_CARL
+        // Specialization for storm::RationalNumber
         template<>
-        void EigenLinearEquationSolver<storm::RationalNumber>::solveEquations(std::vector<storm::RationalNumber>& x, std::vector<storm::RationalNumber> const& b) const {
+        bool EigenLinearEquationSolver<storm::RationalNumber>::solveEquations(std::vector<storm::RationalNumber>& x, std::vector<storm::RationalNumber> const& b) const {
             // Map the input vectors to Eigen's format.
             auto eigenX = Eigen::Matrix<storm::RationalNumber, Eigen::Dynamic, 1>::Map(x.data(), x.size());
             auto eigenB = Eigen::Matrix<storm::RationalNumber, Eigen::Dynamic, 1>::Map(b.data(), b.size());
@@ -266,12 +278,12 @@ namespace storm {
             Eigen::SparseLU<Eigen::SparseMatrix<storm::RationalNumber>, Eigen::COLAMDOrdering<int>> solver;
             solver.compute(*eigenA);
             solver._solve_impl(eigenB, eigenX);
+            return solver.info() == Eigen::ComputationInfo::Success;
         }
         
-        // Specialization form storm::RationalFunction
-        
+        // Specialization for storm::RationalFunction
         template<>
-        void EigenLinearEquationSolver<storm::RationalFunction>::solveEquations(std::vector<storm::RationalFunction>& x, std::vector<storm::RationalFunction> const& b) const {
+        bool EigenLinearEquationSolver<storm::RationalFunction>::solveEquations(std::vector<storm::RationalFunction>& x, std::vector<storm::RationalFunction> const& b) const {
             // Map the input vectors to Eigen's format.
             auto eigenX = Eigen::Matrix<storm::RationalFunction, Eigen::Dynamic, 1>::Map(x.data(), x.size());
             auto eigenB = Eigen::Matrix<storm::RationalFunction, Eigen::Dynamic, 1>::Map(b.data(), b.size());
@@ -279,8 +291,10 @@ namespace storm {
             Eigen::SparseLU<Eigen::SparseMatrix<storm::RationalFunction>, Eigen::COLAMDOrdering<int>> solver;
             solver.compute(*eigenA);
             solver._solve_impl(eigenB, eigenX);
+            return solver.info() == Eigen::ComputationInfo::Success;
         }
-                
+#endif
+
         template<typename ValueType>
         std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> EigenLinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType> const& matrix) const {
             return std::make_unique<storm::solver::EigenLinearEquationSolver<ValueType>>(matrix, settings);
@@ -307,16 +321,18 @@ namespace storm {
         }
         
         template class EigenLinearEquationSolverSettings<double>;
+        template class EigenLinearEquationSolver<double>;
+        template class EigenLinearEquationSolverFactory<double>;
+
+#ifdef STORM_HAVE_CARL
         template class EigenLinearEquationSolverSettings<storm::RationalNumber>;
         template class EigenLinearEquationSolverSettings<storm::RationalFunction>;
         
-        template class EigenLinearEquationSolver<double>;
         template class EigenLinearEquationSolver<storm::RationalNumber>;
         template class EigenLinearEquationSolver<storm::RationalFunction>;
         
-        template class EigenLinearEquationSolverFactory<double>;
         template class EigenLinearEquationSolverFactory<storm::RationalNumber>;
         template class EigenLinearEquationSolverFactory<storm::RationalFunction>;
-        
+#endif
     }
 }

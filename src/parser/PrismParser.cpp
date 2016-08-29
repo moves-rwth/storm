@@ -65,6 +65,8 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << lineNumber << " of file " << filename << ".");
             }
             
+            STORM_LOG_TRACE("Parsed PRISM input: " << result);
+            
             return result;
         }
         

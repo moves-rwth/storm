@@ -26,7 +26,7 @@ namespace storm {
         }
         
         template<typename SparseMdpModelType>
-        bool SparseMdpMultiObjectiveModelChecker<SparseMdpModelType>::canHandle(CheckTask<storm::logic::Formula> const& checkTask) const {
+        bool SparseMdpMultiObjectiveModelChecker<SparseMdpModelType>::canHandle(CheckTask<storm::logic::Formula, ValueType> const& checkTask) const {
             // A formula without multi objective (sub)formulas can be handled by the base class
             if(SparseMdpPrctlModelChecker<SparseMdpModelType>::canHandle(checkTask)) return true;
             //In general, each initial state requires an individual scheduler (in contrast to single objective model checking). Let's exclude this.
@@ -36,7 +36,7 @@ namespace storm {
         }
         
         template<typename SparseMdpModelType>
-        std::unique_ptr<CheckResult> SparseMdpMultiObjectiveModelChecker<SparseMdpModelType>::checkMultiObjectiveFormula(CheckTask<storm::logic::MultiObjectiveFormula> const& checkTask) {
+        std::unique_ptr<CheckResult> SparseMdpMultiObjectiveModelChecker<SparseMdpModelType>::checkMultiObjectiveFormula(CheckTask<storm::logic::MultiObjectiveFormula, ValueType> const& checkTask) {
             STORM_LOG_ASSERT(this->getModel().getInitialStates().getNumberOfSetBits() == 1, "Multi Objective Model checking on model with multiple initial states is not supported.");
             std::unique_ptr<CheckResult> result;
             

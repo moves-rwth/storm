@@ -13,9 +13,9 @@ namespace storm {
             
             explicit SparseMdpMultiObjectiveModelChecker(SparseMdpModelType const& model);
             
-            virtual bool canHandle(CheckTask<storm::logic::Formula> const& checkTask) const override;
+            virtual bool canHandle(CheckTask<storm::logic::Formula, ValueType> const& checkTask) const override;
 
-            virtual std::unique_ptr<CheckResult> checkMultiObjectiveFormula(CheckTask<storm::logic::MultiObjectiveFormula> const& checkTask) override;
+            virtual std::unique_ptr<CheckResult> checkMultiObjectiveFormula(CheckTask<storm::logic::MultiObjectiveFormula, ValueType> const& checkTask) override;
             
         private:
 

@@ -54,15 +54,14 @@ TEST(SparseMaMultiObjectiveModelCheckerTest, server) {
     //  formulasAsString += "; \n multi(..)";
     
     // programm, model,  formula
-    storm::prism::Program program = storm::parseProgram(programFile);
-    program.checkValidity();
-    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::parseFormulasForProgram(formulasAsString, program);
-    storm::generator::NextStateGeneratorOptions options(formulas);
-    std::shared_ptr<storm::models::sparse::MarkovAutomaton<double>> ma = storm::builder::ExplicitModelBuilder<double>(program, options).build()->as<storm::models::sparse::MarkovAutomaton<double>>();
     
+    storm::prism::Program program = storm::parseProgram(programFile);
+    program = storm::utility::prism::preprocess(program, "");
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::parseFormulasForProgram(formulasAsString, program);
+    std::shared_ptr<storm::models::sparse::MarkovAutomaton<double>> ma = storm::buildSparseModel<double>(program, formulas, true)->as<storm::models::sparse::MarkovAutomaton<double>>();
     storm::modelchecker::SparseMaMultiObjectiveModelChecker<storm::models::sparse::MarkovAutomaton<double>> checker(*ma);
     
-    std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(storm::modelchecker::CheckTask<storm::logic::Formula>(*formulas[0], true));
+    std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(storm::modelchecker::CheckTask<storm::logic::Formula, double>(*formulas[0], true));
     ASSERT_TRUE(result->isParetoCurveCheckResult());
     
     std::vector<double> p = {11.0/6.0, 1.0/2.0};

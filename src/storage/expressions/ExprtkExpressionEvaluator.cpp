@@ -83,7 +83,10 @@ namespace storm {
         }
         
         template class ExprtkExpressionEvaluatorBase<double>;
+
+#ifdef STORM_HAVE_CARL
         template class ExprtkExpressionEvaluatorBase<RationalNumber>;
         template class ExprtkExpressionEvaluatorBase<RationalFunction>;
+#endif
     }
 }

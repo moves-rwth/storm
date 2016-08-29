@@ -74,7 +74,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        std::unique_ptr<storm::storage::TotalScheduler> MinMaxLinearEquationSolver<ValueType>::getScheduler() {
+        std::unique_ptr<storm::storage::TotalScheduler> MinMaxLinearEquationSolver<ValueType>:: getScheduler() {
             STORM_LOG_THROW(scheduler, storm::exceptions::IllegalFunctionCallException, "Cannot retrieve scheduler, because none was generated.");
             return std::move(scheduler.get());
         }
@@ -144,6 +144,7 @@ namespace storm {
             return result;
         }
 
+#ifdef STORM_HAVE_CARL
         template<>
         template<typename MatrixType>
         std::unique_ptr<MinMaxLinearEquationSolver<storm::RationalNumber>> GeneralMinMaxLinearEquationSolverFactory<storm::RationalNumber>::selectSolver(MatrixType&& matrix) const {
@@ -152,15 +153,17 @@ namespace storm {
             STORM_LOG_THROW(method == MinMaxMethod::ValueIteration || method == MinMaxMethod::PolicyIteration, storm::exceptions::InvalidSettingsException, "For this data type only value iteration and policy iteration are available.");
             return std::make_unique<StandardMinMaxLinearEquationSolver<storm::RationalNumber>>(std::forward<MatrixType>(matrix), std::make_unique<GeneralLinearEquationSolverFactory<storm::RationalNumber>>());
         }
-
+#endif
         template class MinMaxLinearEquationSolver<float>;
         template class MinMaxLinearEquationSolver<double>;
-        template class MinMaxLinearEquationSolver<storm::RationalNumber>;
         
         template class MinMaxLinearEquationSolverFactory<double>;
         template class GeneralMinMaxLinearEquationSolverFactory<double>;
+
+#ifdef STORM_HAVE_CARL
+        template class MinMaxLinearEquationSolver<storm::RationalNumber>;
         template class MinMaxLinearEquationSolverFactory<storm::RationalNumber>;
         template class GeneralMinMaxLinearEquationSolverFactory<storm::RationalNumber>;
-        
+#endif
     }
 }

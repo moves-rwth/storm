@@ -87,7 +87,27 @@ namespace storm {
             ValueType const& thresholdValue() const {
                 return bound.threshold;
             }
-            
+
+            bool achieved(std::vector<ValueType> const& result) const{
+                for(std::size_t i : relevantValueVector){
+                    switch(bound.comparisonType) {
+                    case storm::logic::ComparisonType::Greater:
+                        if( result[i] <= bound.threshold) return false;
+                        break;
+                    case storm::logic::ComparisonType::GreaterEqual:
+                        if( result[i] < bound.threshold) return false;
+                        break;
+                    case storm::logic::ComparisonType::Less:
+                        if( result[i] >= bound.threshold) return false;
+                        break;
+                    case storm::logic::ComparisonType::LessEqual:
+                        if( result[i] > bound.threshold) return false;
+                        break;
+                    }
+                }
+                return true;
+            }
+       
             storm::storage::BitVector const& relevantValues() const {
                 return relevantValueVector;
             }

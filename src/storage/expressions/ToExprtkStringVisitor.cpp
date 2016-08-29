@@ -212,7 +212,7 @@ namespace storm {
             return boost::any();
         }
         
-        boost::any ToExprtkStringVisitor::visit(DoubleLiteralExpression const& expression) {
+        boost::any ToExprtkStringVisitor::visit(RationalLiteralExpression const& expression) {
             stream << expression.getValue();
             return boost::any();
         }

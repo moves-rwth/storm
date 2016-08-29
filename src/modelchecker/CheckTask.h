@@ -45,7 +45,7 @@ namespace storm {
                     
                     if (operatorFormula.hasBound()) {
                         if (onlyInitialStatesRelevant) {
-                            this->bound = operatorFormula.getBound();
+                            this->bound = operatorFormula.getBound().convertToOtherValueType<ValueType>();
                         }
 
                         if (!optimizationDirection) {
@@ -58,7 +58,7 @@ namespace storm {
                     storm::logic::ProbabilityOperatorFormula const& probabilityOperatorFormula = formula.asProbabilityOperatorFormula();
                     
                     if (probabilityOperatorFormula.hasBound()) {
-                        if (probabilityOperatorFormula.getThreshold() == storm::utility::zero<ValueType>() || probabilityOperatorFormula.getThreshold() == storm::utility::one<ValueType>()) {
+                        if (storm::utility::isZero(probabilityOperatorFormula.getThreshold()) || storm::utility::isOne(probabilityOperatorFormula.getThreshold())) {
                             this->qualitative = true;
                         }
                     }
@@ -67,7 +67,7 @@ namespace storm {
                     this->rewardModel = rewardOperatorFormula.getOptionalRewardModelName();
                     
                     if (rewardOperatorFormula.hasBound()) {
-                        if (rewardOperatorFormula.getThreshold() == storm::utility::zero<ValueType>()) {
+                        if (storm::utility::isZero(rewardOperatorFormula.getThreshold())) {
                             this->qualitative = true;
                         }
                     }
@@ -80,7 +80,7 @@ namespace storm {
              */
             template<typename NewFormulaType>
             CheckTask<NewFormulaType, ValueType> substituteFormula(NewFormulaType const& newFormula) const {
-                return CheckTask<NewFormulaType, ValueType>(newFormula, this->optimizationDirection, this->rewardModel, this->onlyInitialStatesRelevant, this->bound, this->qualitative, this->produceSchedulers);
+                return CheckTask<NewFormulaType, ValueType>(newFormula, this->optimizationDirection, this->rewardModel, this->onlyInitialStatesRelevant, this->bound, this->qualitative, this->produceSchedulers, this->resultHint);
             }
             
             /*!
@@ -183,6 +183,37 @@ namespace storm {
                 return produceSchedulers;
             }
             
+            /*!
+             * sets a vector that may serve as a hint for the (quantitative) model-checking result
+             */
+            void setResultHint(std::vector<ValueType> const& hint){
+                this->resultHint = hint;
+            }
+            
+            /*!
+             * sets a vector that may serve as a hint for the (quantitative) model-checking result
+             */
+            void setResultHint(std::vector<ValueType>&& hint){
+                this->resultHint = hint;
+            }
+            
+            /*!
+             * Retrieves whether there is a vector that may serve as a hint for the (quantitative) model-checking result
+             */
+            bool isResultHintSet() const {
+                return static_cast<bool>(resultHint);
+            }
+            
+            /*!
+             * Retrieves the vector that may serve as a hint for the (quantitative) model-checking result
+             */
+            std::vector<ValueType> const& getResultVectorHint() const {
+                return resultHint.get();
+            }
+            boost::optional<std::vector<ValueType>> const& getOptionalResultVectorHint() const{
+                return resultHint;
+            }
+            
         private:
             /*!
              * Creates a task object with the given options.
@@ -198,7 +229,7 @@ namespace storm {
              * @param produceSchedulers If supported by the model checker and the model formalism, schedulers to achieve
              * a value will be produced if this flag is set.
              */
-            CheckTask(std::reference_wrapper<FormulaType const> const& formula, boost::optional<storm::OptimizationDirection> const& optimizationDirection, boost::optional<std::string> const& rewardModel, bool onlyInitialStatesRelevant, boost::optional<storm::logic::Bound<ValueType>> const& bound, bool qualitative, bool produceSchedulers) : formula(formula), optimizationDirection(optimizationDirection), rewardModel(rewardModel), onlyInitialStatesRelevant(onlyInitialStatesRelevant), bound(bound), qualitative(qualitative), produceSchedulers(produceSchedulers) {
+            CheckTask(std::reference_wrapper<FormulaType const> const& formula, boost::optional<storm::OptimizationDirection> const& optimizationDirection, boost::optional<std::string> const& rewardModel, bool onlyInitialStatesRelevant, boost::optional<storm::logic::Bound<ValueType>> const& bound, bool qualitative, bool produceSchedulers, boost::optional<std::vector<ValueType>> const& resultHint) : formula(formula), optimizationDirection(optimizationDirection), rewardModel(rewardModel), onlyInitialStatesRelevant(onlyInitialStatesRelevant), bound(bound), qualitative(qualitative), produceSchedulers(produceSchedulers), resultHint(resultHint) {
                 // Intentionally left empty.
             }
             
@@ -223,6 +254,11 @@ namespace storm {
             // If supported by the model checker and the model formalism, schedulers to achieve a value will be produced
             // if this flag is set.
             bool produceSchedulers;
+            
+            // If supported by the model checker and the model formalism, this vector serves as initial guess for the
+            // solution.
+            boost::optional<std::vector<ValueType>> resultHint;
+       //     boost::optional<storm::storage::Scheduler> schedulerHint; //TODO: will need two schedulers for games
         };
         
     }

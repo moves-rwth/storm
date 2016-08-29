@@ -29,7 +29,7 @@ namespace storm {
                 storm::logic::MultiObjectiveFormula const& originalFormula;
                 
                 // Stores the result for this objective obtained from preprocessing.
-                // In case of a numerical result, the value is store in the second entry of the pair. Otherwise, the second entry can be ignored.
+                // In case of a numerical result, the value is stored in the second entry of the pair. Otherwise, the second entry can be ignored.
                 std::vector<std::pair<PreprocessorObjectiveSolution, typename SparseModelType::ValueType>> solutionsFromPreprocessing;
                 
                 SparseModelType const& originalModel;

@@ -93,15 +93,8 @@ namespace storm {
         QualitativeCheckResult const& CheckResult::asQualitativeCheckResult() const {
             return dynamic_cast<QualitativeCheckResult const&>(*this);
         }
-        
-        QuantitativeCheckResult& CheckResult::asQuantitativeCheckResult() {
-            return dynamic_cast<QuantitativeCheckResult&>(*this);
-        }
-        
-        QuantitativeCheckResult const& CheckResult::asQuantitativeCheckResult() const {
-            return dynamic_cast<QuantitativeCheckResult const&>(*this);
-        }
-        
+
+
         template <storm::dd::DdType Type>
         SymbolicQualitativeCheckResult<Type>& CheckResult::asSymbolicQualitativeCheckResult() {
             return dynamic_cast<SymbolicQualitativeCheckResult<Type>&>(*this);
@@ -163,6 +156,7 @@ namespace storm {
         template ParetoCurveCheckResult<double>& CheckResult::asParetoCurveCheckResult();
         template ParetoCurveCheckResult<double> const& CheckResult::asParetoCurveCheckResult() const;
 
+#ifdef STORM_HAVE_CARL
         template ExplicitQuantitativeCheckResult<storm::RationalNumber>& CheckResult::asExplicitQuantitativeCheckResult();
         template ExplicitQuantitativeCheckResult<storm::RationalNumber> const& CheckResult::asExplicitQuantitativeCheckResult() const;
 
@@ -171,6 +165,6 @@ namespace storm {
 
         template ParetoCurveCheckResult<storm::RationalNumber>& CheckResult::asParetoCurveCheckResult();
         template ParetoCurveCheckResult<storm::RationalNumber> const& CheckResult::asParetoCurveCheckResult() const;
-
+#endif
     }
 }

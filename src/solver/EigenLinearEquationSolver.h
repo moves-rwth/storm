@@ -40,6 +40,7 @@ namespace storm {
             uint_fast64_t restart;
         };
         
+#ifdef STORM_HAVE_CARL
         template<>
         class EigenLinearEquationSolverSettings<storm::RationalNumber> {
         public:
@@ -51,6 +52,7 @@ namespace storm {
         public:
             EigenLinearEquationSolverSettings();
         };
+#endif
         
         /*!
          * A class that uses the Eigen library to implement the LinearEquationSolver interface.
@@ -64,7 +66,7 @@ namespace storm {
             virtual void setMatrix(storm::storage::SparseMatrix<ValueType> const& A) override;
             virtual void setMatrix(storm::storage::SparseMatrix<ValueType>&& A) override;
             
-            virtual void solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const override;
+            virtual bool solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const override;
             virtual void multiply(std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const override;
 
             EigenLinearEquationSolverSettings<ValueType>& getSettings();

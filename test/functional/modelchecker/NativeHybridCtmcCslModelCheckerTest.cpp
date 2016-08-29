@@ -42,7 +42,7 @@ TEST(NativeHybridCtmcCslModelCheckerTest, Cluster_Cudd) {
     std::shared_ptr<storm::models::symbolic::Ctmc<storm::dd::DdType::CUDD>> ctmc = model->as<storm::models::symbolic::Ctmc<storm::dd::DdType::CUDD>>();
     
     // Create model checker.
-    storm::modelchecker::HybridCtmcCslModelChecker<storm::dd::DdType::CUDD, double> modelchecker(*ctmc, std::make_unique<storm::solver::NativeLinearEquationSolverFactory<double>>());
+    storm::modelchecker::HybridCtmcCslModelChecker<storm::models::symbolic::Ctmc<storm::dd::DdType::CUDD, double>> modelchecker(*ctmc, std::make_unique<storm::solver::NativeLinearEquationSolverFactory<double>>());
     
     // Start checking properties.
     formula = formulaParser.parseSingleFormulaFromString("P=? [ F<=100 !\"minimum\"]");
@@ -139,7 +139,7 @@ TEST(NativeHybridCtmcCslModelCheckerTest, Cluster_Sylvan) {
     std::shared_ptr<storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan>> ctmc = model->as<storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan>>();
     
     // Create model checker.
-    storm::modelchecker::HybridCtmcCslModelChecker<storm::dd::DdType::Sylvan, double> modelchecker(*ctmc, std::make_unique<storm::solver::NativeLinearEquationSolverFactory<double>>());
+    storm::modelchecker::HybridCtmcCslModelChecker<storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, double>> modelchecker(*ctmc, std::make_unique<storm::solver::NativeLinearEquationSolverFactory<double>>());
     
     // Start checking properties.
     formula = formulaParser.parseSingleFormulaFromString("P=? [ F<=100 !\"minimum\"]");
@@ -236,7 +236,7 @@ TEST(NativeHybridCtmcCslModelCheckerTest, Embedded_Cudd) {
     std::shared_ptr<storm::models::symbolic::Ctmc<storm::dd::DdType::CUDD>> ctmc = model->as<storm::models::symbolic::Ctmc<storm::dd::DdType::CUDD>>();
     
     // Create model checker.
-    storm::modelchecker::HybridCtmcCslModelChecker<storm::dd::DdType::CUDD, double> modelchecker(*ctmc, std::make_unique<storm::solver::NativeLinearEquationSolverFactory<double>>());
+    storm::modelchecker::HybridCtmcCslModelChecker<storm::models::symbolic::Ctmc<storm::dd::DdType::CUDD, double>> modelchecker(*ctmc, std::make_unique<storm::solver::NativeLinearEquationSolverFactory<double>>());
     
     // Start checking properties.
     formula = formulaParser.parseSingleFormulaFromString("P=? [ F<=10000 \"down\"]");
@@ -315,7 +315,7 @@ TEST(NativeHybridCtmcCslModelCheckerTest, Embedded_Sylvan) {
     std::shared_ptr<storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan>> ctmc = model->as<storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan>>();
     
     // Create model checker.
-    storm::modelchecker::HybridCtmcCslModelChecker<storm::dd::DdType::Sylvan, double> modelchecker(*ctmc, std::make_unique<storm::solver::NativeLinearEquationSolverFactory<double>>());
+    storm::modelchecker::HybridCtmcCslModelChecker<storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, double>> modelchecker(*ctmc, std::make_unique<storm::solver::NativeLinearEquationSolverFactory<double>>());
     
     // Start checking properties.
     formula = formulaParser.parseSingleFormulaFromString("P=? [ F<=10000 \"down\"]");
@@ -387,7 +387,7 @@ TEST(NativeHybridCtmcCslModelCheckerTest, Polling_Cudd) {
     std::shared_ptr<storm::models::symbolic::Ctmc<storm::dd::DdType::CUDD>> ctmc = model->as<storm::models::symbolic::Ctmc<storm::dd::DdType::CUDD>>();
     
     // Create model checker.
-    storm::modelchecker::HybridCtmcCslModelChecker<storm::dd::DdType::CUDD, double> modelchecker(*ctmc, std::make_unique<storm::solver::NativeLinearEquationSolverFactory<double>>());
+    storm::modelchecker::HybridCtmcCslModelChecker<storm::models::symbolic::Ctmc<storm::dd::DdType::CUDD, double>> modelchecker(*ctmc, std::make_unique<storm::solver::NativeLinearEquationSolverFactory<double>>());
     
     // Start checking properties.
     formula = formulaParser.parseSingleFormulaFromString("P=?[ F<=10 \"target\"]");
@@ -423,7 +423,7 @@ TEST(NativeHybridCtmcCslModelCheckerTest, Polling_Sylvan) {
     std::shared_ptr<storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan>> ctmc = model->as<storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan>>();
     
     // Create model checker.
-    storm::modelchecker::HybridCtmcCslModelChecker<storm::dd::DdType::Sylvan, double> modelchecker(*ctmc, std::make_unique<storm::solver::NativeLinearEquationSolverFactory<double>>());
+    storm::modelchecker::HybridCtmcCslModelChecker<storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, double>> modelchecker(*ctmc, std::make_unique<storm::solver::NativeLinearEquationSolverFactory<double>>());
     
     // Start checking properties.
     formula = formulaParser.parseSingleFormulaFromString("P=?[ F<=10 \"target\"]");
@@ -473,7 +473,7 @@ TEST(NativeHybridCtmcCslModelCheckerTest, Tandem_Cudd) {
     std::shared_ptr<storm::models::symbolic::Ctmc<storm::dd::DdType::CUDD>> ctmc = model->as<storm::models::symbolic::Ctmc<storm::dd::DdType::CUDD>>();
     
     // Create model checker.
-    storm::modelchecker::HybridCtmcCslModelChecker<storm::dd::DdType::CUDD, double> modelchecker(*ctmc, std::make_unique<storm::solver::NativeLinearEquationSolverFactory<double>>());
+    storm::modelchecker::HybridCtmcCslModelChecker<storm::models::symbolic::Ctmc<storm::dd::DdType::CUDD, double>> modelchecker(*ctmc, std::make_unique<storm::solver::NativeLinearEquationSolverFactory<double>>());
     
     // Start checking properties.
     formula = formulaParser.parseSingleFormulaFromString("P=? [ F<=10 \"network_full\" ]");
@@ -563,7 +563,7 @@ TEST(NativeHybridCtmcCslModelCheckerTest, Tandem_Sylvan) {
     std::shared_ptr<storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan>> ctmc = model->as<storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan>>();
     
     // Create model checker.
-    storm::modelchecker::HybridCtmcCslModelChecker<storm::dd::DdType::Sylvan, double> modelchecker(*ctmc, std::make_unique<storm::solver::NativeLinearEquationSolverFactory<double>>());
+    storm::modelchecker::HybridCtmcCslModelChecker<storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, double>> modelchecker(*ctmc, std::make_unique<storm::solver::NativeLinearEquationSolverFactory<double>>());
     
     // Start checking properties.
     formula = formulaParser.parseSingleFormulaFromString("P=? [ F<=10 \"network_full\" ]");

@@ -21,6 +21,7 @@
 #include "src/settings/modules/IOSettings.h"
 #include "src/settings/modules/BisimulationSettings.h"
 #include "src/settings/modules/ParametricSettings.h"
+#include "src/settings/modules/RegionSettings.h"
 #include "src/settings/modules/EliminationSettings.h"
 #include "src/settings/modules/CoreSettings.h"
 
@@ -60,7 +61,11 @@
 #include "src/modelchecker/prctl/SymbolicDtmcPrctlModelChecker.h"
 #include "src/modelchecker/prctl/SymbolicMdpPrctlModelChecker.h"
 #include "src/modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
+#include "src/modelchecker/region/SparseDtmcRegionModelChecker.h"
+#include "src/modelchecker/region/SparseMdpRegionModelChecker.h"
+#include "src/modelchecker/region/ParameterRegion.h"
 #include "src/modelchecker/exploration/SparseExplorationModelChecker.h"
+
 #include "src/modelchecker/csl/SparseCtmcCslModelChecker.h"
 #include "src/modelchecker/csl/helper/SparseCtmcCslHelper.h"
 #include "src/modelchecker/csl/SparseMarkovAutomatonCslModelChecker.h"
@@ -102,17 +107,17 @@ namespace storm {
     template<typename ValueType>
     std::shared_ptr<storm::models::sparse::Model<ValueType>> buildSparseModel(storm::prism::Program const& program, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool onlyInitialStatesRelevant = false) {
         storm::generator::NextStateGeneratorOptions options(formulas);
-        
+
         // Generate command labels if we are going to build a counterexample later.
         if (storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>().isMinimalCommandSetGenerationSet()) {
             options.setBuildChoiceLabels(true);
         }
-        
+
         std::shared_ptr<storm::generator::NextStateGenerator<ValueType, uint32_t>> generator = std::make_shared<storm::generator::PrismNextStateGenerator<ValueType, uint32_t>>(program, options);
         storm::builder::ExplicitModelBuilder<ValueType> builder(generator);
         return builder.build();
     }
-    
+
     template<typename ValueType, storm::dd::DdType LibraryType = storm::dd::DdType::CUDD>
     std::shared_ptr<storm::models::symbolic::Model<LibraryType, ValueType>> buildSymbolicModel(storm::prism::Program const& program, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
         typename storm::builder::DdPrismModelBuilder<LibraryType, ValueType>::Options options;
@@ -146,7 +151,7 @@ namespace storm {
             options = typename storm::storage::NondeterministicModelBisimulationDecomposition<ModelType>::Options(*model, formulas);
         }
         options.setType(type);
-        
+
         storm::storage::NondeterministicModelBisimulationDecomposition<ModelType> bisimulationDecomposition(*model, options);
         bisimulationDecomposition.computeBisimulationDecomposition();
         model = bisimulationDecomposition.getQuotient();
@@ -184,9 +189,9 @@ namespace storm {
             if (ma->hasOnlyTrivialNondeterminism()) {
                 // Markov automaton can be converted into CTMC
                 model = ma->convertToCTMC();
-            } 
+            }
         }
-        
+
         if (model->isSparseModel() && storm::settings::getModule<storm::settings::modules::GeneralSettings>().isBisimulationSet()) {
             storm::storage::BisimulationType bisimType = storm::storage::BisimulationType::Strong;
             if (storm::settings::getModule<storm::settings::modules::BisimulationSettings>().isWeakBisimulationSet()) {
@@ -196,10 +201,10 @@ namespace storm {
             STORM_LOG_THROW(model->isSparseModel(), storm::exceptions::InvalidSettingsException, "Bisimulation minimization is currently only available for sparse models.");
             return performBisimulationMinimization<ModelType>(model->template as<storm::models::sparse::Model<typename ModelType::ValueType>>(), formulas, bisimType);
         }
-        
+
         return model;
     }
-    
+
     template<typename ValueType>
     void generateCounterexample(storm::prism::Program const& program, std::shared_ptr<storm::models::sparse::Model<ValueType>> model, std::shared_ptr<storm::logic::Formula const> const& formula) {
         if (storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>().isMinimalCommandSetGenerationSet()) {
@@ -222,6 +227,7 @@ namespace storm {
         }
     }
 
+#ifdef STORM_HAVE_CARL
     template<>
     inline void generateCounterexample(storm::prism::Program const& program, std::shared_ptr<storm::models::sparse::Model<storm::RationalNumber>> model, std::shared_ptr<storm::logic::Formula const> const& formula) {
         STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unable to generate counterexample for parametric model.");
@@ -231,7 +237,8 @@ namespace storm {
     inline void generateCounterexample(storm::prism::Program const& program, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model, std::shared_ptr<storm::logic::Formula const> const& formula) {
         STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unable to generate counterexample for parametric model.");
     }
-    
+#endif
+
     template<typename ValueType>
     void generateCounterexamples(storm::prism::Program const& program, std::shared_ptr<storm::models::sparse::Model<ValueType>> model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
         for (auto const& formula : formulas) {
@@ -264,7 +271,7 @@ namespace storm {
     }
 
     template<typename ValueType>
-    std::unique_ptr<storm::modelchecker::CheckResult> verifySparseDtmc(std::shared_ptr<storm::models::sparse::Dtmc<ValueType>> dtmc, storm::modelchecker::CheckTask<storm::logic::Formula> const& task) {
+    std::unique_ptr<storm::modelchecker::CheckResult> verifySparseDtmc(std::shared_ptr<storm::models::sparse::Dtmc<ValueType>> dtmc, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
         std::unique_ptr<storm::modelchecker::CheckResult> result;
         if (storm::settings::getModule<storm::settings::modules::CoreSettings>().getEquationSolver() == storm::solver::EquationSolverType::Elimination && storm::settings::getModule<storm::settings::modules::EliminationSettings>().isUseDedicatedModelCheckerSet()) {
             storm::modelchecker::SparseDtmcEliminationModelChecker<storm::models::sparse::Dtmc<ValueType>> modelchecker(*dtmc);
@@ -283,9 +290,9 @@ namespace storm {
         }
         return result;
     }
-    
+
     template<typename ValueType>
-    std::unique_ptr<storm::modelchecker::CheckResult> verifySparseCtmc(std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> ctmc, storm::modelchecker::CheckTask<storm::logic::Formula> const& task) {
+    std::unique_ptr<storm::modelchecker::CheckResult> verifySparseCtmc(std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> ctmc, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
         std::unique_ptr<storm::modelchecker::CheckResult> result;
         storm::modelchecker::SparseCtmcCslModelChecker<storm::models::sparse::Ctmc<ValueType>> modelchecker(*ctmc);
         if (modelchecker.canHandle(task)) {
@@ -297,7 +304,7 @@ namespace storm {
     }
 
     template<typename ValueType>
-    std::unique_ptr<storm::modelchecker::CheckResult> verifySparseMdp(std::shared_ptr<storm::models::sparse::Mdp<ValueType>> mdp, storm::modelchecker::CheckTask<storm::logic::Formula> const& task) {
+    std::unique_ptr<storm::modelchecker::CheckResult> verifySparseMdp(std::shared_ptr<storm::models::sparse::Mdp<ValueType>> mdp, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
         std::unique_ptr<storm::modelchecker::CheckResult> result;
         if(task.getFormula().isMultiObjectiveFormula()) {
             storm::modelchecker::SparseMdpMultiObjectiveModelChecker<storm::models::sparse::Mdp<ValueType>> modelchecker(*mdp);
@@ -344,7 +351,7 @@ namespace storm {
 
     template<typename ValueType>
     std::unique_ptr<storm::modelchecker::CheckResult> verifySparseModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> model, std::shared_ptr<storm::logic::Formula const> const& formula, bool onlyInitialStatesRelevant = false) {
-        storm::modelchecker::CheckTask<storm::logic::Formula> task(*formula, onlyInitialStatesRelevant);
+        storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> task(*formula, onlyInitialStatesRelevant);
 
         std::unique_ptr<storm::modelchecker::CheckResult> result;
         if (model->getType() == storm::models::ModelType::Dtmc) {
@@ -360,10 +367,11 @@ namespace storm {
         }
         return result;
     }
-    
+
+#ifdef STORM_HAVE_CARL
     template<>
     inline std::unique_ptr<storm::modelchecker::CheckResult> verifySparseModel(std::shared_ptr<storm::models::sparse::Model<storm::RationalNumber>> model, std::shared_ptr<storm::logic::Formula const> const& formula, bool onlyInitialStatesRelevant) {
-        storm::modelchecker::CheckTask<storm::logic::Formula> task(*formula, onlyInitialStatesRelevant);
+        storm::modelchecker::CheckTask<storm::logic::Formula, RationalNumber> task(*formula, onlyInitialStatesRelevant);
 
         std::unique_ptr<storm::modelchecker::CheckResult> result;
         if (model->getType() == storm::models::ModelType::Dtmc) {
@@ -377,8 +385,7 @@ namespace storm {
         }
         return result;
     }
-    
-#ifdef STORM_HAVE_CARL
+
     inline void exportParametricResultToFile(storm::RationalFunction const& result, storm::models::sparse::Dtmc<storm::RationalFunction>::ConstraintCollector const& constraintCollector, std::string const& path) {
         std::ofstream filestream;
         filestream.open(path);
@@ -397,22 +404,103 @@ namespace storm {
 
     template<>
     inline std::unique_ptr<storm::modelchecker::CheckResult> verifySparseModel(std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model, std::shared_ptr<storm::logic::Formula const> const& formula, bool onlyInitialStatesRelevant) {
-        storm::modelchecker::CheckTask<storm::logic::Formula> task(*formula, onlyInitialStatesRelevant);
+        storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction> task(*formula, onlyInitialStatesRelevant);
 
         std::unique_ptr<storm::modelchecker::CheckResult> result;
         if (model->getType() == storm::models::ModelType::Dtmc) {
             result = verifySparseDtmc(model->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>(), task);
         } else if (model->getType() == storm::models::ModelType::Mdp) {
-            std::shared_ptr<storm::models::sparse::Mdp<storm::RationalFunction>> mdp = model->template as<storm::models::sparse::Mdp<storm::RationalFunction>>();
+            //std::shared_ptr<storm::models::sparse::Mdp<storm::RationalFunction>> mdp = model->template as<storm::models::sparse::Mdp<storm::RationalFunction>>();
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The parametric engine currently does not support MDPs.");
         } else if (model->getType() == storm::models::ModelType::Ctmc) {
-            verifySparseCtmc(model->template as<storm::models::sparse::Ctmc<storm::RationalFunction>>(), task);
+            result = verifySparseCtmc(model->template as<storm::models::sparse::Ctmc<storm::RationalFunction>>(), task);
         } else {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The parametric engine currently does not support " << model->getType());
         }
         return result;
     }
-            
+
+    /*!
+     * Initializes a region model checker.
+     *
+     * @param regionModelChecker the resulting model checker object
+     * @param programFilePath a path to the prism program file
+     * @param formulaString The considered formula (as path to the file or directly as string.) Should be exactly one formula.
+     * @param constantsString can be used to specify constants for certain parameters, e.g., "p=0.9,R=42"
+     * @return true when initialization was successful
+     */
+    inline bool initializeRegionModelChecker(std::shared_ptr<storm::modelchecker::region::AbstractSparseRegionModelChecker<storm::RationalFunction, double>>& regionModelChecker,
+                                      std::string const& programFilePath,
+                                      std::string const& formulaString,
+                                      std::string const& constantsString=""){
+        regionModelChecker.reset();
+        // Program and formula
+        storm::prism::Program program = parseProgram(programFilePath);
+        program.checkValidity();
+        std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = parseFormulasForProgram(formulaString, program);;
+        if(formulas.size()!=1) {
+            STORM_LOG_ERROR("The given formulaString does not specify exactly one formula");
+            return false;
+        }
+        std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model = buildSparseModel<storm::RationalFunction>(program, formulas);
+        auto const& regionSettings = storm::settings::getModule<storm::settings::modules::RegionSettings>();
+        storm::modelchecker::region::SparseRegionModelCheckerSettings settings(regionSettings.getSampleMode(), regionSettings.getApproxMode(), regionSettings.getSmtMode());
+        // Preprocessing and ModelChecker
+        if(model->isOfType(storm::models::ModelType::Dtmc)){
+            preprocessModel<storm::models::sparse::Dtmc<storm::RationalFunction>>(model,formulas);
+            regionModelChecker = std::make_shared<storm::modelchecker::region::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>>(model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>(), settings);
+        } else if (model->isOfType(storm::models::ModelType::Mdp)){
+            preprocessModel<storm::models::sparse::Mdp<storm::RationalFunction>>(model,formulas);
+            regionModelChecker = std::make_shared<storm::modelchecker::region::SparseMdpRegionModelChecker<storm::models::sparse::Mdp<storm::RationalFunction>, double>>(model->as<storm::models::sparse::Mdp<storm::RationalFunction>>(),  settings);
+        } else {
+            STORM_LOG_ERROR("The type of the given model is not supported (only Dtmcs or Mdps are supported");
+            return false;
+        }
+        // Specify the formula
+        if(!regionModelChecker->canHandle(*formulas[0])){
+            STORM_LOG_ERROR("The given formula is not supported.");
+            return false;
+        }
+        regionModelChecker->specifyFormula(formulas[0]);
+        return true;
+    }
+
+    /*!
+     * Computes the reachability value at the given point by instantiating the model.
+     *
+     * @param regionModelChecker the model checker object that is to be used
+     * @param point the valuation of the different variables
+     * @return true iff the specified formula is satisfied (i.e., iff the reachability value is within the bound of the formula)
+     */
+    inline bool checkSamplingPoint(std::shared_ptr<storm::modelchecker::region::AbstractSparseRegionModelChecker<storm::RationalFunction, double>> regionModelChecker,
+                                   std::map<storm::RationalFunctionVariable, storm::RationalNumber> const& point){
+        return regionModelChecker->valueIsInBoundOfFormula(regionModelChecker->getReachabilityValue(point));
+    }
+
+    /*!
+     * Does an approximation of the reachability value for all parameters in the given region.
+     * @param regionModelChecker the model checker object that is to be used
+     * @param lowerBoundaries maps every variable to its lowest possible value within the region. (corresponds to the bottom left corner point in the 2D case)
+     * @param upperBoundaries maps every variable to its highest possible value within the region. (corresponds to the top right corner point in the 2D case)
+     * @param proveAllSat if set to true, it is checked whether the property is satisfied for all parameters in the given region. Otherwise, it is checked
+     *                    whether the property is violated for all parameters.
+     * @return true iff the objective (given by the proveAllSat flag) was accomplished.
+     *
+     * So there are the following cases:
+     * proveAllSat=true,  return=true  ==> the property is SATISFIED for all parameters in the given region
+     * proveAllSat=true,  return=false ==> the approximative value is NOT within the bound of the formula (either the approximation is too bad or there are points in the region that violate the property)
+     * proveAllSat=false, return=true  ==> the property is VIOLATED for all parameters in the given region
+     * proveAllSat=false, return=false ==> the approximative value IS within the bound of the formula (either the approximation is too bad or there are points in the region that satisfy the property)
+     */
+    inline bool checkRegionApproximation(std::shared_ptr<storm::modelchecker::region::AbstractSparseRegionModelChecker<storm::RationalFunction, double>> regionModelChecker,
+                                         std::map<storm::RationalFunctionVariable, storm::RationalNumber> const& lowerBoundaries,
+                                         std::map<storm::RationalFunctionVariable, storm::RationalNumber> const& upperBoundaries,
+                                         bool proveAllSat){
+        storm::modelchecker::region::ParameterRegion<storm::RationalFunction> region(lowerBoundaries, upperBoundaries);
+        return regionModelChecker->checkRegionWithApproximation(region, proveAllSat);
+    }
+
+
 #endif
 
     template<storm::dd::DdType DdType>
@@ -421,19 +509,19 @@ namespace storm {
         storm::modelchecker::CheckTask<storm::logic::Formula> task(*formula, onlyInitialStatesRelevant);
         if (model->getType() == storm::models::ModelType::Dtmc) {
             std::shared_ptr<storm::models::symbolic::Dtmc<DdType>> dtmc = model->template as<storm::models::symbolic::Dtmc<DdType>>();
-            storm::modelchecker::HybridDtmcPrctlModelChecker<DdType, double> modelchecker(*dtmc);
+            storm::modelchecker::HybridDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<DdType>> modelchecker(*dtmc);
             if (modelchecker.canHandle(task)) {
                 result = modelchecker.check(task);
             }
         } else if (model->getType() == storm::models::ModelType::Ctmc) {
             std::shared_ptr<storm::models::symbolic::Ctmc<DdType>> ctmc = model->template as<storm::models::symbolic::Ctmc<DdType>>();
-            storm::modelchecker::HybridCtmcCslModelChecker<DdType, double> modelchecker(*ctmc);
+            storm::modelchecker::HybridCtmcCslModelChecker<storm::models::symbolic::Ctmc<DdType>> modelchecker(*ctmc);
             if (modelchecker.canHandle(task)) {
                 result = modelchecker.check(task);
             }
         } else if (model->getType() == storm::models::ModelType::Mdp) {
             std::shared_ptr<storm::models::symbolic::Mdp<DdType>> mdp = model->template as<storm::models::symbolic::Mdp<DdType>>();
-            storm::modelchecker::HybridMdpPrctlModelChecker<DdType, double> modelchecker(*mdp);
+            storm::modelchecker::HybridMdpPrctlModelChecker<storm::models::symbolic::Mdp<DdType>> modelchecker(*mdp);
             if (modelchecker.canHandle(task)) {
                 result = modelchecker.check(task);
             }
@@ -450,13 +538,13 @@ namespace storm {
         storm::modelchecker::CheckTask<storm::logic::Formula> task(*formula, onlyInitialStatesRelevant);
         if (model->getType() == storm::models::ModelType::Dtmc) {
             std::shared_ptr<storm::models::symbolic::Dtmc<DdType>> dtmc = model->template as<storm::models::symbolic::Dtmc<DdType>>();
-            storm::modelchecker::SymbolicDtmcPrctlModelChecker<DdType, double> modelchecker(*dtmc);
+            storm::modelchecker::SymbolicDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<DdType>> modelchecker(*dtmc);
             if (modelchecker.canHandle(task)) {
                 result = modelchecker.check(task);
             }
         } else if (model->getType() == storm::models::ModelType::Mdp) {
             std::shared_ptr<storm::models::symbolic::Mdp<DdType>> mdp = model->template as<storm::models::symbolic::Mdp<DdType>>();
-            storm::modelchecker::SymbolicMdpPrctlModelChecker<DdType, double> modelchecker(*mdp);
+            storm::modelchecker::SymbolicMdpPrctlModelChecker<storm::models::symbolic::Mdp<DdType>> modelchecker(*mdp);
             if (modelchecker.canHandle(task)) {
                 result = modelchecker.check(task);
             }
@@ -478,4 +566,3 @@ namespace storm {
 }
 
 #endif	/* STORM_H */
-

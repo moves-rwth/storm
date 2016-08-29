@@ -164,13 +164,11 @@ TEST(FormulaParserTest, MultiObjectiveFormulaTest) {
     ASSERT_TRUE(mof.getSubformula(0).asProbabilityOperatorFormula().getSubformula().isEventuallyFormula());
     ASSERT_TRUE(mof.getSubformula(0).asProbabilityOperatorFormula().getSubformula().asEventuallyFormula().getSubformula().isAtomicLabelFormula());
     ASSERT_TRUE(mof.getSubformula(0).asProbabilityOperatorFormula().hasBound());
-    ASSERT_EQ(0.9, mof.getSubformula(0).asProbabilityOperatorFormula().getBound().threshold);
     
     ASSERT_TRUE(mof.getSubformula(1).isRewardOperatorFormula());
     ASSERT_TRUE(mof.getSubformula(1).asRewardOperatorFormula().getSubformula().isEventuallyFormula());
     ASSERT_TRUE(mof.getSubformula(1).asRewardOperatorFormula().getSubformula().asEventuallyFormula().getSubformula().isAtomicLabelFormula());
     ASSERT_TRUE(mof.getSubformula(1).asRewardOperatorFormula().hasBound());
-    ASSERT_EQ(42, mof.getSubformula(1).asRewardOperatorFormula().getBound().threshold);
     
     ASSERT_TRUE(mof.getSubformula(2).isProbabilityOperatorFormula());
     ASSERT_TRUE(mof.getSubformula(2).asProbabilityOperatorFormula().getSubformula().isEventuallyFormula());

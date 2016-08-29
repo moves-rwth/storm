@@ -151,7 +151,6 @@ namespace storm {
                 static const std::string engineOptionShortName;
                 static const std::string ddLibraryOptionName;
                 static const std::string cudaOptionName;
-                static const std::string minMaxEquationSolvingTechniqueOptionName;
             };
 
         } // namespace modules

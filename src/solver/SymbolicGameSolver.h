@@ -18,7 +18,7 @@ namespace storm {
          * An interface that represents an abstract symbolic game solver.
          */
         template<storm::dd::DdType Type, typename ValueType = double>
-        class SymbolicGameSolver : public AbstractGameSolver {
+        class SymbolicGameSolver : public AbstractGameSolver<ValueType> {
         public:
             /*!
              * Constructs a symbolic game solver with the given meta variable sets and pairs.

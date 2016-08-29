@@ -135,7 +135,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void GmmxxLinearEquationSolver<ValueType>::solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+        bool GmmxxLinearEquationSolver<ValueType>::solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             auto method = this->getSettings().getSolutionMethod();
             auto preconditioner = this->getSettings().getPreconditioner();
             STORM_LOG_INFO("Using method '" << method << "' with preconditioner '" << preconditioner << "' (max. " << this->getSettings().getMaximalNumberOfIterations() << " iterations).");
@@ -176,8 +176,10 @@ namespace storm {
                 // Check if the solver converged and issue a warning otherwise.
                 if (iter.converged()) {
                     STORM_LOG_INFO("Iterative solver converged after " << iter.get_iteration() << " iterations.");
+                    return true;
                 } else {
                     STORM_LOG_WARN("Iterative solver did not converge.");
+                    return false;
                 }
             } else if (method == GmmxxLinearEquationSolverSettings<ValueType>::SolutionMethod::Jacobi) {
                 uint_fast64_t iterations = solveLinearEquationSystemWithJacobi(*A, x, b);
@@ -185,10 +187,14 @@ namespace storm {
                 // Check if the solver converged and issue a warning otherwise.
                 if (iterations < this->getSettings().getMaximalNumberOfIterations()) {
                     STORM_LOG_INFO("Iterative solver converged after " << iterations << " iterations.");
+                    return true;
                 } else {
                     STORM_LOG_WARN("Iterative solver did not converge.");
+                    return false;
                 }
             }
+            STORM_LOG_ERROR("Selected method is not available");
+            return false;
         }
         
         template<typename ValueType>

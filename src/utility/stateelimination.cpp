@@ -202,6 +202,7 @@ namespace storm {
             template std::vector<uint_fast64_t> getDistanceBasedPriorities(storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::SparseMatrix<double> const& transitionMatrixTransposed, storm::storage::BitVector const& initialStates, std::vector<double> const& oneStepProbabilities, bool forward, bool reverse);
             template std::vector<uint_fast64_t> getStateDistances(storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::SparseMatrix<double> const& transitionMatrixTransposed, storm::storage::BitVector const& initialStates, std::vector<double> const& oneStepProbabilities, bool forward);
             
+#ifdef STORM_HAVE_CARL
             template uint_fast64_t estimateComplexity(storm::RationalNumber const& value);
             template std::shared_ptr<StatePriorityQueue> createStatePriorityQueue(boost::optional<std::vector<uint_fast64_t>> const& distanceBasedStatePriorities, storm::storage::FlexibleSparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::storage::FlexibleSparseMatrix<storm::RationalNumber> const& backwardTransitions, std::vector<storm::RationalNumber> const& oneStepProbabilities, storm::storage::BitVector const& states);
             template uint_fast64_t computeStatePenalty(storm::storage::sparse::state_type const& state, storm::storage::FlexibleSparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::storage::FlexibleSparseMatrix<storm::RationalNumber> const& backwardTransitions, std::vector<storm::RationalNumber> const& oneStepProbabilities);
@@ -215,6 +216,7 @@ namespace storm {
             template uint_fast64_t computeStatePenaltyRegularExpression(storm::storage::sparse::state_type const& state, storm::storage::FlexibleSparseMatrix<storm::RationalFunction> const& transitionMatrix, storm::storage::FlexibleSparseMatrix<storm::RationalFunction> const& backwardTransitions, std::vector<storm::RationalFunction> const& oneStepProbabilities);
             template std::vector<uint_fast64_t> getDistanceBasedPriorities(storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrix, storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrixTransposed, storm::storage::BitVector const& initialStates, std::vector<storm::RationalFunction> const& oneStepProbabilities, bool forward, bool reverse);
             template std::vector<uint_fast64_t> getStateDistances(storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrix, storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrixTransposed, storm::storage::BitVector const& initialStates, std::vector<storm::RationalFunction> const& oneStepProbabilities, bool forward);
+#endif
         }
     }
 }

@@ -49,7 +49,7 @@ namespace storm {
             virtual void setMatrix(storm::storage::SparseMatrix<ValueType> const& A) override;
             virtual void setMatrix(storm::storage::SparseMatrix<ValueType>&& A) override;
             
-            virtual void solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const override;
+            virtual bool solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const override;
             virtual void multiply(std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const override;
 
             NativeLinearEquationSolverSettings<ValueType>& getSettings();
@@ -60,6 +60,7 @@ namespace storm {
             virtual bool reallocateAuxMemory(LinearEquationSolverOperation operation) const override;
             virtual bool hasAuxMemory(LinearEquationSolverOperation operation) const override;
 
+            storm::storage::SparseMatrix<ValueType> const& getMatrix() const { return *A; }
         private:
             virtual uint64_t getMatrixRowCount() const override;
             virtual uint64_t getMatrixColumnCount() const override;

@@ -98,15 +98,16 @@ namespace storm {
             localA.reset();
             this->A = &A;
         }
-        
+
         template<typename ValueType>
         void NativeLinearEquationSolver<ValueType>::setMatrix(storm::storage::SparseMatrix<ValueType>&& A) {
             localA = std::make_unique<storm::storage::SparseMatrix<ValueType>>(std::move(A));
             this->A = localA.get();
         }
+
         
         template<typename ValueType>
-        void NativeLinearEquationSolver<ValueType>::solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+        bool NativeLinearEquationSolver<ValueType>::solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             bool allocatedAuxStorage = !this->hasAuxMemory(LinearEquationSolverOperation::SolveEquations);
             if (allocatedAuxStorage) {
                 this->allocateAuxMemory(LinearEquationSolverOperation::SolveEquations);
@@ -134,6 +135,13 @@ namespace storm {
                     // Increase iteration count so we can abort if convergence is too slow.
                     ++iterationCount;
                 }
+                // If we allocated auxiliary memory, we need to dispose of it now.
+                if (allocatedAuxStorage) {
+                    this->deallocateAuxMemory(LinearEquationSolverOperation::SolveEquations);
+                }
+
+                return converged;
+                
             } else {
                 // Get a Jacobi decomposition of the matrix A.
                 std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> jacobiDecomposition = A->getJacobiDecomposition();
@@ -166,12 +174,15 @@ namespace storm {
                 if (currentX == auxiliarySolvingMemory.get()) {
                     std::swap(x, *currentX);
                 }
+
+                // If we allocated auxiliary memory, we need to dispose of it now.
+                if (allocatedAuxStorage) {
+                    this->deallocateAuxMemory(LinearEquationSolverOperation::SolveEquations);
+                }
+                return iterationCount < this->getSettings().getMaximalNumberOfIterations();
             }
-            
-            // If we allocated auxiliary memory, we need to dispose of it now.
-            if (allocatedAuxStorage) {
-                this->deallocateAuxMemory(LinearEquationSolverOperation::SolveEquations);
-            }
+
+
         }
         
         template<typename ValueType>

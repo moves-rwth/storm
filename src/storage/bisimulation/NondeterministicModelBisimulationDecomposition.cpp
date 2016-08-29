@@ -416,8 +416,10 @@ namespace storm {
         }
         
         template class NondeterministicModelBisimulationDecomposition<storm::models::sparse::Mdp<double>>;
+
+#ifdef STORM_HAVE_CARL
         template class NondeterministicModelBisimulationDecomposition<storm::models::sparse::Mdp<storm::RationalNumber>>;
         template class NondeterministicModelBisimulationDecomposition<storm::models::sparse::Mdp<storm::RationalFunction>>;
-        
+#endif
     }
 }

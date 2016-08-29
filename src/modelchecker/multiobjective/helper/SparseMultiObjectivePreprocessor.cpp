@@ -62,7 +62,7 @@ namespace storm {
                 } else if (numOfObjectivesWithoutThreshold == data.objectives.size()) {
                     data.queryType = PreprocessorData::QueryType::Pareto;
                 } else {
-                    STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "The number of objecties without threshold is not valid. It should be either 0 (achievabilityQuery), 1 (numericalQuery), or " << data.objectives.size() << " (paretoQuery). Got " << numOfObjectivesWithoutThreshold << " instead.");
+                    STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "The number of objectives without threshold is not valid. It should be either 0 (achievabilityQuery), 1 (numericalQuery), or " << data.objectives.size() << " (paretoQuery). Got " << numOfObjectivesWithoutThreshold << " instead.");
                 }
                 return data;
             }
@@ -183,8 +183,8 @@ namespace storm {
             
             template<typename SparseModelType>
             void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessFormula(storm::logic::UntilFormula const& formula, PreprocessorData& data, ObjectiveInformation& currentObjective, bool isProb0Formula, bool isProb1Formula) {
-                CheckTask<storm::logic::Formula> phiTask(formula.getLeftSubformula());
-                CheckTask<storm::logic::Formula> psiTask(formula.getRightSubformula());
+                CheckTask<storm::logic::Formula, ValueType> phiTask(formula.getLeftSubformula());
+                CheckTask<storm::logic::Formula, ValueType> psiTask(formula.getRightSubformula());
                 storm::modelchecker::SparsePropositionalModelChecker<SparseModelType> mc(data.preprocessedModel);
                 STORM_LOG_THROW(mc.canHandle(phiTask) && mc.canHandle(psiTask), storm::exceptions::InvalidPropertyException, "The subformulas of " << formula << " should be propositional.");
                 storm::storage::BitVector phiStates = mc.check(phiTask)->asExplicitQualitativeCheckResult().getTruthValuesVector();
@@ -299,7 +299,7 @@ namespace storm {
                     return;
                 }
                 
-                CheckTask<storm::logic::Formula> targetTask(formula.getSubformula());
+                CheckTask<storm::logic::Formula, ValueType> targetTask(formula.getSubformula());
                 storm::modelchecker::SparsePropositionalModelChecker<SparseModelType> mc(data.preprocessedModel);
                 STORM_LOG_THROW(mc.canHandle(targetTask), storm::exceptions::InvalidPropertyException, "The subformula of " << formula << " should be propositional.");
                 storm::storage::BitVector targetStates = mc.check(targetTask)->asExplicitQualitativeCheckResult().getTruthValuesVector();

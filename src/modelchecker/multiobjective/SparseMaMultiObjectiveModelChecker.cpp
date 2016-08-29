@@ -26,7 +26,7 @@ namespace storm {
         }
         
         template<typename SparseMaModelType>
-        bool SparseMaMultiObjectiveModelChecker<SparseMaModelType>::canHandle(CheckTask<storm::logic::Formula> const& checkTask) const {
+        bool SparseMaMultiObjectiveModelChecker<SparseMaModelType>::canHandle(CheckTask<storm::logic::Formula, ValueType> const& checkTask) const {
             // A formula without multi objective (sub)formulas can be handled by the base class
             if(SparseMarkovAutomatonCslModelChecker<SparseMaModelType>::canHandle(checkTask)) return true;
             //In general, each initial state requires an individual scheduler (in contrast to single objective model checking). Let's exclude this.
@@ -36,7 +36,7 @@ namespace storm {
         }
         
         template<typename SparseMaModelType>
-        std::unique_ptr<CheckResult> SparseMaMultiObjectiveModelChecker<SparseMaModelType>::checkMultiObjectiveFormula(CheckTask<storm::logic::MultiObjectiveFormula> const& checkTask) {
+        std::unique_ptr<CheckResult> SparseMaMultiObjectiveModelChecker<SparseMaModelType>::checkMultiObjectiveFormula(CheckTask<storm::logic::MultiObjectiveFormula, ValueType> const& checkTask) {
             STORM_LOG_ASSERT(this->getModel().getInitialStates().getNumberOfSetBits() == 1, "Multi-objective Model checking on model with multiple initial states is not supported.");
             STORM_LOG_THROW(this->getModel().isClosed(), storm::exceptions::InvalidArgumentException, "Unable to check multi-objective formula in non-closed Markov automaton.");
             std::unique_ptr<CheckResult> result;

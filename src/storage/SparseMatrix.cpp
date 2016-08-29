@@ -956,6 +956,48 @@ namespace storm {
             return matrixBuilder.build();
         }
         
+        template<typename ValueType>
+        SparseMatrix<ValueType> SparseMatrix<ValueType>::selectRowsFromRowIndexSequence(std::vector<index_type> const& rowIndexSequence, bool insertDiagonalEntries) const{
+            // First, we need to count how many non-zero entries the resulting matrix will have and reserve space for
+            // diagonal entries if requested.
+            index_type newEntries = 0;
+            for(index_type row = 0, rowEnd = rowIndexSequence.size(); row < rowEnd; ++row) {
+                bool foundDiagonalElement = false;
+                for (const_iterator it = this->begin(rowIndexSequence[row]), ite = this->end(rowIndexSequence[row]); it != ite; ++it) {
+                    if (it->getColumn() == row) {
+                        foundDiagonalElement = true;
+                    }
+                    ++newEntries;
+                }
+                if (insertDiagonalEntries && !foundDiagonalElement) {
+                    ++newEntries;
+                }
+            }
+            
+            // Now create the matrix to be returned with the appropriate size.
+            SparseMatrixBuilder<ValueType> matrixBuilder(rowIndexSequence.size(), columnCount, newEntries);
+            
+            // Copy over the selected rows from the source matrix.
+            for(index_type row = 0, rowEnd = rowIndexSequence.size(); row < rowEnd; ++row) {
+                bool insertedDiagonalElement = false;
+                for (const_iterator it = this->begin(rowIndexSequence[row]), ite = this->end(rowIndexSequence[row]); it != ite; ++it) {
+                    if (it->getColumn() == row) {
+                        insertedDiagonalElement = true;
+                    } else if (insertDiagonalEntries && !insertedDiagonalElement && it->getColumn() > row) {
+                        matrixBuilder.addNextValue(row, row, storm::utility::zero<ValueType>());
+                        insertedDiagonalElement = true;
+                    }
+                    matrixBuilder.addNextValue(row, it->getColumn(), it->getValue());
+                }
+                if (insertDiagonalEntries && !insertedDiagonalElement) {
+                    matrixBuilder.addNextValue(row, row, storm::utility::zero<ValueType>());
+                }
+            }
+            
+            // Finally create matrix and return result.
+            return matrixBuilder.build();
+        }
+        
         template <typename ValueType>
         SparseMatrix<ValueType> SparseMatrix<ValueType>::transpose(bool joinGroups, bool keepZeros) const {
             index_type rowCount = this->getColumnCount();
@@ -1196,6 +1238,15 @@ namespace storm {
 #endif
         
         template<typename ValueType>
+        ValueType SparseMatrix<ValueType>::multiplyRowWithVector(index_type row, std::vector<ValueType> const& vector) const {
+            ValueType result = storm::utility::zero<ValueType>();
+            for(auto const& entry : this->getRow(row)){
+                result += entry.getValue() * vector[entry.getColumn()];
+            }
+            return result;
+        }
+        
+        template<typename ValueType>
         void SparseMatrix<ValueType>::performSuccessiveOverRelaxationStep(ValueType omega, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             const_iterator it = this->begin();
             const_iterator ite;
@@ -1224,10 +1275,12 @@ namespace storm {
             }
         }
         
+#ifdef STORM_HAVE_CARL
         template<>
         void SparseMatrix<Interval>::performSuccessiveOverRelaxationStep(Interval omega, std::vector<Interval>& x, std::vector<Interval> const& b) const {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This operation is not supported.");
         }
+#endif
         
         template<typename ValueType>
         void SparseMatrix<ValueType>::multiplyVectorWithMatrix(std::vector<value_type> const& vector, std::vector<value_type>& result) const {
@@ -1364,6 +1417,31 @@ namespace storm {
                 sum += it->getValue();
             }
             return sum;
+        }
+        
+        template<typename ValueType>
+        typename SparseMatrix<ValueType>::index_type SparseMatrix<ValueType>::getNonconstantEntryCount() const {
+            index_type nonConstEntries = 0;
+            for( auto const& entry : *this){
+                if(!storm::utility::isConstant(entry.getValue())){
+                    ++nonConstEntries;
+                }
+            }
+            return nonConstEntries;
+        }
+        
+        template<typename ValueType>
+        typename SparseMatrix<ValueType>::index_type SparseMatrix<ValueType>::getNonconstantRowGroupCount() const {
+            index_type nonConstRowGroups = 0;
+            for (index_type rowGroup=0; rowGroup < this->getRowGroupCount(); ++rowGroup) {
+                for( auto const& entry : this->getRowGroup(rowGroup)){
+                    if(!storm::utility::isConstant(entry.getValue())){
+                        ++nonConstRowGroups;
+                        break;
+                    }
+                }
+            }
+            return nonConstRowGroups;
         }
         
         template<typename ValueType>

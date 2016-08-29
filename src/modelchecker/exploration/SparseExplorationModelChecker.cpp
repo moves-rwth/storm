@@ -17,6 +17,8 @@
 #include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 
 #include "src/models/sparse/StandardRewardModel.h"
+#include "src/models/sparse/Dtmc.h"
+#include "src/models/sparse/Mdp.h"
 
 #include "src/settings/SettingsManager.h"
 #include "src/settings/modules/CoreSettings.h"
@@ -34,20 +36,20 @@
 namespace storm {
     namespace modelchecker {
         
-        template<typename ValueType, typename StateType>
-        SparseExplorationModelChecker<ValueType, StateType>::SparseExplorationModelChecker(storm::prism::Program const& program) : program(program.substituteConstants()), randomGenerator(std::chrono::system_clock::now().time_since_epoch().count()), comparator(storm::settings::getModule<storm::settings::modules::ExplorationSettings>().getPrecision()) {
+        template<typename ModelType, typename StateType>
+        SparseExplorationModelChecker<ModelType, StateType>::SparseExplorationModelChecker(storm::prism::Program const& program) : program(program.substituteConstants()), randomGenerator(std::chrono::system_clock::now().time_since_epoch().count()), comparator(storm::settings::getModule<storm::settings::modules::ExplorationSettings>().getPrecision()) {
             // Intentionally left empty.
         }
         
-        template<typename ValueType, typename StateType>
-        bool SparseExplorationModelChecker<ValueType, StateType>::canHandle(CheckTask<storm::logic::Formula> const& checkTask) const {
+        template<typename ModelType, typename StateType>
+        bool SparseExplorationModelChecker<ModelType, StateType>::canHandle(CheckTask<storm::logic::Formula, ValueType> const& checkTask) const {
             storm::logic::Formula const& formula = checkTask.getFormula();
             storm::logic::FragmentSpecification fragment = storm::logic::reachability();
             return formula.isInFragment(fragment) && checkTask.isOnlyInitialStatesRelevantSet();
         }
         
-        template<typename ValueType, typename StateType>
-        std::unique_ptr<CheckResult> SparseExplorationModelChecker<ValueType, StateType>::computeUntilProbabilities(CheckTask<storm::logic::UntilFormula> const& checkTask) {
+        template<typename ModelType, typename StateType>
+        std::unique_ptr<CheckResult> SparseExplorationModelChecker<ModelType, StateType>::computeUntilProbabilities(CheckTask<storm::logic::UntilFormula, ValueType> const& checkTask) {
             storm::logic::UntilFormula const& untilFormula = checkTask.getFormula();
             storm::logic::Formula const& conditionFormula = untilFormula.getLeftSubformula();
             storm::logic::Formula const& targetFormula = untilFormula.getRightSubformula();
@@ -67,8 +69,8 @@ namespace storm {
             return std::make_unique<ExplicitQuantitativeCheckResult<ValueType>>(std::get<0>(boundsForInitialState), std::get<1>(boundsForInitialState));
         }
         
-        template<typename ValueType, typename StateType>
-        std::tuple<StateType, ValueType, ValueType> SparseExplorationModelChecker<ValueType, StateType>::performExploration(StateGeneration<StateType, ValueType>& stateGeneration, ExplorationInformation<StateType, ValueType>& explorationInformation) const {
+        template<typename ModelType, typename StateType>
+        std::tuple<StateType, typename ModelType::ValueType, typename ModelType::ValueType> SparseExplorationModelChecker<ModelType, StateType>::performExploration(StateGeneration<StateType, ValueType>& stateGeneration, ExplorationInformation<StateType, typename ModelType::ValueType>& explorationInformation) const {
             // Generate the initial state so we know where to start the simulation.
             stateGeneration.computeInitialStates();
             STORM_LOG_THROW(stateGeneration.getNumberOfInitialStates() == 1, storm::exceptions::NotSupportedException, "Currently only models with one initial state are supported by the exploration engine.");
@@ -120,8 +122,8 @@ namespace storm {
             return std::make_tuple(initialStateIndex, bounds.getLowerBoundForState(initialStateIndex, explorationInformation), bounds.getUpperBoundForState(initialStateIndex, explorationInformation));
         }
         
-        template<typename ValueType, typename StateType>
-        bool SparseExplorationModelChecker<ValueType, StateType>::samplePathFromInitialState(StateGeneration<StateType, ValueType>& stateGeneration, ExplorationInformation<StateType, ValueType>& explorationInformation, StateActionStack& stack, Bounds<StateType, ValueType>& bounds, Statistics<StateType, ValueType>& stats) const {
+        template<typename ModelType, typename StateType>
+        bool SparseExplorationModelChecker<ModelType, StateType>::samplePathFromInitialState(StateGeneration<StateType, ValueType>& stateGeneration, ExplorationInformation<StateType, ValueType>& explorationInformation, StateActionStack& stack, Bounds<StateType, ValueType>& bounds, Statistics<StateType, ValueType>& stats) const {
             // Start the search from the initial state.
             stack.push_back(std::make_pair(stateGeneration.getFirstInitialState(), 0));
             
@@ -182,8 +184,8 @@ namespace storm {
             return foundTerminalState;
         }
         
-        template<typename ValueType, typename StateType>
-        bool SparseExplorationModelChecker<ValueType, StateType>::exploreState(StateGeneration<StateType, ValueType>& stateGeneration, StateType const& currentStateId, storm::generator::CompressedState const& currentState, ExplorationInformation<StateType, ValueType>& explorationInformation, Bounds<StateType, ValueType>& bounds, Statistics<StateType, ValueType>& stats) const {
+        template<typename ModelType, typename StateType>
+        bool SparseExplorationModelChecker<ModelType, StateType>::exploreState(StateGeneration<StateType, ValueType>& stateGeneration, StateType const& currentStateId, storm::generator::CompressedState const& currentState, ExplorationInformation<StateType, ValueType>& explorationInformation, Bounds<StateType, ValueType>& bounds, Statistics<StateType, ValueType>& stats) const {
             bool isTerminalState = false;
             bool isTargetState = false;
             
@@ -284,8 +286,8 @@ namespace storm {
             return isTerminalState;
         }
         
-        template<typename ValueType, typename StateType>
-        typename SparseExplorationModelChecker<ValueType, StateType>::ActionType SparseExplorationModelChecker<ValueType, StateType>::sampleActionOfState(StateType const& currentStateId, ExplorationInformation<StateType, ValueType> const& explorationInformation, Bounds<StateType, ValueType>& bounds) const {
+        template<typename ModelType, typename StateType>
+        typename SparseExplorationModelChecker<ModelType, StateType>::ActionType SparseExplorationModelChecker<ModelType, StateType>::sampleActionOfState(StateType const& currentStateId, ExplorationInformation<StateType, ValueType> const& explorationInformation, Bounds<StateType, ValueType>& bounds) const {
             // Determine the values of all available actions.
             std::vector<std::pair<ActionType, ValueType>> actionValues;
             StateType rowGroup = explorationInformation.getRowGroup(currentStateId);
@@ -322,8 +324,8 @@ namespace storm {
             return actionValues[distribution(randomGenerator)].first;
         }
         
-        template<typename ValueType, typename StateType>
-        StateType SparseExplorationModelChecker<ValueType, StateType>::sampleSuccessorFromAction(ActionType const& chosenAction, ExplorationInformation<StateType, ValueType> const& explorationInformation, Bounds<StateType, ValueType> const& bounds) const {
+        template<typename ModelType, typename StateType>
+        StateType SparseExplorationModelChecker<ModelType, StateType>::sampleSuccessorFromAction(ActionType const& chosenAction, ExplorationInformation<StateType, ValueType> const& explorationInformation, Bounds<StateType, ValueType> const& bounds) const {
             std::vector<storm::storage::MatrixEntry<StateType, ValueType>> const& row = explorationInformation.getRowOfMatrix(chosenAction);
             if (row.size() == 1) {
                 return row.front().getColumn();
@@ -354,8 +356,8 @@ namespace storm {
             }
         }
         
-        template<typename ValueType, typename StateType>
-        bool SparseExplorationModelChecker<ValueType, StateType>::performPrecomputation(StateActionStack const& stack, ExplorationInformation<StateType, ValueType>& explorationInformation, Bounds<StateType, ValueType>& bounds, Statistics<StateType, ValueType>& stats) const {
+        template<typename ModelType, typename StateType>
+        bool SparseExplorationModelChecker<ModelType, StateType>::performPrecomputation(StateActionStack const& stack, ExplorationInformation<StateType, ValueType>& explorationInformation, Bounds<StateType, ValueType>& bounds, Statistics<StateType, ValueType>& stats) const {
             ++stats.numberOfPrecomputations;
             
             // Outline:
@@ -487,8 +489,8 @@ namespace storm {
             return true;
         }
         
-        template<typename ValueType, typename StateType>
-        void SparseExplorationModelChecker<ValueType, StateType>::collapseMec(storm::storage::MaximalEndComponent const& mec, std::vector<StateType> const& relevantStates, storm::storage::SparseMatrix<ValueType> const& relevantStatesMatrix, ExplorationInformation<StateType, ValueType>& explorationInformation, Bounds<StateType, ValueType>& bounds) const {
+        template<typename ModelType, typename StateType>
+        void SparseExplorationModelChecker<ModelType, StateType>::collapseMec(storm::storage::MaximalEndComponent const& mec, std::vector<StateType> const& relevantStates, storm::storage::SparseMatrix<ValueType> const& relevantStatesMatrix, ExplorationInformation<StateType, ValueType>& explorationInformation, Bounds<StateType, ValueType>& bounds) const {
             bool containsTargetState = false;
             
             // Now we record all actions leaving the EC.
@@ -556,8 +558,8 @@ namespace storm {
             }
         }
         
-        template<typename ValueType, typename StateType>
-        ValueType SparseExplorationModelChecker<ValueType, StateType>::computeLowerBoundOfAction(ActionType const& action, ExplorationInformation<StateType, ValueType> const& explorationInformation, Bounds<StateType, ValueType> const& bounds) const {
+        template<typename ModelType, typename StateType>
+        typename ModelType::ValueType SparseExplorationModelChecker<ModelType, StateType>::computeLowerBoundOfAction(ActionType const& action, ExplorationInformation<StateType, ValueType> const& explorationInformation, Bounds<StateType, ValueType> const& bounds) const {
             ValueType result = storm::utility::zero<ValueType>();
             for (auto const& element : explorationInformation.getRowOfMatrix(action)) {
                 result += element.getValue() * bounds.getLowerBoundForState(element.getColumn(), explorationInformation);
@@ -565,8 +567,8 @@ namespace storm {
             return result;
         }
         
-        template<typename ValueType, typename StateType>
-        ValueType SparseExplorationModelChecker<ValueType, StateType>::computeUpperBoundOfAction(ActionType const& action, ExplorationInformation<StateType, ValueType> const& explorationInformation, Bounds<StateType, ValueType> const& bounds) const {
+        template<typename ModelType, typename StateType>
+        typename ModelType::ValueType SparseExplorationModelChecker<ModelType, StateType>::computeUpperBoundOfAction(ActionType const& action, ExplorationInformation<StateType, ValueType> const& explorationInformation, Bounds<StateType, ValueType> const& bounds) const {
             ValueType result = storm::utility::zero<ValueType>();
             for (auto const& element : explorationInformation.getRowOfMatrix(action)) {
                 result += element.getValue() * bounds.getUpperBoundForState(element.getColumn(), explorationInformation);
@@ -574,8 +576,8 @@ namespace storm {
             return result;
         }
         
-        template<typename ValueType, typename StateType>
-        std::pair<ValueType, ValueType> SparseExplorationModelChecker<ValueType, StateType>::computeBoundsOfAction(ActionType const& action, ExplorationInformation<StateType, ValueType> const& explorationInformation, Bounds<StateType, ValueType> const& bounds) const {
+        template<typename ModelType, typename StateType>
+        std::pair<typename ModelType::ValueType, typename ModelType::ValueType> SparseExplorationModelChecker<ModelType, StateType>::computeBoundsOfAction(ActionType const& action, ExplorationInformation<StateType, ValueType> const& explorationInformation, Bounds<StateType, ValueType> const& bounds) const {
             // TODO: take into account self-loops?
             std::pair<ValueType, ValueType> result = std::make_pair(storm::utility::zero<ValueType>(), storm::utility::zero<ValueType>());
             for (auto const& element : explorationInformation.getRowOfMatrix(action)) {
@@ -585,8 +587,8 @@ namespace storm {
             return result;
         }
         
-        template<typename ValueType, typename StateType>
-        std::pair<ValueType, ValueType> SparseExplorationModelChecker<ValueType, StateType>::computeBoundsOfState(StateType const& currentStateId, ExplorationInformation<StateType, ValueType> const& explorationInformation, Bounds<StateType, ValueType> const& bounds) const {
+        template<typename ModelType, typename StateType>
+        std::pair<typename ModelType::ValueType, typename ModelType::ValueType> SparseExplorationModelChecker<ModelType, StateType>::computeBoundsOfState(StateType const& currentStateId, ExplorationInformation<StateType, ValueType> const& explorationInformation, Bounds<StateType, ValueType> const& bounds) const {
             StateType group = explorationInformation.getRowGroup(currentStateId);
             std::pair<ValueType, ValueType> result = getLowestBounds(explorationInformation.getOptimizationDirection());
             for (ActionType action = explorationInformation.getStartRowOfGroup(group); action < explorationInformation.getStartRowOfGroup(group + 1); ++action) {
@@ -596,8 +598,8 @@ namespace storm {
             return result;
         }
         
-        template<typename ValueType, typename StateType>
-        void SparseExplorationModelChecker<ValueType, StateType>::updateProbabilityBoundsAlongSampledPath(StateActionStack& stack, ExplorationInformation<StateType, ValueType> const& explorationInformation, Bounds<StateType, ValueType>& bounds) const {
+        template<typename ModelType, typename StateType>
+        void SparseExplorationModelChecker<ModelType, StateType>::updateProbabilityBoundsAlongSampledPath(StateActionStack& stack, ExplorationInformation<StateType, ValueType> const& explorationInformation, Bounds<StateType, ValueType>& bounds) const {
             stack.pop_back();
             while (!stack.empty()) {
                 updateProbabilityOfAction(stack.back().first, stack.back().second, explorationInformation, bounds);
@@ -605,8 +607,8 @@ namespace storm {
             }
         }
         
-        template<typename ValueType, typename StateType>
-        void SparseExplorationModelChecker<ValueType, StateType>::updateProbabilityOfAction(StateType const& state, ActionType const& action, ExplorationInformation<StateType, ValueType> const& explorationInformation, Bounds<StateType, ValueType>& bounds) const {
+        template<typename ModelType, typename StateType>
+        void SparseExplorationModelChecker<ModelType, StateType>::updateProbabilityOfAction(StateType const& state, ActionType const& action, ExplorationInformation<StateType, ValueType> const& explorationInformation, Bounds<StateType, ValueType>& bounds) const {
             // Compute the new lower/upper values of the action.
             std::pair<ValueType, ValueType> newBoundsForAction = computeBoundsOfAction(action, explorationInformation, bounds);
             
@@ -640,8 +642,8 @@ namespace storm {
             }
         }
         
-        template<typename ValueType, typename StateType>
-        ValueType SparseExplorationModelChecker<ValueType, StateType>::computeBoundOverAllOtherActions(storm::OptimizationDirection const& direction, StateType const& state, ActionType const& action, ExplorationInformation<StateType, ValueType> const& explorationInformation, Bounds<StateType, ValueType> const& bounds) const {
+        template<typename ModelType, typename StateType>
+        typename ModelType::ValueType SparseExplorationModelChecker<ModelType, StateType>::computeBoundOverAllOtherActions(storm::OptimizationDirection const& direction, StateType const& state, ActionType const& action, ExplorationInformation<StateType, ValueType> const& explorationInformation, Bounds<StateType, ValueType> const& bounds) const {
             ValueType bound = getLowestBound(explorationInformation.getOptimizationDirection());
             
             ActionType group = explorationInformation.getRowGroup(state);
@@ -659,14 +661,14 @@ namespace storm {
             return bound;
         }
         
-        template<typename ValueType, typename StateType>
-        std::pair<ValueType, ValueType> SparseExplorationModelChecker<ValueType, StateType>::getLowestBounds(storm::OptimizationDirection const& direction) const {
+        template<typename ModelType, typename StateType>
+        std::pair<typename ModelType::ValueType, typename ModelType::ValueType> SparseExplorationModelChecker<ModelType, StateType>::getLowestBounds(storm::OptimizationDirection const& direction) const {
             ValueType val = getLowestBound(direction);
             return std::make_pair(val, val);
         }
         
-        template<typename ValueType, typename StateType>
-        ValueType SparseExplorationModelChecker<ValueType, StateType>::getLowestBound(storm::OptimizationDirection const& direction) const {
+        template<typename ModelType, typename StateType>
+        typename ModelType::ValueType SparseExplorationModelChecker<ModelType, StateType>::getLowestBound(storm::OptimizationDirection const& direction) const {
             if (direction == storm::OptimizationDirection::Maximize) {
                 return storm::utility::zero<ValueType>();
             } else {
@@ -674,8 +676,8 @@ namespace storm {
             }
         }
         
-        template<typename ValueType, typename StateType>
-        std::pair<ValueType, ValueType> SparseExplorationModelChecker<ValueType, StateType>::combineBounds(storm::OptimizationDirection const& direction, std::pair<ValueType, ValueType> const& bounds1, std::pair<ValueType, ValueType> const& bounds2) const {
+        template<typename ModelType, typename StateType>
+        std::pair<typename ModelType::ValueType, typename ModelType::ValueType> SparseExplorationModelChecker<ModelType, StateType>::combineBounds(storm::OptimizationDirection const& direction, std::pair<ValueType, ValueType> const& bounds1, std::pair<ValueType, ValueType> const& bounds2) const {
             if (direction == storm::OptimizationDirection::Maximize) {
                 return std::make_pair(std::max(bounds1.first, bounds2.first), std::max(bounds1.second, bounds2.second));
             } else {
@@ -683,6 +685,7 @@ namespace storm {
             }
         }
         
-        template class SparseExplorationModelChecker<double, uint32_t>;
+        template class SparseExplorationModelChecker<storm::models::sparse::Dtmc<double>, uint32_t>;
+        template class SparseExplorationModelChecker<storm::models::sparse::Mdp<double>, uint32_t>;
     }
 }
