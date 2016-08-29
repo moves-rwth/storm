@@ -177,6 +177,8 @@ namespace storm {
                         return ite(leftResult <= rightResult, leftResult, rightResult);
 					case storm::expressions::BinaryNumericalFunctionExpression::OperatorType::Max:
                         return ite(leftResult >= rightResult, leftResult, rightResult);
+					case storm::expressions::BinaryNumericalFunctionExpression::OperatorType::Power:
+                        return pw(leftResult,rightResult);
                     default:
                         STORM_LOG_THROW(false, storm::exceptions::ExpressionEvaluationException, "Cannot evaluate expression: unknown numerical binary operator '" << static_cast<int>(expression.getOperatorType()) << "' in expression " << expression << ".");
                 }
