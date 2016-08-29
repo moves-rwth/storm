@@ -122,12 +122,18 @@ namespace storm {
                 for (auto const& successorValuePair : lowerChoiceAsAdd) {
                     uint_fast64_t updateIndex = abstractionInformation.decodeAux(successorValuePair.first, 0, currentGame->getProbabilisticBranchingVariables().size());
                     
+                    std::cout << "update idx: " << updateIndex << std::endl;
                     storm::storage::BitVector successor(abstractionInformation.getNumberOfPredicates());
                     for (uint_fast64_t index = 0; index < abstractionInformation.getOrderedSuccessorVariables().size(); ++index) {
                         auto const& successorVariable = abstractionInformation.getOrderedSuccessorVariables()[index];
+                        std::cout << successorVariable.getName() << " has value";
                         if (successorValuePair.first.getBooleanValue(successorVariable)) {
                             successor.set(index);
+                            std::cout << " true";
+                        } else {
+                            std::cout << " false";
                         }
+                        std::cout << std::endl;
                     }
                     
                     result[updateIndex] = successor;
@@ -162,11 +168,25 @@ namespace storm {
                 } else {
                     STORM_LOG_TRACE("No bottom state successor. Deriving a new predicate using weakest precondition.");
                     
+                    lowerChoice.template toAdd<ValueType>().exportToDot("lowerchoice_ref.dot");
+                    upperChoice.template toAdd<ValueType>().exportToDot("upperchoice_ref.dot");
+                    
                     // Decode both choices to explicit mappings.
+                    std::cout << "lower" << std::endl;
                     std::map<uint_fast64_t, storm::storage::BitVector> lowerChoiceUpdateToSuccessorMapping = decodeChoiceToUpdateSuccessorMapping(lowerChoice);
+                    std::cout << "upper" << std::endl;
                     std::map<uint_fast64_t, storm::storage::BitVector> upperChoiceUpdateToSuccessorMapping = decodeChoiceToUpdateSuccessorMapping(upperChoice);
-                    STORM_LOG_ASSERT(lowerChoiceUpdateToSuccessorMapping.size() == upperChoiceUpdateToSuccessorMapping.size(), "Mismatching sizes after decode.");
+                    STORM_LOG_ASSERT(lowerChoiceUpdateToSuccessorMapping.size() == upperChoiceUpdateToSuccessorMapping.size(), "Mismatching sizes after decode (" << lowerChoiceUpdateToSuccessorMapping.size() << " vs. " << upperChoiceUpdateToSuccessorMapping.size() << ").");
 
+                    std::cout << "lower" << std::endl;
+                    for (auto const& entry : lowerChoiceUpdateToSuccessorMapping) {
+                        std::cout << entry.first << " -> " << entry.second << std::endl;
+                    }
+                    std::cout << "upper" << std::endl;
+                    for (auto const& entry : upperChoiceUpdateToSuccessorMapping) {
+                        std::cout << entry.first << " -> " << entry.second << std::endl;
+                    }
+                    
                     // Now go through the mappings and find points of deviation. Currently, we take the first deviation.
                     storm::expressions::Expression newPredicate;
                     auto lowerIt = lowerChoiceUpdateToSuccessorMapping.begin();
@@ -186,6 +206,7 @@ namespace storm {
                             }
                         }
                     }
+                    STORM_LOG_ASSERT(newPredicate.isInitialized(), "Could not derive new predicate as there is no deviation.");
                     
                     STORM_LOG_TRACE("Derived new predicate: " << newPredicate);
                     

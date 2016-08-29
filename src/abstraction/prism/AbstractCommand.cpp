@@ -69,8 +69,7 @@ namespace storm {
                     this->recomputeCachedBdd();
                 }
                 
-                // Refine bottom state abstractor.
-                // FIXME: Should this only be done if the other BDD needs recomputation? 
+                // Refine bottom state abstractor. Note that this does not trigger a recomputation yet.
                 bottomStateAbstractor.refine(predicates);
             }
             

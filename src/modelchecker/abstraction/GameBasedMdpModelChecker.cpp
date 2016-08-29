@@ -61,13 +61,15 @@ namespace storm {
         template<storm::dd::DdType Type, typename ValueType>
         std::unique_ptr<CheckResult> GameBasedMdpModelChecker<Type, ValueType>::computeUntilProbabilities(CheckTask<storm::logic::UntilFormula> const& checkTask) {
             storm::logic::UntilFormula const& pathFormula = checkTask.getFormula();
-            return performGameBasedAbstractionRefinement(checkTask.substituteFormula<storm::logic::Formula>(pathFormula), getExpression(pathFormula.getLeftSubformula()), getExpression(pathFormula.getRightSubformula()));
+            std::map<std::string, storm::expressions::Expression> labelToExpressionMapping = preprocessedProgram.getLabelToExpressionMapping();
+            return performGameBasedAbstractionRefinement(checkTask.substituteFormula<storm::logic::Formula>(pathFormula), pathFormula.getLeftSubformula().toExpression(preprocessedProgram.getManager(), labelToExpressionMapping), pathFormula.getRightSubformula().toExpression(preprocessedProgram.getManager(), labelToExpressionMapping));
         }
         
         template<storm::dd::DdType Type, typename ValueType>
         std::unique_ptr<CheckResult> GameBasedMdpModelChecker<Type, ValueType>::computeReachabilityProbabilities(CheckTask<storm::logic::EventuallyFormula> const& checkTask) {
             storm::logic::EventuallyFormula const& pathFormula = checkTask.getFormula();
-            return performGameBasedAbstractionRefinement(checkTask.substituteFormula<storm::logic::Formula>(pathFormula), originalProgram.getManager().boolean(true), getExpression(pathFormula.getSubformula()));
+            std::map<std::string, storm::expressions::Expression> labelToExpressionMapping = preprocessedProgram.getLabelToExpressionMapping();
+            return performGameBasedAbstractionRefinement(checkTask.substituteFormula<storm::logic::Formula>(pathFormula), originalProgram.getManager().boolean(true), pathFormula.getSubformula().toExpression(preprocessedProgram.getManager(), labelToExpressionMapping));
         }
         
         template<typename ValueType>
@@ -195,6 +197,7 @@ namespace storm {
         
         template<storm::dd::DdType Type, typename ValueType>
         void refineAfterQualitativeCheck(storm::abstraction::prism::PrismMenuGameAbstractor<Type, ValueType>& abstractor, storm::abstraction::MenuGame<Type, ValueType> const& game, detail::GameProb01Result<Type> const& prob01, storm::dd::Bdd<Type> const& transitionMatrixBdd) {
+            STORM_LOG_TRACE("Refining after qualitative check.");
             // Build the fragment of states that is reachable by any combination of the player 1 and player 2 strategies.
             storm::dd::Bdd<Type> reachableTransitions = prob01.min.first.getPlayer2Strategy() || prob01.max.second.getPlayer2Strategy();
             reachableTransitions = (prob01.min.first.getPlayer1Strategy() && reachableTransitions) || (prob01.max.second.getPlayer1Strategy() && reachableTransitions);
@@ -236,7 +239,8 @@ namespace storm {
         }
 
         template<storm::dd::DdType Type, typename ValueType>
-        void refineAfterQuantitativeCheck(storm::abstraction::prism::PrismMenuGameAbstractor<Type, ValueType>& abstractor, storm::abstraction::MenuGame<Type, ValueType> const& game, std::pair<storm::dd::Bdd<Type>, storm::dd::Bdd<Type>> const& minStrategyPair, std::pair<storm::dd::Bdd<Type>, storm::dd::Bdd<Type>> const& maxStrategyPair, storm::dd::Bdd<Type> const& transitionMatrixBdd) {
+        void refineAfterQuantitativeCheck(storm::abstraction::prism::PrismMenuGameAbstractor<Type, ValueType>& abstractor, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Add<Type, ValueType> const& minResult, storm::dd::Add<Type, ValueType> const& maxResult, detail::GameProb01Result<Type> const& prob01, std::pair<storm::dd::Bdd<Type>, storm::dd::Bdd<Type>> const& minStrategyPair, std::pair<storm::dd::Bdd<Type>, storm::dd::Bdd<Type>> const& maxStrategyPair, storm::dd::Bdd<Type> const& transitionMatrixBdd) {
+            STORM_LOG_TRACE("Refining after quantitative check.");
             // Build the fragment of states that is reachable by any combination of the player 1 and player 2 strategies.
             storm::dd::Bdd<Type> reachableTransitions = minStrategyPair.second || maxStrategyPair.second;
             reachableTransitions = (minStrategyPair.first && reachableTransitions) || (maxStrategyPair.first && reachableTransitions);
@@ -251,12 +255,48 @@ namespace storm {
             // Now that we have the pivot state candidates, we need to pick one.
             storm::dd::Bdd<Type> pivotState = pickPivotState<Type>(game.getInitialStates(), reachableTransitions, game.getRowVariables(), game.getColumnVariables(), pivotStates);
             
+            storm::dd::Add<Type, ValueType> pivotStateLower = pivotState.template toAdd<ValueType>() * minResult;
+            storm::dd::Add<Type, ValueType> pivotStateUpper = pivotState.template toAdd<ValueType>() * maxResult;
+            storm::dd::Bdd<Type> pivotStateIsMinProb0 = pivotState && prob01.min.first.states;
+            storm::dd::Bdd<Type> pivotStateIsMaxProb0 = pivotState && prob01.max.first.states;
+            storm::dd::Bdd<Type> pivotStateLowerStrategies = pivotState && prob01.min.first.getPlayer1Strategy() && prob01.min.first.getPlayer2Strategy();
+            storm::dd::Bdd<Type> pivotStateUpperStrategies = pivotState && prob01.max.first.getPlayer1Strategy() && prob01.max.first.getPlayer2Strategy();
+            storm::dd::Bdd<Type> pivotStateLowerPl1Strategy = pivotState && prob01.min.first.getPlayer1Strategy();
+            storm::dd::Bdd<Type> pivotStateUpperPl1Strategy = pivotState && prob01.max.first.getPlayer1Strategy();
+            storm::dd::Bdd<Type> pivotStateLowerPl2Strategy = pivotState && prob01.min.first.getPlayer2Strategy();
+            storm::dd::Bdd<Type> pivotStateUpperPl2Strategy = pivotState && prob01.max.first.getPlayer2Strategy();
+            
+            minResult.exportToDot("minresult.dot");
+            maxResult.exportToDot("maxresult.dot");
+            pivotState.template toAdd<ValueType>().exportToDot("pivot.dot");
+            pivotStateLower.exportToDot("pivot_lower.dot");
+            pivotStateUpper.exportToDot("pivot_upper.dot");
+            pivotStateIsMinProb0.template toAdd<ValueType>().exportToDot("pivot_is_minprob0.dot");
+            pivotStateIsMaxProb0.template toAdd<ValueType>().exportToDot("pivot_is_maxprob0.dot");
+            pivotStateLowerStrategies.template toAdd<ValueType>().exportToDot("pivot_lower_strats.dot");
+            pivotStateUpperStrategies.template toAdd<ValueType>().exportToDot("pivot_upper_strats.dot");
+            pivotStateLowerPl1Strategy.template toAdd<ValueType>().exportToDot("pivot_lower_pl1_strat.dot");
+            pivotStateUpperPl1Strategy.template toAdd<ValueType>().exportToDot("pivot_upper_pl1_strat.dot");
+            pivotStateLowerPl2Strategy.template toAdd<ValueType>().exportToDot("pivot_lower_pl2_strat.dot");
+            pivotStateUpperPl2Strategy.template toAdd<ValueType>().exportToDot("pivot_upper_pl2_strat.dot");
+            
             // Compute the lower and the upper choice for the pivot state.
             std::set<storm::expressions::Variable> variablesToAbstract = game.getNondeterminismVariables();
             variablesToAbstract.insert(game.getRowVariables().begin(), game.getRowVariables().end());
             storm::dd::Bdd<Type> lowerChoice = pivotState && game.getExtendedTransitionMatrix().toBdd() && minStrategyPair.first;
+            (pivotState && minStrategyPair.first).template toAdd<ValueType>().exportToDot("pl1_choice_in_pivot.dot");
+            (pivotState && minStrategyPair.first && maxStrategyPair.second).template toAdd<ValueType>().exportToDot("pl1and2_choice_in_pivot.dot");
+            (pivotState && maxStrategyPair.second).template toAdd<ValueType>().exportToDot("pl2_choice_in_pivot.dot");
             storm::dd::Bdd<Type> lowerChoice1 = (lowerChoice && minStrategyPair.second).existsAbstract(variablesToAbstract);
-            storm::dd::Bdd<Type> lowerChoice2 = (lowerChoice && maxStrategyPair.second).existsAbstract(variablesToAbstract);
+            lowerChoice.template toAdd<ValueType>().exportToDot("lower.dot");
+            maxStrategyPair.second.template toAdd<ValueType>().exportToDot("max_strat.dot");
+            storm::dd::Bdd<Type> lowerChoice2 = (lowerChoice && maxStrategyPair.second);
+            lowerChoice2.template toAdd<ValueType>().exportToDot("tmp_lower.dot");
+            lowerChoice2 = lowerChoice2.existsAbstract(variablesToAbstract);
+            
+            lowerChoice.template toAdd<ValueType>().exportToDot("ref_lower.dot");
+            lowerChoice1.template toAdd<ValueType>().exportToDot("ref_lower1.dot");
+            lowerChoice2.template toAdd<ValueType>().exportToDot("ref_lower2.dot");
             
             bool lowerChoicesDifferent = !lowerChoice1.exclusiveOr(lowerChoice2).isZero();
             if (lowerChoicesDifferent) {
@@ -377,6 +417,13 @@ namespace storm {
                     return result;
                 }
                 
+                // 2.5 At this point, we need to fix the max strategy for the prob 0 states for player 2. This is because
+                // there may be player 2 nodes for which there is no choice in the currently computed strategy (by prob0)
+                // as no choice achieves probability 0. However, later we require the strategies to only differ if necessary
+                // so we need to force the player 2 strategy to agree with the player 2 strategy for the probability 0
+                // states in the min case.
+                prob01.max.first.player2Strategy = prob01.max.first.getPlayer2Strategy().existsAbstract(game.getPlayer1Variables()).ite(prob01.max.first.getPlayer2Strategy(), prob01.min.first.getPlayer2Strategy());
+                
                 // 3. compute the states for which we know the result/for which we know there is more work to be done.
                 storm::dd::Bdd<Type> maybeMin = !(prob01.min.first.states || prob01.min.second.states) && game.getReachableStates();
                 storm::dd::Bdd<Type> maybeMax = !(prob01.max.first.states || prob01.max.second.states) && game.getReachableStates();
@@ -465,7 +512,7 @@ namespace storm {
                     maxMaybeStateResult.player1Strategy |= prob01.max.first.getPlayer1Strategy() || prob01.max.second.getPlayer1Strategy();
                     maxMaybeStateResult.player2Strategy |= prob01.max.first.getPlayer2Strategy() || prob01.max.second.getPlayer2Strategy();
                     
-                    refineAfterQuantitativeCheck(abstractor, game, std::make_pair(minMaybeStateResult.player1Strategy, minMaybeStateResult.player2Strategy), std::make_pair(maxMaybeStateResult.player1Strategy, maxMaybeStateResult.player2Strategy), transitionMatrixBdd);
+                    refineAfterQuantitativeCheck(abstractor, game, minResult, maxResult, prob01, std::make_pair(minMaybeStateResult.player1Strategy, minMaybeStateResult.player2Strategy), std::make_pair(maxMaybeStateResult.player1Strategy, maxMaybeStateResult.player2Strategy), transitionMatrixBdd);
                 }
             }
 
