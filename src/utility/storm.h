@@ -327,11 +327,11 @@ namespace storm {
     template<typename ValueType>
     std::unique_ptr<storm::modelchecker::CheckResult> verifySparseMarkovAutomaton(std::shared_ptr<storm::models::sparse::MarkovAutomaton<ValueType>> ma, storm::modelchecker::CheckTask<storm::logic::Formula> const& task) {
         std::unique_ptr<storm::modelchecker::CheckResult> result;
+        // Close the MA, if it is not already closed.
+        if (!ma->isClosed()) {
+            ma->close();
+        }
         if(task.getFormula().isMultiObjectiveFormula()) {
-            // Close the MA, if it is not already closed.
-            if (!ma->isClosed()) {
-                ma->close();
-            }
             storm::modelchecker::SparseMaMultiObjectiveModelChecker<storm::models::sparse::MarkovAutomaton<ValueType>> modelchecker(*ma);
             if (modelchecker.canHandle(task)) {
                 result = modelchecker.check(task);

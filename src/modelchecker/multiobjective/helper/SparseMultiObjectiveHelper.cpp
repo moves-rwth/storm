@@ -57,8 +57,8 @@ namespace storm {
             
             template <class SparseModelType, typename RationalNumberType>
             void SparseMultiObjectiveHelper<SparseModelType, RationalNumberType>::achievabilityQuery(PreprocessorData const& preprocessorData, WeightVectorCheckerType weightVectorChecker, ResultData& resultData) {
-                //Set the maximum gap between lower and upper bound of the weightVectorChecker result we initially allow for this query type.
-                weightVectorChecker->setMaximumLowerUpperBoundGap(storm::utility::convertNumber<SparseModelValueType>(0.1)); // TODO try other values?
+                //Set the maximum gap between lower and upper bound of the weightVectorChecker result we initially allow for this query type.  Note that we could also try other values
+                weightVectorChecker->setMaximumLowerUpperBoundGap(storm::utility::convertNumber<SparseModelValueType>(0.1));
                 // Get a point that represents the thresholds
                 Point thresholds;
                 thresholds.reserve(preprocessorData.objectives.size());
@@ -84,8 +84,8 @@ namespace storm {
             template <class SparseModelType, typename RationalNumberType>
             void SparseMultiObjectiveHelper<SparseModelType, RationalNumberType>::numericalQuery(PreprocessorData const& preprocessorData, WeightVectorCheckerType weightVectorChecker, ResultData& resultData) {
                 STORM_LOG_ASSERT(preprocessorData.indexOfOptimizingObjective, "Detected numerical query but index of optimizing objective is not set.");
-                // Set the maximum gap between lower and upper bound of the weightVectorChecker result we initially allow for this query type.
-                weightVectorChecker->setMaximumLowerUpperBoundGap(storm::utility::convertNumber<SparseModelValueType>(0.1)); // TODO try other values?
+                // Set the maximum gap between lower and upper bound of the weightVectorChecker result we initially allow for this query type. Note that we could also try other values
+                weightVectorChecker->setMaximumLowerUpperBoundGap(storm::utility::convertNumber<SparseModelValueType>(0.1));
                 // initialize some data
                 uint_fast64_t optimizingObjIndex = *preprocessorData.indexOfOptimizingObjective;
                 Point thresholds;
@@ -131,11 +131,12 @@ namespace storm {
                     // Note that we do not have to care whether a threshold is strict anymore, because the resulting optimum should be
                     // the supremum over all strategies. Hence, one could combine a scheduler inducing the optimum value (but possibly violating strict
                     // thresholds) and (with very low probability) a scheduler that satisfies all (possibly strict) thresholds.
-                    // The euclidean distance between the lower and upper bounds of the results of the weightVectorChecker should be less than the precision given in the settings
+                    
+                    // Pick the maximum gap between lower and upper bound of the weightVectorChecker result.
                     SparseModelValueType gap = storm::utility::convertNumber<SparseModelValueType>(storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>().getPrecision());
-                    gap -=  storm::utility::convertNumber<SparseModelValueType>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
-                    gap /= storm::utility::sqrt(static_cast<SparseModelValueType>(preprocessorData.objectives.size()));
-                    weightVectorChecker->setMaximumLowerUpperBoundGap(gap); // TODO try other values?
+                    gap /= (storm::utility::one<SparseModelValueType>() + storm::utility::one<SparseModelValueType>());
+                    weightVectorChecker->setMaximumLowerUpperBoundGap(gap);
+                    
                     while(true) {
                         std::pair<Point, bool> optimizationRes = resultData.underApproximation()->intersection(thresholdsAsPolytope)->optimize(directionOfOptimizingObjective);
                         STORM_LOG_THROW(optimizationRes.second, storm::exceptions::UnexpectedException, "The underapproximation is either unbounded or empty.");
@@ -160,12 +161,13 @@ namespace storm {
             
             template <class SparseModelType, typename RationalNumberType>
             void SparseMultiObjectiveHelper<SparseModelType, RationalNumberType>::paretoQuery(PreprocessorData const& preprocessorData, WeightVectorCheckerType weightVectorChecker, ResultData& resultData) {
-                // Set the maximum gap between lower and upper bound of the weightVectorChecker result we initially allow for this query type.
-                // The euclidean distance between the lower and upper bounds of the results of the weightVectorChecker should be less than the precision given in the settings
+                // Set the maximum gap between lower and upper bound of the weightVectorChecker result.
+                // This is the maximal edge length of the box we have to consider around each computed point
+                // We pick the gap such that the maximal distance between two points within this box is less than the given precision divided by two.
                 SparseModelValueType gap = storm::utility::convertNumber<SparseModelValueType>(storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>().getPrecision());
-                gap -=  storm::utility::convertNumber<SparseModelValueType>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
+                gap /= (storm::utility::one<SparseModelValueType>() + storm::utility::one<SparseModelValueType>());
                 gap /= storm::utility::sqrt(static_cast<SparseModelValueType>(preprocessorData.objectives.size()));
-                weightVectorChecker->setMaximumLowerUpperBoundGap(gap); // TODO try other values?
+                weightVectorChecker->setMaximumLowerUpperBoundGap(gap);
                 
                 //First consider the objectives individually
                 for(uint_fast64_t objIndex = 0; objIndex<preprocessorData.objectives.size() && !maxStepsPerformed(resultData); ++objIndex) {

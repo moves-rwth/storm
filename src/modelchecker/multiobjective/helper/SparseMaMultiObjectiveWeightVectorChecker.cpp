@@ -78,10 +78,10 @@ namespace storm {
                     // Only perform such a step if there is time left.
                     if(currentEpoch>0) {
                         performMSStep(MS, PS, consideredObjectives);
-                        if(currentEpoch % 1000 == 0) {
-                            STORM_LOG_DEBUG(currentEpoch << " digitized time steps left. Current weighted value is " << PS.weightedSolutionVector[0]);
-                            std::cout << std::endl << currentEpoch << " digitized time steps left. Current weighted value is " << PS.weightedSolutionVector[0] << std::endl;
-                        }
+      //                  if(currentEpoch % 1000 == 0) {
+      //                      STORM_LOG_DEBUG(currentEpoch << " digitized time steps left. Current weighted value is " << PS.weightedSolutionVector[0]);
+      //                      std::cout << std::endl << currentEpoch << " digitized time steps left. Current weighted value is " << PS.weightedSolutionVector[0] << std::endl;
+      //                  }
                         --currentEpoch;
                     } else {
                         break;
@@ -261,17 +261,19 @@ namespace storm {
                 VT const maxRate = this->data.preprocessedModel.getMaximalExitRate();
                 for(uint_fast64_t objIndex = 0; objIndex < this->data.objectives.size(); ++objIndex) {
                     auto const& obj = this->data.objectives[objIndex];
+                    VT errorTowardsZero;
+                    VT errorAwayFromZero;
                     if(obj.lowerTimeBound) {
                         uint_fast64_t digitizedBound = storm::utility::convertNumber<uint_fast64_t>((*obj.lowerTimeBound)/digitizationConstant);
                         auto timeBoundIt = lowerTimeBounds.insert(std::make_pair(digitizedBound, storm::storage::BitVector(this->data.objectives.size(), false))).first;
                         timeBoundIt->second.set(objIndex);
                         VT digitizationError = storm::utility::one<VT>();
                         digitizationError -= std::exp(-maxRate * (*obj.lowerTimeBound)) * storm::utility::pow(storm::utility::one<VT>() + maxRate * digitizationConstant, digitizedBound);
-                        this->offsetsToLowerBound[objIndex] = -digitizationError;
-                        this->offsetsToUpperBound[objIndex] = storm::utility::one<VT>() - std::exp(-maxRate * digitizationConstant);;
+                        errorTowardsZero = -digitizationError;
+                        errorAwayFromZero = storm::utility::one<VT>() - std::exp(-maxRate * digitizationConstant);;
                     } else {
-                        this->offsetsToLowerBound[objIndex] = storm::utility::zero<VT>();
-                        this->offsetsToUpperBound[objIndex] = storm::utility::zero<VT>();
+                        errorTowardsZero = storm::utility::zero<VT>();
+                        errorAwayFromZero = storm::utility::zero<VT>();
                     }
                     if(obj.upperTimeBound) {
                         uint_fast64_t digitizedBound = storm::utility::convertNumber<uint_fast64_t>((*obj.upperTimeBound)/digitizationConstant);
@@ -279,9 +281,16 @@ namespace storm {
                         timeBoundIt->second.set(objIndex);
                         VT digitizationError = storm::utility::one<VT>();
                         digitizationError -= std::exp(-maxRate * (*obj.upperTimeBound)) * storm::utility::pow(storm::utility::one<VT>() + maxRate * digitizationConstant, digitizedBound);
-                        this->offsetsToUpperBound[objIndex] += digitizationError;
+                        errorAwayFromZero += digitizationError;
                     }
-                    STORM_LOG_ASSERT(this->offsetsToUpperBound[objIndex] - this->offsetsToLowerBound[objIndex] <= this->maximumLowerUpperBoundGap, "Precision not sufficient.");
+                    STORM_LOG_ASSERT(errorTowardsZero + errorAwayFromZero <= this->maximumLowerUpperBoundGap, "Precision not sufficient.");
+                    if (obj.rewardsArePositive) {
+                        this->offsetsToLowerBound[objIndex] = -errorTowardsZero;
+                        this->offsetsToUpperBound[objIndex] = errorAwayFromZero;
+                    } else {
+                        this->offsetsToLowerBound[objIndex] = -errorAwayFromZero;
+                        this->offsetsToUpperBound[objIndex] = errorTowardsZero;
+                    }
                 }
             } 
             
@@ -364,14 +373,14 @@ namespace storm {
                 
                 // check whether the linEqSolver needs to be updated, i.e., whether the scheduler has changed
                 if(newOptimalChoices != optimalChoicesAtCurrentEpoch) {
-                    std::cout << "X";
+         //           std::cout << "X";
                     optimalChoicesAtCurrentEpoch.swap(newOptimalChoices);
                     linEq.solver = nullptr;
                     storm::storage::SparseMatrix<ValueType> linEqMatrix = PS.toPS.selectRowsFromRowGroups(optimalChoicesAtCurrentEpoch, true);
                     linEqMatrix.convertToEquationSystem();
                     linEq.solver = linEq.factory.create(std::move(linEqMatrix));
                 } else {
-                    std::cout << " ";
+        //            std::cout << " ";
                 }
                 for(auto objIndex : consideredObjectives) {
                     PS.toMS.multiplyWithVector(MS.objectiveSolutionVectors[objIndex], PS.auxChoiceValues);
