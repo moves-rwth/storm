@@ -212,18 +212,13 @@ namespace storm {
             storm::dd::Bdd<Type> maxPlayer2Strategy = prob01.max.second.getPlayer2Strategy();
             
             // Redirect all player 1 choices of the min strategy to that of the max strategy if this leads to a player 2
-            // state that is also a prob 0 state..
+            // state that is also a prob 0 state.
             minPlayer1Strategy = (maxPlayer1Strategy && prob01.min.first.getPlayer2States()).existsAbstract(game.getPlayer1Variables()).ite(maxPlayer1Strategy, minPlayer1Strategy);
             
             // Build the fragment of transitions that is reachable by both the min and the max strategies.
             storm::dd::Bdd<Type> reachableTransitions = transitionMatrixBdd && minPlayer1Strategy && minPlayer2Strategy && maxPlayer1Strategy && maxPlayer2Strategy;
             reachableTransitions = reachableTransitions.existsAbstract(game.getNondeterminismVariables());
             storm::dd::Bdd<Type> pivotStates = storm::utility::dd::computeReachableStates(game.getInitialStates(), reachableTransitions, game.getRowVariables(), game.getColumnVariables());
-            
-            (minPlayer1Strategy && pivotStates).template toAdd<ValueType>().exportToDot("piv_min_pl1.dot");
-            (maxPlayer1Strategy && pivotStates).template toAdd<ValueType>().exportToDot("piv_max_pl1.dot");
-            (minPlayer2Strategy && pivotStates).template toAdd<ValueType>().exportToDot("piv_min_pl2.dot");
-            (maxPlayer2Strategy && pivotStates).template toAdd<ValueType>().exportToDot("piv_max_pl2.dot");
             
             // Require the pivot state to be a [0, 1] state.
             // TODO: is this restriction necessary or is it already implied?
@@ -286,8 +281,16 @@ namespace storm {
         template<storm::dd::DdType Type, typename ValueType>
         void refineAfterQuantitativeCheck(storm::abstraction::prism::PrismMenuGameAbstractor<Type, ValueType>& abstractor, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Add<Type, ValueType> const& minResult, storm::dd::Add<Type, ValueType> const& maxResult, detail::GameProb01Result<Type> const& prob01, std::pair<storm::dd::Bdd<Type>, storm::dd::Bdd<Type>> const& minStrategyPair, std::pair<storm::dd::Bdd<Type>, storm::dd::Bdd<Type>> const& maxStrategyPair, storm::dd::Bdd<Type> const& transitionMatrixBdd) {
             STORM_LOG_TRACE("Refining after quantitative check.");
+            // Get all relevant strategies.
+            storm::dd::Bdd<Type> minPlayer1Strategy = minStrategyPair.first;
+            storm::dd::Bdd<Type> minPlayer2Strategy = minStrategyPair.second;
+            storm::dd::Bdd<Type> maxPlayer1Strategy = maxStrategyPair.first;
+            storm::dd::Bdd<Type> maxPlayer2Strategy = maxStrategyPair.second;
+
+            // TODO: fix min strategies to take the max strategies if possible.
+            
             // Build the fragment of transitions that is reachable by both the min and the max strategies.
-            storm::dd::Bdd<Type> reachableTransitions = transitionMatrixBdd && minStrategyPair.first && minStrategyPair.second && maxStrategyPair.first && maxStrategyPair.second;
+            storm::dd::Bdd<Type> reachableTransitions = transitionMatrixBdd && minPlayer1Strategy && minPlayer2Strategy && maxPlayer1Strategy && maxPlayer2Strategy;
             reachableTransitions = reachableTransitions.existsAbstract(game.getNondeterminismVariables());
             storm::dd::Bdd<Type> pivotStates = storm::utility::dd::computeReachableStates(game.getInitialStates(), reachableTransitions, game.getRowVariables(), game.getColumnVariables());
             
@@ -299,85 +302,82 @@ namespace storm {
             // Then constrain these states by the requirement that for either the lower or upper player 1 choice the player 2 choices must be different and
             // that the difference is not because of a missing strategy in either case.
             
-            // Start with constructing the player 2 states that have a prob 0 (min) and prob 1 (max) strategy.
+            // Start with constructing the player 2 states that have a (min) and a (max) strategy.
+            // TODO: necessary?
             storm::dd::Bdd<Type> constraint = minStrategyPair.second.existsAbstract(game.getPlayer2Variables()) && maxStrategyPair.second.existsAbstract(game.getPlayer2Variables());
 
-            STORM_LOG_ASSERT(!(constraint && pivotStates).isZero(), "Unable to refine without pivot state candidates.");
-
-            (minStrategyPair.first && pivotStates).template toAdd<ValueType>().exportToDot("piv_min_pl1.dot");
-            (maxStrategyPair.first && pivotStates).template toAdd<ValueType>().exportToDot("piv_max_pl1.dot");
-            (minStrategyPair.second && pivotStates).template toAdd<ValueType>().exportToDot("piv_min_pl2.dot");
-            (maxStrategyPair.second && pivotStates).template toAdd<ValueType>().exportToDot("piv_max_pl2.dot");
+//            (minStrategyPair.first && pivotStates).template toAdd<ValueType>().exportToDot("piv_min_pl1.dot");
+//            (maxStrategyPair.first && pivotStates).template toAdd<ValueType>().exportToDot("piv_max_pl1.dot");
+//            (minStrategyPair.second && pivotStates).template toAdd<ValueType>().exportToDot("piv_min_pl2.dot");
+//            (maxStrategyPair.second && pivotStates).template toAdd<ValueType>().exportToDot("piv_max_pl2.dot");
             
             // Now construct all player 2 choices that actually exist and differ in the min and max case.
-            constraint &= minStrategyPair.second.exclusiveOr(maxStrategyPair.second);
-
-            STORM_LOG_ASSERT(!(constraint && pivotStates).isZero(), "Unable to refine without pivot state candidates.");
+            constraint &= minPlayer2Strategy.exclusiveOr(maxPlayer2Strategy);
 
             // Then restrict the pivot states by requiring existing and different player 2 choices.
-            pivotStates &= ((minStrategyPair.first || maxStrategyPair.first) && constraint).existsAbstract(game.getNondeterminismVariables());
+            pivotStates &= ((minPlayer1Strategy || maxPlayer1Strategy) && constraint).existsAbstract(game.getNondeterminismVariables());
             
             STORM_LOG_ASSERT(!pivotStates.isZero(), "Unable to refine without pivot state candidates.");
             
             // Now that we have the pivot state candidates, we need to pick one.
             storm::dd::Bdd<Type> pivotState = pickPivotState<Type>(game.getInitialStates(), reachableTransitions, game.getRowVariables(), game.getColumnVariables(), pivotStates);
             
-            storm::dd::Add<Type, ValueType> pivotStateLower = pivotState.template toAdd<ValueType>() * minResult;
-            storm::dd::Add<Type, ValueType> pivotStateUpper = pivotState.template toAdd<ValueType>() * maxResult;
-            storm::dd::Bdd<Type> pivotStateIsMinProb0 = pivotState && prob01.min.first.getPlayer1States();
-            storm::dd::Bdd<Type> pivotStateIsMaxProb0 = pivotState && prob01.max.first.getPlayer1States();
-            storm::dd::Bdd<Type> pivotStateLowerStrategies = pivotState && prob01.min.first.getPlayer1Strategy() && prob01.min.first.getPlayer2Strategy();
-            storm::dd::Bdd<Type> pivotStateUpperStrategies = pivotState && prob01.max.first.getPlayer1Strategy() && prob01.max.first.getPlayer2Strategy();
-            storm::dd::Bdd<Type> pivotStateLowerPl1Strategy = pivotState && prob01.min.first.getPlayer1Strategy();
-            storm::dd::Bdd<Type> pivotStateUpperPl1Strategy = pivotState && prob01.max.first.getPlayer1Strategy();
-            storm::dd::Bdd<Type> pivotStateLowerPl2Strategy = pivotState && prob01.min.first.getPlayer2Strategy();
-            storm::dd::Bdd<Type> pivotStateUpperPl2Strategy = pivotState && prob01.max.first.getPlayer2Strategy();
-            
-            minResult.exportToDot("minresult.dot");
-            maxResult.exportToDot("maxresult.dot");
-            pivotState.template toAdd<ValueType>().exportToDot("pivot.dot");
-            pivotStateLower.exportToDot("pivot_lower.dot");
-            pivotStateUpper.exportToDot("pivot_upper.dot");
-            pivotStateIsMinProb0.template toAdd<ValueType>().exportToDot("pivot_is_minprob0.dot");
-            pivotStateIsMaxProb0.template toAdd<ValueType>().exportToDot("pivot_is_maxprob0.dot");
-            pivotStateLowerStrategies.template toAdd<ValueType>().exportToDot("pivot_lower_strats.dot");
-            pivotStateUpperStrategies.template toAdd<ValueType>().exportToDot("pivot_upper_strats.dot");
-            pivotStateLowerPl1Strategy.template toAdd<ValueType>().exportToDot("pivot_lower_pl1_strat.dot");
-            pivotStateUpperPl1Strategy.template toAdd<ValueType>().exportToDot("pivot_upper_pl1_strat.dot");
-            pivotStateLowerPl2Strategy.template toAdd<ValueType>().exportToDot("pivot_lower_pl2_strat.dot");
-            pivotStateUpperPl2Strategy.template toAdd<ValueType>().exportToDot("pivot_upper_pl2_strat.dot");
+//            storm::dd::Add<Type, ValueType> pivotStateLower = pivotState.template toAdd<ValueType>() * minResult;
+//            storm::dd::Add<Type, ValueType> pivotStateUpper = pivotState.template toAdd<ValueType>() * maxResult;
+//            storm::dd::Bdd<Type> pivotStateIsMinProb0 = pivotState && prob01.min.first.getPlayer1States();
+//            storm::dd::Bdd<Type> pivotStateIsMaxProb0 = pivotState && prob01.max.first.getPlayer1States();
+//            storm::dd::Bdd<Type> pivotStateLowerStrategies = pivotState && prob01.min.first.getPlayer1Strategy() && prob01.min.first.getPlayer2Strategy();
+//            storm::dd::Bdd<Type> pivotStateUpperStrategies = pivotState && prob01.max.first.getPlayer1Strategy() && prob01.max.first.getPlayer2Strategy();
+//            storm::dd::Bdd<Type> pivotStateLowerPl1Strategy = pivotState && prob01.min.first.getPlayer1Strategy();
+//            storm::dd::Bdd<Type> pivotStateUpperPl1Strategy = pivotState && prob01.max.first.getPlayer1Strategy();
+//            storm::dd::Bdd<Type> pivotStateLowerPl2Strategy = pivotState && prob01.min.first.getPlayer2Strategy();
+//            storm::dd::Bdd<Type> pivotStateUpperPl2Strategy = pivotState && prob01.max.first.getPlayer2Strategy();
+//            
+//            minResult.exportToDot("minresult.dot");
+//            maxResult.exportToDot("maxresult.dot");
+//            pivotState.template toAdd<ValueType>().exportToDot("pivot.dot");
+//            pivotStateLower.exportToDot("pivot_lower.dot");
+//            pivotStateUpper.exportToDot("pivot_upper.dot");
+//            pivotStateIsMinProb0.template toAdd<ValueType>().exportToDot("pivot_is_minprob0.dot");
+//            pivotStateIsMaxProb0.template toAdd<ValueType>().exportToDot("pivot_is_maxprob0.dot");
+//            pivotStateLowerStrategies.template toAdd<ValueType>().exportToDot("pivot_lower_strats.dot");
+//            pivotStateUpperStrategies.template toAdd<ValueType>().exportToDot("pivot_upper_strats.dot");
+//            pivotStateLowerPl1Strategy.template toAdd<ValueType>().exportToDot("pivot_lower_pl1_strat.dot");
+//            pivotStateUpperPl1Strategy.template toAdd<ValueType>().exportToDot("pivot_upper_pl1_strat.dot");
+//            pivotStateLowerPl2Strategy.template toAdd<ValueType>().exportToDot("pivot_lower_pl2_strat.dot");
+//            pivotStateUpperPl2Strategy.template toAdd<ValueType>().exportToDot("pivot_upper_pl2_strat.dot");
             
             // Compute the lower and the upper choice for the pivot state.
             std::set<storm::expressions::Variable> variablesToAbstract = game.getNondeterminismVariables();
             variablesToAbstract.insert(game.getRowVariables().begin(), game.getRowVariables().end());
-            storm::dd::Bdd<Type> lowerChoice = pivotState && game.getExtendedTransitionMatrix().toBdd() && minStrategyPair.first;
-            (pivotState && minStrategyPair.first).template toAdd<ValueType>().exportToDot("pl1_choice_in_pivot.dot");
-            (pivotState && minStrategyPair.first && maxStrategyPair.second).template toAdd<ValueType>().exportToDot("pl1and2_choice_in_pivot.dot");
-            (pivotState && maxStrategyPair.second).template toAdd<ValueType>().exportToDot("pl2_choice_in_pivot.dot");
-            storm::dd::Bdd<Type> lowerChoice1 = (lowerChoice && minStrategyPair.second).existsAbstract(variablesToAbstract);
-            lowerChoice.template toAdd<ValueType>().exportToDot("lower.dot");
-            maxStrategyPair.second.template toAdd<ValueType>().exportToDot("max_strat.dot");
-            storm::dd::Bdd<Type> lowerChoice2 = (lowerChoice && maxStrategyPair.second);
-            lowerChoice2.template toAdd<ValueType>().exportToDot("tmp_lower.dot");
-            lowerChoice2 = lowerChoice2.existsAbstract(variablesToAbstract);
+            storm::dd::Bdd<Type> lowerChoice = pivotState && game.getExtendedTransitionMatrix().toBdd() && minPlayer1Strategy;
+//            (pivotState && minStrategyPair.first).template toAdd<ValueType>().exportToDot("pl1_choice_in_pivot.dot");
+//            (pivotState && minStrategyPair.first && maxStrategyPair.second).template toAdd<ValueType>().exportToDot("pl1and2_choice_in_pivot.dot");
+//            (pivotState && maxStrategyPair.second).template toAdd<ValueType>().exportToDot("pl2_choice_in_pivot.dot");
+            storm::dd::Bdd<Type> lowerChoice1 = (lowerChoice && minPlayer2Strategy).existsAbstract(variablesToAbstract);
+//            lowerChoice.template toAdd<ValueType>().exportToDot("lower.dot");
+//            maxStrategyPair.second.template toAdd<ValueType>().exportToDot("max_strat.dot");
+            storm::dd::Bdd<Type> lowerChoice2 = (lowerChoice && maxPlayer2Strategy).existsAbstract(variablesToAbstract);
+//            lowerChoice2.template toAdd<ValueType>().exportToDot("tmp_lower.dot");
+//            lowerChoice2 = lowerChoice2.existsAbstract(variablesToAbstract);
             
-            lowerChoice.template toAdd<ValueType>().exportToDot("ref_lower.dot");
-            lowerChoice1.template toAdd<ValueType>().exportToDot("ref_lower1.dot");
-            lowerChoice2.template toAdd<ValueType>().exportToDot("ref_lower2.dot");
+//            lowerChoice.template toAdd<ValueType>().exportToDot("ref_lower.dot");
+//            lowerChoice1.template toAdd<ValueType>().exportToDot("ref_lower1.dot");
+//            lowerChoice2.template toAdd<ValueType>().exportToDot("ref_lower2.dot");
             
             bool lowerChoicesDifferent = !lowerChoice1.exclusiveOr(lowerChoice2).isZero();
             if (lowerChoicesDifferent) {
                 STORM_LOG_TRACE("Refining based on lower choice.");
-                abstractor.refine(pivotState, (pivotState && minStrategyPair.first).existsAbstract(game.getRowVariables()), lowerChoice1, lowerChoice2);
+                abstractor.refine(pivotState, (pivotState && minPlayer1Strategy).existsAbstract(game.getRowVariables()), lowerChoice1, lowerChoice2);
             } else {
-                storm::dd::Bdd<Type> upperChoice = pivotState && game.getExtendedTransitionMatrix().toBdd() && maxStrategyPair.first;
-                storm::dd::Bdd<Type> upperChoice1 = (upperChoice && minStrategyPair.second).existsAbstract(variablesToAbstract);
-                storm::dd::Bdd<Type> upperChoice2 = (upperChoice && maxStrategyPair.second).existsAbstract(variablesToAbstract);
+                storm::dd::Bdd<Type> upperChoice = pivotState && game.getExtendedTransitionMatrix().toBdd() && maxPlayer1Strategy;
+                storm::dd::Bdd<Type> upperChoice1 = (upperChoice && minPlayer2Strategy).existsAbstract(variablesToAbstract);
+                storm::dd::Bdd<Type> upperChoice2 = (upperChoice && maxPlayer2Strategy).existsAbstract(variablesToAbstract);
                 
                 bool upperChoicesDifferent = !upperChoice1.exclusiveOr(upperChoice2).isZero();
                 if (upperChoicesDifferent) {
                     STORM_LOG_TRACE("Refining based on upper choice.");
-                    abstractor.refine(pivotState, (pivotState && maxStrategyPair.first).existsAbstract(game.getRowVariables()), upperChoice1, upperChoice2);
+                    abstractor.refine(pivotState, (pivotState && maxPlayer1Strategy).existsAbstract(game.getRowVariables()), upperChoice1, upperChoice2);
                 } else {
                     STORM_LOG_ASSERT(false, "Did not find choices from which to derive predicates.");
                 }
