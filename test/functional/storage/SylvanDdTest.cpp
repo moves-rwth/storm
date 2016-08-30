@@ -163,7 +163,7 @@ TEST(SylvanDd, BddExistAbstractRepresentative) {
 	EXPECT_TRUE(bddX0Y0Z0 == representative_xyz);
 }
 
-TEST(SylvanDd, AddMinExistAbstractRepresentative) {
+TEST(SylvanDd, AddMinAbstractRepresentative) {
 	std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
 
 	storm::dd::Bdd<storm::dd::DdType::Sylvan> bddZero;
@@ -268,7 +268,7 @@ TEST(SylvanDd, AddMinExistAbstractRepresentative) {
 	EXPECT_TRUE(representative_complex_xyz == comparison_complex_xyz);
 }
 
-TEST(SylvanDd, AddMaxExistAbstractRepresentative) {
+TEST(SylvanDd, AddMaxAbstractRepresentative) {
 	std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
 
 	storm::dd::Bdd<storm::dd::DdType::Sylvan> bddZero;
@@ -431,12 +431,16 @@ TEST(SylvanDd, RationalFunctionLeaveReplacementNonVariable) {
 TEST(SylvanDd, RationalFunctionLeaveReplacementSimpleVariable) {
 	std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
 	
-	// The cache that is used in case the underlying type needs a cache.
-	std::shared_ptr<carl::Cache<carl::PolynomialFactorizationPair<storm::RawPolynomial>>> cache = std::make_shared<carl::Cache<carl::PolynomialFactorizationPair<storm::RawPolynomial>>>();
-	
 	storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> function;
-	carl::Variable x = carl::freshRealVariable("x");
-	storm::RationalFunction variableX = storm::RationalFunction(typename storm::RationalFunction::PolyType(typename storm::RationalFunction::PolyType::PolyType(x), cache));
+	
+	std::shared_ptr<storm::RawPolynomialCache> cache = std::make_shared<storm::RawPolynomialCache>();
+	
+	carl::StringParser parser;
+	parser.setVariables({"x"});
+	
+	storm::RawPolynomial polyX = parser.parseMultivariatePolynomial<storm::RationalNumber>("x");	
+	storm::RationalFunction variableX = storm::RationalFunction(storm::Polynomial(polyX, cache));
+	
 	ASSERT_NO_THROW(function = manager->template getConstant<storm::RationalFunction>(variableX));
 	
 	std::pair<storm::expressions::Variable, storm::expressions::Variable> xExpr;
@@ -445,7 +449,7 @@ TEST(SylvanDd, RationalFunctionLeaveReplacementSimpleVariable) {
 	std::map<storm::RationalFunctionVariable, std::pair<storm::expressions::Variable, std::pair<storm::RationalNumber, storm::RationalNumber>>> replacementMap;
 	storm::RationalNumber rnOneThird = storm::RationalNumber(1) / storm::RationalNumber(3);
 	storm::RationalNumber rnTwoThird = storm::RationalNumber(2) / storm::RationalNumber(3);
-	replacementMap.insert(std::make_pair(x, std::make_pair(xExpr.first, std::make_pair(rnOneThird, rnTwoThird))));
+	replacementMap.insert(std::make_pair(parser.variables().find("x")->second, std::make_pair(xExpr.first, std::make_pair(rnOneThird, rnTwoThird))));
 	
 	storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> replacedAddSimpleX = function.replaceLeaves(replacementMap);
 	
@@ -465,14 +469,13 @@ TEST(SylvanDd, RationalFunctionLeaveReplacementSimpleVariable) {
 TEST(SylvanDd, RationalFunctionLeaveReplacementTwoVariables) {
 	std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
 	
-	// The cache that is used in case the underlying type needs a cache.
-	std::shared_ptr<carl::Cache<carl::PolynomialFactorizationPair<storm::RawPolynomial>>> cache = std::make_shared<carl::Cache<carl::PolynomialFactorizationPair<storm::RawPolynomial>>>();
-	
 	storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> function;
-	carl::Variable x = carl::freshRealVariable("x");
-	carl::Variable y = carl::freshRealVariable("y");
-	storm::RationalFunction variableX = storm::RationalFunction(typename storm::RationalFunction::PolyType(typename storm::RationalFunction::PolyType::PolyType(x), cache));
-	storm::RationalFunction variableY = storm::RationalFunction(typename storm::RationalFunction::PolyType(typename storm::RationalFunction::PolyType::PolyType(y), cache));
+	std::shared_ptr<storm::RawPolynomialCache> cache = std::make_shared<storm::RawPolynomialCache>();
+	carl::StringParser parser;
+	parser.setVariables({"x", "y"});
+	
+	storm::RationalFunction variableX(storm::Polynomial(parser.template parseMultivariatePolynomial<storm::RationalNumber>("x"), cache));
+	storm::RationalFunction variableY(storm::Polynomial(parser.template parseMultivariatePolynomial<storm::RationalNumber>("y"), cache));
 	ASSERT_NO_THROW(function = manager->template getConstant<storm::RationalFunction>(variableX * variableY));
 	
 	std::pair<storm::expressions::Variable, storm::expressions::Variable> xExpr;
@@ -485,8 +488,8 @@ TEST(SylvanDd, RationalFunctionLeaveReplacementTwoVariables) {
 	storm::RationalNumber rnTwoThird = storm::RationalNumber(2) / storm::RationalNumber(3);
 	storm::RationalNumber rnOne = storm::RationalNumber(1);
 	storm::RationalNumber rnTen = storm::RationalNumber(10);
-	replacementMap.insert(std::make_pair(x, std::make_pair(xExpr.first, std::make_pair(rnOneThird, rnTwoThird))));
-	replacementMap.insert(std::make_pair(y, std::make_pair(yExpr.first, std::make_pair(rnOne, rnTen))));
+	replacementMap.insert(std::make_pair(parser.variables().find("x")->second, std::make_pair(xExpr.first, std::make_pair(rnOneThird, rnTwoThird))));
+	replacementMap.insert(std::make_pair(parser.variables().find("y")->second, std::make_pair(yExpr.first, std::make_pair(rnOne, rnTen))));
 	
 	storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> replacedAdd = function.replaceLeaves(replacementMap);
 	
@@ -507,67 +510,35 @@ TEST(SylvanDd, RationalFunctionLeaveReplacementTwoVariables) {
 	EXPECT_TRUE(replacedAdd == complexAdd);
 }
 
-TEST(SylvanDd, RationalFunctionBullshitTest) {
-	// The cache that is used in case the underlying type needs a cache.
-	std::shared_ptr<carl::Cache<carl::PolynomialFactorizationPair<storm::RawPolynomial>>> cache = std::make_shared<carl::Cache<carl::PolynomialFactorizationPair<storm::RawPolynomial>>>();
+TEST(SylvanDd, RationalFunctionCarlSubstituteTest) {
+	std::shared_ptr<storm::RawPolynomialCache> cache = std::make_shared<storm::RawPolynomialCache>();
+	carl::StringParser parser;
+	parser.setVariables({"x", "y", "z"});
+	storm::RationalFunction zHalfed = storm::RationalFunction(storm::Polynomial(parser.template parseMultivariatePolynomial<storm::RationalNumber>("z"), cache), storm::Polynomial(parser.template parseMultivariatePolynomial<storm::RationalNumber>("2"), cache));
+	storm::RationalFunction rationalFunction = storm::RationalFunction(storm::Polynomial(parser.parseMultivariatePolynomial<storm::RationalNumber>("2*x+x*y"), cache), storm::Polynomial(parser.parseMultivariatePolynomial<storm::RationalNumber>("1"), cache)) + zHalfed;
 	
-	carl::Variable x = carl::freshRealVariable("x");
-	carl::Variable y = carl::freshRealVariable("y");
-	carl::Variable z = carl::freshRealVariable("z");
-	storm::RationalFunction variableX = storm::RationalFunction(typename storm::RationalFunction::PolyType(typename storm::RationalFunction::PolyType::PolyType(x), cache));
-	storm::RationalFunction variableY = storm::RationalFunction(typename storm::RationalFunction::PolyType(typename storm::RationalFunction::PolyType::PolyType(y), cache));
-	storm::RationalFunction variableZ = storm::RationalFunction(typename storm::RationalFunction::PolyType(typename storm::RationalFunction::PolyType::PolyType(z), cache));
-	
-	storm::RationalFunction constantOne(1);
-	storm::RationalFunction constantTwo(2);
-	storm::RationalFunction constantOneDivTwo(constantOne / constantTwo);
-	storm::RationalFunction tmpFunctionA(constantOneDivTwo);
-	tmpFunctionA *= variableZ;
-	tmpFunctionA /= variableY;
-	storm::RationalFunction tmpFunctionB(variableX);
-	tmpFunctionB *= variableY;
-	
-	//storm::RationalFunction rationalFunction(two * x + x*y + constantOneDivTwo * z / y);
-	storm::RationalFunction rationalFunction(constantTwo);
-	rationalFunction *= variableX;
-	rationalFunction += tmpFunctionB;
-	rationalFunction += tmpFunctionA;
-	
-	std::map<storm::RationalFunctionVariable, storm::RationalNumber> replacement = {{x, storm::RationalNumber(2)}};
+	std::map<storm::RationalFunctionVariable, storm::RationalNumber> replacement = {{parser.variables().find("x")->second, storm::RationalNumber(2)}};
 	storm::RationalFunction subX = rationalFunction.substitute(replacement);
 	
-	ASSERT_EQ(subX, storm::RationalFunction(4) + storm::RationalFunction(2) * variableY + tmpFunctionA);
+	storm::RationalFunction cmp = storm::RationalFunction(storm::Polynomial(parser.template parseMultivariatePolynomial<storm::RationalNumber>("4+2*y"), cache), storm::Polynomial(parser.template parseMultivariatePolynomial<storm::RationalNumber>("1"), cache)) + zHalfed;
+	EXPECT_EQ(subX, cmp);
+	
+	storm::RawPolynomial poly(parser.template parseMultivariatePolynomial<storm::RationalNumber>("2*x+x*y") + parser.template parseMultivariatePolynomial<storm::RationalNumber>("z") / storm::RationalNumber(2));
+	storm::RawPolynomial polySub = poly.substitute(replacement);
+	EXPECT_EQ(polySub, parser.template parseMultivariatePolynomial<storm::RationalNumber>("4+2*y") + parser.template parseMultivariatePolynomial<storm::RationalNumber>("z") / storm::RationalNumber(2));
 }
 
 TEST(SylvanDd, RationalFunctionLeaveReplacementComplexFunction) {
 	std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
 	
-	// The cache that is used in case the underlying type needs a cache.
-	std::shared_ptr<carl::Cache<carl::PolynomialFactorizationPair<storm::RawPolynomial>>> cache = std::make_shared<carl::Cache<carl::PolynomialFactorizationPair<storm::RawPolynomial>>>();
-	
 	storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> function;
-	carl::Variable x = carl::freshRealVariable("x");
-	carl::Variable y = carl::freshRealVariable("y");
-	carl::Variable z = carl::freshRealVariable("z");
-	storm::RationalFunction variableX = storm::RationalFunction(typename storm::RationalFunction::PolyType(typename storm::RationalFunction::PolyType::PolyType(x), cache));
-	storm::RationalFunction variableY = storm::RationalFunction(typename storm::RationalFunction::PolyType(typename storm::RationalFunction::PolyType::PolyType(y), cache));
-	storm::RationalFunction variableZ = storm::RationalFunction(typename storm::RationalFunction::PolyType(typename storm::RationalFunction::PolyType::PolyType(z), cache));
-	
-	storm::RationalFunction constantOne(1);
-	storm::RationalFunction constantTwo(2);
-	storm::RationalFunction constantOneDivTwo(constantOne / constantTwo);
-	storm::RationalFunction tmpFunctionA(constantOneDivTwo);
-	tmpFunctionA *= variableZ;
-	tmpFunctionA /= variableY;
-	storm::RationalFunction tmpFunctionB(variableX);
-	tmpFunctionB *= variableY;
-	
+	std::shared_ptr<storm::RawPolynomialCache> cache = std::make_shared<storm::RawPolynomialCache>();
+	carl::StringParser parser;
+	parser.setVariables({"x", "y", "z"});
+	storm::RationalFunction zDivTwoY = storm::RationalFunction(storm::Polynomial(parser.template parseMultivariatePolynomial<storm::RationalNumber>("z"), cache), storm::Polynomial(parser.template parseMultivariatePolynomial<storm::RationalNumber>("2*y"), cache));
+
 	//storm::RationalFunction rationalFunction(two * x + x*y + constantOneDivTwo * z / y);
-	storm::RationalFunction rationalFunction(constantTwo);
-	rationalFunction *= variableX;
-	rationalFunction += tmpFunctionB;
-	rationalFunction += tmpFunctionA;
-	
+	storm::RationalFunction rationalFunction = storm::RationalFunction(storm::Polynomial(parser.parseMultivariatePolynomial<storm::RationalNumber>("2*x+x*y"), cache), storm::Polynomial(parser.parseMultivariatePolynomial<storm::RationalNumber>("1"), cache)) + zDivTwoY;	
 	ASSERT_NO_THROW(function = manager->template getConstant<storm::RationalFunction>(rationalFunction));
 	
 	std::pair<storm::expressions::Variable, storm::expressions::Variable> xExpr;
@@ -584,9 +555,9 @@ TEST(SylvanDd, RationalFunctionLeaveReplacementComplexFunction) {
 	storm::RationalNumber rnSeven(7);
 	storm::RationalNumber rnEleven(11);
 	storm::RationalNumber rnThirteen(13);
-	replacementMap.insert(std::make_pair(x, std::make_pair(xExpr.first, std::make_pair(rnTwo, rnSeven))));
-	replacementMap.insert(std::make_pair(y, std::make_pair(yExpr.first, std::make_pair(rnThree, rnEleven))));
-	replacementMap.insert(std::make_pair(z, std::make_pair(zExpr.first, std::make_pair(rnFive, rnThirteen))));
+	replacementMap.insert(std::make_pair(parser.variables().find("x")->second, std::make_pair(xExpr.first, std::make_pair(rnTwo, rnSeven))));
+	replacementMap.insert(std::make_pair(parser.variables().find("y")->second, std::make_pair(yExpr.first, std::make_pair(rnThree, rnEleven))));
+	replacementMap.insert(std::make_pair(parser.variables().find("z")->second, std::make_pair(zExpr.first, std::make_pair(rnFive, rnThirteen))));
 	
 	storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> replacedAdd = function.replaceLeaves(replacementMap);
 	
@@ -599,31 +570,31 @@ TEST(SylvanDd, RationalFunctionLeaveReplacementComplexFunction) {
 
 	auto f = [&](bool x, bool y, bool z) {
 		storm::RationalNumber result(2);
-		if (x) {
+		if (!x) {
 			result *= rnSeven;
 		} else {
 			result *= rnTwo;
 		}
 		
 		storm::RationalNumber partTwo(1);
-		if (x) {
+		if (!x) {
 			partTwo *= rnSeven;
 		} else {
 			partTwo *= rnTwo;
 		}
-		if (y) {
+		if (!y) {
 			partTwo *= rnEleven;
 		} else {
 			partTwo *= rnThree;
 		}
 		
 		storm::RationalNumber partThree(1);
-		if (z) {
+		if (!z) {
 			partThree *= rnThirteen;
 		} else {
 			partThree *= rnFive;
 		}
-		if (y) {
+		if (!y) {
 			partThree /= storm::RationalNumber(2) * rnEleven;
 		} else {
 			partThree /= storm::RationalNumber(2) * rnThree;
@@ -642,92 +613,13 @@ TEST(SylvanDd, RationalFunctionLeaveReplacementComplexFunction) {
 		+ ((bddX1 && (bddY1 && bddZ0)).template toAdd<storm::RationalFunction>() * manager->template getConstant<storm::RationalFunction>(storm::RationalFunction(f(true, true, false))))
 		+ ((bddX1 && (bddY1 && bddZ1)).template toAdd<storm::RationalFunction>() * manager->template getConstant<storm::RationalFunction>(storm::RationalFunction(f(true, true, true))));
 	
-	EXPECT_EQ(4ul, replacedAdd.getNonZeroCount());
-    EXPECT_EQ(4ul, replacedAdd.getLeafCount());
-    EXPECT_EQ(7ul, replacedAdd.getNodeCount());
+	EXPECT_EQ(8ul, replacedAdd.getNonZeroCount());
+    EXPECT_EQ(8ul, replacedAdd.getLeafCount());
+    EXPECT_EQ(15ul, replacedAdd.getNodeCount());
 	EXPECT_TRUE(replacedAdd == complexAdd);
 	
 	replacedAdd.exportToDot("sylvan_replacedAddC.dot");
 	complexAdd.exportToDot("sylvan_complexAddC.dot");
-}
-
-TEST(SylvanDd, RationalFunctionLeaveReplacementComplexFunction2) {
-	std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
-    
-	// The cache that is used in case the underlying type needs a cache.
-	std::shared_ptr<carl::Cache<carl::PolynomialFactorizationPair<storm::RawPolynomial>>> cache = std::make_shared<carl::Cache<carl::PolynomialFactorizationPair<storm::RawPolynomial>>>();
-	
-	storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> function;
-	carl::Variable x = carl::freshRealVariable("x");
-	carl::Variable y = carl::freshRealVariable("y");
-	carl::Variable z = carl::freshRealVariable("z");
-	
-	storm::RationalFunction constantOne(1);
-	storm::RationalFunction constantTwo(2);
-
-	storm::RationalFunction variableX = storm::RationalFunction(typename storm::RationalFunction::PolyType(typename storm::RationalFunction::PolyType::PolyType(x), cache));
-	storm::RationalFunction variableY = storm::RationalFunction(typename storm::RationalFunction::PolyType(typename storm::RationalFunction::PolyType::PolyType(y), cache));
-	storm::RationalFunction variableZ = storm::RationalFunction(typename storm::RationalFunction::PolyType(typename storm::RationalFunction::PolyType::PolyType(z), cache));
-	
-	storm::RationalFunction constantOneDivTwo(constantOne / constantTwo);
-	storm::RationalFunction tmpFunctionA(constantOneDivTwo);
-	tmpFunctionA *= variableZ;
-	tmpFunctionA /= variableY;
-	storm::RationalFunction tmpFunctionB(variableX);
-	tmpFunctionB *= variableY;
-	
-	//storm::RationalFunction rationalFunction(two * x + x*y + constantOneDivTwo * z / y);
-	storm::RationalFunction rationalFunction(constantTwo);
-	rationalFunction *= variableX;
-	rationalFunction += tmpFunctionB;
-	rationalFunction += tmpFunctionA;
-	
-    ASSERT_NO_THROW(function = manager->template getConstant<storm::RationalFunction>(rationalFunction));
-    
-    EXPECT_EQ(0ul, function.getNonZeroCount());
-    EXPECT_EQ(1ul, function.getLeafCount());
-    EXPECT_EQ(1ul, function.getNodeCount());
-	
-	std::pair<storm::expressions::Variable, storm::expressions::Variable> xExpr;
-	std::pair<storm::expressions::Variable, storm::expressions::Variable> yExpr;
-	std::pair<storm::expressions::Variable, storm::expressions::Variable> zExpr;
-	ASSERT_NO_THROW(xExpr = manager->addMetaVariable("x", 0, 1));
-	ASSERT_NO_THROW(yExpr = manager->addMetaVariable("y", 0, 1));
-	ASSERT_NO_THROW(zExpr = manager->addMetaVariable("z", 0, 1));
-
-	storm::dd::Bdd<storm::dd::DdType::Sylvan> bddX0 = manager->getEncoding(xExpr.first, 0);
-	storm::dd::Bdd<storm::dd::DdType::Sylvan> bddX1 = manager->getEncoding(xExpr.first, 1);
-	storm::dd::Bdd<storm::dd::DdType::Sylvan> bddY0 = manager->getEncoding(yExpr.first, 0);
-	storm::dd::Bdd<storm::dd::DdType::Sylvan> bddY1 = manager->getEncoding(yExpr.first, 1);
-	storm::dd::Bdd<storm::dd::DdType::Sylvan> bddZ0 = manager->getEncoding(zExpr.first, 0);
-	storm::dd::Bdd<storm::dd::DdType::Sylvan> bddZ1 = manager->getEncoding(zExpr.first, 1);
-	
-	storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> functionSimpleX;
-	ASSERT_NO_THROW(functionSimpleX = manager->template getConstant<storm::RationalFunction>(storm::RationalFunction(variableX)));
-	
-	std::map<storm::RationalFunctionVariable, std::pair<storm::expressions::Variable, std::pair<storm::RationalNumber, storm::RationalNumber>>> replacementMapSimpleX;
-	
-	storm::RationalNumber rnOneThird = storm::RationalNumber(1) / storm::RationalNumber(3);
-	storm::RationalNumber rnTwoThird = storm::RationalNumber(2) / storm::RationalNumber(3);
-	replacementMapSimpleX.insert(std::make_pair(x, std::make_pair(xExpr.first, std::make_pair(rnOneThird, rnTwoThird))));
-	
-	storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> replacedAddSimpleX = functionSimpleX.replaceLeaves(replacementMapSimpleX);
-	replacedAddSimpleX.exportToDot("sylvan_replacementMapSimpleX.dot");
-	
-	std::map<storm::RationalFunctionVariable, std::pair<storm::expressions::Variable, std::pair<storm::RationalNumber, storm::RationalNumber>>> replacementMap;
-	
-	storm::RationalNumber rnMinusOne(-1);
-	storm::RationalNumber rnOne(1);
-	storm::RationalNumber rnPointOne = storm::RationalNumber(1) / storm::RationalNumber(10);
-	storm::RationalNumber rnPointSixSix = storm::RationalNumber(2) / storm::RationalNumber(3);
-	storm::RationalNumber rnPointFive = storm::RationalNumber(1) / storm::RationalNumber(2);
-	
-	replacementMap.insert(std::make_pair(x, std::make_pair(xExpr.first, std::make_pair(rnMinusOne, rnOne))));
-	replacementMap.insert(std::make_pair(y, std::make_pair(yExpr.first, std::make_pair(rnPointOne, rnPointSixSix))));
-	replacementMap.insert(std::make_pair(z, std::make_pair(zExpr.first, std::make_pair(rnPointFive, rnOne))));
-	
-	storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> replacedAdd = function.replaceLeaves(replacementMap);
-	replacedAdd.exportToDot("sylvan_replaceLeave.dot");
 }
 
 TEST(SylvanDd, RationalFunctionConstants) {
@@ -755,33 +647,15 @@ TEST(SylvanDd, RationalFunctionConstants) {
     EXPECT_EQ(1ul, two.getLeafCount());
     EXPECT_EQ(1ul, two.getNodeCount());
 	
-	// The cache that is used in case the underlying type needs a cache.
-	std::shared_ptr<carl::Cache<carl::PolynomialFactorizationPair<storm::RawPolynomial>>> cache = std::make_shared<carl::Cache<carl::PolynomialFactorizationPair<storm::RawPolynomial>>>();
-	
 	storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> function;
-	carl::Variable x = carl::freshRealVariable("x");
-	carl::Variable y = carl::freshRealVariable("y");
-	carl::Variable z = carl::freshRealVariable("z");
+	std::shared_ptr<storm::RawPolynomialCache> cache = std::make_shared<storm::RawPolynomialCache>();
+	carl::StringParser parser;
+	parser.setVariables({"x", "y", "z"});
 	
-	storm::RationalFunction constantOne(1);
+	storm::RationalFunction partA = storm::RationalFunction(storm::Polynomial(parser.template parseMultivariatePolynomial<storm::RationalNumber>("2*x+x*y"), cache));
+	storm::RationalFunction partB = storm::RationalFunction(storm::Polynomial(parser.template parseMultivariatePolynomial<storm::RationalNumber>("z"), cache), storm::Polynomial(parser.template parseMultivariatePolynomial<storm::RationalNumber>("2*y"), cache));
 
-	storm::RationalFunction variableX = storm::RationalFunction(typename storm::RationalFunction::PolyType(typename storm::RationalFunction::PolyType::PolyType(x), cache));
-	storm::RationalFunction variableY = storm::RationalFunction(typename storm::RationalFunction::PolyType(typename storm::RationalFunction::PolyType::PolyType(y), cache));
-	storm::RationalFunction variableZ = storm::RationalFunction(typename storm::RationalFunction::PolyType(typename storm::RationalFunction::PolyType::PolyType(z), cache));
-	
-	storm::RationalFunction constantOneDivTwo(constantOne / constantTwo);
-	storm::RationalFunction tmpFunctionA(constantOneDivTwo);
-	tmpFunctionA *= variableZ;
-	tmpFunctionA /= variableY;
-	storm::RationalFunction tmpFunctionB(variableX);
-	tmpFunctionB *= variableY;
-	
-	
-	//storm::RationalFunction rationalFunction(two * x + x*y + constantOneDivTwo * z / y);
-	storm::RationalFunction rationalFunction(constantTwo);
-	rationalFunction *= variableX;
-	rationalFunction += tmpFunctionB;
-	rationalFunction += tmpFunctionA;
+	storm::RationalFunction rationalFunction = storm::RationalFunction(partA + partB);
 	
     ASSERT_NO_THROW(function = manager->template getConstant<storm::RationalFunction>(rationalFunction));
     
