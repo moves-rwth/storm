@@ -525,7 +525,7 @@ namespace storm {
             template <storm::dd::DdType Type>
             struct GameProb01Result {
                 GameProb01Result() = default;
-                GameProb01Result(storm::dd::Bdd<Type> const& states, boost::optional<storm::dd::Bdd<Type>> const& player1Strategy = boost::none, boost::optional<storm::dd::Bdd<Type>> const& player2Strategy = boost::none) : states(states), player1Strategy(player1Strategy), player2Strategy(player2Strategy) {
+                GameProb01Result(storm::dd::Bdd<Type> const& player1States, storm::dd::Bdd<Type> const& player2States, boost::optional<storm::dd::Bdd<Type>> const& player1Strategy = boost::none, boost::optional<storm::dd::Bdd<Type>> const& player2Strategy = boost::none) : player1States(player1States), player2States(player2States), player1Strategy(player1Strategy), player2Strategy(player2Strategy) {
                     // Intentionally left empty.
                 }
                 
@@ -553,11 +553,16 @@ namespace storm {
                     return player2Strategy;
                 }
 
-                storm::dd::Bdd<Type> const& getStates() const {
-                    return states;
+                storm::dd::Bdd<Type> const& getPlayer1States() const {
+                    return player1States;
                 }
 
-                storm::dd::Bdd<Type> states;
+                storm::dd::Bdd<Type> const& getPlayer2States() const {
+                    return player2States;
+                }
+
+                storm::dd::Bdd<Type> player1States;
+                storm::dd::Bdd<Type> player2States;
                 boost::optional<storm::dd::Bdd<Type>> player1Strategy;
                 boost::optional<storm::dd::Bdd<Type>> player2Strategy;
             };
