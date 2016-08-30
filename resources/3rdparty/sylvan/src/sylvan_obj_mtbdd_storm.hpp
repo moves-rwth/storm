@@ -30,6 +30,8 @@
     Mtbdd DivideRF(const Mtbdd &other) const;
 	
 	Mtbdd AbstractPlusRF(const BddSet &variables) const;
+	
+	Mtbdd ReplaceLeavesRF(void* context) const;
 #endif
 	
 	/**

@@ -3,8 +3,15 @@
 #include <cstring>
 #include <iostream>
 #include <sstream>
+#include <set>
+#include <map>
 #include "src/adapters/CarlAdapter.h"
 #include "sylvan_storm_rational_function.h"
+
+#include <sylvan_config.h>
+#include <sylvan.h>
+#include <sylvan_common.h>
+#include <sylvan_mtbdd.h>
 
 #undef DEBUG_STORM_FUNCTION_WRAPPER
 
@@ -206,16 +213,44 @@ void print_storm_rational_function_to_file(storm_rational_function_ptr a, FILE* 
 	fprintf(out, "%s", s.c_str());
 }
 
-MTBDD storm_rational_function_leaf_parameter_replacement(uint64_t node_value, uint32_t node_type, void* context) {
-	if (node_type != sylvan_storm_rational_function_get_type()) {
-		//
-	} else {
-		//
+MTBDD testiTest(storm::RationalFunction const& currentFunction, std::map<storm::RationalFunctionVariable, std::pair<uint32_t, std::pair<storm::RationalNumber, storm::RationalNumber>>> const& replacements) {
+	if (currentFunction.isConstant()) {
+		std::cout << "Is constant, returning f = " << currentFunction << std::endl;
+		return mtbdd_storm_rational_function((storm_rational_function_ptr)&currentFunction);
 	}
 	
-	(void)node_value;
-	(void)node_type;
-	(void)context;
+	std::set<storm::RationalFunctionVariable> variablesInFunction = currentFunction.gatherVariables();
+	std::cout << "Entered testiTest with f = " << currentFunction << " and " << variablesInFunction.size() << " Variables left." << std::endl;
+
+	std::map<storm::RationalFunctionVariable, std::pair<uint32_t, std::pair<storm::RationalNumber, storm::RationalNumber>>>::const_iterator it = replacements.cbegin();
+	std::map<storm::RationalFunctionVariable, std::pair<uint32_t, std::pair<storm::RationalNumber, storm::RationalNumber>>>::const_iterator end = replacements.cend();
 	
-	return mtbdd_invalid;
+	// Walking the (ordered) map enforces an ordering on the MTBDD
+	for (; it != end; ++it) {
+		if (variablesInFunction.find(it->first) != variablesInFunction.cend()) {
+			std::cout << "Replacing variable!" << std::endl;
+			std::map<storm::RationalFunctionVariable, storm::RationalNumber> highReplacement = {{it->first, it->second.second.first}};
+			std::map<storm::RationalFunctionVariable, storm::RationalNumber> lowReplacement = {{it->first, it->second.second.second}};
+			std::cout << "High Function = " << currentFunction.substitute(highReplacement) << " w. replc = " << it->second.second.first << std::endl;
+			MTBDD high = testiTest(currentFunction.substitute(highReplacement), replacements);
+			std::cout << "Low Function = " << currentFunction.substitute(lowReplacement) << " w. replc = " << it->second.second.second << std::endl;
+			MTBDD low = testiTest(currentFunction.substitute(lowReplacement), replacements);
+			LACE_ME
+			return mtbdd_ite(mtbdd_ithvar(it->second.first), high, low);
+		}
+	}
+	
+	std::cout << "Found no variable, returning..." << std::endl;
+	return mtbdd_storm_rational_function((storm_rational_function_ptr)&currentFunction);
+}
+
+
+MTBDD storm_rational_function_leaf_parameter_replacement(MTBDD dd, storm_rational_function_ptr a, void* context) {
+	storm::RationalFunction& srf_a = *(storm::RationalFunction*)a;
+	if (srf_a.isConstant()) {
+		return dd;
+	}
+	
+	std::map<storm::RationalFunctionVariable, std::pair<uint32_t, std::pair<storm::RationalNumber, storm::RationalNumber>>>* replacements = (std::map<storm::RationalFunctionVariable, std::pair<uint32_t, std::pair<storm::RationalNumber, storm::RationalNumber>>>*)context;
+	return testiTest(srf_a, *replacements);
 }

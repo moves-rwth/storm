@@ -380,7 +380,7 @@ TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_neg, MTBDD, dd, size_t, p)
 /**
  * Operation "replace leaves" for one storm::RationalFunction MTBDD
  */
-TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_replace_leaves, MTBDD, dd, void*, context)
+TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_replace_leaves, MTBDD, dd, size_t, context)
 {
 	LOG_I("task_impl_2 op_replace")
     /* Handle partial functions */
@@ -388,7 +388,12 @@ TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_replace_leaves, MTBDD, dd, 
 
     /* Compute result for leaf */
     if (mtbdd_isleaf(dd)) {
-		return storm_rational_function_leaf_parameter_replacement(mtbdd_getvalue(dd), mtbdd_gettype(dd), context);
+		if (mtbdd_gettype(dd) != sylvan_storm_rational_function_type) {
+			assert(0);
+		}
+		
+		storm_rational_function_ptr mdd = (storm_rational_function_ptr)mtbdd_getvalue(dd);
+		return storm_rational_function_leaf_parameter_replacement(dd, mdd, (void*)context);
     }
 
     return mtbdd_invalid;
