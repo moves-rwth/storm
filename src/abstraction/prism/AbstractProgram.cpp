@@ -147,8 +147,12 @@ namespace storm {
                 storm::dd::Add<DdType, ValueType> player1ChoiceAsAdd = player1Choice.template toAdd<ValueType>();
                 auto pl1It = player1ChoiceAsAdd.begin();
                 uint_fast64_t commandIndex = abstractionInformation.decodePlayer1Choice((*pl1It).first, abstractionInformation.getPlayer1VariableCount());
+                std::cout << "command index " << commandIndex << std::endl;
+                std::cout << program.get() << std::endl;
                 storm::abstraction::prism::AbstractCommand<DdType, ValueType>& abstractCommand = modules.front().getCommands()[commandIndex];
                 storm::prism::Command const& concreteCommand = abstractCommand.getConcreteCommand();
+                player1Choice.template toAdd<ValueType>().exportToDot("pl1choice_ref.dot");
+                std::cout << concreteCommand << std::endl;
 
                 // Check whether there are bottom states in the game and whether one of the choices actually picks the
                 // bottom state as the successor.
@@ -195,6 +199,7 @@ namespace storm {
                     for (; lowerIt != lowerIte; ++lowerIt, ++upperIt) {
                         STORM_LOG_ASSERT(lowerIt->first == upperIt->first, "Update indices mismatch.");
                         uint_fast64_t updateIndex = lowerIt->first;
+                        std::cout << "update idx " << updateIndex << std::endl;
                         bool deviates = lowerIt->second != upperIt->second;
                         if (deviates) {
                             for (uint_fast64_t predicateIndex = 0; predicateIndex < lowerIt->second.size(); ++predicateIndex) {

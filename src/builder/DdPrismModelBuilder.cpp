@@ -1231,22 +1231,7 @@ namespace storm {
         std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdPrismModelBuilder<Type, ValueType>::build(storm::prism::Program const& program, Options const& options) {
             preparedProgram = program;
             
-            if (preparedProgram->hasUndefinedConstants()) {
-                std::vector<std::reference_wrapper<storm::prism::Constant const>> undefinedConstants = preparedProgram->getUndefinedConstants();
-                std::stringstream stream;
-                bool printComma = false;
-                for (auto const& constant : undefinedConstants) {
-                    if (printComma) {
-                        stream << ", ";
-                    } else {
-                        printComma = true;
-                    }
-                    stream << constant.get().getName() << " (" << constant.get().getType() << ")";
-                }
-                stream << ".";
-                STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Program still contains these undefined constants: " + stream.str());
-            }
-            
+            storm::utility::prism::requireNoUndefinedConstants(preparedProgram.get());
             preparedProgram = preparedProgram->substituteConstants();
             
             STORM_LOG_DEBUG("Building representation of program:" << std::endl << *preparedProgram << std::endl);

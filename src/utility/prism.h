@@ -26,6 +26,8 @@ namespace storm {
             
             storm::prism::Program preprocess(storm::prism::Program const& program, std::string const& constantDefinitionString);
             
+            void requireNoUndefinedConstants(storm::prism::Program const& program);
+            
         } // namespace prism
     } // namespace utility
 } // namespace storm

@@ -112,7 +112,7 @@ namespace storm {
                     stream << constant.get().getName() << " (" << constant.get().getType() << ")";
                     strings.push_back(stream.str());
                 }
-                STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Program still contains these undefined constants: " << boost::join(strings, ", ") << ".");
+                STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Model still contains these undefined constants: " << boost::join(strings, ", ") << ".");
             }
             
             this->model = this->model->substituteConstants();
