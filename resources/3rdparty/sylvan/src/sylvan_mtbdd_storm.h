@@ -28,13 +28,22 @@ TASK_DECL_2(MTBDD, mtbdd_op_less, MTBDD*, MTBDD*)
 #define mtbdd_less_as_bdd(a, b) mtbdd_apply(a, b, TASK(mtbdd_op_less))
 
 /**
- * Binary operation Less (for MTBDDs of same type)
+ * Binary operation Less or Equal (for MTBDDs of same type)
  * Only for MTBDDs where either all leaves are Boolean, or Integer, or Double.
  * For Integer/Double MTBDD, if either operand is mtbdd_false (not defined),
  * then the result is the other operand.
  */
 TASK_DECL_2(MTBDD, mtbdd_op_less_or_equal, MTBDD*, MTBDD*)
 #define mtbdd_less_or_equal_as_bdd(a, b) mtbdd_apply(a, b, TASK(mtbdd_op_less_or_equal))
+
+/**
+ * Binary operation Greater or Equal (for MTBDDs of same type)
+ * Only for MTBDDs where either all leaves are Boolean, or Integer, or Double.
+ * For Integer/Double MTBDD, if either operand is mtbdd_false (not defined),
+ * then the result is the other operand.
+ */
+TASK_DECL_2(MTBDD, mtbdd_op_greater_or_equal, MTBDD*, MTBDD*)
+#define mtbdd_greater_or_equal_as_bdd(a, b) mtbdd_apply(a, b, TASK(mtbdd_op_greater_or_equal))
 
 /**
  * Binary operation Pow (for MTBDDs of same type)
