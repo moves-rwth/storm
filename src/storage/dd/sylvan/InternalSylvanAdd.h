@@ -248,6 +248,16 @@ namespace storm {
              */
             InternalAdd<DdType::Sylvan, ValueType> maximum(InternalAdd<DdType::Sylvan, ValueType> const& other) const;
             
+#ifdef STORM_HAVE_CARL
+			/*!
+             * Replaces the leaves in this MTBDD, using the supplied variable replacement map.
+             *
+             * @param replacementMap The variable replacement map.
+             * @return The resulting function represented as an ADD.
+             */
+            InternalAdd<DdType::Sylvan, ValueType> replaceLeaves(std::map<storm::RationalFunctionVariable, std::pair<uint32_t, std::pair<storm::RationalNumber, storm::RationalNumber>>> const& replacementMap) const;
+#endif
+			
             /*!
              * Sum-abstracts from the given cube.
              *

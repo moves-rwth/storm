@@ -14,6 +14,9 @@
 #include "src/storage/dd/cudd/CuddAddIterator.h"
 #include "src/storage/dd/sylvan/SylvanAddIterator.h"
 
+#include "storm-config.h"
+#include "src/adapters/CarlAdapter.h"
+
 namespace storm {
     namespace dd {
         template<DdType LibraryType>
@@ -243,6 +246,16 @@ namespace storm {
              */
             Add<LibraryType, ValueType> maximum(Add<LibraryType, ValueType> const& other) const;
             
+#ifdef STORM_HAVE_CARL
+			/*!
+             * Replaces the leaves in this MTBDD, using the supplied variable replacement map.
+             *
+             * @param replacementMap The variable replacement map.
+             * @return The resulting function represented as an ADD.
+             */
+            Add<LibraryType, ValueType> replaceLeaves(std::map<storm::RationalFunctionVariable, std::pair<storm::expressions::Variable, std::pair<storm::RationalNumber, storm::RationalNumber>>> const& replacementMap) const;
+#endif
+			
             /*!
              * Sum-abstracts from the given meta variables.
              *

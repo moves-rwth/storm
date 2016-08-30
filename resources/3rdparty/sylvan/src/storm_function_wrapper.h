@@ -31,7 +31,7 @@ void print_storm_rational_function_to_file(storm_rational_function_ptr a, FILE* 
 
 int storm_rational_function_is_zero(storm_rational_function_ptr a);
 
-MTBDD storm_rational_function_leaf_parameter_replacement(uint64_t node_value, uint32_t node_type, void* context);
+MTBDD storm_rational_function_leaf_parameter_replacement(MTBDD dd, storm_rational_function_ptr a, void* context);
 
 #ifdef __cplusplus
 }

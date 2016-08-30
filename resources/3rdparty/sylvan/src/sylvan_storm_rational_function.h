@@ -116,12 +116,12 @@ typedef MTBDD (*mtbddLeaveReplacementFunction)(uint64_t, uint32_t, void*);
 /**
  * Operation "replace" for one storm::RationalFunction MTBDD
  */
-TASK_DECL_2(MTBDD, sylvan_storm_rational_function_op_replace_leaves, MTBDD, void*)
+TASK_DECL_2(MTBDD, sylvan_storm_rational_function_op_replace_leaves, MTBDD, size_t)
 
 /**
  * Compute the MTBDD that arises from a after calling the mtbddLeaveReplacementFunction on each leaf.
  */
-#define sylvan_storm_rational_function_replace_leaves(a, func, ctx) mtbdd_uapply(a, TASK(sylvan_storm_rational_function_op_replace_leaves), ctx)
+#define sylvan_storm_rational_function_replace_leaves(a, ctx) mtbdd_uapply(a, TASK(sylvan_storm_rational_function_op_replace_leaves), ctx)
 
 #ifdef __cplusplus
 }

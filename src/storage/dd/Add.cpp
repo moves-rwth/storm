@@ -784,6 +784,34 @@ namespace storm {
             return internalAdd;
         }
         
+#ifdef STORM_HAVE_CARL
+		template<DdType LibraryType, typename ValueType>
+        Add<LibraryType, ValueType> Add<LibraryType, ValueType>::replaceLeaves(std::map<storm::RationalFunctionVariable, std::pair<storm::expressions::Variable, std::pair<storm::RationalNumber, storm::RationalNumber>>> const& replacementMap) const {
+			STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Not yet implemented: replaceLeaves");
+		}
+
+		template<>
+        Add<storm::dd::DdType::Sylvan, storm::RationalFunction> Add<storm::dd::DdType::Sylvan, storm::RationalFunction>::replaceLeaves(std::map<storm::RationalFunctionVariable, std::pair<storm::expressions::Variable, std::pair<storm::RationalNumber, storm::RationalNumber>>> const& replacementMap) const {
+			std::map<storm::RationalFunctionVariable, std::pair<uint32_t, std::pair<storm::RationalNumber, storm::RationalNumber>>> internalReplacementMap;
+			std::set<storm::expressions::Variable> containedMetaVariables = this->getContainedMetaVariables();
+			
+			std::map<storm::RationalFunctionVariable, std::pair<storm::expressions::Variable, std::pair<storm::RationalNumber, storm::RationalNumber>>>::const_iterator it = replacementMap.cbegin();
+			std::map<storm::RationalFunctionVariable, std::pair<storm::expressions::Variable, std::pair<storm::RationalNumber, storm::RationalNumber>>>::const_iterator end = replacementMap.cend();
+			
+			for (; it != end; ++it) {
+				DdMetaVariable<storm::dd::DdType::Sylvan> const& metaVariable = this->getDdManager().getMetaVariable(it->second.first);
+				STORM_LOG_THROW(metaVariable.getNumberOfDdVariables() == 1, storm::exceptions::InvalidArgumentException, "Cannot use MetaVariable with more then one internal DD variable.");
+				
+				auto const& ddVariable = metaVariable.getDdVariables().at(0);
+				
+				internalReplacementMap.insert(std::make_pair(it->first, std::make_pair(ddVariable.getIndex(), it->second.second)));
+				containedMetaVariables.insert(it->second.first);
+			}
+			
+			return Add<storm::dd::DdType::Sylvan, storm::RationalFunction>(this->getDdManager(), internalAdd.replaceLeaves(internalReplacementMap), containedMetaVariables);
+		}
+#endif
+		
         template class Add<storm::dd::DdType::CUDD, double>;
         template class Add<storm::dd::DdType::CUDD, uint_fast64_t>;
 

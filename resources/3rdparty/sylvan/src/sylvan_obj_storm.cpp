@@ -57,6 +57,11 @@ Mtbdd Mtbdd::AbstractPlusRF(const BddSet &variables) const {
     return sylvan_storm_rational_function_abstract_plus(mtbdd, variables.set.bdd);
 }
 
+Mtbdd Mtbdd::ReplaceLeavesRF(void* context) const {
+	LACE_ME;
+    return sylvan_storm_rational_function_replace_leaves(mtbdd, (size_t)context);
+}
+
 #endif
 
 Mtbdd
