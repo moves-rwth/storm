@@ -53,12 +53,15 @@ namespace storm {
                 }
             }
             
+            this->A.exportToDot("matrix.dot");
+            
             do {
                 // Compute tmp = A * x + b.
                 storm::dd::Add<Type, ValueType> xCopyAsColumn = xCopy.swapVariables(this->rowColumnMetaVariablePairs);
                 storm::dd::Add<Type, ValueType> tmp = this->A.multiplyMatrix(xCopyAsColumn, this->columnMetaVariables);
                 tmp += b;
-                
+                tmp.exportToDot("tmp_pre_" + std::to_string(iterations) + ".dot");
+
                 // Now abstract from player 2 and player 1 variables.
                 if (player2Goal == storm::OptimizationDirection::Maximize) {
                     storm::dd::Add<Type, ValueType> newValues = tmp.maxAbstract(this->player2Variables);
@@ -74,9 +77,11 @@ namespace storm {
                 } else {
                     tmp = (tmp + illegalPlayer2Mask);
                     storm::dd::Add<Type, ValueType> newValues = tmp.minAbstract(this->player2Variables);
+                    newValues.exportToDot("vals_iter_" + std::to_string(iterations) + ".dot");
 
                     if (generatePlayer2Strategy) {
                         player2Strategy = tmp.minAbstractRepresentative(this->player2Variables);
+                        player2Strategy.get().template toAdd<ValueType>().exportToDot("pl2_strat_iter_" + std::to_string(iterations) + ".dot");
                     }
                     
                     tmp = newValues;
@@ -103,6 +108,8 @@ namespace storm {
                     tmp = newValues;
                 }
 
+                tmp.exportToDot("pl1_vals_iter_" + std::to_string(iterations) + ".dot");
+
                 // Now check if the process already converged within our precision.
                 converged = xCopy.equalModuloPrecision(tmp, precision, relative);
                 
@@ -113,6 +120,7 @@ namespace storm {
                 
                 ++iterations;
             } while (!converged && iterations < maximalNumberOfIterations);
+            STORM_LOG_TRACE("Numerically solving the game took " << iterations << " iterations.");
             
             return xCopy;
         }

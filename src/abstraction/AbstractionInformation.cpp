@@ -283,7 +283,7 @@ namespace storm {
             std::map<storm::expressions::Expression, storm::dd::Bdd<DdType>> result;
             
             for (uint_fast64_t index = 0; index < predicates.size(); ++index) {
-                result[predicates[index]] = predicateBdds[index].first;
+                result[predicates[index]] = predicateBdds[index].first && !bottomStateBdds.first;
             }
             
             return result;

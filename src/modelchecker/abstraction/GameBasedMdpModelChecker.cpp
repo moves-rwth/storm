@@ -335,7 +335,7 @@ namespace storm {
 //            
 //            minResult.exportToDot("minresult.dot");
 //            maxResult.exportToDot("maxresult.dot");
-//            pivotState.template toAdd<ValueType>().exportToDot("pivot.dot");
+            pivotState.template toAdd<ValueType>().exportToDot("pivot.dot");
 //            pivotStateLower.exportToDot("pivot_lower.dot");
 //            pivotStateUpper.exportToDot("pivot_upper.dot");
 //            pivotStateIsMinProb0.template toAdd<ValueType>().exportToDot("pivot_is_minprob0.dot");
@@ -361,9 +361,9 @@ namespace storm {
 //            lowerChoice2.template toAdd<ValueType>().exportToDot("tmp_lower.dot");
 //            lowerChoice2 = lowerChoice2.existsAbstract(variablesToAbstract);
             
-//            lowerChoice.template toAdd<ValueType>().exportToDot("ref_lower.dot");
-//            lowerChoice1.template toAdd<ValueType>().exportToDot("ref_lower1.dot");
-//            lowerChoice2.template toAdd<ValueType>().exportToDot("ref_lower2.dot");
+            lowerChoice.template toAdd<ValueType>().exportToDot("ref_lower.dot");
+            lowerChoice1.template toAdd<ValueType>().exportToDot("ref_lower1.dot");
+            lowerChoice2.template toAdd<ValueType>().exportToDot("ref_lower2.dot");
             
             bool lowerChoicesDifferent = !lowerChoice1.exclusiveOr(lowerChoice2).isZero();
             if (lowerChoicesDifferent) {
@@ -478,6 +478,9 @@ namespace storm {
                 if (result) {
                     return result;
                 }
+                if (iterations == 18) {
+                    exit(-1);
+                }
                 prob01.max = computeProb01States(player1Direction, storm::OptimizationDirection::Maximize, game, transitionMatrixBdd, game.getStates(constraintExpression), targetStates);
                 result = checkForResultAfterQualitativeCheck<Type, ValueType>(checkTask, storm::OptimizationDirection::Maximize, game.getInitialStates(), prob01.max.first.getPlayer1States(), prob01.max.second.getPlayer1States());
                 if (result) {
@@ -529,8 +532,6 @@ namespace storm {
                         minMaybeStateResult = solveMaybeStates(player1Direction, storm::OptimizationDirection::Minimize, game, maybeMin, prob01.min.second.getPlayer1States());
                         minResult += minMaybeStateResult.values;
                         storm::dd::Add<Type, ValueType> initialStateMin = initialStatesAdd * minResult;
-                        initialStatesAdd.exportToDot("init.dot");
-                        initialStateMin.exportToDot("initmin.dot");
                         // Here we can only require a non-zero count of *at most* one, because the result may actually be 0.
                         STORM_LOG_ASSERT(initialStateMin.getNonZeroCount() <= 1, "Wrong number of results for initial states. Expected <= 1, but got " << initialStateMin.getNonZeroCount() << ".");
                         minValue = initialStateMin.getMax();
@@ -576,9 +577,34 @@ namespace storm {
                     
                     // Start by extending the quantitative strategies by the qualitative ones.
                     minMaybeStateResult.player1Strategy |= prob01.min.first.getPlayer1Strategy() || prob01.min.second.getPlayer1Strategy();
+
+                    storm::dd::Bdd<Type> tmp = (prob01.min.first.getPlayer2Strategy().existsAbstract(game.getPlayer2Variables()) && prob01.min.second.getPlayer2Strategy().existsAbstract(game.getPlayer2Variables()));
+                    STORM_LOG_ASSERT(tmp.isZero(), "wth?");
+                    tmp = prob01.min.first.getPlayer2Strategy().existsAbstract(game.getPlayer2Variables()) && minMaybeStateResult.player2Strategy.existsAbstract(game.getPlayer2Variables());
+                    if (!tmp.isZero()) {
+                        tmp = tmp && prob01.min.first.getPlayer2Strategy().exclusiveOr(minMaybeStateResult.player2Strategy).existsAbstract(game.getPlayer2Variables());
+                        (tmp && prob01.min.first.getPlayer2Strategy()).template toAdd<ValueType>().exportToDot("prob0_strat.dot");
+                        (tmp && minMaybeStateResult.player2Strategy).template toAdd<ValueType>().exportToDot("maybe_strat.dot");
+                        if (!tmp.isZero()) {
+                            storm::dd::Add<Type, ValueType> values = (tmp.template toAdd<ValueType>() * game.getTransitionMatrix() * minResult.swapVariables(game.getRowColumnMetaVariablePairs())).sumAbstract(game.getColumnVariables());
+                            tmp.template toAdd<ValueType>().exportToDot("illegal.dot");
+                            minResult.exportToDot("vals.dot");
+                        }
+                        STORM_LOG_ASSERT(tmp.isZero(), "ddduuuudde?");
+                    }
+                    STORM_LOG_ASSERT(tmp.isZero(), "wth2?");
+                    tmp = prob01.min.second.getPlayer2Strategy().existsAbstract(game.getPlayer2Variables()) && minMaybeStateResult.player2Strategy;
+                    
+                    (minMaybeStateResult.player2Strategy && (prob01.min.first.getPlayer2Strategy() || prob01.min.second.getPlayer2Strategy())).template toAdd<ValueType>().exportToDot("strat_overlap.dot");
                     minMaybeStateResult.player2Strategy |= prob01.min.first.getPlayer2Strategy() || prob01.min.second.getPlayer2Strategy();
                     maxMaybeStateResult.player1Strategy |= prob01.max.first.getPlayer1Strategy() || prob01.max.second.getPlayer1Strategy();
                     maxMaybeStateResult.player2Strategy |= prob01.max.first.getPlayer2Strategy() || prob01.max.second.getPlayer2Strategy();
+                    
+                    // Make sure that all strategies are still valid strategies.
+                    STORM_LOG_ASSERT(minMaybeStateResult.player1Strategy.template toAdd<ValueType>().sumAbstract(game.getPlayer1Variables()).getMax() <= 1, "Player 1 strategy for min is illegal.");
+                    STORM_LOG_ASSERT(maxMaybeStateResult.player1Strategy.template toAdd<ValueType>().sumAbstract(game.getPlayer1Variables()).getMax() <= 1, "Player 1 strategy for max is illegal.");
+                    STORM_LOG_ASSERT(minMaybeStateResult.player2Strategy.template toAdd<ValueType>().sumAbstract(game.getPlayer2Variables()).getMax() <= 1, "Player 2 strategy for min is illegal.");
+                    STORM_LOG_ASSERT(maxMaybeStateResult.player2Strategy.template toAdd<ValueType>().sumAbstract(game.getPlayer2Variables()).getMax() <= 1, "Player 2 strategy for max is illegal.");
                     
                     refineAfterQuantitativeCheck(abstractor, game, minResult, maxResult, prob01, std::make_pair(minMaybeStateResult.player1Strategy, minMaybeStateResult.player2Strategy), std::make_pair(maxMaybeStateResult.player1Strategy, maxMaybeStateResult.player2Strategy), transitionMatrixBdd);
                 }
