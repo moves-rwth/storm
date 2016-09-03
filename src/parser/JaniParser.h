@@ -34,7 +34,8 @@ namespace storm {
             storm::jani::Model parseModel();
             storm::jani::Automaton parseAutomaton(json const& automatonStructure);
             std::shared_ptr<storm::jani::Variable>  parseVariable(json const& variableStructure, std::string const& scopeDescription, bool prefWithScope = false);
-            storm::expressions::Expression parseExpression(json const& expressionStructure, std::string const& scopeDescription, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& localVars = {});
+            storm::expressions::Expression parseExpression(json const& expressionStructure, std::string const& scopeDescription, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& localVars = std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>>());
+            
         private:
             /**
              * Helper for parsing the actions of a model.
@@ -42,8 +43,6 @@ namespace storm {
             void parseActions(json const& actionStructure, storm::jani::Model& parentModel);
 
             std::shared_ptr<storm::jani::Composition> parseComposition(json const& compositionStructure);
-
-
 
         };
     }
