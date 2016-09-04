@@ -177,6 +177,8 @@ namespace storm {
                         return ite(leftResult <= rightResult, leftResult, rightResult);
 					case storm::expressions::BinaryNumericalFunctionExpression::OperatorType::Max:
                         return ite(leftResult >= rightResult, leftResult, rightResult);
+					case storm::expressions::BinaryNumericalFunctionExpression::OperatorType::Power:
+                        return pw(leftResult,rightResult);
                     default:
                         STORM_LOG_THROW(false, storm::exceptions::ExpressionEvaluationException, "Cannot evaluate expression: unknown numerical binary operator '" << static_cast<int>(expression.getOperatorType()) << "' in expression " << expression << ".");
                 }
@@ -208,7 +210,7 @@ namespace storm {
                 return context.bool_val(expression.getValue());
             }
             
-            boost::any Z3ExpressionAdapter::visit(storm::expressions::DoubleLiteralExpression const& expression)  {
+            boost::any Z3ExpressionAdapter::visit(storm::expressions::RationalLiteralExpression const& expression)  {
                 std::stringstream fractionStream;
                 fractionStream << expression.getValue();
                 return context.real_val(fractionStream.str().c_str());

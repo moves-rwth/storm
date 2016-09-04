@@ -148,6 +148,12 @@ namespace storm {
             }
             
             template<typename ValueType, typename RewardModelType>
+            typename std::unordered_map<std::string, RewardModelType>::iterator Model<ValueType, RewardModelType>::getUniqueRewardModel() {
+                STORM_LOG_THROW(this->getNumberOfRewardModels() == 1, storm::exceptions::IllegalFunctionCallException, "The reward model is not unique.");
+                return this->rewardModels.begin();
+            }
+            
+            template<typename ValueType, typename RewardModelType>
             uint_fast64_t Model<ValueType, RewardModelType>::getNumberOfRewardModels() const {
                 return this->rewardModels.size();
             }

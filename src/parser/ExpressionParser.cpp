@@ -3,6 +3,34 @@
 #include "src/exceptions/InvalidTypeException.h"
 #include "src/exceptions/WrongFormatException.h"
 
+#include "src/utility/constants.h"
+
+namespace boost {
+    namespace spirit {
+        namespace traits {
+            template<>
+            bool scale(int exp, storm::RationalNumber& r, storm::RationalNumber acc) {
+                if (exp >= 0) {
+                    r = acc * storm::utility::pow(storm::RationalNumber(10), static_cast<uint_fast64_t>(exp));
+                } else {
+                    r = acc / storm::utility::pow(storm::RationalNumber(10), static_cast<uint_fast64_t>(-exp));
+                }
+                return true;
+            }
+            
+            template<>
+            bool is_equal_to_one(storm::RationalNumber const& value) {
+                return storm::utility::isOne(value);
+            }
+            
+            template<>
+            storm::RationalNumber negate(bool neg, storm::RationalNumber const& number) {
+                return neg ? storm::RationalNumber(-number) : number;
+            }
+        }
+    }
+}
+
 namespace storm {
     namespace parser {
         ExpressionParser::ExpressionParser(storm::expressions::ExpressionManager const& manager, qi::symbols<char, uint_fast64_t> const& invalidIdentifiers_, bool enableErrorHandling, bool allowBacktracking) : ExpressionParser::base_type(expression), orOperator_(), andOperator_(), equalityOperator_(), relationalOperator_(), plusOperator_(), multiplicationOperator_(), infixPowerOperator_(), unaryOperator_(), floorCeilOperator_(), minMaxOperator_(), prefixPowerOperator_(), trueFalse_(manager), manager(manager.getSharedPointer()), createExpressions(false), acceptDoubleLiterals(true), identifiers_(nullptr), invalidIdentifiers_(invalidIdentifiers_) {
@@ -33,7 +61,7 @@ namespace storm {
 			identifierExpression = identifier[qi::_val = phoenix::bind(&ExpressionParser::getIdentifierExpression, phoenix::ref(*this), qi::_1, allowBacktracking, qi::_pass)];
             identifierExpression.name("identifier expression");
             
-            literalExpression = trueFalse_[qi::_val = qi::_1] | strict_double[qi::_val = phoenix::bind(&ExpressionParser::createDoubleLiteralExpression, phoenix::ref(*this), qi::_1, qi::_pass)] | qi::int_[qi::_val = phoenix::bind(&ExpressionParser::createIntegerLiteralExpression, phoenix::ref(*this), qi::_1, qi::_pass)];
+            literalExpression = trueFalse_[qi::_val = qi::_1] | rationalLiteral_[qi::_val = phoenix::bind(&ExpressionParser::createRationalLiteralExpression, phoenix::ref(*this), qi::_1, qi::_pass)] | qi::int_[qi::_val = phoenix::bind(&ExpressionParser::createIntegerLiteralExpression, phoenix::ref(*this), qi::_1, qi::_pass)];
             literalExpression.name("literal expression");
             
             atomicExpression = floorCeilExpression | prefixPowerExpression | minMaxExpression | (qi::lit("(") >> expression >> qi::lit(")")) | literalExpression | identifierExpression;
@@ -295,7 +323,7 @@ namespace storm {
             return manager->boolean(false);
         }
                 
-        storm::expressions::Expression ExpressionParser::createDoubleLiteralExpression(double value, bool& pass) const {
+        storm::expressions::Expression ExpressionParser::createRationalLiteralExpression(storm::RationalNumber const& value, bool& pass) const {
             // If we are not supposed to accept double expressions, we reject it by setting pass to false.
             if (!this->acceptDoubleLiterals) {
                 pass = false;

@@ -88,15 +88,8 @@ namespace storm {
         QualitativeCheckResult const& CheckResult::asQualitativeCheckResult() const {
             return dynamic_cast<QualitativeCheckResult const&>(*this);
         }
-        
-        QuantitativeCheckResult& CheckResult::asQuantitativeCheckResult() {
-            return dynamic_cast<QuantitativeCheckResult&>(*this);
-        }
-        
-        QuantitativeCheckResult const& CheckResult::asQuantitativeCheckResult() const {
-            return dynamic_cast<QuantitativeCheckResult const&>(*this);
-        }
-        
+
+
         template <storm::dd::DdType Type>
         SymbolicQualitativeCheckResult<Type>& CheckResult::asSymbolicQualitativeCheckResult() {
             return dynamic_cast<SymbolicQualitativeCheckResult<Type>&>(*this);

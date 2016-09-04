@@ -18,12 +18,12 @@ namespace storm {
          * An interface that represents an abstract symbolic game solver.
          */
         template<storm::dd::DdType Type, typename ValueType = double>
-        class SymbolicGameSolver : public AbstractGameSolver {
+        class SymbolicGameSolver : public AbstractGameSolver<ValueType> {
         public:
             /*!
              * Constructs a symbolic game solver with the given meta variable sets and pairs.
              *
-             * @param gameMatrix The matrix defining the coefficients of the game.
+             * @param A The matrix defining the coefficients of the game.
              * @param allRows A BDD characterizing all rows of the equation system.
              * @param illegalPlayer1Mask A BDD characterizing the illegal choices of player 1.
              * @param illegalPlayer2Mask A BDD characterizing the illegal choices of player 2.
@@ -34,12 +34,12 @@ namespace storm {
              * @param player1Variables The meta variables used to encode the player 1 choices.
              * @param player2Variables The meta variables used to encode the player 2 choices.
              */
-            SymbolicGameSolver(storm::dd::Add<Type, ValueType> const& gameMatrix, storm::dd::Bdd<Type> const& allRows, storm::dd::Bdd<Type> const& illegalPlayer1Mask, storm::dd::Bdd<Type> const& illegalPlayer2Mask, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs, std::set<storm::expressions::Variable> const& player1Variables, std::set<storm::expressions::Variable> const& player2Variables);
+            SymbolicGameSolver(storm::dd::Add<Type, ValueType> const& A, storm::dd::Bdd<Type> const& allRows, storm::dd::Bdd<Type> const& illegalPlayer1Mask, storm::dd::Bdd<Type> const& illegalPlayer2Mask, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs, std::set<storm::expressions::Variable> const& player1Variables, std::set<storm::expressions::Variable> const& player2Variables);
             
             /*!
              * Constructs a symbolic game solver with the given meta variable sets and pairs.
              *
-             * @param gameMatrix The matrix defining the coefficients of the game.
+             * @param A The matrix defining the coefficients of the game.
              * @param allRows A BDD characterizing all rows of the equation system.
              * @param illegalPlayer1Mask A BDD characterizing the illegal choices of player 1.
              * @param illegalPlayer2Mask A BDD characterizing the illegal choices of player 2.
@@ -54,7 +54,7 @@ namespace storm {
              * equation system iteratively.
              * @param relative Sets whether or not to use a relativ stopping criterion rather than an absolute one.
              */
-            SymbolicGameSolver(storm::dd::Add<Type, ValueType> const& gameMatrix, storm::dd::Bdd<Type> const& allRows, storm::dd::Bdd<Type> const& illegalPlayer1Mask, storm::dd::Bdd<Type> const& illegalPlayer2Mask, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs, std::set<storm::expressions::Variable> const& player1Variables, std::set<storm::expressions::Variable> const& player2Variables, double precision, uint_fast64_t maximalNumberOfIterations, bool relative);
+            SymbolicGameSolver(storm::dd::Add<Type, ValueType> const& A, storm::dd::Bdd<Type> const& allRows, storm::dd::Bdd<Type> const& illegalPlayer1Mask, storm::dd::Bdd<Type> const& illegalPlayer2Mask, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs, std::set<storm::expressions::Variable> const& player1Variables, std::set<storm::expressions::Variable> const& player2Variables, double precision, uint_fast64_t maximalNumberOfIterations, bool relative);
             
             /*!
              * Solves the equation system defined by the game matrix. Note that the game matrix has to be given upon

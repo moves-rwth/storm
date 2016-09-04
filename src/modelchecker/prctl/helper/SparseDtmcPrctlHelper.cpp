@@ -48,7 +48,8 @@ namespace storm {
             }
             
             template<typename ValueType, typename RewardModelType>
-            std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeUntilProbabilities(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool qualitative, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+
+            std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeUntilProbabilities(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool qualitative, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory, boost::optional<std::vector<ValueType>> resultHint) {
                 // We need to identify the states which have to be taken out of the matrix, i.e.
                 // all states that have probability 0 and 1 of satisfying the until-formula.
                 std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(backwardTransitions, phiStates, psiStates);
@@ -79,10 +80,14 @@ namespace storm {
                         // system. That is, we go from x = A*x + b to (I-A)x = b.
                         submatrix.convertToEquationSystem();
                         
-                        // Initialize the x vector with 0.5 for each element. This is the initial guess for
-                        // the iterative solvers. It should be safe as for all 'maybe' states we know that the
-                        // probability is strictly larger than 0.
+                        // Initialize the x vector with the hint (if available) or with 0.5 for each element.
+                        // This is the initial guess for the iterative solvers. It should be safe as for all
+                        // 'maybe' states we know that the probability is strictly larger than 0.
                         std::vector<ValueType> x(maybeStates.getNumberOfSetBits(), storm::utility::convertNumber<ValueType>(0.5));
+                        if(resultHint){
+                            storm::utility::vector::selectVectorValues(x, maybeStates, resultHint.get());
+                        }
+
                         
                         // Prepare the right-hand side of the equation system. For entry i this corresponds to
                         // the accumulated probability of going from state i to some 'yes' state.
@@ -156,24 +161,24 @@ namespace storm {
             }
             
             template<typename ValueType, typename RewardModelType>
-            std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeReachabilityRewards(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, RewardModelType const& rewardModel, storm::storage::BitVector const& targetStates, bool qualitative, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
-                return computeReachabilityRewards(transitionMatrix, backwardTransitions, [&] (uint_fast64_t numberOfRows, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& maybeStates) { return rewardModel.getTotalRewardVector(numberOfRows, transitionMatrix, maybeStates); }, targetStates, qualitative, linearEquationSolverFactory);
+            std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeReachabilityRewards(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, RewardModelType const& rewardModel, storm::storage::BitVector const& targetStates, bool qualitative, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory, boost::optional<std::vector<ValueType>> resultHint) {
+                return computeReachabilityRewards(transitionMatrix, backwardTransitions, [&] (uint_fast64_t numberOfRows, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& maybeStates) { return rewardModel.getTotalRewardVector(numberOfRows, transitionMatrix, maybeStates); }, targetStates, qualitative, linearEquationSolverFactory, resultHint);
             }
-            
+
             template<typename ValueType, typename RewardModelType>
-            std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeReachabilityRewards(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& totalStateRewardVector, storm::storage::BitVector const& targetStates, bool qualitative, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+            std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeReachabilityRewards(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& totalStateRewardVector, storm::storage::BitVector const& targetStates, bool qualitative, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory, boost::optional<std::vector<ValueType>> resultHint) {
+
                 return computeReachabilityRewards(transitionMatrix, backwardTransitions,
                                                   [&] (uint_fast64_t numberOfRows, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& maybeStates) {
                                                       std::vector<ValueType> result(numberOfRows);
                                                       storm::utility::vector::selectVectorValues(result, maybeStates, totalStateRewardVector);
                                                       return result;
                                                   },
-                                                  targetStates, qualitative, linearEquationSolverFactory);
+                                                  targetStates, qualitative, linearEquationSolverFactory, resultHint);
             }
             
             template<typename ValueType, typename RewardModelType>
-            std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeReachabilityRewards(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::function<std::vector<ValueType>(uint_fast64_t, storm::storage::SparseMatrix<ValueType> const&, storm::storage::BitVector const&)> const& totalStateRewardVectorGetter, storm::storage::BitVector const& targetStates, bool qualitative, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
-                                
+            std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeReachabilityRewards(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::function<std::vector<ValueType>(uint_fast64_t, storm::storage::SparseMatrix<ValueType> const&, storm::storage::BitVector const&)> const& totalStateRewardVectorGetter, storm::storage::BitVector const& targetStates, bool qualitative, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory, boost::optional<std::vector<ValueType>> resultHint) {
                 // Determine which states have a reward of infinity by definition.
                 storm::storage::BitVector trueStates(transitionMatrix.getRowCount(), true);
                 storm::storage::BitVector infinityStates = storm::utility::graph::performProb1(backwardTransitions, trueStates, targetStates);
@@ -201,9 +206,12 @@ namespace storm {
                         // system. That is, we go from x = A*x + b to (I-A)x = b.
                         submatrix.convertToEquationSystem();
                         
-                        // Initialize the x vector with 1 for each element. This is the initial guess for
-                        // the iterative solvers.
+                        // Initialize the x vector with the hint (if available) or with 1 for each element.
+                        // This is the initial guess for the iterative solvers.
                         std::vector<ValueType> x(submatrix.getColumnCount(), storm::utility::one<ValueType>());
+                        if(resultHint){
+                            storm::utility::vector::selectVectorValues(x, maybeStates, resultHint.get());
+                        }
                         
                         // Prepare the right-hand side of the equation system.
                         std::vector<ValueType> b = totalStateRewardVectorGetter(submatrix.getRowCount(), transitionMatrix, maybeStates);
@@ -230,7 +238,7 @@ namespace storm {
             
             template<typename ValueType, typename RewardModelType>
             typename SparseDtmcPrctlHelper<ValueType, RewardModelType>::BaierTransformedModel SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeBaierTransformation(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& targetStates, storm::storage::BitVector const& conditionStates, boost::optional<std::vector<ValueType>> const& stateRewards, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
-                
+
                 BaierTransformedModel result;
                 
                 // Start by computing all 'before' states, i.e. the states for which the conditional probability is defined.

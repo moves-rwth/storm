@@ -85,7 +85,7 @@ namespace storm {
             return LinearityStatus::LinearWithoutVariables;
         }
         
-        boost::any LinearityCheckVisitor::visit(DoubleLiteralExpression const& expression) {
+        boost::any LinearityCheckVisitor::visit(RationalLiteralExpression const& expression) {
             return LinearityStatus::LinearWithoutVariables;
         }
     }

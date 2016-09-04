@@ -22,24 +22,24 @@
 
 namespace storm {
     namespace modelchecker {
-        template<storm::dd::DdType DdType, typename ValueType>
-        SymbolicDtmcPrctlModelChecker<DdType, ValueType>::SymbolicDtmcPrctlModelChecker(storm::models::symbolic::Dtmc<DdType, ValueType> const& model, std::unique_ptr<storm::utility::solver::SymbolicLinearEquationSolverFactory<DdType, ValueType>>&& linearEquationSolverFactory) : SymbolicPropositionalModelChecker<DdType, ValueType>(model), linearEquationSolverFactory(std::move(linearEquationSolverFactory)) {
+        template<typename ModelType>
+        SymbolicDtmcPrctlModelChecker<ModelType>::SymbolicDtmcPrctlModelChecker(ModelType const& model, std::unique_ptr<storm::utility::solver::SymbolicLinearEquationSolverFactory<DdType, ValueType>>&& linearEquationSolverFactory) : SymbolicPropositionalModelChecker<ModelType>(model), linearEquationSolverFactory(std::move(linearEquationSolverFactory)) {
             // Intentionally left empty.
         }
         
-        template<storm::dd::DdType DdType, typename ValueType>
-        SymbolicDtmcPrctlModelChecker<DdType, ValueType>::SymbolicDtmcPrctlModelChecker(storm::models::symbolic::Dtmc<DdType, ValueType> const& model) : SymbolicPropositionalModelChecker<DdType, ValueType>(model), linearEquationSolverFactory(new storm::utility::solver::SymbolicLinearEquationSolverFactory<DdType, ValueType>()) {
+        template<typename ModelType>
+        SymbolicDtmcPrctlModelChecker<ModelType>::SymbolicDtmcPrctlModelChecker(ModelType const& model) : SymbolicPropositionalModelChecker<ModelType>(model), linearEquationSolverFactory(new storm::utility::solver::SymbolicLinearEquationSolverFactory<DdType, ValueType>()) {
             // Intentionally left empty.
         }
         
-        template<storm::dd::DdType DdType, typename ValueType>
-        bool SymbolicDtmcPrctlModelChecker<DdType, ValueType>::canHandle(CheckTask<storm::logic::Formula> const& checkTask) const {
+        template<typename ModelType>
+        bool SymbolicDtmcPrctlModelChecker<ModelType>::canHandle(CheckTask<storm::logic::Formula, ValueType> const& checkTask) const {
             storm::logic::Formula const& formula = checkTask.getFormula();
             return formula.isInFragment(storm::logic::prctl().setLongRunAverageRewardFormulasAllowed(false));
         }
         
-        template<storm::dd::DdType DdType, typename ValueType>
-        std::unique_ptr<CheckResult> SymbolicDtmcPrctlModelChecker<DdType, ValueType>::computeUntilProbabilities(CheckTask<storm::logic::UntilFormula> const& checkTask) {
+        template<typename ModelType>
+        std::unique_ptr<CheckResult> SymbolicDtmcPrctlModelChecker<ModelType>::computeUntilProbabilities(CheckTask<storm::logic::UntilFormula, ValueType> const& checkTask) {
             storm::logic::UntilFormula const& pathFormula = checkTask.getFormula();
             std::unique_ptr<CheckResult> leftResultPointer = this->check(pathFormula.getLeftSubformula());
             std::unique_ptr<CheckResult> rightResultPointer = this->check(pathFormula.getRightSubformula());
@@ -49,8 +49,8 @@ namespace storm {
             return std::unique_ptr<SymbolicQuantitativeCheckResult<DdType>>(new SymbolicQuantitativeCheckResult<DdType>(this->getModel().getReachableStates(), numericResult));
         }
         
-        template<storm::dd::DdType DdType, typename ValueType>
-        std::unique_ptr<CheckResult> SymbolicDtmcPrctlModelChecker<DdType, ValueType>::computeGloballyProbabilities(CheckTask<storm::logic::GloballyFormula> const& checkTask) {
+        template<typename ModelType>
+        std::unique_ptr<CheckResult> SymbolicDtmcPrctlModelChecker<ModelType>::computeGloballyProbabilities(CheckTask<storm::logic::GloballyFormula, ValueType> const& checkTask) {
             storm::logic::GloballyFormula const& pathFormula = checkTask.getFormula();
             std::unique_ptr<CheckResult> subResultPointer = this->check(pathFormula.getSubformula());
             SymbolicQualitativeCheckResult<DdType> const& subResult = subResultPointer->asSymbolicQualitativeCheckResult<DdType>();
@@ -58,8 +58,8 @@ namespace storm {
             return std::unique_ptr<SymbolicQuantitativeCheckResult<DdType>>(new SymbolicQuantitativeCheckResult<DdType>(this->getModel().getReachableStates(), numericResult));
         }
         
-        template<storm::dd::DdType DdType, typename ValueType>
-        std::unique_ptr<CheckResult> SymbolicDtmcPrctlModelChecker<DdType, ValueType>::computeNextProbabilities(CheckTask<storm::logic::NextFormula> const& checkTask) {
+        template<typename ModelType>
+        std::unique_ptr<CheckResult> SymbolicDtmcPrctlModelChecker<ModelType>::computeNextProbabilities(CheckTask<storm::logic::NextFormula, ValueType> const& checkTask) {
             storm::logic::NextFormula const& pathFormula = checkTask.getFormula();
             std::unique_ptr<CheckResult> subResultPointer = this->check(pathFormula.getSubformula());
             SymbolicQualitativeCheckResult<DdType> const& subResult = subResultPointer->asSymbolicQualitativeCheckResult<DdType>();
@@ -67,8 +67,8 @@ namespace storm {
             return std::unique_ptr<SymbolicQuantitativeCheckResult<DdType>>(new SymbolicQuantitativeCheckResult<DdType>(this->getModel().getReachableStates(), numericResult));
         }
                 
-        template<storm::dd::DdType DdType, typename ValueType>
-        std::unique_ptr<CheckResult> SymbolicDtmcPrctlModelChecker<DdType, ValueType>::computeBoundedUntilProbabilities(CheckTask<storm::logic::BoundedUntilFormula> const& checkTask) {
+        template<typename ModelType>
+        std::unique_ptr<CheckResult> SymbolicDtmcPrctlModelChecker<ModelType>::computeBoundedUntilProbabilities(CheckTask<storm::logic::BoundedUntilFormula, ValueType> const& checkTask) {
             storm::logic::BoundedUntilFormula const& pathFormula = checkTask.getFormula();
             STORM_LOG_THROW(pathFormula.hasDiscreteTimeBound(), storm::exceptions::InvalidPropertyException, "Formula needs to have a discrete time bound.");
             std::unique_ptr<CheckResult> leftResultPointer = this->check(pathFormula.getLeftSubformula());
@@ -79,37 +79,33 @@ namespace storm {
             return std::unique_ptr<SymbolicQuantitativeCheckResult<DdType>>(new SymbolicQuantitativeCheckResult<DdType>(this->getModel().getReachableStates(), numericResult));
         }
         
-        template<storm::dd::DdType DdType, typename ValueType>
-        std::unique_ptr<CheckResult> SymbolicDtmcPrctlModelChecker<DdType, ValueType>::computeCumulativeRewards(storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::CumulativeRewardFormula> const& checkTask) {
+        template<typename ModelType>
+        std::unique_ptr<CheckResult> SymbolicDtmcPrctlModelChecker<ModelType>::computeCumulativeRewards(storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::CumulativeRewardFormula, ValueType> const& checkTask) {
             storm::logic::CumulativeRewardFormula const& rewardPathFormula = checkTask.getFormula();
             STORM_LOG_THROW(rewardPathFormula.hasDiscreteTimeBound(), storm::exceptions::InvalidPropertyException, "Formula needs to have a discrete time bound.");
             storm::dd::Add<DdType> numericResult = storm::modelchecker::helper::SymbolicDtmcPrctlHelper<DdType, ValueType>::computeCumulativeRewards(this->getModel(), this->getModel().getTransitionMatrix(), checkTask.isRewardModelSet() ? this->getModel().getRewardModel(checkTask.getRewardModel()) : this->getModel().getRewardModel(""), rewardPathFormula.getDiscreteTimeBound(), *this->linearEquationSolverFactory);
             return std::unique_ptr<SymbolicQuantitativeCheckResult<DdType>>(new SymbolicQuantitativeCheckResult<DdType>(this->getModel().getReachableStates(), numericResult));
         }
         
-        template<storm::dd::DdType DdType, typename ValueType>
-        std::unique_ptr<CheckResult> SymbolicDtmcPrctlModelChecker<DdType, ValueType>::computeInstantaneousRewards(storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::InstantaneousRewardFormula> const& checkTask) {
+        template<typename ModelType>
+        std::unique_ptr<CheckResult> SymbolicDtmcPrctlModelChecker<ModelType>::computeInstantaneousRewards(storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::InstantaneousRewardFormula, ValueType> const& checkTask) {
             storm::logic::InstantaneousRewardFormula const& rewardPathFormula = checkTask.getFormula();
             STORM_LOG_THROW(rewardPathFormula.hasDiscreteTimeBound(), storm::exceptions::InvalidPropertyException, "Formula needs to have a discrete time bound.");
             storm::dd::Add<DdType> numericResult = storm::modelchecker::helper::SymbolicDtmcPrctlHelper<DdType, ValueType>::computeInstantaneousRewards(this->getModel(), this->getModel().getTransitionMatrix(), checkTask.isRewardModelSet() ? this->getModel().getRewardModel(checkTask.getRewardModel()) : this->getModel().getRewardModel(""), rewardPathFormula.getDiscreteTimeBound(), *this->linearEquationSolverFactory);
             return std::unique_ptr<SymbolicQuantitativeCheckResult<DdType>>(new SymbolicQuantitativeCheckResult<DdType>(this->getModel().getReachableStates(), numericResult));
         }
         
-        template<storm::dd::DdType DdType, typename ValueType>
-        std::unique_ptr<CheckResult> SymbolicDtmcPrctlModelChecker<DdType, ValueType>::computeReachabilityRewards(storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::EventuallyFormula> const& checkTask) {
+        template<typename ModelType>
+        std::unique_ptr<CheckResult> SymbolicDtmcPrctlModelChecker<ModelType>::computeReachabilityRewards(storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) {
             storm::logic::EventuallyFormula const& eventuallyFormula = checkTask.getFormula();
             std::unique_ptr<CheckResult> subResultPointer = this->check(eventuallyFormula.getSubformula());
             SymbolicQualitativeCheckResult<DdType> const& subResult = subResultPointer->asSymbolicQualitativeCheckResult<DdType>();
             storm::dd::Add<DdType> numericResult = storm::modelchecker::helper::SymbolicDtmcPrctlHelper<DdType, ValueType>::computeReachabilityRewards(this->getModel(), this->getModel().getTransitionMatrix(), checkTask.isRewardModelSet() ? this->getModel().getRewardModel(checkTask.getRewardModel()) : this->getModel().getRewardModel(""), subResult.getTruthValuesVector(), checkTask.isQualitativeSet(), *this->linearEquationSolverFactory);
             return std::unique_ptr<SymbolicQuantitativeCheckResult<DdType>>(new SymbolicQuantitativeCheckResult<DdType>(this->getModel().getReachableStates(), numericResult));
         }
-        
-        template<storm::dd::DdType DdType, typename ValueType>
-        storm::models::symbolic::Dtmc<DdType, ValueType> const& SymbolicDtmcPrctlModelChecker<DdType, ValueType>::getModel() const {
-            return this->template getModelAs<storm::models::symbolic::Dtmc<DdType, ValueType>>();
-        }
-        
-        template class SymbolicDtmcPrctlModelChecker<storm::dd::DdType::CUDD, double>;
-        template class SymbolicDtmcPrctlModelChecker<storm::dd::DdType::Sylvan, double>;
+
+
+        template class SymbolicDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD, double>>;
+        template class SymbolicDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, double>>;
     }
 }

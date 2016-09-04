@@ -25,7 +25,7 @@ namespace storm {
             virtual boost::any visit(UnaryNumericalFunctionExpression const& expression) override;
             virtual boost::any visit(BooleanLiteralExpression const& expression) override;
             virtual boost::any visit(IntegerLiteralExpression const& expression) override;
-            virtual boost::any visit(DoubleLiteralExpression const& expression) override;
+            virtual boost::any visit(RationalLiteralExpression const& expression) override;
         };
     }
 }

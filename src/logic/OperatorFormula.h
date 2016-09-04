@@ -7,13 +7,17 @@
 #include "src/logic/Bound.h"
 #include "src/solver/OptimizationDirection.h"
 
+#include "src/adapters/CarlAdapter.h"
+#include "src/utility/constants.h"
+
 namespace storm {
-    namespace logic {        
+    namespace logic {
+
         struct OperatorInformation {
-            OperatorInformation(boost::optional<storm::solver::OptimizationDirection> const& optimizationDirection = boost::none, boost::optional<Bound<double>> const& bound = boost::none);
+            OperatorInformation(boost::optional<storm::solver::OptimizationDirection> const& optimizationDirection = boost::none, boost::optional<Bound<RationalNumber>> const& bound = boost::none);
 
             boost::optional<storm::solver::OptimizationDirection> optimalityType;
-            boost::optional<Bound<double>> bound;
+            boost::optional<Bound<RationalNumber>> bound;
         };
         
         class OperatorFormula : public UnaryStateFormula {
@@ -28,10 +32,14 @@ namespace storm {
             bool hasBound() const;
             ComparisonType getComparisonType() const;
             void setComparisonType(ComparisonType newComparisonType);
-            double getThreshold() const;
-            void setThreshold(double newThreshold);
-            Bound<double> const& getBound() const;
-            void setBound(Bound<double> const& newBound);
+            RationalNumber const& getThreshold() const;
+            template<typename ValueType=RationalNumber>
+            ValueType getThresholdAs() const {
+                return storm::utility::convertNumber<ValueType>(this->getThreshold());
+            }
+            void setThreshold(RationalNumber const& newThreshold);
+            Bound<RationalNumber> const& getBound() const;
+            void setBound(Bound<RationalNumber> const& newBound);
             
             // Optimality-type-related accessors.
             bool hasOptimalityType() const;

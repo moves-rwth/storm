@@ -74,7 +74,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        std::unique_ptr<storm::storage::TotalScheduler> MinMaxLinearEquationSolver<ValueType>::getScheduler() {
+        std::unique_ptr<storm::storage::TotalScheduler> MinMaxLinearEquationSolver<ValueType>:: getScheduler() {
             STORM_LOG_THROW(scheduler, storm::exceptions::IllegalFunctionCallException, "Cannot retrieve scheduler, because none was generated.");
             return std::move(scheduler.get());
         }

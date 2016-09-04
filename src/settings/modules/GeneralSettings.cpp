@@ -19,6 +19,8 @@ namespace storm {
             const std::string GeneralSettings::moduleName = "general";
             const std::string GeneralSettings::helpOptionName = "help";
             const std::string GeneralSettings::helpOptionShortName = "h";
+            const std::string GeneralSettings::printTimingsOptionName = "printTime";
+            const std::string GeneralSettings::printTimingsOptionShortName = "pt";
             const std::string GeneralSettings::versionOptionName = "version";
             const std::string GeneralSettings::verboseOptionName = "verbose";
             const std::string GeneralSettings::verboseOptionShortName = "v";
@@ -31,12 +33,15 @@ namespace storm {
             const std::string GeneralSettings::bisimulationOptionName = "bisimulation";
             const std::string GeneralSettings::bisimulationOptionShortName = "bisim";
             const std::string GeneralSettings::parametricOptionName = "parametric";
+            const std::string GeneralSettings::parametricRegionOptionName = "parametricRegion";
             const std::string GeneralSettings::exactOptionName = "exact";
+
 
             GeneralSettings::GeneralSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, helpOptionName, false, "Shows all available options, arguments and descriptions.").setShortName(helpOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("hint", "A regular expression to show help for all matching entities or 'all' for the complete help.").setDefaultValueString("all").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, versionOptionName, false, "Prints the version information.").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, printTimingsOptionName, false, "Prints the timing at the end").setShortName(printTimingsOptionShortName).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, verboseOptionName, false, "Enables more verbose output.").setShortName(verboseOptionShortName).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, precisionOptionName, false, "The internally used precision.").setShortName(precisionOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to use.").setDefaultValueDouble(1e-06).addValidationFunctionDouble(storm::settings::ArgumentValidators::doubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
@@ -45,6 +50,7 @@ namespace storm {
 
                 this->addOption(storm::settings::OptionBuilder(moduleName, propertyOptionName, false, "Specifies the formulas to be checked on the model.").setShortName(propertyOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("formula or filename", "The formula or the file containing the formulas.").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, parametricRegionOptionName, false, "Sets whether to use the parametric Region engine.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, bisimulationOptionName, false, "Sets whether to perform bisimulation minimization.").setShortName(bisimulationOptionShortName).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, parametricOptionName, false, "Sets whether to enable parametric model checking.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, exactOptionName, false, "Sets whether to enable exact model checking.").build());
@@ -92,6 +98,14 @@ namespace storm {
             
             bool GeneralSettings::isParametricSet() const {
                 return this->getOption(parametricOptionName).getHasOptionBeenSet();
+            }
+
+            bool GeneralSettings::isParametricRegionSet() const {
+                return this->getOption(parametricRegionOptionName).getHasOptionBeenSet();
+            }
+                                
+            bool GeneralSettings::isPrintTimingsSet() const {
+                return this->getOption(printTimingsOptionName).getHasOptionBeenSet();
             }
 
             bool GeneralSettings::isExactSet() const {

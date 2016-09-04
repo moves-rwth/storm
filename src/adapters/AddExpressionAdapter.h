@@ -31,7 +31,7 @@ namespace storm {
             virtual boost::any visit(storm::expressions::UnaryNumericalFunctionExpression const& expression) override;
             virtual boost::any visit(storm::expressions::BooleanLiteralExpression const& expression) override;
             virtual boost::any visit(storm::expressions::IntegerLiteralExpression const& expression) override;
-            virtual boost::any visit(storm::expressions::DoubleLiteralExpression const& expression) override;
+            virtual boost::any visit(storm::expressions::RationalLiteralExpression const& expression) override;
 
         private:
             // The manager responsible for the DDs built by this adapter.

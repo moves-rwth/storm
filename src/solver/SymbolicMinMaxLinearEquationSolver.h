@@ -88,7 +88,8 @@ namespace storm {
              * @return The solution of the equation system.
              */
             virtual storm::dd::Add<DdType, ValueType> multiply(bool minimize, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const* b = nullptr, uint_fast64_t n = 1) const;
-            
+
+            virtual ValueType const& getPrecision() const;// override;
         protected:
             // The matrix defining the coefficients of the linear equation system.
             storm::dd::Add<DdType, ValueType> A;
@@ -111,7 +112,7 @@ namespace storm {
             // The pairs of meta variables used for renaming.
             std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> rowColumnMetaVariablePairs;
             
-            // The precision to achive.
+            // The precision to achieve.
             double precision;
             
             // The maximal number of iterations to perform.

@@ -64,26 +64,43 @@ namespace storm {
         
         template<typename ValueType>
         void verifySymbolicModelWithExplorationEngine(storm::prism::Program const& program, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool onlyInitialStatesRelevant = false) {
-            
-            for (auto const& formula : formulas) {
-                STORM_LOG_THROW(program.getModelType() == storm::prism::Program::ModelType::DTMC || program.getModelType() == storm::prism::Program::ModelType::MDP, storm::exceptions::InvalidSettingsException, "Currently exploration-based verification is only available for DTMCs and MDPs.");
-                std::cout << std::endl << "Model checking property: " << *formula << " ...";
-                
-                storm::modelchecker::SparseExplorationModelChecker<ValueType> checker(program);
+            STORM_LOG_THROW(program.getModelType() == storm::prism::Program::ModelType::DTMC || program.getModelType() == storm::prism::Program::ModelType::MDP, storm::exceptions::InvalidSettingsException, "Currently exploration-based verification is only available for DTMCs and MDPs.");
 
-                storm::modelchecker::CheckTask<storm::logic::Formula> task(*formula, onlyInitialStatesRelevant);
+            for (auto const& formula : formulas) {
+                std::cout << std::endl << "Model checking property: " << *formula << " ...";
+                bool supportFormula;
                 std::unique_ptr<storm::modelchecker::CheckResult> result;
-                if (checker.canHandle(task)) {
-                    result = checker.check(task);
-                    if (result) {
-                        std::cout << " done." << std::endl;
-                        std::cout << "Result (initial states): ";
-                        std::cout << *result << std::endl;
-                    } else {
-                        std::cout << " skipped, because the modelling formalism is currently unsupported." << std::endl;
+
+                if(program.getModelType() == storm::prism::Program::ModelType::DTMC) {
+                    storm::modelchecker::SparseExplorationModelChecker<storm::models::sparse::Dtmc<ValueType>> checker(program);
+                    storm::modelchecker::CheckTask<storm::logic::Formula> task(*formula, onlyInitialStatesRelevant);
+
+                    supportFormula = checker.canHandle(task);
+                    if (supportFormula) {
+                        result = checker.check(task);
+                    }
+                } else if(program.getModelType() == storm::prism::Program::ModelType::MDP) {
+                    storm::modelchecker::SparseExplorationModelChecker<storm::models::sparse::Mdp<ValueType>> checker(program);
+                    storm::modelchecker::CheckTask<storm::logic::Formula> task(*formula, onlyInitialStatesRelevant);
+
+                    supportFormula = checker.canHandle(task);
+                    if (supportFormula) {
+                        result = checker.check(task);
                     }
                 } else {
+                    // Should be catched before.
+                    assert(false);
+                }
+                if(!supportFormula) {
                     std::cout << " skipped, because the formula cannot be handled by the selected engine/method." << std::endl;
+                }
+
+                if (result) {
+                    std::cout << " done." << std::endl;
+                    std::cout << "Result (initial states): ";
+                    std::cout << *result << std::endl;
+                } else {
+                    std::cout << " skipped, because the modelling formalism is currently unsupported." << std::endl;
                 }
             }
         }

@@ -232,7 +232,7 @@ namespace storm {
             // constants' variables is empty (except for the update probabilities).
             
             // Start by checking the defining expressions of all defined constants. If it contains a currently undefined
-            //constant, we need to mark the target constant as undefined as well.
+            // constant, we need to mark the target constant as undefined as well.
             for (auto const& constant : this->getConstants()) {
                 if (constant.isDefined()) {
                     if (constant.getExpression().containsVariable(undefinedConstantVariables)) {
@@ -268,7 +268,9 @@ namespace storm {
             
             // Proceed by checking each of the modules.
             for (auto const& module : this->getModules()) {
-                module.containsVariablesOnlyInUpdateProbabilities(undefinedConstantVariables);
+                if (!module.containsVariablesOnlyInUpdateProbabilities(undefinedConstantVariables)) {
+                    return false;
+                }
             }
             
             // Check the reward models.
@@ -727,7 +729,7 @@ namespace storm {
         }
         
         Program Program::substituteConstants() const {
-            // We start by creating the appropriate substitution
+            // We start by creating the appropriate substitution.
             std::map<storm::expressions::Variable, storm::expressions::Expression> constantSubstitution;
             std::vector<Constant> newConstants(this->getConstants());
             for (uint_fast64_t constantIndex = 0; constantIndex < newConstants.size(); ++constantIndex) {
@@ -1163,17 +1165,28 @@ namespace storm {
         }
         
         Program Program::simplify() {
+            // Start by substituting the constants, because this will potentially erase some commands or even actions.
+            Program substitutedProgram = this->substituteConstants();
+            
+            // As we possibly delete some commands and some actions might be dropped from modules altogether, we need to
+            // maintain a list of actions that we need to remove in other modules. For example, if module A loses all [a]
+            // commands, we need to delete all [a] commands from all other modules as well. If we do not do that, we will
+            // remove the forced synchronization that was there before.
+            std::set<uint_fast64_t> actionIndicesToDelete;
+            
             std::vector<Module> newModules;
-            std::vector<Constant> newConstants = this->getConstants();
-            for (auto const& module : this->getModules()) {
-                // Remove identity assignments from the updates
+            std::vector<Constant> newConstants = substitutedProgram.getConstants();
+            for (auto const& module : substitutedProgram.getModules()) {
+                
+                // Discard all commands with a guard equivalent to false and remove identity assignments from the updates.
                 std::vector<Command> newCommands;
                 for (auto const& command : module.getCommands()) {
-                    newCommands.emplace_back(command.removeIdentityAssignmentsFromUpdates());
+                    if (!command.getGuardExpression().isFalse()) {
+                        newCommands.emplace_back(command.removeIdentityAssignmentsFromUpdates());
+                    }
                 }
                 
-                // Substitute Variables by Global constants if possible.
-                
+                // Substitute variables by global constants if possible.
                 std::map<storm::expressions::Variable, storm::expressions::Expression> booleanVars;
                 std::map<storm::expressions::Variable, storm::expressions::Expression> integerVars;
                 for (auto const& variable : module.getBooleanVariables()) {
@@ -1183,54 +1196,84 @@ namespace storm {
                     integerVars.emplace(variable.getExpressionVariable(), variable.getInitialValueExpression());
                 }
                 
+                // Collect all variables that are being written. These variables cannot be turned to constants.
                 for (auto const& command : newCommands) {
                     // Check all updates.
                     for (auto const& update : command.getUpdates()) {
                         // Check all assignments.
                         for (auto const& assignment : update.getAssignments()) {
-                            auto bit = booleanVars.find(assignment.getVariable());
-                            if(bit != booleanVars.end()) {
-                                booleanVars.erase(bit);
+                            if (assignment.getVariable().getType().isBooleanType()) {
+                                auto it = booleanVars.find(assignment.getVariable());
+                                if (it != booleanVars.end()) {
+                                    booleanVars.erase(it);
+                                }
                             } else {
-                                auto iit = integerVars.find(assignment.getVariable());
-                                if(iit != integerVars.end()) {
-                                    integerVars.erase(iit);
+                                auto it = integerVars.find(assignment.getVariable());
+                                if (it != integerVars.end()) {
+                                    integerVars.erase(it);
                                 }
                             }
                         }
                     }
                 }
                 
-                std::vector<storm::prism::BooleanVariable> newBVars;
-                for(auto const& variable : module.getBooleanVariables()) {
-                    if(booleanVars.count(variable.getExpressionVariable()) == 0) {
-                        newBVars.push_back(variable);
+                std::vector<storm::prism::BooleanVariable> newBooleanVars;
+                for (auto const& variable : module.getBooleanVariables()) {
+                    if (booleanVars.find(variable.getExpressionVariable()) == booleanVars.end()) {
+                        newBooleanVars.push_back(variable);
                     }
                 }
-                std::vector<storm::prism::IntegerVariable> newIVars;
-                for(auto const& variable : module.getIntegerVariables()) {
-                    if(integerVars.count(variable.getExpressionVariable()) == 0) {
-                        newIVars.push_back(variable);
+                std::vector<storm::prism::IntegerVariable> newIntegerVars;
+                for (auto const& variable : module.getIntegerVariables()) {
+                    if (integerVars.find(variable.getExpressionVariable()) == integerVars.end()) {
+                        newIntegerVars.push_back(variable);
                     }
                 }
                 
-                newModules.emplace_back(module.getName(), newBVars, newIVars, newCommands);
+                newModules.emplace_back(module.getName(), newBooleanVars, newIntegerVars, newCommands);
                 
-                for(auto const& entry : booleanVars) {
+                // Determine the set of action indices that have been deleted entirely.
+                std::set_difference(module.getSynchronizingActionIndices().begin(), module.getSynchronizingActionIndices().end(), newModules.back().getSynchronizingActionIndices().begin(), newModules.back().getSynchronizingActionIndices().end(), std::inserter(actionIndicesToDelete, actionIndicesToDelete.begin()));
+                
+                for (auto const& entry : booleanVars) {
                     newConstants.emplace_back(entry.first, entry.second);
                 }
                 
-                for(auto const& entry : integerVars) {
+                for (auto const& entry : integerVars) {
                     newConstants.emplace_back(entry.first, entry.second);
                 }
             }
             
-            return replaceModulesAndConstantsInProgram(newModules, newConstants).substituteConstants();
+            // If we have to delete whole actions, do so now.
+            std::map<std::string, uint_fast64_t> newActionToIndexMap;
+            std::vector<RewardModel> newRewardModels;
+            if (!actionIndicesToDelete.empty()) {
+                boost::container::flat_set<uint_fast64_t> actionsToKeep;
+                std::set_difference(this->getSynchronizingActionIndices().begin(), this->getSynchronizingActionIndices().end(), actionIndicesToDelete.begin(), actionIndicesToDelete.end(), std::inserter(actionsToKeep, actionsToKeep.begin()));
+                
+                // Insert the silent action as this is not contained in the synchronizing action indices.
+                actionsToKeep.insert(0);
+                
+                std::vector<Module> cleanedModules;
+                cleanedModules.reserve(newModules.size());
+                for (auto const& module : newModules) {
+                    cleanedModules.emplace_back(module.restrictCommands(actionsToKeep));
+                }
+                newModules = std::move(cleanedModules);
+                
+                newRewardModels.reserve(substitutedProgram.getNumberOfRewardModels());
+                for (auto const& rewardModel : substitutedProgram.getRewardModels()) {
+                    newRewardModels.emplace_back(rewardModel.restrictActionRelatedRewards(actionsToKeep));
+                }
+                
+                for (auto const& entry : this->getActionNameToIndexMapping()) {
+                    if (actionsToKeep.find(entry.second) != actionsToKeep.end()) {
+                        newActionToIndexMap.emplace(entry.first, entry.second);
+                    }
+                }
+            }
             
-        }
-        
-        Program Program::replaceModulesAndConstantsInProgram(std::vector<Module> const& newModules, std::vector<Constant> const& newConstants) {
-            return Program(this->manager, modelType, newConstants, getGlobalBooleanVariables(), getGlobalIntegerVariables(), getFormulas(), newModules, getActionNameToIndexMapping(), getRewardModels(), getLabels(), getInitialConstruct(), this->getOptionalSystemCompositionConstruct());
+            return Program(this->manager, modelType, newConstants, getGlobalBooleanVariables(), getGlobalIntegerVariables(), getFormulas(), newModules, actionIndicesToDelete.empty() ? getActionNameToIndexMapping() : newActionToIndexMap, actionIndicesToDelete.empty() ? this->getRewardModels() : newRewardModels, getLabels(), getInitialConstruct(), this->getOptionalSystemCompositionConstruct());
         }
         
         Program Program::flattenModules(std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory) const {

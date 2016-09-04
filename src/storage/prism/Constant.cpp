@@ -42,7 +42,12 @@ namespace storm {
         }
         
         std::ostream& operator<<(std::ostream& stream, Constant const& constant) {
-            stream << "const " << constant.getExpressionVariable().getType() << " ";
+            stream << "const ";
+            if (constant.getType().isRationalType()) {
+                stream << "double" << " ";
+            } else {
+                stream << constant.getType() << " ";
+            }
             stream << constant.getName();
             if (constant.isDefined()) {
                 stream << " = " << constant.getExpression();

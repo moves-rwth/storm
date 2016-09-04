@@ -9,10 +9,12 @@ include_directories("${PROJECT_SOURCE_DIR}/src")
 
 
 # Add the resources/cmake folder to Module Search Path for FindTBB.cmake
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/resources/cmake/")
-
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/resources/cmake/find_modules" "${PROJECT_SOURCE_DIR}/resources/cmake/macros")
 
 include(ExternalProject)
+
+
+include(RegisterSourceGroup)
 #############################################################
 ##
 ##	CMake options of StoRM

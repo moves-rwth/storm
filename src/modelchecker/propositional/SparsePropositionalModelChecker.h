@@ -8,7 +8,7 @@ namespace storm {
     namespace modelchecker {
         
         template<typename SparseModelType>
-        class SparsePropositionalModelChecker : public AbstractModelChecker {
+        class SparsePropositionalModelChecker : public AbstractModelChecker<SparseModelType> {
         public:
             typedef typename SparseModelType::ValueType ValueType;
             typedef typename SparseModelType::RewardModelType RewardModelType;
@@ -16,9 +16,9 @@ namespace storm {
             explicit SparsePropositionalModelChecker(SparseModelType const& model);
             
             // The implemented methods of the AbstractModelChecker interface.
-            virtual bool canHandle(CheckTask<storm::logic::Formula> const& checkTask) const override;
-            virtual std::unique_ptr<CheckResult> checkBooleanLiteralFormula(CheckTask<storm::logic::BooleanLiteralFormula> const& checkTask) override;
-            virtual std::unique_ptr<CheckResult> checkAtomicLabelFormula(CheckTask<storm::logic::AtomicLabelFormula> const& checkTask) override;
+            virtual bool canHandle(CheckTask<storm::logic::Formula, ValueType> const& checkTask) const override;
+            virtual std::unique_ptr<CheckResult> checkBooleanLiteralFormula(CheckTask<storm::logic::BooleanLiteralFormula, ValueType> const& checkTask) override;
+            virtual std::unique_ptr<CheckResult> checkAtomicLabelFormula(CheckTask<storm::logic::AtomicLabelFormula, ValueType> const& checkTask) override;
             
         protected:
             /*!

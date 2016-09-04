@@ -29,9 +29,11 @@ namespace storm {
             };
         }
 
-        template<storm::dd::DdType Type, typename ValueType>
-        class GameBasedMdpModelChecker : public AbstractModelChecker {
+        template<storm::dd::DdType Type, typename ModelType>
+        class GameBasedMdpModelChecker : public AbstractModelChecker<ModelType> {
         public:
+            typedef typename ModelType::ValueType ValueType;
+            
             /*!
              * Constructs a model checker whose underlying model is implicitly given by the provided program. All
              * verification calls will be answererd with respect to this model.

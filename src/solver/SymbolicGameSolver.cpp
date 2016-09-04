@@ -15,12 +15,12 @@ namespace storm {
     namespace solver {
         
         template<storm::dd::DdType Type, typename ValueType>
-        SymbolicGameSolver<Type, ValueType>::SymbolicGameSolver(storm::dd::Add<Type, ValueType> const& A, storm::dd::Bdd<Type> const& allRows, storm::dd::Bdd<Type> const& illegalPlayer1Mask, storm::dd::Bdd<Type> const& illegalPlayer2Mask, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs, std::set<storm::expressions::Variable> const& player1Variables, std::set<storm::expressions::Variable> const& player2Variables) : A(A), allRows(allRows), illegalPlayer1Mask(illegalPlayer1Mask.ite(A.getDdManager().getConstant(storm::utility::infinity<ValueType>()), A.getDdManager().template getAddZero<ValueType>())), illegalPlayer2Mask(illegalPlayer2Mask.ite(A.getDdManager().getConstant(storm::utility::infinity<ValueType>()), A.getDdManager().template getAddZero<ValueType>())), rowMetaVariables(rowMetaVariables), columnMetaVariables(columnMetaVariables), rowColumnMetaVariablePairs(rowColumnMetaVariablePairs), player1Variables(player1Variables), player2Variables(player2Variables), generatePlayer1Strategy(false), generatePlayer2Strategy(false) {
+        SymbolicGameSolver<Type, ValueType>::SymbolicGameSolver(storm::dd::Add<Type, ValueType> const& A, storm::dd::Bdd<Type> const& allRows, storm::dd::Bdd<Type> const& illegalPlayer1Mask, storm::dd::Bdd<Type> const& illegalPlayer2Mask, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs, std::set<storm::expressions::Variable> const& player1Variables, std::set<storm::expressions::Variable> const& player2Variables) : AbstractGameSolver<ValueType>(), A(A), allRows(allRows), illegalPlayer1Mask(illegalPlayer1Mask.ite(A.getDdManager().getConstant(storm::utility::infinity<ValueType>()), A.getDdManager().template getAddZero<ValueType>())), illegalPlayer2Mask(illegalPlayer2Mask.ite(A.getDdManager().getConstant(storm::utility::infinity<ValueType>()), A.getDdManager().template getAddZero<ValueType>())), rowMetaVariables(rowMetaVariables), columnMetaVariables(columnMetaVariables), rowColumnMetaVariablePairs(rowColumnMetaVariablePairs), player1Variables(player1Variables), player2Variables(player2Variables), generatePlayer1Strategy(false), generatePlayer2Strategy(false) {
             // Intentionally left empty.
         }
         
         template<storm::dd::DdType Type, typename ValueType>
-        SymbolicGameSolver<Type, ValueType>::SymbolicGameSolver(storm::dd::Add<Type, ValueType> const& A, storm::dd::Bdd<Type> const& allRows, storm::dd::Bdd<Type> const& illegalPlayer1Mask, storm::dd::Bdd<Type> const& illegalPlayer2Mask, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs, std::set<storm::expressions::Variable> const& player1Variables, std::set<storm::expressions::Variable> const& player2Variables, double precision, uint_fast64_t maximalNumberOfIterations, bool relative) : AbstractGameSolver(precision, maximalNumberOfIterations, relative), A(A), allRows(allRows), illegalPlayer1Mask(illegalPlayer1Mask.ite(A.getDdManager().getConstant(storm::utility::infinity<ValueType>()), A.getDdManager().template getAddZero<ValueType>())), illegalPlayer2Mask(illegalPlayer2Mask.ite(A.getDdManager().getConstant(storm::utility::infinity<ValueType>()), A.getDdManager().template getAddZero<ValueType>())), rowMetaVariables(rowMetaVariables), columnMetaVariables(columnMetaVariables), rowColumnMetaVariablePairs(rowColumnMetaVariablePairs), player1Variables(player1Variables), player2Variables(player2Variables), generatePlayer1Strategy(false), generatePlayer2Strategy(false) {
+        SymbolicGameSolver<Type, ValueType>::SymbolicGameSolver(storm::dd::Add<Type, ValueType> const& A, storm::dd::Bdd<Type> const& allRows, storm::dd::Bdd<Type> const& illegalPlayer1Mask, storm::dd::Bdd<Type> const& illegalPlayer2Mask, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs, std::set<storm::expressions::Variable> const& player1Variables, std::set<storm::expressions::Variable> const& player2Variables, double precision, uint_fast64_t maximalNumberOfIterations, bool relative) : AbstractGameSolver<ValueType>(precision, maximalNumberOfIterations, relative), A(A), allRows(allRows), illegalPlayer1Mask(illegalPlayer1Mask.ite(A.getDdManager().getConstant(storm::utility::infinity<ValueType>()), A.getDdManager().template getAddZero<ValueType>())), illegalPlayer2Mask(illegalPlayer2Mask.ite(A.getDdManager().getConstant(storm::utility::infinity<ValueType>()), A.getDdManager().template getAddZero<ValueType>())), rowMetaVariables(rowMetaVariables), columnMetaVariables(columnMetaVariables), rowColumnMetaVariablePairs(rowColumnMetaVariablePairs), player1Variables(player1Variables), player2Variables(player2Variables), generatePlayer1Strategy(false), generatePlayer2Strategy(false) {
             // Intentionally left empty.
         }
         
@@ -53,14 +53,11 @@ namespace storm {
                 }
             }
             
-            this->A.exportToDot("matrix.dot");
-            
             do {
                 // Compute tmp = A * x + b.
                 storm::dd::Add<Type, ValueType> xCopyAsColumn = xCopy.swapVariables(this->rowColumnMetaVariablePairs);
                 storm::dd::Add<Type, ValueType> tmp = this->A.multiplyMatrix(xCopyAsColumn, this->columnMetaVariables);
                 tmp += b;
-                tmp.exportToDot("tmp_pre_" + std::to_string(iterations) + ".dot");
 
                 // Now abstract from player 2 and player 1 variables.
                 if (player2Goal == storm::OptimizationDirection::Maximize) {
@@ -77,11 +74,9 @@ namespace storm {
                 } else {
                     tmp = (tmp + illegalPlayer2Mask);
                     storm::dd::Add<Type, ValueType> newValues = tmp.minAbstract(this->player2Variables);
-                    newValues.exportToDot("vals_iter_" + std::to_string(iterations) + ".dot");
 
                     if (generatePlayer2Strategy) {
                         player2Strategy = tmp.minAbstractRepresentative(this->player2Variables);
-                        player2Strategy.get().template toAdd<ValueType>().exportToDot("pl2_strat_iter_" + std::to_string(iterations) + ".dot");
                     }
                     
                     tmp = newValues;
@@ -108,10 +103,8 @@ namespace storm {
                     tmp = newValues;
                 }
 
-                tmp.exportToDot("pl1_vals_iter_" + std::to_string(iterations) + ".dot");
-
                 // Now check if the process already converged within our precision.
-                converged = xCopy.equalModuloPrecision(tmp, precision, relative);
+                converged = xCopy.equalModuloPrecision(tmp, this->precision, this->relative);
                 
                 // If the method did not converge yet, we prepare the x vector for the next iteration.
                 if (!converged) {
@@ -119,7 +112,7 @@ namespace storm {
                 }
                 
                 ++iterations;
-            } while (!converged && iterations < maximalNumberOfIterations);
+            } while (!converged && iterations < this->maximalNumberOfIterations);
             STORM_LOG_TRACE("Numerically solving the game took " << iterations << " iterations.");
             
             return xCopy;

@@ -30,7 +30,6 @@ namespace storm {
             const std::string CoreSettings::engineOptionShortName = "e";
             const std::string CoreSettings::ddLibraryOptionName = "ddlib";
             const std::string CoreSettings::cudaOptionName = "cuda";
-			const std::string CoreSettings::minMaxEquationSolvingTechniqueOptionName = "ndmethod";
             
             CoreSettings::CoreSettings() : ModuleSettings(moduleName), engine(CoreSettings::Engine::Sparse) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, counterexampleOptionName, false, "Generates a counterexample for the given PRCTL formulas if not satisfied by the model")
@@ -57,10 +56,6 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of an SMT solver. Available are: z3 and mathsat.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(smtSolvers)).setDefaultValueString("z3").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, statisticsOptionName, false, "Sets whether to display statistics if available.").setShortName(statisticsOptionShortName).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, cudaOptionName, false, "Sets whether to use CUDA to speed up computation time.").build());
-
-				std::vector<std::string> minMaxSolvingTechniques = {"vi", "value-iteration", "pi", "policy-iteration"};
-				this->addOption(storm::settings::OptionBuilder(moduleName, minMaxEquationSolvingTechniqueOptionName, false, "Sets which min/max linear equation solving technique is preferred.")
-					.addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of a min/max linear equation solving technique. Available are: value-iteration (vi) and policy-iteration (pi).").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(minMaxSolvingTechniques)).setDefaultValueString("vi").build()).build());
             }
 
             bool CoreSettings::isCounterexampleSet() const {
