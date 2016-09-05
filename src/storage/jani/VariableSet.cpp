@@ -74,31 +74,34 @@ namespace storm {
             return detail::ConstVariables<UnboundedIntegerVariable>(unboundedIntegerVariables.begin(), unboundedIntegerVariables.end());
         }
 
-        void VariableSet::addBooleanVariable(BooleanVariable const& variable) {
+        BooleanVariable const& VariableSet::addBooleanVariable(BooleanVariable const& variable) {
             STORM_LOG_THROW(!this->hasVariable(variable.getName()), storm::exceptions::WrongFormatException, "Cannot add variable with name '" << variable.getName() << "', because a variable with that name already exists.");
             std::shared_ptr<BooleanVariable> newVariable = std::make_shared<BooleanVariable>(variable);
             variables.push_back(newVariable);
             booleanVariables.push_back(newVariable);
             nameToVariable.emplace(variable.getName(), variable.getExpressionVariable());
             variableToVariable.emplace(variable.getExpressionVariable(), newVariable);
+            return *newVariable;
         }
         
-        void VariableSet::addBoundedIntegerVariable(BoundedIntegerVariable const& variable) {
+        BoundedIntegerVariable const& VariableSet::addBoundedIntegerVariable(BoundedIntegerVariable const& variable) {
             STORM_LOG_THROW(!this->hasVariable(variable.getName()), storm::exceptions::WrongFormatException, "Cannot add variable with name '" << variable.getName() << "', because a variable with that name already exists.");
             std::shared_ptr<BoundedIntegerVariable> newVariable = std::make_shared<BoundedIntegerVariable>(variable);
             variables.push_back(newVariable);
             boundedIntegerVariables.push_back(newVariable);
             nameToVariable.emplace(variable.getName(), variable.getExpressionVariable());
             variableToVariable.emplace(variable.getExpressionVariable(), newVariable);
+            return *newVariable;
         }
         
-        void VariableSet::addUnboundedIntegerVariable(UnboundedIntegerVariable const& variable) {
+        UnboundedIntegerVariable const& VariableSet::addUnboundedIntegerVariable(UnboundedIntegerVariable const& variable) {
             STORM_LOG_THROW(!this->hasVariable(variable.getName()), storm::exceptions::WrongFormatException, "Cannot add variable with name '" << variable.getName() << "', because a variable with that name already exists.");
             std::shared_ptr<UnboundedIntegerVariable> newVariable = std::make_shared<UnboundedIntegerVariable>(variable);
             variables.push_back(newVariable);
             unboundedIntegerVariables.push_back(newVariable);
             nameToVariable.emplace(variable.getName(), variable.getExpressionVariable());
             variableToVariable.emplace(variable.getExpressionVariable(), newVariable);
+            return *newVariable;
         }
         
         bool VariableSet::hasVariable(std::string const& name) const {

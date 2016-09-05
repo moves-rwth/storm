@@ -103,22 +103,22 @@ namespace storm {
             /*!
              * Adds the given variable to this automaton
              */
-            void addVariable(Variable const& variable);
+            Variable const& addVariable(Variable const& variable);
 
             /*!
              * Adds the given Boolean variable to this automaton.
              */
-            void addBooleanVariable(BooleanVariable const& variable);
+            BooleanVariable const& addBooleanVariable(BooleanVariable const& variable);
             
             /*!
              * Adds the given bounded integer variable to this automaton.
              */
-            void addBoundedIntegerVariable(BoundedIntegerVariable const& variable);
+            BoundedIntegerVariable const& addBoundedIntegerVariable(BoundedIntegerVariable const& variable);
             
             /*!
              * Adds the given unbounded integer variable to this automaton.
              */
-            void addUnboundedIntegerVariable(UnboundedIntegerVariable const& variable);
+            UnboundedIntegerVariable const& addUnboundedIntegerVariable(UnboundedIntegerVariable const& variable);
 
             /*!
              * Retrieves the variables of this automaton.

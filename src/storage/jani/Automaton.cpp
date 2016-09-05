@@ -3,6 +3,7 @@
 #include "src/utility/macros.h"
 #include "src/exceptions/WrongFormatException.h"
 #include "src/exceptions/InvalidArgumentException.h"
+#include "src/exceptions/InvalidTypeException.h"
 
 namespace storm {
     namespace jani {
@@ -58,26 +59,28 @@ namespace storm {
             return name;
         }
 
-        void Automaton::addVariable(Variable const &variable) {
-            if(variable.isBooleanVariable()) {
+        Variable const& Automaton::addVariable(Variable const &variable) {
+            if (variable.isBooleanVariable()) {
                 return addBooleanVariable(variable.asBooleanVariable());
-            } else if(variable.isBoundedIntegerVariable()) {
+            } else if (variable.isBoundedIntegerVariable()) {
                 return addBoundedIntegerVariable(variable.asBoundedIntegerVariable());
-            } else if(variable.isUnboundedIntegerVariable()) {
+            } else if (variable.isUnboundedIntegerVariable()) {
                 return addUnboundedIntegerVariable(variable.asUnboundedIntegerVariable());
+            } else {
+                STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Variable has invalid type.");
             }
         }
         
-        void Automaton::addBooleanVariable(BooleanVariable const& variable) {
-            variables.addBooleanVariable(variable);
+        BooleanVariable const& Automaton::addBooleanVariable(BooleanVariable const& variable) {
+            return variables.addBooleanVariable(variable);
         }
         
-        void Automaton::addBoundedIntegerVariable(BoundedIntegerVariable const& variable) {
-            variables.addBoundedIntegerVariable(variable);
+        BoundedIntegerVariable const& Automaton::addBoundedIntegerVariable(BoundedIntegerVariable const& variable) {
+            return variables.addBoundedIntegerVariable(variable);
         }
 
-        void Automaton::addUnboundedIntegerVariable(UnboundedIntegerVariable const& variable) {
-            variables.addUnboundedIntegerVariable(variable);
+        UnboundedIntegerVariable const& Automaton::addUnboundedIntegerVariable(UnboundedIntegerVariable const& variable) {
+            return variables.addUnboundedIntegerVariable(variable);
         }
 
         VariableSet& Automaton::getVariables() {

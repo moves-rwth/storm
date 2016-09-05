@@ -48,8 +48,7 @@ namespace storm {
              * @see hasInitExpression()
              */
             storm::expressions::Expression const& getInitExpression() const;
-
-                        
+            
             // Methods to determine the type of the variable.
             virtual bool isBooleanVariable() const;
             virtual bool isBoundedIntegerVariable() const;

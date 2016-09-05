@@ -8,6 +8,7 @@
 #include "src/utility/macros.h"
 #include "src/exceptions/WrongFormatException.h"
 #include "src/exceptions/InvalidOperationException.h"
+#include "src/exceptions/InvalidTypeException.h"
 
 namespace storm {
     namespace jani {
@@ -101,26 +102,28 @@ namespace storm {
             return constants;
         }
 
-        void Model::addVariable(Variable const& variable) {
-            if(variable.isBooleanVariable()) {
+        Variable const& Model::addVariable(Variable const& variable) {
+            if (variable.isBooleanVariable()) {
                 return addBooleanVariable(variable.asBooleanVariable());
-            } else if(variable.isBoundedIntegerVariable()) {
+            } else if (variable.isBoundedIntegerVariable()) {
                 return addBoundedIntegerVariable(variable.asBoundedIntegerVariable());
-            } else if(variable.isUnboundedIntegerVariable()) {
+            } else if (variable.isUnboundedIntegerVariable()) {
                 return addUnboundedIntegerVariable(variable.asUnboundedIntegerVariable());
+            } else {
+                STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Variable has invalid type.");
             }
         }
 
-        void Model::addBooleanVariable(BooleanVariable const& variable) {
-            globalVariables.addBooleanVariable(variable);
+        BooleanVariable const& Model::addBooleanVariable(BooleanVariable const& variable) {
+            return globalVariables.addBooleanVariable(variable);
         }
         
-        void Model::addBoundedIntegerVariable(BoundedIntegerVariable const& variable) {
-            globalVariables.addBoundedIntegerVariable(variable);
+        BoundedIntegerVariable const& Model::addBoundedIntegerVariable(BoundedIntegerVariable const& variable) {
+            return globalVariables.addBoundedIntegerVariable(variable);
         }
         
-        void Model::addUnboundedIntegerVariable(UnboundedIntegerVariable const& variable) {
-            globalVariables.addUnboundedIntegerVariable(variable);
+        UnboundedIntegerVariable const& Model::addUnboundedIntegerVariable(UnboundedIntegerVariable const& variable) {
+            return globalVariables.addUnboundedIntegerVariable(variable);
         }
 
         VariableSet& Model::getGlobalVariables() {

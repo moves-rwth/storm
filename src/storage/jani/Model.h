@@ -108,24 +108,24 @@ namespace storm {
             Constant const& getConstant(std::string const& name) const;
 
             /*!
-             * Adds the given variable to this model
+             * Adds the given variable to this model.
              */
-            void addVariable(Variable const& variable);
+            Variable const& addVariable(Variable const& variable);
 
             /*!
              * Adds the given boolean variable to this model.
              */
-            void addBooleanVariable(BooleanVariable const& variable);
+            BooleanVariable const& addBooleanVariable(BooleanVariable const& variable);
             
             /*!
              * Adds the given bounded integer variable to this model.
              */
-            void addBoundedIntegerVariable(BoundedIntegerVariable const& variable);
+            BoundedIntegerVariable const& addBoundedIntegerVariable(BoundedIntegerVariable const& variable);
             
             /*!
              * Adds the given unbounded integer variable to this model.
              */
-            void addUnboundedIntegerVariable(UnboundedIntegerVariable const& variable);
+            UnboundedIntegerVariable const& addUnboundedIntegerVariable(UnboundedIntegerVariable const& variable);
 
             /*!
              * Retrieves the variables of this automaton.

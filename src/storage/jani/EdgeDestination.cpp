@@ -6,8 +6,17 @@
 namespace storm {
     namespace jani {
         
-        EdgeDestination::EdgeDestination(uint64_t locationIndex, storm::expressions::Expression const& probability, std::vector<Assignment> const& assignments, std::vector<RewardIncrement> const& rewardIncrements) : locationIndex(locationIndex), probability(probability), assignments(assignments), rewardIncrements(rewardIncrements) {
-            sortAssignments();
+        EdgeDestination::EdgeDestination(uint64_t locationIndex, storm::expressions::Expression const& probability, std::vector<Assignment> const& assignments) : locationIndex(locationIndex), probability(probability), assignments(assignments) {
+            for (auto const& assignment : assignments) {
+                if (assignment.isTransientAssignment()) {
+                    transientAssignments.push_back(assignment);
+                } else {
+                    nonTransientAssignments.push_back(assignment);
+                }
+            }
+            sortAssignments(this->assignments);
+            sortAssignments(transientAssignments);
+            sortAssignments(nonTransientAssignments);
         }
         
         void EdgeDestination::addAssignment(Assignment const& assignment) {
@@ -16,11 +25,15 @@ namespace storm {
                 STORM_LOG_THROW(oldAssignment.getExpressionVariable() != assignment.getExpressionVariable(), storm::exceptions::WrongFormatException, "Cannot add assignment '" << assignment << "', because another assignment '" << assignment << "' writes to the same target variable.");
             }
             assignments.push_back(assignment);
-            sortAssignments();
-        }
-        
-        void EdgeDestination::addRewardIncrement(RewardIncrement const& rewardIncrement) {
-            rewardIncrements.push_back(rewardIncrement);
+            sortAssignments(assignments);
+            
+            if (assignment.isTransientAssignment()) {
+                transientAssignments.push_back(assignment);
+                sortAssignments(transientAssignments);
+            } else {
+                nonTransientAssignments.push_back(assignment);
+                sortAssignments(nonTransientAssignments);
+            }
         }
         
         uint64_t EdgeDestination::getLocationIndex() const {
@@ -43,19 +56,30 @@ namespace storm {
             return assignments;
         }
         
-        std::vector<RewardIncrement> const& EdgeDestination::getRewardIncrements() const {
-            return rewardIncrements;
+        std::vector<Assignment>& EdgeDestination::getNonTransientAssignments() {
+            return nonTransientAssignments;
         }
         
-        void EdgeDestination::sortAssignments() {
-            std::sort(this->assignments.begin(), this->assignments.end(), [] (storm::jani::Assignment const& assignment1, storm::jani::Assignment const& assignment2) {
+        std::vector<Assignment> const& EdgeDestination::getNonTransientAssignments() const {
+            return nonTransientAssignments;
+        }
+        
+        std::vector<Assignment>& EdgeDestination::getTransientAssignments() {
+            return transientAssignments;
+        }
+        
+        std::vector<Assignment> const& EdgeDestination::getTransientAssignments() const {
+            return transientAssignments;
+        }
+        
+        void EdgeDestination::sortAssignments(std::vector<Assignment>& assignments) {
+            std::sort(assignments.begin(), assignments.end(), [] (storm::jani::Assignment const& assignment1, storm::jani::Assignment const& assignment2) {
                 bool smaller = assignment1.getExpressionVariable().getType().isBooleanType() && !assignment2.getExpressionVariable().getType().isBooleanType();
                 if (!smaller) {
                     smaller = assignment1.getExpressionVariable() < assignment2.getExpressionVariable();
                 }
                 return smaller;
             });
-
         }
         
     }

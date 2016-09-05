@@ -100,17 +100,17 @@ namespace storm {
             /*!
              * Adds the given boolean variable to this set.
              */
-            void addBooleanVariable(BooleanVariable const& variable);
+            BooleanVariable const& addBooleanVariable(BooleanVariable const& variable);
 
             /*!
              * Adds the given bounded integer variable to this set.
              */
-            void addBoundedIntegerVariable(BoundedIntegerVariable const& variable);
+            BoundedIntegerVariable const& addBoundedIntegerVariable(BoundedIntegerVariable const& variable);
 
             /*!
              * Adds the given unbounded integer variable to this set.
              */
-            void addUnboundedIntegerVariable(UnboundedIntegerVariable const& variable);
+            UnboundedIntegerVariable const& addUnboundedIntegerVariable(UnboundedIntegerVariable const& variable);
 
             /*!
              * Retrieves whether this variable set contains a variable with the given name.

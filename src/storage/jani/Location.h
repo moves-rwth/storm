@@ -25,7 +25,7 @@ namespace storm {
             std::string const& getName() const;
             
             /*!
-             *
+             * Retrieves the transient assignments of this location.
              */
             std::vector<Assignment> const& getTransientAssignments() const;
             
@@ -33,9 +33,12 @@ namespace storm {
              * Checks whether the location is valid, that is, whether the assignments are indeed all transient assignments.
              */
             void checkValid() const;
+            
         private:
-            // The name of the location.
+            /// The name of the location.
             std::string name;
+            
+            /// The transient assignments made in this location.
             std::vector<Assignment> transientAssignments;
         };
         
