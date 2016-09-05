@@ -1,0 +1,26 @@
+function robotOnGrid() {
+	
+	// robot starts in the lower left corner
+	int robotX := 1; int robotY := 20;
+
+	// janitor starts in the grid middle
+	int janitorX := ceil(20 / 2); int janitorY := ceil(20 / 2);
+
+	// iterates as long as the robot is not in the upper right corner
+	while(!(robotX = 20 & robotY = 1)) {
+
+		// robot perfoms one step at max each iteration
+		// checks whether we can go to the right and the janitor is not there
+		if(robotX < 20 & !((janitorX = robotX + 1) & (janitorY = robotY))) {
+			robotX := robotX + 1;
+		}
+		// checks whether we can go up and the janitor is not there
+		if(robotX = 20 & !((janitorX = robotX) & (janitorY = robotY - 1))) {
+			robotY := robotY - 1;
+		}
+
+		// moves the janitor randomly in one direction, not limited by any borders
+		{janitorX := janitorX + 1;}[0.25]{{janitorX := janitorX - 1;}[1/3]{{janitorY := janitorY + 1;}[0.375]{janitorY := janitorY - 1;}}}
+
+	}
+}

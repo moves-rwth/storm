@@ -1,0 +1,32 @@
+/* 
+ * File:   CompoundStatement.h
+ * Author: Lukas Westhofen
+ *
+ * Created on 11. April 2015, 17:41
+ */
+
+#ifndef COMPOUNDSTATEMENT_H
+#define	COMPOUNDSTATEMENT_H
+
+#include "src/storage/pgcl/Statement.h"
+
+namespace storm {
+    namespace pgcl {
+        /**
+         * This abstract class represents compound statements. A compound
+         * statement is a statement which has again a PGCL program as a child.
+         * Examples are if and loop statements.
+         */
+        class CompoundStatement : public Statement {
+        public:
+            CompoundStatement() = default;
+            CompoundStatement(const CompoundStatement& orig) = default;
+            virtual ~CompoundStatement() = default;
+            virtual void accept(class AbstractStatementVisitor&) = 0;
+        private:
+        };
+    }
+}
+
+#endif	/* COMPOUNDSTATEMENT_H */
+

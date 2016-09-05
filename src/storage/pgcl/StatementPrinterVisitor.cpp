@@ -1,0 +1,97 @@
+//
+// Created by Lukas Westhofen on 21.04.15.
+//
+
+#include "src/storage/pgcl/StatementPrinterVisitor.h"
+
+#include "src/storage/pgcl/AssignmentStatement.h"
+#include "src/storage/pgcl/ObserveStatement.h"
+#include "src/storage/pgcl/IfStatement.h"
+#include "src/storage/pgcl/LoopStatement.h"
+#include "src/storage/pgcl/NondeterministicBranch.h"
+#include "src/storage/pgcl/ProbabilisticBranch.h"
+
+namespace storm {
+    namespace pgcl {
+        StatementPrinterVisitor::StatementPrinterVisitor(std::ostream &stream) : stream(stream) {
+        }
+
+        void StatementPrinterVisitor::visit(storm::pgcl::AssignmentStatement& statement) {
+            this->stream << statement.getLocationNumber() << ": ";
+            if(statement.getExpression().which() == 0) {
+                storm::expressions::Expression const& expression = boost::get<storm::expressions::Expression>(statement.getExpression());
+                this->stream << statement.getVariable().getType() << " " << statement.getVariable().getName() << " := " << expression << ";" << std::endl;
+            } else {
+                storm::pgcl::UniformExpression const& unif = boost::get<storm::pgcl::UniformExpression>(statement.getExpression());
+                this->stream << statement.getVariable().getType() << " " << statement.getVariable().getName() << " := " << "unif(" << unif.getBegin() << ", " << unif.getEnd() << ");" << std::endl;
+            }
+        }
+
+        void StatementPrinterVisitor::visit(storm::pgcl::ObserveStatement& statement) {
+            this->stream << statement.getLocationNumber() << ": ";
+            this->stream << "observe(" << statement.getCondition().getBooleanExpression() << ");" << std::endl;
+        }
+
+        void StatementPrinterVisitor::visit(storm::pgcl::IfStatement& statement) {
+            this->stream << statement.getLocationNumber() << ": ";
+            this->stream << "if(" << statement.getCondition().getBooleanExpression() << ") {" << std::endl;
+            int i = 1;
+            for(iterator it = (*(statement.getIfBody())).begin(); it != (*(statement.getIfBody())).end(); ++it) {
+                (*(*it)).accept(*this);
+                i++;
+            }
+            this->stream << "}" << std::endl;
+            if(statement.hasElse()) {
+                this->stream << "else {" << std::endl;
+                for(iterator it = (*(statement.getElseBody())).begin(); it != (*(statement.getElseBody())).end(); ++it) {
+                    (*(*it)).accept(*this);
+                    i++;
+                }
+                this->stream << "}" << std::endl;
+            }
+        }
+
+        void StatementPrinterVisitor::visit(storm::pgcl::LoopStatement& statement) {
+            this->stream << statement.getLocationNumber() << ": ";
+            this->stream << "while(" << statement.getCondition().getBooleanExpression() << ") {" << std::endl;
+            int i = 1;
+            for(iterator it = (*(statement.getBody())).begin(); it != (*(statement.getBody())).end(); ++it) {
+                (*(*it)).accept(*this);
+                i++;
+            }
+            this->stream << "}" << std::endl;
+        }
+
+        void StatementPrinterVisitor::visit(storm::pgcl::NondeterministicBranch& statement) {
+            this->stream << statement.getLocationNumber() << ": ";
+            this->stream << "{" << std::endl;
+            int i = 1;
+            for(iterator it = (*(statement.getLeftBranch())).begin(); it != (*(statement.getLeftBranch())).end(); ++it) {
+                (*(*it)).accept(*this);
+                i++;
+            }
+            this->stream << "} [] {" << std::endl;
+            for(iterator it = (*(statement.getRightBranch())).begin(); it != (*(statement.getRightBranch())).end(); ++it) {
+                (*(*it)).accept(*this);
+                i++;
+            }
+            this->stream << "}" << std::endl;
+        }
+
+        void StatementPrinterVisitor::visit(storm::pgcl::ProbabilisticBranch& statement) {
+            this->stream << statement.getLocationNumber() << ": ";
+            this->stream << "{" << std::endl;
+            int i = 1;
+            for(iterator it = (*(statement.getLeftBranch())).begin(); it != (*(statement.getLeftBranch())).end(); ++it) {
+                (*(*it)).accept(*this);
+                i++;
+            }
+            this->stream << "} [" << statement.getProbability() << "] {" << std::endl;
+            for(iterator it = (*(statement.getRightBranch())).begin(); it != (*(statement.getRightBranch())).end(); ++it) {
+                (*(*it)).accept(*this);
+                i++;
+            }
+            this->stream << "}" << std::endl;
+        }
+    }
+}

@@ -1,0 +1,28 @@
+function coupon3() {
+	int coup0 := 0;
+	int coup1 := 0;
+	int coup2 := 0;
+
+	int draw1 := 0;
+	int draw2 := 0;
+	int draw3 := 0;
+
+	int numberDraws := 0;
+
+	while (!(coup0 = 1) | !(coup1 = 1) | !(coup2 = 1)) {
+		draw1 := unif(0,2);
+		draw2 := unif(0,2);
+		draw3 := unif(0,2);
+		numberDraws := numberDraws + 1;
+
+		if(draw1 = 0 | draw2 = 0 | draw3 = 0) {
+			coup0 := 1;
+		}
+		if(draw1 = 1 | draw2 = 1 | draw3 = 1) {
+			coup1 := 1;
+		}
+		if(draw1 = 2 | draw2 = 2 | draw3 = 2) {
+			coup2 := 1;
+		}
+	}
+}

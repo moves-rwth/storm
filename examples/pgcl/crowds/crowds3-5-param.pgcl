@@ -1,0 +1,33 @@
+function crowds(double PF, double bad) {
+	int delivered := 0;
+	int lastSender := 0;
+	int remainingRuns := 5;
+	int observeSender := 0;
+	int observeOther := 0;
+
+	while(remainingRuns > 0) {
+		while(delivered = 0) {
+			{
+				if(lastSender = 0) {
+					observeSender := observeSender + 1;
+				} else {
+					observeOther := observeOther + 1;
+				}
+				lastSender := 0;
+				delivered := 1;
+			} [bad] {
+					{ lastSender:=0; } [1/3] { lastSender := 1; }
+				}
+				[PF]
+				{
+					lastSender := 0;
+					// When not forwarding, the message is delivered here.
+					delivered := 1;
+				}
+			}
+		}
+		delivered := 0;
+		// Set up new run.
+		remainingRuns := remainingRuns - 1;
+	}
+}

@@ -1,0 +1,58 @@
+function coupon10() {
+	int coup0  := 0;
+	int coup1  := 0;
+	int coup2  := 0;
+	int coup3  := 0;
+	int coup4  := 0;
+	int coup5  := 0;
+	int coup6  := 0;
+	int coup7  := 0;
+	int coup8  := 0;
+	int coup9  := 0;
+	int coup10 := 0;
+
+	int draw := 0;
+
+	int numberDraws := 0;
+
+	while (!(coup0 = 1) | !(coup1 = 1) | !(coup2 = 1) | !(coup3 = 1) | !(coup4 = 1) | !(coup5= 1) | !(coup6 = 1) | !(coup7 = 1) | !(coup8 = 1) | !(coup9 = 1) | !(coup10 = 1)) {
+		draw := unif(0,10);
+		draw2 := unif(0,10);
+		draw3 := unif(0,10);
+		numberDraws := numberDraws + 1;
+
+		if(draw = 0) {
+			coup0 := 1;
+		}
+		if(draw = 1) {
+			coup1 := 1;
+		}
+		if(draw = 2) {
+			coup2 := 1;
+		}
+		if(draw = 3) {
+			coup3 := 1;
+		}
+		if(draw = 4) {
+			coup4 := 1;
+		}
+		if(draw = 5) {
+			coup5 := 1;
+		}
+		if(draw = 6) {
+			coup6 := 1;
+		}
+		if(draw = 7) {
+			coup7 := 1;
+		}
+		if(draw = 8) {
+			coup8 := 1;
+		}
+		if(draw = 9) {
+			coup9 := 1;
+		}
+		if(draw = 10) {
+			coup10 := 1;
+		}
+	}
+}
