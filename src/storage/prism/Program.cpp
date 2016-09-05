@@ -152,20 +152,26 @@ namespace storm {
             if (initialConstruct) {
                 this->initialConstruct = initialConstruct.get();
             } else {
+                // First, add all missing initial values.
+                this->createMissingInitialValues();
+                for (auto& modules : this->modules) {
+                    modules.createMissingInitialValues();
+                }
+                
                 // Create a new initial construct if none was given.
                 storm::expressions::Expression newInitialExpression = manager->boolean(true);
                 
-                for (auto const& booleanVariable : this->getGlobalBooleanVariables()) {
+                for (auto& booleanVariable : this->getGlobalBooleanVariables()) {
                     newInitialExpression = newInitialExpression && storm::expressions::iff(booleanVariable.getExpression(), booleanVariable.getInitialValueExpression());
                 }
-                for (auto const& integerVariable : this->getGlobalIntegerVariables()) {
+                for (auto& integerVariable : this->getGlobalIntegerVariables()) {
                     newInitialExpression = newInitialExpression && integerVariable.getExpression() == integerVariable.getInitialValueExpression();
                 }
-                for (auto const& module : this->getModules()) {
-                    for (auto const& booleanVariable : module.getBooleanVariables()) {
+                for (auto& module : this->getModules()) {
+                    for (auto& booleanVariable : module.getBooleanVariables()) {
                         newInitialExpression = newInitialExpression && storm::expressions::iff(booleanVariable.getExpression(), booleanVariable.getInitialValueExpression());
                     }
-                    for (auto const& integerVariable : module.getIntegerVariables()) {
+                    for (auto& integerVariable : module.getIntegerVariables()) {
                         newInitialExpression = newInitialExpression && integerVariable.getExpression() == integerVariable.getInitialValueExpression();
                     }
                 }
@@ -241,13 +247,17 @@ namespace storm {
             
             // Now check initial value expressions of global variables.
             for (auto const& booleanVariable : this->getGlobalBooleanVariables()) {
-                if (booleanVariable.getInitialValueExpression().containsVariable(undefinedConstantVariables)) {
-                    return false;
+                if (booleanVariable.hasInitialValue()) {
+                    if (booleanVariable.getInitialValueExpression().containsVariable(undefinedConstantVariables)) {
+                        return false;
+                    }
                 }
             }
             for (auto const& integerVariable : this->getGlobalIntegerVariables()) {
-                if (integerVariable.getInitialValueExpression().containsVariable(undefinedConstantVariables)) {
-                    return false;
+                if (integerVariable.hasInitialValue()) {
+                    if (integerVariable.getInitialValueExpression().containsVariable(undefinedConstantVariables)) {
+                        return false;
+                    }
                 }
                 if (integerVariable.getLowerBoundExpression().containsVariable(undefinedConstantVariables)) {
                     return false;
@@ -809,18 +819,20 @@ namespace storm {
             // Now we check the variable declarations. We start with the global variables.
             std::set<storm::expressions::Variable> variables;
             for (auto const& variable : this->getGlobalBooleanVariables()) {
-                // Check the initial value of the variable.
-                std::set<storm::expressions::Variable> containedVariables = variable.getInitialValueExpression().getVariables();
-                std::set<storm::expressions::Variable> illegalVariables;
-                std::set_difference(containedVariables.begin(), containedVariables.end(), constants.begin(), constants.end(), std::inserter(illegalVariables, illegalVariables.begin()));
-                bool isValid = illegalVariables.empty();
-                
-                if (!isValid) {
-                    std::vector<std::string> illegalVariableNames;
-                    for (auto const& var : illegalVariables) {
-                        illegalVariableNames.push_back(var.getName());
+                if (variable.hasInitialValue()) {
+                    // Check the initial value of the variable.
+                    std::set<storm::expressions::Variable> containedVariables = variable.getInitialValueExpression().getVariables();
+                    std::set<storm::expressions::Variable> illegalVariables;
+                    std::set_difference(containedVariables.begin(), containedVariables.end(), constants.begin(), constants.end(), std::inserter(illegalVariables, illegalVariables.begin()));
+                    bool isValid = illegalVariables.empty();
+                    
+                    if (!isValid) {
+                        std::vector<std::string> illegalVariableNames;
+                        for (auto const& var : illegalVariables) {
+                            illegalVariableNames.push_back(var.getName());
+                        }
+                        STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": initial value expression refers to unknown constants: " << boost::algorithm::join(illegalVariableNames, ",") << ".");
                     }
-                    STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": initial value expression refers to unknown constants: " << boost::algorithm::join(illegalVariableNames, ",") << ".");
                 }
                 
                 // Record the new identifier for future checks.
@@ -855,16 +867,18 @@ namespace storm {
                     STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": upper bound expression refers to unknown constants: " << boost::algorithm::join(illegalVariableNames, ",") << ".");
                 }
                 
-                // Check the initial value of the variable.
-                containedVariables = variable.getInitialValueExpression().getVariables();
-                std::set_difference(containedVariables.begin(), containedVariables.end(), constants.begin(), constants.end(), std::inserter(illegalVariables, illegalVariables.begin()));
-                isValid = illegalVariables.empty();
-                if (!isValid) {
-                    std::vector<std::string> illegalVariableNames;
-                    for (auto const& var : illegalVariables) {
-                        illegalVariableNames.push_back(var.getName());
+                if (variable.hasInitialValue()) {
+                    // Check the initial value of the variable.
+                    containedVariables = variable.getInitialValueExpression().getVariables();
+                    std::set_difference(containedVariables.begin(), containedVariables.end(), constants.begin(), constants.end(), std::inserter(illegalVariables, illegalVariables.begin()));
+                    isValid = illegalVariables.empty();
+                    if (!isValid) {
+                        std::vector<std::string> illegalVariableNames;
+                        for (auto const& var : illegalVariables) {
+                            illegalVariableNames.push_back(var.getName());
+                        }
+                        STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": initial value expression refers to unknown constants: " << boost::algorithm::join(illegalVariableNames, ",") << ".");
                     }
-                    STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": initial value expression refers to unknown constants: " << boost::algorithm::join(illegalVariableNames, ",") << ".");
                 }
                 
                 // Record the new identifier for future checks.
@@ -877,17 +891,19 @@ namespace storm {
             // Now go through the variables of the modules.
             for (auto const& module : this->getModules()) {
                 for (auto const& variable : module.getBooleanVariables()) {
-                    // Check the initial value of the variable.
-                    std::set<storm::expressions::Variable> containedVariables = variable.getInitialValueExpression().getVariables();
-                    std::set<storm::expressions::Variable> illegalVariables;
-                    std::set_difference(containedVariables.begin(), containedVariables.end(), constants.begin(), constants.end(), std::inserter(illegalVariables, illegalVariables.begin()));
-                    bool isValid = illegalVariables.empty();
-                    if (!isValid) {
-                        std::vector<std::string> illegalVariableNames;
-                        for (auto const& var : illegalVariables) {
-                            illegalVariableNames.push_back(var.getName());
+                    if (variable.hasInitialValue()) {
+                        // Check the initial value of the variable.
+                        std::set<storm::expressions::Variable> containedVariables = variable.getInitialValueExpression().getVariables();
+                        std::set<storm::expressions::Variable> illegalVariables;
+                        std::set_difference(containedVariables.begin(), containedVariables.end(), constants.begin(), constants.end(), std::inserter(illegalVariables, illegalVariables.begin()));
+                        bool isValid = illegalVariables.empty();
+                        if (!isValid) {
+                            std::vector<std::string> illegalVariableNames;
+                            for (auto const& var : illegalVariables) {
+                                illegalVariableNames.push_back(var.getName());
+                            }
+                            STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": initial value expression refers to unknown constants: " << boost::algorithm::join(illegalVariableNames, ",") << ".");
                         }
-                        STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": initial value expression refers to unknown constants: " << boost::algorithm::join(illegalVariableNames, ",") << ".");
                     }
                     
                     // Record the new identifier for future checks.
@@ -920,17 +936,19 @@ namespace storm {
                         STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": upper bound expression refers to unknown constants: " << boost::algorithm::join(illegalVariableNames, ",") << ".");
                     }
                     
-                    // Check the initial value of the variable.
-                    containedVariables = variable.getInitialValueExpression().getVariables();
-                    illegalVariables.clear();
-                    std::set_difference(containedVariables.begin(), containedVariables.end(), constants.begin(), constants.end(), std::inserter(illegalVariables, illegalVariables.begin()));
-                    isValid = illegalVariables.empty();
-                    if (!isValid) {
-                        std::vector<std::string> illegalVariableNames;
-                        for (auto const& var : illegalVariables) {
-                            illegalVariableNames.push_back(var.getName());
+                    if (variable.hasInitialValue()) {
+                        // Check the initial value of the variable.
+                        containedVariables = variable.getInitialValueExpression().getVariables();
+                        illegalVariables.clear();
+                        std::set_difference(containedVariables.begin(), containedVariables.end(), constants.begin(), constants.end(), std::inserter(illegalVariables, illegalVariables.begin()));
+                        isValid = illegalVariables.empty();
+                        if (!isValid) {
+                            std::vector<std::string> illegalVariableNames;
+                            for (auto const& var : illegalVariables) {
+                                illegalVariableNames.push_back(var.getName());
+                            }
+                            STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": initial value expression refers to unknown constants: " << boost::algorithm::join(illegalVariableNames, ",") << ".");
                         }
-                        STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": initial value expression refers to unknown constants: " << boost::algorithm::join(illegalVariableNames, ",") << ".");
                     }
                     
                     // Record the new identifier for future checks.
@@ -1571,7 +1589,7 @@ namespace storm {
             }
             storm::jani::Model janiModel("jani_from_prism", modelType, 1, manager);
             storm::expressions::Expression globalInitialStatesExpression;
-
+            
             // Add all constants of the PRISM program to the JANI model.
             for (auto const& constant : constants) {
                 janiModel.addConstant(storm::jani::Constant(constant.getName(), constant.getExpressionVariable(), constant.isDefined() ? boost::optional<storm::expressions::Expression>(constant.getExpression()) : boost::none));
@@ -1580,13 +1598,17 @@ namespace storm {
             // Add all global variables of the PRISM program to the JANI model.
             for (auto const& variable : globalIntegerVariables) {
                 janiModel.addBoundedIntegerVariable(storm::jani::BoundedIntegerVariable(variable.getName(), variable.getExpressionVariable(), variable.getLowerBoundExpression(), variable.getUpperBoundExpression()));
-                storm::expressions::Expression variableInitialExpression = variable.getExpressionVariable() == variable.getInitialValueExpression();
-                globalInitialStatesExpression = globalInitialStatesExpression.isInitialized() ? globalInitialStatesExpression && variableInitialExpression : variableInitialExpression;
+                if (variable.hasInitialValue()) {
+                    storm::expressions::Expression variableInitialExpression = variable.getExpressionVariable() == variable.getInitialValueExpression();
+                    globalInitialStatesExpression = globalInitialStatesExpression.isInitialized() ? globalInitialStatesExpression && variableInitialExpression : variableInitialExpression;
+                }
             }
             for (auto const& variable : globalBooleanVariables) {
                 janiModel.addBooleanVariable(storm::jani::BooleanVariable(variable.getName(), variable.getExpressionVariable()));
-                storm::expressions::Expression variableInitialExpression = storm::expressions::iff(variable.getExpressionVariable(), variable.getInitialValueExpression());
-                globalInitialStatesExpression = globalInitialStatesExpression.isInitialized() ? globalInitialStatesExpression && variableInitialExpression : variableInitialExpression;
+                if (variable.hasInitialValue()) {
+                    storm::expressions::Expression variableInitialExpression = storm::expressions::iff(variable.getExpressionVariable(), variable.getInitialValueExpression());
+                    globalInitialStatesExpression = globalInitialStatesExpression.isInitialized() ? globalInitialStatesExpression && variableInitialExpression : variableInitialExpression;
+                }
             }
             
             // Add all actions of the PRISM program to the JANI model.
@@ -1598,7 +1620,7 @@ namespace storm {
             }
             
             // Because of the rules of JANI, we have to make all variables of modules global that are read by other modules.
-
+            
             // Create a mapping from variables to the indices of module indices that write/read the variable.
             std::map<storm::expressions::Variable, std::set<uint_fast64_t>> variablesToAccessingModuleIndices;
             for (uint_fast64_t index = 0; index < modules.size(); ++index) {
@@ -1627,20 +1649,24 @@ namespace storm {
             for (auto const& module : modules) {
                 storm::jani::Automaton automaton(module.getName());
                 storm::expressions::Expression initialStatesExpression;
-
+                
                 for (auto const& variable : module.getIntegerVariables()) {
                     storm::jani::BoundedIntegerVariable newIntegerVariable(variable.getName(), variable.getExpressionVariable(), variable.getLowerBoundExpression(), variable.getUpperBoundExpression());
                     std::set<uint_fast64_t> const& accessingModuleIndices = variablesToAccessingModuleIndices[variable.getExpressionVariable()];
                     // If there is exactly one module reading and writing the variable, we can make the variable local to this module.
                     if (!allVariablesGlobal && accessingModuleIndices.size() == 1) {
                         automaton.addBoundedIntegerVariable(newIntegerVariable);
-                        storm::expressions::Expression variableInitialExpression = variable.getExpressionVariable() == variable.getInitialValueExpression();
-                        initialStatesExpression = initialStatesExpression.isInitialized() ? initialStatesExpression && variableInitialExpression : variableInitialExpression;
+                        if (variable.hasInitialValue()) {
+                            storm::expressions::Expression variableInitialExpression = variable.getExpressionVariable() == variable.getInitialValueExpression();
+                            initialStatesExpression = initialStatesExpression.isInitialized() ? initialStatesExpression && variableInitialExpression : variableInitialExpression;
+                        }
                     } else if (!accessingModuleIndices.empty()) {
                         // Otherwise, we need to make it global.
                         janiModel.addBoundedIntegerVariable(newIntegerVariable);
-                        storm::expressions::Expression variableInitialExpression = variable.getExpressionVariable() == variable.getInitialValueExpression();
-                        globalInitialStatesExpression = globalInitialStatesExpression.isInitialized() ? globalInitialStatesExpression && variableInitialExpression : variableInitialExpression;
+                        if (variable.hasInitialValue()) {
+                            storm::expressions::Expression variableInitialExpression = variable.getExpressionVariable() == variable.getInitialValueExpression();
+                            globalInitialStatesExpression = globalInitialStatesExpression.isInitialized() ? globalInitialStatesExpression && variableInitialExpression : variableInitialExpression;
+                        }
                     }
                 }
                 for (auto const& variable : module.getBooleanVariables()) {
@@ -1649,13 +1675,17 @@ namespace storm {
                     // If there is exactly one module reading and writing the variable, we can make the variable local to this module.
                     if (!allVariablesGlobal && accessingModuleIndices.size() == 1) {
                         automaton.addBooleanVariable(newBooleanVariable);
-                        storm::expressions::Expression variableInitialExpression = storm::expressions::iff(variable.getExpressionVariable(), variable.getInitialValueExpression());
-                        initialStatesExpression = initialStatesExpression.isInitialized() ? initialStatesExpression && variableInitialExpression : variableInitialExpression;
+                        if (variable.hasInitialValue()) {
+                            storm::expressions::Expression variableInitialExpression = storm::expressions::iff(variable.getExpressionVariable(), variable.getInitialValueExpression());
+                            initialStatesExpression = initialStatesExpression.isInitialized() ? initialStatesExpression && variableInitialExpression : variableInitialExpression;
+                        }
                     } else if (!accessingModuleIndices.empty()) {
                         // Otherwise, we need to make it global.
                         janiModel.addBooleanVariable(newBooleanVariable);
-                        storm::expressions::Expression variableInitialExpression = storm::expressions::iff(variable.getExpressionVariable(), variable.getInitialValueExpression());
-                        globalInitialStatesExpression = globalInitialStatesExpression.isInitialized() ? globalInitialStatesExpression && variableInitialExpression : variableInitialExpression;
+                        if (variable.hasInitialValue()) {
+                            storm::expressions::Expression variableInitialExpression = storm::expressions::iff(variable.getExpressionVariable(), variable.getInitialValueExpression());
+                            globalInitialStatesExpression = globalInitialStatesExpression.isInitialized() ? globalInitialStatesExpression && variableInitialExpression : variableInitialExpression;
+                        }
                     }
                 }
                 
@@ -1711,6 +1741,19 @@ namespace storm {
             janiModel.finalize();
             
             return janiModel;
+        }
+        
+        void Program::createMissingInitialValues() {
+            for (auto& variable : globalBooleanVariables) {
+                if (!variable.hasInitialValue()) {
+                    variable.setInitialValueExpression(manager->boolean(false));
+                }
+            }
+            for (auto& variable : globalIntegerVariables) {
+                if (!variable.hasInitialValue()) {
+                    variable.setInitialValueExpression(variable.getLowerBoundExpression());
+                }
+            }
         }
         
         std::ostream& operator<<(std::ostream& out, Program::ModelType const& type) {

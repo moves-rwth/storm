@@ -188,7 +188,7 @@ namespace storm {
             
             // Rules for variable definitions.
             qi::rule<Iterator, qi::unused_type(std::vector<storm::prism::BooleanVariable>&, std::vector<storm::prism::IntegerVariable>&), Skipper> variableDefinition;
-            qi::rule<Iterator, storm::prism::BooleanVariable(), Skipper> booleanVariableDefinition;
+            qi::rule<Iterator, storm::prism::BooleanVariable(), qi::locals<storm::expressions::Expression>, Skipper> booleanVariableDefinition;
             qi::rule<Iterator, storm::prism::IntegerVariable(), qi::locals<storm::expressions::Expression>, Skipper> integerVariableDefinition;
             
             // Rules for command definitions.
@@ -241,7 +241,7 @@ namespace storm {
             
             // Helper methods used in the grammar.
             bool isValidIdentifier(std::string const& identifier);
-            bool addInitialStatesConstruct(storm::expressions::Expression initialStatesExpression, GlobalProgramInformation& globalProgramInformation);
+            bool addInitialStatesConstruct(storm::expressions::Expression const& initialStatesExpression, GlobalProgramInformation& globalProgramInformation);
             bool addSystemCompositionConstruct(std::shared_ptr<storm::prism::Composition> const& composition, GlobalProgramInformation& globalProgramInformation);
             
             
@@ -273,6 +273,8 @@ namespace storm {
             storm::prism::Module createModule(std::string const& moduleName, std::vector<storm::prism::BooleanVariable> const& booleanVariables, std::vector<storm::prism::IntegerVariable> const& integerVariables, std::vector<storm::prism::Command> const& commands, GlobalProgramInformation& globalProgramInformation) const;
             storm::prism::Module createRenamedModule(std::string const& newModuleName, std::string const& oldModuleName, std::map<std::string, std::string> const& renaming, GlobalProgramInformation& globalProgramInformation) const;
             storm::prism::Program createProgram(GlobalProgramInformation const& globalProgramInformation) const;
+            
+            void removeInitialConstruct(GlobalProgramInformation& globalProgramInformation) const;
             
             // An error handler function.
             phoenix::function<SpiritErrorHandler> handler;

@@ -175,7 +175,7 @@ namespace storm {
              * @return The global boolean variables of the program.
              */
             std::vector<BooleanVariable> const& getGlobalBooleanVariables() const;
-            
+
             /*!
              * Retrieves a the global boolean variable with the given name.
              *
@@ -586,6 +586,11 @@ namespace storm {
              * @return The resulting command.
              */
             Command synchronizeCommands(uint_fast64_t newCommandIndex, uint_fast64_t actionIndex, uint_fast64_t firstUpdateIndex, std::string const& actionName, std::vector<std::reference_wrapper<Command const>> const& commands) const;
+            
+            /*!
+             * Equips all global variables without initial values with initial values based on their type.
+             */
+            void createMissingInitialValues();
             
             // The manager responsible for the variables/expressions of the program.
             std::shared_ptr<storm::expressions::ExpressionManager> manager;

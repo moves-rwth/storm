@@ -60,6 +60,8 @@ namespace storm {
              */
             IntegerVariable substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const;
             
+            virtual void createMissingInitialValue() override;
+            
             friend std::ostream& operator<<(std::ostream& stream, IntegerVariable const& variable);
             
         private:
