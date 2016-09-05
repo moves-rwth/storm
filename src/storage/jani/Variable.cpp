@@ -48,6 +48,10 @@ namespace storm {
             return this->init.get();
         }
         
+        void Variable::setInitExpression(storm::expressions::Expression const& initialExpression) {
+            this->init = initialExpression;
+        }
+        
         BooleanVariable& Variable::asBooleanVariable() {
             return dynamic_cast<BooleanVariable&>(*this);
         }

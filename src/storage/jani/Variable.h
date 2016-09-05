@@ -49,6 +49,11 @@ namespace storm {
              */
             storm::expressions::Expression const& getInitExpression() const;
             
+            /*!
+             * Sets the initial expression for this variable.
+             */
+            void setInitExpression(storm::expressions::Expression const& initialExpression);
+            
             // Methods to determine the type of the variable.
             virtual bool isBooleanVariable() const;
             virtual bool isBoundedIntegerVariable() const;

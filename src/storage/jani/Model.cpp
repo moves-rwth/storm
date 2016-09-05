@@ -27,6 +27,9 @@ namespace storm {
                 this->expressionManager = std::make_shared<storm::expressions::ExpressionManager>();
             }
             
+            // Create an initial restriction.
+            initialStatesRestriction = this->expressionManager->boolean(true);
+            
             // Add a prefined action that represents the silent action.
             silentActionIndex = addAction(storm::jani::Action(SILENT_ACTION_NAME));
         }
@@ -301,25 +304,23 @@ namespace storm {
             
             // Substitute constants in all global variables.
             for (auto& variable : result.getGlobalVariables().getBoundedIntegerVariables()) {
+                variable.setInitExpression(variable.getInitExpression().substitute(constantSubstitution));
                 variable.setLowerBound(variable.getLowerBound().substitute(constantSubstitution));
                 variable.setUpperBound(variable.getUpperBound().substitute(constantSubstitution));
             }
             
             // Substitute constants in initial states expression.
-            if (this->hasInitialStatesExpression()) {
-                result.setInitialStatesExpression(this->getInitialStatesExpression().substitute(constantSubstitution));
-            }
+            result.setInitialStatesRestriction(this->getInitialStatesRestriction().substitute(constantSubstitution));
             
             // Substitute constants in variables of automata and their edges.
             for (auto& automaton : result.getAutomata()) {
                 for (auto& variable : automaton.getVariables().getBoundedIntegerVariables()) {
+                    variable.setInitExpression(variable.getInitExpression().substitute(constantSubstitution));
                     variable.setLowerBound(variable.getLowerBound().substitute(constantSubstitution));
                     variable.setUpperBound(variable.getUpperBound().substitute(constantSubstitution));
                 }
                 
-                if (automaton.hasInitialStatesExpression()) {
-                    automaton.setInitialStatesExpression(automaton.getInitialStatesExpression().substitute(constantSubstitution));
-                }
+                automaton.setInitialStatesRestriction(automaton.getInitialStatesExpression().substitute(constantSubstitution));
                 
                 for (auto& edge : automaton.getEdges()) {
                     edge.setGuard(edge.getGuard().substitute(constantSubstitution));
@@ -350,26 +351,37 @@ namespace storm {
             return result;
         }
         
-        bool Model::hasInitialStatesExpression() const {
-            return initialStatesExpression.isInitialized();
+        void Model::setInitialStatesRestriction(storm::expressions::Expression const& initialStatesRestriction) {
+            this->initialStatesRestriction = initialStatesRestriction;
         }
-     
+        
+        storm::expressions::Expression const& Model::getInitialStatesRestriction() const {
+            return initialStatesRestriction;
+        }
+        
         storm::expressions::Expression Model::getInitialStatesExpression(bool includeAutomataInitialStatesExpressions) const {
-            STORM_LOG_THROW(globalVariables.empty() || this->hasInitialStatesExpression(), storm::exceptions::InvalidOperationException, "Cannot retrieve global initial states expression, because there is none.");
-            storm::expressions::Expression result = this->hasInitialStatesExpression() ? initialStatesExpression : expressionManager->boolean(true);
+            // Start with the restriction of variables.
+            storm::expressions::Expression result = initialStatesRestriction;
+            
+            // Then add initial values for those variables that have one.
+            for (auto const& variable : globalVariables) {
+                if (variable.hasInitExpression()) {
+                    result = result && (variable.isBooleanVariable() ? storm::expressions::iff(variable.getExpressionVariable(), variable.getInitExpression()) : variable.getExpressionVariable() == variable.getInitExpression());
+                }
+            }
+            
+            // If we are to include the expressions for the automata, do so now.
             if (includeAutomataInitialStatesExpressions) {
                 for (auto const& automaton : automata) {
-                    STORM_LOG_THROW(automaton.getVariables().empty() || automaton.hasInitialStatesExpression(), storm::exceptions::InvalidOperationException, "Cannot retrieve initial states expression from automaton '" << automaton.getName() << "', because there is none.");
                     if (!automaton.getVariables().empty()) {
-                        result = result && automaton.getInitialStatesExpression();
+                        storm::expressions::Expression automatonInitialStatesExpression = automaton.getInitialStatesExpression();
+                        if (automatonInitialStatesExpression.isInitialized() && !automatonInitialStatesExpression.isTrue()) {
+                            result = result && automatonInitialStatesExpression;
+                        }
                     }
                 }
             }
             return result;
-        }
-        
-        void Model::setInitialStatesExpression(storm::expressions::Expression const& initialStatesExpression) {
-            this->initialStatesExpression = initialStatesExpression;
         }
         
         bool Model::isDeterministicModel() const {

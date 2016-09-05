@@ -587,7 +587,7 @@ namespace storm {
             if(automatonStructure.count("restrict-initial") > 0) {
                 initialValueRestriction  = parseExpression(automatonStructure.at("restrict-initial"), "Initial value restriction for automaton " + name);
             }
-            automaton.setInitialStatesExpression(initialValueRestriction);
+            automaton.setInitialStatesRestriction(initialValueRestriction);
             uint64_t varDeclCount = automatonStructure.count("variables");
             STORM_LOG_THROW(varDeclCount < 2, storm::exceptions::InvalidJaniException, "Automaton '" << name << "' has more than one list of variables");
             std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> localVars;

@@ -236,9 +236,19 @@ namespace storm {
             std::map<storm::expressions::Variable, storm::expressions::Expression> getConstantsSubstitution() const;
             
             /*!
-             * Retrieves whether there is an expression defining the legal initial values of the global variables.
+             * Retrieves whether there is an expression restricting the legal initial values of the global variables.
              */
-            bool hasInitialStatesExpression() const;
+            bool hasInitialStatesRestriction() const;
+            
+            /*!
+             * Sets the expression restricting the legal initial values of the global variables.
+             */
+            void setInitialStatesRestriction(storm::expressions::Expression const& initialStatesRestriction);
+
+            /*!
+             * Gets the expression restricting the legal initial values of the global variables.
+             */
+            storm::expressions::Expression const& getInitialStatesRestriction() const;
             
             /*!
              * Retrieves the expression defining the legal initial values of the variables.
@@ -247,11 +257,6 @@ namespace storm {
              * states not only for the global variables but also for the variables of each automaton.
              */
             storm::expressions::Expression getInitialStatesExpression(bool includeAutomataInitialStatesExpressions = false) const;
-            
-            /*!
-             * Sets the expression defining the legal initial values of the global variables.
-             */
-            void setInitialStatesExpression(storm::expressions::Expression const& initialStatesExpression);
             
             /*!
              * Determines whether this model is a deterministic one in the sense that each state only has one choice.
@@ -329,8 +334,8 @@ namespace storm {
             /// An expression describing how the system is composed of the automata.
             std::shared_ptr<Composition> composition;
             
-            // The expression characterizing the legal initial values of the global variables.
-            storm::expressions::Expression initialStatesExpression;
+            // The expression restricting the legal initial values of the global variables.
+            storm::expressions::Expression initialStatesRestriction;
         };
     }
 }

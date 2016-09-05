@@ -305,16 +305,39 @@ namespace storm {
             return edges.size();
         }
 
-        bool Automaton::hasInitialStatesExpression() const {
-            return initialStatesExpression.isInitialized();
+        bool Automaton::hasInitialStatesRestriction() const {
+            return initialStatesRestriction.isInitialized();
         }
         
-        storm::expressions::Expression const& Automaton::getInitialStatesExpression() const {
-            return initialStatesExpression;
+        storm::expressions::Expression const& Automaton::getInitialStatesRestriction() const {
+            return initialStatesRestriction;
         }
         
-        void Automaton::setInitialStatesExpression(storm::expressions::Expression const& initialStatesExpression) {
-            this->initialStatesExpression = initialStatesExpression;
+        void Automaton::setInitialStatesRestriction(storm::expressions::Expression const& initialStatesRestriction) {
+            this->initialStatesRestriction = initialStatesRestriction;
+        }
+        
+        storm::expressions::Expression Automaton::getInitialStatesExpression() const {
+            storm::expressions::Expression result;
+            
+            // Add initial state restriction if there is one.
+            if (this->hasInitialStatesRestriction()) {
+                result = this->getInitialStatesRestriction();
+            }
+            
+            // Add the expressions for all variables that have initial expressions.
+            for (auto const& variable : this->getVariables()) {
+                if (variable.hasInitExpression()) {
+                    storm::expressions::Expression newInitExpression = variable.isBooleanVariable() ? storm::expressions::iff(variable.getExpressionVariable(), variable.getInitExpression()) : variable.getExpressionVariable() == variable.getInitExpression();
+                    if (result.isInitialized()) {
+                        result = result && newInitExpression;
+                    } else {
+                        result = newInitExpression;
+                    }
+                }
+            }
+            
+            return result;
         }
         
         bool Automaton::hasEdgeLabeledWithActionIndex(uint64_t actionIndex) const {

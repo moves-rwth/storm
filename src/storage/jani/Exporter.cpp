@@ -355,7 +355,7 @@ namespace storm {
             appendIndent(out, indent + 1);
             out << "]";
             clearLine(out);
-            if (automaton.hasInitialStatesExpression()) {
+            if (automaton.hasInitialStatesRestriction()) {
                 appendIndent(out, indent + 1);
                 appendField(out, "initial-states");
                 clearLine(out);
@@ -413,21 +413,19 @@ namespace storm {
             appendVariables(out, model.getGlobalVariables(), 1);
             clearLine(out);
             
-            if (model.hasInitialStatesExpression()) {
-                appendIndent(out, 1);
-                appendField(out, "initial-states");
-                clearLine(out);
-                appendIndent(out, 2);
-                out << "{";
-                clearLine(out);
-                appendIndent(out, 3);
-                appendField(out, "exp");
-                appendValue(out, expressionToString(model.getInitialStatesExpression()));
-                clearLine(out);
-                appendIndent(out, 2);
-                out << "}";
-                clearLine(out);
-            }
+            appendIndent(out, 1);
+            appendField(out, "initial-states");
+            clearLine(out);
+            appendIndent(out, 2);
+            out << "{";
+            clearLine(out);
+            appendIndent(out, 3);
+            appendField(out, "exp");
+            appendValue(out, expressionToString(model.getInitialStatesRestriction()));
+            clearLine(out);
+            appendIndent(out, 2);
+            out << "}";
+            clearLine(out);
             
             appendAutomata(out, model, 1);
             clearLine(out);

@@ -232,21 +232,26 @@ namespace storm {
              * Retrieves the number of edges.
              */
             uint64_t getNumberOfEdges() const;
-
+            
             /*!
-             * Retrieves whether there is an expression defining the legal initial values of the automaton's variables.
+             * Retrieves whether this automaton has an initial states restriction.
              */
-            bool hasInitialStatesExpression() const;
+            bool hasInitialStatesRestriction() const;
+            
+            /*!
+             * Gets the expression restricting the legal initial values of the automaton's variables.
+             */
+            storm::expressions::Expression const& getInitialStatesRestriction() const;
+            
+            /*!
+             * Sets the expression restricting the legal initial values of the automaton's variables.
+             */
+            void setInitialStatesRestriction(storm::expressions::Expression const& initialStatesRestriction);
             
             /*!
              * Retrieves the expression defining the legal initial values of the automaton's variables.
              */
-            storm::expressions::Expression const& getInitialStatesExpression() const;
-            
-            /*!
-             * Sets the expression defining the legal initial values of the automaton's variables.
-             */
-            void setInitialStatesExpression(storm::expressions::Expression const& initialStatesExpression);
+            storm::expressions::Expression getInitialStatesExpression() const;
             
             /*!
              * Retrieves whether there is an edge labeled with the action with the given index in this automaton.
@@ -287,8 +292,8 @@ namespace storm {
             /// The indices of the initial locations.
             std::set<uint64_t> initialLocationIndices;
             
-            /// The expression characterizing the legal initial values of the variables of the automaton.
-            storm::expressions::Expression initialStatesExpression;
+            /// The expression restricting the legal initial values of the variables of the automaton.
+            storm::expressions::Expression initialStatesRestriction;
             
             /// The set of action indices that label some action in this automaton.
             std::set<uint64_t> actionIndices;
