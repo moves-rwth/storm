@@ -16,7 +16,6 @@ namespace storm {
             // Intentionally left empty.
         }
 
-
         storm::expressions::Variable const& Variable::getExpressionVariable() const {
             return variable;
         }
@@ -87,6 +86,12 @@ namespace storm {
         
         RealVariable const& Variable::asRealVariable() const {
             return static_cast<RealVariable const&>(*this);
+        }
+        
+        void Variable::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
+            if (this->hasInitExpression()) {
+                this->setInitExpression(this->getInitExpression().substitute(substitution));
+            }
         }
         
     }

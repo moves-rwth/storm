@@ -188,10 +188,14 @@ namespace storm {
                 this->model.getSystemComposition().accept(*this, boost::none);
                 STORM_LOG_THROW(automata.size() == this->model.getNumberOfAutomata(), storm::exceptions::InvalidArgumentException, "Cannot build symbolic model from JANI model whose system composition refers to a subset of automata.");
                 
-                // Then, check that the model does not contain unbounded integer variables.
+                // Then, check that the model does not contain unbounded integer or non-transient real variables.
                 STORM_LOG_THROW(!this->model.getGlobalVariables().containsUnboundedIntegerVariables(), storm::exceptions::InvalidArgumentException, "Cannot build symbolic model from JANI model that contains global unbounded integer variables.");
                 for (auto const& automaton : this->model.getAutomata()) {
                     STORM_LOG_THROW(!automaton.getVariables().containsUnboundedIntegerVariables(), storm::exceptions::InvalidArgumentException, "Cannot build symbolic model from JANI model that contains unbounded integer variables in automaton '" << automaton.getName() << "'.");
+                }
+                STORM_LOG_THROW(!this->model.getGlobalVariables().containsNonTransientRealVariables(), storm::exceptions::InvalidArgumentException, "Cannot build symbolic model from JANI model that contains global non-transient real variables.");
+                for (auto const& automaton : this->model.getAutomata()) {
+                    STORM_LOG_THROW(!automaton.getVariables().containsNonTransientRealVariables(), storm::exceptions::InvalidArgumentException, "Cannot build symbolic model from JANI model that contains non-transient real variables in automaton '" << automaton.getName() << "'.");
                 }
                 
                 // Based on this assumption, we create the variables.
@@ -256,6 +260,11 @@ namespace storm {
                 // Create global variables.
                 storm::dd::Bdd<Type> globalVariableRanges = result.manager->getBddOne();
                 for (auto const& variable : this->model.getGlobalVariables()) {
+                    // Only create the variable if it's non-transient.
+                    if (variable.isTransientVariable()) {
+                        continue;
+                    }
+                    
                     createVariable(variable, result);
                     globalVariableRanges &= result.manager->getRange(result.variableToRowMetaVariableMap->at(variable.getExpressionVariable()));
                 }
@@ -274,6 +283,11 @@ namespace storm {
                     
                     // Then create variables for the variables of the automaton.
                     for (auto const& variable : automaton.getVariables()) {
+                        // Only create the variable if it's non-transient.
+                        if (variable.isTransientVariable()) {
+                            continue;
+                        }
+                        
                         createVariable(variable, result);
                         identity &= result.variableToIdentityMap.at(variable.getExpressionVariable()).toBdd();
                         range &= result.manager->getRange(result.variableToRowMetaVariableMap->at(variable.getExpressionVariable()));
@@ -391,7 +405,7 @@ namespace storm {
             
             // Iterate over all assignments (boolean and integer) and build the DD for it.
             std::set<storm::expressions::Variable> assignedVariables;
-            for (auto const& assignment : destination.getAssignments()) {
+            for (auto const& assignment : destination.getNonTransientAssignments()) {
                 // Record the variable as being written.
                 STORM_LOG_TRACE("Assigning to variable " << variables.variableToRowMetaVariableMap->at(assignment.getExpressionVariable()).getName());
                 assignedVariables.insert(assignment.getExpressionVariable());

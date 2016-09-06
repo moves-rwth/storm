@@ -179,8 +179,8 @@ namespace storm {
             // within the types, the assignments to variables are ordered (in ascending order) by the expression variables.
             // This is guaranteed for JANI models, by sorting the assignments as soon as an edge destination is created.
             
-            auto assignmentIt = destination.getAssignments().begin();
-            auto assignmentIte = destination.getAssignments().end();
+            auto assignmentIt = destination.getNonTransientAssignments().begin();
+            auto assignmentIte = destination.getNonTransientAssignments().end();
             
             // Iterate over all boolean assignments and carry them out.
             auto boolIt = this->variableInformation.booleanVariables.begin();

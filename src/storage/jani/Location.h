@@ -30,6 +30,11 @@ namespace storm {
             std::vector<Assignment> const& getTransientAssignments() const;
             
             /*!
+             * Adds the given transient assignment to this location.
+             */
+            void addTransientAssignment(storm::jani::Assignment const& assignment);
+            
+            /*!
              * Checks whether the location is valid, that is, whether the assignments are indeed all transient assignments.
              */
             void checkValid() const;

@@ -6,6 +6,9 @@
 #include "src/storage/prism/CompositionToJaniVisitor.h"
 #include "src/storage/jani/Model.h"
 
+#include "src/utility/macros.h"
+#include "src/exceptions/NotImplementedException.h"
+
 namespace storm {
     namespace prism {
         
@@ -91,8 +94,53 @@ namespace storm {
                 }
             }
             
+            // Go through the reward models and construct assignments to the transient variables that are to be added to
+            // edges and transient assignments that are added to the locations.
+            std::map<uint_fast64_t, std::vector<storm::jani::Assignment>> transientEdgeAssignments;
+            std::vector<storm::jani::Assignment> transientLocationAssignments;
+            for (auto const& rewardModel : program.getRewardModels()) {
+                auto newExpressionVariable = manager->declareRationalVariable(rewardModel.getName().empty() ? "default" : rewardModel.getName());
+                storm::jani::RealVariable const& newTransientVariable = janiModel.addVariable(storm::jani::RealVariable(rewardModel.getName(), newExpressionVariable, true));
+                
+                if (rewardModel.hasStateRewards()) {
+                    storm::expressions::Expression transientLocationExpression;
+                    for (auto const& stateReward : rewardModel.getStateRewards()) {
+                        storm::expressions::Expression rewardTerm = stateReward.getStatePredicateExpression().isTrue() ? stateReward.getRewardValueExpression() : storm::expressions::ite(stateReward.getStatePredicateExpression(), stateReward.getRewardValueExpression(), manager->rational(0));
+                        if (transientLocationExpression.isInitialized()) {
+                            transientLocationExpression = transientLocationExpression + rewardTerm;
+                        } else {
+                            transientLocationExpression = rewardTerm;
+                        }
+                    }
+                    transientLocationAssignments.emplace_back(newTransientVariable, transientLocationExpression);
+                }
+                
+                std::map<uint_fast64_t, storm::expressions::Expression> actionIndexToExpression;
+                for (auto const& actionReward : rewardModel.getStateActionRewards()) {
+                    storm::expressions::Expression rewardTerm = actionReward.getStatePredicateExpression().isTrue() ? actionReward.getRewardValueExpression() : storm::expressions::ite(actionReward.getStatePredicateExpression(), actionReward.getRewardValueExpression(), manager->rational(0));
+                    auto it = actionIndexToExpression.find(janiModel.getActionIndex(actionReward.getActionName()));
+                    if (it != actionIndexToExpression.end()) {
+                        it->second = it->second + rewardTerm;
+                    } else {
+                        actionIndexToExpression[janiModel.getActionIndex(actionReward.getActionName())] = rewardTerm;
+                    }
+                }
+                
+                for (auto const& entry : actionIndexToExpression) {
+                    auto it = transientEdgeAssignments.find(entry.first);
+                    if (it != transientEdgeAssignments.end()) {
+                        it->second.push_back(storm::jani::Assignment(newTransientVariable, entry.second));
+                    } else {
+                        std::vector<storm::jani::Assignment> assignments = {storm::jani::Assignment(newTransientVariable, entry.second)};
+                        transientEdgeAssignments.emplace(entry.first, assignments);
+                    }
+                }
+                STORM_LOG_THROW(!rewardModel.hasTransitionRewards(), storm::exceptions::NotImplementedException, "Transition reward translation currently not implemented.");
+            }
+            
             // Now create the separate JANI automata from the modules of the PRISM program. While doing so, we use the
             // previously built mapping to make variables global that are read by more than one module.
+            bool firstModule = true;
             for (auto const& module : program.getModules()) {
                 storm::jani::Automaton automaton(module.getName());
                 for (auto const& variable : module.getIntegerVariables()) {
@@ -124,8 +172,16 @@ namespace storm {
                 automaton.setInitialStatesRestriction(manager->boolean(true));
                 
                 // Create a single location that will have all the edges.
-                uint64_t onlyLocation = automaton.addLocation(storm::jani::Location("l"));
-                automaton.addInitialLocation(onlyLocation);
+                uint64_t onlyLocationIndex = automaton.addLocation(storm::jani::Location("l"));
+                automaton.addInitialLocation(onlyLocationIndex);
+                
+                // If we are translating the first module, we need to add the transient assignments to the location.
+                if (firstModule) {
+                    storm::jani::Location& onlyLocation = automaton.getLocation(onlyLocationIndex);
+                    for (auto const& assignment : transientLocationAssignments) {
+                        onlyLocation.addTransientAssignment(assignment);
+                    }
+                }
                 
                 for (auto const& command : module.getCommands()) {
                     boost::optional<storm::expressions::Expression> rateExpression;
@@ -147,20 +203,29 @@ namespace storm {
                         }
                         
                         if (rateExpression) {
-                            destinations.push_back(storm::jani::EdgeDestination(onlyLocation, manager->integer(1) / rateExpression.get(), assignments));
+                            destinations.push_back(storm::jani::EdgeDestination(onlyLocationIndex, manager->integer(1) / rateExpression.get(), assignments));
                         } else {
-                            destinations.push_back(storm::jani::EdgeDestination(onlyLocation, update.getLikelihoodExpression(), assignments));
+                            destinations.push_back(storm::jani::EdgeDestination(onlyLocationIndex, update.getLikelihoodExpression(), assignments));
                         }
                     }
-                    automaton.addEdge(storm::jani::Edge(onlyLocation, janiModel.getActionIndex(command.getActionName()), rateExpression, command.getGuardExpression(), destinations));
+                    
+                    // Create the edge object so we can add transient assignments.
+                    storm::jani::Edge newEdge(onlyLocationIndex, janiModel.getActionIndex(command.getActionName()), rateExpression, command.getGuardExpression(), destinations);
+                    
+                    // Then add the transient assignments for the rewards.
+                    auto transientEdgeAssignmentsToAdd = transientEdgeAssignments.find(janiModel.getActionIndex(command.getActionName()));
+                    if (transientEdgeAssignmentsToAdd != transientEdgeAssignments.end()) {
+                        for (auto const& assignment : transientEdgeAssignmentsToAdd->second) {
+                            newEdge.addTransientAssignment(assignment);
+                        }
+                    }
+                    
+                    // Finally add the constructed edge.
+                    automaton.addEdge(newEdge);
                 }
                 
                 janiModel.addAutomaton(automaton);
-            }
-            
-            // Translate the reward models.
-            for (auto const& rewardModel : program.getRewardModels()) {
-                
+                firstModule = false;
             }
             
             // Create an initial state restriction if there was an initial construct in the program.

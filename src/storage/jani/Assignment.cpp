@@ -31,6 +31,10 @@ namespace storm  {
             return this->variable.get().isTransientVariable();
         }
         
+        void Assignment::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
+            this->setAssignedExpression(this->getAssignedExpression().substitute(substitution));
+        }
+        
         std::ostream& operator<<(std::ostream& stream, Assignment const& assignment) {
             stream << assignment.getVariable().getName() << " := " << assignment.getAssignedExpression();
             return stream;

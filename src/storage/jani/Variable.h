@@ -73,6 +73,11 @@ namespace storm {
             RealVariable& asRealVariable();
             RealVariable const& asRealVariable() const;
             
+            /*!
+             * Substitutes all variables in all expressions according to the given substitution.
+             */
+            virtual void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution);
+            
         private:
             // The name of the variable.
             std::string name;

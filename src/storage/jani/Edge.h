@@ -65,6 +65,21 @@ namespace storm {
             void addDestination(EdgeDestination const& destination);
             
             /*!
+             * Retrieves the transient assignments of this edge.
+             */
+            std::vector<Assignment>& getTransientAssignments();
+            
+            /*!
+             * Retrieves the transient assignments of this edge.
+             */
+            std::vector<Assignment> const& getTransientAssignments() const;
+            
+            /*!
+             * Substitutes all variables in all expressions according to the given substitution.
+             */
+            void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution);
+            
+            /*!
              * Finalizes the building of this edge. Subsequent changes to the edge require another call to this
              * method. Note that this method is invoked by a call to <code>finalize</code> to the containing model.
              */

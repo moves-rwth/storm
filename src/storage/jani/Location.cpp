@@ -18,6 +18,10 @@ namespace storm {
             return transientAssignments;
         }
         
+        void Location::addTransientAssignment(storm::jani::Assignment const& assignment) {
+            transientAssignments.push_back(assignment);
+        }
+        
         void Location::checkValid() const {
             for(auto const& assignment : transientAssignments) {
                 STORM_LOG_THROW(assignment.isTransientAssignment(), storm::exceptions::InvalidJaniException, "Only transient assignments are allowed in locations.");

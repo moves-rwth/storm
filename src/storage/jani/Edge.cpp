@@ -49,6 +49,27 @@ namespace storm {
             destinations.push_back(destination);
         }
         
+        std::vector<Assignment>& Edge::getTransientAssignments() {
+            return transientAssignments;
+        }
+        
+        std::vector<Assignment> const& Edge::getTransientAssignments() const {
+            return transientAssignments;
+        }
+        
+        void Edge::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
+            this->setGuard(this->getGuard().substitute(substitution));
+            if (this->hasRate()) {
+                this->setRate(this->getRate().substitute(substitution));
+            }
+            for (auto& assignment : this->getTransientAssignments()) {
+                assignment.substitute(substitution);
+            }
+            for (auto& destination : this->getDestinations()) {
+                destination.substitute(substitution);
+            }
+        }
+        
         void Edge::finalize(Model const& containingModel) {
             for (auto const& destination : getDestinations()) {
                 for (auto const& assignment : destination.getAssignments()) {

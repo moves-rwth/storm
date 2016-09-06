@@ -67,6 +67,11 @@ namespace storm {
             std::vector<Assignment> const& getTransientAssignments() const;
 
             /*!
+             * Substitutes all variables in all expressions according to the given substitution.
+             */
+            void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution);
+            
+            /*!
              * Retrieves whether this assignment is made when choosing this destination.
              *
              * @return True iff the assignment is made.

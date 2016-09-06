@@ -52,6 +52,11 @@ namespace storm {
             
             virtual bool isBoundedIntegerVariable() const override;
 
+            /*!
+             * Substitutes all variables in all expressions according to the given substitution.
+             */
+            virtual void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) override;
+            
         private:
             // The expression defining the lower bound of the variable.
             storm::expressions::Expression lowerBound;

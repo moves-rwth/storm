@@ -310,9 +310,7 @@ namespace storm {
             
             // Substitute constants in all global variables.
             for (auto& variable : result.getGlobalVariables().getBoundedIntegerVariables()) {
-                variable.setInitExpression(variable.getInitExpression().substitute(constantSubstitution));
-                variable.setLowerBound(variable.getLowerBound().substitute(constantSubstitution));
-                variable.setUpperBound(variable.getUpperBound().substitute(constantSubstitution));
+                variable.substitute(constantSubstitution);
             }
             
             // Substitute constants in initial states expression.
@@ -320,26 +318,7 @@ namespace storm {
             
             // Substitute constants in variables of automata and their edges.
             for (auto& automaton : result.getAutomata()) {
-                for (auto& variable : automaton.getVariables().getBoundedIntegerVariables()) {
-                    variable.setInitExpression(variable.getInitExpression().substitute(constantSubstitution));
-                    variable.setLowerBound(variable.getLowerBound().substitute(constantSubstitution));
-                    variable.setUpperBound(variable.getUpperBound().substitute(constantSubstitution));
-                }
-                
-                automaton.setInitialStatesRestriction(automaton.getInitialStatesExpression().substitute(constantSubstitution));
-                
-                for (auto& edge : automaton.getEdges()) {
-                    edge.setGuard(edge.getGuard().substitute(constantSubstitution));
-                    if (edge.hasRate()) {
-                        edge.setRate(edge.getRate().substitute(constantSubstitution));
-                    }
-                    for (auto& destination : edge.getDestinations()) {
-                        destination.setProbability(destination.getProbability().substitute(constantSubstitution));
-                        for (auto& assignment : destination.getAssignments()) {
-                            assignment.setAssignedExpression(assignment.getAssignedExpression().substitute(constantSubstitution));
-                        }
-                    }
-                }
+                automaton.substitute(constantSubstitution);
             }
             
             return result;

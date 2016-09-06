@@ -108,7 +108,11 @@ namespace storm {
         Location const& Automaton::getLocation(uint64_t index) const {
             return locations[index];
         }
-        
+
+        Location& Automaton::getLocation(uint64_t index) {
+            return locations[index];
+        }
+
         uint64_t Automaton::addLocation(Location const& location) {
             STORM_LOG_THROW(!this->hasLocation(location.getName()), storm::exceptions::WrongFormatException, "Cannot add location with name '" << location.getName() << "', because a location with this name already exists.");
             locationToIndex.emplace(location.getName(), locations.size());
@@ -356,6 +360,18 @@ namespace storm {
                 result.push_back(variable.getRangeExpression());
             }
             return result;
+        }
+        
+        void Automaton::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
+            for (auto& variable : this->getVariables().getBoundedIntegerVariables()) {
+                variable.substitute(substitution);
+            }
+            
+            this->setInitialStatesRestriction(this->getInitialStatesRestriction().substitute(substitution));
+            
+            for (auto& edge : this->getEdges()) {
+                edge.substitute(substitution);
+            }
         }
         
         void Automaton::finalize(Model const& containingModel) {

@@ -72,6 +72,19 @@ namespace storm {
             return transientAssignments;
         }
         
+        void EdgeDestination::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
+            this->setProbability(this->getProbability().substitute(substitution));
+            for (auto& assignment : this->getAssignments()) {
+                assignment.substitute(substitution);
+            }
+            for (auto& assignment : this->getTransientAssignments()) {
+                assignment.substitute(substitution);
+            }
+            for (auto& assignment : this->getNonTransientAssignments()) {
+                assignment.substitute(substitution);
+            }
+        }
+        
         bool EdgeDestination::hasAssignment(Assignment const& assignment) const {
             for (auto const& containedAssignment : assignments) {
                 if (containedAssignment == assignment) {

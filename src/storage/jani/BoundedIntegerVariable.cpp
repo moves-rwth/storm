@@ -21,7 +21,6 @@ namespace storm {
             // Intentionally left empty.
         }
 
-
         storm::expressions::Expression const& BoundedIntegerVariable::getLowerBound() const {
             return lowerBound;
         }
@@ -44,6 +43,12 @@ namespace storm {
 
         bool BoundedIntegerVariable::isBoundedIntegerVariable() const {
             return true;
+        }
+        
+        void BoundedIntegerVariable::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
+            Variable::substitute(substitution);
+            this->setLowerBound(this->getLowerBound().substitute(substitution));
+            this->setUpperBound(this->getUpperBound().substitute(substitution));
         }
         
         std::shared_ptr<BoundedIntegerVariable> makeBoundedIntegerVariable(std::string const& name, storm::expressions::Variable const& variable, boost::optional<storm::expressions::Expression> initValue, bool transient, boost::optional<storm::expressions::Expression> lowerBound, boost::optional<storm::expressions::Expression> upperBound) {

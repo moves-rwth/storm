@@ -37,6 +37,11 @@ namespace storm {
              */
             void setAssignedExpression(storm::expressions::Expression const& expression);
 
+            /*!
+             * Substitutes all variables in all expressions according to the given substitution.
+             */
+            void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution);
+            
             /**
              * Retrieves whether the assignment assigns to a transient variable.
              */
