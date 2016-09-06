@@ -8,6 +8,7 @@
 #include "src/storage/jani/BooleanVariable.h"
 #include "src/storage/jani/UnboundedIntegerVariable.h"
 #include "src/storage/jani/BoundedIntegerVariable.h"
+#include "src/storage/jani/RealVariable.h"
 
 namespace storm {
     namespace jani {
@@ -98,19 +99,34 @@ namespace storm {
             detail::ConstVariables<UnboundedIntegerVariable> getUnboundedIntegerVariables() const;
             
             /*!
+             * Retrieves the real variables in this set.
+             */
+            detail::Variables<RealVariable> getRealVariables();
+            
+            /*!
+             * Retrieves the real variables in this set.
+             */
+            detail::ConstVariables<RealVariable> getRealVariables() const;
+            
+            /*!
              * Adds the given boolean variable to this set.
              */
-            BooleanVariable const& addBooleanVariable(BooleanVariable const& variable);
+            BooleanVariable const& addVariable(BooleanVariable const& variable);
 
             /*!
              * Adds the given bounded integer variable to this set.
              */
-            BoundedIntegerVariable const& addBoundedIntegerVariable(BoundedIntegerVariable const& variable);
+            BoundedIntegerVariable const& addVariable(BoundedIntegerVariable const& variable);
 
             /*!
              * Adds the given unbounded integer variable to this set.
              */
-            UnboundedIntegerVariable const& addUnboundedIntegerVariable(UnboundedIntegerVariable const& variable);
+            UnboundedIntegerVariable const& addVariable(UnboundedIntegerVariable const& variable);
+            
+            /*!
+             * Adds the given real variable to this set.
+             */
+            RealVariable const& addVariable(RealVariable const& variable);
 
             /*!
              * Retrieves whether this variable set contains a variable with the given name.
@@ -168,6 +184,11 @@ namespace storm {
             bool containsUnboundedIntegerVariables() const;
 
             /*!
+             * Retrieves whether the set of variables contains an unbounded integer variable.
+             */
+            bool containsRealVariables() const;
+
+            /*!
              * Retrieves whether this variable set is empty.
              */
             bool empty() const;
@@ -184,6 +205,9 @@ namespace storm {
 
             /// The unbounded integer variables in this set.
             std::vector<std::shared_ptr<UnboundedIntegerVariable>> unboundedIntegerVariables;
+            
+            /// The real variables in this set.
+            std::vector<std::shared_ptr<RealVariable>> realVariables;
             
             /// A set of all variable names currently in use.
             std::map<std::string, storm::expressions::Variable> nameToVariable;

@@ -107,26 +107,32 @@ namespace storm {
 
         Variable const& Model::addVariable(Variable const& variable) {
             if (variable.isBooleanVariable()) {
-                return addBooleanVariable(variable.asBooleanVariable());
+                return addVariable(variable.asBooleanVariable());
             } else if (variable.isBoundedIntegerVariable()) {
-                return addBoundedIntegerVariable(variable.asBoundedIntegerVariable());
+                return addVariable(variable.asBoundedIntegerVariable());
             } else if (variable.isUnboundedIntegerVariable()) {
-                return addUnboundedIntegerVariable(variable.asUnboundedIntegerVariable());
+                return addVariable(variable.asUnboundedIntegerVariable());
+            } else if (variable.isRealVariable()) {
+                return addVariable(variable.asRealVariable());
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Variable has invalid type.");
             }
         }
 
-        BooleanVariable const& Model::addBooleanVariable(BooleanVariable const& variable) {
-            return globalVariables.addBooleanVariable(variable);
+        BooleanVariable const& Model::addVariable(BooleanVariable const& variable) {
+            return globalVariables.addVariable(variable);
         }
         
-        BoundedIntegerVariable const& Model::addBoundedIntegerVariable(BoundedIntegerVariable const& variable) {
-            return globalVariables.addBoundedIntegerVariable(variable);
+        BoundedIntegerVariable const& Model::addVariable(BoundedIntegerVariable const& variable) {
+            return globalVariables.addVariable(variable);
         }
         
-        UnboundedIntegerVariable const& Model::addUnboundedIntegerVariable(UnboundedIntegerVariable const& variable) {
-            return globalVariables.addUnboundedIntegerVariable(variable);
+        UnboundedIntegerVariable const& Model::addVariable(UnboundedIntegerVariable const& variable) {
+            return globalVariables.addVariable(variable);
+        }
+
+        RealVariable const& Model::addVariable(RealVariable const& variable) {
+            return globalVariables.addVariable(variable);
         }
 
         VariableSet& Model::getGlobalVariables() {

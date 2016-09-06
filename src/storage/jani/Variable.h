@@ -13,6 +13,7 @@ namespace storm {
         class BooleanVariable;
         class BoundedIntegerVariable;
         class UnboundedIntegerVariable;
+        class RealVariable;
         
         class Variable {
         public:
@@ -58,6 +59,7 @@ namespace storm {
             virtual bool isBooleanVariable() const;
             virtual bool isBoundedIntegerVariable() const;
             virtual bool isUnboundedIntegerVariable() const;
+            virtual bool isRealVariable() const;
 
             virtual bool isTransientVariable() const;
             
@@ -68,6 +70,8 @@ namespace storm {
             BoundedIntegerVariable const& asBoundedIntegerVariable() const;
             UnboundedIntegerVariable& asUnboundedIntegerVariable();
             UnboundedIntegerVariable const& asUnboundedIntegerVariable() const;
+            RealVariable& asRealVariable();
+            RealVariable const& asRealVariable() const;
             
         private:
             // The name of the variable.

@@ -115,17 +115,22 @@ namespace storm {
             /*!
              * Adds the given boolean variable to this model.
              */
-            BooleanVariable const& addBooleanVariable(BooleanVariable const& variable);
+            BooleanVariable const& addVariable(BooleanVariable const& variable);
             
             /*!
              * Adds the given bounded integer variable to this model.
              */
-            BoundedIntegerVariable const& addBoundedIntegerVariable(BoundedIntegerVariable const& variable);
+            BoundedIntegerVariable const& addVariable(BoundedIntegerVariable const& variable);
             
             /*!
              * Adds the given unbounded integer variable to this model.
              */
-            UnboundedIntegerVariable const& addUnboundedIntegerVariable(UnboundedIntegerVariable const& variable);
+            UnboundedIntegerVariable const& addVariable(UnboundedIntegerVariable const& variable);
+
+            /*!
+             * Adds the given real variable to this model.
+             */
+            RealVariable const& addVariable(RealVariable const& variable);
 
             /*!
              * Retrieves the variables of this automaton.

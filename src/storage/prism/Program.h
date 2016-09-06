@@ -566,18 +566,8 @@ namespace storm {
              *
              * @return The manager responsible for the expressions of this program.
              */
-            storm::expressions::ExpressionManager const& getManager() const;
+            storm::expressions::ExpressionManager& getManager() const;
 
-            /*!
-             * Retrieves the manager responsible for the expressions of this program.
-             *
-             * @return The manager responsible for the expressions of this program.
-             */
-            storm::expressions::ExpressionManager& getManager();
-
-            /*!
-             *
-             */
             std::unordered_map<uint_fast64_t, std::string> buildCommandIndexToActionNameMap() const;
 
             std::unordered_map<uint_fast64_t, uint_fast64_t> buildCommandIndexToActionIndex() const;

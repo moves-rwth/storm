@@ -61,26 +61,32 @@ namespace storm {
 
         Variable const& Automaton::addVariable(Variable const &variable) {
             if (variable.isBooleanVariable()) {
-                return addBooleanVariable(variable.asBooleanVariable());
+                return addVariable(variable.asBooleanVariable());
             } else if (variable.isBoundedIntegerVariable()) {
-                return addBoundedIntegerVariable(variable.asBoundedIntegerVariable());
+                return addVariable(variable.asBoundedIntegerVariable());
             } else if (variable.isUnboundedIntegerVariable()) {
-                return addUnboundedIntegerVariable(variable.asUnboundedIntegerVariable());
+                return addVariable(variable.asUnboundedIntegerVariable());
+            } else if (variable.isRealVariable()) {
+                return addVariable(variable.asRealVariable());
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Variable has invalid type.");
             }
         }
         
-        BooleanVariable const& Automaton::addBooleanVariable(BooleanVariable const& variable) {
-            return variables.addBooleanVariable(variable);
+        BooleanVariable const& Automaton::addVariable(BooleanVariable const& variable) {
+            return variables.addVariable(variable);
         }
         
-        BoundedIntegerVariable const& Automaton::addBoundedIntegerVariable(BoundedIntegerVariable const& variable) {
-            return variables.addBoundedIntegerVariable(variable);
+        BoundedIntegerVariable const& Automaton::addVariable(BoundedIntegerVariable const& variable) {
+            return variables.addVariable(variable);
         }
 
-        UnboundedIntegerVariable const& Automaton::addUnboundedIntegerVariable(UnboundedIntegerVariable const& variable) {
-            return variables.addUnboundedIntegerVariable(variable);
+        UnboundedIntegerVariable const& Automaton::addVariable(UnboundedIntegerVariable const& variable) {
+            return variables.addVariable(variable);
+        }
+
+        RealVariable const& Automaton::addVariable(RealVariable const& variable) {
+            return variables.addVariable(variable);
         }
 
         VariableSet& Automaton::getVariables() {

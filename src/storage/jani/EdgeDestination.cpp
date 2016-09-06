@@ -72,6 +72,28 @@ namespace storm {
             return transientAssignments;
         }
         
+        bool EdgeDestination::hasAssignment(Assignment const& assignment) const {
+            for (auto const& containedAssignment : assignments) {
+                if (containedAssignment == assignment) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        
+        bool EdgeDestination::removeAssignment(Assignment const& assignment) {
+            bool toRemove = removeAssignment(assignment, assignments);
+            if (toRemove) {
+                if (assignment.isTransientAssignment()) {
+                    removeAssignment(assignment, transientAssignments);
+                } else {
+                    removeAssignment(assignment, nonTransientAssignments);
+                }
+                return true;
+            }
+            return false;
+        }
+        
         void EdgeDestination::sortAssignments(std::vector<Assignment>& assignments) {
             std::sort(assignments.begin(), assignments.end(), [] (storm::jani::Assignment const& assignment1, storm::jani::Assignment const& assignment2) {
                 bool smaller = assignment1.getExpressionVariable().getType().isBooleanType() && !assignment2.getExpressionVariable().getType().isBooleanType();
@@ -82,5 +104,15 @@ namespace storm {
             });
         }
         
+        bool EdgeDestination::removeAssignment(Assignment const& assignment, std::vector<Assignment>& assignments) {
+            for (auto it = assignments.begin(), ite = assignments.end(); it != ite; ++it) {
+                if (assignment == *it) {
+                    assignments.erase(it);
+                    return true;
+                }
+            }
+            return false;
+        }
+
     }
 }

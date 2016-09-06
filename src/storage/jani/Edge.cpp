@@ -64,7 +64,28 @@ namespace storm {
         }
         
         void Edge::liftTransientDestinationAssignments() {
-            
+            if (!destinations.empty()) {
+                auto const& destination = *destinations.begin();
+                
+                for (auto const& assignment : destination.getTransientAssignments()) {
+                    // Check if we can lift the assignment to the edge.
+                    bool canBeLifted = true;
+                    for (auto const& destination : destinations) {
+                        if (!destination.hasAssignment(assignment)) {
+                            canBeLifted = false;
+                            break;
+                        }
+                    }
+                    
+                    // If so, remove the assignment from all destinations.
+                    if (canBeLifted) {
+                        this->addTransientAssignment(assignment);
+                        for (auto& destination : destinations) {
+                            destination.removeAssignment(assignment);
+                        }
+                    }
+                }
+            }
         }
         
         boost::container::flat_set<storm::expressions::Variable> const& Edge::getWrittenGlobalVariables() const {
