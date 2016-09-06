@@ -7,6 +7,10 @@ namespace storm  {
             // Intentionally left empty.
         }
         
+        bool Assignment::operator==(Assignment const& other) const {
+            return this->getExpressionVariable() == other.getExpressionVariable() && this->getAssignedExpression().isSyntacticallyEqual(other.getAssignedExpression());
+        }
+        
         storm::jani::Variable const& Assignment::getVariable() const {
             return variable.get();
         }

@@ -14,23 +14,23 @@ namespace storm {
         
         template<typename RationalNumberType>
         RationalNumberType ToRationalNumberVisitor<RationalNumberType>::toRationalNumber(Expression const& expression) {
-            return boost::any_cast<RationalNumberType>(expression.accept(*this));
+            return boost::any_cast<RationalNumberType>(expression.accept(*this, boost::none));
         }
         
         template<typename RationalNumberType>
-        boost::any ToRationalNumberVisitor<RationalNumberType>::visit(IfThenElseExpression const& expression) {
+        boost::any ToRationalNumberVisitor<RationalNumberType>::visit(IfThenElseExpression const& expression, boost::any const& data) {
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression cannot be translated into a rational number.");
         }
         
         template<typename RationalNumberType>
-        boost::any ToRationalNumberVisitor<RationalNumberType>::visit(BinaryBooleanFunctionExpression const& expression) {
+        boost::any ToRationalNumberVisitor<RationalNumberType>::visit(BinaryBooleanFunctionExpression const& expression, boost::any const& data) {
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression cannot be translated into a rational number.");
         }
         
         template<typename RationalNumberType>
-        boost::any ToRationalNumberVisitor<RationalNumberType>::visit(BinaryNumericalFunctionExpression const& expression) {
-            RationalNumberType firstOperandAsRationalNumber = boost::any_cast<RationalNumberType>(expression.getFirstOperand()->accept(*this));
-            RationalNumberType secondOperandAsRationalNumber = boost::any_cast<RationalNumberType>(expression.getSecondOperand()->accept(*this));
+        boost::any ToRationalNumberVisitor<RationalNumberType>::visit(BinaryNumericalFunctionExpression const& expression, boost::any const& data) {
+            RationalNumberType firstOperandAsRationalNumber = boost::any_cast<RationalNumberType>(expression.getFirstOperand()->accept(*this, data));
+            RationalNumberType secondOperandAsRationalNumber = boost::any_cast<RationalNumberType>(expression.getSecondOperand()->accept(*this, data));
             switch(expression.getOperatorType()) {
                 case BinaryNumericalFunctionExpression::OperatorType::Plus:
                     return firstOperandAsRationalNumber + secondOperandAsRationalNumber;
@@ -63,32 +63,32 @@ namespace storm {
         }
         
         template<typename RationalNumberType>
-        boost::any ToRationalNumberVisitor<RationalNumberType>::visit(BinaryRelationExpression const& expression) {
+        boost::any ToRationalNumberVisitor<RationalNumberType>::visit(BinaryRelationExpression const& expression, boost::any const& data) {
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression cannot be translated into a rational number.");
         }
         
         template<typename RationalNumberType>
-        boost::any ToRationalNumberVisitor<RationalNumberType>::visit(VariableExpression const& expression) {
+        boost::any ToRationalNumberVisitor<RationalNumberType>::visit(VariableExpression const& expression, boost::any const& data) {
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Cannot transform expressions containing variables to a rational number.");
         }
         
         template<typename RationalNumberType>
-        boost::any ToRationalNumberVisitor<RationalNumberType>::visit(UnaryBooleanFunctionExpression const& expression) {
+        boost::any ToRationalNumberVisitor<RationalNumberType>::visit(UnaryBooleanFunctionExpression const& expression, boost::any const& data) {
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression cannot be translated into a rational number.");
         }
         
         template<typename RationalNumberType>
-        boost::any ToRationalNumberVisitor<RationalNumberType>::visit(UnaryNumericalFunctionExpression const& expression) {
+        boost::any ToRationalNumberVisitor<RationalNumberType>::visit(UnaryNumericalFunctionExpression const& expression, boost::any const& data) {
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression cannot be translated into a rational number.");
         }
         
         template<typename RationalNumberType>
-        boost::any ToRationalNumberVisitor<RationalNumberType>::visit(BooleanLiteralExpression const& expression) {
+        boost::any ToRationalNumberVisitor<RationalNumberType>::visit(BooleanLiteralExpression const& expression, boost::any const& data) {
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression cannot be translated into a rational number.");
         }
         
         template<typename RationalNumberType>
-        boost::any ToRationalNumberVisitor<RationalNumberType>::visit(IntegerLiteralExpression const& expression) {
+        boost::any ToRationalNumberVisitor<RationalNumberType>::visit(IntegerLiteralExpression const& expression, boost::any const& data) {
 #ifdef STORM_HAVE_CARL
             return RationalNumberType(carl::rationalize<storm::RationalNumber>(static_cast<size_t>(expression.getValue())));
 #else
@@ -97,7 +97,7 @@ namespace storm {
         }
         
         template<typename RationalNumberType>
-        boost::any ToRationalNumberVisitor<RationalNumberType>::visit(RationalLiteralExpression const& expression) {
+        boost::any ToRationalNumberVisitor<RationalNumberType>::visit(RationalLiteralExpression const& expression, boost::any const& data) {
 #ifdef STORM_HAVE_CARL
             return expression.getValue();
 #else

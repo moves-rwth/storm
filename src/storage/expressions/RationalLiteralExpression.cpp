@@ -34,8 +34,8 @@ namespace storm {
             return this->shared_from_this();
         }
         
-        boost::any RationalLiteralExpression::accept(ExpressionVisitor& visitor) const {
-            return visitor.visit(*this);
+        boost::any RationalLiteralExpression::accept(ExpressionVisitor& visitor, boost::any const& data) const {
+            return visitor.visit(*this, data);
         }
         
         double RationalLiteralExpression::getValueAsDouble() const {

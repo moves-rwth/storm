@@ -4,6 +4,8 @@
 #include "src/exceptions/InvalidTypeException.h"
 #include "src/exceptions/InvalidAccessException.h"
 
+#include "src/storage/expressions/Expressions.h"
+
 namespace storm {
     namespace expressions {        
         BaseExpression::BaseExpression(ExpressionManager const& manager, Type const& type) : manager(manager), type(type) {
@@ -92,6 +94,86 @@ namespace storm {
         
         std::shared_ptr<BaseExpression const> BaseExpression::getSharedPointer() const {
             return this->shared_from_this();
+        }
+        
+        bool BaseExpression::isIfThenElseExpression() const {
+            return false;
+        }
+        
+        IfThenElseExpression const& BaseExpression::asIfThenElseExpression() const {
+            return static_cast<IfThenElseExpression const&>(*this);
+        }
+        
+        bool BaseExpression::isBinaryBooleanFunctionExpression() const {
+            return false;
+        }
+        
+        BinaryBooleanFunctionExpression const& BaseExpression::asBinaryBooleanFunctionExpression() const {
+            return static_cast<BinaryBooleanFunctionExpression const&>(*this);
+        }
+        
+        bool BaseExpression::isBinaryNumericalFunctionExpression() const {
+            return false;
+        }
+        
+        BinaryNumericalFunctionExpression const& BaseExpression::asBinaryNumericalFunctionExpression() const {
+            return static_cast<BinaryNumericalFunctionExpression const&>(*this);
+        }
+        
+        bool BaseExpression::isBinaryRelationExpression() const {
+            return false;
+        }
+        
+        BinaryRelationExpression const& BaseExpression::asBinaryRelationExpression() const {
+            return static_cast<BinaryRelationExpression const&>(*this);
+        }
+        
+        bool BaseExpression::isBooleanLiteralExpression() const {
+            return false;
+        }
+        
+        BooleanLiteralExpression const& BaseExpression::asBooleanLiteralExpression() const {
+            return static_cast<BooleanLiteralExpression const&>(*this);
+        }
+        
+        bool BaseExpression::isIntegerLiteralExpression() const {
+            return false;
+        }
+        
+        IntegerLiteralExpression const& BaseExpression::asIntegerLiteralExpression() const {
+            return static_cast<IntegerLiteralExpression const&>(*this);
+        }
+        
+        bool BaseExpression::isRationalLiteralExpression() const {
+            return false;
+        }
+        
+        RationalLiteralExpression const& BaseExpression::asRationalLiteralExpression() const {
+            return static_cast<RationalLiteralExpression const&>(*this);
+        }
+        
+        bool BaseExpression::isUnaryBooleanFunctionExpression() const {
+            return false;
+        }
+        
+        UnaryBooleanFunctionExpression const& BaseExpression::asUnaryBooleanFunctionExpression() const {
+            return static_cast<UnaryBooleanFunctionExpression const&>(*this);
+        }
+        
+        bool BaseExpression::isUnaryNumericalFunctionExpression() const {
+            return false;
+        }
+        
+        UnaryNumericalFunctionExpression const& BaseExpression::asUnaryNumericalFunctionExpression() const {
+            return static_cast<UnaryNumericalFunctionExpression const&>(*this);
+        }
+        
+        bool BaseExpression::isVariableExpression() const {
+            return false;
+        }
+        
+        VariableExpression const& BaseExpression::asVariableExpression() const {
+            return static_cast<VariableExpression const&>(*this);
         }
         
         std::ostream& operator<<(std::ostream& stream, BaseExpression const& expression) {

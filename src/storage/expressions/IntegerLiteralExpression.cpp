@@ -29,8 +29,8 @@ namespace storm {
             return this->shared_from_this();
         }
         
-        boost::any IntegerLiteralExpression::accept(ExpressionVisitor& visitor) const {
-            return visitor.visit(*this);
+        boost::any IntegerLiteralExpression::accept(ExpressionVisitor& visitor, boost::any const& data) const {
+            return visitor.visit(*this, data);
         }
         
         int_fast64_t IntegerLiteralExpression::getValue() const {

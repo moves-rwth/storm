@@ -59,6 +59,14 @@ namespace storm {
             }
         }
         
+        void Edge::addTransientAssignment(Assignment const& assignment) {
+            transientAssignments.push_back(assignment);
+        }
+        
+        void Edge::liftTransientDestinationAssignments() {
+            
+        }
+        
         boost::container::flat_set<storm::expressions::Variable> const& Edge::getWrittenGlobalVariables() const {
             return writtenGlobalVariables;
         }

@@ -1,24 +1,15 @@
-#ifndef STORM_STORAGE_EXPRESSIONS_LINEARITYCHECKVISITOR_H_
-#define STORM_STORAGE_EXPRESSIONS_LINEARITYCHECKVISITOR_H_
+#pragma once
 
-#include "src/storage/expressions/Expression.h"
 #include "src/storage/expressions/ExpressionVisitor.h"
 
 namespace storm {
     namespace expressions {
-        class LinearityCheckVisitor : public ExpressionVisitor {
+        
+        class Expression;
+        
+        class SyntacticalEqualityCheckVisitor : public ExpressionVisitor {
         public:
-            /*!
-             * Creates a linearity check visitor.
-             */
-            LinearityCheckVisitor();
-            
-            /*!
-             * Checks that the given expression is linear.
-             *
-             * @param expression The expression to check for linearity.
-             */
-            bool check(Expression const& expression);
+            bool isSyntaticallyEqual(storm::expressions::Expression const& expression1, storm::expressions::Expression const& expression2);
             
             virtual boost::any visit(IfThenElseExpression const& expression, boost::any const& data) override;
             virtual boost::any visit(BinaryBooleanFunctionExpression const& expression, boost::any const& data) override;
@@ -30,11 +21,7 @@ namespace storm {
             virtual boost::any visit(BooleanLiteralExpression const& expression, boost::any const& data) override;
             virtual boost::any visit(IntegerLiteralExpression const& expression, boost::any const& data) override;
             virtual boost::any visit(RationalLiteralExpression const& expression, boost::any const& data) override;
-            
-        private:
-            enum class LinearityStatus { NonLinear, LinearContainsVariables, LinearWithoutVariables };
         };
+        
     }
 }
-
-#endif /* STORM_STORAGE_EXPRESSIONS_LINEARITYCHECKVISITOR_H_ */

@@ -38,7 +38,7 @@ namespace storm {
             virtual double evaluateAsDouble(Valuation const* valuation = nullptr) const override;
             virtual void gatherVariables(std::set<storm::expressions::Variable>& variables) const override;
             virtual std::shared_ptr<BaseExpression const> simplify() const override;
-            virtual boost::any accept(ExpressionVisitor& visitor) const override;
+            virtual boost::any accept(ExpressionVisitor& visitor, boost::any const& data) const override;
             
             /*!
              * Retrieves the condition expression of the if-then-else expression.

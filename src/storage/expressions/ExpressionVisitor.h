@@ -19,16 +19,16 @@ namespace storm {
         
         class ExpressionVisitor {
         public:
-            virtual boost::any visit(IfThenElseExpression const& expression) = 0;
-            virtual boost::any visit(BinaryBooleanFunctionExpression const& expression) = 0;
-            virtual boost::any visit(BinaryNumericalFunctionExpression const& expression) = 0;
-            virtual boost::any visit(BinaryRelationExpression const& expression) = 0;
-            virtual boost::any visit(VariableExpression const& expression) = 0;
-            virtual boost::any visit(UnaryBooleanFunctionExpression const& expression) = 0;
-            virtual boost::any visit(UnaryNumericalFunctionExpression const& expression) = 0;
-            virtual boost::any visit(BooleanLiteralExpression const& expression) = 0;
-            virtual boost::any visit(IntegerLiteralExpression const& expression) = 0;
-            virtual boost::any visit(RationalLiteralExpression const& expression) = 0;
+            virtual boost::any visit(IfThenElseExpression const& expression, boost::any const& data) = 0;
+            virtual boost::any visit(BinaryBooleanFunctionExpression const& expression, boost::any const& data) = 0;
+            virtual boost::any visit(BinaryNumericalFunctionExpression const& expression, boost::any const& data) = 0;
+            virtual boost::any visit(BinaryRelationExpression const& expression, boost::any const& data) = 0;
+            virtual boost::any visit(VariableExpression const& expression, boost::any const& data) = 0;
+            virtual boost::any visit(UnaryBooleanFunctionExpression const& expression, boost::any const& data) = 0;
+            virtual boost::any visit(UnaryNumericalFunctionExpression const& expression, boost::any const& data) = 0;
+            virtual boost::any visit(BooleanLiteralExpression const& expression, boost::any const& data) = 0;
+            virtual boost::any visit(IntegerLiteralExpression const& expression, boost::any const& data) = 0;
+            virtual boost::any visit(RationalLiteralExpression const& expression, boost::any const& data) = 0;
         };
     }
 }

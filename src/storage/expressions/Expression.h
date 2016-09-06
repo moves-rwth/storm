@@ -298,7 +298,7 @@ namespace storm {
              *
              * @param visitor The visitor to accept.
              */
-            boost::any accept(ExpressionVisitor& visitor) const;
+            boost::any accept(ExpressionVisitor& visitor, boost::any const& data) const;
             
             /*!
              * Converts the expression into a string.
@@ -307,11 +307,16 @@ namespace storm {
              */
             std::string toString() const;
 
-            /**
+            /*!
              * Checks whether the object encapsulates a base-expression.
              */
             bool isInitialized() const;
 
+            /*!
+             * Checks whether the two expressions are syntatically the same.
+             */
+            bool isSyntacticallyEqual(storm::expressions::Expression const& other) const;
+            
             friend std::ostream& operator<<(std::ostream& stream, Expression const& expression);
 
         private:

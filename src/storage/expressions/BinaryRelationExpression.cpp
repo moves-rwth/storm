@@ -81,8 +81,8 @@ namespace storm {
             }
         }
         
-        boost::any BinaryRelationExpression::accept(ExpressionVisitor& visitor) const {
-            return visitor.visit(*this);
+        boost::any BinaryRelationExpression::accept(ExpressionVisitor& visitor, boost::any const& data) const {
+            return visitor.visit(*this, data);
         }
         
         BinaryRelationExpression::RelationType BinaryRelationExpression::getRelationType() const {

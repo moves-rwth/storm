@@ -5,6 +5,7 @@
 #include "src/storage/expressions/ExpressionManager.h"
 #include "src/storage/expressions/SubstitutionVisitor.h"
 #include "src/storage/expressions/LinearityCheckVisitor.h"
+#include "src/storage/expressions/SyntacticalEqualityCheckVisitor.h"
 #include "src/storage/expressions/Expressions.h"
 #include "src/exceptions/InvalidTypeException.h"
 #include "src/exceptions/InvalidArgumentException.h"
@@ -158,8 +159,8 @@ namespace storm {
             return this->getBaseExpression().hasBitVectorType();
         }
         
-        boost::any Expression::accept(ExpressionVisitor& visitor) const {
-            return this->getBaseExpression().accept(visitor);
+        boost::any Expression::accept(ExpressionVisitor& visitor, boost::any const& data) const {
+            return this->getBaseExpression().accept(visitor, data);
         }
 
         bool Expression::isInitialized() const {
@@ -167,6 +168,14 @@ namespace storm {
                 return true;
             }
             return false;
+        }
+        
+        bool Expression::isSyntacticallyEqual(storm::expressions::Expression const& other) const {
+            if (this->getBaseExpressionPointer() == other.getBaseExpressionPointer()) {
+                return true;
+            }
+            SyntacticalEqualityCheckVisitor checker;
+            return checker.isSyntaticallyEqual(*this, other);
         }
 
         std::string Expression::toString() const {

@@ -15,6 +15,8 @@ namespace storm {
              */
             Assignment(storm::jani::Variable const& variable, storm::expressions::Expression const& expression);
             
+            bool operator==(Assignment const& other) const;
+            
             /*!
              * Retrieves the expression variable that is written in this assignment.
              */
