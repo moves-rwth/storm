@@ -204,7 +204,7 @@ if(USE_CARL)
                 LOG_INSTALL ON
         )
 
-        add_dependencies(resources xercesc)
+        add_dependencies(resources carl)
         include_directories(${STORM_3RDPARTY_BINARY_DIR}/carl/include)
         list(APPEND STORM_LINK_LIBRARIES ${STORM_3RDPARTY_BINARY_DIR}/carl/lib/libcarl${DYNAMIC_EXT})
         set(STORM_HAVE_CARL ON)

@@ -21,5 +21,10 @@ namespace storm {
             virtual bool isBooleanVariable() const override;
         };
         
+        /**
+         * Convenience function to call the appropriate constructor and return a shared pointer to the variable.
+         */
+        std::shared_ptr<BooleanVariable> makeBooleanVariable(std::string const& name, storm::expressions::Variable const& variable, boost::optional<storm::expressions::Expression> initValue, bool transient);
+        
     }
 }

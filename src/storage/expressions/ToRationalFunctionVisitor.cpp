@@ -2,6 +2,7 @@
 
 #include <sstream>
 
+#include "src/utility/constants.h"
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidArgumentException.h"
 
@@ -33,6 +34,7 @@ namespace storm {
         boost::any ToRationalFunctionVisitor<RationalFunctionType>::visit(BinaryNumericalFunctionExpression const& expression) {
             RationalFunctionType firstOperandAsRationalFunction = boost::any_cast<RationalFunctionType>(expression.getFirstOperand()->accept(*this));
             RationalFunctionType secondOperandAsRationalFunction = boost::any_cast<RationalFunctionType>(expression.getSecondOperand()->accept(*this));
+            uint_fast64_t exponentAsInteger = 0;
             switch(expression.getOperatorType()) {
                 case BinaryNumericalFunctionExpression::OperatorType::Plus:
                     return firstOperandAsRationalFunction + secondOperandAsRationalFunction;
@@ -45,6 +47,11 @@ namespace storm {
                     break;
                 case BinaryNumericalFunctionExpression::OperatorType::Divide:
                     return firstOperandAsRationalFunction / secondOperandAsRationalFunction;
+                    break;
+                case BinaryNumericalFunctionExpression::OperatorType::Power:
+                    STORM_LOG_THROW(storm::utility::isInteger(secondOperandAsRationalFunction), storm::exceptions::InvalidArgumentException, "Exponent of power operator must be a positive integer.");
+                    exponentAsInteger = storm::utility::convertNumber<uint_fast64_t>(secondOperandAsRationalFunction);
+                    return storm::utility::pow(firstOperandAsRationalFunction, exponentAsInteger);
                     break;
                 default:
                     STORM_LOG_ASSERT(false, "Illegal operator type.");
@@ -92,8 +99,8 @@ namespace storm {
         }
         
         template<typename RationalFunctionType>
-        boost::any ToRationalFunctionVisitor<RationalFunctionType>::visit(DoubleLiteralExpression const& expression) {
-            return RationalFunctionType(carl::rationalize<storm::RationalNumber>(expression.getValue()));
+        boost::any ToRationalFunctionVisitor<RationalFunctionType>::visit(RationalLiteralExpression const& expression) {
+            return storm::utility::convertNumber<storm::RationalFunction>(expression.getValue());
         }
 
         template class ToRationalFunctionVisitor<storm::RationalFunction>;

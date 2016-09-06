@@ -8,8 +8,20 @@
 #include "src/storage/expressions/Expression.h"
 #include "src/storage/expressions/ExpressionManager.h"
 
+#include "src/adapters/CarlAdapter.h"
+
 namespace storm {
     namespace parser {
+        template<typename NumberType>
+        struct RationalPolicies : boost::spirit::qi::strict_real_policies<NumberType> {
+            static const bool expect_dot = true;
+            
+            template <typename It, typename Attr>
+            static bool parse_nan(It&, It const&, Attr&) { return false; }
+            template <typename It, typename Attr>
+            static bool parse_inf(It&, It const&, Attr&) { return false; }
+        };
+        
         class ExpressionParser : public qi::grammar<Iterator, storm::expressions::Expression(), Skipper> {
         public:
             /*!
@@ -236,7 +248,7 @@ namespace storm {
             qi::rule<Iterator, std::string(), Skipper> identifier;
             
             // Parser that is used to recognize doubles only (as opposed to Spirit's double_ parser).
-            boost::spirit::qi::real_parser<double, boost::spirit::qi::strict_real_policies<double>> strict_double;
+            boost::spirit::qi::real_parser<storm::RationalNumber, RationalPolicies<storm::RationalNumber>> rationalLiteral_;
             
             // Helper functions to create expressions.
             storm::expressions::Expression createIteExpression(storm::expressions::Expression e1, storm::expressions::Expression e2, storm::expressions::Expression e3, bool& pass) const;
@@ -248,7 +260,7 @@ namespace storm {
             storm::expressions::Expression createMultExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2, bool& pass) const;
             storm::expressions::Expression createPowerExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2, bool& pass) const;
             storm::expressions::Expression createUnaryExpression(boost::optional<storm::expressions::OperatorType> const& operatorType, storm::expressions::Expression const& e1, bool& pass) const;
-            storm::expressions::Expression createDoubleLiteralExpression(double value, bool& pass) const;
+            storm::expressions::Expression createRationalLiteralExpression(storm::RationalNumber const& value, bool& pass) const;
             storm::expressions::Expression createIntegerLiteralExpression(int value, bool& pass) const;
             storm::expressions::Expression createMinimumMaximumExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2, bool& pass) const;
             storm::expressions::Expression createFloorCeilExpression(storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e1, bool& pass) const;

@@ -161,6 +161,9 @@ namespace storm {
                 }
                 
                 // Block the current initial state to search for the next one.
+                if (!blockingExpression.isInitialized()) {
+                    break;
+                }
                 solver->add(blockingExpression);
             }
             

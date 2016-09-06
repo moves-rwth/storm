@@ -15,7 +15,6 @@ namespace storm {
              * Creates an unbounded integer variable with initial value.
              */
             UnboundedIntegerVariable(std::string const& name, storm::expressions::Variable const& variable, storm::expressions::Expression const&, bool transient=false);
-
             
             virtual bool isUnboundedIntegerVariable() const override;
         };

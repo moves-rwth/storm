@@ -47,10 +47,8 @@ namespace storm {
         }
         
         std::shared_ptr<BoundedIntegerVariable> makeBoundedIntegerVariable(std::string const& name, storm::expressions::Variable const& variable, boost::optional<storm::expressions::Expression> initValue, bool transient, boost::optional<storm::expressions::Expression> lowerBound, boost::optional<storm::expressions::Expression> upperBound) {
-            if(!lowerBound || !upperBound) {
-                STORM_LOG_THROW(lowerBound && upperBound, storm::exceptions::NotImplementedException, "Jani Bounded Integer variables (for now) have to be bounded from both sides");
-            }
-            if(initValue) {
+            STORM_LOG_THROW(lowerBound && upperBound, storm::exceptions::NotImplementedException, "Jani Bounded Integer variables (for now) have to be bounded from both sides");
+            if (initValue) {
                 return std::make_shared<BoundedIntegerVariable>(name, variable, initValue.get(), transient, lowerBound.get(), upperBound.get());
             } else {
                 return std::make_shared<BoundedIntegerVariable>(name, variable, transient, lowerBound.get(), upperBound.get());

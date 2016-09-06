@@ -23,8 +23,9 @@ namespace storm {
         
         template<typename ValueType, typename StateType>
         PrismNextStateGenerator<ValueType, StateType>::PrismNextStateGenerator(storm::prism::Program const& program, NextStateGeneratorOptions const& options, bool flag) : NextStateGenerator<ValueType, StateType>(program.getManager(), options), program(program), rewardModels() {
+            STORM_LOG_TRACE("Creating next-state generator for PRISM program: " << program);
             STORM_LOG_THROW(!this->program.specifiesSystemComposition(), storm::exceptions::WrongFormatException, "The explicit next-state generator currently does not support custom system compositions.");
-            
+                        
             // Only after checking validity of the program, we initialize the variable information.
             this->checkValid(program);
             this->variableInformation = VariableInformation(program);
@@ -136,7 +137,7 @@ namespace storm {
             for (auto const& expression : rangeExpressions) {
                 solver->add(expression);
             }
-            solver->add(program.getInitialConstruct().getInitialStatesExpression());
+            solver->add(program.getInitialStatesExpression());
             
             // Proceed ss long as the solver can still enumerate initial states.
             std::vector<StateType> initialStateIndices;
@@ -166,6 +167,9 @@ namespace storm {
                 initialStateIndices.push_back(id);
                 
                 // Block the current initial state to search for the next one.
+                if (!blockingExpression.isInitialized()) {
+                    break;
+                }
                 solver->add(blockingExpression);
             }
             
@@ -314,7 +318,7 @@ namespace storm {
         template<typename ValueType, typename StateType>
         boost::optional<std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>>> PrismNextStateGenerator<ValueType, StateType>::getActiveCommandsByActionIndex(uint_fast64_t const& actionIndex) {
             boost::optional<std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>>> result((std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>>()));
-            
+                        
             // Iterate over all modules.
             for (uint_fast64_t i = 0; i < program.getNumberOfModules(); ++i) {
                 storm::prism::Module const& module = program.getModule(i);
@@ -445,7 +449,6 @@ namespace storm {
                         
                         for (uint_fast64_t i = 0; i < iteratorList.size(); ++i) {
                             storm::prism::Command const& command = *iteratorList[i];
-                            
                             for (uint_fast64_t j = 0; j < command.getNumberOfUpdates(); ++j) {
                                 storm::prism::Update const& update = command.getUpdate(j);
                                 

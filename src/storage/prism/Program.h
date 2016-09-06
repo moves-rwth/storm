@@ -175,7 +175,7 @@ namespace storm {
              * @return The global boolean variables of the program.
              */
             std::vector<BooleanVariable> const& getGlobalBooleanVariables() const;
-            
+
             /*!
              * Retrieves a the global boolean variable with the given name.
              *
@@ -286,11 +286,30 @@ namespace storm {
             std::map<std::string, uint_fast64_t> const& getActionNameToIndexMapping() const;
             
             /*!
+             * Retrieves whether the program specifies an initial construct.
+             */
+            bool hasInitialConstruct() const;
+            
+            /*!
              * Retrieves the initial construct of the program.
              *
              * @return The initial construct of the program.
              */
             InitialConstruct const& getInitialConstruct() const;
+
+            /*!
+             * Retrieves an optional containing the initial construct of the program if there is any and nothing otherwise.
+             *
+             * @return The initial construct of the program.
+             */
+            boost::optional<InitialConstruct> const& getOptionalInitialConstruct() const;
+
+            /*!
+             * Retrieves an expression characterizing the initial states.
+             *
+             * @return an expression characterizing the initial states.
+             */
+            storm::expressions::Expression getInitialStatesExpression() const;
             
             /*!
              * Retrieves whether the program specifies a system composition in terms of process algebra operations over
@@ -587,6 +606,11 @@ namespace storm {
              */
             Command synchronizeCommands(uint_fast64_t newCommandIndex, uint_fast64_t actionIndex, uint_fast64_t firstUpdateIndex, std::string const& actionName, std::vector<std::reference_wrapper<Command const>> const& commands) const;
             
+            /*!
+             * Equips all global variables without initial values with initial values based on their type.
+             */
+            void createMissingInitialValues();
+            
             // The manager responsible for the variables/expressions of the program.
             std::shared_ptr<storm::expressions::ExpressionManager> manager;
             
@@ -633,7 +657,7 @@ namespace storm {
             std::map<std::string, uint_fast64_t> rewardModelToIndexMap;
             
             // The initial construct of the program.
-            InitialConstruct initialConstruct;
+            boost::optional<InitialConstruct> initialConstruct;
             
             // If set, this specifies the way the modules are composed to obtain the full system.
             boost::optional<SystemCompositionConstruct> systemCompositionConstruct;
@@ -661,14 +685,6 @@ namespace storm {
             
             // A mapping from variable names to the modules in which they were declared.
             std::map<std::string, uint_fast64_t> variableToModuleIndexMap;
-            
-            /**
-             * Takes the current program and replaces all modules. As we reuse the expression manager, we recommend to not use the original program any further.
-             * @param newModules the modules which replace the old modules.
-             * @param newConstants the constants which replace the old constants.
-             * @return A program with the new modules and constants.
-             */
-            Program replaceModulesAndConstantsInProgram(std::vector<Module> const& newModules, std::vector<Constant> const& newConstants);
         };
         
         std::ostream& operator<<(std::ostream& out, Program::ModelType const& type);

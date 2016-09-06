@@ -4,7 +4,7 @@
 #include "src/storage/expressions/BinaryRelationExpression.h"
 #include "src/storage/expressions/BooleanLiteralExpression.h"
 #include "src/storage/expressions/IntegerLiteralExpression.h"
-#include "src/storage/expressions/DoubleLiteralExpression.h"
+#include "src/storage/expressions/RationalLiteralExpression.h"
 #include "src/storage/expressions/UnaryBooleanFunctionExpression.h"
 #include "src/storage/expressions/UnaryNumericalFunctionExpression.h"
 #include "src/storage/expressions/VariableExpression.h"

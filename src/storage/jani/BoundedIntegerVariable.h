@@ -61,7 +61,7 @@ namespace storm {
         };
         
         /**
-         * Convenience function to call the appropriate constructor and retur a shared pointer to the variable.
+         * Convenience function to call the appropriate constructor and return a shared pointer to the variable.
          */
         std::shared_ptr<BoundedIntegerVariable> makeBoundedIntegerVariable(std::string const& name, storm::expressions::Variable const& variable, boost::optional<storm::expressions::Expression> initValue, bool transient, boost::optional<storm::expressions::Expression> lowerBound, boost::optional<storm::expressions::Expression> upperBound);
     }

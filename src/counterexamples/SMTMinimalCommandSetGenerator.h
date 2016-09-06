@@ -628,7 +628,7 @@ namespace storm {
                 }
                 
                 // Construct an expression that exactly characterizes the initial state.
-                storm::expressions::Expression initialStateExpression = program.getInitialConstruct().getInitialStatesExpression();
+                storm::expressions::Expression initialStateExpression = program.getInitialStatesExpression();
                 
                 // Store the found implications in a container similar to the preceding label sets.
                 std::map<boost::container::flat_set<uint_fast64_t>, std::set<boost::container::flat_set<uint_fast64_t>>> backwardImplications;
