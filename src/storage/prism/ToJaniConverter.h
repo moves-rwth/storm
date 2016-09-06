@@ -11,8 +11,6 @@ namespace storm {
         
         class ToJaniConverter {
         public:
-            ToJaniConverter();
-            
             storm::jani::Model convert(storm::prism::Program const& program, bool allVariablesGlobal = false) const;
         };
         

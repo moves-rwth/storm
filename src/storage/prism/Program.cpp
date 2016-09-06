@@ -20,6 +20,7 @@
 
 #include "src/storage/prism/CompositionVisitor.h"
 #include "src/storage/prism/Compositions.h"
+#include "src/storage/prism/ToJaniConverter.h"
 
 namespace storm {
     namespace prism {
@@ -1600,13 +1601,13 @@ namespace storm {
             return Command(newCommandIndex, false, actionIndex, actionName, newGuard, newUpdates, this->getFilename(), 0);
         }
         
-        uint_fast64_t Program::numberOfActions() const {
+        uint_fast64_t Program::getNumberOfActions() const {
             return this->actions.size();
         }
         
-        uint_fast64_t Program::largestActionIndex() const {
-            assert(numberOfActions() != 0);
-            return this->indexToActionMap.rbegin()->first;
+        storm::jani::Model Program::toJani(bool allVariablesGlobal) const {
+            ToJaniConverter converter;
+            return converter.convert(*this, allVariablesGlobal);
         }
         
         storm::expressions::ExpressionManager& Program::getManager() const {

@@ -9,7 +9,7 @@
 namespace storm {
     namespace prism {
         
-        storm::jani::Model convert(storm::prism::Program const& program, bool allVariablesGlobal) {
+        storm::jani::Model ToJaniConverter::convert(storm::prism::Program const& program, bool allVariablesGlobal) const {
             std::shared_ptr<storm::expressions::ExpressionManager> manager = program.getManager().getSharedPointer();
             
             // Start by creating an empty JANI model.
@@ -59,10 +59,10 @@ namespace storm {
             }
             
             // Add all actions of the PRISM program to the JANI model.
-            for (auto const& action : indexToActionMap) {
+            for (auto const& action : program.getActions()) {
                 // Ignore the empty action as every JANI program has predefined tau action.
-                if (!action.second.empty()) {
-                    janiModel.addAction(storm::jani::Action(action.second));
+                if (!action.empty()) {
+                    janiModel.addAction(storm::jani::Action(action));
                 }
             }
             
