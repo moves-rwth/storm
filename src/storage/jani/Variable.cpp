@@ -40,7 +40,7 @@ namespace storm {
             return false;
         }
         
-        bool Variable::isTransientVariable() const {
+        bool Variable::isTransient() const {
             return transient;
         }
 

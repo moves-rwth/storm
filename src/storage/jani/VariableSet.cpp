@@ -158,6 +158,15 @@ namespace storm {
             return variableToVariable.find(variable) != variableToVariable.end();
         }
         
+        bool VariableSet::hasTransientVariable() const {
+            for (auto const& variable : variables) {
+                if (variable->isTransient()) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        
         bool VariableSet::containsBooleanVariable() const {
             return !booleanVariables.empty();
         }
@@ -176,7 +185,7 @@ namespace storm {
         
         bool VariableSet::containsNonTransientRealVariables() const {
             for (auto const& variable : realVariables) {
-                if (!variable->isTransientVariable()) {
+                if (!variable->isTransient()) {
                     std::cout << "var " << variable->getName() << "is non-transient " << std::endl;
                     return true;
                 }

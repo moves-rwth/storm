@@ -61,7 +61,7 @@ namespace storm {
             virtual bool isUnboundedIntegerVariable() const;
             virtual bool isRealVariable() const;
 
-            virtual bool isTransientVariable() const;
+            virtual bool isTransient() const;
             
             // Methods to get the variable as a different type.
             BooleanVariable& asBooleanVariable();

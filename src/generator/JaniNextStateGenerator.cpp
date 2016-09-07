@@ -11,6 +11,7 @@
 #include "src/utility/solver.h"
 #include "src/exceptions/InvalidSettingsException.h"
 #include "src/exceptions/WrongFormatException.h"
+#include "src/exceptions/InvalidArgumentException.h"
 
 namespace storm {
     namespace generator {
@@ -21,10 +22,37 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
-        JaniNextStateGenerator<ValueType, StateType>::JaniNextStateGenerator(storm::jani::Model const& model, NextStateGeneratorOptions const& options, bool flag) : NextStateGenerator<ValueType, StateType>(model.getExpressionManager(), VariableInformation(model), options), model(model) {
+        JaniNextStateGenerator<ValueType, StateType>::JaniNextStateGenerator(storm::jani::Model const& model, NextStateGeneratorOptions const& options, bool flag) : NextStateGenerator<ValueType, StateType>(model.getExpressionManager(), VariableInformation(model), options), model(model), rewardVariables() {
             STORM_LOG_THROW(model.hasDefaultComposition(), storm::exceptions::WrongFormatException, "The explicit next-state generator currently does not support custom system compositions.");
-            STORM_LOG_THROW(!this->options.isBuildAllRewardModelsSet() && this->options.getRewardModelNames().empty(), storm::exceptions::InvalidSettingsException, "The explicit next-state generator currently does not support building reward models.");
+            STORM_LOG_THROW(!model.hasNonGlobalTransientVariable(), storm::exceptions::InvalidSettingsException, "The explicit next-state generator currently does not support automata-local transient variables.");
             STORM_LOG_THROW(!this->options.isBuildChoiceLabelsSet(), storm::exceptions::InvalidSettingsException, "JANI next-state generator cannot generate choice labels.");
+            
+            if (this->options.isBuildAllRewardModelsSet()) {
+                for (auto const& variable : model.getGlobalVariables()) {
+                    if (variable.isTransient()) {
+                        rewardVariables.push_back(variable.getExpressionVariable());
+                    }
+                }
+            } else {
+                // Extract the reward models from the program based on the names we were given.
+                for (auto const& rewardModelName : this->options.getRewardModelNames()) {
+                    auto const& globalVariables = model.getGlobalVariables();
+                    if (globalVariables.hasVariable(rewardModelName)) {
+                        rewardVariables.push_back(globalVariables.getVariable(rewardModelName).getExpressionVariable());
+                    } else {
+                        STORM_LOG_THROW(rewardModelName.empty(), storm::exceptions::InvalidArgumentException, "Cannot build unknown reward model '" << rewardModelName << "'.");
+                        STORM_LOG_THROW(globalVariables.getNumberOfTransientVariables() == 1, storm::exceptions::InvalidArgumentException, "Reference to standard reward model is ambiguous.");
+                        STORM_LOG_THROW(this->program.getNumberOfRewardModels() > 0, storm::exceptions::InvalidArgumentException, "Reference to standard reward model is invalid, because there is no reward model.");
+                    }
+                }
+                
+                // If no reward model was yet added, but there was one that was given in the options, we try to build
+                // standard reward model.
+                if (rewardModels.empty() && !this->options.getRewardModelNames().empty()) {
+                    rewardModels.push_back(this->program.getRewardModel(0));
+                }
+            }
+
             
             // If there are terminal states we need to handle, we now need to translate all labels to expressions.
             if (this->options.hasTerminalStates()) {

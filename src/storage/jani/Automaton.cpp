@@ -97,6 +97,10 @@ namespace storm {
             return variables;
         }
         
+        bool Automaton::hasTransientVariable() const {
+            return variables.hasTransientVariable();
+        }
+        
         bool Automaton::hasLocation(std::string const& name) const {
             return locationToIndex.find(name) != locationToIndex.end();
         }

@@ -261,7 +261,7 @@ namespace storm {
                 storm::dd::Bdd<Type> globalVariableRanges = result.manager->getBddOne();
                 for (auto const& variable : this->model.getGlobalVariables()) {
                     // Only create the variable if it's non-transient.
-                    if (variable.isTransientVariable()) {
+                    if (variable.isTransient()) {
                         continue;
                     }
                     
@@ -284,7 +284,7 @@ namespace storm {
                     // Then create variables for the variables of the automaton.
                     for (auto const& variable : automaton.getVariables()) {
                         // Only create the variable if it's non-transient.
-                        if (variable.isTransientVariable()) {
+                        if (variable.isTransient()) {
                             continue;
                         }
                         

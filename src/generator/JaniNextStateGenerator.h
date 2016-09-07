@@ -91,6 +91,10 @@ namespace storm {
             
             /// The model used for the generation of next states.
             storm::jani::Model model;
+            
+            // The transient variables of reward models that need to be considered.
+            std::vector<storm::expressions::Variable> rewardVariables;
+
         };
         
     }

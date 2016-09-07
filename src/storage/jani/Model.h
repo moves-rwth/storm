@@ -141,6 +141,21 @@ namespace storm {
              * Retrieves the variables of this automaton.
              */
             VariableSet const& getGlobalVariables() const;
+
+            /*!
+             * Retrieves whether this model has a global variable with the given name.
+             */
+            bool hasGlobalVariable(std::string const& name) const;
+            
+            /*!
+             * Retrieves the global variable with the given name if one exists.
+             */
+            Variable const& getGlobalVariable(std::string const& name) const;
+            
+            /*!
+             * Retrieves whether this model has a non-global transient variable.
+             */
+            bool hasNonGlobalTransientVariable() const;
             
             /*!
              * Retrieves the manager responsible for the expressions in the JANI model.

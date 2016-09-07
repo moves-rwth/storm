@@ -143,6 +143,23 @@ namespace storm {
             return globalVariables;
         }
         
+        bool Model::hasGlobalVariable(std::string const& name) const {
+            return globalVariables.hasVariable(name);
+        }
+        
+        Variable const& Model::getGlobalVariable(std::string const& name) const {
+            return globalVariables.getVariable(name);
+        }
+        
+        bool Model::hasNonGlobalTransientVariable() const {
+            for (auto const& automaton : automata) {
+                if (automaton.hasTransientVariable()) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        
         storm::expressions::ExpressionManager& Model::getExpressionManager() {
             return *expressionManager;
         }

@@ -136,6 +136,11 @@ namespace storm {
             VariableSet const& getVariables() const;
             
             /*!
+             * Retrieves whether this automaton has a transient variable.
+             */
+            bool hasTransientVariable() const;
+            
+            /*!
              * Retrieves whether the automaton has a location with the given name.
              */
             bool hasLocation(std::string const& name) const;

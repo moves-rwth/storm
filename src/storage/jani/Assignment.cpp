@@ -28,7 +28,7 @@ namespace storm  {
         }
         
         bool Assignment::isTransientAssignment() const {
-            return this->variable.get().isTransientVariable();
+            return this->variable.get().isTransient();
         }
         
         void Assignment::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {

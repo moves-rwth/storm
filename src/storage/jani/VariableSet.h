@@ -149,6 +149,11 @@ namespace storm {
             Variable const& getVariable(storm::expressions::Variable const& variable) const;
 
             /*!
+             * Retrieves whether this variable set contains a transient variable.
+             */
+            bool hasTransientVariable() const;
+            
+            /*!
              * Retrieves an iterator to the variables in this set.
              */
             iterator begin();
