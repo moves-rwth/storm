@@ -10,11 +10,11 @@
 
 namespace storm {
     namespace pgcl {
-        std::shared_ptr<storm::pgcl::PgclProgram> BranchStatement::getLeftBranch() {
+        std::shared_ptr<storm::pgcl::PgclBlock> BranchStatement::getLeftBranch() {
             return this->leftBranch;
         }
 
-        std::shared_ptr<storm::pgcl::PgclProgram> BranchStatement::getRightBranch() {
+        std::shared_ptr<storm::pgcl::PgclBlock> BranchStatement::getRightBranch() {
             return this->rightBranch;
         }
 

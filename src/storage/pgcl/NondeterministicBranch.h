@@ -25,7 +25,7 @@ namespace storm {
              * @param left The left (first) subprogram of the branch.
              * @param right The right (second) subprogram of the branch.
              */
-            NondeterministicBranch(std::shared_ptr<storm::pgcl::PgclProgram> const& left, std::shared_ptr<storm::pgcl::PgclProgram> const& right);
+            NondeterministicBranch(std::shared_ptr<storm::pgcl::PgclBlock> const& left, std::shared_ptr<storm::pgcl::PgclBlock> const& right);
             NondeterministicBranch(const NondeterministicBranch& orig) = default;
             virtual ~NondeterministicBranch() = default;
             void accept(class AbstractStatementVisitor&);

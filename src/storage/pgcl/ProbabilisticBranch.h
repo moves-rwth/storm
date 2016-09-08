@@ -31,7 +31,7 @@ namespace storm {
              * @param left The left (first) subprogram of the branch.
              * @param right The right (second) subprogram of the branch.
              */
-            ProbabilisticBranch(storm::expressions::Expression const& probability, std::shared_ptr<storm::pgcl::PgclProgram> const& left, std::shared_ptr<storm::pgcl::PgclProgram> const& right);
+            ProbabilisticBranch(storm::expressions::Expression const& probability, std::shared_ptr<storm::pgcl::PgclBlock> const& left, std::shared_ptr<storm::pgcl::PgclBlock> const& right);
             ProbabilisticBranch(const ProbabilisticBranch& orig) = default;
             virtual ~ProbabilisticBranch() = default;
             /**

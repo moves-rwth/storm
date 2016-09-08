@@ -10,11 +10,11 @@
 
 namespace storm {
     namespace pgcl {
-        LoopStatement::LoopStatement(storm::pgcl::BooleanExpression const& condition, std::shared_ptr<storm::pgcl::PgclProgram> const& body) :
+        LoopStatement::LoopStatement(storm::pgcl::BooleanExpression const& condition, std::shared_ptr<storm::pgcl::PgclBlock> const& body) :
             body(body), condition(condition) {
         }
 
-        std::shared_ptr<storm::pgcl::PgclProgram> LoopStatement::getBody() {
+        std::shared_ptr<storm::pgcl::PgclBlock> LoopStatement::getBody() {
             return this->body;
         }
         

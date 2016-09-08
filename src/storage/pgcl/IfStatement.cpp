@@ -10,20 +10,20 @@
 
 namespace storm {
     namespace pgcl {
-        IfStatement::IfStatement(storm::pgcl::BooleanExpression const& condition, std::shared_ptr<storm::pgcl::PgclProgram> const& body) :
+        IfStatement::IfStatement(storm::pgcl::BooleanExpression const& condition, std::shared_ptr<storm::pgcl::PgclBlock> const& body) :
             ifBody(body), condition(condition) {
         }
 
-        IfStatement::IfStatement(storm::pgcl::BooleanExpression const& condition, std::shared_ptr<storm::pgcl::PgclProgram> const& ifBody, std::shared_ptr<storm::pgcl::PgclProgram> const& elseBody) :
+        IfStatement::IfStatement(storm::pgcl::BooleanExpression const& condition, std::shared_ptr<storm::pgcl::PgclBlock> const& ifBody, std::shared_ptr<storm::pgcl::PgclBlock> const& elseBody) :
             ifBody(ifBody), elseBody(elseBody), condition(condition) {
             this->hasElseBody = true;
         }
 
-        std::shared_ptr<storm::pgcl::PgclProgram> IfStatement::getIfBody() {
+        std::shared_ptr<storm::pgcl::PgclBlock> IfStatement::getIfBody() {
             return this->ifBody;
         }
 
-        std::shared_ptr<storm::pgcl::PgclProgram> IfStatement::getElseBody() {
+        std::shared_ptr<storm::pgcl::PgclBlock> IfStatement::getElseBody() {
             if(this->elseBody) {
                 return this->elseBody;
             } else {

@@ -10,7 +10,7 @@
 
 namespace storm {
     namespace pgcl {
-        NondeterministicBranch::NondeterministicBranch(std::shared_ptr<storm::pgcl::PgclProgram> const& left, std::shared_ptr<storm::pgcl::PgclProgram> const& right) {
+        NondeterministicBranch::NondeterministicBranch(std::shared_ptr<storm::pgcl::PgclBlock> const& left, std::shared_ptr<storm::pgcl::PgclBlock> const& right) {
             leftBranch = left;
             rightBranch = right;
         }

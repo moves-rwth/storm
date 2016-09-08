@@ -10,7 +10,7 @@
 
 namespace storm {
     namespace pgcl {
-        ProbabilisticBranch::ProbabilisticBranch(storm::expressions::Expression const& probability, std::shared_ptr<storm::pgcl::PgclProgram> const& left, std::shared_ptr<storm::pgcl::PgclProgram> const& right) :
+        ProbabilisticBranch::ProbabilisticBranch(storm::expressions::Expression const& probability, std::shared_ptr<storm::pgcl::PgclBlock> const& left, std::shared_ptr<storm::pgcl::PgclBlock> const& right) :
         probability(probability) {
             rightBranch = right;
             leftBranch = left;

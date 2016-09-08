@@ -30,15 +30,15 @@ namespace storm {
              * Returns the left branch of the statement.
              * @return The left branch PGCL program.
              */
-            std::shared_ptr<storm::pgcl::PgclProgram> getLeftBranch();
+            std::shared_ptr<storm::pgcl::PgclBlock> getLeftBranch();
             /**
              * Returns the right branch of the statement.
              * @return The right branch PGCL program.
              */
-            std::shared_ptr<storm::pgcl::PgclProgram> getRightBranch();
+            std::shared_ptr<storm::pgcl::PgclBlock> getRightBranch();
         protected:
-            std::shared_ptr<storm::pgcl::PgclProgram> leftBranch;
-            std::shared_ptr<storm::pgcl::PgclProgram> rightBranch;
+            std::shared_ptr<storm::pgcl::PgclBlock> leftBranch;
+            std::shared_ptr<storm::pgcl::PgclBlock> rightBranch;
         };
     }
 }

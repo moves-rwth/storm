@@ -27,7 +27,7 @@ namespace storm {
              * @param condition The guard of the loop.
              * @param body The body of the loop.
              */
-            LoopStatement(storm::pgcl::BooleanExpression const& condition, std::shared_ptr<storm::pgcl::PgclProgram> const& body);
+            LoopStatement(storm::pgcl::BooleanExpression const& condition, std::shared_ptr<storm::pgcl::PgclBlock> const& body);
             LoopStatement(const LoopStatement& orig) = default;
             virtual ~LoopStatement() = default;
             std::size_t getNumberOfOutgoingTransitions();
@@ -36,7 +36,7 @@ namespace storm {
              * Returns the loop body program.
              * @return The loop body program.
              */
-            std::shared_ptr<storm::pgcl::PgclProgram> getBody();
+            std::shared_ptr<storm::pgcl::PgclBlock> getBody();
             /**
              * Returns the guard of the loop.
              * @return The boolean condition of the loop.
@@ -44,7 +44,7 @@ namespace storm {
             storm::pgcl::BooleanExpression& getCondition();
         private:
             /// Represents the loop body.
-            std::shared_ptr<storm::pgcl::PgclProgram> body;
+            std::shared_ptr<storm::pgcl::PgclBlock> body;
             /// Represents the loop guard.
             storm::pgcl::BooleanExpression condition;
         };
