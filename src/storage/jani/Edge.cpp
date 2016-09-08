@@ -2,6 +2,9 @@
 
 #include "src/storage/jani/Model.h"
 
+#include "src/utility/macros.h"
+#include "src/exceptions/InvalidArgumentException.h"
+
 namespace storm {
     namespace jani {
         
@@ -49,11 +52,7 @@ namespace storm {
             destinations.push_back(destination);
         }
         
-        std::vector<Assignment>& Edge::getTransientAssignments() {
-            return transientAssignments;
-        }
-        
-        std::vector<Assignment> const& Edge::getTransientAssignments() const {
+        OrderedAssignments const& Edge::getTransientAssignments() const {
             return transientAssignments;
         }
         
@@ -80,8 +79,9 @@ namespace storm {
             }
         }
         
-        void Edge::addTransientAssignment(Assignment const& assignment) {
-            transientAssignments.push_back(assignment);
+        bool Edge::addTransientAssignment(Assignment const& assignment) {
+            STORM_LOG_THROW(assignment.isTransient(), storm::exceptions::InvalidArgumentException, "Must not add non-transient assignment to location.");
+            return transientAssignments.add(assignment);
         }
         
         void Edge::liftTransientDestinationAssignments() {

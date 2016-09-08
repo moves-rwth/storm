@@ -1,7 +1,8 @@
 #include "src/storage/jani/Location.h"
-#include "src/storage/jani/Assignment.h"
-#include "src/exceptions/InvalidJaniException.h"
+
 #include "src/utility/macros.h"
+#include "src/exceptions/InvalidJaniException.h"
+#include "src/exceptions/InvalidArgumentException.h"
 
 namespace storm {
     namespace jani {
@@ -14,18 +15,17 @@ namespace storm {
             return name;
         }
         
-        std::vector<Assignment> const& Location::getTransientAssignments() const {
+        OrderedAssignments const& Location::getTransientAssignments() const {
             return transientAssignments;
         }
         
         void Location::addTransientAssignment(storm::jani::Assignment const& assignment) {
-            transientAssignments.push_back(assignment);
+            STORM_LOG_THROW(assignment.isTransient(), storm::exceptions::InvalidArgumentException, "Must not add non-transient assignment to location.");
+            transientAssignments.add(assignment);
         }
         
         void Location::checkValid() const {
-            for(auto const& assignment : transientAssignments) {
-                STORM_LOG_THROW(assignment.isTransientAssignment(), storm::exceptions::InvalidJaniException, "Only transient assignments are allowed in locations.");
-            }
+            // Intentionally left empty.
         }
         
     }

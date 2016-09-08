@@ -42,11 +42,10 @@ namespace storm {
                     } else {
                         STORM_LOG_THROW(rewardModelName.empty(), storm::exceptions::InvalidArgumentException, "Cannot build unknown reward model '" << rewardModelName << "'.");
                         STORM_LOG_THROW(this->program.getNumberOfRewardModels() == 1, storm::exceptions::InvalidArgumentException, "Reference to standard reward model is ambiguous.");
-                        STORM_LOG_THROW(this->program.getNumberOfRewardModels() > 0, storm::exceptions::InvalidArgumentException, "Reference to standard reward model is invalid, because there is no reward model.");
                     }
                 }
                 
-                // If no reward model was yet added, but there was one that was given in the options, we try to build
+                // If no reward model was yet added, but there was one that was given in the options, we try to build the
                 // standard reward model.
                 if (rewardModels.empty() && !this->options.getRewardModelNames().empty()) {
                     rewardModels.push_back(this->program.getRewardModel(0));

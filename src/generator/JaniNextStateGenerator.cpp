@@ -34,22 +34,22 @@ namespace storm {
                     }
                 }
             } else {
+                auto const& globalVariables = model.getGlobalVariables();
+
                 // Extract the reward models from the program based on the names we were given.
                 for (auto const& rewardModelName : this->options.getRewardModelNames()) {
-                    auto const& globalVariables = model.getGlobalVariables();
                     if (globalVariables.hasVariable(rewardModelName)) {
                         rewardVariables.push_back(globalVariables.getVariable(rewardModelName).getExpressionVariable());
                     } else {
                         STORM_LOG_THROW(rewardModelName.empty(), storm::exceptions::InvalidArgumentException, "Cannot build unknown reward model '" << rewardModelName << "'.");
                         STORM_LOG_THROW(globalVariables.getNumberOfTransientVariables() == 1, storm::exceptions::InvalidArgumentException, "Reference to standard reward model is ambiguous.");
-                        STORM_LOG_THROW(this->program.getNumberOfRewardModels() > 0, storm::exceptions::InvalidArgumentException, "Reference to standard reward model is invalid, because there is no reward model.");
                     }
                 }
                 
-                // If no reward model was yet added, but there was one that was given in the options, we try to build
+                // If no reward model was yet added, but there was one that was given in the options, we try to build the
                 // standard reward model.
-                if (rewardModels.empty() && !this->options.getRewardModelNames().empty()) {
-                    rewardModels.push_back(this->program.getRewardModel(0));
+                if (rewardVariables.empty() && !this->options.getRewardModelNames().empty()) {
+                    rewardVariables.push_back(globalVariables.getTransientVariables().front()->getExpressionVariable());
                 }
             }
 

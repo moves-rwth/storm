@@ -7,33 +7,11 @@ namespace storm {
     namespace jani {
         
         EdgeDestination::EdgeDestination(uint64_t locationIndex, storm::expressions::Expression const& probability, std::vector<Assignment> const& assignments) : locationIndex(locationIndex), probability(probability), assignments(assignments) {
-            for (auto const& assignment : assignments) {
-                if (assignment.isTransientAssignment()) {
-                    transientAssignments.push_back(assignment);
-                } else {
-                    nonTransientAssignments.push_back(assignment);
-                }
-            }
-            sortAssignments(this->assignments);
-            sortAssignments(transientAssignments);
-            sortAssignments(nonTransientAssignments);
+            // Intentionally left empty.
         }
         
         void EdgeDestination::addAssignment(Assignment const& assignment) {
-            // We make sure that there are no two assignments to the same variable.
-            for (auto const& oldAssignment : assignments) {
-                STORM_LOG_THROW(oldAssignment.getExpressionVariable() != assignment.getExpressionVariable(), storm::exceptions::WrongFormatException, "Cannot add assignment '" << assignment << "', because another assignment '" << assignment << "' writes to the same target variable.");
-            }
-            assignments.push_back(assignment);
-            sortAssignments(assignments);
-            
-            if (assignment.isTransientAssignment()) {
-                transientAssignments.push_back(assignment);
-                sortAssignments(transientAssignments);
-            } else {
-                nonTransientAssignments.push_back(assignment);
-                sortAssignments(nonTransientAssignments);
-            }
+            assignments.add(assignment);
         }
         
         uint64_t EdgeDestination::getLocationIndex() const {
@@ -48,84 +26,30 @@ namespace storm {
             this->probability = probability;
         }
         
-        std::vector<Assignment>& EdgeDestination::getAssignments() {
-            return assignments;
+        storm::jani::detail::ConstAssignments EdgeDestination::getAssignments() const {
+            return assignments.getAllAssignments();
+        }
+
+        storm::jani::detail::ConstAssignments EdgeDestination::getTransientAssignments() const {
+            return assignments.getTransientAssignments();
         }
         
-        std::vector<Assignment> const& EdgeDestination::getAssignments() const {
-            return assignments;
-        }
-        
-        std::vector<Assignment>& EdgeDestination::getNonTransientAssignments() {
-            return nonTransientAssignments;
-        }
-        
-        std::vector<Assignment> const& EdgeDestination::getNonTransientAssignments() const {
-            return nonTransientAssignments;
-        }
-        
-        std::vector<Assignment>& EdgeDestination::getTransientAssignments() {
-            return transientAssignments;
-        }
-        
-        std::vector<Assignment> const& EdgeDestination::getTransientAssignments() const {
-            return transientAssignments;
+        storm::jani::detail::ConstAssignments EdgeDestination::getNonTransientAssignments() const {
+            return assignments.getNonTransientAssignments();
         }
         
         void EdgeDestination::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
             this->setProbability(this->getProbability().substitute(substitution));
-            for (auto& assignment : this->getAssignments()) {
-                assignment.substitute(substitution);
-            }
-            for (auto& assignment : this->getTransientAssignments()) {
-                assignment.substitute(substitution);
-            }
-            for (auto& assignment : this->getNonTransientAssignments()) {
-                assignment.substitute(substitution);
-            }
+            assignments.substitute(substitution);
         }
         
         bool EdgeDestination::hasAssignment(Assignment const& assignment) const {
-            for (auto const& containedAssignment : assignments) {
-                if (containedAssignment == assignment) {
-                    return true;
-                }
-            }
-            return false;
+            return assignments.contains(assignment);
         }
         
         bool EdgeDestination::removeAssignment(Assignment const& assignment) {
-            bool toRemove = removeAssignment(assignment, assignments);
-            if (toRemove) {
-                if (assignment.isTransientAssignment()) {
-                    removeAssignment(assignment, transientAssignments);
-                } else {
-                    removeAssignment(assignment, nonTransientAssignments);
-                }
-                return true;
-            }
-            return false;
+            return assignments.remove(assignment);
         }
         
-        void EdgeDestination::sortAssignments(std::vector<Assignment>& assignments) {
-            std::sort(assignments.begin(), assignments.end(), [] (storm::jani::Assignment const& assignment1, storm::jani::Assignment const& assignment2) {
-                bool smaller = assignment1.getExpressionVariable().getType().isBooleanType() && !assignment2.getExpressionVariable().getType().isBooleanType();
-                if (!smaller) {
-                    smaller = assignment1.getExpressionVariable() < assignment2.getExpressionVariable();
-                }
-                return smaller;
-            });
-        }
-        
-        bool EdgeDestination::removeAssignment(Assignment const& assignment, std::vector<Assignment>& assignments) {
-            for (auto it = assignments.begin(), ite = assignments.end(); it != ite; ++it) {
-                if (assignment == *it) {
-                    assignments.erase(it);
-                    return true;
-                }
-            }
-            return false;
-        }
-
     }
 }

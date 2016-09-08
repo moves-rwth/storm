@@ -4,6 +4,7 @@
 #include <boost/container/flat_set.hpp>
 
 #include "src/storage/jani/EdgeDestination.h"
+#include "src/storage/jani/OrderedAssignments.h"
 
 namespace storm {
     namespace jani {
@@ -65,16 +66,6 @@ namespace storm {
             void addDestination(EdgeDestination const& destination);
             
             /*!
-             * Retrieves the transient assignments of this edge.
-             */
-            std::vector<Assignment>& getTransientAssignments();
-            
-            /*!
-             * Retrieves the transient assignments of this edge.
-             */
-            std::vector<Assignment> const& getTransientAssignments() const;
-            
-            /*!
              * Substitutes all variables in all expressions according to the given substitution.
              */
             void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution);
@@ -90,14 +81,20 @@ namespace storm {
              * that prior to calling this, the edge has to be finalized.
              */
             boost::container::flat_set<storm::expressions::Variable> const& getWrittenGlobalVariables() const;
-            
+
             /*!
              * Adds a transient assignment to this edge.
              *
              * @param assignment The transient assignment to add.
+             * @return True if the assignment was added.
              */
-            void addTransientAssignment(Assignment const& assignment);
+            bool addTransientAssignment(Assignment const& assignment);
             
+            /*!
+             * Retrieves the transient assignments of this edge.
+             */
+            OrderedAssignments const& getTransientAssignments() const;
+
             /*!
              * Finds the transient assignments common to all destinations and lifts them to the edge. Afterwards, these
              * assignments are no longer contained in the destination.
@@ -122,7 +119,7 @@ namespace storm {
             std::vector<EdgeDestination> destinations;
             
             /// The transient assignments made when taking this edge.
-            std::vector<Assignment> transientAssignments;
+            OrderedAssignments transientAssignments;
             
             /// A set of global variables that is written by at least one of the edge's destinations. This set is
             /// initialized by the call to <code>finalize</code>.

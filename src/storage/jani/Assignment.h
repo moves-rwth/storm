@@ -13,7 +13,7 @@ namespace storm {
             /*!
              * Creates an assignment of the given expression to the given variable.
              */
-            Assignment(storm::jani::Variable const& variable, storm::expressions::Expression const& expression);
+            Assignment(storm::jani::Variable const& variable, storm::expressions::Expression const& expression, uint64_t index = 0);
             
             bool operator==(Assignment const& other) const;
             
@@ -45,7 +45,12 @@ namespace storm {
             /**
              * Retrieves whether the assignment assigns to a transient variable.
              */
-            bool isTransientAssignment() const;
+            bool isTransient() const;
+            
+            /*!
+             * Retrieves the level of the assignment.
+             */
+            uint64_t getLevel() const;
             
             friend std::ostream& operator<<(std::ostream& stream, Assignment const& assignment);
             
@@ -55,7 +60,20 @@ namespace storm {
             
             // The expression that is being assigned to the variable.
             storm::expressions::Expression expression;
+            
+            // The level of the assignment.
+            uint64_t level;
         };
         
+        /*!
+         * This functor enables ordering the assignments by variable. Note that this is a partial order.
+         */
+        struct AssignmentPartialOrderByVariable {
+            bool operator()(Assignment const& left, Assignment const& right) const;
+            bool operator()(Assignment const& left, std::shared_ptr<Assignment> const& right) const;
+            bool operator()(std::shared_ptr<Assignment> const& left, std::shared_ptr<Assignment> const& right) const;
+            bool operator()(std::shared_ptr<Assignment> const& left, Assignment const& right) const;
+        };
+    
     }
 }

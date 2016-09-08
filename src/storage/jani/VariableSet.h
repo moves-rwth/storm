@@ -3,7 +3,7 @@
 #include <vector>
 #include <set>
 
-#include <boost/iterator/transform_iterator.hpp>
+#include "src/adapters/DereferenceIteratorAdapter.h"
 
 #include "src/storage/jani/BooleanVariable.h"
 #include "src/storage/jani/UnboundedIntegerVariable.h"
@@ -12,57 +12,17 @@
 
 namespace storm {
     namespace jani {
-        
-        class VariableSet;
-        
+                
         namespace detail {
-            
-            template<typename VariableType>
-            class Dereferencer {
-            public:
-                VariableType& operator()(std::shared_ptr<VariableType> const& d) const;
-            };
-            
-            template<typename VariableType>
-            class Variables {
-            public:
-                typedef typename std::vector<std::shared_ptr<VariableType>>::iterator input_iterator;
-                typedef boost::transform_iterator<Dereferencer<VariableType>, input_iterator> iterator;
-                
-                Variables(input_iterator it, input_iterator ite);
-                
-                iterator begin();
-                iterator end();
-                
-            private:
-                input_iterator it;
-                input_iterator ite;
-            };
+            template <typename VariableType>
+            using Variables = storm::adapters::DereferenceIteratorAdapter<std::vector<std::shared_ptr<VariableType>>>;
 
-            template<typename VariableType>
-            class ConstVariables {
-            public:
-                typedef typename std::vector<std::shared_ptr<VariableType>>::const_iterator const_input_iterator;
-                typedef boost::transform_iterator<Dereferencer<VariableType const>, const_input_iterator> const_iterator;
-                
-                ConstVariables(const_input_iterator it, const_input_iterator ite);
-                
-                const_iterator begin();
-                const_iterator end();
-                
-            private:
-                const_input_iterator it;
-                const_input_iterator ite;
-            };
+            template <typename VariableType>
+            using ConstVariables = storm::adapters::DereferenceIteratorAdapter<std::vector<std::shared_ptr<VariableType>> const>;
         }
         
         class VariableSet {
         public:
-            typedef typename std::vector<std::shared_ptr<Variable>>::iterator input_iterator;
-            typedef typename std::vector<std::shared_ptr<Variable>>::const_iterator const_input_iterator;
-            typedef boost::transform_iterator<detail::Dereferencer<Variable>, input_iterator> iterator;
-            typedef boost::transform_iterator<detail::Dereferencer<Variable const>, const_input_iterator> const_iterator;
-            
             /*!
              * Creates an empty variable set.
              */
@@ -156,22 +116,22 @@ namespace storm {
             /*!
              * Retrieves an iterator to the variables in this set.
              */
-            iterator begin();
+            typename detail::Variables<Variable>::iterator begin();
 
             /*!
              * Retrieves an iterator to the variables in this set.
              */
-            const_iterator begin() const;
+            typename detail::ConstVariables<Variable>::iterator begin() const;
 
             /*!
              * Retrieves the end iterator to the variables in this set.
              */
-            iterator end();
+            typename detail::Variables<Variable>::iterator end();
 
             /*!
              * Retrieves the end iterator to the variables in this set.
              */
-            const_iterator end() const;
+            typename detail::ConstVariables<Variable>::iterator end() const;
 
             /*!
              * Retrieves whether the set of variables contains a boolean variable.
@@ -202,6 +162,16 @@ namespace storm {
              * Retrieves whether this variable set is empty.
              */
             bool empty() const;
+            
+            /*!
+             * Retrieves the number of transient variables in this variable set.
+             */
+            uint_fast64_t getNumberOfTransientVariables() const;
+            
+            /*!
+             * Retrieves a vector of transient variables in this variable set.
+             */
+            std::vector<std::shared_ptr<Variable const>> getTransientVariables() const;
             
         private:
             /// The vector of all variables.
