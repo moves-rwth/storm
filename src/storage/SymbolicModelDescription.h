@@ -1,14 +1,27 @@
-//
-//  SymbolicModelDescription.hpp
-//  storm
-//
-//  Created by Christian Dehnert on 09/09/16.
-//
-//
+#pragma once
 
-#ifndef SymbolicModelDescription_hpp
-#define SymbolicModelDescription_hpp
+#include <boost/variant.hpp>
 
-#include <stdio.h>
+#include "src/storage/jani/Model.h"
+#include "src/storage/prism/Program.h"
 
-#endif /* SymbolicModelDescription_hpp */
+namespace storm {
+    namespace storage {
+        
+        class SymbolicModelDescription {
+        public:
+            SymbolicModelDescription(storm::jani::Model const& model);
+            SymbolicModelDescription(storm::prism::Program const& program);
+
+            bool isJaniModel() const;
+            bool isPrismProgram() const;
+            
+            storm::jani::Model const& asJaniModel() const;
+            storm::prism::Program const& asPrismProgram() const;
+            
+        private:
+            boost::variant<storm::jani::Model, storm::prism::Program> modelDescription;
+        };
+        
+    }
+}
