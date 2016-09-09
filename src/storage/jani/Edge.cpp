@@ -8,7 +8,7 @@
 namespace storm {
     namespace jani {
         
-        Edge::Edge(uint64_t sourceLocationIndex, uint64_t actionIndex, boost::optional<storm::expressions::Expression> const& rate, storm::expressions::Expression const& guard, std::vector<EdgeDestination> destinations) : sourceLocationIndex(sourceLocationIndex), actionIndex(actionIndex), rate(rate), guard(guard), destinations(destinations) {
+        Edge::Edge(uint64_t sourceLocationIndex, uint64_t actionIndex, boost::optional<storm::expressions::Expression> const& rate, storm::expressions::Expression const& guard, std::vector<EdgeDestination> destinations) : sourceLocationIndex(sourceLocationIndex), actionIndex(actionIndex), rate(rate), guard(guard), destinations(destinations), assignments(), writtenGlobalVariables() {
             // Intentionally left empty.
         }
         
@@ -52,8 +52,8 @@ namespace storm {
             destinations.push_back(destination);
         }
         
-        OrderedAssignments const& Edge::getTransientAssignments() const {
-            return transientAssignments;
+        OrderedAssignments const& Edge::getAssignments() const {
+            return assignments;
         }
         
         void Edge::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
@@ -61,7 +61,7 @@ namespace storm {
             if (this->hasRate()) {
                 this->setRate(this->getRate().substitute(substitution));
             }
-            for (auto& assignment : this->getTransientAssignments()) {
+            for (auto& assignment : this->getAssignments()) {
                 assignment.substitute(substitution);
             }
             for (auto& destination : this->getDestinations()) {
@@ -81,7 +81,7 @@ namespace storm {
         
         bool Edge::addTransientAssignment(Assignment const& assignment) {
             STORM_LOG_THROW(assignment.isTransient(), storm::exceptions::InvalidArgumentException, "Must not add non-transient assignment to location.");
-            return transientAssignments.add(assignment);
+            return assignments.add(assignment);
         }
         
         void Edge::liftTransientDestinationAssignments() {

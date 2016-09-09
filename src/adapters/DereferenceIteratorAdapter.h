@@ -25,11 +25,11 @@ namespace storm {
                 // Intentionally left empty.
             }
             
-            iterator begin() {
+            iterator begin() const {
                 return boost::make_transform_iterator(it, Dereferencer<value_type>());
             }
             
-            iterator end() {
+            iterator end() const {
                 return boost::make_transform_iterator(ite, Dereferencer<value_type>());
             }
             

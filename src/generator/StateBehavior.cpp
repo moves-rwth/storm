@@ -21,6 +21,11 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
+        void StateBehavior<ValueType, StateType>::addStateRewards(std::vector<ValueType>&& stateRewards) {
+            this->stateRewards = std::move(stateRewards);
+        }
+        
+        template<typename ValueType, typename StateType>
         void StateBehavior<ValueType, StateType>::setExpanded(bool newValue) {
             this->expanded = newValue;
         }

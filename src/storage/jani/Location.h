@@ -25,9 +25,9 @@ namespace storm {
             std::string const& getName() const;
             
             /*!
-             * Retrieves the transient assignments of this location.
+             * Retrieves the assignments of this location.
              */
-            OrderedAssignments const& getTransientAssignments() const;
+            OrderedAssignments const& getAssignments() const;
             
             /*!
              * Adds the given transient assignment to this location.
@@ -44,7 +44,7 @@ namespace storm {
             std::string name;
             
             /// The transient assignments made in this location.
-            OrderedAssignments transientAssignments;
+            OrderedAssignments assignments;
         };
         
     }

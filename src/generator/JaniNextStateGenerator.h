@@ -89,6 +89,12 @@ namespace storm {
              */
             void checkGlobalVariableWritesValid(std::vector<std::vector<storm::jani::Edge const*>> const& enabledEdges) const;
             
+            /*!
+             * Treats the given transient assignments by calling the callback function whenever a transient assignment
+             * to one of the reward variables of this generator is performed.
+             */
+            void performTransientAssignments(storm::jani::detail::ConstAssignments const& transientAssignments, std::function<void (ValueType const&)> const& callback);
+            
             /// The model used for the generation of next states.
             storm::jani::Model model;
             

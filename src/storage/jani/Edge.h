@@ -91,9 +91,9 @@ namespace storm {
             bool addTransientAssignment(Assignment const& assignment);
             
             /*!
-             * Retrieves the transient assignments of this edge.
+             * Retrieves the assignments of this edge.
              */
-            OrderedAssignments const& getTransientAssignments() const;
+            OrderedAssignments const& getAssignments() const;
 
             /*!
              * Finds the transient assignments common to all destinations and lifts them to the edge. Afterwards, these
@@ -118,8 +118,8 @@ namespace storm {
             /// The destinations of this edge.
             std::vector<EdgeDestination> destinations;
             
-            /// The transient assignments made when taking this edge.
-            OrderedAssignments transientAssignments;
+            /// The assignments made when taking this edge.
+            OrderedAssignments assignments;
             
             /// A set of global variables that is written by at least one of the edge's destinations. This set is
             /// initialized by the call to <code>finalize</code>.

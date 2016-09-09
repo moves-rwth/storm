@@ -25,7 +25,12 @@ namespace storm {
              * Adds the given state reward to the behavior of the state.
              */
             void addStateReward(ValueType const& stateReward);
-            
+
+            /*!
+             * Adds the given state rewards to the behavior of the state.
+             */
+            void addStateRewards(std::vector<ValueType>&& stateRewards);
+
             /*!
              * Sets whether the state was expanded.
              */

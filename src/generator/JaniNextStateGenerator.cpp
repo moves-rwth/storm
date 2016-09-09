@@ -52,7 +52,6 @@ namespace storm {
                     rewardVariables.push_back(globalVariables.getTransientVariables().front()->getExpressionVariable());
                 }
             }
-
             
             // If there are terminal states we need to handle, we now need to translate all labels to expressions.
             if (this->options.hasTerminalStates()) {
@@ -202,11 +201,6 @@ namespace storm {
         CompressedState JaniNextStateGenerator<ValueType, StateType>::applyUpdate(CompressedState const& state, storm::jani::EdgeDestination const& destination) {
             CompressedState newState(state);
             
-            // NOTE: the following process assumes that the assignments of the destination are ordered in such a way
-            // that the assignments to boolean variables precede the assignments to all integer variables and that
-            // within the types, the assignments to variables are ordered (in ascending order) by the expression variables.
-            // This is guaranteed for JANI models, by sorting the assignments as soon as an edge destination is created.
-            
             auto assignmentIt = destination.getNonTransientAssignments().begin();
             auto assignmentIte = destination.getNonTransientAssignments().end();
             
@@ -242,6 +236,22 @@ namespace storm {
             // Prepare the result, in case we return early.
             StateBehavior<ValueType, StateType> result;
             
+            // Retrieve the locations from the state.
+            std::vector<uint64_t> locations = getLocations(*this->state);
+
+            // First, construct the state rewards, as we may return early if there are no choices later and we already
+            // need the state rewards then.
+            std::vector<ValueType> stateRewards(this->rewardVariables.size(), storm::utility::zero<ValueType>());
+            uint64_t automatonIndex = 0;
+            for (auto const& automaton : model.getAutomata()) {
+                uint64_t currentLocationIndex = locations[automatonIndex];
+                storm::jani::Location const& location = automaton.getLocation(currentLocationIndex);
+                auto valueIt = stateRewards.begin();
+                performTransientAssignments(location.getAssignments().getTransientAssignments(), [&valueIt] (ValueType const& value) { *valueIt += value; ++valueIt; } );
+                ++automatonIndex;
+            }
+            result.addStateRewards(std::move(stateRewards));
+            
             // If a terminal expression was set and we must not expand this state, return now.
             if (!this->terminalStates.empty()) {
                 for (auto const& expressionBool : this->terminalStates) {
@@ -250,9 +260,6 @@ namespace storm {
                     }
                 }
             }
-            
-            // Retrieve the locations from the state.
-            std::vector<uint64_t> locations = getLocations(*this->state);
             
             // Get all choices for the state.
             std::vector<Choice<ValueType>> allChoices = getSilentActionChoices(locations, *this->state, stateToIdCallback);
@@ -303,6 +310,25 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
+        void JaniNextStateGenerator<ValueType, StateType>::performTransientAssignments(storm::jani::detail::ConstAssignments const& transientAssignments, std::function<void (ValueType const&)> const& callback) {
+            auto rewardVariableIt = rewardVariables.begin();
+            auto rewardVariableIte = rewardVariables.end();
+            for (auto const& assignment : transientAssignments) {
+                while (rewardVariableIt != rewardVariableIte && *rewardVariableIt < assignment.getExpressionVariable()) {
+                    callback(storm::utility::zero<ValueType>());
+                    ++rewardVariableIt;
+                }
+                if (rewardVariableIt == rewardVariableIte) {
+                    break;
+                }
+                if (*rewardVariableIt == assignment.getExpressionVariable()) {
+                    callback(ValueType(this->evaluator.asRational(assignment.getAssignedExpression())));
+                    ++rewardVariableIt;
+                }
+            }
+        }
+        
+        template<typename ValueType, typename StateType>
         std::vector<Choice<ValueType>> JaniNextStateGenerator<ValueType, StateType>::getSilentActionChoices(std::vector<uint64_t> const& locations, CompressedState const& state, StateToIdCallback stateToIdCallback) {
             std::vector<Choice<ValueType>> result;
             
@@ -339,6 +365,9 @@ namespace storm {
                         probabilitySum += probability;
                     }
                     
+                    // Create the state-action reward for the newly created choice.
+                    performTransientAssignments(edge.getAssignments().getTransientAssignments(), [&choice] (ValueType const& value) { choice.addChoiceReward(value); } );
+
                     // Check that the resulting distribution is in fact a distribution.
                     STORM_LOG_THROW(!this->isDiscreteTimeModel() || this->comparator.isOne(probabilitySum), storm::exceptions::WrongFormatException, "Probabilities do not sum to one for edge (actually sum to " << probabilitySum << ").");
                 }

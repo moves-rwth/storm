@@ -7,7 +7,7 @@
 namespace storm {
     namespace jani {
         
-        Location::Location(std::string const& name, std::vector<Assignment> const& transientAssignments) : name(name), transientAssignments(transientAssignments) {
+        Location::Location(std::string const& name, std::vector<Assignment> const& transientAssignments) : name(name), assignments(transientAssignments) {
             // Intentionally left empty.
         }
         
@@ -15,13 +15,13 @@ namespace storm {
             return name;
         }
         
-        OrderedAssignments const& Location::getTransientAssignments() const {
-            return transientAssignments;
+        OrderedAssignments const& Location::getAssignments() const {
+            return assignments;
         }
         
         void Location::addTransientAssignment(storm::jani::Assignment const& assignment) {
             STORM_LOG_THROW(assignment.isTransient(), storm::exceptions::InvalidArgumentException, "Must not add non-transient assignment to location.");
-            transientAssignments.add(assignment);
+            assignments.add(assignment);
         }
         
         void Location::checkValid() const {
