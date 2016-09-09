@@ -43,7 +43,11 @@ namespace storm {
         return parseFormulas(formulaParser, inputString);
     }
 
-    std::vector<std::shared_ptr<storm::logic::Formula const>> parseFormulasForProgram(std::string const& inputString, storm::prism::Program const& program) {
+    std::vector<std::shared_ptr<storm::logic::Formula const>> parseFormulasForJaniModel(std::string const& inputString, storm::jani::Model const& model) {
+        storm::parser::FormulaParser formulaParser(model.getManager().getSharedPointer());
+        return parseFormulas(formulaParser, inputString);
+    }
+    std::vector<std::shared_ptr<storm::logic::Formula const>> parseFormulasForPrismProgram(std::string const& inputString, storm::prism::Program const& program) {
         storm::parser::FormulaParser formulaParser(program);
         return parseFormulas(formulaParser, inputString);
     } 

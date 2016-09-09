@@ -59,20 +59,42 @@ namespace storm {
                 std::string getLabelingFilename() const;
 
                 /*!
-                 * Retrieves whether the symbolic option was set.
+                 * Retrieves whether the PRISM language option was set.
                  *
-                 * @return True if the symbolic option was set.
+                 * @return True if the PRISM input option was set.
                  */
-                bool isSymbolicSet() const;
+                bool isPrismInputSet() const;
+                
+                /*!
+                 * Retrieves whether the JANI input option was set.
+                 *
+                 * @return True if the JANI input option was set.
+                 */
+                bool isJaniInputSet() const;
 
                 /*!
-                 * Retrieves the name of the file that contains the symbolic model specification if the model was given
-                 * using the symbolic option.
+                 * Retrieves whether the JANI or PRISM input option was set.
                  *
-                 * @return The name of the file that contains the symbolic model specification.
+                 * @return True if either of the two options was set.
                  */
-                std::string getSymbolicModelFilename() const;
+                bool isPrismOrJaniInputSet() const;
                 
+                /*!
+                 * Retrieves the name of the file that contains the PRISM model specification if the model was given
+                 * using the PRISM input option.
+                 *
+                 * @return The name of the file that contains the PRISM model specification.
+                 */
+                std::string getPrismInputFilename() const;
+
+                /*!
+                 * Retrieves the name of the file that contains the JANI model specification if the model was given
+                 * using the JANI input option.
+                 *
+                 * @return The name of the file that contains the JANI model specification.
+                 */
+                std::string getJaniInputFilename() const;
+
                 /*!
                  * Retrieves whether the model exploration order was set.
                  *
@@ -174,8 +196,8 @@ namespace storm {
                 static const std::string exportMatOptionName;
                 static const std::string explicitOptionName;
                 static const std::string explicitOptionShortName;
-                static const std::string symbolicOptionName;
-                static const std::string symbolicOptionShortName;
+                static const std::string prismInputOptionName;
+                static const std::string janiInputOptionName;
                 static const std::string explorationOrderOptionName;
                 static const std::string explorationOrderOptionShortName;
                 static const std::string transitionRewardsOptionName;

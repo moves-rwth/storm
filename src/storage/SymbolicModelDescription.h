@@ -10,17 +10,24 @@ namespace storm {
         
         class SymbolicModelDescription {
         public:
+            SymbolicModelDescription();
             SymbolicModelDescription(storm::jani::Model const& model);
             SymbolicModelDescription(storm::prism::Program const& program);
 
+            bool hasModel() const;
             bool isJaniModel() const;
             bool isPrismProgram() const;
+
+            void setModel(storm::jani::Model const& model);
+            void setModel(storm::prism::Program const& program);
             
             storm::jani::Model const& asJaniModel() const;
             storm::prism::Program const& asPrismProgram() const;
             
+            void preprocess(std::string const& constantDefinitionString = "");
+            
         private:
-            boost::variant<storm::jani::Model, storm::prism::Program> modelDescription;
+            boost::optional<boost::variant<storm::jani::Model, storm::prism::Program>> modelDescription;
         };
         
     }
