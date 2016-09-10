@@ -181,7 +181,22 @@ namespace storm {
 				  */
 				 void combinationUtil(std::vector<int> &output, std::vector<int> childrenIds, std::vector<int> subsets, int start, int end, int index, int threshold);
 				 
+				 /*
+				  * Return true if BE is active (corresponding place contains one initial token) or false if BE is inactive (corresponding place contains no initial token).
+				  * 
+				  * @param dftBE BE element.
+				  */
 				 bool isBEActive(std::shared_ptr<storm::storage::DFTBE<ValueType> const> dftBE);
+				 
+				 /*
+				  * Get the priority of the element.
+				  * The priority is two times the length of the shortest path to the top event.
+				  * 
+				  * @param priority The priority of the gate. Top Event has priority 0,  its children 2, its grandchildren 4, ...
+				  * 
+				  * @param dftElement The element whose priority shall be determined.
+				  */
+				 uint_fast64_t getPriority(uint_fast64_t priority, std::shared_ptr<storm::storage::DFTElement<ValueType> const> dFTElement);
             };
         }
     }

@@ -85,9 +85,11 @@ namespace storm {
             
             template <typename ValueType>
             void DftToGspnTransformator<ValueType>::drawBE(std::shared_ptr<storm::storage::DFTBE<ValueType> const> dftBE) {
+				uint_fast64_t priority = getPriority(0, dftBE);
+				
 				storm::gspn::Place placeBEActivated;
 				placeBEActivated.setName(dftBE->name() + "_activated");
-				placeBEActivated.setNumberOfInitialTokens(isBEActive(dftBE) ? 1 : 0); // TODO: Check if BE is spare child of a SPARE.
+				placeBEActivated.setNumberOfInitialTokens(isBEActive(dftBE) ? 1 : 0);
 				mGspn.addPlace(placeBEActivated);
 				
 				storm::gspn::Place placeBEFailed;
@@ -97,7 +99,7 @@ namespace storm {
 				
 				storm::gspn::TimedTransition<double> timedTransitionActiveFailure;
 				timedTransitionActiveFailure.setName(dftBE->name() + "_activeFailing");
-				timedTransitionActiveFailure.setPriority(1);
+				timedTransitionActiveFailure.setPriority(priority);
 				timedTransitionActiveFailure.setRate(dftBE->activeFailureRate());
 				timedTransitionActiveFailure.setInputArcMultiplicity(placeBEActivated, 1);
 				timedTransitionActiveFailure.setInhibitionArcMultiplicity(placeBEFailed, 1);
@@ -107,7 +109,7 @@ namespace storm {
 				
 				storm::gspn::TimedTransition<double> timedTransitionPassiveFailure;
 				timedTransitionPassiveFailure.setName(dftBE->name() + "_passiveFailing");
-				timedTransitionPassiveFailure.setPriority(1);
+				timedTransitionPassiveFailure.setPriority(priority);
 				timedTransitionPassiveFailure.setRate(dftBE->passiveFailureRate());
 				timedTransitionPassiveFailure.setInhibitionArcMultiplicity(placeBEActivated, 1);
 				timedTransitionPassiveFailure.setInhibitionArcMultiplicity(placeBEFailed, 1);
@@ -124,7 +126,7 @@ namespace storm {
 				
 				storm::gspn::ImmediateTransition<storm::gspn::GSPN::WeightType> immediateTransitionANDFailing;
 				immediateTransitionANDFailing.setName(dftAnd->name() + STR_FAILING);
-				immediateTransitionANDFailing.setPriority(1);
+				immediateTransitionANDFailing.setPriority(getPriority(0, dftAnd));
 				immediateTransitionANDFailing.setWeight(0.0);
 				immediateTransitionANDFailing.setInhibitionArcMultiplicity(placeANDFailed, 1);
 				immediateTransitionANDFailing.setOutputArcMultiplicity(placeANDFailed, 1);
@@ -133,6 +135,8 @@ namespace storm {
 
 			template <typename ValueType>
             void DftToGspnTransformator<ValueType>::drawOR(std::shared_ptr<storm::storage::DFTOr<ValueType> const> dftOr) {
+				uint_fast64_t priority = getPriority(0, dftOr);
+				
 				storm::gspn::Place placeORFailed;
 				placeORFailed.setName(dftOr->name() + STR_FAILED);
 				placeORFailed.setNumberOfInitialTokens(0);
@@ -142,7 +146,7 @@ namespace storm {
 				for (std::size_t i = 0; i < dftOr->nrChildren(); i++) {
 					storm::gspn::ImmediateTransition<storm::gspn::GSPN::WeightType> immediateTransitionORFailing;
 					immediateTransitionORFailing.setName(dftOr->name() + "_" + children[i]->name() + STR_FAILING);
-					immediateTransitionORFailing.setPriority(1);
+					immediateTransitionORFailing.setPriority(priority);
 					immediateTransitionORFailing.setWeight(0.0);
 					immediateTransitionORFailing.setInhibitionArcMultiplicity(placeORFailed, 1);
 					immediateTransitionORFailing.setOutputArcMultiplicity(placeORFailed, 1);
@@ -152,6 +156,8 @@ namespace storm {
 			
 			template <typename ValueType>
             void DftToGspnTransformator<ValueType>::drawVOT(std::shared_ptr<storm::storage::DFTVot<ValueType> const> dftVot) {
+				uint_fast64_t priority = getPriority(0, dftVot);
+				
 				storm::gspn::Place placeVOTFailed;
 				placeVOTFailed.setName(dftVot->name() + STR_FAILED);
 				placeVOTFailed.setNumberOfInitialTokens(0);
@@ -161,7 +167,7 @@ namespace storm {
 				for (int i = 0; i < calculateBinomialCoefficient(dftVot->nrChildren(), dftVot->threshold()); i++) {
 					storm::gspn::ImmediateTransition<storm::gspn::GSPN::WeightType> immediateTransitionVOTFailing;
 					immediateTransitionVOTFailing.setName(dftVot->name() + "_" + std::to_string(i) + STR_FAILING);
-					immediateTransitionVOTFailing.setPriority(1);
+					immediateTransitionVOTFailing.setPriority(priority);
 					immediateTransitionVOTFailing.setWeight(0.0);
 					immediateTransitionVOTFailing.setInhibitionArcMultiplicity(placeVOTFailed, 1);
 					immediateTransitionVOTFailing.setOutputArcMultiplicity(placeVOTFailed, 1);
@@ -170,7 +176,9 @@ namespace storm {
 			}
 
 			template <typename ValueType>
-            void DftToGspnTransformator<ValueType>::drawPAND(std::shared_ptr<storm::storage::DFTPand<ValueType> const> dftPand) {				
+            void DftToGspnTransformator<ValueType>::drawPAND(std::shared_ptr<storm::storage::DFTPand<ValueType> const> dftPand) {
+				uint_fast64_t priority = getPriority(0, dftPand);
+				
 				storm::gspn::Place placePANDFailed;
 				placePANDFailed.setName(dftPand->name() + STR_FAILED);
 				placePANDFailed.setNumberOfInitialTokens(0);
@@ -183,7 +191,7 @@ namespace storm {
 				
 				storm::gspn::ImmediateTransition<storm::gspn::GSPN::WeightType> immediateTransitionPANDFailing;
 				immediateTransitionPANDFailing.setName(dftPand->name() + STR_FAILING);
-				immediateTransitionPANDFailing.setPriority(1);
+				immediateTransitionPANDFailing.setPriority(priority);
 				immediateTransitionPANDFailing.setWeight(0.0);
 				immediateTransitionPANDFailing.setInhibitionArcMultiplicity(placePANDFailed, 1);
 				immediateTransitionPANDFailing.setInhibitionArcMultiplicity(placePANDFailsave, 1);
@@ -193,7 +201,7 @@ namespace storm {
 				for (std::size_t i = 0; i < dftPand->nrChildren() -1; i++) {
 					storm::gspn::ImmediateTransition<storm::gspn::GSPN::WeightType> immediateTransitionPANDFailsave;
 					immediateTransitionPANDFailsave.setName(dftPand->name() + "_" + std::to_string(i) + STR_FAILSAVING);
-					immediateTransitionPANDFailsave.setPriority(1);
+					immediateTransitionPANDFailsave.setPriority(priority);
 					immediateTransitionPANDFailsave.setWeight(0.0);
 					immediateTransitionPANDFailsave.setInhibitionArcMultiplicity(placePANDFailsave, 1);
 					immediateTransitionPANDFailsave.setOutputArcMultiplicity(placePANDFailsave, 1);
@@ -208,6 +216,8 @@ namespace storm {
 			
 			template <typename ValueType>
             void DftToGspnTransformator<ValueType>::drawPOR(std::shared_ptr<storm::storage::DFTPor<ValueType> const> dftPor) {
+				uint_fast64_t priority = getPriority(0, dftPor);
+				
 				storm::gspn::Place placePORFailed;
 				placePORFailed.setName(dftPor->name() + STR_FAILED);
 				placePORFailed.setNumberOfInitialTokens(0);
@@ -220,7 +230,7 @@ namespace storm {
 				
 				storm::gspn::ImmediateTransition<storm::gspn::GSPN::WeightType> immediateTransitionPORFailing;
 				immediateTransitionPORFailing.setName(dftPor->name() + STR_FAILING);
-				immediateTransitionPORFailing.setPriority(1);
+				immediateTransitionPORFailing.setPriority(priority);
 				immediateTransitionPORFailing.setWeight(0.0);
 				immediateTransitionPORFailing.setInhibitionArcMultiplicity(placePORFailed, 1);
 				immediateTransitionPORFailing.setInhibitionArcMultiplicity(placePORFailsave, 1);
@@ -229,7 +239,7 @@ namespace storm {
 				
 				storm::gspn::ImmediateTransition<storm::gspn::GSPN::WeightType> immediateTransitionPORFailsave;
 				immediateTransitionPORFailsave.setName(dftPor->name() + STR_FAILSAVING);
-				immediateTransitionPORFailsave.setPriority(1);
+				immediateTransitionPORFailsave.setPriority(priority);
 				immediateTransitionPORFailsave.setWeight(0.0);
 				immediateTransitionPORFailsave.setInhibitionArcMultiplicity(placePORFailsave, 1);
 				immediateTransitionPORFailsave.setOutputArcMultiplicity(placePORFailsave, 1);
@@ -270,7 +280,7 @@ namespace storm {
 					
 					storm::gspn::TimedTransition<double> timedTransitionDEPFailure;
 					timedTransitionDEPFailure.setName(gateName + STR_FAILING);
-					timedTransitionDEPFailure.setPriority(1);
+					timedTransitionDEPFailure.setPriority(getPriority(0, dftDependency));
 					timedTransitionDEPFailure.setRate(dftDependency->probability());
 					timedTransitionDEPFailure.setOutputArcMultiplicity(placeDEPFailed, 1);
 					timedTransitionDEPFailure.setInhibitionArcMultiplicity(placeDEPFailed, 1);
@@ -509,6 +519,7 @@ namespace storm {
 				}
 				
 				auto parents = dftBE->parents();
+				
 				for (std::size_t i = 0; i < parents.size(); i++) {
 					if (parents[i]->id() == mDft.getTopLevelIndex()) {
 						return true;
@@ -517,6 +528,26 @@ namespace storm {
 				
 				// No "valid" path found. BE is inactive.
 				return false;
+			}
+			
+			template <typename ValueType>
+            uint_fast64_t DftToGspnTransformator<ValueType>::getPriority(uint_fast64_t priority, std::shared_ptr<storm::storage::DFTElement<ValueType> const> dFTElement)
+			{
+				if (dFTElement->id() == mDft.getTopLevelIndex()) {
+					return priority;
+				}
+				else {
+					auto parents = dFTElement->parents();
+					std::vector<uint_fast64_t> pathLengths;
+					
+					for (std::size_t i = 0; i < parents.size(); i++) {
+						pathLengths.push_back(getPriority(priority + 2, parents[i]));
+					}
+					
+					return *std::min_element(pathLengths.begin(), pathLengths.end());
+				}
+				
+				return priority;
 			}
 			
 			template <typename ValueType>
