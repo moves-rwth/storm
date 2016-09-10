@@ -16,8 +16,6 @@ namespace storm {
                 mGspn = storm::gspn::GSPN();
 				mGspn.setName("DftToGspnTransformation");
 				
-				// TODO: Reconsider priorities!
-				
 				// Loop through every DFT element and draw them as a GSPN.
 				drawGSPNElements();
 				
@@ -77,7 +75,6 @@ namespace storm {
 							break;
 						case storm::storage::DFTElementType::PDEP:
 							drawPDEP(std::static_pointer_cast<storm::storage::DFTDependency<ValueType> const>(dftElement));
-							//STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "The transformation of a PDEP is not yet implemented.");
 							break;
 						default:
 							STORM_LOG_ASSERT(false, "DFT type unknown.");
@@ -403,22 +400,22 @@ namespace storm {
 							}
 							case storm::storage::DFTElementType::MUTEX:
 							{
-								// MUTEX is not implemented yet. Nothing to do here.
+								// MUTEX are realized with restrictions. Nothing to do here.
 								break;
 							}
 							case storm::storage::DFTElementType::BE:
 							{
-								// The parent is never a Basic Event (Except for SPAREs?).
+								// The parent is never a Basic Event.
 								break;
 							}
 							case storm::storage::DFTElementType::CONSTF:
 							{
-								// The parent is never a Basic Event (Except for SPAREs?).
+								// The parent is never a Basic Event.
 								break;
 							}
 							case storm::storage::DFTElementType::CONSTS:
 							{
-								// The parent is never a Basic Event (Except for SPAREs?).
+								// The parent is never a Basic Event.
 								break;
 							}
 							case storm::storage::DFTElementType::PDEP:
@@ -525,7 +522,6 @@ namespace storm {
 						}
 					}
 				}
-				// TODO: Does the DEP has a parent?
 			}
 			
 			template <typename ValueType>
@@ -570,10 +566,14 @@ namespace storm {
 								}
 								break;
 							}
+							case storm::storage::DFTElementType::MUTEX:
+							{
+								// MUTEX is not implemented by the DFTGalileoParser yet. Nothing to do here.
+								STORM_LOG_ASSERT(false, "MUTEX is not supported by DftToGspnTransformator.");
+								break;
+							}
 							default:
 							{
-								// TODO: Are there other restrictions than SEQ?
-								// TODO: There is: MUTEX.
 								break;
 							}
 						}

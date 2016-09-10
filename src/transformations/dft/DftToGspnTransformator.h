@@ -63,7 +63,7 @@ namespace storm {
 				void drawGSPNDependencies();
 				
 				/*
-				 * Draw restrictions between the elements of the GSPN (i.e. SEQ).
+				 * Draw restrictions between the elements of the GSPN (i.e. SEQ or MUTEX).
 				 */
 				void drawGSPNRestrictions();
 				
