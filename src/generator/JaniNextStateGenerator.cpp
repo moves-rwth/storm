@@ -53,6 +53,9 @@ namespace storm {
                 }
             }
             
+            // Build the information structs for the reward models.
+            buildRewardModelInformation();
+            
             // If there are terminal states we need to handle, we now need to translate all labels to expressions.
             if (this->options.hasTerminalStates()) {
                 for (auto const& expressionOrLabelAndBool : this->options.getTerminalStates()) {
@@ -310,25 +313,6 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
-        void JaniNextStateGenerator<ValueType, StateType>::performTransientAssignments(storm::jani::detail::ConstAssignments const& transientAssignments, std::function<void (ValueType const&)> const& callback) {
-            auto rewardVariableIt = rewardVariables.begin();
-            auto rewardVariableIte = rewardVariables.end();
-            for (auto const& assignment : transientAssignments) {
-                while (rewardVariableIt != rewardVariableIte && *rewardVariableIt < assignment.getExpressionVariable()) {
-                    callback(storm::utility::zero<ValueType>());
-                    ++rewardVariableIt;
-                }
-                if (rewardVariableIt == rewardVariableIte) {
-                    break;
-                }
-                if (*rewardVariableIt == assignment.getExpressionVariable()) {
-                    callback(ValueType(this->evaluator.asRational(assignment.getAssignedExpression())));
-                    ++rewardVariableIt;
-                }
-            }
-        }
-        
-        template<typename ValueType, typename StateType>
         std::vector<Choice<ValueType>> JaniNextStateGenerator<ValueType, StateType>::getSilentActionChoices(std::vector<uint64_t> const& locations, CompressedState const& state, StateToIdCallback stateToIdCallback) {
             std::vector<Choice<ValueType>> result;
             
@@ -537,18 +521,83 @@ namespace storm {
         
         template<typename ValueType, typename StateType>
         std::size_t JaniNextStateGenerator<ValueType, StateType>::getNumberOfRewardModels() const {
-            return 0;
+            return rewardVariables.size();
         }
         
         template<typename ValueType, typename StateType>
         RewardModelInformation JaniNextStateGenerator<ValueType, StateType>::getRewardModelInformation(uint64_t const& index) const {
-            STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Cannot retrieve reward model information.");
-            return RewardModelInformation("", false, false, false);
+            return rewardModelInformation[index];
         }
         
         template<typename ValueType, typename StateType>
         storm::models::sparse::StateLabeling JaniNextStateGenerator<ValueType, StateType>::label(storm::storage::BitVectorHashMap<StateType> const& states, std::vector<StateType> const& initialStateIndices, std::vector<StateType> const& deadlockStateIndices) {
             return NextStateGenerator<ValueType, StateType>::label(states, initialStateIndices, deadlockStateIndices, {});
+        }
+        
+        template<typename ValueType, typename StateType>
+        void JaniNextStateGenerator<ValueType, StateType>::performTransientAssignments(storm::jani::detail::ConstAssignments const& transientAssignments, std::function<void (ValueType const&)> const& callback) {
+            auto rewardVariableIt = rewardVariables.begin();
+            auto rewardVariableIte = rewardVariables.end();
+            for (auto const& assignment : transientAssignments) {
+                while (rewardVariableIt != rewardVariableIte && *rewardVariableIt < assignment.getExpressionVariable()) {
+                    callback(storm::utility::zero<ValueType>());
+                    ++rewardVariableIt;
+                }
+                if (rewardVariableIt == rewardVariableIte) {
+                    break;
+                }
+                if (*rewardVariableIt == assignment.getExpressionVariable()) {
+                    callback(ValueType(this->evaluator.asRational(assignment.getAssignedExpression())));
+                    ++rewardVariableIt;
+                }
+            }
+        }
+        
+        template<typename ValueType, typename StateType>
+        void JaniNextStateGenerator<ValueType, StateType>::buildRewardModelInformation() {
+            // Prepare all reward model information structs.
+            for (auto const& variable : rewardVariables) {
+                rewardModelInformation.emplace_back(variable.getName(), false, false, false);
+            }
+            
+            // Then fill them.
+            for (auto const& automaton : model.getAutomata()) {
+                for (auto const& location : automaton.getLocations()) {
+                    auto rewardVariableIt = rewardVariables.begin();
+                    auto rewardVariableIte = rewardVariables.end();
+                    
+                    for (auto const& assignment : location.getAssignments().getTransientAssignments()) {
+                        while (rewardVariableIt != rewardVariableIte && *rewardVariableIt < assignment.getExpressionVariable()) {
+                            ++rewardVariableIt;
+                        }
+                        if (rewardVariableIt == rewardVariableIte) {
+                            break;
+                        }
+                        if (*rewardVariableIt == assignment.getExpressionVariable()) {
+                            rewardModelInformation[std::distance(rewardVariables.begin(), rewardVariableIt)].setHasStateRewards();
+                            ++rewardVariableIt;
+                        }
+                    }
+                }
+
+                for (auto const& edge : automaton.getEdges()) {
+                    auto rewardVariableIt = rewardVariables.begin();
+                    auto rewardVariableIte = rewardVariables.end();
+                    
+                    for (auto const& assignment : edge.getAssignments().getTransientAssignments()) {
+                        while (rewardVariableIt != rewardVariableIte && *rewardVariableIt < assignment.getExpressionVariable()) {
+                            ++rewardVariableIt;
+                        }
+                        if (rewardVariableIt == rewardVariableIte) {
+                            break;
+                        }
+                        if (*rewardVariableIt == assignment.getExpressionVariable()) {
+                            rewardModelInformation[std::distance(rewardVariables.begin(), rewardVariableIt)].setHasStateActionRewards();
+                            ++rewardVariableIt;
+                        }
+                    }
+                }
+            }
         }
         
         template class JaniNextStateGenerator<double>;

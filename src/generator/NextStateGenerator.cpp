@@ -211,6 +211,18 @@ namespace storm {
             return transitionRewards;
         }
         
+        void RewardModelInformation::setHasStateRewards() {
+            stateRewards = true;
+        }
+        
+        void RewardModelInformation::setHasStateActionRewards() {
+            stateActionRewards = true;
+        }
+        
+        void RewardModelInformation::setHasTransitionRewards() {
+            transitionRewards = true;
+        }
+        
         template<typename ValueType, typename StateType>
         NextStateGenerator<ValueType, StateType>::NextStateGenerator(storm::expressions::ExpressionManager const& expressionManager, VariableInformation const& variableInformation, NextStateGeneratorOptions const& options) : options(options), expressionManager(expressionManager.getSharedPointer()), variableInformation(variableInformation), evaluator(expressionManager), state(nullptr) {
             // Intentionally left empty.

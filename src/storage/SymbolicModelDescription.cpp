@@ -47,6 +47,17 @@ namespace storm {
             return boost::get<storm::prism::Program>(modelDescription.get());
         }
         
+        void SymbolicModelDescription::toJani(bool makeVariablesGlobal) {
+            if (this->isJaniModel()) {
+                return;
+            }
+            if (this->isPrismProgram()) {
+                modelDescription = this->asPrismProgram().toJani(makeVariablesGlobal);
+            } else {
+                STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot transform model description to the JANI format.");
+            }
+        }
+        
         void SymbolicModelDescription::preprocess(std::string const& constantDefinitionString) {
             if (this->isJaniModel()) {
                 std::map<storm::expressions::Variable, storm::expressions::Expression> substitution = storm::utility::jani::parseConstantDefinitionString(this->asJaniModel(), constantDefinitionString);

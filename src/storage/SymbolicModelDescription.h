@@ -24,6 +24,8 @@ namespace storm {
             storm::jani::Model const& asJaniModel() const;
             storm::prism::Program const& asPrismProgram() const;
             
+            void toJani(bool makeVariablesGlobal = true);
+            
             void preprocess(std::string const& constantDefinitionString = "");
             
         private:
