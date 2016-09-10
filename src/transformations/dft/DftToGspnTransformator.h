@@ -180,6 +180,8 @@ namespace storm {
 				  * http://www.geeksforgeeks.org/print-all-possible-combinations-of-r-elements-in-a-given-array-of-size-n/
 				  */
 				 void combinationUtil(std::vector<int> &output, std::vector<int> childrenIds, std::vector<int> subsets, int start, int end, int index, int threshold);
+				 
+				 bool isBEActive(std::shared_ptr<storm::storage::DFTBE<ValueType> const> dftBE);
             };
         }
     }

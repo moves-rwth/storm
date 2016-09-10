@@ -87,7 +87,7 @@ namespace storm {
             void DftToGspnTransformator<ValueType>::drawBE(std::shared_ptr<storm::storage::DFTBE<ValueType> const> dftBE) {
 				storm::gspn::Place placeBEActivated;
 				placeBEActivated.setName(dftBE->name() + "_activated");
-				placeBEActivated.setNumberOfInitialTokens(true ? 1 : 0); // TODO: Check if BE is spare child of a SPARE.
+				placeBEActivated.setNumberOfInitialTokens(isBEActive(dftBE) ? 1 : 0); // TODO: Check if BE is spare child of a SPARE.
 				mGspn.addPlace(placeBEActivated);
 				
 				storm::gspn::Place placeBEFailed;
@@ -494,6 +494,29 @@ namespace storm {
 					subsets[index] = childrenIds[i];
 					combinationUtil(output, childrenIds, subsets, i + 1, end, index + 1, threshold);
 				}
+			}
+			
+			template <typename ValueType>
+            bool DftToGspnTransformator<ValueType>::isBEActive(std::shared_ptr<storm::storage::DFTBE<ValueType> const> dftBE)
+			{
+				// TODO: Fix for higher lvl layers, maybe recursive?
+				
+				// Check all paths to the top event.
+				// If all paths are intervened by a SPARE, and the BE is never the primary child, it is not activated.
+				
+				if (dftBE->id() == mDft.getTopLevelIndex()) {
+					return true;
+				}
+				
+				auto parents = dftBE->parents();
+				for (std::size_t i = 0; i < parents.size(); i++) {
+					if (parents[i]->id() == mDft.getTopLevelIndex()) {
+						return true;
+					}
+				}
+				
+				// No "valid" path found. BE is inactive.
+				return false;
 			}
 			
 			template <typename ValueType>
