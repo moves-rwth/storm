@@ -184,9 +184,9 @@ namespace storm {
 				 /*
 				  * Return true if BE is active (corresponding place contains one initial token) or false if BE is inactive (corresponding place contains no initial token).
 				  * 
-				  * @param dftBE BE element.
+				  * @param dFTElement DFT element.
 				  */
-				 bool isBEActive(std::shared_ptr<storm::storage::DFTBE<ValueType> const> dftBE);
+				 bool isBEActive(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dFTElement);
 				 
 				 /*
 				  * Get the priority of the element.

@@ -13,6 +13,8 @@ namespace storm {
 
             template <typename ValueType>
             void DftToGspnTransformator<ValueType>::transform() {
+				// TODO: PDEP and FDEP are currently bugged.
+				
                 mGspn = storm::gspn::GSPN();
 				mGspn.setName("DftToGspnTransformation");
 				
@@ -252,8 +254,6 @@ namespace storm {
 				placeCONSTFFailed.setName(dftConstF->name() + STR_FAILED);
 				placeCONSTFFailed.setNumberOfInitialTokens(1);
 				mGspn.addPlace(placeCONSTFFailed);
-				
-				// TODO: Not tested because there is no corresponding DFT element yet.
 			}
 			
 			template <typename ValueType>
@@ -263,8 +263,6 @@ namespace storm {
 				placeCONSTSFailed.setNumberOfInitialTokens(0);
 				placeCONSTSFailed.setCapacity(0); // It cannot contain a token, because it cannot fail.
 				mGspn.addPlace(placeCONSTSFailed);
-				
-				// TODO: Not tested because there is no corresponding DFT element yet.
 			}
 			
 			template <typename ValueType>
@@ -507,22 +505,35 @@ namespace storm {
 			}
 			
 			template <typename ValueType>
-            bool DftToGspnTransformator<ValueType>::isBEActive(std::shared_ptr<storm::storage::DFTBE<ValueType> const> dftBE)
+            bool DftToGspnTransformator<ValueType>::isBEActive(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftElement)
 			{
-				// TODO: Fix for higher lvl layers, maybe recursive?
+				// TODO: This method must be tested again after SPAREs are implemented.
 				
-				// Check all paths to the top event.
-				// If all paths are intervened by a SPARE, and the BE is never the primary child, it is not activated.
-				
-				if (dftBE->id() == mDft.getTopLevelIndex()) {
+				// If element is the top element, return true.
+				if (dftElement->id() == mDft.getTopLevelIndex()) {
 					return true;
 				}
-				
-				auto parents = dftBE->parents();
-				
-				for (std::size_t i = 0; i < parents.size(); i++) {
-					if (parents[i]->id() == mDft.getTopLevelIndex()) {
-						return true;
+				else { // Else look at all parents.
+					auto parents = dftElement->parents();
+					std::vector<bool> pathValidities;
+					
+					for (std::size_t i = 0; i < parents.size(); i++) {
+						// Add all parents to the vector, except if the parent is a SPARE and the current element is an inactive child of the SPARE.
+						if (parents[i]->type() == storm::storage::DFTElementType::SPARE) {
+							auto children = std::static_pointer_cast<storm::storage::DFTSpare<ValueType> const>(parents[i])->children();
+							if (children[0]->id() != dftElement->id()) {
+								continue;
+							}
+						}
+						
+						pathValidities.push_back(isBEActive(parents[i]));
+					}
+					
+					// Check all vector entries. If one is true, a "valid" path has been found.
+					for (std::size_t i = 0; i < pathValidities.size(); i++) {
+						if (pathValidities[i]) {
+							return true;
+						}
 					}
 				}
 				
@@ -531,19 +542,22 @@ namespace storm {
 			}
 			
 			template <typename ValueType>
-            uint_fast64_t DftToGspnTransformator<ValueType>::getPriority(uint_fast64_t priority, std::shared_ptr<storm::storage::DFTElement<ValueType> const> dFTElement)
+            uint_fast64_t DftToGspnTransformator<ValueType>::getPriority(uint_fast64_t priority, std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftElement)
 			{
-				if (dFTElement->id() == mDft.getTopLevelIndex()) {
+				// If element is the top element, return current priority.
+				if (dftElement->id() == mDft.getTopLevelIndex()) {
 					return priority;
 				}
-				else {
-					auto parents = dFTElement->parents();
+				else { // Else look at all parents.
+					auto parents = dftElement->parents();
 					std::vector<uint_fast64_t> pathLengths;
 					
+					// Check priorities of all parents.
 					for (std::size_t i = 0; i < parents.size(); i++) {
 						pathLengths.push_back(getPriority(priority + 2, parents[i]));
 					}
 					
+					// And only use the lowest priority.
 					return *std::min_element(pathLengths.begin(), pathLengths.end());
 				}
 				
