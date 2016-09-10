@@ -30,6 +30,11 @@ namespace storm {
              * Creates an empty model with the given type.
              */
             Model(std::string const& name, ModelType const& modelType, uint64_t version = 1, boost::optional<std::shared_ptr<storm::expressions::ExpressionManager>> const& expressionManager = boost::none);
+
+            /*!
+             * Retrieves the expression manager responsible for the expressions in the model.
+             */
+            storm::expressions::ExpressionManager& getManager() const;
             
             /*!
              * Retrieves the JANI-version of the model.
@@ -106,7 +111,7 @@ namespace storm {
              * Retrieves the constant with the given name (if any).
              */
             Constant const& getConstant(std::string const& name) const;
-
+            
             /*!
              * Adds the given variable to this model.
              */

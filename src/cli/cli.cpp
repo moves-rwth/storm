@@ -231,27 +231,20 @@ namespace storm {
                     }
                 }
 
-                // There may be constants of the model appearing in the formulas, so we replace all their occurrences
-                // by their definitions in the translated program.
-                std::vector<std::shared_ptr<storm::logic::Formula const>> preprocessedFormulas;
-                for (auto const& formula : formulas) {
-                    preprocessedFormulas.emplace_back(formula->substitute(constantsSubstitution));
-                }
-
                 if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isParametricSet()) {
 #ifdef STORM_HAVE_CARL
-                    buildAndCheckSymbolicModel<storm::RationalFunction>(preprocessedProgram, preprocessedFormulas, true);
+                    buildAndCheckSymbolicModel<storm::RationalFunction>(model, formulas, true);
 #else
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "No parameters are supported in this build.");
 #endif
                 } else if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isExactSet()) {
 #ifdef STORM_HAVE_CARL
-                    buildAndCheckSymbolicModel<storm::RationalNumber>(preprocessedProgram, preprocessedFormulas, true);
+                    buildAndCheckSymbolicModel<storm::RationalNumber>(model, formulas, true);
 #else
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "No exact numbers are supported in this build.");
 #endif
                 } else {
-                    buildAndCheckSymbolicModel<double>(preprocessedProgram, preprocessedFormulas, true);
+                    buildAndCheckSymbolicModel<double>(model, formulas, true);
                 }
             } else if (storm::settings::getModule<storm::settings::modules::IOSettings>().isExplicitSet()) {
                 STORM_LOG_THROW(storm::settings::getModule<storm::settings::modules::CoreSettings>().getEngine() == storm::settings::modules::CoreSettings::Engine::Sparse, storm::exceptions::InvalidSettingsException, "Only the sparse engine supports explicit model input.");

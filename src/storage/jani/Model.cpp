@@ -34,6 +34,10 @@ namespace storm {
             silentActionIndex = addAction(storm::jani::Action(SILENT_ACTION_NAME));
         }
         
+        storm::expressions::ExpressionManager& Model::getManager() const {
+            return *expressionManager;
+        }
+        
         uint64_t Model::getJaniVersion() const {
             return version;
         }
@@ -104,7 +108,7 @@ namespace storm {
         std::vector<Constant>& Model::getConstants() {
             return constants;
         }
-
+        
         Variable const& Model::addVariable(Variable const& variable) {
             if (variable.isBooleanVariable()) {
                 return addVariable(variable.asBooleanVariable());

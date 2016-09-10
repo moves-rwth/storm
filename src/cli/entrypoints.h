@@ -3,7 +3,10 @@
 
 #include "src/utility/storm.h"
 
+#include "src/storage/SymbolicModelDescription.h"
+
 #include "src/exceptions/NotImplementedException.h"
+#include "src/exceptions/InvalidSettingsException.h"
 
 namespace storm {
     namespace cli {
@@ -49,12 +52,14 @@ namespace storm {
 #endif
 
         template<storm::dd::DdType DdType>
-        void verifySymbolicModelWithAbstractionRefinementEngine(storm::prism::Program const& program, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool onlyInitialStatesRelevant = false) {
+        void verifySymbolicModelWithAbstractionRefinementEngine(storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool onlyInitialStatesRelevant = false) {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Abstraction Refinement is not yet implemented.");
         }
         
         template<typename ValueType>
-        void verifySymbolicModelWithExplorationEngine(storm::prism::Program const& program, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool onlyInitialStatesRelevant = false) {
+        void verifySymbolicModelWithExplorationEngine(storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool onlyInitialStatesRelevant = false) {
+            STORM_LOG_THROW(model.isPrismProgram(), storm::exceptions::InvalidSettingsException, "Exploration engine is currently only applicable to PRISM models.");
+            storm::prism::Program const& program = model.asPrismProgram();
             STORM_LOG_THROW(program.getModelType() == storm::prism::Program::ModelType::DTMC || program.getModelType() == storm::prism::Program::ModelType::MDP, storm::exceptions::InvalidSettingsException, "Currently exploration-based verification is only available for DTMCs and MDPs.");
 
             for (auto const& formula : formulas) {
@@ -98,7 +103,7 @@ namespace storm {
         
 #ifdef STORM_HAVE_CARL
         template<>
-        void verifySymbolicModelWithExplorationEngine<storm::RationalFunction>(storm::prism::Program const& program, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool onlyInitialStatesRelevant) {
+        void verifySymbolicModelWithExplorationEngine<storm::RationalFunction>(storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool onlyInitialStatesRelevant) {
             STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Exploration-based verification does currently not support parametric models.");
         }
 #endif
@@ -177,81 +182,80 @@ namespace storm {
     }
         
         template<storm::dd::DdType LibraryType>
-        void buildAndCheckSymbolicModelWithSymbolicEngine(bool hybrid, storm::prism::Program const& program, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool onlyInitialStatesRelevant = false) {
+        void buildAndCheckSymbolicModelWithSymbolicEngine(bool hybrid, storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool onlyInitialStatesRelevant = false) {
             // Start by building the model.
-            auto model = buildSymbolicModel<double, LibraryType>(program, formulas);
+            auto markovModel = buildSymbolicModel<double, LibraryType>(model, formulas);
             
             // Print some information about the model.
-            model->printModelInformationToStream(std::cout);
+            markovModel->printModelInformationToStream(std::cout);
             
             // Then select the correct engine.
             if (hybrid) {
-                verifySymbolicModelWithHybridEngine(model, formulas, onlyInitialStatesRelevant);
+                verifySymbolicModelWithHybridEngine(markovModel, formulas, onlyInitialStatesRelevant);
             } else {
-                verifySymbolicModelWithDdEngine(model, formulas, onlyInitialStatesRelevant);
+                verifySymbolicModelWithDdEngine(markovModel, formulas, onlyInitialStatesRelevant);
             }
         }
         
         template<typename ValueType>
-        void buildAndCheckSymbolicModelWithSparseEngine(storm::prism::Program const& program, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool onlyInitialStatesRelevant = false) {
+        void buildAndCheckSymbolicModelWithSparseEngine(storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool onlyInitialStatesRelevant = false) {
             // Start by building the model.
-            std::shared_ptr<storm::models::ModelBase> model = buildSparseModel<ValueType>(program, formulas);
+            std::shared_ptr<storm::models::ModelBase> markovModel = buildSparseModel<ValueType>(model, formulas);
             
             // Print some information about the model.
-            model->printModelInformationToStream(std::cout);
+            markovModel->printModelInformationToStream(std::cout);
             
             // Preprocess the model.
-            BRANCH_ON_SPARSE_MODELTYPE(model, model, ValueType, preprocessModel, formulas);
+            BRANCH_ON_SPARSE_MODELTYPE(markovModel, markovModel, ValueType, preprocessModel, formulas);
             
-            std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel = model->template as<storm::models::sparse::Model<ValueType>>();
+            std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel = markovModel->template as<storm::models::sparse::Model<ValueType>>();
             
             // Finally, treat the formulas.
             if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isCounterexampleSet()) {
-                generateCounterexamples<ValueType>(program, sparseModel, formulas);
+                generateCounterexamples<ValueType>(model, sparseModel, formulas);
             } else {
                 verifySparseModel<ValueType>(sparseModel, formulas, onlyInitialStatesRelevant);
             }
         }
         
         template<typename ValueType>
-        void buildAndCheckSymbolicModel(storm::prism::Program const& program, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool onlyInitialStatesRelevant = false) {
+        void buildAndCheckSymbolicModel(storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool onlyInitialStatesRelevant = false) {
             if (storm::settings::getModule<storm::settings::modules::CoreSettings>().getEngine() == storm::settings::modules::CoreSettings::Engine::AbstractionRefinement) {
                 auto ddlib = storm::settings::getModule<storm::settings::modules::CoreSettings>().getDdLibraryType();
                 if (ddlib == storm::dd::DdType::CUDD) {
-                    verifySymbolicModelWithAbstractionRefinementEngine<storm::dd::DdType::CUDD>(program, formulas, onlyInitialStatesRelevant);
+                    verifySymbolicModelWithAbstractionRefinementEngine<storm::dd::DdType::CUDD>(model, formulas, onlyInitialStatesRelevant);
                 } else {
-                    verifySymbolicModelWithAbstractionRefinementEngine<storm::dd::DdType::Sylvan>(program, formulas, onlyInitialStatesRelevant);
+                    verifySymbolicModelWithAbstractionRefinementEngine<storm::dd::DdType::Sylvan>(model, formulas, onlyInitialStatesRelevant);
                 }
             } else if (storm::settings::getModule<storm::settings::modules::CoreSettings>().getEngine() == storm::settings::modules::CoreSettings::Engine::Exploration) {
-                verifySymbolicModelWithExplorationEngine<ValueType>(program, formulas, onlyInitialStatesRelevant);
+                verifySymbolicModelWithExplorationEngine<ValueType>(model, formulas, onlyInitialStatesRelevant);
             } else {
                 auto engine = storm::settings::getModule<storm::settings::modules::CoreSettings>().getEngine();
                 if (engine == storm::settings::modules::CoreSettings::Engine::Dd || engine == storm::settings::modules::CoreSettings::Engine::Hybrid) {
                     auto ddlib = storm::settings::getModule<storm::settings::modules::CoreSettings>().getDdLibraryType();
                     if (ddlib == storm::dd::DdType::CUDD) {
-                        buildAndCheckSymbolicModelWithSymbolicEngine<storm::dd::DdType::CUDD>(engine == storm::settings::modules::CoreSettings::Engine::Hybrid, program, formulas, onlyInitialStatesRelevant);
+                        buildAndCheckSymbolicModelWithSymbolicEngine<storm::dd::DdType::CUDD>(engine == storm::settings::modules::CoreSettings::Engine::Hybrid, model, formulas, onlyInitialStatesRelevant);
                     } else {
-                        buildAndCheckSymbolicModelWithSymbolicEngine<storm::dd::DdType::Sylvan>(engine == storm::settings::modules::CoreSettings::Engine::Hybrid, program, formulas, onlyInitialStatesRelevant);
+                        buildAndCheckSymbolicModelWithSymbolicEngine<storm::dd::DdType::Sylvan>(engine == storm::settings::modules::CoreSettings::Engine::Hybrid, model, formulas, onlyInitialStatesRelevant);
                     }
                 } else {
                     STORM_LOG_THROW(engine == storm::settings::modules::CoreSettings::Engine::Sparse, storm::exceptions::InvalidSettingsException, "Illegal engine.");
-                    
-                    buildAndCheckSymbolicModelWithSparseEngine<ValueType>(program, formulas, onlyInitialStatesRelevant);
+                    buildAndCheckSymbolicModelWithSparseEngine<ValueType>(model, formulas, onlyInitialStatesRelevant);
                 }
             }
         }
         
 #ifdef STORM_HAVE_CARL
         template<>
-        void buildAndCheckSymbolicModel<storm::RationalNumber>(storm::prism::Program const& program, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool onlyInitialStatesRelevant) {
+        void buildAndCheckSymbolicModel<storm::RationalNumber>(storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool onlyInitialStatesRelevant) {
             STORM_LOG_THROW(storm::settings::getModule<storm::settings::modules::CoreSettings>().getEngine() == storm::settings::modules::CoreSettings::Engine::Sparse, storm::exceptions::InvalidSettingsException, "Cannot use this data type with an engine different than the sparse one.");
-            buildAndCheckSymbolicModelWithSparseEngine<storm::RationalNumber>(program, formulas, onlyInitialStatesRelevant);
+            buildAndCheckSymbolicModelWithSparseEngine<storm::RationalNumber>(model, formulas, onlyInitialStatesRelevant);
         }
         
         template<>
-        void buildAndCheckSymbolicModel<storm::RationalFunction>(storm::prism::Program const& program, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool onlyInitialStatesRelevant) {
+        void buildAndCheckSymbolicModel<storm::RationalFunction>(storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool onlyInitialStatesRelevant) {
             STORM_LOG_THROW(storm::settings::getModule<storm::settings::modules::CoreSettings>().getEngine() == storm::settings::modules::CoreSettings::Engine::Sparse, storm::exceptions::InvalidSettingsException, "Cannot use this data type with an engine different than the sparse one.");
-            buildAndCheckSymbolicModelWithSparseEngine<storm::RationalFunction>(program, formulas, onlyInitialStatesRelevant);
+            buildAndCheckSymbolicModelWithSparseEngine<storm::RationalFunction>(model, formulas, onlyInitialStatesRelevant);
         }
 #endif
         

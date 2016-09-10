@@ -103,22 +103,6 @@ namespace storm {
         }
         
         template <storm::dd::DdType Type, typename ValueType>
-        DdJaniModelBuilder<Type, ValueType>::DdJaniModelBuilder(storm::jani::Model const& model, Options const& options) : model(model), options(options) {
-            if (this->model->hasUndefinedConstants()) {
-                std::vector<std::reference_wrapper<storm::jani::Constant const>> undefinedConstants = this->model->getUndefinedConstants();
-                std::vector<std::string> strings;
-                for (auto const& constant : undefinedConstants) {
-                    std::stringstream stream;
-                    stream << constant.get().getName() << " (" << constant.get().getType() << ")";
-                    strings.push_back(stream.str());
-                }
-                STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Program still contains these undefined constants: " << boost::join(strings, ", ") << ".");
-            }
-            
-            this->model = this->model->substituteConstants();
-        }
-        
-        template <storm::dd::DdType Type, typename ValueType>
         struct CompositionVariables {
             CompositionVariables() : manager(std::make_shared<storm::dd::DdManager<Type>>()),
             variableToRowMetaVariableMap(std::make_shared<std::map<storm::expressions::Variable, storm::expressions::Variable>>()),
@@ -1732,31 +1716,42 @@ namespace storm {
         }
         
         template <storm::dd::DdType Type, typename ValueType>
-        std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdJaniModelBuilder<Type, ValueType>::build() {
+        std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdJaniModelBuilder<Type, ValueType>::build(storm::jani::Model const& model, Options const& options) {
+            if (model.hasUndefinedConstants()) {
+                std::vector<std::reference_wrapper<storm::jani::Constant const>> undefinedConstants = model.getUndefinedConstants();
+                std::vector<std::string> strings;
+                for (auto const& constant : undefinedConstants) {
+                    std::stringstream stream;
+                    stream << constant.get().getName() << " (" << constant.get().getType() << ")";
+                    strings.push_back(stream.str());
+                }
+                STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Model still contains these undefined constants: " << boost::join(strings, ", ") << ".");
+            }
+            
             // Create all necessary variables.
-            CompositionVariableCreator<Type, ValueType> variableCreator(*this->model);
+            CompositionVariableCreator<Type, ValueType> variableCreator(model);
             CompositionVariables<Type, ValueType> variables = variableCreator.create();
             
             // Create a builder to compose and build the model.
-//            SeparateEdgesSystemComposer<Type, ValueType> composer(*this->model, variables);
-            CombinedEdgesSystemComposer<Type, ValueType> composer(*this->model, variables);
+//            SeparateEdgesSystemComposer<Type, ValueType> composer(model, variables);
+            CombinedEdgesSystemComposer<Type, ValueType> composer(model, variables);
             ComposerResult<Type, ValueType> system = composer.compose();
             
             // Postprocess the variables in place.
-            postprocessVariables(this->model->getModelType(), system, variables);
+            postprocessVariables(model.getModelType(), system, variables);
             
             // Postprocess the system in place and get the states that were terminal (i.e. whose transitions were cut off).
-            storm::dd::Bdd<Type> terminalStates = postprocessSystem(*this->model, system, variables, options);
+            storm::dd::Bdd<Type> terminalStates = postprocessSystem(model, system, variables, options);
             
             // Start creating the model components.
             ModelComponents<Type, ValueType> modelComponents;
             
             // Build initial states.
-            modelComponents.initialStates = computeInitialStates(*this->model, variables);
+            modelComponents.initialStates = computeInitialStates(model, variables);
             
             // Perform reachability analysis to obtain reachable states.
             storm::dd::Bdd<Type> transitionMatrixBdd = system.transitions.notZero();
-            if (this->model->getModelType() == storm::jani::ModelType::MDP) {
+            if (model.getModelType() == storm::jani::ModelType::MDP) {
                 transitionMatrixBdd = transitionMatrixBdd.existsAbstract(variables.allNondeterminismVariables);
             }
             modelComponents.reachableStates = storm::utility::dd::computeReachableStates(modelComponents.initialStates, transitionMatrixBdd, variables.rowMetaVariables, variables.columnMetaVariables);
@@ -1770,13 +1765,13 @@ namespace storm {
             modelComponents.transitionMatrix = system.transitions * reachableStatesAdd;
             
             // Fix deadlocks if existing.
-            modelComponents.deadlockStates = fixDeadlocks(this->model->getModelType(), modelComponents.transitionMatrix, transitionMatrixBdd, modelComponents.reachableStates, variables);
+            modelComponents.deadlockStates = fixDeadlocks(model.getModelType(), modelComponents.transitionMatrix, transitionMatrixBdd, modelComponents.reachableStates, variables);
             
             // Cut the deadlock states by removing all states that we 'converted' to deadlock states by making them terminal.
             modelComponents.deadlockStates = modelComponents.deadlockStates && !terminalStates;
             
             // Finally, create the model.
-            return createModel(this->model->getModelType(), variables, modelComponents);
+            return createModel(model.getModelType(), variables, modelComponents);
         }
         
         template class DdJaniModelBuilder<storm::dd::DdType::CUDD, double>;

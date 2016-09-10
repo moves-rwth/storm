@@ -10,7 +10,7 @@ namespace storm {
         
         class SymbolicModelDescription {
         public:
-            SymbolicModelDescription();
+            SymbolicModelDescription() = default;
             SymbolicModelDescription(storm::jani::Model const& model);
             SymbolicModelDescription(storm::prism::Program const& program);
 

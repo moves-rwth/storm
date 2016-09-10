@@ -332,7 +332,6 @@ namespace storm {
             return constantsSubstitution;
         }
         
-        
         std::size_t Program::getNumberOfConstants() const {
             return this->getConstants().size();
         }
