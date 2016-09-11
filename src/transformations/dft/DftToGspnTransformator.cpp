@@ -544,9 +544,14 @@ namespace storm {
 			template <typename ValueType>
             uint_fast64_t DftToGspnTransformator<ValueType>::getPriority(uint_fast64_t priority, std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftElement)
 			{
+				// TODO: This method is buggy for pdep2.dft and fdep.dft.
+				
 				// If element is the top element, return current priority.
 				if (dftElement->id() == mDft.getTopLevelIndex()) {
 					return priority;
+				}
+				else if (dftElement->type() == storm::storage::DFTElementType::PDEP) { // TODO: Else if Necessary?
+					return UINT_FAST64_MAX;
 				}
 				else { // Else look at all parents.
 					auto parents = dftElement->parents();
