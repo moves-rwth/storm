@@ -588,8 +588,9 @@ namespace storm {
 					
 					storm::dd::Add<Type, ValueType> matrix = game.getTransitionMatrix();
 					
-					storm::dd::Add<Type, ValueType> minValuesForPlayer1UnderMinP1Strategy = matrix * minPlayer1Strategy.template toAdd<ValueType>() * minPlayer2Strategy.template toAdd<ValueType>();
-					storm::dd::Add<Type, ValueType> minValuesForPlayer1UnderMaxP1Strategy = matrix * maxPlayer1Strategy.template toAdd<ValueType>() * minPlayer2Strategy.template toAdd<ValueType>();
+					storm::dd::Add<Type, ValueType> minResultTmp = minResult.swapVariables(game.getRowColumnMetaVariablePairs());
+					storm::dd::Add<Type, ValueType> minValuesForPlayer1UnderMinP1Strategy = (matrix * minPlayer1Strategy.template toAdd<ValueType>() * minPlayer2Strategy.template toAdd<ValueType>() * minResultTmp).sumAbstract(game.getColumnVariables()).sumAbstract(game.getPlayer2Variables());
+					storm::dd::Add<Type, ValueType> minValuesForPlayer1UnderMaxP1Strategy = (matrix * maxPlayer1Strategy.template toAdd<ValueType>() * minPlayer2Strategy.template toAdd<ValueType>() * minResultTmp).sumAbstract(game.getColumnVariables()).sumAbstract(game.getPlayer2Variables());
 					// This BDD has a 1 for every state (s) that can switch the strategy.
 					storm::dd::Bdd<Type> minIsGreaterOrEqual = minValuesForPlayer1UnderMinP1Strategy.greaterOrEqual(minValuesForPlayer1UnderMaxP1Strategy);
 					
