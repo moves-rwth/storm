@@ -25,12 +25,16 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type, typename ValueType>
-        storm::dd::Add<Type, ValueType> SymbolicGameSolver<Type, ValueType>::solveGame(OptimizationDirection player1Goal, OptimizationDirection player2Goal, storm::dd::Add<Type, ValueType> const& x, storm::dd::Add<Type, ValueType> const& b, boost::optional<storm::dd::Bdd<Type>> const& basePlayer1Strategy, boost::optional<storm::dd::Bdd<Type>> const& basePlayer2Strategy) {
+        storm::dd::Add<Type, ValueType> SymbolicGameSolver<Type, ValueType>::solveGame(OptimizationDirection player1Goal, OptimizationDirection player2Goal, storm::dd::Add<Type, ValueType> const& x, storm::dd::Add<Type, ValueType> const& b, storm::dd::Bdd<Type> const& prob0States, storm::dd::Bdd<Type> const& prob1States, boost::optional<storm::dd::Bdd<Type>> const& basePlayer1Strategy, boost::optional<storm::dd::Bdd<Type>> const& basePlayer2Strategy) {
             // Set up the environment.
             storm::dd::Add<Type, ValueType> xCopy = x;
             uint_fast64_t iterations = 0;
             bool converged = false;
 
+			// Constants
+			storm::dd::Add<Type, ValueType> const addOne = A.getDdManager().template getAddOne<ValueType>();
+			storm::dd::Add<Type, ValueType> const addZero = A.getDdManager().template getAddZero<ValueType>();
+			
             // Prepare some data storage in case we need to generate strategies.
             if (generatePlayer1Strategy) {
                 if (basePlayer1Strategy) {
@@ -49,7 +53,7 @@ namespace storm {
                     previousPlayer2Values = (player2Strategy.get().template toAdd<ValueType>() * (this->A.multiplyMatrix(x.swapVariables(this->rowColumnMetaVariablePairs), this->columnMetaVariables) + b)).sumAbstract(this->player2Variables);
                 } else {
                     player2Strategy = A.getDdManager().getBddZero();
-                    previousPlayer2Values = A.getDdManager().template getAddZero<ValueType>();
+                    previousPlayer2Values = addZero;
                 }
             }
             
@@ -103,6 +107,10 @@ namespace storm {
                     tmp = newValues;
                 }
 
+				// Fix Prob0 and Prob1 States
+				tmp = prob0States.ite(addZero, tmp);
+				tmp = prob1States.ite(addOne, tmp);
+				
                 // Now check if the process already converged within our precision.
                 converged = xCopy.equalModuloPrecision(tmp, this->precision, this->relative);
                 

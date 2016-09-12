@@ -400,35 +400,35 @@ namespace storm {
         };
         
         template<storm::dd::DdType Type, typename ValueType>
-        MaybeStateResult<Type, ValueType> solveMaybeStates(storm::OptimizationDirection const& player1Direction, storm::OptimizationDirection const& player2Direction, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& maybeStates, storm::dd::Bdd<Type> const& prob1States, boost::optional<MaybeStateResult<Type, ValueType>> startInfo = boost::none) {
+        MaybeStateResult<Type, ValueType> solveMaybeStates(storm::OptimizationDirection const& player1Direction, storm::OptimizationDirection const& player2Direction, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& prob0States, storm::dd::Bdd<Type> const& prob1States, boost::optional<MaybeStateResult<Type, ValueType>> startInfo = boost::none) {
             
             STORM_LOG_TRACE("Performing quantative solution step. Player 1: " << player1Direction << ", player 2: " << player2Direction << ".");
             
-            // Compute the ingredients of the equation system.
-            storm::dd::Add<Type, ValueType> maybeStatesAdd = maybeStates.template toAdd<ValueType>();
-			storm::dd::Bdd<Type> allStates = game.getReachableStates();
-			storm::dd::Add<Type, ValueType> allStatesAdd = allStates.template toAdd<ValueType>();
-            storm::dd::Add<Type, ValueType> submatrix = allStatesAdd * game.getTransitionMatrix();
-            storm::dd::Add<Type, ValueType> prob1StatesAsColumn = prob1States.template toAdd<ValueType>().swapVariables(game.getRowColumnMetaVariablePairs());
-            storm::dd::Add<Type, ValueType> subvector = submatrix * prob1StatesAsColumn;
-            subvector = subvector.sumAbstract(game.getColumnVariables());
+             // Compute the ingredients of the equation system.
+            storm::dd::Add<Type, ValueType> maybeStatesAdd = game.getReachableStates().template toAdd<ValueType>();
+            storm::dd::Add<Type, ValueType> submatrix = maybeStatesAdd * game.getTransitionMatrix();
+            storm::dd::Add<Type, ValueType> subvector = game.getManager().template getAddZero<ValueType>();
 
             // Cut away all columns targeting non-maybe states.
-            submatrix *= allStatesAdd.swapVariables(game.getRowColumnMetaVariablePairs());
+            submatrix *= maybeStatesAdd.swapVariables(game.getRowColumnMetaVariablePairs());
 
             // Cut the starting vector to the maybe states of this query.
             storm::dd::Add<Type, ValueType> startVector;
             if (startInfo) {
-                startVector = startInfo.get().values * allStatesAdd;
+                startVector = startInfo.get().values * maybeStatesAdd;
             } else {
                 startVector = game.getManager().template getAddZero<ValueType>();
             }
+			
+			// Set all target- and Prob1-states to 1 and all Prob0-states to 0
+			startVector = prob0States.ite(game.getManager().template getAddZero<ValueType>(), startVector);
+			startVector = prob1States.ite(game.getManager().template getAddOne<ValueType>(), startVector);
             
             // Create the solver and solve the equation system.
             storm::utility::solver::SymbolicGameSolverFactory<Type, ValueType> solverFactory;
-            std::unique_ptr<storm::solver::SymbolicGameSolver<Type, ValueType>> solver = solverFactory.create(submatrix, allStates, game.getIllegalPlayer1Mask(), game.getIllegalPlayer2Mask(), game.getRowVariables(), game.getColumnVariables(), game.getRowColumnMetaVariablePairs(), game.getPlayer1Variables(), game.getPlayer2Variables());
+            std::unique_ptr<storm::solver::SymbolicGameSolver<Type, ValueType>> solver = solverFactory.create(submatrix, game.getReachableStates(), game.getIllegalPlayer1Mask(), game.getIllegalPlayer2Mask(), game.getRowVariables(), game.getColumnVariables(), game.getRowColumnMetaVariablePairs(), game.getPlayer1Variables(), game.getPlayer2Variables());
             solver->setGeneratePlayersStrategies(true);
-            auto values = solver->solveGame(player1Direction, player2Direction, startVector, subvector, startInfo ? boost::make_optional(startInfo.get().player1Strategy) : boost::none, startInfo ? boost::make_optional(startInfo.get().player2Strategy) : boost::none);
+            auto values = solver->solveGame(player1Direction, player2Direction, startVector, subvector, prob0States, prob1States, startInfo ? boost::make_optional(startInfo.get().player1Strategy) : boost::none, startInfo ? boost::make_optional(startInfo.get().player2Strategy) : boost::none);
             return MaybeStateResult<Type, ValueType>(values, solver->getPlayer1Strategy(), solver->getPlayer2Strategy());
         }
         
@@ -527,13 +527,13 @@ namespace storm {
                     storm::dd::Add<Type, ValueType> minResult = prob01.min.second.getPlayer1States().template toAdd<ValueType>();
                     storm::dd::Add<Type, ValueType> maxResult = prob01.max.second.getPlayer1States().template toAdd<ValueType>();
                     storm::dd::Add<Type, ValueType> initialStatesAdd = game.getInitialStates().template toAdd<ValueType>();
-
+					
                     // The minimal value after qualitative checking can only be zero. It it was 1, we could have given
                     // the result right away.
                     ValueType minValue = storm::utility::zero<ValueType>();
                     MaybeStateResult<Type, ValueType> minMaybeStateResult(game.getManager().template getAddZero<ValueType>(), game.getManager().getBddZero(), game.getManager().getBddZero());
                     if (!maybeMin.isZero()) {
-                        minMaybeStateResult = solveMaybeStates(player1Direction, storm::OptimizationDirection::Minimize, game, maybeMin, prob01.min.second.getPlayer1States());
+                        minMaybeStateResult = solveMaybeStates(player1Direction, storm::OptimizationDirection::Minimize, game, prob01.min.first.getPlayer1States(), prob01.min.second.getPlayer1States());
                         minResult = minMaybeStateResult.values;
                         storm::dd::Add<Type, ValueType> initialStateMin = initialStatesAdd * minResult;
                         // Here we can only require a non-zero count of *at most* one, because the result may actually be 0.
@@ -553,7 +553,7 @@ namespace storm {
                     ValueType maxValue = storm::utility::one<ValueType>();
                     MaybeStateResult<Type, ValueType> maxMaybeStateResult(game.getManager().template getAddZero<ValueType>(), game.getManager().getBddZero(), game.getManager().getBddZero());
                     if (!maybeMax.isZero()) {
-                        maxMaybeStateResult = solveMaybeStates(player1Direction, storm::OptimizationDirection::Maximize, game, maybeMax, prob01.max.second.getPlayer1States(), boost::make_optional(minMaybeStateResult));
+                        maxMaybeStateResult = solveMaybeStates(player1Direction, storm::OptimizationDirection::Maximize, game, prob01.max.first.getPlayer1States(), prob01.max.second.getPlayer1States(), boost::make_optional(minMaybeStateResult));
                         maxResult = maxMaybeStateResult.values;
                         storm::dd::Add<Type, ValueType> initialStateMax = (initialStatesAdd * maxResult);
                         // Unlike in the min-case, we can require a non-zero count of 1 here, because if the max was in
