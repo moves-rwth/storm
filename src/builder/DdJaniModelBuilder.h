@@ -59,6 +59,16 @@ namespace storm {
                  */
                 void setTerminalStatesFromFormula(storm::logic::Formula const& formula);
                 
+                /*!
+                 * Retrieves the names of the reward models to build.
+                 */
+                std::set<std::string> const& getRewardModelNames() const;
+                
+                /*!
+                 * Retrieves whether the flag to build all reward models is set.
+                 */
+                bool isBuildAllRewardModelsSet() const;
+                
                 // A flag that indicates whether or not all reward models are to be build.
                 bool buildAllRewardModels;
                 

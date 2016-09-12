@@ -34,9 +34,8 @@ namespace storm {
                     }
                 }
             } else {
-                auto const& globalVariables = model.getGlobalVariables();
-
                 // Extract the reward models from the program based on the names we were given.
+                auto const& globalVariables = model.getGlobalVariables();
                 for (auto const& rewardModelName : this->options.getRewardModelNames()) {
                     if (globalVariables.hasVariable(rewardModelName)) {
                         rewardVariables.push_back(globalVariables.getVariable(rewardModelName).getExpressionVariable());
@@ -536,6 +535,12 @@ namespace storm {
         
         template<typename ValueType, typename StateType>
         void JaniNextStateGenerator<ValueType, StateType>::performTransientAssignments(storm::jani::detail::ConstAssignments const& transientAssignments, std::function<void (ValueType const&)> const& callback) {
+            // If there are no reward variables, there is no need to iterate at all.
+            if (rewardVariables.empty()) {
+                return;
+            }
+            
+            // Otherwise, perform the callback for all selected reward variables.
             auto rewardVariableIt = rewardVariables.begin();
             auto rewardVariableIte = rewardVariables.end();
             for (auto const& assignment : transientAssignments) {

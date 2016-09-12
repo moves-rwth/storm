@@ -103,6 +103,16 @@ namespace storm {
         }
         
         template <storm::dd::DdType Type, typename ValueType>
+        std::set<std::string> const& DdJaniModelBuilder<Type, ValueType>::Options::getRewardModelNames() const {
+            return rewardModelsToBuild;
+        }
+        
+        template <storm::dd::DdType Type, typename ValueType>
+        bool DdJaniModelBuilder<Type, ValueType>::Options::isBuildAllRewardModelsSet() const {
+            return buildAllRewardModels;
+        }
+        
+        template <storm::dd::DdType Type, typename ValueType>
         struct CompositionVariables {
             CompositionVariables() : manager(std::make_shared<storm::dd::DdManager<Type>>()),
             variableToRowMetaVariableMap(std::make_shared<std::map<storm::expressions::Variable, storm::expressions::Variable>>()),
@@ -356,7 +366,7 @@ namespace storm {
         template <storm::dd::DdType Type, typename ValueType>
         class SystemComposer : public storm::jani::CompositionVisitor {
         public:
-            SystemComposer(storm::jani::Model const& model, CompositionVariables<Type, ValueType> const& variables) : model(model), variables(variables) {
+            SystemComposer(storm::jani::Model const& model, CompositionVariables<Type, ValueType> const& variables, std::vector<storm::expressions::Variable> const& transientVariables) : model(model), variables(variables), transientVariables(transientVariables) {
                 // Intentionally left empty.
             }
             
@@ -368,6 +378,9 @@ namespace storm {
             
             // The variable to use when building an automaton.
             CompositionVariables<Type, ValueType> const& variables;
+            
+            // The transient variables to consider during system composition.
+            std::vector<storm::expressions::Variable> transientVariables;
         };
 
         // This structure represents an edge destination.
@@ -906,7 +919,7 @@ namespace storm {
         public:
             // This structure represents an edge.
             struct EdgeDd {
-                EdgeDd(storm::dd::Add<Type> const& guard = storm::dd::Add<Type>(), storm::dd::Add<Type, ValueType> const& transitions = storm::dd::Add<Type, ValueType>(), std::set<storm::expressions::Variable> const& writtenGlobalVariables = {}) : guard(guard), transitions(transitions), writtenGlobalVariables(writtenGlobalVariables) {
+                EdgeDd(storm::dd::Add<Type> const& guard = storm::dd::Add<Type>(), storm::dd::Add<Type, ValueType> const& transitions = storm::dd::Add<Type, ValueType>(), std::map<storm::expressions::Variable, storm::dd::Add<Type, ValueType>> const& transientVariableAssignments = {}, std::set<storm::expressions::Variable> const& writtenGlobalVariables = {}) : guard(guard), transitions(transitions), transientVariableAssignments(transientVariableAssignments), writtenGlobalVariables(writtenGlobalVariables) {
                     // Intentionally left empty.
                 }
                 
@@ -915,6 +928,9 @@ namespace storm {
                 
                 // A DD that represents the transitions of this edge.
                 storm::dd::Add<Type, ValueType> transitions;
+                
+                // A mapping from transient variables to the DDs representing their value assignments.
+                std::map<storm::expressions::Variable, storm::dd::Add<Type, ValueType>> transientVariableAssignments;
                 
                 // The set of global variables written by this edge.
                 std::set<storm::expressions::Variable> writtenGlobalVariables;
@@ -994,7 +1010,7 @@ namespace storm {
 
             };
             
-            CombinedEdgesSystemComposer(storm::jani::Model const& model, CompositionVariables<Type, ValueType> const& variables) : SystemComposer<Type, ValueType>(model, variables) {
+            CombinedEdgesSystemComposer(storm::jani::Model const& model, CompositionVariables<Type, ValueType> const& variables, std::vector<storm::expressions::Variable> const& transientVariables) : SystemComposer<Type, ValueType>(model, variables, transientVariables) {
                 // Intentionally left empty.
             }
 
@@ -1305,6 +1321,27 @@ namespace storm {
                     // If the edge has a rate, we multiply it to the DD.
                     if (edge.hasRate()) {
                         transitions *= this->variables.rowExpressionAdapter->translateExpression(edge.getRate());
+                    }
+                    
+                    // Finally treat the transient assignments.
+                    if (!this->transientVariables.empty()) {
+                        auto transientAssignments = edge.getAssignments().getTransientAssignments();
+
+                        auto transientVariableIt = this->transientVariables.begin();
+                        auto transientVariableIte = this->transientVariables.end();
+                        for (auto const& assignment : transientAssignments) {
+                            while (transientVariableIt != transientVariableIte && *transientVariableIt < assignment.getExpressionVariable()) {
+//                                callback(storm::utility::zero<ValueType>());
+                                ++transientVariableIt;
+                            }
+                            if (transientVariableIt == transientVariableIte) {
+                                break;
+                            }
+                            if (*transientVariableIt == assignment.getExpressionVariable()) {
+//                                callback(ValueType(this->evaluator.asRational(assignment.getAssignedExpression())));
+                                ++transientVariableIt;
+                            }
+                        }
                     }
                     
                     return EdgeDd(guard, guard * transitions, globalVariablesInSomeDestination);
@@ -1716,6 +1753,36 @@ namespace storm {
         }
         
         template <storm::dd::DdType Type, typename ValueType>
+        std::vector<storm::expressions::Variable> selectRewardVariables(storm::jani::Model const& model, typename DdJaniModelBuilder<Type, ValueType>::Options const& options) {
+            std::vector<storm::expressions::Variable> result;
+            if (options.isBuildAllRewardModelsSet()) {
+                for (auto const& variable : model.getGlobalVariables()) {
+                    if (variable.isTransient()) {
+                        result.push_back(variable.getExpressionVariable());
+                    }
+                }
+            } else {
+                auto const& globalVariables = model.getGlobalVariables();
+                for (auto const& rewardModelName : options.getRewardModelNames()) {
+                    if (globalVariables.hasVariable(rewardModelName)) {
+                        result.push_back(globalVariables.getVariable(rewardModelName).getExpressionVariable());
+                    } else {
+                        STORM_LOG_THROW(rewardModelName.empty(), storm::exceptions::InvalidArgumentException, "Cannot build unknown reward model '" << rewardModelName << "'.");
+                        STORM_LOG_THROW(globalVariables.getNumberOfTransientVariables() == 1, storm::exceptions::InvalidArgumentException, "Reference to standard reward model is ambiguous.");
+                    }
+                }
+                
+                // If no reward model was yet added, but there was one that was given in the options, we try to build the
+                // standard reward model.
+                if (result.empty() && !options.getRewardModelNames().empty()) {
+                    result.push_back(globalVariables.getTransientVariables().front()->getExpressionVariable());
+                }
+            }
+            
+            return result;
+        }
+        
+        template <storm::dd::DdType Type, typename ValueType>
         std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdJaniModelBuilder<Type, ValueType>::build(storm::jani::Model const& model, Options const& options) {
             if (model.hasUndefinedConstants()) {
                 std::vector<std::reference_wrapper<storm::jani::Constant const>> undefinedConstants = model.getUndefinedConstants();
@@ -1732,9 +1799,12 @@ namespace storm {
             CompositionVariableCreator<Type, ValueType> variableCreator(model);
             CompositionVariables<Type, ValueType> variables = variableCreator.create();
             
+            // Determine which transient assignments need to be considered in the building process.
+            std::vector<storm::expressions::Variable> rewardVariables = selectRewardVariables<Type, ValueType>(model, options);
+            
             // Create a builder to compose and build the model.
 //            SeparateEdgesSystemComposer<Type, ValueType> composer(model, variables);
-            CombinedEdgesSystemComposer<Type, ValueType> composer(model, variables);
+            CombinedEdgesSystemComposer<Type, ValueType> composer(model, variables, rewardVariables);
             ComposerResult<Type, ValueType> system = composer.compose();
             
             // Postprocess the variables in place.
