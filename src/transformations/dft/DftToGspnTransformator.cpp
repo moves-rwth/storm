@@ -88,7 +88,7 @@ namespace storm {
 				uint_fast64_t priority = getPriority(0, dftBE);
 				
 				storm::gspn::Place placeBEActivated;
-				placeBEActivated.setName(dftBE->name() + "_activated");
+				placeBEActivated.setName(dftBE->name() + STR_ACTIVATED);
 				placeBEActivated.setNumberOfInitialTokens(isBEActive(dftBE) ? 1 : 0);
 				mGspn.addPlace(placeBEActivated);
 				
@@ -212,7 +212,74 @@ namespace storm {
 			template <typename ValueType>
             void DftToGspnTransformator<ValueType>::drawSPARE(std::shared_ptr<storm::storage::DFTSpare<ValueType> const> dftSpare) {
 				// TODO: Implement.
-				STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "The transformation of a SPARE is not yet implemented.");
+				
+				uint_fast64_t priority = getPriority(0, dftSpare);
+				
+				storm::gspn::Place placeSPAREActivated;
+				placeSPAREActivated.setName(dftSpare->name() + STR_ACTIVATED);
+				placeSPAREActivated.setNumberOfInitialTokens(isBEActive(dftSpare));
+				mGspn.addPlace(placeSPAREActivated);
+				
+				storm::gspn::ImmediateTransition<storm::gspn::GSPN::WeightType> immediateTransitionPCActivating;
+				immediateTransitionPCActivating.setName(dftSpare->children()[0]->name() + STR_ACTIVATING);
+				immediateTransitionPCActivating.setPriority(priority);
+				immediateTransitionPCActivating.setWeight(0.0);
+				immediateTransitionPCActivating.setInputArcMultiplicity(placeSPAREActivated, 1);
+				immediateTransitionPCActivating.setOutputArcMultiplicity(placeSPAREActivated, 1);
+				mGspn.addImmediateTransition(immediateTransitionPCActivating);
+				
+				auto children = dftSpare->children();
+				
+				// Repeat for every spare child (every child that is not the first!).
+				for (std::size_t i = 1; i < children.size(); i++) {
+					auto placeChildClaimedPreexist = mGspn.getPlace(children[i]->name() + "_claimed");
+					
+					if (!placeChildClaimedPreexist.first) { // Only draw this place if it doesn't exist jet.
+						storm::gspn::Place placeChildClaimed;
+						placeChildClaimed.setName(children[i]->name() + "_claimed");
+						placeChildClaimed.setNumberOfInitialTokens(0);
+						mGspn.addPlace(placeChildClaimed);
+						
+						storm::gspn::ImmediateTransition<storm::gspn::GSPN::WeightType> immediateTransitionSpareChildActivating;
+						immediateTransitionSpareChildActivating.setName(dftSpare->children()[i]->name() + STR_ACTIVATING);
+						immediateTransitionSpareChildActivating.setPriority(priority);
+						immediateTransitionSpareChildActivating.setWeight(0.0);
+						immediateTransitionSpareChildActivating.setInputArcMultiplicity(placeChildClaimed, 1);
+						immediateTransitionSpareChildActivating.setOutputArcMultiplicity(placeChildClaimed, 1);
+						mGspn.addImmediateTransition(immediateTransitionSpareChildActivating);
+					}
+					
+					auto placeChildClaimedExist = mGspn.getPlace(children[i]->name() + "_claimed");
+					
+					storm::gspn::Place placeSPAREClaimedChild;
+					placeSPAREClaimedChild.setName(dftSpare->name() + "_claimed_" + children[i]->name());
+					placeSPAREClaimedChild.setNumberOfInitialTokens(0);
+					mGspn.addPlace(placeSPAREClaimedChild);
+					
+					storm::gspn::Place placeSPAREChildConsumed;
+					placeSPAREChildConsumed.setName(children[i]->name() + "_consumed"); // TODO: If its the last child, this label must be "SPARE_failed".
+					placeSPAREChildConsumed.setNumberOfInitialTokens(0);
+					mGspn.addPlace(placeSPAREChildConsumed);
+					
+					storm::gspn::ImmediateTransition<storm::gspn::GSPN::WeightType> immediateTransitionChildConsuming1;
+					immediateTransitionChildConsuming1.setName(dftSpare->children()[i]->name() + "_consuming1");
+					immediateTransitionChildConsuming1.setPriority(priority);
+					immediateTransitionChildConsuming1.setWeight(0.0);
+					immediateTransitionChildConsuming1.setOutputArcMultiplicity(placeSPAREChildConsumed, 1);
+					immediateTransitionChildConsuming1.setInhibitionArcMultiplicity(placeSPAREChildConsumed, 1);
+					immediateTransitionChildConsuming1.setInhibitionArcMultiplicity(placeSPAREClaimedChild, 1);
+					mGspn.addImmediateTransition(immediateTransitionChildConsuming1);
+					
+					storm::gspn::ImmediateTransition<storm::gspn::GSPN::WeightType> immediateTransitionChildConsuming2;
+					immediateTransitionChildConsuming2.setName(dftSpare->children()[i]->name() + "_consuming2");
+					immediateTransitionChildConsuming2.setPriority(priority);
+					immediateTransitionChildConsuming2.setWeight(0.0);
+					immediateTransitionChildConsuming2.setOutputArcMultiplicity(placeSPAREChildConsumed, 1);
+					immediateTransitionChildConsuming2.setInhibitionArcMultiplicity(placeSPAREChildConsumed, 1);
+					immediateTransitionChildConsuming2.setOutputArcMultiplicity(placeSPAREClaimedChild, 1);
+					immediateTransitionChildConsuming2.setInputArcMultiplicity(placeSPAREClaimedChild, 1);
+					mGspn.addImmediateTransition(immediateTransitionChildConsuming2);
+				}
 			}
 			
 			template <typename ValueType>
@@ -377,7 +444,21 @@ namespace storm {
 								break;
 							}
 							case storm::storage::DFTElementType::SPARE:
+							{
+								// TODO: Implement.
+								
+								// Check if child is a primary or spare child.
+								auto children =  std::static_pointer_cast<storm::storage::DFTSpare<ValueType> const>(mDft.getElement(parents[j]))->children();
+								
+								if (child == children[0]) { // Primary child.
+									// TODO: Draw line from "FC_activating" to every BE, that is connected to the primary child.
+								}
+								else { // Spare child.
+									
+								}
+								
 								break;
+							}
 							case storm::storage::DFTElementType::POR:
 							{
 								auto children =  std::static_pointer_cast<storm::storage::DFTPand<ValueType> const>(mDft.getElement(parents[j]))->children();

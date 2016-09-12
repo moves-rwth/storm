@@ -38,7 +38,9 @@ namespace storm {
 				static constexpr const char* STR_FAILED = "_failed";			// Name standard for place which indicates the failure of a gate.
 				static constexpr const char* STR_FAILSAVING = "_failsaving";	// Name standard for transition that point towards a place, which in turn indicates the failsave state of a gate.
 				static constexpr const char* STR_FAILSAVE = "_failsave";		// Name standard for place which indicates the failsave state of a gate.
-                
+                static constexpr const char* STR_ACTIVATED = "_activated";		// Name standard for place which indicates the activity.
+				static constexpr const char* STR_ACTIVATING = "_activating";	// Name standard for transition that point towards a place, which in turn indicates its activity.
+				
                 /*!
                  * Write Gspn to file or console.
                  *
