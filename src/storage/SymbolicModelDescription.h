@@ -14,6 +14,9 @@ namespace storm {
             SymbolicModelDescription(storm::jani::Model const& model);
             SymbolicModelDescription(storm::prism::Program const& program);
 
+            SymbolicModelDescription& operator=(storm::jani::Model const& model);
+            SymbolicModelDescription& operator=(storm::prism::Program const& program);
+            
             bool hasModel() const;
             bool isJaniModel() const;
             bool isPrismProgram() const;
@@ -24,9 +27,9 @@ namespace storm {
             storm::jani::Model const& asJaniModel() const;
             storm::prism::Program const& asPrismProgram() const;
             
-            void toJani(bool makeVariablesGlobal = true);
+            SymbolicModelDescription toJani(bool makeVariablesGlobal = true) const;
             
-            void preprocess(std::string const& constantDefinitionString = "");
+            SymbolicModelDescription preprocess(std::string const& constantDefinitionString = "") const;
             
         private:
             boost::optional<boost::variant<storm::jani::Model, storm::prism::Program>> modelDescription;

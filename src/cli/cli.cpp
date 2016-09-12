@@ -219,7 +219,7 @@ namespace storm {
                 
                 // Get the string that assigns values to the unknown currently undefined constants in the model.
                 std::string constantDefinitionString = ioSettings.getConstantDefinitionString();
-                model.preprocess(constantDefinitionString);
+                model = model.preprocess(constantDefinitionString);
 
                 // Then proceed to parsing the properties (if given), since the model we are building may depend on the property.
                 std::vector<std::shared_ptr<storm::logic::Formula const>> formulas;

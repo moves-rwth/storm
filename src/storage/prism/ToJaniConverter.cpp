@@ -137,11 +137,15 @@ namespace storm {
                 }
                 STORM_LOG_THROW(!rewardModel.hasTransitionRewards(), storm::exceptions::NotImplementedException, "Transition reward translation currently not implemented.");
             }
+            STORM_LOG_THROW(transientEdgeAssignments.empty() || transientLocationAssignments.empty() || !program.specifiesSystemComposition(), storm::exceptions::NotImplementedException, "Cannot translate reward models from PRISM to JANI that  specify a custom system composition.");
             
             // Now create the separate JANI automata from the modules of the PRISM program. While doing so, we use the
             // previously built mapping to make variables global that are read by more than one module.
             bool firstModule = true;
             for (auto const& module : program.getModules()) {
+                // Keep track of the action indices contained in this module.
+                std::set<uint_fast64_t> actionIndicesOfModule;
+
                 storm::jani::Automaton automaton(module.getName());
                 for (auto const& variable : module.getIntegerVariables()) {
                     storm::jani::BoundedIntegerVariable newIntegerVariable = *storm::jani::makeBoundedIntegerVariable(variable.getName(), variable.getExpressionVariable(), variable.hasInitialValue() ? boost::make_optional(variable.getInitialValueExpression()) : boost::none, false, variable.getLowerBoundExpression(), variable.getUpperBoundExpression());
@@ -184,6 +188,8 @@ namespace storm {
                 }
                 
                 for (auto const& command : module.getCommands()) {
+                    actionIndicesOfModule.insert(command.getActionIndex());
+                    
                     boost::optional<storm::expressions::Expression> rateExpression;
                     std::vector<storm::jani::EdgeDestination> destinations;
                     if (program.getModelType() == Program::ModelType::CTMC || program.getModelType() == Program::ModelType::CTMDP) {
@@ -222,6 +228,17 @@ namespace storm {
                     
                     // Finally add the constructed edge.
                     automaton.addEdge(newEdge);
+                }
+                
+                // Now remove for all actions of this module the corresponding transient assignments, because we must
+                // not deal out this reward multiple times.
+                // NOTE: This only works for the standard composition and not for any custom compositions. This case
+                // must be checked for earlier.
+                for (auto actionIndex : actionIndicesOfModule) {
+                    auto it = transientEdgeAssignments.find(actionIndex);
+                    if (it != transientEdgeAssignments.end()) {
+                        transientEdgeAssignments.erase(it);
+                    }
                 }
                 
                 janiModel.addAutomaton(automaton);
