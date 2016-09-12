@@ -13,9 +13,7 @@ namespace storm {
 
             template <typename ValueType>
             void DftToGspnTransformator<ValueType>::transform() {
-				// TODO: PDEP and FDEP are currently bugged.
-				
-                mGspn = storm::gspn::GSPN();
+				mGspn = storm::gspn::GSPN();
 				mGspn.setName("DftToGspnTransformation");
 				
 				// Loop through every DFT element and draw them as a GSPN.
@@ -213,6 +211,7 @@ namespace storm {
 			
 			template <typename ValueType>
             void DftToGspnTransformator<ValueType>::drawSPARE(std::shared_ptr<storm::storage::DFTSpare<ValueType> const> dftSpare) {
+				// TODO: Implement.
 				STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "The transformation of a SPARE is not yet implemented.");
 			}
 			
@@ -544,25 +543,25 @@ namespace storm {
 			template <typename ValueType>
             uint_fast64_t DftToGspnTransformator<ValueType>::getPriority(uint_fast64_t priority, std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftElement)
 			{
-				// TODO: This method is buggy for pdep2.dft and fdep.dft.
-				
 				// If element is the top element, return current priority.
 				if (dftElement->id() == mDft.getTopLevelIndex()) {
 					return priority;
 				}
-				else if (dftElement->type() == storm::storage::DFTElementType::PDEP) { // TODO: Else if Necessary?
-					return UINT_FAST64_MAX;
-				}
 				else { // Else look at all parents.
 					auto parents = dftElement->parents();
 					std::vector<uint_fast64_t> pathLengths;
+					
+					// If the element has no parents, return.
+					if (parents.size() == 0) {
+						return UINT_FAST64_MAX / 2; // High enough value so that this priority is never used as the shortest path to the top event.
+					}
 					
 					// Check priorities of all parents.
 					for (std::size_t i = 0; i < parents.size(); i++) {
 						pathLengths.push_back(getPriority(priority + 2, parents[i]));
 					}
 					
-					// And only use the lowest priority.
+					// And only use the path to the parent with the lowest priority.
 					return *std::min_element(pathLengths.begin(), pathLengths.end());
 				}
 				
