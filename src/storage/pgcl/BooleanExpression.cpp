@@ -14,7 +14,7 @@ namespace storm {
             booleanExpression(booleanExpression) {
         }
         
-        storm::expressions::Expression& BooleanExpression::getBooleanExpression() {
+        storm::expressions::Expression const& BooleanExpression::getBooleanExpression() const {
             return this->booleanExpression;
         }
     }

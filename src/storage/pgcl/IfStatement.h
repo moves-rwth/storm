@@ -39,28 +39,27 @@ namespace storm {
             IfStatement(storm::pgcl::BooleanExpression const& condition, std::shared_ptr<storm::pgcl::PgclBlock> const& ifBody, std::shared_ptr<storm::pgcl::PgclBlock> const& elseBody);
             IfStatement(const IfStatement& orig) = default;
             virtual ~IfStatement() = default;
-            std::size_t getNumberOfOutgoingTransitions();
             void accept(class AbstractStatementVisitor&);
             /**
              * Returns the if body of the if statement.
              * @return The if body.
              */
-            std::shared_ptr<storm::pgcl::PgclBlock> getIfBody();
+            std::shared_ptr<storm::pgcl::PgclBlock> const& getIfBody() const;
             /**
              * Returns the else body of the if statement, if present. Otherwise
              * it throws an excpetion.
              * @return The else body.
              */
-            std::shared_ptr<storm::pgcl::PgclBlock> getElseBody();
+            std::shared_ptr<storm::pgcl::PgclBlock> const& getElseBody() const;
             /**
              * Returns true iff the if statement has an else body.
              */
-            bool hasElse();
+            bool hasElse() const;
             /**
              * Returns the guard of the if statement.
              * @return The condition.
              */
-            storm::pgcl::BooleanExpression& getCondition();
+            storm::pgcl::BooleanExpression const& getCondition() const;
         private:
             /// The if body is again a PGCL program.
             std::shared_ptr<storm::pgcl::PgclBlock> ifBody;

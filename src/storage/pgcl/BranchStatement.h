@@ -1,12 +1,4 @@
-/* 
- * File:   BranchStatement.h
- * Author: Lukas Westhofen
- *
- * Created on 11. April 2015, 17:42
- */
-
-#ifndef BRANCHSTATEMENT_H
-#define	BRANCHSTATEMENT_H
+#pragma once 
 
 #include "src/storage/pgcl/PgclProgram.h"
 #include "src/storage/pgcl/CompoundStatement.h"
@@ -25,22 +17,19 @@ namespace storm {
             BranchStatement(const BranchStatement& orig) = default;
             virtual ~BranchStatement() = default;
             virtual void accept(class AbstractStatementVisitor&) = 0;
-            std::size_t getNumberOfOutgoingTransitions();
             /**
              * Returns the left branch of the statement.
              * @return The left branch PGCL program.
              */
-            std::shared_ptr<storm::pgcl::PgclBlock> getLeftBranch();
+            std::shared_ptr<storm::pgcl::PgclBlock> const& getLeftBranch() const;
             /**
              * Returns the right branch of the statement.
              * @return The right branch PGCL program.
              */
-            std::shared_ptr<storm::pgcl::PgclBlock> getRightBranch();
+            std::shared_ptr<storm::pgcl::PgclBlock> const& getRightBranch() const;
         protected:
             std::shared_ptr<storm::pgcl::PgclBlock> leftBranch;
             std::shared_ptr<storm::pgcl::PgclBlock> rightBranch;
         };
     }
 }
-
-#endif	/* BRANCHSTATEMENT_H */

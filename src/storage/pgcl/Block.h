@@ -42,7 +42,9 @@ namespace storm {
             PgclBlock(const PgclBlock & orig) = default;
             PgclBlock & operator=(PgclBlock const& other) = default;
             iterator begin();
+            const_iterator begin() const;
             iterator end();
+            const_iterator end() const;
             element front();
             element back();
             unsigned long size();
@@ -62,7 +64,8 @@ namespace storm {
              * the program and all its subprograms.
              * @return The expression manager of the program.
              */
-            std::shared_ptr<storm::expressions::ExpressionManager> getExpressionManager();
+            std::shared_ptr<storm::expressions::ExpressionManager> const& getExpressionManager() const;
+            
             /**
              * Returns true if the program contains a loop statement.
              * @return True if the program has a loop.
@@ -84,7 +87,7 @@ namespace storm {
              * @return True if the program has at least one parameter.
              */
             bool hasParameters() const;
-           
+            
         protected:
             /**
              * We are basically wrapping a std::vector which represents the
@@ -113,7 +116,6 @@ namespace storm {
             bool loop    = false;
             bool nondet  = false;
             bool observe = false;
-            bool top     = false;
         };
     }
 }

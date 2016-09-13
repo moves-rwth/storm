@@ -28,13 +28,12 @@ namespace storm {
              */
             ObserveStatement(storm::pgcl::BooleanExpression const& condition);
             ObserveStatement(const ObserveStatement& orig) = default;
-            std::size_t getNumberOfOutgoingTransitions();
             virtual ~ObserveStatement() = default;
             /**
              * Returns the condition of the observe statement.
              * @return The boolean expression of the observe statement.
              */
-            storm::pgcl::BooleanExpression& getCondition();
+            storm::pgcl::BooleanExpression const& getCondition() const;
             void accept(class AbstractStatementVisitor&);
         private:
             /// Represents the assigned condition.

@@ -17,13 +17,10 @@ namespace storm {
             visitor.visit(*this);
         }
 
-        storm::pgcl::BooleanExpression& ObserveStatement::getCondition() {
+        storm::pgcl::BooleanExpression const& ObserveStatement::getCondition() const {
             return this->condition;
         }
 
-        std::size_t ObserveStatement::getNumberOfOutgoingTransitions() {
-            return 1;
-        }
     }
 }
 

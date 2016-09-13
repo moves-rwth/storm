@@ -16,7 +16,7 @@ namespace storm {
             leftBranch = left;
         }
         
-        storm::expressions::Expression& ProbabilisticBranch::getProbability() {
+        storm::expressions::Expression const& ProbabilisticBranch::getProbability() const {
             return this->probability;
         }
 

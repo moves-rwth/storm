@@ -37,7 +37,8 @@ namespace storm {
              * @param hasParam Whether the program is parameterized.
              */
             PgclProgram(vector const& statements, vector const& locationToStatement, std::vector<storm::expressions::Variable> const& parameters, std::shared_ptr<storm::expressions::ExpressionManager> expressions, bool hasLoop, bool hasNondet, bool hasObserve);
-                        PgclProgram(const PgclProgram & orig) = default;
+            
+            PgclProgram(const PgclProgram & orig) = default;
             
             /**
              * Returns a vector that has the statement with location number i at
@@ -45,6 +46,8 @@ namespace storm {
              * only the location number is given.
              */
             vector getLocationToStatementVector();
+            
+            std::vector<storm::expressions::Variable> getVariables() const;
             
         private:
             /**

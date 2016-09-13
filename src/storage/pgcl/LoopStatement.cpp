@@ -14,20 +14,16 @@ namespace storm {
             body(body), condition(condition) {
         }
 
-        std::shared_ptr<storm::pgcl::PgclBlock> LoopStatement::getBody() {
+        std::shared_ptr<storm::pgcl::PgclBlock> const& LoopStatement::getBody() const {
             return this->body;
         }
         
-        storm::pgcl::BooleanExpression& LoopStatement::getCondition() {
+        storm::pgcl::BooleanExpression const& LoopStatement::getCondition() const{
             return this->condition;
         }
 
         void LoopStatement::accept(storm::pgcl::AbstractStatementVisitor& visitor) {
             visitor.visit(*this);
-        }
-
-        std::size_t LoopStatement::getNumberOfOutgoingTransitions() {
-            return 1;
         }
     }
 }

@@ -11,11 +11,11 @@ namespace storm {
             this->lineNumber = lineNumber;
         }
 
-        std::size_t Statement::getLineNumber() {
+        std::size_t Statement::getLineNumber() const {
             return this->lineNumber;
         }
 
-        std::size_t Statement::getLocationNumber() {
+        std::size_t Statement::getLocationNumber() const {
             return this->locationNumber;
         }
 
@@ -23,7 +23,7 @@ namespace storm {
             this->locationNumber = locationNumber;
         }
 
-        bool Statement::isLast() {
+        bool Statement::isLast() const {
             return this->last;
         }
 
@@ -31,7 +31,7 @@ namespace storm {
             this->last = isLast;
         }
 
-        bool Statement::isNondet() {
+        bool Statement::isNondet() const {
             return false;
         }
 
@@ -44,7 +44,7 @@ namespace storm {
         }
 
 
-        std::size_t Statement::getNumberOfOutgoingTransitions() {
+        std::size_t Statement::getNumberOfOutgoingTransitions() const {
             return 1;
         }
     }

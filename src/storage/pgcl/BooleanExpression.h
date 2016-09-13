@@ -31,7 +31,7 @@ namespace storm {
              * Returns the expression.
              * @return The expression of boolean type.
              */
-            storm::expressions::Expression& getBooleanExpression();
+            storm::expressions::Expression const& getBooleanExpression() const;
         private:
             storm::expressions::Expression booleanExpression;
         };

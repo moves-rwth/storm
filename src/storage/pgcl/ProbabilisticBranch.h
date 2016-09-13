@@ -38,7 +38,7 @@ namespace storm {
              * Returns the expression representing the probability.
              * @return The expression representing the probability.
              */
-            storm::expressions::Expression& getProbability();
+            storm::expressions::Expression const& getProbability() const;
             void accept(class AbstractStatementVisitor&);
         private:
             /// The expression represents the probability of the branch.

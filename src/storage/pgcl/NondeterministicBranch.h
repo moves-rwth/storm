@@ -29,7 +29,7 @@ namespace storm {
             NondeterministicBranch(const NondeterministicBranch& orig) = default;
             virtual ~NondeterministicBranch() = default;
             void accept(class AbstractStatementVisitor&);
-            bool isNondet();
+            bool isNondet() const;
         private:
         };
     }

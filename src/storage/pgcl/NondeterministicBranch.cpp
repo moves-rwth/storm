@@ -19,7 +19,7 @@ namespace storm {
             visitor.visit(*this);
         }
 
-        bool NondeterministicBranch::isNondet() {
+        bool NondeterministicBranch::isNondet() const {
             return true;
         }
     }

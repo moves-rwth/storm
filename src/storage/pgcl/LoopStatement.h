@@ -30,18 +30,17 @@ namespace storm {
             LoopStatement(storm::pgcl::BooleanExpression const& condition, std::shared_ptr<storm::pgcl::PgclBlock> const& body);
             LoopStatement(const LoopStatement& orig) = default;
             virtual ~LoopStatement() = default;
-            std::size_t getNumberOfOutgoingTransitions();
             void accept(class AbstractStatementVisitor&);
             /**
              * Returns the loop body program.
              * @return The loop body program.
              */
-            std::shared_ptr<storm::pgcl::PgclBlock> getBody();
+            std::shared_ptr<storm::pgcl::PgclBlock> const& getBody() const;
             /**
              * Returns the guard of the loop.
              * @return The boolean condition of the loop.
              */
-            storm::pgcl::BooleanExpression& getCondition();
+            storm::pgcl::BooleanExpression const& getCondition() const;
         private:
             /// Represents the loop body.
             std::shared_ptr<storm::pgcl::PgclBlock> body;

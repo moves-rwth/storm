@@ -1,12 +1,4 @@
-/* 
- * File:   AssignmentStatement.h
- * Author: Lukas Westhofen
- *
- * Created on 11. April 2015, 17:42
- */
-
-#ifndef ASSIGNMENTSTATEMENT_H
-#define	ASSIGNMENTSTATEMENT_H
+#pragma once
 
 #include "src/storage/pgcl/SimpleStatement.h"
 #include "src/storage/pgcl/UniformExpression.h"
@@ -34,18 +26,17 @@ namespace storm {
             AssignmentStatement(storm::expressions::Variable const& variable, boost::variant<storm::expressions::Expression, storm::pgcl::UniformExpression> const& expression);
             AssignmentStatement(const AssignmentStatement& orig) = default;
             virtual ~AssignmentStatement() = default;
-            std::size_t getNumberOfOutgoingTransitions();
-            void accept(class AbstractStatementVisitor&);
+            void accept(AbstractStatementVisitor&);
             /**
              * Returns the right hand expression of the assignemnt.
              * @return The expression of the assignment.
              */
-            boost::variant<storm::expressions::Expression, storm::pgcl::UniformExpression> const& getExpression();
+            boost::variant<storm::expressions::Expression, storm::pgcl::UniformExpression> const& getExpression() const;
             /**
              * Returns the left hand variable of the assignemnt.
              * @return The variable to which the expression is assigned.
              */
-            storm::expressions::Variable const& getVariable();
+            storm::expressions::Variable const& getVariable() const;
         private:
             /// Represents the variable of our assignment statement.
             storm::expressions::Variable variable;
@@ -54,6 +45,3 @@ namespace storm {
         };
     }
 }
-
-#endif	/* ASSIGNMENTSTATEMENT_H */
-

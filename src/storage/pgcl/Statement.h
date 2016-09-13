@@ -31,7 +31,7 @@ namespace storm {
              * was parsed from.
              * @return The line number of the statement.
              */
-            std::size_t getLineNumber();
+            std::size_t getLineNumber() const;
             /**
              * Sets the line number during the parsing process.
              * @param lineNumber The location number of the statement.
@@ -41,7 +41,7 @@ namespace storm {
              * Returns the unique location number of the statement.
              * @return The line number of the statement.
              */
-            std::size_t getLocationNumber();
+            std::size_t getLocationNumber() const;
             /**
              * Sets the unique location number of the statement.
              * @param lineNumber The location number of the statement.
@@ -52,7 +52,7 @@ namespace storm {
              * program.
              * @return true Whether the statement is the last statement.
              */
-            bool isLast();
+            bool isLast() const;
             /**
              * Sets the information whether the statement is the last of its
              * direct parent program.
@@ -62,11 +62,11 @@ namespace storm {
             /**
              * Returns wether the statements represents nondeterminism.
              */
-            virtual bool isNondet();
+            virtual bool isNondet() const;
             /**
              * Returns the number of transitions this statement will produce.
              */
-            virtual std::size_t getNumberOfOutgoingTransitions();
+            virtual std::size_t getNumberOfOutgoingTransitions() const;
             virtual void accept(class AbstractStatementVisitor&) = 0;
             /**
              * Sets the parent program of the statement.

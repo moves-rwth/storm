@@ -19,11 +19,11 @@ namespace storm {
             this->hasElseBody = true;
         }
 
-        std::shared_ptr<storm::pgcl::PgclBlock> IfStatement::getIfBody() {
+        std::shared_ptr<storm::pgcl::PgclBlock> const& IfStatement::getIfBody() const {
             return this->ifBody;
         }
 
-        std::shared_ptr<storm::pgcl::PgclBlock> IfStatement::getElseBody() {
+        std::shared_ptr<storm::pgcl::PgclBlock> const& IfStatement::getElseBody() const {
             if(this->elseBody) {
                 return this->elseBody;
             } else {
@@ -31,11 +31,11 @@ namespace storm {
             }
         }
         
-        bool IfStatement::hasElse() {
+        bool IfStatement::hasElse() const{
             return this->hasElseBody;
         }
         
-        storm::pgcl::BooleanExpression& IfStatement::getCondition() {
+        storm::pgcl::BooleanExpression const& IfStatement::getCondition() const {
             return this->condition;
         }
 
@@ -43,8 +43,5 @@ namespace storm {
             visitor.visit(*this);
         }
 
-        std::size_t IfStatement::getNumberOfOutgoingTransitions() {
-            return 1;
-        }
     }
 }

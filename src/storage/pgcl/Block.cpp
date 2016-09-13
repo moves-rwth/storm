@@ -20,7 +20,15 @@ namespace storm {
             return this->sequenceOfStatements.begin();
         }
         
+        const_iterator PgclBlock::begin() const {
+            return this->sequenceOfStatements.begin();
+        }
+        
         iterator PgclBlock::end() {
+            return this->sequenceOfStatements.end();
+        }
+        
+        const_iterator PgclBlock::end() const {
             return this->sequenceOfStatements.end();
         }
         
@@ -52,7 +60,7 @@ namespace storm {
             this->sequenceOfStatements.clear();
         }
         
-        std::shared_ptr<storm::expressions::ExpressionManager> PgclBlock::getExpressionManager() {
+        std::shared_ptr<storm::expressions::ExpressionManager> const&  PgclBlock::getExpressionManager() const  {
             return this->expressions;
         }
         
