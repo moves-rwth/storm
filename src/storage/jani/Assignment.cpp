@@ -1,10 +1,18 @@
 #include "src/storage/jani/Assignment.h"
 
+#include "src/utility/macros.h"
+#include "src/exceptions/NotImplementedException.h"
+
 namespace storm  {
     namespace jani {
         
-        Assignment::Assignment(storm::jani::Variable const& variable, storm::expressions::Expression const& expression) : variable(variable), expression(expression) {
-            // Intentionally left empty.
+        Assignment::Assignment(storm::jani::Variable const& variable, storm::expressions::Expression const& expression, uint64_t level) : variable(variable), expression(expression), level(level) {
+            STORM_LOG_THROW(level == 0, storm::exceptions::NotImplementedException, "Assignment levels other than 0 are currently not supported.");
+        }
+        
+        bool Assignment::operator==(Assignment const& other) const {
+            // FIXME: the level is currently ignored as we do not support it 
+            return this->isTransient() == other.isTransient() && this->getExpressionVariable() == other.getExpressionVariable() && this->getAssignedExpression().isSyntacticallyEqual(other.getAssignedExpression());
         }
         
         storm::jani::Variable const& Assignment::getVariable() const {
@@ -23,8 +31,16 @@ namespace storm  {
             this->expression = expression;
         }
         
-        bool Assignment::isTransientAssignment() const {
-            return this->variable.get().isTransientVariable();
+        bool Assignment::isTransient() const {
+            return this->variable.get().isTransient();
+        }
+        
+        void Assignment::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
+            this->setAssignedExpression(this->getAssignedExpression().substitute(substitution));
+        }
+        
+        uint64_t Assignment::getLevel() const {
+            return level;
         }
         
         std::ostream& operator<<(std::ostream& stream, Assignment const& assignment) {
@@ -32,5 +48,20 @@ namespace storm  {
             return stream;
         }
         
+        bool AssignmentPartialOrderByVariable::operator()(Assignment const& left, Assignment const& right) const {
+            return left.getExpressionVariable() < right.getExpressionVariable();
+        }
+
+        bool AssignmentPartialOrderByVariable::operator()(Assignment const& left, std::shared_ptr<Assignment> const& right) const {
+            return left.getExpressionVariable() < right->getExpressionVariable();
+        }
+        
+        bool AssignmentPartialOrderByVariable::operator()(std::shared_ptr<Assignment> const& left, std::shared_ptr<Assignment> const& right) const {
+            return left->getExpressionVariable() < right->getExpressionVariable();
+        }
+        
+        bool AssignmentPartialOrderByVariable::operator()(std::shared_ptr<Assignment> const& left, Assignment const& right) const {
+            return left->getExpressionVariable() < right.getExpressionVariable();
+        }
     }
 }

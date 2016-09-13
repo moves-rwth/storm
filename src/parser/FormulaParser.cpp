@@ -4,6 +4,9 @@
 
 #include "src/parser/SpiritErrorHandler.h"
 
+#include "src/storage/prism/Program.h"
+#include "src/storage/jani/Model.h"
+
 // If the parser fails due to ill-formed data, this exception is thrown.
 #include "src/exceptions/WrongFormatException.h"
 
@@ -176,7 +179,7 @@ namespace storm {
             phoenix::function<SpiritErrorHandler> handler;
         };
         
-        FormulaParser::FormulaParser(std::shared_ptr<storm::expressions::ExpressionManager const> const& manager) : manager(manager->getSharedPointer()), grammar(new FormulaParserGrammar(manager)) {
+        FormulaParser::FormulaParser(std::shared_ptr<storm::expressions::ExpressionManager const> const& manager) : manager(manager), grammar(new FormulaParserGrammar(manager)) {
             // Intentionally left empty.
         }
         

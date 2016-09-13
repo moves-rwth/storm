@@ -65,7 +65,11 @@ namespace storm {
         }
 
         Expression ExpressionManager::rational(double value) const {
-            return Expression(std::shared_ptr<BaseExpression>(new DoubleLiteralExpression(*this, value)));
+            return Expression(std::shared_ptr<BaseExpression>(new RationalLiteralExpression(*this, value)));
+        }
+        
+        Expression ExpressionManager::rational(storm::RationalNumber const& value) const {
+            return Expression(std::shared_ptr<BaseExpression>(new RationalLiteralExpression(*this, value)));
         }
         
         bool ExpressionManager::operator==(ExpressionManager const& other) const {

@@ -3,6 +3,8 @@
 
 #include "../utility/storm.h"
 
+#include "src/storage/SymbolicModelDescription.h"
+
 #include "src/settings/modules/DebugSettings.h"
 #include "src/settings/modules/IOSettings.h"
 #include "src/settings/modules/CoreSettings.h"
@@ -206,42 +208,46 @@ namespace storm {
                 storm::utility::initializeFileLogging();
             }
 
-            if (storm::settings::getModule<storm::settings::modules::IOSettings>().isSymbolicSet()) {
-                // If we have to build the model from a symbolic representation, we need to parse the representation first.
-                storm::prism::Program program = storm::parseProgram(storm::settings::getModule<storm::settings::modules::IOSettings>().getSymbolicModelFilename());
+            auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
+            if (ioSettings.isPrismOrJaniInputSet()) {
+                storm::storage::SymbolicModelDescription model;
+                if (ioSettings.isPrismInputSet()) {
+                    model = storm::parseProgram(ioSettings.getPrismInputFilename());
+                    if (ioSettings.isPrismToJaniSet()) {
+                        model = model.toJani(true);
+                    }
+                } else if (ioSettings.isJaniInputSet()) {
+                    model = storm::parseJaniModel(ioSettings.getJaniInputFilename()).first;
+                }
                 
                 // Get the string that assigns values to the unknown currently undefined constants in the model.
-                std::string constantDefinitionString = storm::settings::getModule<storm::settings::modules::IOSettings>().getConstantDefinitionString();
-                storm::prism::Program preprocessedProgram = storm::utility::prism::preprocess(program, constantDefinitionString);
-                std::map<storm::expressions::Variable, storm::expressions::Expression> constantsSubstitution = preprocessedProgram.getConstantsSubstitution();
+                std::string constantDefinitionString = ioSettings.getConstantDefinitionString();
+                model = model.preprocess(constantDefinitionString);
 
                 // Then proceed to parsing the properties (if given), since the model we are building may depend on the property.
                 std::vector<std::shared_ptr<storm::logic::Formula const>> formulas;
                 if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isPropertySet()) {
-                    formulas = storm::parseFormulasForProgram(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getProperty(), preprocessedProgram);
-                }
-
-                // There may be constants of the model appearing in the formulas, so we replace all their occurrences
-                // by their definitions in the translated program.
-                std::vector<std::shared_ptr<storm::logic::Formula const>> preprocessedFormulas;
-                for (auto const& formula : formulas) {
-                    preprocessedFormulas.emplace_back(formula->substitute(constantsSubstitution));
+                    if (model.isJaniModel()) {
+                        formulas = storm::parseFormulasForJaniModel(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getProperty(), model.asJaniModel());
+                    } else {
+                        formulas = storm::parseFormulasForPrismProgram(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getProperty(), model.asPrismProgram());
+                    }
                 }
 
                 if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isParametricSet()) {
 #ifdef STORM_HAVE_CARL
-                    buildAndCheckSymbolicModel<storm::RationalFunction>(preprocessedProgram, preprocessedFormulas, true);
+                    buildAndCheckSymbolicModel<storm::RationalFunction>(model, formulas, true);
 #else
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "No parameters are supported in this build.");
 #endif
                 } else if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isExactSet()) {
 #ifdef STORM_HAVE_CARL
-                    buildAndCheckSymbolicModel<storm::RationalNumber>(preprocessedProgram, preprocessedFormulas, true);
+                    buildAndCheckSymbolicModel<storm::RationalNumber>(model, formulas, true);
 #else
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "No exact numbers are supported in this build.");
 #endif
                 } else {
-                    buildAndCheckSymbolicModel<double>(preprocessedProgram, preprocessedFormulas, true);
+                    buildAndCheckSymbolicModel<double>(model, formulas, true);
                 }
             } else if (storm::settings::getModule<storm::settings::modules::IOSettings>().isExplicitSet()) {
                 STORM_LOG_THROW(storm::settings::getModule<storm::settings::modules::CoreSettings>().getEngine() == storm::settings::modules::CoreSettings::Engine::Sparse, storm::exceptions::InvalidSettingsException, "Only the sparse engine supports explicit model input.");

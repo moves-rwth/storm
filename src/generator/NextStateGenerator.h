@@ -148,6 +148,9 @@ namespace storm {
             bool hasStateActionRewards() const;
             bool hasTransitionRewards() const;
             
+            void setHasStateRewards();
+            void setHasStateActionRewards();
+            void setHasTransitionRewards();
         private:
             std::string name;
             bool stateRewards;

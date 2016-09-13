@@ -9,9 +9,11 @@
 #include "src/storage/expressions/Expression.h"
 #include "src/utility/macros.h"
 
-#include "src/storage/prism/Program.h"
-
 namespace storm {
+    namespace prism {
+        class Program;
+    }
+    
     namespace parser {
         
         // Forward-declare grammar.

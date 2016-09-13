@@ -61,26 +61,32 @@ namespace storm {
 
         Variable const& Automaton::addVariable(Variable const &variable) {
             if (variable.isBooleanVariable()) {
-                return addBooleanVariable(variable.asBooleanVariable());
+                return addVariable(variable.asBooleanVariable());
             } else if (variable.isBoundedIntegerVariable()) {
-                return addBoundedIntegerVariable(variable.asBoundedIntegerVariable());
+                return addVariable(variable.asBoundedIntegerVariable());
             } else if (variable.isUnboundedIntegerVariable()) {
-                return addUnboundedIntegerVariable(variable.asUnboundedIntegerVariable());
+                return addVariable(variable.asUnboundedIntegerVariable());
+            } else if (variable.isRealVariable()) {
+                return addVariable(variable.asRealVariable());
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Variable has invalid type.");
             }
         }
         
-        BooleanVariable const& Automaton::addBooleanVariable(BooleanVariable const& variable) {
-            return variables.addBooleanVariable(variable);
+        BooleanVariable const& Automaton::addVariable(BooleanVariable const& variable) {
+            return variables.addVariable(variable);
         }
         
-        BoundedIntegerVariable const& Automaton::addBoundedIntegerVariable(BoundedIntegerVariable const& variable) {
-            return variables.addBoundedIntegerVariable(variable);
+        BoundedIntegerVariable const& Automaton::addVariable(BoundedIntegerVariable const& variable) {
+            return variables.addVariable(variable);
         }
 
-        UnboundedIntegerVariable const& Automaton::addUnboundedIntegerVariable(UnboundedIntegerVariable const& variable) {
-            return variables.addUnboundedIntegerVariable(variable);
+        UnboundedIntegerVariable const& Automaton::addVariable(UnboundedIntegerVariable const& variable) {
+            return variables.addVariable(variable);
+        }
+
+        RealVariable const& Automaton::addVariable(RealVariable const& variable) {
+            return variables.addVariable(variable);
         }
 
         VariableSet& Automaton::getVariables() {
@@ -91,6 +97,10 @@ namespace storm {
             return variables;
         }
         
+        bool Automaton::hasTransientVariable() const {
+            return variables.hasTransientVariable();
+        }
+        
         bool Automaton::hasLocation(std::string const& name) const {
             return locationToIndex.find(name) != locationToIndex.end();
         }
@@ -98,11 +108,19 @@ namespace storm {
         std::vector<Location> const& Automaton::getLocations() const {
             return locations;
         }
-        
+
+        std::vector<Location>& Automaton::getLocations() {
+            return locations;
+        }
+
         Location const& Automaton::getLocation(uint64_t index) const {
             return locations[index];
         }
-        
+
+        Location& Automaton::getLocation(uint64_t index) {
+            return locations[index];
+        }
+
         uint64_t Automaton::addLocation(Location const& location) {
             STORM_LOG_THROW(!this->hasLocation(location.getName()), storm::exceptions::WrongFormatException, "Cannot add location with name '" << location.getName() << "', because a location with this name already exists.");
             locationToIndex.emplace(location.getName(), locations.size());
@@ -350,6 +368,22 @@ namespace storm {
                 result.push_back(variable.getRangeExpression());
             }
             return result;
+        }
+        
+        void Automaton::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
+            for (auto& variable : this->getVariables().getBoundedIntegerVariables()) {
+                variable.substitute(substitution);
+            }
+            
+            for (auto& location : this->getLocations()) {
+                location.substitute(substitution);
+            }
+            
+            this->setInitialStatesRestriction(this->getInitialStatesRestriction().substitute(substitution));
+            
+            for (auto& edge : this->getEdges()) {
+                edge.substitute(substitution);
+            }
         }
         
         void Automaton::finalize(Model const& containingModel) {

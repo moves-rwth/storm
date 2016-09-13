@@ -48,11 +48,13 @@
 // Headers of builders.
 #include "src/builder/ExplicitModelBuilder.h"
 #include "src/builder/DdPrismModelBuilder.h"
+#include "src/builder/DdJaniModelBuilder.h"
 
 // Headers for model processing.
 #include "src/storage/bisimulation/DeterministicModelBisimulationDecomposition.h"
 #include "src/storage/bisimulation/NondeterministicModelBisimulationDecomposition.h"
 #include "src/storage/ModelFormulasPair.h"
+#include "src/storage/SymbolicModelDescription.h"
 
 // Headers for model checking.
 #include "src/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
@@ -79,9 +81,9 @@
 #include "src/counterexamples/MILPMinimalLabelSetGenerator.h"
 #include "src/counterexamples/SMTMinimalCommandSetGenerator.h"
 
-// Headers related to PRISM model building.
+// Headers related to model building.
 #include "src/generator/PrismNextStateGenerator.h"
-#include "src/utility/prism.h"
+#include "src/generator/JaniNextStateGenerator.h"
 
 // Headers related to exception handling.
 #include "src/exceptions/InvalidStateException.h"
@@ -101,10 +103,11 @@ namespace storm {
     std::pair<storm::jani::Model, std::vector<storm::jani::Property>> parseJaniModel(std::string const& path);
     storm::prism::Program parseProgram(std::string const& path);
     std::vector<std::shared_ptr<storm::logic::Formula const>> parseFormulasForExplicit(std::string const& inputString);
-    std::vector<std::shared_ptr<storm::logic::Formula const>> parseFormulasForProgram(std::string const& inputString, storm::prism::Program const& program);
+    std::vector<std::shared_ptr<storm::logic::Formula const>> parseFormulasForPrismProgram(std::string const& inputString, storm::prism::Program const& program);
+    std::vector<std::shared_ptr<storm::logic::Formula const>> parseFormulasForJaniModel(std::string const& inputString, storm::jani::Model const& model);
 
     template<typename ValueType>
-    std::shared_ptr<storm::models::sparse::Model<ValueType>> buildSparseModel(storm::prism::Program const& program, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool onlyInitialStatesRelevant = false) {
+    std::shared_ptr<storm::models::sparse::Model<ValueType>> buildSparseModel(storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool onlyInitialStatesRelevant = false) {
         storm::generator::NextStateGeneratorOptions options(formulas);
 
         // Generate command labels if we are going to build a counterexample later.
@@ -112,18 +115,34 @@ namespace storm {
             options.setBuildChoiceLabels(true);
         }
 
-        std::shared_ptr<storm::generator::NextStateGenerator<ValueType, uint32_t>> generator = std::make_shared<storm::generator::PrismNextStateGenerator<ValueType, uint32_t>>(program, options);
+        std::shared_ptr<storm::generator::NextStateGenerator<ValueType, uint32_t>> generator;
+        if (model.isPrismProgram()) {
+            generator = std::make_shared<storm::generator::PrismNextStateGenerator<ValueType, uint32_t>>(model.asPrismProgram(), options);
+        } else if (model.isJaniModel()) {
+            generator = std::make_shared<storm::generator::JaniNextStateGenerator<ValueType, uint32_t>>(model.asJaniModel(), options);
+        } else {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Cannot build sparse model from this symbolic model description.");
+        }
         storm::builder::ExplicitModelBuilder<ValueType> builder(generator);
         return builder.build();
     }
 
     template<typename ValueType, storm::dd::DdType LibraryType = storm::dd::DdType::CUDD>
-    std::shared_ptr<storm::models::symbolic::Model<LibraryType, ValueType>> buildSymbolicModel(storm::prism::Program const& program, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
-        typename storm::builder::DdPrismModelBuilder<LibraryType, ValueType>::Options options;
-        options = typename storm::builder::DdPrismModelBuilder<LibraryType, ValueType>::Options(formulas);
-
-        storm::builder::DdPrismModelBuilder<LibraryType, ValueType> builder;
-        return builder.build(program, options);
+    std::shared_ptr<storm::models::symbolic::Model<LibraryType, ValueType>> buildSymbolicModel(storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
+        if (model.isPrismProgram()) {
+            typename storm::builder::DdPrismModelBuilder<LibraryType, ValueType>::Options options;
+            options = typename storm::builder::DdPrismModelBuilder<LibraryType, ValueType>::Options(formulas);
+            
+            storm::builder::DdPrismModelBuilder<LibraryType, ValueType> builder;
+            return builder.build(model.asPrismProgram(), options);
+        } else {
+            STORM_LOG_THROW(model.isJaniModel(), storm::exceptions::InvalidArgumentException, "Cannot build symbolic model for the given symbolic model description.");
+            typename storm::builder::DdJaniModelBuilder<LibraryType, ValueType>::Options options;
+            options = typename storm::builder::DdJaniModelBuilder<LibraryType, ValueType>::Options(formulas);
+            
+            storm::builder::DdJaniModelBuilder<LibraryType, ValueType> builder;
+            return builder.build(model.asJaniModel(), options);
+        }
     }
     
     template<typename ModelType>
@@ -205,12 +224,13 @@ namespace storm {
     }
 
     template<typename ValueType>
-    void generateCounterexample(storm::prism::Program const& program, std::shared_ptr<storm::models::sparse::Model<ValueType>> model, std::shared_ptr<storm::logic::Formula const> const& formula) {
+    void generateCounterexample(storm::storage::SymbolicModelDescription const& model, std::shared_ptr<storm::models::sparse::Model<ValueType>> markovModel, std::shared_ptr<storm::logic::Formula const> const& formula) {
         if (storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>().isMinimalCommandSetGenerationSet()) {
-            STORM_LOG_THROW(model->getType() == storm::models::ModelType::Mdp, storm::exceptions::InvalidTypeException, "Minimal command set generation is only available for MDPs.");
-            STORM_LOG_THROW(storm::settings::getModule<storm::settings::modules::IOSettings>().isSymbolicSet(), storm::exceptions::InvalidSettingsException, "Minimal command set generation is only available for symbolic models.");
-
-            std::shared_ptr<storm::models::sparse::Mdp<ValueType>> mdp = model->template as<storm::models::sparse::Mdp<ValueType>>();
+            STORM_LOG_THROW(model.isPrismProgram(), storm::exceptions::InvalidTypeException, "Minimal command set generation is only available for PRISM models.");
+            STORM_LOG_THROW(markovModel->getType() == storm::models::ModelType::Mdp, storm::exceptions::InvalidTypeException, "Minimal command set generation is only available for MDPs.");
+            storm::prism::Program const& program = model.asPrismProgram();
+            
+            std::shared_ptr<storm::models::sparse::Mdp<ValueType>> mdp = markovModel->template as<storm::models::sparse::Mdp<ValueType>>();
 
             // Determine whether we are required to use the MILP-version or the SAT-version.
             bool useMILP = storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>().isUseMilpBasedMinimalCommandSetGenerationSet();
@@ -228,20 +248,20 @@ namespace storm {
 
 #ifdef STORM_HAVE_CARL
     template<>
-    inline void generateCounterexample(storm::prism::Program const& program, std::shared_ptr<storm::models::sparse::Model<storm::RationalNumber>> model, std::shared_ptr<storm::logic::Formula const> const& formula) {
-        STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unable to generate counterexample for parametric model.");
+    inline void generateCounterexample(storm::storage::SymbolicModelDescription const& model, std::shared_ptr<storm::models::sparse::Model<storm::RationalNumber>> markovModel, std::shared_ptr<storm::logic::Formula const> const& formula) {
+        STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unable to generate counterexample for exact arithmetic model.");
     }
 
     template<>
-    inline void generateCounterexample(storm::prism::Program const& program, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model, std::shared_ptr<storm::logic::Formula const> const& formula) {
+    inline void generateCounterexample(storm::storage::SymbolicModelDescription const& model, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> markovModel, std::shared_ptr<storm::logic::Formula const> const& formula) {
         STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unable to generate counterexample for parametric model.");
     }
 #endif
 
     template<typename ValueType>
-    void generateCounterexamples(storm::prism::Program const& program, std::shared_ptr<storm::models::sparse::Model<ValueType>> model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
+    void generateCounterexamples(storm::storage::SymbolicModelDescription const& model, std::shared_ptr<storm::models::sparse::Model<ValueType>> markovModel, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
         for (auto const& formula : formulas) {
-            generateCounterexample(program, model, formula);
+            generateCounterexample(model, markovModel, formula);
         }
     }
 
@@ -382,10 +402,10 @@ namespace storm {
         if (model->getType() == storm::models::ModelType::Dtmc) {
             result = verifySparseDtmc(model->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>(), task);
         } else if (model->getType() == storm::models::ModelType::Mdp) {
-            std::shared_ptr<storm::models::sparse::Mdp<storm::RationalFunction>> mdp = model->template as<storm::models::sparse::Mdp<storm::RationalFunction>>();
+            //std::shared_ptr<storm::models::sparse::Mdp<storm::RationalFunction>> mdp = model->template as<storm::models::sparse::Mdp<storm::RationalFunction>>();
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The parametric engine currently does not support MDPs.");
         } else if (model->getType() == storm::models::ModelType::Ctmc) {
-            verifySparseCtmc(model->template as<storm::models::sparse::Ctmc<storm::RationalFunction>>(), task);
+            result = verifySparseCtmc(model->template as<storm::models::sparse::Ctmc<storm::RationalFunction>>(), task);
         } else {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The parametric engine currently does not support " << model->getType());
         }
@@ -409,7 +429,7 @@ namespace storm {
         // Program and formula
         storm::prism::Program program = parseProgram(programFilePath);
         program.checkValidity();
-        std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = parseFormulasForProgram(formulaString, program);;
+        std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = parseFormulasForPrismProgram(formulaString, program);
         if(formulas.size()!=1) {
             STORM_LOG_ERROR("The given formulaString does not specify exactly one formula");
             return false;

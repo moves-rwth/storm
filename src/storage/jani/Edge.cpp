@@ -2,10 +2,13 @@
 
 #include "src/storage/jani/Model.h"
 
+#include "src/utility/macros.h"
+#include "src/exceptions/InvalidArgumentException.h"
+
 namespace storm {
     namespace jani {
         
-        Edge::Edge(uint64_t sourceLocationIndex, uint64_t actionIndex, boost::optional<storm::expressions::Expression> const& rate, storm::expressions::Expression const& guard, std::vector<EdgeDestination> destinations) : sourceLocationIndex(sourceLocationIndex), actionIndex(actionIndex), rate(rate), guard(guard), destinations(destinations) {
+        Edge::Edge(uint64_t sourceLocationIndex, uint64_t actionIndex, boost::optional<storm::expressions::Expression> const& rate, storm::expressions::Expression const& guard, std::vector<EdgeDestination> destinations) : sourceLocationIndex(sourceLocationIndex), actionIndex(actionIndex), rate(rate), guard(guard), destinations(destinations), assignments(), writtenGlobalVariables() {
             // Intentionally left empty.
         }
         
@@ -49,11 +52,58 @@ namespace storm {
             destinations.push_back(destination);
         }
         
+        OrderedAssignments const& Edge::getAssignments() const {
+            return assignments;
+        }
+        
+        void Edge::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
+            this->setGuard(this->getGuard().substitute(substitution));
+            if (this->hasRate()) {
+                this->setRate(this->getRate().substitute(substitution));
+            }
+            for (auto& assignment : this->getAssignments()) {
+                assignment.substitute(substitution);
+            }
+            for (auto& destination : this->getDestinations()) {
+                destination.substitute(substitution);
+            }
+        }
+        
         void Edge::finalize(Model const& containingModel) {
             for (auto const& destination : getDestinations()) {
                 for (auto const& assignment : destination.getAssignments()) {
                     if (containingModel.getGlobalVariables().hasVariable(assignment.getExpressionVariable())) {
                         writtenGlobalVariables.insert(assignment.getExpressionVariable());
+                    }
+                }
+            }
+        }
+        
+        bool Edge::addTransientAssignment(Assignment const& assignment) {
+            STORM_LOG_THROW(assignment.isTransient(), storm::exceptions::InvalidArgumentException, "Must not add non-transient assignment to location.");
+            return assignments.add(assignment);
+        }
+        
+        void Edge::liftTransientDestinationAssignments() {
+            if (!destinations.empty()) {
+                auto const& destination = *destinations.begin();
+                
+                for (auto const& assignment : destination.getTransientAssignments()) {
+                    // Check if we can lift the assignment to the edge.
+                    bool canBeLifted = true;
+                    for (auto const& destination : destinations) {
+                        if (!destination.hasAssignment(assignment)) {
+                            canBeLifted = false;
+                            break;
+                        }
+                    }
+                    
+                    // If so, remove the assignment from all destinations.
+                    if (canBeLifted) {
+                        this->addTransientAssignment(assignment);
+                        for (auto& destination : destinations) {
+                            destination.removeAssignment(assignment);
+                        }
                     }
                 }
             }

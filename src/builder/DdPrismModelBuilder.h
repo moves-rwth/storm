@@ -98,14 +98,6 @@ namespace storm {
              */
             std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> build(storm::prism::Program const& program, Options const& options = Options());
             
-            /*!
-             * Retrieves the program that was actually translated (i.e. including constant substitutions etc.). Note
-             * that this function may only be called after a succesful translation.
-             *
-             * @return The translated program.
-             */
-            storm::prism::Program const& getTranslatedProgram() const;
-            
         private:
             // This structure can store the decision diagrams representing a particular action.
             struct UpdateDecisionDiagram {
@@ -243,9 +235,6 @@ namespace storm {
             static SystemResult createSystemDecisionDiagram(GenerationInformation& generationInfo);
             
             static storm::dd::Bdd<Type> createInitialStatesDecisionDiagram(GenerationInformation& generationInfo);
-            
-            // This member holds the program that was most recently translated (if any).
-            boost::optional<storm::prism::Program> preparedProgram;
         };
         
     } // namespace adapters

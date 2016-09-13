@@ -10,6 +10,7 @@
 
 #include "src/storage/expressions/Variable.h"
 #include "src/storage/expressions/Expression.h"
+#include "src/adapters/CarlAdapter.h"
 #include "src/utility/OsDetection.h"
 
 namespace storm {
@@ -104,6 +105,14 @@ namespace storm {
              * @return The resulting expression.
              */
             Expression rational(double value) const;
+
+            /*!
+             * Creates an expression that characterizes the given rational literal.
+             *
+             * @param value The value of the rational literal.
+             * @return The resulting expression.
+             */
+            Expression rational(storm::RationalNumber const& value) const;
             
             /*!
              * Compares the two expression managers for equality, which holds iff they are the very same object.

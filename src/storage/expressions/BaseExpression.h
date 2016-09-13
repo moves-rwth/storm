@@ -13,12 +13,24 @@
 
 namespace storm {
     namespace expressions {
-        // Forward-declare expression manager.
+        // Forward-declare expression classes.
         class ExpressionManager;
         class Variable;
         class Valuation;
         class ExpressionVisitor;
         enum struct OperatorType;
+        
+        class IfThenElseExpression;
+        class BinaryBooleanFunctionExpression;
+        class BinaryNumericalFunctionExpression;
+        class BinaryRelationExpression;
+        class BooleanLiteralExpression;
+        class IntegerLiteralExpression;
+        class RationalLiteralExpression;
+        class UnaryBooleanFunctionExpression;
+        class UnaryNumericalFunctionExpression;
+        class VariableExpression;
+        
         /*!
          * The base class of all expression classes.
          */
@@ -164,7 +176,7 @@ namespace storm {
              *
              * @param visitor The visitor that is to be accepted.
              */
-            virtual boost::any accept(ExpressionVisitor& visitor) const = 0;
+            virtual boost::any accept(ExpressionVisitor& visitor, boost::any const& data) const = 0;
             
             /*!
              * Retrieves whether the expression has a numerical type, i.e., integer or double.
@@ -223,6 +235,36 @@ namespace storm {
             Type const& getType() const;
             
             friend std::ostream& operator<<(std::ostream& stream, BaseExpression const& expression);
+            
+            virtual bool isIfThenElseExpression() const;
+            IfThenElseExpression const& asIfThenElseExpression() const;
+            
+            virtual bool isBinaryBooleanFunctionExpression() const;
+            BinaryBooleanFunctionExpression const& asBinaryBooleanFunctionExpression() const;
+            
+            virtual bool isBinaryNumericalFunctionExpression() const;
+            BinaryNumericalFunctionExpression const& asBinaryNumericalFunctionExpression() const;
+            
+            virtual bool isBinaryRelationExpression() const;
+            BinaryRelationExpression const& asBinaryRelationExpression() const;
+            
+            virtual bool isBooleanLiteralExpression() const;
+            BooleanLiteralExpression const& asBooleanLiteralExpression() const;
+            
+            virtual bool isIntegerLiteralExpression() const;
+            IntegerLiteralExpression const& asIntegerLiteralExpression() const;
+            
+            virtual bool isRationalLiteralExpression() const;
+            RationalLiteralExpression const& asRationalLiteralExpression() const;
+            
+            virtual bool isUnaryBooleanFunctionExpression() const;
+            UnaryBooleanFunctionExpression const& asUnaryBooleanFunctionExpression() const;
+            
+            virtual bool isUnaryNumericalFunctionExpression() const;
+            UnaryNumericalFunctionExpression const& asUnaryNumericalFunctionExpression() const;
+            
+            virtual bool isVariableExpression() const;
+            VariableExpression const& asVariableExpression() const;
             
         protected:
             /*!

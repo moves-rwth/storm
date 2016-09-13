@@ -104,7 +104,6 @@ namespace storm {
              */
             std::set<storm::expressions::Variable> getAllExpressionVariables() const;
             
-            
             /*!
              * Retrieves a list of expressions that characterize the legal ranges of all variables declared by this
              * module.
@@ -225,6 +224,11 @@ namespace storm {
              * @return True iff the given variables only appear in the update probabilities of the module and nowhere else.
              */
             bool containsVariablesOnlyInUpdateProbabilities(std::set<storm::expressions::Variable> const& undefinedConstantVariables) const;
+            
+            /*!
+             * Equips all of the modules' variables without initial values with initial values based on their type.
+             */
+            void createMissingInitialValues();
             
             friend std::ostream& operator<<(std::ostream& stream, Module const& module);
 

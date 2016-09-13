@@ -13,6 +13,7 @@ namespace storm {
         class BooleanVariable;
         class BoundedIntegerVariable;
         class UnboundedIntegerVariable;
+        class RealVariable;
         
         class Variable {
         public:
@@ -58,8 +59,9 @@ namespace storm {
             virtual bool isBooleanVariable() const;
             virtual bool isBoundedIntegerVariable() const;
             virtual bool isUnboundedIntegerVariable() const;
+            virtual bool isRealVariable() const;
 
-            virtual bool isTransientVariable() const;
+            virtual bool isTransient() const;
             
             // Methods to get the variable as a different type.
             BooleanVariable& asBooleanVariable();
@@ -68,6 +70,13 @@ namespace storm {
             BoundedIntegerVariable const& asBoundedIntegerVariable() const;
             UnboundedIntegerVariable& asUnboundedIntegerVariable();
             UnboundedIntegerVariable const& asUnboundedIntegerVariable() const;
+            RealVariable& asRealVariable();
+            RealVariable const& asRealVariable() const;
+            
+            /*!
+             * Substitutes all variables in all expressions according to the given substitution.
+             */
+            virtual void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution);
             
         private:
             // The name of the variable.

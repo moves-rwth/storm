@@ -48,7 +48,7 @@ namespace storm {
             
             bool CounterexampleGeneratorSettings::check() const {
                 // Ensure that the model was given either symbolically or explicitly.
-                STORM_LOG_THROW(!isMinimalCommandSetGenerationSet() || storm::settings::getModule<storm::settings::modules::IOSettings>().isSymbolicSet(), storm::exceptions::InvalidSettingsException, "For the generation of a minimal command set, the model has to be specified symbolically.");
+                STORM_LOG_THROW(!isMinimalCommandSetGenerationSet() || storm::settings::getModule<storm::settings::modules::IOSettings>().isPrismInputSet(), storm::exceptions::InvalidSettingsException, "For the generation of a minimal command set, the model has to be specified in the PRISM format.");
                 
                 if (isMinimalCommandSetGenerationSet()) {
                     STORM_LOG_WARN_COND(isUseMaxSatBasedMinimalCommandSetGenerationSet() || !isEncodeReachabilitySet(), "Encoding reachability is only available for the MaxSat-based minimal command set generation, so selecting it has no effect.");

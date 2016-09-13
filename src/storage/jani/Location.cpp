@@ -1,12 +1,13 @@
 #include "src/storage/jani/Location.h"
-#include "src/storage/jani/Assignment.h"
-#include "src/exceptions/InvalidJaniException.h"
+
 #include "src/utility/macros.h"
+#include "src/exceptions/InvalidJaniException.h"
+#include "src/exceptions/InvalidArgumentException.h"
 
 namespace storm {
     namespace jani {
         
-        Location::Location(std::string const& name, std::vector<Assignment> const& transientAssignments) : name(name), transientAssignments(transientAssignments) {
+        Location::Location(std::string const& name, std::vector<Assignment> const& transientAssignments) : name(name), assignments(transientAssignments) {
             // Intentionally left empty.
         }
         
@@ -14,14 +15,23 @@ namespace storm {
             return name;
         }
         
-        std::vector<Assignment> const& Location::getTransientAssignments() const {
-            return transientAssignments;
+        OrderedAssignments const& Location::getAssignments() const {
+            return assignments;
+        }
+        
+        void Location::addTransientAssignment(storm::jani::Assignment const& assignment) {
+            STORM_LOG_THROW(assignment.isTransient(), storm::exceptions::InvalidArgumentException, "Must not add non-transient assignment to location.");
+            assignments.add(assignment);
+        }
+        
+        void Location::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
+            for (auto& assignment : assignments) {
+                assignment.substitute(substitution);
+            }
         }
         
         void Location::checkValid() const {
-            for(auto const& assignment : transientAssignments) {
-                STORM_LOG_THROW(assignment.isTransientAssignment(), storm::exceptions::InvalidJaniException, "Only transient assignments are allowed in locations.");
-            }
+            // Intentionally left empty.
         }
         
     }

@@ -6,46 +6,7 @@
 
 namespace storm {
     namespace jani {
-        
-        namespace detail {
-            
-            template<typename VariableType>
-            VariableType& Dereferencer<VariableType>::operator()(std::shared_ptr<VariableType> const& d) const {
-                return *d;
-            }
-            
-            template<typename VariableType>
-            Variables<VariableType>::Variables(input_iterator it, input_iterator ite) : it(it), ite(ite) {
-                // Intentionally left empty.
-            }
                 
-            template<typename VariableType>
-            typename Variables<VariableType>::iterator Variables<VariableType>::begin() {
-                return boost::make_transform_iterator(it, Dereferencer<VariableType>());
-            }
-            
-            template<typename VariableType>
-            typename Variables<VariableType>::iterator Variables<VariableType>::end() {
-                return boost::make_transform_iterator(ite, Dereferencer<VariableType>());
-            }
-
-            template<typename VariableType>
-            ConstVariables<VariableType>::ConstVariables(const_input_iterator it, const_input_iterator ite) : it(it), ite(ite) {
-                // Intentionally left empty.
-            }
-            
-            template<typename VariableType>
-            typename ConstVariables<VariableType>::const_iterator ConstVariables<VariableType>::begin() {
-                return boost::make_transform_iterator(it, Dereferencer<VariableType const>());
-            }
-            
-            template<typename VariableType>
-            typename ConstVariables<VariableType>::const_iterator ConstVariables<VariableType>::end() {
-                return boost::make_transform_iterator(ite, Dereferencer<VariableType const>());
-            }
-
-        }
-        
         VariableSet::VariableSet() {
             // Intentionally left empty.
         }
@@ -74,7 +35,15 @@ namespace storm {
             return detail::ConstVariables<UnboundedIntegerVariable>(unboundedIntegerVariables.begin(), unboundedIntegerVariables.end());
         }
 
-        BooleanVariable const& VariableSet::addBooleanVariable(BooleanVariable const& variable) {
+        detail::Variables<RealVariable> VariableSet::getRealVariables() {
+            return detail::Variables<RealVariable>(realVariables.begin(), realVariables.end());
+        }
+        
+        detail::ConstVariables<RealVariable> VariableSet::getRealVariables() const {
+            return detail::ConstVariables<RealVariable>(realVariables.begin(), realVariables.end());
+        }
+        
+        BooleanVariable const& VariableSet::addVariable(BooleanVariable const& variable) {
             STORM_LOG_THROW(!this->hasVariable(variable.getName()), storm::exceptions::WrongFormatException, "Cannot add variable with name '" << variable.getName() << "', because a variable with that name already exists.");
             std::shared_ptr<BooleanVariable> newVariable = std::make_shared<BooleanVariable>(variable);
             variables.push_back(newVariable);
@@ -84,7 +53,7 @@ namespace storm {
             return *newVariable;
         }
         
-        BoundedIntegerVariable const& VariableSet::addBoundedIntegerVariable(BoundedIntegerVariable const& variable) {
+        BoundedIntegerVariable const& VariableSet::addVariable(BoundedIntegerVariable const& variable) {
             STORM_LOG_THROW(!this->hasVariable(variable.getName()), storm::exceptions::WrongFormatException, "Cannot add variable with name '" << variable.getName() << "', because a variable with that name already exists.");
             std::shared_ptr<BoundedIntegerVariable> newVariable = std::make_shared<BoundedIntegerVariable>(variable);
             variables.push_back(newVariable);
@@ -94,11 +63,21 @@ namespace storm {
             return *newVariable;
         }
         
-        UnboundedIntegerVariable const& VariableSet::addUnboundedIntegerVariable(UnboundedIntegerVariable const& variable) {
+        UnboundedIntegerVariable const& VariableSet::addVariable(UnboundedIntegerVariable const& variable) {
             STORM_LOG_THROW(!this->hasVariable(variable.getName()), storm::exceptions::WrongFormatException, "Cannot add variable with name '" << variable.getName() << "', because a variable with that name already exists.");
             std::shared_ptr<UnboundedIntegerVariable> newVariable = std::make_shared<UnboundedIntegerVariable>(variable);
             variables.push_back(newVariable);
             unboundedIntegerVariables.push_back(newVariable);
+            nameToVariable.emplace(variable.getName(), variable.getExpressionVariable());
+            variableToVariable.emplace(variable.getExpressionVariable(), newVariable);
+            return *newVariable;
+        }
+        
+        RealVariable const& VariableSet::addVariable(RealVariable const& variable) {
+            STORM_LOG_THROW(!this->hasVariable(variable.getName()), storm::exceptions::WrongFormatException, "Cannot add variable with name '" << variable.getName() << "', because a variable with that name already exists.");
+            std::shared_ptr<RealVariable> newVariable = std::make_shared<RealVariable>(variable);
+            variables.push_back(newVariable);
+            realVariables.push_back(newVariable);
             nameToVariable.emplace(variable.getName(), variable.getExpressionVariable());
             variableToVariable.emplace(variable.getExpressionVariable(), newVariable);
             return *newVariable;
@@ -114,20 +93,20 @@ namespace storm {
             return getVariable(it->second);
         }
 
-        VariableSet::iterator VariableSet::begin() {
-            return boost::make_transform_iterator(variables.begin(), detail::Dereferencer<Variable>());
+        typename detail::Variables<Variable>::iterator VariableSet::begin() {
+            return detail::Variables<Variable>::make_iterator(variables.begin());
         }
 
-        VariableSet::const_iterator VariableSet::begin() const {
-            return boost::make_transform_iterator(variables.begin(), detail::Dereferencer<Variable const>());
+        typename detail::ConstVariables<Variable>::iterator VariableSet::begin() const {
+            return detail::ConstVariables<Variable>::make_iterator(variables.begin());
         }
         
-        VariableSet::iterator VariableSet::end() {
-            return boost::make_transform_iterator(variables.end(), detail::Dereferencer<Variable>());
+        typename detail::Variables<Variable>::iterator VariableSet::end() {
+            return detail::Variables<Variable>::make_iterator(variables.end());
         }
 
-        VariableSet::const_iterator VariableSet::end() const {
-            return boost::make_transform_iterator(variables.end(), detail::Dereferencer<Variable const>());
+        detail::ConstVariables<Variable>::iterator VariableSet::end() const {
+            return detail::ConstVariables<Variable>::make_iterator(variables.end());
         }
 
         Variable const& VariableSet::getVariable(storm::expressions::Variable const& variable) const {
@@ -138,6 +117,15 @@ namespace storm {
         
         bool VariableSet::hasVariable(storm::expressions::Variable const& variable) const {
             return variableToVariable.find(variable) != variableToVariable.end();
+        }
+        
+        bool VariableSet::hasTransientVariable() const {
+            for (auto const& variable : variables) {
+                if (variable->isTransient()) {
+                    return true;
+                }
+            }
+            return false;
         }
         
         bool VariableSet::containsBooleanVariable() const {
@@ -152,24 +140,43 @@ namespace storm {
             return !unboundedIntegerVariables.empty();
         }
         
+        bool VariableSet::containsRealVariables() const {
+            return !realVariables.empty();
+        }
+        
+        bool VariableSet::containsNonTransientRealVariables() const {
+            for (auto const& variable : realVariables) {
+                if (!variable->isTransient()) {
+                    std::cout << "var " << variable->getName() << "is non-transient " << std::endl;
+                    return true;
+                }
+            }
+            return false;
+        }
+        
         bool VariableSet::empty() const {
             return !(containsBooleanVariable() || containsBoundedIntegerVariable() || containsUnboundedIntegerVariables());
         }
         
-        template class detail::Dereferencer<Variable>;
-        template class detail::Dereferencer<BooleanVariable>;
-        template class detail::Dereferencer<BoundedIntegerVariable>;
-        template class detail::Dereferencer<UnboundedIntegerVariable>;
-        template class detail::Dereferencer<Variable const>;
-        template class detail::Dereferencer<BooleanVariable const>;
-        template class detail::Dereferencer<BoundedIntegerVariable const>;
-        template class detail::Dereferencer<UnboundedIntegerVariable const>;
-        template class detail::Variables<BooleanVariable>;
-        template class detail::Variables<BoundedIntegerVariable>;
-        template class detail::Variables<UnboundedIntegerVariable>;
-        template class detail::ConstVariables<BooleanVariable>;
-        template class detail::ConstVariables<BoundedIntegerVariable>;
-        template class detail::ConstVariables<UnboundedIntegerVariable>;
-
+        uint_fast64_t VariableSet::getNumberOfTransientVariables() const {
+            uint_fast64_t result = 0;
+            for (auto const& variable : variables) {
+                if (variable->isTransient()) {
+                    ++result;
+                }
+            }
+            return result;
+        }
+        
+        std::vector<std::shared_ptr<Variable const>> VariableSet::getTransientVariables() const {
+            std::vector<std::shared_ptr<Variable const>> result;
+            for (auto const& variable : variables) {
+                if (variable->isTransient()) {
+                    result.push_back(variable);
+                }
+            }
+            return result;
+        }
+        
     }
 }

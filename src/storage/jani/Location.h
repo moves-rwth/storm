@@ -1,8 +1,8 @@
 #pragma once
 
 #include <string>
-#include <vector>
-#include "src/storage/jani/Assignment.h"
+
+#include "src/storage/jani/OrderedAssignments.h"
 
 namespace storm {
     namespace jani {
@@ -25,9 +25,19 @@ namespace storm {
             std::string const& getName() const;
             
             /*!
-             * Retrieves the transient assignments of this location.
+             * Retrieves the assignments of this location.
              */
-            std::vector<Assignment> const& getTransientAssignments() const;
+            OrderedAssignments const& getAssignments() const;
+            
+            /*!
+             * Adds the given transient assignment to this location.
+             */
+            void addTransientAssignment(storm::jani::Assignment const& assignment);
+  
+            /*!
+             * Substitutes all variables in all expressions according to the given substitution.
+             */
+            void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution);
             
             /*!
              * Checks whether the location is valid, that is, whether the assignments are indeed all transient assignments.
@@ -39,7 +49,7 @@ namespace storm {
             std::string name;
             
             /// The transient assignments made in this location.
-            std::vector<Assignment> transientAssignments;
+            OrderedAssignments assignments;
         };
         
     }

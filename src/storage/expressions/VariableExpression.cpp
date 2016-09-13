@@ -63,8 +63,8 @@ namespace storm {
             return this->shared_from_this();
         }
         
-        boost::any VariableExpression::accept(ExpressionVisitor& visitor) const {
-            return visitor.visit(*this);
+        boost::any VariableExpression::accept(ExpressionVisitor& visitor, boost::any const& data) const {
+            return visitor.visit(*this, data);
         }
         
         void VariableExpression::printToStream(std::ostream& stream) const {

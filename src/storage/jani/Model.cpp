@@ -34,6 +34,10 @@ namespace storm {
             silentActionIndex = addAction(storm::jani::Action(SILENT_ACTION_NAME));
         }
         
+        storm::expressions::ExpressionManager& Model::getManager() const {
+            return *expressionManager;
+        }
+        
         uint64_t Model::getJaniVersion() const {
             return version;
         }
@@ -104,29 +108,35 @@ namespace storm {
         std::vector<Constant>& Model::getConstants() {
             return constants;
         }
-
+        
         Variable const& Model::addVariable(Variable const& variable) {
             if (variable.isBooleanVariable()) {
-                return addBooleanVariable(variable.asBooleanVariable());
+                return addVariable(variable.asBooleanVariable());
             } else if (variable.isBoundedIntegerVariable()) {
-                return addBoundedIntegerVariable(variable.asBoundedIntegerVariable());
+                return addVariable(variable.asBoundedIntegerVariable());
             } else if (variable.isUnboundedIntegerVariable()) {
-                return addUnboundedIntegerVariable(variable.asUnboundedIntegerVariable());
+                return addVariable(variable.asUnboundedIntegerVariable());
+            } else if (variable.isRealVariable()) {
+                return addVariable(variable.asRealVariable());
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Variable has invalid type.");
             }
         }
 
-        BooleanVariable const& Model::addBooleanVariable(BooleanVariable const& variable) {
-            return globalVariables.addBooleanVariable(variable);
+        BooleanVariable const& Model::addVariable(BooleanVariable const& variable) {
+            return globalVariables.addVariable(variable);
         }
         
-        BoundedIntegerVariable const& Model::addBoundedIntegerVariable(BoundedIntegerVariable const& variable) {
-            return globalVariables.addBoundedIntegerVariable(variable);
+        BoundedIntegerVariable const& Model::addVariable(BoundedIntegerVariable const& variable) {
+            return globalVariables.addVariable(variable);
         }
         
-        UnboundedIntegerVariable const& Model::addUnboundedIntegerVariable(UnboundedIntegerVariable const& variable) {
-            return globalVariables.addUnboundedIntegerVariable(variable);
+        UnboundedIntegerVariable const& Model::addVariable(UnboundedIntegerVariable const& variable) {
+            return globalVariables.addVariable(variable);
+        }
+
+        RealVariable const& Model::addVariable(RealVariable const& variable) {
+            return globalVariables.addVariable(variable);
         }
 
         VariableSet& Model::getGlobalVariables() {
@@ -135,6 +145,23 @@ namespace storm {
 
         VariableSet const& Model::getGlobalVariables() const {
             return globalVariables;
+        }
+        
+        bool Model::hasGlobalVariable(std::string const& name) const {
+            return globalVariables.hasVariable(name);
+        }
+        
+        Variable const& Model::getGlobalVariable(std::string const& name) const {
+            return globalVariables.getVariable(name);
+        }
+        
+        bool Model::hasNonGlobalTransientVariable() const {
+            for (auto const& automaton : automata) {
+                if (automaton.hasTransientVariable()) {
+                    return true;
+                }
+            }
+            return false;
         }
         
         storm::expressions::ExpressionManager& Model::getExpressionManager() {
@@ -171,6 +198,12 @@ namespace storm {
             auto it = automatonToIndex.find(name);
             STORM_LOG_THROW(it != automatonToIndex.end(), storm::exceptions::InvalidOperationException, "Unable to retrieve unknown automaton '" << name << "'.");
             return automata[it->second];
+        }
+        
+        uint64_t Model::getAutomatonIndex(std::string const& name) const {
+            auto it = automatonToIndex.find(name);
+            STORM_LOG_THROW(it != automatonToIndex.end(), storm::exceptions::InvalidOperationException, "Unable to retrieve unknown automaton '" << name << "'.");
+            return it->second;
         }
         
         std::size_t Model::getNumberOfAutomata() const {
@@ -304,9 +337,7 @@ namespace storm {
             
             // Substitute constants in all global variables.
             for (auto& variable : result.getGlobalVariables().getBoundedIntegerVariables()) {
-                variable.setInitExpression(variable.getInitExpression().substitute(constantSubstitution));
-                variable.setLowerBound(variable.getLowerBound().substitute(constantSubstitution));
-                variable.setUpperBound(variable.getUpperBound().substitute(constantSubstitution));
+                variable.substitute(constantSubstitution);
             }
             
             // Substitute constants in initial states expression.
@@ -314,26 +345,7 @@ namespace storm {
             
             // Substitute constants in variables of automata and their edges.
             for (auto& automaton : result.getAutomata()) {
-                for (auto& variable : automaton.getVariables().getBoundedIntegerVariables()) {
-                    variable.setInitExpression(variable.getInitExpression().substitute(constantSubstitution));
-                    variable.setLowerBound(variable.getLowerBound().substitute(constantSubstitution));
-                    variable.setUpperBound(variable.getUpperBound().substitute(constantSubstitution));
-                }
-                
-                automaton.setInitialStatesRestriction(automaton.getInitialStatesExpression().substitute(constantSubstitution));
-                
-                for (auto& edge : automaton.getEdges()) {
-                    edge.setGuard(edge.getGuard().substitute(constantSubstitution));
-                    if (edge.hasRate()) {
-                        edge.setRate(edge.getRate().substitute(constantSubstitution));
-                    }
-                    for (auto& destination : edge.getDestinations()) {
-                        destination.setProbability(destination.getProbability().substitute(constantSubstitution));
-                        for (auto& assignment : destination.getAssignments()) {
-                            assignment.setAssignedExpression(assignment.getAssignedExpression().substitute(constantSubstitution));
-                        }
-                    }
-                }
+                automaton.substitute(constantSubstitution);
             }
             
             return result;

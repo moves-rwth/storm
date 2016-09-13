@@ -52,6 +52,11 @@ namespace storm {
             
             virtual bool isBoundedIntegerVariable() const override;
 
+            /*!
+             * Substitutes all variables in all expressions according to the given substitution.
+             */
+            virtual void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) override;
+            
         private:
             // The expression defining the lower bound of the variable.
             storm::expressions::Expression lowerBound;
@@ -61,7 +66,7 @@ namespace storm {
         };
         
         /**
-         * Convenience function to call the appropriate constructor and retur a shared pointer to the variable.
+         * Convenience function to call the appropriate constructor and return a shared pointer to the variable.
          */
         std::shared_ptr<BoundedIntegerVariable> makeBoundedIntegerVariable(std::string const& name, storm::expressions::Variable const& variable, boost::optional<storm::expressions::Expression> initValue, bool transient, boost::optional<storm::expressions::Expression> lowerBound, boost::optional<storm::expressions::Expression> upperBound);
     }

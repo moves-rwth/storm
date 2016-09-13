@@ -30,6 +30,11 @@ namespace storm {
              * Creates an empty model with the given type.
              */
             Model(std::string const& name, ModelType const& modelType, uint64_t version = 1, boost::optional<std::shared_ptr<storm::expressions::ExpressionManager>> const& expressionManager = boost::none);
+
+            /*!
+             * Retrieves the expression manager responsible for the expressions in the model.
+             */
+            storm::expressions::ExpressionManager& getManager() const;
             
             /*!
              * Retrieves the JANI-version of the model.
@@ -106,7 +111,7 @@ namespace storm {
              * Retrieves the constant with the given name (if any).
              */
             Constant const& getConstant(std::string const& name) const;
-
+            
             /*!
              * Adds the given variable to this model.
              */
@@ -115,17 +120,22 @@ namespace storm {
             /*!
              * Adds the given boolean variable to this model.
              */
-            BooleanVariable const& addBooleanVariable(BooleanVariable const& variable);
+            BooleanVariable const& addVariable(BooleanVariable const& variable);
             
             /*!
              * Adds the given bounded integer variable to this model.
              */
-            BoundedIntegerVariable const& addBoundedIntegerVariable(BoundedIntegerVariable const& variable);
+            BoundedIntegerVariable const& addVariable(BoundedIntegerVariable const& variable);
             
             /*!
              * Adds the given unbounded integer variable to this model.
              */
-            UnboundedIntegerVariable const& addUnboundedIntegerVariable(UnboundedIntegerVariable const& variable);
+            UnboundedIntegerVariable const& addVariable(UnboundedIntegerVariable const& variable);
+
+            /*!
+             * Adds the given real variable to this model.
+             */
+            RealVariable const& addVariable(RealVariable const& variable);
 
             /*!
              * Retrieves the variables of this automaton.
@@ -136,6 +146,21 @@ namespace storm {
              * Retrieves the variables of this automaton.
              */
             VariableSet const& getGlobalVariables() const;
+
+            /*!
+             * Retrieves whether this model has a global variable with the given name.
+             */
+            bool hasGlobalVariable(std::string const& name) const;
+            
+            /*!
+             * Retrieves the global variable with the given name if one exists.
+             */
+            Variable const& getGlobalVariable(std::string const& name) const;
+            
+            /*!
+             * Retrieves whether this model has a non-global transient variable.
+             */
+            bool hasNonGlobalTransientVariable() const;
             
             /*!
              * Retrieves the manager responsible for the expressions in the JANI model.
@@ -171,6 +196,11 @@ namespace storm {
              * Retrieves the automaton with the given name.
              */
             Automaton const& getAutomaton(std::string const& name) const;
+            
+            /*!
+             * Retrieves the index of the given automaton.
+             */
+            uint64_t getAutomatonIndex(std::string const& name) const;
 
             /*!
              * Retrieves the number of automata in this model.

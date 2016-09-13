@@ -1219,20 +1219,15 @@ namespace storm {
                 }
             }
             
+            stateActionRewards.get().exportToDot("prismrew.dot");
+            
             return storm::models::symbolic::StandardRewardModel<Type, ValueType>(stateRewards, stateActionRewards, transitionRewards);
         }
         
         template <storm::dd::DdType Type, typename ValueType>
-        storm::prism::Program const& DdPrismModelBuilder<Type, ValueType>::getTranslatedProgram() const {
-            return preparedProgram.get();
-        }
-        
-        template <storm::dd::DdType Type, typename ValueType>
         std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdPrismModelBuilder<Type, ValueType>::build(storm::prism::Program const& program, Options const& options) {
-            preparedProgram = program;
-            
-            if (preparedProgram->hasUndefinedConstants()) {
-                std::vector<std::reference_wrapper<storm::prism::Constant const>> undefinedConstants = preparedProgram->getUndefinedConstants();
+            if (program.hasUndefinedConstants()) {
+                std::vector<std::reference_wrapper<storm::prism::Constant const>> undefinedConstants = program.getUndefinedConstants();
                 std::stringstream stream;
                 bool printComma = false;
                 for (auto const& constant : undefinedConstants) {
@@ -1247,13 +1242,11 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Program still contains these undefined constants: " + stream.str());
             }
             
-            preparedProgram = preparedProgram->substituteConstants();
-            
-            STORM_LOG_DEBUG("Building representation of program:" << std::endl << *preparedProgram << std::endl);
+            STORM_LOG_DEBUG("Building representation of program:" << std::endl << program << std::endl);
             
             // Start by initializing the structure used for storing all information needed during the model generation.
             // In particular, this creates the meta variables used to encode the model.
-            GenerationInformation generationInfo(*preparedProgram);
+            GenerationInformation generationInfo(program);
             
             SystemResult system = createSystemDecisionDiagram(generationInfo);
             storm::dd::Add<Type, ValueType> transitionMatrix = system.allTransitionsDd;
@@ -1264,7 +1257,7 @@ namespace storm {
             // If we were asked to treat some states as terminal states, we cut away their transitions now.
             storm::dd::Bdd<Type> terminalStatesBdd = generationInfo.manager->getBddZero();
             if (options.terminalStates || options.negatedTerminalStates) {
-                std::map<storm::expressions::Variable, storm::expressions::Expression> constantsSubstitution = preparedProgram->getConstantsSubstitution();
+                std::map<storm::expressions::Variable, storm::expressions::Expression> constantsSubstitution = program.getConstantsSubstitution();
                 
                 if (options.terminalStates) {
                     storm::expressions::Expression terminalExpression;
@@ -1273,7 +1266,7 @@ namespace storm {
                     } else {
                         std::string const& labelName = boost::get<std::string>(options.terminalStates.get());
                         if (program.hasLabel(labelName)) {
-                            terminalExpression = preparedProgram->getLabelExpression(labelName);
+                            terminalExpression = program.getLabelExpression(labelName);
                         } else {
                             STORM_LOG_THROW(labelName == "init" || labelName == "deadlock", storm::exceptions::InvalidArgumentException, "Terminal states refer to illegal label '" << labelName << "'.");
                         }
@@ -1294,7 +1287,7 @@ namespace storm {
                     } else {
                         std::string const& labelName = boost::get<std::string>(options.negatedTerminalStates.get());
                         if (program.hasLabel(labelName)) {
-                            negatedTerminalExpression = preparedProgram->getLabelExpression(labelName);
+                            negatedTerminalExpression = program.getLabelExpression(labelName);
                         } else {
                             STORM_LOG_THROW(labelName == "init" || labelName == "deadlock", storm::exceptions::InvalidArgumentException, "Terminal states refer to illegal label '" << labelName << "'.");
                         }
@@ -1377,18 +1370,18 @@ namespace storm {
             
             // First, we make sure that all selected reward models actually exist.
             for (auto const& rewardModelName : options.rewardModelsToBuild) {
-                STORM_LOG_THROW(rewardModelName.empty() || preparedProgram->hasRewardModel(rewardModelName), storm::exceptions::InvalidArgumentException, "Model does not possess a reward model with the name '" << rewardModelName << "'.");
+                STORM_LOG_THROW(rewardModelName.empty() || program.hasRewardModel(rewardModelName), storm::exceptions::InvalidArgumentException, "Model does not possess a reward model with the name '" << rewardModelName << "'.");
             }
             
-            for (auto const& rewardModel : preparedProgram->getRewardModels()) {
+            for (auto const& rewardModel : program.getRewardModels()) {
                 if (options.buildAllRewardModels || options.rewardModelsToBuild.find(rewardModel.getName()) != options.rewardModelsToBuild.end()) {
                     selectedRewardModels.push_back(rewardModel);
                 }
             }
             // If no reward model was selected until now and a referenced reward model appears to be unique, we build
             // the only existing reward model (given that no explicit name was given for the referenced reward model).
-            if (selectedRewardModels.empty() && preparedProgram->getNumberOfRewardModels() == 1 && options.rewardModelsToBuild.size() == 1 && *options.rewardModelsToBuild.begin() == "") {
-                selectedRewardModels.push_back(preparedProgram->getRewardModel(0));
+            if (selectedRewardModels.empty() && program.getNumberOfRewardModels() == 1 && options.rewardModelsToBuild.size() == 1 && *options.rewardModelsToBuild.begin() == "") {
+                selectedRewardModels.push_back(program.getRewardModel(0));
             }
             
             std::unordered_map<std::string, storm::models::symbolic::StandardRewardModel<Type, ValueType>> rewardModels;
@@ -1398,7 +1391,7 @@ namespace storm {
             
             // Build the labels that can be accessed as a shortcut.
             std::map<std::string, storm::expressions::Expression> labelToExpressionMapping;
-            for (auto const& label : preparedProgram->getLabels()) {
+            for (auto const& label : program.getLabels()) {
                 labelToExpressionMapping.emplace(label.getName(), label.getStatePredicateExpression());
             }
             
@@ -1415,7 +1408,7 @@ namespace storm {
         
         template <storm::dd::DdType Type, typename ValueType>
         storm::dd::Bdd<Type> DdPrismModelBuilder<Type, ValueType>::createInitialStatesDecisionDiagram(GenerationInformation& generationInfo) {
-            storm::dd::Bdd<Type> initialStates = generationInfo.rowExpressionAdapter->translateExpression(generationInfo.program.getInitialConstruct().getInitialStatesExpression()).toBdd();
+            storm::dd::Bdd<Type> initialStates = generationInfo.rowExpressionAdapter->translateExpression(generationInfo.program.getInitialStatesExpression()).toBdd();
             
             for (auto const& metaVariable : generationInfo.rowMetaVariables) {
                 initialStates &= generationInfo.manager->getRange(metaVariable);

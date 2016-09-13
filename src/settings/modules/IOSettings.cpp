@@ -17,8 +17,9 @@ namespace storm {
             const std::string IOSettings::exportMatOptionName = "exportmat";
             const std::string IOSettings::explicitOptionName = "explicit";
             const std::string IOSettings::explicitOptionShortName = "exp";
-            const std::string IOSettings::symbolicOptionName = "symbolic";
-            const std::string IOSettings::symbolicOptionShortName = "s";
+            const std::string IOSettings::prismInputOptionName = "prism";
+            const std::string IOSettings::janiInputOptionName = "jani";
+            const std::string IOSettings::prismToJaniOptionName = "prism2jani";
             const std::string IOSettings::explorationOrderOptionName = "explorder";
             const std::string IOSettings::explorationOrderOptionShortName = "eo";
             const std::string IOSettings::transitionRewardsOptionName = "transrew";
@@ -38,8 +39,11 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, explicitOptionName, false, "Parses the model given in an explicit (sparse) representation.").setShortName(explicitOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("transition filename", "The name of the file from which to read the transitions.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build())
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("labeling filename", "The name of the file from which to read the state labeling.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, symbolicOptionName, false, "Parses the model given in a symbolic representation.").setShortName(symbolicOptionShortName)
-                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file from which to read the symbolic model.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, prismInputOptionName, false, "Parses the model given in the PRISM format.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file from which to read the PRISM input.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, janiInputOptionName, false, "Parses the model given in the JANI format.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file from which to read the JANI input.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, prismToJaniOptionName, false, "If set, the input PRISM model is transformed to JANI.").build());
 
                 std::vector<std::string> explorationOrders = {"dfs", "bfs"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, explorationOrderOptionName, false, "Sets which exploration order to use.").setShortName(explorationOrderOptionShortName)
@@ -51,7 +55,7 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The file from which to read the state rewards.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, choiceLabelingOptionName, false, "If given, the choice labels are read from this file and added to the explicit model. Note that this requires the model to be given as an explicit model (i.e., via --" + explicitOptionName + ").")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The file from which to read the choice labels.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, constantsOptionName, false, "Specifies the constant replacements to use in symbolic models. Note that Note that this requires the model to be given as an symbolic model (i.e., via --" + symbolicOptionName + ").").setShortName(constantsOptionShortName)
+                this->addOption(storm::settings::OptionBuilder(moduleName, constantsOptionName, false, "Specifies the constant replacements to use in symbolic models. Note that this requires the model to be given as an symbolic model (i.e., via --" + prismInputOptionName + " or --" + janiInputOptionName + ").").setShortName(constantsOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("values", "A comma separated list of constants and their value, e.g. a=1,b=2,c=3.").setDefaultValueString("").build()).build());
             }
 
@@ -75,14 +79,30 @@ namespace storm {
                 return this->getOption(explicitOptionName).getArgumentByName("labeling filename").getValueAsString();
             }
             
-            bool IOSettings::isSymbolicSet() const {
-                return this->getOption(symbolicOptionName).getHasOptionBeenSet();
+            bool IOSettings::isPrismInputSet() const {
+                return this->getOption(prismInputOptionName).getHasOptionBeenSet();
             }
             
-            std::string IOSettings::getSymbolicModelFilename() const {
-                return this->getOption(symbolicOptionName).getArgumentByName("filename").getValueAsString();
+            bool IOSettings::isPrismOrJaniInputSet() const {
+                return isJaniInputSet() || isPrismInputSet();
             }
             
+            bool IOSettings::isPrismToJaniSet() const {
+                return this->getOption(prismToJaniOptionName).getHasOptionBeenSet();
+            }
+            
+            std::string IOSettings::getPrismInputFilename() const {
+                return this->getOption(prismInputOptionName).getArgumentByName("filename").getValueAsString();
+            }
+
+            bool IOSettings::isJaniInputSet() const {
+                return this->getOption(janiInputOptionName).getHasOptionBeenSet();
+            }
+
+            std::string IOSettings::getJaniInputFilename() const {
+                return this->getOption(janiInputOptionName).getArgumentByName("filename").getValueAsString();
+            }
+
             bool IOSettings::isExplorationOrderSet() const {
                 return this->getOption(explorationOrderOptionName).getHasOptionBeenSet();
             }
@@ -141,8 +161,15 @@ namespace storm {
             }
 
             bool IOSettings::check() const {
+                // Ensure that not two symbolic input models were given.
+                STORM_LOG_THROW(!isJaniInputSet() || !isPrismInputSet(), storm::exceptions::InvalidSettingsException, "Symbolic model ");
+                
                 // Ensure that the model was given either symbolically or explicitly.
-                STORM_LOG_THROW(!isSymbolicSet() || !isExplicitSet(), storm::exceptions::InvalidSettingsException, "The model may be either given in an explicit or a symbolic format, but not both.");
+                STORM_LOG_THROW(!isJaniInputSet() || !isPrismInputSet() || !isExplicitSet(), storm::exceptions::InvalidSettingsException, "The model may be either given in an explicit or a symbolic format (PRISM or JANI), but not both.");
+                
+                // Make sure PRISM-to-JANI conversion is only set if the actual input is in PRISM format.
+                STORM_LOG_THROW(!isPrismToJaniSet() || isPrismInputSet(), storm::exceptions::InvalidSettingsException, "For the transformation from PRISM to JANI, the input model must be given in the prism format.");
+                
                 return true;
             }
 

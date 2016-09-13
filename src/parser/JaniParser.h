@@ -42,7 +42,8 @@ namespace storm {
             storm::jani::Property parseProperty(json const& propertyStructure);
             storm::jani::Automaton parseAutomaton(json const& automatonStructure, storm::jani::Model const& parentModel);
             std::shared_ptr<storm::jani::Variable>  parseVariable(json const& variableStructure, std::string const& scopeDescription, bool prefWithScope = false);
-            storm::expressions::Expression parseExpression(json const& expressionStructure, std::string const& scopeDescription, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& localVars = {});
+            storm::expressions::Expression parseExpression(json const& expressionStructure, std::string const& scopeDescription, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& localVars = std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>>());
+            
         private:
             std::shared_ptr<storm::jani::Constant> parseConstant(json const& constantStructure, std::string const& scopeDescription = "global");
 

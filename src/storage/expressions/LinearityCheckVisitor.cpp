@@ -12,27 +12,27 @@ namespace storm {
         }
         
         bool LinearityCheckVisitor::check(Expression const& expression) {
-            LinearityStatus result = boost::any_cast<LinearityStatus>(expression.getBaseExpression().accept(*this));
+            LinearityStatus result = boost::any_cast<LinearityStatus>(expression.getBaseExpression().accept(*this, boost::none));
             return result == LinearityStatus::LinearWithoutVariables || result == LinearityStatus::LinearContainsVariables;
         }
         
-        boost::any LinearityCheckVisitor::visit(IfThenElseExpression const& expression) {
+        boost::any LinearityCheckVisitor::visit(IfThenElseExpression const& expression, boost::any const& data) {
             // An if-then-else expression is never linear.
             return LinearityStatus::NonLinear;
         }
         
-        boost::any LinearityCheckVisitor::visit(BinaryBooleanFunctionExpression const& expression) {
+        boost::any LinearityCheckVisitor::visit(BinaryBooleanFunctionExpression const& expression, boost::any const& data) {
             // Boolean function applications are not allowed in linear expressions.
             return LinearityStatus::NonLinear;
         }
         
-        boost::any LinearityCheckVisitor::visit(BinaryNumericalFunctionExpression const& expression) {
-            LinearityStatus leftResult = boost::any_cast<LinearityStatus>(expression.getFirstOperand()->accept(*this));
+        boost::any LinearityCheckVisitor::visit(BinaryNumericalFunctionExpression const& expression, boost::any const& data) {
+            LinearityStatus leftResult = boost::any_cast<LinearityStatus>(expression.getFirstOperand()->accept(*this, data));
             if (leftResult == LinearityStatus::NonLinear) {
                 return LinearityStatus::NonLinear;
             }
 
-            LinearityStatus rightResult = boost::any_cast<LinearityStatus>(expression.getSecondOperand()->accept(*this));
+            LinearityStatus rightResult = boost::any_cast<LinearityStatus>(expression.getSecondOperand()->accept(*this, data));
             if (rightResult == LinearityStatus::NonLinear) {
                 return LinearityStatus::NonLinear;
             }
@@ -55,37 +55,37 @@ namespace storm {
             STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Illegal binary numerical expression operator.");
         }
         
-        boost::any LinearityCheckVisitor::visit(BinaryRelationExpression const& expression) {
+        boost::any LinearityCheckVisitor::visit(BinaryRelationExpression const& expression, boost::any const& data) {
             return LinearityStatus::NonLinear;
         }
         
-        boost::any LinearityCheckVisitor::visit(VariableExpression const& expression) {
+        boost::any LinearityCheckVisitor::visit(VariableExpression const& expression, boost::any const& data) {
             return LinearityStatus::LinearContainsVariables;
         }
         
-        boost::any LinearityCheckVisitor::visit(UnaryBooleanFunctionExpression const& expression) {
+        boost::any LinearityCheckVisitor::visit(UnaryBooleanFunctionExpression const& expression, boost::any const& data) {
             // Boolean function applications are not allowed in linear expressions.
             return LinearityStatus::NonLinear;
         }
         
-        boost::any LinearityCheckVisitor::visit(UnaryNumericalFunctionExpression const& expression) {
+        boost::any LinearityCheckVisitor::visit(UnaryNumericalFunctionExpression const& expression, boost::any const& data) {
             switch (expression.getOperatorType()) {
-                case UnaryNumericalFunctionExpression::OperatorType::Minus: return expression.getOperand()->accept(*this);
+                case UnaryNumericalFunctionExpression::OperatorType::Minus: return expression.getOperand()->accept(*this, data);
                 case UnaryNumericalFunctionExpression::OperatorType::Floor:
                 case UnaryNumericalFunctionExpression::OperatorType::Ceil: return LinearityStatus::NonLinear;
             }
             STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Illegal unary numerical expression operator.");
         }
         
-        boost::any LinearityCheckVisitor::visit(BooleanLiteralExpression const& expression) {
+        boost::any LinearityCheckVisitor::visit(BooleanLiteralExpression const& expression, boost::any const& data) {
             return LinearityStatus::NonLinear;
         }
         
-        boost::any LinearityCheckVisitor::visit(IntegerLiteralExpression const& expression) {
+        boost::any LinearityCheckVisitor::visit(IntegerLiteralExpression const& expression, boost::any const& data) {
             return LinearityStatus::LinearWithoutVariables;
         }
         
-        boost::any LinearityCheckVisitor::visit(DoubleLiteralExpression const& expression) {
+        boost::any LinearityCheckVisitor::visit(RationalLiteralExpression const& expression, boost::any const& data) {
             return LinearityStatus::LinearWithoutVariables;
         }
     }

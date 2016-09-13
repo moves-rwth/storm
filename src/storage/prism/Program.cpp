@@ -20,7 +20,7 @@
 
 #include "src/storage/prism/CompositionVisitor.h"
 #include "src/storage/prism/Compositions.h"
-#include "src/storage/prism/CompositionToJaniVisitor.h"
+#include "src/storage/prism/ToJaniConverter.h"
 
 namespace storm {
     namespace prism {
@@ -148,28 +148,15 @@ namespace storm {
             // Start by creating the necessary mappings from the given ones.
             this->createMappings();
             
-            // Set the initial construct.
+            // Set the initial construct if given.
             if (initialConstruct) {
                 this->initialConstruct = initialConstruct.get();
             } else {
-                // Create a new initial construct if none was given.
-                storm::expressions::Expression newInitialExpression = manager->boolean(true);
-                
-                for (auto const& booleanVariable : this->getGlobalBooleanVariables()) {
-                    newInitialExpression = newInitialExpression && storm::expressions::iff(booleanVariable.getExpression(), booleanVariable.getInitialValueExpression());
+                // Otherwise, we create the missing initial values.
+                this->createMissingInitialValues();
+                for (auto& modules : this->modules) {
+                    modules.createMissingInitialValues();
                 }
-                for (auto const& integerVariable : this->getGlobalIntegerVariables()) {
-                    newInitialExpression = newInitialExpression && integerVariable.getExpression() == integerVariable.getInitialValueExpression();
-                }
-                for (auto const& module : this->getModules()) {
-                    for (auto const& booleanVariable : module.getBooleanVariables()) {
-                        newInitialExpression = newInitialExpression && storm::expressions::iff(booleanVariable.getExpression(), booleanVariable.getInitialValueExpression());
-                    }
-                    for (auto const& integerVariable : module.getIntegerVariables()) {
-                        newInitialExpression = newInitialExpression && integerVariable.getExpression() == integerVariable.getInitialValueExpression();
-                    }
-                }
-                this->initialConstruct = storm::prism::InitialConstruct(newInitialExpression, this->getInitialConstruct().getFilename(), this->getInitialConstruct().getLineNumber());
             }
             
             if (finalModel) {
@@ -230,7 +217,7 @@ namespace storm {
             // constants' variables is empty (except for the update probabilities).
             
             // Start by checking the defining expressions of all defined constants. If it contains a currently undefined
-            //constant, we need to mark the target constant as undefined as well.
+            // constant, we need to mark the target constant as undefined as well.
             for (auto const& constant : this->getConstants()) {
                 if (constant.isDefined()) {
                     if (constant.getExpression().containsVariable(undefinedConstantVariables)) {
@@ -241,13 +228,17 @@ namespace storm {
             
             // Now check initial value expressions of global variables.
             for (auto const& booleanVariable : this->getGlobalBooleanVariables()) {
-                if (booleanVariable.getInitialValueExpression().containsVariable(undefinedConstantVariables)) {
-                    return false;
+                if (booleanVariable.hasInitialValue()) {
+                    if (booleanVariable.getInitialValueExpression().containsVariable(undefinedConstantVariables)) {
+                        return false;
+                    }
                 }
             }
             for (auto const& integerVariable : this->getGlobalIntegerVariables()) {
-                if (integerVariable.getInitialValueExpression().containsVariable(undefinedConstantVariables)) {
-                    return false;
+                if (integerVariable.hasInitialValue()) {
+                    if (integerVariable.getInitialValueExpression().containsVariable(undefinedConstantVariables)) {
+                        return false;
+                    }
                 }
                 if (integerVariable.getLowerBoundExpression().containsVariable(undefinedConstantVariables)) {
                     return false;
@@ -266,7 +257,9 @@ namespace storm {
             
             // Proceed by checking each of the modules.
             for (auto const& module : this->getModules()) {
-                module.containsVariablesOnlyInUpdateProbabilities(undefinedConstantVariables);
+                if (!module.containsVariablesOnlyInUpdateProbabilities(undefinedConstantVariables)) {
+                    return false;
+                }
             }
             
             // Check the reward models.
@@ -275,8 +268,10 @@ namespace storm {
             }
             
             // Initial construct.
-            if (this->getInitialConstruct().getInitialStatesExpression().containsVariable(undefinedConstantVariables)) {
-                return false;
+            if (this->hasInitialConstruct()) {
+                if (this->getInitialConstruct().getInitialStatesExpression().containsVariable(undefinedConstantVariables)) {
+                    return false;
+                }
             }
             
             // Labels.
@@ -336,7 +331,6 @@ namespace storm {
             }
             return constantsSubstitution;
         }
-        
         
         std::size_t Program::getNumberOfConstants() const {
             return this->getConstants().size();
@@ -446,8 +440,59 @@ namespace storm {
             return actionToIndexMap;
         }
         
+        bool Program::hasInitialConstruct() const {
+            return static_cast<bool>(initialConstruct);
+        }
+        
         storm::prism::InitialConstruct const& Program::getInitialConstruct() const {
+            return this->initialConstruct.get();
+        }
+        
+        boost::optional<InitialConstruct> const& Program::getOptionalInitialConstruct() const {
             return this->initialConstruct;
+        }
+        
+        storm::expressions::Expression Program::getInitialStatesExpression() const {
+            // If there is an initial construct, return its expression. If not, we construct the expression from the
+            // initial values of the variables (which have to exist).
+            if (this->hasInitialConstruct()) {
+                return this->getInitialConstruct().getInitialStatesExpression();
+            } else {
+                storm::expressions::Expression result;
+                
+                for (auto const& variable : this->getGlobalBooleanVariables()) {
+                    if (result.isInitialized()) {
+                        result = result && storm::expressions::iff(variable.getExpressionVariable(), variable.getInitialValueExpression());
+                    } else {
+                        result = storm::expressions::iff(variable.getExpressionVariable(), variable.getInitialValueExpression());
+                    }
+                }
+                for (auto const& variable : this->getGlobalIntegerVariables()) {
+                    if (result.isInitialized()) {
+                        result = result && variable.getExpressionVariable() == variable.getInitialValueExpression();
+                    } else {
+                        result = variable.getExpressionVariable() == variable.getInitialValueExpression();
+                    }
+                }
+                for (auto const& module : this->getModules()) {
+                    for (auto const& variable : module.getBooleanVariables()) {
+                        if (result.isInitialized()) {
+                            result = result && storm::expressions::iff(variable.getExpressionVariable(), variable.getInitialValueExpression());
+                        } else {
+                            result = storm::expressions::iff(variable.getExpressionVariable(), variable.getInitialValueExpression());
+                        }
+                    }
+                    for (auto const& variable : module.getIntegerVariables()) {
+                        if (result.isInitialized()) {
+                            result = result && variable.getExpressionVariable() == variable.getInitialValueExpression();
+                        } else {
+                            result = variable.getExpressionVariable() == variable.getInitialValueExpression();
+                        }
+                    }
+                }
+                
+                return result;
+            }
         }
         
         bool Program::specifiesSystemComposition() const {
@@ -611,7 +656,7 @@ namespace storm {
                 newModules.push_back(module.restrictCommands(indexSet));
             }
             
-            return Program(this->manager, this->getModelType(), this->getConstants(), this->getGlobalBooleanVariables(), this->getGlobalIntegerVariables(), this->getFormulas(), newModules, this->getActionNameToIndexMapping(), this->getRewardModels(), this->getLabels(), this->getInitialConstruct(), this->getOptionalSystemCompositionConstruct());
+            return Program(this->manager, this->getModelType(), this->getConstants(), this->getGlobalBooleanVariables(), this->getGlobalIntegerVariables(), this->getFormulas(), newModules, this->getActionNameToIndexMapping(), this->getRewardModels(), this->getLabels(), this->getOptionalInitialConstruct(), this->getOptionalSystemCompositionConstruct());
         }
         
         void Program::createMappings() {
@@ -711,11 +756,11 @@ namespace storm {
                 STORM_LOG_THROW(definedUndefinedConstants.find(constantExpressionPair.first) != definedUndefinedConstants.end(), storm::exceptions::InvalidArgumentException, "Unable to define non-existant constant.");
             }
             
-            return Program(this->manager, this->getModelType(), newConstants, this->getGlobalBooleanVariables(), this->getGlobalIntegerVariables(), this->getFormulas(), this->getModules(), this->getActionNameToIndexMapping(), this->getRewardModels(), this->getLabels(), this->getInitialConstruct(), this->getOptionalSystemCompositionConstruct());
+            return Program(this->manager, this->getModelType(), newConstants, this->getGlobalBooleanVariables(), this->getGlobalIntegerVariables(), this->getFormulas(), this->getModules(), this->getActionNameToIndexMapping(), this->getRewardModels(), this->getLabels(), this->getOptionalInitialConstruct(), this->getOptionalSystemCompositionConstruct());
         }
         
         Program Program::substituteConstants() const {
-            // We start by creating the appropriate substitution
+            // We start by creating the appropriate substitution.
             std::map<storm::expressions::Variable, storm::expressions::Expression> constantSubstitution;
             std::vector<Constant> newConstants(this->getConstants());
             for (uint_fast64_t constantIndex = 0; constantIndex < newConstants.size(); ++constantIndex) {
@@ -763,7 +808,10 @@ namespace storm {
                 newRewardModels.emplace_back(rewardModel.substitute(constantSubstitution));
             }
             
-            storm::prism::InitialConstruct newInitialConstruct = this->getInitialConstruct().substitute(constantSubstitution);
+            boost::optional<storm::prism::InitialConstruct> newInitialConstruct;
+            if (this->hasInitialConstruct()) {
+                newInitialConstruct = this->getInitialConstruct().substitute(constantSubstitution);
+            }
             
             std::vector<Label> newLabels;
             newLabels.reserve(this->getNumberOfLabels());
@@ -807,18 +855,22 @@ namespace storm {
             // Now we check the variable declarations. We start with the global variables.
             std::set<storm::expressions::Variable> variables;
             for (auto const& variable : this->getGlobalBooleanVariables()) {
-                // Check the initial value of the variable.
-                std::set<storm::expressions::Variable> containedVariables = variable.getInitialValueExpression().getVariables();
-                std::set<storm::expressions::Variable> illegalVariables;
-                std::set_difference(containedVariables.begin(), containedVariables.end(), constants.begin(), constants.end(), std::inserter(illegalVariables, illegalVariables.begin()));
-                bool isValid = illegalVariables.empty();
-                
-                if (!isValid) {
-                    std::vector<std::string> illegalVariableNames;
-                    for (auto const& var : illegalVariables) {
-                        illegalVariableNames.push_back(var.getName());
+                if (variable.hasInitialValue()) {
+                    STORM_LOG_THROW(!this->hasInitialConstruct(), storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": illegal to specify initial value if an initial construct is present.");
+                    
+                    // Check the initial value of the variable.
+                    std::set<storm::expressions::Variable> containedVariables = variable.getInitialValueExpression().getVariables();
+                    std::set<storm::expressions::Variable> illegalVariables;
+                    std::set_difference(containedVariables.begin(), containedVariables.end(), constants.begin(), constants.end(), std::inserter(illegalVariables, illegalVariables.begin()));
+                    bool isValid = illegalVariables.empty();
+                    
+                    if (!isValid) {
+                        std::vector<std::string> illegalVariableNames;
+                        for (auto const& var : illegalVariables) {
+                            illegalVariableNames.push_back(var.getName());
+                        }
+                        STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": initial value expression refers to unknown constants: " << boost::algorithm::join(illegalVariableNames, ",") << ".");
                     }
-                    STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": initial value expression refers to unknown constants: " << boost::algorithm::join(illegalVariableNames, ",") << ".");
                 }
                 
                 // Record the new identifier for future checks.
@@ -853,16 +905,20 @@ namespace storm {
                     STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": upper bound expression refers to unknown constants: " << boost::algorithm::join(illegalVariableNames, ",") << ".");
                 }
                 
-                // Check the initial value of the variable.
-                containedVariables = variable.getInitialValueExpression().getVariables();
-                std::set_difference(containedVariables.begin(), containedVariables.end(), constants.begin(), constants.end(), std::inserter(illegalVariables, illegalVariables.begin()));
-                isValid = illegalVariables.empty();
-                if (!isValid) {
-                    std::vector<std::string> illegalVariableNames;
-                    for (auto const& var : illegalVariables) {
-                        illegalVariableNames.push_back(var.getName());
+                if (variable.hasInitialValue()) {
+                    STORM_LOG_THROW(!this->hasInitialConstruct(), storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": illegal to specify initial value if an initial construct is present.");
+
+                    // Check the initial value of the variable.
+                    containedVariables = variable.getInitialValueExpression().getVariables();
+                    std::set_difference(containedVariables.begin(), containedVariables.end(), constants.begin(), constants.end(), std::inserter(illegalVariables, illegalVariables.begin()));
+                    isValid = illegalVariables.empty();
+                    if (!isValid) {
+                        std::vector<std::string> illegalVariableNames;
+                        for (auto const& var : illegalVariables) {
+                            illegalVariableNames.push_back(var.getName());
+                        }
+                        STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": initial value expression refers to unknown constants: " << boost::algorithm::join(illegalVariableNames, ",") << ".");
                     }
-                    STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": initial value expression refers to unknown constants: " << boost::algorithm::join(illegalVariableNames, ",") << ".");
                 }
                 
                 // Record the new identifier for future checks.
@@ -875,17 +931,21 @@ namespace storm {
             // Now go through the variables of the modules.
             for (auto const& module : this->getModules()) {
                 for (auto const& variable : module.getBooleanVariables()) {
-                    // Check the initial value of the variable.
-                    std::set<storm::expressions::Variable> containedVariables = variable.getInitialValueExpression().getVariables();
-                    std::set<storm::expressions::Variable> illegalVariables;
-                    std::set_difference(containedVariables.begin(), containedVariables.end(), constants.begin(), constants.end(), std::inserter(illegalVariables, illegalVariables.begin()));
-                    bool isValid = illegalVariables.empty();
-                    if (!isValid) {
-                        std::vector<std::string> illegalVariableNames;
-                        for (auto const& var : illegalVariables) {
-                            illegalVariableNames.push_back(var.getName());
+                    if (variable.hasInitialValue()) {
+                        STORM_LOG_THROW(!this->hasInitialConstruct(), storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": illegal to specify initial value if an initial construct is present.");
+
+                        // Check the initial value of the variable.
+                        std::set<storm::expressions::Variable> containedVariables = variable.getInitialValueExpression().getVariables();
+                        std::set<storm::expressions::Variable> illegalVariables;
+                        std::set_difference(containedVariables.begin(), containedVariables.end(), constants.begin(), constants.end(), std::inserter(illegalVariables, illegalVariables.begin()));
+                        bool isValid = illegalVariables.empty();
+                        if (!isValid) {
+                            std::vector<std::string> illegalVariableNames;
+                            for (auto const& var : illegalVariables) {
+                                illegalVariableNames.push_back(var.getName());
+                            }
+                            STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": initial value expression refers to unknown constants: " << boost::algorithm::join(illegalVariableNames, ",") << ".");
                         }
-                        STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": initial value expression refers to unknown constants: " << boost::algorithm::join(illegalVariableNames, ",") << ".");
                     }
                     
                     // Record the new identifier for future checks.
@@ -918,17 +978,21 @@ namespace storm {
                         STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": upper bound expression refers to unknown constants: " << boost::algorithm::join(illegalVariableNames, ",") << ".");
                     }
                     
-                    // Check the initial value of the variable.
-                    containedVariables = variable.getInitialValueExpression().getVariables();
-                    illegalVariables.clear();
-                    std::set_difference(containedVariables.begin(), containedVariables.end(), constants.begin(), constants.end(), std::inserter(illegalVariables, illegalVariables.begin()));
-                    isValid = illegalVariables.empty();
-                    if (!isValid) {
-                        std::vector<std::string> illegalVariableNames;
-                        for (auto const& var : illegalVariables) {
-                            illegalVariableNames.push_back(var.getName());
+                    if (variable.hasInitialValue()) {
+                        STORM_LOG_THROW(!this->hasInitialConstruct(), storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": illegal to specify initial value if an initial construct is present.");
+
+                        // Check the initial value of the variable.
+                        containedVariables = variable.getInitialValueExpression().getVariables();
+                        illegalVariables.clear();
+                        std::set_difference(containedVariables.begin(), containedVariables.end(), constants.begin(), constants.end(), std::inserter(illegalVariables, illegalVariables.begin()));
+                        isValid = illegalVariables.empty();
+                        if (!isValid) {
+                            std::vector<std::string> illegalVariableNames;
+                            for (auto const& var : illegalVariables) {
+                                illegalVariableNames.push_back(var.getName());
+                            }
+                            STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": initial value expression refers to unknown constants: " << boost::algorithm::join(illegalVariableNames, ",") << ".");
                         }
-                        STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": initial value expression refers to unknown constants: " << boost::algorithm::join(illegalVariableNames, ",") << ".");
                     }
                     
                     // Record the new identifier for future checks.
@@ -1091,9 +1155,11 @@ namespace storm {
             }
             
             // Check the initial states expression.
-            std::set<storm::expressions::Variable> containedIdentifiers = this->getInitialConstruct().getInitialStatesExpression().getVariables();
-            bool isValid = std::includes(variablesAndConstants.begin(), variablesAndConstants.end(), containedIdentifiers.begin(), containedIdentifiers.end());
-            STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << this->getInitialConstruct().getFilename() << ", line " << this->getInitialConstruct().getLineNumber() << ": initial expression refers to unknown identifiers.");
+            if (this->hasInitialConstruct()) {
+                std::set<storm::expressions::Variable> containedIdentifiers = this->getInitialConstruct().getInitialStatesExpression().getVariables();
+                bool isValid = std::includes(variablesAndConstants.begin(), variablesAndConstants.end(), containedIdentifiers.begin(), containedIdentifiers.end());
+                STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << this->getInitialConstruct().getFilename() << ", line " << this->getInitialConstruct().getLineNumber() << ": initial construct refers to unknown identifiers.");
+            }
             
             // Check the system composition if given.
             if (systemCompositionConstruct) {
@@ -1151,17 +1217,28 @@ namespace storm {
         }
         
         Program Program::simplify() {
+            // Start by substituting the constants, because this will potentially erase some commands or even actions.
+            Program substitutedProgram = this->substituteConstants();
+            
+            // As we possibly delete some commands and some actions might be dropped from modules altogether, we need to
+            // maintain a list of actions that we need to remove in other modules. For example, if module A loses all [a]
+            // commands, we need to delete all [a] commands from all other modules as well. If we do not do that, we will
+            // remove the forced synchronization that was there before.
+            std::set<uint_fast64_t> actionIndicesToDelete;
+            
             std::vector<Module> newModules;
-            std::vector<Constant> newConstants = this->getConstants();
-            for (auto const& module : this->getModules()) {
-                // Remove identity assignments from the updates
+            std::vector<Constant> newConstants = substitutedProgram.getConstants();
+            for (auto const& module : substitutedProgram.getModules()) {
+                
+                // Discard all commands with a guard equivalent to false and remove identity assignments from the updates.
                 std::vector<Command> newCommands;
                 for (auto const& command : module.getCommands()) {
-                    newCommands.emplace_back(command.removeIdentityAssignmentsFromUpdates());
+                    if (!command.getGuardExpression().isFalse()) {
+                        newCommands.emplace_back(command.removeIdentityAssignmentsFromUpdates());
+                    }
                 }
                 
-                // Substitute Variables by Global constants if possible.
-                
+                // Substitute variables by global constants if possible.
                 std::map<storm::expressions::Variable, storm::expressions::Expression> booleanVars;
                 std::map<storm::expressions::Variable, storm::expressions::Expression> integerVars;
                 for (auto const& variable : module.getBooleanVariables()) {
@@ -1171,54 +1248,84 @@ namespace storm {
                     integerVars.emplace(variable.getExpressionVariable(), variable.getInitialValueExpression());
                 }
                 
+                // Collect all variables that are being written. These variables cannot be turned to constants.
                 for (auto const& command : newCommands) {
                     // Check all updates.
                     for (auto const& update : command.getUpdates()) {
                         // Check all assignments.
                         for (auto const& assignment : update.getAssignments()) {
-                            auto bit = booleanVars.find(assignment.getVariable());
-                            if(bit != booleanVars.end()) {
-                                booleanVars.erase(bit);
+                            if (assignment.getVariable().getType().isBooleanType()) {
+                                auto it = booleanVars.find(assignment.getVariable());
+                                if (it != booleanVars.end()) {
+                                    booleanVars.erase(it);
+                                }
                             } else {
-                                auto iit = integerVars.find(assignment.getVariable());
-                                if(iit != integerVars.end()) {
-                                    integerVars.erase(iit);
+                                auto it = integerVars.find(assignment.getVariable());
+                                if (it != integerVars.end()) {
+                                    integerVars.erase(it);
                                 }
                             }
                         }
                     }
                 }
                 
-                std::vector<storm::prism::BooleanVariable> newBVars;
-                for(auto const& variable : module.getBooleanVariables()) {
-                    if(booleanVars.count(variable.getExpressionVariable()) == 0) {
-                        newBVars.push_back(variable);
+                std::vector<storm::prism::BooleanVariable> newBooleanVars;
+                for (auto const& variable : module.getBooleanVariables()) {
+                    if (booleanVars.find(variable.getExpressionVariable()) == booleanVars.end()) {
+                        newBooleanVars.push_back(variable);
                     }
                 }
-                std::vector<storm::prism::IntegerVariable> newIVars;
-                for(auto const& variable : module.getIntegerVariables()) {
-                    if(integerVars.count(variable.getExpressionVariable()) == 0) {
-                        newIVars.push_back(variable);
+                std::vector<storm::prism::IntegerVariable> newIntegerVars;
+                for (auto const& variable : module.getIntegerVariables()) {
+                    if (integerVars.find(variable.getExpressionVariable()) == integerVars.end()) {
+                        newIntegerVars.push_back(variable);
                     }
                 }
                 
-                newModules.emplace_back(module.getName(), newBVars, newIVars, newCommands);
+                newModules.emplace_back(module.getName(), newBooleanVars, newIntegerVars, newCommands);
                 
-                for(auto const& entry : booleanVars) {
+                // Determine the set of action indices that have been deleted entirely.
+                std::set_difference(module.getSynchronizingActionIndices().begin(), module.getSynchronizingActionIndices().end(), newModules.back().getSynchronizingActionIndices().begin(), newModules.back().getSynchronizingActionIndices().end(), std::inserter(actionIndicesToDelete, actionIndicesToDelete.begin()));
+                
+                for (auto const& entry : booleanVars) {
                     newConstants.emplace_back(entry.first, entry.second);
                 }
                 
-                for(auto const& entry : integerVars) {
+                for (auto const& entry : integerVars) {
                     newConstants.emplace_back(entry.first, entry.second);
                 }
             }
             
-            return replaceModulesAndConstantsInProgram(newModules, newConstants).substituteConstants();
+            // If we have to delete whole actions, do so now.
+            std::map<std::string, uint_fast64_t> newActionToIndexMap;
+            std::vector<RewardModel> newRewardModels;
+            if (!actionIndicesToDelete.empty()) {
+                boost::container::flat_set<uint_fast64_t> actionsToKeep;
+                std::set_difference(this->getSynchronizingActionIndices().begin(), this->getSynchronizingActionIndices().end(), actionIndicesToDelete.begin(), actionIndicesToDelete.end(), std::inserter(actionsToKeep, actionsToKeep.begin()));
+                
+                // Insert the silent action as this is not contained in the synchronizing action indices.
+                actionsToKeep.insert(0);
+                
+                std::vector<Module> cleanedModules;
+                cleanedModules.reserve(newModules.size());
+                for (auto const& module : newModules) {
+                    cleanedModules.emplace_back(module.restrictCommands(actionsToKeep));
+                }
+                newModules = std::move(cleanedModules);
+                
+                newRewardModels.reserve(substitutedProgram.getNumberOfRewardModels());
+                for (auto const& rewardModel : substitutedProgram.getRewardModels()) {
+                    newRewardModels.emplace_back(rewardModel.restrictActionRelatedRewards(actionsToKeep));
+                }
+                
+                for (auto const& entry : this->getActionNameToIndexMapping()) {
+                    if (actionsToKeep.find(entry.second) != actionsToKeep.end()) {
+                        newActionToIndexMap.emplace(entry.first, entry.second);
+                    }
+                }
+            }
             
-        }
-        
-        Program Program::replaceModulesAndConstantsInProgram(std::vector<Module> const& newModules, std::vector<Constant> const& newConstants) {
-            return Program(this->manager, modelType, newConstants, getGlobalBooleanVariables(), getGlobalIntegerVariables(), getFormulas(), newModules, getActionNameToIndexMapping(), getRewardModels(), getLabels(), getInitialConstruct(), this->getOptionalSystemCompositionConstruct());
+            return Program(this->manager, modelType, newConstants, getGlobalBooleanVariables(), getGlobalIntegerVariables(), getFormulas(), newModules, actionIndicesToDelete.empty() ? getActionNameToIndexMapping() : newActionToIndexMap, actionIndicesToDelete.empty() ? this->getRewardModels() : newRewardModels, getLabels(), getOptionalInitialConstruct(), this->getOptionalSystemCompositionConstruct());
         }
         
         Program Program::flattenModules(std::unique_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory) const {
@@ -1404,7 +1511,7 @@ namespace storm {
             
             // Finally, we can create the module and the program and return it.
             storm::prism::Module singleModule(newModuleName.str(), allBooleanVariables, allIntegerVariables, newCommands, this->getFilename(), 0);
-            return Program(manager, this->getModelType(), this->getConstants(), std::vector<storm::prism::BooleanVariable>(), std::vector<storm::prism::IntegerVariable>(), this->getFormulas(), {singleModule}, actionToIndexMap, this->getRewardModels(), this->getLabels(), this->getInitialConstruct(), this->getOptionalSystemCompositionConstruct(), this->getFilename(), 0, true);
+            return Program(manager, this->getModelType(), this->getConstants(), std::vector<storm::prism::BooleanVariable>(), std::vector<storm::prism::IntegerVariable>(), this->getFormulas(), {singleModule}, actionToIndexMap, this->getRewardModels(), this->getLabels(), this->getOptionalInitialConstruct(), this->getOptionalSystemCompositionConstruct(), this->getFilename(), 0, true);
         }
         
         std::unordered_map<uint_fast64_t, std::string> Program::buildCommandIndexToActionNameMap() const {
@@ -1493,173 +1600,30 @@ namespace storm {
             return Command(newCommandIndex, false, actionIndex, actionName, newGuard, newUpdates, this->getFilename(), 0);
         }
         
-        uint_fast64_t Program::numberOfActions() const {
+        uint_fast64_t Program::getNumberOfActions() const {
             return this->actions.size();
         }
         
-        uint_fast64_t Program::largestActionIndex() const {
-            assert(numberOfActions() != 0);
-            return this->indexToActionMap.rbegin()->first;
-        }
-        
-        storm::expressions::ExpressionManager const& Program::getManager() const {
-            return *this->manager;
-        }
-        
-        storm::expressions::ExpressionManager& Program::getManager() {
-            return *this->manager;
-        }
-        
         storm::jani::Model Program::toJani(bool allVariablesGlobal) const {
-            // Start by creating an empty JANI model.
-            storm::jani::ModelType modelType;
-            switch (this->getModelType()) {
-                case Program::ModelType::DTMC: modelType = storm::jani::ModelType::DTMC;
-                    break;
-                case Program::ModelType::CTMC: modelType = storm::jani::ModelType::CTMC;
-                    break;
-                case Program::ModelType::MDP: modelType = storm::jani::ModelType::MDP;
-                    break;
-                case Program::ModelType::CTMDP: modelType = storm::jani::ModelType::CTMDP;
-                    break;
-                case Program::ModelType::MA: modelType = storm::jani::ModelType::MA;
-                    break;
-                default: modelType = storm::jani::ModelType::UNDEFINED;
-            }
-            storm::jani::Model janiModel("jani_from_prism", modelType, 1, manager);
-
-            // Add all constants of the PRISM program to the JANI model.
-            for (auto const& constant : constants) {
-                janiModel.addConstant(storm::jani::Constant(constant.getName(), constant.getExpressionVariable(), constant.isDefined() ? boost::optional<storm::expressions::Expression>(constant.getExpression()) : boost::none));
-            }
-            
-            // Maintain a mapping from expression variables to JANI variables so we can fill in the correct objects when
-            // creating assignments.
-            std::map<storm::expressions::Variable, std::reference_wrapper<storm::jani::Variable const>> variableToVariableMap;
-            
-            // Add all global variables of the PRISM program to the JANI model.
-            for (auto const& variable : globalIntegerVariables) {
-                storm::jani::BoundedIntegerVariable const& newVariable = janiModel.addBoundedIntegerVariable(storm::jani::BoundedIntegerVariable(variable.getName(), variable.getExpressionVariable(), variable.getInitialValueExpression(), variable.getLowerBoundExpression(), variable.getUpperBoundExpression()));
-                variableToVariableMap.emplace(variable.getExpressionVariable(), newVariable);
-            }
-            for (auto const& variable : globalBooleanVariables) {
-                storm::jani::BooleanVariable const& newVariable = janiModel.addBooleanVariable(storm::jani::BooleanVariable(variable.getName(), variable.getExpressionVariable(), variable.getInitialValueExpression()));
-                variableToVariableMap.emplace(variable.getExpressionVariable(), newVariable);
-            }
-            
-            // Add all actions of the PRISM program to the JANI model.
-            for (auto const& action : indexToActionMap) {
-                // Ignore the empty action as every JANI program has predefined tau action.
-                if (!action.second.empty()) {
-                    janiModel.addAction(storm::jani::Action(action.second));
+            ToJaniConverter converter;
+            return converter.convert(*this, allVariablesGlobal);
+        }
+        
+        storm::expressions::ExpressionManager& Program::getManager() const {
+            return *this->manager;
+        }
+        
+        void Program::createMissingInitialValues() {
+            for (auto& variable : globalBooleanVariables) {
+                if (!variable.hasInitialValue()) {
+                    variable.setInitialValueExpression(manager->boolean(false));
                 }
             }
-            
-            // Because of the rules of JANI, we have to make all variables of modules global that are read by other modules.
-
-            // Create a mapping from variables to the indices of module indices that write/read the variable.
-            std::map<storm::expressions::Variable, std::set<uint_fast64_t>> variablesToAccessingModuleIndices;
-            for (uint_fast64_t index = 0; index < modules.size(); ++index) {
-                storm::prism::Module const& module = modules[index];
-                
-                for (auto const& command : module.getCommands()) {
-                    std::set<storm::expressions::Variable> variables = command.getGuardExpression().getVariables();
-                    for (auto const& variable : variables) {
-                        variablesToAccessingModuleIndices[variable].insert(index);
-                    }
-                    
-                    for (auto const& update : command.getUpdates()) {
-                        for (auto const& assignment : update.getAssignments()) {
-                            variables = assignment.getExpression().getVariables();
-                            for (auto const& variable : variables) {
-                                variablesToAccessingModuleIndices[variable].insert(index);
-                            }
-                            variablesToAccessingModuleIndices[assignment.getVariable()].insert(index);
-                        }
-                    }
+            for (auto& variable : globalIntegerVariables) {
+                if (!variable.hasInitialValue()) {
+                    variable.setInitialValueExpression(variable.getLowerBoundExpression());
                 }
             }
-            
-            // Now create the separate JANI automata from the modules of the PRISM program. While doing so, we use the
-            // previously built mapping to make variables global that are read by more than one module.
-            for (auto const& module : modules) {
-                storm::jani::Automaton automaton(module.getName());
-
-                for (auto const& variable : module.getIntegerVariables()) {
-                    storm::jani::BoundedIntegerVariable newIntegerVariable(variable.getName(), variable.getExpressionVariable(), variable.getInitialValueExpression(), variable.getLowerBoundExpression(), variable.getUpperBoundExpression());
-                    std::set<uint_fast64_t> const& accessingModuleIndices = variablesToAccessingModuleIndices[variable.getExpressionVariable()];
-                    // If there is exactly one module reading and writing the variable, we can make the variable local to this module.
-                    if (!allVariablesGlobal && accessingModuleIndices.size() == 1) {
-                        storm::jani::BoundedIntegerVariable const& newVariable = automaton.addBoundedIntegerVariable(newIntegerVariable);
-                        variableToVariableMap.emplace(variable.getExpressionVariable(), newVariable);
-                    } else if (!accessingModuleIndices.empty()) {
-                        // Otherwise, we need to make it global.
-                        storm::jani::BoundedIntegerVariable const& newVariable = janiModel.addBoundedIntegerVariable(newIntegerVariable);
-                        variableToVariableMap.emplace(variable.getExpressionVariable(), newVariable);
-                    }
-                }
-                for (auto const& variable : module.getBooleanVariables()) {
-                    storm::jani::BooleanVariable newBooleanVariable(variable.getName(), variable.getExpressionVariable(), variable.getInitialValueExpression());
-                    std::set<uint_fast64_t> const& accessingModuleIndices = variablesToAccessingModuleIndices[variable.getExpressionVariable()];
-                    // If there is exactly one module reading and writing the variable, we can make the variable local to this module.
-                    if (!allVariablesGlobal && accessingModuleIndices.size() == 1) {
-                        storm::jani::BooleanVariable const& newVariable = automaton.addBooleanVariable(newBooleanVariable);
-                        variableToVariableMap.emplace(variable.getExpressionVariable(), newVariable);
-                    } else if (!accessingModuleIndices.empty()) {
-                        // Otherwise, we need to make it global.
-                        storm::jani::BooleanVariable const& newVariable = janiModel.addBooleanVariable(newBooleanVariable);
-                        variableToVariableMap.emplace(variable.getExpressionVariable(), newVariable);
-                    }
-                }
-                automaton.setInitialStatesRestriction(manager->boolean(true));
-                
-                // Create a single location that will have all the edges.
-                uint64_t onlyLocation = automaton.addLocation(storm::jani::Location("l"));
-                automaton.addInitialLocation(onlyLocation);
-                
-                for (auto const& command : module.getCommands()) {
-                    boost::optional<storm::expressions::Expression> rateExpression;
-                    std::vector<storm::jani::EdgeDestination> destinations;
-                    if (this->getModelType() == Program::ModelType::CTMC || this->getModelType() == Program::ModelType::CTMDP) {
-                        for (auto const& update : command.getUpdates()) {
-                            if (rateExpression) {
-                                rateExpression = rateExpression.get() + update.getLikelihoodExpression();
-                            } else {
-                                rateExpression = update.getLikelihoodExpression();
-                            }
-                        }
-                    }
-                    
-                    for (auto const& update : command.getUpdates()) {
-                        std::vector<storm::jani::Assignment> assignments;
-                        for (auto const& assignment : update.getAssignments()) {
-                            assignments.push_back(storm::jani::Assignment(variableToVariableMap.at(assignment.getVariable()).get(), assignment.getExpression()));
-                        }
-                        
-                        if (rateExpression) {
-                            destinations.push_back(storm::jani::EdgeDestination(onlyLocation, manager->integer(1) / rateExpression.get(), assignments));
-                        } else {
-                            destinations.push_back(storm::jani::EdgeDestination(onlyLocation, update.getLikelihoodExpression(), assignments));
-                        }
-                    }
-                    automaton.addEdge(storm::jani::Edge(onlyLocation, janiModel.getActionIndex(command.getActionName()), rateExpression, command.getGuardExpression(), destinations));
-                }
-                
-                janiModel.addAutomaton(automaton);
-            }
-            janiModel.setInitialStatesRestriction(manager->boolean(true));
-            
-            // Set the standard system composition. This is possible, because we reject non-standard compositions anyway.
-            if (this->specifiesSystemComposition()) {
-                CompositionToJaniVisitor visitor;
-                janiModel.setSystemComposition(visitor.toJani(this->getSystemCompositionConstruct().getSystemComposition(), janiModel));
-            } else {
-                janiModel.setSystemComposition(janiModel.getStandardSystemComposition());
-            }
-            
-            janiModel.finalize();
-            
-            return janiModel;
         }
         
         std::ostream& operator<<(std::ostream& out, Program::ModelType const& type) {
@@ -1706,7 +1670,9 @@ namespace storm {
                 stream << label << std::endl;
             }
             
-            stream << program.getInitialConstruct() << std::endl;
+            if (program.hasInitialConstruct()) {
+                stream << program.getInitialConstruct() << std::endl;
+            }
             
             if (program.specifiesSystemComposition()) {
                 stream << program.getSystemCompositionConstruct();

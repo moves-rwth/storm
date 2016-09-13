@@ -3,6 +3,7 @@
 #include "src/storage/jani/BooleanVariable.h"
 #include "src/storage/jani/BoundedIntegerVariable.h"
 #include "src/storage/jani/UnboundedIntegerVariable.h"
+#include "src/storage/jani/RealVariable.h"
 
 namespace storm {
     namespace jani {
@@ -14,7 +15,6 @@ namespace storm {
         Variable::Variable(std::string const& name, storm::expressions::Variable const& variable, bool transient) : name(name), variable(variable), transient(transient), init() {
             // Intentionally left empty.
         }
-
 
         storm::expressions::Variable const& Variable::getExpressionVariable() const {
             return variable;
@@ -36,7 +36,11 @@ namespace storm {
             return false;
         }
 
-        bool Variable::isTransientVariable() const {
+        bool Variable::isRealVariable() const {
+            return false;
+        }
+        
+        bool Variable::isTransient() const {
             return transient;
         }
 
@@ -53,27 +57,41 @@ namespace storm {
         }
         
         BooleanVariable& Variable::asBooleanVariable() {
-            return dynamic_cast<BooleanVariable&>(*this);
+            return static_cast<BooleanVariable&>(*this);
         }
         
         BooleanVariable const& Variable::asBooleanVariable() const {
-            return dynamic_cast<BooleanVariable const&>(*this);
+            return static_cast<BooleanVariable const&>(*this);
         }
         
         BoundedIntegerVariable& Variable::asBoundedIntegerVariable() {
-            return dynamic_cast<BoundedIntegerVariable&>(*this);
+            return static_cast<BoundedIntegerVariable&>(*this);
         }
         
         BoundedIntegerVariable const& Variable::asBoundedIntegerVariable() const {
-            return dynamic_cast<BoundedIntegerVariable const&>(*this);
+            return static_cast<BoundedIntegerVariable const&>(*this);
         }
         
         UnboundedIntegerVariable& Variable::asUnboundedIntegerVariable() {
-            return dynamic_cast<UnboundedIntegerVariable&>(*this);
+            return static_cast<UnboundedIntegerVariable&>(*this);
         }
         
         UnboundedIntegerVariable const& Variable::asUnboundedIntegerVariable() const {
-            return dynamic_cast<UnboundedIntegerVariable const&>(*this);
+            return static_cast<UnboundedIntegerVariable const&>(*this);
+        }
+        
+        RealVariable& Variable::asRealVariable() {
+            return static_cast<RealVariable&>(*this);
+        }
+        
+        RealVariable const& Variable::asRealVariable() const {
+            return static_cast<RealVariable const&>(*this);
+        }
+        
+        void Variable::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
+            if (this->hasInitExpression()) {
+                this->setInitExpression(this->getInitExpression().substitute(substitution));
+            }
         }
         
     }

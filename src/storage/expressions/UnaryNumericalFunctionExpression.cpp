@@ -4,7 +4,7 @@
 
 #include "src/storage/expressions/UnaryNumericalFunctionExpression.h"
 #include "src/storage/expressions/IntegerLiteralExpression.h"
-#include "src/storage/expressions/DoubleLiteralExpression.h"
+#include "src/storage/expressions/RationalLiteralExpression.h"
 #include "ExpressionVisitor.h"
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidTypeException.h"
@@ -87,7 +87,7 @@ namespace storm {
                         case OperatorType::Floor: value = std::floor(boost::get<double>(operandEvaluation)); break;
                         case OperatorType::Ceil: value = std::ceil(boost::get<double>(operandEvaluation)); break;
                     }
-                    return std::shared_ptr<BaseExpression>(new DoubleLiteralExpression(this->getManager(), value));
+                    return std::shared_ptr<BaseExpression>(new RationalLiteralExpression(this->getManager(), value));
                 }
             }
             
@@ -98,8 +98,8 @@ namespace storm {
             }
         }
         
-        boost::any UnaryNumericalFunctionExpression::accept(ExpressionVisitor& visitor) const {
-            return visitor.visit(*this);
+        boost::any UnaryNumericalFunctionExpression::accept(ExpressionVisitor& visitor, boost::any const& data) const {
+            return visitor.visit(*this, data);
         }
         
         void UnaryNumericalFunctionExpression::printToStream(std::ostream& stream) const {

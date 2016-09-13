@@ -10,7 +10,7 @@
 namespace storm {
    
      storm::prism::Program parseProgram(std::string const& path) {
-        storm::prism::Program program= storm::parser::PrismParser::parse(path).simplify().simplify();
+        storm::prism::Program program = storm::parser::PrismParser::parse(path).simplify().simplify();
         program.checkValidity();
         return program;
     }
@@ -43,8 +43,23 @@ namespace storm {
         return parseFormulas(formulaParser, inputString);
     }
 
-    std::vector<std::shared_ptr<storm::logic::Formula const>> parseFormulasForProgram(std::string const& inputString, storm::prism::Program const& program) {
+    std::vector<std::shared_ptr<storm::logic::Formula const>> substituteConstantsInFormulas(std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
+        std::vector<std::shared_ptr<storm::logic::Formula const>> preprocessedFormulas;
+        for (auto const& formula : formulas) {
+            preprocessedFormulas.emplace_back(formula->substitute(substitution));
+        }
+        return preprocessedFormulas;
+    }
+    
+    std::vector<std::shared_ptr<storm::logic::Formula const>> parseFormulasForJaniModel(std::string const& inputString, storm::jani::Model const& model) {
+        storm::parser::FormulaParser formulaParser(model.getManager().getSharedPointer());
+        auto formulas = parseFormulas(formulaParser, inputString);
+        return substituteConstantsInFormulas(formulas, model.getConstantsSubstitution());
+    }
+    
+    std::vector<std::shared_ptr<storm::logic::Formula const>> parseFormulasForPrismProgram(std::string const& inputString, storm::prism::Program const& program) {
         storm::parser::FormulaParser formulaParser(program);
-        return parseFormulas(formulaParser, inputString);
+        auto formulas = parseFormulas(formulaParser, inputString);
+        return substituteConstantsInFormulas(formulas, program.getConstantsSubstitution());
     } 
 }

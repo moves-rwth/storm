@@ -108,17 +108,22 @@ namespace storm {
             /*!
              * Adds the given Boolean variable to this automaton.
              */
-            BooleanVariable const& addBooleanVariable(BooleanVariable const& variable);
+            BooleanVariable const& addVariable(BooleanVariable const& variable);
             
             /*!
              * Adds the given bounded integer variable to this automaton.
              */
-            BoundedIntegerVariable const& addBoundedIntegerVariable(BoundedIntegerVariable const& variable);
+            BoundedIntegerVariable const& addVariable(BoundedIntegerVariable const& variable);
             
             /*!
              * Adds the given unbounded integer variable to this automaton.
              */
-            UnboundedIntegerVariable const& addUnboundedIntegerVariable(UnboundedIntegerVariable const& variable);
+            UnboundedIntegerVariable const& addVariable(UnboundedIntegerVariable const& variable);
+
+            /*!
+             * Adds the given real variable to this automaton.
+             */
+            RealVariable const& addVariable(RealVariable const& variable);
 
             /*!
              * Retrieves the variables of this automaton.
@@ -129,6 +134,11 @@ namespace storm {
              * Retrieves the variables of this automaton.
              */
             VariableSet const& getVariables() const;
+            
+            /*!
+             * Retrieves whether this automaton has a transient variable.
+             */
+            bool hasTransientVariable() const;
             
             /*!
              * Retrieves whether the automaton has a location with the given name.
@@ -147,11 +157,21 @@ namespace storm {
              * Retrieves the locations of the automaton.
              */
             std::vector<Location> const& getLocations() const;
-            
+
+            /*!
+             * Retrieves the locations of the automaton.
+             */
+            std::vector<Location>& getLocations();
+
             /*!
              * Retrieves the location with the given index.
              */
             Location const& getLocation(uint64_t index) const;
+            
+            /*!
+             * Retrieves the location with the given index.
+             */
+            Location& getLocation(uint64_t index);
             
             /*!
              * Adds the given location to the automaton.
@@ -262,6 +282,11 @@ namespace storm {
              * Retrieves a list of expressions that characterize the legal values of the variables in this automaton.
              */
             std::vector<storm::expressions::Expression> getAllRangeExpressions() const;
+            
+            /*!
+             * Substitutes all variables in all expressions according to the given substitution.
+             */
+            void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution);
             
             /*!
              * Finalizes the building of this automaton. Subsequent changes to the automaton require another call to this

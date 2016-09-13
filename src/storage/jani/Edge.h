@@ -4,6 +4,7 @@
 #include <boost/container/flat_set.hpp>
 
 #include "src/storage/jani/EdgeDestination.h"
+#include "src/storage/jani/OrderedAssignments.h"
 
 namespace storm {
     namespace jani {
@@ -65,6 +66,11 @@ namespace storm {
             void addDestination(EdgeDestination const& destination);
             
             /*!
+             * Substitutes all variables in all expressions according to the given substitution.
+             */
+            void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution);
+            
+            /*!
              * Finalizes the building of this edge. Subsequent changes to the edge require another call to this
              * method. Note that this method is invoked by a call to <code>finalize</code> to the containing model.
              */
@@ -75,6 +81,25 @@ namespace storm {
              * that prior to calling this, the edge has to be finalized.
              */
             boost::container::flat_set<storm::expressions::Variable> const& getWrittenGlobalVariables() const;
+
+            /*!
+             * Adds a transient assignment to this edge.
+             *
+             * @param assignment The transient assignment to add.
+             * @return True if the assignment was added.
+             */
+            bool addTransientAssignment(Assignment const& assignment);
+            
+            /*!
+             * Retrieves the assignments of this edge.
+             */
+            OrderedAssignments const& getAssignments() const;
+
+            /*!
+             * Finds the transient assignments common to all destinations and lifts them to the edge. Afterwards, these
+             * assignments are no longer contained in the destination.
+             */
+            void liftTransientDestinationAssignments();
             
         private:
             /// The index of the source location.
@@ -92,6 +117,9 @@ namespace storm {
             
             /// The destinations of this edge.
             std::vector<EdgeDestination> destinations;
+            
+            /// The assignments made when taking this edge.
+            OrderedAssignments assignments;
             
             /// A set of global variables that is written by at least one of the edge's destinations. This set is
             /// initialized by the call to <code>finalize</code>.

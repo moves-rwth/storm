@@ -22,16 +22,16 @@ namespace storm {
             storm::dd::Add<Type, ValueType> translateExpression(storm::expressions::Expression const& expression);
             storm::dd::Bdd<Type> translateBooleanExpression(storm::expressions::Expression const& expression);
             
-            virtual boost::any visit(storm::expressions::IfThenElseExpression const& expression) override;
-            virtual boost::any visit(storm::expressions::BinaryBooleanFunctionExpression const& expression) override;
-            virtual boost::any visit(storm::expressions::BinaryNumericalFunctionExpression const& expression) override;
-            virtual boost::any visit(storm::expressions::BinaryRelationExpression const& expression) override;
-            virtual boost::any visit(storm::expressions::VariableExpression const& expression) override;
-            virtual boost::any visit(storm::expressions::UnaryBooleanFunctionExpression const& expression) override;
-            virtual boost::any visit(storm::expressions::UnaryNumericalFunctionExpression const& expression) override;
-            virtual boost::any visit(storm::expressions::BooleanLiteralExpression const& expression) override;
-            virtual boost::any visit(storm::expressions::IntegerLiteralExpression const& expression) override;
-            virtual boost::any visit(storm::expressions::DoubleLiteralExpression const& expression) override;
+            virtual boost::any visit(storm::expressions::IfThenElseExpression const& expression, boost::any const& data) override;
+            virtual boost::any visit(storm::expressions::BinaryBooleanFunctionExpression const& expression, boost::any const& data) override;
+            virtual boost::any visit(storm::expressions::BinaryNumericalFunctionExpression const& expression, boost::any const& data) override;
+            virtual boost::any visit(storm::expressions::BinaryRelationExpression const& expression, boost::any const& data) override;
+            virtual boost::any visit(storm::expressions::VariableExpression const& expression, boost::any const& data) override;
+            virtual boost::any visit(storm::expressions::UnaryBooleanFunctionExpression const& expression, boost::any const& data) override;
+            virtual boost::any visit(storm::expressions::UnaryNumericalFunctionExpression const& expression, boost::any const& data) override;
+            virtual boost::any visit(storm::expressions::BooleanLiteralExpression const& expression, boost::any const& data) override;
+            virtual boost::any visit(storm::expressions::IntegerLiteralExpression const& expression, boost::any const& data) override;
+            virtual boost::any visit(storm::expressions::RationalLiteralExpression const& expression, boost::any const& data) override;
 
         private:
             // The manager responsible for the DDs built by this adapter.
