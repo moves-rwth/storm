@@ -81,6 +81,11 @@ namespace storm {
              * Retrieves the actions of the model.
              */
             std::vector<Action> const& getActions() const;
+    
+            /*!
+             *  Builds a map with action indices mapped to their names
+             */
+            std::map<uint64_t, std::string> buildActionToNameMap() const;
             
             /*!
              * Retrieves all non-silent action indices of the model.

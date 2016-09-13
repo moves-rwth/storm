@@ -260,6 +260,16 @@ namespace storm {
             return result;
         }
         
+        std::map<uint64_t, std::string> Model::buildActionToNameMap() const {
+            std::map<uint64_t, std::string> mapping;
+            uint64_t i = 0;
+            for(auto const& act : actions) {
+                mapping[i] = act.getName();
+                ++i;
+            }
+            return mapping;
+        }
+        
         std::string const& Model::getSilentActionName() const {
             return actions[silentActionIndex].getName();
         }

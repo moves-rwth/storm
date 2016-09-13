@@ -194,6 +194,11 @@ namespace storm {
             std::set<uint64_t> const& getInitialLocationIndices() const;
 
             /*!
+             * Builds a map from ID to Location Name.
+             */
+            std::map<uint64_t, std::string> buildIdToLocationNameMap() const;
+            
+            /*!
              * Retrieves the edges of the location with the given name.
              */
             Edges getEdgesFromLocation(std::string const& name);
