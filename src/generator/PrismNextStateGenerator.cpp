@@ -242,7 +242,7 @@ namespace storm {
                     }
                     
                     if (this->options.isBuildChoiceLabelsSet()) {
-                        globalChoice.addChoiceLabels(choice.getChoiceLabels());
+                        globalChoice.addLabels(choice.getLabels());
                     }
                 }
                 
@@ -259,7 +259,7 @@ namespace storm {
                             
                         }
                     }
-                    globalChoice.addChoiceReward(stateActionRewardValue);
+                    globalChoice.addReward(stateActionRewardValue);
                 }
                 
                 // Move the newly fused choice in place.
@@ -382,7 +382,7 @@ namespace storm {
                     
                     // Remember the command labels only if we were asked to.
                     if (this->options.isBuildChoiceLabelsSet()) {
-                        choice.addChoiceLabel(command.getGlobalIndex());
+                        choice.addLabel(command.getGlobalIndex());
                     }
                     
                     // Iterate over all updates of the current command.
@@ -410,7 +410,7 @@ namespace storm {
                                 }
                             }
                         }
-                        choice.addChoiceReward(stateActionRewardValue);
+                        choice.addReward(stateActionRewardValue);
                     }
                     
                     // Check that the resulting distribution is in fact a distribution.
@@ -486,7 +486,7 @@ namespace storm {
                         if (this->options.isBuildChoiceLabelsSet()) {
                             // Add the labels of all commands to this choice.
                             for (uint_fast64_t i = 0; i < iteratorList.size(); ++i) {
-                                choice.addChoiceLabel(iteratorList[i]->get().getGlobalIndex());
+                                choice.addLabel(iteratorList[i]->get().getGlobalIndex());
                             }
                         }
                         
@@ -511,7 +511,7 @@ namespace storm {
                                     }
                                 }
                             }
-                            choice.addChoiceReward(stateActionRewardValue);
+                            choice.addReward(stateActionRewardValue);
                         }
                         
                         // Dispose of the temporary maps.

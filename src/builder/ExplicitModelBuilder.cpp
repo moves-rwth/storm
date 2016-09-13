@@ -274,7 +274,7 @@ namespace storm {
                     for (auto const& choice : behavior) {
                         // Add command labels if requested.
                         if (generator->getOptions().isBuildChoiceLabelsSet()) {
-                            choiceLabels.get().push_back(choice.getChoiceLabels());
+                            choiceLabels.get().push_back(choice.getLabels());
                         }
                         
                         // If we keep track of the Markovian choices, store whether the current one is Markovian.
@@ -289,7 +289,7 @@ namespace storm {
                         }
                         
                         // Add the rewards to the reward models.
-                        auto choiceRewardIt = choice.getChoiceRewards().begin();
+                        auto choiceRewardIt = choice.getRewards().begin();
                         for (auto& rewardModelBuilder : rewardModelBuilders) {
                             if (rewardModelBuilder.hasStateActionRewards()) {
                                 rewardModelBuilder.addStateActionReward(*choiceRewardIt);
