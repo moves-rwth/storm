@@ -9,8 +9,10 @@
 #include "src/settings/modules/IOSettings.h"
 #include "src/settings/modules/CoreSettings.h"
 #include "src/exceptions/OptionParserException.h"
+#include "src/settings/modules/JaniExportSettings.h"
 
 #include "src/utility/storm-version.h"
+#include "src/storage/jani/JSONExporter.h"
 
 
 // Includes for the linked libraries and versions header.
@@ -218,6 +220,10 @@ namespace storm {
                     }
                 } else if (ioSettings.isJaniInputSet()) {
                     model = storm::parseJaniModel(ioSettings.getJaniInputFilename()).first;
+                }
+                
+                if(model.isJaniModel() && storm::settings::getModule<storm::settings::modules::JaniExportSettings>().isJaniFileSet()) {
+                    storm::jani::JsonExporter::toFile(model.asJaniModel(), storm::settings::getModule<storm::settings::modules::JaniExportSettings>().getJaniFilename());
                 }
                 
                 // Get the string that assigns values to the unknown currently undefined constants in the model.
