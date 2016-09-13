@@ -405,9 +405,6 @@ namespace storm {
             // A mapping from all variable indices to their types.
             std::unordered_map<uint64_t, Type> indexToTypeMapping;
             
-            // The number of declared variables.
-            uint_fast64_t numberOfVariables;
-
             // Store counts for variables.
             uint_fast64_t numberOfBooleanVariables;
             uint_fast64_t numberOfIntegerVariables;

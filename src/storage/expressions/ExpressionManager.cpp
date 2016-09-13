@@ -52,7 +52,7 @@ namespace storm {
             }
         }
         
-        ExpressionManager::ExpressionManager() : nameToIndexMapping(), indexToNameMapping(), indexToTypeMapping(), numberOfVariables(0), numberOfBooleanVariables(0), numberOfIntegerVariables(0), numberOfBitVectorVariables(0), numberOfRationalVariables(0), numberOfAuxiliaryVariables(0), numberOfAuxiliaryBooleanVariables(0), numberOfAuxiliaryIntegerVariables(0), numberOfAuxiliaryBitVectorVariables(0), numberOfAuxiliaryRationalVariables(0), freshVariableCounter(0), types() {
+        ExpressionManager::ExpressionManager() : nameToIndexMapping(), indexToNameMapping(), indexToTypeMapping(), numberOfBooleanVariables(0), numberOfIntegerVariables(0), numberOfBitVectorVariables(0), numberOfRationalVariables(0), numberOfAuxiliaryVariables(0), numberOfAuxiliaryBooleanVariables(0), numberOfAuxiliaryIntegerVariables(0), numberOfAuxiliaryBitVectorVariables(0), numberOfAuxiliaryRationalVariables(0), freshVariableCounter(0), types() {
             // Intentionally left empty.
         }
         
@@ -232,7 +232,7 @@ namespace storm {
         }
         
         uint_fast64_t ExpressionManager::getNumberOfVariables() const {
-            return numberOfVariables;
+            return numberOfBooleanVariables + numberOfIntegerVariables + numberOfBitVectorVariables + numberOfRationalVariables;
         }
         
         uint_fast64_t ExpressionManager::getNumberOfBooleanVariables() const {
