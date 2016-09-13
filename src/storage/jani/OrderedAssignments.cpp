@@ -65,6 +65,19 @@ namespace storm {
             return true;
         }
         
+        bool OrderedAssignments::hasMultipleLevels() const {
+            if(allAssignments.empty()) {
+                return false;
+            }
+            uint64_t firstLevel = allAssignments.front()->getLevel();
+            for(auto const& assignment : allAssignments) {
+                if(assignment->getLevel() != firstLevel) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        
         bool OrderedAssignments::contains(Assignment const& assignment) const {
             auto it = lowerBound(assignment, allAssignments);
             if (it != allAssignments.end() && assignment == **it) {
