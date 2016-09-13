@@ -198,6 +198,8 @@ namespace storm {
                 }
                 return elements;
             }
+
+            bool canHaveNondeterminism() const;
             
             std::vector<DFT<ValueType>> topModularisation() const;
             

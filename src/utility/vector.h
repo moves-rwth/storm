@@ -19,6 +19,7 @@
 //template<typename ValueType>
 //std::ostream& operator<<(std::ostream& out, std::vector<ValueType> const& vector);
 std::ostream& operator<<(std::ostream& out, std::vector<double> const& vector);
+std::ostream& operator<<(std::ostream& out, std::vector<uint_fast64_t> const& vector);
 
 namespace storm {
     namespace utility {

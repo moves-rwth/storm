@@ -529,6 +529,11 @@ namespace storm {
         }
 
         template<typename ValueType>
+        bool DFT<ValueType>::canHaveNondeterminism() const {
+            return !getDependencies().empty();
+        }
+
+        template<typename ValueType>
         DFTColouring<ValueType> DFT<ValueType>::colourDFT() const {
             return DFTColouring<ValueType>(*this);
         }

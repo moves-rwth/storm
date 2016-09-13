@@ -9,11 +9,11 @@ namespace storm {
         DFTState<ValueType>::DFTState(DFT<ValueType> const& dft, DFTStateGenerationInfo const& stateGenerationInfo, size_t id) : mStatus(dft.stateVectorSize()), mId(id), mDft(dft), mStateGenerationInfo(stateGenerationInfo)  {
             
             // Initialize uses
-            for(size_t id  : mDft.getSpareIndices()) {
-                std::shared_ptr<DFTGate<ValueType> const> elem = mDft.getGate(id);
+            for(size_t spareId  : mDft.getSpareIndices()) {
+                std::shared_ptr<DFTGate<ValueType> const> elem = mDft.getGate(spareId);
                 STORM_LOG_ASSERT(elem->isSpareGate(), "Element is no spare gate.");
                 STORM_LOG_ASSERT(elem->nrChildren() > 0, "Element has no child.");
-                this->setUses(id, elem->children()[0]->id());
+                this->setUses(spareId, elem->children()[0]->id());
             }
             
             // Initialize activation

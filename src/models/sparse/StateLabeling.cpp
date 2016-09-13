@@ -29,7 +29,7 @@ namespace storm {
                 return true;
             }
             
-            StateLabeling StateLabeling::getSubLabeling(storm::storage::BitVector const& states) {
+            StateLabeling StateLabeling::getSubLabeling(storm::storage::BitVector const& states) const {
                 StateLabeling result(states.getNumberOfSetBits());
                 for (auto const& labelIndexPair : nameToLabelingIndexMap) {
                     result.addLabel(labelIndexPair.first, labelings[labelIndexPair.second] % states);

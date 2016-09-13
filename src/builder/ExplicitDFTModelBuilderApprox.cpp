@@ -12,223 +12,167 @@
 namespace storm {
     namespace builder {
 
-        template <typename ValueType>
-        ExplicitDFTModelBuilderApprox<ValueType>::ModelComponents::ModelComponents() : transitionMatrix(), stateLabeling(), markovianStates(), exitRates(), choiceLabeling() {
+        template <typename ValueType, typename StateType>
+        ExplicitDFTModelBuilderApprox<ValueType, StateType>::ModelComponents::ModelComponents() : transitionMatrix(), stateLabeling(), markovianStates(), exitRates(), choiceLabeling() {
             // Intentionally left empty.
         }
-        
-        template <typename ValueType>
-        ExplicitDFTModelBuilderApprox<ValueType>::ExplicitDFTModelBuilderApprox(storm::storage::DFT<ValueType> const& dft, storm::storage::DFTIndependentSymmetries const& symmetries, bool enableDC) : mDft(dft), enableDC(enableDC), stateStorage(((mDft.stateVectorSize() / 64) + 1) * 64) {
+
+        template <typename ValueType, typename StateType>
+        ExplicitDFTModelBuilderApprox<ValueType, StateType>::ExplicitDFTModelBuilderApprox(storm::storage::DFT<ValueType> const& dft, storm::storage::DFTIndependentSymmetries const& symmetries, bool enableDC) : dft(dft), enableDC(enableDC), stateStorage(((dft.stateVectorSize() / 64) + 1) * 64) {
             // stateVectorSize is bound for size of bitvector
 
-            mStateGenerationInfo = std::make_shared<storm::storage::DFTStateGenerationInfo>(mDft.buildStateGenerationInfo(symmetries));
+            stateGenerationInfo = std::make_shared<storm::storage::DFTStateGenerationInfo>(dft.buildStateGenerationInfo(symmetries));
         }
 
+        template <typename ValueType, typename StateType>
+        std::shared_ptr<storm::models::sparse::Model<ValueType>> ExplicitDFTModelBuilderApprox<ValueType, StateType>::buildModel(LabelOptions const& labelOpts) {
+            STORM_LOG_TRACE("Generating DFT state space");
 
-        template <typename ValueType>
-        std::shared_ptr<storm::models::sparse::Model<ValueType>> ExplicitDFTModelBuilderApprox<ValueType>::buildModel(LabelOptions const& labelOpts) {
             // Initialize
-            bool deterministicModel = false;
-            size_t rowOffset = 0;
-            ModelComponents modelComponents;
-            std::vector<uint_fast64_t> tmpMarkovianStates;
-            storm::storage::SparseMatrixBuilder<ValueType> transitionMatrixBuilder(0, 0, 0, false, !deterministicModel, 0);
+            StateType currentRowGroup = 0;
+            StateType currentRow = 0;
+            modelComponents.markovianStates = storm::storage::BitVector(INITIAL_BITVECTOR_SIZE);
+            // Create generator
+            storm::generator::DftNextStateGenerator<ValueType, StateType> generator(dft, *stateGenerationInfo, enableDC, mergeFailedStates);
+            // Create sparse matrix builder
+            storm::storage::SparseMatrixBuilder<ValueType> transitionMatrixBuilder(0, 0, 0, false, !generator.isDeterministicModel(), 0);
 
             if(mergeFailedStates) {
                 // Introduce explicit fail state
-                failedIndex = newIndex;
-                newIndex++;
-                transitionMatrixBuilder.newRowGroup(failedIndex);
-                transitionMatrixBuilder.addNextValue(failedIndex, failedIndex, storm::utility::one<ValueType>());
-                STORM_LOG_TRACE("Introduce fail state with id: " << failedIndex);
-                modelComponents.exitRates.push_back(storm::utility::one<ValueType>());
-                tmpMarkovianStates.push_back(failedIndex);        
+                storm::generator::StateBehavior<ValueType, StateType> behavior = generator.createMergeFailedState([this] (DFTStatePointer const& state) {
+                        this->failedStateId = newIndex++;
+                        stateRemapping.push_back(0);
+                        return this->failedStateId;
+                    } );
+
+                setRemapping(failedStateId, currentRowGroup);
+
+                STORM_LOG_ASSERT(!behavior.empty(), "Behavior is empty.");
+                setMarkovian(currentRowGroup, behavior.begin()->isMarkovian());
+
+                // If the model is nondeterministic, we need to open a row group.
+                if (!generator.isDeterministicModel()) {
+                    transitionMatrixBuilder.newRowGroup(currentRow);
+                }
+
+                // Now add self loop.
+                // TODO Matthias: maybe use general method.
+                STORM_LOG_ASSERT(behavior.getNumberOfChoices() == 1, "Wrong number of choices for failed state.");
+                STORM_LOG_ASSERT(behavior.begin()->size() == 1, "Wrong number of transitions for failed state.");
+                std::pair<StateType, ValueType> stateProbabilityPair = *(behavior.begin()->begin());
+                STORM_LOG_ASSERT(stateProbabilityPair.first == failedStateId, "No self loop for failed state.");
+                STORM_LOG_ASSERT(storm::utility::isOne<ValueType>(stateProbabilityPair.second), "Probability for failed state != 1.");
+                transitionMatrixBuilder.addNextValue(currentRow, stateProbabilityPair.first, stateProbabilityPair.second);
+                ++currentRow;
+                ++currentRowGroup;
             }
-            
+
+            // Create a callback for the next-state generator to enable it to add states
+            std::function<StateType (DFTStatePointer const&)> stateToIdCallback = std::bind(&ExplicitDFTModelBuilderApprox::getOrAddStateIndex, this, std::placeholders::_1);
+
+            // Build initial states
+            this->stateStorage.initialStateIndices = generator.getInitialStates(stateToIdCallback);
+            STORM_LOG_ASSERT(stateStorage.initialStateIndices.size() == 1, "Only one initial state assumed.");
+            StateType initialStateIndex = stateStorage.initialStateIndices[0];
+            STORM_LOG_TRACE("Initial state: " << initialStateIndex);
+
             // Explore state space
-            DFTStatePointer state = std::make_shared<storm::storage::DFTState<ValueType>>(mDft, *mStateGenerationInfo, newIndex);
-            auto exploreResult = exploreStates(state, rowOffset, transitionMatrixBuilder, tmpMarkovianStates, modelComponents.exitRates);
-            initialStateIndex = exploreResult.first;
-            bool deterministic = exploreResult.second;
-        
-            // Before ending the exploration check for pseudo states which are not initialized yet
-            for (auto & pseudoStatePair : mPseudoStatesMapping) {
-                if (pseudoStatePair.first == 0) {
-                    // Create state from pseudo state and explore
-                    STORM_LOG_ASSERT(stateStorage.stateToId.contains(pseudoStatePair.second), "Pseudo state not contained.");
-                    STORM_LOG_ASSERT(stateStorage.stateToId.getValue(pseudoStatePair.second) >= OFFSET_PSEUDO_STATE, "State is no pseudo state.");
-                    STORM_LOG_TRACE("Create pseudo state from bit vector " << pseudoStatePair.second);
-                    DFTStatePointer pseudoState = std::make_shared<storm::storage::DFTState<ValueType>>(pseudoStatePair.second, mDft, *mStateGenerationInfo, newIndex);
-                    STORM_LOG_ASSERT(pseudoStatePair.second == pseudoState->status(), "Pseudo states do not coincide.");
-                    STORM_LOG_TRACE("Explore pseudo state " << mDft.getStateString(pseudoState) << " with id " << pseudoState->getId());
-                    auto exploreResult = exploreStates(pseudoState, rowOffset, transitionMatrixBuilder, tmpMarkovianStates, modelComponents.exitRates);
-                    deterministic &= exploreResult.second;
-                    STORM_LOG_ASSERT(pseudoStatePair.first == pseudoState->getId(), "Pseudo state ids do not coincide");
-                    STORM_LOG_ASSERT(pseudoState->getId() == exploreResult.first, "Pseudo state ids do not coincide.");
-                }
-            }
-            
-            // Replace pseudo states in matrix
-            std::vector<uint_fast64_t> pseudoStatesVector;
-            for (auto const& pseudoStatePair : mPseudoStatesMapping) {
-                pseudoStatesVector.push_back(pseudoStatePair.first);
-            }
-            STORM_LOG_ASSERT(std::find(pseudoStatesVector.begin(), pseudoStatesVector.end(), 0) == pseudoStatesVector.end(), "Unexplored pseudo state still contained.");
-            transitionMatrixBuilder.replaceColumns(pseudoStatesVector, OFFSET_PSEUDO_STATE);
-            
-            STORM_LOG_DEBUG("Generated " << stateStorage.getNumberOfStates() + (mergeFailedStates ? 1 : 0) << " states");
-            STORM_LOG_DEBUG("Model is " << (deterministic ? "deterministic" : "non-deterministic"));
+            bool explorationFinished = false;
+            while (!explorationFinished) {
+                // Get the first state in the queue
+                DFTStatePointer currentState = statesToExplore.front();
+                STORM_LOG_ASSERT(stateStorage.stateToId.getValue(currentState->status()) == currentState->getId(), "Ids of states do not coincide.");
+                statesToExplore.pop_front();
 
-            size_t stateSize = stateStorage.getNumberOfStates() + (mergeFailedStates ? 1 : 0);
-            // Build Markov Automaton
-            modelComponents.markovianStates = storm::storage::BitVector(stateSize, tmpMarkovianStates);
-            // Build transition matrix
-            modelComponents.transitionMatrix = transitionMatrixBuilder.build(stateSize, stateSize);
-            if (stateSize <= 15) {
-                STORM_LOG_TRACE("Transition matrix: " << std::endl << modelComponents.transitionMatrix);
-            } else {
-                STORM_LOG_TRACE("Transition matrix: too big to print");
-            }
-            STORM_LOG_TRACE("Exit rates: " << modelComponents.exitRates);
-            STORM_LOG_TRACE("Markovian states: " << modelComponents.markovianStates);
-            
-            // Build state labeling
-            modelComponents.stateLabeling = storm::models::sparse::StateLabeling(stateStorage.getNumberOfStates() + (mergeFailedStates ? 1 : 0));
-            // Initial state is always first state without any failure
-            modelComponents.stateLabeling.addLabel("init");
-            modelComponents.stateLabeling.addLabelToState("init", initialStateIndex);
-            // Label all states corresponding to their status (failed, failsafe, failed BE)
-            if(labelOpts.buildFailLabel) {
-                modelComponents.stateLabeling.addLabel("failed");
-            } 
-            if(labelOpts.buildFailSafeLabel) {
-                modelComponents.stateLabeling.addLabel("failsafe");
-            }
-            
-            // Collect labels for all BE
-            std::vector<std::shared_ptr<storage::DFTBE<ValueType>>> basicElements = mDft.getBasicElements();
-            for (std::shared_ptr<storage::DFTBE<ValueType>> elem : basicElements) {
-                if(labelOpts.beLabels.count(elem->name()) > 0) {
-                    modelComponents.stateLabeling.addLabel(elem->name() + "_fail");
-                }
-            }
+                // Remember that this row group was actually filled with the transitions of a different state
+                setRemapping(currentState->getId(), currentRowGroup);
 
-            if(mergeFailedStates) {
-                modelComponents.stateLabeling.addLabelToState("failed", failedIndex);
-            }
-            for (auto const& stateIdPair : stateStorage.stateToId) {
-                storm::storage::BitVector state = stateIdPair.first;
-                size_t stateId = stateIdPair.second;
-                if (!mergeFailedStates && labelOpts.buildFailLabel && mDft.hasFailed(state, *mStateGenerationInfo)) {
-                    modelComponents.stateLabeling.addLabelToState("failed", stateId);
+                // Explore state
+                generator.load(currentState);
+                storm::generator::StateBehavior<ValueType, StateType> behavior = generator.expand(stateToIdCallback);
+
+                STORM_LOG_ASSERT(!behavior.empty(), "Behavior is empty.");
+                setMarkovian(currentRowGroup, behavior.begin()->isMarkovian());
+
+                // If the model is nondeterministic, we need to open a row group.
+                if (!generator.isDeterministicModel()) {
+                    transitionMatrixBuilder.newRowGroup(currentRow);
                 }
-                if (labelOpts.buildFailSafeLabel && mDft.isFailsafe(state, *mStateGenerationInfo)) {
-                    modelComponents.stateLabeling.addLabelToState("failsafe", stateId);
-                };
-                // Set fail status for each BE
-                for (std::shared_ptr<storage::DFTBE<ValueType>> elem : basicElements) {
-                    if (labelOpts.beLabels.count(elem->name()) > 0 && storm::storage::DFTState<ValueType>::hasFailed(state, mStateGenerationInfo->getStateIndex(elem->id())) ) {
-                        modelComponents.stateLabeling.addLabelToState(elem->name() + "_fail", stateId);
+
+                // Now add all choices.
+                for (auto const& choice : behavior) {
+                    // Add the probabilistic behavior to the matrix.
+                    for (auto const& stateProbabilityPair : choice) {
+
+                        // Check that pseudo state and its instantiation do not appear together
+                        // TODO Matthias: prove that this is not possible and remove
+                        if (stateProbabilityPair.first >= OFFSET_PSEUDO_STATE) {
+                            StateType newId = stateProbabilityPair.first - OFFSET_PSEUDO_STATE;
+                            STORM_LOG_ASSERT(newId < mPseudoStatesMapping.size(), "Id is not valid.");
+                            if (mPseudoStatesMapping[newId].first > 0) {
+                                // State exists already
+                                newId = mPseudoStatesMapping[newId].first;
+                                for (auto itFind = choice.begin(); itFind != choice.end(); ++itFind) {
+                                    STORM_LOG_ASSERT(itFind->first != newId, "Pseudo state and instantiation occur together in a distribution.");
+                                }
+                            }
+                        }
+
+                        transitionMatrixBuilder.addNextValue(currentRow, stateProbabilityPair.first, stateProbabilityPair.second);
                     }
+                    ++currentRow;
                 }
-            }
+                ++currentRowGroup;
 
-            std::shared_ptr<storm::models::sparse::Model<ValueType>> model;
-            
-            if (deterministic) {
-                // Turn the probabilities into rates by multiplying each row with the exit rate of the state.
-                // TODO Matthias: avoid transforming back and forth
-                storm::storage::SparseMatrix<ValueType> rateMatrix(modelComponents.transitionMatrix);
-                for (uint_fast64_t row = 0; row < rateMatrix.getRowCount(); ++row) {
-                    STORM_LOG_ASSERT(row < modelComponents.markovianStates.size(), "Row exceeds no. of markovian states.");
-                    if (modelComponents.markovianStates.get(row)) {
-                        for (auto& entry : rateMatrix.getRow(row)) {
-                            entry.setValue(entry.getValue() * modelComponents.exitRates[row]);
+                if (statesToExplore.empty()) {
+                    explorationFinished = true;
+                    // Before ending the exploration check for pseudo states which are not initialized yet
+                    for ( ; pseudoStatesToCheck < mPseudoStatesMapping.size(); ++pseudoStatesToCheck) {
+                        std::pair<StateType, storm::storage::BitVector> pseudoStatePair = mPseudoStatesMapping[pseudoStatesToCheck];
+                        if (pseudoStatePair.first == 0) {
+                            // Create state from pseudo state and explore
+                            STORM_LOG_ASSERT(stateStorage.stateToId.contains(pseudoStatePair.second), "Pseudo state not contained.");
+                            STORM_LOG_ASSERT(stateStorage.stateToId.getValue(pseudoStatePair.second) >= OFFSET_PSEUDO_STATE, "State is no pseudo state.");
+                            STORM_LOG_TRACE("Create pseudo state from bit vector " << pseudoStatePair.second);
+                            DFTStatePointer pseudoState = std::make_shared<storm::storage::DFTState<ValueType>>(pseudoStatePair.second, dft, *stateGenerationInfo, newIndex);
+                            STORM_LOG_ASSERT(pseudoStatePair.second == pseudoState->status(), "Pseudo states do not coincide.");
+                            STORM_LOG_TRACE("Explore pseudo state " << dft.getStateString(pseudoState) << " with id " << pseudoState->getId());
+
+                            getOrAddStateIndex(pseudoState);
+                            explorationFinished = false;
+                            break;
                         }
                     }
                 }
-                model = std::make_shared<storm::models::sparse::Ctmc<ValueType>>(std::move(rateMatrix), std::move(modelComponents.exitRates), std::move(modelComponents.stateLabeling));
-            } else {
-                std::shared_ptr<storm::models::sparse::MarkovAutomaton<ValueType>> ma = std::make_shared<storm::models::sparse::MarkovAutomaton<ValueType>>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), std::move(modelComponents.markovianStates), std::move(modelComponents.exitRates), true);
-                if (ma->hasOnlyTrivialNondeterminism()) {
-                    // Markov automaton can be converted into CTMC
-                    model = ma->convertToCTMC();
-                } else {
-                    model = ma;
-                }
-            }
-            
-            return model;
-        }
-        
-        template <typename ValueType>
-        std::shared_ptr<storm::models::sparse::Model<ValueType>> ExplicitDFTModelBuilderApprox<ValueType>::buildModelApprox(LabelOptions const& labelOpts) {
-            // Initialize
-            bool deterministicModel = false;
-            size_t rowOffset = 0;
-            ModelComponents modelComponents;
-            std::vector<uint_fast64_t> tmpMarkovianStates;
-            storm::storage::SparseMatrixBuilder<ValueType> transitionMatrixBuilder(0, 0, 0, false, !deterministicModel, 0);
-            
-            if(mergeFailedStates) {
-                // Introduce explicit fail state
-                failedIndex = newIndex;
-                newIndex++;
-                transitionMatrixBuilder.newRowGroup(failedIndex);
-                transitionMatrixBuilder.addNextValue(failedIndex, failedIndex, storm::utility::one<ValueType>());
-                STORM_LOG_TRACE("Introduce fail state with id: " << failedIndex);
-                modelComponents.exitRates.push_back(storm::utility::one<ValueType>());
-                tmpMarkovianStates.push_back(failedIndex);
-            }
-            
-            // Initialize generator
-            storm::generator::DftNextStateGenerator<ValueType, uint_fast64_t> generator(mDft, *mStateGenerationInfo);
-            
-            // Explore state space
-            typename storm::generator::DftNextStateGenerator<ValueType, uint_fast64_t>::StateToIdCallback stateToIdCallback = [this] (DFTStatePointer const& state) -> uint_fast64_t {
-                uint_fast64_t id = newIndex++;
-                std::cout << "Added state " << id << std::endl;
-                return id;
-            };
-            
-            uint_fast64_t id = generator.getInitialStates(stateToIdCallback)[0];
-            std::cout << "Initial state " << id << std::endl;
-            DFTStatePointer state = std::make_shared<storm::storage::DFTState<ValueType>>(mDft, *mStateGenerationInfo, newIndex);
-            auto exploreResult = exploreStates(state, rowOffset, transitionMatrixBuilder, tmpMarkovianStates, modelComponents.exitRates);
-            initialStateIndex = exploreResult.first;
-            bool deterministic = exploreResult.second;
-            
-            // Before ending the exploration check for pseudo states which are not initialized yet
-            for (auto & pseudoStatePair : mPseudoStatesMapping) {
-                if (pseudoStatePair.first == 0) {
-                    // Create state from pseudo state and explore
-                    STORM_LOG_ASSERT(stateStorage.stateToId.contains(pseudoStatePair.second), "Pseudo state not contained.");
-                    STORM_LOG_ASSERT(stateStorage.stateToId.getValue(pseudoStatePair.second) >= OFFSET_PSEUDO_STATE, "State is no pseudo state.");
-                    STORM_LOG_TRACE("Create pseudo state from bit vector " << pseudoStatePair.second);
-                    DFTStatePointer pseudoState = std::make_shared<storm::storage::DFTState<ValueType>>(pseudoStatePair.second, mDft, *mStateGenerationInfo, newIndex);
-                    STORM_LOG_ASSERT(pseudoStatePair.second == pseudoState->status(), "Pseudo states do not coincide.");
-                    STORM_LOG_TRACE("Explore pseudo state " << mDft.getStateString(pseudoState) << " with id " << pseudoState->getId());
-                    auto exploreResult = exploreStates(pseudoState, rowOffset, transitionMatrixBuilder, tmpMarkovianStates, modelComponents.exitRates);
-                    deterministic &= exploreResult.second;
-                    STORM_LOG_ASSERT(pseudoStatePair.first == pseudoState->getId(), "Pseudo state ids do not coincide");
-                    STORM_LOG_ASSERT(pseudoState->getId() == exploreResult.first, "Pseudo state ids do not coincide.");
-                }
-            }
-            
+
+            } // end exploration
+
+            size_t stateSize = stateStorage.getNumberOfStates() + (mergeFailedStates ? 1 : 0);
+            modelComponents.markovianStates.resize(stateSize);
+
             // Replace pseudo states in matrix
+            // TODO Matthias: avoid hack with fixed int type
             std::vector<uint_fast64_t> pseudoStatesVector;
             for (auto const& pseudoStatePair : mPseudoStatesMapping) {
                 pseudoStatesVector.push_back(pseudoStatePair.first);
             }
             STORM_LOG_ASSERT(std::find(pseudoStatesVector.begin(), pseudoStatesVector.end(), 0) == pseudoStatesVector.end(), "Unexplored pseudo state still contained.");
             transitionMatrixBuilder.replaceColumns(pseudoStatesVector, OFFSET_PSEUDO_STATE);
-            
-            STORM_LOG_DEBUG("Generated " << stateStorage.getNumberOfStates() + (mergeFailedStates ? 1 : 0) << " states");
-            STORM_LOG_DEBUG("Model is " << (deterministic ? "deterministic" : "non-deterministic"));
-            
-            size_t stateSize = stateStorage.getNumberOfStates() + (mergeFailedStates ? 1 : 0);
-            // Build Markov Automaton
-            modelComponents.markovianStates = storm::storage::BitVector(stateSize, tmpMarkovianStates);
+
+
+            // Fix the entries in the matrix according to the (reversed) mapping of row groups to indices
+            STORM_LOG_ASSERT(stateRemapping[initialStateIndex] == initialStateIndex, "Initial state should not be remapped.");
+            // Fix the transition matrix
+            transitionMatrixBuilder.replaceColumns(stateRemapping, 0);
+            // Fix the hash map storing the mapping states -> ids
+            this->stateStorage.stateToId.remap([this] (StateType const& state) { return this->stateRemapping[state]; } );
+
+            STORM_LOG_TRACE("State remapping: " << stateRemapping);
+            STORM_LOG_TRACE("Markovian states: " << modelComponents.markovianStates);
+
+            STORM_LOG_DEBUG("Generated " << stateSize << " states");
+            STORM_LOG_DEBUG("Model is " << (generator.isDeterministicModel() ? "deterministic" : "non-deterministic"));
+
             // Build transition matrix
             modelComponents.transitionMatrix = transitionMatrixBuilder.build(stateSize, stateSize);
             if (stateSize <= 15) {
@@ -236,11 +180,9 @@ namespace storm {
             } else {
                 STORM_LOG_TRACE("Transition matrix: too big to print");
             }
-            STORM_LOG_TRACE("Exit rates: " << modelComponents.exitRates);
-            STORM_LOG_TRACE("Markovian states: " << modelComponents.markovianStates);
-            
+
             // Build state labeling
-            modelComponents.stateLabeling = storm::models::sparse::StateLabeling(stateStorage.getNumberOfStates() + (mergeFailedStates ? 1 : 0));
+            modelComponents.stateLabeling = storm::models::sparse::StateLabeling(stateSize);
             // Initial state is always first state without any failure
             modelComponents.stateLabeling.addLabel("init");
             modelComponents.stateLabeling.addLabelToState("init", initialStateIndex);
@@ -251,52 +193,56 @@ namespace storm {
             if(labelOpts.buildFailSafeLabel) {
                 modelComponents.stateLabeling.addLabel("failsafe");
             }
-            
+
             // Collect labels for all BE
-            std::vector<std::shared_ptr<storage::DFTBE<ValueType>>> basicElements = mDft.getBasicElements();
+            std::vector<std::shared_ptr<storage::DFTBE<ValueType>>> basicElements = dft.getBasicElements();
             for (std::shared_ptr<storage::DFTBE<ValueType>> elem : basicElements) {
                 if(labelOpts.beLabels.count(elem->name()) > 0) {
                     modelComponents.stateLabeling.addLabel(elem->name() + "_fail");
                 }
             }
-            
+
+            // Set labels to states
             if(mergeFailedStates) {
-                modelComponents.stateLabeling.addLabelToState("failed", failedIndex);
+                modelComponents.stateLabeling.addLabelToState("failed", failedStateId);
             }
             for (auto const& stateIdPair : stateStorage.stateToId) {
                 storm::storage::BitVector state = stateIdPair.first;
                 size_t stateId = stateIdPair.second;
-                if (!mergeFailedStates && labelOpts.buildFailLabel && mDft.hasFailed(state, *mStateGenerationInfo)) {
+                if (!mergeFailedStates && labelOpts.buildFailLabel && dft.hasFailed(state, *stateGenerationInfo)) {
                     modelComponents.stateLabeling.addLabelToState("failed", stateId);
                 }
-                if (labelOpts.buildFailSafeLabel && mDft.isFailsafe(state, *mStateGenerationInfo)) {
+                if (labelOpts.buildFailSafeLabel && dft.isFailsafe(state, *stateGenerationInfo)) {
                     modelComponents.stateLabeling.addLabelToState("failsafe", stateId);
                 };
                 // Set fail status for each BE
                 for (std::shared_ptr<storage::DFTBE<ValueType>> elem : basicElements) {
-                    if (labelOpts.beLabels.count(elem->name()) > 0 && storm::storage::DFTState<ValueType>::hasFailed(state, mStateGenerationInfo->getStateIndex(elem->id())) ) {
+                    if (labelOpts.beLabels.count(elem->name()) > 0 && storm::storage::DFTState<ValueType>::hasFailed(state, stateGenerationInfo->getStateIndex(elem->id())) ) {
                         modelComponents.stateLabeling.addLabelToState(elem->name() + "_fail", stateId);
                     }
                 }
             }
-            
+
             std::shared_ptr<storm::models::sparse::Model<ValueType>> model;
-            
-            if (deterministic) {
-                // Turn the probabilities into rates by multiplying each row with the exit rate of the state.
-                // TODO Matthias: avoid transforming back and forth
-                storm::storage::SparseMatrix<ValueType> rateMatrix(modelComponents.transitionMatrix);
-                for (uint_fast64_t row = 0; row < rateMatrix.getRowCount(); ++row) {
-                    STORM_LOG_ASSERT(row < modelComponents.markovianStates.size(), "Row exceeds no. of markovian states.");
-                    if (modelComponents.markovianStates.get(row)) {
-                        for (auto& entry : rateMatrix.getRow(row)) {
-                            entry.setValue(entry.getValue() * modelComponents.exitRates[row]);
-                        }
+
+            if (generator.isDeterministicModel()) {
+                // Build CTMC
+                model = std::make_shared<storm::models::sparse::Ctmc<ValueType>>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling));
+            } else {
+                // Build MA
+                // Compute exit rates
+                modelComponents.exitRates = std::vector<ValueType>(stateSize);
+                std::vector<typename storm::storage::SparseMatrix<ValueType>::index_type> indices = modelComponents.transitionMatrix.getRowGroupIndices();
+                for (StateType stateIndex = 0; stateIndex < stateSize; ++stateIndex) {
+                    if (modelComponents.markovianStates[stateIndex]) {
+                        modelComponents.exitRates[stateIndex] = modelComponents.transitionMatrix.getRowSum(indices[stateIndex]);
+                    } else {
+                        modelComponents.exitRates[stateIndex] = storm::utility::zero<ValueType>();
                     }
                 }
-                model = std::make_shared<storm::models::sparse::Ctmc<ValueType>>(std::move(rateMatrix), std::move(modelComponents.exitRates), std::move(modelComponents.stateLabeling));
-            } else {
-                std::shared_ptr<storm::models::sparse::MarkovAutomaton<ValueType>> ma = std::make_shared<storm::models::sparse::MarkovAutomaton<ValueType>>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), std::move(modelComponents.markovianStates), std::move(modelComponents.exitRates), true);
+                STORM_LOG_TRACE("Exit rates: " << modelComponents.exitRates);
+
+                std::shared_ptr<storm::models::sparse::MarkovAutomaton<ValueType>> ma = std::make_shared<storm::models::sparse::MarkovAutomaton<ValueType>>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), std::move(modelComponents.markovianStates), std::move(modelComponents.exitRates));
                 if (ma->hasOnlyTrivialNondeterminism()) {
                     // Markov automaton can be converted into CTMC
                     model = ma->convertToCTMC();
@@ -325,331 +271,77 @@ namespace storm {
             return eval < threshold;
         }
 
-        
-        template <typename ValueType>
-        std::pair<uint_fast64_t, bool> ExplicitDFTModelBuilderApprox<ValueType>::exploreStates(DFTStatePointer const& state, size_t& rowOffset, storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder, std::vector<uint_fast64_t>& markovianStates, std::vector<ValueType>& exitRates) {
-            STORM_LOG_TRACE("Explore state: " << mDft.getStateString(state));
-
-            auto explorePair = checkForExploration(state);
-            if (!explorePair.first) {
-                // State does not need any exploration
-                return std::make_pair(explorePair.second, true);
-            }
-
-            
-            // Initialization
-            // TODO Matthias: set Markovian states directly as bitvector?
-            std::map<uint_fast64_t, ValueType> outgoingRates;
-            std::vector<std::map<uint_fast64_t, ValueType>> outgoingProbabilities;
-            bool hasDependencies = state->nrFailableDependencies() > 0;
-            size_t failableCount = hasDependencies ? state->nrFailableDependencies() : state->nrFailableBEs();
-            size_t smallest = 0;
-            ValueType exitRate = storm::utility::zero<ValueType>();
-            bool deterministic = !hasDependencies;
-
-            // Absorbing state
-            if (mDft.hasFailed(state) || mDft.isFailsafe(state) || state->nrFailableBEs() == 0) {
-                uint_fast64_t stateId = addState(state);
-                STORM_LOG_ASSERT(stateId == state->getId(), "Ids do not coincide.");
-
-                // Add self loop
-                transitionMatrixBuilder.newRowGroup(stateId + rowOffset);
-                transitionMatrixBuilder.addNextValue(stateId + rowOffset, stateId, storm::utility::one<ValueType>());
-                STORM_LOG_TRACE("Added self loop for " << stateId);
-                exitRates.push_back(storm::utility::one<ValueType>());
-                STORM_LOG_ASSERT(exitRates.size()-1 == stateId, "No. of considered states does not match state id.");
-                markovianStates.push_back(stateId);
-                // No further exploration required
-                return std::make_pair(stateId, true);
-            }
-
-            // Let BE fail
-            while (smallest < failableCount) {
-                STORM_LOG_ASSERT(!mDft.hasFailed(state), "Dft has failed.");
-
-                // Construct new state as copy from original one
-                DFTStatePointer newState = std::make_shared<storm::storage::DFTState<ValueType>>(*state);
-                std::pair<std::shared_ptr<storm::storage::DFTBE<ValueType> const>, bool> nextBEPair = newState->letNextBEFail(smallest++);
-                std::shared_ptr<storm::storage::DFTBE<ValueType> const>& nextBE = nextBEPair.first;
-                STORM_LOG_ASSERT(nextBE, "NextBE is null.");
-                STORM_LOG_ASSERT(nextBEPair.second == hasDependencies, "Failure due to dependencies does not match.");
-                STORM_LOG_TRACE("With the failure of: " << nextBE->name() << " [" << nextBE->id() << "] in " << mDft.getStateString(state));
-                
-                if (storm::settings::getModule<storm::settings::modules::DFTSettings>().computeApproximation()) {
-                    if (!storm::utility::isZero(exitRate)) {
-                        ValueType rate = nextBE->activeFailureRate();
-                        ValueType div = rate / exitRate;
-                        if (!storm::utility::isZero(exitRate) && belowThreshold(div)) {
-                            // Set transition directly to failed state
-                            auto resultFind = outgoingRates.find(failedIndex);
-                            if (resultFind != outgoingRates.end()) {
-                                // Add to existing transition
-                                resultFind->second += rate;
-                                STORM_LOG_TRACE("Updated transition to " << resultFind->first << " with rate " << rate << " to new rate " << resultFind->second);
-                            } else {
-                                // Insert new transition
-                                outgoingRates.insert(std::make_pair(failedIndex, rate));
-                                STORM_LOG_TRACE("Added transition to " << failedIndex << " with rate " << rate);
-                            }
-                            exitRate += rate;
-                            std::cout << "IGNORE: " << nextBE->name() << " [" << nextBE->id() << "] with rate " << rate << std::endl;
-                            //STORM_LOG_TRACE("Ignore: " << nextBE->name() << " [" << nextBE->id() << "] with rate " << rate);
-                            continue;
-                        }
-                    }
-                }
-
-                // Propagate failures
-                storm::storage::DFTStateSpaceGenerationQueues<ValueType> queues;
-
-                for (DFTGatePointer parent : nextBE->parents()) {
-                    if (newState->isOperational(parent->id())) {
-                        queues.propagateFailure(parent);
-                    }
-                }
-                for (DFTRestrictionPointer restr : nextBE->restrictions()) {
-                    queues.checkRestrictionLater(restr);
-                }
-
-                while (!queues.failurePropagationDone()) {
-                    DFTGatePointer next = queues.nextFailurePropagation();
-                    next->checkFails(*newState, queues);
-                    newState->updateFailableDependencies(next->id());
-                }
-                
-                while(!queues.restrictionChecksDone()) {
-                    DFTRestrictionPointer next = queues.nextRestrictionCheck();
-                    next->checkFails(*newState, queues);
-                    newState->updateFailableDependencies(next->id());
-                }
-                
-                if(newState->isInvalid()) {
-                    continue;
-                }
-                bool dftFailed = newState->hasFailed(mDft.getTopLevelIndex());
-                
-                while (!dftFailed && !queues.failsafePropagationDone()) {
-                    DFTGatePointer next = queues.nextFailsafePropagation();
-                    next->checkFailsafe(*newState, queues);
-                }
-
-                while (!dftFailed && enableDC && !queues.dontCarePropagationDone()) {
-                    DFTElementPointer next = queues.nextDontCarePropagation();
-                    next->checkDontCareAnymore(*newState, queues);
-                }
-                
-                // Update failable dependencies
-                if (!dftFailed) {
-                    newState->updateFailableDependencies(nextBE->id());
-                    newState->updateDontCareDependencies(nextBE->id());
-                }
-                
-                uint_fast64_t newStateId;
-                if(dftFailed && mergeFailedStates) {
-                    newStateId = failedIndex;
-                } else {
-                    // Explore new state recursively
-                    auto explorePair = exploreStates(newState, rowOffset, transitionMatrixBuilder, markovianStates, exitRates);
-                    newStateId = explorePair.first;
-                    deterministic &= explorePair.second;
-                }
-
-                // Set transitions
-                if (hasDependencies) {
-                    // Failure is due to dependency -> add non-deterministic choice
-                    std::map<uint_fast64_t, ValueType> choiceProbabilities;
-                    std::shared_ptr<storm::storage::DFTDependency<ValueType> const> dependency = mDft.getDependency(state->getDependencyId(smallest-1));
-                    choiceProbabilities.insert(std::make_pair(newStateId, dependency->probability()));
-                    STORM_LOG_TRACE("Added transition to " << newStateId << " with probability " << dependency->probability());
-
-                    if (!storm::utility::isOne(dependency->probability())) {
-                        // Add transition to state where dependency was unsuccessful
-                        DFTStatePointer unsuccessfulState = std::make_shared<storm::storage::DFTState<ValueType>>(*state);
-                        unsuccessfulState->letDependencyBeUnsuccessful(smallest-1);
-                        auto explorePair = exploreStates(unsuccessfulState, rowOffset, transitionMatrixBuilder, markovianStates, exitRates);
-                        uint_fast64_t unsuccessfulStateId = explorePair.first;
-                        deterministic &= explorePair.second;
-                        ValueType remainingProbability = storm::utility::one<ValueType>() - dependency->probability();
-                        choiceProbabilities.insert(std::make_pair(unsuccessfulStateId, remainingProbability));
-                        STORM_LOG_TRACE("Added transition to " << unsuccessfulStateId << " with remaining probability " << remainingProbability);
-                    }
-                    outgoingProbabilities.push_back(choiceProbabilities);
-                } else {
-                    // Set failure rate according to activation
-                    bool isActive = true;
-                    if (mDft.hasRepresentant(nextBE->id())) {
-                        // Active must be checked for the state we are coming from as this state is responsible for the
-                        // rate and not the new state we are going to
-                        isActive = state->isActive(mDft.getRepresentant(nextBE->id())->id());
-                    }
-                    ValueType rate = isActive ? nextBE->activeFailureRate() : nextBE->passiveFailureRate();
-                    STORM_LOG_ASSERT(!storm::utility::isZero(rate), "Rate is 0.");
-                    auto resultFind = outgoingRates.find(newStateId);
-                    if (resultFind != outgoingRates.end()) {
-                        // Add to existing transition
-                        resultFind->second += rate;
-                        STORM_LOG_TRACE("Updated transition to " << resultFind->first << " with " << (isActive ? "active" : "passive") << " rate " << rate << " to new rate " << resultFind->second);
-                    } else {
-                        // Insert new transition
-                        outgoingRates.insert(std::make_pair(newStateId, rate));
-                        STORM_LOG_TRACE("Added transition to " << newStateId << " with " << (isActive ? "active" : "passive") << " rate " << rate);
-                    }
-                    exitRate += rate;
-                }
-
-            } // end while failing BE
-            
-            // Add state
-            uint_fast64_t stateId = addState(state);
-            STORM_LOG_ASSERT(stateId == state->getId(), "Ids do not match.");
-            STORM_LOG_ASSERT(stateId == newIndex-1, "Id does not match no. of states.");
-            
-            if (hasDependencies) {
-                // Add all probability transitions
-                STORM_LOG_ASSERT(outgoingRates.empty(), "Outgoing transitions not empty.");
-                transitionMatrixBuilder.newRowGroup(stateId + rowOffset);
-                for (size_t i = 0; i < outgoingProbabilities.size(); ++i, ++rowOffset) {
-                    STORM_LOG_ASSERT(outgoingProbabilities[i].size() == 1 || outgoingProbabilities[i].size() == 2, "No. of outgoing transitions is not valid.");
-                    for (auto it = outgoingProbabilities[i].begin(); it != outgoingProbabilities[i].end(); ++it)
-                    {
-                        STORM_LOG_TRACE("Set transition from " << stateId << " to " << it->first << " with probability " << it->second);
-                        transitionMatrixBuilder.addNextValue(stateId + rowOffset, it->first, it->second);
-                    }
-                }
-                rowOffset--; // One increment too many
-            } else {
-                // Try to merge pseudo states with their instantiation
-                // TODO Matthias: improve?
-                for (auto it = outgoingRates.begin(); it != outgoingRates.end(); ) {
-                    if (it->first >= OFFSET_PSEUDO_STATE) {
-                        uint_fast64_t newId = it->first - OFFSET_PSEUDO_STATE;
-                        STORM_LOG_ASSERT(newId < mPseudoStatesMapping.size(), "Id is not valid.");
-                        if (mPseudoStatesMapping[newId].first > 0) {
-                            // State exists already
-                            newId = mPseudoStatesMapping[newId].first;
-                            auto itFind = outgoingRates.find(newId);
-                            if (itFind != outgoingRates.end()) {
-                                // Add probability from pseudo state to instantiation
-                                itFind->second += it->second;
-                                STORM_LOG_TRACE("Merged pseudo state " << newId << " adding rate " << it->second << " to total rate of " << itFind->second);
-                            } else {
-                                // Only change id
-                                outgoingRates.emplace(newId, it->second);
-                                STORM_LOG_TRACE("Instantiated pseudo state " << newId << " with rate " << it->second);
-                            }
-                            // Remove pseudo state
-                            it = outgoingRates.erase(it);
-                        } else {
-                            ++it;
-                        }
-                    } else {
-                        ++it;
-                    }
-                }
-                
-                // Add all rate transitions
-                STORM_LOG_ASSERT(outgoingProbabilities.empty(), "Outgoing probabilities not empty.");
-                transitionMatrixBuilder.newRowGroup(state->getId() + rowOffset);
-                STORM_LOG_TRACE("Exit rate for " << state->getId() << ": " << exitRate);
-                for (auto it = outgoingRates.begin(); it != outgoingRates.end(); ++it)
-                {
-                    ValueType probability = it->second / exitRate; // Transform rate to probability
-                    STORM_LOG_TRACE("Set transition from " << state->getId() << " to " << it->first << " with rate " << it->second);
-                    transitionMatrixBuilder.addNextValue(state->getId() + rowOffset, it->first, probability);
-                }
-
-                markovianStates.push_back(state->getId());
-            }
-            
-            STORM_LOG_TRACE("Finished exploring state: " << mDft.getStateString(state));
-            exitRates.push_back(exitRate);
-            STORM_LOG_ASSERT(exitRates.size()-1 == state->getId(), "Id does not match no. of states.");
-            return std::make_pair(state->getId(), deterministic);
-        }
-        
-        template <typename ValueType>
-        std::pair<bool, uint_fast64_t> ExplicitDFTModelBuilderApprox<ValueType>::checkForExploration(DFTStatePointer const& state) {
+        template <typename ValueType, typename StateType>
+        StateType ExplicitDFTModelBuilderApprox<ValueType, StateType>::getOrAddStateIndex(DFTStatePointer const& state) {
+            StateType stateId;
             bool changed = false;
-            if (mStateGenerationInfo->hasSymmetries()) {
-                // Order state by symmetry
-                STORM_LOG_TRACE("Check for symmetry: " << mDft.getStateString(state));
-                changed = state->orderBySymmetry();
-                STORM_LOG_TRACE("State " << (changed ? "changed to " : "did not change") << (changed ? mDft.getStateString(state) : ""));
-            }
-            
-            if (stateStorage.stateToId.contains(state->status())) {
-                // State already exists
-                uint_fast64_t stateId = stateStorage.stateToId.getValue(state->status());
-                STORM_LOG_TRACE("State " << mDft.getStateString(state) << " with id " << stateId << " already exists");
-                
-                if (changed || stateId < OFFSET_PSEUDO_STATE) {
-                    // State is changed or an explored "normal" state
-                    return std::make_pair(false, stateId);
-                }
-                
-                stateId -= OFFSET_PSEUDO_STATE;
-                STORM_LOG_ASSERT(stateId < mPseudoStatesMapping.size(), "Id not valid.");
-                if (mPseudoStatesMapping[stateId].first > 0) {
-                    // Pseudo state already explored
-                    return std::make_pair(false, mPseudoStatesMapping[stateId].first);
-                }
-                
-                STORM_LOG_ASSERT(mPseudoStatesMapping[stateId].second == state->status(), "States do not coincide.");
-                STORM_LOG_TRACE("Pseudo state " << mDft.getStateString(state) << " can be explored now");
-                return std::make_pair(true, stateId);
-            } else {
-                // State does not exists
-                if (changed) {
-                    // Remember state for later creation
-                    state->setId(mPseudoStatesMapping.size() + OFFSET_PSEUDO_STATE);
-                    mPseudoStatesMapping.push_back(std::make_pair(0, state->status()));
-                    stateStorage.stateToId.findOrAdd(state->status(), state->getId());
-                    STORM_LOG_TRACE("Remember state for later creation: " << mDft.getStateString(state));
-                    return std::make_pair(false, state->getId());
-                } else {
-                    // State needs exploration
-                    return std::make_pair(true, 0);
-                }
-            }
-        }
 
-        template <typename ValueType>
-        uint_fast64_t ExplicitDFTModelBuilderApprox<ValueType>::addState(DFTStatePointer const& state) {
-            uint_fast64_t stateId;
-            // TODO remove
-            bool changed = state->orderBySymmetry();
-            STORM_LOG_ASSERT(!changed, "State to add has changed by applying symmetry.");
-            
-            // Check if state already exists
+            if (stateGenerationInfo->hasSymmetries()) {
+                // Order state by symmetry
+                STORM_LOG_TRACE("Check for symmetry: " << dft.getStateString(state));
+                changed = state->orderBySymmetry();
+                STORM_LOG_TRACE("State " << (changed ? "changed to " : "did not change") << (changed ? dft.getStateString(state) : ""));
+            }
+
             if (stateStorage.stateToId.contains(state->status())) {
                 // State already exists
                 stateId = stateStorage.stateToId.getValue(state->status());
-                STORM_LOG_TRACE("State " << mDft.getStateString(state) << " with id " << stateId << " already exists");
-                
-                // Check if possible pseudo state can be created now
-                STORM_LOG_ASSERT(stateId >= OFFSET_PSEUDO_STATE, "State is no pseudo state.");
-                stateId -= OFFSET_PSEUDO_STATE;
-                STORM_LOG_ASSERT(stateId < mPseudoStatesMapping.size(), "Pseudo state not known.");
-                if (mPseudoStatesMapping[stateId].first == 0) {
+                STORM_LOG_TRACE("State " << dft.getStateString(state) << " with id " << stateId << " already exists");
+
+                if (!changed && stateId >= OFFSET_PSEUDO_STATE) {
+                    // Pseudo state can be created now
+                    STORM_LOG_ASSERT(stateId >= OFFSET_PSEUDO_STATE, "State is no pseudo state.");
+                    stateId -= OFFSET_PSEUDO_STATE;
+                    STORM_LOG_ASSERT(stateId < mPseudoStatesMapping.size(), "Pseudo state not known.");
+                    STORM_LOG_ASSERT(mPseudoStatesMapping[stateId].first == 0, "Pseudo state already created.");
                     // Create pseudo state now
                     STORM_LOG_ASSERT(mPseudoStatesMapping[stateId].second == state->status(), "Pseudo states do not coincide.");
                     state->setId(newIndex++);
                     mPseudoStatesMapping[stateId].first = state->getId();
                     stateId = state->getId();
                     stateStorage.stateToId.setOrAdd(state->status(), stateId);
-                    STORM_LOG_TRACE("Now create state " << mDft.getStateString(state) << " with id " << stateId);
-                    return stateId;
-                } else {
-                    STORM_LOG_ASSERT(false, "Pseudo state already created.");
-                    return 0;
+                    STORM_LOG_TRACE("Now create state " << dft.getStateString(state) << " with id " << stateId);
+                    statesToExplore.push_front(state);
                 }
             } else {
-                // Create new state
-                state->setId(newIndex++);
-                stateId = stateStorage.stateToId.findOrAdd(state->status(), state->getId());
-                STORM_LOG_TRACE("New state: " << mDft.getStateString(state));
-                return stateId;
+                // State does not exist yet
+                if (changed) {
+                    // Remember state for later creation
+                    state->setId(mPseudoStatesMapping.size() + OFFSET_PSEUDO_STATE);
+                    mPseudoStatesMapping.push_back(std::make_pair(0, state->status()));
+                    stateId = stateStorage.stateToId.findOrAdd(state->status(), state->getId());
+                    STORM_LOG_ASSERT(stateId == state->getId(), "Ids do not match.");
+                    STORM_LOG_TRACE("Remember state for later creation: " << dft.getStateString(state));
+                    // Reserve one slot for the coming state in the remapping
+                    stateRemapping.push_back(0);
+                } else {
+                    // Create new state
+                    state->setId(newIndex++);
+                    stateId = stateStorage.stateToId.findOrAdd(state->status(), state->getId());
+                    STORM_LOG_ASSERT(stateId == state->getId(), "Ids do not match.");
+                    STORM_LOG_TRACE("New state: " << dft.getStateString(state));
+                    statesToExplore.push_front(state);
+
+                    // Reserve one slot for the new state in the remapping
+                    stateRemapping.push_back(0);
+                }
             }
+            return stateId;
+        }
+
+        template <typename ValueType, typename StateType>
+        void ExplicitDFTModelBuilderApprox<ValueType, StateType>::setMarkovian(StateType id, bool markovian) {
+            if (id >= modelComponents.markovianStates.size()) {
+                // Resize BitVector
+                modelComponents.markovianStates.resize(modelComponents.markovianStates.size() + INITIAL_BITVECTOR_SIZE);
+            }
+            modelComponents.markovianStates.set(id, markovian);
+        }
+
+        template <typename ValueType, typename StateType>
+        void ExplicitDFTModelBuilderApprox<ValueType, StateType>::setRemapping(StateType id, StateType mappedId) {
+            STORM_LOG_ASSERT(id < stateRemapping.size(), "Invalid index for remapping.");
+            stateRemapping[id] = mappedId;
         }
 
 
