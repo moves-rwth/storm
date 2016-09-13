@@ -10,6 +10,7 @@ namespace storm {
                             HA = 10, PHA = 11, SHA = 12};
 
         ModelType getModelType(std::string const& input);
+        std::string to_string(ModelType const& type);
         std::ostream& operator<<(std::ostream& stream, ModelType const& type);
         
     }
