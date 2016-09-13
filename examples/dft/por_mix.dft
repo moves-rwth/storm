@@ -1,6 +1,0 @@
-toplevel "A";
-"A" por "B" "C" "D";
-"B" and "C" "E";
-"C" lambda=0.2 dorm=0.0;
-"D" lambda=0.2 dorm=0.0;
-"E" lambda=0.2 dorm=0.0;

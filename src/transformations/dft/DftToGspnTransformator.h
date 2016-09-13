@@ -199,6 +199,13 @@ namespace storm {
 				  * @param dftElement The element whose priority shall be determined.
 				  */
 				 uint_fast64_t getPriority(uint_fast64_t priority, std::shared_ptr<storm::storage::DFTElement<ValueType> const> dFTElement);
+				 
+				 /*
+				  * Return all ids of BEs, that are successors of the given element.
+				  * 
+				  * @param dftElement The element which 
+				  */
+				 std::vector<int> getAllBEIDsOfElement(std::vector<int> ids, std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftElement);
             };
         }
     }

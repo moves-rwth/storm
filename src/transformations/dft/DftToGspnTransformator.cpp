@@ -241,7 +241,7 @@ namespace storm {
 						mGspn.addPlace(placeChildClaimed);
 						
 						storm::gspn::ImmediateTransition<storm::gspn::GSPN::WeightType> immediateTransitionSpareChildActivating;
-						immediateTransitionSpareChildActivating.setName(dftSpare->children()[i]->name() + STR_ACTIVATING);
+						immediateTransitionSpareChildActivating.setName(children[i]->name() + STR_ACTIVATING);
 						immediateTransitionSpareChildActivating.setPriority(priority);
 						immediateTransitionSpareChildActivating.setWeight(0.0);
 						immediateTransitionSpareChildActivating.setInputArcMultiplicity(placeChildClaimed, 1);
@@ -256,13 +256,27 @@ namespace storm {
 					placeSPAREClaimedChild.setNumberOfInitialTokens(0);
 					mGspn.addPlace(placeSPAREClaimedChild);
 					
+					storm::gspn::ImmediateTransition<storm::gspn::GSPN::WeightType> immediateTransitionChildClaiming;
+					immediateTransitionChildClaiming.setName(children[i]->name() + "_claiming");
+					immediateTransitionChildClaiming.setPriority(priority + 1); // Higher priority needed!
+					immediateTransitionChildClaiming.setWeight(0.0);
+					immediateTransitionChildClaiming.setInhibitionArcMultiplicity(placeChildClaimedExist.second, 1);
+					immediateTransitionChildClaiming.setOutputArcMultiplicity(placeChildClaimedExist.second, 1);
+					immediateTransitionChildClaiming.setOutputArcMultiplicity(placeSPAREClaimedChild, 1);
+					mGspn.addImmediateTransition(immediateTransitionChildClaiming);
+					
 					storm::gspn::Place placeSPAREChildConsumed;
-					placeSPAREChildConsumed.setName(children[i]->name() + "_consumed"); // TODO: If its the last child, this label must be "SPARE_failed".
+					if (i < children.size() - 1) {
+						placeSPAREChildConsumed.setName(children[i]->name() + "_consumed");
+					}
+					else {
+						placeSPAREChildConsumed.setName(dftSpare->name() + STR_FAILED);
+					}
 					placeSPAREChildConsumed.setNumberOfInitialTokens(0);
 					mGspn.addPlace(placeSPAREChildConsumed);
 					
 					storm::gspn::ImmediateTransition<storm::gspn::GSPN::WeightType> immediateTransitionChildConsuming1;
-					immediateTransitionChildConsuming1.setName(dftSpare->children()[i]->name() + "_consuming1");
+					immediateTransitionChildConsuming1.setName(children[i]->name() + "_consuming1");
 					immediateTransitionChildConsuming1.setPriority(priority);
 					immediateTransitionChildConsuming1.setWeight(0.0);
 					immediateTransitionChildConsuming1.setOutputArcMultiplicity(placeSPAREChildConsumed, 1);
@@ -271,7 +285,7 @@ namespace storm {
 					mGspn.addImmediateTransition(immediateTransitionChildConsuming1);
 					
 					storm::gspn::ImmediateTransition<storm::gspn::GSPN::WeightType> immediateTransitionChildConsuming2;
-					immediateTransitionChildConsuming2.setName(dftSpare->children()[i]->name() + "_consuming2");
+					immediateTransitionChildConsuming2.setName(children[i]->name() + "_consuming2");
 					immediateTransitionChildConsuming2.setPriority(priority);
 					immediateTransitionChildConsuming2.setWeight(0.0);
 					immediateTransitionChildConsuming2.setOutputArcMultiplicity(placeSPAREChildConsumed, 1);
@@ -732,6 +746,20 @@ namespace storm {
 						}
 					}
 				}
+			}
+			
+			template <typename ValueType>
+            std::vector<int> DftToGspnTransformator<ValueType>::getAllBEIDsOfElement(std::vector<int> ids, std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftElement) {
+				std::vector<int> newIds;
+				
+				if (dftElement->type() == storm::storage::DFTElementType::BE) {
+					newIds.push_back(dftElement->id());
+				}
+				else {
+					// TODO: Check all children: If they are BEs, add them to the list. Else, check the children again.
+				}
+				
+				return newIds;
 			}
 			
 			template <typename ValueType>
