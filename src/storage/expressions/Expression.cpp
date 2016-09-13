@@ -185,10 +185,25 @@ namespace storm {
             return Expression(std::shared_ptr<BaseExpression>(new BinaryNumericalFunctionExpression(first.getManager(), first.getType().plusMinusTimes(second.getType()), first.getBaseExpressionPointer(), second.getBaseExpressionPointer(), BinaryNumericalFunctionExpression::OperatorType::Plus)));
         }
         
+        Expression operator+(Expression const& first, int64_t second) {
+            return first + Expression(std::shared_ptr<BaseExpression>(new IntegerLiteralExpression(first.getBaseExpression().getManager(), second)));
+        }
+        
+        Expression operator+(int64_t first, Expression const& second) {
+            return second + first;
+        }
+        
         Expression operator-(Expression const& first, Expression const& second) {
             assertSameManager(first.getBaseExpression(), second.getBaseExpression());
             return Expression(std::shared_ptr<BaseExpression>(new BinaryNumericalFunctionExpression(first.getBaseExpression().getManager(), first.getType().plusMinusTimes(second.getType()), first.getBaseExpressionPointer(), second.getBaseExpressionPointer(), BinaryNumericalFunctionExpression::OperatorType::Minus)));
         }
+        
+        Expression operator-(Expression const& first, int64_t second) {
+            return first - Expression(std::shared_ptr<BaseExpression>(new IntegerLiteralExpression(first.getBaseExpression().getManager(), second)));
+        }
+        
+        Expression operator-(int64_t first, Expression const& second) {
+            return Expression(std::shared_ptr<BaseExpression>(new IntegerLiteralExpression(second.getBaseExpression().getManager(), first))) - second;        }
         
         Expression operator-(Expression const& first) {
             return Expression(std::shared_ptr<BaseExpression>(new UnaryNumericalFunctionExpression(first.getBaseExpression().getManager(), first.getType().minus(), first.getBaseExpressionPointer(), UnaryNumericalFunctionExpression::OperatorType::Minus)));

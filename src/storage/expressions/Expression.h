@@ -23,7 +23,11 @@ namespace storm {
             template<typename MapType> friend class SubstitutionVisitor;
             
             friend Expression operator+(Expression const& first, Expression const& second);
+            friend Expression operator+(Expression const& first, int64_t second);
+            friend Expression operator+(int64_t first, Expression const& second);
             friend Expression operator-(Expression const& first, Expression const& second);
+            friend Expression operator-(Expression const& first, int64_t second);
+            friend Expression operator-(int64_t first, Expression const& second);
             friend Expression operator-(Expression const& first);
             friend Expression operator*(Expression const& first, Expression const& second);
             friend Expression operator/(Expression const& first, Expression const& second);
@@ -328,7 +332,11 @@ namespace storm {
         
         // Provide operator overloads to conveniently construct new expressions from other expressions.
         Expression operator+(Expression const& first, Expression const& second);
+        Expression operator+(Expression const& first, int64_t second);
+        Expression operator+(int64_t first, Expression const& second);
         Expression operator-(Expression const& first, Expression const& second);
+        Expression operator-(Expression const& first, int64_t second);
+        Expression operator-(int64_t first, Expression const& second);
         Expression operator-(Expression const& first);
         Expression operator*(Expression const& first, Expression const& second);
         Expression operator/(Expression const& first, Expression const& second);
