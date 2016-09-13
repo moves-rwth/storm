@@ -213,6 +213,9 @@ namespace storm {
                 storm::storage::SymbolicModelDescription model;
                 if (ioSettings.isPrismInputSet()) {
                     model = storm::parseProgram(ioSettings.getPrismInputFilename());
+                    if (ioSettings.isPrismToJaniSet()) {
+                        model = model.toJani(true);
+                    }
                 } else if (ioSettings.isJaniInputSet()) {
                     model = storm::parseJaniModel(ioSettings.getJaniInputFilename()).first;
                 }

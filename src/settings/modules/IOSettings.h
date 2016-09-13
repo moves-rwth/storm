@@ -80,6 +80,13 @@ namespace storm {
                 bool isPrismOrJaniInputSet() const;
                 
                 /*!
+                 * Retrieves whether the option to convert PRISM to JANI input was set.
+                 *
+                 * @return True if the option was set.
+                 */
+                bool isPrismToJaniSet() const;
+                
+                /*!
                  * Retrieves the name of the file that contains the PRISM model specification if the model was given
                  * using the PRISM input option.
                  *
@@ -198,6 +205,7 @@ namespace storm {
                 static const std::string explicitOptionShortName;
                 static const std::string prismInputOptionName;
                 static const std::string janiInputOptionName;
+                static const std::string prismToJaniOptionName;
                 static const std::string explorationOrderOptionName;
                 static const std::string explorationOrderOptionShortName;
                 static const std::string transitionRewardsOptionName;

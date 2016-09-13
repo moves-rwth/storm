@@ -108,7 +108,11 @@ namespace storm {
         std::vector<Location> const& Automaton::getLocations() const {
             return locations;
         }
-        
+
+        std::vector<Location>& Automaton::getLocations() {
+            return locations;
+        }
+
         Location const& Automaton::getLocation(uint64_t index) const {
             return locations[index];
         }
@@ -369,6 +373,10 @@ namespace storm {
         void Automaton::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
             for (auto& variable : this->getVariables().getBoundedIntegerVariables()) {
                 variable.substitute(substitution);
+            }
+            
+            for (auto& location : this->getLocations()) {
+                location.substitute(substitution);
             }
             
             this->setInitialStatesRestriction(this->getInitialStatesRestriction().substitute(substitution));

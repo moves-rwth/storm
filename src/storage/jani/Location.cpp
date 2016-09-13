@@ -24,6 +24,12 @@ namespace storm {
             assignments.add(assignment);
         }
         
+        void Location::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
+            for (auto& assignment : assignments) {
+                assignment.substitute(substitution);
+            }
+        }
+        
         void Location::checkValid() const {
             // Intentionally left empty.
         }

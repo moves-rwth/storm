@@ -196,6 +196,11 @@ namespace storm {
              * Retrieves the automaton with the given name.
              */
             Automaton const& getAutomaton(std::string const& name) const;
+            
+            /*!
+             * Retrieves the index of the given automaton.
+             */
+            uint64_t getAutomatonIndex(std::string const& name) const;
 
             /*!
              * Retrieves the number of automata in this model.

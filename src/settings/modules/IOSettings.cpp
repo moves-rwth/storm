@@ -19,6 +19,7 @@ namespace storm {
             const std::string IOSettings::explicitOptionShortName = "exp";
             const std::string IOSettings::prismInputOptionName = "prism";
             const std::string IOSettings::janiInputOptionName = "jani";
+            const std::string IOSettings::prismToJaniOptionName = "prism2jani";
             const std::string IOSettings::explorationOrderOptionName = "explorder";
             const std::string IOSettings::explorationOrderOptionShortName = "eo";
             const std::string IOSettings::transitionRewardsOptionName = "transrew";
@@ -42,6 +43,7 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file from which to read the PRISM input.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, janiInputOptionName, false, "Parses the model given in the JANI format.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file from which to read the JANI input.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, prismToJaniOptionName, false, "If set, the input PRISM model is transformed to JANI.").build());
 
                 std::vector<std::string> explorationOrders = {"dfs", "bfs"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, explorationOrderOptionName, false, "Sets which exploration order to use.").setShortName(explorationOrderOptionShortName)
@@ -83,6 +85,10 @@ namespace storm {
             
             bool IOSettings::isPrismOrJaniInputSet() const {
                 return isJaniInputSet() || isPrismInputSet();
+            }
+            
+            bool IOSettings::isPrismToJaniSet() const {
+                return this->getOption(prismToJaniOptionName).getHasOptionBeenSet();
             }
             
             std::string IOSettings::getPrismInputFilename() const {
@@ -160,6 +166,10 @@ namespace storm {
                 
                 // Ensure that the model was given either symbolically or explicitly.
                 STORM_LOG_THROW(!isJaniInputSet() || !isPrismInputSet() || !isExplicitSet(), storm::exceptions::InvalidSettingsException, "The model may be either given in an explicit or a symbolic format (PRISM or JANI), but not both.");
+                
+                // Make sure PRISM-to-JANI conversion is only set if the actual input is in PRISM format.
+                STORM_LOG_THROW(!isPrismToJaniSet() || isPrismInputSet(), storm::exceptions::InvalidSettingsException, "For the transformation from PRISM to JANI, the input model must be given in the prism format.");
+                
                 return true;
             }
 

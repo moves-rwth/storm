@@ -19,10 +19,12 @@ namespace storm {
         
         SymbolicModelDescription& SymbolicModelDescription::operator=(storm::jani::Model const& model) {
             this->modelDescription = model;
+            return *this;
         }
         
         SymbolicModelDescription& SymbolicModelDescription::operator=(storm::prism::Program const& program) {
             this->modelDescription = program;
+            return *this;
         }
         
         bool SymbolicModelDescription::hasModel() const {

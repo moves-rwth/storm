@@ -550,11 +550,14 @@ namespace storm {
                 }
                 if (rewardVariableIt == rewardVariableIte) {
                     break;
-                }
-                if (*rewardVariableIt == assignment.getExpressionVariable()) {
+                } else if (*rewardVariableIt == assignment.getExpressionVariable()) {
                     callback(ValueType(this->evaluator.asRational(assignment.getAssignedExpression())));
                     ++rewardVariableIt;
                 }
+            }
+            // Add a value of zero for all variables that have no assignment.
+            for (; rewardVariableIt != rewardVariableIte; ++rewardVariableIt) {
+                callback(storm::utility::zero<ValueType>());
             }
         }
         

@@ -157,7 +157,12 @@ namespace storm {
              * Retrieves the locations of the automaton.
              */
             std::vector<Location> const& getLocations() const;
-            
+
+            /*!
+             * Retrieves the locations of the automaton.
+             */
+            std::vector<Location>& getLocations();
+
             /*!
              * Retrieves the location with the given index.
              */

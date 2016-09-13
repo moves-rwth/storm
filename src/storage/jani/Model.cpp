@@ -200,6 +200,12 @@ namespace storm {
             return automata[it->second];
         }
         
+        uint64_t Model::getAutomatonIndex(std::string const& name) const {
+            auto it = automatonToIndex.find(name);
+            STORM_LOG_THROW(it != automatonToIndex.end(), storm::exceptions::InvalidOperationException, "Unable to retrieve unknown automaton '" << name << "'.");
+            return it->second;
+        }
+        
         std::size_t Model::getNumberOfAutomata() const {
             return automata.size();
         }

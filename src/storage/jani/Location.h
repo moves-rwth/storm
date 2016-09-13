@@ -33,6 +33,11 @@ namespace storm {
              * Adds the given transient assignment to this location.
              */
             void addTransientAssignment(storm::jani::Assignment const& assignment);
+  
+            /*!
+             * Substitutes all variables in all expressions according to the given substitution.
+             */
+            void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution);
             
             /*!
              * Checks whether the location is valid, that is, whether the assignments are indeed all transient assignments.
