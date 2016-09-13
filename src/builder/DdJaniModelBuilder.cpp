@@ -1752,7 +1752,13 @@ namespace storm {
         storm::dd::Bdd<Type> postprocessSystem(storm::jani::Model const& model, ComposerResult<Type, ValueType>& system, CompositionVariables<Type, ValueType> const& variables, typename DdJaniModelBuilder<Type, ValueType>::Options const& options) {
             // For DTMCs, we normalize each row to 1 (to account for non-determinism).
             if (model.getModelType() == storm::jani::ModelType::DTMC) {
-                system.transitions = system.transitions / system.transitions.sumAbstract(variables.columnMetaVariables);
+                storm::dd::Add<Type, ValueType> stateToNumberOfChoices = system.transitions.sumAbstract(variables.columnMetaVariables);
+                system.transitions = system.transitions / stateToNumberOfChoices;
+                
+                // Scale all state-action rewards.
+                for (auto& entry : system.transientEdgeAssignments) {
+                    entry.second = entry.second / stateToNumberOfChoices;
+                }
             }
             
             // If we were asked to treat some states as terminal states, we cut away their transitions now.
