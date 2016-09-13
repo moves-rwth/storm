@@ -16,9 +16,12 @@ namespace storm {
             
             const std::string PGCLSettings::pgclFileOptionName = "pgclfile";
             const std::string PGCLSettings::pgclFileOptionShortName = "pgcl";
+            const std::string PGCLSettings::pgclToJaniOptionName = "to-jani";
+            const std::string PGCLSettings::pgclToJaniOptionShortName = "tj";
             
             PGCLSettings::PGCLSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, pgclFileOptionName, false, "Parses the pgcl program.").setShortName(pgclFileOptionShortName).addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "path to file").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, pgclToJaniOptionName, false, "Transform to JANI.").setShortName(pgclToJaniOptionShortName).build());
             }
             
             bool PGCLSettings::isPgclFileSet() const {
@@ -27,6 +30,10 @@ namespace storm {
             
             std::string PGCLSettings::getPgclFilename() const {
                 return this->getOption(pgclFileOptionName).getArgumentByName("filename").getValueAsString();
+            }
+            
+            bool PGCLSettings::isToJaniSet() const {
+                return this->getOption(pgclToJaniOptionName).getHasOptionBeenSet();
             }
             
             void PGCLSettings::finalize() {

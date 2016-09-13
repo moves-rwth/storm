@@ -24,6 +24,11 @@ namespace storm {
                  */
                 std::string getPgclFilename() const;
                 
+                /**
+                 *
+                 */
+                bool isToJaniSet() const;
+                
                 bool check() const override;
                 void finalize() override;
                 
@@ -32,6 +37,8 @@ namespace storm {
             private:
                 static const std::string pgclFileOptionName;
                 static const std::string pgclFileOptionShortName;
+                static const std::string pgclToJaniOptionName;
+                static const std::string pgclToJaniOptionShortName;
                 
             };
         }
