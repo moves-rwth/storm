@@ -75,6 +75,10 @@ namespace storm {
             return it->second;
         }
         
+        std::unordered_map<std::string, uint64_t> const& Model::getActionToIndexMap() const {
+            return actionToIndex;
+        }
+        
         std::vector<Action> const& Model::getActions() const {
             return actions;
         }
@@ -448,7 +452,7 @@ namespace storm {
         bool Model::hasDefaultComposition() const {
             CompositionInformationVisitor visitor;
             CompositionInformation info = visitor.getInformation(this->getSystemComposition(), *this);
-            if (info.containsRestrictedParallelComposition() || info.containsRenameComposition()) {
+            if (info.containsNonStandardParallelComposition() || info.containsRenameComposition()) {
                 return false;
             }
             for (auto const& multiplicity : info.getAutomatonToMultiplicityMap()) {

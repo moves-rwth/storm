@@ -2,47 +2,95 @@
 
 #include <set>
 #include <memory>
+#include <vector>
+#include <string>
 
 #include "src/storage/jani/Composition.h"
 
 namespace storm {
     namespace jani {
         
+        class SynchronizationVector {
+        public:
+            SynchronizationVector(std::vector<std::string> const& input, std::string const& output);
+            
+            std::size_t size() const;
+            std::vector<std::string> const& getInput() const;
+            std::string const& getInput(uint64_t index) const;
+            std::string const& getOutput() const;
+            
+        private:
+            /// The input to the synchronization.
+            std::vector<std::string> input;
+            
+            /// The output of the synchronization.
+            std::string output;
+        };
+        
+        std::ostream& operator<<(std::ostream& stream, SynchronizationVector const& synchronizationVector);
+        
         class ParallelComposition : public Composition {
         public:
             /*!
-             * Creates a parallel composition of the two subcompositions.
+             * Creates a parallel composition of the subcompositions and the provided synchronization vectors.
              */
-            ParallelComposition(std::shared_ptr<Composition> const& leftSubcomposition, std::shared_ptr<Composition> const& rightSubcomposition, std::set<std::string> const& alphabet = {});
+            ParallelComposition(std::vector<std::shared_ptr<Composition>> const& subcompositions, std::vector<SynchronizationVector> const& synchronizationVectors);
+
+            /*!
+             * Creates a parallel composition of the subcompositions over the provided synchronization alphabet.
+             */
+            ParallelComposition(std::vector<std::shared_ptr<Composition>> const& subcompositions, std::set<std::string> const& synchronizationAlphabet);
+
+            /*!
+             * Creates a parallel composition of the subcompositions over the provided synchronization alphabet.
+             */
+            ParallelComposition(std::shared_ptr<Composition> const& leftSubcomposition, std::shared_ptr<Composition> const& rightSubcomposition, std::set<std::string> const& synchronizationAlphabet);
+
+            /*!
+             * Retrieves the subcomposition with the given index.
+             */
+            Composition const& getSubcomposition(uint64_t index) const;
             
             /*!
-             * Retrieves the left subcomposition.
+             * Retrieves the subcompositions of the parallel composition.
              */
-            Composition const& getLeftSubcomposition() const;
+            std::vector<std::shared_ptr<Composition>> const& getSubcompositions() const;
 
             /*!
-             * Retrieves the right subcomposition.
+             * Retrieves the number of subcompositions of this parallel composition.
              */
-            Composition const& getRightSubcomposition() const;
-
+            uint64_t getNumberOfSubcompositions() const;
+            
             /*!
-             * Retrieves the alphabet of actions over which to synchronize the automata.
+             * Retrieves the synchronization vector with the given index.
              */
-            std::set<std::string> const& getSynchronizationAlphabet() const;
+            SynchronizationVector const& getSynchronizationVector(uint64_t index) const;
+            
+            /*!
+             * Retrieves the synchronization vectors of the parallel composition.
+             */
+            std::vector<SynchronizationVector> const& getSynchronizationVectors() const;
+            
+            /*!
+             * Retrieves the number of synchronization vectors.
+             */
+            std::size_t getNumberOfSynchronizationVectors() const;
             
             virtual boost::any accept(CompositionVisitor& visitor, boost::any const& data) const override;
             
             virtual void write(std::ostream& stream) const override;
             
         private:
-            // The left subcomposition.
-            std::shared_ptr<Composition> leftSubcomposition;
+            /*!
+             * Checks the synchronization vectors for validity.
+             */
+            bool checkSynchronizationVectors() const;
             
-            // The right subcomposition.
-            std::shared_ptr<Composition> rightSubcomposition;
+            /// The subcompositions.
+            std::vector<std::shared_ptr<Composition>> subcompositions;
             
-            // The alphabet of actions over which to synchronize.
-            std::set<std::string> alphabet;
+            /// The synchronization vectors of the parallel composition.
+            std::vector<SynchronizationVector> synchronizationVectors;
         };
         
     }

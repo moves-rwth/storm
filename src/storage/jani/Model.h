@@ -65,6 +65,11 @@ namespace storm {
              */
             uint64_t getActionIndex(std::string const& name) const;
             
+            /*!
+             * Retrieves the mapping from action names to their indices.
+             */
+            std::unordered_map<std::string, uint64_t> const& getActionToIndexMap() const;
+            
             /**
              * Adds an action to the model.
              *
