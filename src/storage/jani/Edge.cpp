@@ -71,7 +71,7 @@ namespace storm {
         
         void Edge::finalize(Model const& containingModel) {
             for (auto const& destination : getDestinations()) {
-                for (auto const& assignment : destination.getAssignments()) {
+                for (auto const& assignment : destination.getOrderedAssignments().getAllAssignments()) {
                     if (containingModel.getGlobalVariables().hasVariable(assignment.getExpressionVariable())) {
                         writtenGlobalVariables.insert(assignment.getExpressionVariable());
                     }
@@ -88,7 +88,7 @@ namespace storm {
             if (!destinations.empty()) {
                 auto const& destination = *destinations.begin();
                 
-                for (auto const& assignment : destination.getTransientAssignments()) {
+                for (auto const& assignment : destination.getOrderedAssignments().getTransientAssignments()) {
                     // Check if we can lift the assignment to the edge.
                     bool canBeLifted = true;
                     for (auto const& destination : destinations) {

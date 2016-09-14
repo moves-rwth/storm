@@ -36,20 +36,7 @@ namespace storm {
              */
             void setProbability(storm::expressions::Expression const& probability);
 
-            /*!
-             * Retrieves the assignments to make when choosing this destination.
-             */
-            storm::jani::detail::ConstAssignments getAssignments() const;
-            
-            /*!
-             * Retrieves the transient assignments to make when choosing this destination.
-             */
-            storm::jani::detail::ConstAssignments getTransientAssignments() const;
-
-            /*!
-             * Retrieves the non-transient assignments to make when choosing this destination.
-             */
-            storm::jani::detail::ConstAssignments getNonTransientAssignments() const;
+            OrderedAssignments const& getOrderedAssignments() const;
 
             /*!
              * Substitutes all variables in all expressions according to the given substitution.

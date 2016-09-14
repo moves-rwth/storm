@@ -203,8 +203,8 @@ namespace storm {
         CompressedState JaniNextStateGenerator<ValueType, StateType>::applyUpdate(CompressedState const& state, storm::jani::EdgeDestination const& destination) {
             CompressedState newState(state);
             
-            auto assignmentIt = destination.getNonTransientAssignments().begin();
-            auto assignmentIte = destination.getNonTransientAssignments().end();
+            auto assignmentIt = destination.getOrderedAssignments().getNonTransientAssignments().begin();
+            auto assignmentIte = destination.getOrderedAssignments().getNonTransientAssignments().end();
             
             // Iterate over all boolean assignments and carry them out.
             auto boolIt = this->variableInformation.booleanVariables.begin();
