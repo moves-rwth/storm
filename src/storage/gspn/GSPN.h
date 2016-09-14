@@ -1,6 +1,7 @@
 #ifndef STORM_STORAGE_GSPN_GSPN_H
 #define STORM_STORAGE_GSPN_GSPN_H
 
+#include <iostream>
 #include <stdint.h>
 #include <vector>
 #include <memory>
@@ -142,6 +143,10 @@ namespace storm {
              * @return true if no errors are found
              */
             bool isValid() const;
+            // TODO doc
+            void toPnpro(std::ostream &stream) const;
+            // TODO doc
+            void toPnml(std::ostream &stream) const;
         private:
             /*!
              * Test

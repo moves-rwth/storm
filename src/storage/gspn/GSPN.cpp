@@ -313,6 +313,203 @@ namespace storm {
 
             return result;
         }
+
+        void GSPN::toPnpro(std::ostream &stream) const {
+            auto space = "  ";
+            auto space2 = "    ";
+            auto space3 = "      ";
+            auto projectName = "storm-export"; // TODO add to args
+            stream << "<project name=\"" << projectName << "\" version=\"121\">" << std::endl;
+            stream << space << "<gspn name=\"" << getName() << "\" >" << std::endl;
+
+            u_int32_t x = 1;
+            stream << space2 << "<nodes>" << std::endl;
+            for (auto& place : places) {
+                stream << space3 << "<place marking=\"" << place.getNumberOfInitialTokens() <<"\" ";
+                stream << "name =\"" << place.getName() << "\" ";
+                stream << "x=\"" << x << "\" ";
+                stream << "y=\"1\" ";
+                stream << "/>" << std::endl;
+                x = x + 3;
+            }
+            x = 1;
+            for (auto& trans : timedTransitions) {
+                stream << space3 << "<transition name=\"" << trans->getName() << "\" ";
+                stream << "type=\"EXP\" ";
+                stream << "nservers-x=\"" << trans->getRate() << "\" ";
+                stream << "x=\"" << x << "\" ";
+                stream << "y=\"4\" ";
+                stream << "/>" << std::endl;
+                x = x + 3;
+            }
+            for (auto& trans : immediateTransitions) {
+                stream << space3 << "<transition name=\"" << trans->getName() << "\" ";
+                stream << "type=\"IMM\" ";
+                stream << "x=\"" << x << "\" ";
+                stream << "y=\"4\" ";
+                stream << "/>" << std::endl;
+                x = x + 3;
+            }
+            stream << space2 << "</nodes>" << std::endl;
+
+            stream << space2 << "<edges>" << std::endl;
+            for (auto& trans : timedTransitions) {
+                for (auto it = trans->getInputPlacesCBegin(); it != trans->getInputPlacesCEnd(); ++it) {
+                    stream << space3 << "<arc ";
+                    stream << "head=\"" << trans->getName() << "\" ";
+                    stream << "tail=\"" << (*it)->getName() << "\" ";
+                    stream << "kind=\"INPUT\" ";
+                    stream << "mult=\"" << trans->getInputArcMultiplicity(**it) << "\" ";
+                    stream << "/>" << std::endl;
+                }
+                for (auto it = trans->getInhibitionPlacesCBegin(); it != trans->getInhibitionPlacesCEnd(); ++it) {
+                    stream << space3 << "<arc ";
+                    stream << "head=\"" << trans->getName() << "\" ";
+                    stream << "tail=\"" << (*it)->getName() << "\" ";
+                    stream << "kind=\"INHIBITOR\" ";
+                    stream << "mult=\"" << trans->getInhibitionArcMultiplicity(**it) << "\" ";
+                    stream << "/>" << std::endl;
+                }
+                for (auto it = trans->getOutputPlacesCBegin(); it != trans->getOutputPlacesCEnd(); ++it) {
+                    stream << space3 << "<arc ";
+                    stream << "head=\"" << (*it)->getName() << "\" ";
+                    stream << "tail=\"" << trans->getName() << "\" ";
+                    stream << "kind=\"OUTPUT\" ";
+                    stream << "mult=\"" << trans->getOutputArcMultiplicity(**it) << "\" ";
+                    stream << "/>" << std::endl;
+                }
+            }
+            for (auto& trans : immediateTransitions) {
+                for (auto it = trans->getInputPlacesCBegin(); it != trans->getInputPlacesCEnd(); ++it) {
+                    stream << space3 << "<arc ";
+                    stream << "head=\"" << trans->getName() << "\" ";
+                    stream << "tail=\"" << (*it)->getName() << "\" ";
+                    stream << "kind=\"INPUT\" ";
+                    stream << "mult=\"" << trans->getInputArcMultiplicity(**it) << "\" ";
+                    stream << "/>" << std::endl;
+                }
+                for (auto it = trans->getInhibitionPlacesCBegin(); it != trans->getInhibitionPlacesCEnd(); ++it) {
+                    stream << space3 << "<arc ";
+                    stream << "head=\"" << trans->getName() << "\" ";
+                    stream << "tail=\"" << (*it)->getName() << "\" ";
+                    stream << "kind=\"INHIBITOR\" ";
+                    stream << "mult=\"" << trans->getInhibitionArcMultiplicity(**it) << "\" ";
+                    stream << "/>" << std::endl;
+                }
+                for (auto it = trans->getOutputPlacesCBegin(); it != trans->getOutputPlacesCEnd(); ++it) {
+                    stream << space3 << "<arc ";
+                    stream << "head=\"" << (*it)->getName() << "\" ";
+                    stream << "tail=\"" << trans->getName() << "\" ";
+                    stream << "kind=\"OUTPUT\" ";
+                    stream << "mult=\"" << trans->getOutputArcMultiplicity(**it) << "\" ";
+                    stream << "/>" << std::endl;
+                }
+            }
+            stream << space2 << "</edges>" << std::endl;
+            stream << space << "</gspn>" << std::endl;
+            stream << "</project>" << std::endl;
+        }
+
+        void GSPN::toPnml(std::ostream &stream) const {
+            std::string space = "  ";
+            std::string space2 = "    ";
+            std::string space3 = "      ";
+            std::string space4 = "        ";
+
+            stream << "<pnml>" << std::endl;
+            stream << space << "<net id=\"" << getName() << "\">" << std::endl;
+
+            // add places
+            for (const auto &place : places) {
+                stream << space2 << "<place id=\"" << place.getName() << "\">" << std::endl;
+                stream << space3 << "<initialMarking>" << std::endl;
+                stream << space4 << "<value>Default," << place.getNumberOfInitialTokens() << "</value>" << std::endl;
+                stream << space3 << "</initialMarking>" << std::endl;
+                stream << space2 << "</place>" << std::endl;
+            }
+
+            // add immediate transitions
+            for (const auto &trans : immediateTransitions) {
+                stream << space2 << "<transition id=\"" << trans->getName() << "\">" << std::endl;
+                stream << space3 << "<rate>" << std::endl;
+                stream << space4 << "<value>" << trans->getWeight() << "</value>" << std::endl;
+                stream << space3 << "</rate>" << std::endl;
+                stream << space3 << "<timed>" << std::endl;
+                stream << space4 << "<value>false</value>" << std::endl;
+                stream << space3 << "</timed>" << std::endl;
+                stream << space2 << "</transition>" << std::endl;
+            }
+
+            // add timed transitions
+            for (const auto &trans : timedTransitions) {
+                stream << space2 << "<transition id=\"" << trans->getName() << "\">" << std::endl;
+                stream << space3 << "<rate>" << std::endl;
+                stream << space4 << "<value>" << trans->getRate() << "</value>" << std::endl;
+                stream << space3 << "</rate>" << std::endl;
+                stream << space3 << "<timed>" << std::endl;
+                stream << space4 << "<value>true</value>" << std::endl;
+                stream << space3 << "</timed>" << std::endl;
+                stream << space2 << "</transition>" << std::endl;
+            }
+
+            uint_fast64_t i = 0;
+            // add arcs for immediate transitions
+            for (const auto &trans : immediateTransitions) {
+                // add input arcs
+                for (auto it = trans->getInputPlacesCBegin(); it != trans->getInputPlacesCEnd(); ++it) {
+                    stream << space2 << "<arc ";
+                    stream << "id=\"arc" << i++ << "\" ";
+                    stream << "source=\"" << (*it)->getName() << "\" ";
+                    stream << "target=\"" << trans->getName() << "\" ";
+                    stream << ">" << std::endl;
+
+                    stream << space3 << "<inscription>" << std::endl;
+                    stream << space4 << "<value>Default," << trans->getInputArcMultiplicity(**it) << "</value>" << std::endl;
+                    stream << space3 << "</inscription>" << std::endl;
+
+                    stream << space3 << "<type value=\"normal\" />" << std::endl;
+
+                    stream << space2 << "</arc>" << std::endl;
+                }
+
+                // add inhibition arcs
+                for (auto it = trans->getInhibitionPlacesCBegin(); it != trans->getInhibitionPlacesCEnd(); ++it) {
+                    stream << space2 << "<arc ";
+                    stream << "id=\"arc" << i++ << "\" ";
+                    stream << "source=\"" << (*it)->getName() << "\" ";
+                    stream << "target=\"" << trans->getName() << "\" ";
+                    stream << ">" << std::endl;
+
+                    stream << space3 << "<inscription>" << std::endl;
+                    stream << space4 << "<value>Default," << trans->getInputArcMultiplicity(**it) << "</value>" << std::endl;
+                    stream << space3 << "</inscription>" << std::endl;
+
+                    stream << space3 << "<type value=\"inhibition\" />" << std::endl;
+
+                    stream << space2 << "</arc>" << std::endl;
+                }
+
+                // add output arcs
+                for (auto it = trans->getOutputPlacesCBegin(); it != trans->getOutputPlacesCEnd(); ++it) {
+                    stream << space2 << "<arc ";
+                    stream << "id=\"arc" << i++ << "\" ";
+                    stream << "source=\"" << trans->getName() << "\" ";
+                    stream << "target=\"" << (*it)->getName() << "\" ";
+                    stream << ">" << std::endl;
+
+                    stream << space3 << "<inscription>" << std::endl;
+                    stream << space4 << "<value>Default," << trans->getInputArcMultiplicity(**it) << "</value>" << std::endl;
+                    stream << space3 << "</inscription>" << std::endl;
+
+                    stream << space3 << "<type value=\"normal\" />" << std::endl;
+
+                    stream << space2 << "</arc>" << std::endl;
+                }
+            }
+
+            stream << space << "</net>" << std::endl;
+            stream << "</pnml>" << std::endl;
+        }
     }
 }
 
