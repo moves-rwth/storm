@@ -84,7 +84,7 @@ namespace storm {
             /*!
              * Checks the synchronization vectors for validity.
              */
-            bool checkSynchronizationVectors() const;
+            void checkSynchronizationVectors() const;
             
             /// The subcompositions.
             std::vector<std::shared_ptr<Composition>> subcompositions;

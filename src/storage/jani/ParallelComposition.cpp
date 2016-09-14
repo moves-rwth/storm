@@ -94,14 +94,20 @@ namespace storm {
             return synchronizationVectors.size();
         }
         
-        bool ParallelComposition::checkSynchronizationVectors() const {
+        void ParallelComposition::checkSynchronizationVectors() const {
             for (uint_fast64_t inputIndex = 0; inputIndex < subcompositions.size(); ++ inputIndex) {
                 std::set<std::string> actions;
                 for (auto const& vector : synchronizationVectors) {
                     std::string const& action = vector.getInput(inputIndex);
-                    STORM_LOG_THROW(actions.find(action) == actions.end(), storm::exceptions::WrongFormatException, "Cannot use the same action multiple times as input in synchronization vector.");
+                    STORM_LOG_THROW(actions.find(action) == actions.end(), storm::exceptions::WrongFormatException, "Cannot use the same action multiple times as input in synchronization vectors.");
                     actions.insert(action);
                 }
+            }
+            
+            std::set<std::string> actions;
+            for (auto const& vector : synchronizationVectors) {
+                STORM_LOG_THROW(actions.find(vector.getOutput()) == actions.end(), storm::exceptions::WrongFormatException, "Cannot use the same output action multiple times in synchronization vectors.");
+                actions.insert(vector.getOutput());
             }
         }
         

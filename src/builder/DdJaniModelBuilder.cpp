@@ -1116,55 +1116,82 @@ namespace storm {
                 for (uint64_t automatonIndex = 0; automatonIndex < subautomata.size(); ++automatonIndex) {
                     AutomatonDd const& subautomaton = subautomata[automatonIndex];
                     
-                    // Construct combined identity.
-                    result.identity *= subautomaton.identity;
-                    
+                    // Add the transient assignments from the new subautomaton.
                     addToTransientAssignmentMap(result.transientLocationAssignments, subautomaton.transientLocationAssignments);
-                }
-                
-                result.transientLocationAssignments = joinTransientAssignmentMaps(automaton1.transientLocationAssignments, automaton2.transientLocationAssignments);
-                
-                // Treat all actions of the first automaton.
-                for (auto const& action1 : automaton1.actionIndexToAction) {
-                    // If we need to synchronize over this action index, we try to do so now.
-                    if (synchronizingActionIndices.find(action1.first) != synchronizingActionIndices.end()) {
-                        auto action2It = automaton2.actionIndexToAction.find(action1.first);
-                        if (action2It != automaton2.actionIndexToAction.end()) {
-                            ActionDd newAction = combineSynchronizingActions(action1.second, action2It->second);
-                            result.actionIndexToAction[action1.first] = newAction;
-                            result.extendLocalNondeterminismVariables(newAction.getLocalNondeterminismVariables());
-                        }
+                    
+                    // Set the used local nondeterminism variables appropriately.
+                    if (automatonIndex == 0) {
+                        result.setLowestLocalNondeterminismVariable(subautomaton.getLowestLocalNondeterminismVariable());
+                        result.setHighestLocalNondeterminismVariable(subautomaton.getHighestLocalNondeterminismVariable());
                     } else {
-                        // If we don't synchronize over this action, we need to construct the interleaving.
+                        result.extendLocalNondeterminismVariables(subautomaton.localNondeterminismVariables);
+                    }
+
+                    // Keep track of all actions of the current result that were combined with another action of the current
+                    // automaton so we can extend the missing actions with the current automaton's identity later.
+                    std::set<uint64_t> combinedActions;
+                    
+                    // Compose the actions according to the synchronization vectors.
+                    std::set<uint64_t> actionsInSynch;
+                    for (auto const& synchVector : synchronizationVectors) {
+                        uint64_t outputActionIndex = actionInformation.getActionIndex(synchVector.getOutput());
+                        uint64_t inputActionIndex = actionInformation.getActionIndex(synchVector.getInput(automatonIndex));
+                        actionsInSynch.insert(inputActionIndex);
                         
-                        // If both automata contain the action, we need to combine the actions in an unsynchronized way.
-                        auto action2It = automaton2.actionIndexToAction.find(action1.first);
-                        if (action2It != automaton2.actionIndexToAction.end()) {
-                            ActionDd newAction = combineUnsynchronizedActions(action1.second, action2It->second, automaton1.identity, automaton2.identity);
-                            result.actionIndexToAction[action1.first] = newAction;
-                            result.extendLocalNondeterminismVariables(newAction.getLocalNondeterminismVariables());
+                        // Either set the action (if it's the first of the ones to compose) or compose the actions directly.
+                        if (automatonIndex == 0) {
+                            // If the action cannot be found, the particular spot in the output will be left empty.
+                            auto inputActionIt = subautomaton.actionIndexToAction.find(inputActionIndex);
+                            if (inputActionIt != subautomaton.actionIndexToAction.end()) {
+                                result.actionIndexToAction[actionInformation.getActionIndex(synchVector.getOutput())] = inputActionIt->second;
+                            }
                         } else {
-                            // If only the first automaton has this action, we only need to apply the identity of the
-                            // second automaton.
-                            result.actionIndexToAction[action1.first] = ActionDd(action1.second.guard, action1.second.transitions * automaton2.identity, action1.second.transientEdgeAssignments, action1.second.localNondeterminismVariables, action1.second.variableToWritingFragment, action1.second.illegalFragment);
+                            // If there is no action in the output spot, this means that some other subcomposition did
+                            // not provide the action necessary for the synchronization vector to resolve.
+                            auto outputActionIt = result.actionIndexToAction.find(outputActionIndex);
+                            if (outputActionIt != result.actionIndexToAction.end()) {
+                                auto inputActionIt = subautomaton.actionIndexToAction.find(inputActionIndex);
+                                if (inputActionIt != subautomaton.actionIndexToAction.end()) {
+                                    combinedActions.insert(outputActionIt->first);
+                                    outputActionIt->second = combineSynchronizingActions(outputActionIt->second, inputActionIt->second);
+                                    result.extendLocalNondeterminismVariables(outputActionIt->second.getLocalNondeterminismVariables());
+                                } else {
+                                    // If the current subcomposition does not provide the required action for the synchronization
+                                    // vector, we clear the action.
+                                    result.actionIndexToAction.erase(outputActionIt);
+                                }
+                            }
                         }
                     }
-                }
-                
-                // Treat the actions of the second automaton.
-                for (auto const& action2 : automaton2.actionIndexToAction) {
-                    // Here, we only need to treat actions that the first automaton does not have, because we have handled
-                    // this case earlier. Likewise, we have to consider non-synchronizing actions only.
-                    if (automaton1.actionIndexToAction.find(action2.first) == automaton1.actionIndexToAction.end()) {
-                        if (synchronizingActionIndices.find(action2.first) == synchronizingActionIndices.end()) {
-                            // If only the second automaton has this action, we only need to apply the identity of the
-                            // first automaton.
-                            result.actionIndexToAction[action2.first] = ActionDd(action2.second.guard, action2.second.transitions * automaton1.identity, action2.second.transientEdgeAssignments, action2.second.localNondeterminismVariables, action2.second.variableToWritingFragment, action2.second.illegalFragment);
+
+                    // Now treat all unsynchronizing actions.
+                    for (auto const& action : subautomaton.actionIndexToAction) {
+                        if (actionsInSynch.find(action.first) == actionsInSynch.end()) {
+                            auto oldActionIt = result.actionIndexToAction.find(action.first);
+                            combinedActions.insert(action.first);
+                            if (oldActionIt != result.actionIndexToAction.end()) {
+                                oldActionIt->second = combineUnsynchronizedActions(oldActionIt->second, action.second, result.identity, subautomaton.identity);
+                                result.extendLocalNondeterminismVariables(oldActionIt->second.getLocalNondeterminismVariables());
+                            } else {
+                                // Extend the action with the identity of the previous composition.
+                                result.actionIndexToAction[action.first] = ActionDd(action.second.guard, action.second.transitions * result.identity, action.second.transientEdgeAssignments, action.second.localNondeterminismVariables, action.second.variableToWritingFragment, action.second.illegalFragment);
+                            }
                         }
                     }
+                    
+                    // If it's not the first automaton we are treating, then we need to add the current automaton's
+                    // identity to all actions that were not yet combined with another action.
+                    if (automatonIndex == 0) {
+                        for (auto& action : result.actionIndexToAction) {
+                            if (combinedActions.find(action.first) == combinedActions.end()) {
+                                result.actionIndexToAction[action.first] = ActionDd(action.second.guard, action.second.transitions * subautomaton.identity, action.second.transientEdgeAssignments, action.second.localNondeterminismVariables, action.second.variableToWritingFragment, action.second.illegalFragment);
+                            }
+                        }
+                    }
+                    
+                    // Finally, construct combined identity.
+                    result.identity *= subautomaton.identity;
                 }
-                
-                result.identity = automaton1.identity * automaton2.identity;
                 
                 return result;
             }
