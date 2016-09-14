@@ -502,11 +502,18 @@ namespace storm {
 									}
 								}
 								else { // A spare child.
-									// TODO: Draw line from "SC_activating" to every BE, that is connected to the spare child.
+									auto spareExit = mGspn.getImmediateTransition(child->name() + STR_ACTIVATING);
 									
+									std::vector<int> ids = getAllBEIDsOfElement(child);
+									for (std::size_t k = 0; k < ids.size(); k++) {
+										auto childEntry = mGspn.getPlace(mDft.getElement(ids[k])->name() + STR_ACTIVATED);
+										
+										if (spareExit.first && childEntry.first) { // Only add arcs if the objects have been found.
+											spareExit.second->setInhibitionArcMultiplicity(childEntry.second, 1);
+											spareExit.second->setOutputArcMultiplicity(childEntry.second, 1);
+										}
+									}
 									
-									
-									// TODO: End.
 									auto childExit = mGspn.getPlace(child->name() + STR_FAILED);
 									auto spareEntry = mGspn.getImmediateTransition(mDft.getElement(parents[j])->name() + "_claiming_" + child->name());
 									auto spareEntry2 = mGspn.getImmediateTransition(child->name() + STR_ACTIVATING);
