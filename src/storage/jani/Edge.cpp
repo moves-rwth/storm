@@ -79,6 +79,10 @@ namespace storm {
             }
         }
         
+        bool Edge::hasSilentAction() const {
+            return actionIndex == Model::silentActionIndex;
+        }
+        
         bool Edge::addTransientAssignment(Assignment const& assignment) {
             STORM_LOG_THROW(assignment.isTransient(), storm::exceptions::InvalidArgumentException, "Must not add non-transient assignment to location.");
             return assignments.add(assignment);

@@ -14,6 +14,7 @@ namespace storm {
     namespace jani {
         
         static const std::string SILENT_ACTION_NAME = "";
+        const uint64_t Model::silentActionIndex = 0;
         
         Model::Model() {
             // Intentionally left empty.
@@ -31,7 +32,8 @@ namespace storm {
             initialStatesRestriction = this->expressionManager->boolean(true);
             
             // Add a prefined action that represents the silent action.
-            silentActionIndex = addAction(storm::jani::Action(SILENT_ACTION_NAME));
+            uint64_t actionIndex = addAction(storm::jani::Action(SILENT_ACTION_NAME));
+            assert(actionIndex == silentActionIndex);
         }
         
         storm::expressions::ExpressionManager& Model::getManager() const {

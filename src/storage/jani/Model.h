@@ -17,8 +17,12 @@ namespace storm {
         
         class Exporter;
         
+        
+        
         class Model {
         public:
+            static const uint64_t silentActionIndex;
+            
             friend class Exporter;
             
             /*!
@@ -347,9 +351,6 @@ namespace storm {
             
             /// The set of non-silent action indices.
             boost::container::flat_set<uint64_t> nonsilentActionIndices;
-            
-            /// The index of the silent action.
-            uint64_t silentActionIndex;
             
             /// The constants defined by the model.
             std::vector<Constant> constants;

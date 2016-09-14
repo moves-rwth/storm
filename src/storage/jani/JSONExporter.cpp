@@ -160,7 +160,13 @@ namespace storm {
         
         modernjson::json buildActionArray(std::vector<storm::jani::Action> const& actions) {
             std::vector<modernjson::json> actionReprs;
+            uint64_t actIndex = 0;
             for(auto const& act : actions) {
+                if(actIndex == storm::jani::Model::silentActionIndex) {
+                    actIndex++;
+                    continue;
+                }
+                actIndex++;
                 modernjson::json actEntry;
                 actEntry["name"] = act.getName();
                 actionReprs.push_back(actEntry);
@@ -270,7 +276,7 @@ namespace storm {
             for(auto const& destination : destinations) {
                 modernjson::json destEntry;
                 destEntry["location"] = locationNames.at(destination.getLocationIndex());
-                destEntry["probability"] = buildExpression(destination.getProbability());
+                destEntry["probability"]["exp"] = buildExpression(destination.getProbability());
                 destEntry["assignments"] = buildAssignmentArray(destination.getOrderedAssignments());
                 destDeclarations.push_back(destEntry);
             }
@@ -282,10 +288,9 @@ namespace storm {
             for(auto const& edge : edges) {
                 modernjson::json edgeEntry;
                 edgeEntry["location"] = locationNames.at(edge.getSourceLocationIndex());
-                // TODO silent action
-                //if(edge.nonSilentAction()) {
-                edgeEntry["action"] = actionNames.at(edge.getActionIndex());
-                //}
+                if(!edge.hasSilentAction()) {
+                    edgeEntry["action"] = actionNames.at(edge.getActionIndex());
+                }
                 if(edge.hasRate()) {
                     edgeEntry["rate"]["exp"] = buildExpression(edge.getRate());
                 }

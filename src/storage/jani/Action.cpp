@@ -9,6 +9,5 @@ namespace storm {
         std::string const& Action::getName() const {
             return this->name;
         }
-
     }
 }
