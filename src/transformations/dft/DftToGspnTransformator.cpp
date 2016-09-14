@@ -210,9 +210,7 @@ namespace storm {
 			}
 			
 			template <typename ValueType>
-            void DftToGspnTransformator<ValueType>::drawSPARE(std::shared_ptr<storm::storage::DFTSpare<ValueType> const> dftSpare) {
-				// TODO: Implement.
-				
+            void DftToGspnTransformator<ValueType>::drawSPARE(std::shared_ptr<storm::storage::DFTSpare<ValueType> const> dftSpare) {	
 				uint_fast64_t priority = getPriority(0, dftSpare);
 				
 				storm::gspn::Place placeSPAREActivated;
@@ -267,7 +265,7 @@ namespace storm {
 					
 					storm::gspn::Place placeSPAREChildConsumed;
 					if (i < children.size() - 1) {
-						placeSPAREChildConsumed.setName(children[i]->name() + "_consumed");
+						placeSPAREChildConsumed.setName(dftSpare->name() + "_" + children[i]->name() + "_consumed");
 					}
 					else {
 						placeSPAREChildConsumed.setName(dftSpare->name() + STR_FAILED);
@@ -276,7 +274,7 @@ namespace storm {
 					mGspn.addPlace(placeSPAREChildConsumed);
 					
 					storm::gspn::ImmediateTransition<storm::gspn::GSPN::WeightType> immediateTransitionChildConsuming1;
-					immediateTransitionChildConsuming1.setName(children[i]->name() + "_consuming1");
+					immediateTransitionChildConsuming1.setName(dftSpare->name() + "_" + children[i]->name() + "_consuming1");
 					immediateTransitionChildConsuming1.setPriority(priority);
 					immediateTransitionChildConsuming1.setWeight(0.0);
 					immediateTransitionChildConsuming1.setOutputArcMultiplicity(placeSPAREChildConsumed, 1);
@@ -285,7 +283,7 @@ namespace storm {
 					mGspn.addImmediateTransition(immediateTransitionChildConsuming1);
 					
 					storm::gspn::ImmediateTransition<storm::gspn::GSPN::WeightType> immediateTransitionChildConsuming2;
-					immediateTransitionChildConsuming2.setName(children[i]->name() + "_consuming2");
+					immediateTransitionChildConsuming2.setName(dftSpare->name() + "_" + children[i]->name() + "_consuming2");
 					immediateTransitionChildConsuming2.setPriority(priority);
 					immediateTransitionChildConsuming2.setWeight(0.0);
 					immediateTransitionChildConsuming2.setOutputArcMultiplicity(placeSPAREChildConsumed, 1);
@@ -297,9 +295,9 @@ namespace storm {
 				
 				// Draw connections between all spare childs.
 				for (std::size_t i = 1; i < children.size() - 1; i++) {
-					auto placeSPAREChildConsumed = mGspn.getPlace(children[i]->name() + "_consumed");
+					auto placeSPAREChildConsumed = mGspn.getPlace(dftSpare->name() + "_" + children[i]->name() + "_consumed");
 					auto immediateTransitionChildClaiming = mGspn.getImmediateTransition(dftSpare->name() + "_claiming_" + children[i + 1]->name());
-					auto immediateTransitionChildConsuming1 = mGspn.getImmediateTransition(children[i + 1]->name() + "_consuming1");
+					auto immediateTransitionChildConsuming1 = mGspn.getImmediateTransition(dftSpare->name() + "_" + children[i + 1]->name() + "_consuming1");
 					
 					immediateTransitionChildClaiming.second->setOutputArcMultiplicity(placeSPAREChildConsumed.second, 1);
 					immediateTransitionChildClaiming.second->setInputArcMultiplicity(placeSPAREChildConsumed.second, 1);
@@ -491,7 +489,7 @@ namespace storm {
 									// Draw lines from "primary child_failed" to SPARE.
 									auto childExit = mGspn.getPlace(child->name() + STR_FAILED);
 									auto spareEntry = mGspn.getImmediateTransition(mDft.getElement(parents[j])->name() + "_claiming_" + children[1]->name());
-									auto spareEntry2 = mGspn.getImmediateTransition(children[1]->name() + "_consuming1");
+									auto spareEntry2 = mGspn.getImmediateTransition(mDft.getElement(parents[j])->name() + "_" + children[1]->name() + "_consuming1");
 									
 									if (childExit.first && spareEntry.first && spareEntry2.first) { // Only add arcs if the objects have been found.
 										spareEntry.second->setInputArcMultiplicity(childExit.second, 1);
@@ -509,20 +507,26 @@ namespace storm {
 										auto childEntry = mGspn.getPlace(mDft.getElement(ids[k])->name() + STR_ACTIVATED);
 										
 										if (spareExit.first && childEntry.first) { // Only add arcs if the objects have been found.
-											spareExit.second->setInhibitionArcMultiplicity(childEntry.second, 1);
-											spareExit.second->setOutputArcMultiplicity(childEntry.second, 1);
+											if (!spareExit.second->existsInhibitionArc(childEntry.second)) {
+												spareExit.second->setInhibitionArcMultiplicity(childEntry.second, 1);
+											}
+											if (!spareExit.second->existsOutputArc(childEntry.second)) {
+												spareExit.second->setOutputArcMultiplicity(childEntry.second, 1);
+											}
 										}
 									}
 									
 									auto childExit = mGspn.getPlace(child->name() + STR_FAILED);
 									auto spareEntry = mGspn.getImmediateTransition(mDft.getElement(parents[j])->name() + "_claiming_" + child->name());
 									auto spareEntry2 = mGspn.getImmediateTransition(child->name() + STR_ACTIVATING);
-									auto spareEntry3 = mGspn.getImmediateTransition(child->name() + "_consuming2");
+									auto spareEntry3 = mGspn.getImmediateTransition(mDft.getElement(parents[j])->name() + "_" + child->name() + "_consuming2");
 									
 									if (childExit.first && spareEntry.first && spareEntry2.first && spareEntry3.first) { // Only add arcs if the objects have been found.
 										spareEntry.second->setInhibitionArcMultiplicity(childExit.second, 1);
 										
-										spareEntry2.second->setInhibitionArcMultiplicity(childExit.second, 1);
+										if (!spareEntry2.second->existsInhibitionArc(childExit.second)) {
+											spareEntry2.second->setInhibitionArcMultiplicity(childExit.second, 1);
+										}
 										
 										spareEntry3.second->setInputArcMultiplicity(childExit.second, 1);
 										spareEntry3.second->setOutputArcMultiplicity(childExit.second, 1);
@@ -855,7 +859,8 @@ namespace storm {
 					{								
 						auto children = std::static_pointer_cast<storm::storage::DFTSpare<ValueType> const>(dftElement)->children();
 						
-						for (std::size_t i = 0; i < children.size(); i++) {
+						// Only regard the primary child of a SPARE. The spare childs are not allowed to be listed here.
+						for (std::size_t i = 0; i < 1; i++) {
 							std::vector<int> newIds = getAllBEIDsOfElement(children[i]);
 							ids.insert(ids.end(), newIds.begin(), newIds.end());
 						}
