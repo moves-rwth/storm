@@ -30,7 +30,7 @@ namespace storm {
             Dd(Dd<LibraryType>&& other) = default;
             Dd& operator=(Dd<LibraryType>&& other) = default;
             
-            virtual ~Dd();
+            virtual ~Dd() = default;
             
             /*!
              * Retrieves the support of the current DD.
