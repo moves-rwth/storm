@@ -1032,6 +1032,7 @@ namespace storm {
                 for (auto const& actionIndex : actionInformation.getNonSilentActionIndices()) {
                     actionIndexToLocalNondeterminismVariableOffset[actionIndex] = 0;
                 }
+                actionIndexToLocalNondeterminismVariableOffset[actionInformation.getSilentActionIndex()] = 0;
 
                 AutomatonDd globalAutomaton = boost::any_cast<AutomatonDd>(this->model.getSystemComposition().accept(*this, actionIndexToLocalNondeterminismVariableOffset));
                 return buildSystemFromAutomaton(globalAutomaton);

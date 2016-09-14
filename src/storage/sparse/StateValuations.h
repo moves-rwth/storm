@@ -20,6 +20,8 @@ namespace storm {
                  */
                 StateValuations(state_type const& numberOfStates);
                 
+                virtual ~StateValuations();
+                
                 // A mapping from state indices to their variable valuations.
                 std::vector<storm::expressions::SimpleValuation> valuations;
                 

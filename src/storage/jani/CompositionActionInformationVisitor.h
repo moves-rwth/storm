@@ -12,13 +12,15 @@ namespace storm {
         
         class ActionInformation {
         public:
-            ActionInformation(std::set<uint64_t> const& nonsilentActionIndices, std::map<uint64_t, std::string> const& indexToNameMap, std::map<std::string, uint64_t> const& nameToIndexMap);
+            ActionInformation(std::set<uint64_t> const& nonsilentActionIndices, std::map<uint64_t, std::string> const& indexToNameMap, std::map<std::string, uint64_t> const& nameToIndexMap, uint64_t silentActionIndex = 0);
             
             std::string const& getActionName(uint64_t index) const;
             uint64_t getActionIndex(std::string const& name) const;
             std::set<uint64_t> const& getNonSilentActionIndices() const;
+            uint64_t getSilentActionIndex() const;
             
         private:
+            uint64_t silentActionIndex;
             std::set<uint64_t> nonsilentActionIndices;
             std::map<uint64_t, std::string> indexToNameMap;
             std::map<std::string, uint64_t> nameToIndexMap;

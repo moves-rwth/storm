@@ -6,7 +6,7 @@
 namespace storm {
     namespace jani {
         
-        ActionInformation::ActionInformation(std::set<uint64_t> const& nonsilentActionIndices, std::map<uint64_t, std::string> const& indexToNameMap, std::map<std::string, uint64_t> const& nameToIndexMap) : nonsilentActionIndices(nonsilentActionIndices), indexToNameMap(indexToNameMap), nameToIndexMap(nameToIndexMap) {
+        ActionInformation::ActionInformation(std::set<uint64_t> const& nonsilentActionIndices, std::map<uint64_t, std::string> const& indexToNameMap, std::map<std::string, uint64_t> const& nameToIndexMap, uint64_t silentActionIndex) : silentActionIndex(silentActionIndex), nonsilentActionIndices(nonsilentActionIndices), indexToNameMap(indexToNameMap), nameToIndexMap(nameToIndexMap) {
             // Intentionally left empty.
         }
         
@@ -21,6 +21,10 @@ namespace storm {
         std::set<uint64_t> const& ActionInformation::getNonSilentActionIndices() const {
             return nonsilentActionIndices;
         }
+        
+        uint64_t ActionInformation::getSilentActionIndex() const {
+            return silentActionIndex;
+        }
      
         CompositionActionInformationVisitor::CompositionActionInformationVisitor(storm::jani::Model const& model) : model(model), nextFreeActionIndex(0), nameToIndexMap(), indexToNameMap() {
             // Intentionally left empty.
@@ -32,6 +36,11 @@ namespace storm {
 
             // Determine the next free index we can give out to a new action.
             for (auto const& action : model.getActions()) {
+                uint64_t actionIndex = model.getActionIndex(action.getName());
+                
+                nameToIndexMap[action.getName()] = model.getActionIndex(action.getName());
+                indexToNameMap[actionIndex] = action.getName();
+
                 nextFreeActionIndex = std::max(nextFreeActionIndex, model.getActionIndex(action.getName()));
             }
             ++nextFreeActionIndex;
@@ -42,7 +51,9 @@ namespace storm {
         }
         
         boost::any CompositionActionInformationVisitor::visit(AutomatonComposition const& composition, boost::any const& data) {
-            return model.getAutomaton(composition.getAutomatonName()).getUsedActionIndices();
+            std::set<uint64_t> result = model.getAutomaton(composition.getAutomatonName()).getUsedActionIndices();
+            result.erase(model.getSilentActionIndex());
+            return result;
         }
         
         boost::any CompositionActionInformationVisitor::visit(RenameComposition const& composition, boost::any const& data) {

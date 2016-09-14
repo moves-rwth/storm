@@ -15,6 +15,11 @@ namespace storm {
         }
         
         template<DdType LibraryType>
+        Dd<LibraryType>::~Dd() {
+            // Intentionally left empty.
+        }
+        
+        template<DdType LibraryType>
         bool Dd<LibraryType>::containsMetaVariable(storm::expressions::Variable const& metaVariable) const {
             return containedMetaVariables.find(metaVariable) != containedMetaVariables.end();
         }

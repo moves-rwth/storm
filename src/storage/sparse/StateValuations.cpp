@@ -8,6 +8,10 @@ namespace storm {
                 // Intentionally left empty.
             }
             
+            StateValuations::~StateValuations() {
+                // Intentionally left empty.
+            }
+            
             std::string StateValuations::stateInfo(state_type const& state) const {
                 return valuations[state].toString();
             }
