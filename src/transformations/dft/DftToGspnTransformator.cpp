@@ -230,7 +230,7 @@ namespace storm {
 				
 				auto children = dftSpare->children();
 				
-				// Repeat for every spare child (every child that is not the first!).
+				// Draw places and transitions that belong to each spare child.
 				for (std::size_t i = 1; i < children.size(); i++) {
 					auto placeChildClaimedPreexist = mGspn.getPlace(children[i]->name() + "_claimed");
 					
@@ -257,7 +257,7 @@ namespace storm {
 					mGspn.addPlace(placeSPAREClaimedChild);
 					
 					storm::gspn::ImmediateTransition<storm::gspn::GSPN::WeightType> immediateTransitionChildClaiming;
-					immediateTransitionChildClaiming.setName(children[i]->name() + "_claiming");
+					immediateTransitionChildClaiming.setName(dftSpare->name() + "_claiming_" + children[i]->name());
 					immediateTransitionChildClaiming.setPriority(priority + 1); // Higher priority needed!
 					immediateTransitionChildClaiming.setWeight(0.0);
 					immediateTransitionChildClaiming.setInhibitionArcMultiplicity(placeChildClaimedExist.second, 1);
@@ -293,6 +293,19 @@ namespace storm {
 					immediateTransitionChildConsuming2.setOutputArcMultiplicity(placeSPAREClaimedChild, 1);
 					immediateTransitionChildConsuming2.setInputArcMultiplicity(placeSPAREClaimedChild, 1);
 					mGspn.addImmediateTransition(immediateTransitionChildConsuming2);
+				}
+				
+				// Draw connections between all spare childs.
+				for (std::size_t i = 1; i < children.size() - 1; i++) {
+					auto placeSPAREChildConsumed = mGspn.getPlace(children[i]->name() + "_consumed");
+					auto immediateTransitionChildClaiming = mGspn.getImmediateTransition(dftSpare->name() + "_claiming_" + children[i + 1]->name());
+					auto immediateTransitionChildConsuming1 = mGspn.getImmediateTransition(children[i + 1]->name() + "_consuming1");
+					
+					immediateTransitionChildClaiming.second->setOutputArcMultiplicity(placeSPAREChildConsumed.second, 1);
+					immediateTransitionChildClaiming.second->setInputArcMultiplicity(placeSPAREChildConsumed.second, 1);
+					
+					immediateTransitionChildConsuming1.second->setOutputArcMultiplicity(placeSPAREChildConsumed.second, 1);
+					immediateTransitionChildConsuming1.second->setInputArcMultiplicity(placeSPAREChildConsumed.second, 1);
 				}
 			}
 			
@@ -461,14 +474,41 @@ namespace storm {
 							{
 								// TODO: Implement.
 								
-								// Check if child is a primary or spare child.
+								// Check if current child is a primary or spare child.
 								auto children =  std::static_pointer_cast<storm::storage::DFTSpare<ValueType> const>(mDft.getElement(parents[j]))->children();
 								
 								if (child == children[0]) { // Primary child.
 									// TODO: Draw line from "FC_activating" to every BE, that is connected to the primary child.
-								}
-								else { // Spare child.
 									
+									// Draw lines from "primary child_failed" to SPARE.
+									auto childExit = mGspn.getPlace(child->name() + STR_FAILED);
+									auto spareEntry = mGspn.getImmediateTransition(mDft.getElement(parents[j])->name() + "_claiming_" + children[1]->name());
+									auto spareEntry2 = mGspn.getImmediateTransition(children[1]->name() + "_consuming1");
+									
+									if (childExit.first && spareEntry.first && spareEntry2.first) { // Only add arcs if the objects have been found.
+										spareEntry.second->setInputArcMultiplicity(childExit.second, 1);
+										spareEntry.second->setOutputArcMultiplicity(childExit.second, 1);
+										
+										spareEntry2.second->setInputArcMultiplicity(childExit.second, 1);
+										spareEntry2.second->setOutputArcMultiplicity(childExit.second, 1);
+									}
+								}
+								else { // A spare child.
+									// TODO: Draw line from "SC_activating" to every BE, that is connected to the spare child.
+									
+									auto childExit = mGspn.getPlace(child->name() + STR_FAILED);
+									auto spareEntry = mGspn.getImmediateTransition(mDft.getElement(parents[j])->name() + "_claiming_" + child->name());
+									auto spareEntry2 = mGspn.getImmediateTransition(child->name() + STR_ACTIVATING);
+									auto spareEntry3 = mGspn.getImmediateTransition(child->name() + "_consuming2");
+									
+									if (childExit.first && spareEntry.first && spareEntry2.first && spareEntry3.first) { // Only add arcs if the objects have been found.
+										spareEntry.second->setInhibitionArcMultiplicity(childExit.second, 1);
+										
+										spareEntry2.second->setInhibitionArcMultiplicity(childExit.second, 1);
+										
+										spareEntry3.second->setInputArcMultiplicity(childExit.second, 1);
+										spareEntry3.second->setOutputArcMultiplicity(childExit.second, 1);
+									}
 								}
 								
 								break;

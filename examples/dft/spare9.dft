@@ -1,0 +1,6 @@
+toplevel "SPARE";
+"SPARE" wsp "PC" "FSC" "SSC";
+"PC" lambda=0.5 dorm=0.3;
+"FSC" lambda=0.5 dorm=0.3;
+"SSC" lambda=0.5 dorm=0.3;
+
