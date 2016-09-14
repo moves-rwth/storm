@@ -70,7 +70,7 @@ namespace storm {
              * then this strategy can be used to generate a strategy that only differs from the given one if it has to.
              * @return The solution vector.
              */
-            virtual storm::dd::Add<Type, ValueType> solveGame(OptimizationDirection player1Goal, OptimizationDirection player2Goal, storm::dd::Add<Type, ValueType> const& x, storm::dd::Add<Type, ValueType> const& b, storm::dd::Bdd<Type> const& prob0States, storm::dd::Bdd<Type> const& prob1States, boost::optional<storm::dd::Bdd<Type>> const& basePlayer1Strategy = boost::none, boost::optional<storm::dd::Bdd<Type>> const& basePlayer2Strategy = boost::none);
+            virtual storm::dd::Add<Type, ValueType> solveGame(OptimizationDirection player1Goal, OptimizationDirection player2Goal, storm::dd::Add<Type, ValueType> const& x, storm::dd::Add<Type, ValueType> const& b, boost::optional<storm::dd::Bdd<Type>> const& basePlayer1Strategy = boost::none, boost::optional<storm::dd::Bdd<Type>> const& basePlayer2Strategy = boost::none);
         
             // Setters that enable the generation of the players' strategies.
             void setGeneratePlayer1Strategy(bool value);
