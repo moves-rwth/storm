@@ -472,13 +472,21 @@ namespace storm {
 							}
 							case storm::storage::DFTElementType::SPARE:
 							{
-								// TODO: Implement.
-								
 								// Check if current child is a primary or spare child.
 								auto children =  std::static_pointer_cast<storm::storage::DFTSpare<ValueType> const>(mDft.getElement(parents[j]))->children();
 								
 								if (child == children[0]) { // Primary child.
-									// TODO: Draw line from "FC_activating" to every BE, that is connected to the primary child.
+									auto spareExit = mGspn.getImmediateTransition(child->name() + STR_ACTIVATING);
+									
+									std::vector<int> ids = getAllBEIDsOfElement(child);
+									for (std::size_t k = 0; k < ids.size(); k++) {
+										auto childEntry = mGspn.getPlace(mDft.getElement(ids[k])->name() + STR_ACTIVATED);
+										
+										if (spareExit.first && childEntry.first) { // Only add arcs if the objects have been found.
+											spareExit.second->setInhibitionArcMultiplicity(childEntry.second, 1);
+											spareExit.second->setOutputArcMultiplicity(childEntry.second, 1);
+										}
+									}
 									
 									// Draw lines from "primary child_failed" to SPARE.
 									auto childExit = mGspn.getPlace(child->name() + STR_FAILED);
@@ -496,6 +504,9 @@ namespace storm {
 								else { // A spare child.
 									// TODO: Draw line from "SC_activating" to every BE, that is connected to the spare child.
 									
+									
+									
+									// TODO: End.
 									auto childExit = mGspn.getPlace(child->name() + STR_FAILED);
 									auto spareEntry = mGspn.getImmediateTransition(mDft.getElement(parents[j])->name() + "_claiming_" + child->name());
 									auto spareEntry2 = mGspn.getImmediateTransition(child->name() + STR_ACTIVATING);
@@ -789,17 +800,91 @@ namespace storm {
 			}
 			
 			template <typename ValueType>
-            std::vector<int> DftToGspnTransformator<ValueType>::getAllBEIDsOfElement(std::vector<int> ids, std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftElement) {
-				std::vector<int> newIds;
+            std::vector<int> DftToGspnTransformator<ValueType>::getAllBEIDsOfElement(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftElement) {
+				std::vector<int> ids;
 				
-				if (dftElement->type() == storm::storage::DFTElementType::BE) {
-					newIds.push_back(dftElement->id());
-				}
-				else {
-					// TODO: Check all children: If they are BEs, add them to the list. Else, check the children again.
+				switch (dftElement->type()) {
+					case storm::storage::DFTElementType::AND:
+					{
+						auto children = std::static_pointer_cast<storm::storage::DFTAnd<ValueType> const>(dftElement)->children();
+						
+						for (std::size_t i = 0; i < children.size(); i++) {
+							std::vector<int> newIds = getAllBEIDsOfElement(children[i]);
+							ids.insert(ids.end(), newIds.begin(), newIds.end());
+						}
+						break;
+					}
+					case storm::storage::DFTElementType::OR:
+					{
+						auto children = std::static_pointer_cast<storm::storage::DFTOr<ValueType> const>(dftElement)->children();
+						
+						for (std::size_t i = 0; i < children.size(); i++) {
+							std::vector<int> newIds = getAllBEIDsOfElement(children[i]);
+							ids.insert(ids.end(), newIds.begin(), newIds.end());
+						}
+						break;
+					}
+					case storm::storage::DFTElementType::VOT:
+					{
+						auto children = std::static_pointer_cast<storm::storage::DFTVot<ValueType> const>(dftElement)->children();
+						
+						for (std::size_t i = 0; i < children.size(); i++) {
+							std::vector<int> newIds = getAllBEIDsOfElement(children[i]);
+							ids.insert(ids.end(), newIds.begin(), newIds.end());
+						}
+						break;
+					}
+					case storm::storage::DFTElementType::PAND:
+					{
+						auto children = std::static_pointer_cast<storm::storage::DFTPand<ValueType> const>(dftElement)->children();
+						
+						for (std::size_t i = 0; i < children.size(); i++) {
+							std::vector<int> newIds = getAllBEIDsOfElement(children[i]);
+							ids.insert(ids.end(), newIds.begin(), newIds.end());
+						}
+						break;
+					}
+					case storm::storage::DFTElementType::SPARE:
+					{								
+						auto children = std::static_pointer_cast<storm::storage::DFTSpare<ValueType> const>(dftElement)->children();
+						
+						for (std::size_t i = 0; i < children.size(); i++) {
+							std::vector<int> newIds = getAllBEIDsOfElement(children[i]);
+							ids.insert(ids.end(), newIds.begin(), newIds.end());
+						}
+						break;
+					}
+					case storm::storage::DFTElementType::POR:
+					{
+						auto children = std::static_pointer_cast<storm::storage::DFTPor<ValueType> const>(dftElement)->children();
+						
+						for (std::size_t i = 0; i < children.size(); i++) {
+							std::vector<int> newIds = getAllBEIDsOfElement(children[i]);
+							ids.insert(ids.end(), newIds.begin(), newIds.end());
+						}
+						break;
+					}
+					case storm::storage::DFTElementType::BE:
+					case storm::storage::DFTElementType::CONSTF:
+					case storm::storage::DFTElementType::CONSTS:
+					{
+						ids.push_back(dftElement->id());
+						break;
+					}
+					case storm::storage::DFTElementType::SEQ:
+					case storm::storage::DFTElementType::MUTEX:
+					case storm::storage::DFTElementType::PDEP:
+					{
+						break;
+					}
+					default:
+					{
+						STORM_LOG_ASSERT(false, "DFT type unknown.");
+						break;
+					}
 				}
 				
-				return newIds;
+				return ids;
 			}
 			
 			template <typename ValueType>

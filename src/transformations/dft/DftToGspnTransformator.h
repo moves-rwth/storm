@@ -205,7 +205,7 @@ namespace storm {
 				  * 
 				  * @param dftElement The element which 
 				  */
-				 std::vector<int> getAllBEIDsOfElement(std::vector<int> ids, std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftElement);
+				 std::vector<int> getAllBEIDsOfElement(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftElement);
             };
         }
     }
