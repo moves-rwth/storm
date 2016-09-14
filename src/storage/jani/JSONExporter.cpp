@@ -7,10 +7,141 @@
 #include "src/utility/macros.h"
 #include "src/exceptions/FileIoException.h"
 
+#include "src/exceptions/InvalidJaniException.h"
 
+#include "src/storage/expressions/RationalLiteralExpression.h"
+#include "src/storage/expressions/IntegerLiteralExpression.h"
+#include "src/storage/expressions/BooleanLiteralExpression.h"
+#include "src/storage/expressions/UnaryBooleanFunctionExpression.h"
+#include "src/storage/expressions/UnaryNumericalFunctionExpression.h"
+#include "src/storage/expressions/BinaryBooleanFunctionExpression.h"
+#include "src/storage/expressions/BinaryNumericalFunctionExpression.h"
+#include "src/storage/expressions/IfThenElseExpression.h"
+#include "src/storage/expressions/BinaryRelationExpression.h"
+#include "src/storage/expressions/VariableExpression.h"
 
 namespace storm {
     namespace jani {
+        
+        std::string operatorTypeToJaniString(storm::expressions::OperatorType optype) {
+            
+            using OpType = storm::expressions::OperatorType;
+            switch(optype) {
+                case OpType::And:
+                    return "∧";
+                case OpType::Or:
+                    return "∨";
+                case OpType::Xor:
+                    return "≠";
+                case OpType::Implies:
+                    return "⇒";
+                case OpType::Iff:
+                    return "=";
+                case OpType::Plus:
+                    return "+";
+                case OpType::Minus:
+                    return "-";
+                case OpType::Times:
+                    return "*";
+                case OpType::Divide:
+                    return "/";
+                case OpType::Min:
+                    return "min";
+                case OpType::Max:
+                    return "max";
+                case OpType::Power:
+                    return "pow";
+                case OpType::Equal:
+                    return "=";
+                case OpType::NotEqual:
+                    return "≠";
+                case OpType::Less:
+                    return "<";
+                case OpType::LessOrEqual:
+                    return "≤";
+                case OpType::Greater:
+                    return ">";
+                case OpType::GreaterOrEqual:
+                    return "≥";
+                case OpType::Not:
+                    return "¬";
+                case OpType::Floor:
+                    return "floor";
+                case OpType::Ceil:
+                    return "ceil";
+                case OpType::Ite:
+                    return "ite";
+                default:
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Operator not supported by Jani");
+            }
+        }
+        
+        modernjson::json ExpressionToJson::translate(storm::expressions::Expression const& expr) {
+            ExpressionToJson visitor;
+            return boost::any_cast<modernjson::json>(expr.accept(visitor, boost::none));
+        }
+        
+        
+        boost::any ExpressionToJson::visit(storm::expressions::IfThenElseExpression const& expression, boost::any const& data) {
+            modernjson::json opDecl;
+            opDecl["op"] = "ite";
+            opDecl["if"] = boost::any_cast<modernjson::json>(expression.getCondition()->accept(*this, boost::none));
+            opDecl["then"] = boost::any_cast<modernjson::json>(expression.getThenExpression()->accept(*this, boost::none));
+            opDecl["else"] = boost::any_cast<modernjson::json>(expression.getElseExpression()->accept(*this, boost::none));
+            return opDecl;
+        }
+        boost::any ExpressionToJson::visit(storm::expressions::BinaryBooleanFunctionExpression const& expression, boost::any const& data) {
+            modernjson::json opDecl;
+            opDecl["op"] = operatorTypeToJaniString(expression.getOperator());
+            opDecl["left"] = boost::any_cast<modernjson::json>(expression.getOperand(0)->accept(*this, boost::none));
+            opDecl["right"] = boost::any_cast<modernjson::json>(expression.getOperand(1)->accept(*this, boost::none));
+            return opDecl;
+        }
+        boost::any ExpressionToJson::visit(storm::expressions::BinaryNumericalFunctionExpression const& expression, boost::any const& data) {
+            modernjson::json opDecl;
+            opDecl["op"] = operatorTypeToJaniString(expression.getOperator());
+            opDecl["left"] = boost::any_cast<modernjson::json>(expression.getOperand(0)->accept(*this, boost::none));
+            opDecl["right"] = boost::any_cast<modernjson::json>(expression.getOperand(1)->accept(*this, boost::none));
+            return opDecl;
+        }
+        boost::any ExpressionToJson::visit(storm::expressions::BinaryRelationExpression const& expression, boost::any const& data) {
+            modernjson::json opDecl;
+            opDecl["op"] = operatorTypeToJaniString(expression.getOperator());
+            opDecl["left"] = boost::any_cast<modernjson::json>(expression.getOperand(0)->accept(*this, boost::none));
+            opDecl["right"] = boost::any_cast<modernjson::json>(expression.getOperand(1)->accept(*this, boost::none));
+            return opDecl;
+        }
+        boost::any ExpressionToJson::visit(storm::expressions::VariableExpression const& expression, boost::any const& data) {
+            return modernjson::json(expression.getVariableName());
+        }
+        boost::any ExpressionToJson::visit(storm::expressions::UnaryBooleanFunctionExpression const& expression, boost::any const& data) {
+            modernjson::json opDecl;
+            opDecl["op"] = operatorTypeToJaniString(expression.getOperator());
+            opDecl["exp"] = boost::any_cast<modernjson::json>(expression.getOperand()->accept(*this, boost::none));
+            return opDecl;
+        }
+        boost::any ExpressionToJson::visit(storm::expressions::UnaryNumericalFunctionExpression const& expression, boost::any const& data) {
+            modernjson::json opDecl;
+            opDecl["op"] = operatorTypeToJaniString(expression.getOperator());
+            opDecl["exp"] = boost::any_cast<modernjson::json>(expression.getOperand()->accept(*this, boost::none));
+            return opDecl;
+        }
+        boost::any ExpressionToJson::visit(storm::expressions::BooleanLiteralExpression const& expression, boost::any const& data) {
+            return modernjson::json(expression.getValue());
+        }
+        boost::any ExpressionToJson::visit(storm::expressions::IntegerLiteralExpression const& expression, boost::any const& data) {
+            return modernjson::json(expression.getValue());
+        }
+        boost::any ExpressionToJson::visit(storm::expressions::RationalLiteralExpression const& expression, boost::any const& data) {
+            return modernjson::json(expression.getValueAsDouble());
+        }
+        
+        
+        
+        
+        
+        
+        
         void JsonExporter::toFile(storm::jani::Model const& janiModel, std::string const& filepath) {
             std::ofstream ofs;
             ofs.open (filepath, std::ofstream::out );
@@ -41,7 +172,7 @@ namespace storm {
         
         
         modernjson::json buildExpression(storm::expressions::Expression const& exp) {
-            return modernjson::json();
+            return ExpressionToJson::translate(exp);
         }
         
         
@@ -140,8 +271,7 @@ namespace storm {
                 modernjson::json destEntry;
                 destEntry["location"] = locationNames.at(destination.getLocationIndex());
                 destEntry["probability"] = buildExpression(destination.getProbability());
-                // TODO
-                //destEntry["assignments"] = buildAssignmentArray(destination.getAssignments());
+                destEntry["assignments"] = buildAssignmentArray(destination.getOrderedAssignments());
                 destDeclarations.push_back(destEntry);
             }
             return modernjson::json(destDeclarations);
