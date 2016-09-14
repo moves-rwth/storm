@@ -10,6 +10,7 @@
 #include "src/storage/jani/RenameComposition.h"
 #include "src/storage/jani/AutomatonComposition.h"
 #include "src/storage/jani/ParallelComposition.h"
+#include "src/storage/jani/CompositionActionInformationVisitor.h"
 
 #include "src/storage/dd/Add.h"
 #include "src/storage/dd/Bdd.h"
@@ -172,7 +173,7 @@ namespace storm {
         template <storm::dd::DdType Type, typename ValueType>
         class CompositionVariableCreator : public storm::jani::CompositionVisitor {
         public:
-            CompositionVariableCreator(storm::jani::Model const& model) : model(model), automata() {
+            CompositionVariableCreator(storm::jani::Model const& model, storm::jani::ActionInformation const& actionInformation) : model(model), automata(), actionInformation(actionInformation) {
                 // Intentionally left empty.
             }
             
@@ -180,7 +181,7 @@ namespace storm {
                 // First, check whether every automaton appears exactly once in the system composition. Simultaneously,
                 // we determine the set of non-silent actions used by the composition.
                 automata.clear();
-                nonSilentActions = boost::any_cast<std::set<std::string>>(this->model.getSystemComposition().accept(*this, boost::none));
+                this->model.getSystemComposition().accept(*this, boost::none);
                 STORM_LOG_THROW(automata.size() == this->model.getNumberOfAutomata(), storm::exceptions::InvalidArgumentException, "Cannot build symbolic model from JANI model whose system composition refers to a subset of automata.");
                 
                 // Then, check that the model does not contain unbounded integer or non-transient real variables.
@@ -194,78 +195,38 @@ namespace storm {
                 }
                 
                 // Based on this assumption, we create the variables.
-                return createVariables(nonSilentActions);
+                return createVariables();
             }
             
             boost::any visit(storm::jani::AutomatonComposition const& composition, boost::any const& data) override {
                 auto it = automata.find(composition.getAutomatonName());
                 STORM_LOG_THROW(it == automata.end(), storm::exceptions::InvalidArgumentException, "Cannot build symbolic model from JANI model whose system composition that refers to the automaton '" << composition.getAutomatonName() << "' multiple times.");
                 automata.insert(it, composition.getAutomatonName());
-                
-                // Compute the set of actions used by this automaton.
-                std::set<uint64_t> actionIndices = model.getAutomaton(composition.getAutomatonName()).getUsedActionIndices();
-                std::set<std::string> result;
-                for (auto const& index : actionIndices) {
-                    result.insert(this->model.getAction(index).getName());
-                }
-                return result;
+                return boost::none;
             }
             
             boost::any visit(storm::jani::RenameComposition const& composition, boost::any const& data) override {
-                std::set<std::string> usedActions = boost::any_cast<std::set<std::string>>(composition.getSubcomposition().accept(*this, boost::none));
-                
-                std::set<std::string> newUsedActions;
-                for (auto const& action : usedActions) {
-                    auto it = composition.getRenaming().find(action);
-                    if (it != composition.getRenaming().end()) {
-                        if (it->second) {
-                            newUsedActions.insert(it->second.get());
-                        }
-                    } else {
-                        newUsedActions.insert(action);
-                    }
-                }
-                
-                return newUsedActions;
+                boost::any_cast<std::set<std::string>>(composition.getSubcomposition().accept(*this, boost::none));
+                return boost::none;
             }
             
             boost::any visit(storm::jani::ParallelComposition const& composition, boost::any const& data) override {
-                std::vector<std::set<std::string>> subresults;
                 for (auto const& subcomposition : composition.getSubcompositions()) {
-                    subresults.push_back(boost::any_cast<std::set<std::string>>(subcomposition->accept(*this, boost::none)));
+                    subcomposition->accept(*this, boost::none);
                 }
-                
-                // Determine all actions that do not take part in synchronization vectors.
-                std::set<std::string> result;
-                for (uint64_t subresultIndex = 0; subresultIndex < subresults.size(); ++subresultIndex) {
-                    std::set<std::string> actionsInSynch;
-                    for (auto const& synchVector : composition.getSynchronizationVectors()) {
-                        actionsInSynch.insert(synchVector.getInput()[subresultIndex]);
-                    }
-                    
-                    std::set_difference(subresults[subresultIndex].begin(), subresults[subresultIndex].end(), actionsInSynch.begin(), actionsInSynch.end(), std::inserter(result, result.begin()));
-                }
-                
-                // Now add all outputs of synchronization vectors.
-                for (auto const& synchVector : composition.getSynchronizationVectors()) {
-                    result.insert(synchVector.getOutput());
-                }
-                
-                return result;
+                return boost::none;
             }
             
         private:
             CompositionVariables<Type, ValueType> createVariables() {
                 CompositionVariables<Type, ValueType> result;
                 
-                for (auto const& action : this->model.getActions()) {
-                    if (this->model.getActionIndex(action.getName()) != this->model.getSilentActionIndex()) {
-                        std::pair<storm::expressions::Variable, storm::expressions::Variable> variablePair = result.manager->addMetaVariable(action.getName());
-                        result.actionVariablesMap[this->model.getActionIndex(action.getName())] = variablePair.first;
-                        result.allNondeterminismVariables.insert(variablePair.first);
-                    }
+                for (auto const& nonSilentActionIndex : actionInformation.getNonSilentActionIndices()) {
+                    std::pair<storm::expressions::Variable, storm::expressions::Variable> variablePair = result.manager->addMetaVariable(actionInformation.getActionName(nonSilentActionIndex));
+                    result.actionVariablesMap[nonSilentActionIndex] = variablePair.first;
+                    result.allNondeterminismVariables.insert(variablePair.first);
                 }
-                
+                    
                 // FIXME: check how many nondeterminism variables we should actually allocate.
                 uint64_t numberOfNondeterminismVariables = this->model.getNumberOfAutomata();
                 for (auto const& automaton : this->model.getAutomata()) {
@@ -390,7 +351,7 @@ namespace storm {
             
             storm::jani::Model const& model;
             std::set<std::string> automata;
-            std::set<std::string> nonSilentActions;
+            storm::jani::ActionInformation actionInformation;
         };
         
         template <storm::dd::DdType Type, typename ValueType>
@@ -1055,29 +1016,29 @@ namespace storm {
                 // The identity of the automaton's variables.
                 storm::dd::Add<Type, ValueType> identity;
                 
-                // The local nondeterminism variables used by this action DD, given as the lowest
+                // The local nondeterminism variables used by this action DD, given as the lowest and highest variable index.
                 std::pair<uint64_t, uint64_t> localNondeterminismVariables;
 
             };
             
-            CombinedEdgesSystemComposer(storm::jani::Model const& model, CompositionVariables<Type, ValueType> const& variables, std::vector<storm::expressions::Variable> const& transientVariables) : SystemComposer<Type, ValueType>(model, variables, transientVariables), actionToIndex(model.getActionToIndexMap()) {
+            CombinedEdgesSystemComposer(storm::jani::Model const& model, storm::jani::ActionInformation const& actionInformation, CompositionVariables<Type, ValueType> const& variables, std::vector<storm::expressions::Variable> const& transientVariables) : SystemComposer<Type, ValueType>(model, variables, transientVariables), actionInformation(actionInformation) {
                 // Intentionally left empty.
             }
         
-            std::unordered_map<std::string, uint64_t> actionToIndex;
+            storm::jani::ActionInformation const& actionInformation;
 
             ComposerResult<Type, ValueType> compose() override {
-                std::map<uint_fast64_t, uint_fast64_t> actionIndexToLocalNondeterminismVariableOffset;
-                for (auto const& action : this->model.getActions()) {
-                    actionIndexToLocalNondeterminismVariableOffset[this->model.getActionIndex(action.getName())] = 0;
+                std::map<uint64_t, uint64_t> actionIndexToLocalNondeterminismVariableOffset;
+                for (auto const& actionIndex : actionInformation.getNonSilentActionIndices()) {
+                    actionIndexToLocalNondeterminismVariableOffset[actionIndex] = 0;
                 }
-                
+
                 AutomatonDd globalAutomaton = boost::any_cast<AutomatonDd>(this->model.getSystemComposition().accept(*this, actionIndexToLocalNondeterminismVariableOffset));
                 return buildSystemFromAutomaton(globalAutomaton);
             }
             
             boost::any visit(storm::jani::AutomatonComposition const& composition, boost::any const& data) override {
-                std::map<uint_fast64_t, uint_fast64_t> const& actionIndexToLocalNondeterminismVariableOffset = boost::any_cast<std::map<uint_fast64_t, uint_fast64_t> const&>(data);
+                std::map<uint64_t, uint64_t> const& actionIndexToLocalNondeterminismVariableOffset = boost::any_cast<std::map<uint_fast64_t, uint_fast64_t> const&>(data);
                 return buildAutomatonDd(composition.getAutomatonName(), actionIndexToLocalNondeterminismVariableOffset);
             }
             
@@ -1085,12 +1046,12 @@ namespace storm {
                 // Build a mapping from indices to indices for the renaming.
                 std::map<uint64_t, uint64_t> renamingIndexToIndex;
                 for (auto const& entry : composition.getRenaming()) {
-                    if (this->model.getActionIndex(entry.first) != this->model.getSilentActionIndex()) {
+                    if (actionInformation.getActionIndex(entry.first) != this->model.getSilentActionIndex()) {
                         // Distinguish the cases where we hide the action or properly rename it.
                         if (entry.second) {
-                            renamingIndexToIndex.emplace(this->model.getActionIndex(entry.first), this->model.getActionIndex(entry.second.get()));
+                            renamingIndexToIndex.emplace(actionInformation.getActionIndex(entry.first), actionInformation.getActionIndex(entry.second.get()));
                         } else {
-                            renamingIndexToIndex.emplace(this->model.getActionIndex(entry.first), this->model.getSilentActionIndex());
+                            renamingIndexToIndex.emplace(actionInformation.getActionIndex(entry.first), this->model.getSilentActionIndex());
                         }
                     } else {
                         STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Renaming composition must not rename the silent action.");
@@ -1098,9 +1059,10 @@ namespace storm {
                 }
                 
                 // Prepare the new offset mapping.
-                std::map<uint_fast64_t, uint_fast64_t> const& actionIndexToLocalNondeterminismVariableOffset = boost::any_cast<std::map<uint_fast64_t, uint_fast64_t> const&>(data);
-                std::map<uint_fast64_t, uint_fast64_t> newSynchronizingActionToOffsetMap = actionIndexToLocalNondeterminismVariableOffset;
+                std::map<uint64_t, uint64_t> const& actionIndexToLocalNondeterminismVariableOffset = boost::any_cast<std::map<uint64_t, uint64_t> const&>(data);
+                std::map<uint64_t, uint64_t> newSynchronizingActionToOffsetMap = actionIndexToLocalNondeterminismVariableOffset;
                 for (auto const& indexPair : renamingIndexToIndex) {
+                    // FIXME: Check correct? Introduce zero if not contained?
                     auto it = actionIndexToLocalNondeterminismVariableOffset.find(indexPair.second);
                     STORM_LOG_THROW(it != actionIndexToLocalNondeterminismVariableOffset.end(), storm::exceptions::InvalidArgumentException, "Invalid action index " << indexPair.second << ".");
                     newSynchronizingActionToOffsetMap[indexPair.first] = it->second;
@@ -1114,38 +1076,52 @@ namespace storm {
             }
             
             boost::any visit(storm::jani::ParallelComposition const& composition, boost::any const& data) override {
-                // Build the set of synchronizing action indices.
-                std::set<uint64_t> synchronizingActionIndices;
-                for (auto const& entry : composition.getSynchronizationAlphabet()) {
-                    if (this->model.getActionIndex(entry) != this->model.getSilentActionIndex()) {
-                        synchronizingActionIndices.insert(this->model.getActionIndex(entry));
-                    } else {
-                        STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Parallel composition must not synchronize over silent action.");
-                    }
-                }
-                
-                // Then translate the left subcomposition.
-                AutomatonDd left = boost::any_cast<AutomatonDd>(composition.getLeftSubcomposition().accept(*this, data));
-                
-                // Prepare the new offset mapping.
                 std::map<uint64_t, uint64_t> const& actionIndexToLocalNondeterminismVariableOffset = boost::any_cast<std::map<uint64_t, uint64_t> const&>(data);
-                std::map<uint64_t, uint64_t> newActionIndexToLocalNondeterminismVariableOffset = actionIndexToLocalNondeterminismVariableOffset;
-                for (auto const& actionIndex : synchronizingActionIndices) {
-                    auto it = left.actionIndexToAction.find(actionIndex);
-                    if (it != left.actionIndexToAction.end()) {
-                        newActionIndexToLocalNondeterminismVariableOffset[actionIndex] = it->second.getHighestLocalNondeterminismVariable();
+                
+                std::vector<AutomatonDd> subautomata;
+                for (uint64_t subcompositionIndex = 0; subcompositionIndex < composition.getNumberOfSubcompositions(); ++subcompositionIndex) {
+                    // Prepare the new offset mapping.
+                    std::map<uint64_t, uint64_t> newSynchronizingActionToOffsetMap = actionIndexToLocalNondeterminismVariableOffset;
+                    if (subcompositionIndex == 0) {
+                        for (auto const& synchVector : composition.getSynchronizationVectors()) {
+                            auto it = actionIndexToLocalNondeterminismVariableOffset.find(actionInformation.getActionIndex(synchVector.getOutput()));
+                            STORM_LOG_THROW(it != actionIndexToLocalNondeterminismVariableOffset.end(), storm::exceptions::InvalidArgumentException, "Invalid action " << synchVector.getOutput() << ".");
+                            newSynchronizingActionToOffsetMap[actionInformation.getActionIndex(synchVector.getInput(0))] = it->second;
+                        }
+                    } else {
+                        AutomatonDd const& previousAutomatonDd = subautomata.back();
+                        
+                        // Based on the previous results, we need to update the offsets.
+                        for (auto const& synchVector : composition.getSynchronizationVectors()) {
+                            auto it = previousAutomatonDd.actionIndexToAction.find(actionInformation.getActionIndex(synchVector.getInput(subcompositionIndex - 1)));
+                            if (it != previousAutomatonDd.actionIndexToAction.end()) {
+                                newSynchronizingActionToOffsetMap[actionInformation.getActionIndex(synchVector.getInput(subcompositionIndex))] = it->second.getHighestLocalNondeterminismVariable();
+                            } else {
+                                STORM_LOG_ASSERT(false, "Subcomposition does not have action that is mentioned in parallel composition.");
+                            }
+                        }
                     }
+                    
+                    // Build the DD for the next element of the composition wrt. to the current offset mapping.
+                    subautomata.push_back(boost::any_cast<AutomatonDd>(composition.getSubcomposition(subcompositionIndex).accept(*this, newSynchronizingActionToOffsetMap)));
                 }
                 
-                // Then translate the right subcomposition.
-                AutomatonDd right = boost::any_cast<AutomatonDd>(composition.getRightSubcomposition().accept(*this, newActionIndexToLocalNondeterminismVariableOffset));
-
-                return composeInParallel(left, right, synchronizingActionIndices);
+                return composeInParallel(subautomata, composition.getSynchronizationVectors());
             }
             
         private:
-            AutomatonDd composeInParallel(AutomatonDd const& automaton1, AutomatonDd const& automaton2, std::set<uint64_t> const& synchronizingActionIndices) {
-                AutomatonDd result(automaton1);
+            AutomatonDd composeInParallel(std::vector<AutomatonDd> const& subautomata, std::vector<storm::jani::SynchronizationVector> const& synchronizationVectors) {
+                AutomatonDd result(this->variables.manager->template getAddOne<ValueType>());
+                
+                for (uint64_t automatonIndex = 0; automatonIndex < subautomata.size(); ++automatonIndex) {
+                    AutomatonDd const& subautomaton = subautomata[automatonIndex];
+                    
+                    // Construct combined identity.
+                    result.identity *= subautomaton.identity;
+                    
+                    addToTransientAssignmentMap(result.transientLocationAssignments, subautomaton.transientLocationAssignments);
+                }
+                
                 result.transientLocationAssignments = joinTransientAssignmentMaps(automaton1.transientLocationAssignments, automaton2.transientLocationAssignments);
                 
                 // Treat all actions of the first automaton.
@@ -1958,16 +1934,19 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Model still contains these undefined constants: " << boost::join(strings, ", ") << ".");
             }
             
+            // Determine the actions that will appear in the parallel composition.
+            storm::jani::CompositionActionInformationVisitor actionInformationVisitor(model);
+            storm::jani::ActionInformation actionInformation = actionInformationVisitor.getActionInformation();
+            
             // Create all necessary variables.
-            CompositionVariableCreator<Type, ValueType> variableCreator(model);
+            CompositionVariableCreator<Type, ValueType> variableCreator(model, actionInformation);
             CompositionVariables<Type, ValueType> variables = variableCreator.create();
             
             // Determine which transient assignments need to be considered in the building process.
             std::vector<storm::expressions::Variable> rewardVariables = selectRewardVariables<Type, ValueType>(model, options);
             
             // Create a builder to compose and build the model.
-//            SeparateEdgesSystemComposer<Type, ValueType> composer(model, variables);
-            CombinedEdgesSystemComposer<Type, ValueType> composer(model, variables, rewardVariables);
+            CombinedEdgesSystemComposer<Type, ValueType> composer(model, actionInformation, variables, rewardVariables);
             ComposerResult<Type, ValueType> system = composer.compose();
             
             // Postprocess the variables in place.
