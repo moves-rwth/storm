@@ -1,0 +1,11 @@
+toplevel "OR";
+"OR" or "A" "B";
+"A" wsp "AND" "C";
+"B" wsp "C" "R" "S";
+"C" wsp "Q" "R";
+"AND" and "P" "Q";
+"P" lambda=0.1 dorm=0.9;
+"Q" lambda=0.2 dorm=0.8;
+"R" lambda=0.3 dorm=0.7;
+"S" lambda=0.4 dorm=0.6;
+

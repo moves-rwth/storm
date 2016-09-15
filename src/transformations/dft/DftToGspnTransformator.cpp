@@ -213,6 +213,8 @@ namespace storm {
             void DftToGspnTransformator<ValueType>::drawSPARE(std::shared_ptr<storm::storage::DFTSpare<ValueType> const> dftSpare) {	
 				uint_fast64_t priority = getPriority(0, dftSpare);
 				
+				// This codeblock can be removed later, when I am 100% sure it is not needed anymore.
+				/*
 				storm::gspn::Place placeSPAREActivated;
 				placeSPAREActivated.setName(dftSpare->name() + STR_ACTIVATED);
 				placeSPAREActivated.setNumberOfInitialTokens(isBEActive(dftSpare));
@@ -225,6 +227,7 @@ namespace storm {
 				immediateTransitionPCActivating.setInputArcMultiplicity(placeSPAREActivated, 1);
 				immediateTransitionPCActivating.setOutputArcMultiplicity(placeSPAREActivated, 1);
 				mGspn.addImmediateTransition(immediateTransitionPCActivating);
+				*/
 				
 				auto children = dftSpare->children();
 				
@@ -663,8 +666,6 @@ namespace storm {
 			template <typename ValueType>
             bool DftToGspnTransformator<ValueType>::isBEActive(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftElement)
 			{
-				// TODO: This method must be tested again after SPAREs are implemented.
-				
 				// If element is the top element, return true.
 				if (dftElement->id() == mDft.getTopLevelIndex()) {
 					return true;
