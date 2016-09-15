@@ -958,6 +958,10 @@ namespace storm {
                 std::pair<uint64_t, uint64_t> const& getLocalNondeterminismVariables() const {
                     return localNondeterminismVariables;
                 }
+                
+                ActionDd multiplyTransitions(storm::dd::Add<Type, ValueType> const& factor) const {
+                    return ActionDd(guard, transitions * factor, transientEdgeAssignments, localNondeterminismVariables, variableToWritingFragment, illegalFragment);
+                }
 
                 // A DD that represents all states that have this edge enabled.
                 storm::dd::Add<Type, ValueType> guard;
@@ -1114,28 +1118,26 @@ namespace storm {
             AutomatonDd composeInParallel(std::vector<AutomatonDd> const& subautomata, std::vector<storm::jani::SynchronizationVector> const& synchronizationVectors) {
                 AutomatonDd result(this->variables.manager->template getAddOne<ValueType>());
                 
+                std::map<uint64_t, std::vector<ActionDd>> nonSynchronizingActions;
+                std::vector<boost::optional<ActionDd>> synchronizationVectorActions(synchronizationVectors.size(), boost::none);
                 for (uint64_t automatonIndex = 0; automatonIndex < subautomata.size(); ++automatonIndex) {
                     AutomatonDd const& subautomaton = subautomata[automatonIndex];
                     
                     // Add the transient assignments from the new subautomaton.
                     addToTransientAssignmentMap(result.transientLocationAssignments, subautomaton.transientLocationAssignments);
                     
-                    // Set the used local nondeterminism variables appropriately.
+                    // Initilize the used local nondeterminism variables appropriately.
                     if (automatonIndex == 0) {
                         result.setLowestLocalNondeterminismVariable(subautomaton.getLowestLocalNondeterminismVariable());
                         result.setHighestLocalNondeterminismVariable(subautomaton.getHighestLocalNondeterminismVariable());
-                    } else {
-                        result.extendLocalNondeterminismVariables(subautomaton.localNondeterminismVariables);
                     }
 
-                    // Keep track of all actions of the current result that were combined with another action of the current
-                    // automaton so we can extend the missing actions with the current automaton's identity later.
-                    std::set<uint64_t> combinedActions;
-                    
                     // Compose the actions according to the synchronization vectors.
                     std::set<uint64_t> actionsInSynch;
-                    for (auto const& synchVector : synchronizationVectors) {
-                        uint64_t outputActionIndex = actionInformation.getActionIndex(synchVector.getOutput());
+                    for (uint64_t synchVectorIndex = 0; synchVectorIndex < synchronizationVectors.size(); ++synchVectorIndex) {
+                        auto const& synchVector = synchronizationVectors[synchVectorIndex];
+                        
+                        // Determine the indices of input (at the current automaton position) and the output.
                         uint64_t inputActionIndex = actionInformation.getActionIndex(synchVector.getInput(automatonIndex));
                         actionsInSynch.insert(inputActionIndex);
                         
@@ -1144,54 +1146,76 @@ namespace storm {
                             // If the action cannot be found, the particular spot in the output will be left empty.
                             auto inputActionIt = subautomaton.actionIndexToAction.find(inputActionIndex);
                             if (inputActionIt != subautomaton.actionIndexToAction.end()) {
-                                result.actionIndexToAction[actionInformation.getActionIndex(synchVector.getOutput())] = inputActionIt->second;
+                                synchronizationVectorActions[synchVectorIndex] = inputActionIt->second;
                             }
                         } else {
                             // If there is no action in the output spot, this means that some other subcomposition did
                             // not provide the action necessary for the synchronization vector to resolve.
-                            auto outputActionIt = result.actionIndexToAction.find(outputActionIndex);
-                            if (outputActionIt != result.actionIndexToAction.end()) {
+                            if (synchronizationVectorActions[synchVectorIndex]) {
                                 auto inputActionIt = subautomaton.actionIndexToAction.find(inputActionIndex);
                                 if (inputActionIt != subautomaton.actionIndexToAction.end()) {
-                                    combinedActions.insert(outputActionIt->first);
-                                    outputActionIt->second = combineSynchronizingActions(outputActionIt->second, inputActionIt->second);
-                                    result.extendLocalNondeterminismVariables(outputActionIt->second.getLocalNondeterminismVariables());
+                                    synchronizationVectorActions[synchVectorIndex] = combineSynchronizingActions(synchronizationVectorActions[synchVectorIndex].get(), inputActionIt->second);
                                 } else {
                                     // If the current subcomposition does not provide the required action for the synchronization
                                     // vector, we clear the action.
-                                    result.actionIndexToAction.erase(outputActionIt);
+                                    synchronizationVectorActions[synchVectorIndex] = boost::none;
                                 }
                             }
                         }
                     }
 
                     // Now treat all unsynchronizing actions.
-                    for (auto const& action : subautomaton.actionIndexToAction) {
-                        if (actionsInSynch.find(action.first) == actionsInSynch.end()) {
-                            auto oldActionIt = result.actionIndexToAction.find(action.first);
-                            combinedActions.insert(action.first);
-                            if (oldActionIt != result.actionIndexToAction.end()) {
-                                oldActionIt->second = combineUnsynchronizedActions(oldActionIt->second, action.second, result.identity, subautomaton.identity);
-                                result.extendLocalNondeterminismVariables(oldActionIt->second.getLocalNondeterminismVariables());
-                            } else {
-                                // Extend the action with the identity of the previous composition.
-                                result.actionIndexToAction[action.first] = ActionDd(action.second.guard, action.second.transitions * result.identity, action.second.transientEdgeAssignments, action.second.localNondeterminismVariables, action.second.variableToWritingFragment, action.second.illegalFragment);
+                    if (automatonIndex == 0) {
+                        // Since it's the first automaton, there is nothing to combine.
+                        for (auto const& action : subautomaton.actionIndexToAction) {
+                            if (actionsInSynch.find(action.first) == actionsInSynch.end()) {
+                                nonSynchronizingActions[action.first].push_back(action.second);
                             }
                         }
-                    }
-                    
-                    // If it's not the first automaton we are treating, then we need to add the current automaton's
-                    // identity to all actions that were not yet combined with another action.
-                    if (automatonIndex == 0) {
-                        for (auto& action : result.actionIndexToAction) {
-                            if (combinedActions.find(action.first) == combinedActions.end()) {
-                                result.actionIndexToAction[action.first] = ActionDd(action.second.guard, action.second.transitions * subautomaton.identity, action.second.transientEdgeAssignments, action.second.localNondeterminismVariables, action.second.variableToWritingFragment, action.second.illegalFragment);
+                    } else {
+                        // Extend all other non-synchronizing actions with the identity of the current subautomaton.
+                        for (auto& actions : nonSynchronizingActions) {
+                            for (auto& action : actions.second) {
+                                action.transitions *= subautomaton.identity;
+                            }
+                        }
+                        
+                        // Extend the actions of the current subautomaton with the identity of the previous system and
+                        // add it to the overall non-synchronizing action result.
+                        for (auto const& action : subautomaton.actionIndexToAction) {
+                            if (actionsInSynch.find(action.first) == actionsInSynch.end()) {
+                                nonSynchronizingActions[action.first].push_back(action.second.multiplyTransitions(result.identity));
                             }
                         }
                     }
                     
                     // Finally, construct combined identity.
                     result.identity *= subautomaton.identity;
+                }
+                
+                // Add the results of the synchronization vectors to that of the non-synchronizing actions.
+                for (uint64_t synchVectorIndex = 0; synchVectorIndex < synchronizationVectors.size(); ++synchVectorIndex) {
+                    auto const& synchVector = synchronizationVectors[synchVectorIndex];
+                    
+                    // If there is an action resulting from this combination of actions, add it to the output action.
+                    if (synchronizationVectorActions[synchVectorIndex]) {
+                        uint64_t outputActionIndex = actionInformation.getActionIndex(synchVector.getOutput());
+                        nonSynchronizingActions[outputActionIndex].push_back(synchronizationVectorActions[synchVectorIndex].get());
+                    }
+                }
+                
+                // Now that we have built the individual action DDs for all resulting actions, we need to combine them
+                // in an unsynchronizing way.
+                for (auto const& nonSynchronizingActionDds : nonSynchronizingActions) {
+                    std::vector<ActionDd> const& actionDds = nonSynchronizingActionDds.second;
+                    if (actionDds.size() > 1) {
+                        ActionDd combinedAction = combineUnsynchronizedActions(actionDds);
+                        result.actionIndexToAction[nonSynchronizingActionDds.first] = combinedAction;
+                        result.extendLocalNondeterminismVariables(combinedAction.getLocalNondeterminismVariables());
+                    } else {
+                        result.actionIndexToAction[nonSynchronizingActionDds.first] = actionDds.front();
+                        result.extendLocalNondeterminismVariables(actionDds.front().getLocalNondeterminismVariables());
+                    }
                 }
                 
                 return result;
@@ -1237,56 +1261,67 @@ namespace storm {
             }
             
             ActionDd combineUnsynchronizedActions(ActionDd action1, ActionDd action2) {
+                return combineUnsynchronizedActions({action1, action2});
+            }
+
+            ActionDd combineUnsynchronizedActions(std::vector<ActionDd> actions) {
                 STORM_LOG_TRACE("Combining unsynchronized actions.");
                 
                 if (this->model.getModelType() == storm::jani::ModelType::DTMC || this->model.getModelType() == storm::jani::ModelType::CTMC) {
-                    return ActionDd(action1.guard + action2.guard, action1.transitions + action2.transitions, joinTransientAssignmentMaps(action1.transientEdgeAssignments, action2.transientEdgeAssignments), std::make_pair<uint64_t, uint64_t>(0, 0), joinVariableWritingFragmentMaps(action1.variableToWritingFragment, action2.variableToWritingFragment), this->variables.manager->getBddZero());
+                    auto actionIt = actions.begin();
+                    ActionDd result(*actionIt);
+                    
+                    for (++actionIt; actionIt != actions.end(); ++actionIt) {
+                        result = ActionDd(result.guard + actionIt->guard, result.transitions + actionIt->transitions, joinTransientAssignmentMaps(result.transientEdgeAssignments, actionIt->transientEdgeAssignments), std::make_pair<uint64_t, uint64_t>(0, 0), joinVariableWritingFragmentMaps(result.variableToWritingFragment, actionIt->variableToWritingFragment), result.illegalFragment || actionIt->illegalFragment);
+                    }
+                    return result;
                 } else if (this->model.getModelType() == storm::jani::ModelType::MDP) {
-                    if (action1.transitions.isZero()) {
-                        return action2;
-                    } else if (action2.transitions.isZero()) {
-                        return action1;
+                    // Ensure that all actions start at the same local nondeterminism variable.
+                    uint_fast64_t lowestLocalNondeterminismVariable = actions.front().getLowestLocalNondeterminismVariable();
+                    uint_fast64_t highestLocalNondeterminismVariable = actions.front().getHighestLocalNondeterminismVariable();
+                    for (auto const& action : actions) {
+                        STORM_LOG_ASSERT(action.getLowestLocalNondeterminismVariable() == lowestLocalNondeterminismVariable, "Mismatching lowest nondeterminism variable indices.");
                     }
                     
-                    // Bring both choices to the same number of variables that encode the nondeterminism.
-                    STORM_LOG_ASSERT(action1.getLowestLocalNondeterminismVariable() == action2.getLowestLocalNondeterminismVariable(), "Mismatching lowest nondeterminism variable indices.");
-                    uint_fast64_t highestLocalNondeterminismVariable = std::max(action1.getHighestLocalNondeterminismVariable(), action2.getHighestLocalNondeterminismVariable());
-                    if (action1.getHighestLocalNondeterminismVariable() > action2.getHighestLocalNondeterminismVariable()) {
+                    // Bring all actions to the same number of variables that encode the nondeterminism.
+                    for (auto& action : actions) {
                         storm::dd::Add<Type, ValueType> nondeterminismEncoding = this->variables.manager->template getAddOne<ValueType>();
-                        
-                        for (uint_fast64_t i = action2.getHighestLocalNondeterminismVariable(); i < action1.getHighestLocalNondeterminismVariable(); ++i) {
+                        for (uint_fast64_t i = action.getHighestLocalNondeterminismVariable(); i < highestLocalNondeterminismVariable; ++i) {
                             nondeterminismEncoding *= this->variables.manager->getEncoding(this->variables.localNondeterminismVariables[i], 0).template toAdd<ValueType>();
                         }
-                        action2.transitions *= nondeterminismEncoding;
+                        action.transitions *= nondeterminismEncoding;
                         
-                        for (auto& transientAssignment : action2.transientEdgeAssignments) {
+                        for (auto& transientAssignment : action.transientEdgeAssignments) {
                             transientAssignment.second *= nondeterminismEncoding;
                         }
-                    } else if (action2.getHighestLocalNondeterminismVariable() > action1.getHighestLocalNondeterminismVariable()) {
-                        storm::dd::Add<Type, ValueType> nondeterminismEncoding = this->variables.manager->template getAddOne<ValueType>();
-                        
-                        for (uint_fast64_t i = action1.getHighestLocalNondeterminismVariable(); i < action2.getHighestLocalNondeterminismVariable(); ++i) {
-                            nondeterminismEncoding *= this->variables.manager->getEncoding(this->variables.localNondeterminismVariables[i], 0).template toAdd<ValueType>();
-                        }
-                        action1.transitions *= nondeterminismEncoding;
+                    }
+                    
+                    uint64_t numberOfLocalNondeterminismVariables = static_cast<uint64_t>(std::ceil(std::log2(actions.size())));
+                    storm::dd::Bdd<Type> guard = this->variables.manager->getBddZero();
+                    storm::dd::Add<Type, ValueType> transitions = this->variables.manager->template getAddZero<ValueType>();
+                    std::map<storm::expressions::Variable, storm::dd::Add<Type, ValueType>> transientEdgeAssignments;
+                    std::map<storm::expressions::Variable, storm::dd::Bdd<Type>> variableToWritingFragment;
+                    storm::dd::Bdd<Type> illegalFragment = this->variables.manager->getBddZero();
 
-                        for (auto& transientAssignment : action1.transientEdgeAssignments) {
-                            transientAssignment.second *= nondeterminismEncoding;
+                    for (uint64_t actionIndex = 0; actionIndex < actions.size(); ++actionIndex) {
+                        ActionDd& action = actions[actionIndex];
+
+                        guard |= action.guard.toBdd();
+
+                        storm::dd::Add<Type, ValueType> nondeterminismEncoding = encodeIndex(actionIndex, highestLocalNondeterminismVariable, numberOfLocalNondeterminismVariables, this->variables);
+                        transitions += nondeterminismEncoding * action.transitions;
+                        
+                        joinTransientAssignmentMaps(transientEdgeAssignments, action.transientEdgeAssignments);
+                        
+                        storm::dd::Bdd<Type> nondeterminismEncodingBdd = nondeterminismEncoding.toBdd();
+                        for (auto& entry : action.variableToWritingFragment) {
+                            entry.second &= nondeterminismEncodingBdd;
                         }
+                        addToVariableWritingFragmentMap(variableToWritingFragment, action.variableToWritingFragment);
+                        illegalFragment |= action.illegalFragment;
                     }
                     
-                    // Add a new variable that resolves the nondeterminism between the two choices.
-                    storm::dd::Add<Type, ValueType> combinedTransitions = this->variables.manager->getEncoding(this->variables.localNondeterminismVariables[highestLocalNondeterminismVariable], 1).ite(action2.transitions, action1.transitions);
-                    
-                    // Add the new variable to the writing fragments of each global variable before joining them.
-                    for (auto& entry : action1.variableToWritingFragment) {
-                        entry.second = this->variables.manager->getEncoding(this->variables.localNondeterminismVariables[highestLocalNondeterminismVariable], 0) && entry.second;
-                    }
-                    for (auto& entry : action2.variableToWritingFragment) {
-                        entry.second = this->variables.manager->getEncoding(this->variables.localNondeterminismVariables[highestLocalNondeterminismVariable], 1) && entry.second;
-                    }
-                    
-                    return ActionDd((action1.guard.toBdd() || action2.guard.toBdd()).template toAdd<ValueType>(), combinedTransitions, joinTransientAssignmentMaps(action1.transientEdgeAssignments, action2.transientEdgeAssignments), std::make_pair(action1.getLowestLocalNondeterminismVariable(), highestLocalNondeterminismVariable + 1), joinVariableWritingFragmentMaps(action1.variableToWritingFragment, action2.variableToWritingFragment), action1.illegalFragment || action2.illegalFragment);
+                    return ActionDd(guard.template toAdd<ValueType>(), transitions, transientEdgeAssignments, std::make_pair(lowestLocalNondeterminismVariable, highestLocalNondeterminismVariable + numberOfLocalNondeterminismVariables), variableToWritingFragment, illegalFragment);
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidStateException, "Illegal model type.");
                 }
@@ -1523,7 +1558,13 @@ namespace storm {
                     globalVariableToWritingFragment.emplace(variable, partToAdd);
                 }
             }
-            
+
+            void addToVariableWritingFragmentMap(std::map<storm::expressions::Variable, storm::dd::Bdd<Type>>& globalVariableToWritingFragment, std::map<storm::expressions::Variable, storm::dd::Bdd<Type>> const& partToAdd) const {
+                for (auto const& entry : partToAdd) {
+                    addToVariableWritingFragmentMap(globalVariableToWritingFragment, entry.first, entry.second);
+                }
+            }
+
             std::map<storm::expressions::Variable, storm::dd::Bdd<Type>> joinVariableWritingFragmentMaps(std::map<storm::expressions::Variable, storm::dd::Bdd<Type>> const& globalVariableToWritingFragment1, std::map<storm::expressions::Variable, storm::dd::Bdd<Type>> const& globalVariableToWritingFragment2) {
                 std::map<storm::expressions::Variable, storm::dd::Bdd<Type>> result = globalVariableToWritingFragment1;
                 
