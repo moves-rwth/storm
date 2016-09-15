@@ -7,12 +7,28 @@
 #include "gtest/gtest.h"
 
 #include "src/settings/SettingsManager.h"
+#include "src/utility/initialize.h"
 
 int main(int argc, char* argv[]) {
 	storm::settings::initializeAll("StoRM (Functional) Testing Suite", "storm-functional-tests");
 	std::cout << "StoRM (Functional) Testing Suite" << std::endl;
 	
-	testing::InitGoogleTest(&argc, argv);
+	storm::utility::setUp();
+	storm::utility::setLogLevel(l3pp::LogLevel::WARN);
+	
+	char** filteredArguments = new char*[argc]();
+	int position = 0;
+	for (int i = 0; i < argc; ++i) {
+		if (strcmp(argv[i], "--trace") != 0) {
+			filteredArguments[position] = argv[i];
+			++position;
+		} else {
+			// Handle --trace
+			storm::utility::setLogLevel(l3pp::LogLevel::TRACE);
+		}
+	}
+	
+	testing::InitGoogleTest(&position, filteredArguments);
 
     int result = RUN_ALL_TESTS();
     
