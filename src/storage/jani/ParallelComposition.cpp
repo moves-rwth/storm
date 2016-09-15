@@ -45,10 +45,7 @@ namespace storm {
         
         ParallelComposition::ParallelComposition(std::vector<std::shared_ptr<Composition>> const& subcompositions, std::vector<SynchronizationVector> const& synchronizationVectors) : subcompositions(subcompositions), synchronizationVectors(synchronizationVectors) {
             STORM_LOG_THROW(subcompositions.size() > 1, storm::exceptions::WrongFormatException, "At least two automata required for parallel composition.");
-
-            for (auto const& vector : this->synchronizationVectors) {
-                STORM_LOG_THROW(vector.size() == this->subcompositions.size(), storm::exceptions::WrongFormatException, "Synchronization vectors must match parallel composition size.");
-            }
+            this->checkSynchronizationVectors();
         }
         
         ParallelComposition::ParallelComposition(std::vector<std::shared_ptr<Composition>> const& subcompositions, std::set<std::string> const& synchronizationAlphabet) : subcompositions(subcompositions), synchronizationVectors() {
@@ -98,16 +95,11 @@ namespace storm {
             for (uint_fast64_t inputIndex = 0; inputIndex < subcompositions.size(); ++ inputIndex) {
                 std::set<std::string> actions;
                 for (auto const& vector : synchronizationVectors) {
+                    STORM_LOG_THROW(vector.size() == this->subcompositions.size(), storm::exceptions::WrongFormatException, "Synchronization vectors must match parallel composition size.");
                     std::string const& action = vector.getInput(inputIndex);
                     STORM_LOG_THROW(actions.find(action) == actions.end(), storm::exceptions::WrongFormatException, "Cannot use the same action multiple times as input in synchronization vectors.");
                     actions.insert(action);
                 }
-            }
-            
-            std::set<std::string> actions;
-            for (auto const& vector : synchronizationVectors) {
-                STORM_LOG_THROW(actions.find(vector.getOutput()) == actions.end(), storm::exceptions::WrongFormatException, "Cannot use the same output action multiple times in synchronization vectors.");
-                actions.insert(vector.getOutput());
             }
         }
         

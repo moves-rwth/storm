@@ -357,4 +357,11 @@ TEST(DdJaniModelBuilderTest_Cudd, SynchronizationVectors) {
     model = builder.build(janiModel);
     EXPECT_EQ(3ul, model->getNumberOfStates());
     EXPECT_EQ(3ul, model->getNumberOfTransitions());
+    
+    inputVector.clear();
+    inputVector.push_back("b");
+    inputVector.push_back("c");
+    inputVector.push_back("b");
+    synchronizationVectors.push_back(storm::jani::SynchronizationVector(inputVector, "e"));
+    EXPECT_THROW(newComposition = std::make_shared<storm::jani::ParallelComposition>(automataCompositions, synchronizationVectors), storm::exceptions::WrongFormatException);
 }
