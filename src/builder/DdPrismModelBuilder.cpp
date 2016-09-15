@@ -1218,9 +1218,7 @@ namespace storm {
                     transitionRewards.get() /= stateActionDd;
                 }
             }
-            
-            stateActionRewards.get().exportToDot("prismrew.dot");
-            
+                        
             return storm::models::symbolic::StandardRewardModel<Type, ValueType>(stateRewards, stateActionRewards, transitionRewards);
         }
         

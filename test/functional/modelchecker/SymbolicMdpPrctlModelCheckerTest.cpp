@@ -3,6 +3,7 @@
 
 #include "src/logic/Formulas.h"
 #include "src/utility/solver.h"
+#include "src/storage/SymbolicModelDescription.h"
 #include "src/modelchecker/prctl/SymbolicMdpPrctlModelChecker.h"
 #include "src/modelchecker/results/SymbolicQualitativeCheckResult.h"
 #include "src/modelchecker/results/SymbolicQuantitativeCheckResult.h"
@@ -18,7 +19,8 @@
 #include "src/settings/modules/GeneralSettings.h"
 
 TEST(SymbolicMdpPrctlModelCheckerTest, Dice_Cudd) {
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/two_dice.nm");
+    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/two_dice.nm");
+    storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
     
     // A parser that we use for conveniently constructing the formulas.
     storm::parser::FormulaParser formulaParser;
@@ -115,7 +117,8 @@ TEST(SymbolicMdpPrctlModelCheckerTest, Dice_Cudd) {
 }
 
 TEST(SymbolicMdpPrctlModelCheckerTest, Dice_Sylvan) {
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/two_dice.nm");
+    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/two_dice.nm");
+    storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
     
     // A parser that we use for conveniently constructing the formulas.
     storm::parser::FormulaParser formulaParser;
@@ -212,7 +215,8 @@ TEST(SymbolicMdpPrctlModelCheckerTest, Dice_Sylvan) {
 }
 
 TEST(SymbolicMdpPrctlModelCheckerTest, AsynchronousLeader_Cudd) {
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/leader4.nm");
+    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/leader4.nm");
+    storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
     
     // A parser that we use for conveniently constructing the formulas.
     storm::parser::FormulaParser formulaParser;
@@ -291,7 +295,8 @@ TEST(SymbolicMdpPrctlModelCheckerTest, AsynchronousLeader_Cudd) {
 }
 
 TEST(SymbolicMdpPrctlModelCheckerTest, AsynchronousLeader_Sylvan) {
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/leader4.nm");
+    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/leader4.nm");
+    storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
     
     // A parser that we use for conveniently constructing the formulas.
     storm::parser::FormulaParser formulaParser;

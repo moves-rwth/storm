@@ -66,21 +66,21 @@ namespace storm {
              *
              * @param label The label to associate with this choice.
              */
-            void addChoiceLabel(uint_fast64_t label);
+            void addLabel(uint_fast64_t label);
             
             /*!
              * Adds the given label set to the labels associated with this choice.
              *
              * @param labelSet The label set to associate with this choice.
              */
-            void addChoiceLabels(LabelSet const& labelSet);
+            void addLabels(LabelSet const& labelSet);
             
             /*!
              * Retrieves the set of labels associated with this choice.
              *
              * @return The set of labels associated with this choice.
              */
-            LabelSet const& getChoiceLabels() const;
+            LabelSet const& getLabels() const;
             
             /*!
              * Retrieves the index of the action of this choice.
@@ -104,12 +104,17 @@ namespace storm {
             /*!
              * Adds the given value to the reward associated with this choice.
              */
-            void addChoiceReward(ValueType const& value);
+            void addReward(ValueType const& value);
+            
+            /*!
+             * Adds the given choices rewards to this choice.
+             */
+            void addRewards(std::vector<ValueType>&& values);
             
             /*!
              * Retrieves the rewards for this choice under selected reward models.
              */
-            std::vector<ValueType> const& getChoiceRewards() const;
+            std::vector<ValueType> const& getRewards() const;
             
             /*!
              * Retrieves whether the choice is Markovian.
@@ -135,10 +140,10 @@ namespace storm {
             ValueType totalMass;
             
             // The reward values associated with this choice.
-            std::vector<ValueType> choiceRewards;
+            std::vector<ValueType> rewards;
             
             // The labels that are associated with this choice.
-            boost::optional<LabelSet> choiceLabels;
+            boost::optional<LabelSet> labels;
         };
 
         template<typename ValueType, typename StateType>

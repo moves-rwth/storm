@@ -299,6 +299,11 @@ namespace storm {
              */
             void finalize(Model const& containingModel);
             
+            /*!
+             * Retrieves the action indices appearing at some edge of the automaton.
+             */
+            std::set<uint64_t> getUsedActionIndices() const;
+                        
         private:
             /// The name of the automaton.
             std::string name;

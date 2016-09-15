@@ -402,6 +402,14 @@ namespace storm {
                 edge.finalize(containingModel);
             }
         }
+        
+        std::set<uint64_t> Automaton::getUsedActionIndices() const {
+            std::set<uint64_t> result;
+            for (auto const& edge : edges) {
+                result.insert(edge.getActionIndex());
+            }
+            return result;
+        }
 
     }
 }

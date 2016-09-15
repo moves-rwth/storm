@@ -16,7 +16,7 @@ namespace storm {
         class CompositionInformation {
         public:
             CompositionInformation();
-            CompositionInformation(std::map<std::string, uint64_t> const& automatonNameToMultiplicity, std::set<std::string> const& nonsilentActions, bool containsRenaming, bool containsRestrictedParallelComposition);
+            CompositionInformation(std::map<std::string, uint64_t> const& automatonNameToMultiplicity, std::set<std::string> const& nonsilentActions, bool containsRenaming, bool nonStandardParallelComposition);
 
             void increaseAutomatonMultiplicity(std::string const& automatonName, uint64_t count = 1);
             
@@ -27,8 +27,8 @@ namespace storm {
             void setContainsRenameComposition();
             bool containsRenameComposition() const;
             
-            void setContainsRestrictedParallelComposition();
-            bool containsRestrictedParallelComposition() const;
+            void setContainsNonStandardParallelComposition();
+            bool containsNonStandardParallelComposition() const;
             
             static std::map<std::string, uint64_t> joinMultiplicityMaps(std::map<std::string, uint64_t> const& first, std::map<std::string, uint64_t> const& second);
             std::map<std::string, uint64_t> const& getAutomatonToMultiplicityMap() const;
@@ -43,8 +43,8 @@ namespace storm {
             /// A flag indicating whether the composition contains a renaming composition.
             bool renameComposition;
             
-            /// A flag indicating whether the composition contains
-            bool restrictedParallelComposition;
+            /// A flag indicating whether the composition contains any non-standard parallel composition.
+            bool nonStandardParallelComposition;
         };
         
         class CompositionInformationVisitor : public CompositionVisitor {
