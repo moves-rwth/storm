@@ -660,64 +660,82 @@ namespace storm {
         
         template<typename ValueType>
         void SparseMatrix<ValueType>::swapRows(index_type const& row1, index_type const& row2) {
-            if(row1==row2) {
+            if (row1 == row2) {
                 return;
             }
             
-            // Get the index of the row that has more / less entries than the other
+            // Get the index of the row that has more / less entries than the other.
             index_type largerRow = getRow(row1).getNumberOfEntries() > getRow(row2).getNumberOfEntries() ? row1 : row2;
             index_type smallerRow = largerRow == row1 ? row2 : row1;
             index_type rowSizeDifference = getRow(largerRow).getNumberOfEntries() - getRow(smallerRow).getNumberOfEntries();
-            // Save contents of larger row
-            std::vector<MatrixEntry<index_type, value_type>> largerRowContents(getRow(largerRow).begin(), getRow(largerRow).end());
             
-            if(largerRow < smallerRow) {
-                auto writeIt = getRows(largerRow, smallerRow+1).begin();
-                // write smaller row in its new position
-                for(auto& smallerRowEntry : getRow(smallerRow)) {
+            // Save contents of larger row.
+            auto copyRow = getRow(largerRow);
+            std::vector<MatrixEntry<index_type, value_type>> largerRowContents(copyRow.begin(), copyRow.end());
+            
+            if (largerRow < smallerRow) {
+                auto writeIt = getRows(largerRow, smallerRow + 1).begin();
+                
+                // Write smaller row to its new position.
+                for (auto& smallerRowEntry : getRow(smallerRow)) {
                     *writeIt = std::move(smallerRowEntry);
                     ++writeIt;
                 }
-                if(!storm::utility::isZero(rowSizeDifference)) {
-                    // write the intermediate rows into their correct position
-                    for(auto& intermediateRowEntry : getRows(largerRow+1, smallerRow)) {
+                
+                // Write the intermediate rows into their correct position.
+                if (!storm::utility::isZero(rowSizeDifference)) {
+                    for (auto& intermediateRowEntry : getRows(largerRow + 1, smallerRow)) {
                         *writeIt = std::move(intermediateRowEntry);
                         ++writeIt;
                     }
                 }
-                // write the larger row
-                for(auto& largerRowEntry : largerRowContents) {
+                
+                // Write the larger row to its new position.
+                for (auto& largerRowEntry : largerRowContents) {
                     *writeIt = std::move(largerRowEntry);
                     ++writeIt;
                 }
-                STORM_LOG_ASSERT(writeIt == getRow(smallerRow).end(), "Unexpected position of write iterator");
-                //Update row indications
-                for(index_type row = largerRow +1; row <= smallerRow; ++row) {
-                    rowIndications[row] -= rowSizeDifference;
+                
+                STORM_LOG_ASSERT(writeIt == getRow(smallerRow).end(), "Unexpected position of write iterator.");
+                
+                // Update the row indications to account for the shift of indices at where the rows now start.
+                if (!storm::utility::isZero(rowSizeDifference)) {
+                    for (index_type row = largerRow + 1; row <= smallerRow; ++row) {
+                        rowIndications[row] -= rowSizeDifference;
+                    }
                 }
             } else {
-                auto writeIt = getRows(smallerRow, largerRow+1).end() -1;
-                // write smaller row in its new position
-                for(auto smallerRowEntryIt = getRow(smallerRow).end() -1; smallerRowEntryIt != getRow(smallerRow).begin()-1; --smallerRowEntryIt) {
+                auto writeIt = getRows(smallerRow, largerRow + 1).end() - 1;
+                
+                // Write smaller row to its new position
+                auto copyRow = getRow(smallerRow);
+                for (auto smallerRowEntryIt = copyRow.end() - 1; smallerRowEntryIt != copyRow.begin() - 1; --smallerRowEntryIt) {
                     *writeIt = std::move(*smallerRowEntryIt);
                     --writeIt;
                 }
-                if(!storm::utility::isZero(rowSizeDifference)) {
-                    // write the intermediate rows into their correct position
-                    for(auto intermediateRowEntryIt = getRows(smallerRow+1, largerRow).end() -1; intermediateRowEntryIt != getRows(smallerRow+1, largerRow).begin()-1; --intermediateRowEntryIt) {
+                
+                // Write the intermediate rows into their correct position.
+                if (!storm::utility::isZero(rowSizeDifference)) {
+                    for (auto intermediateRowEntryIt = getRows(smallerRow + 1, largerRow).end() - 1; intermediateRowEntryIt != getRows(smallerRow + 1, largerRow).begin() - 1; --intermediateRowEntryIt) {
                         *writeIt = std::move(*intermediateRowEntryIt);
                         --writeIt;
                     }
                 }
-                // write the larger row
-                for(auto largerRowEntryIt = largerRowContents.rbegin(); largerRowEntryIt != largerRowContents.rend(); ++largerRowEntryIt) {
+                
+                // Write the larger row to its new position.
+                for (auto largerRowEntryIt = largerRowContents.rbegin(); largerRowEntryIt != largerRowContents.rend(); ++largerRowEntryIt) {
                     *writeIt = std::move(*largerRowEntryIt);
                     --writeIt;
                 }
-                STORM_LOG_ASSERT(writeIt == getRow(smallerRow).begin()-1, "Unexpected position of write iterator");
-                //Update row indications
-                for(index_type row = smallerRow +1; row <= largerRow; ++row) {
-                    rowIndications[row] += rowSizeDifference;
+                
+                STORM_LOG_ASSERT(writeIt == getRow(smallerRow).begin() - 1, "Unexpected position of write iterator.");
+                
+                // Update row indications.
+                // Update the row indications to account for the shift of indices at where the rows now start.
+                if (!storm::utility::isZero(rowSizeDifference)) {
+                    for (index_type row = smallerRow + 1; row <= largerRow; ++row) {
+                        rowIndications[row] += rowSizeDifference;
+                    }
                 }
             }
         }

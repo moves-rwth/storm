@@ -253,11 +253,10 @@ namespace storm {
             }
         }
         
-        void BitVector::enlargeLiberally(uint_fast64_t minimumLength, bool init) {
-            if(minimumLength > this->size()) {
-                uint_fast64_t newLength = this->bucketCount();
-                newLength = std::max(newLength, static_cast<decltype(newLength)>(1u)) << 6;
-                while(newLength < minimumLength) {
+        void BitVector::grow(uint_fast64_t minimumLength, bool init) {
+            if (minimumLength > bitCount) {
+                uint_fast64_t newLength = bitCount;
+                while (newLength < minimumLength) {
                     newLength = newLength << 1;
                 }
                 resize(newLength, init);

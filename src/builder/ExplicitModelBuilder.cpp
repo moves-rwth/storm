@@ -169,16 +169,16 @@ namespace storm {
         }
         
         template <typename ValueType, typename RewardModelType, typename StateType>
-        void ExplicitModelBuilder<ValueType, RewardModelType, StateType>::buildMatrices(storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder, std::vector<RewardModelBuilder<typename RewardModelType::ValueType>>& rewardModelBuilders, boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>& choiceLabels , boost::optional<storm::storage::BitVector>& markovianChoices) {
+        void ExplicitModelBuilder<ValueType, RewardModelType, StateType>::buildMatrices(storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder, std::vector<RewardModelBuilder<typename RewardModelType::ValueType>>& rewardModelBuilders, boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>& choiceLabels, boost::optional<storm::storage::BitVector>& markovianStates) {
             // Create choice labels, if requested,
             if (generator->getOptions().isBuildChoiceLabelsSet()) {
                 choiceLabels = std::vector<boost::container::flat_set<uint_fast64_t>>();
             }
             
-            // Create markovian states bit vector, if required
+            // Create markovian states bit vector, if required.
             if (generator->getModelType() == storm::generator::ModelType::MA) {
-                // The BitVector will be resized when the correct size is known
-                markovianChoices = storm::storage::BitVector();
+                // The bit vector will be resized when the correct size is known.
+                markovianStates = storm::storage::BitVector(1000);
             }
 
             // Create a callback for the next-state generator to enable it to request the index of states.
@@ -229,9 +229,9 @@ namespace storm {
                             choiceLabels.get().push_back(boost::container::flat_set<uint_fast64_t>());
                         }
                         
-                        if (generator->getModelType() == storm::generator::ModelType::MA) {
-                            markovianChoices->enlargeLiberally(currentRow+1, false);
-                            markovianChoices->set(currentRow);
+                        if (markovianStates) {
+                            markovianStates.get().grow(currentRowGroup + 1, false);
+                            markovianStates.get().set(currentRowGroup);
                         }
                         
                         if (!generator->isDeterministicModel()) {
@@ -278,9 +278,9 @@ namespace storm {
                         }
                         
                         // If we keep track of the Markovian choices, store whether the current one is Markovian.
-                        if( markovianChoices &&  choice.isMarkovian() ) {
-                            markovianChoices->enlargeLiberally(currentRow+1, false);
-                            markovianChoices->set(currentRow);
+                        if (markovianStates && choice.isMarkovian()) {
+                            markovianStates.get().grow(currentRowGroup + 1, false);
+                            markovianStates.get().set(currentRowGroup);
                         }
                         
                         // Add the probabilistic behavior to the matrix.
@@ -302,9 +302,9 @@ namespace storm {
                 }
             }
             
-            if (markovianChoices) {
-                // We now know the correct size
-                markovianChoices->resize(currentRow, false);
+            if (markovianStates) {
+                // Since we now know the correct size, cut the bit vector to the correct length.
+                markovianStates->resize(currentRowGroup, false);
             }
 
             // If the exploration order was not breadth-first, we need to fix the entries in the matrix according to
@@ -348,9 +348,9 @@ namespace storm {
             }
             
             boost::optional<storm::storage::BitVector> markovianChoices;
-            buildMatrices(transitionMatrixBuilder, rewardModelBuilders, modelComponents.choiceLabeling, markovianChoices);
+            buildMatrices(transitionMatrixBuilder, rewardModelBuilders, modelComponents.choiceLabeling, modelComponents.markovianStates);
             modelComponents.transitionMatrix = transitionMatrixBuilder.build();
-            
+
             // Now finalize all reward models.
             for (auto& rewardModelBuilder : rewardModelBuilders) {
                 modelComponents.rewardModels.emplace(rewardModelBuilder.getName(), rewardModelBuilder.build(modelComponents.transitionMatrix.getRowCount(), modelComponents.transitionMatrix.getColumnCount(), modelComponents.transitionMatrix.getRowGroupCount()));
@@ -367,42 +367,7 @@ namespace storm {
                 }
             }
             
-            if (generator->getModelType() == storm::generator::ModelType::MA) {
-                STORM_LOG_ASSERT(markovianChoices, "No information regarding markovian choices available.");
-                buildMarkovianStates(modelComponents, *markovianChoices);
-            }
-            
             return modelComponents;
-        }
-        
-        template <typename ValueType, typename RewardModelType, typename StateType>
-        void ExplicitModelBuilder<ValueType, RewardModelType, StateType>::buildMarkovianStates(ModelComponents& modelComponents, storm::storage::BitVector const& markovianChoices) const {
-            modelComponents.markovianStates = storm::storage::BitVector(modelComponents.transitionMatrix.getRowGroupCount(), false);
-            // Check for each state whether it contains a markovian choice.
-            for (uint_fast64_t state = 0; state < modelComponents.transitionMatrix.getRowGroupCount(); ++state ) {
-                uint_fast64_t firstChoice = modelComponents.transitionMatrix.getRowGroupIndices()[state];
-                uint_fast64_t markovianChoice = markovianChoices.getNextSetIndex(firstChoice);
-                if (markovianChoice < modelComponents.transitionMatrix.getRowGroupIndices()[state+1]) {
-                    // Found a markovian choice. Assert that there is not a second one.
-                    STORM_LOG_THROW(markovianChoices.getNextSetIndex(markovianChoice+1) >= modelComponents.transitionMatrix.getRowGroupIndices()[state+1], storm::exceptions::WrongFormatException, "Multiple Markovian choices defined for some state");
-                    modelComponents.markovianStates->set(state);
-                    // Swap the first choice and the found markovian choice (if they are not equal)
-                    if (firstChoice != markovianChoice) {
-                        modelComponents.transitionMatrix.swapRows(firstChoice, markovianChoice);
-                        for (auto& rewardModel : modelComponents.rewardModels) {
-                            if (rewardModel.second.hasStateActionRewards()) {
-                                std::swap(rewardModel.second.getStateActionRewardVector()[firstChoice], rewardModel.second.getStateActionRewardVector()[markovianChoice]);
-                            }
-                            if (rewardModel.second.hasTransitionRewards()) {
-                                rewardModel.second.getTransitionRewardMatrix().swapRows(firstChoice, markovianChoice);
-                            }
-                        }
-                        if (modelComponents.choiceLabeling) {
-                            std::swap(modelComponents.choiceLabeling.get()[firstChoice], modelComponents.choiceLabeling.get()[markovianChoice]);
-                        }
-                    }
-                }
-            }
         }
         
         template <typename ValueType, typename RewardModelType, typename StateType>

@@ -264,6 +264,7 @@ namespace storm {
             }
             
             // Get all choices for the state.
+            result.setExpanded();
             std::vector<Choice<ValueType>> allChoices = getSilentActionChoices(locations, *this->state, stateToIdCallback);
             std::vector<Choice<ValueType>> allLabeledChoices = getNonsilentActionChoices(locations, *this->state, stateToIdCallback);
             for (auto& choice : allLabeledChoices) {
@@ -323,7 +324,8 @@ namespace storm {
                 result.addChoice(std::move(choice));
             }
             
-            result.setExpanded();
+            this->postprocess(result);
+            
             return result;
         }
         
@@ -348,7 +350,13 @@ namespace storm {
                         continue;
                     }
                     
-                    result.push_back(Choice<ValueType>(edge.getActionIndex()));
+                    // Determine the exit rate if it's a Markovian edge.
+                    boost::optional<ValueType> exitRate;
+                    if (edge.hasRate()) {
+                        exitRate = this->evaluator.asRational(edge.getRate());
+                    }
+                    
+                    result.push_back(Choice<ValueType>(edge.getActionIndex(), static_cast<bool>(exitRate)));
                     Choice<ValueType>& choice = result.back();
                     
                     // Iterate over all updates of the current command.
@@ -360,6 +368,7 @@ namespace storm {
                         
                         // Update the choice by adding the probability/target state to it.
                         ValueType probability = this->evaluator.asRational(destination.getProbability());
+                        probability = exitRate ? exitRate.get() * probability : probability;
                         choice.addProbability(stateIndex, probability);
                         probabilitySum += probability;
                     }

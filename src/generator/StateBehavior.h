@@ -57,6 +57,16 @@ namespace storm {
             typename std::vector<Choice<ValueType, StateType>>::const_iterator end() const;
 
             /*!
+             * Retrieves the vector of choices.
+             */
+            std::vector<Choice<ValueType, StateType>> const& getChoices() const;
+
+            /*!
+             * Retrieves the vector of choices.
+             */
+            std::vector<Choice<ValueType, StateType>>& getChoices();
+
+            /*!
              * Retrieves the list of state rewards under selected reward models.
              */
             std::vector<ValueType> const& getStateRewards() const;

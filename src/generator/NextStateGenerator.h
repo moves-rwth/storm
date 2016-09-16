@@ -196,6 +196,8 @@ namespace storm {
              */
             storm::models::sparse::StateLabeling label(storm::storage::BitVectorHashMap<StateType> const& states, std::vector<StateType> const& initialStateIndices, std::vector<StateType> const& deadlockStateIndices, std::vector<std::pair<std::string, storm::expressions::Expression>> labelsAndExpressions);
             
+            void postprocess(StateBehavior<ValueType, StateType>& result);
+            
             /// The options to be used for next-state generation.
             NextStateGeneratorOptions options;
             

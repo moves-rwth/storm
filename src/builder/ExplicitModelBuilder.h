@@ -1,5 +1,5 @@
-#ifndef STORM_BUILDER_ExplicitModelBuilder_H
-#define	STORM_BUILDER_ExplicitModelBuilder_H
+#ifndef STORM_BUILDER_EXPLICITMODELBUILDER_H
+#define	STORM_BUILDER_EXPLICITMODELBUILDER_H
 
 #include <memory>
 #include <utility>
@@ -195,4 +195,4 @@ namespace storm {
     } // namespace adapters
 } // namespace storm
 
-#endif	/* STORM_BUILDER_ExplicitModelBuilder_H */
+#endif	/* STORM_BUILDER_EXPLICITMODELBUILDER_H */

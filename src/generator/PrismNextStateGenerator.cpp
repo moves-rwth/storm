@@ -272,6 +272,8 @@ namespace storm {
                 result.addChoice(std::move(choice));
             }
             
+            this->postprocess(result);
+                        
             return result;
         }
         
