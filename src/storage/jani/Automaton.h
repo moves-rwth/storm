@@ -259,6 +259,11 @@ namespace storm {
             uint64_t getNumberOfEdges() const;
             
             /*!
+             * Retrieves whether the initial restriction is set and unequal to true
+             */
+            bool hasRestrictedInitialStates() const;
+            
+            /*!
              * Retrieves whether this automaton has an initial states restriction.
              */
             bool hasInitialStatesRestriction() const;

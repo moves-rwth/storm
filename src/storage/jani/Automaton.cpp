@@ -333,6 +333,10 @@ namespace storm {
         uint64_t Automaton::getNumberOfEdges() const {
             return edges.size();
         }
+        
+        bool Automaton::hasRestrictedInitialStates() const {
+            return hasInitialStatesRestriction() && !(getInitialStatesExpression().evaluateAsBool());
+        }
 
         bool Automaton::hasInitialStatesRestriction() const {
             return initialStatesRestriction.isInitialized();
