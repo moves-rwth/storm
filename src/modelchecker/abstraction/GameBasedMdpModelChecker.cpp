@@ -28,6 +28,8 @@
 
 #include "src/modelchecker/results/CheckResult.h"
 
+//#define LOCAL_DEBUG
+
 namespace storm {
     namespace modelchecker {
         namespace detail {
@@ -337,7 +339,7 @@ namespace storm {
 //            
 //            minResult.exportToDot("minresult.dot");
 //            maxResult.exportToDot("maxresult.dot");
-            pivotState.template toAdd<ValueType>().exportToDot("pivot.dot");
+//            pivotState.template toAdd<ValueType>().exportToDot("pivot.dot");
 //            pivotStateLower.exportToDot("pivot_lower.dot");
 //            pivotStateUpper.exportToDot("pivot_upper.dot");
 //            pivotStateIsMinProb0.template toAdd<ValueType>().exportToDot("pivot_is_minprob0.dot");
@@ -362,10 +364,12 @@ namespace storm {
             storm::dd::Bdd<Type> lowerChoice2 = (lowerChoice && maxPlayer2Strategy).existsAbstract(variablesToAbstract);
 //            lowerChoice2.template toAdd<ValueType>().exportToDot("tmp_lower.dot");
 //            lowerChoice2 = lowerChoice2.existsAbstract(variablesToAbstract);
-            
+
+#ifdef LOCAL_DEBUG
             lowerChoice.template toAdd<ValueType>().exportToDot("ref_lower.dot");
             lowerChoice1.template toAdd<ValueType>().exportToDot("ref_lower1.dot");
             lowerChoice2.template toAdd<ValueType>().exportToDot("ref_lower2.dot");
+#endif
             
             bool lowerChoicesDifferent = !lowerChoice1.exclusiveOr(lowerChoice2).isZero();
             if (lowerChoicesDifferent) {
@@ -475,16 +479,16 @@ namespace storm {
                     targetStates |= game.getBottomStates();
                 }
 				
-				abstractor.exportToDot("game" + std::to_string(iterations) + ".dot");
+#ifdef LOCAL_DEBUG
+				abstractor.exportToDot("game" + std::to_string(iterations) + ".dot", targetStates, game.getManager().getBddOne());
+#endif
 				
                 prob01.min = computeProb01States(player1Direction, storm::OptimizationDirection::Minimize, game, transitionMatrixBdd, game.getStates(constraintExpression), targetStates);
                 std::unique_ptr<CheckResult> result = checkForResultAfterQualitativeCheck<Type, ValueType>(checkTask, storm::OptimizationDirection::Minimize, game.getInitialStates(), prob01.min.first.getPlayer1States(), prob01.min.second.getPlayer1States());
                 if (result) {
                     return result;
                 }
-                /*if (iterations == 18) {
-                    exit(-1);
-                }*/
+
                 prob01.max = computeProb01States(player1Direction, storm::OptimizationDirection::Maximize, game, transitionMatrixBdd, game.getStates(constraintExpression), targetStates);
                 result = checkForResultAfterQualitativeCheck<Type, ValueType>(checkTask, storm::OptimizationDirection::Maximize, game.getInitialStates(), prob01.max.first.getPlayer1States(), prob01.max.second.getPlayer1States());
                 if (result) {
@@ -608,10 +612,12 @@ namespace storm {
 					//std::cout << "diff one? " << ((commonReach && minMaybeStateResult.player2Strategy) != (commonReach && maxMaybeStateResult.player2Strategy)) << std::endl;
 					STORM_LOG_ASSERT((commonReach && minMaybeStateResult.player1Strategy) != (commonReach && maxMaybeStateResult.player1Strategy) || (commonReach && minMaybeStateResult.player2Strategy) != (commonReach && maxMaybeStateResult.player2Strategy), "The strategies fully coincide.");
 
+#ifdef LOCAL_DEBUG
 					abstractor.exportToDot("lowerlower" + std::to_string(iterations) + ".dot", targetStates, minMaybeStateResult.player1Strategy && minMaybeStateResult.player2Strategy);
 					abstractor.exportToDot("upperupper" + std::to_string(iterations) + ".dot", targetStates, maxMaybeStateResult.player1Strategy && maxMaybeStateResult.player2Strategy);
 					abstractor.exportToDot("common" + std::to_string(iterations) + ".dot", targetStates, (minMaybeStateResult.player1Strategy || maxMaybeStateResult.player1Strategy) && minMaybeStateResult.player2Strategy && maxMaybeStateResult.player2Strategy);
 					abstractor.exportToDot("both" + std::to_string(iterations) + ".dot", targetStates, (minMaybeStateResult.player1Strategy || maxMaybeStateResult.player1Strategy) && (minMaybeStateResult.player2Strategy || maxMaybeStateResult.player2Strategy));
+#endif
 
                     refineAfterQuantitativeCheck(abstractor, game, minResult, maxResult, prob01, std::make_pair(minMaybeStateResult.player1Strategy, minMaybeStateResult.player2Strategy), std::make_pair(maxMaybeStateResult.player1Strategy, maxMaybeStateResult.player2Strategy), transitionMatrixBdd);
                 }
@@ -657,6 +663,5 @@ namespace storm {
         template class GameBasedMdpModelChecker<storm::dd::DdType::CUDD, storm::models::symbolic::Mdp<storm::dd::DdType::CUDD, double>>;
         template class GameBasedMdpModelChecker<storm::dd::DdType::Sylvan, storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, double>>;
         template class GameBasedMdpModelChecker<storm::dd::DdType::Sylvan, storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan, double>>;
-
     }
 }

@@ -20,6 +20,8 @@
 #include "storm-config.h"
 #include "src/adapters/CarlAdapter.h"
 
+//#define LOCAL_DEBUG
+
 namespace storm {
     namespace abstraction {
         namespace prism {
@@ -122,18 +124,28 @@ namespace storm {
                 for (auto const& successorValuePair : lowerChoiceAsAdd) {
                     uint_fast64_t updateIndex = abstractionInformation.decodeAux(successorValuePair.first, 0, currentGame->getProbabilisticBranchingVariables().size());
                     
+#ifdef LOCAL_DEBUG
                     std::cout << "update idx: " << updateIndex << std::endl;
+#endif
                     storm::storage::BitVector successor(abstractionInformation.getNumberOfPredicates());
                     for (uint_fast64_t index = 0; index < abstractionInformation.getOrderedSuccessorVariables().size(); ++index) {
                         auto const& successorVariable = abstractionInformation.getOrderedSuccessorVariables()[index];
+#ifdef LOCAL_DEBUG
                         std::cout << successorVariable.getName() << " has value";
+#endif
                         if (successorValuePair.first.getBooleanValue(successorVariable)) {
                             successor.set(index);
+#ifdef LOCAL_DEBUG
                             std::cout << " true";
+#endif
                         } else {
+#ifdef LOCAL_DEBUG
                             std::cout << " false";
+#endif
                         }
+#ifdef LOCAL_DEBUG
                         std::cout << std::endl;
+#endif
                     }
                     
                     result[updateIndex] = successor;
@@ -147,12 +159,16 @@ namespace storm {
                 storm::dd::Add<DdType, ValueType> player1ChoiceAsAdd = player1Choice.template toAdd<ValueType>();
                 auto pl1It = player1ChoiceAsAdd.begin();
                 uint_fast64_t commandIndex = abstractionInformation.decodePlayer1Choice((*pl1It).first, abstractionInformation.getPlayer1VariableCount());
+#ifdef LOCAL_DEBUG
                 std::cout << "command index " << commandIndex << std::endl;
                 std::cout << program.get() << std::endl;
+#endif
                 storm::abstraction::prism::AbstractCommand<DdType, ValueType>& abstractCommand = modules.front().getCommands()[commandIndex];
                 storm::prism::Command const& concreteCommand = abstractCommand.getConcreteCommand();
+#ifdef LOCAL_DEBUG
                 player1Choice.template toAdd<ValueType>().exportToDot("pl1choice_ref.dot");
                 std::cout << concreteCommand << std::endl;
+#endif
 
                 // Check whether there are bottom states in the game and whether one of the choices actually picks the
                 // bottom state as the successor.
@@ -172,16 +188,23 @@ namespace storm {
                 } else {
                     STORM_LOG_TRACE("No bottom state successor. Deriving a new predicate using weakest precondition.");
                     
+#ifdef LOCAL_DEBUG
                     lowerChoice.template toAdd<ValueType>().exportToDot("lowerchoice_ref.dot");
                     upperChoice.template toAdd<ValueType>().exportToDot("upperchoice_ref.dot");
+#endif
                     
                     // Decode both choices to explicit mappings.
+#ifdef LOCAL_DEBUG
                     std::cout << "lower" << std::endl;
+#endif
                     std::map<uint_fast64_t, storm::storage::BitVector> lowerChoiceUpdateToSuccessorMapping = decodeChoiceToUpdateSuccessorMapping(lowerChoice);
+#ifdef LOCAL_DEBUG
                     std::cout << "upper" << std::endl;
+#endif
                     std::map<uint_fast64_t, storm::storage::BitVector> upperChoiceUpdateToSuccessorMapping = decodeChoiceToUpdateSuccessorMapping(upperChoice);
                     STORM_LOG_ASSERT(lowerChoiceUpdateToSuccessorMapping.size() == upperChoiceUpdateToSuccessorMapping.size(), "Mismatching sizes after decode (" << lowerChoiceUpdateToSuccessorMapping.size() << " vs. " << upperChoiceUpdateToSuccessorMapping.size() << ").");
 
+#ifdef LOCAL_DEBUG
                     std::cout << "lower" << std::endl;
                     for (auto const& entry : lowerChoiceUpdateToSuccessorMapping) {
                         std::cout << entry.first << " -> " << entry.second << std::endl;
@@ -190,6 +213,7 @@ namespace storm {
                     for (auto const& entry : upperChoiceUpdateToSuccessorMapping) {
                         std::cout << entry.first << " -> " << entry.second << std::endl;
                     }
+#endif
                     
                     // Now go through the mappings and find points of deviation. Currently, we take the first deviation.
                     storm::expressions::Expression newPredicate;
@@ -199,7 +223,9 @@ namespace storm {
                     for (; lowerIt != lowerIte; ++lowerIt, ++upperIt) {
                         STORM_LOG_ASSERT(lowerIt->first == upperIt->first, "Update indices mismatch.");
                         uint_fast64_t updateIndex = lowerIt->first;
+#ifdef LOCAL_DEBUG
                         std::cout << "update idx " << updateIndex << std::endl;
+#endif
                         bool deviates = lowerIt->second != upperIt->second;
                         if (deviates) {
                             for (uint_fast64_t predicateIndex = 0; predicateIndex < lowerIt->second.size(); ++predicateIndex) {
