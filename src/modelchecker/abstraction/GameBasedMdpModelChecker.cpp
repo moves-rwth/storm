@@ -595,48 +595,6 @@ namespace storm {
                     // If we arrived at this point, it means that we have all qualitative and quantitative information
                     // about the game, but we could not yet answer the query. In this case, we need to refine.
                     
-					// Redirect all player 1 choices of the min strategy to that of the max strategy if this leads to a player 2 state that has the same prob.
-					// Get all relevant strategies.
-					/*storm::dd::Add<Type, ValueType> matrix = game.getTransitionMatrix();
-					
-					storm::dd::Add<Type, ValueType> minResultTmp = minResult.swapVariables(game.getRowColumnMetaVariablePairs());
-					storm::dd::Add<Type, ValueType> minValuesForPlayer1UnderMinP1Strategy = (matrix * minMaybeStateResult.player1Strategy.template toAdd<ValueType>() * minMaybeStateResult.player2Strategy.template toAdd<ValueType>() * minResultTmp).sumAbstract(game.getColumnVariables()).sumAbstract(game.getPlayer2Variables()).sumAbstract(game.getPlayer1Variables());
-					storm::dd::Add<Type, ValueType> minValuesForPlayer1UnderMaxP1P2Strategy = (matrix * maxMaybeStateResult.player1Strategy.template toAdd<ValueType>() * maxMaybeStateResult.player2Strategy.template toAdd<ValueType>() * minResultTmp).sumAbstract(game.getColumnVariables()).sumAbstract(game.getPlayer2Variables()).sumAbstract(game.getPlayer1Variables());
-					storm::dd::Add<Type, ValueType> minValuesForPlayer1UnderMaxP1Strategy = (matrix * maxMaybeStateResult.player1Strategy.template toAdd<ValueType>() * minMaybeStateResult.player2Strategy.template toAdd<ValueType>() * minResultTmp).sumAbstract(game.getColumnVariables()).sumAbstract(game.getPlayer2Variables()).sumAbstract(game.getPlayer1Variables());
-					
-					minValuesForPlayer1UnderMinP1Strategy = prob01.min.first.getPlayer1States().ite(game.getManager().template getAddZero<ValueType>(), prob01.min.second.getPlayer1States().ite(game.getManager().template getAddOne<ValueType>(), minValuesForPlayer1UnderMinP1Strategy));
-					minValuesForPlayer1UnderMaxP1Strategy = prob01.min.first.getPlayer1States().ite(game.getManager().template getAddZero<ValueType>(), prob01.min.second.getPlayer1States().ite(game.getManager().template getAddOne<ValueType>(), minValuesForPlayer1UnderMaxP1Strategy));
-
-					// This BDD has a 1 for every state (s) that can switch the strategy.
-					storm::dd::Bdd<Type> minIsGreaterOrEqual = minValuesForPlayer1UnderMinP1Strategy.greaterOrEqual(minValuesForPlayer1UnderMaxP1Strategy);
-					
-					minMaybeStateResult.player1Strategy = minIsGreaterOrEqual.ite(maxMaybeStateResult.player1Strategy, minMaybeStateResult.player1Strategy);*/
-					
-                    // Start by extending the quantitative strategies by the qualitative ones.
-                    //minMaybeStateResult.player1Strategy |= prob01.min.first.getPlayer1Strategy() || prob01.min.second.getPlayer1Strategy();
-
-                    storm::dd::Bdd<Type> tmp = (prob01.min.first.getPlayer2Strategy().existsAbstract(game.getPlayer2Variables()) && prob01.min.second.getPlayer2Strategy().existsAbstract(game.getPlayer2Variables()));
-                    STORM_LOG_ASSERT(tmp.isZero(), "wth?");
-                    tmp = prob01.min.first.getPlayer2Strategy().existsAbstract(game.getPlayer2Variables()) && minMaybeStateResult.player2Strategy.existsAbstract(game.getPlayer2Variables());
-                    if (!tmp.isZero()) {
-                        tmp = tmp && prob01.min.first.getPlayer2Strategy().exclusiveOr(minMaybeStateResult.player2Strategy).existsAbstract(game.getPlayer2Variables());
-                        (tmp && prob01.min.first.getPlayer2Strategy()).template toAdd<ValueType>().exportToDot("prob0_strat.dot");
-                        (tmp && minMaybeStateResult.player2Strategy).template toAdd<ValueType>().exportToDot("maybe_strat.dot");
-                        if (!tmp.isZero()) {
-                            storm::dd::Add<Type, ValueType> values = (tmp.template toAdd<ValueType>() * game.getTransitionMatrix() * minResult.swapVariables(game.getRowColumnMetaVariablePairs())).sumAbstract(game.getColumnVariables());
-                            tmp.template toAdd<ValueType>().exportToDot("illegal.dot");
-                            minResult.exportToDot("vals.dot");
-                        }
-                        STORM_LOG_ASSERT(tmp.isZero(), "ddduuuudde?");
-                    }
-                    STORM_LOG_ASSERT(tmp.isZero(), "wth2?");
-                    tmp = prob01.min.second.getPlayer2Strategy().existsAbstract(game.getPlayer2Variables()) && minMaybeStateResult.player2Strategy;
-                    
-                    //(minMaybeStateResult.player2Strategy && (prob01.min.first.getPlayer2Strategy() || prob01.min.second.getPlayer2Strategy())).template toAdd<ValueType>().exportToDot("strat_overlap.dot");
-                    //minMaybeStateResult.player2Strategy |= prob01.min.first.getPlayer2Strategy() || prob01.min.second.getPlayer2Strategy();
-                    //maxMaybeStateResult.player1Strategy |= prob01.max.first.getPlayer1Strategy() || prob01.max.second.getPlayer1Strategy();
-                    //maxMaybeStateResult.player2Strategy |= prob01.max.first.getPlayer2Strategy() || prob01.max.second.getPlayer2Strategy();
-                    
                     // Make sure that all strategies are still valid strategies.
                     STORM_LOG_ASSERT(minMaybeStateResult.player1Strategy.template toAdd<ValueType>().sumAbstract(game.getPlayer1Variables()).getMax() <= 1, "Player 1 strategy for min is illegal.");
                     STORM_LOG_ASSERT(maxMaybeStateResult.player1Strategy.template toAdd<ValueType>().sumAbstract(game.getPlayer1Variables()).getMax() <= 1, "Player 1 strategy for max is illegal.");
