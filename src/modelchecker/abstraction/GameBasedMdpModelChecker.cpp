@@ -319,8 +319,6 @@ namespace storm {
             // Then restrict the pivot states by requiring existing and different player 2 choices.
             pivotStates &= ((minPlayer1Strategy || maxPlayer1Strategy) && constraint).existsAbstract(game.getNondeterminismVariables());
             
-            ((minPlayer1Strategy || maxPlayer1Strategy) && constraint).existsAbstract(game.getNondeterminismVariables()).template toAdd<ValueType>().exportToDot("a.dot");
-            
             STORM_LOG_ASSERT(!pivotStates.isZero(), "Unable to refine without pivot state candidates.");
             
             // Now that we have the pivot state candidates, we need to pick one.
@@ -339,7 +337,7 @@ namespace storm {
 //            
 //            minResult.exportToDot("minresult.dot");
 //            maxResult.exportToDot("maxresult.dot");
-//            pivotState.template toAdd<ValueType>().exportToDot("pivot.dot");
+            pivotState.template toAdd<ValueType>().exportToDot("pivot.dot");
 //            pivotStateLower.exportToDot("pivot_lower.dot");
 //            pivotStateUpper.exportToDot("pivot_upper.dot");
 //            pivotStateIsMinProb0.template toAdd<ValueType>().exportToDot("pivot_is_minprob0.dot");
@@ -476,9 +474,9 @@ namespace storm {
                 if (player1Direction == storm::OptimizationDirection::Minimize) {
                     targetStates |= game.getBottomStates();
                 }
-                
-                abstractor.exportToDot("game" + std::to_string(iterations) + ".dot", targetStates, game.getManager().getBddOne());
-                
+				
+				abstractor.exportToDot("game" + std::to_string(iterations) + ".dot");
+				
                 prob01.min = computeProb01States(player1Direction, storm::OptimizationDirection::Minimize, game, transitionMatrixBdd, game.getStates(constraintExpression), targetStates);
                 std::unique_ptr<CheckResult> result = checkForResultAfterQualitativeCheck<Type, ValueType>(checkTask, storm::OptimizationDirection::Minimize, game.getInitialStates(), prob01.min.first.getPlayer1States(), prob01.min.second.getPlayer1States());
                 if (result) {
@@ -616,6 +614,23 @@ namespace storm {
 					
                     // Start by extending the quantitative strategies by the qualitative ones.
                     //minMaybeStateResult.player1Strategy |= prob01.min.first.getPlayer1Strategy() || prob01.min.second.getPlayer1Strategy();
+
+                    storm::dd::Bdd<Type> tmp = (prob01.min.first.getPlayer2Strategy().existsAbstract(game.getPlayer2Variables()) && prob01.min.second.getPlayer2Strategy().existsAbstract(game.getPlayer2Variables()));
+                    STORM_LOG_ASSERT(tmp.isZero(), "wth?");
+                    tmp = prob01.min.first.getPlayer2Strategy().existsAbstract(game.getPlayer2Variables()) && minMaybeStateResult.player2Strategy.existsAbstract(game.getPlayer2Variables());
+                    if (!tmp.isZero()) {
+                        tmp = tmp && prob01.min.first.getPlayer2Strategy().exclusiveOr(minMaybeStateResult.player2Strategy).existsAbstract(game.getPlayer2Variables());
+                        (tmp && prob01.min.first.getPlayer2Strategy()).template toAdd<ValueType>().exportToDot("prob0_strat.dot");
+                        (tmp && minMaybeStateResult.player2Strategy).template toAdd<ValueType>().exportToDot("maybe_strat.dot");
+                        if (!tmp.isZero()) {
+                            storm::dd::Add<Type, ValueType> values = (tmp.template toAdd<ValueType>() * game.getTransitionMatrix() * minResult.swapVariables(game.getRowColumnMetaVariablePairs())).sumAbstract(game.getColumnVariables());
+                            tmp.template toAdd<ValueType>().exportToDot("illegal.dot");
+                            minResult.exportToDot("vals.dot");
+                        }
+                        STORM_LOG_ASSERT(tmp.isZero(), "ddduuuudde?");
+                    }
+                    STORM_LOG_ASSERT(tmp.isZero(), "wth2?");
+                    tmp = prob01.min.second.getPlayer2Strategy().existsAbstract(game.getPlayer2Variables()) && minMaybeStateResult.player2Strategy;
                     
                     //(minMaybeStateResult.player2Strategy && (prob01.min.first.getPlayer2Strategy() || prob01.min.second.getPlayer2Strategy())).template toAdd<ValueType>().exportToDot("strat_overlap.dot");
                     //minMaybeStateResult.player2Strategy |= prob01.min.first.getPlayer2Strategy() || prob01.min.second.getPlayer2Strategy();
@@ -627,19 +642,19 @@ namespace storm {
                     STORM_LOG_ASSERT(maxMaybeStateResult.player1Strategy.template toAdd<ValueType>().sumAbstract(game.getPlayer1Variables()).getMax() <= 1, "Player 1 strategy for max is illegal.");
                     STORM_LOG_ASSERT(minMaybeStateResult.player2Strategy.template toAdd<ValueType>().sumAbstract(game.getPlayer2Variables()).getMax() <= 1, "Player 2 strategy for min is illegal.");
                     STORM_LOG_ASSERT(maxMaybeStateResult.player2Strategy.template toAdd<ValueType>().sumAbstract(game.getPlayer2Variables()).getMax() <= 1, "Player 2 strategy for max is illegal.");
-                    
-                    // Check whether the strategies coincide over the reachable parts.
-                    storm::dd::Bdd<Type> tmp = game.getTransitionMatrix().toBdd() && (minMaybeStateResult.player1Strategy || maxMaybeStateResult.player1Strategy) && (minMaybeStateResult.player2Strategy || maxMaybeStateResult.player2Strategy);
-                    storm::dd::Bdd<Type> commonReach = storm::utility::dd::computeReachableStates(game.getInitialStates(), tmp.existsAbstract(game.getNondeterminismVariables()), game.getRowVariables(), game.getColumnVariables());
-                    std::cout << "diff one? " << ((commonReach && minMaybeStateResult.player1Strategy) != (commonReach && maxMaybeStateResult.player1Strategy)) << std::endl;
-                    std::cout << "diff one? " << ((commonReach && minMaybeStateResult.player2Strategy) != (commonReach && maxMaybeStateResult.player2Strategy)) << std::endl;
-                    STORM_LOG_ASSERT((commonReach && minMaybeStateResult.player1Strategy) != (commonReach && maxMaybeStateResult.player1Strategy) || (commonReach && minMaybeStateResult.player2Strategy) != (commonReach && maxMaybeStateResult.player2Strategy), "The strategies fully coincide.");
-                    
-                    abstractor.exportToDot("lowerlower" + std::to_string(iterations) + ".dot", targetStates, minMaybeStateResult.player1Strategy && minMaybeStateResult.player2Strategy);
-                    abstractor.exportToDot("upperupper" + std::to_string(iterations) + ".dot", targetStates, maxMaybeStateResult.player1Strategy && maxMaybeStateResult.player2Strategy);
-                    abstractor.exportToDot("common" + std::to_string(iterations) + ".dot", targetStates, (minMaybeStateResult.player1Strategy || maxMaybeStateResult.player1Strategy) && minMaybeStateResult.player2Strategy && maxMaybeStateResult.player2Strategy);
-                    abstractor.exportToDot("both" + std::to_string(iterations) + ".dot", targetStates, (minMaybeStateResult.player1Strategy || maxMaybeStateResult.player1Strategy) && (minMaybeStateResult.player2Strategy || maxMaybeStateResult.player2Strategy));
-                    
+
+					// Check whether the strategies coincide over the reachable parts.
+					storm::dd::Bdd<Type> tmp = game.getTransitionMatrix().toBdd() && (minMaybeStateResult.player1Strategy || maxMaybeStateResult.player1Strategy) && (minMaybeStateResult.player2Strategy || maxMaybeStateResult.player2Strategy);
+					storm::dd::Bdd<Type> commonReach = storm::utility::dd::computeReachableStates(game.getInitialStates(), tmp.existsAbstract(game.getNondeterminismVariables()), game.getRowVariables(), game.getColumnVariables());
+					//std::cout << "diff one? " << ((commonReach && minMaybeStateResult.player1Strategy) != (commonReach && maxMaybeStateResult.player1Strategy)) << std::endl;
+					//std::cout << "diff one? " << ((commonReach && minMaybeStateResult.player2Strategy) != (commonReach && maxMaybeStateResult.player2Strategy)) << std::endl;
+					STORM_LOG_ASSERT((commonReach && minMaybeStateResult.player1Strategy) != (commonReach && maxMaybeStateResult.player1Strategy) || (commonReach && minMaybeStateResult.player2Strategy) != (commonReach && maxMaybeStateResult.player2Strategy), "The strategies fully coincide.");
+
+					abstractor.exportToDot("lowerlower" + std::to_string(iterations) + ".dot", targetStates, minMaybeStateResult.player1Strategy && minMaybeStateResult.player2Strategy);
+					abstractor.exportToDot("upperupper" + std::to_string(iterations) + ".dot", targetStates, maxMaybeStateResult.player1Strategy && maxMaybeStateResult.player2Strategy);
+					abstractor.exportToDot("common" + std::to_string(iterations) + ".dot", targetStates, (minMaybeStateResult.player1Strategy || maxMaybeStateResult.player1Strategy) && minMaybeStateResult.player2Strategy && maxMaybeStateResult.player2Strategy);
+					abstractor.exportToDot("both" + std::to_string(iterations) + ".dot", targetStates, (minMaybeStateResult.player1Strategy || maxMaybeStateResult.player1Strategy) && (minMaybeStateResult.player2Strategy || maxMaybeStateResult.player2Strategy));
+
                     refineAfterQuantitativeCheck(abstractor, game, minResult, maxResult, prob01, std::make_pair(minMaybeStateResult.player1Strategy, minMaybeStateResult.player2Strategy), std::make_pair(maxMaybeStateResult.player1Strategy, maxMaybeStateResult.player2Strategy), transitionMatrixBdd);
                 }
             }
