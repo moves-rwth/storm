@@ -292,7 +292,7 @@ namespace storm {
             // TODO: fix min strategies to take the max strategies if possible.
             
             // Build the fragment of transitions that is reachable by both the min and the max strategies.
-            storm::dd::Bdd<Type> reachableTransitions = transitionMatrixBdd && minPlayer1Strategy && minPlayer2Strategy && maxPlayer1Strategy && maxPlayer2Strategy;
+            storm::dd::Bdd<Type> reachableTransitions = transitionMatrixBdd && (minPlayer1Strategy || maxPlayer1Strategy) && minPlayer2Strategy && maxPlayer2Strategy;
             reachableTransitions = reachableTransitions.existsAbstract(game.getNondeterminismVariables());
             storm::dd::Bdd<Type> pivotStates = storm::utility::dd::computeReachableStates(game.getInitialStates(), reachableTransitions, game.getRowVariables(), game.getColumnVariables());
             
@@ -480,9 +480,9 @@ namespace storm {
                 if (result) {
                     return result;
                 }
-                if (iterations == 18) {
+                /*if (iterations == 18) {
                     exit(-1);
-                }
+                }*/
                 prob01.max = computeProb01States(player1Direction, storm::OptimizationDirection::Maximize, game, transitionMatrixBdd, game.getStates(constraintExpression), targetStates);
                 result = checkForResultAfterQualitativeCheck<Type, ValueType>(checkTask, storm::OptimizationDirection::Maximize, game.getInitialStates(), prob01.max.first.getPlayer1States(), prob01.max.second.getPlayer1States());
                 if (result) {
@@ -596,7 +596,7 @@ namespace storm {
                     
 					// Redirect all player 1 choices of the min strategy to that of the max strategy if this leads to a player 2 state that has the same prob.
 					// Get all relevant strategies.
-					storm::dd::Add<Type, ValueType> matrix = game.getTransitionMatrix();
+					/*storm::dd::Add<Type, ValueType> matrix = game.getTransitionMatrix();
 					
 					storm::dd::Add<Type, ValueType> minResultTmp = minResult.swapVariables(game.getRowColumnMetaVariablePairs());
 					storm::dd::Add<Type, ValueType> minValuesForPlayer1UnderMinP1Strategy = (matrix * minMaybeStateResult.player1Strategy.template toAdd<ValueType>() * minMaybeStateResult.player2Strategy.template toAdd<ValueType>() * minResultTmp).sumAbstract(game.getColumnVariables()).sumAbstract(game.getPlayer2Variables()).sumAbstract(game.getPlayer1Variables());
@@ -609,7 +609,7 @@ namespace storm {
 					// This BDD has a 1 for every state (s) that can switch the strategy.
 					storm::dd::Bdd<Type> minIsGreaterOrEqual = minValuesForPlayer1UnderMinP1Strategy.greaterOrEqual(minValuesForPlayer1UnderMaxP1Strategy);
 					
-					minMaybeStateResult.player1Strategy = minIsGreaterOrEqual.ite(maxMaybeStateResult.player1Strategy, minMaybeStateResult.player1Strategy);
+					minMaybeStateResult.player1Strategy = minIsGreaterOrEqual.ite(maxMaybeStateResult.player1Strategy, minMaybeStateResult.player1Strategy);*/
 					
                     // Start by extending the quantitative strategies by the qualitative ones.
                     //minMaybeStateResult.player1Strategy |= prob01.min.first.getPlayer1Strategy() || prob01.min.second.getPlayer1Strategy();
@@ -631,10 +631,10 @@ namespace storm {
                     STORM_LOG_ASSERT(tmp.isZero(), "wth2?");
                     tmp = prob01.min.second.getPlayer2Strategy().existsAbstract(game.getPlayer2Variables()) && minMaybeStateResult.player2Strategy;
                     
-                    (minMaybeStateResult.player2Strategy && (prob01.min.first.getPlayer2Strategy() || prob01.min.second.getPlayer2Strategy())).template toAdd<ValueType>().exportToDot("strat_overlap.dot");
-                    minMaybeStateResult.player2Strategy |= prob01.min.first.getPlayer2Strategy() || prob01.min.second.getPlayer2Strategy();
-                    maxMaybeStateResult.player1Strategy |= prob01.max.first.getPlayer1Strategy() || prob01.max.second.getPlayer1Strategy();
-                    maxMaybeStateResult.player2Strategy |= prob01.max.first.getPlayer2Strategy() || prob01.max.second.getPlayer2Strategy();
+                    //(minMaybeStateResult.player2Strategy && (prob01.min.first.getPlayer2Strategy() || prob01.min.second.getPlayer2Strategy())).template toAdd<ValueType>().exportToDot("strat_overlap.dot");
+                    //minMaybeStateResult.player2Strategy |= prob01.min.first.getPlayer2Strategy() || prob01.min.second.getPlayer2Strategy();
+                    //maxMaybeStateResult.player1Strategy |= prob01.max.first.getPlayer1Strategy() || prob01.max.second.getPlayer1Strategy();
+                    //maxMaybeStateResult.player2Strategy |= prob01.max.first.getPlayer2Strategy() || prob01.max.second.getPlayer2Strategy();
                     
                     // Make sure that all strategies are still valid strategies.
                     STORM_LOG_ASSERT(minMaybeStateResult.player1Strategy.template toAdd<ValueType>().sumAbstract(game.getPlayer1Variables()).getMax() <= 1, "Player 1 strategy for min is illegal.");
