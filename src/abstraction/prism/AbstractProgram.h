@@ -89,8 +89,10 @@ namespace storm {
                  * Exports the current state of the abstraction in the dot format to the given file.
                  *
                  * @param filename The name of the file to which to write the dot output.
+                 * @param highlightStates A BDD characterizing states that will be highlighted.
+                 * @param filter A filter that is applied to select which part of the game to export.
                  */
-                void exportToDot(std::string const& filename) const;
+                void exportToDot(std::string const& filename, storm::dd::Bdd<DdType> const& highlightStates, storm::dd::Bdd<DdType> const& filter) const;
                 
             private:                
                 /*!
