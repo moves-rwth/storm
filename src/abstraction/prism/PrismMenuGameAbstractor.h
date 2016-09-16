@@ -17,7 +17,7 @@ namespace storm {
                 virtual void refine(std::vector<storm::expressions::Expression> const& predicates) override;
                 virtual void refine(storm::dd::Bdd<DdType> const& pivotState, storm::dd::Bdd<DdType> const& player1Choice, storm::dd::Bdd<DdType> const& lowerChoice, storm::dd::Bdd<DdType> const& upperChoice) override;
 
-                void exportToDot(std::string const& filename) const;
+                void exportToDot(std::string const& filename, storm::dd::Bdd<DdType> const& highlightStates, storm::dd::Bdd<DdType> const& filter) const;
                 
             private:
                 /// The abstract program that performs the actual abstraction.

@@ -30,8 +30,8 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            void PrismMenuGameAbstractor<DdType, ValueType>::exportToDot(std::string const& filename) const {
-                abstractProgram.exportToDot(filename);
+            void PrismMenuGameAbstractor<DdType, ValueType>::exportToDot(std::string const& filename, storm::dd::Bdd<DdType> const& highlightStates, storm::dd::Bdd<DdType> const& filter) const {
+                abstractProgram.exportToDot(filename, highlightStates, filter);
             }
          
             template class PrismMenuGameAbstractor<storm::dd::DdType::CUDD, double>;

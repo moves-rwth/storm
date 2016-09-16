@@ -300,12 +300,48 @@ namespace storm {
             }
                         
             template <storm::dd::DdType DdType, typename ValueType>
-            void AbstractProgram<DdType, ValueType>::exportToDot(std::string const& filename) const {
+            void AbstractProgram<DdType, ValueType>::exportToDot(std::string const& filename, storm::dd::Bdd<DdType> const& highlightStatesBdd, storm::dd::Bdd<DdType> const& filter) const {
                 std::ofstream out(filename);
+                
+                storm::dd::Add<DdType, ValueType> filteredTransitions = filter.template toAdd<ValueType>() * currentGame->getTransitionMatrix();
+                storm::dd::Bdd<DdType> filteredTransitionsBdd = filteredTransitions.toBdd().existsAbstract(currentGame->getNondeterminismVariables());
+                storm::dd::Bdd<DdType> filteredReachableStates = storm::utility::dd::computeReachableStates(currentGame->getInitialStates(), filteredTransitionsBdd, currentGame->getRowVariables(), currentGame->getColumnVariables());
+                filteredTransitions *= filteredReachableStates.template toAdd<ValueType>();
+                
+                // Determine all initial states so we can color them blue.
+                std::unordered_set<std::string> initialStates;
+                storm::dd::Add<DdType, ValueType> initialStatesAsAdd = currentGame->getInitialStates().template toAdd<ValueType>();
+                for (auto stateValue : initialStatesAsAdd) {
+                    std::stringstream stateName;
+                    for (auto const& var : currentGame->getRowVariables()) {
+                        if (stateValue.first.getBooleanValue(var)) {
+                            stateName << "1";
+                        } else {
+                            stateName << "0";
+                        }
+                    }
+                    initialStates.insert(stateName.str());
+                }
+                
+                // Determine all highlight states so we can color them red.
+                std::unordered_set<std::string> highlightStates;
+                storm::dd::Add<DdType, ValueType> highlightStatesAdd = highlightStatesBdd.template toAdd<ValueType>();
+                for (auto stateValue : highlightStatesAdd) {
+                    std::stringstream stateName;
+                    for (auto const& var : currentGame->getRowVariables()) {
+                        if (stateValue.first.getBooleanValue(var)) {
+                            stateName << "1";
+                        } else {
+                            stateName << "0";
+                        }
+                    }
+                    highlightStates.insert(stateName.str());
+                }
+
                 out << "digraph game {" << std::endl;
                 
                 // Create the player 1 nodes.
-                storm::dd::Add<DdType, ValueType> statesAsAdd = currentGame->getReachableStates().template toAdd<ValueType>();
+                storm::dd::Add<DdType, ValueType> statesAsAdd = filteredReachableStates.template toAdd<ValueType>();
                 for (auto stateValue : statesAsAdd) {
                     out << "\tpl1_";
                     std::stringstream stateName;
@@ -316,18 +352,28 @@ namespace storm {
                             stateName << "0";
                         }
                     }
-                    out << stateName.str();
+                    std::string stateNameAsString = stateName.str();
+                    out << stateNameAsString;
                     out << " [ label=\"";
                     if (stateValue.first.getBooleanValue(abstractionInformation.getBottomStateVariable(true))) {
-                        out << "*\", margin=0, width=0, height=0, shape=\"none";
+                        out << "*\", margin=0, width=0, height=0, shape=\"none\"";
                     } else {
-                        out << stateName.str() << "\", margin=0, width=0, height=0, shape=\"oval";
+                        out << stateName.str() << "\", margin=0, width=0, height=0, shape=\"oval\"";
                     }
-                    out << "\" ];" << std::endl;
+                    bool isInitial = initialStates.find(stateNameAsString) != initialStates.end();
+                    bool isHighlight = highlightStates.find(stateNameAsString) != highlightStates.end();
+                    if (isInitial && isHighlight) {
+                        out << ", style=\"filled\", fillcolor=\"yellow\"";
+                    } else if (isInitial) {
+                        out << ", style=\"filled\", fillcolor=\"blue\"";
+                    } else if (isHighlight) {
+                        out << ", style=\"filled\", fillcolor=\"red\"";
+                    }
+                    out << " ];" << std::endl;
                 }
                 
                 // Create the nodes of the second player.
-                storm::dd::Add<DdType, ValueType> player2States = currentGame->getTransitionMatrix().toBdd().existsAbstract(currentGame->getColumnVariables()).existsAbstract(currentGame->getPlayer2Variables()).template toAdd<ValueType>();
+                storm::dd::Add<DdType, ValueType> player2States = filteredTransitions.toBdd().existsAbstract(currentGame->getColumnVariables()).existsAbstract(currentGame->getPlayer2Variables()).template toAdd<ValueType>();
                 for (auto stateValue : player2States) {
                     out << "\tpl2_";
                     std::stringstream stateName;
@@ -345,7 +391,7 @@ namespace storm {
                 }
                 
                 // Create the nodes of the probabilistic player.
-                storm::dd::Add<DdType, ValueType> playerPStates = currentGame->getTransitionMatrix().toBdd().existsAbstract(currentGame->getColumnVariables()).template toAdd<ValueType>();
+                storm::dd::Add<DdType, ValueType> playerPStates = filteredTransitions.toBdd().existsAbstract(currentGame->getColumnVariables()).template toAdd<ValueType>();
                 for (auto stateValue : playerPStates) {
                     out << "\tplp_";
                     std::stringstream stateName;
@@ -364,7 +410,7 @@ namespace storm {
                     out << "\tpl2_" << stateName.str() << " -> " << "plp_" << stateName.str() << "_" << index << " [ label=\"" << index << "\" ];" << std::endl;
                 }
                 
-                for (auto stateValue : currentGame->getTransitionMatrix()) {
+                for (auto stateValue : filteredTransitions) {
                     std::stringstream sourceStateName;
                     std::stringstream successorStateName;
                     for (auto const& var : currentGame->getRowVariables()) {
