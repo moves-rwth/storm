@@ -10,6 +10,7 @@ namespace storm {
         using ProgramActionIdentifier = uint64_t;
         using ProgramEdgeGroupIdentifier =  uint64_t;
         using ProgramEdgeIdentifier = uint64_t;
+        using ProgramVariableIdentifier = uint64_t;
         
     }
 }

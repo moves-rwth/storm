@@ -8,19 +8,10 @@
 #include "ProgramLocation.h"
 #include "ProgramEdge.h"
 #include "ProgramEdgeGroup.h"
+#include "ProgramAction.h"
 
 namespace storm {
     namespace ppg {
-        struct ProgramAction {
-            ProgramAction(ProgramGraph* graph, ProgramActionIdentifier actId) : graph(graph), actId(actId) {
-                
-            }
-            
-            ProgramGraph* graph;
-            ProgramActionIdentifier actId;
-        };
-        
-         
         /**
          *  Program graph as based on Principles of Model Checking, Def 2.13
          *  Action effects are part of the action.
@@ -34,15 +25,15 @@ namespace storm {
                 
             }
             
+            ProgramGraph(ProgramGraph const&) = delete;
+            
             virtual ~ProgramGraph() {
-                std::cout << "remove graph" << std::endl;
             }
             
-            ProgramActionIdentifier addAction() {
+            DeterministicProgramAction* addDeterministicAction() {
                 ProgramActionIdentifier newId = freeActionIndex();
                 assert(!hasAction(newId));
-                actions.emplace(newId, ProgramAction(this, newId));
-                return newId;
+                return &(deterministicActions.emplace(newId, DeterministicProgramAction(this, newId)).first->second);
             }
             
             ProgramLocation* addLocation(bool isInitial = false) {
@@ -101,12 +92,51 @@ namespace storm {
             }
 
             
+            ProgramVariableIdentifier getVariableId(std::string const& varName) const {
+                // TODO consider holding a map for this.
+                uint64_t res = 0;
+                for(auto const& v : variables) {
+                    if(v.getName() == varName) {
+                        return res;
+                    }
+                    ++res;
+                }
+                assert(false);
+            }
+            
+            std::string const& getVariableName(ProgramVariableIdentifier id) const {
+                return variables.at(id).getName();
+            }
+            
+            bool hasVariable(std::string const& varName) const {
+                for(auto const& v : variables) {
+                    if(v.getName() == varName) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+            
             bool hasLocation(ProgramLocationIdentifier id) const {
                 return locations.count(id) == 1;
             }
             
             bool hasAction(ProgramActionIdentifier id) const {
-                return actions.count(id) == 1;
+                return deterministicActions.count(id) == 1 || probabilisticActions.count(id);
+            }
+            
+            ProgramAction const& getAction(ProgramActionIdentifier id) const {
+                assert(hasAction(id));
+                if(isDeterministicAction(id)) {
+                    return deterministicActions.at(id);
+                } else {
+                    return probabilisticActions.at(id);
+                }
+            }
+            
+            bool isDeterministicAction(ProgramActionIdentifier id) const {
+                assert(hasAction(id));
+                return probabilisticActions.count(id) == 0;
             }
             
             size_t nrLocations() const {
@@ -114,6 +144,10 @@ namespace storm {
             }
             
             size_t nrVariables() const {
+                return variables.size();
+            }
+            
+            size_t nrActions() const {
                 return variables.size();
             }
             
@@ -141,6 +175,7 @@ namespace storm {
             void printInfo(std::ostream& os) const {
                 os << "Number of variables: " << nrVariables() << std::endl;
                 os << "Number of locations: " << nrLocations() << std::endl;
+                os << "Number of actions: " << nrActions() << std::endl;
             }
             
         protected:
@@ -168,7 +203,8 @@ namespace storm {
                 return newEdgeGroupId++;
             }
             
-            std::unordered_map<ProgramActionIdentifier, ProgramAction> actions;
+            std::unordered_map<ProgramActionIdentifier, DeterministicProgramAction> deterministicActions;
+            std::unordered_map<ProgramActionIdentifier, ProbabilisticProgramAction> probabilisticActions;
             std::unordered_map<ProgramLocationIdentifier, ProgramLocation> locations;
             storm::expressions::Expression initialValueRestriction;
             std::vector<storm::expressions::Variable> variables;

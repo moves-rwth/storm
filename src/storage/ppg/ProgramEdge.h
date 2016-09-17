@@ -5,6 +5,8 @@
 
 namespace storm {
     namespace ppg {
+        class ProgramAction;
+        
         class ProgramEdge {
         public:
             ProgramEdge(ProgramEdgeGroup* group, ProgramEdgeIdentifier id, ProgramActionIdentifier action, storm::expressions::Expression const& condition, ProgramLocationIdentifier targetId)
@@ -12,6 +14,17 @@ namespace storm {
             {
                 // Intentionally left empty.
             }
+            
+            
+            ProgramLocationIdentifier getTargetId() const {
+                return target;
+            }
+            
+            storm::expressions::Expression const& getCondition() const {
+                return condition;
+            }
+            
+            ProgramAction const& getAction() const;
             
             virtual ~ProgramEdge() {
                 // Intentionally left empty.

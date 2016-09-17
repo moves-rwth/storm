@@ -8,6 +8,8 @@ namespace storm {
         
         class ProgramEdgeGroup {
         public:
+            using const_iterator = std::vector<ProgramEdge*>::const_iterator;
+            
             ProgramEdgeGroup(ProgramGraph* graph, ProgramEdgeGroupIdentifier id, ProgramLocationIdentifier sourceId, storm::expressions::Expression const& probability)
             : graph(graph), groupId(id), sourceId(sourceId), probability(probability)
             {
@@ -29,6 +31,26 @@ namespace storm {
             ProgramEdge* emplaceEdge(ProgramEdgeIdentifier id, ProgramActionIdentifier action, storm::expressions::Expression const& condition, ProgramLocationIdentifier target) {
                 edges.emplace_back(new ProgramEdge(this, id, action, condition, target));
                 return edges.back();
+            }
+            
+            const_iterator begin() const {
+                return edges.begin();
+            }
+            
+            const_iterator end() const {
+                return edges.end();
+            }
+            
+            size_t nrEdges() const {
+                return edges.size();
+            }
+            
+            storm::expressions::Expression const& getProbability() const {
+                return probability;
+            }
+            
+            ProgramGraph const& getGraph() const {
+                return *graph;
             }
             
         private:

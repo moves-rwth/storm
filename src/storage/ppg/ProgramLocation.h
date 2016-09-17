@@ -8,6 +8,7 @@ namespace storm {
         class ProgramLocation {
         public:
             using EdgeGroupIterator = std::vector<ProgramEdgeGroup*>::iterator;
+            using const_iterator = std::vector<ProgramEdgeGroup*>::const_iterator;
             
             ProgramLocation(ProgramGraph* graph, ProgramLocationIdentifier id, bool initial) : graph(graph), locId(id), init(initial){
                 // Intentionally left empty
@@ -38,10 +39,27 @@ namespace storm {
                 return edgeGroups.size();
             }
             
+            bool hasNonDeterminism() const {
+                for(auto const& eg : edgeGroups) {
+                    if(eg->nrEdges() > 1) return true;
+                }
+                return false;
+            }
+            
+            const_iterator begin() const {
+                return edgeGroups.begin();
+            }
+            
+            const_iterator end() const {
+                return edgeGroups.end();
+            }
+            
+            // Todo rename?
             EdgeGroupIterator getOutgoingEdgeGroupBegin() {
                 return edgeGroups.begin();
             }
             
+            // Todo rename?
             EdgeGroupIterator getOutgoingEdgeGroupEnd() {
                 return edgeGroups.end();
             }

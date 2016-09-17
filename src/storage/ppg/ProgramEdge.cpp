@@ -1,9 +1,11 @@
-//
-//  ProgramEdge.cpp
-//  storm
-//
-//  Created by Sebastian Junges on 09/09/16.
-//
-//
-
 #include "ProgramEdge.h"
+#include "ProgramGraph.h"
+
+namespace storm {
+    namespace ppg {
+        
+        ProgramAction const& ProgramEdge::getAction() const {
+            return group->getGraph().getAction(action);
+        }
+    }
+}
