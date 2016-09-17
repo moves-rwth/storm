@@ -1,4 +1,5 @@
 #include "ProgramGraphBuilder.h"
+#include "src/storage/pgcl/AssignmentStatement.h"
 #include "src/storage/pgcl/ObserveStatement.h"
 #include "src/storage/pgcl/LoopStatement.h"
 #include "src/storage/pgcl/IfStatement.h"
@@ -9,8 +10,12 @@
 namespace storm {
     namespace builder {
         void ProgramGraphBuilderVisitor::visit(storm::pgcl::AssignmentStatement const& s) {
-            builder.currentLoc()->addProgramEdgeToAllGroups(builder.getAction(),  builder.nextLocId());
-            
+            if(s.isDeterministic()) {
+                builder.currentLoc()->addProgramEdgeToAllGroups(builder.addAction(s.getVariable(), boost::get<storm::expressions::Expression>(s.getExpression())),  builder.nextLocId());
+            } else {
+                builder.currentLoc()->addProgramEdgeToAllGroups(builder.addAction(s.getVariable(), builder.getExpressionManager()->integer(2)),  builder.nextLocId());
+
+            }
         }
         void ProgramGraphBuilderVisitor::visit(storm::pgcl::ObserveStatement const& s) {
             builder.currentLoc()->addProgramEdgeToAllGroups(builder.noAction(), s.getCondition().getBooleanExpression(), builder.nextLocId());
@@ -58,11 +63,11 @@ namespace storm {
             storm::ppg::ProgramLocation* beforeStatementLocation = builder.currentLoc();
             builder.storeNextLocation(builder.nextLoc());
             storm::ppg::ProgramLocation* bodyStart = builder.newLocation();
-            beforeStatementLocation->addProgramEdgeGroup(s.getProbability());
+            beforeStatementLocation->addProgramEdgeGroup(s.getProbability())->addEdge(builder.nextLocId(), builder.noAction());
             builder.buildBlock(*s.getLeftBranch());
             builder.storeNextLocation(builder.nextLoc());
             bodyStart = builder.newLocation();
-            beforeStatementLocation->addProgramEdgeGroup(1 - s.getProbability());
+            beforeStatementLocation->addProgramEdgeGroup(1 - s.getProbability())->addEdge(builder.nextLocId(), builder.noAction());
             builder.buildBlock(*s.getRightBranch());
         }
     }

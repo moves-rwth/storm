@@ -39,7 +39,7 @@ namespace storm {
             
             ~ProgramGraphBuilder() {
                 if(graph != nullptr) {
-                //    delete graph;
+                    delete graph;
                 }
             }
             
@@ -52,7 +52,7 @@ namespace storm {
                 return currentLoc();
             }
             
-            storm::ppg::ProgramLocation* storeNextLocation(storm::ppg::ProgramLocation* loc) {
+            void storeNextLocation(storm::ppg::ProgramLocation* loc) {
                 nextStack.push_back(loc);
             }
             
@@ -64,18 +64,23 @@ namespace storm {
                 return nextLoc()->id();
             }
             
-            storm::ppg::ProgramActionIdentifier getAction() const {
-                return graph->addAction();
+            storm::ppg::ProgramActionIdentifier addAction(storm::expressions::Variable const& var, storm::expressions::Expression const& expr) const {
+                storm::ppg::DeterministicProgramAction* action = graph->addDeterministicAction();
+                action->addAssignment(graph->getVariableId(var.getName()), expr);
+                return action->id();
             }
             
             storm::ppg::ProgramActionIdentifier noAction() const {
                 return noActionId;
             }
             
+            std::shared_ptr<storm::expressions::ExpressionManager> const& getExpressionManager() const {
+                return program.getExpressionManager();
+            }
+            
             
             
             void buildBlock(storm::pgcl::PgclBlock const& block) {
-                
                 ProgramGraphBuilderVisitor visitor(*this);
                 for(auto const& statement : block) {
                     std::cout << "Statement " << statement->getLocationNumber() << std::endl;
@@ -98,7 +103,7 @@ namespace storm {
             : program(program)
             {
                 graph = new storm::ppg::ProgramGraph(program.getExpressionManager(), program.getVariables());
-                noActionId = getAction();
+                noActionId = graph->addDeterministicAction()->id();
                 
             }
              
