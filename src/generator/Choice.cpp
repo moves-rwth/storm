@@ -8,7 +8,7 @@ namespace storm {
     namespace generator {
         
         template<typename ValueType, typename StateType>
-        Choice<ValueType, StateType>::Choice(uint_fast64_t actionIndex, bool markovian) : markovian(markovian), actionIndex(actionIndex), distribution(), totalMass(storm::utility::zero<ValueType>()), choiceRewards() {
+        Choice<ValueType, StateType>::Choice(uint_fast64_t actionIndex, bool markovian) : markovian(markovian), actionIndex(actionIndex), distribution(), totalMass(storm::utility::zero<ValueType>()), rewards(), labels() {
             // Intentionally left empty.
         }
         
@@ -33,24 +33,24 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
-        void Choice<ValueType, StateType>::addChoiceLabel(uint_fast64_t label) {
-            if (!choiceLabels) {
-                choiceLabels = LabelSet();
+        void Choice<ValueType, StateType>::addLabel(uint_fast64_t label) {
+            if (!labels) {
+                labels = LabelSet();
             }
-            choiceLabels->insert(label);
+            labels->insert(label);
         }
         
         template<typename ValueType, typename StateType>
-        void Choice<ValueType, StateType>::addChoiceLabels(LabelSet const& labelSet) {
-            if (!choiceLabels) {
-                choiceLabels = LabelSet();
+        void Choice<ValueType, StateType>::addLabels(LabelSet const& labelSet) {
+            if (!labels) {
+                labels = LabelSet();
             }
-            choiceLabels->insert(labelSet.begin(), labelSet.end());
+            labels->insert(labelSet.begin(), labelSet.end());
         }
         
         template<typename ValueType, typename StateType>
-        boost::container::flat_set<uint_fast64_t> const& Choice<ValueType, StateType>::getChoiceLabels() const {
-            return *choiceLabels;
+        boost::container::flat_set<uint_fast64_t> const& Choice<ValueType, StateType>::getLabels() const {
+            return *labels;
         }
         
         template<typename ValueType, typename StateType>
@@ -70,13 +70,18 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
-        void Choice<ValueType, StateType>::addChoiceReward(ValueType const& value) {
-            choiceRewards.push_back(value);
+        void Choice<ValueType, StateType>::addReward(ValueType const& value) {
+            rewards.push_back(value);
         }
         
         template<typename ValueType, typename StateType>
-        std::vector<ValueType> const& Choice<ValueType, StateType>::getChoiceRewards() const {
-            return choiceRewards;
+        void Choice<ValueType, StateType>::addRewards(std::vector<ValueType>&& values) {
+            this->rewards = std::move(values);
+        }
+        
+        template<typename ValueType, typename StateType>
+        std::vector<ValueType> const& Choice<ValueType, StateType>::getRewards() const {
+            return rewards;
         }
         
         template<typename ValueType, typename StateType>

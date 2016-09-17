@@ -22,7 +22,7 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
-        JaniNextStateGenerator<ValueType, StateType>::JaniNextStateGenerator(storm::jani::Model const& model, NextStateGeneratorOptions const& options, bool flag) : NextStateGenerator<ValueType, StateType>(model.getExpressionManager(), VariableInformation(model), options), model(model), rewardVariables() {
+        JaniNextStateGenerator<ValueType, StateType>::JaniNextStateGenerator(storm::jani::Model const& model, NextStateGeneratorOptions const& options, bool flag) : NextStateGenerator<ValueType, StateType>(model.getExpressionManager(), VariableInformation(model), options), model(model), rewardVariables(), hasStateActionRewards(false) {
             STORM_LOG_THROW(model.hasDefaultComposition(), storm::exceptions::WrongFormatException, "The explicit next-state generator currently does not support custom system compositions.");
             STORM_LOG_THROW(!model.hasNonGlobalTransientVariable(), storm::exceptions::InvalidSettingsException, "The explicit next-state generator currently does not support automata-local transient variables.");
             STORM_LOG_THROW(!this->options.isBuildChoiceLabelsSet(), storm::exceptions::InvalidSettingsException, "JANI next-state generator cannot generate choice labels.");
@@ -282,6 +282,10 @@ namespace storm {
             if (this->isDeterministicModel() && totalNumberOfChoices > 1) {
                 Choice<ValueType> globalChoice;
                 
+                // For CTMCs, we need to keep track of the total exit rate to scale the action rewards later. For DTMCs
+                // this is equal to the number of choices, which is why we initialize it like this here.
+                ValueType totalExitRate = this->isDiscreteTimeModel() ? static_cast<ValueType>(totalNumberOfChoices) : storm::utility::zero<ValueType>();
+
                 // Iterate over all choices and combine the probabilities/rates into one choice.
                 for (auto const& choice : allChoices) {
                     for (auto const& stateProbabilityPair : choice) {
@@ -292,11 +296,23 @@ namespace storm {
                         }
                     }
                     
+                    if (hasStateActionRewards && !this->isDiscreteTimeModel()) {
+                        totalExitRate += choice.getTotalMass();
+                    }
+                    
                     if (this->options.isBuildChoiceLabelsSet()) {
-                        globalChoice.addChoiceLabels(choice.getChoiceLabels());
+                        globalChoice.addLabels(choice.getLabels());
                     }
                 }
-                
+             
+                std::vector<ValueType> stateActionRewards(rewardVariables.size(), storm::utility::zero<ValueType>());
+                for (auto const& choice : allChoices) {
+                    for (uint_fast64_t rewardVariableIndex = 0; rewardVariableIndex < rewardVariables.size(); ++rewardVariableIndex) {
+                        stateActionRewards[rewardVariableIndex] += choice.getRewards()[rewardVariableIndex] * choice.getTotalMass() / totalExitRate;
+                    }
+                }
+                globalChoice.addRewards(std::move(stateActionRewards));
+                                
                 // Move the newly fused choice in place.
                 allChoices.clear();
                 allChoices.push_back(std::move(globalChoice));
@@ -349,7 +365,7 @@ namespace storm {
                     }
                     
                     // Create the state-action reward for the newly created choice.
-                    performTransientAssignments(edge.getAssignments().getTransientAssignments(), [&choice] (ValueType const& value) { choice.addChoiceReward(value); } );
+                    performTransientAssignments(edge.getAssignments().getTransientAssignments(), [&choice] (ValueType const& value) { choice.addReward(value); } );
 
                     // Check that the resulting distribution is in fact a distribution.
                     STORM_LOG_THROW(!this->isDiscreteTimeModel() || this->comparator.isOne(probabilitySum), storm::exceptions::WrongFormatException, "Probabilities do not sum to one for edge (actually sum to " << probabilitySum << ").");
@@ -385,6 +401,7 @@ namespace storm {
                     while (!done) {
                         boost::container::flat_map<CompressedState, ValueType>* currentTargetStates = new boost::container::flat_map<CompressedState, ValueType>();
                         boost::container::flat_map<CompressedState, ValueType>* newTargetStates = new boost::container::flat_map<CompressedState, ValueType>();
+                        std::vector<ValueType> stateActionRewards(rewardVariables.size(), storm::utility::zero<ValueType>());
                         
                         currentTargetStates->emplace(state, storm::utility::one<ValueType>());
                         
@@ -405,6 +422,10 @@ namespace storm {
                                         newTargetStates->emplace(newTargetState, stateProbabilityPair.second * this->evaluator.asRational(destination.getProbability()));
                                     }
                                 }
+                                
+                                // Create the state-action reward for the newly created choice.
+                                auto valueIt = stateActionRewards.begin();
+                                performTransientAssignments(edge.getAssignments().getTransientAssignments(), [&valueIt] (ValueType const& value) { *valueIt += value; ++valueIt; } );
                             }
                             
                             // If there is one more command to come, shift the target states one time step back.
@@ -423,6 +444,9 @@ namespace storm {
                         // Now create the actual distribution.
                         Choice<ValueType>& choice = result.back();
                         
+                        // Add the rewards to the choice.
+                        choice.addRewards(std::move(stateActionRewards));
+
                         // Add the probabilities/rates to the newly created choice.
                         ValueType probabilitySum = storm::utility::zero<ValueType>();
                         for (auto const& stateProbabilityPair : *newTargetStates) {
@@ -601,6 +625,7 @@ namespace storm {
                         }
                         if (*rewardVariableIt == assignment.getExpressionVariable()) {
                             rewardModelInformation[std::distance(rewardVariables.begin(), rewardVariableIt)].setHasStateActionRewards();
+                            hasStateActionRewards = true;
                             ++rewardVariableIt;
                         }
                     }

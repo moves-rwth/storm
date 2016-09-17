@@ -6,11 +6,11 @@
 namespace storm {
     namespace jani {
         
-        CompositionInformation::CompositionInformation() : automatonNameToMultiplicity(), nonsilentActions(), renameComposition(false), restrictedParallelComposition(false) {
+        CompositionInformation::CompositionInformation() : automatonNameToMultiplicity(), nonsilentActions(), renameComposition(false), nonStandardParallelComposition(false) {
             // Intentionally left empty.
         }
         
-        CompositionInformation::CompositionInformation(std::map<std::string, uint64_t> const& automatonNameToMultiplicity, std::set<std::string> const& nonsilentActions, bool containsRenameComposition, bool containsRestrictedParallelComposition) : automatonNameToMultiplicity(automatonNameToMultiplicity), nonsilentActions(nonsilentActions), renameComposition(containsRenameComposition), restrictedParallelComposition(containsRestrictedParallelComposition) {
+        CompositionInformation::CompositionInformation(std::map<std::string, uint64_t> const& automatonNameToMultiplicity, std::set<std::string> const& nonsilentActions, bool containsRenameComposition, bool nonStandardParallelComposition) : automatonNameToMultiplicity(automatonNameToMultiplicity), nonsilentActions(nonsilentActions), renameComposition(containsRenameComposition), nonStandardParallelComposition(nonStandardParallelComposition) {
             // Intentionally left empty.
         }
         
@@ -49,12 +49,12 @@ namespace storm {
             return renameComposition;
         }
         
-        void CompositionInformation::setContainsRestrictedParallelComposition() {
-            restrictedParallelComposition = true;
+        void CompositionInformation::setContainsNonStandardParallelComposition() {
+            nonStandardParallelComposition = true;
         }
         
-        bool CompositionInformation::containsRestrictedParallelComposition() const {
-            return restrictedParallelComposition;
+        bool CompositionInformation::containsNonStandardParallelComposition() const {
+            return nonStandardParallelComposition;
         }
         
         std::map<std::string, uint64_t> CompositionInformation::joinMultiplicityMaps(std::map<std::string, uint64_t> const& first, std::map<std::string, uint64_t> const& second) {
@@ -90,30 +90,61 @@ namespace storm {
         boost::any CompositionInformationVisitor::visit(RenameComposition const& composition, boost::any const& data) {
             CompositionInformation subresult = boost::any_cast<CompositionInformation>(composition.getSubcomposition().accept(*this, data));
             std::set<std::string> nonsilentActions = CompositionInformation::renameNonsilentActions(subresult.getNonsilentActions(), composition.getRenaming());
-            return CompositionInformation(subresult.getAutomatonToMultiplicityMap(), nonsilentActions, true, subresult.containsRestrictedParallelComposition());
+            return CompositionInformation(subresult.getAutomatonToMultiplicityMap(), nonsilentActions, true, subresult.containsNonStandardParallelComposition());
         }
         
         boost::any CompositionInformationVisitor::visit(ParallelComposition const& composition, boost::any const& data) {
-            CompositionInformation left = boost::any_cast<CompositionInformation>(composition.getLeftSubcomposition().accept(*this, data));
-            CompositionInformation right = boost::any_cast<CompositionInformation>(composition.getRightSubcomposition().accept(*this, data));
-
-            // Join the information from both sides.
-            bool containsRenameComposition = left.containsRenameComposition() || right.containsRenameComposition();
-            bool containsRestrictedParallelComposition = left.containsRestrictedParallelComposition() || right.containsRestrictedParallelComposition();
-            std::map<std::string, uint64_t> joinedAutomatonToMultiplicity = CompositionInformation::joinMultiplicityMaps(left.getAutomatonToMultiplicityMap(), right.getAutomatonToMultiplicityMap());
+            std::vector<CompositionInformation> subinformation;
             
-            std::set<std::string> nonsilentActions;
-            std::set_union(left.getNonsilentActions().begin(), left.getNonsilentActions().end(), right.getNonsilentActions().begin(), right.getNonsilentActions().end(), std::inserter(nonsilentActions, nonsilentActions.begin()));
-            
-            // If there was no restricted parallel composition yet, maybe the current composition is one, so check it.
-            if (!containsRestrictedParallelComposition) {
-                std::set<std::string> commonNonsilentActions;
-                std::set_intersection(left.getNonsilentActions().begin(), left.getNonsilentActions().end(), right.getNonsilentActions().begin(), right.getNonsilentActions().end(), std::inserter(commonNonsilentActions, commonNonsilentActions.begin()));
-                bool allCommonActionsIncluded = std::includes(commonNonsilentActions.begin(), commonNonsilentActions.end(), composition.getSynchronizationAlphabet().begin(), composition.getSynchronizationAlphabet().end());
-                containsRestrictedParallelComposition = !allCommonActionsIncluded;
+            for (auto const& subcomposition : composition.getSubcompositions()) {
+                subinformation.push_back(boost::any_cast<CompositionInformation>(subcomposition->accept(*this, data)));
             }
             
-            return CompositionInformation(joinedAutomatonToMultiplicity, nonsilentActions, containsRenameComposition, containsRestrictedParallelComposition);
+            std::map<std::string, uint64_t> joinedAutomatonToMultiplicityMap;
+            bool containsRenameComposition = false;
+            bool containsNonStandardParallelComposition = false;
+            
+            for (auto const& subinfo : subinformation) {
+                containsRenameComposition |= subinfo.containsRenameComposition();
+                containsNonStandardParallelComposition |= subinfo.containsNonStandardParallelComposition();
+                joinedAutomatonToMultiplicityMap = CompositionInformation::joinMultiplicityMaps(joinedAutomatonToMultiplicityMap, subinfo.getAutomatonToMultiplicityMap());
+                
+            }
+            
+            // Keep track of the synchronization vectors that are effective, meaning that the subcompositions all have
+            // the non-silent actions that are referred to.
+            std::set<uint64_t> effectiveSynchVectors;
+            for (uint64_t synchVectorIndex = 0; synchVectorIndex < composition.getNumberOfSynchronizationVectors(); ++synchVectorIndex) {
+                effectiveSynchVectors.insert(synchVectorIndex);
+            }
+            
+            // Now compute non-silent actions.
+            std::set<std::string> nonsilentActions;
+            for (uint_fast64_t infoIndex = 0; infoIndex < subinformation.size(); ++infoIndex) {
+                auto const& subinfo = subinformation[infoIndex];
+                
+                std::set<uint64_t> enabledSynchVectors;
+                for (auto const& nonsilentAction : subinfo.getNonsilentActions()) {
+                    bool appearsInSomeSynchVector = false;
+                    for (uint64_t synchVectorIndex = 0; synchVectorIndex < composition.getNumberOfSynchronizationVectors(); ++synchVectorIndex) {
+                        auto const& synchVector = composition.getSynchronizationVector(synchVectorIndex);
+                        if (synchVector.getInput(infoIndex) == nonsilentAction) {
+                            appearsInSomeSynchVector = true;
+                            enabledSynchVectors.insert(synchVectorIndex);
+                        }
+                    }
+                    
+                    if (!appearsInSomeSynchVector) {
+                        nonsilentActions.insert(nonsilentAction);
+                    }
+                }
+                
+                std::set<uint64_t> newEffectiveSynchVectors;
+                std::set_intersection(effectiveSynchVectors.begin(), effectiveSynchVectors.end(), enabledSynchVectors.begin(), enabledSynchVectors.end(), std::inserter(newEffectiveSynchVectors, newEffectiveSynchVectors.begin()));
+                effectiveSynchVectors = std::move(newEffectiveSynchVectors);
+            }
+
+            return CompositionInformation(joinedAutomatonToMultiplicityMap, nonsilentActions, containsRenameComposition, containsNonStandardParallelComposition);
         }
         
     }
