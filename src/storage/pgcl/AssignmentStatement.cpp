@@ -1,16 +1,13 @@
-/* 
- * File:   AssignmentStatement.cpp
- * Author: Lukas Westhofen
- * 
- * Created on 11. April 2015, 17:42
- */
-
 #include "src/storage/pgcl/AssignmentStatement.h"
 
 namespace storm {
     namespace pgcl {
         AssignmentStatement::AssignmentStatement(storm::expressions::Variable const& variable, boost::variant<storm::expressions::Expression, storm::pgcl::UniformExpression> const& expression) :
             variable(variable), expression(expression) {
+        }
+        
+        bool AssignmentStatement::isDeterministic() const {
+            return expression.which() == 0;
         }
         
         boost::variant<storm::expressions::Expression, storm::pgcl::UniformExpression> const& AssignmentStatement::getExpression() const {

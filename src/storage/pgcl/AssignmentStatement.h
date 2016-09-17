@@ -32,6 +32,8 @@ namespace storm {
              * @return The expression of the assignment.
              */
             boost::variant<storm::expressions::Expression, storm::pgcl::UniformExpression> const& getExpression() const;
+            
+            bool isDeterministic() const;
             /**
              * Returns the left hand variable of the assignemnt.
              * @return The variable to which the expression is assigned.
