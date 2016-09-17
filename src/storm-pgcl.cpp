@@ -7,11 +7,15 @@
 #include "src/exceptions/BaseException.h"
 #include "src/utility/macros.h"
 #include <boost/lexical_cast.hpp>
+#include "src/builder/ProgramGraphBuilder.h"
+#include "src/builder/JaniProgramGraphBuilder.h"
+#include "src/storage/jani/JSONExporter.h"
 
 #include "src/settings/modules/GeneralSettings.h"
 #include "src/settings/modules/PGCLSettings.h"
 #include "src/settings/modules/CoreSettings.h"
 #include "src/settings/modules/DebugSettings.h"
+#include "src/settings/modules/JaniExportSettings.h"
 //#include "src/settings/modules/CounterexampleGeneratorSettings.h"
 //#include "src/settings/modules/CuddSettings.h"
 //#include "src/settings/modules/SylvanSettings.h"
@@ -46,6 +50,17 @@ void initializeSettings() {
     //storm::settings::addModule<storm::settings::modules::TopologicalValueIterationEquationSolverSettings>();
     //storm::settings::addModule<storm::settings::modules::ParametricSettings>();
     storm::settings::addModule<storm::settings::modules::EliminationSettings>();
+    storm::settings::addModule<storm::settings::modules::JaniExportSettings>();
+}
+
+int handleJani(storm::jani::Model& model) {
+    
+    if(!storm::settings::getModule<storm::settings::modules::JaniExportSettings>().isJaniFileSet()) {
+        // For now, we have to have a jani file
+        storm::jani::JsonExporter::toStream(model, std::cout);
+    } else {
+        storm::jani::JsonExporter::toFile(model, storm::settings::getModule<storm::settings::modules::JaniExportSettings>().getJaniFilename());
+    }
 }
 
 int main(const int argc, const char** argv) {
@@ -59,10 +74,24 @@ int main(const int argc, const char** argv) {
             return -1;
         }
         
-        if(storm::settings::getModule<storm::settings::modules::PGCLSettings>().isPgclFileSet()) {
-            storm::pgcl::PgclProgram prog = storm::parser::PgclParser::parse(storm::settings::getModule<storm::settings::modules::PGCLSettings>().getPgclFilename());
-            std::cout << prog << std::endl;
+        if(!storm::settings::getModule<storm::settings::modules::PGCLSettings>().isPgclFileSet()) {
+            return -1;
         }
+        storm::pgcl::PgclProgram prog = storm::parser::PgclParser::parse(storm::settings::getModule<storm::settings::modules::PGCLSettings>().getPgclFilename());
+        std::cout << prog << std::endl;
+        storm::ppg::ProgramGraph* progGraph = storm::builder::ProgramGraphBuilder::build(prog);
+    
+        progGraph->printInfo(std::cout);
+        if(storm::settings::getModule<storm::settings::modules::PGCLSettings>().isToJaniSet()) {
+            storm::builder::JaniProgramGraphBuilder builder;
+            storm::jani::Model* model = builder.build(*progGraph);
+            delete progGraph;
+            handleJani(*model);
+            delete model;
+        } else {
+            
+        }
+        
         
         
         
