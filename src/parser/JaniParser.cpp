@@ -88,29 +88,29 @@ namespace storm {
             parseActions(parsedStructure.at("actions"), model);
             size_t constantsCount = parsedStructure.count("constants");
             STORM_LOG_THROW(constantsCount < 2, storm::exceptions::InvalidJaniException, "Constant-declarations can be given at most once.");
-            if(constantsCount == 1) {
+            if (constantsCount == 1) {
                 for (auto const &constStructure : parsedStructure.at("constants")) {
                     model.addConstant(*parseConstant(constStructure, "global"));
                 }
             }
             size_t variablesCount = parsedStructure.count("variables");
             STORM_LOG_THROW(variablesCount < 2, storm::exceptions::InvalidJaniException, "Variable-declarations can be given at most once for global variables.");
-            if(variablesCount == 1) {
-                for(auto const& varStructure : parsedStructure.at("variables")) {
+            if (variablesCount == 1) {
+                for (auto const& varStructure : parsedStructure.at("variables")) {
                     model.addVariable(*parseVariable(varStructure, "global"));
                 }
             }
             STORM_LOG_THROW(parsedStructure.count("automata") == 1, storm::exceptions::InvalidJaniException, "Exactly one list of automata must be given");
             STORM_LOG_THROW(parsedStructure.at("automata").is_array(), storm::exceptions::InvalidJaniException, "Automata must be an array");
             // Automatons can only be parsed after constants and variables.
-            for(auto const& automataEntry : parsedStructure.at("automata")) {
+            for (auto const& automataEntry : parsedStructure.at("automata")) {
                 model.addAutomaton(parseAutomaton(automataEntry, model));
             }
             //STORM_LOG_THROW(parsedStructure.count("system") == 1, storm::exceptions::InvalidJaniException, "Exactly one system description must be given");
             //std::shared_ptr<storm::jani::Composition> composition = parseComposition(parsedStructure.at("system"));
             STORM_LOG_THROW(parsedStructure.count("properties") <= 1, storm::exceptions::InvalidJaniException, "At most one list of properties can be given");
             PropertyVector properties;
-            if(parseProperties && parsedStructure.count("properties") == 1) {
+            if (parseProperties && parsedStructure.count("properties") == 1) {
                 STORM_LOG_THROW(parsedStructure.at("properties").is_array(), storm::exceptions::InvalidJaniException, "Properties should be an array");
                 for(auto const& propertyEntry : parsedStructure.at("properties")) {
                     properties.push_back(this->parseProperty(propertyEntry));
@@ -125,9 +125,10 @@ namespace storm {
             // TODO check unique name
             std::string name = getString(propertyStructure.at("name"), "property-name");
             std::string comment = "";
-            if(propertyStructure.count("comment") > 0) {
+            if (propertyStructure.count("comment") > 0) {
                 comment = getString(propertyStructure.at("comment"), "comment for property named '" + name + "'.");
             }
+            
 
         }
 
@@ -141,13 +142,13 @@ namespace storm {
             size_t valueCount = constantStructure.count("value");
             storm::expressions::Expression initExpr;
             STORM_LOG_THROW(valueCount < 2, storm::exceptions::InvalidJaniException, "Value for constant '" + name +  "'  (scope: " + scopeDescription + ") must be given at most once.");
-            if(valueCount == 1) {
+            if (valueCount == 1) {
                 // Read initial value before; that makes creation later on a bit easier, and has as an additional benefit that we do not need to check whether the variable occurs also on the assignment.
                 initExpr = parseExpression(constantStructure.at("value"), "Value of constant " + name + " (scope: " + scopeDescription + ")");
                 assert(initExpr.isInitialized());
             }
 
-            if(constantStructure.at("type").is_object()) {
+            if (constantStructure.at("type").is_object()) {
 //                STORM_LOG_THROW(variableStructure.at("type").count("kind") == 1, storm::exceptions::InvalidJaniException, "For complex type as in variable " << name << "(scope: " << scopeDescription << ")  kind must be given");
 //                std::string kind = getString(variableStructure.at("type").at("kind"), "kind for complex type as in variable " + name  + "(scope: " + scopeDescription + ") ");
 //                if(kind == "bounded") {
@@ -336,7 +337,7 @@ namespace storm {
 
         storm::jani::Variable const& getLValue(std::string const& ident, storm::jani::VariableSet const& globalVars, storm::jani::VariableSet const& localVars, std::string const& scopeDescription) {
             if(localVars.hasVariable(ident)) {
-                return globalVars.getVariable(ident);
+                return localVars.getVariable(ident);
             } else if(globalVars.hasVariable(ident)) {
                 return globalVars.getVariable(ident);
             } else {
@@ -675,7 +676,7 @@ namespace storm {
                         storm::jani::Variable const& lhs = getLValue(refstring, parentModel.getGlobalVariables(), automaton.getVariables(), "Assignment variable in edge from '" + sourceLoc + "' to '" + targetLoc + "' in automaton '" + name + "'");
                         // value
                         STORM_LOG_THROW(assignmentEntry.count("value") == 1, storm::exceptions::InvalidJaniException, "Assignment in edge from '" << sourceLoc << "' to '" << targetLoc << "' in automaton '" << name << "'  must have one value field");
-                        storm::expressions::Expression assignmentExpr = parseExpression(assignmentEntry.at("value"), "assignment in edge from '" + sourceLoc + "' to '" + targetLoc + "' in automaton '" + name + "'");
+                        storm::expressions::Expression assignmentExpr = parseExpression(assignmentEntry.at("value"), "assignment in edge from '" + sourceLoc + "' to '" + targetLoc + "' in automaton '" + name + "'", localVars);
                         // TODO check types
                         assignments.emplace_back(lhs, assignmentExpr);
                     }

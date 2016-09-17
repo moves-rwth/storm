@@ -142,17 +142,20 @@ namespace storm {
         
         
         
-        void JsonExporter::toFile(storm::jani::Model const& janiModel, std::string const& filepath) {
+        void JsonExporter::toFile(storm::jani::Model const& janiModel, std::string const& filepath, bool checkValid) {
             std::ofstream ofs;
             ofs.open (filepath, std::ofstream::out );
             if(ofs.is_open()) {
-                toStream(janiModel, ofs);
+                toStream(janiModel, ofs, checkValid);
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::FileIoException, "Cannot open " << filepath);
             }
         }
         
-        void JsonExporter::toStream(storm::jani::Model const& janiModel, std::ostream& os) {
+        void JsonExporter::toStream(storm::jani::Model const& janiModel, std::ostream& os, bool checkValid) {
+            if(checkValid) {
+                janiModel.checkValid();
+            }
             JsonExporter exporter;
             exporter.convertModel(janiModel);
             os << exporter.finalize().dump(4) << std::endl;
@@ -308,7 +311,9 @@ namespace storm {
                 modernjson::json autoEntry;
                 autoEntry["name"] = automaton.getName();
                 autoEntry["variables"] = buildVariablesArray(automaton.getVariables());
-                autoEntry["restrict-initial"]["exp"] = buildExpression(automaton.getInitialStatesRestriction());
+                if(automaton.hasRestrictedInitialStates()) {
+                    autoEntry["restrict-initial"]["exp"] = buildExpression(automaton.getInitialStatesRestriction());
+                }
                 autoEntry["locations"] = buildLocationsArray(automaton.getLocations());
                 autoEntry["initial-locations"] = buildInitialLocations(automaton);
                 autoEntry["edges"] = buildEdges(automaton.getEdges(), actionNames, automaton.buildIdToLocationNameMap());

@@ -222,6 +222,11 @@ namespace storm {
             void setSystemComposition(std::shared_ptr<Composition> const& composition);
             
             /*!
+             * Sets the system composition to be the fully-synchronizing parallel composition of all automat
+             * @see getStandardSystemComposition
+             */
+            void setStandardSystemComposition();
+            /*!
              * Gets the system composition as the standard, fully-synchronizing parallel composition.
              */
             std::shared_ptr<Composition> getStandardSystemComposition() const;
@@ -328,7 +333,7 @@ namespace storm {
             /*!
              *  Checks if the model is valid JANI, which should be verified before any further operations are applied to a model.
              */
-            bool checkValidity(bool logdbg = true) const;
+            void checkValid() const;
             
         private:
             /// The model name.

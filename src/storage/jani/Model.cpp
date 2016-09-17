@@ -252,6 +252,10 @@ namespace storm {
             this->composition = composition;
         }
         
+        void Model::setStandardSystemComposition() {
+            setSystemComposition(getStandardSystemComposition());
+        }
+        
         std::set<std::string> Model::getActionNames(bool includeSilent) const {
             std::set<std::string> result;
             for (auto const& entry : actionToIndex) {
@@ -435,25 +439,11 @@ namespace storm {
             }
         }
         
-        bool Model::checkValidity(bool logdbg) const {
+        void Model::checkValid() const {
             // TODO switch to exception based return value.
-            
-            if (version == 0) {
-                if(logdbg) STORM_LOG_DEBUG("Jani version is unspecified");
-                return false;
-            }
-            
-            if(modelType == ModelType::UNDEFINED) {
-                if(logdbg) STORM_LOG_DEBUG("Model type is unspecified");
-                return false;
-            }
-            
-            if(automata.empty()) {
-                if(logdbg) STORM_LOG_DEBUG("No automata specified");
-                return false;
-            }
-            // All checks passed.
-            return true;
+            STORM_LOG_ASSERT(getModelType() != storm::jani::ModelType::UNDEFINED, "Model type not set");
+            STORM_LOG_ASSERT(!automata.empty(), "No automata set");
+            STORM_LOG_ASSERT(composition != nullptr, "Composition is not set");
             
         }
         
