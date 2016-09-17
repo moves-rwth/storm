@@ -30,7 +30,7 @@ namespace storm {
             private:
 
                 // The expression adapter that is used to translate the variable names.
-                storm::adapters::Smt2ExpressionAdapter& expressionAdapter;
+                //storm::adapters::Smt2ExpressionAdapter& expressionAdapter;
             };
 
         public:
