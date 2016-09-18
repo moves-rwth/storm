@@ -31,8 +31,12 @@ namespace storm {
         
         class CompositionJsonExporter : public CompositionVisitor {
         public:
-            static modernjson::json translate(storm::jani::Composition const& comp) {
-                CompositionJsonExporter visitor;
+            CompositionJsonExporter(bool allowRecursion) : allowRecursion(allowRecursion){
+                
+            }
+            
+            static modernjson::json translate(storm::jani::Composition const& comp, bool allowRecursion = true) {
+                CompositionJsonExporter visitor(allowRecursion);
                 return boost::any_cast<modernjson::json>(comp.accept(visitor, boost::none));
             }
             
@@ -55,18 +59,35 @@ namespace storm {
                 std::vector<modernjson::json> elems;
                 for (auto const& subcomp : composition.getSubcompositions()) {
                     modernjson::json elemDecl;
-                    STORM_LOG_THROW(subcomp->isAutomaton(), storm::exceptions::InvalidJaniException, "Nesting composition " << *subcomp << " is not supported by JANI.");
-                    elemDecl["automaton"] = std::static_pointer_cast<AutomatonComposition>(subcomp)->getAutomatonName();
+                    if (subcomp->isAutomaton()) {
+                        modernjson::json autDecl;
+                        autDecl["automaton"] = std::static_pointer_cast<AutomatonComposition>(subcomp)->getAutomatonName();
+                        std::vector<modernjson::json> elements;
+                        elements.push_back(autDecl);
+                        elemDecl["elements"] = elements;
+                    } else {
+                        STORM_LOG_THROW(allowRecursion, storm::exceptions::InvalidJaniException, "Nesting composition " << *subcomp << " is not supported by JANI.");
+                        elemDecl = boost::any_cast<modernjson::json>(subcomp->accept(*this, boost::none));
+                    }
+                    elems.push_back(elemDecl);
                 }
                 compDecl["elements"] = elems;
                 std::vector<modernjson::json> synElems;
                 for (auto const& syncs : composition.getSynchronizationVectors()) {
                     modernjson::json syncDecl;
-                    syncDecl["input"] = syncs.getInput();
+                    syncDecl["synchronise"] = syncs.getInput();
                     syncDecl["result"] = syncs.getOutput();
                     synElems.push_back(syncDecl);
                 }
+                if (!synElems.empty()) {
+                    compDecl["syncs"] = synElems;
+                }
+                
+                return compDecl;
             }
+            
+        private:
+            bool allowRecursion;
         };
         
         

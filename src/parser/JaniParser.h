@@ -67,6 +67,7 @@ namespace storm {
              */
             std::shared_ptr<storm::expressions::ExpressionManager> expressionManager;
 
+            bool allowRecursion = true;
 
             //////////
             //   Default values -- assumptions from JANI.

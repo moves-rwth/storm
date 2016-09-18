@@ -715,13 +715,31 @@ namespace storm {
             
             std::vector<std::shared_ptr<storm::jani::Composition>>  compositions;
             for (auto const& elemDecl : compositionStructure.at("elements")) {
-                STORM_LOG_THROW(elemDecl.count("automaton") == 1, storm::exceptions::InvalidJaniException, "Automaton must be given in the element");
+                if(!allowRecursion) {
+                    STORM_LOG_THROW(elemDecl.count("automaton") == 1, storm::exceptions::InvalidJaniException, "Automaton must be given in the element");
+                }
                 compositions.push_back(parseComposition(elemDecl));
             }
             
             STORM_LOG_THROW(compositionStructure.count("syncs") < 2, storm::exceptions::InvalidJaniException, "Sync vectors can be given at most once");
-            // TODO parse syncs.
+            std::vector<storm::jani::SynchronizationVector> syncVectors;
+            if (compositionStructure.count("syncs") > 0) {
+                // TODO add error checks
+                for (auto const& syncEntry : compositionStructure.at("syncs")) {
+                    std::vector<std::string> inputs;
+                    for (auto const& syncInput : syncEntry.at("synchronise")) {
+                        if(syncInput.is_null()) {
+                            // TODO handle null;
+                        } else {
+                            inputs.push_back(syncInput);
+                        }
+                    }
+                    std::string syncResult = syncEntry.at("result");
+                    syncVectors.emplace_back(inputs, syncResult);
+                }
+            }
             
+            return std::shared_ptr<storm::jani::Composition>(new storm::jani::ParallelComposition(compositions, syncVectors));
             
         }
     }
