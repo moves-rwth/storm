@@ -10,6 +10,8 @@
 namespace storm {
     namespace jani {
         
+        const std::string SynchronizationVector::noAction = "-";
+        
         SynchronizationVector::SynchronizationVector(std::vector<std::string> const& input, std::string const& output) : input(input), output(output) {
             // Intentionally left empty.
         }
@@ -26,8 +28,16 @@ namespace storm {
             return input[index];
         }
         
+        std::string const& SynchronizationVector::getNoActionInput() const {
+            return SynchronizationVector::noAction;
+        }
+        
         std::string const& SynchronizationVector::getOutput() const {
             return output;
+        }
+        
+        bool SynchronizationVector::isNoActionInput(std::string const& action) const {
+            return action == noAction;
         }
         
         std::ostream& operator<<(std::ostream& stream, SynchronizationVector const& synchronizationVector) {

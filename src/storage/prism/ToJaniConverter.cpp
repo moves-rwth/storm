@@ -209,7 +209,7 @@ namespace storm {
                         }
                         
                         if (rateExpression) {
-                            destinations.push_back(storm::jani::EdgeDestination(onlyLocationIndex, manager->integer(1) / rateExpression.get(), assignments));
+                            destinations.push_back(storm::jani::EdgeDestination(onlyLocationIndex, update.getLikelihoodExpression() / rateExpression.get(), assignments));
                         } else {
                             destinations.push_back(storm::jani::EdgeDestination(onlyLocationIndex, update.getLikelihoodExpression(), assignments));
                         }

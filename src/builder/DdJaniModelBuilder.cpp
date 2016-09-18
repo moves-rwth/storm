@@ -147,6 +147,9 @@ namespace storm {
             // The meta variables used to encode the remaining nondeterminism.
             std::vector<storm::expressions::Variable> localNondeterminismVariables;
             
+            // The meta variable used to distinguish Markovian from probabilistic choices in Markov automata.
+            storm::expressions::Variable markovNondeterminismVariable;
+            
             // The meta variables used to encode the actions and nondeterminism.
             std::set<storm::expressions::Variable> allNondeterminismVariables;
             
@@ -236,6 +239,11 @@ namespace storm {
                     std::pair<storm::expressions::Variable, storm::expressions::Variable> variablePair = result.manager->addMetaVariable("nondet" + std::to_string(i));
                     result.localNondeterminismVariables.push_back(variablePair.first);
                     result.allNondeterminismVariables.insert(variablePair.first);
+                }
+                
+                if (this->model.getModelType() == storm::jani::ModelType::MA) {
+                    result.markovNondeterminismVariable = result.manager->addMetaVariable("markov").first;
+                    result.allNondeterminismVariables.insert(result.markovNondeterminismVariable);
                 }
                 
                 for (auto const& automaton : this->model.getAutomata()) {
@@ -924,9 +932,12 @@ namespace storm {
         public:
             // This structure represents an edge.
             struct EdgeDd {
-                EdgeDd(storm::dd::Add<Type> const& guard = storm::dd::Add<Type>(), storm::dd::Add<Type, ValueType> const& transitions = storm::dd::Add<Type, ValueType>(), std::map<storm::expressions::Variable, storm::dd::Add<Type, ValueType>> const& transientEdgeAssignments = {}, std::set<storm::expressions::Variable> const& writtenGlobalVariables = {}) : guard(guard), transitions(transitions), transientEdgeAssignments(transientEdgeAssignments), writtenGlobalVariables(writtenGlobalVariables) {
+                EdgeDd(bool isMarkovian, storm::dd::Add<Type> const& guard = storm::dd::Add<Type>(), storm::dd::Add<Type, ValueType> const& transitions = storm::dd::Add<Type, ValueType>(), std::map<storm::expressions::Variable, storm::dd::Add<Type, ValueType>> const& transientEdgeAssignments = {}, std::set<storm::expressions::Variable> const& writtenGlobalVariables = {}) : isMarkovian(isMarkovian), guard(guard), transitions(transitions), transientEdgeAssignments(transientEdgeAssignments), writtenGlobalVariables(writtenGlobalVariables) {
                     // Intentionally left empty.
                 }
+                
+                // A flag storing whether this edge is a Markovian one (i.e. one with a rate).
+                bool isMarkovian;
                 
                 // A DD that represents all states that have this edge enabled.
                 storm::dd::Add<Type, ValueType> guard;
@@ -1137,28 +1148,41 @@ namespace storm {
                     for (uint64_t synchVectorIndex = 0; synchVectorIndex < synchronizationVectors.size(); ++synchVectorIndex) {
                         auto const& synchVector = synchronizationVectors[synchVectorIndex];
                         
-                        // Determine the indices of input (at the current automaton position) and the output.
-                        uint64_t inputActionIndex = actionInformation.getActionIndex(synchVector.getInput(automatonIndex));
-                        actionsInSynch.insert(inputActionIndex);
-                        
-                        // Either set the action (if it's the first of the ones to compose) or compose the actions directly.
-                        if (automatonIndex == 0) {
-                            // If the action cannot be found, the particular spot in the output will be left empty.
-                            auto inputActionIt = subautomaton.actionIndexToAction.find(inputActionIndex);
-                            if (inputActionIt != subautomaton.actionIndexToAction.end()) {
-                                synchronizationVectorActions[synchVectorIndex] = inputActionIt->second;
+                        if (synchVector.isNoActionInput(synchVector.getInput(automatonIndex))) {
+                            if (automatonIndex == 0) {
+                                // Create a new action that is the identity over the first automaton.
+                                synchronizationVectorActions[synchVectorIndex] = ActionDd(this->variables.manager->template getAddOne<ValueType>(), subautomaton.identity, {}, subautomaton.localNondeterminismVariables, {}, this->variables.manager->getBddZero());
+                            } else {
+                                // If there is no action in the output spot, this means that some other subcomposition did
+                                // not provide the action necessary for the synchronization vector to resolve.
+                                if (synchronizationVectorActions[synchVectorIndex]) {
+                                    synchronizationVectorActions[synchVectorIndex].transitions *= subautomaton.identity;
+                                }
                             }
                         } else {
-                            // If there is no action in the output spot, this means that some other subcomposition did
-                            // not provide the action necessary for the synchronization vector to resolve.
-                            if (synchronizationVectorActions[synchVectorIndex]) {
+                            // Determine the indices of input (at the current automaton position) and the output.
+                            uint64_t inputActionIndex = actionInformation.getActionIndex(synchVector.getInput(automatonIndex));
+                            actionsInSynch.insert(inputActionIndex);
+                            
+                            // Either set the action (if it's the first of the ones to compose) or compose the actions directly.
+                            if (automatonIndex == 0) {
+                                // If the action cannot be found, the particular spot in the output will be left empty.
                                 auto inputActionIt = subautomaton.actionIndexToAction.find(inputActionIndex);
                                 if (inputActionIt != subautomaton.actionIndexToAction.end()) {
-                                    synchronizationVectorActions[synchVectorIndex] = combineSynchronizingActions(synchronizationVectorActions[synchVectorIndex].get(), inputActionIt->second);
-                                } else {
-                                    // If the current subcomposition does not provide the required action for the synchronization
-                                    // vector, we clear the action.
-                                    synchronizationVectorActions[synchVectorIndex] = boost::none;
+                                    synchronizationVectorActions[synchVectorIndex] = inputActionIt->second;
+                                }
+                            } else {
+                                // If there is no action in the output spot, this means that some other subcomposition did
+                                // not provide the action necessary for the synchronization vector to resolve.
+                                if (synchronizationVectorActions[synchVectorIndex]) {
+                                    auto inputActionIt = subautomaton.actionIndexToAction.find(inputActionIndex);
+                                    if (inputActionIt != subautomaton.actionIndexToAction.end()) {
+                                        synchronizationVectorActions[synchVectorIndex] = combineSynchronizingActions(synchronizationVectorActions[synchVectorIndex].get(), inputActionIt->second);
+                                    } else {
+                                        // If the current subcomposition does not provide the required action for the synchronization
+                                        // vector, we clear the action.
+                                        synchronizationVectorActions[synchVectorIndex] = boost::none;
+                                    }
                                 }
                             }
                         }
@@ -1436,8 +1460,17 @@ namespace storm {
                     }
                     
                     // If the edge has a rate, we multiply it to the DD.
+                    bool isMarkovian = false;
                     if (edge.hasRate()) {
-                        transitions *= this->variables.rowExpressionAdapter->translateExpression(edge.getRate());
+                        transitions *=  this->variables.rowExpressionAdapter->translateExpression(edge.getRate());
+                        isMarkovian = true;
+                        if (this->model.getModelType() == storm::jani::ModelType::MA) {
+                            transitions *= this->variables.manager->getEncoding(this->variables.markovNondeterminismVariable, 1);
+                        }
+                    } else {
+                        if (this->model.getModelType() == storm::jani::ModelType::MA) {
+                            transitions *= this->variables.manager->getEncoding(this->variables.markovNondeterminismVariable, 0);
+                        }
                     }
                     
                     // Finally treat the transient assignments.
@@ -1446,33 +1479,67 @@ namespace storm {
                         performTransientAssignments(edge.getAssignments().getTransientAssignments(), [this, &transientEdgeAssignments, &guard] (storm::jani::Assignment const& assignment) { transientEdgeAssignments[assignment.getExpressionVariable()] = guard * this->variables.rowExpressionAdapter->translateExpression(assignment.getAssignedExpression()); } );
                     }
                     
-                    return EdgeDd(guard, guard * transitions, transientEdgeAssignments, globalVariablesInSomeDestination);
+                    return EdgeDd(isMarkovian, guard, guard * transitions, transientEdgeAssignments, globalVariablesInSomeDestination);
                 } else {
-                    return EdgeDd(this->variables.manager->template getAddZero<ValueType>(), this->variables.manager->template getAddZero<ValueType>());
+                    return EdgeDd(false, this->variables.manager->template getAddZero<ValueType>(), this->variables.manager->template getAddZero<ValueType>());
                 }
+            }
+            
+            EdgeDd combineMarkovianEdges(std::vector<EdgeDd> const& edgeDds) {
+                storm::dd::Bdd<Type> guard = this->variables.manager->getBddZero();
+                storm::dd::Add<Type, ValueType> transitions = this->variables.manager->template getAddZero<ValueType>();
+                std::map<storm::expressions::Variable, storm::dd::Add<Type, ValueType>> transientEdgeAssignments;
+                std::set<storm::expressions::Variable> writtenVariables;
+
+                for (auto const& edge : edgeDds) {
+                    STORM_LOG_THROW(edge.isMarkovian, storm::exceptions::InvalidArgumentException, "Can only combine Markovian edges.");
+                    
+                    guard |= edge.guard.toBdd();
+                    transitions += edge.transitions;
+                    for (auto const& variable : edge.writtenGlobalVariables) {
+                        writtenVariables.insert(variable);
+                    }
+                        
+                    // FIXME: This is not correct, need to consider guards. However, the semantics is not currently clear.
+                    joinTransientAssignmentMaps(transientEdgeAssignments, edge.transientEdgeAssignments);
+                }
+                
+                return ActionDd(true, guard.template toAdd<ValueType>(), transitions, transientEdgeAssignments, writtenVariables);
             }
             
             ActionDd buildActionDdForActionIndex(storm::jani::Automaton const& automaton, uint64_t actionIndex, uint64_t localNondeterminismVariableOffset) {
                 // Translate the individual edges.
-                std::vector<EdgeDd> edgeDds;
+                std::vector<EdgeDd> markovianEdges;
+                std::vector<EdgeDd> nonMarkovianEdges;
+                uint64_t numberOfEdges = 0;
                 for (auto const& edge : automaton.getEdges()) {
+                    ++numberOfEdges;
                     if (edge.getActionIndex() == actionIndex) {
-                        edgeDds.push_back(buildEdgeDd(automaton, edge));
+                        EdgeDd result = buildEdgeDd(automaton, edge);
+                        if (result.isMarkovian) {
+                            markovianEdges.push_back(result);
+                        } else {
+                            nonMarkovianEdges.push_back(result);
+                        }
                     }
                 }
                 
                 // Now combine the edges to a single action.
-                if (!edgeDds.empty()) {
-                    switch (this->model.getModelType()){
-                        case storm::jani::ModelType::DTMC:
-                        case storm::jani::ModelType::CTMC:
-                            return combineEdgesToActionMarkovChain(edgeDds);
-                            break;
-                        case storm::jani::ModelType::MDP:
-                            return combineEdgesToActionMdp(edgeDds, localNondeterminismVariableOffset);
-                            break;
-                        default:
-                            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Cannot translate model of this type.");
+                if (numberOfEdges > 0) {
+                    storm::jani::ModelType modelType = this->model.getModelType();
+                    if (modelType == storm::jani::ModelType::DTMC) {
+                        STORM_LOG_THROW(markovianEdges.empty(), storm::exceptions::WrongFormatException, "Illegal Markovian edges in DTMC.");
+                        return combineEdgesToActionDeterministic(nonMarkovianEdges);
+                    } else if (modelType == storm::jani::ModelType::CTMC) {
+                        STORM_LOG_THROW(markovianEdges.empty(), storm::exceptions::WrongFormatException, "Illegal non-Markovian edges in CTMC.");
+                        return combineEdgesToActionDeterministic(markovianEdges);
+                    } else if (modelType == storm::jani::ModelType::MDP) {
+                        STORM_LOG_THROW(markovianEdges.empty(), storm::exceptions::WrongFormatException, "Illegal Markovian edges in MDP.");
+                        return combineEdgesToActionNondeterministic(nonMarkovianEdges, boost::none, localNondeterminismVariableOffset);
+                    } else if (modelType == storm::jani::ModelType::MA) {
+                        return combineEdgesToActionNondeterministic(nonMarkovianEdges, markovianEdges, localNondeterminismVariableOffset);
+                    } else {
+                        STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Cannot translate model of this type.");
                     }
                 } else {
                     return ActionDd(this->variables.manager->template getAddZero<ValueType>(), this->variables.manager->template getAddZero<ValueType>(), {}, std::make_pair<uint64_t, uint64_t>(0, 0), {}, this->variables.manager->getBddZero());
@@ -1514,7 +1581,7 @@ namespace storm {
                 return result;
             }
 
-            ActionDd combineEdgesToActionMarkovChain(std::vector<EdgeDd> const& edgeDds) {
+            ActionDd combineEdgesToActionDeterministic(std::vector<EdgeDd> const& edgeDds) {
                 storm::dd::Bdd<Type> allGuards = this->variables.manager->getBddZero();
                 storm::dd::Add<Type, ValueType> allTransitions = this->variables.manager->template getAddZero<ValueType>();
                 storm::dd::Bdd<Type> temporary;
@@ -1594,19 +1661,26 @@ namespace storm {
                 return ActionDd(guard, transitions, transientEdgeAssignments, std::make_pair<uint64_t, uint64_t>(0, 0), globalVariableToWritingFragment, this->variables.manager->getBddZero());
             }
             
-            ActionDd combineEdgesToActionMdp(std::vector<EdgeDd> const& edges, uint64_t localNondeterminismVariableOffset) {
+            ActionDd combineEdgesToActionNondeterministic(std::vector<EdgeDd> const& nonMarkovianEdges, boost::optional<std::vector<EdgeDd>> const& markovianEdges, uint64_t localNondeterminismVariableOffset) {
                 // Sum all guards, so we can read off the maximal number of nondeterministic choices in any given state.
                 storm::dd::Bdd<Type> allGuards = this->variables.manager->getBddZero();
                 storm::dd::Add<Type, ValueType> sumOfGuards = this->variables.manager->template getAddZero<ValueType>();
+                bool hasMarkovianEdge = false;
                 for (auto const& edge : edges) {
+                    if (edge.isMarkovian) {
+                        hasMarkovianEdge = true;
+                        continue;
+                    }
+                    
                     sumOfGuards += edge.guard;
                     allGuards |= edge.guard.toBdd();
                 }
                 uint_fast64_t maxChoices = static_cast<uint_fast64_t>(sumOfGuards.getMax());
-                STORM_LOG_TRACE("Found " << maxChoices << " local choices.");
+                STORM_LOG_TRACE("Found " << maxChoices << " local (non-Markovian) choices.");
                 
                 // Depending on the maximal number of nondeterminstic choices, we need to use some variables to encode the nondeterminism.
                 if (maxChoices <= 1) {
+                    
                     return combineEdgesBySummation(allGuards.template toAdd<ValueType>(), edges);
                 } else {
                     // Calculate number of required variables to encode the nondeterminism.

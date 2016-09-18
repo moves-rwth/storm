@@ -102,13 +102,18 @@ namespace storm {
                 std::set<uint64_t> localEffectiveSynchVectors;
                 for (uint64_t synchVectorIndex = 0; synchVectorIndex < composition.getNumberOfSynchronizationVectors(); ++synchVectorIndex) {
                     auto const& synchVector = composition.getSynchronizationVector(synchVectorIndex);
-                    uint64_t synchVectorActionIndex = nameToIndexMap.at(synchVector.getInput(subresultIndex));
-                    actionsInSynch.insert(synchVectorActionIndex);
                     
-                    // If the action of they synchronization vector at this position is one that is actually contained
-                    // in the corresponding subcomposition, the synchronization vector is effective.
-                    if (subresults[subresultIndex].find(synchVectorActionIndex) != subresults[subresultIndex].end()) {
+                    if (synchVector.isNoActionInput(synchVector.getInput(subresultIndex))) {
                         effectiveSynchronizationVectors.insert(synchVectorIndex);
+                    } else {
+                        uint64_t synchVectorActionIndex = nameToIndexMap.at(synchVector.getInput(subresultIndex));
+                        actionsInSynch.insert(synchVectorActionIndex);
+                        
+                        // If the action of they synchronization vector at this position is one that is actually contained
+                        // in the corresponding subcomposition, the synchronization vector is effective.
+                        if (subresults[subresultIndex].find(synchVectorActionIndex) != subresults[subresultIndex].end()) {
+                            effectiveSynchronizationVectors.insert(synchVectorIndex);
+                        }
                     }
                 }
                 
