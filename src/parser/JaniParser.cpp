@@ -1,10 +1,13 @@
 #include "JaniParser.h"
 #include "src/storage/jani/Model.h"
 #include "src/storage/jani/Property.h"
+#include "src/storage/jani/AutomatonComposition.h"
+#include "src/storage/jani/ParallelComposition.h"
 #include "src/exceptions/FileIoException.h"
 #include "src/exceptions/InvalidJaniException.h"
 #include "src/exceptions/NotImplementedException.h"
 #include "src/storage/jani/ModelType.h"
+
 
 #include <iostream>
 #include <sstream>
@@ -106,8 +109,9 @@ namespace storm {
             for (auto const& automataEntry : parsedStructure.at("automata")) {
                 model.addAutomaton(parseAutomaton(automataEntry, model));
             }
-            //STORM_LOG_THROW(parsedStructure.count("system") == 1, storm::exceptions::InvalidJaniException, "Exactly one system description must be given");
-            //std::shared_ptr<storm::jani::Composition> composition = parseComposition(parsedStructure.at("system"));
+            STORM_LOG_THROW(parsedStructure.count("system") == 1, storm::exceptions::InvalidJaniException, "Exactly one system description must be given");
+            std::shared_ptr<storm::jani::Composition> composition = parseComposition(parsedStructure.at("system"));
+            model.setSystemComposition(composition);
             STORM_LOG_THROW(parsedStructure.count("properties") <= 1, storm::exceptions::InvalidJaniException, "At most one list of properties can be given");
             PropertyVector properties;
             if (parseProperties && parsedStructure.count("properties") == 1) {
@@ -691,7 +695,34 @@ namespace storm {
         }
 
         std::shared_ptr<storm::jani::Composition> JaniParser::parseComposition(json const &compositionStructure) {
-
+            
+            STORM_LOG_THROW(compositionStructure.count("elements") == 1, storm::exceptions::InvalidJaniException, "Elements of a composition must be given");
+            
+            if (compositionStructure.at("elements").size() == 1) {
+                if (compositionStructure.count("syncs") == 0) {
+                    // We might have an automaton.
+                    STORM_LOG_THROW(compositionStructure.at("elements").back().count("automaton") == 1, storm::exceptions::InvalidJaniException, "Automaton must be given in composition");
+                    if (compositionStructure.at("elements").back().at("automaton").is_string()) {
+                        std::string name = compositionStructure.at("elements").back().at("automaton");
+                        // TODO check whether name exist?
+                        return std::shared_ptr<storm::jani::AutomatonComposition>(new storm::jani::AutomatonComposition(name));
+                    }
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Nesting parallel composition is not supported");
+                } else {
+                    // Might be rename or input-enable.
+                }
+            }
+            
+            std::vector<std::shared_ptr<storm::jani::Composition>>  compositions;
+            for (auto const& elemDecl : compositionStructure.at("elements")) {
+                STORM_LOG_THROW(elemDecl.count("automaton") == 1, storm::exceptions::InvalidJaniException, "Automaton must be given in the element");
+                compositions.push_back(parseComposition(elemDecl));
+            }
+            
+            STORM_LOG_THROW(compositionStructure.count("syncs") < 2, storm::exceptions::InvalidJaniException, "Sync vectors can be given at most once");
+            // TODO parse syncs.
+            
+            
         }
     }
 }

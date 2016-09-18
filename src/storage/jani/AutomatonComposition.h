@@ -21,6 +21,8 @@ namespace storm {
             
             virtual void write(std::ostream& stream) const override;
             
+            bool isAutomaton() const override  { return true; }
+            
         private:
             // The name of the automaton this composition element refers to.
             std::string name;

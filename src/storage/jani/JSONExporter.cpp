@@ -20,8 +20,55 @@
 #include "src/storage/expressions/BinaryRelationExpression.h"
 #include "src/storage/expressions/VariableExpression.h"
 
+#include "src/storage/jani/AutomatonComposition.h"
+#include "src/storage/jani/RenameComposition.h"
+#include "src/storage/jani/ParallelComposition.h"
+
+
 namespace storm {
     namespace jani {
+        
+        
+        class CompositionJsonExporter : public CompositionVisitor {
+        public:
+            static modernjson::json translate(storm::jani::Composition const& comp) {
+                CompositionJsonExporter visitor;
+                return boost::any_cast<modernjson::json>(comp.accept(visitor, boost::none));
+            }
+            
+            virtual boost::any visit(AutomatonComposition const& composition, boost::any const& data) {
+                modernjson::json compDecl;
+                modernjson::json autDecl;
+                autDecl["automaton"] = composition.getAutomatonName();
+                std::vector<modernjson::json> elements;
+                elements.push_back(autDecl);
+                compDecl["elements"] = elements;
+                return compDecl;
+            }
+            
+            virtual boost::any visit(RenameComposition const& composition, boost::any const& data) {
+                
+            }
+            virtual boost::any visit(ParallelComposition const& composition, boost::any const& data) {
+                modernjson::json compDecl;
+                
+                std::vector<modernjson::json> elems;
+                for (auto const& subcomp : composition.getSubcompositions()) {
+                    modernjson::json elemDecl;
+                    STORM_LOG_THROW(subcomp->isAutomaton(), storm::exceptions::InvalidJaniException, "Nesting composition " << *subcomp << " is not supported by JANI.");
+                    elemDecl["automaton"] = std::static_pointer_cast<AutomatonComposition>(subcomp)->getAutomatonName();
+                }
+                compDecl["elements"] = elems;
+                std::vector<modernjson::json> synElems;
+                for (auto const& syncs : composition.getSynchronizationVectors()) {
+                    modernjson::json syncDecl;
+                    syncDecl["input"] = syncs.getInput();
+                    syncDecl["result"] = syncs.getOutput();
+                    synElems.push_back(syncDecl);
+                }
+            }
+        };
+        
         
         std::string operatorTypeToJaniString(storm::expressions::OperatorType optype) {
             
@@ -332,7 +379,7 @@ namespace storm {
             jsonStruct["variables"] = buildVariablesArray(janiModel.getGlobalVariables());
             jsonStruct["restrict-initial"]["exp"] = buildExpression(janiModel.getInitialStatesRestriction());
             jsonStruct["automata"] = buildAutomataArray(janiModel.getAutomata(), janiModel.buildActionToNameMap());
-            //jsonStruct["system"] = buildComposition();
+            jsonStruct["system"] = CompositionJsonExporter::translate(janiModel.getSystemComposition());
             
         }
         
