@@ -173,6 +173,12 @@ namespace storm {
              */
             std::vector<std::shared_ptr<Variable const>> getTransientVariables() const;
             
+            /*!
+             * Checks whether any of the provided variables appears in bound expressions or initial values of the
+             * variables contained in this variable set.
+             */
+            bool containsVariablesInBoundExpressionsOrInitialValues(std::set<storm::expressions::Variable> const& variables) const;
+            
         private:
             /// The vector of all variables.
             std::vector<std::shared_ptr<Variable>> variables;

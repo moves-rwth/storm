@@ -298,7 +298,13 @@ namespace storm {
              * Retrieves the action indices appearing at some edge of the automaton.
              */
             std::set<uint64_t> getUsedActionIndices() const;
-                        
+            
+            /*!
+             * Checks whether the provided variables only appear in the probability expressions or the expressions being
+             * assigned in transient assignments.
+             */
+            bool containsVariablesOnlyInProbabilitiesOrTransientAssignments(std::set<storm::expressions::Variable> const& variables) const;
+            
         private:
             /// The name of the automaton.
             std::string name;

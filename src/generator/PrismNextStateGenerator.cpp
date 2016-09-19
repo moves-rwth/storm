@@ -27,7 +27,7 @@ namespace storm {
             STORM_LOG_THROW(!this->program.specifiesSystemComposition(), storm::exceptions::WrongFormatException, "The explicit next-state generator currently does not support custom system compositions.");
                         
             // Only after checking validity of the program, we initialize the variable information.
-            this->checkValid(program);
+            this->checkValid();
             this->variableInformation = VariableInformation(program);
             
             if (this->options.isBuildAllRewardModelsSet()) {
@@ -75,7 +75,7 @@ namespace storm {
         }
 
         template<typename ValueType, typename StateType>
-        void PrismNextStateGenerator<ValueType, StateType>::checkValid(storm::prism::Program const& program) {
+        void PrismNextStateGenerator<ValueType, StateType>::checkValid() const {
             // If the program still contains undefined constants and we are not in a parametric setting, assemble an appropriate error message.
 #ifdef STORM_HAVE_CARL
             if (!std::is_same<ValueType, storm::RationalFunction>::value && program.hasUndefinedConstants()) {
@@ -98,7 +98,7 @@ namespace storm {
             }
 
 #ifdef STORM_HAVE_CARL
-            else if (std::is_same<ValueType, storm::RationalFunction>::value && !program.hasUndefinedConstantsOnlyInUpdateProbabilitiesAndRewards()) {
+            else if (std::is_same<ValueType, storm::RationalFunction>::value && !program.undefinedConstantsAreGraphPreserving()) {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The program contains undefined constants that appear in some places other than update probabilities and reward value expressions, which is not admitted.");
             }
 #endif

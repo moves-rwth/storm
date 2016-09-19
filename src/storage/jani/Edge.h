@@ -101,6 +101,11 @@ namespace storm {
              */
             void liftTransientDestinationAssignments();
             
+            /*!
+             * Checks whether the provided variables appear on the right-hand side of non-transient assignments.
+             */
+            bool usesVariablesInNonTransientAssignments(std::set<storm::expressions::Variable> const& variables) const;
+            
         private:
             /// The index of the source location.
             uint64_t sourceLocationIndex;

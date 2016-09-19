@@ -26,16 +26,8 @@ namespace storm {
             this->probability = probability;
         }
         
-        storm::jani::detail::ConstAssignments EdgeDestination::getAssignments() const {
-            return assignments.getAllAssignments();
-        }
-
-        storm::jani::detail::ConstAssignments EdgeDestination::getTransientAssignments() const {
-            return assignments.getTransientAssignments();
-        }
-        
-        storm::jani::detail::ConstAssignments EdgeDestination::getNonTransientAssignments() const {
-            return assignments.getNonTransientAssignments();
+        OrderedAssignments const& EdgeDestination::getAssignments() const {
+            return assignments;
         }
         
         void EdgeDestination::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {

@@ -463,5 +463,47 @@ namespace storm {
             return true;
         }
         
+        bool Model::undefinedConstantsAreGraphPreserving() const {
+            if (!this->hasUndefinedConstants()) {
+                return true;
+            }
+
+            // Gather the variables of all undefined constants.
+            std::set<storm::expressions::Variable> undefinedConstantVariables;
+            for (auto const& constant : this->getConstants()) {
+                if (!constant.isDefined()) {
+                    undefinedConstantVariables.insert(constant.getExpressionVariable());
+                }
+            }
+            
+            // Start by checking the defining expressions of all defined constants. If it contains a currently undefined
+            // constant, we need to mark the target constant as undefined as well.
+            for (auto const& constant : this->getConstants()) {
+                if (constant.isDefined()) {
+                    if (constant.getExpression().containsVariable(undefinedConstantVariables)) {
+                        undefinedConstantVariables.insert(constant.getExpressionVariable());
+                    }
+                }
+            }
+
+            // Check global variable definitions.
+            if (this->getGlobalVariables().containsVariablesInBoundExpressionsOrInitialValues(undefinedConstantVariables)) {
+                return false;
+            }
+            
+            // Check the automata.
+            for (auto const& automaton : this->getAutomata()) {
+                if (!automaton.containsVariablesOnlyInProbabilitiesOrTransientAssignments(undefinedConstantVariables)) {
+                    return false;
+                }
+            }
+            
+            // Check initial states restriction.
+            if (initialStatesRestriction.containsVariable(undefinedConstantVariables)) {
+                return false;
+            }
+            return true;
+        }
+        
     }
 }

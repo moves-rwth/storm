@@ -326,6 +326,13 @@ namespace storm {
              */
             bool checkValidity(bool logdbg = true) const;
             
+            /*!
+             * Checks that undefined constants (parameters) of the model preserve the graph of the underlying model.
+             * That is, undefined constants may only appear in the probability expressions of edge destinations as well
+             * as on the right-hand sides of transient assignments.
+             */
+            bool undefinedConstantsAreGraphPreserving() const;
+            
         private:
             /// The model name.
             std::string name;

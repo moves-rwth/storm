@@ -88,7 +88,7 @@ namespace storm {
             if (!destinations.empty()) {
                 auto const& destination = *destinations.begin();
                 
-                for (auto const& assignment : destination.getTransientAssignments()) {
+                for (auto const& assignment : destination.getAssignments().getTransientAssignments()) {
                     // Check if we can lift the assignment to the edge.
                     bool canBeLifted = true;
                     for (auto const& destination : destinations) {
@@ -111,6 +111,17 @@ namespace storm {
         
         boost::container::flat_set<storm::expressions::Variable> const& Edge::getWrittenGlobalVariables() const {
             return writtenGlobalVariables;
+        }
+        
+        bool Edge::usesVariablesInNonTransientAssignments(std::set<storm::expressions::Variable> const& variables) const {
+            for (auto const& destination : destinations) {
+                for (auto const& assignment : destination.getAssignments().getNonTransientAssignments()) {
+                    if (assignment.getAssignedExpression().containsVariable(variables)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
         }
     }
 }

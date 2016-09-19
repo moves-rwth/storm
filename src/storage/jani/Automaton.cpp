@@ -400,5 +400,27 @@ namespace storm {
             return result;
         }
 
+        bool Automaton::containsVariablesOnlyInProbabilitiesOrTransientAssignments(std::set<storm::expressions::Variable> const& variables) const {
+            // Check initial states restriction expression.
+            if (this->hasInitialStatesRestriction()) {
+                if (this->getInitialStatesRestriction().containsVariable(variables)) {
+                    return false;
+                }
+            }
+            
+            // Check global variable definitions.
+            if (this->getVariables().containsVariablesInBoundExpressionsOrInitialValues(variables)) {
+                return false;
+            }
+            
+            // Check edges.
+            for (auto const& edge : edges) {
+                if (edge.usesVariablesInNonTransientAssignments(variables)) {
+                    return false;
+                }
+            }
+            
+            return true;
+        }
     }
 }

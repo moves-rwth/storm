@@ -418,7 +418,7 @@ namespace storm {
             
             // Iterate over all assignments (boolean and integer) and build the DD for it.
             std::set<storm::expressions::Variable> assignedVariables;
-            for (auto const& assignment : destination.getNonTransientAssignments()) {
+            for (auto const& assignment : destination.getAssignments().getNonTransientAssignments()) {
                 // Record the variable as being written.
                 STORM_LOG_TRACE("Assigning to variable " << variables.variableToRowMetaVariableMap->at(assignment.getExpressionVariable()).getName());
                 assignedVariables.insert(assignment.getExpressionVariable());

@@ -178,5 +178,29 @@ namespace storm {
             return result;
         }
         
+        bool VariableSet::containsVariablesInBoundExpressionsOrInitialValues(std::set<storm::expressions::Variable> const& variables) const {
+            for (auto const& booleanVariable : this->getBooleanVariables()) {
+                if (booleanVariable.hasInitExpression()) {
+                    if (booleanVariable.getInitExpression().containsVariable(variables)) {
+                        return true;
+                    }
+                }
+            }
+            for (auto const& integerVariable : this->getBoundedIntegerVariables()) {
+                if (integerVariable.hasInitExpression()) {
+                    if (integerVariable.getInitExpression().containsVariable(variables)) {
+                        return true;
+                    }
+                }
+                if (integerVariable.getLowerBound().containsVariable(variables)) {
+                    return true;
+                }
+                if (integerVariable.getUpperBound().containsVariable(variables)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        
     }
 }

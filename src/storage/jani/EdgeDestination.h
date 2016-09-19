@@ -39,18 +39,8 @@ namespace storm {
             /*!
              * Retrieves the assignments to make when choosing this destination.
              */
-            storm::jani::detail::ConstAssignments getAssignments() const;
+            OrderedAssignments const& getAssignments() const;
             
-            /*!
-             * Retrieves the transient assignments to make when choosing this destination.
-             */
-            storm::jani::detail::ConstAssignments getTransientAssignments() const;
-
-            /*!
-             * Retrieves the non-transient assignments to make when choosing this destination.
-             */
-            storm::jani::detail::ConstAssignments getNonTransientAssignments() const;
-
             /*!
              * Substitutes all variables in all expressions according to the given substitution.
              */
