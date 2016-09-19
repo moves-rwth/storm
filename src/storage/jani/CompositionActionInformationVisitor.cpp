@@ -30,7 +30,7 @@ namespace storm {
             // Intentionally left empty.
         }
         
-        ActionInformation CompositionActionInformationVisitor::getActionInformation() {
+        ActionInformation CompositionActionInformationVisitor::getActionInformation(storm::jani::Composition const& composition) {
             indexToNameMap.clear();
             nameToIndexMap.clear();
 
@@ -45,7 +45,7 @@ namespace storm {
             }
             ++nextFreeActionIndex;
             
-            std::set<uint64_t> nonSilentActionIndices = boost::any_cast<std::set<uint64_t>>(model.getSystemComposition().accept(*this, boost::none));
+            std::set<uint64_t> nonSilentActionIndices = boost::any_cast<std::set<uint64_t>>(composition.accept(*this, boost::none));
             
             return ActionInformation(nonSilentActionIndices, indexToNameMap, nameToIndexMap);
         }

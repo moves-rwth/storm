@@ -35,9 +35,12 @@ namespace storm {
                 } else {
                     stream << "tau";
                 }
+                renamingStrings.push_back(stream.str());
             }
             
-            stream << "(" << subcomposition << ") / {" << boost::join(renamingStrings, ", ") << "}";
+            stream << "(";
+            subcomposition->write(stream);
+            stream << ")/{" << boost::join(renamingStrings, ", ") << "} ";
         }
 
         

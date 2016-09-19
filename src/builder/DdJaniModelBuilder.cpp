@@ -211,7 +211,7 @@ namespace storm {
             }
             
             boost::any visit(storm::jani::RenameComposition const& composition, boost::any const& data) override {
-                boost::any_cast<std::set<std::string>>(composition.getSubcomposition().accept(*this, boost::none));
+                composition.getSubcomposition().accept(*this, data);
                 return boost::none;
             }
             
@@ -322,7 +322,7 @@ namespace storm {
                 int_fast64_t high = variable.getUpperBound().evaluateAsInt();
                 std::pair<storm::expressions::Variable, storm::expressions::Variable> variablePair = result.manager->addMetaVariable(variable.getName(), low, high);
                 
-                STORM_LOG_TRACE("Created meta variables for global integer variable: " << variablePair.first.getName() << "] and " << variablePair.second.getName() << ".");
+                STORM_LOG_TRACE("Created meta variables for global integer variable: " << variablePair.first.getName() << " and " << variablePair.second.getName() << ".");
                 
                 result.rowMetaVariables.insert(variablePair.first);
                 result.variableToRowMetaVariableMap->emplace(variable.getExpressionVariable(), variablePair.first);
@@ -1133,6 +1133,7 @@ namespace storm {
                     subautomata.push_back(boost::any_cast<AutomatonDd>(composition.getSubcomposition(subcompositionIndex).accept(*this, newSynchronizingActionToOffsetMap)));
                 }
                 
+                std::cout << "composing " << composition << std::endl;
                 return composeInParallel(subautomata, composition.getSynchronizationVectors());
             }
             
@@ -1211,6 +1212,7 @@ namespace storm {
                         // Extend all other non-synchronizing actions with the identity of the current subautomaton.
                         for (auto& actions : nonSynchronizingActions) {
                             for (auto& action : actions.second) {
+                                STORM_LOG_TRACE("Extending action '" << actionInformation.getActionName(actions.first) << "' with identity of next composition.");
                                 action.transitions *= subautomaton.identity;
                             }
                         }
@@ -1219,6 +1221,7 @@ namespace storm {
                         // add it to the overall non-synchronizing action result.
                         for (auto const& action : subautomaton.actionIndexToAction) {
                             if (actionsInSynch.find(action.first) == actionsInSynch.end()) {
+                                STORM_LOG_TRACE("Adding action " << actionInformation.getActionName(action.first) << " to non-synchronizing actions and multiply it with system identity.");
                                 nonSynchronizingActions[action.first].push_back(action.second.multiplyTransitions(result.identity));
                             }
                         }
@@ -1251,6 +1254,10 @@ namespace storm {
                         result.actionIndexToAction[nonSynchronizingActionDds.first] = actionDds.front();
                         result.extendLocalNondeterminismVariables(actionDds.front().getLocalNondeterminismVariables());
                     }
+                }
+                
+                for (auto act : result.actionIndexToAction) {
+                    act.second.transitions.exportToDot("act__" + actionInformation.getActionName(act.first) + ".dot");
                 }
                 
                 return result;
@@ -1505,7 +1512,7 @@ namespace storm {
                     
                     guard |= edge.guard.toBdd();
                     transitions += edge.transitions;
-                    joinVariableWritingFragmentMaps(variableToWritingFragment, edge.variableToWritingFragment);
+                    variableToWritingFragment = joinVariableWritingFragmentMaps(variableToWritingFragment, edge.variableToWritingFragment);
                     joinTransientAssignmentMaps(transientEdgeAssignments, edge.transientEdgeAssignments);
                 }
 
@@ -1846,6 +1853,7 @@ namespace storm {
                     }
                     ActionDd actionDd = buildActionDdForActionIndex(automaton, actionIndex, actionIndexToLocalNondeterminismVariableOffset.at(actionIndex));
                     result.actionIndexToAction[actionIndex] = actionDd;
+                    actionDd.transitions.exportToDot("build_" + action.getName() + ".dot");
                     result.setLowestLocalNondeterminismVariable(std::max(result.getLowestLocalNondeterminismVariable(), actionDd.getLowestLocalNondeterminismVariable()));
                     result.setHighestLocalNondeterminismVariable(std::max(result.getHighestLocalNondeterminismVariable(), actionDd.getHighestLocalNondeterminismVariable()));
                 }
@@ -1895,6 +1903,7 @@ namespace storm {
                     // Add missing global variable identities, action and nondeterminism encodings.
                     std::map<storm::expressions::Variable, storm::dd::Add<Type, ValueType>> transientEdgeAssignments;
                     for (auto& action : automaton.actionIndexToAction) {
+                        action.second.transitions.exportToDot("build_from_aut_" + std::to_string(action.first) + ".dot");
                         illegalFragment |= action.second.illegalFragment;
                         addMissingGlobalVariableIdentities(action.second);
                         storm::dd::Add<Type, ValueType> actionEncoding = encodeAction(action.first != this->model.getSilentActionIndex() ? boost::optional<uint64_t>(action.first) : boost::none, this->variables);
@@ -1906,6 +1915,7 @@ namespace storm {
                         }
                         
                         result += extendedTransitions;
+                        result.exportToDot("result_after_" + actionInformation.getActionName(action.first) + ".dot");
                     }
                     
                     return ComposerResult<Type, ValueType>(result, automaton.transientLocationAssignments, transientEdgeAssignments, illegalFragment, numberOfUsedNondeterminismVariables);
@@ -1940,6 +1950,7 @@ namespace storm {
         
         template <storm::dd::DdType Type, typename ValueType>
         std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> createModel(storm::jani::ModelType const& modelType, CompositionVariables<Type, ValueType> const& variables, ModelComponents<Type, ValueType> const& modelComponents) {
+            
             if (modelType == storm::jani::ModelType::DTMC) {
                 return std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>>(new storm::models::symbolic::Dtmc<Type, ValueType>(variables.manager, modelComponents.reachableStates, modelComponents.initialStates, modelComponents.deadlockStates, modelComponents.transitionMatrix, variables.rowMetaVariables, variables.rowExpressionAdapter, variables.columnMetaVariables, variables.columnExpressionAdapter, variables.rowColumnMetaVariablePairs, std::map<std::string, storm::expressions::Expression>(), modelComponents.rewardModels));
             } else if (modelType == storm::jani::ModelType::CTMC) {
@@ -2141,7 +2152,7 @@ namespace storm {
             
             // Determine the actions that will appear in the parallel composition.
             storm::jani::CompositionActionInformationVisitor actionInformationVisitor(model);
-            storm::jani::ActionInformation actionInformation = actionInformationVisitor.getActionInformation();
+            storm::jani::ActionInformation actionInformation = actionInformationVisitor.getActionInformation(model.getSystemComposition());
             
             // Create all necessary variables.
             CompositionVariableCreator<Type, ValueType> variableCreator(model, actionInformation);
@@ -2168,10 +2179,13 @@ namespace storm {
             
             // Perform reachability analysis to obtain reachable states.
             storm::dd::Bdd<Type> transitionMatrixBdd = system.transitions.notZero();
+            system.transitions.exportToDot("trans.dot");
+            transitionMatrixBdd.template toAdd<ValueType>().exportToDot("transbdd.dot");
             if (model.getModelType() == storm::jani::ModelType::MDP) {
                 transitionMatrixBdd = transitionMatrixBdd.existsAbstract(variables.allNondeterminismVariables);
             }
             modelComponents.reachableStates = storm::utility::dd::computeReachableStates(modelComponents.initialStates, transitionMatrixBdd, variables.rowMetaVariables, variables.columnMetaVariables);
+            modelComponents.reachableStates.template toAdd<ValueType>().exportToDot("reach_jani.dot");
             
             // Check that the reachable fragment does not overlap with the illegal fragment.
             storm::dd::Bdd<Type> reachableIllegalFragment = modelComponents.reachableStates && system.illegalFragment;

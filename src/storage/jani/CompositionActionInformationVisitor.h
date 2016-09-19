@@ -30,7 +30,7 @@ namespace storm {
         public:
             CompositionActionInformationVisitor(storm::jani::Model const& model);
             
-            ActionInformation getActionInformation();
+            ActionInformation getActionInformation(storm::jani::Composition const& composition);
             
             virtual boost::any visit(AutomatonComposition const& composition, boost::any const& data) override;
             virtual boost::any visit(RenameComposition const& composition, boost::any const& data) override;

@@ -48,6 +48,7 @@ namespace storm {
                     stream << ", ";
                 }
                 stream << element;
+                first = false;
             }
             stream << ") -> " << synchronizationVector.getOutput();
             return stream;
@@ -130,9 +131,9 @@ namespace storm {
             for (auto const& subcomposition : subcompositions) {
                 if (!first) {
                     stream << " || ";
-                    first = false;
                 }
                 stream << *subcomposition;
+                first = false;
             }
             stream << ")[" << boost::algorithm::join(synchronizationVectorsAsStrings, ", ") << "]";
         }

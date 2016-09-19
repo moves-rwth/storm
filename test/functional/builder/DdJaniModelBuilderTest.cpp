@@ -365,3 +365,54 @@ TEST(DdJaniModelBuilderTest_Cudd, SynchronizationVectors) {
     synchronizationVectors.push_back(storm::jani::SynchronizationVector(inputVector, "e"));
     EXPECT_THROW(newComposition = std::make_shared<storm::jani::ParallelComposition>(automataCompositions, synchronizationVectors), storm::exceptions::WrongFormatException);
 }
+
+TEST(DdJaniModelBuilderTest_Sylvan, Composition) {
+    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/system_composition.nm");
+    storm::jani::Model janiModel = modelDescription.toJani(true).preprocess().asJaniModel();
+    
+    storm::builder::DdJaniModelBuilder<storm::dd::DdType::Sylvan, double> builder;
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = builder.build(janiModel);
+    
+    EXPECT_TRUE(model->getType() == storm::models::ModelType::Mdp);
+    std::shared_ptr<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan>> mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan>>();
+    
+    EXPECT_EQ(21ul, mdp->getNumberOfStates());
+    EXPECT_EQ(61ul, mdp->getNumberOfTransitions());
+    EXPECT_EQ(61ul, mdp->getNumberOfChoices());
+    
+    modelDescription = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/system_composition2.nm");
+    janiModel = modelDescription.toJani(true).preprocess().asJaniModel();
+    model = builder.build(janiModel);
+    EXPECT_TRUE(model->getType() == storm::models::ModelType::Mdp);
+    mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan>>();
+    
+    EXPECT_EQ(8ul, mdp->getNumberOfStates());
+    EXPECT_EQ(21ul, mdp->getNumberOfTransitions());
+    EXPECT_EQ(21ul, mdp->getNumberOfChoices());
+}
+
+TEST(DdJaniModelBuilderTest_Cudd, Composition) {
+    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/system_composition.nm");
+    storm::jani::Model janiModel = modelDescription.toJani(true).preprocess().asJaniModel();
+    
+    storm::builder::DdJaniModelBuilder<storm::dd::DdType::CUDD, double> builder;
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = builder.build(janiModel);
+    
+    EXPECT_TRUE(model->getType() == storm::models::ModelType::Mdp);
+    std::shared_ptr<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>> mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>();
+    
+    EXPECT_EQ(21ul, mdp->getNumberOfStates());
+    EXPECT_EQ(61ul, mdp->getNumberOfTransitions());
+    EXPECT_EQ(61ul, mdp->getNumberOfChoices());
+    
+    modelDescription = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/system_composition2.nm");
+    janiModel = modelDescription.toJani(true).preprocess().asJaniModel();
+    model = builder.build(janiModel);
+    EXPECT_TRUE(model->getType() == storm::models::ModelType::Mdp);
+    mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>();
+    
+    EXPECT_EQ(8ul, mdp->getNumberOfStates());
+    EXPECT_EQ(21ul, mdp->getNumberOfTransitions());
+    EXPECT_EQ(21ul, mdp->getNumberOfChoices());
+}
+
