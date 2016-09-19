@@ -31,6 +31,7 @@
 #include "src/exceptions/WrongFormatException.h"
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/exceptions/InvalidStateException.h"
+#include "src/exceptions/NotSupportedException.h"
 
 namespace storm {
     namespace builder {
@@ -149,6 +150,7 @@ namespace storm {
             
             // The meta variable used to distinguish Markovian from probabilistic choices in Markov automata.
             storm::expressions::Variable markovNondeterminismVariable;
+            storm::dd::Bdd<Type> markovMarker;
             
             // The meta variables used to encode the actions and nondeterminism.
             std::set<storm::expressions::Variable> allNondeterminismVariables;
@@ -243,6 +245,7 @@ namespace storm {
                 
                 if (this->model.getModelType() == storm::jani::ModelType::MA) {
                     result.markovNondeterminismVariable = result.manager->addMetaVariable("markov").first;
+                    result.markovMarker = result.manager->getEncoding(result.markovNondeterminismVariable, 1);
                     result.allNondeterminismVariables.insert(result.markovNondeterminismVariable);
                 }
                 
@@ -932,10 +935,18 @@ namespace storm {
         public:
             // This structure represents an edge.
             struct EdgeDd {
-                EdgeDd(bool isMarkovian, storm::dd::Add<Type> const& guard = storm::dd::Add<Type>(), storm::dd::Add<Type, ValueType> const& transitions = storm::dd::Add<Type, ValueType>(), std::map<storm::expressions::Variable, storm::dd::Add<Type, ValueType>> const& transientEdgeAssignments = {}, std::set<storm::expressions::Variable> const& writtenGlobalVariables = {}) : isMarkovian(isMarkovian), guard(guard), transitions(transitions), transientEdgeAssignments(transientEdgeAssignments), writtenGlobalVariables(writtenGlobalVariables) {
+                EdgeDd(bool isMarkovian, storm::dd::Add<Type> const& guard, storm::dd::Add<Type, ValueType> const& transitions, std::map<storm::expressions::Variable, storm::dd::Add<Type, ValueType>> const& transientEdgeAssignments, std::set<storm::expressions::Variable> const& writtenGlobalVariables) : isMarkovian(isMarkovian), guard(guard), transitions(transitions), transientEdgeAssignments(transientEdgeAssignments), variableToWritingFragment() {
+                    
+                    // Convert the set of written variables to a mapping from variable to the writing fragments.
+                    for (auto const& variable : writtenGlobalVariables) {
+                        variableToWritingFragment[variable] = guard.toBdd();
+                    }
+                }
+
+                EdgeDd(bool isMarkovian, storm::dd::Add<Type> const& guard, storm::dd::Add<Type, ValueType> const& transitions, std::map<storm::expressions::Variable, storm::dd::Add<Type, ValueType>> const& transientEdgeAssignments, std::map<storm::expressions::Variable, storm::dd::Bdd<Type>> const& variableToWritingFragment) : isMarkovian(isMarkovian), guard(guard), transitions(transitions), transientEdgeAssignments(transientEdgeAssignments), variableToWritingFragment(variableToWritingFragment) {
                     // Intentionally left empty.
                 }
-                
+
                 // A flag storing whether this edge is a Markovian one (i.e. one with a rate).
                 bool isMarkovian;
                 
@@ -948,8 +959,8 @@ namespace storm {
                 // A mapping from transient variables to the DDs representing their value assignments.
                 std::map<storm::expressions::Variable, storm::dd::Add<Type, ValueType>> transientEdgeAssignments;
                 
-                // The set of global variables written by this edge.
-                std::set<storm::expressions::Variable> writtenGlobalVariables;
+                // A mapping of variables to the variables to the fragment of transitions that is writing the corresponding variable.
+                std::map<storm::expressions::Variable, storm::dd::Bdd<Type>> variableToWritingFragment;
             };
             
             // This structure represents an edge.
@@ -1156,7 +1167,7 @@ namespace storm {
                                 // If there is no action in the output spot, this means that some other subcomposition did
                                 // not provide the action necessary for the synchronization vector to resolve.
                                 if (synchronizationVectorActions[synchVectorIndex]) {
-                                    synchronizationVectorActions[synchVectorIndex].transitions *= subautomaton.identity;
+                                    synchronizationVectorActions[synchVectorIndex].get().transitions *= subautomaton.identity;
                                 }
                             }
                         } else {
@@ -1464,13 +1475,6 @@ namespace storm {
                     if (edge.hasRate()) {
                         transitions *=  this->variables.rowExpressionAdapter->translateExpression(edge.getRate());
                         isMarkovian = true;
-                        if (this->model.getModelType() == storm::jani::ModelType::MA) {
-                            transitions *= this->variables.manager->getEncoding(this->variables.markovNondeterminismVariable, 1);
-                        }
-                    } else {
-                        if (this->model.getModelType() == storm::jani::ModelType::MA) {
-                            transitions *= this->variables.manager->getEncoding(this->variables.markovNondeterminismVariable, 0);
-                        }
                     }
                     
                     // Finally treat the transient assignments.
@@ -1481,30 +1485,34 @@ namespace storm {
                     
                     return EdgeDd(isMarkovian, guard, guard * transitions, transientEdgeAssignments, globalVariablesInSomeDestination);
                 } else {
-                    return EdgeDd(false, this->variables.manager->template getAddZero<ValueType>(), this->variables.manager->template getAddZero<ValueType>());
+                    return EdgeDd(false, rangedGuard, rangedGuard, std::map<storm::expressions::Variable, storm::dd::Add<Type, ValueType>>(), std::set<storm::expressions::Variable>());
                 }
             }
             
-            EdgeDd combineMarkovianEdges(std::vector<EdgeDd> const& edgeDds) {
+            EdgeDd combineMarkovianEdgesToSingleEdge(std::vector<EdgeDd> const& edgeDds) {
                 storm::dd::Bdd<Type> guard = this->variables.manager->getBddZero();
                 storm::dd::Add<Type, ValueType> transitions = this->variables.manager->template getAddZero<ValueType>();
                 std::map<storm::expressions::Variable, storm::dd::Add<Type, ValueType>> transientEdgeAssignments;
-                std::set<storm::expressions::Variable> writtenVariables;
+                std::map<storm::expressions::Variable, storm::dd::Bdd<Type>> variableToWritingFragment;
 
+                bool overlappingGuards = false;
                 for (auto const& edge : edgeDds) {
                     STORM_LOG_THROW(edge.isMarkovian, storm::exceptions::InvalidArgumentException, "Can only combine Markovian edges.");
                     
+                    if (!overlappingGuards) {
+                        overlappingGuards |= !(guard && edge.guard.toBdd()).isZero();
+                    }
+                    
                     guard |= edge.guard.toBdd();
                     transitions += edge.transitions;
-                    for (auto const& variable : edge.writtenGlobalVariables) {
-                        writtenVariables.insert(variable);
-                    }
-                        
-                    // FIXME: This is not correct, need to consider guards. However, the semantics is not currently clear.
+                    joinVariableWritingFragmentMaps(variableToWritingFragment, edge.variableToWritingFragment);
                     joinTransientAssignmentMaps(transientEdgeAssignments, edge.transientEdgeAssignments);
                 }
+
+                // Currently, we can only combine the transient edge assignments if there is no overlap of the guards of the edges.
+                STORM_LOG_THROW(!overlappingGuards || transientEdgeAssignments.empty(), storm::exceptions::NotSupportedException, "Cannot have transient edge assignments when combining Markovian edges with overlapping guards.");
                 
-                return ActionDd(true, guard.template toAdd<ValueType>(), transitions, transientEdgeAssignments, writtenVariables);
+                return EdgeDd(true, guard.template toAdd<ValueType>(), transitions, transientEdgeAssignments, variableToWritingFragment);
             }
             
             ActionDd buildActionDdForActionIndex(storm::jani::Automaton const& automaton, uint64_t actionIndex, uint64_t localNondeterminismVariableOffset) {
@@ -1531,13 +1539,19 @@ namespace storm {
                         STORM_LOG_THROW(markovianEdges.empty(), storm::exceptions::WrongFormatException, "Illegal Markovian edges in DTMC.");
                         return combineEdgesToActionDeterministic(nonMarkovianEdges);
                     } else if (modelType == storm::jani::ModelType::CTMC) {
-                        STORM_LOG_THROW(markovianEdges.empty(), storm::exceptions::WrongFormatException, "Illegal non-Markovian edges in CTMC.");
+                        STORM_LOG_THROW(nonMarkovianEdges.empty(), storm::exceptions::WrongFormatException, "Illegal non-Markovian edges in CTMC.");
                         return combineEdgesToActionDeterministic(markovianEdges);
                     } else if (modelType == storm::jani::ModelType::MDP) {
                         STORM_LOG_THROW(markovianEdges.empty(), storm::exceptions::WrongFormatException, "Illegal Markovian edges in MDP.");
                         return combineEdgesToActionNondeterministic(nonMarkovianEdges, boost::none, localNondeterminismVariableOffset);
                     } else if (modelType == storm::jani::ModelType::MA) {
-                        return combineEdgesToActionNondeterministic(nonMarkovianEdges, markovianEdges, localNondeterminismVariableOffset);
+                        boost::optional<EdgeDd> markovianEdge = boost::none;
+                        if (markovianEdges.size() > 1) {
+                            markovianEdge = combineMarkovianEdgesToSingleEdge(markovianEdges);
+                        } else if (markovianEdges.size() == 1) {
+                            markovianEdge = markovianEdges.front();
+                        }
+                        return combineEdgesToActionNondeterministic(nonMarkovianEdges, markovianEdge, localNondeterminismVariableOffset);
                     } else {
                         STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Cannot translate model of this type.");
                     }
@@ -1588,31 +1602,31 @@ namespace storm {
                 
                 std::map<storm::expressions::Variable, storm::dd::Bdd<Type>> globalVariableToWritingFragment;
                 std::map<storm::expressions::Variable, storm::dd::Add<Type, ValueType>> transientEdgeAssignments;
+                bool overlappingGuards = false;
                 for (auto const& edgeDd : edgeDds) {
+                    STORM_LOG_THROW((this->model.getModelType() == storm::jani::ModelType::CTMC) == edgeDd.isMarkovian, storm::exceptions::WrongFormatException, "Unexpected non-Markovian edge in CTMC.");
+                    
                     // Check for overlapping guards.
                     storm::dd::Bdd<Type> guardBdd = edgeDd.guard.toBdd();
-                    temporary = guardBdd && allGuards;
+                    overlappingGuards = !(guardBdd && allGuards).isZero();
                     
                     // Issue a warning if there are overlapping guards in a DTMC.
-                    STORM_LOG_WARN_COND(temporary.isZero() || this->model.getModelType() == storm::jani::ModelType::CTMC, "Guard of a command overlaps with previous guards.");
+                    STORM_LOG_WARN_COND(!overlappingGuards || this->model.getModelType() == storm::jani::ModelType::CTMC, "Guard of an edge in a DTMC overlaps with previous guards.");
                     
                     // Add the elements of the current edge to the global ones.
                     allGuards |= guardBdd;
                     allTransitions += edgeDd.transitions;
                     
-                    // Add the transient variable assignments to the resulting one.
+                    // Add the transient variable assignments to the resulting one. This transformation is illegal for
+                    // CTMCs for which there is some overlap in edges that have some transient assignment (this needs to
+                    // be checked later).
                     addToTransientAssignmentMap(transientEdgeAssignments, edgeDd.transientEdgeAssignments);
                     
                     // Keep track of the fragment that is writing global variables.
-                    for (auto const& variable : edgeDd.writtenGlobalVariables) {
-                        auto it = globalVariableToWritingFragment.find(variable);
-                        if (it != globalVariableToWritingFragment.end()) {
-                            it->second |= guardBdd;
-                        } else {
-                            globalVariableToWritingFragment[variable] = guardBdd;
-                        }
-                    }
+                    globalVariableToWritingFragment = joinVariableWritingFragmentMaps(globalVariableToWritingFragment, edgeDd.variableToWritingFragment);
                 }
+
+                STORM_LOG_THROW(this->model.getModelType() == storm::jani::ModelType::DTMC || !overlappingGuards || transientEdgeAssignments.empty(), storm::exceptions::NotSupportedException, "Cannot have transient edge assignments when combining Markovian edges with overlapping guards.");
                 
                 return ActionDd(allGuards.template toAdd<ValueType>(), allTransitions, transientEdgeAssignments, std::make_pair<uint64_t, uint64_t>(0, 0), globalVariableToWritingFragment, this->variables.manager->getBddZero());
             }
@@ -1647,41 +1661,59 @@ namespace storm {
                 return result;
             }
             
-            ActionDd combineEdgesBySummation(storm::dd::Add<Type, ValueType> const& guard, std::vector<EdgeDd> const& edges) {
+            ActionDd combineEdgesBySummation(storm::dd::Add<Type, ValueType> const& guard, std::vector<EdgeDd> const& edges, boost::optional<EdgeDd> const& markovianEdge) {
+                bool addMarkovianFlag = this->model.getModelType() == storm::jani::ModelType::MA;
+                STORM_LOG_ASSERT(addMarkovianFlag || !markovianEdge, "Illegally adding Markovian edge without marker.");
+                
                 storm::dd::Add<Type, ValueType> transitions = this->variables.manager->template getAddZero<ValueType>();
                 std::map<storm::expressions::Variable, storm::dd::Bdd<Type>> globalVariableToWritingFragment;
                 std::map<storm::expressions::Variable, storm::dd::Add<Type, ValueType>> transientEdgeAssignments;
+                
+                storm::dd::Bdd<Type> flagBdd = addMarkovianFlag ? !this->variables.markovMarker : this->variables.manager->getBddOne();
+                storm::dd::Add<Type, ValueType> flag = flagBdd.template toAdd<ValueType>();
                 for (auto const& edge : edges) {
-                    transitions += edge.transitions;
-                    addToTransientAssignmentMap(transientEdgeAssignments, edge.transientEdgeAssignments);
-                    for (auto const& variable : edge.writtenGlobalVariables) {
-                        addToVariableWritingFragmentMap(globalVariableToWritingFragment, variable, edge.guard.toBdd());
+                    transitions += addMarkovianFlag ? flag * edge.transitions : edge.transitions;
+                    for (auto const& assignment : edge.transientEdgeAssignments) {
+                        addToTransientAssignmentMap(transientEdgeAssignments, assignment.first, addMarkovianFlag ? flag * assignment.second : assignment.second);
+                    }
+                    for (auto const& variableFragment : edge.variableToWritingFragment) {
+                        addToVariableWritingFragmentMap(globalVariableToWritingFragment, variableFragment.first, addMarkovianFlag ? flagBdd && variableFragment.second : variableFragment.second);
                     }
                 }
+                
+                // Add the Markovian edge (if any).
+                if (markovianEdge) {
+                    flagBdd = addMarkovianFlag ? !this->variables.markovMarker : this->variables.manager->getBddOne();
+                    flag = flagBdd.template toAdd<ValueType>();
+                    EdgeDd const& edge = markovianEdge.get();
+                    
+                    transitions += flag * edge.transitions;
+                    for (auto const& assignment : edge.transientEdgeAssignments) {
+                        addToTransientAssignmentMap(transientEdgeAssignments, assignment.first, addMarkovianFlag ? flag * assignment.second : assignment.second);
+                    }
+                    for (auto const& variableFragment : edge.variableToWritingFragment) {
+                        addToVariableWritingFragmentMap(globalVariableToWritingFragment, variableFragment.first, addMarkovianFlag ? flagBdd && variableFragment.second : variableFragment.second);
+                    }
+                }
+                
                 return ActionDd(guard, transitions, transientEdgeAssignments, std::make_pair<uint64_t, uint64_t>(0, 0), globalVariableToWritingFragment, this->variables.manager->getBddZero());
             }
             
-            ActionDd combineEdgesToActionNondeterministic(std::vector<EdgeDd> const& nonMarkovianEdges, boost::optional<std::vector<EdgeDd>> const& markovianEdges, uint64_t localNondeterminismVariableOffset) {
+            ActionDd combineEdgesToActionNondeterministic(std::vector<EdgeDd> const& nonMarkovianEdges, boost::optional<EdgeDd> const& markovianEdge, uint64_t localNondeterminismVariableOffset) {
                 // Sum all guards, so we can read off the maximal number of nondeterministic choices in any given state.
                 storm::dd::Bdd<Type> allGuards = this->variables.manager->getBddZero();
                 storm::dd::Add<Type, ValueType> sumOfGuards = this->variables.manager->template getAddZero<ValueType>();
-                bool hasMarkovianEdge = false;
-                for (auto const& edge : edges) {
-                    if (edge.isMarkovian) {
-                        hasMarkovianEdge = true;
-                        continue;
-                    }
-                    
+                for (auto const& edge : nonMarkovianEdges) {
+                    STORM_LOG_ASSERT(!edge.isMarkovian, "Unexpected Markovian edge.");
                     sumOfGuards += edge.guard;
                     allGuards |= edge.guard.toBdd();
                 }
                 uint_fast64_t maxChoices = static_cast<uint_fast64_t>(sumOfGuards.getMax());
-                STORM_LOG_TRACE("Found " << maxChoices << " local (non-Markovian) choices.");
+                STORM_LOG_TRACE("Found " << maxChoices << " non-Markovian local choices.");
                 
                 // Depending on the maximal number of nondeterminstic choices, we need to use some variables to encode the nondeterminism.
                 if (maxChoices <= 1) {
-                    
-                    return combineEdgesBySummation(allGuards.template toAdd<ValueType>(), edges);
+                    return combineEdgesBySummation(allGuards.template toAdd<ValueType>(), nonMarkovianEdges, markovianEdge);
                 } else {
                     // Calculate number of required variables to encode the nondeterminism.
                     uint_fast64_t numberOfBinaryVariables = static_cast<uint_fast64_t>(std::ceil(storm::utility::math::log2(maxChoices)));
@@ -1714,8 +1746,8 @@ namespace storm {
                             remainingDds[j] = equalsNumberOfChoicesDd;
                         }
                         
-                        for (std::size_t j = 0; j < edges.size(); ++j) {
-                            EdgeDd const& currentEdge = edges[j];
+                        for (std::size_t j = 0; j < nonMarkovianEdges.size(); ++j) {
+                            EdgeDd const& currentEdge = nonMarkovianEdges[j];
                             
                             // Check if edge guard overlaps with equalsNumberOfChoicesDd. That is, there are states with exactly currentChoices
                             // choices such that one outgoing choice is given by the j-th edge.
@@ -1745,8 +1777,8 @@ namespace storm {
                                     }
                                     
                                     // Keep track of the written global variables of the fragment.
-                                    for (auto const& variable : currentEdge.writtenGlobalVariables) {
-                                        addToVariableWritingFragmentMap(globalVariableToWritingFragment, variable, remainingGuardChoicesIntersection && indicesEncodedWithLocalNondeterminismVariables[k].first);
+                                    for (auto const& variableFragment : currentEdge.variableToWritingFragment) {
+                                        addToVariableWritingFragmentMap(globalVariableToWritingFragment, variableFragment.first, remainingGuardChoicesIntersection && variableFragment.second && indicesEncodedWithLocalNondeterminismVariables[k].first);
                                     }
                                 }
                                 
@@ -1767,6 +1799,36 @@ namespace storm {
                         
                         // Delete currentChoices out of overlapping DD
                         sumOfGuards = sumOfGuards * (!equalsNumberOfChoicesDd).template toAdd<ValueType>();
+                    }
+                    
+                    // Extend the transitions with the appropriate flag if needed.
+                    bool addMarkovianFlag = this->model.getModelType() == storm::jani::ModelType::MA;
+                    STORM_LOG_ASSERT(addMarkovianFlag || !markovianEdge, "Illegally adding Markovian edge without marker.");
+                    if (addMarkovianFlag) {
+                        storm::dd::Bdd<Type> flagBdd = !this->variables.markovMarker;
+                        storm::dd::Add<Type, ValueType> flag = flagBdd.template toAdd<ValueType>();
+                        allEdges *= flag;
+                        for (auto& assignment : transientAssignments) {
+                            assignment.second *= flag;
+                        }
+                        for (auto& writingFragment : globalVariableToWritingFragment) {
+                            writingFragment.second &= flagBdd;
+                        }
+                    }
+                    
+                    // Add Markovian edge (if there is any).
+                    if (markovianEdge) {
+                        storm::dd::Bdd<Type> flagBdd = this->variables.markovMarker;
+                        storm::dd::Add<Type, ValueType> flag = flagBdd.template toAdd<ValueType>();
+                        EdgeDd const& edge = markovianEdge.get();
+
+                        allEdges += flag * edge.transitions;
+                        for (auto const& assignment : edge.transientEdgeAssignments) {
+                            addToTransientAssignmentMap(transientAssignments, assignment.first, flag * assignment.second);
+                        }
+                        for (auto const& variableFragment : edge.variableToWritingFragment) {
+                            addToVariableWritingFragmentMap(globalVariableToWritingFragment, variableFragment.first, flagBdd && variableFragment.second);
+                        }
                     }
                     
                     return ActionDd(allGuards.template toAdd<ValueType>(), allEdges, transientAssignments, std::make_pair(localNondeterminismVariableOffset, localNondeterminismVariableOffset + numberOfBinaryVariables), globalVariableToWritingFragment, this->variables.manager->getBddZero());
