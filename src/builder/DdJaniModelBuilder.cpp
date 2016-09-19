@@ -1133,7 +1133,6 @@ namespace storm {
                     subautomata.push_back(boost::any_cast<AutomatonDd>(composition.getSubcomposition(subcompositionIndex).accept(*this, newSynchronizingActionToOffsetMap)));
                 }
                 
-                std::cout << "composing " << composition << std::endl;
                 return composeInParallel(subautomata, composition.getSynchronizationVectors());
             }
             
@@ -1255,11 +1254,7 @@ namespace storm {
                         result.extendLocalNondeterminismVariables(actionDds.front().getLocalNondeterminismVariables());
                     }
                 }
-                
-                for (auto act : result.actionIndexToAction) {
-                    act.second.transitions.exportToDot("act__" + actionInformation.getActionName(act.first) + ".dot");
-                }
-                
+
                 return result;
             }
             
@@ -1323,16 +1318,22 @@ namespace storm {
                     uint_fast64_t highestLocalNondeterminismVariable = actions.front().getHighestLocalNondeterminismVariable();
                     for (auto const& action : actions) {
                         STORM_LOG_ASSERT(action.getLowestLocalNondeterminismVariable() == lowestLocalNondeterminismVariable, "Mismatching lowest nondeterminism variable indices.");
+                        highestLocalNondeterminismVariable = std::max(highestLocalNondeterminismVariable, action.getHighestLocalNondeterminismVariable());
                     }
                     
                     // Bring all actions to the same number of variables that encode the nondeterminism.
                     for (auto& action : actions) {
-                        storm::dd::Add<Type, ValueType> nondeterminismEncoding = this->variables.manager->template getAddOne<ValueType>();
+                        storm::dd::Bdd<Type> nondeterminismEncodingBdd = this->variables.manager->getBddOne();
                         for (uint_fast64_t i = action.getHighestLocalNondeterminismVariable(); i < highestLocalNondeterminismVariable; ++i) {
-                            nondeterminismEncoding *= this->variables.manager->getEncoding(this->variables.localNondeterminismVariables[i], 0).template toAdd<ValueType>();
+                            nondeterminismEncodingBdd &= this->variables.manager->getEncoding(this->variables.localNondeterminismVariables[i], 0);
                         }
+                        storm::dd::Add<Type, ValueType> nondeterminismEncoding = nondeterminismEncodingBdd.template toAdd<ValueType>();
+
                         action.transitions *= nondeterminismEncoding;
                         
+                        for (auto& variableFragment : action.variableToWritingFragment) {
+                            variableFragment.second &= nondeterminismEncodingBdd;
+                        }
                         for (auto& transientAssignment : action.transientEdgeAssignments) {
                             transientAssignment.second *= nondeterminismEncoding;
                         }
@@ -1853,7 +1854,6 @@ namespace storm {
                     }
                     ActionDd actionDd = buildActionDdForActionIndex(automaton, actionIndex, actionIndexToLocalNondeterminismVariableOffset.at(actionIndex));
                     result.actionIndexToAction[actionIndex] = actionDd;
-                    actionDd.transitions.exportToDot("build_" + action.getName() + ".dot");
                     result.setLowestLocalNondeterminismVariable(std::max(result.getLowestLocalNondeterminismVariable(), actionDd.getLowestLocalNondeterminismVariable()));
                     result.setHighestLocalNondeterminismVariable(std::max(result.getHighestLocalNondeterminismVariable(), actionDd.getHighestLocalNondeterminismVariable()));
                 }
@@ -1903,7 +1903,6 @@ namespace storm {
                     // Add missing global variable identities, action and nondeterminism encodings.
                     std::map<storm::expressions::Variable, storm::dd::Add<Type, ValueType>> transientEdgeAssignments;
                     for (auto& action : automaton.actionIndexToAction) {
-                        action.second.transitions.exportToDot("build_from_aut_" + std::to_string(action.first) + ".dot");
                         illegalFragment |= action.second.illegalFragment;
                         addMissingGlobalVariableIdentities(action.second);
                         storm::dd::Add<Type, ValueType> actionEncoding = encodeAction(action.first != this->model.getSilentActionIndex() ? boost::optional<uint64_t>(action.first) : boost::none, this->variables);
@@ -1915,7 +1914,6 @@ namespace storm {
                         }
                         
                         result += extendedTransitions;
-                        result.exportToDot("result_after_" + actionInformation.getActionName(action.first) + ".dot");
                     }
                     
                     return ComposerResult<Type, ValueType>(result, automaton.transientLocationAssignments, transientEdgeAssignments, illegalFragment, numberOfUsedNondeterminismVariables);
@@ -2179,13 +2177,10 @@ namespace storm {
             
             // Perform reachability analysis to obtain reachable states.
             storm::dd::Bdd<Type> transitionMatrixBdd = system.transitions.notZero();
-            system.transitions.exportToDot("trans.dot");
-            transitionMatrixBdd.template toAdd<ValueType>().exportToDot("transbdd.dot");
             if (model.getModelType() == storm::jani::ModelType::MDP) {
                 transitionMatrixBdd = transitionMatrixBdd.existsAbstract(variables.allNondeterminismVariables);
             }
             modelComponents.reachableStates = storm::utility::dd::computeReachableStates(modelComponents.initialStates, transitionMatrixBdd, variables.rowMetaVariables, variables.columnMetaVariables);
-            modelComponents.reachableStates.template toAdd<ValueType>().exportToDot("reach_jani.dot");
             
             // Check that the reachable fragment does not overlap with the illegal fragment.
             storm::dd::Bdd<Type> reachableIllegalFragment = modelComponents.reachableStates && system.illegalFragment;

@@ -1393,8 +1393,6 @@ namespace storm {
                 labelToExpressionMapping.emplace(label.getName(), label.getStatePredicateExpression());
             }
             
-            reachableStates.template toAdd<ValueType>().exportToDot("prism_jani.dot");
-
             if (program.getModelType() == storm::prism::Program::ModelType::DTMC) {
                 return std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>>(new storm::models::symbolic::Dtmc<Type, ValueType>(generationInfo.manager, reachableStates, initialStates, deadlockStates, transitionMatrix, generationInfo.rowMetaVariables, generationInfo.rowExpressionAdapter, generationInfo.columnMetaVariables, generationInfo.columnExpressionAdapter, generationInfo.rowColumnMetaVariablePairs, labelToExpressionMapping, rewardModels));
             } else if (program.getModelType() == storm::prism::Program::ModelType::CTMC) {

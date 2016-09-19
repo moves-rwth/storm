@@ -10,7 +10,6 @@ namespace storm {
         
         std::shared_ptr<storm::jani::Composition> CompositionToJaniVisitor::toJani(Composition const& composition, storm::jani::Model const& model) {
             auto result = boost::any_cast<std::shared_ptr<storm::jani::Composition>>(composition.accept(*this, model));
-            std::cout << "got composition " << *result << std::endl;
             return result;
         }
         
