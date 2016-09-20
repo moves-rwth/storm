@@ -19,6 +19,8 @@ namespace storm {
              */
             OrderedAssignments(std::vector<Assignment> const& assignments = std::vector<Assignment>());
 
+            explicit OrderedAssignments(Assignment const& assignment);
+            
             /*!
              * Adds the given assignment to the set of assignments.
              *

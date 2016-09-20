@@ -14,9 +14,10 @@ namespace storm {
             /*!
              * Creates a new edge destination.
              */
-            EdgeDestination(uint64_t locationIndex, storm::expressions::Expression const& probability, std::vector<Assignment> const& assignments = {});
-            
             EdgeDestination(uint64_t locationIndex, storm::expressions::Expression const& probability, OrderedAssignments const& assignments);
+            
+            EdgeDestination(uint64_t locationIndex, storm::expressions::Expression const& probability, Assignment const& assignment);
+            EdgeDestination(uint64_t locationIndex, storm::expressions::Expression const& probability, std::vector<Assignment> const& assignments = {});
             
             /*!
              * Additionally performs the given assignment when choosing this destination.

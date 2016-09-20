@@ -6,16 +6,17 @@
 namespace storm {
     namespace jani {
         
-        EdgeDestination::EdgeDestination(uint64_t locationIndex, storm::expressions::Expression const& probability, std::vector<Assignment> const& assignments) : locationIndex(locationIndex), probability(probability), assignments(assignments) {
-            // Intentionally left empty.
-        }
-        
-        
         EdgeDestination::EdgeDestination(uint64_t locationIndex, storm::expressions::Expression const& probability, OrderedAssignments const& assignments) : locationIndex(locationIndex), probability(probability), assignments(assignments) {
             // Intentionally left empty.
         }
 
+        EdgeDestination::EdgeDestination(uint64_t locationIndex, storm::expressions::Expression const& probability, Assignment const& assignments) : locationIndex(locationIndex), probability(probability), assignments(assignments) {
+            // Intentionally left empty.
+        }
 
+        EdgeDestination::EdgeDestination(uint64_t locationIndex, storm::expressions::Expression const& probability, std::vector<Assignment> const& assignments) : locationIndex(locationIndex), probability(probability), assignments(assignments) {
+            // Intentionally left empty.
+        }
         
         void EdgeDestination::addAssignment(Assignment const& assignment) {
             assignments.add(assignment);

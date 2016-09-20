@@ -12,6 +12,10 @@ namespace storm {
             }
         }
         
+        OrderedAssignments::OrderedAssignments(Assignment const& assignment) {
+            add(assignment);
+        }
+        
         bool OrderedAssignments::add(Assignment const& assignment) {
             // If the element is contained in this set of assignment, nothing needs to be added.
             if (this->contains(assignment)) {
