@@ -12,6 +12,7 @@ namespace storm {
      storm::prism::Program parseProgram(std::string const& path) {
         storm::prism::Program program = storm::parser::PrismParser::parse(path).simplify().simplify();
         program.checkValidity();
+        std::cout << program << std::endl;
         return program;
     }
 

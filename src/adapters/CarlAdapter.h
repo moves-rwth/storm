@@ -6,6 +6,10 @@
 
 #include <boost/multiprecision/gmp.hpp>
 
+#ifdef STORM_HAVE_CLN
+#include <cln/cln.h>
+#endif
+
 #ifdef STORM_HAVE_CARL
 
 #include <carl/numbers/numbers.h>
@@ -44,15 +48,23 @@ namespace carl {
 
 }
 
+inline size_t hash_value(mpq_class const& q) {
+    std::hash<mpq_class> h;
+    return h(q);
+}
+
+
+#if defined STORM_HAVE_CLN && defined STORM_USE_CLN_NUMBERS
 namespace cln {
     inline size_t hash_value(cl_RA const& n) {
         std::hash<cln::cl_RA> h;
         return h(n);
     }
 }
+#endif
 
 namespace storm {
-#if defined STORM_HAVE_CLN && defined USE_CLN_NUMBERS
+#if defined STORM_HAVE_CLN && defined STORM_USE_CLN_NUMBERS
     typedef cln::cl_RA RationalNumber;
 #else
     typedef mpq_class RationalNumber;

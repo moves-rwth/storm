@@ -271,7 +271,7 @@ namespace storm {
             case storm::settings::modules::CoreSettings::Engine::Sparse: {
                 std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel = model->template as<storm::models::sparse::Model<ValueType>>();
                 STORM_LOG_THROW(sparseModel != nullptr, storm::exceptions::InvalidArgumentException, "Sparse engine requires a sparse input model");
-                return verifySparseModel(sparseModel, formula, onlyInitialStatesRelevant);
+                return (sparseModel, formula, onlyInitialStatesRelevant);
             }
             case storm::settings::modules::CoreSettings::Engine::Hybrid: {
                 std::shared_ptr<storm::models::symbolic::Model<DdType>> ddModel = model->template as<storm::models::symbolic::Model<DdType>>();
