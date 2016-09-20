@@ -51,7 +51,7 @@ namespace storm {
         }
         
         boost::any CompositionActionInformationVisitor::visit(AutomatonComposition const& composition, boost::any const& data) {
-            std::set<uint64_t> result = model.getAutomaton(composition.getAutomatonName()).getUsedActionIndices();
+            std::set<uint64_t> result = model.getAutomaton(composition.getAutomatonName()).getActionIndices();
             result.erase(model.getSilentActionIndex());
             return result;
         }

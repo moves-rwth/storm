@@ -28,7 +28,7 @@ namespace storm {
             return input[index];
         }
         
-        std::string const& SynchronizationVector::getNoActionInput() const {
+        std::string const& SynchronizationVector::getNoActionInput() {
             return SynchronizationVector::noAction;
         }
         
@@ -36,7 +36,36 @@ namespace storm {
             return output;
         }
         
-        bool SynchronizationVector::isNoActionInput(std::string const& action) const {
+        boost::optional<std::string> SynchronizationVector::getPrecedingParticipatingAction(uint64_t index) const {
+            boost::optional<uint64_t> position = getPositionOfPrecedingParticipatingAction(index);
+            if (position) {
+                return getInput(position.get());
+            } else {
+                return boost::none;
+            }
+        }
+        
+        boost::optional<uint64_t> SynchronizationVector::getPositionOfPrecedingParticipatingAction(uint64_t index) const {
+            if (index == 0) {
+                return boost::none;
+            }
+            
+            uint64_t i = index - 1;
+            for (; i > 0; --i) {
+                if (this->getInput(i) != SynchronizationVector::getNoActionInput()) {
+                    return boost::make_optional(i);
+                }
+            }
+            
+            // Check the 0-index.
+            if (this->getInput(i) != SynchronizationVector::getNoActionInput()) {
+                return boost::make_optional(i);
+            }
+            
+            return boost::none;
+        }
+        
+        bool SynchronizationVector::isNoActionInput(std::string const& action) {
             return action == noAction;
         }
         
@@ -108,8 +137,10 @@ namespace storm {
                 for (auto const& vector : synchronizationVectors) {
                     STORM_LOG_THROW(vector.size() == this->subcompositions.size(), storm::exceptions::WrongFormatException, "Synchronization vectors must match parallel composition size.");
                     std::string const& action = vector.getInput(inputIndex);
-                    STORM_LOG_THROW(actions.find(action) == actions.end(), storm::exceptions::WrongFormatException, "Cannot use the same action multiple times as input in synchronization vectors.");
-                    actions.insert(action);
+                    if (action != SynchronizationVector::getNoActionInput()) {
+                        STORM_LOG_THROW(actions.find(action) == actions.end(), storm::exceptions::WrongFormatException, "Cannot use the same action multiple times as input in synchronization vectors.");
+                        actions.insert(action);
+                    }
                 }
             }
         }
@@ -127,15 +158,19 @@ namespace storm {
             }
             
             bool first = true;
+            bool hasSynchVectors = !synchronizationVectors.empty();
             stream << "(";
             for (auto const& subcomposition : subcompositions) {
                 if (!first) {
-                    stream << " || ";
+                    stream << (hasSynchVectors ? " || " : " ||| ");
                 }
                 stream << *subcomposition;
                 first = false;
             }
-            stream << ")[" << boost::algorithm::join(synchronizationVectorsAsStrings, ", ") << "]";
+            stream << ")";
+            if (hasSynchVectors) {
+                stream << "[" << boost::algorithm::join(synchronizationVectorsAsStrings, ", ") << "]";
+            }
         }
         
     }

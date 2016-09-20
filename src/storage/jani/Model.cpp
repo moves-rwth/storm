@@ -215,35 +215,45 @@ namespace storm {
         }
         
         std::shared_ptr<Composition> Model::getStandardSystemComposition() const {
-            std::shared_ptr<Composition> current;
-            current = std::make_shared<AutomatonComposition>(this->automata.front().getName());
-            std::set<uint64_t> leftHandActionIndices = this->automata.front().getActionIndices();
-            
-            for (uint64_t index = 1; index < automata.size(); ++index) {
-                std::set<uint64_t> newActionIndices = automata[index].getActionIndices();
-                
-                // Compute the intersection of actions of the left- and right-hand side.
-                std::set<uint64_t> intersectionActions;
-                std::set_intersection(leftHandActionIndices.begin(), leftHandActionIndices.end(), newActionIndices.begin(), newActionIndices.end(), std::inserter(intersectionActions, intersectionActions.begin()));
-                
-                // If the silent action is in the intersection, we remove it since we cannot synchronize over it.
-                auto it = intersectionActions.find(this->getSilentActionIndex());
-                if (it != intersectionActions.end()) {
-                    intersectionActions.erase(it);
-                }
-                
-                // Then join the actions to reflect the actions of the new left-hand side.
-                leftHandActionIndices.insert(newActionIndices.begin(), newActionIndices.end());
-                
-                // Create the set of strings that represents the actions over which to synchronize.
-                std::set<std::string> intersectionActionNames;
-                for (auto const& actionIndex : intersectionActions) {
-                    intersectionActionNames.insert(this->getAction(actionIndex).getName());
-                }
-
-                current = std::make_shared<ParallelComposition>(current, std::make_shared<AutomatonComposition>(automata[index].getName()), intersectionActionNames);
+            // If there's just one automaton, we must not use the parallel composition operator.
+            if (this->getNumberOfAutomata() == 1) {
+                return std::make_shared<AutomatonComposition>(this->getAutomata().front().getName());
             }
-            return current;
+            
+            // Determine the action indices used by each of the automata and create the standard subcompositions.
+            std::set<uint64_t> allActionIndices;
+            std::vector<std::set<uint64_t>> automatonActionIndices;
+            std::vector<std::shared_ptr<Composition>> subcompositions;
+            for (auto const& automaton : automata) {
+                automatonActionIndices.push_back(automaton.getActionIndices());
+                automatonActionIndices.back().erase(silentActionIndex);
+                allActionIndices.insert(automatonActionIndices.back().begin(), automatonActionIndices.back().end());
+                subcompositions.push_back(std::make_shared<AutomatonComposition>(automaton.getName()));
+            }
+            
+            // Create the standard synchronization vectors: every automaton with that action participates in the
+            // synchronization.
+            std::vector<storm::jani::SynchronizationVector> synchVectors;
+            for (auto actionIndex : allActionIndices) {
+                std::string const& actionName = this->getAction(actionIndex).getName();
+                std::vector<std::string> synchVectorInputs;
+                uint64_t numberOfParticipatingAutomata = 0;
+                for (auto const& actionIndices : automatonActionIndices) {
+                    if (actionIndices.find(actionIndex) != actionIndices.end()) {
+                        ++numberOfParticipatingAutomata;
+                        synchVectorInputs.push_back(actionName);
+                    } else {
+                        synchVectorInputs.push_back(storm::jani::SynchronizationVector::getNoActionInput());
+                    }
+                }
+                
+                // Only add the synchronization vector if there is more than one participating automaton.
+                if (numberOfParticipatingAutomata > 1) {
+                    synchVectors.push_back(storm::jani::SynchronizationVector(synchVectorInputs, actionName));
+                }
+            }
+            
+            return std::make_shared<ParallelComposition>(subcompositions, synchVectors);
         }
         
         Composition const& Model::getSystemComposition() const {

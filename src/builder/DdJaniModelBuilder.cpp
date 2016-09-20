@@ -1109,22 +1109,31 @@ namespace storm {
                 for (uint64_t subcompositionIndex = 0; subcompositionIndex < composition.getNumberOfSubcompositions(); ++subcompositionIndex) {
                     // Prepare the new offset mapping.
                     std::map<uint64_t, uint64_t> newSynchronizingActionToOffsetMap = actionIndexToLocalNondeterminismVariableOffset;
+                    
                     if (subcompositionIndex == 0) {
                         for (auto const& synchVector : composition.getSynchronizationVectors()) {
                             auto it = actionIndexToLocalNondeterminismVariableOffset.find(actionInformation.getActionIndex(synchVector.getOutput()));
                             STORM_LOG_THROW(it != actionIndexToLocalNondeterminismVariableOffset.end(), storm::exceptions::InvalidArgumentException, "Invalid action " << synchVector.getOutput() << ".");
-                            newSynchronizingActionToOffsetMap[actionInformation.getActionIndex(synchVector.getInput(0))] = it->second;
+                            if (synchVector.getInput(0) != storm::jani::SynchronizationVector::getNoActionInput()) {
+                                newSynchronizingActionToOffsetMap[actionInformation.getActionIndex(synchVector.getInput(0))] = it->second;
+                            }
                         }
                     } else {
-                        AutomatonDd const& previousAutomatonDd = subautomata.back();
-                        
                         // Based on the previous results, we need to update the offsets.
                         for (auto const& synchVector : composition.getSynchronizationVectors()) {
-                            auto it = previousAutomatonDd.actionIndexToAction.find(actionInformation.getActionIndex(synchVector.getInput(subcompositionIndex - 1)));
-                            if (it != previousAutomatonDd.actionIndexToAction.end()) {
-                                newSynchronizingActionToOffsetMap[actionInformation.getActionIndex(synchVector.getInput(subcompositionIndex))] = it->second.getHighestLocalNondeterminismVariable();
-                            } else {
-                                STORM_LOG_ASSERT(false, "Subcomposition does not have action that is mentioned in parallel composition.");
+                            if (synchVector.getInput(subcompositionIndex) != storm::jani::SynchronizationVector::getNoActionInput()) {
+                                boost::optional<uint64_t> previousActionPosition = synchVector.getPositionOfPrecedingParticipatingAction(subcompositionIndex);
+                                if (previousActionPosition) {
+                                    AutomatonDd const& previousAutomatonDd = subautomata[previousActionPosition.get()];
+
+                                    std::string const& previousAction = synchVector.getInput(previousActionPosition.get());
+                                    auto it = previousAutomatonDd.actionIndexToAction.find(actionInformation.getActionIndex(previousAction));
+                                    if (it != previousAutomatonDd.actionIndexToAction.end()) {
+                                        newSynchronizingActionToOffsetMap[actionInformation.getActionIndex(synchVector.getInput(subcompositionIndex))] = it->second.getHighestLocalNondeterminismVariable();
+                                    } else {
+                                        STORM_LOG_ASSERT(false, "Subcomposition does not have action that is mentioned in parallel composition.");
+                                    }
+                                }
                             }
                         }
                     }

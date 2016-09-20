@@ -5,6 +5,8 @@
 #include <vector>
 #include <string>
 
+#include <boost/optional.hpp>
+
 #include "src/storage/jani/Composition.h"
 
 namespace storm {
@@ -16,12 +18,23 @@ namespace storm {
             
             std::size_t size() const;
             std::vector<std::string> const& getInput() const;
-            std::string const& getNoActionInput() const;
+            static std::string const& getNoActionInput();
             std::string const& getInput(uint64_t index) const;
             std::string const& getOutput() const;
-            
-            bool isNoActionInput(std::string const& action) const;
-            
+            static bool isNoActionInput(std::string const& action);
+
+            /*!
+             * Retrieves the action name that is the last participating action before the given input index. If there is
+             * no such action none is returned.
+             */
+            boost::optional<std::string> getPrecedingParticipatingAction(uint64_t index) const;
+
+            /*!
+             * Retrieves the position with the last participating action before the given input index. If there is
+             * no such action none is returned.
+             */
+            boost::optional<uint64_t> getPositionOfPrecedingParticipatingAction(uint64_t index) const;
+
         private:
             // A marker that can be used as one of the inputs. The semantics is that no action of the corresponding
             // automaton takes part in the synchronization.

@@ -392,14 +392,6 @@ namespace storm {
             }
         }
         
-        std::set<uint64_t> Automaton::getUsedActionIndices() const {
-            std::set<uint64_t> result;
-            for (auto const& edge : edges) {
-                result.insert(edge.getActionIndex());
-            }
-            return result;
-        }
-
         bool Automaton::containsVariablesOnlyInProbabilitiesOrTransientAssignments(std::set<storm::expressions::Variable> const& variables) const {
             // Check initial states restriction expression.
             if (this->hasInitialStatesRestriction()) {
