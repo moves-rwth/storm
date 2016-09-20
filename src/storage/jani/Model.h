@@ -233,11 +233,6 @@ namespace storm {
             std::set<std::string> getActionNames(bool includeSilent = true) const;
             
             /*!
-             * Retrieves the name of the silent action.
-             */
-            std::string const& getSilentActionName() const;
-            
-            /*!
              * Retrieves the index of the silent action.
              */
             uint64_t getSilentActionIndex() const;
@@ -309,10 +304,10 @@ namespace storm {
             std::vector<storm::expressions::Expression> getAllRangeExpressions() const;
             
             /*!
-             * Retrieves whether this model has the default composition, that is it composes all automata in parallel
+             * Retrieves whether this model has the standard composition, that is it composes all automata in parallel
              * and synchronizes over all common actions.
              */
-            bool hasDefaultComposition() const;
+            bool hasStandardComposition() const;
             
             /*!
              * After adding all components to the model, this method has to be called. It recursively calls
@@ -333,7 +328,20 @@ namespace storm {
              */
             bool undefinedConstantsAreGraphPreserving() const;
             
+            /*!
+             * Retrieves the name of the silent action.
+             */
+            static std::string const& getSilentActionName();
+            
+            /*!
+             * Checks whether the provided action name belongs to the silent action.
+             */
+            static bool isSilentAction(std::string const& name);
+            
         private:
+            /// The name of the silent action.
+            static const std::string SILENT_ACTION_NAME;
+            
             /// The model name.
             std::string name;
             

@@ -56,33 +56,6 @@ namespace storm {
             return result;
         }
         
-        boost::any CompositionActionInformationVisitor::visit(RenameComposition const& composition, boost::any const& data) {
-            std::set<uint64_t> usedActions = boost::any_cast<std::set<uint64_t>>(composition.getSubcomposition().accept(*this, boost::none));
-            
-            std::set<uint64_t> newUsedActions;
-            for (auto const& index : usedActions) {
-                auto renamingIt = composition.getRenaming().find(indexToNameMap.at(index));
-                if (renamingIt != composition.getRenaming().end()) {
-                    if (renamingIt->second) {
-                        newUsedActions.insert(addOrGetActionIndex(renamingIt->second.get()));
-
-                        auto actionIndexIt = nameToIndexMap.find(renamingIt->second.get());
-                        if (actionIndexIt != nameToIndexMap.end()) {
-                            newUsedActions.insert(actionIndexIt->second);
-                        } else {
-                            nameToIndexMap[renamingIt->second.get()] = nextFreeActionIndex;
-                            indexToNameMap[nextFreeActionIndex] = renamingIt->second.get();
-                            ++nextFreeActionIndex;
-                        }
-                    }
-                } else {
-                    newUsedActions.insert(index);
-                }
-            }
-            
-            return newUsedActions;
-        }
-        
         boost::any CompositionActionInformationVisitor::visit(ParallelComposition const& composition, boost::any const& data) {
             std::vector<std::set<uint64_t>> subresults;
             for (auto const& subcomposition : composition.getSubcompositions()) {
@@ -97,7 +70,6 @@ namespace storm {
             // Determine all actions that do not take part in synchronization vectors.
             std::set<uint64_t> result;
             for (uint64_t subresultIndex = 0; subresultIndex < subresults.size(); ++subresultIndex) {
-                
                 std::set<uint64_t> actionsInSynch;
                 std::set<uint64_t> localEffectiveSynchVectors;
                 for (uint64_t synchVectorIndex = 0; synchVectorIndex < composition.getNumberOfSynchronizationVectors(); ++synchVectorIndex) {
@@ -128,7 +100,9 @@ namespace storm {
             
             // Now add all outputs of synchronization vectors.
             for (auto const& synchVector : composition.getSynchronizationVectors()) {
-                result.insert(addOrGetActionIndex(synchVector.getOutput()));
+                if (synchVector.getOutput() != storm::jani::Model::getSilentActionName()) {
+                    result.insert(addOrGetActionIndex(synchVector.getOutput()));
+                }
             }
             
             return result;

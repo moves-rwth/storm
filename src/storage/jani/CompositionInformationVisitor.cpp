@@ -6,11 +6,11 @@
 namespace storm {
     namespace jani {
         
-        CompositionInformation::CompositionInformation() : automatonNameToMultiplicity(), nonsilentActions(), renameComposition(false), nonStandardParallelComposition(false) {
+        CompositionInformation::CompositionInformation() : automatonNameToMultiplicity(), nonsilentActions(), nonStandardParallelComposition(false) {
             // Intentionally left empty.
         }
         
-        CompositionInformation::CompositionInformation(std::map<std::string, uint64_t> const& automatonNameToMultiplicity, std::set<std::string> const& nonsilentActions, bool containsRenameComposition, bool nonStandardParallelComposition) : automatonNameToMultiplicity(automatonNameToMultiplicity), nonsilentActions(nonsilentActions), renameComposition(containsRenameComposition), nonStandardParallelComposition(nonStandardParallelComposition) {
+        CompositionInformation::CompositionInformation(std::map<std::string, uint64_t> const& automatonNameToMultiplicity, std::set<std::string> const& nonsilentActions, bool nonStandardParallelComposition) : automatonNameToMultiplicity(automatonNameToMultiplicity), nonsilentActions(nonsilentActions), nonStandardParallelComposition(nonStandardParallelComposition) {
             // Intentionally left empty.
         }
         
@@ -24,29 +24,6 @@ namespace storm {
         
         std::set<std::string> const& CompositionInformation::getNonsilentActions() const {
             return nonsilentActions;
-        }
-        
-        std::set<std::string> CompositionInformation::renameNonsilentActions(std::set<std::string> const& nonsilentActions, std::map<std::string, boost::optional<std::string>> const& renaming) {
-            std::set<std::string> newNonsilentActions;
-            for (auto const& entry : nonsilentActions) {
-                auto it = renaming.find(entry);
-                if (it != renaming.end()) {
-                    if (it->second) {
-                        newNonsilentActions.insert(it->second.get());
-                    }
-                } else {
-                    newNonsilentActions.insert(entry);
-                }
-            }
-            return newNonsilentActions;
-        }
-        
-        void CompositionInformation::setContainsRenameComposition() {
-            renameComposition = true;
-        }
-        
-        bool CompositionInformation::containsRenameComposition() const {
-            return renameComposition;
         }
         
         void CompositionInformation::setContainsNonStandardParallelComposition() {
@@ -87,28 +64,21 @@ namespace storm {
             return result;
         }
         
-        boost::any CompositionInformationVisitor::visit(RenameComposition const& composition, boost::any const& data) {
-            CompositionInformation subresult = boost::any_cast<CompositionInformation>(composition.getSubcomposition().accept(*this, data));
-            std::set<std::string> nonsilentActions = CompositionInformation::renameNonsilentActions(subresult.getNonsilentActions(), composition.getRenaming());
-            return CompositionInformation(subresult.getAutomatonToMultiplicityMap(), nonsilentActions, true, subresult.containsNonStandardParallelComposition());
-        }
-        
         boost::any CompositionInformationVisitor::visit(ParallelComposition const& composition, boost::any const& data) {
             std::vector<CompositionInformation> subinformation;
             
+            std::set<std::string> nonsilentSubActions;
             for (auto const& subcomposition : composition.getSubcompositions()) {
                 subinformation.push_back(boost::any_cast<CompositionInformation>(subcomposition->accept(*this, data)));
+                nonsilentSubActions.insert(subinformation.back().getNonsilentActions().begin(), subinformation.back().getNonsilentActions().end());
             }
             
             std::map<std::string, uint64_t> joinedAutomatonToMultiplicityMap;
-            bool containsRenameComposition = false;
             bool containsNonStandardParallelComposition = false;
             
             for (auto const& subinfo : subinformation) {
-                containsRenameComposition |= subinfo.containsRenameComposition();
                 containsNonStandardParallelComposition |= subinfo.containsNonStandardParallelComposition();
                 joinedAutomatonToMultiplicityMap = CompositionInformation::joinMultiplicityMaps(joinedAutomatonToMultiplicityMap, subinfo.getAutomatonToMultiplicityMap());
-                
             }
             
             // Keep track of the synchronization vectors that are effective, meaning that the subcompositions all have
@@ -124,27 +94,64 @@ namespace storm {
                 auto const& subinfo = subinformation[infoIndex];
                 
                 std::set<uint64_t> enabledSynchVectors;
-                for (auto const& nonsilentAction : subinfo.getNonsilentActions()) {
-                    bool appearsInSomeSynchVector = false;
-                    for (uint64_t synchVectorIndex = 0; synchVectorIndex < composition.getNumberOfSynchronizationVectors(); ++synchVectorIndex) {
-                        auto const& synchVector = composition.getSynchronizationVector(synchVectorIndex);
-                        if (synchVector.getInput(infoIndex) == nonsilentAction) {
-                            appearsInSomeSynchVector = true;
-                            enabledSynchVectors.insert(synchVectorIndex);
+                std::set<std::string> actionsInSynch;
+                for (uint64_t synchVectorIndex = 0; synchVectorIndex < composition.getNumberOfSynchronizationVectors(); ++synchVectorIndex) {
+                    auto const& synchVector = composition.getSynchronizationVector(synchVectorIndex);
+                    if (synchVector.getInput(infoIndex) != SynchronizationVector::getNoActionInput()) {
+                        for (auto const& nonsilentAction : subinfo.getNonsilentActions()) {
+                            if (synchVector.getInput(infoIndex) == nonsilentAction) {
+                                enabledSynchVectors.insert(synchVectorIndex);
+                                actionsInSynch.insert(nonsilentAction);
+                            }
                         }
-                    }
-                    
-                    if (!appearsInSomeSynchVector) {
-                        nonsilentActions.insert(nonsilentAction);
+                    } else {
+                        enabledSynchVectors.insert(synchVectorIndex);
                     }
                 }
                 
+                std::set_difference(subinfo.getNonsilentActions().begin(), subinfo.getNonsilentActions().end(), actionsInSynch.begin(), actionsInSynch.end(), std::inserter(nonsilentActions, nonsilentActions.begin()));
+
                 std::set<uint64_t> newEffectiveSynchVectors;
                 std::set_intersection(effectiveSynchVectors.begin(), effectiveSynchVectors.end(), enabledSynchVectors.begin(), enabledSynchVectors.end(), std::inserter(newEffectiveSynchVectors, newEffectiveSynchVectors.begin()));
                 effectiveSynchVectors = std::move(newEffectiveSynchVectors);
             }
 
-            return CompositionInformation(joinedAutomatonToMultiplicityMap, nonsilentActions, containsRenameComposition, containsNonStandardParallelComposition);
+            // Finally check whether it's a non-standard parallel composition. We do that by first constructing a set of
+            // all effective synchronization vectors and then checking whether this set is fully contained within the
+            // set of expected synchronization vectors.
+            
+            std::set<storm::jani::SynchronizationVector, storm::jani::SynchronizationVectorLexicographicalLess> synchVectorSet;
+            for (auto synchVectorIndex : effectiveSynchVectors) {
+                synchVectorSet.insert(composition.getSynchronizationVector(synchVectorIndex));
+            }
+
+            // Construct the set of expected synchronization vectors.
+            std::set<storm::jani::SynchronizationVector, storm::jani::SynchronizationVectorLexicographicalLess> expectedSynchVectorSetUnderApprox;
+            std::set<storm::jani::SynchronizationVector, storm::jani::SynchronizationVectorLexicographicalLess> expectedSynchVectorSetOverApprox;
+            for (auto action : nonsilentSubActions) {
+                std::vector<std::string> input;
+                uint64_t numberOfParticipatingAutomata = 0;
+                for (auto const& subcomposition : subinformation) {
+                    if (subcomposition.getNonsilentActions().find(action) != subcomposition.getNonsilentActions().end()) {
+                        input.push_back(action);
+                        ++numberOfParticipatingAutomata;
+                    } else {
+                        input.push_back(SynchronizationVector::getNoActionInput());
+                    }
+                }
+                
+                storm::jani::SynchronizationVector newSynchVector(input, action);
+                expectedSynchVectorSetOverApprox.insert(newSynchVector);
+                if (numberOfParticipatingAutomata > 1) {
+                    expectedSynchVectorSetUnderApprox.insert(newSynchVector);
+                }
+            }
+            
+            containsNonStandardParallelComposition |= !std::includes(expectedSynchVectorSetOverApprox.begin(), expectedSynchVectorSetOverApprox.end(), synchVectorSet.begin(), synchVectorSet.end(), SynchronizationVectorLexicographicalLess());
+
+            containsNonStandardParallelComposition |= !std::includes(synchVectorSet.begin(), synchVectorSet.end(), expectedSynchVectorSetUnderApprox.begin(), expectedSynchVectorSetUnderApprox.end(), SynchronizationVectorLexicographicalLess());
+
+            return CompositionInformation(joinedAutomatonToMultiplicityMap, nonsilentActions, containsNonStandardParallelComposition);
         }
         
     }

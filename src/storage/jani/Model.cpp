@@ -13,7 +13,7 @@
 namespace storm {
     namespace jani {
         
-        static const std::string SILENT_ACTION_NAME = "";
+        const std::string Model::SILENT_ACTION_NAME = "";
         
         Model::Model() {
             // Intentionally left empty.
@@ -238,6 +238,7 @@ namespace storm {
                 std::string const& actionName = this->getAction(actionIndex).getName();
                 std::vector<std::string> synchVectorInputs;
                 uint64_t numberOfParticipatingAutomata = 0;
+                int i = 0;
                 for (auto const& actionIndices : automatonActionIndices) {
                     if (actionIndices.find(actionIndex) != actionIndices.end()) {
                         ++numberOfParticipatingAutomata;
@@ -245,6 +246,7 @@ namespace storm {
                     } else {
                         synchVectorInputs.push_back(storm::jani::SynchronizationVector::getNoActionInput());
                     }
+                    ++i;
                 }
                 
                 // Only add the synchronization vector if there is more than one participating automaton.
@@ -273,11 +275,7 @@ namespace storm {
             }
             return result;
         }
-        
-        std::string const& Model::getSilentActionName() const {
-            return actions[silentActionIndex].getName();
-        }
-        
+                
         uint64_t Model::getSilentActionIndex() const {
             return silentActionIndex;
         }
@@ -459,10 +457,10 @@ namespace storm {
             
         }
         
-        bool Model::hasDefaultComposition() const {
+        bool Model::hasStandardComposition() const {
             CompositionInformationVisitor visitor;
             CompositionInformation info = visitor.getInformation(this->getSystemComposition(), *this);
-            if (info.containsNonStandardParallelComposition() || info.containsRenameComposition()) {
+            if (info.containsNonStandardParallelComposition()) {
                 return false;
             }
             for (auto const& multiplicity : info.getAutomatonToMultiplicityMap()) {
@@ -515,5 +513,13 @@ namespace storm {
             return true;
         }
         
+        std::string const& Model::getSilentActionName() {
+            return Model::SILENT_ACTION_NAME;
+        }
+        
+        bool Model::isSilentAction(std::string const& name) {
+            return name == Model::SILENT_ACTION_NAME;
+        }
+
     }
 }

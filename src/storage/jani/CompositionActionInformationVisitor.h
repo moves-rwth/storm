@@ -33,7 +33,6 @@ namespace storm {
             ActionInformation getActionInformation(storm::jani::Composition const& composition);
             
             virtual boost::any visit(AutomatonComposition const& composition, boost::any const& data) override;
-            virtual boost::any visit(RenameComposition const& composition, boost::any const& data) override;
             virtual boost::any visit(ParallelComposition const& composition, boost::any const& data) override;
             
         private:

@@ -19,22 +19,20 @@ namespace storm {
         }
         
         boost::any CompositionToJaniVisitor::visit(RenamingComposition const& composition, boost::any const& data) {
-            std::map<std::string, boost::optional<std::string>> newRenaming;
+            std::vector<storm::jani::SynchronizationVector> synchronizationVectors;
             for (auto const& renamingPair : composition.getActionRenaming()) {
-                newRenaming.emplace(renamingPair.first, renamingPair.second);
+                synchronizationVectors.push_back(storm::jani::SynchronizationVector({renamingPair.first}, renamingPair.second));
             }
-            auto subcomposition = boost::any_cast<std::shared_ptr<storm::jani::Composition>>(composition.getSubcomposition().accept(*this, data));
-            std::shared_ptr<storm::jani::Composition> result = std::make_shared<storm::jani::RenameComposition>(subcomposition, newRenaming);
+            std::shared_ptr<storm::jani::Composition> result = std::make_shared<storm::jani::ParallelComposition>(boost::any_cast<std::shared_ptr<storm::jani::Composition>>(composition.getSubcomposition().accept(*this, data)), synchronizationVectors);
             return result;
         }
         
         boost::any CompositionToJaniVisitor::visit(HidingComposition const& composition, boost::any const& data) {
-            std::map<std::string, boost::optional<std::string>> newRenaming;
+            std::vector<storm::jani::SynchronizationVector> synchronizationVectors;
             for (auto const& action : composition.getActionsToHide()) {
-                newRenaming.emplace(action, boost::none);
+                synchronizationVectors.push_back(storm::jani::SynchronizationVector({action}, storm::jani::Model::getSilentActionName()));
             }
-            auto subcomposition = boost::any_cast<std::shared_ptr<storm::jani::Composition>>(composition.getSubcomposition().accept(*this, data));
-            std::shared_ptr<storm::jani::Composition> result = std::make_shared<storm::jani::RenameComposition>(subcomposition, newRenaming);
+            std::shared_ptr<storm::jani::Composition> result = std::make_shared<storm::jani::ParallelComposition>(boost::any_cast<std::shared_ptr<storm::jani::Composition>>(composition.getSubcomposition().accept(*this, data)), synchronizationVectors);
             return result;
         }
         

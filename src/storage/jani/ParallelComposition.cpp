@@ -65,6 +65,15 @@ namespace storm {
             return boost::none;
         }
         
+        uint64_t SynchronizationVector::getPositionOfFirstParticipatingAction() const {
+            for (uint64_t result = 0; result < this->size(); ++result) {
+                if (this->getInput(result) != getNoActionInput()) {
+                    return result;
+                }
+            }
+            STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Synchronization vector must have at least one participating action.");
+        }
+        
         bool SynchronizationVector::isNoActionInput(std::string const& action) {
             return action == noAction;
         }
@@ -83,13 +92,48 @@ namespace storm {
             return stream;
         }
         
+        bool operator==(SynchronizationVector const& vector1, SynchronizationVector const& vector2) {
+            if (vector1.getOutput() != vector2.getOutput()) {
+                return false;
+            }
+            if (vector1.getInput() != vector1.getInput()) {
+                return false;
+            }
+            return true;
+        }
+        
+        bool operator!=(SynchronizationVector const& vector1, SynchronizationVector const& vector2) {
+            return !(vector1 == vector2);
+        }
+        
+        bool SynchronizationVectorLexicographicalLess::operator()(SynchronizationVector const& vector1, SynchronizationVector const& vector2) {
+            STORM_LOG_THROW(vector1.size() == vector2.size(), storm::exceptions::WrongFormatException, "Cannot compare synchronization vectors of different size.");
+            for (uint64_t i = 0; i < vector1.size(); ++i) {
+                if (vector1.getInput(i) < vector2.getInput(i)) {
+                    return true;
+                } else if (vector1.getInput(i) > vector2.getInput(i)) {
+                    return false;
+                }
+            }
+            if (vector1.getOutput() < vector2.getOutput()) {
+                return true;
+            } else if (vector1.getOutput() > vector2.getOutput()) {
+                return false;
+            }
+            return false;
+        }
+        
+        ParallelComposition::ParallelComposition(std::shared_ptr<Composition> const& subcomposition, std::vector<SynchronizationVector> const& synchronizationVectors) : ParallelComposition(std::vector<std::shared_ptr<Composition>>{subcomposition}, synchronizationVectors) {
+            // Intentionally left empty.
+        }
+        
         ParallelComposition::ParallelComposition(std::vector<std::shared_ptr<Composition>> const& subcompositions, std::vector<SynchronizationVector> const& synchronizationVectors) : subcompositions(subcompositions), synchronizationVectors(synchronizationVectors) {
-            STORM_LOG_THROW(subcompositions.size() > 1, storm::exceptions::WrongFormatException, "At least two automata required for parallel composition.");
+            STORM_LOG_THROW(!subcompositions.empty(), storm::exceptions::WrongFormatException, "At least one automaton required for parallel composition.");
             this->checkSynchronizationVectors();
         }
         
         ParallelComposition::ParallelComposition(std::vector<std::shared_ptr<Composition>> const& subcompositions, std::set<std::string> const& synchronizationAlphabet) : subcompositions(subcompositions), synchronizationVectors() {
-            STORM_LOG_THROW(subcompositions.size() > 1, storm::exceptions::WrongFormatException, "At least two automata required for parallel composition.");
+            STORM_LOG_THROW(!subcompositions.empty(), storm::exceptions::WrongFormatException, "At least one automaton required for parallel composition.");
 
             // Manually construct the synchronization vectors for all elements of the synchronization alphabet.
             for (auto const& action : synchronizationAlphabet) {
@@ -142,6 +186,17 @@ namespace storm {
                         actions.insert(action);
                     }
                 }
+            }
+            
+            for (auto const& vector : synchronizationVectors) {
+                bool hasInput = false;
+                for (auto const& input : vector.getInput()) {
+                    if (input != SynchronizationVector::getNoActionInput()) {
+                        hasInput = true;
+                        break;
+                    }
+                }
+                STORM_LOG_THROW(hasInput, storm::exceptions::WrongFormatException, "Synchronization vector must have at least one proper input.");
             }
         }
         
