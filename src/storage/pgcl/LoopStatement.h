@@ -18,7 +18,7 @@ namespace storm {
          * This class represents a guarded loop statement. The guard is saved as
          * a boolean expression. The body of the loop is again a PGCL program.
          */
-        class LoopStatement : public CompoundStatement {
+        class LoopStatement : public Statement {
         public:
             LoopStatement() = default;
             /**

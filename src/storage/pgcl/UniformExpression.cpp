@@ -1,7 +1,3 @@
-//
-// Created by foxnbk on 16.03.16.
-//
-
 #include "UniformExpression.h"
 
 namespace storm {
@@ -19,5 +15,3 @@ namespace storm {
         }
     }
 }
-
-#include "UniformExpression.h"

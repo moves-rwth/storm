@@ -1,9 +1,3 @@
-/* 
- * File:   LoopStatement.cpp
- * Author: Lukas Westhofen
- * 
- * Created on 11. April 2015, 17:42
- */
 
 #include "src/storage/pgcl/LoopStatement.h"
 #include "src/storage/pgcl/AbstractStatementVisitor.h"

@@ -1,10 +1,3 @@
-/* 
- * File:   IfStatement.cpp
- * Author: Lukas Westhofen
- * 
- * Created on 11. April 2015, 17:42
- */
-
 #include "IfStatement.h"
 #include "src/storage/pgcl/AbstractStatementVisitor.h"
 
@@ -24,11 +17,8 @@ namespace storm {
         }
 
         std::shared_ptr<storm::pgcl::PgclBlock> const& IfStatement::getElseBody() const {
-            if(this->elseBody) {
-                return this->elseBody;
-            } else {
-                throw "Tried to access non-present else body of if statement.";
-            }
+            assert(hasElse());
+            return this->elseBody;
         }
         
         bool IfStatement::hasElse() const{

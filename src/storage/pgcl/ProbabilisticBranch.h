@@ -1,12 +1,4 @@
-/* 
- * File:   ProbabilisticBranch.h
- * Author: Lukas Westhofen
- *
- * Created on 11. April 2015, 17:43
- */
-
-#ifndef PROBABILISTICBRANCH_H
-#define	PROBABILISTICBRANCH_H
+#pragma once
 
 #include "src/storage/pgcl/BranchStatement.h"
 
@@ -46,6 +38,3 @@ namespace storm {
         };
     }
 }
-
-#endif	/* PROBABILISTICBRANCH_H */
-

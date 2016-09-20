@@ -1,7 +1,3 @@
-//
-// Created by Lukas Westhofen on 21.04.15.
-//
-
 #include "src/storage/pgcl/StatementPrinterVisitor.h"
 
 #include "src/storage/pgcl/AssignmentStatement.h"
@@ -34,7 +30,7 @@ namespace storm {
 
         void StatementPrinterVisitor::visit(storm::pgcl::IfStatement const& statement) {
             this->stream << statement.getLocationNumber() << ": ";
-            this->stream << "if(" << statement.getCondition().getBooleanExpression() << ") {" << std::endl;
+            this->stream << "if (" << statement.getCondition().getBooleanExpression() << ") {" << std::endl;
             int i = 1;
             for(iterator it = (*(statement.getIfBody())).begin(); it != (*(statement.getIfBody())).end(); ++it) {
                 (*(*it)).accept(*this);
@@ -53,7 +49,7 @@ namespace storm {
 
         void StatementPrinterVisitor::visit(storm::pgcl::LoopStatement const& statement) {
             this->stream << statement.getLocationNumber() << ": ";
-            this->stream << "while(" << statement.getCondition().getBooleanExpression() << ") {" << std::endl;
+            this->stream << "while (" << statement.getCondition().getBooleanExpression() << ") {" << std::endl;
             int i = 1;
             for(iterator it = (*(statement.getBody())).begin(); it != (*(statement.getBody())).end(); ++it) {
                 (*(*it)).accept(*this);

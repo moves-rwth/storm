@@ -1,9 +1,4 @@
-//
-// Created by Lukas Westhofen on 21.04.15.
-//
-
-#ifndef STORM_STATEMENTVISITOR_H
-#define STORM_STATEMENTVISITOR_H
+#pragma once
 
 #include <iostream>
 #include <boost/variant/get.hpp>
@@ -35,5 +30,3 @@ namespace storm {
         };
     }
 }
-
-#endif //STORM_STATEMENTVISITOR_H

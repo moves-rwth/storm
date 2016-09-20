@@ -1,12 +1,4 @@
-/* 
- * File:   BooleanExpression.h
- * Author: Lukas Westhofen
- *
- * Created on 11. April 2015, 17:44
- */
-
-#ifndef BOOLEANEXPRESSION_H
-#define	BOOLEANEXPRESSION_H
+#pragma once
 
 #include "src/storage/expressions/Expression.h"
 
@@ -37,6 +29,3 @@ namespace storm {
         };
     }
 }
-
-#endif	/* BOOLEANEXPRESSION_H */
-

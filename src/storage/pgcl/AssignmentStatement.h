@@ -14,7 +14,7 @@ namespace storm {
          * identifier := expression; where the expression is either handled by
          * the expression manager or is a uniform distribution expression.
          */
-        class AssignmentStatement : public SimpleStatement {
+        class AssignmentStatement : public Statement {
         public:
             AssignmentStatement() = default;
             /**

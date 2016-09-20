@@ -11,7 +11,7 @@ namespace storm {
          * compound statements, every branch is again a complete PGCL program
          * itself.
          */
-        class BranchStatement : public CompoundStatement {
+        class BranchStatement : public Statement {
         public:
             BranchStatement() = default;
             BranchStatement(const BranchStatement& orig) = default;

@@ -1,12 +1,4 @@
-/* 
- * File:   IfStatement.h
- * Author: Lukas Westhofen
- *
- * Created on 11. April 2015, 17:42
- */
-
-#ifndef IFSTATEMENT_H
-#define	IFSTATEMENT_H
+#pragma once
 
 #include "src/storage/pgcl/CompoundStatement.h"
 #include "src/storage/pgcl/BooleanExpression.h"
@@ -21,7 +13,7 @@ namespace storm {
          * It is possibly for if statements to have one else body, but not
          * mandatory.
          */
-        class IfStatement : public CompoundStatement {
+        class IfStatement : public Statement {
         public:
             IfStatement() = default;
             /**
@@ -72,6 +64,4 @@ namespace storm {
         };
     }
 }
-
-#endif	/* IFSTATEMENT_H */
 

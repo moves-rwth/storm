@@ -1,10 +1,3 @@
-/* 
- * File:   ProbabilisticBranch.cpp
- * Author: Lukas Westhofen
- * 
- * Created on 11. April 2015, 17:43
- */
-
 #include "src/storage/pgcl/ProbabilisticBranch.h"
 #include "src/storage/pgcl/AbstractStatementVisitor.h"
 

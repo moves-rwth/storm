@@ -58,8 +58,8 @@ namespace storm {
             qi::rule<Iterator, storm::pgcl::PgclProgram(), Skipper> program;
             qi::rule<Iterator, std::vector<std::shared_ptr<storm::pgcl::Statement> >(), Skipper> sequenceOfStatements;
             qi::rule<Iterator, std::shared_ptr<storm::pgcl::Statement>(), Skipper> statement;
-            qi::rule<Iterator, std::shared_ptr<storm::pgcl::SimpleStatement>(), Skipper> simpleStatement;
-            qi::rule<Iterator, std::shared_ptr<storm::pgcl::CompoundStatement>(), Skipper> compoundStatement;
+            qi::rule<Iterator, std::shared_ptr<storm::pgcl::Statement>(), Skipper> simpleStatement;
+            qi::rule<Iterator, std::shared_ptr<storm::pgcl::Statement>(), Skipper> compoundStatement;
             qi::rule<Iterator, std::shared_ptr<storm::pgcl::IfStatement>(), Skipper> ifElseStatement;
             qi::rule<Iterator, std::shared_ptr<storm::pgcl::BranchStatement>(), Skipper> branchStatement;
             qi::rule<Iterator, std::shared_ptr<storm::pgcl::LoopStatement>(), Skipper> loopStatement;

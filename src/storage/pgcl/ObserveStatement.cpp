@@ -1,10 +1,3 @@
-/* 
- * File:   ObserveStatement.cpp
- * Author: Lukas Westhofen
- * 
- * Created on 11. April 2015, 17:42
- */
-
 #include "src/storage/pgcl/ObserveStatement.h"
 #include "src/storage/pgcl/AbstractStatementVisitor.h"
 
