@@ -21,8 +21,12 @@ namespace storm {
             using EdgeGroupIterator = ProgramLocation::EdgeGroupIterator;
             using ConstLocationIterator = std::unordered_map<ProgramLocationIdentifier, ProgramLocation>::const_iterator;
             
-            ProgramGraph(std::shared_ptr<storm::expressions::ExpressionManager> const& expManager, std::vector<storm::expressions::Variable> const& variables) : expManager(expManager), variables(variables) {
-                
+            ProgramGraph(std::shared_ptr<storm::expressions::ExpressionManager> const& expManager, std::vector<storm::expressions::Variable> const& variables) : expManager(expManager), variables() {
+                for(auto const& v : variables) {
+                    this->variables.emplace(v.getIndex(), v);
+                }
+                // No Action:
+                deterministicActions.emplace(noActionId, DeterministicProgramAction(this, noActionId));
             }
             
             ProgramGraph(ProgramGraph const&) = delete;
@@ -34,6 +38,12 @@ namespace storm {
                 ProgramActionIdentifier newId = freeActionIndex();
                 assert(!hasAction(newId));
                 return &(deterministicActions.emplace(newId, DeterministicProgramAction(this, newId)).first->second);
+            }
+            
+            ProbabilisticProgramAction* addUniformProbabilisticAction(ProgramVariableIdentifier var, int64_t from, int64_t to) {
+                ProgramActionIdentifier newId = freeActionIndex();
+                assert(!hasAction(newId));
+                return &(probabilisticActions.emplace(newId, ProbabilisticProgramAction(this, newId, var, from, to)).first->second);
             }
             
             ProgramLocation* addLocation(bool isInitial = false) {
@@ -86,6 +96,10 @@ namespace storm {
             }
             
             
+            ProgramActionIdentifier getNoActionId() const {
+                return noActionId;
+            }
+            
             std::vector<ProgramEdge*> addProgramEdgeToAllGroups(ProgramLocationIdentifier sourceId, ProgramActionIdentifier action, storm::expressions::Expression const& condition, ProgramLocationIdentifier targetId) {
                 assert(hasLocation(sourceId));
                 return addProgramEdgeToAllGroups(getLocation(sourceId), action, condition, targetId);
@@ -94,12 +108,10 @@ namespace storm {
             
             ProgramVariableIdentifier getVariableId(std::string const& varName) const {
                 // TODO consider holding a map for this.
-                uint64_t res = 0;
                 for(auto const& v : variables) {
-                    if(v.getName() == varName) {
-                        return res;
+                    if(v.second.getName() == varName) {
+                        return v.first;
                     }
-                    ++res;
                 }
                 assert(false);
             }
@@ -110,7 +122,7 @@ namespace storm {
             
             bool hasVariable(std::string const& varName) const {
                 for(auto const& v : variables) {
-                    if(v.getName() == varName) {
+                    if(v.second.getName() == varName) {
                         return true;
                     }
                 }
@@ -160,7 +172,7 @@ namespace storm {
                 return locations.end();
             }
             
-            std::vector<storm::expressions::Variable> const& getVariables() const {
+            std::unordered_map<ProgramVariableIdentifier, storm::expressions::Variable> const& getVariables() const {
                 return variables;
             }
             
@@ -178,6 +190,7 @@ namespace storm {
                 os << "Number of actions: " << nrActions() << std::endl;
             }
             
+            void printDot(std::ostream& os) const;
         protected:
             
             ProgramLocation& getLocation(ProgramLocationIdentifier id) {
@@ -207,7 +220,7 @@ namespace storm {
             std::unordered_map<ProgramActionIdentifier, ProbabilisticProgramAction> probabilisticActions;
             std::unordered_map<ProgramLocationIdentifier, ProgramLocation> locations;
             storm::expressions::Expression initialValueRestriction;
-            std::vector<storm::expressions::Variable> variables;
+            std::unordered_map<ProgramVariableIdentifier, storm::expressions::Variable> variables;
             
             std::shared_ptr<storm::expressions::ExpressionManager> expManager;
         private:
@@ -215,7 +228,8 @@ namespace storm {
             ProgramEdgeGroupIdentifier newEdgeGroupId = 0;
             ProgramLocationIdentifier newLocationId = 0;
             ProgramEdgeIdentifier newEdgeId = 0;
-            ProgramActionIdentifier newActionId = 0;
+            ProgramActionIdentifier newActionId = 1;
+            ProgramActionIdentifier noActionId = 0;
             
         };
     }

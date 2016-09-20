@@ -15,7 +15,7 @@ namespace storm {
                 // Intentionally left empty.
             }
             
-            
+            ProgramLocationIdentifier getSourceId() const;
             ProgramLocationIdentifier getTargetId() const {
                 return target;
             }
@@ -24,7 +24,11 @@ namespace storm {
                 return condition;
             }
             
+            bool hasNoAction() const; 
             ProgramAction const& getAction() const;
+            ProgramActionIdentifier getActionId() const {
+                return action;
+            }
             
             virtual ~ProgramEdge() {
                 // Intentionally left empty.

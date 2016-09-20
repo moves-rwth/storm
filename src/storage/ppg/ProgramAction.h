@@ -49,11 +49,13 @@ namespace storm {
              * Constructs a uniform assignment operation to a variable;
              * Action assigns a variable according to a uniform distribution [from, to]
              */
-            ProbabilisticProgramAction(ProgramGraph* graph, ProgramActionIdentifier actId, int64_t from, int64_t to);
+            ProbabilisticProgramAction(ProgramGraph* graph, ProgramActionIdentifier actId, ProgramVariableIdentifier var, int64_t from, int64_t to);
             
             bool isProbabilistic() const override{
                 return true;
             }
+            
+            std::string const& getVariableName() const;
             
             iterator begin() {
                 return values.begin();
@@ -74,6 +76,7 @@ namespace storm {
         private:
             // TODO not the smartest representation (but at least it is internal!)
             std::vector<ValueProbabilityPair> values;
+            ProgramVariableIdentifier var;
             
         };
         
@@ -107,7 +110,7 @@ namespace storm {
             }
             
         private:
-            std::unordered_map<uint64_t, storm::expressions::Expression> map;
+            std::unordered_map<ProgramVariableIdentifier, storm::expressions::Expression> map;
         };
         
         class DeterministicProgramAction : public ProgramAction {
@@ -120,14 +123,16 @@ namespace storm {
                 
             }
             
-            
-            
-            void addAssignment(uint64_t varIndex, storm::expressions::Expression const& expr, uint64_t level=0) {
+            void addAssignment(ProgramVariableIdentifier varIndex, storm::expressions::Expression const& expr, uint64_t level=0) {
                 if(assignments.size() <= level) {
                     assignments.resize(level+1);
                 }
                 assert(!assignments[level].hasVariable(varIndex));
                 assignments[level][varIndex] = expr;
+            }
+            
+            size_t nrLevels() const {
+                return assignments.size();
             }
             
             iterator begin() {

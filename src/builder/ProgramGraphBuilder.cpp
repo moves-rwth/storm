@@ -13,7 +13,7 @@ namespace storm {
             if(s.isDeterministic()) {
                 builder.currentLoc()->addProgramEdgeToAllGroups(builder.addAction(s.getVariable(), boost::get<storm::expressions::Expression>(s.getExpression())),  builder.nextLocId());
             } else {
-                builder.currentLoc()->addProgramEdgeToAllGroups(builder.addAction(s.getVariable(), builder.getExpressionManager()->integer(2)),  builder.nextLocId());
+                builder.currentLoc()->addProgramEdgeToAllGroups(builder.addAction(s.getVariable(), boost::get<storm::pgcl::UniformExpression>(s.getExpression())),  builder.nextLocId());
 
             }
         }
@@ -24,16 +24,19 @@ namespace storm {
             storm::expressions::Expression elseCondition;
             storm::ppg::ProgramLocation* beforeStatementLocation = builder.currentLoc();
             builder.storeNextLocation(builder.nextLoc());
-            storm::ppg::ProgramLocation* bodyStart = builder.newLocation();
+            storm::ppg::ProgramLocation* ifbodyStart = builder.newLocation();
             builder.buildBlock(*s.getIfBody());
+            storm::ppg::ProgramLocation* elsebodyStart;
             if(s.hasElse()) {
                 builder.storeNextLocation(builder.nextLoc());
-                bodyStart = builder.newLocation();
+                elsebodyStart = builder.newLocation();
                 builder.buildBlock(*s.getElseBody());
             }
-            beforeStatementLocation->addProgramEdgeToAllGroups(builder.noAction(), s.getCondition().getBooleanExpression(), bodyStart->id());
+            beforeStatementLocation->addProgramEdgeToAllGroups(builder.noAction(), s.getCondition().getBooleanExpression(), ifbodyStart->id());
+            elseCondition = !s.getCondition().getBooleanExpression();
             if(s.hasElse()) {
-                elseCondition = !s.getCondition().getBooleanExpression();
+                beforeStatementLocation->addProgramEdgeToAllGroups(builder.noAction(), elseCondition, elsebodyStart->id());
+            } else {
                 beforeStatementLocation->addProgramEdgeToAllGroups(builder.noAction(), elseCondition, builder.nextLocId());
             }
             

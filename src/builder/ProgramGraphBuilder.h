@@ -3,6 +3,7 @@
 #include "src/storage/pgcl/PgclProgram.h"
 #include "src/storage/ppg/ProgramGraph.h"
 #include "src/storage/pgcl/AbstractStatementVisitor.h"
+#include "src/storage/pgcl/UniformExpression.h"
 
 namespace storm {
     namespace builder {
@@ -38,7 +39,7 @@ namespace storm {
             }
             
             ~ProgramGraphBuilder() {
-                if(graph != nullptr) {
+                if (graph != nullptr) {
                     delete graph;
                 }
             }
@@ -70,6 +71,12 @@ namespace storm {
                 return action->id();
             }
             
+            storm::ppg::ProgramActionIdentifier addAction(storm::expressions::Variable const& var, storm::pgcl::UniformExpression const& expr) const {
+                storm::ppg::ProbabilisticProgramAction* action = graph->addUniformProbabilisticAction(graph->getVariableId(var.getName()), expr.getBegin(), expr.getEnd());
+                return action->id();
+                
+            }
+            
             storm::ppg::ProgramActionIdentifier noAction() const {
                 return noActionId;
             }
@@ -82,9 +89,8 @@ namespace storm {
             
             void buildBlock(storm::pgcl::PgclBlock const& block) {
                 ProgramGraphBuilderVisitor visitor(*this);
-                for(auto const& statement : block) {
-                    std::cout << "Statement " << statement->getLocationNumber() << std::endl;
-                    if(!statement->isLast()) {
+                for (auto const& statement : block) {
+                    if (!statement->isLast()) {
                         nextStack.push_back(graph->addLocation(false));
                     }
                     assert(!currentStack.empty());
@@ -103,7 +109,7 @@ namespace storm {
             : program(program)
             {
                 graph = new storm::ppg::ProgramGraph(program.getExpressionManager(), program.getVariables());
-                noActionId = graph->addDeterministicAction()->id();
+                noActionId = graph->getNoActionId();
                 
             }
              
@@ -112,7 +118,7 @@ namespace storm {
                 // Terminal state.
                 nextStack.push_back(graph->addLocation(false));
                 // Observe Violated State.
-                if(program.hasObserve()) {
+                if (program.hasObserve()) {
                     observeFailedState = graph->addLocation();
                 }
                 buildBlock(program);

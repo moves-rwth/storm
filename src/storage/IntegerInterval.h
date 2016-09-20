@@ -7,33 +7,47 @@ namespace storm {
         class IntegerInterval {
             
         public:
-            explicit IntegerInterval(uint64_t v) : leftBound(v), rightBound(v) {
+            explicit IntegerInterval(int64_t v) : leftBound(v), rightBound(v) {
                 
             }
             
-            IntegerInterval(uint64_t lb, uint64_t rb) : leftBound(lb), rightBound(rb) {
+            IntegerInterval(int64_t lb, int64_t rb) : leftBound(lb), rightBound(rb) {
                 
             }
             
-            bool hasLeftBound() {
+            bool hasLeftBound() const {
                 return leftBound != boost::none;
             }
             
-            bool hasRightBound() {
+            bool hasRightBound() const {
                 return rightBound != boost::none;
             }
             
-            boost::optional<uint64_t> getLeftBound() {
+            bool contains(int64_t val) const {
+                if (hasLeftBound()) {
+                    if (val < leftBound.get()) {
+                        return false;
+                    }
+                }
+                if (hasRightBound()) {
+                    if (val > rightBound.get()) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+            
+            boost::optional<int64_t> getLeftBound() const {
                 return leftBound;
             }
             
-            boost::optional<uint64_t> getRightBound() {
+            boost::optional<int64_t> getRightBound() const {
                 return rightBound;
             }
             
         private:
-            boost::optional<uint64_t> leftBound;
-            boost::optional<uint64_t> rightBound;
+            boost::optional<int64_t> leftBound;
+            boost::optional<int64_t> rightBound;
             
         };
         

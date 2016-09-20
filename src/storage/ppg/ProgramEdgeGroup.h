@@ -53,6 +53,14 @@ namespace storm {
                 return *graph;
             }
             
+            ProgramLocationIdentifier getSourceId() const {
+                return sourceId;
+            }
+            
+            ProgramEdgeGroupIdentifier getId() const {
+                return groupId;
+            }
+            
         private:
             /// Pointer to the graph; not owned.
             ProgramGraph* graph;
