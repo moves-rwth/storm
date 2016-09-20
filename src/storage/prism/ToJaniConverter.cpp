@@ -192,7 +192,7 @@ namespace storm {
                     
                     boost::optional<storm::expressions::Expression> rateExpression;
                     std::vector<storm::jani::EdgeDestination> destinations;
-                    if (program.getModelType() == Program::ModelType::CTMC || program.getModelType() == Program::ModelType::CTMDP) {
+                    if (program.getModelType() == Program::ModelType::CTMC || program.getModelType() == Program::ModelType::CTMDP || (program.getModelType() == Program::ModelType::MA && command.isMarkovian())) {
                         for (auto const& update : command.getUpdates()) {
                             if (rateExpression) {
                                 rateExpression = rateExpression.get() + update.getLikelihoodExpression();
@@ -201,7 +201,7 @@ namespace storm {
                             }
                         }
                     }
-                    
+                                        
                     for (auto const& update : command.getUpdates()) {
                         std::vector<storm::jani::Assignment> assignments;
                         for (auto const& assignment : update.getAssignments()) {

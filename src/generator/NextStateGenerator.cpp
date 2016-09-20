@@ -326,8 +326,10 @@ namespace storm {
                             // that the previous Markovian choice is the very first one in the choices vector.
                             result.getChoices().front().add(choice);
                             
-                            // Swap the choice to the end to indicate it can be removed.
-                            std::swap(choice, result.getChoices().back());
+                            // Swap the choice to the end to indicate it can be removed (if it's not already there).
+                            if (index != result.getNumberOfChoices() - 1) {
+                                std::swap(choice, result.getChoices().back());
+                            }
                             ++numberOfChoicesToDelete;
                         } else {
                             // If there is no previous Markovian choice, just move the Markovian choice to the front.

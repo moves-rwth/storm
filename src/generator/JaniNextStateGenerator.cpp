@@ -355,7 +355,7 @@ namespace storm {
                     }
                     
                     // Determine the exit rate if it's a Markovian edge.
-                    boost::optional<ValueType> exitRate;
+                    boost::optional<ValueType> exitRate = boost::none;
                     if (edge.hasRate()) {
                         exitRate = this->evaluator.asRational(edge.getRate());
                     }
