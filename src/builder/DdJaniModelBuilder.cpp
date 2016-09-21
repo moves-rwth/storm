@@ -9,7 +9,7 @@
 #include "src/storage/jani/Model.h"
 #include "src/storage/jani/AutomatonComposition.h"
 #include "src/storage/jani/ParallelComposition.h"
-#include "src/storage/jani/CompositionActionInformationVisitor.h"
+#include "src/storage/jani/CompositionInformationVisitor.h"
 
 #include "src/storage/dd/Add.h"
 #include "src/storage/dd/Bdd.h"
@@ -177,7 +177,7 @@ namespace storm {
         template <storm::dd::DdType Type, typename ValueType>
         class CompositionVariableCreator : public storm::jani::CompositionVisitor {
         public:
-            CompositionVariableCreator(storm::jani::Model const& model, storm::jani::ActionInformation const& actionInformation) : model(model), automata(), actionInformation(actionInformation) {
+            CompositionVariableCreator(storm::jani::Model const& model, storm::jani::CompositionInformation const& actionInformation) : model(model), automata(), actionInformation(actionInformation) {
                 // Intentionally left empty.
             }
             
@@ -356,7 +356,7 @@ namespace storm {
             
             storm::jani::Model const& model;
             std::set<std::string> automata;
-            storm::jani::ActionInformation actionInformation;
+            storm::jani::CompositionInformation actionInformation;
         };
         
         template <storm::dd::DdType Type, typename ValueType>
@@ -612,18 +612,18 @@ namespace storm {
 
             };
             
-            CombinedEdgesSystemComposer(storm::jani::Model const& model, storm::jani::ActionInformation const& actionInformation, CompositionVariables<Type, ValueType> const& variables, std::vector<storm::expressions::Variable> const& transientVariables) : SystemComposer<Type, ValueType>(model, variables, transientVariables), actionInformation(actionInformation) {
+            CombinedEdgesSystemComposer(storm::jani::Model const& model, storm::jani::CompositionInformation const& actionInformation, CompositionVariables<Type, ValueType> const& variables, std::vector<storm::expressions::Variable> const& transientVariables) : SystemComposer<Type, ValueType>(model, variables, transientVariables), actionInformation(actionInformation) {
                 // Intentionally left empty.
             }
         
-            storm::jani::ActionInformation const& actionInformation;
+            storm::jani::CompositionInformation const& actionInformation;
 
             ComposerResult<Type, ValueType> compose() override {
                 std::map<uint64_t, uint64_t> actionIndexToLocalNondeterminismVariableOffset;
                 for (auto const& actionIndex : actionInformation.getNonSilentActionIndices()) {
                     actionIndexToLocalNondeterminismVariableOffset[actionIndex] = 0;
                 }
-                actionIndexToLocalNondeterminismVariableOffset[actionInformation.getSilentActionIndex()] = 0;
+                actionIndexToLocalNondeterminismVariableOffset[storm::jani::Model::getSilentActionIndex()] = 0;
 
                 AutomatonDd globalAutomaton = boost::any_cast<AutomatonDd>(this->model.getSystemComposition().accept(*this, actionIndexToLocalNondeterminismVariableOffset));
                 return buildSystemFromAutomaton(globalAutomaton);
@@ -1659,8 +1659,8 @@ namespace storm {
             }
             
             // Determine the actions that will appear in the parallel composition.
-            storm::jani::CompositionActionInformationVisitor actionInformationVisitor(model);
-            storm::jani::ActionInformation actionInformation = actionInformationVisitor.getActionInformation(model.getSystemComposition());
+            storm::jani::CompositionInformationVisitor visitor(model, model.getSystemComposition());
+            storm::jani::CompositionInformation actionInformation = visitor.getInformation();
             
             // Create all necessary variables.
             CompositionVariableCreator<Type, ValueType> variableCreator(model, actionInformation);

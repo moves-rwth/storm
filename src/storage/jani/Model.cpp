@@ -277,7 +277,7 @@ namespace storm {
         }
                 
         uint64_t Model::getSilentActionIndex() const {
-            return silentActionIndex;
+            return SILENT_ACTION_INDEX;
         }
         
         Model Model::defineUndefinedConstants(std::map<storm::expressions::Variable, storm::expressions::Expression> const& constantDefinitions) const {

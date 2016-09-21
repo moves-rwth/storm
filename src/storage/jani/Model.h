@@ -233,11 +233,6 @@ namespace storm {
             std::set<std::string> getActionNames(bool includeSilent = true) const;
             
             /*!
-             * Retrieves the index of the silent action.
-             */
-            uint64_t getSilentActionIndex() const;
-            
-            /*!
              * Defines the undefined constants of the model by the given expressions. The original model is not modified,
              * but instead a new model is created.
              */
@@ -337,6 +332,11 @@ namespace storm {
              * Checks whether the provided action name belongs to the silent action.
              */
             static bool isSilentAction(std::string const& name);
+            
+            /*!
+             * Retrieves the index of the silent action.
+             */
+            static uint64_t getSilentActionIndex();
             
         private:
             /// The name of the silent action.
