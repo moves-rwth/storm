@@ -34,10 +34,10 @@ bool parseArguments(const int argc, const char **argv, std::string &inputFile, s
         if (currentArg == "--input_file" || currentArg == "-i") {
             auto next = it + 1;
             if (next != end) {
-                return -1;
-            } else {
                 inputFile = *next;
                 result = true;
+            } else {
+                return -1;
             }
             break;
         }
@@ -46,9 +46,9 @@ bool parseArguments(const int argc, const char **argv, std::string &inputFile, s
         if (currentArg == "--formula" || currentArg == "-f") {
             auto next = it + 1;
             if (next != end) {
-                return -1;
-            } else {
                 formula = *next;
+            } else {
+                return -1;
             }
             break;
         }
@@ -57,9 +57,9 @@ bool parseArguments(const int argc, const char **argv, std::string &inputFile, s
         if (currentArg == "--output_file" || currentArg == "-o") {
             auto next = it + 1;
             if (next != end) {
-                return -1;
-            } else {
                 outputFile = *next;
+            } else {
+                return -1;
             }
             break;
         }
@@ -68,9 +68,9 @@ bool parseArguments(const int argc, const char **argv, std::string &inputFile, s
         if (currentArg == "--output_type" || currentArg == "-ot") {
             auto next = it + 1;
             if (next != end) {
-                return -1;
-            } else {
                 outputType = *next;
+            } else {
+                return -1;
             }
             break;
         }
@@ -109,11 +109,12 @@ int main(const int argc, const char **argv) {
 
         // parse GSPN from file
         auto parser = storm::parser::GspnParser();
+        std::cout << "input_file: " << inputFile << std::endl;
         auto gspn = parser.parse(inputFile);
 
         // todo ------[marker]
-        gspn.isValid();
-
+        std::cout << "valid? = " << gspn.isValid() << std::endl;
+        /*
         storm::gspn::GspnBuilder builder2;
         builder2.addPlace(2);
 
@@ -138,7 +139,7 @@ int main(const int argc, const char **argv) {
         std::cout << "number of states: " << ma.getNumberOfStates() << std::endl;
         std::cout << "number of transitions: " << ma.getNumberOfTransitions() << std::endl << std::endl;
 
-
+        */
 
 
 
