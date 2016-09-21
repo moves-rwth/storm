@@ -1,10 +1,3 @@
-/* 
- * File:   ObserveStatement.cpp
- * Author: Lukas Westhofen
- * 
- * Created on 11. April 2015, 17:42
- */
-
 #include "src/storage/pgcl/ObserveStatement.h"
 #include "src/storage/pgcl/AbstractStatementVisitor.h"
 
@@ -17,13 +10,10 @@ namespace storm {
             visitor.visit(*this);
         }
 
-        storm::pgcl::BooleanExpression& ObserveStatement::getCondition() {
+        storm::pgcl::BooleanExpression const& ObserveStatement::getCondition() const {
             return this->condition;
         }
 
-        std::size_t ObserveStatement::getNumberOfOutgoingTransitions() {
-            return 1;
-        }
     }
 }
 

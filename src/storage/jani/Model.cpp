@@ -14,6 +14,7 @@ namespace storm {
     namespace jani {
         
         const std::string Model::SILENT_ACTION_NAME = "";
+        const uint64_t Model::SILENT_ACTION_INDEX = 0;
         
         Model::Model() {
             // Intentionally left empty.
@@ -31,7 +32,8 @@ namespace storm {
             initialStatesRestriction = this->expressionManager->boolean(true);
             
             // Add a prefined action that represents the silent action.
-            silentActionIndex = addAction(storm::jani::Action(SILENT_ACTION_NAME));
+            uint64_t actionIndex = addAction(storm::jani::Action(SILENT_ACTION_NAME));
+            STORM_LOG_ASSERT(actionIndex == SILENT_ACTION_INDEX, "Illegal silent action index.");
         }
         
         storm::expressions::ExpressionManager& Model::getManager() const {
@@ -226,7 +228,7 @@ namespace storm {
             std::vector<std::shared_ptr<Composition>> subcompositions;
             for (auto const& automaton : automata) {
                 automatonActionIndices.push_back(automaton.getActionIndices());
-                automatonActionIndices.back().erase(silentActionIndex);
+                automatonActionIndices.back().erase(SILENT_ACTION_INDEX);
                 allActionIndices.insert(automatonActionIndices.back().begin(), automatonActionIndices.back().end());
                 subcompositions.push_back(std::make_shared<AutomatonComposition>(automaton.getName()));
             }
@@ -266,18 +268,28 @@ namespace storm {
             this->composition = composition;
         }
         
+        void Model::setStandardSystemComposition() {
+            setSystemComposition(getStandardSystemComposition());
+        }
+        
         std::set<std::string> Model::getActionNames(bool includeSilent) const {
             std::set<std::string> result;
             for (auto const& entry : actionToIndex) {
-                if (includeSilent || entry.second != silentActionIndex) {
+                if (includeSilent || entry.second != SILENT_ACTION_INDEX) {
                     result.insert(entry.first);
                 }
             }
             return result;
         }
-                
-        uint64_t Model::getSilentActionIndex() const {
-            return SILENT_ACTION_INDEX;
+
+        std::map<uint64_t, std::string> Model::getActionIndexToNameMap() const {
+            std::map<uint64_t, std::string> mapping;
+            uint64_t i = 0;
+            for(auto const& act : actions) {
+                mapping[i] = act.getName();
+                ++i;
+            }
+            return mapping;
         }
         
         Model Model::defineUndefinedConstants(std::map<storm::expressions::Variable, storm::expressions::Expression> const& constantDefinitions) const {
@@ -435,31 +447,17 @@ namespace storm {
             }
         }
         
-        bool Model::checkValidity(bool logdbg) const {
+        void Model::checkValid() const {
             // TODO switch to exception based return value.
-            
-            if (version == 0) {
-                if(logdbg) STORM_LOG_DEBUG("Jani version is unspecified");
-                return false;
-            }
-            
-            if(modelType == ModelType::UNDEFINED) {
-                if(logdbg) STORM_LOG_DEBUG("Model type is unspecified");
-                return false;
-            }
-            
-            if(automata.empty()) {
-                if(logdbg) STORM_LOG_DEBUG("No automata specified");
-                return false;
-            }
-            // All checks passed.
-            return true;
+            STORM_LOG_ASSERT(getModelType() != storm::jani::ModelType::UNDEFINED, "Model type not set");
+            STORM_LOG_ASSERT(!automata.empty(), "No automata set");
+            STORM_LOG_ASSERT(composition != nullptr, "Composition is not set");
             
         }
         
         bool Model::hasStandardComposition() const {
-            CompositionInformationVisitor visitor;
-            CompositionInformation info = visitor.getInformation(this->getSystemComposition(), *this);
+            CompositionInformationVisitor visitor(*this, this->getSystemComposition());
+            CompositionInformation info = visitor.getInformation();
             if (info.containsNonStandardParallelComposition()) {
                 return false;
             }
@@ -513,13 +511,5 @@ namespace storm {
             return true;
         }
         
-        std::string const& Model::getSilentActionName() {
-            return Model::SILENT_ACTION_NAME;
-        }
-        
-        bool Model::isSilentAction(std::string const& name) {
-            return name == Model::SILENT_ACTION_NAME;
-        }
-
     }
 }

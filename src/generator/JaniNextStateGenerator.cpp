@@ -207,8 +207,8 @@ namespace storm {
         CompressedState JaniNextStateGenerator<ValueType, StateType>::applyUpdate(CompressedState const& state, storm::jani::EdgeDestination const& destination) {
             CompressedState newState(state);
             
-            auto assignmentIt = destination.getAssignments().getNonTransientAssignments().begin();
-            auto assignmentIte = destination.getAssignments().getNonTransientAssignments().end();
+            auto assignmentIt = destination.getOrderedAssignments().getNonTransientAssignments().begin();
+            auto assignmentIte = destination.getOrderedAssignments().getNonTransientAssignments().end();
             
             // Iterate over all boolean assignments and carry them out.
             auto boolIt = this->variableInformation.booleanVariables.begin();
@@ -345,7 +345,7 @@ namespace storm {
                 // Iterate over all edges from the source location.
                 for (auto const& edge : automaton.getEdgesFromLocation(location)) {
                     // Skip the edge if it is labeled with a non-silent action.
-                    if (edge.getActionIndex() != model.getSilentActionIndex()) {
+                    if (edge.getActionIndex() != storm::jani::Model::SILENT_ACTION_INDEX) {
                         continue;
                     }
                     

@@ -17,6 +17,8 @@ namespace storm {
         
         class Exporter;
         
+        
+        
         class Model {
         public:
             friend class Exporter;
@@ -86,6 +88,11 @@ namespace storm {
              * Retrieves the actions of the model.
              */
             std::vector<Action> const& getActions() const;
+    
+            /*!
+             *  Builds a map with action indices mapped to their names
+             */
+            std::map<uint64_t, std::string> getActionIndexToNameMap() const;
             
             /*!
              * Retrieves all non-silent action indices of the model.
@@ -218,6 +225,11 @@ namespace storm {
             void setSystemComposition(std::shared_ptr<Composition> const& composition);
             
             /*!
+             * Sets the system composition to be the fully-synchronizing parallel composition of all automat
+             * @see getStandardSystemComposition
+             */
+            void setStandardSystemComposition();
+            /*!
              * Gets the system composition as the standard, fully-synchronizing parallel composition.
              */
             std::shared_ptr<Composition> getStandardSystemComposition() const;
@@ -314,7 +326,7 @@ namespace storm {
             /*!
              *  Checks if the model is valid JANI, which should be verified before any further operations are applied to a model.
              */
-            bool checkValidity(bool logdbg = true) const;
+            void checkValid() const;
             
             /*!
              * Checks that undefined constants (parameters) of the model preserve the graph of the underlying model.
@@ -323,25 +335,13 @@ namespace storm {
              */
             bool undefinedConstantsAreGraphPreserving() const;
             
-            /*!
-             * Retrieves the name of the silent action.
-             */
-            static std::string const& getSilentActionName();
-            
-            /*!
-             * Checks whether the provided action name belongs to the silent action.
-             */
-            static bool isSilentAction(std::string const& name);
-            
-            /*!
-             * Retrieves the index of the silent action.
-             */
-            static uint64_t getSilentActionIndex();
-            
-        private:
             /// The name of the silent action.
             static const std::string SILENT_ACTION_NAME;
             
+            /// The index of the silent action.
+            static const uint64_t SILENT_ACTION_INDEX;
+            
+        private:
             /// The model name.
             std::string name;
             
@@ -362,9 +362,6 @@ namespace storm {
             
             /// The set of non-silent action indices.
             boost::container::flat_set<uint64_t> nonsilentActionIndices;
-            
-            /// The index of the silent action.
-            uint64_t silentActionIndex;
             
             /// The constants defined by the model.
             std::vector<Constant> constants;

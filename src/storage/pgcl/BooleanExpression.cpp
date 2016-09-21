@@ -1,10 +1,3 @@
-/* 
- * File:   BooleanExpression.cpp
- * Author: Lukas Westhofen
- * 
- * Created on 11. April 2015, 17:44
- */
-
 #include "src/storage/pgcl/BooleanExpression.h"
 #include "src/storage/expressions/ExpressionManager.h"
 
@@ -14,7 +7,7 @@ namespace storm {
             booleanExpression(booleanExpression) {
         }
         
-        storm::expressions::Expression& BooleanExpression::getBooleanExpression() {
+        storm::expressions::Expression const& BooleanExpression::getBooleanExpression() const {
             return this->booleanExpression;
         }
     }

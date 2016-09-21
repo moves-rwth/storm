@@ -1,41 +1,31 @@
-/* 
- * File:   IfStatement.cpp
- * Author: Lukas Westhofen
- * 
- * Created on 11. April 2015, 17:42
- */
-
 #include "IfStatement.h"
 #include "src/storage/pgcl/AbstractStatementVisitor.h"
 
 namespace storm {
     namespace pgcl {
-        IfStatement::IfStatement(storm::pgcl::BooleanExpression const& condition, std::shared_ptr<storm::pgcl::PgclProgram> const& body) :
+        IfStatement::IfStatement(storm::pgcl::BooleanExpression const& condition, std::shared_ptr<storm::pgcl::PgclBlock> const& body) :
             ifBody(body), condition(condition) {
         }
 
-        IfStatement::IfStatement(storm::pgcl::BooleanExpression const& condition, std::shared_ptr<storm::pgcl::PgclProgram> const& ifBody, std::shared_ptr<storm::pgcl::PgclProgram> const& elseBody) :
+        IfStatement::IfStatement(storm::pgcl::BooleanExpression const& condition, std::shared_ptr<storm::pgcl::PgclBlock> const& ifBody, std::shared_ptr<storm::pgcl::PgclBlock> const& elseBody) :
             ifBody(ifBody), elseBody(elseBody), condition(condition) {
             this->hasElseBody = true;
         }
 
-        std::shared_ptr<storm::pgcl::PgclProgram> IfStatement::getIfBody() {
+        std::shared_ptr<storm::pgcl::PgclBlock> const& IfStatement::getIfBody() const {
             return this->ifBody;
         }
 
-        std::shared_ptr<storm::pgcl::PgclProgram> IfStatement::getElseBody() {
-            if(this->elseBody) {
-                return this->elseBody;
-            } else {
-                throw "Tried to access non-present else body of if statement.";
-            }
+        std::shared_ptr<storm::pgcl::PgclBlock> const& IfStatement::getElseBody() const {
+            assert(hasElse());
+            return this->elseBody;
         }
         
-        bool IfStatement::hasElse() {
+        bool IfStatement::hasElse() const{
             return this->hasElseBody;
         }
         
-        storm::pgcl::BooleanExpression& IfStatement::getCondition() {
+        storm::pgcl::BooleanExpression const& IfStatement::getCondition() const {
             return this->condition;
         }
 
@@ -43,8 +33,5 @@ namespace storm {
             visitor.visit(*this);
         }
 
-        std::size_t IfStatement::getNumberOfOutgoingTransitions() {
-            return 1;
-        }
     }
 }

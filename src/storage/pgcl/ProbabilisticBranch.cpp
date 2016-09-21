@@ -1,22 +1,15 @@
-/* 
- * File:   ProbabilisticBranch.cpp
- * Author: Lukas Westhofen
- * 
- * Created on 11. April 2015, 17:43
- */
-
 #include "src/storage/pgcl/ProbabilisticBranch.h"
 #include "src/storage/pgcl/AbstractStatementVisitor.h"
 
 namespace storm {
     namespace pgcl {
-        ProbabilisticBranch::ProbabilisticBranch(storm::expressions::Expression const& probability, std::shared_ptr<storm::pgcl::PgclProgram> const& left, std::shared_ptr<storm::pgcl::PgclProgram> const& right) :
+        ProbabilisticBranch::ProbabilisticBranch(storm::expressions::Expression const& probability, std::shared_ptr<storm::pgcl::PgclBlock> const& left, std::shared_ptr<storm::pgcl::PgclBlock> const& right) :
         probability(probability) {
             rightBranch = right;
             leftBranch = left;
         }
         
-        storm::expressions::Expression& ProbabilisticBranch::getProbability() {
+        storm::expressions::Expression const& ProbabilisticBranch::getProbability() const {
             return this->probability;
         }
 

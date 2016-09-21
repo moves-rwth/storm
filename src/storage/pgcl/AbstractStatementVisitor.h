@@ -1,9 +1,4 @@
-//
-// Created by Lukas Westhofen on 22.04.15.
-//
-
-#ifndef STORM_ABSTRACTSTATEVISITOR_H
-#define STORM_ABSTRACTSTATEVISITOR_H
+#pragma once 
 
 namespace storm {
     namespace pgcl {
@@ -20,14 +15,13 @@ namespace storm {
         public:
             // Those functions need to be implemented for every possible
             // statement instantiation.
-            virtual void visit(class AssignmentStatement&) = 0;
-            virtual void visit(class ObserveStatement&) = 0;
-            virtual void visit(class IfStatement&) = 0;
-            virtual void visit(class LoopStatement&) = 0;
-            virtual void visit(class NondeterministicBranch&) = 0;
-            virtual void visit(class ProbabilisticBranch&) = 0;
+            virtual void visit(class AssignmentStatement const&) = 0;
+            virtual void visit(class ObserveStatement const&) = 0;
+            virtual void visit(class IfStatement const&) = 0;
+            virtual void visit(class LoopStatement const&) = 0;
+            virtual void visit(class NondeterministicBranch const&) = 0;
+            virtual void visit(class ProbabilisticBranch const&) = 0;
         };
     }
 }
 
-#endif //STORM_ABSTRACTSTATEVISITOR_H

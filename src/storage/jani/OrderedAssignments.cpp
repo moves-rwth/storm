@@ -12,6 +12,10 @@ namespace storm {
             }
         }
         
+        OrderedAssignments::OrderedAssignments(Assignment const& assignment) {
+            add(assignment);
+        }
+        
         bool OrderedAssignments::add(Assignment const& assignment) {
             // If the element is contained in this set of assignment, nothing needs to be added.
             if (this->contains(assignment)) {
@@ -63,6 +67,19 @@ namespace storm {
                 nonTransientAssignments.erase(nonTransientIt);
             }
             return true;
+        }
+        
+        bool OrderedAssignments::hasMultipleLevels() const {
+            if(allAssignments.empty()) {
+                return false;
+            }
+            uint64_t firstLevel = allAssignments.front()->getLevel();
+            for(auto const& assignment : allAssignments) {
+                if(assignment->getLevel() != firstLevel) {
+                    return true;
+                }
+            }
+            return false;
         }
         
         bool OrderedAssignments::contains(Assignment const& assignment) const {

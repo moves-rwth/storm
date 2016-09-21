@@ -71,12 +71,16 @@ namespace storm {
         
         void Edge::finalize(Model const& containingModel) {
             for (auto const& destination : getDestinations()) {
-                for (auto const& assignment : destination.getAssignments()) {
+                for (auto const& assignment : destination.getOrderedAssignments().getAllAssignments()) {
                     if (containingModel.getGlobalVariables().hasVariable(assignment.getExpressionVariable())) {
                         writtenGlobalVariables.insert(assignment.getExpressionVariable());
                     }
                 }
             }
+        }
+        
+        bool Edge::hasSilentAction() const {
+            return actionIndex == Model::SILENT_ACTION_INDEX;
         }
         
         bool Edge::addTransientAssignment(Assignment const& assignment) {
@@ -88,7 +92,7 @@ namespace storm {
             if (!destinations.empty()) {
                 auto const& destination = *destinations.begin();
                 
-                for (auto const& assignment : destination.getAssignments().getTransientAssignments()) {
+                for (auto const& assignment : destination.getOrderedAssignments().getTransientAssignments()) {
                     // Check if we can lift the assignment to the edge.
                     bool canBeLifted = true;
                     for (auto const& destination : destinations) {
@@ -115,7 +119,7 @@ namespace storm {
         
         bool Edge::usesVariablesInNonTransientAssignments(std::set<storm::expressions::Variable> const& variables) const {
             for (auto const& destination : destinations) {
-                for (auto const& assignment : destination.getAssignments().getNonTransientAssignments()) {
+                for (auto const& assignment : destination.getOrderedAssignments().getNonTransientAssignments()) {
                     if (assignment.getAssignedExpression().containsVariable(variables)) {
                         return true;
                     }

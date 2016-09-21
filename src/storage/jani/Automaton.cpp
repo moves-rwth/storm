@@ -148,6 +148,16 @@ namespace storm {
         std::set<uint64_t> const& Automaton::getInitialLocationIndices() const {
             return initialLocationIndices;
         }
+        
+        std::map<uint64_t, std::string> Automaton::buildIdToLocationNameMap() const {
+            std::map<uint64_t, std::string> mapping;
+            uint64_t i = 0;
+            for(auto const& loc : locations) {
+                mapping[i] = loc.getName();
+                ++i;
+            }
+            return mapping;
+        }
 
         Automaton::Edges Automaton::getEdgesFromLocation(std::string const& name) {
             auto it = locationToIndex.find(name);
@@ -299,6 +309,7 @@ namespace storm {
             actionIndices.insert(edge.getActionIndex());
         }
         
+        
         std::vector<Edge>& Automaton::getEdges() {
             return edges;
         }
@@ -321,6 +332,10 @@ namespace storm {
         
         uint64_t Automaton::getNumberOfEdges() const {
             return edges.size();
+        }
+        
+        bool Automaton::hasRestrictedInitialStates() const {
+            return hasInitialStatesRestriction() && !(getInitialStatesExpression().evaluateAsBool());
         }
 
         bool Automaton::hasInitialStatesRestriction() const {

@@ -1,9 +1,4 @@
-//
-// Created by Lukas Westhofen on 16.03.16.
-//
-
-#ifndef STORM_UNIFORMEXPRESSION_H
-#define STORM_UNIFORMEXPRESSION_H
+#pragma once
 
 #include <stdint.h>
 
@@ -39,5 +34,3 @@ namespace storm {
         };
     }
 }
-
-#endif //STORM_UNIFORMEXPRESSION_H

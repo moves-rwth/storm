@@ -17,9 +17,7 @@ namespace storm {
 
     std::pair<storm::jani::Model, std::vector<storm::jani::Property>> parseJaniModel(std::string const& path) {
         std::pair<storm::jani::Model, std::vector<storm::jani::Property>> modelAndFormulae = storm::parser::JaniParser::parse(path);
-        if(!modelAndFormulae.first.checkValidity(true)) {
-            STORM_LOG_THROW(false, storm::exceptions::FileIoException, "Jani file parsing yields invalid model.");
-        }
+        modelAndFormulae.first.checkValid();
         return modelAndFormulae;
     }
 

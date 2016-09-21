@@ -143,12 +143,12 @@ namespace storm {
             }
             // Creates the actual program.
             std::shared_ptr<storm::pgcl::PgclProgram> result(
-                    new storm::pgcl::PgclProgram(statements, this->locationToStatement, params, this->expressionManager, this->loopCreated, this->nondetCreated, this->observeCreated, true)
+                    new storm::pgcl::PgclProgram(statements, this->locationToStatement, params, this->expressionManager, this->loopCreated, this->nondetCreated, this->observeCreated)
             );
             result->back()->setLast(true);
             // Sets the current program as a parent to all its direct children statements.
             for(storm::pgcl::iterator it = result->begin(); it != result->end(); ++it) {
-                (*it)->setParentProgram(result);
+                (*it)->setParentBlock(result.get());
             }
             return *result;
         }
@@ -204,29 +204,26 @@ namespace storm {
         }
 
         std::shared_ptr<storm::pgcl::IfStatement> PgclParser::createIfElseStatement(storm::pgcl::BooleanExpression const& condition, std::vector<std::shared_ptr<storm::pgcl::Statement> > const& ifBody, boost::optional<std::vector<std::shared_ptr<storm::pgcl::Statement> > > const& elseBody) {
-            std::shared_ptr<storm::pgcl::PgclProgram> ifBodyProgram(new storm::pgcl::PgclProgram(ifBody, this->expressionManager, this->loopCreated, this->nondetCreated, this->observeCreated, false));
+            std::shared_ptr<storm::pgcl::PgclBlock> ifBodyProgram(new storm::pgcl::PgclBlock(ifBody, this->expressionManager, this->loopCreated, this->nondetCreated, this->observeCreated));
             std::shared_ptr<storm::pgcl::IfStatement> ifElse;
             if(elseBody) {
-                std::shared_ptr<storm::pgcl::PgclProgram> elseBodyProgram(new storm::pgcl::PgclProgram(*elseBody, this->expressionManager, this->loopCreated, this->nondetCreated, this->observeCreated, false));
+                std::shared_ptr<storm::pgcl::PgclBlock> elseBodyProgram(new storm::pgcl::PgclBlock(*elseBody, this->expressionManager, this->loopCreated, this->nondetCreated, this->observeCreated));
                 ifElse = std::shared_ptr<storm::pgcl::IfStatement>(new storm::pgcl::IfStatement(condition, ifBodyProgram, elseBodyProgram));
                 (*(ifElse->getIfBody()->back())).setLast(true);
                 (*(ifElse->getElseBody()->back())).setLast(true);
                 // Sets the current program as a parent to all its children statements.
                 for(storm::pgcl::iterator it = ifElse->getElseBody()->begin(); it != ifElse->getElseBody()->end(); ++it) {
-                    (*it)->setParentProgram(ifElse->getElseBody());
-                    (*it)->setParentStatement(ifElse);
+                    (*it)->setParentBlock(ifElse->getElseBody().get());
                 }
                 for(storm::pgcl::iterator it = ifElse->getIfBody()->begin(); it != ifElse->getIfBody()->end(); ++it) {
-                    (*it)->setParentProgram(ifElse->getIfBody());
-                    (*it)->setParentStatement(ifElse);
+                    (*it)->setParentBlock(ifElse->getIfBody().get());
                 }
             } else {
                 ifElse = std::shared_ptr<storm::pgcl::IfStatement>(new storm::pgcl::IfStatement(condition, ifBodyProgram));
                 (*(ifElse->getIfBody()->back())).setLast(true);
                 // Sets the current program as a parent to all its children statements.
                 for(storm::pgcl::iterator it = ifElse->getIfBody()->begin(); it != ifElse->getIfBody()->end(); ++it) {
-                    (*it)->setParentProgram(ifElse->getIfBody());
-                    (*it)->setParentStatement(ifElse);
+                    (*it)->setParentBlock(ifElse->getIfBody().get());
                 }
             }
             ifElse->setLocationNumber(this->currentLocationNumber);
@@ -236,13 +233,12 @@ namespace storm {
         }
 
         std::shared_ptr<storm::pgcl::LoopStatement> PgclParser::createLoopStatement(storm::pgcl::BooleanExpression const& condition, std::vector<std::shared_ptr<storm::pgcl::Statement> > const& body) {
-            std::shared_ptr<storm::pgcl::PgclProgram> bodyProgram(new storm::pgcl::PgclProgram(body, this->expressionManager, this->loopCreated, this->nondetCreated, this->observeCreated, false));
+            std::shared_ptr<storm::pgcl::PgclBlock> bodyProgram(new storm::pgcl::PgclBlock(body, this->expressionManager, this->loopCreated, this->nondetCreated, this->observeCreated));
             std::shared_ptr<storm::pgcl::LoopStatement> loop(new storm::pgcl::LoopStatement(condition, bodyProgram));
             this->loopCreated = true;
             // Sets the current program as a parent to all its children statements.
             for(storm::pgcl::iterator it = loop->getBody()->begin(); it != loop->getBody()->end(); ++it) {
-                (*it)->setParentProgram(loop->getBody());
-                (*it)->setParentStatement(loop);
+                (*it)->setParentBlock(loop->getBody().get());
             }
             (*(loop->getBody()->back())).setLast(true);
             loop->setLocationNumber(this->currentLocationNumber);
@@ -252,19 +248,17 @@ namespace storm {
         }
 
         std::shared_ptr<storm::pgcl::NondeterministicBranch> PgclParser::createNondeterministicBranch(std::vector<std::shared_ptr<storm::pgcl::Statement> > const& left, std::vector<std::shared_ptr<storm::pgcl::Statement> > const& right) {
-            std::shared_ptr<storm::pgcl::PgclProgram> leftProgram(new storm::pgcl::PgclProgram(left, this->expressionManager, this->loopCreated, this->nondetCreated, this->observeCreated, false));
-            std::shared_ptr<storm::pgcl::PgclProgram> rightProgram(new storm::pgcl::PgclProgram(right, this->expressionManager, this->loopCreated, this->nondetCreated, this->observeCreated, false));
+            std::shared_ptr<storm::pgcl::PgclBlock> leftProgram(new storm::pgcl::PgclBlock(left, this->expressionManager, this->loopCreated, this->nondetCreated, this->observeCreated));
+            std::shared_ptr<storm::pgcl::PgclBlock> rightProgram(new storm::pgcl::PgclBlock(right, this->expressionManager, this->loopCreated, this->nondetCreated, this->observeCreated));
             std::shared_ptr<storm::pgcl::NondeterministicBranch> branch(new storm::pgcl::NondeterministicBranch(leftProgram, rightProgram));
             this->nondetCreated = true;
             // Sets the left program as a parent to all its children statements.
             for(storm::pgcl::iterator it = branch->getLeftBranch()->begin(); it != branch->getLeftBranch()->end(); ++it) {
-                (*it)->setParentProgram(branch->getLeftBranch());
-                (*it)->setParentStatement(branch);
+                (*it)->setParentBlock(branch->getLeftBranch().get());
             }
             // Sets the right program as a parent to all its children statements.
             for(storm::pgcl::iterator it = branch->getRightBranch()->begin(); it != branch->getRightBranch()->end(); ++it) {
-                (*it)->setParentProgram(branch->getRightBranch());
-                (*it)->setParentStatement(branch);
+                (*it)->setParentBlock(branch->getRightBranch().get());
             }
             (*(branch->getLeftBranch()->back())).setLast(true);
             (*(branch->getRightBranch()->back())).setLast(true);
@@ -275,18 +269,16 @@ namespace storm {
         }
 
         std::shared_ptr<storm::pgcl::ProbabilisticBranch> PgclParser::createProbabilisticBranch(storm::expressions::Expression const& probability, std::vector<std::shared_ptr<storm::pgcl::Statement> > const& left, std::vector<std::shared_ptr<storm::pgcl::Statement> > const& right) {
-            std::shared_ptr<storm::pgcl::PgclProgram> leftProgram(new storm::pgcl::PgclProgram(left, this->expressionManager, this->loopCreated, this->nondetCreated, this->observeCreated, false));
-            std::shared_ptr<storm::pgcl::PgclProgram> rightProgram(new storm::pgcl::PgclProgram(right, this->expressionManager, this->loopCreated, this->nondetCreated, this->observeCreated, false));
+            std::shared_ptr<storm::pgcl::PgclBlock> leftProgram(new storm::pgcl::PgclBlock(left, this->expressionManager, this->loopCreated, this->nondetCreated, this->observeCreated));
+            std::shared_ptr<storm::pgcl::PgclBlock> rightProgram(new storm::pgcl::PgclBlock(right, this->expressionManager, this->loopCreated, this->nondetCreated, this->observeCreated));
             std::shared_ptr<storm::pgcl::ProbabilisticBranch> branch(new storm::pgcl::ProbabilisticBranch(probability, leftProgram, rightProgram));
             // Sets the left program as a parent to all its children statements.
             for(storm::pgcl::iterator it = branch->getLeftBranch()->begin(); it != branch->getLeftBranch()->end(); ++it) {
-                (*it)->setParentProgram(branch->getLeftBranch());
-                (*it)->setParentStatement(branch);
+                (*it)->setParentBlock(branch->getLeftBranch().get());
             }
             // Sets the right program as a parent to all its children statements.
             for(storm::pgcl::iterator it = branch->getRightBranch()->begin(); it != branch->getRightBranch()->end(); ++it) {
-                (*it)->setParentProgram(branch->getRightBranch());
-                (*it)->setParentStatement(branch);
+                (*it)->setParentBlock(branch->getRightBranch().get());
             }
             (*(branch->getLeftBranch()->back())).setLast(true);
             (*(branch->getRightBranch()->back())).setLast(true);

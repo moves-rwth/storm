@@ -1,12 +1,4 @@
-/* 
- * File:   ObserveStatement.h
- * Author: Lukas Westhofen
- *
- * Created on 11. April 2015, 17:42
- */
-
-#ifndef OBSERVESTATEMENT_H
-#define	OBSERVESTATEMENT_H
+#pragma once
 
 #include "src/storage/pgcl/SimpleStatement.h"
 #include "src/storage/pgcl/BooleanExpression.h"
@@ -18,7 +10,7 @@ namespace storm {
          * include a condition. If this condition doesn't hold, the program
          * stops at that point in its execution.
          */
-        class ObserveStatement : public SimpleStatement {
+        class ObserveStatement : public Statement {
         public:
             ObserveStatement() = default;
             /**
@@ -28,13 +20,12 @@ namespace storm {
              */
             ObserveStatement(storm::pgcl::BooleanExpression const& condition);
             ObserveStatement(const ObserveStatement& orig) = default;
-            std::size_t getNumberOfOutgoingTransitions();
             virtual ~ObserveStatement() = default;
             /**
              * Returns the condition of the observe statement.
              * @return The boolean expression of the observe statement.
              */
-            storm::pgcl::BooleanExpression& getCondition();
+            storm::pgcl::BooleanExpression const& getCondition() const;
             void accept(class AbstractStatementVisitor&);
         private:
             /// Represents the assigned condition.
@@ -42,6 +33,3 @@ namespace storm {
         };
     }
 }
-
-#endif	/* OBSERVESTATEMENT_H */
-

@@ -1,9 +1,4 @@
-//
-// Created by Lukas Westhofen on 21.04.15.
-//
-
-#ifndef STORM_STATEMENTVISITOR_H
-#define STORM_STATEMENTVISITOR_H
+#pragma once
 
 #include <iostream>
 #include <boost/variant/get.hpp>
@@ -24,16 +19,14 @@ namespace storm {
              * @param stream The stream to print to.
              */
             StatementPrinterVisitor(std::ostream& stream);
-            void visit(class AssignmentStatement&);
-            void visit(class ObserveStatement&);
-            void visit(class IfStatement&);
-            void visit(class LoopStatement&);
-            void visit(class NondeterministicBranch&);
-            void visit(class ProbabilisticBranch&);
+            void visit(AssignmentStatement const&);
+            void visit(ObserveStatement const&);
+            void visit(IfStatement const&);
+            void visit(LoopStatement const&);
+            void visit(NondeterministicBranch const&);
+            void visit(ProbabilisticBranch const&);
         private:
             std::ostream& stream;
         };
     }
 }
-
-#endif //STORM_STATEMENTVISITOR_H

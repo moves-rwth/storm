@@ -26,6 +26,11 @@ namespace storm {
             uint64_t getActionIndex() const;
             
             /*!
+             * Returns whether it contains the silent action.
+             */
+            bool hasSilentAction() const;
+            
+            /*!
              * Retrieves whether this edge has an associated rate.
              */
             bool hasRate() const;

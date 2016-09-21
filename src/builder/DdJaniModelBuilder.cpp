@@ -412,7 +412,7 @@ namespace storm {
             
             // Iterate over all assignments (boolean and integer) and build the DD for it.
             std::set<storm::expressions::Variable> assignedVariables;
-            for (auto const& assignment : destination.getAssignments().getNonTransientAssignments()) {
+            for (auto const& assignment : destination.getOrderedAssignments().getNonTransientAssignments()) {
                 // Record the variable as being written.
                 STORM_LOG_TRACE("Assigning to variable " << variables.variableToRowMetaVariableMap->at(assignment.getExpressionVariable()).getName());
                 assignedVariables.insert(assignment.getExpressionVariable());
@@ -623,7 +623,7 @@ namespace storm {
                 for (auto const& actionIndex : actionInformation.getNonSilentActionIndices()) {
                     actionIndexToLocalNondeterminismVariableOffset[actionIndex] = 0;
                 }
-                actionIndexToLocalNondeterminismVariableOffset[storm::jani::Model::getSilentActionIndex()] = 0;
+                actionIndexToLocalNondeterminismVariableOffset[storm::jani::Model::SILENT_ACTION_INDEX] = 0;
 
                 AutomatonDd globalAutomaton = boost::any_cast<AutomatonDd>(this->model.getSystemComposition().accept(*this, actionIndexToLocalNondeterminismVariableOffset));
                 return buildSystemFromAutomaton(globalAutomaton);
@@ -955,7 +955,7 @@ namespace storm {
                     // If the edge is not labeled with the silent action, we have to analyze which portion of the global
                     // variables was written by any of the updates and make all update results equal w.r.t. this set. If
                     // the edge is labeled with the silent action, we can already multiply the identities of all global variables.
-                    if (edge.getActionIndex() != this->model.getSilentActionIndex()) {
+                    if (edge.getActionIndex() != storm::jani::Model::SILENT_ACTION_INDEX) {
                         for (auto const& edgeDestinationDd : destinationDds) {
                             globalVariablesInSomeDestination.insert(edgeDestinationDd.writtenGlobalVariables.begin(), edgeDestinationDd.writtenGlobalVariables.end());
                         }
@@ -1415,7 +1415,7 @@ namespace storm {
                     for (auto& action : automaton.actionIndexToAction) {
                         illegalFragment |= action.second.illegalFragment;
                         addMissingGlobalVariableIdentities(action.second);
-                        storm::dd::Add<Type, ValueType> actionEncoding = encodeAction(action.first != this->model.getSilentActionIndex() ? boost::optional<uint64_t>(action.first) : boost::none, this->variables);
+                        storm::dd::Add<Type, ValueType> actionEncoding = encodeAction(action.first != storm::jani::Model::SILENT_ACTION_INDEX ? boost::optional<uint64_t>(action.first) : boost::none, this->variables);
                         storm::dd::Add<Type, ValueType> missingNondeterminismEncoding = encodeIndex(0, action.second.getHighestLocalNondeterminismVariable(), numberOfUsedNondeterminismVariables - action.second.getHighestLocalNondeterminismVariable(), this->variables);
                         storm::dd::Add<Type, ValueType> extendedTransitions = actionEncoding * missingNondeterminismEncoding * action.second.transitions;
                         

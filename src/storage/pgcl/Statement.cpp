@@ -1,11 +1,5 @@
-/* 
- * File:   Statement.cpp
- * Author: Lukas Westhofen
- * 
- * Created on 11. April 2015, 17:41
- */
-
 #include "src/storage/pgcl/Statement.h"
+#include "Block.h"
 
 namespace storm {
     namespace pgcl {
@@ -17,11 +11,11 @@ namespace storm {
             this->lineNumber = lineNumber;
         }
 
-        std::size_t Statement::getLineNumber() {
+        std::size_t Statement::getLineNumber() const {
             return this->lineNumber;
         }
 
-        std::size_t Statement::getLocationNumber() {
+        std::size_t Statement::getLocationNumber() const {
             return this->locationNumber;
         }
 
@@ -29,7 +23,7 @@ namespace storm {
             this->locationNumber = locationNumber;
         }
 
-        bool Statement::isLast() {
+        bool Statement::isLast() const {
             return this->last;
         }
 
@@ -37,27 +31,20 @@ namespace storm {
             this->last = isLast;
         }
 
-        bool Statement::isNondet() {
+        bool Statement::isNondet() const {
             return false;
         }
 
-        void Statement::setParentProgram(std::shared_ptr<storm::pgcl::PgclProgram> parentProgram) {
-                this->parentProgram = parentProgram;
+        void Statement::setParentBlock(PgclBlock* b) {
+                this->parentBlock = b;
         }
 
-        boost::optional<std::shared_ptr<storm::pgcl::PgclProgram> > Statement::getParentProgram() {
-            return this->parentProgram;
+        PgclBlock* Statement::getParentBlock() {
+            return this->parentBlock;
         }
 
-        void Statement::setParentStatement(std::shared_ptr<storm::pgcl::Statement> parentStatement) {
-            this->parentStatement = parentStatement;
-        }
 
-        boost::optional<std::shared_ptr<storm::pgcl::Statement> > Statement::getParentStatement() {
-            return this->parentStatement;
-        }
-
-        std::size_t Statement::getNumberOfOutgoingTransitions() {
+        std::size_t Statement::getNumberOfOutgoingTransitions() const {
             return 1;
         }
     }

@@ -104,7 +104,7 @@ namespace storm {
             CompositionInformation result;
             result.increaseAutomatonMultiplicity(composition.getAutomatonName());
             for (auto const& actionIndex : automaton.getActionIndices()) {
-                if (actionIndex != model.getSilentActionIndex()) {
+                if (actionIndex != storm::jani::Model::SILENT_ACTION_INDEX) {
                     result.addNonSilentActionIndex(actionIndex);
                 }
             }
@@ -149,15 +149,15 @@ namespace storm {
                 auto const& subinfo = subinformation[infoIndex];
                 
                 std::set<uint64_t> enabledSynchVectors;
-                std::set<std::string> actionsInSynch;
+                std::set<uint64_t> actionsInSynch;
                 for (uint64_t synchVectorIndex = 0; synchVectorIndex < composition.getNumberOfSynchronizationVectors(); ++synchVectorIndex) {
                     auto const& synchVector = composition.getSynchronizationVector(synchVectorIndex);
                     if (synchVector.getInput(infoIndex) != SynchronizationVector::getNoActionInput()) {
-                        for (auto const& nonsilentActionIndex : subinfo.getNonSilentActionIndices()) {
-                            std::string const& nonSilentAction = indexToNameMap.at(nonsilentActionIndex);
+                        for (auto const& nonSilentActionIndex : subinfo.getNonSilentActionIndices()) {
+                            std::string const& nonSilentAction = indexToNameMap.at(nonSilentActionIndex);
                             if (synchVector.getInput(infoIndex) == nonSilentAction) {
                                 enabledSynchVectors.insert(synchVectorIndex);
-                                actionsInSynch.insert(nonSilentAction);
+                                actionsInSynch.insert(nonSilentActionIndex);
                             }
                         }
                     } else {
@@ -172,6 +172,14 @@ namespace storm {
                 effectiveSynchVectors = std::move(newEffectiveSynchVectors);
             }
 
+            // Now add all outputs of effective synchronization vectors.
+            for (auto const& synchVectorIndex : effectiveSynchVectors) {
+                auto const& synchVector = composition.getSynchronizationVector(synchVectorIndex);
+                if (synchVector.getOutput() != storm::jani::Model::SILENT_ACTION_NAME) {
+                    nonSilentActionIndices.insert(addOrGetActionIndex(synchVector.getOutput()));
+                }
+            }
+            
             // Finally check whether it's a non-standard parallel composition. We do that by first constructing a set of
             // all effective synchronization vectors and then checking whether this set is fully contained within the
             // set of expected synchronization vectors.

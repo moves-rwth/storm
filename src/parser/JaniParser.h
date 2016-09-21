@@ -67,6 +67,7 @@ namespace storm {
              */
             std::shared_ptr<storm::expressions::ExpressionManager> expressionManager;
 
+            bool allowRecursion = true;
 
             //////////
             //   Default values -- assumptions from JANI.
@@ -74,6 +75,7 @@ namespace storm {
             static const bool defaultVariableTransient;
             
             static const bool defaultBooleanInitialValue;
+            static const double defaultRationalInitialValue;
             static const int64_t defaultIntegerInitialValue;
 
             static const std::set<std::string> unsupportedOpstrings;

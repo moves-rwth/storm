@@ -194,6 +194,11 @@ namespace storm {
             std::set<uint64_t> const& getInitialLocationIndices() const;
 
             /*!
+             * Builds a map from ID to Location Name.
+             */
+            std::map<uint64_t, std::string> buildIdToLocationNameMap() const;
+            
+            /*!
              * Retrieves the edges of the location with the given name.
              */
             Edges getEdgesFromLocation(std::string const& name);
@@ -252,6 +257,11 @@ namespace storm {
              * Retrieves the number of edges.
              */
             uint64_t getNumberOfEdges() const;
+            
+            /*!
+             * Retrieves whether the initial restriction is set and unequal to true
+             */
+            bool hasRestrictedInitialStates() const;
             
             /*!
              * Retrieves whether this automaton has an initial states restriction.

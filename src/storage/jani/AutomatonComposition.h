@@ -24,6 +24,8 @@ namespace storm {
             virtual void write(std::ostream& stream) const override;
             
             std::set<std::string> const& getInputEnabledActions() const;
+
+            bool isAutomaton() const override;
             
         private:
             /// The name of the automaton this composition element refers to.

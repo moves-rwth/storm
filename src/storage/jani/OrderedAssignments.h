@@ -19,6 +19,8 @@ namespace storm {
              */
             OrderedAssignments(std::vector<Assignment> const& assignments = std::vector<Assignment>());
 
+            explicit OrderedAssignments(Assignment const& assignment);
+            
             /*!
              * Adds the given assignment to the set of assignments.
              *
@@ -32,7 +34,14 @@ namespace storm {
              * @return True if the assignment was found and removed.
              */
             bool remove(Assignment const& assignment);
-
+            
+            /*!
+             * Checks whether the assignments have several levels.
+             * 
+             * @return True if more than one level occurs in the assignment set.
+             */
+            bool hasMultipleLevels() const;
+            
             /*!
              * Retrieves whether the given assignment is contained in this set of assignments.
              */

@@ -24,6 +24,32 @@ namespace storm {
                  */
                 std::string getPgclFilename() const;
                 
+                /**
+                 * Whether the pgcl should be transformed to Jani
+                 */
+                bool isToJaniSet() const;
+                
+                /**
+                 * Whether the program graph should be drawn (dot output)
+                 */
+                bool isProgramGraphToDotSet() const;
+                
+                /**
+                 * Destination where to write dot output of the program graph.
+                 */
+                std::string getProgramGraphDotOutputFilename() const ;
+                
+                /**
+                 * Is program variable restriction string given
+                 */
+                bool isProgramVariableRestrictionSet() const;
+                
+                /**
+                 * String for program variable restrictions
+                 */
+                std::string getProgramVariableRestrictions() const;
+                
+                
                 bool check() const override;
                 void finalize() override;
                 
@@ -32,6 +58,12 @@ namespace storm {
             private:
                 static const std::string pgclFileOptionName;
                 static const std::string pgclFileOptionShortName;
+                static const std::string pgclToJaniOptionName;
+                static const std::string pgclToJaniOptionShortName;
+                static const std::string programGraphToDotOptionName;
+                static const std::string programGraphToDotShortOptionName;
+                static const std::string programVariableRestrictionsOptionName;
+                static const std::string programVariableRestrictionShortOptionName;
                 
             };
         }

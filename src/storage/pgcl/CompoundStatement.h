@@ -1,12 +1,4 @@
-/* 
- * File:   CompoundStatement.h
- * Author: Lukas Westhofen
- *
- * Created on 11. April 2015, 17:41
- */
-
-#ifndef COMPOUNDSTATEMENT_H
-#define	COMPOUNDSTATEMENT_H
+#pragma once
 
 #include "src/storage/pgcl/Statement.h"
 
@@ -27,6 +19,3 @@ namespace storm {
         };
     }
 }
-
-#endif	/* COMPOUNDSTATEMENT_H */
-

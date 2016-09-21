@@ -1,12 +1,4 @@
-/* 
- * File:   Statement.h
- * Author: Lukas Westhofen
- *
- * Created on 11. April 2015, 17:41
- */
-
-#ifndef STATEMENT_H
-#define	STATEMENT_H
+#pragma once
 
 #include <cstdint>
 #include <memory>
@@ -14,7 +6,7 @@
 
 namespace storm {
     namespace pgcl {
-        class PgclProgram;
+        class PgclBlock;
         /**
          * A PGCL program consists of various statements. Statements can again
          * save lists of statements as their children. To make life easier, the
@@ -39,7 +31,7 @@ namespace storm {
              * was parsed from.
              * @return The line number of the statement.
              */
-            std::size_t getLineNumber();
+            std::size_t getLineNumber() const;
             /**
              * Sets the line number during the parsing process.
              * @param lineNumber The location number of the statement.
@@ -49,7 +41,7 @@ namespace storm {
              * Returns the unique location number of the statement.
              * @return The line number of the statement.
              */
-            std::size_t getLocationNumber();
+            std::size_t getLocationNumber() const;
             /**
              * Sets the unique location number of the statement.
              * @param lineNumber The location number of the statement.
@@ -60,7 +52,7 @@ namespace storm {
              * program.
              * @return true Whether the statement is the last statement.
              */
-            bool isLast();
+            bool isLast() const;
             /**
              * Sets the information whether the statement is the last of its
              * direct parent program.
@@ -70,37 +62,26 @@ namespace storm {
             /**
              * Returns wether the statements represents nondeterminism.
              */
-            virtual bool isNondet();
+            virtual bool isNondet() const;
             /**
              * Returns the number of transitions this statement will produce.
              */
-            virtual std::size_t getNumberOfOutgoingTransitions();
+            virtual std::size_t getNumberOfOutgoingTransitions() const;
             virtual void accept(class AbstractStatementVisitor&) = 0;
             /**
              * Sets the parent program of the statement.
              * @param parentProgram The parent program of the statement.
              */
-            void setParentProgram(std::shared_ptr<storm::pgcl::PgclProgram> parentProgram);
+            void setParentBlock(PgclBlock* block);
             /**
              * Returns the parent program of the statement.
              * @return The parent program of the statement.
              */
-            boost::optional<std::shared_ptr<storm::pgcl::PgclProgram> > getParentProgram();
-            /**
-             * Sets the parent statement of the statement.
-             * @param parentProgram The parent statement of the statement.
-             */
-            void setParentStatement(std::shared_ptr<storm::pgcl::Statement> parentStatement);
-            /**
-             * Returns the parent statement of the statement.
-             * @return The parent statement of the statement.
-             */
-            boost::optional<std::shared_ptr<storm::pgcl::Statement> > getParentStatement();
+            PgclBlock* getParentBlock();
+            
         protected:
             /// The parent program of the statement.
-            boost::optional<std::shared_ptr<storm::pgcl::PgclProgram> > parentProgram;
-            /// The parent program of the statement.
-            boost::optional<std::shared_ptr<storm::pgcl::Statement> > parentStatement;
+            PgclBlock* parentBlock;
             /// Represents the line number of the statement.
             std::size_t lineNumber = 0;
             /// Represents the unique statement location.
@@ -110,5 +91,4 @@ namespace storm {
         };
     }
 }
-#endif	/* STATEMENT_H */
 

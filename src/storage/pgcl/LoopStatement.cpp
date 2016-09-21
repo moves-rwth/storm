@@ -1,33 +1,23 @@
-/* 
- * File:   LoopStatement.cpp
- * Author: Lukas Westhofen
- * 
- * Created on 11. April 2015, 17:42
- */
 
 #include "src/storage/pgcl/LoopStatement.h"
 #include "src/storage/pgcl/AbstractStatementVisitor.h"
 
 namespace storm {
     namespace pgcl {
-        LoopStatement::LoopStatement(storm::pgcl::BooleanExpression const& condition, std::shared_ptr<storm::pgcl::PgclProgram> const& body) :
+        LoopStatement::LoopStatement(storm::pgcl::BooleanExpression const& condition, std::shared_ptr<storm::pgcl::PgclBlock> const& body) :
             body(body), condition(condition) {
         }
 
-        std::shared_ptr<storm::pgcl::PgclProgram> LoopStatement::getBody() {
+        std::shared_ptr<storm::pgcl::PgclBlock> const& LoopStatement::getBody() const {
             return this->body;
         }
         
-        storm::pgcl::BooleanExpression& LoopStatement::getCondition() {
+        storm::pgcl::BooleanExpression const& LoopStatement::getCondition() const{
             return this->condition;
         }
 
         void LoopStatement::accept(storm::pgcl::AbstractStatementVisitor& visitor) {
             visitor.visit(*this);
-        }
-
-        std::size_t LoopStatement::getNumberOfOutgoingTransitions() {
-            return 1;
         }
     }
 }

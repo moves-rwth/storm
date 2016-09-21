@@ -1,7 +1,3 @@
-//
-// Created by Lukas Westhofen on 21.04.15.
-//
-
 #include "src/storage/pgcl/StatementPrinterVisitor.h"
 
 #include "src/storage/pgcl/AssignmentStatement.h"
@@ -16,7 +12,7 @@ namespace storm {
         StatementPrinterVisitor::StatementPrinterVisitor(std::ostream &stream) : stream(stream) {
         }
 
-        void StatementPrinterVisitor::visit(storm::pgcl::AssignmentStatement& statement) {
+        void StatementPrinterVisitor::visit(storm::pgcl::AssignmentStatement const& statement) {
             this->stream << statement.getLocationNumber() << ": ";
             if(statement.getExpression().which() == 0) {
                 storm::expressions::Expression const& expression = boost::get<storm::expressions::Expression>(statement.getExpression());
@@ -27,14 +23,14 @@ namespace storm {
             }
         }
 
-        void StatementPrinterVisitor::visit(storm::pgcl::ObserveStatement& statement) {
+        void StatementPrinterVisitor::visit(storm::pgcl::ObserveStatement const& statement) {
             this->stream << statement.getLocationNumber() << ": ";
             this->stream << "observe(" << statement.getCondition().getBooleanExpression() << ");" << std::endl;
         }
 
-        void StatementPrinterVisitor::visit(storm::pgcl::IfStatement& statement) {
+        void StatementPrinterVisitor::visit(storm::pgcl::IfStatement const& statement) {
             this->stream << statement.getLocationNumber() << ": ";
-            this->stream << "if(" << statement.getCondition().getBooleanExpression() << ") {" << std::endl;
+            this->stream << "if (" << statement.getCondition().getBooleanExpression() << ") {" << std::endl;
             int i = 1;
             for(iterator it = (*(statement.getIfBody())).begin(); it != (*(statement.getIfBody())).end(); ++it) {
                 (*(*it)).accept(*this);
@@ -51,9 +47,9 @@ namespace storm {
             }
         }
 
-        void StatementPrinterVisitor::visit(storm::pgcl::LoopStatement& statement) {
+        void StatementPrinterVisitor::visit(storm::pgcl::LoopStatement const& statement) {
             this->stream << statement.getLocationNumber() << ": ";
-            this->stream << "while(" << statement.getCondition().getBooleanExpression() << ") {" << std::endl;
+            this->stream << "while (" << statement.getCondition().getBooleanExpression() << ") {" << std::endl;
             int i = 1;
             for(iterator it = (*(statement.getBody())).begin(); it != (*(statement.getBody())).end(); ++it) {
                 (*(*it)).accept(*this);
@@ -62,7 +58,7 @@ namespace storm {
             this->stream << "}" << std::endl;
         }
 
-        void StatementPrinterVisitor::visit(storm::pgcl::NondeterministicBranch& statement) {
+        void StatementPrinterVisitor::visit(storm::pgcl::NondeterministicBranch const& statement) {
             this->stream << statement.getLocationNumber() << ": ";
             this->stream << "{" << std::endl;
             int i = 1;
@@ -78,7 +74,7 @@ namespace storm {
             this->stream << "}" << std::endl;
         }
 
-        void StatementPrinterVisitor::visit(storm::pgcl::ProbabilisticBranch& statement) {
+        void StatementPrinterVisitor::visit(storm::pgcl::ProbabilisticBranch const& statement) {
             this->stream << statement.getLocationNumber() << ": ";
             this->stream << "{" << std::endl;
             int i = 1;

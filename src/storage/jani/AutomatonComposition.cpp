@@ -19,6 +19,10 @@ namespace storm {
             return inputEnabledActions;
         }
         
+        bool AutomatonComposition::isAutomaton() const {
+            return true;
+        }
+        
         void AutomatonComposition::write(std::ostream& stream) const {
             stream << name;
         }
