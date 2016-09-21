@@ -109,7 +109,6 @@ int main(const int argc, const char **argv) {
 
         // parse GSPN from file
         auto parser = storm::parser::GspnParser();
-        std::cout << "input_file: " << inputFile << std::endl;
         auto gspn = parser.parse(inputFile);
 
         // todo ------[marker]
