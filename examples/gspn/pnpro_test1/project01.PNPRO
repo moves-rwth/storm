@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- This project file has been saved by the New GreatSPN Editor, v.100 --><project name="project01" version="121">
+  <gspn name="gspn_1_1" show-color-cmd="false" show-fluid-cmd="false">
+    <nodes>
+      <place marking="2" name="P0" x="1.0" y="1.0"/>
+      <place marking="2" name="P1" x="1.0" y="6.0"/>
+      <transition name="T0" nservers-x="0.5" type="EXP" x="7.55" y="1.0"/>
+      <transition name="t0" type="IMM" x="7.85" y="6.0"/>
+      <place marking="3" name="P2" x="13.0" y="4.0"/>
+    </nodes>
+    <edges>
+      <arc head="T0" kind="INPUT" mult="5" mult-x="-0.09999999999999964" mult-y="-1.0" tail="P0"/>
+      <arc head="t0" kind="INPUT" mult="5" mult-x="1.4000000000000004" mult-y="0.0" tail="P0"/>
+      <arc head="T0" kind="INHIBITOR" mult="2" mult-k="0.32783203125000004" mult-x="-1.4669921875000003" mult-y="-0.36083984375" tail="P1"/>
+      <arc head="t0" kind="INHIBITOR" mult="2" mult-x="-0.09999999999999964" tail="P1"/>
+      <arc head="P2" kind="OUTPUT" tail="T0"/>
+      <arc head="P2" kind="OUTPUT" tail="t0"/>
+    </edges>
+  </gspn>
+</project>
