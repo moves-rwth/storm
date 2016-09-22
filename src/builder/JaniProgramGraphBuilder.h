@@ -25,7 +25,7 @@ namespace storm {
             static unsigned janiVersion;
             
             JaniProgramGraphBuilder(storm::ppg::ProgramGraph const& pg) : programGraph(pg) {
-                
+                transients = programGraph.transientVariables();
             }
             
             //void addVariableRestriction(storm::expressions::Variable const& var, storm::IntegerInterval const& interval ) {
@@ -71,13 +71,22 @@ namespace storm {
             
             std::pair<std::vector<storm::jani::Edge>, storm::expressions::Expression> addVariableChecks(storm::ppg::ProgramEdge const& edge);
             
-            bool isUserRestricted(storm::ppg::ProgramVariableIdentifier i) {
+            bool isUserRestrictedVariable(storm::ppg::ProgramVariableIdentifier i) {
                 return variableRestrictions.count(i) == 1;
+            }
+            
+            bool isRestrictedVariable(storm::ppg::ProgramVariableIdentifier i) {
+                // Might be different from user restricted in near future.
+                return variableRestrictions.count(i) == 1;
+            }
+            
+            bool isTransientVariable(storm::ppg::ProgramVariableIdentifier i) {
+                return std::find(transients.begin(), transients.end(), i) != transients.end();
             }
             
             void addProcedureVariables(storm::jani::Automaton& automaton) {
                 for (auto const& v : programGraph.getVariables()) {
-                    if(variableRestrictions.count(v.first) == 1) {
+                    if(isRestrictedVariable(v.first) && !isTransientVariable(v.first)) {
                         storm::storage::IntegerInterval const& bounds = variableRestrictions.at(v.first);
                         if (bounds.hasLeftBound()) {
                             if (bounds.hasRightBound()) {
@@ -92,7 +101,7 @@ namespace storm {
                             assert(false);
                         }
                     } else {
-                        storm::jani::UnboundedIntegerVariable janiVar(v.second.getName(), v.second, expManager->integer(0), false);
+                        storm::jani::UnboundedIntegerVariable janiVar(v.second.getName(), v.second, expManager->integer(0), isTransientVariable(v.first));
                         automaton.addVariable(janiVar);
                     }
                 }
@@ -118,7 +127,8 @@ namespace storm {
                     
                 }
             }
-            
+            /// Transient variables
+            std::vector<storm::ppg::ProgramVariableIdentifier> transients;
             /// Restrictions on variables
             std::map<uint64_t, storm::storage::IntegerInterval> variableRestrictions;
             /// Locations for variables that would have gone ot o

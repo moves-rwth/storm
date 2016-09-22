@@ -180,6 +180,8 @@ namespace storm {
                 return expManager;
             }
             
+            std::vector<ProgramVariableIdentifier> transientVariables() const;
+            
             void checkValid() {
                 
             }
@@ -192,6 +194,11 @@ namespace storm {
             
             void printDot(std::ostream& os) const;
         protected:
+            
+            /**
+             *  Returns the set of variables which do not occur in guards.
+             */
+            std::vector<ProgramVariableIdentifier> variablesNotInGuards() const;
             
             ProgramLocation& getLocation(ProgramLocationIdentifier id) {
                 return locations.at(id);

@@ -53,7 +53,7 @@ namespace storm {
                 STORM_LOG_THROW(act.nrLevels() <= 1, storm::exceptions::NotSupportedException, "Multi-level assignments with user variable bounds not supported");
                 for(auto const& group : act) {
                     for(auto const& assignment : group) {
-                        if (isUserRestricted(assignment.first)) {
+                        if (isUserRestrictedVariable(assignment.first)) {
                             assert(variableRestrictions.count(assignment.first) == 1);
                             storm::storage::IntegerInterval const& bound = variableRestrictions.at(assignment.first);
                             if (!assignment.second.containsVariables()) {
