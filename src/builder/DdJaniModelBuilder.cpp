@@ -550,7 +550,7 @@ namespace storm {
                     return ActionDd(guard, transitions * factor, transientEdgeAssignments, localNondeterminismVariables, variableToWritingFragment, illegalFragment);
                 }
 
-                bool isInputEnabled() {
+                bool isInputEnabled() const {
                     return inputEnabled;
                 }
                 
@@ -696,10 +696,15 @@ namespace storm {
             
         private:
             AutomatonDd composeInParallel(std::vector<AutomatonDd> const& subautomata, std::vector<storm::jani::SynchronizationVector> const& synchronizationVectors) {
+                typedef storm::dd::Add<Type, ValueType> IdentityAdd;
+                typedef std::pair<ActionDd, IdentityAdd> ActionAndAutomatonIdentity;
+                typedef std::vector<ActionAndAutomatonIdentity> ActionAndAutomatonIdentities;
+                typedef std::vector<boost::optional<std::pair<ActionAndAutomatonIdentities, IdentityAdd>>> SynchronizationVectorActionsAndIdentities;
+                
                 AutomatonDd result(this->variables.manager->template getAddOne<ValueType>());
                 
                 std::map<uint64_t, std::vector<ActionDd>> nonSynchronizingActions;
-                std::vector<boost::optional<std::pair<std::vector<ActionDd>, storm::dd::Add<Type, ValueType>>>> synchronizationVectorActions(synchronizationVectors.size(), boost::none);
+                SynchronizationVectorActionsAndIdentities synchronizationVectorActions(synchronizationVectors.size(), boost::none);
                 for (uint64_t automatonIndex = 0; automatonIndex < subautomata.size(); ++automatonIndex) {
                     AutomatonDd const& subautomaton = subautomata[automatonIndex];
                     
@@ -720,7 +725,7 @@ namespace storm {
                         if (synchVector.isNoActionInput(synchVector.getInput(automatonIndex))) {
                             if (automatonIndex == 0) {
                                 // Create a new action that is the identity over the first automaton.
-                                synchronizationVectorActions[synchVectorIndex] = std::make_pair(std::vector<ActionDd>{ActionDd(this->variables.manager->template getAddOne<ValueType>(), subautomaton.identity, {}, subautomaton.localNondeterminismVariables, {}, this->variables.manager->getBddZero())}, this->variables.manager->template getAddOne<ValueType>());
+                                synchronizationVectorActions[synchVectorIndex] = std::make_pair(ActionAndAutomatonIdentities{std::make_pair(ActionDd(this->variables.manager->template getAddOne<ValueType>(), subautomaton.identity, {}, subautomaton.localNondeterminismVariables, {}, this->variables.manager->getBddZero()), subautomaton.identity)}, this->variables.manager->template getAddOne<ValueType>());
                             } else {
                                 // If there is no action in the output spot, this means that some other subcomposition did
                                 // not provide the action necessary for the synchronization vector to resolve.
@@ -738,7 +743,7 @@ namespace storm {
                                 // If the action cannot be found, the particular spot in the output will be left empty.
                                 auto inputActionIt = subautomaton.actionIndexToAction.find(inputActionIndex);
                                 if (inputActionIt != subautomaton.actionIndexToAction.end()) {
-                                    synchronizationVectorActions[synchVectorIndex] = std::make_pair(std::vector<ActionDd>{inputActionIt->second}, this->variables.manager->template getAddOne<ValueType>());
+                                    synchronizationVectorActions[synchVectorIndex] = std::make_pair(ActionAndAutomatonIdentities{std::make_pair(inputActionIt->second, subautomaton.identity)}, this->variables.manager->template getAddOne<ValueType>());
                                 }
                             } else {
                                 // If there is no action in the output spot, this means that some other subcomposition did
@@ -746,7 +751,7 @@ namespace storm {
                                 if (synchronizationVectorActions[synchVectorIndex]) {
                                     auto inputActionIt = subautomaton.actionIndexToAction.find(inputActionIndex);
                                     if (inputActionIt != subautomaton.actionIndexToAction.end()) {
-                                        synchronizationVectorActions[synchVectorIndex].get().first.push_back(inputActionIt->second);
+                                        synchronizationVectorActions[synchVectorIndex].get().first.push_back(std::make_pair(inputActionIt->second, subautomaton.identity));
                                     } else {
                                         // If the current subcomposition does not provide the required action for the synchronization
                                         // vector, we clear the action.
@@ -816,10 +821,24 @@ namespace storm {
                 return result;
             }
             
-            ActionDd combineSynchronizingActions(std::vector<ActionDd> const& actions, storm::dd::Add<Type, ValueType> const& identities) {
+            ActionDd combineSynchronizingActions(std::vector<std::pair<ActionDd, storm::dd::Add<Type, ValueType>>> const& actionsAndIdentities, storm::dd::Add<Type, ValueType> const& nonSynchronizingAutomataIdentities) {
                 // If there is just one action, no need to combine anything.
-                if (actions.size() == 1) {
-                    return actions.front();
+                if (actionsAndIdentities.size() == 1) {
+                    return actionsAndIdentities.front().first;
+                }
+                
+                // If there are only input-enabled actions, we also need to build the disjunction of the guards.
+                bool allActionsInputEnabled = true;
+                for (auto const& actionIdentityPair : actionsAndIdentities) {
+                    auto const& action = actionIdentityPair.first;
+                    if (!action.isInputEnabled()) {
+                        allActionsInputEnabled = false;
+                        break;
+                    }
+                }
+                boost::optional<storm::dd::Bdd<Type>> guardDisjunction;
+                if (allActionsInputEnabled) {
+                    guardDisjunction = this->variables.manager->getBddZero();
                 }
                 
                 // Otherwise, construct the synchronization.
@@ -832,16 +851,27 @@ namespace storm {
                 storm::dd::Add<Type, ValueType> transitions = this->variables.manager->template getAddOne<ValueType>();
                 std::map<storm::expressions::Variable, storm::dd::Add<Type, ValueType>> transientEdgeAssignments;
                 
-                uint64_t lowestNondeterminismVariable = actions.front().getLowestLocalNondeterminismVariable();
-                uint64_t highestNondeterminismVariable = actions.front().getHighestLocalNondeterminismVariable();
+                uint64_t lowestNondeterminismVariable = actionsAndIdentities.front().first.getLowestLocalNondeterminismVariable();
+                uint64_t highestNondeterminismVariable = actionsAndIdentities.front().first.getHighestLocalNondeterminismVariable();
                 
                 storm::dd::Bdd<Type> newIllegalFragment = this->variables.manager->getBddZero();
-                for (auto const& action : actions) {
+                for (auto const& actionIdentityPair : actionsAndIdentities) {
+                    auto const& action = actionIdentityPair.first;
                     storm::dd::Bdd<Type> actionGuard = action.guard.toBdd();
+                    if (guardDisjunction) {
+                        guardDisjunction.get() |= actionGuard;
+                    }
+                    
                     lowestNondeterminismVariable = std::min(lowestNondeterminismVariable, action.getLowestLocalNondeterminismVariable());
                     highestNondeterminismVariable = std::max(highestNondeterminismVariable, action.getHighestLocalNondeterminismVariable());
                     transientEdgeAssignments = joinTransientAssignmentMaps(transientEdgeAssignments, action.transientEdgeAssignments);
-                    transitions *= action.transitions;
+                    
+                    if (action.isInputEnabled()) {
+                        // If the action is input-enabled, we add self-loops to all states.
+                        transitions *= actionGuard.ite(action.transitions, encodeIndex(0, action.getLowestLocalNondeterminismVariable(), action.getHighestLocalNondeterminismVariable() - action.getLowestLocalNondeterminismVariable(), this->variables) * actionIdentityPair.second);
+                    } else {
+                        transitions *= action.transitions;
+                    }
                     
                     // Create a set of variables that is used as nondeterminism variables in this action.
                     auto nondetVariables = std::set<storm::expressions::Variable>(this->variables.localNondeterminismVariables.begin() + action.getLowestLocalNondeterminismVariable(), this->variables.localNondeterminismVariables.begin() + action.getHighestLocalNondeterminismVariable());
@@ -885,7 +915,7 @@ namespace storm {
                 // such a combined transition.
                 illegalFragment &= guardConjunction;
                 
-                return ActionDd(guardConjunction.template toAdd<ValueType>(), transitions * identities, transientEdgeAssignments, std::make_pair(lowestNondeterminismVariable, highestNondeterminismVariable), globalVariableToWritingFragment, illegalFragment);
+                return ActionDd(guardConjunction.template toAdd<ValueType>(), transitions * nonSynchronizingAutomataIdentities, transientEdgeAssignments, std::make_pair(lowestNondeterminismVariable, highestNondeterminismVariable), globalVariableToWritingFragment, illegalFragment);
             }
             
             ActionDd combineUnsynchronizedActions(ActionDd action1, ActionDd action2, storm::dd::Add<Type, ValueType> const& identity1, storm::dd::Add<Type, ValueType> const& identity2) {
