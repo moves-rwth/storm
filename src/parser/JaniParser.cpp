@@ -363,10 +363,11 @@ namespace storm {
                 if(expressionStructure.count("op") == 1) {
                     std::string opstring = getString(expressionStructure.at("op"), scopeDescription);
                     std::vector<storm::expressions::Expression> arguments = {};
-                    if(opstring == "?:") {
-                        ensureNumberOfArguments(3, arguments.size(), opstring, scopeDescription);
-                        assert(arguments.size() == 3);
-                        return storm::expressions::ite(arguments[0], arguments[1], arguments[2]);
+                    if(opstring == "ite") {
+                        storm::expressions::Expression ifexpr = parseExpression(expressionStructure.at("if"), "If argument of operator ite in " + scopeDescription, localVars);
+                        storm::expressions::Expression thenexpr = parseExpression(expressionStructure.at("then"), "Then argument of operator ite in " + scopeDescription, localVars);
+                        storm::expressions::Expression elseexpr = parseExpression(expressionStructure.at("else"), "Else argument of operator ite in " + scopeDescription, localVars);
+                        return storm::expressions::ite(ifexpr, thenexpr, elseexpr);
                     } else if (opstring == "∨") {
                         arguments = parseBinaryExpressionArguments(expressionStructure, opstring, scopeDescription, localVars);
                         assert(arguments.size() == 2);
@@ -620,7 +621,8 @@ namespace storm {
                 STORM_LOG_THROW(edgeEntry.count("rate") < 2, storm::exceptions::InvalidJaniException, "Edge from '" << sourceLoc << "' in automaton '" << name << "' has multiple rates");
                 storm::expressions::Expression rateExpr;
                 if(edgeEntry.count("rate") > 0) {
-                    rateExpr = parseExpression(edgeEntry.at("rate"), "rate expression in edge from '" + sourceLoc + "' in automaton '" + name + "'");
+                    STORM_LOG_THROW(edgeEntry.at("rate").count("exp") == 1, storm::exceptions::InvalidJaniException, "Rate in edge from '" << sourceLoc << "' in automaton '" << name << "' has no expression");
+                    rateExpr = parseExpression(edgeEntry.at("rate").at("exp"), "Rate expression in edge from '" + sourceLoc + "' in automaton '" + name + "'");
                     STORM_LOG_THROW(rateExpr.hasNumericalType(), storm::exceptions::InvalidJaniException, "Rate '" << rateExpr << "' has not a numerical type");
                 }
                 // guard
