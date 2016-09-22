@@ -6,14 +6,19 @@
 
 #include "src/utility/macros.h"
 #include "src/exceptions/WrongFormatException.h"
+#include "src/storage/jani/Model.h"
 
 namespace storm {
     namespace jani {
         
-        const std::string SynchronizationVector::noAction = "-";
+        const std::string SynchronizationVector::NO_ACTION_INPUT = "-";
         
         SynchronizationVector::SynchronizationVector(std::vector<std::string> const& input, std::string const& output) : input(input), output(output) {
             // Intentionally left empty.
+        }
+        
+        SynchronizationVector::SynchronizationVector(std::vector<std::string> const& input) : input(input), output(storm::jani::Model::SILENT_ACTION_NAME) {
+            
         }
         
         std::size_t SynchronizationVector::size() const {
@@ -27,11 +32,6 @@ namespace storm {
         std::string const& SynchronizationVector::getInput(uint64_t index) const {
             return input[index];
         }
-        
-        std::string const& SynchronizationVector::getNoActionInput() {
-            return SynchronizationVector::noAction;
-        }
-        
         std::string const& SynchronizationVector::getOutput() const {
             return output;
         }
@@ -52,13 +52,13 @@ namespace storm {
             
             uint64_t i = index - 1;
             for (; i > 0; --i) {
-                if (this->getInput(i) != SynchronizationVector::getNoActionInput()) {
+                if (this->getInput(i) != NO_ACTION_INPUT) {
                     return boost::make_optional(i);
                 }
             }
             
             // Check the 0-index.
-            if (this->getInput(i) != SynchronizationVector::getNoActionInput()) {
+            if (this->getInput(i) != NO_ACTION_INPUT) {
                 return boost::make_optional(i);
             }
             
@@ -67,7 +67,7 @@ namespace storm {
         
         uint64_t SynchronizationVector::getPositionOfFirstParticipatingAction() const {
             for (uint64_t result = 0; result < this->size(); ++result) {
-                if (this->getInput(result) != getNoActionInput()) {
+                if (this->getInput(result) != NO_ACTION_INPUT) {
                     return result;
                 }
             }
@@ -75,7 +75,7 @@ namespace storm {
         }
         
         bool SynchronizationVector::isNoActionInput(std::string const& action) {
-            return action == noAction;
+            return action == NO_ACTION_INPUT;
         }
         
         std::ostream& operator<<(std::ostream& stream, SynchronizationVector const& synchronizationVector) {
@@ -181,7 +181,7 @@ namespace storm {
                 for (auto const& vector : synchronizationVectors) {
                     STORM_LOG_THROW(vector.size() == this->subcompositions.size(), storm::exceptions::WrongFormatException, "Synchronization vectors must match parallel composition size.");
                     std::string const& action = vector.getInput(inputIndex);
-                    if (action != SynchronizationVector::getNoActionInput()) {
+                    if (action != SynchronizationVector::NO_ACTION_INPUT) {
                         STORM_LOG_THROW(actions.find(action) == actions.end(), storm::exceptions::WrongFormatException, "Cannot use the same action multiple times as input in synchronization vectors.");
                         actions.insert(action);
                     }
@@ -191,7 +191,7 @@ namespace storm {
             for (auto const& vector : synchronizationVectors) {
                 bool hasInput = false;
                 for (auto const& input : vector.getInput()) {
-                    if (input != SynchronizationVector::getNoActionInput()) {
+                    if (input != SynchronizationVector::NO_ACTION_INPUT) {
                         hasInput = true;
                         break;
                     }

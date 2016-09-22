@@ -646,14 +646,14 @@ namespace storm {
                         for (auto const& synchVector : composition.getSynchronizationVectors()) {
                             auto it = actionIndexToLocalNondeterminismVariableOffset.find(actionInformation.getActionIndex(synchVector.getOutput()));
                             STORM_LOG_THROW(it != actionIndexToLocalNondeterminismVariableOffset.end(), storm::exceptions::InvalidArgumentException, "Invalid action " << synchVector.getOutput() << ".");
-                            if (synchVector.getInput(0) != storm::jani::SynchronizationVector::getNoActionInput()) {
+                            if (synchVector.getInput(0) != storm::jani::SynchronizationVector::NO_ACTION_INPUT) {
                                 newSynchronizingActionToOffsetMap[actionInformation.getActionIndex(synchVector.getInput(0))] = it->second;
                             }
                         }
                     } else {
                         // Based on the previous results, we need to update the offsets.
                         for (auto const& synchVector : composition.getSynchronizationVectors()) {
-                            if (synchVector.getInput(subcompositionIndex) != storm::jani::SynchronizationVector::getNoActionInput()) {
+                            if (synchVector.getInput(subcompositionIndex) != storm::jani::SynchronizationVector::NO_ACTION_INPUT) {
                                 boost::optional<uint64_t> previousActionPosition = synchVector.getPositionOfPrecedingParticipatingAction(subcompositionIndex);
                                 if (previousActionPosition) {
                                     AutomatonDd const& previousAutomatonDd = subautomata[previousActionPosition.get()];

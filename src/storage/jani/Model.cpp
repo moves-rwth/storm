@@ -246,7 +246,7 @@ namespace storm {
                         ++numberOfParticipatingAutomata;
                         synchVectorInputs.push_back(actionName);
                     } else {
-                        synchVectorInputs.push_back(storm::jani::SynchronizationVector::getNoActionInput());
+                        synchVectorInputs.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
                     }
                     ++i;
                 }

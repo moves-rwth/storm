@@ -153,28 +153,7 @@ namespace storm {
             }
 
             if (constantStructure.at("type").is_object()) {
-//                STORM_LOG_THROW(variableStructure.at("type").count("kind") == 1, storm::exceptions::InvalidJaniException, "For complex type as in variable " << name << "(scope: " << scopeDescription << ")  kind must be given");
-//                std::string kind = getString(variableStructure.at("type").at("kind"), "kind for complex type as in variable " + name  + "(scope: " + scopeDescription + ") ");
-//                if(kind == "bounded") {
-//                    // First do the bounds, that makes the code a bit more streamlined
-//                    STORM_LOG_THROW(variableStructure.at("type").count("lower-bound") == 1, storm::exceptions::InvalidJaniException, "For bounded type as in variable " << name << "(scope: " << scopeDescription << ") lower-bound must be given");
-//                    storm::expressions::Expression lowerboundExpr = parseExpression(variableStructure.at("type").at("lower-bound"), "Lower bound for variable "+ name + " (scope: " + scopeDescription + ")");
-//                    assert(lowerboundExpr.isInitialized());
-//                    STORM_LOG_THROW(variableStructure.at("type").count("upper-bound") == 1, storm::exceptions::InvalidJaniException, "For bounded type as in variable " << name << "(scope: " << scopeDescription << ") upper-bound must be given");
-//                    storm::expressions::Expression upperboundExpr = parseExpression(variableStructure.at("type").at("upper-bound"), "Upper bound for variable "+ name + " (scope: " + scopeDescription + ")");
-//                    assert(upperboundExpr.isInitialized());
-//                    STORM_LOG_THROW(variableStructure.at("type").count("base") == 1, storm::exceptions::InvalidJaniException, "For bounded type as in variable " << name << "(scope: " << scopeDescription << ") base must be given");
-//                    std::string basictype = getString(variableStructure.at("type").at("base"), "base for bounded type as in variable " + name  + "(scope: " + scopeDescription + ") ");
-//                    if(basictype == "int") {
-//                        STORM_LOG_THROW(lowerboundExpr.hasIntegerType(), storm::exceptions::InvalidJaniException, "Lower bound for bounded integer variable " << name << "(scope: " << scopeDescription << ") must be integer-typed");
-//                        STORM_LOG_THROW(upperboundExpr.hasIntegerType(), storm::exceptions::InvalidJaniException, "Upper bound for bounded integer variable " << name << "(scope: " << scopeDescription << ") must be integer-typed");
-//                        return std::make_shared<storm::jani::BoundedIntegerVariable>(name, expressionManager->declareIntegerVariable(exprManagerName), lowerboundExpr, upperboundExpr);
-//                    } else {
-//                        STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Unsupported base " << basictype << " for bounded variable " << name << "(scope: " << scopeDescription << ") ");
-//                    }
-//                } else {
-//                    STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Unsupported kind " << kind << " for complex type of variable " << name << "(scope: " << scopeDescription << ") ");
-//                }
+
              }
              else if(constantStructure.at("type").is_string()) {
                 if(constantStructure.at("type") == "real") {
@@ -231,10 +210,11 @@ namespace storm {
                     expressionManager->declareRationalVariable(name);
                     if(initvalcount == 1) {
                         if(variableStructure.at("initial-value").is_null()) {
+                            STORM_LOG_WARN("Deprecated null value in initial value");
                             initVal = expressionManager->rational(defaultRationalInitialValue);
                         } else {
                             initVal = parseExpression(variableStructure.at("initial-value"), "Initial value for variable " + name + " (scope: " + scopeDescription + ") ");
-                            STORM_LOG_THROW(initVal.get().hasRationalType(), storm::exceptions::InvalidJaniException, "Initial value for integer variable " + name + "(scope " + scopeDescription + ") should be a rational");
+                            STORM_LOG_THROW(initVal.get().hasRationalType() || initVal.get().hasIntegerType(), storm::exceptions::InvalidJaniException, "Initial value for rational variable " + name + "(scope " + scopeDescription + ") should be a rational");
                         }
                         return std::make_shared<storm::jani::RealVariable>(name, expressionManager->declareRationalVariable(exprManagerName), initVal.get(), transientVar);
                         
@@ -243,6 +223,7 @@ namespace storm {
                 } else if(variableStructure.at("type") == "bool") {
                     if(initvalcount == 1) {
                         if(variableStructure.at("initial-value").is_null()) {
+                            STORM_LOG_WARN("Deprecated null value in initial value");
                             initVal = expressionManager->boolean(defaultBooleanInitialValue);
                         } else {
                             initVal = parseExpression(variableStructure.at("initial-value"), "Initial value for variable " + name + " (scope: " + scopeDescription + ") ");
@@ -254,6 +235,7 @@ namespace storm {
                 } else if(variableStructure.at("type") == "int") {
                     if(initvalcount == 1) {
                         if(variableStructure.at("initial-value").is_null()) {
+                            STORM_LOG_WARN("Deprecated null value in initial value");
                             initVal = expressionManager->integer(defaultIntegerInitialValue);
                         } else {
                             initVal = parseExpression(variableStructure.at("initial-value"), "Initial value for variable " + name + " (scope: " + scopeDescription + ") ");
@@ -582,7 +564,7 @@ namespace storm {
                 STORM_LOG_THROW(locEntry.count("name") == 1, storm::exceptions::InvalidJaniException, "Locations for automaton '" << name << "' must have exactly one name");
                 std::string locName = getString(locEntry.at("name"), "location of automaton " + name);
                 STORM_LOG_THROW(locIds.count(locName) == 0, storm::exceptions::InvalidJaniException, "Location with name '" + locName + "' already exists in automaton '" + name + "'");
-                STORM_LOG_THROW(locEntry.count("invariant") == 0, storm::exceptions::InvalidJaniException, "Invariants in locations as in '" + locName + "' in automaton '" + name + "' are not supported");
+                STORM_LOG_THROW(locEntry.count("time-progress") == 0, storm::exceptions::InvalidJaniException, "Time progress conditions in locations as in '" + locName + "' in automaton '" + name + "' are not supported");
                 //STORM_LOG_THROW(locEntry.count("invariant") > 0 && !supportsInvariants(parentModel.getModelType()), storm::exceptions::InvalidJaniException, "Invariants are not supported in the model type " + to_string(parentModel.getModelType()));
                 std::vector<storm::jani::Assignment> transientAssignments;
                 for(auto const& transientValueEntry : locEntry.at("transient-values")) {
@@ -734,8 +716,13 @@ namespace storm {
                             inputs.push_back(syncInput);
                         }
                     }
-                    std::string syncResult = syncEntry.at("result");
-                    syncVectors.emplace_back(inputs, syncResult);
+                    if (syncEntry.count("result") > 0) {
+                        std::string syncResult = syncEntry.at("result");
+                        syncVectors.emplace_back(inputs, syncResult);
+                    } else {
+                        syncVectors.emplace_back(inputs);
+                    }
+                    
                 }
             }
             

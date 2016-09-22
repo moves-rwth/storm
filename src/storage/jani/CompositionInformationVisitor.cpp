@@ -152,7 +152,7 @@ namespace storm {
                 std::set<uint64_t> actionsInSynch;
                 for (uint64_t synchVectorIndex = 0; synchVectorIndex < composition.getNumberOfSynchronizationVectors(); ++synchVectorIndex) {
                     auto const& synchVector = composition.getSynchronizationVector(synchVectorIndex);
-                    if (synchVector.getInput(infoIndex) != SynchronizationVector::getNoActionInput()) {
+                    if (synchVector.getInput(infoIndex) != SynchronizationVector::NO_ACTION_INPUT) {
                         for (auto const& nonSilentActionIndex : subinfo.getNonSilentActionIndices()) {
                             std::string const& nonSilentAction = indexToNameMap.at(nonSilentActionIndex);
                             if (synchVector.getInput(infoIndex) == nonSilentAction) {
@@ -201,7 +201,7 @@ namespace storm {
                         input.push_back(actionName);
                         ++numberOfParticipatingAutomata;
                     } else {
-                        input.push_back(SynchronizationVector::getNoActionInput());
+                        input.push_back(SynchronizationVector::NO_ACTION_INPUT);
                     }
                 }
                 

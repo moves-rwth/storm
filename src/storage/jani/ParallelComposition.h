@@ -15,13 +15,13 @@ namespace storm {
         class SynchronizationVector {
         public:
             SynchronizationVector(std::vector<std::string> const& input, std::string const& output);
+            SynchronizationVector(std::vector<std::string> const& input);
             
             std::size_t size() const;
             std::vector<std::string> const& getInput() const;
             std::string const& getInput(uint64_t index) const;
             std::string const& getOutput() const;
 
-            static std::string const& getNoActionInput();
             static bool isNoActionInput(std::string const& action);
             
             /*!
@@ -41,10 +41,11 @@ namespace storm {
              */
             uint64_t getPositionOfFirstParticipatingAction() const;
 
-        private:
+            
             // A marker that can be used as one of the inputs. The semantics is that no action of the corresponding
             // automaton takes part in the synchronization.
-            static const std::string noAction;
+            static const std::string NO_ACTION_INPUT;
+        private:
             
             /// The input to the synchronization.
             std::vector<std::string> input;
