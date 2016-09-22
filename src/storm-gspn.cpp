@@ -5,6 +5,11 @@
 #include "src/storage/gspn/GspnBuilder.h"
 #include "src/utility/macros.h"
 #include "src/utility/initialize.h"
+
+#include "src/storage/expressions/ExpressionManager.h"
+#include "src/storage/jani/Model.h"
+#include "src/storage/jani/JsonExporter.h"
+#include "src/builder/JaniGSPNBuilder.h"
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -33,7 +38,7 @@ bool parseArguments(const int argc, const char **argv, std::string &inputFile, s
         // parse input file argument
         if (currentArg == "--input_file" || currentArg == "-i") {
             auto next = it + 1;
-            if (next != end) {
+            if (next == end) {
                 return -1;
             } else {
                 inputFile = *next;
@@ -97,6 +102,14 @@ void printHelp() {
     std::cout << "-ot, --output_type: possible output types are: pnml, pnpro or ma" << std::endl;
 }
 
+void handleJani(storm::gspn::GSPN const& gspn) {
+    std::shared_ptr<storm::expressions::ExpressionManager> exprManager(new storm::expressions::ExpressionManager());
+    storm::builder::JaniGSPNBuilder builder(gspn, exprManager);
+    storm::jani::Model* model = builder.build();
+    storm::jani::JsonExporter::toFile(*model, "gspn.jani");
+    delete model;
+}
+
 int main(const int argc, const char **argv) {
     std::string inputFile, formula, outputFile, outputType;
     if (!parseArguments(argc, argv, inputFile, formula, outputFile, outputType)) {
@@ -114,8 +127,9 @@ int main(const int argc, const char **argv) {
         // todo ------[marker]
         gspn.isValid();
 
-        storm::gspn::GspnBuilder builder2;
-        builder2.addPlace(2);
+        handleJani(gspn);
+        //storm::gspn::GspnBuilder builder2;
+        //builder2.addPlace(2);
 
         //
         //std::ofstream file;
@@ -123,20 +137,20 @@ int main(const int argc, const char **argv) {
         //gspn.writeDotToStream(file);
         //file.close();
 
-        std::ofstream file;
-        file.open("/Users/thomas/Desktop/gspn.pnpro");
-        gspn.toPnpro(file);
-        file.close();
+        //std::ofstream file;
+        //file.open("/Users/thomas/Desktop/gspn.pnpro");
+        //gspn.toPnpro(file);
+        //file.close();
 
         std::cout << "Parsing complete!" << std::endl;
 
 
         // Construct MA
-        auto builder = storm::builder::ExplicitGspnModelBuilder<>();
-        auto ma = builder.translateGspn(gspn, argv[2]);
-        std::cout << "Markov Automaton: " << std::endl;
-        std::cout << "number of states: " << ma.getNumberOfStates() << std::endl;
-        std::cout << "number of transitions: " << ma.getNumberOfTransitions() << std::endl << std::endl;
+        //auto builder = storm::builder::ExplicitGspnModelBuilder<>();
+        //auto ma = builder.translateGspn(gspn, argv[2]);
+        //std::cout << "Markov Automaton: " << std::endl;
+        //std::cout << "number of states: " << ma.getNumberOfStates() << std::endl;
+        //std::cout << "number of transitions: " << ma.getNumberOfTransitions() << std::endl << std::endl;
 
 
 
