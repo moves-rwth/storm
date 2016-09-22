@@ -429,5 +429,11 @@ namespace storm {
             
             return true;
         }
+        
+        void Automaton::pushEdgeAssignmentsToDestinations() {
+            for (auto& edge : edges) {
+                edge.pushAssignmentsToDestinations();
+            }
+        }
     }
 }

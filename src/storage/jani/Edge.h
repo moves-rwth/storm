@@ -106,6 +106,11 @@ namespace storm {
              */
             void liftTransientDestinationAssignments();
             
+            /**
+             * Shifts the assingments from the edges to the destinations.
+             */
+            void pushAssignmentsToDestinations();
+            
             /*!
              * Checks whether the provided variables appear on the right-hand side of non-transient assignments.
              */

@@ -315,6 +315,8 @@ namespace storm {
              */
             bool containsVariablesOnlyInProbabilitiesOrTransientAssignments(std::set<storm::expressions::Variable> const& variables) const;
             
+            void pushEdgeAssignmentsToDestinations();
+            
         private:
             /// The name of the automaton.
             std::string name;

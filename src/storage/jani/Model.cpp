@@ -510,6 +510,11 @@ namespace storm {
             }
             return true;
         }
-        
+     
+        void Model::makeStandardJaniCompliant() {
+            for (auto& automaton : automata) {
+                automaton.pushEdgeAssignmentsToDestinations();
+            }
+        }
     }
 }

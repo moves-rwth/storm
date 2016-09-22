@@ -113,6 +113,16 @@ namespace storm {
             }
         }
         
+        void Edge::pushAssignmentsToDestinations() {
+            assert(!destinations.empty());
+            for (auto const& assignment : this->getAssignments()) {
+                for (auto& destination : destinations) {
+                    destination.addAssignment(assignment);
+                }
+            }
+            assignments = OrderedAssignments();
+        }
+        
         boost::container::flat_set<storm::expressions::Variable> const& Edge::getWrittenGlobalVariables() const {
             return writtenGlobalVariables;
         }
