@@ -568,13 +568,15 @@ namespace storm {
                 STORM_LOG_THROW(locEntry.count("time-progress") == 0, storm::exceptions::InvalidJaniException, "Time progress conditions in locations as in '" + locName + "' in automaton '" + name + "' are not supported");
                 //STORM_LOG_THROW(locEntry.count("invariant") > 0 && !supportsInvariants(parentModel.getModelType()), storm::exceptions::InvalidJaniException, "Invariants are not supported in the model type " + to_string(parentModel.getModelType()));
                 std::vector<storm::jani::Assignment> transientAssignments;
-                for(auto const& transientValueEntry : locEntry.at("transient-values")) {
-                    STORM_LOG_THROW(transientValueEntry.count("ref") == 1, storm::exceptions::InvalidJaniException, "Transient values in location " << locName << " need exactly one ref that is assigned to");
-                    STORM_LOG_THROW(transientValueEntry.count("value") == 1, storm::exceptions::InvalidJaniException, "Transient values in location " << locName << " need exactly one assigned value");
-                    storm::jani::Variable const& lhs = getLValue(transientValueEntry.at("ref"), parentModel.getGlobalVariables(), automaton.getVariables(), "LHS of assignment in location " + locName + " (automaton '" + name + "')");
-                    STORM_LOG_THROW(lhs.isTransient(), storm::exceptions::InvalidJaniException, "Assigned non-transient variable " + lhs.getName() + " in location " + locName + " (automaton: '" + name + "')");
-                    storm::expressions::Expression rhs = parseExpression(transientValueEntry.at("value"), "Assignment of variable " + lhs.getName() + " in location " + locName + " (automaton: '" + name + "')");
-                    transientAssignments.emplace_back(lhs, rhs);
+                if (locEntry.count("transient-values") > 0) {
+                    for(auto const& transientValueEntry : locEntry.at("transient-values")) {
+                        STORM_LOG_THROW(transientValueEntry.count("ref") == 1, storm::exceptions::InvalidJaniException, "Transient values in location " << locName << " need exactly one ref that is assigned to");
+                        STORM_LOG_THROW(transientValueEntry.count("value") == 1, storm::exceptions::InvalidJaniException, "Transient values in location " << locName << " need exactly one assigned value");
+                        storm::jani::Variable const& lhs = getLValue(transientValueEntry.at("ref"), parentModel.getGlobalVariables(), automaton.getVariables(), "LHS of assignment in location " + locName + " (automaton '" + name + "')");
+                        STORM_LOG_THROW(lhs.isTransient(), storm::exceptions::InvalidJaniException, "Assigned non-transient variable " + lhs.getName() + " in location " + locName + " (automaton: '" + name + "')");
+                        storm::expressions::Expression rhs = parseExpression(transientValueEntry.at("value"), "Assignment of variable " + lhs.getName() + " in location " + locName + " (automaton: '" + name + "')");
+                        transientAssignments.emplace_back(lhs, rhs);
+                    }
                 }
                 uint64_t id = automaton.addLocation(storm::jani::Location(locName, transientAssignments));
                 locIds.emplace(locName, id);
@@ -677,10 +679,35 @@ namespace storm {
 
             return automaton;
         }
+        
+        std::vector<storm::jani::SynchronizationVector> parseSyncVectors(json const& syncvectorsStructure) {
+            std::vector<storm::jani::SynchronizationVector> syncVectors;
+            // TODO add error checks
+            for (auto const& syncEntry : syncvectorsStructure) {
+                std::vector<std::string> inputs;
+                for (auto const& syncInput : syncEntry.at("synchronise")) {
+                    if(syncInput.is_null()) {
+                        inputs.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
+                    } else {
+                        inputs.push_back(syncInput);
+                    }
+                }
+                if (syncEntry.count("result") > 0) {
+                    std::string syncResult = syncEntry.at("result");
+                    syncVectors.emplace_back(inputs, syncResult);
+                } else {
+                    syncVectors.emplace_back(inputs);
+                }
+                
+            }
+            return syncVectors;
+            
+        }
+        
 
         std::shared_ptr<storm::jani::Composition> JaniParser::parseComposition(json const &compositionStructure) {
-            
-            STORM_LOG_THROW(compositionStructure.count("elements") == 1, storm::exceptions::InvalidJaniException, "Elements of a composition must be given");
+            STORM_LOG_THROW(compositionStructure.count("elements") > 0, storm::exceptions::InvalidJaniException, "Elements of a composition must be given.");
+            STORM_LOG_THROW(compositionStructure.count("elements") < 2, storm::exceptions::InvalidJaniException, "Elements of a composition must be given at most once.");
             
             if (compositionStructure.at("elements").size() == 1) {
                 if (compositionStructure.count("syncs") == 0) {
@@ -693,7 +720,16 @@ namespace storm {
                     }
                     STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Nesting parallel composition is not supported");
                 } else {
-                    // Might be rename or input-enable.
+                    std::vector<storm::jani::SynchronizationVector> syncVectors = parseSyncVectors(compositionStructure.at("syncs"));
+                    std::shared_ptr<storm::jani::Composition> comp;
+                    if (compositionStructure.at("elements").back().at("automaton").is_string()) {
+                        std::string name = compositionStructure.at("elements").back().at("automaton");
+                        // TODO check whether name exist?
+                        comp = std::shared_ptr<storm::jani::AutomatonComposition>(new storm::jani::AutomatonComposition(name));
+                    } else {
+                        comp = parseComposition(compositionStructure.at("elements").back().at("automaton"));
+                    }
+                    return std::shared_ptr<storm::jani::Composition>(new storm::jani::ParallelComposition({comp}, syncVectors));
                 }
             }
             
@@ -706,27 +742,7 @@ namespace storm {
             }
             
             STORM_LOG_THROW(compositionStructure.count("syncs") < 2, storm::exceptions::InvalidJaniException, "Sync vectors can be given at most once");
-            std::vector<storm::jani::SynchronizationVector> syncVectors;
-            if (compositionStructure.count("syncs") > 0) {
-                // TODO add error checks
-                for (auto const& syncEntry : compositionStructure.at("syncs")) {
-                    std::vector<std::string> inputs;
-                    for (auto const& syncInput : syncEntry.at("synchronise")) {
-                        if(syncInput.is_null()) {
-                            // TODO handle null;
-                        } else {
-                            inputs.push_back(syncInput);
-                        }
-                    }
-                    if (syncEntry.count("result") > 0) {
-                        std::string syncResult = syncEntry.at("result");
-                        syncVectors.emplace_back(inputs, syncResult);
-                    } else {
-                        syncVectors.emplace_back(inputs);
-                    }
-                    
-                }
-            }
+            std::vector<storm::jani::SynchronizationVector> syncVectors = parseSyncVectors(compositionStructure.at("syncs"));
             
             return std::shared_ptr<storm::jani::Composition>(new storm::jani::ParallelComposition(compositions, syncVectors));
             
