@@ -358,8 +358,12 @@ namespace storm {
                 result = this->getInitialStatesRestriction();
             }
             
-            // Add the expressions for all variables that have initial expressions.
+            // Add the expressions for all non-transient variables that have initial expressions.
             for (auto const& variable : this->getVariables()) {
+                if (variable.isTransient()) {
+                    continue;
+                }
+                
                 if (variable.hasInitExpression()) {
                     storm::expressions::Expression newInitExpression = variable.isBooleanVariable() ? storm::expressions::iff(variable.getExpressionVariable(), variable.getInitExpression()) : variable.getExpressionVariable() == variable.getInitExpression();
                     if (result.isInitialized()) {

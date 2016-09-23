@@ -399,8 +399,12 @@ namespace storm {
             // Start with the restriction of variables.
             storm::expressions::Expression result = initialStatesRestriction;
             
-            // Then add initial values for those variables that have one.
+            // Then add initial values for those non-transient variables that have one.
             for (auto const& variable : globalVariables) {
+                if (variable.isTransient()) {
+                    continue;
+                }
+                
                 if (variable.hasInitExpression()) {
                     result = result && (variable.isBooleanVariable() ? storm::expressions::iff(variable.getExpressionVariable(), variable.getInitExpression()) : variable.getExpressionVariable() == variable.getInitExpression());
                 }

@@ -147,7 +147,15 @@ namespace storm {
         bool VariableSet::containsNonTransientRealVariables() const {
             for (auto const& variable : realVariables) {
                 if (!variable->isTransient()) {
-                    std::cout << "var " << variable->getName() << "is non-transient " << std::endl;
+                    return true;
+                }
+            }
+            return false;
+        }
+        
+        bool VariableSet::containsNonTransientUnboundedIntegerVariables() const {
+            for (auto const& variable : unboundedIntegerVariables) {
+                if (!variable->isTransient()) {
                     return true;
                 }
             }

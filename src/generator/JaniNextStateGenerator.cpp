@@ -204,9 +204,13 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
-        CompressedState JaniNextStateGenerator<ValueType, StateType>::applyUpdate(CompressedState const& state, storm::jani::EdgeDestination const& destination) {
+        CompressedState JaniNextStateGenerator<ValueType, StateType>::applyUpdate(CompressedState const& state, storm::jani::EdgeDestination const& destination, storm::generator::LocationVariableInformation const& locationVariable) {
             CompressedState newState(state);
             
+            // Update the location of the state.
+            setLocation(newState, locationVariable, destination.getLocationIndex());
+            
+            // Then perform the assignments.
             auto assignmentIt = destination.getOrderedAssignments().getNonTransientAssignments().begin();
             auto assignmentIte = destination.getOrderedAssignments().getNonTransientAssignments().end();
             
@@ -233,7 +237,7 @@ namespace storm {
             
             // Check that we processed all assignments.
             STORM_LOG_ASSERT(assignmentIt == assignmentIte, "Not all assignments were consumed.");
-            
+
             return newState;
         }
         
@@ -339,6 +343,7 @@ namespace storm {
             
             // Iterate over all automata.
             uint64_t automatonIndex = 0;
+            
             for (auto const& automaton : model.getAutomata()) {
                 uint64_t location = locations[automatonIndex];
                 
@@ -368,7 +373,7 @@ namespace storm {
                     for (auto const& destination : edge.getDestinations()) {
                         // Obtain target state index and add it to the list of known states. If it has not yet been
                         // seen, we also add it to the set of states that have yet to be explored.
-                        StateType stateIndex = stateToIdCallback(applyUpdate(state, destination));
+                        StateType stateIndex = stateToIdCallback(applyUpdate(state, destination, this->variableInformation.locationVariables[automatonIndex]));
                         
                         // Update the choice by adding the probability/target state to it.
                         ValueType probability = this->evaluator.asRational(destination.getProbability());
@@ -418,13 +423,14 @@ namespace storm {
                         
                         currentTargetStates->emplace(state, storm::utility::one<ValueType>());
                         
+                        auto locationVariableIt = this->variableInformation.locationVariables.cbegin();
                         for (uint_fast64_t i = 0; i < iteratorList.size(); ++i) {
                             storm::jani::Edge const& edge = **iteratorList[i];
                             
                             for (auto const& destination : edge.getDestinations()) {
                                 for (auto const& stateProbabilityPair : *currentTargetStates) {
                                     // Compute the new state under the current update and add it to the set of new target states.
-                                    CompressedState newTargetState = applyUpdate(stateProbabilityPair.first, destination);
+                                    CompressedState newTargetState = applyUpdate(stateProbabilityPair.first, destination, *locationVariableIt);
                                     
                                     // If the new state was already found as a successor state, update the probability
                                     // and otherwise insert it.

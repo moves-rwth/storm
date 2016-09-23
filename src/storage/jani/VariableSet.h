@@ -157,7 +157,12 @@ namespace storm {
              * Retrieves whether the set of variables contains a non-transient real variable.
              */
             bool containsNonTransientRealVariables() const;
-            
+
+            /*!
+             * Retrieves whether the set of variables contains a non-transient unbounded integer variable.
+             */
+            bool containsNonTransientUnboundedIntegerVariables() const;
+
             /*!
              * Retrieves whether this variable set is empty.
              */
