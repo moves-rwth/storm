@@ -5,12 +5,12 @@ namespace storm {
     namespace builder {
         unsigned JaniProgramGraphBuilder::janiVersion = 1;
         
-        storm::jani::OrderedAssignments buildOrderedAssignments(storm::jani::Automaton& automaton, storm::ppg::DeterministicProgramAction const& act) {
+        storm::jani::OrderedAssignments JaniProgramGraphBuilder::buildOrderedAssignments(storm::jani::Automaton& automaton, storm::ppg::DeterministicProgramAction const& act) {
             std::vector<storm::jani::Assignment> vec;
             uint64_t level = 0;
             for(auto const& group : act) {
                 for(auto const& assignment : group) {
-                    vec.emplace_back(automaton.getVariables().getVariable(act.getProgramGraph().getVariableName(assignment.first)) , assignment.second, level);
+                    vec.emplace_back(*(variables.at(assignment.first)), assignment.second, level);
                 }
                 ++level;
             }

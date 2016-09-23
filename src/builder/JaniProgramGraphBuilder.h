@@ -28,6 +28,12 @@ namespace storm {
                 transients = programGraph.transientVariables();
             }
             
+            virtual ~JaniProgramGraphBuilder() {
+                for (auto& var : variables ) {
+                    delete var.second;
+                }
+            }
+            
             //void addVariableRestriction(storm::expressions::Variable const& var, storm::IntegerInterval const& interval ) {
                 
             //}
@@ -43,7 +49,7 @@ namespace storm {
                 expManager = programGraph.getExpressionManager();
                 storm::jani::Model* model = new storm::jani::Model(name, storm::jani::ModelType::MDP, janiVersion, expManager);
                 storm::jani::Automaton mainAutomaton("main");
-                addProcedureVariables(mainAutomaton);
+                addProcedureVariables(*model, mainAutomaton);
                 janiLocId = addProcedureLocations(mainAutomaton);
                 addVariableOoBLocations(mainAutomaton);
                 addEdges(mainAutomaton);
@@ -61,7 +67,7 @@ namespace storm {
                 return "oob-" + programGraph.getVariableName(i);
             }
             
-            
+            storm::jani::OrderedAssignments buildOrderedAssignments(storm::jani::Automaton& automaton, storm::ppg::DeterministicProgramAction const& act) ;
             void addEdges(storm::jani::Automaton& automaton);
             std::vector<storm::jani::EdgeDestination> buildDestinations(storm::jani::Automaton& automaton, storm::ppg::ProgramEdge const& edge );
             /**
@@ -72,26 +78,27 @@ namespace storm {
             std::pair<std::vector<storm::jani::Edge>, storm::expressions::Expression> addVariableChecks(storm::ppg::ProgramEdge const& edge);
             
             bool isUserRestrictedVariable(storm::ppg::ProgramVariableIdentifier i) {
-                return variableRestrictions.count(i) == 1;
+                return variableRestrictions.count(i) == 1 && !isTransientVariable(i);
             }
             
             bool isRestrictedVariable(storm::ppg::ProgramVariableIdentifier i) {
                 // Might be different from user restricted in near future.
-                return variableRestrictions.count(i) == 1;
+                return variableRestrictions.count(i) == 1 && !isTransientVariable(i);
             }
             
             bool isTransientVariable(storm::ppg::ProgramVariableIdentifier i) {
                 return std::find(transients.begin(), transients.end(), i) != transients.end();
             }
             
-            void addProcedureVariables(storm::jani::Automaton& automaton) {
+            void addProcedureVariables(storm::jani::Model& model, storm::jani::Automaton& automaton) {
                 for (auto const& v : programGraph.getVariables()) {
                     if(isRestrictedVariable(v.first) && !isTransientVariable(v.first)) {
                         storm::storage::IntegerInterval const& bounds = variableRestrictions.at(v.first);
                         if (bounds.hasLeftBound()) {
                             if (bounds.hasRightBound()) {
-                                storm::jani::BoundedIntegerVariable janiVar(v.second.getName(), v.second, expManager->integer(0), false, expManager->integer(bounds.getLeftBound().get()), expManager->integer(bounds.getRightBound().get()));
-                                automaton.addVariable(janiVar);
+                                storm::jani::BoundedIntegerVariable* janiVar = new storm::jani::BoundedIntegerVariable (v.second.getName(), v.second, expManager->integer(0), false, expManager->integer(bounds.getLeftBound().get()), expManager->integer(bounds.getRightBound().get()));
+                                variables.emplace(v.first, janiVar);
+                                automaton.addVariable(*janiVar);
                             } else {
                                 // Not yet supported.
                                 assert(false);
@@ -101,8 +108,14 @@ namespace storm {
                             assert(false);
                         }
                     } else {
-                        storm::jani::UnboundedIntegerVariable janiVar(v.second.getName(), v.second, expManager->integer(0), isTransientVariable(v.first));
-                        automaton.addVariable(janiVar);
+                        storm::jani::UnboundedIntegerVariable* janiVar = new storm::jani::UnboundedIntegerVariable(v.second.getName(), v.second, expManager->integer(0), isTransientVariable(v.first));
+                        if(isTransientVariable(v.first)) {
+                            model.addVariable(*janiVar);
+                        } else {
+                            automaton.addVariable(*janiVar);
+                        }
+                        variables.emplace(v.first, janiVar);
+                        
                     }
                 }
             }
@@ -121,9 +134,11 @@ namespace storm {
             
             void addVariableOoBLocations(storm::jani::Automaton& automaton) {
                 for(auto const& restr : variableRestrictions) {
-                    storm::jani::Location janiLoc(janiVariableOutOfBoundsLocationName(restr.first));
-                    uint64_t locId = automaton.addLocation(janiLoc);
-                    varOutOfBoundsLocations[restr.first] = locId;
+                    if(!isTransientVariable(restr.first)) {
+                        storm::jani::Location janiLoc(janiVariableOutOfBoundsLocationName(restr.first));
+                        uint64_t locId = automaton.addLocation(janiLoc);
+                        varOutOfBoundsLocations[restr.first] = locId;
+                    }
                     
                 }
             }
@@ -134,6 +149,8 @@ namespace storm {
             /// Locations for variables that would have gone ot o
             std::map<uint64_t, uint64_t> varOutOfBoundsLocations;
             std::map<storm::ppg::ProgramLocationIdentifier, uint64_t> janiLocId;
+            std::map<storm::ppg::ProgramVariableIdentifier, storm::jani::Variable*> variables;
+            
             /// The expression manager
             std::shared_ptr<storm::expressions::ExpressionManager> expManager;
             /// The program graph to be translated
