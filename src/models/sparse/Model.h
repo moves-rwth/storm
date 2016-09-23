@@ -180,16 +180,16 @@ namespace storm {
                 /*!
                  * Retrieves the unique reward model, if there exists exactly one. Otherwise, an exception is thrown.
                  *
-                 * @return An iterator to the name and the reward model.
+                 * @return The requested reward model.
                  */
-                typename std::unordered_map<std::string, RewardModelType>::const_iterator getUniqueRewardModel() const;
+                RewardModelType const& getUniqueRewardModel() const;
                 
                 /*!
                  * Retrieves the unique reward model, if there exists exactly one. Otherwise, an exception is thrown.
                  *
-                 * @return An iterator to the name and the reward model.
+                 * @return The requested reward model.
                  */
-                typename std::unordered_map<std::string, RewardModelType>::iterator getUniqueRewardModel();
+                RewardModelType& getUniqueRewardModel();
                 
                 /*!
                  * Retrieves whether the model has a unique reward model.
