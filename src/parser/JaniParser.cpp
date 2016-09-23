@@ -655,7 +655,7 @@ namespace storm {
                 for(auto const& destEntry : edgeEntry.at("destinations")) {
                     // target location
                     STORM_LOG_THROW(edgeEntry.count("location") == 1, storm::exceptions::InvalidJaniException, "Each destination in edge from '" << sourceLoc << "' in automaton '" << name << "' must have a target location");
-                    std::string targetLoc = getString(edgeEntry.at("location"), "target location for edge from '" + sourceLoc + "' in automaton '" + name + "'");
+                    std::string targetLoc = getString(destEntry.at("location"), "target location for edge from '" + sourceLoc + "' in automaton '" + name + "'");
                     STORM_LOG_THROW(locIds.count(targetLoc) == 1, storm::exceptions::InvalidJaniException, "Target of edge has unknown location '" << targetLoc << "' in automaton '" << name << "'.");
                     // probability
                     storm::expressions::Expression probExpr;
