@@ -26,6 +26,7 @@ namespace storm {
         const bool JaniParser::defaultBooleanInitialValue = false;
         const double JaniParser::defaultRationalInitialValue = 0.0;
         const int64_t JaniParser::defaultIntegerInitialValue = 0;
+        const std::string VARIABLE_AUTOMATON_DELIMITER = "KUCHEN";
         const std::set<std::string> JaniParser::unsupportedOpstrings({"sin", "cos", "tan", "cot", "sec", "csc", "asin", "acos", "atan", "acot", "asec", "acsc",
                                                          "sinh", "cosh", "tanh", "coth", "sech", "csch", "asinh", "acosh", "atanh", "asinh", "acosh"});
 
@@ -186,7 +187,7 @@ namespace storm {
 
         std::shared_ptr<storm::jani::Variable> JaniParser::parseVariable(json const &variableStructure, std::string const& scopeDescription, bool prefWithScope) {
             STORM_LOG_THROW(variableStructure.count("name") == 1, storm::exceptions::InvalidJaniException, "Variable (scope: " + scopeDescription + ") must have a name");
-            std::string pref = prefWithScope  ? scopeDescription + "." : "";
+            std::string pref = prefWithScope  ? scopeDescription + VARIABLE_AUTOMATON_DELIMITER : "";
             std::string name = getString(variableStructure.at("name"), "variable-name in " + scopeDescription + "-scope");
             // TODO check existance of name.
             // TODO store prefix in variable.
