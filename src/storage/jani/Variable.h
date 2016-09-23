@@ -27,7 +27,7 @@ namespace storm {
              */
             Variable(std::string const& name, storm::expressions::Variable const& variable, bool transient = false);
             
-            virtual ~Variable() = default;
+            virtual ~Variable();
             
             /*!
              * Retrieves the associated expression variable

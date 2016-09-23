@@ -26,7 +26,7 @@ namespace storm {
         const bool JaniParser::defaultBooleanInitialValue = false;
         const double JaniParser::defaultRationalInitialValue = 0.0;
         const int64_t JaniParser::defaultIntegerInitialValue = 0;
-        const std::string VARIABLE_AUTOMATON_DELIMITER = "KUCHEN";
+        const std::string VARIABLE_AUTOMATON_DELIMITER = "_";
         const std::set<std::string> JaniParser::unsupportedOpstrings({"sin", "cos", "tan", "cot", "sec", "csc", "asin", "acos", "atan", "acot", "asec", "acsc",
                                                          "sinh", "cosh", "tanh", "coth", "sech", "csch", "asinh", "acosh", "atanh", "asinh", "acosh"});
 

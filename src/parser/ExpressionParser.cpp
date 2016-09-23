@@ -379,6 +379,8 @@ namespace storm {
                 STORM_LOG_THROW(this->identifiers_ != nullptr, storm::exceptions::WrongFormatException, "Unable to substitute identifier expressions without given mapping.");
                 storm::expressions::Expression const* expression = this->identifiers_->find(identifier);
                 if (expression == nullptr) {
+                    std::cout << "didn't find " << identifier << std::endl;
+                    identifiers_->for_each([] (std::string const& name, storm::expressions::Expression const& expr) { std::cout << "name: " << name << ", " << expr << std::endl; });
                     pass = false;
                     return manager->boolean(false);
                 }
