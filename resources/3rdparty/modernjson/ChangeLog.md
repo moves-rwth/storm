@@ -1,10 +1,54 @@
 # Change Log
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased](https://github.com/nlohmann/json/tree/HEAD)
+## [v2.0.5](https://github.com/nlohmann/json/releases/tag/v2.0.5) (2016-09-14)
+[Full Changelog](https://github.com/nlohmann/json/compare/v2.0.4...v2.0.5)
 
-[Full Changelog](https://github.com/nlohmann/json/compare/v1.1.0...HEAD)
+- make json\_benchmarks no longer working in 2.0.4 [\#310](https://github.com/nlohmann/json/issues/310)
 
+- \[feature request\]: schema validator and comments [\#311](https://github.com/nlohmann/json/issues/311)
+
+## [v2.0.4](https://github.com/nlohmann/json/releases/tag/v2.0.4) (2016-09-11)
+[Full Changelog](https://github.com/nlohmann/json/compare/v2.0.3...v2.0.4)
+
+- Parsing fails without space at end of file [\#306](https://github.com/nlohmann/json/issues/306)
+
+- Unused variable warning [\#304](https://github.com/nlohmann/json/issues/304)
+
+## [v2.0.3](https://github.com/nlohmann/json/releases/tag/v2.0.3) (2016-08-31)
+[Full Changelog](https://github.com/nlohmann/json/compare/v2.0.2...v2.0.3)
+
+- Support for iterator-range parsing [\#290](https://github.com/nlohmann/json/issues/290)
+
+- warning C4706: assignment within conditional expression [\#295](https://github.com/nlohmann/json/issues/295)
+- Horribly inconsistent behavior between const/non-const reference in operator \[\] \(\) [\#289](https://github.com/nlohmann/json/issues/289)
+
+- unit-constructor1.cpp: Fix floating point truncation warning [\#300](https://github.com/nlohmann/json/pull/300) ([t-b](https://github.com/t-b))
+
+## [v2.0.2](https://github.com/nlohmann/json/releases/tag/v2.0.2) (2016-07-31)
+[Full Changelog](https://github.com/nlohmann/json/compare/v2.0.1...v2.0.2)
+
+- value\(\) does not work with \_json\_pointer types [\#283](https://github.com/nlohmann/json/issues/283)
+- Easy serialization of classes [\#280](https://github.com/nlohmann/json/issues/280)
+
+- Build error for std::int64 [\#282](https://github.com/nlohmann/json/issues/282)
+
+- hexify\(\) function emits conversion warning [\#270](https://github.com/nlohmann/json/issues/270)
+
+- let the makefile choose the correct sed [\#279](https://github.com/nlohmann/json/pull/279) ([murinicanor](https://github.com/murinicanor))
+- Update hexify to use array lookup instead of ternary \(\#270\) [\#275](https://github.com/nlohmann/json/pull/275) ([dtoma](https://github.com/dtoma))
+
+## [v2.0.1](https://github.com/nlohmann/json/releases/tag/v2.0.1) (2016-06-28)
+[Full Changelog](https://github.com/nlohmann/json/compare/v2.0.0...v2.0.1)
+
+- dump\(\) performance degradation in v2 [\#272](https://github.com/nlohmann/json/issues/272)
+
+- fixed a tiny typo [\#271](https://github.com/nlohmann/json/pull/271) ([thelostt](https://github.com/thelostt))
+
+## [v2.0.0](https://github.com/nlohmann/json/releases/tag/v2.0.0) (2016-06-23)
+[Full Changelog](https://github.com/nlohmann/json/compare/v1.1.0...v2.0.0)
+
+- concatenate objects [\#252](https://github.com/nlohmann/json/issues/252)
 - Unit test fails when doing a CMake out-of-tree build [\#241](https://github.com/nlohmann/json/issues/241)
 - Additional integration options [\#237](https://github.com/nlohmann/json/issues/237)
 - Can't use basic\_json::iterator as a base iterator for std::move\_iterator [\#233](https://github.com/nlohmann/json/issues/233)
@@ -14,8 +58,12 @@ All notable changes to this project will be documented in this file. This projec
 - Add support for afl-fuzz testing [\#207](https://github.com/nlohmann/json/pull/207) ([mykter](https://github.com/mykter))
 - Issue \#178 - Extending support to full uint64\_t/int64\_t range and unsigned type \(updated\) [\#193](https://github.com/nlohmann/json/pull/193) ([twelsby](https://github.com/twelsby))
 
+- json::diff generates incorrect patch when removing multiple array elements. [\#269](https://github.com/nlohmann/json/issues/269)
+- -Wconversion warning [\#259](https://github.com/nlohmann/json/issues/259)
+- Maybe a bug [\#258](https://github.com/nlohmann/json/issues/258)
 - -Wconversion warnings [\#239](https://github.com/nlohmann/json/issues/239)
 - ambiguous overload for 'push\_back' and 'operator+=' [\#235](https://github.com/nlohmann/json/issues/235)
+- Incorrect dumping of parsed numbers with exponents, but without decimal places [\#230](https://github.com/nlohmann/json/issues/230)
 - double values are serialized with commas as decimal points [\#228](https://github.com/nlohmann/json/issues/228)
 - Move semantics with std::initializer\_list [\#225](https://github.com/nlohmann/json/issues/225)
 - abort during getline in yyfill [\#223](https://github.com/nlohmann/json/issues/223)
@@ -26,11 +74,18 @@ All notable changes to this project will be documented in this file. This projec
 - Floating point exceptions [\#181](https://github.com/nlohmann/json/issues/181)
 - In basic\_json::basic\_json\(const CompatibleArrayType& val\), the requirement of CompatibleArrayType is not strict enough. [\#174](https://github.com/nlohmann/json/issues/174)
 - Implicit assignment to std::string fails [\#144](https://github.com/nlohmann/json/issues/144)
+- Fix Issue \#265 [\#266](https://github.com/nlohmann/json/pull/266) ([06needhamt](https://github.com/06needhamt))
 - Issue \#195 - update Travis to Trusty due to gcc/clang strtod\(\) bug [\#196](https://github.com/nlohmann/json/pull/196) ([twelsby](https://github.com/twelsby))
 
+- Compiler Errors With JSON.hpp [\#265](https://github.com/nlohmann/json/issues/265)
+- VS2015 compile fail [\#260](https://github.com/nlohmann/json/issues/260)
+- Error when using json in g++ [\#254](https://github.com/nlohmann/json/issues/254)
+- Update long-term goals [\#246](https://github.com/nlohmann/json/issues/246)
+- Error compile Android NDK  error: 'strtof' is not a member of 'std' [\#219](https://github.com/nlohmann/json/issues/219)
 - Conflicting typedef of ssize\_t on Windows 32 bit when using Boost.Python [\#204](https://github.com/nlohmann/json/issues/204)
 - Integer conversion to unsigned [\#178](https://github.com/nlohmann/json/issues/178)
 
+- Define CMake/CTest tests [\#247](https://github.com/nlohmann/json/pull/247) ([robertmrk](https://github.com/robertmrk))
 - Out of tree builds and a few other miscellaneous CMake cleanups. [\#242](https://github.com/nlohmann/json/pull/242) ([ChrisKitching](https://github.com/ChrisKitching))
 - Implement additional integration options [\#238](https://github.com/nlohmann/json/pull/238) ([robertmrk](https://github.com/robertmrk))
 - make serialization locale-independent [\#232](https://github.com/nlohmann/json/pull/232) ([nlohmann](https://github.com/nlohmann))
