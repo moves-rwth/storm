@@ -1749,6 +1749,8 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Model still contains these undefined constants: " << boost::join(strings, ", ") << ".");
             }
             
+            STORM_LOG_THROW(!model.hasTransientEdgeDestinationAssignments(), storm::exceptions::WrongFormatException, "The symbolic JANI model builder currently does not support transient edge destination assignments.");
+            
             // Determine the actions that will appear in the parallel composition.
             storm::jani::CompositionInformationVisitor visitor(model, model.getSystemComposition());
             storm::jani::CompositionInformation actionInformation = visitor.getInformation();

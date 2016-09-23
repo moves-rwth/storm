@@ -51,5 +51,9 @@ namespace storm {
             return assignments.remove(assignment);
         }
         
+        bool EdgeDestination::hasTransientAssignment() const {
+            return !assignments.getTransientAssignments().empty();
+        }
+        
     }
 }

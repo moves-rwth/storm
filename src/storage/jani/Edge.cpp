@@ -137,5 +137,14 @@ namespace storm {
             }
             return false;
         }
+        
+        bool Edge::hasTransientEdgeDestinationAssignments() const {
+            for (auto const& destination : this->getDestinations()) {
+                if (destination.hasTransientAssignment()) {
+                    return true;
+                }
+            }
+            return false;
+        }
     }
 }

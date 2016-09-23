@@ -439,5 +439,20 @@ namespace storm {
                 edge.pushAssignmentsToDestinations();
             }
         }
+        
+        bool Automaton::hasTransientEdgeDestinationAssignments() const {
+            for (auto const& edge : this->getEdges()) {
+                if (edge.hasTransientEdgeDestinationAssignments()) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        
+        void Automaton::liftTransientEdgeDestinationAssignments() {
+            for (auto& edge : this->getEdges()) {
+                edge.liftTransientDestinationAssignments();
+            }
+        }
     }
 }

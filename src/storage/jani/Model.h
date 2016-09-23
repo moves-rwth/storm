@@ -17,8 +17,6 @@ namespace storm {
         
         class Exporter;
         
-        
-        
         class Model {
         public:
             friend class Exporter;
@@ -334,6 +332,16 @@ namespace storm {
              * as on the right-hand sides of transient assignments.
              */
             bool undefinedConstantsAreGraphPreserving() const;
+            
+            /*!
+             * Lifts the common edge destination assignments to edge assignments.
+             */
+            void liftTransientEdgeDestinationAssignments();
+            
+            /*!
+             * Retrieves whether there is any transient edge destination assignment in the model.
+             */
+            bool hasTransientEdgeDestinationAssignments() const;
             
             void makeStandardJaniCompliant();
             

@@ -317,6 +317,16 @@ namespace storm {
             
             void pushEdgeAssignmentsToDestinations();
             
+            /*!
+             * Retrieves whether there is any transient edge destination assignment in the automaton.
+             */
+            bool hasTransientEdgeDestinationAssignments() const;
+            
+            /*!
+             * Lifts the common edge destination assignments to edge assignments.
+             */
+            void liftTransientEdgeDestinationAssignments();
+            
         private:
             /// The name of the automaton.
             std::string name;

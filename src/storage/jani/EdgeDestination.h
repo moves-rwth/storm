@@ -53,6 +53,11 @@ namespace storm {
             bool hasAssignment(Assignment const& assignment) const;
             bool removeAssignment(Assignment const& assignment);
             
+            /*!
+             * Retrieves whether this destination has transient assignments.
+             */
+            bool hasTransientAssignment() const;
+            
         private:
             // The index of the destination location.
             uint64_t locationIndex;
