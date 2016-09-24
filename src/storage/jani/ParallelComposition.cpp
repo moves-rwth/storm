@@ -182,7 +182,7 @@ namespace storm {
                     STORM_LOG_THROW(vector.size() == this->subcompositions.size(), storm::exceptions::WrongFormatException, "Synchronization vectors must match parallel composition size.");
                     std::string const& action = vector.getInput(inputIndex);
                     if (action != SynchronizationVector::NO_ACTION_INPUT) {
-                        STORM_LOG_THROW(actions.find(action) == actions.end(), storm::exceptions::WrongFormatException, "Cannot use the same action multiple times as input in synchronization vectors.");
+                        STORM_LOG_THROW(actions.find(action) == actions.end(), storm::exceptions::WrongFormatException, "Cannot use the same action ('" << action << "') multiple times as input for index " << inputIndex << " in synchronization vectors.");
                         actions.insert(action);
                     }
                 }

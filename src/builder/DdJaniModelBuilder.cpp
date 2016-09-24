@@ -815,7 +815,7 @@ namespace storm {
                         result.extendLocalNondeterminismVariables(actionDds.front().getLocalNondeterminismVariables());
                     }
                 }
-
+                
                 return result;
             }
             
@@ -831,9 +831,9 @@ namespace storm {
                     auto const& action = actionIdentityPair.first;
                     if (!action.isInputEnabled()) {
                         allActionsInputEnabled = false;
-                        break;
                     }
                 }
+                
                 boost::optional<storm::dd::Bdd<Type>> guardDisjunction;
                 if (allActionsInputEnabled) {
                     guardDisjunction = this->variables.manager->getBddZero();
@@ -845,7 +845,7 @@ namespace storm {
                 std::map<storm::expressions::Variable, storm::dd::Bdd<Type>> globalVariableToWritingFragment;
                 std::map<storm::expressions::Variable, storm::dd::Bdd<Type>> globalVariableToWritingFragmentWithoutNondeterminism;
                 
-                storm::dd::Bdd<Type> guardConjunction = this->variables.manager->getBddOne();
+                storm::dd::Bdd<Type> inputEnabledGuard = this->variables.manager->getBddOne();
                 storm::dd::Add<Type, ValueType> transitions = this->variables.manager->template getAddOne<ValueType>();
                 std::map<storm::expressions::Variable, storm::dd::Add<Type, ValueType>> transientEdgeAssignments;
                 
@@ -867,6 +867,7 @@ namespace storm {
                     if (action.isInputEnabled()) {
                         // If the action is input-enabled, we add self-loops to all states.
                         transitions *= actionGuard.ite(action.transitions, encodeIndex(0, action.getLowestLocalNondeterminismVariable(), action.getHighestLocalNondeterminismVariable() - action.getLowestLocalNondeterminismVariable(), this->variables) * actionIdentityPair.second);
+                        actionGuard.ite(action.transitions, encodeIndex(0, action.getLowestLocalNondeterminismVariable(), action.getHighestLocalNondeterminismVariable() - action.getLowestLocalNondeterminismVariable(), this->variables) * actionIdentityPair.second).exportToDot("this.dot");
                     } else {
                         transitions *= action.transitions;
                     }
@@ -875,13 +876,13 @@ namespace storm {
                     auto nondetVariables = std::set<storm::expressions::Variable>(this->variables.localNondeterminismVariables.begin() + action.getLowestLocalNondeterminismVariable(), this->variables.localNondeterminismVariables.begin() + action.getHighestLocalNondeterminismVariable());
                     
                     for (auto const& entry : action.variableToWritingFragment) {
-                        storm::dd::Bdd<Type> guardedWritingFragment = guardConjunction && entry.second;
+                        storm::dd::Bdd<Type> guardedWritingFragment = inputEnabledGuard && entry.second;
                         
                         // Check whether there already is an entry for this variable in the mapping of global variables
                         // to their writing fragments.
                         auto globalFragmentIt = globalVariableToWritingFragment.find(entry.first);
                         if (globalFragmentIt != globalVariableToWritingFragment.end()) {
-                            // If it does, take the conjunction of the entries and also of their versions without nondeterminism
+                            // If there is, take the conjunction of the entries and also of their versions without nondeterminism
                             // variables.
                             globalFragmentIt->second &= guardedWritingFragment;
                             illegalFragment |= globalVariableToWritingFragmentWithoutNondeterminism[entry.first] && guardedWritingFragment.existsAbstract(nondetVariables);
@@ -899,21 +900,30 @@ namespace storm {
                     }
                     
                     // Now go through all fragments that are not written by the current action and join them with the
-                    // guard of the current action.
+                    // guard of the current action if the current action is not input enabled.
                     for (auto& entry : globalVariableToWritingFragment) {
-                        if (action.variableToWritingFragment.find(entry.first) == action.variableToWritingFragment.end()) {
+                        if (action.variableToWritingFragment.find(entry.first) == action.variableToWritingFragment.end() && !action.isInputEnabled()) {
                             entry.second &= actionGuard;
                         }
                     }
                     
-                    guardConjunction &= actionGuard;
+                    if (!action.isInputEnabled()) {
+                        inputEnabledGuard &= actionGuard;
+                    }
+                }
+                
+                // If all actions were input-enabled, we need to constrain the transitions with the disjunction of all
+                // guards to make sure there are not transitions resulting from input enabledness alone.
+                if (allActionsInputEnabled) {
+                    inputEnabledGuard &= guardDisjunction.get();
+                    transitions *= guardDisjunction.get().template toAdd<ValueType>();
                 }
                 
                 // Cut the union of the illegal fragments to the conjunction of the guards since only these states have
                 // such a combined transition.
-                illegalFragment &= guardConjunction;
+                illegalFragment &= inputEnabledGuard;
                 
-                return ActionDd(guardConjunction.template toAdd<ValueType>(), transitions * nonSynchronizingAutomataIdentities, transientEdgeAssignments, std::make_pair(lowestNondeterminismVariable, highestNondeterminismVariable), globalVariableToWritingFragment, illegalFragment);
+                return ActionDd(inputEnabledGuard.template toAdd<ValueType>(), transitions * nonSynchronizingAutomataIdentities, transientEdgeAssignments, std::make_pair(lowestNondeterminismVariable, highestNondeterminismVariable), globalVariableToWritingFragment, illegalFragment);
             }
             
             ActionDd combineUnsynchronizedActions(ActionDd action1, ActionDd action2, storm::dd::Add<Type, ValueType> const& identity1, storm::dd::Add<Type, ValueType> const& identity2) {
@@ -951,6 +961,7 @@ namespace storm {
                     }
                     
                     // Bring all actions to the same number of variables that encode the nondeterminism.
+                    int i = 0;
                     for (auto& action : actions) {
                         storm::dd::Bdd<Type> nondeterminismEncodingBdd = this->variables.manager->getBddOne();
                         for (uint_fast64_t i = action.getHighestLocalNondeterminismVariable(); i < highestLocalNondeterminismVariable; ++i) {
@@ -1454,6 +1465,7 @@ namespace storm {
                     if (inputEnabledActionIndices.find(actionIndex) != inputEnabledActionIndices.end()) {
                         actionDd.setIsInputEnabled();
                     }
+                    
                     result.actionIndexToAction[actionIndex] = actionDd;
                     result.setLowestLocalNondeterminismVariable(std::max(result.getLowestLocalNondeterminismVariable(), actionDd.getLowestLocalNondeterminismVariable()));
                     result.setHighestLocalNondeterminismVariable(std::max(result.getHighestLocalNondeterminismVariable(), actionDd.getHighestLocalNondeterminismVariable()));
@@ -1509,7 +1521,6 @@ namespace storm {
                         storm::dd::Add<Type, ValueType> actionEncoding = encodeAction(action.first != storm::jani::Model::SILENT_ACTION_INDEX ? boost::optional<uint64_t>(action.first) : boost::none, this->variables);
                         storm::dd::Add<Type, ValueType> missingNondeterminismEncoding = encodeIndex(0, action.second.getHighestLocalNondeterminismVariable(), numberOfUsedNondeterminismVariables - action.second.getHighestLocalNondeterminismVariable(), this->variables);
                         storm::dd::Add<Type, ValueType> extendedTransitions = actionEncoding * missingNondeterminismEncoding * action.second.transitions;
-                        
                         for (auto const& transientAssignment : action.second.transientEdgeAssignments) {
                             addToTransientAssignmentMap(transientEdgeAssignments, transientAssignment.first, actionEncoding * missingNondeterminismEncoding * transientAssignment.second);
                         }
