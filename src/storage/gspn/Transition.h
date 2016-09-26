@@ -121,46 +121,22 @@ namespace storm {
             std::string const& getName() const;
 
             /*!
-             * Returns a constant iterator to the begin of a vector which contains all input places.
-             *
-             * @return Returns iterator.
+             * Returns a list of places which are connected via a input arc.
+             * @return
              */
-            std::vector<std::shared_ptr<storm::gspn::Place>>::const_iterator getInputPlacesCBegin() const;
+            const std::vector<std::shared_ptr<storm::gspn::Place>> &getInputPlaces() const;
 
             /*!
-             * Returns a constant iterator to the end of a vector which contains all input places.
-             *
-             * @return Returns iterator.
+             * Returns a list of places which are connected via a output arc.
+             * @return
              */
-            std::vector<std::shared_ptr<storm::gspn::Place>>::const_iterator getInputPlacesCEnd() const;
+            const std::vector<std::shared_ptr<storm::gspn::Place>> &getOutputPlaces() const;
 
             /*!
-             * Returns a constant iterator to the begin of a vector which contains all output places.
-             *
-             * @return Returns iterator.
+             * Returns a list of places which are connected via a inhibition arc.
+             * @return
              */
-            std::vector<std::shared_ptr<storm::gspn::Place>>::const_iterator getOutputPlacesCBegin() const;
-
-            /*!
-             * Returns a constant iterator to the end of a vector which contains all output places.
-             *
-             * @return Returns iterator.
-             */
-            std::vector<std::shared_ptr<storm::gspn::Place>>::const_iterator getOutputPlacesCEnd() const;
-
-            /*!
-             * Returns a constant iterator to the begin of a vector which contains all inhibition places.
-             *
-             * @return Returns iterator.
-             */
-            std::vector<std::shared_ptr<storm::gspn::Place>>::const_iterator getInhibitionPlacesCBegin() const;
-
-            /*!
-             * Returns a constant iterator to the end of a vector which contains all inhibition places.
-             *
-             * @return Returns iterator.
-             */
-            std::vector<std::shared_ptr<storm::gspn::Place>>::const_iterator getInhibitionPlacesCEnd() const;
+            const std::vector<std::shared_ptr<storm::gspn::Place>> &getInhibitionPlaces() const;
 
             /*!
              * Returns the corresponding multiplicity.
@@ -205,19 +181,19 @@ namespace storm {
              * A place is less than another place if the id is less than the id from the other place.
              */
             struct PlaceComparator {
-                bool operator()(std::shared_ptr<storm::gspn::Place> const& lhs, std::shared_ptr<storm::gspn::Place> const& rhs) const {
-                    return lhs->getID() < rhs->getID();
+                bool operator()(uint_fast64_t const& lhs, uint_fast64_t const& rhs) const {
+                    return lhs < rhs;
                 }
             };
 
-            // maps places connected to this transition with an input arc to the corresponding multiplicity
-            std::map<std::shared_ptr<storm::gspn::Place>, uint_fast64_t, storm::gspn::Transition::PlaceComparator> inputMultiplicities;
+            // maps place ids connected to this transition with an input arc to the corresponding multiplicity
+            std::map<uint_fast64_t, uint_fast64_t, storm::gspn::Transition::PlaceComparator> inputMultiplicities;
 
-            // maps places connected to this transition with an output arc to the corresponding multiplicities
-            std::map<std::shared_ptr<storm::gspn::Place>, uint_fast64_t, storm::gspn::Transition::PlaceComparator> outputMultiplicities;
+            // maps place ids connected to this transition with an output arc to the corresponding multiplicities
+            std::map<uint_fast64_t, uint_fast64_t, storm::gspn::Transition::PlaceComparator> outputMultiplicities;
 
-            // maps places connected to this transition with an inhibition arc to the corresponding multiplicity
-            std::map<std::shared_ptr<storm::gspn::Place>, uint_fast64_t, storm::gspn::Transition::PlaceComparator> inhibitionMultiplicities;
+            // maps place ids connected to this transition with an inhibition arc to the corresponding multiplicity
+            std::map<uint_fast64_t, uint_fast64_t, storm::gspn::Transition::PlaceComparator> inhibitionMultiplicities;
 
             // name of the transition
             std::string name;

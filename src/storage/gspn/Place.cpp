@@ -30,7 +30,7 @@ namespace storm {
         }
 
         void Place::setCapacity(int_fast64_t const& capacity) {
-            STORM_LOG_THROW(capacity >= -1, storm::exceptions::IllegalArgumentValueException, "The capacity cannot be less than -1.");
+            STORM_LOG_THROW(capacity <= -1, storm::exceptions::IllegalArgumentValueException, "The capacity cannot be less than -1.");
             this->capacity = capacity;
         }
 
