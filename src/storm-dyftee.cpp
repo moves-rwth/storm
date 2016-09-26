@@ -1,12 +1,12 @@
-#include "logic/Formula.h"
-#include "utility/initialize.h"
-#include "utility/storm.h"
-#include "modelchecker/DFTAnalyser.h"
+#include "src/logic/Formula.h"
+#include "src/utility/initialize.h"
+#include "src/utility/storm.h"
+#include "src/parser/DFTGalileoParser.h"
+#include "src/modelchecker/dft/DFTModelChecker.h"
 #include "src/cli/cli.h"
 #include "src/exceptions/BaseException.h"
 #include "src/utility/macros.h"
 #include "src/builder/DftSmtBuilder.h"
-#include <boost/lexical_cast.hpp>
 
 #include "src/settings/modules/GeneralSettings.h"
 #include "src/settings/modules/DFTSettings.h"
@@ -24,6 +24,8 @@
 //#include "src/settings/modules/ParametricSettings.h"
 #include "src/settings/modules/SparseDtmcEliminationModelCheckerSettings.h"
 
+#include <boost/lexical_cast.hpp>
+
 /*!
  * Load DFT from filename, build corresponding Model and check against given property.
  *
@@ -39,10 +41,10 @@ void analyzeDFT(std::string filename, std::string property, bool symred = false,
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::parseFormulasForExplicit(property);
     STORM_LOG_ASSERT(formulas.size() == 1, "Wrong number of formulas.");
     
-    DFTAnalyser<ValueType> analyser;
-    analyser.check(dft, formulas[0], symred, allowModularisation, enableDC);
-    analyser.printTimings();
-    analyser.printResult();
+    storm::modelchecker::DFTModelChecker<ValueType> modelChecker;
+    modelChecker.check(dft, formulas[0], symred, allowModularisation, enableDC);
+    modelChecker.printTimings();
+    modelChecker.printResult();
 }
 
 template<typename ValueType>

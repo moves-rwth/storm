@@ -29,6 +29,7 @@ namespace storm {
             virtual std::vector<StateType> getInitialStates(StateToIdCallback const& stateToIdCallback) override;
 
             virtual void load(DFTStatePointer const& state) override;
+            void load(CompressedState const& state);
             virtual StateBehavior<ValueType, StateType> expand(StateToIdCallback const& stateToIdCallback) override;
             virtual bool satisfies(storm::expressions::Expression const& expression) const override;
 
@@ -50,7 +51,7 @@ namespace storm {
             storm::storage::DFTStateGenerationInfo const& mStateGenerationInfo;
 
             // Current state
-            DFTStatePointer const* state;
+            DFTStatePointer state;
 
             // Flag indicating if dont care propagation is enabled.
             bool enableDC;
