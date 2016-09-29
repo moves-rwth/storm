@@ -21,7 +21,7 @@ namespace storm {
         
         class FormulaParser {
         public:
-            FormulaParser(std::shared_ptr<storm::expressions::ExpressionManager const> const& manager = std::shared_ptr<storm::expressions::ExpressionManager>(new storm::expressions::ExpressionManager()));
+            FormulaParser(std::shared_ptr<storm::expressions::ExpressionManager const> const& manager);
             FormulaParser(storm::prism::Program const& program);
             
             FormulaParser(FormulaParser const& other);

@@ -1,10 +1,3 @@
-/* 
- * File:   PgclParser.cpp
- * Author: Lukas Westhofen
- * 
- * Created on 1. April 2015, 19:12
- */
-
 #include "src/parser/PgclParser.h"
 // If the parser fails due to ill-formed data, this exception is thrown.
 #include "src/exceptions/WrongFormatException.h"
@@ -60,22 +53,24 @@ namespace storm {
         }
         
         PgclParser::PgclParser(std::string const& filename, Iterator first) :
-            PgclParser::base_type(program, "PGCL grammar"),
-            annotate(first),
-            expressionManager(std::shared_ptr<storm::expressions::ExpressionManager>(new storm::expressions::ExpressionManager())),
-            expressionParser(*expressionManager, invalidIdentifiers) {
+        PgclParser::base_type(program, "PGCL grammar"),
+        annotate(first),
+        expressionManager(std::shared_ptr<storm::expressions::ExpressionManager>(new storm::expressions::ExpressionManager())),
+        expressionParser(*expressionManager, invalidIdentifiers)
+        {
             this->enableExpressions();
             /*
              * PGCL grammar is defined here
              */
             // Rough program structure
-            program               = (qi::lit("function ") >> programName >> qi::lit("(") >> -(doubleDeclaration % qi::lit(",")) >> qi::lit(")") >> qi::lit("{") >>
-                                        variableDeclarations >>
-                                        sequenceOfStatements >>
+            program               = (qi::lit("function ") > programName > qi::lit("(") > -(doubleDeclaration % qi::lit(",")) > qi::lit(")") > qi::lit("{") >
+                                        variableDeclarations >
+                                        sequenceOfStatements >
                                     qi::lit("}"))[qi::_val = phoenix::bind(&PgclParser::createProgram, phoenix::ref(*this), qi::_1, qi::_2, qi::_3, qi::_4)];
             sequenceOfStatements %= +(statement);
+            sequenceOfStatements.name("sequence of statements");
             
-            variableDeclarations %= qi::lit("var") >> qi::lit("{") >> +(integerDeclaration | booleanDeclaration) >> qi::lit("}");
+            variableDeclarations %= qi::lit("var") > qi::lit("{") > +(integerDeclaration | booleanDeclaration) > qi::lit("}");
             variableDeclarations.name("variable declarations");
                 
             // Statements
@@ -86,32 +81,39 @@ namespace storm {
             // Simple statements
             doubleDeclaration           = (qi::lit("double ") >> variableName)[qi::_val = phoenix::bind(&PgclParser::declareDoubleVariable, phoenix::ref(*this), qi::_1)];
             integerDeclaration = (qi::lit("int ") >> variableName >> qi::lit(":=") >> expression >> qi::lit(";"))[qi::_val = phoenix::bind(&PgclParser::createIntegerDeclarationStatement, phoenix::ref(*this), qi::_1, qi::_2)];
+            integerDeclaration.name("integer declaration");
             booleanDeclaration = (qi::lit("bool ") >> variableName >> qi::lit(":=") >> expression >> qi::lit(";"))[qi::_val = phoenix::bind(&PgclParser::createBooleanDeclarationStatement, phoenix::ref(*this), qi::_1, qi::_2)];
-
-            assignmentStatement         = (variableName >> qi::lit(":=") >> (expression | uniformExpression) >> qi::lit(";"))[qi::_val = phoenix::bind(&PgclParser::createAssignmentStatement, phoenix::ref(*this), qi::_1, qi::_2)];
-            observeStatement            = (qi::lit("observe") >> qi::lit("(") >> booleanCondition >> qi::lit(")") >> qi::lit(";"))[qi::_val = phoenix::bind(&PgclParser::createObserveStatement, phoenix::ref(*this), qi::_1)];
+            booleanDeclaration.name("boolean declaration");
+            
+            assignmentStatement         = (variableName > qi::lit(":=") > (expression | uniformExpression) > qi::lit(";"))[qi::_val = phoenix::bind(&PgclParser::createAssignmentStatement, phoenix::ref(*this), qi::_1, qi::_2)];
+            observeStatement            = (qi::lit("observe") > qi::lit("(") >> booleanCondition >> qi::lit(")") > qi::lit(";"))[qi::_val = phoenix::bind(&PgclParser::createObserveStatement, phoenix::ref(*this), qi::_1)];
 
             // Compound statements
-            ifElseStatement        = (qi::lit("if") >> qi::lit("(") >> booleanCondition >> qi::lit(")") >> qi::lit("{") >>
+            ifElseStatement        = (qi::lit("if") > qi::lit("(") >> booleanCondition >> qi::lit(")") >> qi::lit("{") >>
                                          sequenceOfStatements >>
                                      qi::lit("}") >> -(qi::lit("else") >> qi::lit("{") >>
                                          sequenceOfStatements >>
                                      qi::lit("}")))
                                      [qi::_val = phoenix::bind(&PgclParser::createIfElseStatement, phoenix::ref(*this), qi::_1, qi::_2, qi::_3)];
+            ifElseStatement.name("if/else statement");
             branchStatement        = nondeterministicBranch | probabilisticBranch;
-            loopStatement          = (qi::lit("while") >> qi::lit("(") >> booleanCondition >> qi::lit(")") >> qi::lit("{") >>
+            loopStatement          = (qi::lit("while") > qi::lit("(") > booleanCondition > qi::lit(")") > qi::lit("{") >>
                                          sequenceOfStatements >>
                                      qi::lit("}"))
                                      [qi::_val = phoenix::bind(&PgclParser::createLoopStatement, phoenix::ref(*this), qi::_1, qi::_2)];
+            loopStatement.name("loop statement");
             nondeterministicBranch = (qi::lit("{") >> sequenceOfStatements >> qi::lit("}") >> qi::lit("[]") >> qi::lit("{") >> sequenceOfStatements>> qi::lit("}"))[qi::_val = phoenix::bind(&PgclParser::createNondeterministicBranch, phoenix::ref(*this), qi::_1, qi::_2)];
             probabilisticBranch    = (qi::lit("{") >> sequenceOfStatements >> qi::lit("}") >> qi::lit("[") >> expression >> qi::lit("]") >> qi::lit("{") >> sequenceOfStatements >> qi::lit("}"))[qi::_val = phoenix::bind(&PgclParser::createProbabilisticBranch, phoenix::ref(*this), qi::_2, qi::_1, qi::_3)];
 
             // Expression and condition building, and basic identifiers
             expression       %= expressionParser;
+            expression.name("expression");
             booleanCondition  = expressionParser[qi::_val = phoenix::bind(&PgclParser::createBooleanExpression, phoenix::ref(*this), qi::_1)];
             uniformExpression = (qi::lit("unif") >> qi::lit("(") >> qi::int_ >> qi::lit(",") >> qi::int_ >> qi::lit(")"))[qi::_val = phoenix::bind(&PgclParser::createUniformExpression, phoenix::ref(*this), qi::_1, qi::_2)];
-            variableName     %= (+(qi::alnum | qi::lit("_"))) - (qi::lit("int") >> +(qi::alnum | qi::lit("_")));
+            variableName     %= (+(qi::alnum | qi::lit("_"))) - invalidIdentifiers;
+            variableName.name("variable name");
             programName      %= +(qi::alnum | qi::lit("_"));
+            programName.name("program name");
 
             // Enables location tracking for important entities
             auto setLocationInfoFunction = this->annotate(*qi::_val, qi::_1, qi::_3);
@@ -121,8 +123,24 @@ namespace storm {
             qi::on_success(probabilisticBranch, setLocationInfoFunction);
             qi::on_success(loopStatement, setLocationInfoFunction);
             qi::on_success(ifElseStatement, setLocationInfoFunction);
-            qi::on_success(integerDeclaration, setLocationInfoFunction);
-
+                
+            // Enable error reporting.
+            qi::on_error<qi::fail>(program, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+            qi::on_error<qi::fail>(variableDeclarations, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+            qi::on_error<qi::fail>(integerDeclaration, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+            qi::on_error<qi::fail>(booleanDeclaration, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+            
+            qi::on_error<qi::fail>(assignmentStatement, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+            qi::on_error<qi::fail>(observeStatement, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+            qi::on_error<qi::fail>(ifElseStatement, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+            qi::on_error<qi::fail>(loopStatement, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+            qi::on_error<qi::fail>(branchStatement, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+            
+            
+            qi::on_error<qi::fail>(expression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+            qi::on_error<qi::fail>(booleanCondition, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+            qi::on_error<qi::fail>(uniformExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+            
             // Adds dummy to the 0-th location.
             std::shared_ptr<storm::pgcl::AssignmentStatement> dummy(new storm::pgcl::AssignmentStatement());
             this->locationToStatement.insert(this->locationToStatement.begin(), dummy);
@@ -139,15 +157,20 @@ namespace storm {
          * throw excpetions in case something unexpected was parsed, e.g.
          * (x+5) as a boolean expression, or types of assignments don't match.
          */
-        storm::pgcl::PgclProgram PgclParser::createProgram(std::string const& programName, boost::optional<std::vector<storm::expressions::Variable>> parameters, std::vector<std::shared_ptr<storm::pgcl::AssignmentStatement>> const& variableDeclarations, std::vector<std::shared_ptr<storm::pgcl::Statement>> statements) {
+        storm::pgcl::PgclProgram PgclParser::createProgram(std::string const& programName, boost::optional<std::vector<storm::expressions::Variable>> parameters, std::vector<std::shared_ptr<storm::pgcl::VariableDeclaration>> const& variableDeclarations, std::vector<std::shared_ptr<storm::pgcl::Statement>> const&  statements) {
             // Creates an empty paramter list in case no parameters were given.
             std::vector<storm::expressions::Variable> params;
             if(parameters != boost::none) {
                 params = *parameters;
             }
+            std::vector<storm::pgcl::VariableDeclaration> declarations;
+            for (auto const& decl : variableDeclarations) {
+                declarations.push_back(*decl);
+            }
+            
             // Creates the actual program.
             std::shared_ptr<storm::pgcl::PgclProgram> result(
-                    new storm::pgcl::PgclProgram(statements, this->locationToStatement, params, this->expressionManager, this->loopCreated, this->nondetCreated, this->observeCreated)
+                    new storm::pgcl::PgclProgram(declarations, statements, this->locationToStatement, params, this->expressionManager, this->loopCreated, this->nondetCreated, this->observeCreated)
             );
             result->back()->setLast(true);
             // Sets the current program as a parent to all its direct children statements.
@@ -181,7 +204,7 @@ namespace storm {
             return newAssignment;
         }
 
-        std::shared_ptr<storm::pgcl::AssignmentStatement> PgclParser::createIntegerDeclarationStatement(std::string const& variableName, storm::expressions::Expression const& assignedExpression) {
+        std::shared_ptr<storm::pgcl::VariableDeclaration> PgclParser::createIntegerDeclarationStatement(std::string const& variableName, storm::expressions::Expression const& assignedExpression) {
             storm::expressions::Variable variable;
             if(!(*expressionManager).hasVariable(variableName)) {
                 variable = (*expressionManager).declareIntegerVariable(variableName);
@@ -191,14 +214,11 @@ namespace storm {
                 variable = (*expressionManager).getVariable(variableName);
                 STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Declaration of integer variable " << variableName << " which was already declared previously.");
             }
-            std::shared_ptr<storm::pgcl::AssignmentStatement> newAssignment(new storm::pgcl::AssignmentStatement(variable, assignedExpression));
-            newAssignment->setLocationNumber(this->currentLocationNumber);
-            this->locationToStatement.insert(this->locationToStatement.begin() + this->currentLocationNumber, newAssignment);
-            currentLocationNumber++;
-            return newAssignment;
+            // Todo add some checks
+            return std::make_shared<storm::pgcl::VariableDeclaration>(variable, assignedExpression);
         }
 
-        std::shared_ptr<storm::pgcl::AssignmentStatement> PgclParser::createBooleanDeclarationStatement(std::string const& variableName, storm::expressions::Expression const& assignedExpression) {
+        std::shared_ptr<storm::pgcl::VariableDeclaration> PgclParser::createBooleanDeclarationStatement(std::string const& variableName, storm::expressions::Expression const& assignedExpression) {
             storm::expressions::Variable variable;
             if(!(*expressionManager).hasVariable(variableName)) {
                 variable = (*expressionManager).declareBooleanVariable(variableName);
@@ -208,11 +228,8 @@ namespace storm {
                 variable = (*expressionManager).getVariable(variableName);
                 STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Declaration of boolean variable " << variableName << " which was already declared previously.");
             }
-            std::shared_ptr<storm::pgcl::AssignmentStatement> newAssignment(new storm::pgcl::AssignmentStatement(variable, assignedExpression));
-            newAssignment->setLocationNumber(this->currentLocationNumber);
-            this->locationToStatement.insert(this->locationToStatement.begin() + this->currentLocationNumber, newAssignment);
-            currentLocationNumber++;
-            return newAssignment;
+            // TODO add some checks.
+            return std::make_shared<storm::pgcl::VariableDeclaration>(variable, assignedExpression);
         }
 
         std::shared_ptr<storm::pgcl::ObserveStatement> PgclParser::createObserveStatement(storm::pgcl::BooleanExpression const& condition) {

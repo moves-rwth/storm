@@ -37,7 +37,8 @@ namespace storm {
     }
 
     std::vector<std::shared_ptr<storm::logic::Formula const>> parseFormulasForExplicit(std::string const& inputString) {
-        storm::parser::FormulaParser formulaParser;
+        auto exprManager = std::make_shared<storm::expressions::ExpressionManager>();
+        storm::parser::FormulaParser formulaParser(exprManager);
         return parseFormulas(formulaParser, inputString);
     }
 

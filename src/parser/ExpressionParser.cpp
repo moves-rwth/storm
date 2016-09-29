@@ -4,6 +4,9 @@
 #include "src/exceptions/WrongFormatException.h"
 
 #include "src/utility/constants.h"
+#include "src/parser/ExpressionCreator.h"
+#include "src/storage/expressions/Expression.h"
+
 
 namespace boost {
     namespace spirit {
@@ -33,85 +36,91 @@ namespace boost {
 
 namespace storm {
     namespace parser {
-        ExpressionParser::ExpressionParser(storm::expressions::ExpressionManager const& manager, qi::symbols<char, uint_fast64_t> const& invalidIdentifiers_, bool enableErrorHandling, bool allowBacktracking) : ExpressionParser::base_type(expression), orOperator_(), andOperator_(), equalityOperator_(), relationalOperator_(), plusOperator_(), multiplicationOperator_(), infixPowerOperator_(), unaryOperator_(), floorCeilOperator_(), minMaxOperator_(), prefixPowerOperator_(), trueFalse_(manager), manager(manager.getSharedPointer()), createExpressions(false), acceptDoubleLiterals(true), identifiers_(nullptr), invalidIdentifiers_(invalidIdentifiers_) {
+        ExpressionParser::ExpressionParser(storm::expressions::ExpressionManager const& manager, qi::symbols<char, uint_fast64_t> const& invalidIdentifiers_, bool enableErrorHandling, bool allowBacktracking) : ExpressionParser::base_type(expression), orOperator_(), andOperator_(), equalityOperator_(), relationalOperator_(), plusOperator_(), multiplicationOperator_(), infixPowerOperator_(), unaryOperator_(), floorCeilOperator_(), minMaxOperator_(), prefixPowerOperator_(), invalidIdentifiers_(invalidIdentifiers_) {
+            
+            expressionCreator = new ExpressionCreator(manager);
+            
             identifier %= qi::as_string[qi::raw[qi::lexeme[((qi::alpha | qi::char_('_') | qi::char_('.')) >> *(qi::alnum | qi::char_('_')))]]][qi::_pass = phoenix::bind(&ExpressionParser::isValidIdentifier, phoenix::ref(*this), qi::_1)];
             identifier.name("identifier");
             
             if (allowBacktracking) {
-                floorCeilExpression = ((floorCeilOperator_ >> qi::lit("(")) >> expression >> qi::lit(")"))[qi::_val = phoenix::bind(&ExpressionParser::createFloorCeilExpression, phoenix::ref(*this), qi::_1, qi::_2, qi::_pass)];
+                floorCeilExpression = ((floorCeilOperator_ >> qi::lit("(")) >> expression >> qi::lit(")"))[qi::_val = phoenix::bind(&ExpressionCreator::createFloorCeilExpression, phoenix::ref(*expressionCreator), qi::_1, qi::_2, qi::_pass)];
             } else {
-                floorCeilExpression = ((floorCeilOperator_ >> qi::lit("(")) > expression > qi::lit(")"))[qi::_val = phoenix::bind(&ExpressionParser::createFloorCeilExpression, phoenix::ref(*this), qi::_1, qi::_2, qi::_pass)];
+                floorCeilExpression = ((floorCeilOperator_ >> qi::lit("(")) > expression > qi::lit(")"))[qi::_val = phoenix::bind(&ExpressionCreator::createFloorCeilExpression, phoenix::ref(*expressionCreator), qi::_1, qi::_2, qi::_pass)];
             }
             floorCeilExpression.name("floor/ceil expression");
             
             if (allowBacktracking) {
-                minMaxExpression = ((minMaxOperator_[qi::_a = qi::_1] >> qi::lit("(")) >> expression[qi::_val = qi::_1] >> +(qi::lit(",") >> expression)[qi::_val = phoenix::bind(&ExpressionParser::createMinimumMaximumExpression, phoenix::ref(*this), qi::_val, qi::_a, qi::_1, qi::_pass)]) >> qi::lit(")");
+                minMaxExpression = ((minMaxOperator_[qi::_a = qi::_1] >> qi::lit("(")) >> expression[qi::_val = qi::_1] >> +(qi::lit(",") >> expression)[qi::_val = phoenix::bind(&ExpressionCreator::createMinimumMaximumExpression, phoenix::ref(*expressionCreator), qi::_val, qi::_a, qi::_1, qi::_pass)]) >> qi::lit(")");
             } else {
-                minMaxExpression = ((minMaxOperator_[qi::_a = qi::_1] >> qi::lit("(")) > expression[qi::_val = qi::_1] > +(qi::lit(",") > expression)[qi::_val = phoenix::bind(&ExpressionParser::createMinimumMaximumExpression, phoenix::ref(*this), qi::_val, qi::_a, qi::_1, qi::_pass)]) > qi::lit(")");
+                minMaxExpression = ((minMaxOperator_[qi::_a = qi::_1] >> qi::lit("(")) > expression[qi::_val = qi::_1] > +(qi::lit(",") > expression)[qi::_val = phoenix::bind(&ExpressionCreator::createMinimumMaximumExpression, phoenix::ref(*expressionCreator), qi::_val, qi::_a, qi::_1, qi::_pass)]) > qi::lit(")");
             }
             minMaxExpression.name("min/max expression");
             
             if (allowBacktracking) {
-                prefixPowerExpression = ((prefixPowerOperator_ >> qi::lit("(")) >> expression >> qi::lit(",") >> expression >> qi::lit(")"))[qi::_val = phoenix::bind(&ExpressionParser::createPowerExpression, phoenix::ref(*this), qi::_2, qi::_1, qi::_3, qi::_pass)];
+                prefixPowerExpression = ((prefixPowerOperator_ >> qi::lit("(")) >> expression >> qi::lit(",") >> expression >> qi::lit(")"))[qi::_val = phoenix::bind(&ExpressionCreator::createPowerExpression, phoenix::ref(*expressionCreator), qi::_2, qi::_1, qi::_3, qi::_pass)];
             } else {
-                prefixPowerExpression = ((prefixPowerOperator_ >> qi::lit("(")) > expression > qi::lit(",") > expression > qi::lit(")"))[qi::_val = phoenix::bind(&ExpressionParser::createPowerExpression, phoenix::ref(*this), qi::_2, qi::_1, qi::_3, qi::_pass)];
+                prefixPowerExpression = ((prefixPowerOperator_ >> qi::lit("(")) > expression > qi::lit(",") > expression > qi::lit(")"))[qi::_val = phoenix::bind(&ExpressionCreator::createPowerExpression, phoenix::ref(*expressionCreator), qi::_2, qi::_1, qi::_3, qi::_pass)];
             }
             prefixPowerExpression.name("pow expression");
             
-			identifierExpression = identifier[qi::_val = phoenix::bind(&ExpressionParser::getIdentifierExpression, phoenix::ref(*this), qi::_1, allowBacktracking, qi::_pass)];
+			identifierExpression = identifier[qi::_val = phoenix::bind(&ExpressionCreator::getIdentifierExpression, phoenix::ref(*expressionCreator), qi::_1, allowBacktracking, qi::_pass)];
             identifierExpression.name("identifier expression");
             
-            literalExpression = trueFalse_[qi::_val = qi::_1] | rationalLiteral_[qi::_val = phoenix::bind(&ExpressionParser::createRationalLiteralExpression, phoenix::ref(*this), qi::_1, qi::_pass)] | qi::int_[qi::_val = phoenix::bind(&ExpressionParser::createIntegerLiteralExpression, phoenix::ref(*this), qi::_1, qi::_pass)];
+            literalExpression = qi::lit("true")[qi::_val = phoenix::bind(&ExpressionCreator::createBooleanLiteralExpression, phoenix::ref(*expressionCreator), true, qi::_pass)]
+                | qi::lit("false")[qi::_val = phoenix::bind(&ExpressionCreator::createBooleanLiteralExpression, phoenix::ref(*expressionCreator), false, qi::_pass)]
+                | rationalLiteral_[qi::_val = phoenix::bind(&ExpressionCreator::createRationalLiteralExpression, phoenix::ref(*expressionCreator), qi::_1, qi::_pass)]
+                | qi::int_[qi::_val = phoenix::bind(&ExpressionCreator::createIntegerLiteralExpression, phoenix::ref(*expressionCreator), qi::_1, qi::_pass)];
             literalExpression.name("literal expression");
             
             atomicExpression = floorCeilExpression | prefixPowerExpression | minMaxExpression | (qi::lit("(") >> expression >> qi::lit(")")) | literalExpression | identifierExpression;
             atomicExpression.name("atomic expression");
             
-            unaryExpression = (-unaryOperator_ >> atomicExpression)[qi::_val = phoenix::bind(&ExpressionParser::createUnaryExpression, phoenix::ref(*this), qi::_1, qi::_2, qi::_pass)];
+            unaryExpression = (-unaryOperator_ >> atomicExpression)[qi::_val = phoenix::bind(&ExpressionCreator::createUnaryExpression, phoenix::ref(*expressionCreator), qi::_1, qi::_2, qi::_pass)];
             unaryExpression.name("unary expression");
             
             if (allowBacktracking) {
-                infixPowerExpression = unaryExpression[qi::_val = qi::_1] > -(infixPowerOperator_ > expression)[qi::_val = phoenix::bind(&ExpressionParser::createPowerExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2, qi::_pass)];
+                infixPowerExpression = unaryExpression[qi::_val = qi::_1] > -(infixPowerOperator_ > expression)[qi::_val = phoenix::bind(&ExpressionCreator::createPowerExpression, phoenix::ref(*expressionCreator), qi::_val, qi::_1, qi::_2, qi::_pass)];
             } else {
-                infixPowerExpression = unaryExpression[qi::_val = qi::_1] > -(infixPowerOperator_ >> expression)[qi::_val = phoenix::bind(&ExpressionParser::createPowerExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2, qi::_pass)];
+                infixPowerExpression = unaryExpression[qi::_val = qi::_1] > -(infixPowerOperator_ >> expression)[qi::_val = phoenix::bind(&ExpressionCreator::createPowerExpression, phoenix::ref(*expressionCreator), qi::_val, qi::_1, qi::_2, qi::_pass)];
             }
             infixPowerExpression.name("power expression");
             
             if (allowBacktracking) {
-                multiplicationExpression = infixPowerExpression[qi::_val = qi::_1] >> *(multiplicationOperator_ >> infixPowerExpression)[qi::_val = phoenix::bind(&ExpressionParser::createMultExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2, qi::_pass)];
+                multiplicationExpression = infixPowerExpression[qi::_val = qi::_1] >> *(multiplicationOperator_ >> infixPowerExpression)[qi::_val = phoenix::bind(&ExpressionCreator::createMultExpression, phoenix::ref(*expressionCreator), qi::_val, qi::_1, qi::_2, qi::_pass)];
             } else {
-                multiplicationExpression = infixPowerExpression[qi::_val = qi::_1] > *(multiplicationOperator_ > infixPowerExpression)[qi::_val = phoenix::bind(&ExpressionParser::createMultExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2, qi::_pass)];
+                multiplicationExpression = infixPowerExpression[qi::_val = qi::_1] > *(multiplicationOperator_ > infixPowerExpression)[qi::_val = phoenix::bind(&ExpressionCreator::createMultExpression, phoenix::ref(*expressionCreator), qi::_val, qi::_1, qi::_2, qi::_pass)];
             }
             multiplicationExpression.name("multiplication expression");
             
-            plusExpression = multiplicationExpression[qi::_val = qi::_1] > *(plusOperator_ >> multiplicationExpression)[qi::_val = phoenix::bind(&ExpressionParser::createPlusExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2, qi::_pass)];
+            plusExpression = multiplicationExpression[qi::_val = qi::_1] > *(plusOperator_ >> multiplicationExpression)[qi::_val = phoenix::bind(&ExpressionCreator::createPlusExpression, phoenix::ref(*expressionCreator), qi::_val, qi::_1, qi::_2, qi::_pass)];
             plusExpression.name("plus expression");
             
             if (allowBacktracking) {
-                relativeExpression = plusExpression[qi::_val = qi::_1] >> -(relationalOperator_ >> plusExpression)[qi::_val = phoenix::bind(&ExpressionParser::createRelationalExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2, qi::_pass)];
+                relativeExpression = plusExpression[qi::_val = qi::_1] >> -(relationalOperator_ >> plusExpression)[qi::_val = phoenix::bind(&ExpressionCreator::createRelationalExpression, phoenix::ref(*expressionCreator), qi::_val, qi::_1, qi::_2, qi::_pass)];
             } else {
-                relativeExpression = plusExpression[qi::_val = qi::_1] > -(relationalOperator_ > plusExpression)[qi::_val = phoenix::bind(&ExpressionParser::createRelationalExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2, qi::_pass)];
+                relativeExpression = plusExpression[qi::_val = qi::_1] > -(relationalOperator_ > plusExpression)[qi::_val = phoenix::bind(&ExpressionCreator::createRelationalExpression, phoenix::ref(*expressionCreator), qi::_val, qi::_1, qi::_2, qi::_pass)];
             }
             relativeExpression.name("relative expression");
                         
-            equalityExpression = relativeExpression[qi::_val = qi::_1] >> *(equalityOperator_ >> relativeExpression)[qi::_val = phoenix::bind(&ExpressionParser::createEqualsExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2, qi::_pass)];
+            equalityExpression = relativeExpression[qi::_val = qi::_1] >> *(equalityOperator_ >> relativeExpression)[qi::_val = phoenix::bind(&ExpressionCreator::createEqualsExpression, phoenix::ref(*expressionCreator), qi::_val, qi::_1, qi::_2, qi::_pass)];
             equalityExpression.name("equality expression");
             
             if (allowBacktracking) {
-                andExpression = equalityExpression[qi::_val = qi::_1] >> *(andOperator_ >> equalityExpression)[qi::_val = phoenix::bind(&ExpressionParser::createAndExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2, qi::_pass)];
+                andExpression = equalityExpression[qi::_val = qi::_1] >> *(andOperator_ >> equalityExpression)[qi::_val = phoenix::bind(&ExpressionCreator::createAndExpression, phoenix::ref(*expressionCreator), qi::_val, qi::_1, qi::_2, qi::_pass)];
             } else {
-                andExpression = equalityExpression[qi::_val = qi::_1] >> *(andOperator_ > equalityExpression)[qi::_val = phoenix::bind(&ExpressionParser::createAndExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2, qi::_pass)];
+                andExpression = equalityExpression[qi::_val = qi::_1] >> *(andOperator_ > equalityExpression)[qi::_val = phoenix::bind(&ExpressionCreator::createAndExpression, phoenix::ref(*expressionCreator), qi::_val, qi::_1, qi::_2, qi::_pass)];
             }
             andExpression.name("and expression");
             
             if (allowBacktracking) {
-                orExpression = andExpression[qi::_val = qi::_1] >> *(orOperator_ >> andExpression)[qi::_val = phoenix::bind(&ExpressionParser::createOrExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2, qi::_pass)];
+                orExpression = andExpression[qi::_val = qi::_1] >> *(orOperator_ >> andExpression)[qi::_val = phoenix::bind(&ExpressionCreator::createOrExpression, phoenix::ref(*expressionCreator), qi::_val, qi::_1, qi::_2, qi::_pass)];
             } else {
-                orExpression = andExpression[qi::_val = qi::_1] > *(orOperator_ > andExpression)[qi::_val = phoenix::bind(&ExpressionParser::createOrExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2, qi::_pass)];
+                orExpression = andExpression[qi::_val = qi::_1] > *(orOperator_ > andExpression)[qi::_val = phoenix::bind(&ExpressionCreator::createOrExpression, phoenix::ref(*expressionCreator), qi::_val, qi::_1, qi::_2, qi::_pass)];
             }
             orExpression.name("or expression");
             
-            iteExpression = orExpression[qi::_val = qi::_1] > -(qi::lit("?") > orExpression > qi::lit(":") > orExpression)[qi::_val = phoenix::bind(&ExpressionParser::createIteExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2, qi::_pass)];
+            iteExpression = orExpression[qi::_val = qi::_1] > -(qi::lit("?") > orExpression > qi::lit(":") > orExpression)[qi::_val = phoenix::bind(&ExpressionCreator::createIteExpression, phoenix::ref(*expressionCreator), qi::_val, qi::_1, qi::_2, qi::_pass)];
             iteExpression.name("if-then-else expression");
             
             expression %= iteExpression;
@@ -154,240 +163,22 @@ namespace storm {
         }
         
         void ExpressionParser::setIdentifierMapping(qi::symbols<char, storm::expressions::Expression> const* identifiers_) {
-            if (identifiers_ != nullptr) {
-                this->createExpressions = true;
-                this->identifiers_ = identifiers_;
-            } else {
-                this->createExpressions = false;
-                this->identifiers_ = nullptr;
-            }
+            expressionCreator->setIdentifierMapping(identifiers_);
         }
 
         void ExpressionParser::setIdentifierMapping(std::unordered_map<std::string, storm::expressions::Expression> const& identifierMapping) {
-            unsetIdentifierMapping();
-            this->createExpressions = true;
-            this->identifiers_ = new qi::symbols<char, storm::expressions::Expression>();
-            for (auto const& identifierExpressionPair : identifierMapping) {
-                this->identifiers_->add(identifierExpressionPair.first, identifierExpressionPair.second);
-            }
-            deleteIdentifierMapping = true;
+            expressionCreator->setIdentifierMapping(identifierMapping);
         }
 
         void ExpressionParser::unsetIdentifierMapping() {
-            this->createExpressions = false;
-            if (deleteIdentifierMapping) {
-                delete this->identifiers_;
-                deleteIdentifierMapping = false;
-            }
-            this->identifiers_ = nullptr;
+            expressionCreator->unsetIdentifierMapping();
         }
         
         void ExpressionParser::setAcceptDoubleLiterals(bool flag) {
-            this->acceptDoubleLiterals = flag;
+            expressionCreator->setAcceptDoubleLiterals(flag);
         }
-        
-        storm::expressions::Expression ExpressionParser::createIteExpression(storm::expressions::Expression e1, storm::expressions::Expression e2, storm::expressions::Expression e3, bool& pass) const {
-            if (this->createExpressions) {
-                try {
-                    return storm::expressions::ite(e1, e2, e3);
-                } catch (storm::exceptions::InvalidTypeException const& e) {
-                    pass = false;
-                }
-            }
-            return manager->boolean(false);
-        }
+                        
                 
-        storm::expressions::Expression ExpressionParser::createOrExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2, bool& pass) const {
-            if (this->createExpressions) {
-                try {
-                    switch (operatorType) {
-                        case storm::expressions::OperatorType::Or: return e1 || e2; break;
-                        case storm::expressions::OperatorType::Implies: return storm::expressions::implies(e1, e2); break;
-                        default: STORM_LOG_ASSERT(false, "Invalid operation."); break;
-                    }
-                } catch (storm::exceptions::InvalidTypeException const& e) {
-                    pass = false;
-                }
-            }
-            return manager->boolean(false);
-        }
-        
-        storm::expressions::Expression ExpressionParser::createAndExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2, bool& pass) const {
-            if (this->createExpressions) {
-                storm::expressions::Expression result;
-                try {
-                    switch (operatorType) {
-                        case storm::expressions::OperatorType::And: result = e1 && e2; break;
-                        default: STORM_LOG_ASSERT(false, "Invalid operation."); break;
-                    }
-                } catch (storm::exceptions::InvalidTypeException const& e) {
-                    pass = false;
-                }
-                return result;
-            }
-            return manager->boolean(false);
-        }
-        
-        storm::expressions::Expression ExpressionParser::createRelationalExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2, bool& pass) const {
-            if (this->createExpressions) {
-                try {
-                    switch (operatorType) {
-                        case storm::expressions::OperatorType::GreaterOrEqual: return e1 >= e2; break;
-                        case storm::expressions::OperatorType::Greater: return e1 > e2; break;
-                        case storm::expressions::OperatorType::LessOrEqual: return e1 <= e2; break;
-                        case storm::expressions::OperatorType::Less: return e1 < e2; break;
-                        default: STORM_LOG_ASSERT(false, "Invalid operation."); break;
-                    }
-                } catch (storm::exceptions::InvalidTypeException const& e) {
-                    pass = false;
-                }
-            }
-            return manager->boolean(false);
-        }
-        
-        storm::expressions::Expression ExpressionParser::createEqualsExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2, bool& pass) const {
-            if (this->createExpressions) {
-                try {
-                    switch (operatorType) {
-                        case storm::expressions::OperatorType::Equal: return e1.hasBooleanType() && e2.hasBooleanType() ? storm::expressions::iff(e1, e2) : e1 == e2; break;
-                        case storm::expressions::OperatorType::NotEqual: return e1 != e2; break;
-                        default: STORM_LOG_ASSERT(false, "Invalid operation."); break;
-                    }
-                } catch (storm::exceptions::InvalidTypeException const& e) {
-                    pass = false;
-                }
-            }
-            return manager->boolean(false);
-        }
-        
-        storm::expressions::Expression ExpressionParser::createPlusExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2, bool& pass) const {
-            if (this->createExpressions) {
-                try {
-                    switch (operatorType) {
-                        case storm::expressions::OperatorType::Plus: return e1 + e2; break;
-                        case storm::expressions::OperatorType::Minus: return e1 - e2; break;
-                        default: STORM_LOG_ASSERT(false, "Invalid operation."); break;
-                    }
-                } catch (storm::exceptions::InvalidTypeException const& e) {
-                    pass = false;
-                }
-            }
-            return manager->boolean(false);
-        }
-        
-        storm::expressions::Expression ExpressionParser::createMultExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2, bool& pass) const {
-            if (this->createExpressions) {
-                try {
-                    switch (operatorType) {
-                        case storm::expressions::OperatorType::Times: return e1 * e2; break;
-                        case storm::expressions::OperatorType::Divide: return e1 / e2; break;
-                        default: STORM_LOG_ASSERT(false, "Invalid operation."); break;
-                    }
-                } catch (storm::exceptions::InvalidTypeException const& e) {
-                    pass = false;
-                }
-            }
-            return manager->boolean(false);
-        }
-        
-        storm::expressions::Expression ExpressionParser::createPowerExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2, bool& pass) const {
-            if (this->createExpressions) {
-                try {
-                    switch (operatorType) {
-                        case storm::expressions::OperatorType::Power: return e1 ^ e2; break;
-                        default: STORM_LOG_ASSERT(false, "Invalid operation."); break;
-                    }
-                } catch (storm::exceptions::InvalidTypeException const& e) {
-                    pass = false;
-                }
-            }
-            return manager->boolean(false);
-        }
-                
-        storm::expressions::Expression ExpressionParser::createUnaryExpression(boost::optional<storm::expressions::OperatorType> const& operatorType, storm::expressions::Expression const& e1, bool& pass) const {
-            if (this->createExpressions) {
-                try {
-                    if (operatorType) {
-                        switch (operatorType.get()) {
-                            case storm::expressions::OperatorType::Not: return !e1; break;
-                            case storm::expressions::OperatorType::Minus: return -e1; break;
-                            default: STORM_LOG_ASSERT(false, "Invalid operation."); break;
-                        }
-                    } else {
-                        return e1;
-                    }
-                } catch (storm::exceptions::InvalidTypeException const& e) {
-                    pass = false;
-                }
-            }
-            return manager->boolean(false);
-        }
-                
-        storm::expressions::Expression ExpressionParser::createRationalLiteralExpression(storm::RationalNumber const& value, bool& pass) const {
-            // If we are not supposed to accept double expressions, we reject it by setting pass to false.
-            if (!this->acceptDoubleLiterals) {
-                pass = false;
-            }
-            
-            if (this->createExpressions) {
-                return manager->rational(value);
-            } else {
-                return manager->boolean(false);
-            }
-        }
-        
-        storm::expressions::Expression ExpressionParser::createIntegerLiteralExpression(int value, bool& pass) const {
-            if (this->createExpressions) {
-                return manager->integer(value);
-            } else {
-                return manager->boolean(false);
-            }
-        }
-        
-        storm::expressions::Expression ExpressionParser::createMinimumMaximumExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2, bool& pass) const {
-            if (this->createExpressions) {
-                try {
-                    switch (operatorType) {
-                        case storm::expressions::OperatorType::Min: return storm::expressions::minimum(e1, e2); break;
-                        case storm::expressions::OperatorType::Max: return storm::expressions::maximum(e1, e2); break;
-                        default: STORM_LOG_ASSERT(false, "Invalid operation."); break;
-                    }
-                } catch (storm::exceptions::InvalidTypeException const& e) {
-                    pass = false;
-                }
-            }
-            return manager->boolean(false);
-        }
-
-        storm::expressions::Expression ExpressionParser::createFloorCeilExpression(storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e1, bool& pass) const {
-            if (this->createExpressions) {
-                try {
-                    switch (operatorType) {
-                        case storm::expressions::OperatorType::Floor: return storm::expressions::floor(e1); break;
-                        case storm::expressions::OperatorType::Ceil: return storm::expressions::ceil(e1); break;
-                        default: STORM_LOG_ASSERT(false, "Invalid operation."); break;
-                    }
-                } catch (storm::exceptions::InvalidTypeException const& e) {
-                    pass = false;
-                }
-            }
-            return manager->boolean(false);
-        }
-        
-        storm::expressions::Expression ExpressionParser::getIdentifierExpression(std::string const& identifier, bool allowBacktracking, bool& pass) const {
-            if (this->createExpressions) {
-                STORM_LOG_THROW(this->identifiers_ != nullptr, storm::exceptions::WrongFormatException, "Unable to substitute identifier expressions without given mapping.");
-                storm::expressions::Expression const* expression = this->identifiers_->find(identifier);
-                if (expression == nullptr) {
-                    pass = false;
-                    return manager->boolean(false);
-                }
-                return *expression;
-            } else {
-                return manager->boolean(false);
-            }
-        }
-        
         bool ExpressionParser::isValidIdentifier(std::string const& identifier) {
             if (this->invalidIdentifiers_.find(identifier) != nullptr) {
                 return false;

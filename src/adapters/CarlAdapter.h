@@ -51,12 +51,10 @@ namespace cln {
     }
 }
 
+
+#include "NumberAdapter.h"
+
 namespace storm {
-#if defined STORM_HAVE_CLN && defined USE_CLN_NUMBERS
-    typedef cln::cl_RA RationalNumber;
-#else
-    typedef mpq_class RationalNumber;
-#endif
     typedef carl::Variable RationalFunctionVariable;
     typedef carl::MultivariatePolynomial<RationalNumber> RawPolynomial;
     typedef carl::FactorizedPolynomial<RawPolynomial> Polynomial;

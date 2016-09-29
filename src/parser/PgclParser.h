@@ -1,12 +1,4 @@
-/* 
- * File:   PgclParser.h
- * Author: Lukas Westhofen
- *
- * Created on 1. April 2015, 19:12
- */
-
-#ifndef PGCLPARSER_H
-#define	PGCLPARSER_H
+#pragma once
 
 // Includes files for file input.
 #include <fstream>
@@ -14,6 +6,7 @@
 #include <iomanip>
 // Includes files for building and parsing the PGCL program
 #include "src/parser/SpiritParserDefinitions.h"
+#include "src/parser/SpiritErrorHandler.h"
 #include "src/parser/ExpressionParser.h"
 #include "src/storage/expressions/ExpressionManager.h"
 #include "src/storage/expressions/Expression.h"
@@ -29,6 +22,10 @@
 #include "src/storage/pgcl/Statement.h"
 
 namespace storm {
+    namespace pgcl {
+        class IfStatement;
+    }
+    
     namespace parser {
         
         class PgclParser : public qi::grammar<Iterator, storm::pgcl::PgclProgram(), Skipper> {
@@ -74,10 +71,13 @@ namespace storm {
             qi::rule<Iterator, std::string(), Skipper> variableName;
             qi::rule<Iterator, std::string(), Skipper> programName;
 
-            qi::rule<Iterator, std::vector<std::shared_ptr<storm::pgcl::AssignmentStatement>>(), Skipper> variableDeclarations;
-            qi::rule<Iterator, std::shared_ptr<storm::pgcl::AssignmentStatement>(), Skipper> integerDeclaration;
-            qi::rule<Iterator, std::shared_ptr<storm::pgcl::AssignmentStatement>(), Skipper> booleanDeclaration;
+            qi::rule<Iterator, std::vector<std::shared_ptr<storm::pgcl::VariableDeclaration>>(), Skipper> variableDeclarations;
+            qi::rule<Iterator, std::shared_ptr<storm::pgcl::VariableDeclaration>(), Skipper> integerDeclaration;
+            qi::rule<Iterator, std::shared_ptr<storm::pgcl::VariableDeclaration>(), Skipper> booleanDeclaration;
             qi::rule<Iterator, storm::expressions::Variable(), Skipper> doubleDeclaration;
+            
+            // An error handler function.
+            phoenix::function<SpiritErrorHandler> handler;
             
             /// Denotes the invalid identifiers, which are later passed to the expression parser.
             struct keywordsStruct : qi::symbols<char, uint_fast64_t> {
@@ -87,7 +87,8 @@ namespace storm {
                     ("if", 2)
                     ("observe", 3)
                     ("int", 4)
-                    ("function", 5);
+                    ("bool", 5)
+                    ("function", 6);
                 }
             };
 
@@ -138,11 +139,11 @@ namespace storm {
             void enableExpressions();
 
             // Constructors for the single program parts. They just wrap the statement constructors and throw exceptions in case something unexpected was parsed.
-            storm::pgcl::PgclProgram createProgram(std::string const& programName, boost::optional<std::vector<storm::expressions::Variable> > parameters, std::vector<std::shared_ptr<storm::pgcl::AssignmentStatement>> const& variableDeclarations, std::vector<std::shared_ptr<storm::pgcl::Statement> > statements);
+            storm::pgcl::PgclProgram createProgram(std::string const& programName, boost::optional<std::vector<storm::expressions::Variable> > parameters, std::vector<std::shared_ptr<storm::pgcl::VariableDeclaration>> const& variableDeclarations, std::vector<std::shared_ptr<storm::pgcl::Statement> > const& statements);
             storm::expressions::Variable declareDoubleVariable(std::string const& variableName);
             std::shared_ptr<storm::pgcl::AssignmentStatement> createAssignmentStatement(std::string const& variableName, boost::variant<storm::expressions::Expression, storm::pgcl::UniformExpression> const& assignedExpression);
-            std::shared_ptr<storm::pgcl::AssignmentStatement> createIntegerDeclarationStatement(std::string const& variableName, storm::expressions::Expression const& assignedExpression);
-            std::shared_ptr<storm::pgcl::AssignmentStatement> createBooleanDeclarationStatement(std::string const& variableName, storm::expressions::Expression const& assignedExpression);
+            std::shared_ptr<storm::pgcl::VariableDeclaration> createIntegerDeclarationStatement(std::string const& variableName, storm::expressions::Expression const& assignedExpression);
+            std::shared_ptr<storm::pgcl::VariableDeclaration> createBooleanDeclarationStatement(std::string const& variableName, storm::expressions::Expression const& assignedExpression);
             std::shared_ptr<storm::pgcl::ObserveStatement> createObserveStatement(storm::pgcl::BooleanExpression const& condition);
             std::shared_ptr<storm::pgcl::IfStatement> createIfElseStatement(storm::pgcl::BooleanExpression const& condition, std::vector<std::shared_ptr<storm::pgcl::Statement> > const& if_body, boost::optional<std::vector<std::shared_ptr<storm::pgcl::Statement> > > const& else_body);
             std::shared_ptr<storm::pgcl::LoopStatement> createLoopStatement(storm::pgcl::BooleanExpression const& condition, std::vector<std::shared_ptr<storm::pgcl::Statement> > const& body);
@@ -154,5 +155,4 @@ namespace storm {
     } // namespace parser
 } // namespace storm
 
-#endif	/* PGCLPARSER_H */
 
