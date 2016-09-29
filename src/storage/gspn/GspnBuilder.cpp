@@ -7,37 +7,33 @@
 
 namespace storm {
     namespace gspn {
-        void GspnBuilder::addPlace(uint_fast64_t const& id, int_fast64_t const& capacity, uint_fast64_t const& initialTokens) {
-            addPlace(id, "place_" + std::to_string(id), capacity, initialTokens);
-        }
-
-        void GspnBuilder::addPlace(uint_fast64_t const& id, std::string const& name, int_fast64_t const& capacity, uint_fast64_t const& initialTokens) {
+        uint_fast64_t GspnBuilder::addPlace(int_fast64_t const& capacity, uint_fast64_t const& initialTokens) {
             auto place = storm::gspn::Place();
             place.setCapacity(capacity);
-            place.setID(id);
-            place.setName(name);
+            place.setID(nextStateID);
             place.setNumberOfInitialTokens(initialTokens);
-
-            idToPlaceName.insert(std::pair<uint_fast64_t const, std::string const>(id, name));
             gspn.addPlace(place);
+            return nextStateID++;
         }
 
-        void GspnBuilder::addImmediateTransition(uint_fast64_t const& id, uint_fast64_t const& priority, double const& weight) {
+        uint_fast64_t GspnBuilder::addImmediateTransition(uint_fast64_t const& priority, double const& weight) {
             auto trans = storm::gspn::ImmediateTransition<double>();
-            trans.setName(std::to_string(id));
+            trans.setName(std::to_string(nextTransitionID));
             trans.setPriority(priority);
             trans.setWeight(weight);
-
+            trans.setID(nextTransitionID);
             gspn.addImmediateTransition(trans);
+            return nextTransitionID++;
         }
 
-        void GspnBuilder::addTimedTransition(uint_fast64_t const &id, uint_fast64_t const &priority, double const &rate) {
+        uint_fast64_t GspnBuilder::addTimedTransition(uint_fast64_t const &priority, double const &rate) {
             auto trans = storm::gspn::TimedTransition<double>();
-            trans.setName(std::to_string(id));
+            trans.setName(std::to_string(nextTransitionID));
             trans.setPriority(priority);
             trans.setRate(rate);
-
+            trans.setID(nextTransitionID);
             gspn.addTimedTransition(trans);
+            return nextTransitionID++;
         }
 
         void GspnBuilder::addInputArc(uint_fast64_t const &from, uint_fast64_t const &to,
@@ -47,7 +43,7 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::IllegalFunctionCallException, "The transition with the name \"" + std::to_string(to) + "\" does not exist.");
             }
 
-            auto placePair = gspn.getPlace(idToPlaceName.at(from));
+            auto placePair = gspn.getPlace(from);
             if (!std::get<0>(placePair)) {
                 STORM_LOG_THROW(false, storm::exceptions::IllegalFunctionCallException, "The place with the id \"" + std::to_string(from) + "\" does not exist.");
             }
@@ -61,7 +57,7 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::IllegalFunctionCallException, "The transition with the name \"" + std::to_string(to) + "\" does not exist.");
             }
 
-            auto placePair = gspn.getPlace(idToPlaceName.at(from));
+            auto placePair = gspn.getPlace(from);
             if (!std::get<0>(placePair)) {
                 STORM_LOG_THROW(false, storm::exceptions::IllegalFunctionCallException, "The place with the id \"" + std::to_string(from) + "\" does not exist.");
             }
@@ -75,7 +71,7 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::IllegalFunctionCallException, "The transition with the name \"" + std::to_string(to) + "\" does not exist.");
             }
 
-            auto placePair = gspn.getPlace(idToPlaceName.at(to));
+            auto placePair = gspn.getPlace(to);
             if (!std::get<0>(placePair)) {
                 STORM_LOG_THROW(false, storm::exceptions::IllegalFunctionCallException, "The place with the id \"" + std::to_string(from) + "\" does not exist.");
             }

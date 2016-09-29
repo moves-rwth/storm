@@ -175,6 +175,10 @@ namespace storm {
              * @return The priority.
              */
             uint_fast64_t getPriority() const;
+
+            void setID(uint_fast64_t const& id) {
+                this->id = id;
+            }
         private:
             /*!
              * Comparator which defines an total order on places.
@@ -208,7 +212,9 @@ namespace storm {
             std::vector<std::shared_ptr<storm::gspn::Place>> inhibitionPlaces;
 
             // priority of this transition
-            uint_fast64_t priority;
+            uint_fast64_t priority = 0;
+
+            uint_fast64_t id;
         };
     }
 }

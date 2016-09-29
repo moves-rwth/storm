@@ -40,14 +40,23 @@ namespace storm {
             return m;
         }
 
-        std::pair<bool, storm::gspn::Place> GSPN::getPlace(std::string const& id) const {
+        std::pair<bool, storm::gspn::Place> GSPN::getPlace(uint_fast64_t const& id) const {
             for (auto& place : places) {
-                if (id.compare(place.getName()) == 0) {
+                if (id == place.getID()) {
                     return std::make_pair<bool, storm::gspn::Place const&>(true, place);
                 }
             }
             return std::make_pair<bool, storm::gspn::Place>(false, storm::gspn::Place());
         }
+
+        std::pair<bool, storm::gspn::Place> GSPN::getPlace(std::string const& id) const {
+            for (auto& place : places) {
+                if (id.compare(place.getName())) {
+                    return std::make_pair<bool, storm::gspn::Place const&>(true, place);
+                }
+            }
+            return std::make_pair<bool, storm::gspn::Place>(false, storm::gspn::Place());
+        };
 
         std::pair<bool, std::shared_ptr<storm::gspn::TimedTransition<GSPN::RateType>> const> GSPN::getTimedTransition(std::string const& id) const {
             for (auto& trans : timedTransitions) {
