@@ -4,11 +4,12 @@
 
 namespace storm {
     namespace pgcl {
-        PgclProgram::PgclProgram(vector const& statements, vector const& locationToStatement, std::vector<storm::expressions::Variable> const& parameters, std::shared_ptr<storm::expressions::ExpressionManager> expressions, bool hasLoop, bool hasNondet, bool hasObserve) :
+        PgclProgram::PgclProgram(std::vector<VariableDeclaration> variables, vector const& statements, vector const& locationToStatement, std::vector<storm::expressions::Variable> const& parameters, std::shared_ptr<storm::expressions::ExpressionManager> expressions, bool hasLoop, bool hasNondet, bool hasObserve) :
             PgclBlock(statements,
                       expressions, hasLoop, hasNondet, hasObserve),
-            locationToStatement(locationToStatement)
+            locationToStatement(locationToStatement),variables(variables)
         {
+            // Intentionally left empty.
         }
 
         
@@ -23,6 +24,10 @@ namespace storm {
             }
             
             return vars;
+        }
+        
+        std::vector<storm::pgcl::VariableDeclaration> const& PgclProgram::getVariableDeclarations() const {
+            return variables;
         }
 
         std::ostream& operator<<(std::ostream& stream, PgclProgram& program) {

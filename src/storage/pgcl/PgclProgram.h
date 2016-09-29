@@ -2,6 +2,7 @@
 
 #include <vector>
 #include "Block.h"
+#include "VariableDeclaration.h"
 #include "src/storage/pgcl/Statement.h"
 #include "src/storage/pgcl/StatementPrinterVisitor.h"
 #include "src/storage/expressions/ExpressionManager.h"
@@ -36,7 +37,7 @@ namespace storm {
              * statement.
              * @param hasParam Whether the program is parameterized.
              */
-            PgclProgram(vector const& statements, vector const& locationToStatement, std::vector<storm::expressions::Variable> const& parameters, std::shared_ptr<storm::expressions::ExpressionManager> expressions, bool hasLoop, bool hasNondet, bool hasObserve);
+            PgclProgram(std::vector<VariableDeclaration> variables, vector const& statements, vector const& locationToStatement, std::vector<storm::expressions::Variable> const& parameters, std::shared_ptr<storm::expressions::ExpressionManager> expressions, bool hasLoop, bool hasNondet, bool hasObserve);
             
             PgclProgram(const PgclProgram & orig) = default;
             
@@ -48,6 +49,9 @@ namespace storm {
             vector getLocationToStatementVector();
             
             std::vector<storm::expressions::Variable> getVariables() const;
+            std::vector<storm::pgcl::VariableDeclaration> const& getVariableDeclarations() const;
+            
+            
             
         private:
             /**
@@ -56,7 +60,8 @@ namespace storm {
              * recursion is resolved here.
              */
             vector locationToStatement;
-                    };
+            std::vector<storm::pgcl::VariableDeclaration> variables;
+        };
         /**
          * Prints every statement of the program along with their location
          * numbers.

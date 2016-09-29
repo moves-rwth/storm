@@ -1,5 +1,6 @@
 #pragma once
 #include "defines.h"
+#include "src/storage/IntegerInterval.h"
 #include "src/storage/expressions/Expression.h"
 #include "src/storage/expressions/Variable.h"
 #include "src/storage/expressions/ExpressionManager.h"
@@ -56,6 +57,24 @@ namespace storm {
             }
             
             std::string const& getVariableName() const;
+            
+            ProgramVariableIdentifier getVariableIdentifier() const {
+                return var;
+            }
+            
+            storm::storage::IntegerInterval getSupportInterval() const {
+                assert(!values.empty());
+                int64_t min = values.front().value;
+                int64_t max = values.front().value;
+                for (auto const& valEntry : values) {
+                    if (valEntry.value < min) {
+                        min = valEntry.value;
+                    } else if (valEntry.value > max) {
+                        max = valEntry.value;
+                    }
+                }
+                return storm::storage::IntegerInterval(min, max);
+            }
             
             iterator begin() {
                 return values.begin();

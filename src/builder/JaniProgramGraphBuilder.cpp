@@ -47,7 +47,13 @@ namespace storm {
             storm::expressions::Expression newGuard;
             newGuard = expManager->boolean(true);
             if (edge.getAction().isProbabilistic()) {
-            
+                // No check necessary currently, but at least we should statically check that the bounds are okay.
+                storm::ppg::ProbabilisticProgramAction const& act = static_cast<storm::ppg::ProbabilisticProgramAction const&>(edge.getAction());
+                if (isUserRestrictedVariable(act.getVariableIdentifier())) {
+                    storm::storage::IntegerInterval const& bound = variableRestrictions.at(act.getVariableIdentifier());
+                    storm::storage::IntegerInterval supportInterval = act.getSupportInterval();
+                    STORM_LOG_THROW(bound.contains(supportInterval), storm::exceptions::NotSupportedException, "User provided bounds must contain all constant expressions");
+                }
             } else {
                 storm::ppg::DeterministicProgramAction const& act = static_cast<storm::ppg::DeterministicProgramAction const&>(edge.getAction());
                 STORM_LOG_THROW(act.nrLevels() <= 1, storm::exceptions::NotSupportedException, "Multi-level assignments with user variable bounds not supported");
@@ -81,7 +87,10 @@ namespace storm {
             for(auto it = programGraph.locationBegin(); it != programGraph.locationEnd(); ++it) {
                 ppg::ProgramLocation const& loc = it->second;
                 if (loc.nrOutgoingEdgeGroups() == 0) {
-                    // TODO deadlock!
+                    storm::jani::OrderedAssignments oa;
+                    storm::jani::EdgeDestination dest(janiLocId.at(loc.id()), expManager->integer(1), oa);
+                    storm::jani::Edge e(janiLocId.at(loc.id()), storm::jani::Model::SILENT_ACTION_INDEX, boost::none, expManager->boolean(true), {dest});
+                    automaton.addEdge(e);
                 } else if (loc.nrOutgoingEdgeGroups() == 1) {
                     for(auto const& edge :  **(loc.begin())) {
                         std::pair<std::vector<storm::jani::Edge>, storm::expressions::Expression> checks = addVariableChecks(*edge);
