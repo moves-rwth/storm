@@ -75,7 +75,7 @@ namespace storm {
                                     qi::lit("}"))[qi::_val = phoenix::bind(&PgclParser::createProgram, phoenix::ref(*this), qi::_1, qi::_2, qi::_3, qi::_4)];
             sequenceOfStatements %= +(statement);
             
-            variableDeclarations %= qi::lit("var") >> qi::lit("{") >> +integerDeclaration >> qi::lit("}");
+            variableDeclarations %= qi::lit("var") >> qi::lit("{") >> +(integerDeclaration | booleanDeclaration) >> qi::lit("}");
             variableDeclarations.name("variable declarations");
                 
             // Statements
@@ -86,6 +86,7 @@ namespace storm {
             // Simple statements
             doubleDeclaration           = (qi::lit("double ") >> variableName)[qi::_val = phoenix::bind(&PgclParser::declareDoubleVariable, phoenix::ref(*this), qi::_1)];
             integerDeclaration = (qi::lit("int ") >> variableName >> qi::lit(":=") >> expression >> qi::lit(";"))[qi::_val = phoenix::bind(&PgclParser::createIntegerDeclarationStatement, phoenix::ref(*this), qi::_1, qi::_2)];
+            booleanDeclaration = (qi::lit("bool ") >> variableName >> qi::lit(":=") >> expression >> qi::lit(";"))[qi::_val = phoenix::bind(&PgclParser::createBooleanDeclarationStatement, phoenix::ref(*this), qi::_1, qi::_2)];
 
             assignmentStatement         = (variableName >> qi::lit(":=") >> (expression | uniformExpression) >> qi::lit(";"))[qi::_val = phoenix::bind(&PgclParser::createAssignmentStatement, phoenix::ref(*this), qi::_1, qi::_2)];
             observeStatement            = (qi::lit("observe") >> qi::lit("(") >> booleanCondition >> qi::lit(")") >> qi::lit(";"))[qi::_val = phoenix::bind(&PgclParser::createObserveStatement, phoenix::ref(*this), qi::_1)];
@@ -189,6 +190,23 @@ namespace storm {
                 // In case that a declaration already happened.
                 variable = (*expressionManager).getVariable(variableName);
                 STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Declaration of integer variable " << variableName << " which was already declared previously.");
+            }
+            std::shared_ptr<storm::pgcl::AssignmentStatement> newAssignment(new storm::pgcl::AssignmentStatement(variable, assignedExpression));
+            newAssignment->setLocationNumber(this->currentLocationNumber);
+            this->locationToStatement.insert(this->locationToStatement.begin() + this->currentLocationNumber, newAssignment);
+            currentLocationNumber++;
+            return newAssignment;
+        }
+
+        std::shared_ptr<storm::pgcl::AssignmentStatement> PgclParser::createBooleanDeclarationStatement(std::string const& variableName, storm::expressions::Expression const& assignedExpression) {
+            storm::expressions::Variable variable;
+            if(!(*expressionManager).hasVariable(variableName)) {
+                variable = (*expressionManager).declareBooleanVariable(variableName);
+                this->identifiers_.add(variableName, variable.getExpression());
+            } else {
+                // In case that a declaration already happened.
+                variable = (*expressionManager).getVariable(variableName);
+                STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Declaration of boolean variable " << variableName << " which was already declared previously.");
             }
             std::shared_ptr<storm::pgcl::AssignmentStatement> newAssignment(new storm::pgcl::AssignmentStatement(variable, assignedExpression));
             newAssignment->setLocationNumber(this->currentLocationNumber);

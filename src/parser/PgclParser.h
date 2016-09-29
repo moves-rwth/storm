@@ -76,6 +76,7 @@ namespace storm {
 
             qi::rule<Iterator, std::vector<std::shared_ptr<storm::pgcl::AssignmentStatement>>(), Skipper> variableDeclarations;
             qi::rule<Iterator, std::shared_ptr<storm::pgcl::AssignmentStatement>(), Skipper> integerDeclaration;
+            qi::rule<Iterator, std::shared_ptr<storm::pgcl::AssignmentStatement>(), Skipper> booleanDeclaration;
             qi::rule<Iterator, storm::expressions::Variable(), Skipper> doubleDeclaration;
             
             /// Denotes the invalid identifiers, which are later passed to the expression parser.
@@ -141,6 +142,7 @@ namespace storm {
             storm::expressions::Variable declareDoubleVariable(std::string const& variableName);
             std::shared_ptr<storm::pgcl::AssignmentStatement> createAssignmentStatement(std::string const& variableName, boost::variant<storm::expressions::Expression, storm::pgcl::UniformExpression> const& assignedExpression);
             std::shared_ptr<storm::pgcl::AssignmentStatement> createIntegerDeclarationStatement(std::string const& variableName, storm::expressions::Expression const& assignedExpression);
+            std::shared_ptr<storm::pgcl::AssignmentStatement> createBooleanDeclarationStatement(std::string const& variableName, storm::expressions::Expression const& assignedExpression);
             std::shared_ptr<storm::pgcl::ObserveStatement> createObserveStatement(storm::pgcl::BooleanExpression const& condition);
             std::shared_ptr<storm::pgcl::IfStatement> createIfElseStatement(storm::pgcl::BooleanExpression const& condition, std::vector<std::shared_ptr<storm::pgcl::Statement> > const& if_body, boost::optional<std::vector<std::shared_ptr<storm::pgcl::Statement> > > const& else_body);
             std::shared_ptr<storm::pgcl::LoopStatement> createLoopStatement(storm::pgcl::BooleanExpression const& condition, std::vector<std::shared_ptr<storm::pgcl::Statement> > const& body);
