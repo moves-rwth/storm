@@ -70,19 +70,22 @@ namespace storm {
              */
             // Rough program structure
             program               = (qi::lit("function ") >> programName >> qi::lit("(") >> -(doubleDeclaration % qi::lit(",")) >> qi::lit(")") >> qi::lit("{") >>
+                                        variableDeclarations >>
                                         sequenceOfStatements >>
-                                    qi::lit("}"))
-                                    [qi::_val = phoenix::bind(&PgclParser::createProgram, phoenix::ref(*this), qi::_1, qi::_2, qi::_3)];
+                                    qi::lit("}"))[qi::_val = phoenix::bind(&PgclParser::createProgram, phoenix::ref(*this), qi::_1, qi::_2, qi::_3, qi::_4)];
             sequenceOfStatements %= +(statement);
             
+            variableDeclarations %= qi::lit("var") >> qi::lit("{") >> +integerDeclaration >> qi::lit("}");
+            variableDeclarations.name("variable declarations");
+                
             // Statements
             statement         %= simpleStatement | compoundStatement;
-            simpleStatement   %= assignmentStatement | integerDeclarationStatement | observeStatement;
+            simpleStatement   %= assignmentStatement | observeStatement;
             compoundStatement %= ifElseStatement | loopStatement | branchStatement;
 
             // Simple statements
             doubleDeclaration           = (qi::lit("double ") >> variableName)[qi::_val = phoenix::bind(&PgclParser::declareDoubleVariable, phoenix::ref(*this), qi::_1)];
-            integerDeclarationStatement = (qi::lit("int ") >> variableName >> qi::lit(":=") >> expression >> qi::lit(";"))[qi::_val = phoenix::bind(&PgclParser::createIntegerDeclarationStatement, phoenix::ref(*this), qi::_1, qi::_2)];
+            integerDeclaration = (qi::lit("int ") >> variableName >> qi::lit(":=") >> expression >> qi::lit(";"))[qi::_val = phoenix::bind(&PgclParser::createIntegerDeclarationStatement, phoenix::ref(*this), qi::_1, qi::_2)];
 
             assignmentStatement         = (variableName >> qi::lit(":=") >> (expression | uniformExpression) >> qi::lit(";"))[qi::_val = phoenix::bind(&PgclParser::createAssignmentStatement, phoenix::ref(*this), qi::_1, qi::_2)];
             observeStatement            = (qi::lit("observe") >> qi::lit("(") >> booleanCondition >> qi::lit(")") >> qi::lit(";"))[qi::_val = phoenix::bind(&PgclParser::createObserveStatement, phoenix::ref(*this), qi::_1)];
@@ -117,7 +120,7 @@ namespace storm {
             qi::on_success(probabilisticBranch, setLocationInfoFunction);
             qi::on_success(loopStatement, setLocationInfoFunction);
             qi::on_success(ifElseStatement, setLocationInfoFunction);
-            qi::on_success(integerDeclarationStatement, setLocationInfoFunction);
+            qi::on_success(integerDeclaration, setLocationInfoFunction);
 
             // Adds dummy to the 0-th location.
             std::shared_ptr<storm::pgcl::AssignmentStatement> dummy(new storm::pgcl::AssignmentStatement());
@@ -135,7 +138,7 @@ namespace storm {
          * throw excpetions in case something unexpected was parsed, e.g.
          * (x+5) as a boolean expression, or types of assignments don't match.
          */
-        storm::pgcl::PgclProgram PgclParser::createProgram(std::string const& programName, boost::optional<std::vector<storm::expressions::Variable> > parameters, std::vector<std::shared_ptr<storm::pgcl::Statement> > statements) {
+        storm::pgcl::PgclProgram PgclParser::createProgram(std::string const& programName, boost::optional<std::vector<storm::expressions::Variable>> parameters, std::vector<std::shared_ptr<storm::pgcl::AssignmentStatement>> const& variableDeclarations, std::vector<std::shared_ptr<storm::pgcl::Statement>> statements) {
             // Creates an empty paramter list in case no parameters were given.
             std::vector<storm::expressions::Variable> params;
             if(parameters != boost::none) {

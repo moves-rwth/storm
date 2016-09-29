@@ -67,8 +67,6 @@ namespace storm {
             qi::rule<Iterator, std::shared_ptr<storm::pgcl::ProbabilisticBranch>(), Skipper> probabilisticBranch;
             qi::rule<Iterator, std::shared_ptr<storm::pgcl::AssignmentStatement>(), Skipper> assignmentStatement;
             qi::rule<Iterator, storm::expressions::Variable(), Skipper> declaration;
-            qi::rule<Iterator, storm::expressions::Variable(), Skipper> doubleDeclaration;
-            qi::rule<Iterator, std::shared_ptr<storm::pgcl::AssignmentStatement>(), Skipper> integerDeclarationStatement;
             qi::rule<Iterator, std::shared_ptr<storm::pgcl::ObserveStatement>(), Skipper> observeStatement;
             qi::rule<Iterator, storm::expressions::Expression(), Skipper> expression;
             qi::rule<Iterator, storm::pgcl::BooleanExpression(), Skipper> booleanCondition;
@@ -76,6 +74,10 @@ namespace storm {
             qi::rule<Iterator, std::string(), Skipper> variableName;
             qi::rule<Iterator, std::string(), Skipper> programName;
 
+            qi::rule<Iterator, std::vector<std::shared_ptr<storm::pgcl::AssignmentStatement>>(), Skipper> variableDeclarations;
+            qi::rule<Iterator, std::shared_ptr<storm::pgcl::AssignmentStatement>(), Skipper> integerDeclaration;
+            qi::rule<Iterator, storm::expressions::Variable(), Skipper> doubleDeclaration;
+            
             /// Denotes the invalid identifiers, which are later passed to the expression parser.
             struct keywordsStruct : qi::symbols<char, uint_fast64_t> {
                 keywordsStruct() {
@@ -135,7 +137,7 @@ namespace storm {
             void enableExpressions();
 
             // Constructors for the single program parts. They just wrap the statement constructors and throw exceptions in case something unexpected was parsed.
-            storm::pgcl::PgclProgram createProgram(std::string const& programName, boost::optional<std::vector<storm::expressions::Variable> > parameters, std::vector<std::shared_ptr<storm::pgcl::Statement> > statements);
+            storm::pgcl::PgclProgram createProgram(std::string const& programName, boost::optional<std::vector<storm::expressions::Variable> > parameters, std::vector<std::shared_ptr<storm::pgcl::AssignmentStatement>> const& variableDeclarations, std::vector<std::shared_ptr<storm::pgcl::Statement> > statements);
             storm::expressions::Variable declareDoubleVariable(std::string const& variableName);
             std::shared_ptr<storm::pgcl::AssignmentStatement> createAssignmentStatement(std::string const& variableName, boost::variant<storm::expressions::Expression, storm::pgcl::UniformExpression> const& assignedExpression);
             std::shared_ptr<storm::pgcl::AssignmentStatement> createIntegerDeclarationStatement(std::string const& variableName, storm::expressions::Expression const& assignedExpression);
