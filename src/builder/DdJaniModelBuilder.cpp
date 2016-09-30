@@ -961,7 +961,6 @@ namespace storm {
                     }
                     
                     // Bring all actions to the same number of variables that encode the nondeterminism.
-                    int i = 0;
                     for (auto& action : actions) {
                         storm::dd::Bdd<Type> nondeterminismEncodingBdd = this->variables.manager->getBddOne();
                         for (uint_fast64_t i = action.getHighestLocalNondeterminismVariable(); i < highestLocalNondeterminismVariable; ++i) {
