@@ -163,15 +163,38 @@ namespace storm {
 				placeVOTFailed.setNumberOfInitialTokens(0);
 				mGspn.addPlace(placeVOTFailed);
 				
-				// Calculate, how many immediate transitions are necessary and draw the needed number.
-				for (int i = 0; i < calculateBinomialCoefficient(dftVot->nrChildren(), dftVot->threshold()); i++) {
-					storm::gspn::ImmediateTransition<storm::gspn::GSPN::WeightType> immediateTransitionVOTFailing;
-					immediateTransitionVOTFailing.setName(dftVot->name() + "_" + std::to_string(i) + STR_FAILING);
-					immediateTransitionVOTFailing.setPriority(priority);
-					immediateTransitionVOTFailing.setWeight(0.0);
-					immediateTransitionVOTFailing.setInhibitionArcMultiplicity(placeVOTFailed, 1);
-					immediateTransitionVOTFailing.setOutputArcMultiplicity(placeVOTFailed, 1);
-					mGspn.addImmediateTransition(immediateTransitionVOTFailing);
+				storm::gspn::Place placeVOTCollector;
+				placeVOTCollector.setName(dftVot->name() + "_collector");
+				placeVOTCollector.setNumberOfInitialTokens(0);
+				mGspn.addPlace(placeVOTCollector);
+				
+				storm::gspn::ImmediateTransition<storm::gspn::GSPN::WeightType> immediateTransitionVOTFailing;
+				immediateTransitionVOTFailing.setName(dftVot->name() + STR_FAILING);
+				immediateTransitionVOTFailing.setPriority(priority);
+				immediateTransitionVOTFailing.setWeight(0.0);
+				immediateTransitionVOTFailing.setInhibitionArcMultiplicity(placeVOTFailed, 1);
+				immediateTransitionVOTFailing.setOutputArcMultiplicity(placeVOTFailed, 1);
+				immediateTransitionVOTFailing.setOutputArcMultiplicity(placeVOTCollector, dftVot->threshold()); // Custom threshold.
+				immediateTransitionVOTFailing.setInputArcMultiplicity(placeVOTCollector, dftVot->threshold()); // Custom threshold.
+				mGspn.addImmediateTransition(immediateTransitionVOTFailing);
+				
+				auto children = dftVot->children();
+				
+				// Draw transition/place for every child.
+				for (std::size_t i = 0; i < children.size(); i++) {
+					storm::gspn::Place placeChildInhibit;
+					placeChildInhibit.setName(dftVot->name() + "_" + children[i]->name() + "_inhibitor");
+					placeChildInhibit.setNumberOfInitialTokens(0);
+					mGspn.addPlace(placeChildInhibit);
+					
+					storm::gspn::ImmediateTransition<storm::gspn::GSPN::WeightType> immediateTransitionCollecting;
+					immediateTransitionCollecting.setName(dftVot->name() + "_" + children[i]->name() + "_collecting");
+					immediateTransitionCollecting.setPriority(priority);
+					immediateTransitionCollecting.setWeight(0.0);
+					immediateTransitionCollecting.setInhibitionArcMultiplicity(placeChildInhibit, 1);
+					immediateTransitionCollecting.setOutputArcMultiplicity(placeChildInhibit, 1);
+					immediateTransitionCollecting.setOutputArcMultiplicity(placeVOTCollector, 1); 
+					mGspn.addImmediateTransition(immediateTransitionCollecting);
 				}
 			}
 
@@ -414,21 +437,13 @@ namespace storm {
 							case storm::storage::DFTElementType::VOT:
 							{
 								auto childExit = mGspn.getPlace(child->name() + STR_FAILED);
-								if (childExit.first) {
-									// Get all associations of the child to all immediate transitions of the VOTE.
-									auto children = std::static_pointer_cast<storm::storage::DFTVot<ValueType> const>(mDft.getElement(parents[j]))->children();
-									auto associations = getVOTEEntryAssociation(parents[j], child->id(), 
-										std::static_pointer_cast<storm::storage::DFTVot<ValueType> const>(mDft.getElement(parents[j]))->threshold(), children);
-									
-									// Draw.
-									for (std::size_t k = 0; k < associations.size(); k++) {
-										auto voteEntry = mGspn.getImmediateTransition(mDft.getElement(parents[j])->name() + "_" + std::to_string(associations[k]) + STR_FAILING);
-										if (voteEntry.first) {
-											voteEntry.second->setInputArcMultiplicity(childExit.second, 1);
-											voteEntry.second->setOutputArcMultiplicity(childExit.second, 1);
-										}
-									}
+								auto parentEntry = mGspn.getImmediateTransition(mDft.getElement(parents[j])->name() + "_" + child->name() + "_collecting");
+								
+								if (childExit.first && parentEntry.first) { // Only add arcs if the objects have been found.
+									parentEntry.second->setInputArcMultiplicity(childExit.second, 1);
+									parentEntry.second->setOutputArcMultiplicity(childExit.second, 1);
 								}
+								
 								break;
 							}
 							case storm::storage::DFTElementType::PAND:
@@ -597,69 +612,6 @@ namespace storm {
 							}
 						}
 					}
-				}
-			}
-			
-			template <typename ValueType>
-            int DftToGspnTransformator<ValueType>::calculateBinomialCoefficient(int n, int k) {
-				STORM_LOG_ASSERT(n >= k, "k is not allowed to be larger than n.");
-				
-				return factorialFunction(n) / ( factorialFunction(n - k) * factorialFunction(k) );
-            }
-            
-           	template <typename ValueType>
-            int DftToGspnTransformator<ValueType>::factorialFunction(int n) {
-				return (n == 1 || n == 0) ? 1 : factorialFunction(n - 1) * n;
-            }
-            
-           	template <typename ValueType>
-            std::vector<int> DftToGspnTransformator<ValueType>::getVOTEEntryAssociation(int parentId, int childId, int threshold, std::vector<std::shared_ptr<storm::storage::DFTElement<ValueType>>> children) {
-				// Fetch all ids of the children.
-				std::vector<int> childrenIds(children.size());
-				for (std::size_t i = 0; i < children.size(); i++) {
-					childrenIds[i] = children[i]->id();
-				}
-				
-				// Get all subsets of the 'children' of size 'threshold'.
-				std::vector<int> subsets(threshold);
-				std::vector<int> output;
-				
-				// Check if output for this VOTE already exists. If yes, use it instead recalculating.
-				if (mVoteAssociations.find(parentId) == mVoteAssociations.end()) { // Could not find parentId in map.
-					combinationUtil(output, childrenIds, subsets, 0, children.size() - 1, 0, threshold);
-					mVoteAssociations.insert ( std::pair<int, std::vector<int> > (parentId, output) );
-				}
-				else { // Could find parentId in map, use already computed output.
-					output = mVoteAssociations.find(parentId)->second;
-				}
-				
-				// Check which subset contains the id 'childId' and add the subset-number to the association.
-				std::vector<int> associations;
-				for (std::size_t i = 0; i < output.size(); i++) {
-					if (childId == output[i]) {
-						associations.push_back(i / threshold);
-					}
-				}
-				
-				return associations;
-            }
-            
-            template <typename ValueType>
-            void DftToGspnTransformator<ValueType>::combinationUtil(std::vector<int> &output, std::vector<int> childrenIds, std::vector<int> subsets, int start, int end, int index, int threshold)
-			{
-				if (index == threshold)
-				{
-					for (int j = 0; j < threshold; j++) {
-						output.push_back(subsets[j]);
-					}
-					
-					return;
-				}
-			
-				for (int i = start; i <= end && end - i + 1 >= threshold - index; i++)
-				{
-					subsets[index] = childrenIds[i];
-					combinationUtil(output, childrenIds, subsets, i + 1, end, index + 1, threshold);
 				}
 			}
 			

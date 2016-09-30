@@ -139,50 +139,6 @@ namespace storm {
 				 */
 				void drawPDEP(std::shared_ptr<storm::storage::DFTDependency<ValueType> const>(dftDependency));
 				
-				/*
-				 * Calculate the binomial coefficient:
-				 * n! / ( (n - k)! * k!)
-				 * 
-				 * @param n First parameter of binomial coefficient.
-				 * 
-				 * @ param k Second parameter of binomial coefficient.
-				 * 
-				 */
-				int calculateBinomialCoefficient(int n, int k);
-				
-				/*
-				 * Calculate the factorial function of n.
-				 * 
-				 * @param n The parameter for the factorial function, i.e. n!.
-				 * 
-				 */
-				int factorialFunction(int n);
-				
-				/*
-				 * Return the immediate Transition numbers of the VOTE with which the child has to be connected.
-				 * 
-				 * Example: A VOTE2/3 gate has three children BEs: {A, B, C}.
-				 * The subsets of size 2 of {A, B, C} are {{A, B}, {A, C}, {B, C}}. 
-				 * 'A' is contained in subset 0 and subset 1, so this method returns {0, 1}. 
-				 * This means that BE 'A' needs to be connected with the immediate transitions 'VOTE_0_failing' and 'VOTE_1_failing'.
-				 * 
-				 * @param parentId Id of the parent.
-				 * 
-				 * @param childId Id of the child.
-				 * 
-				 * @param threshold The threshold of the VOTE.
-				 * 
-				 * @param children All children of the VOTE.
-				 */
-				 std::vector<int> getVOTEEntryAssociation(int parentId, int childId, int threshold, std::vector<std::shared_ptr<storm::storage::DFTElement<ValueType>>> children);
-				 
-				 /*
-				  * Helper-method for getVOTEEntryAssociation().
-				  * Obtained from / more info at:
-				  * http://www.geeksforgeeks.org/print-all-possible-combinations-of-r-elements-in-a-given-array-of-size-n/
-				  */
-				 void combinationUtil(std::vector<int> &output, std::vector<int> childrenIds, std::vector<int> subsets, int start, int end, int index, int threshold);
-				 
 				 /*
 				  * Return true if BE is active (corresponding place contains one initial token) or false if BE is inactive (corresponding place contains no initial token).
 				  * 
