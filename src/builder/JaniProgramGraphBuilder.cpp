@@ -50,7 +50,7 @@ namespace storm {
                 // No check necessary currently, but at least we should statically check that the bounds are okay.
                 storm::ppg::ProbabilisticProgramAction const& act = static_cast<storm::ppg::ProbabilisticProgramAction const&>(edge.getAction());
                 if (isUserRestrictedVariable(act.getVariableIdentifier())) {
-                    storm::storage::IntegerInterval const& bound = variableRestrictions.at(act.getVariableIdentifier());
+                    storm::storage::IntegerInterval const& bound = userVariableRestrictions.at(act.getVariableIdentifier());
                     storm::storage::IntegerInterval supportInterval = act.getSupportInterval();
                     STORM_LOG_THROW(bound.contains(supportInterval), storm::exceptions::NotSupportedException, "User provided bounds must contain all constant expressions");
                 }
@@ -60,15 +60,15 @@ namespace storm {
                 for(auto const& group : act) {
                     for(auto const& assignment : group) {
                         if (isUserRestrictedVariable(assignment.first)) {
-                            assert(variableRestrictions.count(assignment.first) == 1);
-                            storm::storage::IntegerInterval const& bound = variableRestrictions.at(assignment.first);
+                            assert(userVariableRestrictions.count(assignment.first) == 1);
+                            storm::storage::IntegerInterval const& bound = userVariableRestrictions.at(assignment.first);
                             if (!assignment.second.containsVariables()) {
                                 // Constant assignments can be checked statically.
                                 // TODO we might still want to allow assignments which go out of bounds.
                                 STORM_LOG_THROW(bound.contains(assignment.second.evaluateAsInt()), storm::exceptions::NotSupportedException, "User provided bounds must contain all constant expressions");
                             } else {
                                 // TODO currently only fully bounded restrictions are supported;
-                                assert(variableRestrictions.at(assignment.first).hasLeftBound() && variableRestrictions.at(assignment.first).hasRightBound());
+                                assert(userVariableRestrictions.at(assignment.first).hasLeftBound() && userVariableRestrictions.at(assignment.first).hasRightBound());
                                 storm::expressions::Expression newCondition = simplifyExpression(edge.getCondition() && (assignment.second > bound.getRightBound().get() || assignment.second < bound.getLeftBound().get()));
                                 storm::jani::EdgeDestination dest(varOutOfBoundsLocations.at(assignment.first), expManager->rational(1.0), storm::jani::OrderedAssignments());
                                 storm::jani::Edge e(janiLocId.at(edge.getSourceId()), storm::jani::Model::SILENT_ACTION_INDEX, boost::none, newCondition, {dest});

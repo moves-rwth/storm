@@ -67,11 +67,78 @@ namespace storm {
             return {true, pos};
         }
         
+        
+        std::vector<ProgramVariableIdentifier> ProgramGraph::constantAssigned() const {
+            std::set<ProgramVariableIdentifier> contained;
+            for (auto const& act : deterministicActions) {
+                for (auto const& group : act.second) {
+                    for (auto const& assignment : group) {
+                        if (assignment.second.containsVariables()) {
+                            contained.insert(assignment.first);
+                        }
+                    }
+                }
+            }
+            std::vector<ProgramVariableIdentifier> result;
+            for (auto const& varEntry : variables) {
+                if (contained.count(varEntry.second.getIndex()) == 0) {
+                    // Currently we can only do this for integer assigned initials
+                    if(initialValues.at(varEntry.second.getIndex()).containsVariables() || !varEntry.second.hasIntegerType()) {
+                        continue;
+                    }
+                    result.push_back(varEntry.first);
+                }
+            }
+            return result;
+        }
+        
+        std::vector<ProgramVariableIdentifier> ProgramGraph::constants() const {
+            std::set<ProgramVariableIdentifier> contained;
+            for (auto const& act : deterministicActions) {
+                for (auto const& group : act.second) {
+                    for (auto const& assignment : group) {
+                        contained.insert(assignment.first);
+                    }
+                }
+            }
+            for (auto const& act : probabilisticActions) {
+                contained.insert(act.second.getVariableIdentifier());
+            }
+            std::vector<ProgramVariableIdentifier> result;
+            for (auto const& varEntry : variables) {
+                if (contained.count(varEntry.second.getIndex()) == 0) {
+                    result.push_back(varEntry.first);
+                }
+            }
+            return result;
+        }
+        
+        storm::storage::IntegerInterval ProgramGraph::supportForConstAssignedVariable(ProgramVariableIdentifier i) const {
+            storm::storage::IntegerInterval support(initialValues.at(i).evaluateAsInt());
+            for (auto const& act : deterministicActions) {
+                for (auto const& group : act.second) {
+                    for (auto const& assignment : group) {
+                        if (assignment.first == i) {
+                            support.extend(assignment.second.evaluateAsInt());
+                        }
+                    }
+                }
+            }
+            for (auto const& act : probabilisticActions) {
+                if(act.second.getVariableIdentifier() == i) {
+                    support.extend(act.second.getSupportInterval());
+                }
+            }
+            return support;
+        }
+        
+        
         std::vector<ProgramVariableIdentifier> ProgramGraph::rewardVariables() const {
             std::vector<ProgramVariableIdentifier> rewardCandidates = noeffectVariables();
             std::vector<ProgramVariableIdentifier> result;
             for (auto const& var : rewardCandidates) {
                 if(variables.at(var).hasIntegerType()) {
+                    
                     // TODO add some checks here; refine the evaluate as int stuff.
                     if(initialValues.at(var).evaluateAsInt() == 0 && checkIfRewardVariableHelper(variables.at(var), this->deterministicActions).first) {
                         result.push_back(var);

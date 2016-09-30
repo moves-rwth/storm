@@ -57,6 +57,29 @@ namespace storm {
                 return true;
             }
             
+            void extend(int64_t val) {
+                if (hasLeftBound()) {
+                    if(val < leftBound.get()) {
+                        leftBound = val;
+                        return;
+                    }
+                }
+                if (hasRightBound()) {
+                    if(val > rightBound.get()) {
+                        rightBound = val;
+                    }
+                }
+            }
+            
+            void extend(IntegerInterval const& i) {
+                if(i.hasLeftBound()) {
+                    extend(i.getLeftBound().get());
+                }
+                if(i.hasRightBound()) {
+                    extend(i.getRightBound().get());
+                }
+            }
+            
             boost::optional<int64_t> getLeftBound() const {
                 return leftBound;
             }

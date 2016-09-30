@@ -209,6 +209,12 @@ namespace storm {
             
             std::vector<ProgramVariableIdentifier> rewardVariables() const;
             
+            std::vector<ProgramVariableIdentifier> constantAssigned() const;
+            
+            std::vector<ProgramVariableIdentifier> constants() const;
+            
+            storm::storage::IntegerInterval supportForConstAssignedVariable(ProgramVariableIdentifier i) const;
+            
             
             void checkValid() {
                 

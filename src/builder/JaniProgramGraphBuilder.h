@@ -26,6 +26,11 @@ namespace storm {
             
             JaniProgramGraphBuilder(storm::ppg::ProgramGraph const& pg) : programGraph(pg) {
                 rewards = programGraph.rewardVariables();
+                constants = programGraph.constants();
+                auto boundedVars = programGraph.constantAssigned();
+                for(auto const& v : boundedVars) {
+                    variableRestrictions.emplace(v, programGraph.supportForConstAssignedVariable(v));
+                }
             }
             
             virtual ~JaniProgramGraphBuilder() {
@@ -41,8 +46,14 @@ namespace storm {
         
             void restrictAllVariables(int64_t from, int64_t to) {
                 for (auto const& v : programGraph.getVariables()) {
-                    if(v.second.hasIntegerType()) {
-                        variableRestrictions.emplace(v.first, storm::storage::IntegerInterval(from, to));
+                    if(isConstant(v.first)) {
+                        continue;
+                    }
+                    if(variableRestrictions.count(v.first) > 0) {
+                        continue; // Currently we ignore user bounds if we have bounded integers;
+                    }
+                    if(v.second.hasIntegerType() ) {
+                        userVariableRestrictions.emplace(v.first, storm::storage::IntegerInterval(from, to));
                     }
                 }
             }
@@ -79,27 +90,44 @@ namespace storm {
             
             std::pair<std::vector<storm::jani::Edge>, storm::expressions::Expression> addVariableChecks(storm::ppg::ProgramEdge const& edge);
             
-            bool isUserRestrictedVariable(storm::ppg::ProgramVariableIdentifier i) {
-                return variableRestrictions.count(i) == 1 && !isRewardVariable(i);
+            bool isUserRestrictedVariable(storm::ppg::ProgramVariableIdentifier i) const {
+                return userVariableRestrictions.count(i) == 1 && !isRewardVariable(i);
             }
             
-            bool isRestrictedVariable(storm::ppg::ProgramVariableIdentifier i) {
+            bool isRestrictedVariable(storm::ppg::ProgramVariableIdentifier i) const {
                 // Might be different from user restricted in near future.
-                return variableRestrictions.count(i) == 1 && !isRewardVariable(i);
+                return (variableRestrictions.count(i) == 1 && !isRewardVariable(i)) || isUserRestrictedVariable(i);
             }
             
-            bool isRewardVariable(storm::ppg::ProgramVariableIdentifier i) {
+            storm::storage::IntegerInterval const& variableBounds(storm::ppg::ProgramVariableIdentifier i) const {
+                assert(isRestrictedVariable(i));
+                if (userVariableRestrictions.count(i) == 1) {
+                    return userVariableRestrictions.at(i);
+                } else {
+                    return variableRestrictions.at(i);
+                }
+                
+            }
+            
+            bool isRewardVariable(storm::ppg::ProgramVariableIdentifier i) const {
                 return std::find(rewards.begin(), rewards.end(), i) != rewards.end();
+            }
+            
+            bool isConstant(storm::ppg::ProgramVariableIdentifier i) const {
+                return std::find(constants.begin(), constants.end(), i) != constants.end();
             }
             
             void addProcedureVariables(storm::jani::Model& model, storm::jani::Automaton& automaton) {
                 for (auto const& v : programGraph.getVariables()) {
-                    if (v.second.hasBooleanType()) {
+                    if (isConstant(v.first)) {
+                        storm::jani::Constant constant(v.second.getName(), v.second, programGraph.getInitialValue(v.first));
+                        model.addConstant(constant);
+                    } else if (v.second.hasBooleanType()) {
                         storm::jani::BooleanVariable* janiVar = new storm::jani::BooleanVariable(v.second.getName(), v.second, programGraph.getInitialValue(v.first), false);
                         automaton.addVariable(*janiVar);
                         variables.emplace(v.first, janiVar);
                     } else if (isRestrictedVariable(v.first) && !isRewardVariable(v.first)) {
-                        storm::storage::IntegerInterval const& bounds = variableRestrictions.at(v.first);
+                        storm::storage::IntegerInterval const& bounds = variableBounds(v.first);
                         if (bounds.hasLeftBound()) {
                             if (bounds.hasRightBound()) {
                                 storm::jani::BoundedIntegerVariable* janiVar = new storm::jani::BoundedIntegerVariable (v.second.getName(), v.second, programGraph.getInitialValue(v.first), false, expManager->integer(bounds.getLeftBound().get()), expManager->integer(bounds.getRightBound().get()));
@@ -139,7 +167,7 @@ namespace storm {
             }
             
             void addVariableOoBLocations(storm::jani::Automaton& automaton) {
-                for(auto const& restr : variableRestrictions) {
+                for(auto const& restr : userVariableRestrictions) {
                     if(!isRewardVariable(restr.first)) {
                         storm::jani::Location janiLoc(janiVariableOutOfBoundsLocationName(restr.first));
                         uint64_t locId = automaton.addLocation(janiLoc);
@@ -150,8 +178,13 @@ namespace storm {
             }
             /// Transient variables
             std::vector<storm::ppg::ProgramVariableIdentifier> rewards;
-            /// Restrictions on variables
+            /// Variables that are constants
+            std::vector<storm::ppg::ProgramVariableIdentifier> constants;
+            /// Restrictions on variables (automatic)
             std::map<uint64_t, storm::storage::IntegerInterval> variableRestrictions;
+            /// Restrictions on variables (provided by users)
+            std::map<uint64_t, storm::storage::IntegerInterval> userVariableRestrictions;
+            
             /// Locations for variables that would have gone ot o
             std::map<uint64_t, uint64_t> varOutOfBoundsLocations;
             std::map<storm::ppg::ProgramLocationIdentifier, uint64_t> janiLocId;
