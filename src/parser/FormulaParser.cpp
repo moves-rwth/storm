@@ -17,6 +17,12 @@
 namespace storm {
     namespace parser {
         
+        
+        FormulaParser::FormulaParser() : manager(new storm::expressions::ExpressionManager()), grammar(new FormulaParserGrammar(manager)) {
+            // Intentionally left empty.
+        }
+
+        
         FormulaParser::FormulaParser(std::shared_ptr<storm::expressions::ExpressionManager const> const& manager) : manager(manager), grammar(new FormulaParserGrammar(manager)) {
             // Intentionally left empty.
         }

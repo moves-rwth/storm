@@ -10,7 +10,6 @@
 #include "src/parser/SpiritErrorHandler.h"
 #include "src/storage/prism/Program.h"
 #include "src/storage/expressions/Expression.h"
-#include "src/storage/expressions/Expressions.h"
 
 namespace storm {
     namespace expressions {

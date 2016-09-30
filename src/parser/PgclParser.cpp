@@ -80,9 +80,9 @@ namespace storm {
 
             // Simple statements
             doubleDeclaration           = (qi::lit("double ") >> variableName)[qi::_val = phoenix::bind(&PgclParser::declareDoubleVariable, phoenix::ref(*this), qi::_1)];
-            integerDeclaration = (qi::lit("int ") >> variableName >> qi::lit(":=") >> expression >> qi::lit(";"))[qi::_val = phoenix::bind(&PgclParser::createIntegerDeclarationStatement, phoenix::ref(*this), qi::_1, qi::_2)];
+            integerDeclaration = (qi::lit("int ") > variableName > qi::lit(":=") > expression > qi::lit(";"))[qi::_val = phoenix::bind(&PgclParser::createIntegerDeclarationStatement, phoenix::ref(*this), qi::_1, qi::_2)];
             integerDeclaration.name("integer declaration");
-            booleanDeclaration = (qi::lit("bool ") >> variableName >> qi::lit(":=") >> expression >> qi::lit(";"))[qi::_val = phoenix::bind(&PgclParser::createBooleanDeclarationStatement, phoenix::ref(*this), qi::_1, qi::_2)];
+            booleanDeclaration = (qi::lit("bool ") > variableName > qi::lit(":=") > expression > qi::lit(";"))[qi::_val = phoenix::bind(&PgclParser::createBooleanDeclarationStatement, phoenix::ref(*this), qi::_1, qi::_2)];
             booleanDeclaration.name("boolean declaration");
             
             assignmentStatement         = (variableName > qi::lit(":=") > (expression | uniformExpression) > qi::lit(";"))[qi::_val = phoenix::bind(&PgclParser::createAssignmentStatement, phoenix::ref(*this), qi::_1, qi::_2)];
