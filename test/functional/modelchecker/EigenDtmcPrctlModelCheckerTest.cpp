@@ -15,12 +15,15 @@
 #include "src/parser/AutoParser.h"
 #include "src/parser/PrismParser.h"
 #include "src/builder/ExplicitModelBuilder.h"
+#include "src/storage/expressions/ExpressionManager.h"
 
 TEST(EigenDtmcPrctlModelCheckerTest, Die) {
     std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser<>::parseModel(STORM_CPP_BASE_PATH "/examples/dtmc/die/die.tra", STORM_CPP_BASE_PATH "/examples/dtmc/die/die.lab", "", STORM_CPP_BASE_PATH "/examples/dtmc/die/die.coin_flips.trans.rew");
     
     // A parser that we use for conveniently constructing the formulas.
-    storm::parser::FormulaParser formulaParser;
+    
+    auto expManager = std::make_shared<storm::expressions::ExpressionManager>();
+    storm::parser::FormulaParser formulaParser(expManager);
     
     ASSERT_EQ(abstractModel->getType(), storm::models::ModelType::Dtmc);
     
@@ -69,7 +72,9 @@ TEST(EigenDtmcPrctlModelCheckerTest, Die_RationalNumber) {
     std::shared_ptr<storm::models::sparse::Model<storm::RationalNumber>> model = storm::builder::ExplicitModelBuilder<storm::RationalNumber>(program, options).build();
     
     // A parser that we use for conveniently constructing the formulas.
-    storm::parser::FormulaParser formulaParser;
+    
+    auto expManager = std::make_shared<storm::expressions::ExpressionManager>();
+    storm::parser::FormulaParser formulaParser(expManager);
     
     ASSERT_EQ(model->getType(), storm::models::ModelType::Dtmc);
     
@@ -116,7 +121,9 @@ TEST(EigenDtmcPrctlModelCheckerTest, Die_RationalFunction) {
     std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model = storm::builder::ExplicitModelBuilder<storm::RationalFunction>(program, options).build();
     
     // A parser that we use for conveniently constructing the formulas.
-    storm::parser::FormulaParser formulaParser;
+    
+    auto expManager = std::make_shared<storm::expressions::ExpressionManager>();
+    storm::parser::FormulaParser formulaParser(expManager);
     
     ASSERT_EQ(model->getType(), storm::models::ModelType::Dtmc);
     
@@ -168,7 +175,9 @@ TEST(EigenDtmcPrctlModelCheckerTest, Crowds) {
     ASSERT_EQ(abstractModel->getType(), storm::models::ModelType::Dtmc);
     
     // A parser that we use for conveniently constructing the formulas.
-    storm::parser::FormulaParser formulaParser;
+    
+    auto expManager = std::make_shared<storm::expressions::ExpressionManager>();
+    storm::parser::FormulaParser formulaParser(expManager);
     
     std::shared_ptr<storm::models::sparse::Dtmc<double>> dtmc = abstractModel->as<storm::models::sparse::Dtmc<double>>();
     
@@ -205,7 +214,9 @@ TEST(EigenDtmcPrctlModelCheckerTest, SynchronousLeader) {
     ASSERT_EQ(abstractModel->getType(), storm::models::ModelType::Dtmc);
     
     // A parser that we use for conveniently constructing the formulas.
-    storm::parser::FormulaParser formulaParser;
+    
+    auto expManager = std::make_shared<storm::expressions::ExpressionManager>();
+    storm::parser::FormulaParser formulaParser(expManager);
     
     std::shared_ptr<storm::models::sparse::Dtmc<double>> dtmc = abstractModel->as<storm::models::sparse::Dtmc<double>>();
     
@@ -241,7 +252,9 @@ TEST(EigenDtmcPrctlModelCheckerTest, LRASingleBscc) {
     std::shared_ptr<storm::models::sparse::Dtmc<double>> dtmc;
     
     // A parser that we use for conveniently constructing the formulas.
-    storm::parser::FormulaParser formulaParser;
+    
+    auto expManager = std::make_shared<storm::expressions::ExpressionManager>();
+    storm::parser::FormulaParser formulaParser(expManager);
     
     {
         matrixBuilder = storm::storage::SparseMatrixBuilder<double>(2, 2, 2);
@@ -321,7 +334,9 @@ TEST(EigenDtmcPrctlModelCheckerTest, LRA) {
     std::shared_ptr<storm::models::sparse::Dtmc<double>> dtmc;
     
     // A parser that we use for conveniently constructing the formulas.
-    storm::parser::FormulaParser formulaParser;
+    
+    auto expManager = std::make_shared<storm::expressions::ExpressionManager>();
+    storm::parser::FormulaParser formulaParser(expManager);
     
     {
         matrixBuilder = storm::storage::SparseMatrixBuilder<double>(15, 15, 20, true);
@@ -398,7 +413,9 @@ TEST(EigenDtmcPrctlModelCheckerTest, Conditional) {
     storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>> checker(*dtmc, std::make_unique<storm::solver::EigenLinearEquationSolverFactory<double>>());
     
     // A parser that we use for conveniently constructing the formulas.
-    storm::parser::FormulaParser formulaParser;
+    
+    auto expManager = std::make_shared<storm::expressions::ExpressionManager>();
+    storm::parser::FormulaParser formulaParser(expManager);
     std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"target\"]");
     
     std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*formula);

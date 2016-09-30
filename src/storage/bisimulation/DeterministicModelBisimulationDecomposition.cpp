@@ -627,8 +627,7 @@ namespace storm {
                 // If the model has state rewards, we simply copy the state reward of the representative state, because
                 // all states in a block are guaranteed to have the same state reward.
                 if (this->options.getKeepRewards() && this->model.hasRewardModel()) {
-                    typename std::unordered_map<std::string, typename ModelType::RewardModelType>::const_iterator nameRewardModelPair = this->model.getUniqueRewardModel();
-                    stateRewards.get()[blockIndex] = nameRewardModelPair->second.getStateRewardVector()[representativeState];
+                    stateRewards.get()[blockIndex] = this->model.getUniqueRewardModel().getStateRewardVector()[representativeState];
                 }
             }
             
@@ -641,7 +640,8 @@ namespace storm {
             // Construct the reward model mapping.
             std::unordered_map<std::string, typename ModelType::RewardModelType> rewardModels;
             if (this->options.getKeepRewards() && this->model.hasRewardModel()) {
-                typename std::unordered_map<std::string, typename ModelType::RewardModelType>::const_iterator nameRewardModelPair = this->model.getUniqueRewardModel();
+                STORM_LOG_THROW(this->model.hasUniqueRewardModel(), storm::exceptions::IllegalFunctionCallException, "Cannot preserve more than one reward model.");
+                typename std::unordered_map<std::string, typename ModelType::RewardModelType>::const_iterator nameRewardModelPair = this->model.getRewardModels().begin();
                 rewardModels.insert(std::make_pair(nameRewardModelPair->first, typename ModelType::RewardModelType(stateRewards)));
             }
             

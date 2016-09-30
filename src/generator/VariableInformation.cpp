@@ -53,6 +53,14 @@ namespace storm {
         }
         
         VariableInformation::VariableInformation(storm::jani::Model const& model) : totalBitOffset(0) {
+            // Check that the model does not contain non-transient unbounded integer or non-transient real variables.
+            STORM_LOG_THROW(!model.getGlobalVariables().containsNonTransientRealVariables(), storm::exceptions::InvalidArgumentException, "Cannot build model from JANI model that contains global non-transient real variables.");
+            STORM_LOG_THROW(!model.getGlobalVariables().containsNonTransientUnboundedIntegerVariables(), storm::exceptions::InvalidArgumentException, "Cannot build model from JANI model that contains non-transient unbounded integer variables.");
+            for (auto const& automaton : model.getAutomata()) {
+                STORM_LOG_THROW(!automaton.getVariables().containsNonTransientUnboundedIntegerVariables(), storm::exceptions::InvalidArgumentException, "Cannot build model from JANI model that contains non-transient unbounded integer variables in automaton '" << automaton.getName() << "'.");
+                STORM_LOG_THROW(!automaton.getVariables().containsNonTransientRealVariables(), storm::exceptions::InvalidArgumentException, "Cannot build model from JANI model that contains non-transient real variables in automaton '" << automaton.getName() << "'.");
+            }
+            
             for (auto const& variable : model.getGlobalVariables().getBooleanVariables()) {
                 booleanVariables.emplace_back(variable.getExpressionVariable(), totalBitOffset, true);
                 ++totalBitOffset;

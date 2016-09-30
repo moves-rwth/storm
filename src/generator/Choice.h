@@ -26,6 +26,11 @@ namespace storm {
             Choice& operator=(Choice&& other) = default;
             
             /*!
+             * Adds the given choice to the current one.
+             */
+            void add(Choice const& other);
+            
+            /*!
              * Returns an iterator to the distribution associated with this choice.
              *
              * @return An iterator to the first element of the distribution.

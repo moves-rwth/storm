@@ -46,6 +46,10 @@ namespace storm {
                 return false;
             }
             
+            bool hasUniqueSuccessor() const {
+                return nrOutgoingEdgeGroups() == 1 && !hasNonDeterminism();
+            }
+            
             const_iterator begin() const {
                 return edgeGroups.begin();
             }

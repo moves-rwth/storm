@@ -200,7 +200,7 @@ namespace storm {
             return false;
         }
         
-        bool Program::hasUndefinedConstantsOnlyInUpdateProbabilitiesAndRewards() const {
+        bool Program::undefinedConstantsAreGraphPreserving() const {
             if (!this->hasUndefinedConstants()) {
                 return true;
             }
@@ -212,10 +212,7 @@ namespace storm {
                     undefinedConstantVariables.insert(constant.getExpressionVariable());
                 }
             }
-            
-            // Now it remains to check that the intersection of the variables used in the program with the undefined
-            // constants' variables is empty (except for the update probabilities).
-            
+                        
             // Start by checking the defining expressions of all defined constants. If it contains a currently undefined
             // constant, we need to mark the target constant as undefined as well.
             for (auto const& constant : this->getConstants()) {
@@ -226,7 +223,7 @@ namespace storm {
                 }
             }
             
-            // Now check initial value expressions of global variables.
+            // Now check initial value and range expressions of global variables.
             for (auto const& booleanVariable : this->getGlobalBooleanVariables()) {
                 if (booleanVariable.hasInitialValue()) {
                     if (booleanVariable.getInitialValueExpression().containsVariable(undefinedConstantVariables)) {

@@ -34,8 +34,7 @@ void initializeSettings() {
     storm::settings::addModule<storm::settings::modules::JaniExportSettings>();
 }
 
-int handleJani(storm::jani::Model& model) {
-    
+void handleJani(storm::jani::Model& model) {
     if (!storm::settings::getModule<storm::settings::modules::JaniExportSettings>().isJaniFileSet()) {
         // For now, we have to have a jani file
         storm::jani::JsonExporter::toStream(model, std::cout);

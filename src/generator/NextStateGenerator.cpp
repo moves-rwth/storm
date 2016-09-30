@@ -310,6 +310,48 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
+        void NextStateGenerator<ValueType, StateType>::postprocess(StateBehavior<ValueType, StateType>& result) {
+            // If the model we build is a Markov Automaton, we postprocess the choices to sum all Markovian choices
+            // and make the Markovian choice the very first one (if there is any).
+            bool foundPreviousMarkovianChoice = false;
+            if (this->getModelType() == ModelType::MA) {
+                uint64_t numberOfChoicesToDelete = 0;
+                
+                for (uint_fast64_t index = 0; index + numberOfChoicesToDelete < result.getNumberOfChoices();) {
+                    Choice<ValueType>& choice = result.getChoices()[index];
+                    
+                    if (choice.isMarkovian()) {
+                        if (foundPreviousMarkovianChoice) {
+                            // If there was a previous Markovian choice, we need to sum them. Note that we can assume
+                            // that the previous Markovian choice is the very first one in the choices vector.
+                            result.getChoices().front().add(choice);
+                            
+                            // Swap the choice to the end to indicate it can be removed (if it's not already there).
+                            if (index != result.getNumberOfChoices() - 1) {
+                                std::swap(choice, result.getChoices().back());
+                            }
+                            ++numberOfChoicesToDelete;
+                        } else {
+                            // If there is no previous Markovian choice, just move the Markovian choice to the front.
+                            if (index != 0) {
+                                std::swap(result.getChoices().front(), choice);
+                                foundPreviousMarkovianChoice = true;
+                            }
+                            ++index;
+                        }
+                    } else {
+                        ++index;
+                    }
+                }
+                
+                // Finally remove the choices that were added to other Markovian choices.
+                if (numberOfChoicesToDelete > 0) {
+                    result.getChoices().resize(result.getChoices().size() - numberOfChoicesToDelete);
+                }
+            }
+        }
+        
+        template<typename ValueType, typename StateType>
         storm::expressions::SimpleValuation NextStateGenerator<ValueType, StateType>::toValuation(CompressedState const& state) const {
             return unpackStateIntoValuation(state, variableInformation, *expressionManager);
         }

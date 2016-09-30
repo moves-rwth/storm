@@ -21,9 +21,7 @@
 #include "src/storage/expressions/VariableExpression.h"
 
 #include "src/storage/jani/AutomatonComposition.h"
-#include "src/storage/jani/RenameComposition.h"
 #include "src/storage/jani/ParallelComposition.h"
-
 
 namespace storm {
     namespace jani {
@@ -50,9 +48,6 @@ namespace storm {
                 return compDecl;
             }
             
-            virtual boost::any visit(RenameComposition const& composition, boost::any const& data) {
-                
-            }
             virtual boost::any visit(ParallelComposition const& composition, boost::any const& data) {
                 modernjson::json compDecl;
                 
@@ -233,7 +228,7 @@ namespace storm {
             std::vector<modernjson::json> actionReprs;
             uint64_t actIndex = 0;
             for(auto const& act : actions) {
-                if(actIndex == storm::jani::Model::silentActionIndex) {
+                if(actIndex == storm::jani::Model::SILENT_ACTION_INDEX) {
                     actIndex++;
                     continue;
                 }
@@ -399,7 +394,7 @@ namespace storm {
             jsonStruct["constants"] = buildConstantsArray(janiModel.getConstants());
             jsonStruct["variables"] = buildVariablesArray(janiModel.getGlobalVariables());
             jsonStruct["restrict-initial"]["exp"] = buildExpression(janiModel.getInitialStatesRestriction());
-            jsonStruct["automata"] = buildAutomataArray(janiModel.getAutomata(), janiModel.buildActionToNameMap());
+            jsonStruct["automata"] = buildAutomataArray(janiModel.getAutomata(), janiModel.getActionIndexToNameMap());
             jsonStruct["system"] = CompositionJsonExporter::translate(janiModel.getSystemComposition());
             
         }

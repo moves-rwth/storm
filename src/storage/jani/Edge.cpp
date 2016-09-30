@@ -80,7 +80,7 @@ namespace storm {
         }
         
         bool Edge::hasSilentAction() const {
-            return actionIndex == Model::silentActionIndex;
+            return actionIndex == Model::SILENT_ACTION_INDEX;
         }
         
         bool Edge::addTransientAssignment(Assignment const& assignment) {
@@ -113,8 +113,38 @@ namespace storm {
             }
         }
         
+        void Edge::pushAssignmentsToDestinations() {
+            assert(!destinations.empty());
+            for (auto const& assignment : this->getAssignments()) {
+                for (auto& destination : destinations) {
+                    destination.addAssignment(assignment);
+                }
+            }
+            assignments = OrderedAssignments();
+        }
+        
         boost::container::flat_set<storm::expressions::Variable> const& Edge::getWrittenGlobalVariables() const {
             return writtenGlobalVariables;
+        }
+        
+        bool Edge::usesVariablesInNonTransientAssignments(std::set<storm::expressions::Variable> const& variables) const {
+            for (auto const& destination : destinations) {
+                for (auto const& assignment : destination.getOrderedAssignments().getNonTransientAssignments()) {
+                    if (assignment.getAssignedExpression().containsVariable(variables)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+        
+        bool Edge::hasTransientEdgeDestinationAssignments() const {
+            for (auto const& destination : this->getDestinations()) {
+                if (destination.hasTransientAssignment()) {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 }

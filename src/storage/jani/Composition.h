@@ -17,6 +17,6 @@ namespace storm {
             
             friend std::ostream& operator<<(std::ostream& stream, Composition const& composition);
         };
-        
+                
     }
 }

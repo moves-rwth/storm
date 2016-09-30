@@ -22,10 +22,15 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
-        JaniNextStateGenerator<ValueType, StateType>::JaniNextStateGenerator(storm::jani::Model const& model, NextStateGeneratorOptions const& options, bool flag) : NextStateGenerator<ValueType, StateType>(model.getExpressionManager(), VariableInformation(model), options), model(model), rewardVariables(), hasStateActionRewards(false) {
-            STORM_LOG_THROW(model.hasDefaultComposition(), storm::exceptions::WrongFormatException, "The explicit next-state generator currently does not support custom system compositions.");
+        JaniNextStateGenerator<ValueType, StateType>::JaniNextStateGenerator(storm::jani::Model const& model, NextStateGeneratorOptions const& options, bool flag) : NextStateGenerator<ValueType, StateType>(model.getExpressionManager(), options), model(model), rewardVariables(), hasStateActionRewards(false) {
+            STORM_LOG_THROW(model.hasStandardComposition(), storm::exceptions::WrongFormatException, "The explicit next-state generator currently does not support custom system compositions.");
             STORM_LOG_THROW(!model.hasNonGlobalTransientVariable(), storm::exceptions::InvalidSettingsException, "The explicit next-state generator currently does not support automata-local transient variables.");
+            STORM_LOG_THROW(!model.hasTransientEdgeDestinationAssignments(), storm::exceptions::InvalidSettingsException, "The explicit next-state generator currently does not support transient edge destination assignments.");
             STORM_LOG_THROW(!this->options.isBuildChoiceLabelsSet(), storm::exceptions::InvalidSettingsException, "JANI next-state generator cannot generate choice labels.");
+            
+            // Only after checking validity of the program, we initialize the variable information.
+            this->checkValid();
+            this->variableInformation = VariableInformation(model);
             
             if (this->options.isBuildAllRewardModelsSet()) {
                 for (auto const& variable : model.getGlobalVariables()) {
@@ -200,9 +205,13 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
-        CompressedState JaniNextStateGenerator<ValueType, StateType>::applyUpdate(CompressedState const& state, storm::jani::EdgeDestination const& destination) {
+        CompressedState JaniNextStateGenerator<ValueType, StateType>::applyUpdate(CompressedState const& state, storm::jani::EdgeDestination const& destination, storm::generator::LocationVariableInformation const& locationVariable) {
             CompressedState newState(state);
             
+            // Update the location of the state.
+            setLocation(newState, locationVariable, destination.getLocationIndex());
+            
+            // Then perform the assignments.
             auto assignmentIt = destination.getOrderedAssignments().getNonTransientAssignments().begin();
             auto assignmentIte = destination.getOrderedAssignments().getNonTransientAssignments().end();
             
@@ -229,7 +238,7 @@ namespace storm {
             
             // Check that we processed all assignments.
             STORM_LOG_ASSERT(assignmentIt == assignmentIte, "Not all assignments were consumed.");
-            
+
             return newState;
         }
         
@@ -264,6 +273,7 @@ namespace storm {
             }
             
             // Get all choices for the state.
+            result.setExpanded();
             std::vector<Choice<ValueType>> allChoices = getSilentActionChoices(locations, *this->state, stateToIdCallback);
             std::vector<Choice<ValueType>> allLabeledChoices = getNonsilentActionChoices(locations, *this->state, stateToIdCallback);
             for (auto& choice : allLabeledChoices) {
@@ -323,7 +333,8 @@ namespace storm {
                 result.addChoice(std::move(choice));
             }
             
-            result.setExpanded();
+            this->postprocess(result);
+            
             return result;
         }
         
@@ -333,13 +344,14 @@ namespace storm {
             
             // Iterate over all automata.
             uint64_t automatonIndex = 0;
+            
             for (auto const& automaton : model.getAutomata()) {
                 uint64_t location = locations[automatonIndex];
                 
                 // Iterate over all edges from the source location.
                 for (auto const& edge : automaton.getEdgesFromLocation(location)) {
                     // Skip the edge if it is labeled with a non-silent action.
-                    if (edge.getActionIndex() != model.getSilentActionIndex()) {
+                    if (edge.getActionIndex() != storm::jani::Model::SILENT_ACTION_INDEX) {
                         continue;
                     }
                     
@@ -348,7 +360,13 @@ namespace storm {
                         continue;
                     }
                     
-                    result.push_back(Choice<ValueType>(edge.getActionIndex()));
+                    // Determine the exit rate if it's a Markovian edge.
+                    boost::optional<ValueType> exitRate = boost::none;
+                    if (edge.hasRate()) {
+                        exitRate = this->evaluator.asRational(edge.getRate());
+                    }
+                    
+                    result.push_back(Choice<ValueType>(edge.getActionIndex(), static_cast<bool>(exitRate)));
                     Choice<ValueType>& choice = result.back();
                     
                     // Iterate over all updates of the current command.
@@ -356,10 +374,11 @@ namespace storm {
                     for (auto const& destination : edge.getDestinations()) {
                         // Obtain target state index and add it to the list of known states. If it has not yet been
                         // seen, we also add it to the set of states that have yet to be explored.
-                        StateType stateIndex = stateToIdCallback(applyUpdate(state, destination));
+                        StateType stateIndex = stateToIdCallback(applyUpdate(state, destination, this->variableInformation.locationVariables[automatonIndex]));
                         
                         // Update the choice by adding the probability/target state to it.
                         ValueType probability = this->evaluator.asRational(destination.getProbability());
+                        probability = exitRate ? exitRate.get() * probability : probability;
                         choice.addProbability(stateIndex, probability);
                         probabilitySum += probability;
                     }
@@ -405,13 +424,14 @@ namespace storm {
                         
                         currentTargetStates->emplace(state, storm::utility::one<ValueType>());
                         
+                        auto locationVariableIt = this->variableInformation.locationVariables.cbegin();
                         for (uint_fast64_t i = 0; i < iteratorList.size(); ++i) {
                             storm::jani::Edge const& edge = **iteratorList[i];
                             
                             for (auto const& destination : edge.getDestinations()) {
                                 for (auto const& stateProbabilityPair : *currentTargetStates) {
                                     // Compute the new state under the current update and add it to the set of new target states.
-                                    CompressedState newTargetState = applyUpdate(stateProbabilityPair.first, destination);
+                                    CompressedState newTargetState = applyUpdate(stateProbabilityPair.first, destination, *locationVariableIt);
                                     
                                     // If the new state was already found as a successor state, update the probability
                                     // and otherwise insert it.
@@ -631,6 +651,36 @@ namespace storm {
                     }
                 }
             }
+        }
+        
+        template<typename ValueType, typename StateType>
+        void JaniNextStateGenerator<ValueType, StateType>::checkValid() const {
+            // If the program still contains undefined constants and we are not in a parametric setting, assemble an appropriate error message.
+#ifdef STORM_HAVE_CARL
+            if (!std::is_same<ValueType, storm::RationalFunction>::value && model.hasUndefinedConstants()) {
+#else
+            if (model.hasUndefinedConstants()) {
+#endif
+                std::vector<std::reference_wrapper<storm::jani::Constant const>> undefinedConstants = model.getUndefinedConstants();
+                std::stringstream stream;
+                bool printComma = false;
+                for (auto const& constant : undefinedConstants) {
+                    if (printComma) {
+                        stream << ", ";
+                    } else {
+                        printComma = true;
+                    }
+                    stream << constant.get().getName() << " (" << constant.get().getType() << ")";
+                }
+                stream << ".";
+                STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Program still contains these undefined constants: " + stream.str());
+            }
+                
+#ifdef STORM_HAVE_CARL
+            else if (std::is_same<ValueType, storm::RationalFunction>::value && !model.undefinedConstantsAreGraphPreserving()) {
+                STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The input model contains undefined constants that influence the graph structure of the underlying model, which is not allowed.");
+            }
+#endif
         }
         
         template class JaniNextStateGenerator<double>;

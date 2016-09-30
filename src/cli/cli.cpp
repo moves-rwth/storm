@@ -223,7 +223,13 @@ namespace storm {
                 }
                 
                 if(model.isJaniModel() && storm::settings::getModule<storm::settings::modules::JaniExportSettings>().isJaniFileSet()) {
-                    storm::jani::JsonExporter::toFile(model.asJaniModel(), storm::settings::getModule<storm::settings::modules::JaniExportSettings>().getJaniFilename());
+                    if (storm::settings::getModule<storm::settings::modules::JaniExportSettings>().isExportAsStandardJaniSet()) {
+                        storm::jani::Model normalisedModel = storm::jani::Model(model.asJaniModel());
+                        normalisedModel.makeStandardJaniCompliant();
+                        storm::jani::JsonExporter::toFile(normalisedModel, storm::settings::getModule<storm::settings::modules::JaniExportSettings>().getJaniFilename());
+                    } else {
+                        storm::jani::JsonExporter::toFile(model.asJaniModel(), storm::settings::getModule<storm::settings::modules::JaniExportSettings>().getJaniFilename());
+                    }
                 }
                 
                 // Get the string that assigns values to the unknown currently undefined constants in the model.

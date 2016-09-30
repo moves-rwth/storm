@@ -54,9 +54,10 @@ namespace storm {
              * the given compressed state.
              * @params state The state to which to apply the new values.
              * @params update The update to apply.
+             * @params locationVariable The location variable that is being updated.
              * @return The resulting state.
              */
-            CompressedState applyUpdate(CompressedState const& state, storm::jani::EdgeDestination const& update);
+            CompressedState applyUpdate(CompressedState const& state, storm::jani::EdgeDestination const& update, storm::generator::LocationVariableInformation const& locationVariable);
             
             /*!
              * Retrieves all choices labeled with the silent action possible from the given state.
@@ -99,6 +100,11 @@ namespace storm {
              * Builds the information structs for the reward models.
              */
             void buildRewardModelInformation();
+            
+            /*!
+             * Checks the underlying model for validity for this next-state generator.
+             */
+            void checkValid() const;
             
             /// The model used for the generation of next states.
             storm::jani::Model model;

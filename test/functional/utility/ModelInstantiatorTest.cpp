@@ -183,15 +183,15 @@ TEST(ModelInstantiatorTest, Brp_Rew) {
             }
         }
         ASSERT_TRUE(instantiated.hasUniqueRewardModel());
-        EXPECT_FALSE(instantiated.getUniqueRewardModel()->second.hasStateRewards());
-        EXPECT_FALSE(instantiated.getUniqueRewardModel()->second.hasTransitionRewards());
-        EXPECT_TRUE(instantiated.getUniqueRewardModel()->second.hasStateActionRewards());
-        ASSERT_TRUE(dtmc->getUniqueRewardModel()->second.hasStateActionRewards());
-        std::size_t stateActionEntries = dtmc->getUniqueRewardModel()->second.getStateActionRewardVector().size();
-        ASSERT_EQ(stateActionEntries, instantiated.getUniqueRewardModel()->second.getStateActionRewardVector().size());
+        EXPECT_FALSE(instantiated.getUniqueRewardModel().hasStateRewards());
+        EXPECT_FALSE(instantiated.getUniqueRewardModel().hasTransitionRewards());
+        EXPECT_TRUE(instantiated.getUniqueRewardModel().hasStateActionRewards());
+        ASSERT_TRUE(dtmc->getUniqueRewardModel().hasStateActionRewards());
+        std::size_t stateActionEntries = dtmc->getUniqueRewardModel().getStateActionRewardVector().size();
+        ASSERT_EQ(stateActionEntries, instantiated.getUniqueRewardModel().getStateActionRewardVector().size());
         for(std::size_t i =0; i<stateActionEntries; ++i){
-            double evaluatedValue = carl::toDouble(dtmc->getUniqueRewardModel()->second.getStateActionRewardVector()[i].evaluate(valuation));
-            EXPECT_EQ(evaluatedValue, instantiated.getUniqueRewardModel()->second.getStateActionRewardVector()[i]);
+            double evaluatedValue = carl::toDouble(dtmc->getUniqueRewardModel().getStateActionRewardVector()[i].evaluate(valuation));
+            EXPECT_EQ(evaluatedValue, instantiated.getUniqueRewardModel().getStateActionRewardVector()[i]);
         }
         EXPECT_EQ(dtmc->getStateLabeling(), instantiated.getStateLabeling());
         EXPECT_EQ(dtmc->getOptionalChoiceLabeling(), instantiated.getOptionalChoiceLabeling());

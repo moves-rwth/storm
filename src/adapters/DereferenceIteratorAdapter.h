@@ -37,6 +37,14 @@ namespace storm {
                 return boost::make_transform_iterator(it, Dereferencer<value_type>());
             }
             
+            bool empty() const {
+                return it == ite;
+            }
+            
+            std::size_t size() const {
+                return std::distance(it, ite);
+            }
+            
         private:
             input_iterator it;
             input_iterator ite;

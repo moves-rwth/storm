@@ -106,6 +106,21 @@ namespace storm {
              */
             void liftTransientDestinationAssignments();
             
+            /**
+             * Shifts the assingments from the edges to the destinations.
+             */
+            void pushAssignmentsToDestinations();
+            
+            /*!
+             * Checks whether the provided variables appear on the right-hand side of non-transient assignments.
+             */
+            bool usesVariablesInNonTransientAssignments(std::set<storm::expressions::Variable> const& variables) const;
+            
+            /*!
+             * Retrieves whether there is any transient edge destination assignment in the edge.
+             */
+            bool hasTransientEdgeDestinationAssignments() const;
+            
         private:
             /// The index of the source location.
             uint64_t sourceLocationIndex;

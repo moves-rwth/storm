@@ -24,6 +24,8 @@ namespace storm {
                  */
                 std::string getJaniFilename() const;
                 
+                bool isExportAsStandardJaniSet() const;
+                
                 bool check() const override;
                 void finalize() override;
                 
@@ -32,6 +34,9 @@ namespace storm {
             private:
                 static const std::string janiFileOptionName;
                 static const std::string janiFileOptionShortName;
+                static const std::string standardCompliantOptionName;
+                static const std::string standardCompliantOptionShortName;
+                
             };
         }
     }

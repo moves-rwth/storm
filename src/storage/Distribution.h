@@ -5,8 +5,6 @@
 #include <ostream>
 #include <boost/container/flat_map.hpp>
 
-#include "src/utility/OsDetection.h"
-
 #include "src/storage/sparse/StateType.h"
 
 namespace storm {
@@ -31,11 +29,13 @@ namespace storm {
 
             Distribution(Distribution const& other) = default;
             Distribution& operator=(Distribution const& other) = default;
-
-#ifndef WINDOWS
             Distribution(Distribution&& other) = default;
             Distribution& operator=(Distribution&& other) = default;
-#endif
+            
+            /*!
+             * Adds the given distribution to the current one.
+             */
+            void add(Distribution const& other);
             
             /*!
              * Checks whether the two distributions specify the same probabilities to go to the same states.

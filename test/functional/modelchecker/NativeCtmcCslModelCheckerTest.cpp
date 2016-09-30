@@ -22,7 +22,7 @@ TEST(NativeCtmcCslModelCheckerTest, Cluster) {
     
     // Parse the model description.
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/cluster2.sm");
-    storm::parser::FormulaParser formulaParser(program.getManager().getSharedPointer());
+    storm::parser::FormulaParser formulaParser(program);
     std::shared_ptr<storm::logic::Formula const> formula(nullptr);
     
     // Build the model.
@@ -91,7 +91,7 @@ TEST(NativeCtmcCslModelCheckerTest, Embedded) {
     
     // Parse the model description.
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/embedded2.sm");
-    storm::parser::FormulaParser formulaParser(program.getManager().getSharedPointer());
+    storm::parser::FormulaParser formulaParser(program);
     std::shared_ptr<storm::logic::Formula const> formula(nullptr);
     
     // Build the model.
@@ -148,7 +148,7 @@ TEST(NativeCtmcCslModelCheckerTest, Polling) {
     
     // Parse the model description.
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/polling2.sm");
-    storm::parser::FormulaParser formulaParser(program.getManager().getSharedPointer());
+    storm::parser::FormulaParser formulaParser(program);
     std::shared_ptr<storm::logic::Formula const> formula(nullptr);
     
     // Build the model.
@@ -182,7 +182,7 @@ TEST(NativeCtmcCslModelCheckerTest, Tandem) {
     
     // Parse the model description.
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/tandem5.sm");
-    storm::parser::FormulaParser formulaParser(program.getManager().getSharedPointer());
+    storm::parser::FormulaParser formulaParser(program);
     std::shared_ptr<storm::logic::Formula const> formula(nullptr);
     
     // Build the model with the customers reward structure.

@@ -21,6 +21,7 @@
 #include "src/settings/modules/GmmxxEquationSolverSettings.h"
 
 #include "src/settings/modules/NativeEquationSolverSettings.h"
+#include "src/storage/expressions/ExpressionManager.h"
 
 TEST(GmmxxHybridCtmcCslModelCheckerTest, Cluster_Cudd) {
     // Set the PRISM compatibility mode temporarily. It is set to its old value once the returned object is destructed.

@@ -13,8 +13,8 @@
 namespace storm {
     namespace jani {
         
-        static const std::string SILENT_ACTION_NAME = "";
-        const uint64_t Model::silentActionIndex = 0;
+        const std::string Model::SILENT_ACTION_NAME = "";
+        const uint64_t Model::SILENT_ACTION_INDEX = 0;
         
         Model::Model() {
             // Intentionally left empty.
@@ -33,7 +33,7 @@ namespace storm {
             
             // Add a prefined action that represents the silent action.
             uint64_t actionIndex = addAction(storm::jani::Action(SILENT_ACTION_NAME));
-            assert(actionIndex == silentActionIndex);
+            STORM_LOG_ASSERT(actionIndex == SILENT_ACTION_INDEX, "Illegal silent action index.");
         }
         
         storm::expressions::ExpressionManager& Model::getManager() const {
@@ -217,35 +217,47 @@ namespace storm {
         }
         
         std::shared_ptr<Composition> Model::getStandardSystemComposition() const {
-            std::shared_ptr<Composition> current;
-            current = std::make_shared<AutomatonComposition>(this->automata.front().getName());
-            std::set<uint64_t> leftHandActionIndices = this->automata.front().getActionIndices();
-            
-            for (uint64_t index = 1; index < automata.size(); ++index) {
-                std::set<uint64_t> newActionIndices = automata[index].getActionIndices();
-                
-                // Compute the intersection of actions of the left- and right-hand side.
-                std::set<uint64_t> intersectionActions;
-                std::set_intersection(leftHandActionIndices.begin(), leftHandActionIndices.end(), newActionIndices.begin(), newActionIndices.end(), std::inserter(intersectionActions, intersectionActions.begin()));
-                
-                // If the silent action is in the intersection, we remove it since we cannot synchronize over it.
-                auto it = intersectionActions.find(this->getSilentActionIndex());
-                if (it != intersectionActions.end()) {
-                    intersectionActions.erase(it);
-                }
-                
-                // Then join the actions to reflect the actions of the new left-hand side.
-                leftHandActionIndices.insert(newActionIndices.begin(), newActionIndices.end());
-                
-                // Create the set of strings that represents the actions over which to synchronize.
-                std::set<std::string> intersectionActionNames;
-                for (auto const& actionIndex : intersectionActions) {
-                    intersectionActionNames.insert(this->getAction(actionIndex).getName());
-                }
-
-                current = std::make_shared<ParallelComposition>(current, std::make_shared<AutomatonComposition>(automata[index].getName()), intersectionActionNames);
+            // If there's just one automaton, we must not use the parallel composition operator.
+            if (this->getNumberOfAutomata() == 1) {
+                return std::make_shared<AutomatonComposition>(this->getAutomata().front().getName());
             }
-            return current;
+            
+            // Determine the action indices used by each of the automata and create the standard subcompositions.
+            std::set<uint64_t> allActionIndices;
+            std::vector<std::set<uint64_t>> automatonActionIndices;
+            std::vector<std::shared_ptr<Composition>> subcompositions;
+            for (auto const& automaton : automata) {
+                automatonActionIndices.push_back(automaton.getActionIndices());
+                automatonActionIndices.back().erase(SILENT_ACTION_INDEX);
+                allActionIndices.insert(automatonActionIndices.back().begin(), automatonActionIndices.back().end());
+                subcompositions.push_back(std::make_shared<AutomatonComposition>(automaton.getName()));
+            }
+            
+            // Create the standard synchronization vectors: every automaton with that action participates in the
+            // synchronization.
+            std::vector<storm::jani::SynchronizationVector> synchVectors;
+            for (auto actionIndex : allActionIndices) {
+                std::string const& actionName = this->getAction(actionIndex).getName();
+                std::vector<std::string> synchVectorInputs;
+                uint64_t numberOfParticipatingAutomata = 0;
+                int i = 0;
+                for (auto const& actionIndices : automatonActionIndices) {
+                    if (actionIndices.find(actionIndex) != actionIndices.end()) {
+                        ++numberOfParticipatingAutomata;
+                        synchVectorInputs.push_back(actionName);
+                    } else {
+                        synchVectorInputs.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
+                    }
+                    ++i;
+                }
+                
+                // Only add the synchronization vector if there is more than one participating automaton.
+                if (numberOfParticipatingAutomata > 1) {
+                    synchVectors.push_back(storm::jani::SynchronizationVector(synchVectorInputs, actionName));
+                }
+            }
+            
+            return std::make_shared<ParallelComposition>(subcompositions, synchVectors);
         }
         
         Composition const& Model::getSystemComposition() const {
@@ -263,14 +275,14 @@ namespace storm {
         std::set<std::string> Model::getActionNames(bool includeSilent) const {
             std::set<std::string> result;
             for (auto const& entry : actionToIndex) {
-                if (includeSilent || entry.second != silentActionIndex) {
+                if (includeSilent || entry.second != SILENT_ACTION_INDEX) {
                     result.insert(entry.first);
                 }
             }
             return result;
         }
-        
-        std::map<uint64_t, std::string> Model::buildActionToNameMap() const {
+
+        std::map<uint64_t, std::string> Model::getActionIndexToNameMap() const {
             std::map<uint64_t, std::string> mapping;
             uint64_t i = 0;
             for(auto const& act : actions) {
@@ -278,14 +290,6 @@ namespace storm {
                 ++i;
             }
             return mapping;
-        }
-        
-        std::string const& Model::getSilentActionName() const {
-            return actions[silentActionIndex].getName();
-        }
-        
-        uint64_t Model::getSilentActionIndex() const {
-            return silentActionIndex;
         }
         
         Model Model::defineUndefinedConstants(std::map<storm::expressions::Variable, storm::expressions::Expression> const& constantDefinitions) const {
@@ -395,8 +399,12 @@ namespace storm {
             // Start with the restriction of variables.
             storm::expressions::Expression result = initialStatesRestriction;
             
-            // Then add initial values for those variables that have one.
+            // Then add initial values for those non-transient variables that have one.
             for (auto const& variable : globalVariables) {
+                if (variable.isTransient()) {
+                    continue;
+                }
+                
                 if (variable.hasInitExpression()) {
                     result = result && (variable.isBooleanVariable() ? storm::expressions::iff(variable.getExpressionVariable(), variable.getInitExpression()) : variable.getExpressionVariable() == variable.getInitExpression());
                 }
@@ -451,10 +459,10 @@ namespace storm {
             
         }
         
-        bool Model::hasDefaultComposition() const {
-            CompositionInformationVisitor visitor;
-            CompositionInformation info = visitor.getInformation(this->getSystemComposition(), *this);
-            if (info.containsNonStandardParallelComposition() || info.containsRenameComposition()) {
+        bool Model::hasStandardComposition() const {
+            CompositionInformationVisitor visitor(*this, this->getSystemComposition());
+            CompositionInformation info = visitor.getInformation();
+            if (info.containsNonStandardParallelComposition()) {
                 return false;
             }
             for (auto const& multiplicity : info.getAutomatonToMultiplicityMap()) {
@@ -465,5 +473,67 @@ namespace storm {
             return true;
         }
         
+        bool Model::undefinedConstantsAreGraphPreserving() const {
+            if (!this->hasUndefinedConstants()) {
+                return true;
+            }
+
+            // Gather the variables of all undefined constants.
+            std::set<storm::expressions::Variable> undefinedConstantVariables;
+            for (auto const& constant : this->getConstants()) {
+                if (!constant.isDefined()) {
+                    undefinedConstantVariables.insert(constant.getExpressionVariable());
+                }
+            }
+            
+            // Start by checking the defining expressions of all defined constants. If it contains a currently undefined
+            // constant, we need to mark the target constant as undefined as well.
+            for (auto const& constant : this->getConstants()) {
+                if (constant.isDefined()) {
+                    if (constant.getExpression().containsVariable(undefinedConstantVariables)) {
+                        undefinedConstantVariables.insert(constant.getExpressionVariable());
+                    }
+                }
+            }
+
+            // Check global variable definitions.
+            if (this->getGlobalVariables().containsVariablesInBoundExpressionsOrInitialValues(undefinedConstantVariables)) {
+                return false;
+            }
+            
+            // Check the automata.
+            for (auto const& automaton : this->getAutomata()) {
+                if (!automaton.containsVariablesOnlyInProbabilitiesOrTransientAssignments(undefinedConstantVariables)) {
+                    return false;
+                }
+            }
+            
+            // Check initial states restriction.
+            if (initialStatesRestriction.containsVariable(undefinedConstantVariables)) {
+                return false;
+            }
+            return true;
+        }
+     
+        void Model::makeStandardJaniCompliant() {
+            for (auto& automaton : automata) {
+                automaton.pushEdgeAssignmentsToDestinations();
+            }
+        }
+        
+        void Model::liftTransientEdgeDestinationAssignments() {
+            for (auto& automaton : this->getAutomata()) {
+                automaton.liftTransientEdgeDestinationAssignments();
+            }
+        }
+        
+        bool Model::hasTransientEdgeDestinationAssignments() const {
+            for (auto const& automaton : this->getAutomata()) {
+                if (automaton.hasTransientEdgeDestinationAssignments()) {
+                    return true;
+                }
+            }
+            return false;
+        }
     }
 }

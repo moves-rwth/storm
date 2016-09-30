@@ -20,6 +20,13 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
+        void Distribution<ValueType, StateType>::add(Distribution const& other) {
+            container_type newDistribution;
+            std::set_union(this->distribution.begin(), this->distribution.end(), other.distribution.begin(), other.distribution.end(), std::inserter(newDistribution, newDistribution.begin()));
+            this->distribution = std::move(newDistribution);
+        }
+        
+        template<typename ValueType, typename StateType>
         bool Distribution<ValueType, StateType>::equals(Distribution<ValueType, StateType> const& other, storm::utility::ConstantsComparator<ValueType> const& comparator) const {
             // We need to check equality by ourselves, because we need to account for epsilon differences.
             if (this->distribution.size() != other.distribution.size()) {

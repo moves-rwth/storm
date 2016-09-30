@@ -108,7 +108,7 @@ namespace storm {
             ProgramGraphBuilder(storm::pgcl::PgclProgram const& program)
             : program(program)
             {
-                graph = new storm::ppg::ProgramGraph(program.getExpressionManager(), program.getVariables());
+                graph = new storm::ppg::ProgramGraph(program.getExpressionManager(), program.getVariableDeclarations());
                 noActionId = graph->getNoActionId();
                 
             }
@@ -116,10 +116,10 @@ namespace storm {
             void run() {
                 currentStack.push_back(graph->addLocation(true));
                 // Terminal state.
-                nextStack.push_back(graph->addLocation(false));
+                nextStack.push_back(graph->addLocation(false, true));
                 // Observe Violated State.
                 if (program.hasObserve()) {
-                    observeFailedState = graph->addLocation();
+                    observeFailedState = graph->addLocation(false, false, true);
                 }
                 buildBlock(program);
             }

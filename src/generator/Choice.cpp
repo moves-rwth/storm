@@ -4,12 +4,47 @@
 
 #include "src/utility/constants.h"
 
+#include "src/utility/macros.h"
+#include "src/exceptions/InvalidOperationException.h"
+
 namespace storm {
     namespace generator {
         
         template<typename ValueType, typename StateType>
         Choice<ValueType, StateType>::Choice(uint_fast64_t actionIndex, bool markovian) : markovian(markovian), actionIndex(actionIndex), distribution(), totalMass(storm::utility::zero<ValueType>()), rewards(), labels() {
             // Intentionally left empty.
+        }
+        
+        template<typename ValueType, typename StateType>
+        void Choice<ValueType, StateType>::add(Choice const& other) {
+            STORM_LOG_THROW(this->markovian == other.markovian, storm::exceptions::InvalidOperationException, "Type of choices do not match.");
+            STORM_LOG_THROW(this->actionIndex == other.actionIndex, storm::exceptions::InvalidOperationException, "Action index of choices do not match.");
+            STORM_LOG_THROW(this->rewards.size() == other.rewards.size(), storm::exceptions::InvalidOperationException, "Reward value sizes of choices do not match.");
+            
+            // Add the elements to the distribution.
+            this->distribution.add(other.distribution);
+            
+            // Update the total mass of the choice.
+            this->totalMass += other.totalMass;
+            
+            // Add all reward values.
+            auto otherRewIt = other.rewards.begin();
+            for (auto& rewardValue : this->rewards) {
+                rewardValue += *otherRewIt;
+            }
+            
+            // Join label sets.
+            if (this->labels) {
+                if (other.labels) {
+                    LabelSet newLabelSet;
+                    std::set_union(this->labels.get().begin(), this->labels.get().end(), other.labels.get().begin(), other.labels.get().end(), std::inserter(newLabelSet, newLabelSet.begin()));
+                    this->labels = std::move(newLabelSet);
+                }
+            } else {
+                if (other.labels) {
+                    this->labels = std::move(other.labels);
+                }
+            }
         }
         
         template<typename ValueType, typename StateType>

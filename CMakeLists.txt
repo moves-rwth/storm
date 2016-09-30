@@ -126,7 +126,12 @@ if(CMAKE_COMPILER_IS_GNUCC)
     # Set standard flags for GCC
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -funroll-loops")
     set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -funroll-loops")
-    add_definitions(-DBOOST_RESULT_OF_USE_DECLTYPE)
+
+	# TODO: remove forcing the old version of optional as soon as the related Spirit bug is fixed:
+	# https://svn.boost.org/trac/boost/ticket/12349
+	# Fix thanks to: https://github.com/freeorion/freeorion/issues/777
+    add_definitions(-DBOOST_RESULT_OF_USE_DECLTYPE -DBOOST_OPTIONAL_CONFIG_USE_OLD_IMPLEMENTATION_OF_OPTIONAL)
+
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -Wall -pedantic -Wno-deprecated-declarations -Wno-unused-local-typedefs -Wno-unknown-pragmas")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -pedantic -Wno-deprecated-declarations")
 	if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.0)
@@ -188,7 +193,10 @@ else(CLANG)
 		set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY "libc++")
     endif()
 
-    add_definitions(-DBOOST_RESULT_OF_USE_DECLTYPE)
+	# TODO: remove forcing the old version of optional as soon as the related Spirit bug is fixed:
+	# https://svn.boost.org/trac/boost/ticket/12349
+	# Fix thanks to: https://github.com/freeorion/freeorion/issues/777
+    add_definitions(-DBOOST_RESULT_OF_USE_DECLTYPE -DBOOST_OPTIONAL_CONFIG_USE_OLD_IMPLEMENTATION_OF_OPTIONAL)
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -stdlib=${CLANG_STDLIB} -Wall -pedantic -Wno-newline-eof -Wno-mismatched-tags -Wno-unused-local-typedefs -ftemplate-depth=1024 -Wno-parentheses-equality")
 
     if(FORCE_COLOR)

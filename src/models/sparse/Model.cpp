@@ -101,7 +101,7 @@ namespace storm {
                 if (it == this->rewardModels.end()) {
                     if (rewardModelName.empty()) {
                         if (this->hasUniqueRewardModel()) {
-                            return this->getUniqueRewardModel()->second;
+                            return this->getUniqueRewardModel();
                         } else {
                             STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unable to refer to default reward model, because there is no default model or it is not unique.");
                         }
@@ -142,15 +142,15 @@ namespace storm {
             }
             
             template<typename ValueType, typename RewardModelType>
-            typename std::unordered_map<std::string, RewardModelType>::const_iterator Model<ValueType, RewardModelType>::getUniqueRewardModel() const {
+            RewardModelType const& Model<ValueType, RewardModelType>::getUniqueRewardModel() const {
                 STORM_LOG_THROW(this->getNumberOfRewardModels() == 1, storm::exceptions::IllegalFunctionCallException, "The reward model is not unique.");
-                return this->rewardModels.cbegin();
+                return this->rewardModels.cbegin()->second;
             }
             
             template<typename ValueType, typename RewardModelType>
-            typename std::unordered_map<std::string, RewardModelType>::iterator Model<ValueType, RewardModelType>::getUniqueRewardModel() {
+            RewardModelType& Model<ValueType, RewardModelType>::getUniqueRewardModel() {
                 STORM_LOG_THROW(this->getNumberOfRewardModels() == 1, storm::exceptions::IllegalFunctionCallException, "The reward model is not unique.");
-                return this->rewardModels.begin();
+                return this->rewardModels.begin()->second;
             }
             
             template<typename ValueType, typename RewardModelType>

@@ -51,6 +51,16 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
+        std::vector<Choice<ValueType, StateType>> const& StateBehavior<ValueType, StateType>::getChoices() const {
+            return choices;
+        }
+        
+        template<typename ValueType, typename StateType>
+        std::vector<Choice<ValueType, StateType>>& StateBehavior<ValueType, StateType>::getChoices() {
+            return choices;
+        }
+        
+        template<typename ValueType, typename StateType>
         std::vector<ValueType> const& StateBehavior<ValueType, StateType>::getStateRewards() const {
             return stateRewards;
         }

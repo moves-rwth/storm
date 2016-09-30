@@ -9,6 +9,10 @@
 #include "src/utility/macros.h"
 #include "src/exceptions/WrongFormatException.h"
 
+#include "src/storage/expressions/ExpressionManager.h"
+
+#include "src/parser/ExpressionParser.h"
+
 namespace storm {
     namespace parser {
         storm::prism::Program PrismParser::parse(std::string const& filename) {
@@ -70,7 +74,9 @@ namespace storm {
             return result;
         }
         
-        PrismParser::PrismParser(std::string const& filename, Iterator first) : PrismParser::base_type(start), secondRun(false), filename(filename), annotate(first), manager(new storm::expressions::ExpressionManager()), expressionParser(*manager, keywords_, false, false) {
+        PrismParser::PrismParser(std::string const& filename, Iterator first) : PrismParser::base_type(start), secondRun(false), filename(filename), annotate(first), manager(new storm::expressions::ExpressionManager()), expressionParser(new ExpressionParser(*manager, keywords_, false, false)) {
+            
+            ExpressionParser& expression_ = *expressionParser;
             // Parse simple identifier.
             identifier %= qi::as_string[qi::raw[qi::lexeme[((qi::alpha | qi::char_('_')) >> *(qi::alnum | qi::char_('_')))]]][qi::_pass = phoenix::bind(&PrismParser::isValidIdentifier, phoenix::ref(*this), qi::_1)];
             identifier.name("identifier");
@@ -90,25 +96,25 @@ namespace storm {
             undefinedConstantDefinition = (undefinedBooleanConstantDefinition | undefinedIntegerConstantDefinition | undefinedDoubleConstantDefinition);
             undefinedConstantDefinition.name("undefined constant definition");
             
-            definedBooleanConstantDefinition = ((qi::lit("const") >> qi::lit("bool") >> identifier >> qi::lit("=")) > expressionParser > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createDefinedBooleanConstant, phoenix::ref(*this), qi::_1, qi::_2)];
+            definedBooleanConstantDefinition = ((qi::lit("const") >> qi::lit("bool") >> identifier >> qi::lit("=")) > expression_ > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createDefinedBooleanConstant, phoenix::ref(*this), qi::_1, qi::_2)];
             definedBooleanConstantDefinition.name("defined boolean constant declaration");
             
-            definedIntegerConstantDefinition = ((qi::lit("const") >> qi::lit("int") >> identifier >> qi::lit("=")) > expressionParser >> qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createDefinedIntegerConstant, phoenix::ref(*this), qi::_1, qi::_2)];
+            definedIntegerConstantDefinition = ((qi::lit("const") >> qi::lit("int") >> identifier >> qi::lit("=")) > expression_ >> qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createDefinedIntegerConstant, phoenix::ref(*this), qi::_1, qi::_2)];
             definedIntegerConstantDefinition.name("defined integer constant declaration");
             
-            definedDoubleConstantDefinition = ((qi::lit("const") >> qi::lit("double") >> identifier >> qi::lit("=")) > expressionParser > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createDefinedDoubleConstant, phoenix::ref(*this), qi::_1, qi::_2)];
+            definedDoubleConstantDefinition = ((qi::lit("const") >> qi::lit("double") >> identifier >> qi::lit("=")) > expression_ > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createDefinedDoubleConstant, phoenix::ref(*this), qi::_1, qi::_2)];
             definedDoubleConstantDefinition.name("defined double constant declaration");
             
             definedConstantDefinition %= (definedBooleanConstantDefinition | definedIntegerConstantDefinition | definedDoubleConstantDefinition);
             definedConstantDefinition.name("defined constant definition");
             
-            formulaDefinition = (qi::lit("formula") > identifier > qi::lit("=") > expressionParser > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createFormula, phoenix::ref(*this), qi::_1, qi::_2)];
+            formulaDefinition = (qi::lit("formula") > identifier > qi::lit("=") > expression_ > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createFormula, phoenix::ref(*this), qi::_1, qi::_2)];
             formulaDefinition.name("formula definition");
             
-            booleanVariableDefinition = ((identifier >> qi::lit(":") >> qi::lit("bool")) > -((qi::lit("init") > expressionParser[qi::_a = qi::_1]) | qi::attr(manager->boolean(false))) > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createBooleanVariable, phoenix::ref(*this), qi::_1, qi::_a)];
+            booleanVariableDefinition = ((identifier >> qi::lit(":") >> qi::lit("bool")) > -((qi::lit("init") > expression_[qi::_a = qi::_1]) | qi::attr(manager->boolean(false))) > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createBooleanVariable, phoenix::ref(*this), qi::_1, qi::_a)];
             booleanVariableDefinition.name("boolean variable definition");
             
-            integerVariableDefinition = ((identifier >> qi::lit(":") >> qi::lit("[")[phoenix::bind(&PrismParser::allowDoubleLiterals, phoenix::ref(*this), false)]) > expressionParser > qi::lit("..") > expressionParser > qi::lit("]")[phoenix::bind(&PrismParser::allowDoubleLiterals, phoenix::ref(*this), true)] > -(qi::lit("init") > expressionParser[qi::_a = qi::_1]) > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createIntegerVariable, phoenix::ref(*this), qi::_1, qi::_2, qi::_3, qi::_a)];
+            integerVariableDefinition = ((identifier >> qi::lit(":") >> qi::lit("[")[phoenix::bind(&PrismParser::allowDoubleLiterals, phoenix::ref(*this), false)]) > expression_ > qi::lit("..") > expression_ > qi::lit("]")[phoenix::bind(&PrismParser::allowDoubleLiterals, phoenix::ref(*this), true)] > -(qi::lit("init") > expression_[qi::_a = qi::_1]) > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createIntegerVariable, phoenix::ref(*this), qi::_1, qi::_2, qi::_3, qi::_a)];
             integerVariableDefinition.name("integer variable definition");
             
             variableDefinition = (booleanVariableDefinition[phoenix::push_back(qi::_r1, qi::_1)] | integerVariableDefinition[phoenix::push_back(qi::_r2, qi::_1)]);
@@ -117,13 +123,13 @@ namespace storm {
             globalVariableDefinition = (qi::lit("global") > (booleanVariableDefinition[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::globalBooleanVariables, qi::_r1), qi::_1)] | integerVariableDefinition[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::globalIntegerVariables, qi::_r1), qi::_1)]));
             globalVariableDefinition.name("global variable declaration list");
                         
-            stateRewardDefinition = (expressionParser > qi::lit(":") > expressionParser >> qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createStateReward, phoenix::ref(*this), qi::_1, qi::_2)];
+            stateRewardDefinition = (expression_ > qi::lit(":") > expression_ >> qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createStateReward, phoenix::ref(*this), qi::_1, qi::_2)];
             stateRewardDefinition.name("state reward definition");
             
-            stateActionRewardDefinition = (qi::lit("[") >> -identifier >> qi::lit("]") >> expressionParser >> qi::lit(":") >> expressionParser >> qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createStateActionReward, phoenix::ref(*this), qi::_1, qi::_2, qi::_3, qi::_r1)];
+            stateActionRewardDefinition = (qi::lit("[") >> -identifier >> qi::lit("]") >> expression_ >> qi::lit(":") >> expression_ >> qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createStateActionReward, phoenix::ref(*this), qi::_1, qi::_2, qi::_3, qi::_r1)];
             stateActionRewardDefinition.name("state action reward definition");
 
-            transitionRewardDefinition = (qi::lit("[") > -identifier > qi::lit("]") > expressionParser > qi::lit("->") > expressionParser > qi::lit(":") > expressionParser > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createTransitionReward, phoenix::ref(*this), qi::_1, qi::_2, qi::_3, qi::_4, qi::_r1)];
+            transitionRewardDefinition = (qi::lit("[") > -identifier > qi::lit("]") > expression_ > qi::lit("->") > expression_ > qi::lit(":") > expression_ > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createTransitionReward, phoenix::ref(*this), qi::_1, qi::_2, qi::_3, qi::_4, qi::_r1)];
             transitionRewardDefinition.name("transition reward definition");
             
             rewardModelDefinition = (qi::lit("rewards") > -(qi::lit("\"") > identifier[qi::_a = qi::_1] > qi::lit("\""))
@@ -134,7 +140,7 @@ namespace storm {
                                      >> qi::lit("endrewards"))[qi::_val = phoenix::bind(&PrismParser::createRewardModel, phoenix::ref(*this), qi::_a, qi::_b, qi::_c, qi::_d)];
             rewardModelDefinition.name("reward model definition");
             
-            initialStatesConstruct = (qi::lit("init") > expressionParser > qi::lit("endinit"))[qi::_pass = phoenix::bind(&PrismParser::addInitialStatesConstruct, phoenix::ref(*this), qi::_1, qi::_r1)];
+            initialStatesConstruct = (qi::lit("init") > expression_ > qi::lit("endinit"))[qi::_pass = phoenix::bind(&PrismParser::addInitialStatesConstruct, phoenix::ref(*this), qi::_1, qi::_r1)];
             initialStatesConstruct.name("initial construct");
             
             systemCompositionConstruct = (qi::lit("system") > parallelComposition > qi::lit("endsystem"))[phoenix::bind(&PrismParser::addSystemCompositionConstruct, phoenix::ref(*this), qi::_1, qi::_r1)];
@@ -176,16 +182,16 @@ namespace storm {
             moduleComposition = identifier[qi::_val = phoenix::bind(&PrismParser::createModuleComposition, phoenix::ref(*this), qi::_1)];
             moduleComposition.name("module composition");
             
-            labelDefinition = (qi::lit("label") > -qi::lit("\"") > identifier > -qi::lit("\"") > qi::lit("=") > expressionParser >> qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createLabel, phoenix::ref(*this), qi::_1, qi::_2)];
+            labelDefinition = (qi::lit("label") > -qi::lit("\"") > identifier > -qi::lit("\"") > qi::lit("=") > expression_ >> qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createLabel, phoenix::ref(*this), qi::_1, qi::_2)];
             labelDefinition.name("label definition");
             
-            assignmentDefinition = (qi::lit("(") > identifier > qi::lit("'") > qi::lit("=") > expressionParser > qi::lit(")"))[qi::_val = phoenix::bind(&PrismParser::createAssignment, phoenix::ref(*this), qi::_1, qi::_2)];
+            assignmentDefinition = (qi::lit("(") > identifier > qi::lit("'") > qi::lit("=") > expression_ > qi::lit(")"))[qi::_val = phoenix::bind(&PrismParser::createAssignment, phoenix::ref(*this), qi::_1, qi::_2)];
             assignmentDefinition.name("assignment");
             
             assignmentDefinitionList = (assignmentDefinition % "&")[qi::_val = qi::_1] | (qi::lit("true"))[qi::_val = phoenix::construct<std::vector<storm::prism::Assignment>>()];
             assignmentDefinitionList.name("assignment list");
             
-            updateDefinition = (((expressionParser >> qi::lit(":")) | qi::attr(manager->rational(1))) >> assignmentDefinitionList)[qi::_val = phoenix::bind(&PrismParser::createUpdate, phoenix::ref(*this), qi::_1, qi::_2, qi::_r1)];
+            updateDefinition = (((expression_ >> qi::lit(":")) | qi::attr(manager->rational(1))) >> assignmentDefinitionList)[qi::_val = phoenix::bind(&PrismParser::createUpdate, phoenix::ref(*this), qi::_1, qi::_2, qi::_r1)];
             updateDefinition.name("update");
             
             updateListDefinition %= +updateDefinition(qi::_r1) % "+";
@@ -254,17 +260,17 @@ namespace storm {
             commandDefinition = (((qi::lit("[") > -identifier > qi::lit("]"))
                                  |
                                   (qi::lit("<") > -identifier > qi::lit(">")[qi::_a = true]))
-                                 > expressionParser
+                                 > *expressionParser
                                  > qi::lit("->")
                                  > updateListDefinition(qi::_r1)
                                  > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createCommand, phoenix::ref(*this), qi::_a, qi::_1, qi::_2, qi::_3, qi::_r1)];
             
             this->secondRun = true;
-            this->expressionParser.setIdentifierMapping(&this->identifiers_);
+            this->expressionParser->setIdentifierMapping(&this->identifiers_);
         }
         
         void PrismParser::allowDoubleLiterals(bool flag) {
-            this->expressionParser.setAcceptDoubleLiterals(flag);
+            this->expressionParser->setAcceptDoubleLiterals(flag);
         }
         
         std::string const& PrismParser::getFilename() const {

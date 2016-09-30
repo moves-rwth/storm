@@ -26,6 +26,7 @@ TEST(GmmxxHybridMdpPrctlModelCheckerTest, Dice_Cudd) {
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
 
     // A parser that we use for conveniently constructing the formulas.
+    
     storm::parser::FormulaParser formulaParser;
     
     // Build the die model with its reward model.

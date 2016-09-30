@@ -2,13 +2,15 @@
 #include "src/storage/prism/Compositions.h"
 
 #include "src/storage/jani/Compositions.h"
+#include "src/storage/jani/CompositionInformationVisitor.h"
 #include "src/storage/jani/Model.h"
 
 namespace storm {
     namespace prism {
         
         std::shared_ptr<storm::jani::Composition> CompositionToJaniVisitor::toJani(Composition const& composition, storm::jani::Model const& model) {
-            return boost::any_cast<std::shared_ptr<storm::jani::Composition>>(composition.accept(*this, model));
+            auto result = boost::any_cast<std::shared_ptr<storm::jani::Composition>>(composition.accept(*this, model));
+            return result;
         }
         
         boost::any CompositionToJaniVisitor::visit(ModuleComposition const& composition, boost::any const& data) {
@@ -17,22 +19,20 @@ namespace storm {
         }
         
         boost::any CompositionToJaniVisitor::visit(RenamingComposition const& composition, boost::any const& data) {
-            std::map<std::string, boost::optional<std::string>> newRenaming;
+            std::vector<storm::jani::SynchronizationVector> synchronizationVectors;
             for (auto const& renamingPair : composition.getActionRenaming()) {
-                newRenaming.emplace(renamingPair.first, renamingPair.second);
+                synchronizationVectors.push_back(storm::jani::SynchronizationVector({renamingPair.first}, renamingPair.second));
             }
-            auto subcomposition = boost::any_cast<std::shared_ptr<storm::jani::Composition>>(composition.getSubcomposition().accept(*this, data));
-            std::shared_ptr<storm::jani::Composition> result = std::make_shared<storm::jani::RenameComposition>(subcomposition, newRenaming);
+            std::shared_ptr<storm::jani::Composition> result = std::make_shared<storm::jani::ParallelComposition>(boost::any_cast<std::shared_ptr<storm::jani::Composition>>(composition.getSubcomposition().accept(*this, data)), synchronizationVectors);
             return result;
         }
         
         boost::any CompositionToJaniVisitor::visit(HidingComposition const& composition, boost::any const& data) {
-            std::map<std::string, boost::optional<std::string>> newRenaming;
+            std::vector<storm::jani::SynchronizationVector> synchronizationVectors;
             for (auto const& action : composition.getActionsToHide()) {
-                newRenaming.emplace(action, boost::none);
+                synchronizationVectors.push_back(storm::jani::SynchronizationVector({action}, storm::jani::Model::SILENT_ACTION_NAME));
             }
-            auto subcomposition = boost::any_cast<std::shared_ptr<storm::jani::Composition>>(composition.getSubcomposition().accept(*this, data));
-            std::shared_ptr<storm::jani::Composition> result = std::make_shared<storm::jani::RenameComposition>(subcomposition, newRenaming);
+            std::shared_ptr<storm::jani::Composition> result = std::make_shared<storm::jani::ParallelComposition>(boost::any_cast<std::shared_ptr<storm::jani::Composition>>(composition.getSubcomposition().accept(*this, data)), synchronizationVectors);
             return result;
         }
         
@@ -41,11 +41,22 @@ namespace storm {
             auto rightSubcomposition = boost::any_cast<std::shared_ptr<storm::jani::Composition>>(composition.getRightSubcomposition().accept(*this, data));
             
             storm::jani::Model const& model = boost::any_cast<storm::jani::Model const&>(data);
-            std::set<std::string> allActions;
-            for (auto const& action : model.getActions()) {
-                allActions.insert(action.getName());
+            storm::jani::CompositionInformation leftActionInformation = storm::jani::CompositionInformationVisitor(model, *leftSubcomposition).getInformation();
+            storm::jani::CompositionInformation rightActionInformation = storm::jani::CompositionInformationVisitor(model, *rightSubcomposition).getInformation();
+            
+            std::set<std::string> leftActions;
+            for (auto const& actionIndex : leftActionInformation.getNonSilentActionIndices()) {
+                leftActions.insert(leftActionInformation.getActionName(actionIndex));
             }
-            std::shared_ptr<storm::jani::Composition> result = std::make_shared<storm::jani::ParallelComposition>(leftSubcomposition, rightSubcomposition, allActions);
+            std::set<std::string> rightActions;
+            for (auto const& actionIndex : rightActionInformation.getNonSilentActionIndices()) {
+                rightActions.insert(rightActionInformation.getActionName(actionIndex));
+            }
+            
+            std::set<std::string> commonActions;
+            std::set_intersection(leftActions.begin(), leftActions.end(), rightActions.begin(), rightActions.end(), std::inserter(commonActions, commonActions.begin()));
+
+            std::shared_ptr<storm::jani::Composition> result = std::make_shared<storm::jani::ParallelComposition>(leftSubcomposition, rightSubcomposition, commonActions);
             return result;
         }
         

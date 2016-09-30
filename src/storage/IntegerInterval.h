@@ -37,6 +37,49 @@ namespace storm {
                 return true;
             }
             
+            bool contains(IntegerInterval const& i) const {
+                if (hasLeftBound()) {
+                    if (!i.hasLeftBound()) {
+                        return false;
+                    }
+                    if (leftBound.get() > i.getLeftBound().get()) {
+                        return false;
+                    }
+                }
+                if (hasRightBound()) {
+                    if (!i.hasRightBound()) {
+                        return false;
+                    }
+                    if (rightBound.get() < i.getRightBound().get()) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+            
+            void extend(int64_t val) {
+                if (hasLeftBound()) {
+                    if(val < leftBound.get()) {
+                        leftBound = val;
+                        return;
+                    }
+                }
+                if (hasRightBound()) {
+                    if(val > rightBound.get()) {
+                        rightBound = val;
+                    }
+                }
+            }
+            
+            void extend(IntegerInterval const& i) {
+                if(i.hasLeftBound()) {
+                    extend(i.getLeftBound().get());
+                }
+                if(i.hasRightBound()) {
+                    extend(i.getRightBound().get());
+                }
+            }
+            
             boost::optional<int64_t> getLeftBound() const {
                 return leftBound;
             }

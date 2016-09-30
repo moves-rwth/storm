@@ -5,6 +5,8 @@
 #include <vector>
 #include <string>
 
+#include <boost/optional.hpp>
+
 #include "src/storage/jani/Composition.h"
 
 namespace storm {
@@ -13,13 +15,38 @@ namespace storm {
         class SynchronizationVector {
         public:
             SynchronizationVector(std::vector<std::string> const& input, std::string const& output);
+            SynchronizationVector(std::vector<std::string> const& input);
             
             std::size_t size() const;
             std::vector<std::string> const& getInput() const;
             std::string const& getInput(uint64_t index) const;
             std::string const& getOutput() const;
+
+            static bool isNoActionInput(std::string const& action);
             
+            /*!
+             * Retrieves the action name that is the last participating action before the given input index. If there is
+             * no such action none is returned.
+             */
+            boost::optional<std::string> getPrecedingParticipatingAction(uint64_t index) const;
+
+            /*!
+             * Retrieves the position of the last participating action before the given input index. If there is
+             * no such action none is returned.
+             */
+            boost::optional<uint64_t> getPositionOfPrecedingParticipatingAction(uint64_t index) const;
+
+            /*!
+             * Retrieves the position of the first participating action.
+             */
+            uint64_t getPositionOfFirstParticipatingAction() const;
+
+            
+            // A marker that can be used as one of the inputs. The semantics is that no action of the corresponding
+            // automaton takes part in the synchronization.
+            static const std::string NO_ACTION_INPUT;
         private:
+            
             /// The input to the synchronization.
             std::vector<std::string> input;
             
@@ -27,10 +54,22 @@ namespace storm {
             std::string output;
         };
         
+        bool operator==(SynchronizationVector const& vector1, SynchronizationVector const& vector2);
+        bool operator!=(SynchronizationVector const& vector1, SynchronizationVector const& vector2);
+        
+        struct SynchronizationVectorLexicographicalLess {
+            bool operator()(SynchronizationVector const& vector1, SynchronizationVector const& vector2);
+        };
+        
         std::ostream& operator<<(std::ostream& stream, SynchronizationVector const& synchronizationVector);
         
         class ParallelComposition : public Composition {
         public:
+            /*!
+             * Creates a parallel composition of the subcomposition and the provided synchronization vectors.
+             */
+            ParallelComposition(std::shared_ptr<Composition> const& subcomposition, std::vector<SynchronizationVector> const& synchronizationVectors);
+
             /*!
              * Creates a parallel composition of the subcompositions and the provided synchronization vectors.
              */

@@ -10,6 +10,8 @@
 #include "ProgramEdgeGroup.h"
 #include "ProgramAction.h"
 
+#include "src/storage/pgcl/VariableDeclaration.h"
+
 namespace storm {
     namespace ppg {
         /**
@@ -21,9 +23,10 @@ namespace storm {
             using EdgeGroupIterator = ProgramLocation::EdgeGroupIterator;
             using ConstLocationIterator = std::unordered_map<ProgramLocationIdentifier, ProgramLocation>::const_iterator;
             
-            ProgramGraph(std::shared_ptr<storm::expressions::ExpressionManager> const& expManager, std::vector<storm::expressions::Variable> const& variables) : expManager(expManager), variables() {
+            ProgramGraph(std::shared_ptr<storm::expressions::ExpressionManager> const& expManager, std::vector<storm::pgcl::VariableDeclaration> const& variables) : variables(), expManager(expManager) {
                 for(auto const& v : variables) {
-                    this->variables.emplace(v.getIndex(), v);
+                    this->variables.emplace(v.getVariable().getIndex(), v.getVariable());
+                    this->initialValues.emplace(v.getVariable().getIndex(), v.getInitialValueExpression());
                 }
                 // No Action:
                 deterministicActions.emplace(noActionId, DeterministicProgramAction(this, noActionId));
@@ -46,9 +49,10 @@ namespace storm {
                 return &(probabilisticActions.emplace(newId, ProbabilisticProgramAction(this, newId, var, from, to)).first->second);
             }
             
-            ProgramLocation* addLocation(bool isInitial = false) {
+            ProgramLocation* addLocation(bool isInitial = false, bool successfulTermination = false, bool aborted = false, std::vector<std::string> const& labels = {}) {
                 ProgramLocationIdentifier newId = freeLocationIndex();
                 assert(!hasLocation(newId));
+                locationLabels[newId] = labels;
                 return &(locations.emplace(newId, ProgramLocation(this, newId, isInitial)).first->second);
             }
             
@@ -92,9 +96,25 @@ namespace storm {
                 }
                 
                 return res;
-                
             }
             
+            
+            
+            bool hasLabel(ProgramLocationIdentifier loc, std::string const& label) const {
+                return std::find(locationLabels.at(loc).begin(), locationLabels.at(loc).end(), label) != locationLabels.at(loc).end();
+            }
+            
+            bool hasSuccessfulTerminationLabel(ProgramLocationIdentifier loc) const {
+                return hasLabel(loc, succesfulTerminationLabel);
+            }
+            
+            bool hasAbortLabel(ProgramLocationIdentifier loc) const {
+                return hasLabel(loc, abortLabel);
+            }
+            
+            bool hasTerminationLabel(ProgramLocationIdentifier loc) const {
+                return hasSuccessfulTerminationLabel(loc) || hasAbortLabel(loc);
+            }
             
             ProgramActionIdentifier getNoActionId() const {
                 return noActionId;
@@ -163,6 +183,11 @@ namespace storm {
                 return variables.size();
             }
             
+            storm::expressions::Expression getInitialValue(ProgramVariableIdentifier v) const {
+                return initialValues.at(v);
+            }
+            
+            void collectInitialValues();
             
             ConstLocationIterator locationBegin() const {
                 return locations.begin();
@@ -180,6 +205,17 @@ namespace storm {
                 return expManager;
             }
             
+            std::vector<ProgramVariableIdentifier> noeffectVariables() const;
+            
+            std::vector<ProgramVariableIdentifier> rewardVariables() const;
+            
+            std::vector<ProgramVariableIdentifier> constantAssigned() const;
+            
+            std::vector<ProgramVariableIdentifier> constants() const;
+            
+            storm::storage::IntegerInterval supportForConstAssignedVariable(ProgramVariableIdentifier i) const;
+            
+            
             void checkValid() {
                 
             }
@@ -192,6 +228,25 @@ namespace storm {
             
             void printDot(std::ostream& os) const;
         protected:
+            
+            
+            std::vector<ProgramLocationIdentifier> initialLocationIdentifiers() const {
+                std::vector<ProgramLocationIdentifier> result;
+                for (auto const& loc : locations) {
+                    if(loc.second.isInitial()) {
+                        result.push_back(loc.first);
+                    }
+                }
+                return result;
+            }
+            
+            /**
+             *  Returns the set of variables which do not occur in guards.
+             */
+            std::vector<ProgramVariableIdentifier> variablesNotInGuards() const;
+            
+            std::pair<bool,bool> checkIfRewardVariableHelper(storm::expressions::Variable const& var, std::unordered_map<ProgramActionIdentifier, DeterministicProgramAction> const& detActions) const;
+
             
             ProgramLocation& getLocation(ProgramLocationIdentifier id) {
                 return locations.at(id);
@@ -221,7 +276,10 @@ namespace storm {
             std::unordered_map<ProgramLocationIdentifier, ProgramLocation> locations;
             storm::expressions::Expression initialValueRestriction;
             std::unordered_map<ProgramVariableIdentifier, storm::expressions::Variable> variables;
-            
+            ///
+            std::unordered_map<ProgramVariableIdentifier, storm::expressions::Expression> initialValues;
+            // If heavily used, then it might be better to use a bitvector and a seperate list for the names.
+            std::unordered_map<ProgramVariableIdentifier, std::vector<std::string>> locationLabels;
             std::shared_ptr<storm::expressions::ExpressionManager> expManager;
         private:
             // Helper for IDs, may be changed later.
@@ -230,6 +288,9 @@ namespace storm {
             ProgramEdgeIdentifier newEdgeId = 0;
             ProgramActionIdentifier newActionId = 1;
             ProgramActionIdentifier noActionId = 0;
+            std::string succesfulTerminationLabel = "__ret0__";
+            std::string abortLabel = "__ret1__";
+            
             
         };
     }

@@ -243,7 +243,7 @@ namespace storm {
              * @param minimumLength The minimum number of bits that the bit vector should hold.
              * @param init The truth value to which to initialize newly created bits.
              */
-            void enlargeLiberally(uint_fast64_t minimumLength, bool init = false);
+            void grow(uint_fast64_t minimumLength, bool init = false);
             
             /*!
              * Performs a logical "and" with the given bit vector. In case the sizes of the bit vectors do not match,

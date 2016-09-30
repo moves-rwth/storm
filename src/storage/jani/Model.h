@@ -17,12 +17,8 @@ namespace storm {
         
         class Exporter;
         
-        
-        
         class Model {
         public:
-            static const uint64_t silentActionIndex;
-            
             friend class Exporter;
             
             /*!
@@ -94,7 +90,7 @@ namespace storm {
             /*!
              *  Builds a map with action indices mapped to their names
              */
-            std::map<uint64_t, std::string> buildActionToNameMap() const;
+            std::map<uint64_t, std::string> getActionIndexToNameMap() const;
             
             /*!
              * Retrieves all non-silent action indices of the model.
@@ -247,16 +243,6 @@ namespace storm {
             std::set<std::string> getActionNames(bool includeSilent = true) const;
             
             /*!
-             * Retrieves the name of the silent action.
-             */
-            std::string const& getSilentActionName() const;
-            
-            /*!
-             * Retrieves the index of the silent action.
-             */
-            uint64_t getSilentActionIndex() const;
-            
-            /*!
              * Defines the undefined constants of the model by the given expressions. The original model is not modified,
              * but instead a new model is created.
              */
@@ -323,10 +309,10 @@ namespace storm {
             std::vector<storm::expressions::Expression> getAllRangeExpressions() const;
             
             /*!
-             * Retrieves whether this model has the default composition, that is it composes all automata in parallel
+             * Retrieves whether this model has the standard composition, that is it composes all automata in parallel
              * and synchronizes over all common actions.
              */
-            bool hasDefaultComposition() const;
+            bool hasStandardComposition() const;
             
             /*!
              * After adding all components to the model, this method has to be called. It recursively calls
@@ -339,6 +325,31 @@ namespace storm {
              *  Checks if the model is valid JANI, which should be verified before any further operations are applied to a model.
              */
             void checkValid() const;
+            
+            /*!
+             * Checks that undefined constants (parameters) of the model preserve the graph of the underlying model.
+             * That is, undefined constants may only appear in the probability expressions of edge destinations as well
+             * as on the right-hand sides of transient assignments.
+             */
+            bool undefinedConstantsAreGraphPreserving() const;
+            
+            /*!
+             * Lifts the common edge destination assignments to edge assignments.
+             */
+            void liftTransientEdgeDestinationAssignments();
+            
+            /*!
+             * Retrieves whether there is any transient edge destination assignment in the model.
+             */
+            bool hasTransientEdgeDestinationAssignments() const;
+            
+            void makeStandardJaniCompliant();
+            
+            /// The name of the silent action.
+            static const std::string SILENT_ACTION_NAME;
+            
+            /// The index of the silent action.
+            static const uint64_t SILENT_ACTION_INDEX;
             
         private:
             /// The model name.

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <set>
+
 #include "src/storage/jani/Composition.h"
 
 namespace storm {
@@ -10,7 +12,7 @@ namespace storm {
             /*!
              * Creates a reference to an automaton to be used in a composition.
              */
-            AutomatonComposition(std::string const& name);
+            AutomatonComposition(std::string const& name, std::set<std::string> const& inputEnabledActions = {});
             
             /*!
              * Retrieves the name of the automaton this composition element refers to.
@@ -21,11 +23,16 @@ namespace storm {
             
             virtual void write(std::ostream& stream) const override;
             
-            bool isAutomaton() const override  { return true; }
+            std::set<std::string> const& getInputEnabledActions() const;
+
+            bool isAutomaton() const override;
             
         private:
-            // The name of the automaton this composition element refers to.
+            /// The name of the automaton this composition element refers to.
             std::string name;
+            
+            /// The names of the actions for which to make this automaton input-enabled.
+            std::set<std::string> inputEnabledActions;
         };
         
     }

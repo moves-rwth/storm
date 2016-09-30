@@ -5,12 +5,12 @@ namespace storm {
     namespace builder {
         unsigned JaniProgramGraphBuilder::janiVersion = 1;
         
-        storm::jani::OrderedAssignments buildOrderedAssignments(storm::jani::Automaton& automaton, storm::ppg::DeterministicProgramAction const& act) {
+        storm::jani::OrderedAssignments JaniProgramGraphBuilder::buildOrderedAssignments(storm::jani::Automaton& automaton, storm::ppg::DeterministicProgramAction const& act) {
             std::vector<storm::jani::Assignment> vec;
             uint64_t level = 0;
             for(auto const& group : act) {
                 for(auto const& assignment : group) {
-                    vec.emplace_back(automaton.getVariables().getVariable(act.getProgramGraph().getVariableName(assignment.first)) , assignment.second, level);
+                    vec.emplace_back(*(variables.at(assignment.first)), assignment.second, level);
                 }
                 ++level;
             }
@@ -47,25 +47,31 @@ namespace storm {
             storm::expressions::Expression newGuard;
             newGuard = expManager->boolean(true);
             if (edge.getAction().isProbabilistic()) {
-            
+                // No check necessary currently, but at least we should statically check that the bounds are okay.
+                storm::ppg::ProbabilisticProgramAction const& act = static_cast<storm::ppg::ProbabilisticProgramAction const&>(edge.getAction());
+                if (isUserRestrictedVariable(act.getVariableIdentifier())) {
+                    storm::storage::IntegerInterval const& bound = userVariableRestrictions.at(act.getVariableIdentifier());
+                    storm::storage::IntegerInterval supportInterval = act.getSupportInterval();
+                    STORM_LOG_THROW(bound.contains(supportInterval), storm::exceptions::NotSupportedException, "User provided bounds must contain all constant expressions");
+                }
             } else {
                 storm::ppg::DeterministicProgramAction const& act = static_cast<storm::ppg::DeterministicProgramAction const&>(edge.getAction());
                 STORM_LOG_THROW(act.nrLevels() <= 1, storm::exceptions::NotSupportedException, "Multi-level assignments with user variable bounds not supported");
                 for(auto const& group : act) {
                     for(auto const& assignment : group) {
-                        if (isUserRestricted(assignment.first)) {
-                            assert(variableRestrictions.count(assignment.first) == 1);
-                            storm::storage::IntegerInterval const& bound = variableRestrictions.at(assignment.first);
+                        if (isUserRestrictedVariable(assignment.first)) {
+                            assert(userVariableRestrictions.count(assignment.first) == 1);
+                            storm::storage::IntegerInterval const& bound = userVariableRestrictions.at(assignment.first);
                             if (!assignment.second.containsVariables()) {
                                 // Constant assignments can be checked statically.
                                 // TODO we might still want to allow assignments which go out of bounds.
                                 STORM_LOG_THROW(bound.contains(assignment.second.evaluateAsInt()), storm::exceptions::NotSupportedException, "User provided bounds must contain all constant expressions");
                             } else {
                                 // TODO currently only fully bounded restrictions are supported;
-                                assert(variableRestrictions.at(assignment.first).hasLeftBound() && variableRestrictions.at(assignment.first).hasRightBound());
+                                assert(userVariableRestrictions.at(assignment.first).hasLeftBound() && userVariableRestrictions.at(assignment.first).hasRightBound());
                                 storm::expressions::Expression newCondition = simplifyExpression(edge.getCondition() && (assignment.second > bound.getRightBound().get() || assignment.second < bound.getLeftBound().get()));
                                 storm::jani::EdgeDestination dest(varOutOfBoundsLocations.at(assignment.first), expManager->rational(1.0), storm::jani::OrderedAssignments());
-                                storm::jani::Edge e(janiLocId.at(edge.getSourceId()), storm::jani::Model::silentActionIndex, boost::none, newCondition, {dest});
+                                storm::jani::Edge e(janiLocId.at(edge.getSourceId()), storm::jani::Model::SILENT_ACTION_INDEX, boost::none, newCondition, {dest});
                                 edges.push_back(e);
                                 newGuard = newGuard && assignment.second <= bound.getRightBound().get() && assignment.second >= bound.getLeftBound().get();
                             }
@@ -81,14 +87,17 @@ namespace storm {
             for(auto it = programGraph.locationBegin(); it != programGraph.locationEnd(); ++it) {
                 ppg::ProgramLocation const& loc = it->second;
                 if (loc.nrOutgoingEdgeGroups() == 0) {
-                    // TODO deadlock!
+                    storm::jani::OrderedAssignments oa;
+                    storm::jani::EdgeDestination dest(janiLocId.at(loc.id()), expManager->integer(1), oa);
+                    storm::jani::Edge e(janiLocId.at(loc.id()), storm::jani::Model::SILENT_ACTION_INDEX, boost::none, expManager->boolean(true), {dest});
+                    automaton.addEdge(e);
                 } else if (loc.nrOutgoingEdgeGroups() == 1) {
                     for(auto const& edge :  **(loc.begin())) {
                         std::pair<std::vector<storm::jani::Edge>, storm::expressions::Expression> checks = addVariableChecks(*edge);
                         for(auto const& check : checks.first) {
                             automaton.addEdge(check);
                         }
-                        storm::jani::Edge e(janiLocId.at(loc.id()), storm::jani::Model::silentActionIndex, boost::none, simplifyExpression(edge->getCondition() && checks.second), buildDestinations(automaton, *edge));
+                        storm::jani::Edge e(janiLocId.at(loc.id()), storm::jani::Model::SILENT_ACTION_INDEX, boost::none, simplifyExpression(edge->getCondition() && checks.second), buildDestinations(automaton, *edge));
                         automaton.addEdge(e);
                     }
                 } else {
@@ -105,7 +114,7 @@ namespace storm {
                             uint64_t target = janiLocId.at((*eg->begin())->getTargetId());
                             destinations.emplace_back(target, eg->getProbability());
                         }
-                        storm::jani::Edge e(janiLocId.at(it->second.id()), storm::jani::Model::silentActionIndex, boost::none,  expManager->boolean(true), destinations);
+                        storm::jani::Edge e(janiLocId.at(it->second.id()), storm::jani::Model::SILENT_ACTION_INDEX, boost::none,  expManager->boolean(true), destinations);
                         automaton.addEdge(e);
                     }
                 }

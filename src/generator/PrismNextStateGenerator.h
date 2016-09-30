@@ -27,9 +27,9 @@ namespace storm {
             
             virtual storm::models::sparse::StateLabeling label(storm::storage::BitVectorHashMap<StateType> const& states, std::vector<StateType> const& initialStateIndices = {}, std::vector<StateType> const& deadlockStateIndices = {}) override;
 
-            static void checkValid(storm::prism::Program const& program);
-
         private:
+            void checkValid() const;
+
             /*!
              * A delegate constructor that is used to preprocess the program before the constructor of the superclass is
              * being called. The last argument is only present to distinguish the signature of this constructor from the

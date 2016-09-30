@@ -358,8 +358,12 @@ namespace storm {
                 result = this->getInitialStatesRestriction();
             }
             
-            // Add the expressions for all variables that have initial expressions.
+            // Add the expressions for all non-transient variables that have initial expressions.
             for (auto const& variable : this->getVariables()) {
+                if (variable.isTransient()) {
+                    continue;
+                }
+                
                 if (variable.hasInitExpression()) {
                     storm::expressions::Expression newInitExpression = variable.isBooleanVariable() ? storm::expressions::iff(variable.getExpressionVariable(), variable.getInitExpression()) : variable.getExpressionVariable() == variable.getInitExpression();
                     if (result.isInitialized()) {
@@ -407,13 +411,48 @@ namespace storm {
             }
         }
         
-        std::set<uint64_t> Automaton::getUsedActionIndices() const {
-            std::set<uint64_t> result;
-            for (auto const& edge : edges) {
-                result.insert(edge.getActionIndex());
+        bool Automaton::containsVariablesOnlyInProbabilitiesOrTransientAssignments(std::set<storm::expressions::Variable> const& variables) const {
+            // Check initial states restriction expression.
+            if (this->hasInitialStatesRestriction()) {
+                if (this->getInitialStatesRestriction().containsVariable(variables)) {
+                    return false;
+                }
             }
-            return result;
+            
+            // Check global variable definitions.
+            if (this->getVariables().containsVariablesInBoundExpressionsOrInitialValues(variables)) {
+                return false;
+            }
+            
+            // Check edges.
+            for (auto const& edge : edges) {
+                if (edge.usesVariablesInNonTransientAssignments(variables)) {
+                    return false;
+                }
+            }
+            
+            return true;
         }
-
+        
+        void Automaton::pushEdgeAssignmentsToDestinations() {
+            for (auto& edge : edges) {
+                edge.pushAssignmentsToDestinations();
+            }
+        }
+        
+        bool Automaton::hasTransientEdgeDestinationAssignments() const {
+            for (auto const& edge : this->getEdges()) {
+                if (edge.hasTransientEdgeDestinationAssignments()) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        
+        void Automaton::liftTransientEdgeDestinationAssignments() {
+            for (auto& edge : this->getEdges()) {
+                edge.liftTransientDestinationAssignments();
+            }
+        }
     }
 }

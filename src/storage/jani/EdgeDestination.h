@@ -39,8 +39,11 @@ namespace storm {
              */
             void setProbability(storm::expressions::Expression const& probability);
 
+            /*!
+             * Retrieves the assignments to make when choosing this destination.
+             */
             OrderedAssignments const& getOrderedAssignments() const;
-
+            
             /*!
              * Substitutes all variables in all expressions according to the given substitution.
              */
@@ -49,6 +52,11 @@ namespace storm {
             // Convenience methods to access the assignments.
             bool hasAssignment(Assignment const& assignment) const;
             bool removeAssignment(Assignment const& assignment);
+            
+            /*!
+             * Retrieves whether this destination has transient assignments.
+             */
+            bool hasTransientAssignment() const;
             
         private:
             // The index of the destination location.

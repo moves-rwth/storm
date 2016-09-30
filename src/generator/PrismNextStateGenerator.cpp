@@ -27,7 +27,7 @@ namespace storm {
             STORM_LOG_THROW(!this->program.specifiesSystemComposition(), storm::exceptions::WrongFormatException, "The explicit next-state generator currently does not support custom system compositions.");
                         
             // Only after checking validity of the program, we initialize the variable information.
-            this->checkValid(program);
+            this->checkValid();
             this->variableInformation = VariableInformation(program);
             
             if (this->options.isBuildAllRewardModelsSet()) {
@@ -75,7 +75,7 @@ namespace storm {
         }
 
         template<typename ValueType, typename StateType>
-        void PrismNextStateGenerator<ValueType, StateType>::checkValid(storm::prism::Program const& program) {
+        void PrismNextStateGenerator<ValueType, StateType>::checkValid() const {
             // If the program still contains undefined constants and we are not in a parametric setting, assemble an appropriate error message.
 #ifdef STORM_HAVE_CARL
             if (!std::is_same<ValueType, storm::RationalFunction>::value && program.hasUndefinedConstants()) {
@@ -98,7 +98,7 @@ namespace storm {
             }
 
 #ifdef STORM_HAVE_CARL
-            else if (std::is_same<ValueType, storm::RationalFunction>::value && !program.hasUndefinedConstantsOnlyInUpdateProbabilitiesAndRewards()) {
+            else if (std::is_same<ValueType, storm::RationalFunction>::value && !program.undefinedConstantsAreGraphPreserving()) {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The program contains undefined constants that appear in some places other than update probabilities and reward value expressions, which is not admitted.");
             }
 #endif
@@ -272,6 +272,8 @@ namespace storm {
                 result.addChoice(std::move(choice));
             }
             
+            this->postprocess(result);
+                        
             return result;
         }
         
@@ -304,6 +306,7 @@ namespace storm {
                 }
                 int_fast64_t assignedValue = this->evaluator.asInt(assignmentIt->getExpression());
                 STORM_LOG_THROW(assignedValue <= integerIt->upperBound, storm::exceptions::WrongFormatException, "The update " << update << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getVariableName() << "'.");
+                STORM_LOG_THROW(assignedValue >= integerIt->lowerBound, storm::exceptions::WrongFormatException, "The update " << update << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getVariableName() << "'.");
                 newState.setFromInt(integerIt->bitOffset, integerIt->bitWidth, assignedValue - integerIt->lowerBound);
                 STORM_LOG_ASSERT(static_cast<int_fast64_t>(newState.getAsInt(integerIt->bitOffset, integerIt->bitWidth)) + integerIt->lowerBound == assignedValue, "Writing to the bit vector bucket failed (read " << newState.getAsInt(integerIt->bitOffset, integerIt->bitWidth) << " but wrote " << assignedValue << ").");
             }

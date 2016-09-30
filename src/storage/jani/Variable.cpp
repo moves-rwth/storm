@@ -16,6 +16,10 @@ namespace storm {
             // Intentionally left empty.
         }
 
+        Variable::~Variable() {
+            // Intentionally left empty.
+        }
+        
         storm::expressions::Variable const& Variable::getExpressionVariable() const {
             return variable;
         }
