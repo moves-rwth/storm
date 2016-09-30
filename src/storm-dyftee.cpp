@@ -33,20 +33,25 @@
  * @param property PCTC formula capturing the property to check.
  */
 template <typename ValueType>
-void analyzeDFT(std::string filename, std::string property, bool symred = false, bool allowModularisation = false, bool enableDC = true) {
+void analyzeDFT(std::string filename, std::string property, bool symred, bool allowModularisation, bool enableDC, double approximationError) {
     std::cout << "Running DFT analysis on file " << filename << " with property " << property << std::endl;
 
     storm::parser::DFTGalileoParser<ValueType> parser;
     storm::storage::DFT<ValueType> dft = parser.parseDFT(filename);
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::parseFormulasForExplicit(property);
     STORM_LOG_ASSERT(formulas.size() == 1, "Wrong number of formulas.");
-    
+
     storm::modelchecker::DFTModelChecker<ValueType> modelChecker;
-    modelChecker.check(dft, formulas[0], symred, allowModularisation, enableDC);
+    modelChecker.check(dft, formulas[0], symred, allowModularisation, enableDC, approximationError);
     modelChecker.printTimings();
     modelChecker.printResult();
 }
 
+/*!
+ * Analyze the DFT with use of SMT solving.
+ *
+ * @param filename Path to DFT file in Galileo format.
+ */
 template<typename ValueType>
 void analyzeWithSMT(std::string filename) {
     std::cout << "Running DFT analysis on file " << filename << " with use of SMT" << std::endl;
@@ -163,11 +168,16 @@ int main(const int argc, const char** argv) {
         
         STORM_LOG_ASSERT(!pctlFormula.empty(), "Pctl formula empty.");
 
+        double approximationError = 0.0;
+        if (dftSettings.isApproximationErrorSet()) {
+            approximationError = dftSettings.getApproximationError();
+        }
+
         // From this point on we are ready to carry out the actual computations.
         if (parametric) {
-            analyzeDFT<storm::RationalFunction>(dftSettings.getDftFilename(), pctlFormula, dftSettings.useSymmetryReduction(), allowModular && dftSettings.useModularisation(), !dftSettings.isDisableDC() );
+            analyzeDFT<storm::RationalFunction>(dftSettings.getDftFilename(), pctlFormula, dftSettings.useSymmetryReduction(), allowModular && dftSettings.useModularisation(), !dftSettings.isDisableDC(), approximationError);
         } else {
-            analyzeDFT<double>(dftSettings.getDftFilename(), pctlFormula, dftSettings.useSymmetryReduction(), allowModular && dftSettings.useModularisation(), !dftSettings.isDisableDC());
+            analyzeDFT<double>(dftSettings.getDftFilename(), pctlFormula, dftSettings.useSymmetryReduction(), allowModular && dftSettings.useModularisation(), !dftSettings.isDisableDC(), approximationError);
         }
         
         // All operations have now been performed, so we clean up everything and terminate.

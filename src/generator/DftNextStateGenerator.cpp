@@ -8,7 +8,7 @@ namespace storm {
     namespace generator {
         
         template<typename ValueType, typename StateType>
-        DftNextStateGenerator<ValueType, StateType>::DftNextStateGenerator(storm::storage::DFT<ValueType> const& dft, storm::storage::DFTStateGenerationInfo const& stateGenerationInfo, bool enableDC, bool mergeFailedStates) : mDft(dft), mStateGenerationInfo(stateGenerationInfo), state(nullptr), enableDC(enableDC), mergeFailedStates(mergeFailedStates), comparator() {
+        DftNextStateGenerator<ValueType, StateType>::DftNextStateGenerator(storm::storage::DFT<ValueType> const& dft, storm::storage::DFTStateGenerationInfo const& stateGenerationInfo, bool enableDC, bool mergeFailedStates) : mDft(dft), mStateGenerationInfo(stateGenerationInfo), state(nullptr), enableDC(enableDC), mergeFailedStates(mergeFailedStates) {
             deterministicModel = !mDft.canHaveNondeterminism();
         }
         
@@ -60,7 +60,7 @@ namespace storm {
             Choice<ValueType, StateType> choice(0, !hasDependencies);
 
             // Check for absorbing state
-            if (mDft.hasFailed(state) || mDft.isFailsafe(state) || state->nrFailableBEs() == 0) {
+            if (mDft.hasFailed(state) || mDft.isFailsafe(state) || failableCount == 0) {
                 // Add self loop
                 choice.addProbability(state->getId(), storm::utility::one<ValueType>());
                 STORM_LOG_TRACE("Added self loop for " << state->getId());
@@ -81,30 +81,6 @@ namespace storm {
                 STORM_LOG_ASSERT(nextBE, "NextBE is null.");
                 STORM_LOG_ASSERT(nextBEPair.second == hasDependencies, "Failure due to dependencies does not match.");
                 STORM_LOG_TRACE("With the failure of: " << nextBE->name() << " [" << nextBE->id() << "] in " << mDft.getStateString(state));
-
-                /*if (storm::settings::getModule<storm::settings::modules::DFTSettings>().computeApproximation()) {
-                    if (!storm::utility::isZero(exitRate)) {
-                        ValueType rate = nextBE->activeFailureRate();
-                        ValueType div = rate / exitRate;
-                        if (!storm::utility::isZero(exitRate) && belowThreshold(div)) {
-                            // Set transition directly to failed state
-                            auto resultFind = outgoingRates.find(failedIndex);
-                            if (resultFind != outgoingRates.end()) {
-                                // Add to existing transition
-                                resultFind->second += rate;
-                                STORM_LOG_TRACE("Updated transition to " << resultFind->first << " with rate " << rate << " to new rate " << resultFind->second);
-                            } else {
-                                // Insert new transition
-                                outgoingRates.insert(std::make_pair(failedIndex, rate));
-                                STORM_LOG_TRACE("Added transition to " << failedIndex << " with rate " << rate);
-                            }
-                            exitRate += rate;
-                            std::cout << "IGNORE: " << nextBE->name() << " [" << nextBE->id() << "] with rate " << rate << std::endl;
-                            //STORM_LOG_TRACE("Ignore: " << nextBE->name() << " [" << nextBE->id() << "] with rate " << rate);
-                            continue;
-                        }
-                    }
-                }*/
 
                 // Propagate
                 storm::storage::DFTStateSpaceGenerationQueues<ValueType> queues;
@@ -139,8 +115,8 @@ namespace storm {
                     continue;
                 }
 
+                // Get the id of the successor state
                 StateType newStateId;
-
                 if (newState->hasFailed(mDft.getTopLevelIndex()) && mergeFailedStates) {
                     // Use unique failed state
                     newStateId = mergeFailedStateId;
@@ -168,17 +144,17 @@ namespace storm {
                 // Set transitions
                 if (hasDependencies) {
                     // Failure is due to dependency -> add non-deterministic choice
-                    std::shared_ptr<storm::storage::DFTDependency<ValueType> const> dependency = mDft.getDependency(state->getDependencyId(currentFailable));
-                    choice.addProbability(newStateId, dependency->probability());
-                    STORM_LOG_TRACE("Added transition to " << newStateId << " with probability " << dependency->probability());
+                    ValueType probability = mDft.getDependency(state->getDependencyId(currentFailable))->probability();
+                    choice.addProbability(newStateId, probability);
+                    STORM_LOG_TRACE("Added transition to " << newStateId << " with probability " << probability);
 
-                    if (!storm::utility::isOne(dependency->probability())) {
+                    if (!storm::utility::isOne(probability)) {
                         // Add transition to state where dependency was unsuccessful
                         DFTStatePointer unsuccessfulState = std::make_shared<storm::storage::DFTState<ValueType>>(*state);
                         unsuccessfulState->letDependencyBeUnsuccessful(currentFailable);
                         // Add state
                         StateType unsuccessfulStateId = stateToIdCallback(unsuccessfulState);
-                        ValueType remainingProbability = storm::utility::one<ValueType>() - dependency->probability();
+                        ValueType remainingProbability = storm::utility::one<ValueType>() - probability;
                         choice.addProbability(unsuccessfulStateId, remainingProbability);
                         STORM_LOG_TRACE("Added transition to " << unsuccessfulStateId << " with remaining probability " << remainingProbability);
                     }
@@ -188,14 +164,21 @@ namespace storm {
                     // Set failure rate according to activation
                     bool isActive = true;
                     if (mDft.hasRepresentant(nextBE->id())) {
-                        // Active must be checked for the state we are coming from as this state is responsible for the
-                        // rate and not the new state we are going to
+                        // Active must be checked for the state we are coming from as this state is responsible for the rate
                         isActive = state->isActive(mDft.getRepresentant(nextBE->id())->id());
                     }
                     ValueType rate = isActive ? nextBE->activeFailureRate() : nextBE->passiveFailureRate();
                     STORM_LOG_ASSERT(!storm::utility::isZero(rate), "Rate is 0.");
                     choice.addProbability(newStateId, rate);
-                    STORM_LOG_TRACE("Added transition to " << newStateId << " with " << (isActive ? "active" : "passive") << " rate " << rate);
+                    STORM_LOG_TRACE("Added transition to " << newStateId << " with " << (isActive ? "active" : "passive") << " failure rate " << rate);
+
+                    // Check if new state needs expansion for approximation
+                    if (approximationError > 0.0) {
+                        if (checkSkipState(newState, rate, choice.getTotalMass(), approximationError)) {
+                            STORM_LOG_TRACE("Will skip state " << newStateId);
+                            newState->markSkip();
+                        }
+                    }
                 }
 
                 ++currentFailable;
@@ -228,6 +211,36 @@ namespace storm {
             result.addChoice(std::move(choice));
             result.setExpanded();
             return result;
+        }
+
+        template<typename ValueType, typename StateType>
+        void DftNextStateGenerator<ValueType, StateType>::setApproximationError(double approximationError) {
+            this->approximationError = approximationError;
+        }
+
+        template<typename ValueType, typename StateType>
+        bool DftNextStateGenerator<ValueType, StateType>::checkSkipState(DFTStatePointer const& state, ValueType rate, ValueType exitRate, double approximationError) {
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Approximation works only for double.");
+        }
+
+        template<>
+        bool DftNextStateGenerator<double>::checkSkipState(DFTStatePointer const& state, double rate, double exitRate, double approximationError) {
+            if (mDft.hasFailed(state) || mDft.isFailsafe(state) ||  (state->nrFailableDependencies() == 0 && state->nrFailableBEs() == 0)) {
+                // Do not skip absorbing state
+                return false;
+            }
+            // Skip if the rate to reach this state is low compared to all other outgoing rates from the predecessor
+            return rate/exitRate < approximationError;
+        }
+
+        template<>
+        bool DftNextStateGenerator<storm::RationalFunction>::checkSkipState(DFTStatePointer const& state, storm::RationalFunction rate, storm::RationalFunction exitRate, double approximationError) {
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Approximation works only for double.");
+            /*std::cout << (rate / exitRate) << " < " << threshold << ": " << (number < threshold) << std::endl;
+            std::map<storm::Variable, storm::RationalNumber> mapping;
+            storm::RationalFunction eval(number.evaluate(mapping));
+            std::cout << "Evaluated: " << eval << std::endl;
+            return eval < threshold;*/
         }
         
         template class DftNextStateGenerator<double>;

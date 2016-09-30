@@ -21,8 +21,8 @@ namespace storm {
             const std::string DFTSettings::symmetryReductionOptionShortName = "symred";
             const std::string DFTSettings::modularisationOptionName = "modularisation";
             const std::string DFTSettings::disableDCOptionName = "disabledc";
-            const std::string DFTSettings::computeApproximationOptionName = "approximation";
-            const std::string DFTSettings::computeApproximationOptionShortName = "approx";
+            const std::string DFTSettings::approximationErrorOptionName = "approximation";
+            const std::string DFTSettings::approximationErrorOptionShortName = "approx";
             const std::string DFTSettings::propExpectedTimeOptionName = "expectedtime";
             const std::string DFTSettings::propExpectedTimeOptionShortName = "mttf";
             const std::string DFTSettings::propProbabilityOptionName = "probability";
@@ -39,7 +39,7 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, symmetryReductionOptionName, false, "Exploit symmetric structure of model.").setShortName(symmetryReductionOptionShortName).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, modularisationOptionName, false, "Use modularisation (not applicable for expected time).").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, disableDCOptionName, false, "Disable Dont Care propagation.").build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, computeApproximationOptionName, false, "Compute an approximation.").setShortName(computeApproximationOptionShortName).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, approximationErrorOptionName, false, "Approximation error allowed.").setShortName(approximationErrorOptionShortName).addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("error", "The approximation error to use.").addValidationFunctionDouble(storm::settings::ArgumentValidators::doubleGreaterValidatorIncluding(0.0)).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, propExpectedTimeOptionName, false, "Compute expected time of system failure.").setShortName(propExpectedTimeOptionShortName).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, propProbabilityOptionName, false, "Compute probability of system failure.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, propTimeBoundOptionName, false, "Compute probability of system failure up to given timebound.").addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("time", "The timebound to use.").addValidationFunctionDouble(storm::settings::ArgumentValidators::doubleGreaterValidatorExcluding(0.0)).build()).build());
@@ -69,11 +69,15 @@ namespace storm {
             bool DFTSettings::isDisableDC() const {
                 return this->getOption(disableDCOptionName).getHasOptionBeenSet();
             }
-            
-            bool DFTSettings::computeApproximation() const {
-                return this->getOption(computeApproximationOptionName).getHasOptionBeenSet();
+
+            bool DFTSettings::isApproximationErrorSet() const {
+                return this->getOption(approximationErrorOptionName).getHasOptionBeenSet();
             }
-            
+
+            double DFTSettings::getApproximationError() const {
+                return this->getOption(approximationErrorOptionName).getArgumentByName("error").getValueAsDouble();
+            }
+
             bool DFTSettings::usePropExpectedTime() const {
                 return this->getOption(propExpectedTimeOptionName).getHasOptionBeenSet();
             }

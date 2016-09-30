@@ -204,8 +204,14 @@ namespace storm {
         }
 
         template<typename ValueType>
-        std::pair<std::shared_ptr<DFTBE<ValueType> const>, bool> DFTState<ValueType>::letNextBEFail(size_t index)
-        {
+        ValueType DFTState<ValueType>::getFailableBERate(size_t index) const {
+            STORM_LOG_ASSERT(index < nrFailableBEs(), "Index invalid.");
+            // TODO Matthias: get passive failure rate when applicable
+            return mDft.getBasicElement(mIsCurrentlyFailableBE[index])->activeFailureRate();
+        }
+
+        template<typename ValueType>
+        std::pair<std::shared_ptr<DFTBE<ValueType> const>, bool> DFTState<ValueType>::letNextBEFail(size_t index) {
             STORM_LOG_TRACE("currently failable: " << getCurrentlyFailableString());
             if (nrFailableDependencies() > 0) {
                 // Consider failure due to dependency

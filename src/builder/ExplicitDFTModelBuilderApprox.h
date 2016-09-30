@@ -48,6 +48,9 @@ namespace storm {
 
                 // A vector that stores a labeling for each choice.
                 boost::optional<std::vector<boost::container::flat_set<StateType>>> choiceLabeling;
+
+                // A flag indicating if the model is deterministic.
+                bool deterministicModel;
             };
 
         public:
@@ -68,13 +71,28 @@ namespace storm {
             ExplicitDFTModelBuilderApprox(storm::storage::DFT<ValueType> const& dft, storm::storage::DFTIndependentSymmetries const& symmetries, bool enableDC);
 
             /*!
-             * Build model from Dft.
+             * Build model from DFT.
              *
-             * @param labelOpts Options for labeling.
-             *
-             * @return Built model (either MA or CTMC).
+             * @param labelOpts          Options for labeling.
+             * @param approximationError Error allowed for approximation.
              */
-            std::shared_ptr<storm::models::sparse::Model<ValueType>> buildModel(LabelOptions const& labelOpts);
+            void buildModel(LabelOptions const& labelOpts, double approximationError = 0.0);
+
+            /*!
+             * Get the built model.
+             *
+             * @return The model built from the DFT.
+             */
+            std::shared_ptr<storm::models::sparse::Model<ValueType>> getModel();
+
+            /*!
+             * Get the built approximation model for either the lower or upper bound.
+             *
+             * @param lowerBound If true, the lower bound model is returned, else the upper bound model
+             *
+             * @return The model built from the DFT.
+             */
+            std::shared_ptr<storm::models::sparse::Model<ValueType>> getModelApproximation(bool lowerBound = true);
 
         private:
 
@@ -103,6 +121,31 @@ namespace storm {
              */
             void setRemapping(StateType id, StateType mappedId);
 
+            /**
+             * Change matrix to reflect the lower approximation bound.
+             *
+             * @param matrix Matrix to change. The change are reflected here.
+             */
+            void changeMatrixLowerBound(storm::storage::SparseMatrix<ValueType> & matrix) const;
+
+            /*!
+             * Change matrix to reflect the upper approximation bound.
+             *
+             * @param matrix Matrix to change. The change are reflected here.
+             */
+            void changeMatrixUpperBound(storm::storage::SparseMatrix<ValueType> & matrix) const;
+
+            /*!
+             * Create the model model from the model components.
+             *
+             * @param copy If true, all elements of the model component are copied (used for approximation). If false
+             *             they are moved to reduce the memory overhead.
+             *
+             * @return The model built from the model components.
+             */
+            std::shared_ptr<storm::models::sparse::Model<ValueType>> createModel(bool copy);
+
+
             // Initial size of the bitvector.
             const size_t INITIAL_BITVECTOR_SIZE = 20000;
             // Offset used for pseudo states.
@@ -118,13 +161,17 @@ namespace storm {
             // Current id for new state
             size_t newIndex = 0;
 
-            //TODO Matthias: remove when everything works
-            std::vector<std::pair<StateType, storm::storage::BitVector>> mPseudoStatesMapping; // vector of (id to concrete state, bitvector)
+            // Mapping from pseudo states to (id of concrete state, bitvector)
+            std::vector<std::pair<StateType, storm::storage::BitVector>> mPseudoStatesMapping;
+
             //TODO Matthias: make changeable
             const bool mergeFailedStates = true;
+
+            // Id of failed state
             size_t failedStateId = 0;
+
+            // Id of initial state
             size_t initialStateIndex = 0;
-            size_t pseudoStatesToCheck = 0;
 
             // Flag indication if dont care propagation should be used.
             bool enableDC = true;
@@ -142,10 +189,10 @@ namespace storm {
             // TODO Matthias: avoid hack with fixed int type
             std::vector<uint_fast64_t> stateRemapping;
 
+            // Holds all skipped states which were not yet expanded. More concrete it is a mapping from matrix indices
+            // to the corresponding skipped state.
+            std::unordered_map<StateType, DFTStatePointer> skippedStates;
         };
-        
-        template<typename ValueType>
-        bool belowThreshold(ValueType const& number);
     }
 }
 

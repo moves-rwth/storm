@@ -32,10 +32,7 @@ namespace storm {
                  * @return The name of the file that contains the dft specification.
                  */
                 std::string getDftFilename() const;
-                
-                //expectedtime, probability, timebound, prob
-                //min, max
-                
+
                 /*!
                  * Retrieves whether the option to use symmetry reduction is set.
                  *
@@ -62,8 +59,15 @@ namespace storm {
                  *
                  * @return True iff the option was set.
                  */
-                bool computeApproximation() const;
-                
+                bool isApproximationErrorSet() const;
+
+                /*!
+                 * Retrieves the error allowed for approximation the model checking result.
+                 *
+                 * @return The allowed errorbound.
+                 */
+                double getApproximationError() const;
+
                 /*!
                  * Retrieves whether the property expected time should be used.
                  *
@@ -129,8 +133,8 @@ namespace storm {
                 static const std::string symmetryReductionOptionShortName;
                 static const std::string modularisationOptionName;
                 static const std::string disableDCOptionName;
-                static const std::string computeApproximationOptionName;
-                static const std::string computeApproximationOptionShortName;
+                static const std::string approximationErrorOptionName;
+                static const std::string approximationErrorOptionShortName;
                 static const std::string propExpectedTimeOptionName;
                 static const std::string propExpectedTimeOptionShortName;
                 static const std::string propProbabilityOptionName;

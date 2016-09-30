@@ -31,6 +31,7 @@ namespace storm {
             bool mValid = true;
             const DFT<ValueType>& mDft;
             const DFTStateGenerationInfo& mStateGenerationInfo;
+            bool mSkip = false;
             
         public:
             DFTState(DFT<ValueType> const& dft, DFTStateGenerationInfo const& stateGenerationInfo, size_t id);
@@ -95,6 +96,14 @@ namespace storm {
             bool isInvalid() const {
                 return !mValid;
             }
+
+            void markSkip() {
+                mSkip = true;
+            }
+
+            bool isSkip() const {
+                return mSkip;
+            }
             
             storm::storage::BitVector const& status() const {
                 return mStatus;
@@ -144,6 +153,14 @@ namespace storm {
             size_t nrFailableBEs() const {
                 return mIsCurrentlyFailableBE.size();
             }
+
+            /** Get the failure rate of the currently failable BE on the given index.
+             *
+             * @param index Index of BE in list of currently failable BEs.
+             *
+             * @return Failure rate of the BE.
+             */
+            ValueType getFailableBERate(size_t index) const;
 
             size_t nrFailableDependencies() const {
                 return mFailableDependencies.size();
