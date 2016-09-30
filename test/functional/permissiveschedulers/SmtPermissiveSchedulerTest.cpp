@@ -15,7 +15,7 @@
 
 TEST(SmtPermissiveSchedulerTest, DieSelection) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/die_c1.nm");
-    storm::parser::FormulaParser formulaParser(program.getManager().getSharedPointer());
+    storm::parser::FormulaParser formulaParser(program);
     
 //    auto formula02 = formulaParser.parseSingleFormulaFromString("P>=0.10 [ F \"one\"]")->asProbabilityOperatorFormula();
 //    ASSERT_TRUE(storm::logic::isLowerBound(formula02.getComparisonType()));

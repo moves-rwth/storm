@@ -3,6 +3,7 @@
 #include "src/parser/FormulaParser.h"
 #include "src/logic/FragmentSpecification.h"
 #include "src/exceptions/WrongFormatException.h"
+#include "src/storage/expressions/ExpressionManager.h"
 
 TEST(FormulaParserTest, LabelTest) {
     storm::parser::FormulaParser formulaParser;
