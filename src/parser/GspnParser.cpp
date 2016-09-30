@@ -64,9 +64,19 @@ namespace storm {
             // build gspn by traversing the DOM object
             parser->getDocument()->normalizeDocument();
             xercesc::DOMElement* elementRoot = parser->getDocument()->getDocumentElement();
-            // If the top-level node is not a "pnml" node, then throw an exception.
-            STORM_LOG_THROW(getName(elementRoot).compare("pnml") == 0, storm::exceptions::UnexpectedException, "Failed to identify the root element.\n");
-            traversePnmlElement(elementRoot);
+
+            if (getName(elementRoot).compare("pnml") == 0) {
+                traversePnmlElement(elementRoot);
+            } else if (getName(elementRoot).compare("project") == 0) {
+                traverseProjectElement(elementRoot);
+            } else {
+                // If the top-level node is not a "pnml" or "" node, then throw an exception.
+                STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Failed to identify the root element.\n");
+            }
+
+
+
+
 
             // clean up
             delete parser;
@@ -568,6 +578,311 @@ namespace storm {
             delete tmp;
             return result;
         }
+
+        void GspnParser::traverseProjectElement(xercesc::DOMNode const* const node) {
+            // traverse attributes
+            for (uint_fast64_t i = 0; i < node->getAttributes()->getLength(); ++i) {
+                auto attr = node->getAttributes()->item(i);
+                auto name = getName(attr);
+
+                if (name.compare("version") == 0 ||
+                           name.compare("name") == 0) {
+                    // ignore node (contains only whitespace)
+                } else {
+                    // Found node or attribute which is at the moment not handled by this parser.
+                    // Notify the user and continue the parsing.
+                    STORM_PRINT_AND_LOG("unknown attribute (node=" + XMLtoString(node->getNodeName()) + "): " + name + "\n");
+                }
+            }
+
+            // traverse children
+            for (uint_fast64_t i = 0; i < node->getChildNodes()->getLength(); ++i) {
+                auto child = node->getChildNodes()->item(i);
+                auto name = getName(child);
+
+                if (name.compare("gspn") == 0) {
+                    traverseGspnElement(child);
+                } else if (std::all_of(name.begin(), name.end(), isspace)) {
+                    // ignore node (contains only whitespace)
+                } else {
+                    // Found node or attribute which is at the moment nod handled by this parser.
+                    // Notify the user and continue the parsing.
+                    STORM_PRINT_AND_LOG("unknown child (node=" + XMLtoString(node->getNodeName()) + "): " + name + "\n");
+                }
+            }
+        }
+
+        void GspnParser::traverseGspnElement(xercesc::DOMNode const* const node) {
+            // traverse attributes
+            for (uint_fast64_t i = 0; i < node->getAttributes()->getLength(); ++i) {
+                auto attr = node->getAttributes()->item(i);
+                auto name = getName(attr);
+
+                if (name.compare("name") == 0) {
+                    gspn.setName(XMLtoString(attr->getNodeValue()));
+                } else if (name.compare("show-color-cmd") == 0 ||
+                           name.compare("show-fluid-cmd") == 0) {
+                    // ignore node
+                } else {
+                    // Found node or attribute which is at the moment not handled by this parser.
+                    // Notify the user and continue the parsing.
+                    STORM_PRINT_AND_LOG(
+                        "unknown attribute (node=" + XMLtoString(node->getNodeName()) + "): " + name + "\n");
+                }
+            }
+
+            // traverse children
+            for (uint_fast64_t i = 0; i < node->getChildNodes()->getLength(); ++i) {
+                auto child = node->getChildNodes()->item(i);
+                auto name = getName(child);
+
+                if (name.compare("nodes") == 0) {
+                    traverseNodesElement(child);
+                } else if (name.compare("edges") == 0) {
+                    traverseEdgesElement(child);
+                } else if (std::all_of(name.begin(), name.end(), isspace)) {
+                    // ignore node (contains only whitespace)
+                } else {
+                    // Found node or attribute which is at the moment nod handled by this parser.
+                    // Notify the user and continue the parsing.
+                    STORM_PRINT_AND_LOG("unknown child (node=" + XMLtoString(node->getNodeName()) + "): " + name + "\n");
+                }
+            }
+        }
+
+        void GspnParser::traverseNodesElement(xercesc::DOMNode const* const node) {
+            // traverse attributes
+            for (uint_fast64_t i = 0; i < node->getAttributes()->getLength(); ++i) {
+                auto attr = node->getAttributes()->item(i);
+                auto name = getName(attr);
+
+                // Found node or attribute which is at the moment not handled by this parser.
+                // Notify the user and continue the parsing.
+                STORM_PRINT_AND_LOG("unknown attribute (node=" + XMLtoString(node->getNodeName()) + "): " + name + "\n");
+            }
+
+            // traverse children
+            for (uint_fast64_t i = 0; i < node->getChildNodes()->getLength(); ++i) {
+                auto child = node->getChildNodes()->item(i);
+                auto name = getName(child);
+
+                if (name.compare("place") == 0) {
+                    traversePlaceElement(child);
+                } else if(name.compare("transition") == 0) {
+                    traverseTransitionElement(child);
+                } else if (std::all_of(name.begin(), name.end(), isspace)) {
+                    // ignore node (contains only whitespace)
+                } else {
+                    // Found node or attribute which is at the moment nod handled by this parser.
+                    // Notify the user and continue the parsing.
+                    STORM_PRINT_AND_LOG("unknown child (node=" + XMLtoString(node->getNodeName()) + "): " + name + "\n");
+                }
+            }
+        }
+
+        void GspnParser::traverseEdgesElement(xercesc::DOMNode const* const node) {
+            // traverse attributes
+            for (uint_fast64_t i = 0; i < node->getAttributes()->getLength(); ++i) {
+                auto attr = node->getAttributes()->item(i);
+                auto name = getName(attr);
+
+
+                // Found node or attribute which is at the moment not handled by this parser.
+                // Notify the user and continue the parsing.
+                STORM_PRINT_AND_LOG("unknown attribute (node=" + XMLtoString(node->getNodeName()) + "): " + name + "\n");
+
+            }
+
+            // traverse children
+            for (uint_fast64_t i = 0; i < node->getChildNodes()->getLength(); ++i) {
+                auto child = node->getChildNodes()->item(i);
+                auto name = getName(child);
+
+                if (name.compare("arc") == 0) {
+                    traverseArcElement(child);
+                } else if (std::all_of(name.begin(), name.end(), isspace)) {
+                    // ignore node (contains only whitespace)
+                } else {
+                    // Found node or attribute which is at the moment nod handled by this parser.
+                    // Notify the user and continue the parsing.
+                    STORM_PRINT_AND_LOG("unknown child (node=" + XMLtoString(node->getNodeName()) + "): " + name + "\n");
+                }
+            }
+        }
+
+        void GspnParser::traversePlaceElement(xercesc::DOMNode const* const node) {
+            storm::gspn::Place place;
+            place.setID(newNode);
+            ++newNode;
+
+
+            // traverse attributes
+            for (uint_fast64_t i = 0; i < node->getAttributes()->getLength(); ++i) {
+                auto attr = node->getAttributes()->item(i);
+                auto name = getName(attr);
+
+                if (name.compare("name") == 0) {
+                    place.setName(XMLtoString(attr->getNodeValue()));
+                } else if (name.compare("marking") == 0) {
+                    place.setNumberOfInitialTokens(std::stoull(XMLtoString(attr->getNodeValue())));
+                } else if (name.compare("x") == 0 ||
+                           name.compare("y") == 0) {
+                    // ignore node
+                } else {
+                    // Found node or attribute which is at the moment not handled by this parser.
+                    // Notify the user and continue the parsing.
+                    STORM_PRINT_AND_LOG(
+                            "unknown attribute (node=" + XMLtoString(node->getNodeName()) + "): " + name + "\n");
+                }
+            }
+
+            // traverse children
+            for (uint_fast64_t i = 0; i < node->getChildNodes()->getLength(); ++i) {
+                auto child = node->getChildNodes()->item(i);
+                auto name = getName(child);
+
+                if (std::all_of(name.begin(), name.end(), isspace)) {
+                    // ignore node (contains only whitespace)
+                } else {
+                    // Found node or attribute which is at the moment nod handled by this parser.
+                    // Notify the user and continue the parsing.
+                    STORM_PRINT_AND_LOG("unknown child (node=" + XMLtoString(node->getNodeName()) + "): " + name + "\n");
+                }
+            }
+
+            gspn.addPlace(place);
+        }
+
+        void GspnParser::traverseTransitionElement(xercesc::DOMNode const* const node) {
+            std::string transitionName;
+            bool immediateTransition;
+            double rate;
+
+            // traverse attributes
+            for (uint_fast64_t i = 0; i < node->getAttributes()->getLength(); ++i) {
+                auto attr = node->getAttributes()->item(i);
+                auto name = getName(attr);
+
+                if (name.compare("name") == 0) {
+                    transitionName = XMLtoString(attr->getNodeValue());
+                } else if (name.compare("type") == 0) {
+                    if (XMLtoString(attr->getNodeValue()).compare("EXP") == 0) {
+                        immediateTransition = false;
+                    } else {
+                        immediateTransition = true;
+                    }
+                } else if(name.compare("nservers-x") == 0) {
+                    rate = std::stod(XMLtoString(attr->getNodeValue()));
+                } else if (name.compare("x") == 0 ||
+                           name.compare("y") == 0) {
+                    // ignore node
+                } else {
+                    // Found node or attribute which is at the moment not handled by this parser.
+                    // Notify the user and continue the parsing.
+                    STORM_PRINT_AND_LOG(
+                            "unknown attribute (node=" + XMLtoString(node->getNodeName()) + "): " + name + "\n");
+                }
+            }
+
+            if (immediateTransition) {
+                auto transition = storm::gspn::ImmediateTransition<double>();
+                transition.setName(transitionName);
+                gspn.addImmediateTransition(transition);
+            } else {
+                auto transition = storm::gspn::TimedTransition<double>();
+                transition.setName(transitionName);
+                transition.setRate(rate);
+                gspn.addTimedTransition(transition);
+            }
+
+            // traverse children
+            for (uint_fast64_t i = 0; i < node->getChildNodes()->getLength(); ++i) {
+                auto child = node->getChildNodes()->item(i);
+                auto name = getName(child);
+
+                if (std::all_of(name.begin(), name.end(), isspace)) {
+                    // ignore node (contains only whitespace)
+                } else {
+                    // Found node or attribute which is at the moment nod handled by this parser.
+                    // Notify the user and continue the parsing.
+                    STORM_PRINT_AND_LOG("unknown child (node=" + XMLtoString(node->getNodeName()) + "): " + name + "\n");
+                }
+            }
+        }
+
+        void GspnParser::traverseArcElement(xercesc::DOMNode const* const node) {
+            std::string head, tail, kind;
+            uint_fast64_t mult = 1;
+
+            // traverse attributes
+            for (uint_fast64_t i = 0; i < node->getAttributes()->getLength(); ++i) {
+                auto attr = node->getAttributes()->item(i);
+                auto name = getName(attr);
+
+                if (name.compare("head") == 0) {
+                    head = XMLtoString(attr->getNodeValue());
+                } else if (name.compare("tail") == 0) {
+                    tail = XMLtoString(attr->getNodeValue());
+                } else if (name.compare("kind") == 0) {
+                    kind = XMLtoString(attr->getNodeValue());
+                } else if (name.compare("mult") == 0) {
+                    mult = std::stoull(XMLtoString(attr->getNodeValue()));
+                } else if (name.compare("mult-x") == 0 ||
+                           name.compare("mult-y") == 0 ||
+                           name.compare("mult-k") == 0) {
+                    // ignore node
+                } else {
+                    // Found node or attribute which is at the moment not handled by this parser.
+                    // Notify the user and continue the parsing.
+                    STORM_PRINT_AND_LOG(
+                            "unknown attribute (node=" + XMLtoString(node->getNodeName()) + "): " + name + "\n");
+                }
+            }
+
+            if (kind.compare("INPUT") == 0) {
+                auto transition = gspn.getTransition(head);
+                if (!transition.first) {
+                    std::cout << "transition not found" << std::endl;
+                }
+                auto place = gspn.getPlace(tail);
+                if (!place.first) {
+                    std::cout << "place not found" << std::endl;
+                }
+                transition.second->setInputArcMultiplicity(place.second, mult);
+            } else if (kind.compare("INHIBITOR") == 0) {
+                auto transition = gspn.getTransition(head);
+                auto place = gspn.getPlace(tail);
+                transition.second->setInhibitionArcMultiplicity(place.second, mult);
+            } else if (kind.compare("OUTPUT") == 0) {
+                auto transition = gspn.getTransition(tail);
+                auto place = gspn.getPlace(head);
+                transition.second->setOutputArcMultiplicity(place.second, mult);
+            } else {
+                // TODO error!
+            }
+
+            // traverse children
+            for (uint_fast64_t i = 0; i < node->getChildNodes()->getLength(); ++i) {
+                auto child = node->getChildNodes()->item(i);
+                auto name = getName(child);
+
+                if (std::all_of(name.begin(), name.end(), isspace)) {
+                    // ignore node (contains only whitespace)
+                } else {
+                    // Found node or attribute which is at the moment nod handled by this parser.
+                    // Notify the user and continue the parsing.
+                    STORM_PRINT_AND_LOG("unknown child (node=" + XMLtoString(node->getNodeName()) + "): " + name + "\n");
+                }
+            }
+        }
+
+
+
+
+
+
+
+
     }
 }
 

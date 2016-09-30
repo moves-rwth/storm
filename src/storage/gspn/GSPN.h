@@ -83,8 +83,9 @@ namespace storm {
              *         If the first element is true, then the second element is the wanted place.
              *         If the first element is false, then the second element is not defined.
              */
-            std::pair<bool, storm::gspn::Place> getPlace(std::string const& id) const;
+            std::pair<bool, storm::gspn::Place> getPlace(uint_fast64_t const& id) const;
 
+            std::pair<bool, storm::gspn::Place> getPlace(std::string const& id) const;
             /*!
              * Returns the timed transition with the corresponding id.
              *

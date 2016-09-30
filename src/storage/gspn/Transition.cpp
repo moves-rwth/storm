@@ -7,14 +7,14 @@ namespace storm {
 
         void Transition::setInputArcMultiplicity(storm::gspn::Place const& place, uint_fast64_t multiplicity) {
             auto ptr = std::make_shared<storm::gspn::Place>(place);
-            inputMultiplicities[ptr] = multiplicity;
+            inputMultiplicities[ptr->getID()] = multiplicity;
             inputPlaces.push_back(ptr);
         }
 
         bool Transition::removeInputArc(storm::gspn::Place const& place) {
             if (existsInputArc(place)) {
                 auto ptr = std::make_shared<storm::gspn::Place>(place);
-                inputMultiplicities.erase(ptr);
+                inputMultiplicities.erase(ptr->getID());
                 inputPlaces.erase(std::find(inputPlaces.begin(), inputPlaces.end(), ptr));
                 return true;
             } else {
@@ -24,19 +24,19 @@ namespace storm {
 
         bool Transition::existsInputArc(storm::gspn::Place const& place) const {
             auto ptr = std::make_shared<storm::gspn::Place>(place);
-            return inputMultiplicities.end() != inputMultiplicities.find(ptr);
+            return inputMultiplicities.end() != inputMultiplicities.find(ptr->getID());
         }
 
         void Transition::setOutputArcMultiplicity(storm::gspn::Place const& place, uint_fast64_t multiplicity) {
             auto ptr = std::make_shared<storm::gspn::Place>(place);
-            outputMultiplicities[ptr] = multiplicity;
+            outputMultiplicities[ptr->getID()] = multiplicity;
             outputPlaces.push_back(ptr);
         }
 
         bool Transition::removeOutputArc(storm::gspn::Place const& place) {
             if (existsOutputArc(place)) {
                 auto ptr = std::make_shared<storm::gspn::Place>(place);
-                outputMultiplicities.erase(ptr);
+                outputMultiplicities.erase(ptr->getID());
                 outputPlaces.erase(std::find(outputPlaces.begin(), outputPlaces.end(), ptr));
                 return true;
             } else {
@@ -46,20 +46,20 @@ namespace storm {
 
         bool Transition::existsOutputArc(storm::gspn::Place const& place) const {
             auto ptr = std::make_shared<storm::gspn::Place>(place);
-            return outputMultiplicities.end() != outputMultiplicities.find(ptr);
+            return outputMultiplicities.end() != outputMultiplicities.find(ptr->getID());
         }
 
         void Transition::setInhibitionArcMultiplicity(storm::gspn::Place const& place,
                                                       uint_fast64_t multiplicity) {
             auto ptr = std::make_shared<storm::gspn::Place>(place);
-            inhibitionMultiplicities[ptr] = multiplicity;
+            inhibitionMultiplicities[ptr->getID()] = multiplicity;
             inhibitionPlaces.push_back(ptr);
         }
 
         bool Transition::removeInhibitionArc(storm::gspn::Place const& place) {
             if (existsInhibitionArc(place)) {
                 auto ptr = std::make_shared<storm::gspn::Place>(place);
-                inhibitionMultiplicities.erase(ptr);
+                inhibitionMultiplicities.erase(ptr->getID());
                 inhibitionPlaces.erase(std::find(inhibitionPlaces.begin(), inhibitionPlaces.end(), ptr));
                 return true;
             } else {
@@ -69,13 +69,13 @@ namespace storm {
 
         bool Transition::existsInhibitionArc(storm::gspn::Place const& place) const {
             auto ptr = std::make_shared<storm::gspn::Place>(place);
-            return inhibitionMultiplicities.end() != inhibitionMultiplicities.find(ptr);
+            return inhibitionMultiplicities.end() != inhibitionMultiplicities.find(ptr->getID());
         }
 
         bool Transition::isEnabled(storm::gspn::Marking const& marking) const {
             auto inputIterator = inputMultiplicities.cbegin();
             while (inputIterator != inputMultiplicities.cend()) {
-                if (marking.getNumberOfTokensAt(inputIterator->first->getID()) < inputIterator->second) {
+                if (marking.getNumberOfTokensAt(inputIterator->first) < inputIterator->second) {
                     return false;
                 }
 
@@ -84,22 +84,19 @@ namespace storm {
 
             auto inhibitionIterator = inhibitionMultiplicities.cbegin();
             while (inhibitionIterator != inhibitionMultiplicities.cend()) {
-                if (marking.getNumberOfTokensAt(inhibitionIterator->first->getID()) >= inhibitionIterator->second) {
+                if (marking.getNumberOfTokensAt(inhibitionIterator->first) >= inhibitionIterator->second) {
                     return false;
                 }
 
                 ++inhibitionIterator;
             }
 
-            auto outputIterator = outputMultiplicities.cbegin();
-            while (outputIterator != outputMultiplicities.cend()) {
-                if (outputIterator->first->getCapacity() >= 0) {
-                    if (marking.getNumberOfTokensAt(outputIterator->first->getID()) + outputIterator->second > outputIterator->first->getCapacity()) {
+            for (auto &placePtr : getOutputPlaces()) {
+                if (placePtr->getCapacity() >= 0) {
+                    if (marking.getNumberOfTokensAt(placePtr->getID()) + getOutputArcMultiplicity(*placePtr) > placePtr->getCapacity()) {
                         return false;
                     }
                 }
-
-                ++outputIterator;
             }
 
             return true;
@@ -110,15 +107,15 @@ namespace storm {
 
             auto inputIterator = inputMultiplicities.cbegin();
             while (inputIterator != inputMultiplicities.cend()) {
-                newMarking.setNumberOfTokensAt(inputIterator->first->getID(),
-                                               newMarking.getNumberOfTokensAt(inputIterator->first->getID()) - inputIterator->second);
+                newMarking.setNumberOfTokensAt(inputIterator->first,
+                                               newMarking.getNumberOfTokensAt(inputIterator->first) - inputIterator->second);
                 ++inputIterator;
             }
 
             auto outputIterator = outputMultiplicities.cbegin();
             while (outputIterator != outputMultiplicities.cend()) {
-                newMarking.setNumberOfTokensAt(outputIterator->first->getID(),
-                                               newMarking.getNumberOfTokensAt(outputIterator->first->getID()) + outputIterator->second);
+                newMarking.setNumberOfTokensAt(outputIterator->first,
+                                               newMarking.getNumberOfTokensAt(outputIterator->first) + outputIterator->second);
                 ++outputIterator;
             }
 
@@ -133,34 +130,22 @@ namespace storm {
             return this->name;
         }
 
-        std::vector<std::shared_ptr<storm::gspn::Place>>::const_iterator  Transition::getInputPlacesCBegin() const {
-            return this->inputPlaces.cbegin();
+        const std::vector<std::shared_ptr<storm::gspn::Place>> &Transition::getInputPlaces() const {
+            return inputPlaces;
         }
 
-        std::vector<std::shared_ptr<storm::gspn::Place>>::const_iterator Transition::getInputPlacesCEnd() const {
-            return this->inputPlaces.cend();
+        const std::vector<std::shared_ptr<storm::gspn::Place>> &Transition::getOutputPlaces() const {
+            return outputPlaces;
         }
 
-        std::vector<std::shared_ptr<storm::gspn::Place>>::const_iterator Transition::getOutputPlacesCBegin() const {
-            return this->outputPlaces.cbegin();
-        }
-
-        std::vector<std::shared_ptr<storm::gspn::Place>>::const_iterator Transition::getOutputPlacesCEnd() const {
-            return this->outputPlaces.cend();
-        }
-
-        std::vector<std::shared_ptr<storm::gspn::Place>>::const_iterator Transition::getInhibitionPlacesCBegin() const {
-            return this->inhibitionPlaces.cbegin();
-        }
-
-        std::vector<std::shared_ptr<storm::gspn::Place>>::const_iterator Transition::getInhibitionPlacesCEnd() const {
-            return this->inhibitionPlaces.cend();
+        const std::vector<std::shared_ptr<storm::gspn::Place>> &Transition::getInhibitionPlaces() const {
+            return inhibitionPlaces;
         }
 
         uint_fast64_t Transition::getInputArcMultiplicity(storm::gspn::Place const& place) const {
             if (existsInputArc(place)) {
                 auto ptr = std::make_shared<storm::gspn::Place>(place);
-                return inputMultiplicities.at(ptr);
+                return inputMultiplicities.at(ptr->getID());
             } else {
                 return 0;
             }
@@ -169,7 +154,7 @@ namespace storm {
         uint_fast64_t Transition::getInhibitionArcMultiplicity(storm::gspn::Place const& place) const {
             if (existsInhibitionArc(place)) {
                 auto ptr = std::make_shared<storm::gspn::Place>(place);
-                return inhibitionMultiplicities.at(ptr);
+                return inhibitionMultiplicities.at(ptr->getID());
             } else {
                 return 0;
             }
@@ -178,7 +163,7 @@ namespace storm {
         uint_fast64_t Transition::getOutputArcMultiplicity(storm::gspn::Place const& place) const {
             if (existsOutputArc(place)) {
                 auto ptr = std::make_shared<storm::gspn::Place>(place);
-                return outputMultiplicities.at(ptr);
+                return outputMultiplicities.at(ptr->getID());
             } else {
                 return 0;
             }

@@ -11,7 +11,9 @@ namespace storm {
         class Place {
         public:
             /*!
-             * Sets the name of this place. The name must be unique for a gspn.
+             * Sets the name of this place. The name is not used to identify a place (and therefore do not have to be unique).
+             * Some input and output formats use the name to identify a place. If you want to use the export or import
+             * features make sure that the names a unique if necessary.
              *
              * @param name The new name for the place.
              */
@@ -68,10 +70,10 @@ namespace storm {
             int_fast64_t getCapacity() const;
         private:
             // contains the number of initial tokens of this place
-            uint_fast64_t numberOfInitialTokens;
+            uint_fast64_t numberOfInitialTokens = 0;
 
             // unique id (is used to refer to a specific place in a bitvector)
-            uint_fast64_t id;
+            uint_fast64_t id = 0;
 
             // name which is used in pnml file
             std::string name;
@@ -79,7 +81,7 @@ namespace storm {
             // capacity of this place
             // -1 indicates that the capacity is not set
             // other non-negative values represents the capacity
-            int_fast64_t capacity;
+            int_fast64_t capacity = -1;
         };
     }
 }

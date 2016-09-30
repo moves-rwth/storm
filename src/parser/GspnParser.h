@@ -132,6 +132,18 @@ namespace storm {
             */
             static std::string XMLtoString(const XMLCh* xmlString);
 
+
+            void traverseProjectElement(xercesc::DOMNode const* const node);
+
+            void traverseGspnElement(xercesc::DOMNode const* const node);
+            void traverseNodesElement(xercesc::DOMNode const* const node);
+            void traverseEdgesElement(xercesc::DOMNode const* const node);
+
+            void traversePlaceElement(xercesc::DOMNode const* const node);
+            void traverseTransitionElement(xercesc::DOMNode const* const node);
+            void traverseArcElement(xercesc::DOMNode const* const node);
+
+
             // the constructed gspn
             storm::gspn::GSPN gspn;
 
