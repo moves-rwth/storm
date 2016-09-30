@@ -73,8 +73,10 @@ namespace storm {
                 std::map<storm::expressions::Variable, storm::expressions::Expression> substitution = storm::utility::jani::parseConstantDefinitionString(this->asJaniModel(), constantDefinitionString);
                 storm::jani::Model preparedModel = this->asJaniModel().defineUndefinedConstants(substitution).substituteConstants();
                 if (preparedModel.hasTransientEdgeDestinationAssignments()) {
-                    STORM_LOG_WARN("JANI model has transient edge-destinations assignments, which are currently not supported. Trying to lift these assignments to edges rather than destinations.");
                     preparedModel.liftTransientEdgeDestinationAssignments();
+                    if (preparedModel.hasTransientEdgeDestinationAssignments()) {
+                        STORM_LOG_WARN("JANI model has non-liftable transient edge-destinations assignments, which are currently not supported. Trying to lift these assignments to edges rather than destinations failed.");
+                    }
                 }
                 return SymbolicModelDescription(preparedModel);
             } else if (this->isPrismProgram()) {
