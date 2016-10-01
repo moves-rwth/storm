@@ -89,6 +89,16 @@ include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/exprtk")
 
 #############################################################
 ##
+##	Sparsepp
+##
+#############################################################
+
+# Use the shipped version of Sparsepp
+message (STATUS "StoRM - Including Sparsepp")
+include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/sparsepp")
+
+#############################################################
+##
 ##	ModernJSON
 ##
 #############################################################
