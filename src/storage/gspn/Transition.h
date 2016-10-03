@@ -124,19 +124,19 @@ namespace storm {
              * Returns a list of places which are connected via a input arc.
              * @return
              */
-            const std::vector<std::shared_ptr<storm::gspn::Place>> &getInputPlaces() const;
+            std::vector<std::shared_ptr<storm::gspn::Place>> const& getInputPlaces() const;
 
             /*!
              * Returns a list of places which are connected via a output arc.
              * @return
              */
-            const std::vector<std::shared_ptr<storm::gspn::Place>> &getOutputPlaces() const;
+            std::vector<std::shared_ptr<storm::gspn::Place>> const& getOutputPlaces() const;
 
             /*!
              * Returns a list of places which are connected via a inhibition arc.
              * @return
              */
-            const std::vector<std::shared_ptr<storm::gspn::Place>> &getInhibitionPlaces() const;
+            std::vector<std::shared_ptr<storm::gspn::Place>> const& getInhibitionPlaces() const;
 
             /*!
              * Returns the corresponding multiplicity.
