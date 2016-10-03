@@ -95,5 +95,6 @@ namespace storm {
         };
         
         std::ostream& operator<<(std::ostream& os, IntegerInterval const& i);
+        IntegerInterval parseIntegerInterval(std::string const& stringRepr);
     }
 }

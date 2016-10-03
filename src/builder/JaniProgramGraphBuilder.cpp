@@ -1,16 +1,62 @@
 #include "JaniProgramGraphBuilder.h"
+
 #include "src/storage/jani/EdgeDestination.h"
 
 namespace storm {
     namespace builder {
         unsigned JaniProgramGraphBuilder::janiVersion = 1;
         
+        void JaniProgramGraphBuilder::addProcedureVariables(storm::jani::Model& model, storm::jani::Automaton& automaton) {
+            for (auto const& v : programGraph.getVariables()) {
+                if (isConstant(v.first)) {
+                    storm::jani::Constant constant(v.second.getName(), v.second, programGraph.getInitialValue(v.first));
+                    model.addConstant(constant);
+                } else if (v.second.hasBooleanType()) {
+                    storm::jani::BooleanVariable* janiVar = new storm::jani::BooleanVariable(v.second.getName(), v.second, programGraph.getInitialValue(v.first), false);
+                    automaton.addVariable(*janiVar);
+                    variables.emplace(v.first, janiVar);
+                } else if (isRestrictedVariable(v.first) && !isRewardVariable(v.first)) {
+                    storm::storage::IntegerInterval const& bounds = variableBounds(v.first);
+                    if (bounds.hasLeftBound()) {
+                        if (bounds.hasRightBound()) {
+                            storm::jani::BoundedIntegerVariable* janiVar = new storm::jani::BoundedIntegerVariable (v.second.getName(), v.second, programGraph.getInitialValue(v.first), false, expManager->integer(bounds.getLeftBound().get()), expManager->integer(bounds.getRightBound().get()));
+                            variables.emplace(v.first, janiVar);
+                            automaton.addVariable(*janiVar);
+                        } else {
+                            // Not yet supported.
+                            assert(false);
+                        }
+                    } else {
+                        // Not yet supported.
+                        assert(false);
+                    }
+                } else {
+                    storm::jani::UnboundedIntegerVariable* janiVar = new storm::jani::UnboundedIntegerVariable(v.second.getName(), v.second, programGraph.getInitialValue(v.first), isRewardVariable(v.first));
+                    if(isRewardVariable(v.first)) {
+                        model.addVariable(*janiVar);
+                    } else {
+                        automaton.addVariable(*janiVar);
+                    }
+                    variables.emplace(v.first, janiVar);
+                    
+                }
+            }
+        }
+        
+        
+        
         storm::jani::OrderedAssignments JaniProgramGraphBuilder::buildOrderedAssignments(storm::jani::Automaton& automaton, storm::ppg::DeterministicProgramAction const& act) {
             std::vector<storm::jani::Assignment> vec;
             uint64_t level = 0;
             for(auto const& group : act) {
                 for(auto const& assignment : group) {
-                    vec.emplace_back(*(variables.at(assignment.first)), assignment.second, level);
+                    if(isRewardVariable(assignment.first)) {
+                        std::unordered_map<storm::expressions::Variable, storm::expressions::Expression> eval;
+                        eval.emplace((variables.at(assignment.first))->getExpressionVariable(), expManager->integer(0));
+                        vec.emplace_back(*(variables.at(assignment.first)), assignment.second.substitute(eval).simplify(), level);
+                    } else {
+                        vec.emplace_back(*(variables.at(assignment.first)), assignment.second, level);
+                    }
                 }
                 ++level;
             }
