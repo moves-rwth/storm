@@ -77,6 +77,11 @@ int main(const int argc, const char** argv) {
         }
         if (storm::settings::getModule<storm::settings::modules::PGCLSettings>().isToJaniSet()) {
             storm::builder::JaniProgramGraphBuilder builder(*progGraph);
+            if (storm::settings::getModule<storm::settings::modules::PGCLSettings>().isProgramVariableRestrictionSet()) {
+                // TODO More fine grained control
+                storm::storage::IntegerInterval restr = storm::storage::parseIntegerInterval(storm::settings::getModule<storm::settings::modules::PGCLSettings>().getProgramVariableRestrictions());
+                builder.restrictAllVariables(restr);
+            }
             builder.restrictAllVariables(0, 120);
             storm::jani::Model* model = builder.build();
             delete progGraph;
