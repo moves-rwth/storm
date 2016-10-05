@@ -35,6 +35,22 @@ namespace storm {
                  */
                 std::string getExportDotFilename() const;
 
+                
+                /*!
+                 * Retrieves whether the export-to-explicit option was set
+                 *
+                 * @return True if the export-to-explicit option was set
+                 */
+                bool isExportExplicitSet() const;
+                
+                
+                /*!
+                 * Retrieves thename in which to write the model in explicit format, if the option was set.
+                 *
+                 * @return The name of the file in which to write the exported mode.
+                 */
+                std::string getExportExplicitFilename() const;
+                
                 /*!
                  * Retrieves whether the explicit option was set.
                  *
@@ -200,7 +216,7 @@ namespace storm {
             private:
                 // Define the string names of the options as constants.
                 static const std::string exportDotOptionName;
-                static const std::string exportMatOptionName;
+                static const std::string exportExplicitOptionName;
                 static const std::string explicitOptionName;
                 static const std::string explicitOptionShortName;
                 static const std::string prismInputOptionName;

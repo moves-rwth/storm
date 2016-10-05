@@ -14,7 +14,7 @@ namespace storm {
             
             const std::string IOSettings::moduleName = "io";
             const std::string IOSettings::exportDotOptionName = "exportdot";
-            const std::string IOSettings::exportMatOptionName = "exportmat";
+            const std::string IOSettings::exportExplicitOptionName = "exportexplicit";
             const std::string IOSettings::explicitOptionName = "explicit";
             const std::string IOSettings::explicitOptionShortName = "exp";
             const std::string IOSettings::prismInputOptionName = "prism";
@@ -34,7 +34,7 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, prismCompatibilityOptionName, false, "Enables PRISM compatibility. This may be necessary to process some PRISM models.").setShortName(prismCompatibilityOptionShortName).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportDotOptionName, "", "If given, the loaded model will be written to the specified file in the dot format.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file to which the model is to be written.").build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, exportMatOptionName, "", "If given, the loaded model will be written to the specified file in the mat format.")
+                this->addOption(storm::settings::OptionBuilder(moduleName, exportExplicitOptionName, "", "If given, the loaded model will be written to the specified file in the drn format.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "the name of the file to which the model is to be writen.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, explicitOptionName, false, "Parses the model given in an explicit (sparse) representation.").setShortName(explicitOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("transition filename", "The name of the file from which to read the transitions.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build())
@@ -65,6 +65,14 @@ namespace storm {
             
             std::string IOSettings::getExportDotFilename() const {
                 return this->getOption(exportDotOptionName).getArgumentByName("filename").getValueAsString();
+            }
+            
+            bool IOSettings::isExportExplicitSet() const {
+                return this->getOption(exportExplicitOptionName).getHasOptionBeenSet();
+            }
+            
+            std::string IOSettings::getExportExplicitFilename() const {
+                return this->getOption(exportExplicitOptionName).getArgumentByName("filename").getValueAsString();
             }
 
             bool IOSettings::isExplicitSet() const {

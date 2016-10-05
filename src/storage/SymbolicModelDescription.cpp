@@ -57,6 +57,20 @@ namespace storm {
             return boost::get<storm::prism::Program>(modelDescription.get());
         }
         
+        std::vector<std::string> SymbolicModelDescription::getParameterNames() const {
+            std::vector<std::string> result;
+            if(isJaniModel()) {
+                for(auto const& c : asJaniModel().getUndefinedConstants()) {
+                    result.push_back(c.get().getName());
+                }
+            } else {
+                for(auto const& c : asPrismProgram().getUndefinedConstants()) {
+                    result.push_back(c.get().getName());
+                }
+            }
+            return result;
+        }
+        
         SymbolicModelDescription SymbolicModelDescription::toJani(bool makeVariablesGlobal) const {
             if (this->isJaniModel()) {
                 return *this;

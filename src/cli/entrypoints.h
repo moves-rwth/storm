@@ -4,6 +4,7 @@
 #include "src/utility/storm.h"
 
 #include "src/storage/SymbolicModelDescription.h"
+#include "src/utility/ExplicitExporter.h"
 
 #include "src/exceptions/NotImplementedException.h"
 #include "src/exceptions/InvalidSettingsException.h"
@@ -215,6 +216,14 @@ namespace storm {
                 generateCounterexamples<ValueType>(model, sparseModel, formulas);
             } else {
                 verifySparseModel<ValueType>(sparseModel, formulas, onlyInitialStatesRelevant);
+            }
+            
+            // And export if required.
+            if(storm::settings::getModule<storm::settings::modules::IOSettings>().isExportExplicitSet()) {
+                std::ofstream ofs;
+                ofs.open(storm::settings::getModule<storm::settings::modules::IOSettings>().getExportExplicitFilename(), std::ofstream::out);
+                storm::exporter::explicitExportSparseModel(ofs, sparseModel, model.getParameterNames());
+                ofs.close();
             }
         }
         
