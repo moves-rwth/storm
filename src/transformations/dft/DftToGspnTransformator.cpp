@@ -519,17 +519,21 @@ namespace storm {
 								}
 								else { // A spare child.
 									auto spareExit = mGspn.getImmediateTransition(child->name() + STR_ACTIVATING);
+									auto spareExit2 = mGspn.getImmediateTransition(mDft.getElement(parents[j])->name() + "_claiming_" + child->name());
 									
 									std::vector<int> ids = getAllBEIDsOfElement(child);
 									for (std::size_t k = 0; k < ids.size(); k++) {
 										auto childEntry = mGspn.getPlace(mDft.getElement(ids[k])->name() + STR_ACTIVATED);
 										
-										if (spareExit.first && childEntry.first) { // Only add arcs if the objects have been found.
+										if (spareExit.first && spareExit2.first && childEntry.first) { // Only add arcs if the objects have been found.
 											if (!spareExit.second->existsInhibitionArc(childEntry.second)) {
 												spareExit.second->setInhibitionArcMultiplicity(childEntry.second, 1);
 											}
 											if (!spareExit.second->existsOutputArc(childEntry.second)) {
 												spareExit.second->setOutputArcMultiplicity(childEntry.second, 1);
+											}
+											if (!spareExit2.second->existsInhibitionArc(childEntry.second)) {
+												spareExit2.second->setInhibitionArcMultiplicity(childEntry.second, 1);
 											}
 										}
 									}
