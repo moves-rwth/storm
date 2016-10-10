@@ -101,26 +101,25 @@ namespace storm {
             // print transitions with weight/rate
             outStream << "\t" << "node [shape=box]" << std::endl;
             for (auto& trans : this->getImmediateTransitions()) {
-                outStream << "\t" << trans->getName() << " [label=\"" << trans->getName();
-                outStream << "(immediate:" << trans->getWeight() << ")\"];" << std::endl;
+                outStream << "\t" << trans->getName() << " [fontcolor=white, style=filled, fillcolor=black, label=\"" << trans->getName() << "\"];" << std::endl;
             }
 
             for (auto& trans : this->getTimedTransitions()) {
                 outStream << "\t" << trans->getName() << " [label=\"" << trans->getName();
-                outStream << "(timed:" << trans->getRate() << ")\"];" << std::endl;
+                outStream << " (" << trans->getRate() << ")\"];" << std::endl;
             }
 
             // print arcs
             for (auto& trans : this->getImmediateTransitions()) {
 
                 for (auto &placePtr : trans->getInputPlaces()) {
-                    outStream << "\t" << placePtr->getName() << " -> " << trans->getName() << "[label=\"normal:" <<
+                    outStream << "\t" << placePtr->getName() << " -> " << trans->getName() << "[label=\"" <<
                             trans->getInputArcMultiplicity(*placePtr);
                     outStream << "\"];" << std::endl;
                 }
 
                 for (auto &placePtr : trans->getInhibitionPlaces()) {
-                    outStream << "\t" << placePtr->getName() << " -> " << trans->getName() << "[label=\"inhibition:" <<
+                    outStream << "\t" << placePtr->getName() << " -> " << trans->getName() << "[arrowhead=\"dot\", label=\"" <<
                             trans->getInhibitionArcMultiplicity(*placePtr);
                     outStream << "\"];" << std::endl;
                 }
@@ -134,13 +133,13 @@ namespace storm {
 
             for (auto& trans : this->getTimedTransitions()) {
                 for (auto &placePtr : trans->getInputPlaces()) {
-                    outStream << "\t" << placePtr->getName() << " -> " << trans->getName() << "[label=\"normal:" <<
+                    outStream << "\t" << placePtr->getName() << " -> " << trans->getName() << "[label=\"" <<
                             trans->getInputArcMultiplicity(*placePtr);
                     outStream << "\"];" << std::endl;
                 }
 
                 for (auto &placePtr : trans->getInhibitionPlaces()) {
-                    outStream << "\t" << placePtr->getName() << " -> " << trans->getName() << "[label=\"inhibition:" <<
+                    outStream << "\t" << placePtr->getName() << " -> " << trans->getName() << "[arrowhead=\"dot\", label=\""  <<
                               trans->getInhibitionArcMultiplicity(*placePtr);
                     outStream << "\"];" << std::endl;
                 }
@@ -154,7 +153,7 @@ namespace storm {
 
             outStream << "}" << std::endl;
         }
-
+        
         void GSPN::setName(std::string const& name) {
             this->name = name;
         }
