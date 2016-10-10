@@ -56,7 +56,31 @@ namespace storm {
         bool isInteger(uint_fast64_t const& number) {
             return true;
         }
-
+        
+        template<typename ValueType>
+        std::string to_string(ValueType const& value) {
+            std::stringstream ss;
+            ss << value;
+            return ss.str();
+        }
+        
+        template<>
+        std::string to_string(RationalFunction const& f) {
+            std::stringstream ss;
+            if (f.isConstant())  {
+                if (f.denominator().isOne()) {
+                    ss << f.nominatorAsNumber();
+                } else {
+                    ss << f.nominatorAsNumber() << "/" << f.denominatorAsNumber();
+                }
+            } else if (f.denominator().isOne()) {
+                ss << f.nominatorAsPolynomial().coefficient() * f.nominatorAsPolynomial().polynomial();
+            } else {
+                ss << "(" << f.nominatorAsPolynomial() << ")/(" << f.denominatorAsPolynomial() << ")";
+            }
+            return ss.str();
+        }
+ 
 #ifdef STORM_HAVE_CARL
         template<>
         bool isOne(storm::RationalNumber const& a) {
@@ -275,6 +299,11 @@ namespace storm {
         template bool isInteger(float const& number);
 
         template float simplify(float value);
+        
+        template std::string to_string(float const& value);
+        template std::string to_string(double const& value);
+        template std::string to_string(storm::RationalNumber const& value);
+        template std::string to_string(storm::RationalFunction const& value);
 
         template storm::storage::MatrixEntry<storm::storage::sparse::state_type, float> simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, float> matrixEntry);
         template storm::storage::MatrixEntry<storm::storage::sparse::state_type, float>& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, float>& matrixEntry);

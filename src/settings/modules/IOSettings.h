@@ -206,6 +206,13 @@ namespace storm {
                  * @return True iff the PRISM compatibility mode was enabled.
                  */
                 bool isPrismCompatibilityEnabled() const;
+                
+                /*!
+                 * Retrieves whether the full model should be build, that is, the model including all labels and rewards.
+                 *
+                 * @return true iff the full model should be build.
+                 */
+                bool isBuildFullModelSet() const;
 
                 bool check() const override;
                 void finalize() override;
@@ -231,6 +238,7 @@ namespace storm {
                 static const std::string constantsOptionShortName;
                 static const std::string prismCompatibilityOptionName;
                 static const std::string prismCompatibilityOptionShortName;
+                static const std::string fullModelBuildOptionName;
             };
 
         } // namespace modules

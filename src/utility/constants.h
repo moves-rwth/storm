@@ -11,6 +11,7 @@
 
 #include <limits>
 #include <cstdint>
+#include <string>
 
 namespace storm {
     
@@ -59,6 +60,9 @@ namespace storm {
         
         template<typename ValueType>
         bool isInteger(ValueType const& number);
+        
+        template<typename ValueType>
+        std::string to_string(ValueType const& value);
     }
 }
 

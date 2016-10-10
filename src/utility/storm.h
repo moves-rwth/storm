@@ -108,7 +108,15 @@ namespace storm {
 
     template<typename ValueType>
     std::shared_ptr<storm::models::sparse::Model<ValueType>> buildSparseModel(storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool onlyInitialStatesRelevant = false) {
+        
+        
         storm::generator::NextStateGeneratorOptions options(formulas);
+        
+        
+        if (storm::settings::getModule<storm::settings::modules::IOSettings>().isBuildFullModelSet()) {
+            options.setBuildAllLabels();
+            options.setBuildAllRewardModels();
+        }
 
         // Generate command labels if we are going to build a counterexample later.
         if (storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>().isMinimalCommandSetGenerationSet()) {

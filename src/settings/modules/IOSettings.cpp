@@ -29,6 +29,7 @@ namespace storm {
             const std::string IOSettings::constantsOptionShortName = "const";
             const std::string IOSettings::prismCompatibilityOptionName = "prismcompat";
             const std::string IOSettings::prismCompatibilityOptionShortName = "pc";
+            const std::string IOSettings::fullModelBuildOptionName = "buildfull";
             
             IOSettings::IOSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, prismCompatibilityOptionName, false, "Enables PRISM compatibility. This may be necessary to process some PRISM models.").setShortName(prismCompatibilityOptionShortName).build());
@@ -44,6 +45,8 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, janiInputOptionName, false, "Parses the model given in the JANI format.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file from which to read the JANI input.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, prismToJaniOptionName, false, "If set, the input PRISM model is transformed to JANI.").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, fullModelBuildOptionName, false, "If set, include all rewards and labels.").build());
+                
 
                 std::vector<std::string> explorationOrders = {"dfs", "bfs"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, explorationOrderOptionName, false, "Sets which exploration order to use.").setShortName(explorationOrderOptionShortName)
@@ -57,6 +60,7 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The file from which to read the choice labels.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, constantsOptionName, false, "Specifies the constant replacements to use in symbolic models. Note that this requires the model to be given as an symbolic model (i.e., via --" + prismInputOptionName + " or --" + janiInputOptionName + ").").setShortName(constantsOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("values", "A comma separated list of constants and their value, e.g. a=1,b=2,c=3.").setDefaultValueString("").build()).build());
+                
             }
 
             bool IOSettings::isExportDotSet() const {
@@ -163,6 +167,10 @@ namespace storm {
             
             bool IOSettings::isPrismCompatibilityEnabled() const {
                 return this->getOption(prismCompatibilityOptionName).getHasOptionBeenSet();
+            }
+            
+            bool IOSettings::isBuildFullModelSet() const {
+                return this->getOption(fullModelBuildOptionName).getHasOptionBeenSet();
             }
 
 			void IOSettings::finalize() {
