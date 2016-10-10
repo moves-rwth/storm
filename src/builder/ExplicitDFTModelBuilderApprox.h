@@ -114,9 +114,6 @@ namespace storm {
                     return currentRowGroup;
                 }
 
-                // Flag indicating if row groups are needed.
-                bool canHaveNondeterminism;
-
                 // Matrix builder.
                 storm::storage::SparseMatrixBuilder<ValueType> builder;
 
@@ -134,6 +131,9 @@ namespace storm {
 
                 // Index of the current row.
                 StateType currentRow;
+
+                // Flag indicating if row groups are needed.
+                bool canHaveNondeterminism;
             };
 
         public:
