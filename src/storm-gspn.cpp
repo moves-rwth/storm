@@ -127,7 +127,13 @@ int main(const int argc, const char **argv) {
             STORM_LOG_ERROR("The gspn is not valid.");
         }
         
+        std::ofstream file;
+        file.open("gspn.dot");
+
+        gspn.writeDotToStream(file);
+
         handleJani(gspn);
+
         
         return 0;
         

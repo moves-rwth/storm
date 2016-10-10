@@ -1,5 +1,8 @@
 #include "src/storage/gspn/GSPN.h"
-#include <src/utility/macros.h>
+#include "src/utility/macros.h"
+#include "src/exceptions/InvalidArgumentException.h"
+
+
 #include <boost/lexical_cast.hpp>
 
 namespace storm {
@@ -51,11 +54,11 @@ namespace storm {
 
         std::pair<bool, storm::gspn::Place> GSPN::getPlace(std::string const& id) const {
             for (auto& place : places) {
-                if (id.compare(place.getName())) {
+                if (id.compare(place.getName()) == 0) {
                     return std::make_pair<bool, storm::gspn::Place const&>(true, place);
                 }
             }
-            return std::make_pair<bool, storm::gspn::Place>(false, storm::gspn::Place());
+            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "No place with name " << id);
         };
 
         std::pair<bool, std::shared_ptr<storm::gspn::TimedTransition<GSPN::RateType>> const> GSPN::getTimedTransition(std::string const& id) const {

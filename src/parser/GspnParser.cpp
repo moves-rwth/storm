@@ -7,6 +7,7 @@
 #include <xercesc/util/PlatformUtils.hpp>
 
 #include "src/exceptions/UnexpectedException.h"
+#include "src/exceptions/WrongFormatException.h"
 #include "src/storage/gspn/Place.h"
 #include "src/storage/gspn/ImmediateTransition.h"
 #include "src/utility/macros.h"
@@ -709,6 +710,15 @@ namespace storm {
                 }
             }
         }
+        
+        bool ignorePlaceAttribute(std::string const& name) {
+            // TODO we should probably not ignore x-servers but check that it is 0.5.
+            if ((name == "label-x") || (name == "label-y") || (name == "x") || (name == "y")) {
+                return true;
+            }
+            return false;
+        }
+
 
         void GspnParser::traversePlaceElement(xercesc::DOMNode const* const node) {
             storm::gspn::Place place;
@@ -725,8 +735,7 @@ namespace storm {
                     place.setName(XMLtoString(attr->getNodeValue()));
                 } else if (name.compare("marking") == 0) {
                     place.setNumberOfInitialTokens(std::stoull(XMLtoString(attr->getNodeValue())));
-                } else if (name.compare("x") == 0 ||
-                           name.compare("y") == 0) {
+                } else if (ignorePlaceAttribute(name)) {
                     // ignore node
                 } else {
                     // Found node or attribute which is at the moment not handled by this parser.
@@ -752,6 +761,14 @@ namespace storm {
 
             gspn.addPlace(place);
         }
+        
+        bool ignoreTransitionAttribute(std::string const& name) {
+            // TODO we should probably not ignore x-servers but check that it is 0.5.
+            if ((name == "label-x") || (name == "label-y") || (name == "x") || (name == "y") || (name == "nservers-x")) {
+                return true;
+            }
+            return false;
+        }
 
         void GspnParser::traverseTransitionElement(xercesc::DOMNode const* const node) {
             std::string transitionName;
@@ -771,10 +788,9 @@ namespace storm {
                     } else {
                         immediateTransition = true;
                     }
-                } else if(name.compare("nservers-x") == 0) {
+                } else if(name.compare("delay") == 0) {
                     rate = std::stod(XMLtoString(attr->getNodeValue()));
-                } else if (name.compare("x") == 0 ||
-                           name.compare("y") == 0) {
+                } else if (ignoreTransitionAttribute(name)) {
                     // ignore node
                 } else {
                     // Found node or attribute which is at the moment not handled by this parser.
@@ -809,9 +825,25 @@ namespace storm {
                 }
             }
         }
+        
+        bool ignoreArcAttribute(std::string const& name) {
+            if ((name == "mult-x") || (name == "mult-y") || (name == "mult-k")) {
+                return true;
+            }
+            return false;
+        }
+        
+        bool ignoreArcChild(std::string const& name) {
+            if (name == "point") {
+                return true;
+            }
+            return false;
+        }
 
         void GspnParser::traverseArcElement(xercesc::DOMNode const* const node) {
-            std::string head, tail, kind;
+            std::string head = "____NOT_SET____";
+            std::string tail = "____NOT_SET____";
+            std::string kind = "____NOT_SET____";
             uint_fast64_t mult = 1;
 
             // traverse attributes
@@ -827,9 +859,7 @@ namespace storm {
                     kind = XMLtoString(attr->getNodeValue());
                 } else if (name.compare("mult") == 0) {
                     mult = std::stoull(XMLtoString(attr->getNodeValue()));
-                } else if (name.compare("mult-x") == 0 ||
-                           name.compare("mult-y") == 0 ||
-                           name.compare("mult-k") == 0) {
+                } else if (ignoreArcAttribute(name)) {
                     // ignore node
                 } else {
                     // Found node or attribute which is at the moment not handled by this parser.
@@ -838,6 +868,11 @@ namespace storm {
                             "unknown attribute (node=" + XMLtoString(node->getNodeName()) + "): " + name + "\n");
                 }
             }
+            
+            STORM_LOG_THROW(head.compare("____NOT_SET____") != 0, storm::exceptions::WrongFormatException, "Arc must have a head");
+            STORM_LOG_THROW(tail.compare("____NOT_SET____") != 0, storm::exceptions::WrongFormatException, "Arc must have a tail");
+            STORM_LOG_THROW(kind.compare("____NOT_SET____") != 0, storm::exceptions::WrongFormatException, "Arc must have a kind");
+            
 
             if (kind.compare("INPUT") == 0) {
                 auto transition = gspn.getTransition(head);
@@ -868,6 +903,8 @@ namespace storm {
 
                 if (std::all_of(name.begin(), name.end(), isspace)) {
                     // ignore node (contains only whitespace)
+                } else if(ignoreArcChild(name)) {
+                    // ignore
                 } else {
                     // Found node or attribute which is at the moment nod handled by this parser.
                     // Notify the user and continue the parsing.
