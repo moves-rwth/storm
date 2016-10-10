@@ -773,7 +773,7 @@ namespace storm {
         void GspnParser::traverseTransitionElement(xercesc::DOMNode const* const node) {
             std::string transitionName;
             bool immediateTransition;
-            double rate;
+            double rate = 1.0; // The default rate in GreatSPN. 
 
             // traverse attributes
             for (uint_fast64_t i = 0; i < node->getAttributes()->getLength(); ++i) {
