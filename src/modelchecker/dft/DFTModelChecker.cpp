@@ -158,26 +158,17 @@ namespace storm {
                 size_t iteration = 0;
                 do {
                     // Iteratively build finer models
-                    // TODO Matthias: implement refinement
-                    STORM_LOG_ASSERT(iteration < 1, "Iterative refinement not yet implemented.");
                     explorationStart = std::chrono::high_resolution_clock::now();
                     STORM_LOG_INFO("Building model...");
                     // TODO Matthias refine model using existing model and MC results
                     currentApproximationError = pow(0.1, iteration) * approximationError;
-                    builder.buildModel(labeloptions, currentApproximationError);
+                    builder.buildModel(labeloptions, iteration < 1, currentApproximationError);
+
                     // TODO Matthias: possible to do bisimulation on approximated model and not on concrete one?
 
                     // Build model for lower bound
                     STORM_LOG_INFO("Getting model for lower bound...");
                     model = builder.getModelApproximation(true);
-                    //model->printModelInformationToStream(std::cout);
-                    STORM_LOG_INFO("No. states (Explored): " << model->getNumberOfStates());
-                    STORM_LOG_INFO("No. transitions (Explored): " << model->getNumberOfTransitions());
-                    if (model->getNumberOfStates() <= 15) {
-                        STORM_LOG_TRACE("Transition matrix: " << std::endl << model->getTransitionMatrix());
-                    } else {
-                        STORM_LOG_TRACE("Transition matrix: too big to print");
-                    }
                     explorationTime += std::chrono::high_resolution_clock::now() - explorationStart;
                     // Check lower bound
                     std::unique_ptr<storm::modelchecker::CheckResult> result = checkModel(model, formula);
@@ -188,14 +179,6 @@ namespace storm {
                     STORM_LOG_INFO("Getting model for upper bound...");
                     explorationStart = std::chrono::high_resolution_clock::now();
                     model = builder.getModelApproximation(false);
-                    //model->printModelInformationToStream(std::cout);
-                    STORM_LOG_INFO("No. states (Explored): " << model->getNumberOfStates());
-                    STORM_LOG_INFO("No. transitions (Explored): " << model->getNumberOfTransitions());
-                    if (model->getNumberOfStates() <= 15) {
-                        STORM_LOG_TRACE("Transition matrix: " << std::endl << model->getTransitionMatrix());
-                    } else {
-                        STORM_LOG_TRACE("Transition matrix: too big to print");
-                    }
                     explorationTime += std::chrono::high_resolution_clock::now() - explorationStart;
                     // Check upper bound
                     result = checkModel(model, formula);
@@ -203,7 +186,7 @@ namespace storm {
                     approxResult.second = result->asExplicitQuantitativeCheckResult<ValueType>().getValueMap().begin()->second;
 
                     ++iteration;
-                    STORM_LOG_TRACE("Result after iteration " << iteration << ": (" << approxResult.first << ", " << approxResult.second << ")");
+                    STORM_LOG_INFO("Result after iteration " << iteration << ": (" << std::setprecision(10) << approxResult.first << ", " << approxResult.second << ")");
                 } while (!isApproximationSufficient(approxResult.first, approxResult.second, approximationError));
 
                 STORM_LOG_INFO("Finished approximation after " << iteration << " iteration" << (iteration > 1 ? "s." : "."));
@@ -216,7 +199,7 @@ namespace storm {
                 if (approximationError >= 0.0) {
                     storm::builder::ExplicitDFTModelBuilderApprox<ValueType> builder(dft, symmetries, enableDC);
                     typename storm::builder::ExplicitDFTModelBuilderApprox<ValueType>::LabelOptions labeloptions; // TODO initialize this with the formula
-                    builder.buildModel(labeloptions);
+                    builder.buildModel(labeloptions, true);
                     model = builder.getModel();
                 } else {
                     storm::builder::ExplicitDFTModelBuilder<ValueType> builder(dft, symmetries, enableDC);

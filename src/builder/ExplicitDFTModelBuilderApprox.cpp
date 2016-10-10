@@ -6,7 +6,6 @@
 #include <src/exceptions/UnexpectedException.h>
 #include "src/settings/modules/DFTSettings.h"
 #include "src/settings/SettingsManager.h"
-#include "src/generator/DftNextStateGenerator.h"
 #include <map>
 
 namespace storm {
@@ -18,80 +17,212 @@ namespace storm {
         }
 
         template<typename ValueType, typename StateType>
-        ExplicitDFTModelBuilderApprox<ValueType, StateType>::ExplicitDFTModelBuilderApprox(storm::storage::DFT<ValueType> const& dft, storm::storage::DFTIndependentSymmetries const& symmetries, bool enableDC) : dft(dft), enableDC(enableDC), stateStorage(((dft.stateVectorSize() / 64) + 1) * 64) {
-            // stateVectorSize is bound for size of bitvector
-            stateGenerationInfo = std::make_shared<storm::storage::DFTStateGenerationInfo>(dft.buildStateGenerationInfo(symmetries));
+        ExplicitDFTModelBuilderApprox<ValueType, StateType>::MatrixBuilder::MatrixBuilder(bool canHaveNondeterminism) : mappingOffset(0), stateRemapping(), currentRowGroup(0), currentRow(0) {
+            // Create matrix builder
+            builder = storm::storage::SparseMatrixBuilder<ValueType>(0, 0, 0, false, canHaveNondeterminism, 0);
         }
 
         template<typename ValueType, typename StateType>
-        void ExplicitDFTModelBuilderApprox<ValueType, StateType>::buildModel(LabelOptions const& labelOpts, double approximationError) {
+        ExplicitDFTModelBuilderApprox<ValueType, StateType>::ExplicitDFTModelBuilderApprox(storm::storage::DFT<ValueType> const& dft, storm::storage::DFTIndependentSymmetries const& symmetries, bool enableDC) : dft(dft), stateGenerationInfo(std::make_shared<storm::storage::DFTStateGenerationInfo>(dft.buildStateGenerationInfo(symmetries))), enableDC(enableDC), generator(dft, *stateGenerationInfo, enableDC, mergeFailedStates), matrixBuilder(!generator.isDeterministicModel()), stateStorage(((dft.stateVectorSize() / 64) + 1) * 64) {
+            // stateVectorSize is bound for size of bitvector
+        }
+
+        template<typename ValueType, typename StateType>
+        void ExplicitDFTModelBuilderApprox<ValueType, StateType>::buildModel(LabelOptions const& labelOpts, bool firstTime, double approximationError) {
             STORM_LOG_TRACE("Generating DFT state space");
 
             // Initialize
-            StateType currentRowGroup = 0;
-            StateType currentRow = 0;
-            size_t pseudoStatesToCheck = 0;
-            modelComponents.markovianStates = storm::storage::BitVector(INITIAL_BITVECTOR_SIZE);
-            // Create generator
-            storm::generator::DftNextStateGenerator<ValueType, StateType> generator(dft, *stateGenerationInfo, enableDC, mergeFailedStates);
             generator.setApproximationError(approximationError);
-            // Create sparse matrix builder
-            storm::storage::SparseMatrixBuilder<ValueType> transitionMatrixBuilder(0, 0, 0, false, !generator.isDeterministicModel(), 0);
 
-            if(mergeFailedStates) {
-                // Introduce explicit fail state
-                storm::generator::StateBehavior<ValueType, StateType> behavior = generator.createMergeFailedState([this] (DFTStatePointer const& state) {
+            if (firstTime) {
+                // Initialize
+                modelComponents.markovianStates = storm::storage::BitVector(INITIAL_BITVECTOR_SIZE);
+
+                if(mergeFailedStates) {
+                    // Introduce explicit fail state
+                    storm::generator::StateBehavior<ValueType, StateType> behavior = generator.createMergeFailedState([this] (DFTStatePointer const& state) {
                         this->failedStateId = newIndex++;
-                        stateRemapping.push_back(0);
+                        matrixBuilder.stateRemapping.push_back(0);
                         return this->failedStateId;
                     } );
 
-                setRemapping(failedStateId, currentRowGroup);
+                    matrixBuilder.setRemapping(failedStateId);
+                    STORM_LOG_ASSERT(!behavior.empty(), "Behavior is empty.");
+                    matrixBuilder.newRowGroup();
+                    setMarkovian(behavior.begin()->isMarkovian());
 
-                STORM_LOG_ASSERT(!behavior.empty(), "Behavior is empty.");
-                setMarkovian(currentRowGroup, behavior.begin()->isMarkovian());
-
-                // If the model is nondeterministic, we need to open a row group.
-                if (!generator.isDeterministicModel()) {
-                    transitionMatrixBuilder.newRowGroup(currentRow);
+                    // Now add self loop.
+                    // TODO Matthias: maybe use general method.
+                    STORM_LOG_ASSERT(behavior.getNumberOfChoices() == 1, "Wrong number of choices for failed state.");
+                    STORM_LOG_ASSERT(behavior.begin()->size() == 1, "Wrong number of transitions for failed state.");
+                    std::pair<StateType, ValueType> stateProbabilityPair = *(behavior.begin()->begin());
+                    STORM_LOG_ASSERT(stateProbabilityPair.first == failedStateId, "No self loop for failed state.");
+                    STORM_LOG_ASSERT(storm::utility::isOne<ValueType>(stateProbabilityPair.second), "Probability for failed state != 1.");
+                    matrixBuilder.addTransition(stateProbabilityPair.first, stateProbabilityPair.second);
+                    matrixBuilder.finishRow();
                 }
 
-                // Now add self loop.
-                // TODO Matthias: maybe use general method.
-                STORM_LOG_ASSERT(behavior.getNumberOfChoices() == 1, "Wrong number of choices for failed state.");
-                STORM_LOG_ASSERT(behavior.begin()->size() == 1, "Wrong number of transitions for failed state.");
-                std::pair<StateType, ValueType> stateProbabilityPair = *(behavior.begin()->begin());
-                STORM_LOG_ASSERT(stateProbabilityPair.first == failedStateId, "No self loop for failed state.");
-                STORM_LOG_ASSERT(storm::utility::isOne<ValueType>(stateProbabilityPair.second), "Probability for failed state != 1.");
-                transitionMatrixBuilder.addNextValue(currentRow, stateProbabilityPair.first, stateProbabilityPair.second);
-                ++currentRow;
-                ++currentRowGroup;
+                // Build initial state
+                this->stateStorage.initialStateIndices = generator.getInitialStates(std::bind(&ExplicitDFTModelBuilderApprox::getOrAddStateIndex, this, std::placeholders::_1));
+                STORM_LOG_ASSERT(stateStorage.initialStateIndices.size() == 1, "Only one initial state assumed.");
+                initialStateIndex = stateStorage.initialStateIndices[0];
+                STORM_LOG_TRACE("Initial state: " << initialStateIndex);
+
+            } else {
+                initializeNextIteration();
             }
 
-            // Create a callback for the next-state generator to enable it to add states
-            std::function<StateType (DFTStatePointer const&)> stateToIdCallback = std::bind(&ExplicitDFTModelBuilderApprox::getOrAddStateIndex, this, std::placeholders::_1);
+            exploreStateSpace();
 
-            // Build initial states
-            this->stateStorage.initialStateIndices = generator.getInitialStates(stateToIdCallback);
-            STORM_LOG_ASSERT(stateStorage.initialStateIndices.size() == 1, "Only one initial state assumed.");
-            StateType initialStateIndex = stateStorage.initialStateIndices[0];
-            STORM_LOG_TRACE("Initial state: " << initialStateIndex);
+            size_t stateSize = stateStorage.getNumberOfStates() + (mergeFailedStates ? 1 : 0);
+            modelComponents.markovianStates.resize(stateSize);
+            modelComponents.deterministicModel = generator.isDeterministicModel();
 
-            // Explore state space
+            // Replace pseudo states in matrix
+            // TODO Matthias: avoid hack with fixed int type
+            std::vector<uint_fast64_t> pseudoStatesVector;
+            for (auto const& pseudoStatePair : mPseudoStatesMapping) {
+                pseudoStatesVector.push_back(pseudoStatePair.first);
+            }
+            STORM_LOG_ASSERT(std::find(pseudoStatesVector.begin(), pseudoStatesVector.end(), 0) == pseudoStatesVector.end(), "Unexplored pseudo state still contained.");
+            matrixBuilder.builder.replaceColumns(pseudoStatesVector, OFFSET_PSEUDO_STATE);
+            mPseudoStatesMapping.clear();
+
+            // Fix the entries in the transition matrix according to the mapping of ids to row group indices
+            STORM_LOG_ASSERT(matrixBuilder.stateRemapping[initialStateIndex] == initialStateIndex, "Initial state should not be remapped.");
+            // TODO Matthias: do not consider all rows?
+            matrixBuilder.remap();
+
+            STORM_LOG_TRACE("State remapping: " << matrixBuilder.stateRemapping);
+            STORM_LOG_TRACE("Markovian states: " << modelComponents.markovianStates);
+            STORM_LOG_DEBUG("Generated " << stateSize << " states");
+            STORM_LOG_DEBUG("Skipped " << skippedStates.size() << " states");
+            STORM_LOG_DEBUG("Model is " << (generator.isDeterministicModel() ? "deterministic" : "non-deterministic"));
+
+            // Build transition matrix
+            modelComponents.transitionMatrix = matrixBuilder.builder.build(stateSize, stateSize);
+            if (stateSize <= 15) {
+                STORM_LOG_TRACE("Transition matrix: " << std::endl << modelComponents.transitionMatrix);
+            } else {
+                STORM_LOG_TRACE("Transition matrix: too big to print");
+            }
+
+            buildLabeling(labelOpts);
+        }
+
+        template<typename ValueType, typename StateType>
+        void ExplicitDFTModelBuilderApprox<ValueType, StateType>::initializeNextIteration() {
+            STORM_LOG_TRACE("Refining DFT state space");
+
+            // Initialize matrix builder again
+            // TODO Matthias: avoid copy
+            std::vector<uint_fast64_t> copyRemapping = matrixBuilder.stateRemapping;
+            matrixBuilder = MatrixBuilder(!generator.isDeterministicModel());
+            matrixBuilder.stateRemapping = copyRemapping;
+            StateType nrStates = modelComponents.transitionMatrix.getRowGroupCount();
+            STORM_LOG_ASSERT(nrStates == matrixBuilder.stateRemapping.size(), "No. of states does not coincide with mapping size.");
+
+            // Start by creating a remapping from the old indices to the new indices
+            std::vector<StateType> indexRemapping = std::vector<StateType>(nrStates, 0);
+            auto iterSkipped = skippedStates.begin();
+            size_t skippedBefore = 0;
+            for (size_t i = 0; i < indexRemapping.size(); ++i) {
+                while (iterSkipped->first <= i) {
+                    ++skippedBefore;
+                    ++iterSkipped;
+                }
+                indexRemapping[i] = i - skippedBefore;
+            }
+
+            // Set remapping
+            size_t nrExpandedStates = nrStates - skippedBefore;
+            matrixBuilder.mappingOffset = nrStates;
+            STORM_LOG_TRACE("# expanded states: " << nrExpandedStates);
+            StateType skippedIndex = nrExpandedStates;
+            std::map<StateType, DFTStatePointer> skippedStatesNew;
+            for (size_t id = 0; id < matrixBuilder.stateRemapping.size(); ++id) {
+                StateType index = matrixBuilder.stateRemapping[id];
+                auto itFind = skippedStates.find(index);
+                if (itFind != skippedStates.end()) {
+                    // Set new mapping for skipped state
+                    matrixBuilder.stateRemapping[id] = skippedIndex;
+                    skippedStatesNew[skippedIndex] = itFind->second;
+                    indexRemapping[index] = skippedIndex;
+                    ++skippedIndex;
+                } else {
+                    // Set new mapping for expanded state
+                    matrixBuilder.stateRemapping[id] = indexRemapping[index];
+                }
+            }
+            STORM_LOG_TRACE("New state remapping: " << matrixBuilder.stateRemapping);
+            std::stringstream ss;
+            ss << "Index remapping:" << std::endl;
+            for (auto tmp : indexRemapping) {
+                ss << tmp << " ";
+            }
+            STORM_LOG_TRACE(ss.str());
+
+            // Remap markovian states
+            storm::storage::BitVector markovianStatesNew = storm::storage::BitVector(modelComponents.markovianStates.size(), true);
+            // Iterate over all not set bits
+            modelComponents.markovianStates.complement();
+            size_t index = modelComponents.markovianStates.getNextSetIndex(0);
+            while (index < modelComponents.markovianStates.size()) {
+                markovianStatesNew.set(indexRemapping[index], false);
+                index = modelComponents.markovianStates.getNextSetIndex(index);
+            }
+            STORM_LOG_ASSERT(modelComponents.markovianStates.size() - modelComponents.markovianStates.getNumberOfSetBits() == markovianStatesNew.getNumberOfSetBits(), "Remapping of markovian states is wrong.");
+            STORM_LOG_ASSERT(markovianStatesNew.size() == nrStates, "No. of states does not coincide with markovian size.");
+            modelComponents.markovianStates = markovianStatesNew;
+
+            // Build submatrix for expanded states
+            // TODO Matthias: only use row groups when necessary
+            for (StateType oldRowGroup = 0; oldRowGroup < modelComponents.transitionMatrix.getRowGroupCount(); ++oldRowGroup) {
+                if (indexRemapping[oldRowGroup] < nrExpandedStates) {
+                    // State is expanded -> copy to new matrix
+                    matrixBuilder.newRowGroup();
+                    for (StateType oldRow = modelComponents.transitionMatrix.getRowGroupIndices()[oldRowGroup]; oldRow < modelComponents.transitionMatrix.getRowGroupIndices()[oldRowGroup+1]; ++oldRow) {
+                        for (typename storm::storage::SparseMatrix<ValueType>::const_iterator itEntry = modelComponents.transitionMatrix.begin(oldRow); itEntry != modelComponents.transitionMatrix.end(oldRow); ++itEntry) {
+                            auto itFind = skippedStates.find(itEntry->getColumn());
+                            if (itFind != skippedStates.end()) {
+                                // Set id for skipped states as we remap it later
+                                matrixBuilder.addTransition(matrixBuilder.mappingOffset + itFind->second->getId(), itEntry->getValue());
+                            } else {
+                                // Set newly remapped index for expanded states
+                                matrixBuilder.addTransition(indexRemapping[itEntry->getColumn()], itEntry->getValue());
+                            }
+                        }
+                        matrixBuilder.finishRow();
+                    }
+                }
+            }
+
+            skippedStates = skippedStatesNew;
+
+            STORM_LOG_ASSERT(matrixBuilder.getCurrentRowGroup() == nrExpandedStates, "Row group size does not match.");
+
+            // Explore all skipped states now
+            for (auto const& skippedState : skippedStates) {
+                skippedState.second->setSkip(false);
+                statesToExplore.push_front(skippedState.second);
+            }
+            skippedStates.clear();
+        }
+
+        template<typename ValueType, typename StateType>
+        void ExplicitDFTModelBuilderApprox<ValueType, StateType>::exploreStateSpace() {
             bool explorationFinished = false;
+            size_t pseudoStatesToCheck = 0;
             while (!explorationFinished) {
                 // Get the first state in the queue
                 DFTStatePointer currentState = statesToExplore.front();
                 STORM_LOG_ASSERT(stateStorage.stateToId.getValue(currentState->status()) == currentState->getId(), "Ids of states do not coincide.");
                 statesToExplore.pop_front();
 
-                // Remember that this row group was actually filled with the transitions of a different state
-                setRemapping(currentState->getId(), currentRowGroup);
+                // Remember that the current row group was actually filled with the transitions of a different state
+                matrixBuilder.setRemapping(currentState->getId());
 
-                // If the model is nondeterministic, we need to open a row group.
-                if (!generator.isDeterministicModel()) {
-                    transitionMatrixBuilder.newRowGroup(currentRow);
-                }
+                matrixBuilder.newRowGroup();
 
                 // Try to explore the next state
                 generator.load(currentState);
@@ -99,18 +230,18 @@ namespace storm {
                 if (currentState->isSkip()) {
                     // Skip the current state
                     STORM_LOG_TRACE("Skip expansion of state: " << dft.getStateString(currentState));
-                    setMarkovian(currentRowGroup, true);
+                    setMarkovian(true);
                     // Add transition to target state with temporary value 0
                     // TODO Matthias: what to do when there is no unique target state?
-                    transitionMatrixBuilder.addNextValue(currentRow, failedStateId, storm::utility::zero<ValueType>());
+                    matrixBuilder.addTransition(failedStateId, storm::utility::zero<ValueType>());
                     // Remember skipped state
-                    skippedStates[currentRow] = currentState;
-                    ++currentRow;
+                    skippedStates[matrixBuilder.getCurrentRowGroup() - 1] = currentState;
+                    matrixBuilder.finishRow();
                 } else {
                     // Explore the current state
-                    storm::generator::StateBehavior<ValueType, StateType> behavior = generator.expand(stateToIdCallback);
+                    storm::generator::StateBehavior<ValueType, StateType> behavior = generator.expand(std::bind(&ExplicitDFTModelBuilderApprox::getOrAddStateIndex, this, std::placeholders::_1));
                     STORM_LOG_ASSERT(!behavior.empty(), "Behavior is empty.");
-                    setMarkovian(currentRowGroup, behavior.begin()->isMarkovian());
+                    setMarkovian(behavior.begin()->isMarkovian());
 
                     // Now add all choices.
                     for (auto const& choice : behavior) {
@@ -130,14 +261,11 @@ namespace storm {
                                     }
                                 }
                             }
-
-                            transitionMatrixBuilder.addNextValue(currentRow, stateProbabilityPair.first, stateProbabilityPair.second);
+                            matrixBuilder.addTransition(matrixBuilder.mappingOffset + stateProbabilityPair.first, stateProbabilityPair.second);
                         }
-                        ++currentRow;
+                        matrixBuilder.finishRow();
                     }
                 }
-
-                ++currentRowGroup;
 
                 if (statesToExplore.empty()) {
                     explorationFinished = true;
@@ -161,45 +289,13 @@ namespace storm {
                 }
 
             } // end exploration
+        }
 
-            size_t stateSize = stateStorage.getNumberOfStates() + (mergeFailedStates ? 1 : 0);
-            modelComponents.markovianStates.resize(stateSize);
-            modelComponents.deterministicModel = generator.isDeterministicModel();
-
-            // Replace pseudo states in matrix
-            // TODO Matthias: avoid hack with fixed int type
-            std::vector<uint_fast64_t> pseudoStatesVector;
-            for (auto const& pseudoStatePair : mPseudoStatesMapping) {
-                pseudoStatesVector.push_back(pseudoStatePair.first);
-            }
-            STORM_LOG_ASSERT(std::find(pseudoStatesVector.begin(), pseudoStatesVector.end(), 0) == pseudoStatesVector.end(), "Unexplored pseudo state still contained.");
-            transitionMatrixBuilder.replaceColumns(pseudoStatesVector, OFFSET_PSEUDO_STATE);
-
-
-            // Fix the entries in the matrix according to the (reversed) mapping of row groups to indices
-            STORM_LOG_ASSERT(stateRemapping[initialStateIndex] == initialStateIndex, "Initial state should not be remapped.");
-            // Fix the transition matrix
-            transitionMatrixBuilder.replaceColumns(stateRemapping, 0);
-            // Fix the hash map storing the mapping states -> ids
-            this->stateStorage.stateToId.remap([this] (StateType const& state) { return this->stateRemapping[state]; } );
-
-            STORM_LOG_TRACE("State remapping: " << stateRemapping);
-            STORM_LOG_TRACE("Markovian states: " << modelComponents.markovianStates);
-            STORM_LOG_DEBUG("Generated " << stateSize << " states");
-            STORM_LOG_DEBUG("Skipped " << skippedStates.size() << " states");
-            STORM_LOG_DEBUG("Model is " << (generator.isDeterministicModel() ? "deterministic" : "non-deterministic"));
-
-            // Build transition matrix
-            modelComponents.transitionMatrix = transitionMatrixBuilder.build(stateSize, stateSize);
-            if (stateSize <= 15) {
-                STORM_LOG_TRACE("Transition matrix: " << std::endl << modelComponents.transitionMatrix);
-            } else {
-                STORM_LOG_TRACE("Transition matrix: too big to print");
-            }
-
+        template<typename ValueType, typename StateType>
+        void ExplicitDFTModelBuilderApprox<ValueType, StateType>::buildLabeling(LabelOptions const& labelOpts) {
             // Build state labeling
-            modelComponents.stateLabeling = storm::models::sparse::StateLabeling(stateSize);
-            // Initial state is always first state without any failure
+            modelComponents.stateLabeling = storm::models::sparse::StateLabeling(modelComponents.transitionMatrix.getRowGroupCount());
+            // Initial state
             modelComponents.stateLabeling.addLabel("init");
             modelComponents.stateLabeling.addLabelToState("init", initialStateIndex);
             // Label all states corresponding to their status (failed, failsafe, failed BE)
@@ -259,13 +355,14 @@ namespace storm {
 
         template<typename ValueType, typename StateType>
         std::shared_ptr<storm::models::sparse::Model<ValueType>> ExplicitDFTModelBuilderApprox<ValueType, StateType>::createModel(bool copy) {
+            std::shared_ptr<storm::models::sparse::Model<ValueType>> model;
+
             if (modelComponents.deterministicModel) {
                 // Build CTMC
                 if (copy) {
-                    return std::make_shared<storm::models::sparse::Ctmc<ValueType>>(modelComponents.transitionMatrix, modelComponents.stateLabeling);
-
+                    model = std::make_shared<storm::models::sparse::Ctmc<ValueType>>(modelComponents.transitionMatrix, modelComponents.stateLabeling);
                 } else {
-                    return std::make_shared<storm::models::sparse::Ctmc<ValueType>>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling));
+                    model = std::make_shared<storm::models::sparse::Ctmc<ValueType>>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling));
                 }
             } else {
                 // Build MA
@@ -290,11 +387,21 @@ namespace storm {
                 }
                 if (ma->hasOnlyTrivialNondeterminism()) {
                     // Markov automaton can be converted into CTMC
-                    return ma->convertToCTMC();
+                    // TODO Matthias: change components which were not moved accordingly
+                    model = ma->convertToCTMC();
                 } else {
-                    return ma;
+                    model = ma;
                 }
             }
+
+            STORM_LOG_DEBUG("No. states: " << model->getNumberOfStates());
+            STORM_LOG_DEBUG("No. transitions: " << model->getNumberOfTransitions());
+            if (model->getNumberOfStates() <= 15) {
+                STORM_LOG_TRACE("Transition matrix: " << std::endl << model->getTransitionMatrix());
+            } else {
+                STORM_LOG_TRACE("Transition matrix: too big to print");
+            }
+            return model;
         }
 
         template<typename ValueType, typename StateType>
@@ -369,7 +476,7 @@ namespace storm {
                     STORM_LOG_ASSERT(stateId == state->getId(), "Ids do not match.");
                     STORM_LOG_TRACE("Remember state for later creation: " << dft.getStateString(state));
                     // Reserve one slot for the coming state in the remapping
-                    stateRemapping.push_back(0);
+                    matrixBuilder.stateRemapping.push_back(0);
                 } else {
                     // Create new state
                     state->setId(newIndex++);
@@ -379,25 +486,19 @@ namespace storm {
                     statesToExplore.push_front(state);
 
                     // Reserve one slot for the new state in the remapping
-                    stateRemapping.push_back(0);
+                    matrixBuilder.stateRemapping.push_back(0);
                 }
             }
             return stateId;
         }
 
         template<typename ValueType, typename StateType>
-        void ExplicitDFTModelBuilderApprox<ValueType, StateType>::setMarkovian(StateType id, bool markovian) {
-            if (id >= modelComponents.markovianStates.size()) {
+        void ExplicitDFTModelBuilderApprox<ValueType, StateType>::setMarkovian(bool markovian) {
+            if (matrixBuilder.getCurrentRowGroup() > modelComponents.markovianStates.size()) {
                 // Resize BitVector
                 modelComponents.markovianStates.resize(modelComponents.markovianStates.size() + INITIAL_BITVECTOR_SIZE);
             }
-            modelComponents.markovianStates.set(id, markovian);
-        }
-
-        template<typename ValueType, typename StateType>
-        void ExplicitDFTModelBuilderApprox<ValueType, StateType>::setRemapping(StateType id, StateType mappedId) {
-            STORM_LOG_ASSERT(id < stateRemapping.size(), "Invalid index for remapping.");
-            stateRemapping[id] = mappedId;
+            modelComponents.markovianStates.set(matrixBuilder.getCurrentRowGroup() - 1, markovian);
         }
 
 

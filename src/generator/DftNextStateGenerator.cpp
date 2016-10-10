@@ -176,7 +176,7 @@ namespace storm {
                     if (approximationError > 0.0) {
                         if (checkSkipState(newState, rate, choice.getTotalMass(), approximationError)) {
                             STORM_LOG_TRACE("Will skip state " << newStateId);
-                            newState->markSkip();
+                            newState->setSkip(true);
                         }
                     }
                 }

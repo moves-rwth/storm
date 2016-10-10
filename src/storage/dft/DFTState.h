@@ -97,8 +97,8 @@ namespace storm {
                 return !mValid;
             }
 
-            void markSkip() {
-                mSkip = true;
+            void setSkip(bool skip) {
+                mSkip = skip;
             }
 
             bool isSkip() const {

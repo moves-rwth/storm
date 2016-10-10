@@ -4,6 +4,7 @@
 #include <src/models/sparse/StateLabeling.h>
 #include <src/models/sparse/StandardRewardModel.h>
 #include <src/models/sparse/Model.h>
+#include "src/generator/DftNextStateGenerator.h"
 #include <src/storage/SparseMatrix.h>
 #include "src/storage/sparse/StateStorage.h"
 #include <src/storage/dft/DFT.h>
@@ -32,6 +33,7 @@ namespace storm {
 
             // A structure holding the individual components of a model.
             struct ModelComponents {
+                // Constructor
                 ModelComponents();
 
                 // The transition matrix.
@@ -51,6 +53,87 @@ namespace storm {
 
                 // A flag indicating if the model is deterministic.
                 bool deterministicModel;
+            };
+
+            // A class holding the information for building the transition matrix.
+            class MatrixBuilder {
+            public:
+                // Constructor
+                MatrixBuilder(bool canHaveNondeterminism);
+
+                /*!
+                 * Set a mapping from a state id to the index in the matrix.
+                 *
+                 * @param id Id of the state.
+                 */
+                void setRemapping(StateType id) {
+                    STORM_LOG_ASSERT(id < stateRemapping.size(), "Invalid index for remapping.");
+                    stateRemapping[id] = currentRowGroup;
+                }
+
+                /*!
+                 * Create a new row group if the model is nondeterministic.
+                 */
+                void newRowGroup() {
+                    if (canHaveNondeterminism) {
+                        builder.newRowGroup(currentRow);
+                    }
+                    ++currentRowGroup;
+                }
+
+                /*!
+                 * Add a transition from the current row.
+                 *
+                 * @param index Target index
+                 * @param value Value of transition
+                 */
+                void addTransition(StateType index, ValueType value) {
+                    builder.addNextValue(currentRow, index, value);
+                }
+
+                /*!
+                 * Finish the current row.
+                 */
+                void finishRow() {
+                    ++currentRow;
+                }
+
+                /*!
+                 * Remap the columns in the matrix.
+                 */
+                void remap() {
+                    builder.replaceColumns(stateRemapping, mappingOffset);
+                }
+
+                /*!
+                 * Get the current row group.
+                 *
+                 * @return The current row group.
+                 */
+                StateType getCurrentRowGroup() {
+                    return currentRowGroup;
+                }
+
+                // Flag indicating if row groups are needed.
+                bool canHaveNondeterminism;
+
+                // Matrix builder.
+                storm::storage::SparseMatrixBuilder<ValueType> builder;
+
+                // Offset to distinguish states which will not be remapped anymore and those which will.
+                size_t mappingOffset;
+
+                // A mapping from state ids to the row group indices in which they actually reside.
+                // TODO Matthias: avoid hack with fixed int type
+                std::vector<uint_fast64_t> stateRemapping;
+
+            private:
+
+                // Index of the current row group.
+                StateType currentRowGroup;
+
+                // Index of the current row.
+                StateType currentRow;
             };
 
         public:
@@ -74,9 +157,10 @@ namespace storm {
              * Build model from DFT.
              *
              * @param labelOpts          Options for labeling.
+             * @param firstTime          Flag indicating if the model is built for the first time or rebuilt.
              * @param approximationError Error allowed for approximation.
              */
-            void buildModel(LabelOptions const& labelOpts, double approximationError = 0.0);
+            void buildModel(LabelOptions const& labelOpts, bool firstTime, double approximationError = 0.0);
 
             /*!
              * Get the built model.
@@ -97,6 +181,23 @@ namespace storm {
         private:
 
             /*!
+             * Explore state space of DFT.
+             */
+            void exploreStateSpace();
+
+            /*!
+             * Initialize the matrix for a refinement iteration.
+             */
+            void initializeNextIteration();
+
+            /*!
+             * Build the labeling.
+             *
+             * @param labelOpts Options for labeling.
+             */
+            void buildLabeling(LabelOptions const& labelOpts);
+
+            /*!
              * Add a state to the explored states (if not already there). It also handles pseudo states.
              *
              * @param state The state to add.
@@ -106,20 +207,11 @@ namespace storm {
             StateType getOrAddStateIndex(DFTStatePointer const& state);
 
             /*!
-             * Set if the given state is markovian.
+             * Set markovian flag for the current state.
              *
-             * @param id Id of the state.
              * @param markovian Flag indicating if the state is markovian.
              */
-            void setMarkovian(StateType id, bool markovian);
-
-            /*!
-             * Set a mapping from a state id to its new id.
-             *
-             * @param id Id of the state.
-             * @param mappedId New id to use.
-             */
-            void setRemapping(StateType id, StateType mappedId);
+            void setMarkovian(bool markovian);
 
             /**
              * Change matrix to reflect the lower approximation bound.
@@ -158,14 +250,14 @@ namespace storm {
             // TODO Matthias: use const reference
             std::shared_ptr<storm::storage::DFTStateGenerationInfo> stateGenerationInfo;
 
-            // Current id for new state
-            size_t newIndex = 0;
-
-            // Mapping from pseudo states to (id of concrete state, bitvector)
-            std::vector<std::pair<StateType, storm::storage::BitVector>> mPseudoStatesMapping;
+            // Flag indication if dont care propagation should be used.
+            bool enableDC = true;
 
             //TODO Matthias: make changeable
             const bool mergeFailedStates = true;
+
+            // Current id for new state
+            size_t newIndex = 0;
 
             // Id of failed state
             size_t failedStateId = 0;
@@ -173,11 +265,17 @@ namespace storm {
             // Id of initial state
             size_t initialStateIndex = 0;
 
-            // Flag indication if dont care propagation should be used.
-            bool enableDC = true;
+            // Mapping from pseudo states to (id of concrete state, bitvector representation)
+            std::vector<std::pair<StateType, storm::storage::BitVector>> mPseudoStatesMapping;
+
+            // Next state generator for exploring the state space
+            storm::generator::DftNextStateGenerator<ValueType, StateType> generator;
 
             // Structure for the components of the model.
             ModelComponents modelComponents;
+
+            // Structure for the transition matrix builder.
+            MatrixBuilder matrixBuilder;
 
             // Internal information about the states that were explored.
             storm::storage::sparse::StateStorage<StateType> stateStorage;
@@ -185,13 +283,10 @@ namespace storm {
             // A set of states that still need to be explored.
             std::deque<DFTStatePointer> statesToExplore;
 
-            // A mapping from state indices to the row groups in which they actually reside
-            // TODO Matthias: avoid hack with fixed int type
-            std::vector<uint_fast64_t> stateRemapping;
-
-            // Holds all skipped states which were not yet expanded. More concrete it is a mapping from matrix indices
-            // to the corresponding skipped state.
-            std::unordered_map<StateType, DFTStatePointer> skippedStates;
+            // Holds all skipped states which were not yet expanded. More concretely it is a mapping from matrix indices
+            // to the corresponding skipped states.
+            // Notice that we need an ordered map here to easily iterate in increasing order over state ids.
+            std::map<StateType, DFTStatePointer> skippedStates;
         };
     }
 }

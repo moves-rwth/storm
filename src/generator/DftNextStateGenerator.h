@@ -70,7 +70,7 @@ namespace storm {
             StateType mergeFailedStateId = 0;
 
             // Flag indicating if the model is deterministic.
-            bool deterministicModel = true;
+            bool deterministicModel = false;
 
             // Allowed approximation error.
             double approximationError = 0.0;
