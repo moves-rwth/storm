@@ -586,13 +586,15 @@ namespace storm {
                 STORM_LOG_THROW(locEntry.count("invariant") == 0, storm::exceptions::InvalidJaniException, "Invariants in locations as in '" + locName + "' in automaton '" + name + "' are not supported");
                 //STORM_LOG_THROW(locEntry.count("invariant") > 0 && !supportsInvariants(parentModel.getModelType()), storm::exceptions::InvalidJaniException, "Invariants are not supported in the model type " + to_string(parentModel.getModelType()));
                 std::vector<storm::jani::Assignment> transientAssignments;
-                for(auto const& transientValueEntry : locEntry.at("transient-values")) {
-                    STORM_LOG_THROW(transientValueEntry.count("ref") == 1, storm::exceptions::InvalidJaniException, "Transient values in location " << locName << " need exactly one ref that is assigned to");
-                    STORM_LOG_THROW(transientValueEntry.count("value") == 1, storm::exceptions::InvalidJaniException, "Transient values in location " << locName << " need exactly one assigned value");
-                    storm::jani::Variable const& lhs = getLValue(transientValueEntry.at("ref"), parentModel.getGlobalVariables(), automaton.getVariables(), "LHS of assignment in location " + locName + " (automaton '" + name + "')");
-                    STORM_LOG_THROW(lhs.isTransient(), storm::exceptions::InvalidJaniException, "Assigned non-transient variable " + lhs.getName() + " in location " + locName + " (automaton: '" + name + "')");
-                    storm::expressions::Expression rhs = parseExpression(transientValueEntry.at("value"), "Assignment of variable " + lhs.getName() + " in location " + locName + " (automaton: '" + name + "')");
-                    transientAssignments.emplace_back(lhs, rhs);
+                if(locEntry.count("transient-values") > 0) {
+                    for(auto const& transientValueEntry : locEntry.at("transient-values")) {
+                        STORM_LOG_THROW(transientValueEntry.count("ref") == 1, storm::exceptions::InvalidJaniException, "Transient values in location " << locName << " need exactly one ref that is assigned to");
+                        STORM_LOG_THROW(transientValueEntry.count("value") == 1, storm::exceptions::InvalidJaniException, "Transient values in location " << locName << " need exactly one assigned value");
+                        storm::jani::Variable const& lhs = getLValue(transientValueEntry.at("ref"), parentModel.getGlobalVariables(), automaton.getVariables(), "LHS of assignment in location " + locName + " (automaton '" + name + "')");
+                        STORM_LOG_THROW(lhs.isTransient(), storm::exceptions::InvalidJaniException, "Assigned non-transient variable " + lhs.getName() + " in location " + locName + " (automaton: '" + name + "')");
+                        storm::expressions::Expression rhs = parseExpression(transientValueEntry.at("value"), "Assignment of variable " + lhs.getName() + " in location " + locName + " (automaton: '" + name + "')");
+                        transientAssignments.emplace_back(lhs, rhs);
+                    }
                 }
                 uint64_t id = automaton.addLocation(storm::jani::Location(locName, transientAssignments));
                 locIds.emplace(locName, id);
@@ -639,7 +641,8 @@ namespace storm {
                 STORM_LOG_THROW(edgeEntry.count("rate") < 2, storm::exceptions::InvalidJaniException, "Edge from '" << sourceLoc << "' in automaton '" << name << "' has multiple rates");
                 storm::expressions::Expression rateExpr;
                 if(edgeEntry.count("rate") > 0) {
-                    rateExpr = parseExpression(edgeEntry.at("rate"), "rate expression in edge from '" + sourceLoc + "' in automaton '" + name + "'");
+                    STORM_LOG_THROW(edgeEntry.at("rate").count("exp") == 1, storm::exceptions::InvalidJaniException, "Rate in edge from '" << sourceLoc << "' in automaton '" << name << "' must have a defing expression.");
+                    rateExpr = parseExpression(edgeEntry.at("rate").at("exp"), "rate expression in edge from '" + sourceLoc + "' in automaton '" + name + "'");
                     STORM_LOG_THROW(rateExpr.hasNumericalType(), storm::exceptions::InvalidJaniException, "Rate '" << rateExpr << "' has not a numerical type");
                 }
                 // guard
