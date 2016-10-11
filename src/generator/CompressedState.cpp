@@ -10,6 +10,13 @@ namespace storm {
         
         template<typename ValueType>
         void unpackStateIntoEvaluator(CompressedState const& state, VariableInformation const& variableInformation, storm::expressions::ExpressionEvaluator<ValueType>& evaluator) {
+            for (auto const& locationVariable : variableInformation.locationVariables) {
+                if (locationVariable.bitWidth != 0) {
+                    evaluator.setIntegerValue(locationVariable.variable, state.getAsInt(locationVariable.bitOffset, locationVariable.bitWidth));
+                } else {
+                    evaluator.setIntegerValue(locationVariable.variable, 0);
+                }
+            }
             for (auto const& booleanVariable : variableInformation.booleanVariables) {
                 evaluator.setBooleanValue(booleanVariable.variable, state.get(booleanVariable.bitOffset));
             }
@@ -20,6 +27,13 @@ namespace storm {
         
         storm::expressions::SimpleValuation unpackStateIntoValuation(CompressedState const& state, VariableInformation const& variableInformation, storm::expressions::ExpressionManager const& manager) {
             storm::expressions::SimpleValuation result(manager.getSharedPointer());
+            for (auto const& locationVariable : variableInformation.locationVariables) {
+                if (locationVariable.bitWidth != 0) {
+                    result.setIntegerValue(locationVariable.variable, state.getAsInt(locationVariable.bitOffset, locationVariable.bitWidth));
+                } else {
+                    result.setIntegerValue(locationVariable.variable, 0);
+                }
+            }
             for (auto const& booleanVariable : variableInformation.booleanVariables) {
                 result.setBooleanValue(booleanVariable.variable, state.get(booleanVariable.bitOffset));
             }

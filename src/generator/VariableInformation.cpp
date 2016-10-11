@@ -2,6 +2,7 @@
 
 #include "src/storage/prism/Program.h"
 #include "src/storage/jani/Model.h"
+#include "src/storage/expressions/ExpressionManager.h"
 
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidArgumentException.h"
@@ -19,7 +20,7 @@ namespace storm {
             // Intentionally left empty.
         }
         
-        LocationVariableInformation::LocationVariableInformation(uint64_t highestValue, uint_fast64_t bitOffset, uint_fast64_t bitWidth) : highestValue(highestValue), bitOffset(bitOffset), bitWidth(bitWidth) {
+        LocationVariableInformation::LocationVariableInformation(storm::expressions::Variable const& variable, uint64_t highestValue, uint_fast64_t bitOffset, uint_fast64_t bitWidth) : variable(variable), highestValue(highestValue), bitOffset(bitOffset), bitWidth(bitWidth) {
             // Intentionally left empty.
         }
         
@@ -74,7 +75,7 @@ namespace storm {
             }
             for (auto const& automaton : model.getAutomata()) {
                 uint_fast64_t bitwidth = static_cast<uint_fast64_t>(std::ceil(std::log2(automaton.getNumberOfLocations())));
-                locationVariables.emplace_back(automaton.getNumberOfLocations() - 1, totalBitOffset, bitwidth);
+                locationVariables.emplace_back(model.getManager().declareFreshIntegerVariable(false, "loc"), automaton.getNumberOfLocations() - 1, totalBitOffset, bitwidth);
                 totalBitOffset += bitwidth;
                 
                 for (auto const& variable : automaton.getVariables().getBooleanVariables()) {

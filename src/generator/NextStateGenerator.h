@@ -211,7 +211,7 @@ namespace storm {
             VariableInformation variableInformation;
             
             /// An evaluator used to evaluate expressions.
-            storm::expressions::ExpressionEvaluator<ValueType> evaluator;
+            std::unique_ptr<storm::expressions::ExpressionEvaluator<ValueType>> evaluator;
             
             /// The currently loaded state.
             CompressedState const* state;
