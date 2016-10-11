@@ -112,6 +112,10 @@ namespace storm {
                 exploreHeuristic.setHeuristicValues(oldState->exploreHeuristic.getDepth() + 1, rate, exitRate);
             }
 
+            bool isSkip(double approximationThreshold, storm::builder::ApproximationHeuristic heuristic) {
+                return exploreHeuristic.isSkip(approximationThreshold, heuristic);
+            }
+
             double getPriority() const {
                 return exploreHeuristic.getPriority();
             }

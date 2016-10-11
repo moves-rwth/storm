@@ -14,6 +14,11 @@ namespace storm {
 
     namespace builder {
 
+        /*!
+         * Enum representing the heuristic used for deciding which states to expand.
+         */
+        enum class ApproximationHeuristic { NONE, DEPTH, RATERATIO };
+
         template<typename ValueType>
         class DFTExplorationHeuristic {
 
@@ -22,13 +27,16 @@ namespace storm {
 
             void setHeuristicValues(size_t depth, ValueType rate, ValueType exitRate);
 
-            bool isSkip() const;
+            bool isSkip(double approximationThreshold, ApproximationHeuristic heuristic) const;
+
+            void setNotSkip();
 
             size_t getDepth() const;
 
             double getPriority() const;
             
         private:
+
             bool skip;
             size_t depth;
             ValueType rate;

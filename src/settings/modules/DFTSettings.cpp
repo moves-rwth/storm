@@ -9,7 +9,6 @@
 
 #include "src/exceptions/InvalidSettingsException.h"
 
-
 namespace storm {
     namespace settings {
         namespace modules {
@@ -23,6 +22,7 @@ namespace storm {
             const std::string DFTSettings::disableDCOptionName = "disabledc";
             const std::string DFTSettings::approximationErrorOptionName = "approximation";
             const std::string DFTSettings::approximationErrorOptionShortName = "approx";
+            const std::string DFTSettings::approximationHeuristicOptionName = "approximationheuristic";
             const std::string DFTSettings::propExpectedTimeOptionName = "expectedtime";
             const std::string DFTSettings::propExpectedTimeOptionShortName = "mttf";
             const std::string DFTSettings::propProbabilityOptionName = "probability";
@@ -40,6 +40,7 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, modularisationOptionName, false, "Use modularisation (not applicable for expected time).").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, disableDCOptionName, false, "Disable Dont Care propagation.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, approximationErrorOptionName, false, "Approximation error allowed.").setShortName(approximationErrorOptionShortName).addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("error", "The approximation error to use.").addValidationFunctionDouble(storm::settings::ArgumentValidators::doubleGreaterValidatorIncluding(0.0)).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, approximationHeuristicOptionName, false, "Set the heuristic used for approximation.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("heuristic", "Sets which heuristic is used for approximation. Must be in {depth, rateratio}. Default is").setDefaultValueString("depth").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator({"depth", "rateratio"})).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, propExpectedTimeOptionName, false, "Compute expected time of system failure.").setShortName(propExpectedTimeOptionShortName).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, propProbabilityOptionName, false, "Compute probability of system failure.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, propTimeBoundOptionName, false, "Compute probability of system failure up to given timebound.").addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("time", "The timebound to use.").addValidationFunctionDouble(storm::settings::ArgumentValidators::doubleGreaterValidatorExcluding(0.0)).build()).build());
@@ -78,6 +79,20 @@ namespace storm {
                 return this->getOption(approximationErrorOptionName).getArgumentByName("error").getValueAsDouble();
             }
 
+            storm::builder::ApproximationHeuristic DFTSettings::getApproximationHeuristic() const {
+                if (!isApproximationErrorSet() || getApproximationError() == 0.0) {
+                    // No approximation is done
+                    return storm::builder::ApproximationHeuristic::NONE;
+                }
+                std::string heuristicAsString = this->getOption(approximationHeuristicOptionName).getArgumentByName("heuristic").getValueAsString();
+                if (heuristicAsString == "depth") {
+                    return storm::builder::ApproximationHeuristic::DEPTH;
+                } else if (heuristicAsString == "rateratio") {
+                    return storm::builder::ApproximationHeuristic::RATERATIO;
+                }
+                STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Illegal value '" << heuristicAsString << "' set as heuristic for approximation.");
+            }
+
             bool DFTSettings::usePropExpectedTime() const {
                 return this->getOption(propExpectedTimeOptionName).getHasOptionBeenSet();
             }
@@ -109,7 +124,6 @@ namespace storm {
 #endif
             
             void DFTSettings::finalize() {
-                
             }
 
             bool DFTSettings::check() const {

@@ -258,6 +258,9 @@ namespace storm {
             //TODO Matthias: make changeable
             const bool mergeFailedStates = true;
 
+            // Heuristic used for approximation
+            storm::builder::ApproximationHeuristic heuristic;
+
             // Current id for new state
             size_t newIndex = 0;
 

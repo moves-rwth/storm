@@ -3,6 +3,7 @@
 
 #include "storm-config.h"
 #include "src/settings/modules/ModuleSettings.h"
+#include "src/builder/DftExplorationHeuristic.h"
 
 namespace storm {
     namespace settings {
@@ -67,6 +68,13 @@ namespace storm {
                  * @return The allowed errorbound.
                  */
                 double getApproximationError() const;
+
+                /*!
+                 * Retrieves the heuristic used for approximation.
+                 *
+                 * @return The heuristic to use.
+                 */
+                storm::builder::ApproximationHeuristic getApproximationHeuristic() const;
 
                 /*!
                  * Retrieves whether the property expected time should be used.
@@ -135,6 +143,7 @@ namespace storm {
                 static const std::string disableDCOptionName;
                 static const std::string approximationErrorOptionName;
                 static const std::string approximationErrorOptionShortName;
+                static const std::string approximationHeuristicOptionName;
                 static const std::string propExpectedTimeOptionName;
                 static const std::string propExpectedTimeOptionShortName;
                 static const std::string propProbabilityOptionName;

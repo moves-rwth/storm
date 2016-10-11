@@ -16,9 +16,26 @@ namespace storm {
         }
 
         template<typename ValueType>
-        bool DFTExplorationHeuristic<ValueType>::isSkip() const {
-            return skip;
+        bool DFTExplorationHeuristic<ValueType>::isSkip(double approximationThreshold, ApproximationHeuristic heuristic) const {
+            if (!skip) {
+                return false;
+            }
+            switch (heuristic) {
+                case ApproximationHeuristic::NONE:
+                    return false;
+                case ApproximationHeuristic::DEPTH:
+                    return depth > approximationThreshold;
+                case ApproximationHeuristic::RATERATIO:
+                    // TODO Matthias: implement
+                    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Heuristic rate ration does not work.");
+            }
         }
+
+        template<typename ValueType>
+        void DFTExplorationHeuristic<ValueType>::setNotSkip() {
+            skip = false;
+        }
+
 
         template<typename ValueType>
         size_t DFTExplorationHeuristic<ValueType>::getDepth() const {
@@ -42,10 +59,6 @@ namespace storm {
         template<>
         double DFTExplorationHeuristic<double>::getPriority() const {
             // TODO Matthias: change according to heuristic
-            if (!skip) {
-                // TODO Matthias: change to non-magic number
-                return 0;
-            }
             //return rate/exitRate;
             return depth;
         }
