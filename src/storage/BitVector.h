@@ -472,7 +472,7 @@ namespace storm {
              * value is equal to a call to size(), then there is no bit set after the specified position.
              *
              * @param startingIndex The index at which to start the search for the next bit that is set. The
-             * bit at this index itself is already considered.
+             * bit at this index itself is included in the search range.
              * @return The index of the next bit that is set after the given index.
              */
             uint_fast64_t getNextSetIndex(uint_fast64_t startingIndex) const;

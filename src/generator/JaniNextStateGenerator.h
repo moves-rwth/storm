@@ -105,7 +105,7 @@ namespace storm {
              * Checks the underlying model for validity for this next-state generator.
              */
             void checkValid() const;
-            
+                        
             /// The model used for the generation of next states.
             storm::jani::Model model;
             

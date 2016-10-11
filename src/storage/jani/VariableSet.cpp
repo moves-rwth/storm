@@ -176,6 +176,26 @@ namespace storm {
             return result;
         }
         
+        uint_fast64_t VariableSet::getNumberOfRealTransientVariables() const {
+            uint_fast64_t result = 0;
+            for (auto const& variable : variables) {
+                if (variable->isTransient() && variable->isRealVariable()) {
+                    ++result;
+                }
+            }
+            return result;
+        }
+        
+        uint_fast64_t VariableSet::getNumberOfUnboundedIntegerTransientVariables() const {
+            uint_fast64_t result = 0;
+            for (auto const& variable : variables) {
+                if (variable->isTransient() && variable->isUnboundedIntegerVariable()) {
+                    ++result;
+                }
+            }
+            return result;
+        }
+        
         std::vector<std::shared_ptr<Variable const>> VariableSet::getTransientVariables() const {
             std::vector<std::shared_ptr<Variable const>> result;
             for (auto const& variable : variables) {
