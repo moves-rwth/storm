@@ -162,7 +162,7 @@ namespace storm {
                     STORM_LOG_INFO("Building model...");
                     // TODO Matthias refine model using existing model and MC results
                     currentApproximationError = pow(0.1, iteration) * approximationError;
-                    builder.buildModel(labeloptions, iteration < 1, currentApproximationError);
+                    builder.buildModel(labeloptions, iteration < 1, iteration);
 
                     // TODO Matthias: possible to do bisimulation on approximated model and not on concrete one?
 

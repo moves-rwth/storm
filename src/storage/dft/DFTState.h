@@ -1,8 +1,9 @@
 #ifndef DFTSTATE_H
 #define	DFTSTATE_H
 
-#include "../BitVector.h"
-#include "DFTElementState.h"
+#include "src/storage/dft/DFTElementState.h"
+#include "src/storage/BitVector.h"
+#include "src/builder/DftExplorationHeuristic.h"
 
 #include <sstream>
 #include <memory>
@@ -31,7 +32,7 @@ namespace storm {
             bool mValid = true;
             const DFT<ValueType>& mDft;
             const DFTStateGenerationInfo& mStateGenerationInfo;
-            bool mSkip = false;
+            storm::builder::DFTExplorationHeuristic<ValueType> exploreHeuristic;
             
         public:
             DFTState(DFT<ValueType> const& dft, DFTStateGenerationInfo const& stateGenerationInfo, size_t id);
@@ -40,7 +41,9 @@ namespace storm {
              * Construct state from underlying bitvector.
              */
             DFTState(storm::storage::BitVector const& status, DFT<ValueType> const& dft, DFTStateGenerationInfo const& stateGenerationInfo, size_t id);
-            
+
+            std::shared_ptr<DFTState<ValueType>> copy() const;
+
             DFTElementState getElementState(size_t id) const;
             
             DFTDependencyState getDependencyState(size_t id) const;
@@ -97,12 +100,20 @@ namespace storm {
                 return !mValid;
             }
 
-            void setSkip(bool skip) {
-                mSkip = skip;
+            void setHeuristicValues(size_t depth, ValueType rate, ValueType exitRate) {
+                exploreHeuristic.setHeuristicValues(depth, rate, exitRate);
             }
 
-            bool isSkip() const {
-                return mSkip;
+            void setHeuristicValues(std::shared_ptr<storm::storage::DFTState<ValueType>> oldState, ValueType rate, ValueType exitRate) {
+                if (hasFailed(mDft.getTopLevelIndex()) || isFailsafe(mDft.getTopLevelIndex()) || (nrFailableDependencies() == 0 && nrFailableBEs() == 0)) {
+                    // Do not skip absorbing state
+                    exploreHeuristic.setNotSkip();
+                }
+                exploreHeuristic.setHeuristicValues(oldState->exploreHeuristic.getDepth() + 1, rate, exitRate);
+            }
+
+            double getPriority() const {
+                return exploreHeuristic.getPriority();
             }
             
             storm::storage::BitVector const& status() const {

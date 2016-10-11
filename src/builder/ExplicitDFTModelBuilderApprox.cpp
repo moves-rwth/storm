@@ -25,14 +25,15 @@ namespace storm {
         template<typename ValueType, typename StateType>
         ExplicitDFTModelBuilderApprox<ValueType, StateType>::ExplicitDFTModelBuilderApprox(storm::storage::DFT<ValueType> const& dft, storm::storage::DFTIndependentSymmetries const& symmetries, bool enableDC) : dft(dft), stateGenerationInfo(std::make_shared<storm::storage::DFTStateGenerationInfo>(dft.buildStateGenerationInfo(symmetries))), enableDC(enableDC), generator(dft, *stateGenerationInfo, enableDC, mergeFailedStates), matrixBuilder(!generator.isDeterministicModel()), stateStorage(((dft.stateVectorSize() / 64) + 1) * 64) {
             // stateVectorSize is bound for size of bitvector
+
+            // Compare states by their distance from the initial state
+            // TODO Matthias: customize
+            statesToExplore = std::priority_queue<DFTStatePointer, std::deque<DFTStatePointer>, std::function<bool(DFTStatePointer, DFTStatePointer)>>(&storm::builder::compareDepth<ValueType>);
         }
 
         template<typename ValueType, typename StateType>
-        void ExplicitDFTModelBuilderApprox<ValueType, StateType>::buildModel(LabelOptions const& labelOpts, bool firstTime, double approximationError) {
+        void ExplicitDFTModelBuilderApprox<ValueType, StateType>::buildModel(LabelOptions const& labelOpts, bool firstTime, double approximationThreshold) {
             STORM_LOG_TRACE("Generating DFT state space");
-
-            // Initialize
-            generator.setApproximationError(approximationError);
 
             if (firstTime) {
                 // Initialize
@@ -72,7 +73,7 @@ namespace storm {
                 initializeNextIteration();
             }
 
-            exploreStateSpace();
+            exploreStateSpace(approximationThreshold);
 
             size_t stateSize = stateStorage.getNumberOfStates() + (mergeFailedStates ? 1 : 0);
             modelComponents.markovianStates.resize(stateSize);
@@ -169,7 +170,7 @@ namespace storm {
             size_t index = modelComponents.markovianStates.getNextSetIndex(0);
             while (index < modelComponents.markovianStates.size()) {
                 markovianStatesNew.set(indexRemapping[index], false);
-                index = modelComponents.markovianStates.getNextSetIndex(index);
+                index = modelComponents.markovianStates.getNextSetIndex(index+1);
             }
             STORM_LOG_ASSERT(modelComponents.markovianStates.size() - modelComponents.markovianStates.getNumberOfSetBits() == markovianStatesNew.getNumberOfSetBits(), "Remapping of markovian states is wrong.");
             STORM_LOG_ASSERT(markovianStatesNew.size() == nrStates, "No. of states does not coincide with markovian size.");
@@ -201,23 +202,24 @@ namespace storm {
 
             STORM_LOG_ASSERT(matrixBuilder.getCurrentRowGroup() == nrExpandedStates, "Row group size does not match.");
 
-            // Explore all skipped states now
+            // Push skipped states to explore queue
+            // TODO Matthias: remove
             for (auto const& skippedState : skippedStates) {
-                skippedState.second->setSkip(false);
-                statesToExplore.push_front(skippedState.second);
+                statesToExplore.push(skippedState.second);
             }
             skippedStates.clear();
         }
 
         template<typename ValueType, typename StateType>
-        void ExplicitDFTModelBuilderApprox<ValueType, StateType>::exploreStateSpace() {
+        void ExplicitDFTModelBuilderApprox<ValueType, StateType>::exploreStateSpace(double approximationThreshold) {
             bool explorationFinished = false;
             size_t pseudoStatesToCheck = 0;
             while (!explorationFinished) {
                 // Get the first state in the queue
-                DFTStatePointer currentState = statesToExplore.front();
+                DFTStatePointer currentState = statesToExplore.top();
+                STORM_LOG_ASSERT(stateStorage.stateToId.contains(currentState->status()), "State is not contained in state storage.");
                 STORM_LOG_ASSERT(stateStorage.stateToId.getValue(currentState->status()) == currentState->getId(), "Ids of states do not coincide.");
-                statesToExplore.pop_front();
+                statesToExplore.pop();
 
                 // Remember that the current row group was actually filled with the transitions of a different state
                 matrixBuilder.setRemapping(currentState->getId());
@@ -227,7 +229,8 @@ namespace storm {
                 // Try to explore the next state
                 generator.load(currentState);
 
-                if (currentState->isSkip()) {
+                STORM_LOG_TRACE("Priority of state " <<currentState->getId() << ": " << currentState->getPriority());
+                if (currentState->getPriority() > approximationThreshold) {
                     // Skip the current state
                     STORM_LOG_TRACE("Skip expansion of state: " << dft.getStateString(currentState));
                     setMarkovian(true);
@@ -464,7 +467,7 @@ namespace storm {
                     stateId = state->getId();
                     stateStorage.stateToId.setOrAdd(state->status(), stateId);
                     STORM_LOG_TRACE("Now create state " << dft.getStateString(state) << " with id " << stateId);
-                    statesToExplore.push_front(state);
+                    statesToExplore.push(state);
                 }
             } else {
                 // State does not exist yet
@@ -483,7 +486,7 @@ namespace storm {
                     stateId = stateStorage.stateToId.findOrAdd(state->status(), state->getId());
                     STORM_LOG_ASSERT(stateId == state->getId(), "Ids do not match.");
                     STORM_LOG_TRACE("New state: " << dft.getStateString(state));
-                    statesToExplore.push_front(state);
+                    statesToExplore.push(state);
 
                     // Reserve one slot for the new state in the remapping
                     matrixBuilder.stateRemapping.push_back(0);

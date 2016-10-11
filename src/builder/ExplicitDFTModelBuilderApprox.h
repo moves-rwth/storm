@@ -1,14 +1,15 @@
 #ifndef EXPLICITDFTMODELBUILDERAPPROX_H
 #define	EXPLICITDFTMODELBUILDERAPPROX_H
 
-#include <src/models/sparse/StateLabeling.h>
-#include <src/models/sparse/StandardRewardModel.h>
-#include <src/models/sparse/Model.h>
+#include "src/builder/DftExplorationHeuristic.h"
+#include "src/models/sparse/StateLabeling.h"
+#include "src/models/sparse/StandardRewardModel.h"
+#include "src/models/sparse/Model.h"
 #include "src/generator/DftNextStateGenerator.h"
-#include <src/storage/SparseMatrix.h>
+#include "src/storage/SparseMatrix.h"
 #include "src/storage/sparse/StateStorage.h"
-#include <src/storage/dft/DFT.h>
-#include <src/storage/dft/SymmetricUnits.h>
+#include "src/storage/dft/DFT.h"
+#include "src/storage/dft/SymmetricUnits.h"
 #include <boost/container/flat_set.hpp>
 #include <boost/optional/optional.hpp>
 #include <stack>
@@ -156,11 +157,11 @@ namespace storm {
             /*!
              * Build model from DFT.
              *
-             * @param labelOpts          Options for labeling.
-             * @param firstTime          Flag indicating if the model is built for the first time or rebuilt.
-             * @param approximationError Error allowed for approximation.
+             * @param labelOpts              Options for labeling.
+             * @param firstTime              Flag indicating if the model is built for the first time or rebuilt.
+             * @param approximationThreshold Threshold determining when to skip exploring states.
              */
-            void buildModel(LabelOptions const& labelOpts, bool firstTime, double approximationError = 0.0);
+            void buildModel(LabelOptions const& labelOpts, bool firstTime, double approximationThreshold = 0.0);
 
             /*!
              * Get the built model.
@@ -182,8 +183,10 @@ namespace storm {
 
             /*!
              * Explore state space of DFT.
+             *
+             * @param approximationThreshold Threshold to determine when to skip states.
              */
-            void exploreStateSpace();
+            void exploreStateSpace(double approximationThreshold);
 
             /*!
              * Initialize the matrix for a refinement iteration.
@@ -237,7 +240,6 @@ namespace storm {
              */
             std::shared_ptr<storm::models::sparse::Model<ValueType>> createModel(bool copy);
 
-
             // Initial size of the bitvector.
             const size_t INITIAL_BITVECTOR_SIZE = 20000;
             // Offset used for pseudo states.
@@ -280,14 +282,15 @@ namespace storm {
             // Internal information about the states that were explored.
             storm::storage::sparse::StateStorage<StateType> stateStorage;
 
-            // A set of states that still need to be explored.
-            std::deque<DFTStatePointer> statesToExplore;
+            // A pniority queue of states that still need to be explored.
+            std::priority_queue<DFTStatePointer, std::deque<DFTStatePointer>, std::function<bool(DFTStatePointer, DFTStatePointer)>> statesToExplore;
 
             // Holds all skipped states which were not yet expanded. More concretely it is a mapping from matrix indices
             // to the corresponding skipped states.
             // Notice that we need an ordered map here to easily iterate in increasing order over state ids.
             std::map<StateType, DFTStatePointer> skippedStates;
         };
+
     }
 }
 

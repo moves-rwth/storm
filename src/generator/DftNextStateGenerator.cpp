@@ -20,6 +20,7 @@ namespace storm {
         template<typename ValueType, typename StateType>
         std::vector<StateType> DftNextStateGenerator<ValueType, StateType>::getInitialStates(StateToIdCallback const& stateToIdCallback) {
             DFTStatePointer initialState = std::make_shared<storm::storage::DFTState<ValueType>>(mDft, mStateGenerationInfo, 0);
+            initialState->setHeuristicValues(0, storm::utility::zero<ValueType>(), storm::utility::zero<ValueType>());
 
             // Register initial state
             StateType id = stateToIdCallback(initialState);
@@ -75,7 +76,7 @@ namespace storm {
                 STORM_LOG_ASSERT(!mDft.hasFailed(state), "Dft has failed.");
 
                 // Construct new state as copy from original one
-                DFTStatePointer newState = std::make_shared<storm::storage::DFTState<ValueType>>(*state);
+                DFTStatePointer newState = state->copy();
                 std::pair<std::shared_ptr<storm::storage::DFTBE<ValueType> const>, bool> nextBEPair = newState->letNextBEFail(currentFailable);
                 std::shared_ptr<storm::storage::DFTBE<ValueType> const>& nextBE = nextBEPair.first;
                 STORM_LOG_ASSERT(nextBE, "NextBE is null.");
@@ -150,15 +151,17 @@ namespace storm {
 
                     if (!storm::utility::isOne(probability)) {
                         // Add transition to state where dependency was unsuccessful
-                        DFTStatePointer unsuccessfulState = std::make_shared<storm::storage::DFTState<ValueType>>(*state);
+                        DFTStatePointer unsuccessfulState = state->copy();
                         unsuccessfulState->letDependencyBeUnsuccessful(currentFailable);
                         // Add state
                         StateType unsuccessfulStateId = stateToIdCallback(unsuccessfulState);
                         ValueType remainingProbability = storm::utility::one<ValueType>() - probability;
                         choice.addProbability(unsuccessfulStateId, remainingProbability);
                         STORM_LOG_TRACE("Added transition to " << unsuccessfulStateId << " with remaining probability " << remainingProbability);
+                        unsuccessfulState->setHeuristicValues(state, remainingProbability, storm::utility::one<ValueType>());
                     }
                     result.addChoice(std::move(choice));
+                    newState->setHeuristicValues(state, probability, storm::utility::one<ValueType>());
                 } else {
                     // Failure is due to "normal" BE failure
                     // Set failure rate according to activation
@@ -171,14 +174,7 @@ namespace storm {
                     STORM_LOG_ASSERT(!storm::utility::isZero(rate), "Rate is 0.");
                     choice.addProbability(newStateId, rate);
                     STORM_LOG_TRACE("Added transition to " << newStateId << " with " << (isActive ? "active" : "passive") << " failure rate " << rate);
-
-                    // Check if new state needs expansion for approximation
-                    if (approximationError > 0.0) {
-                        if (checkSkipState(newState, rate, choice.getTotalMass(), approximationError)) {
-                            STORM_LOG_TRACE("Will skip state " << newStateId);
-                            newState->setSkip(true);
-                        }
-                    }
+                    newState->setHeuristicValues(state, rate, choice.getTotalMass());
                 }
 
                 ++currentFailable;
@@ -213,37 +209,10 @@ namespace storm {
             return result;
         }
 
-        template<typename ValueType, typename StateType>
-        void DftNextStateGenerator<ValueType, StateType>::setApproximationError(double approximationError) {
-            this->approximationError = approximationError;
-        }
-
-        template<typename ValueType, typename StateType>
-        bool DftNextStateGenerator<ValueType, StateType>::checkSkipState(DFTStatePointer const& state, ValueType rate, ValueType exitRate, double approximationError) {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Approximation works only for double.");
-        }
-
-        template<>
-        bool DftNextStateGenerator<double>::checkSkipState(DFTStatePointer const& state, double rate, double exitRate, double approximationError) {
-            if (mDft.hasFailed(state) || mDft.isFailsafe(state) ||  (state->nrFailableDependencies() == 0 && state->nrFailableBEs() == 0)) {
-                // Do not skip absorbing state
-                return false;
-            }
-            // Skip if the rate to reach this state is low compared to all other outgoing rates from the predecessor
-            return rate/exitRate < approximationError;
-        }
-
-        template<>
-        bool DftNextStateGenerator<storm::RationalFunction>::checkSkipState(DFTStatePointer const& state, storm::RationalFunction rate, storm::RationalFunction exitRate, double approximationError) {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Approximation works only for double.");
-            /*std::cout << (rate / exitRate) << " < " << threshold << ": " << (number < threshold) << std::endl;
-            std::map<storm::Variable, storm::RationalNumber> mapping;
-            storm::RationalFunction eval(number.evaluate(mapping));
-            std::cout << "Evaluated: " << eval << std::endl;
-            return eval < threshold;*/
-        }
-        
         template class DftNextStateGenerator<double>;
+
+#ifdef STORM_HAVE_CARL
         template class DftNextStateGenerator<storm::RationalFunction>;
+#endif
     }
 }

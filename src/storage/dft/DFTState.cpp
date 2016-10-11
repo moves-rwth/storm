@@ -6,7 +6,7 @@ namespace storm {
     namespace storage {
 
         template<typename ValueType>
-        DFTState<ValueType>::DFTState(DFT<ValueType> const& dft, DFTStateGenerationInfo const& stateGenerationInfo, size_t id) : mStatus(dft.stateVectorSize()), mId(id), mDft(dft), mStateGenerationInfo(stateGenerationInfo)  {
+        DFTState<ValueType>::DFTState(DFT<ValueType> const& dft, DFTStateGenerationInfo const& stateGenerationInfo, size_t id) : mStatus(dft.stateVectorSize()), mId(id), mDft(dft), mStateGenerationInfo(stateGenerationInfo), exploreHeuristic()  {
             
             // Initialize uses
             for(size_t spareId  : mDft.getSpareIndices()) {
@@ -53,6 +53,13 @@ namespace storm {
                     STORM_LOG_TRACE("New dependency failure: " << dependency->toString());
                 }
             }
+        }
+
+        template<typename ValueType>
+        std::shared_ptr<DFTState<ValueType>> DFTState<ValueType>::copy() const {
+            std::shared_ptr<DFTState<ValueType>> stateCopy = std::make_shared<storm::storage::DFTState<ValueType>>(*this);
+            stateCopy->exploreHeuristic = storm::builder::DFTExplorationHeuristic<ValueType>();
+            return stateCopy;
         }
 
         template<typename ValueType>

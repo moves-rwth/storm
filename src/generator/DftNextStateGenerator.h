@@ -42,13 +42,6 @@ namespace storm {
              */
             StateBehavior<ValueType, StateType> createMergeFailedState(StateToIdCallback const& stateToIdCallback);
 
-            /*!
-             * Set a new value for the allowed approximation error.
-             *
-             * @param approximationError Allowed approximation error.
-             */
-            void setApproximationError(double approximationError);
-
         private:
             
             // The dft used for the generation of next states.
@@ -72,20 +65,6 @@ namespace storm {
             // Flag indicating if the model is deterministic.
             bool deterministicModel = false;
 
-            // Allowed approximation error.
-            double approximationError = 0.0;
-
-            /*!
-             * Check if the given state should be skipped for expansion.
-             *
-             * @param state              State to check for expansion
-             * @param rate               Rate of current state
-             * @param exitRate           Exit rates of all outgoing transitions
-             * @param approximationError Allowed approximation error
-             *
-             * @return True, if the given state should be skipped.
-             */
-            bool checkSkipState(DFTStatePointer const& state, ValueType rate, ValueType exitRate, double approximationError);
         };
         
     }
