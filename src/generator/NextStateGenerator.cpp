@@ -224,12 +224,12 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
-        NextStateGenerator<ValueType, StateType>::NextStateGenerator(storm::expressions::ExpressionManager const& expressionManager, VariableInformation const& variableInformation, NextStateGeneratorOptions const& options) : options(options), expressionManager(expressionManager.getSharedPointer()), variableInformation(variableInformation), evaluator(expressionManager), state(nullptr) {
+        NextStateGenerator<ValueType, StateType>::NextStateGenerator(storm::expressions::ExpressionManager const& expressionManager, VariableInformation const& variableInformation, NextStateGeneratorOptions const& options) : options(options), expressionManager(expressionManager.getSharedPointer()), variableInformation(variableInformation), evaluator(nullptr), state(nullptr) {
             // Intentionally left empty.
         }
         
         template<typename ValueType, typename StateType>
-        NextStateGenerator<ValueType, StateType>::NextStateGenerator(storm::expressions::ExpressionManager const& expressionManager, NextStateGeneratorOptions const& options) : options(options), expressionManager(expressionManager.getSharedPointer()), variableInformation(), evaluator(expressionManager), state(nullptr) {
+        NextStateGenerator<ValueType, StateType>::NextStateGenerator(storm::expressions::ExpressionManager const& expressionManager, NextStateGeneratorOptions const& options) : options(options), expressionManager(expressionManager.getSharedPointer()), variableInformation(), evaluator(nullptr), state(nullptr) {
             // Intentionally left empty.
         }
         
@@ -246,7 +246,7 @@ namespace storm {
         template<typename ValueType, typename StateType>
         void NextStateGenerator<ValueType, StateType>::load(CompressedState const& state) {
             // Since almost all subsequent operations are based on the evaluator, we load the state into it now.
-            unpackStateIntoEvaluator(state, variableInformation, evaluator);
+            unpackStateIntoEvaluator(state, variableInformation, *evaluator);
             
             // Also, we need to store a pointer to the state itself, because we need to be able to access it when expanding it.
             this->state = &state;
@@ -257,7 +257,7 @@ namespace storm {
             if (expression.isTrue()) {
                 return true;
             }
-            return evaluator.asBool(expression);
+            return evaluator->asBool(expression);
         }
         
         template<typename ValueType, typename StateType>
@@ -282,11 +282,11 @@ namespace storm {
                 result.addLabel(label.first);
             }
             for (auto const& stateIndexPair : states) {
-                unpackStateIntoEvaluator(stateIndexPair.first, variableInformation, this->evaluator);
+                unpackStateIntoEvaluator(stateIndexPair.first, variableInformation, *this->evaluator);
                 
                 for (auto const& label : labelsAndExpressions) {
                     // Add label to state, if the corresponding expression is true.
-                    if (evaluator.asBool(label.second)) {
+                    if (evaluator->asBool(label.second)) {
                         result.addLabelToState(label.first, stateIndexPair.second);
                     }
                 }

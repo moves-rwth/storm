@@ -327,6 +327,12 @@ namespace storm {
             void checkValid() const;
             
             /*!
+             * Creates the expression that characterizes all states in which the provided transient boolean variable is
+             * true. The provided location variables are used to encode the location of the automata.
+             */
+            storm::expressions::Expression getLabelExpression(BooleanVariable const& transientVariable, std::map<std::string, storm::expressions::Variable> const& automatonToLocationVariableMap) const;
+            
+            /*!
              * Checks that undefined constants (parameters) of the model preserve the graph of the underlying model.
              * That is, undefined constants may only appear in the probability expressions of edge destinations as well
              * as on the right-hand sides of transient assignments.

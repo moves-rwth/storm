@@ -25,7 +25,7 @@ namespace storm {
                 /*!
                  * Creates an object representing the default building options.
                  */
-                Options();
+                Options(bool buildAllLabels = false, bool buildAllRewardModels = false);
                 
                 /*! Creates an object representing the suggested building options assuming that the given formula is the
                  * only one to check. Additional formulas may be preserved by calling <code>preserveFormula</code>.
@@ -63,7 +63,23 @@ namespace storm {
                  * Retrieves the names of the reward models to build.
                  */
                 std::set<std::string> const& getRewardModelNames() const;
+
+                /*!
+                 * Adds the given label to the ones that are supposed to be built.
+                 */
+                void addLabel(std::string const& labelName);
+
+                /*!
+                 * Retrieves whether the flag to build all labels is set.
+                 */
+                bool isBuildAllLabelsSet() const;
+
+                /// A flag that indicates whether all labels are to be built. In this case, the label names are to be ignored.
+                bool buildAllLabels;
                 
+                /// A set of labels to build.
+                std::set<std::string> labelNames;
+
                 /*!
                  * Retrieves whether the flag to build all reward models is set.
                  */
