@@ -697,24 +697,42 @@ namespace storm {
 
             return automaton;
         }
+        
+        std::vector<storm::jani::SynchronizationVector> parseSyncVectors(json const& syncVectorStructure) {
+            std::vector<storm::jani::SynchronizationVector> syncVectors;
+            // TODO add error checks
+            for (auto const& syncEntry : syncVectorStructure) {
+                std::vector<std::string> inputs;
+                for (auto const& syncInput : syncEntry.at("synchronise")) {
+                    if(syncInput.is_null()) {
+                        // TODO handle null;
+                    } else {
+                        inputs.push_back(syncInput);
+                    }
+                }
+                std::string syncResult = syncEntry.at("result");
+                syncVectors.emplace_back(inputs, syncResult);
+            }
+            return syncVectors;
+        }
 
         std::shared_ptr<storm::jani::Composition> JaniParser::parseComposition(json const &compositionStructure) {
+            if(compositionStructure.count("automaton")) {
+                return std::shared_ptr<storm::jani::AutomatonComposition>(new storm::jani::AutomatonComposition(compositionStructure.at("automaton").get<std::string>()));
+            }
             
-            STORM_LOG_THROW(compositionStructure.count("elements") == 1, storm::exceptions::InvalidJaniException, "Elements of a composition must be given");
+            STORM_LOG_THROW(compositionStructure.count("elements") == 1, storm::exceptions::InvalidJaniException, "Elements of a composition must be given, got " << compositionStructure.dump());
             
-            if (compositionStructure.at("elements").size() == 1) {
-                if (compositionStructure.count("syncs") == 0) {
-                    // We might have an automaton.
-                    STORM_LOG_THROW(compositionStructure.at("elements").back().count("automaton") == 1, storm::exceptions::InvalidJaniException, "Automaton must be given in composition");
-                    if (compositionStructure.at("elements").back().at("automaton").is_string()) {
-                        std::string name = compositionStructure.at("elements").back().at("automaton");
-                        // TODO check whether name exist?
-                        return std::shared_ptr<storm::jani::AutomatonComposition>(new storm::jani::AutomatonComposition(name));
-                    }
-                    STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Nesting parallel composition is not supported");
-                } else {
-                    // Might be rename or input-enable.
+            if (compositionStructure.at("elements").size() == 1 && compositionStructure.count("syncs") == 0) {
+                // We might have an automaton.
+                STORM_LOG_THROW(compositionStructure.at("elements").back().count("automaton") == 1, storm::exceptions::InvalidJaniException, "Automaton must be given in composition");
+                if (compositionStructure.at("elements").back().at("automaton").is_string()) {
+                    std::string name = compositionStructure.at("elements").back().at("automaton");
+                    // TODO check whether name exist?
+                    return std::shared_ptr<storm::jani::AutomatonComposition>(new storm::jani::AutomatonComposition(name));
                 }
+                STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Trivial nesting parallel composition is not yet supported");
+                
             }
             
             std::vector<std::shared_ptr<storm::jani::Composition>>  compositions;
@@ -728,19 +746,7 @@ namespace storm {
             STORM_LOG_THROW(compositionStructure.count("syncs") < 2, storm::exceptions::InvalidJaniException, "Sync vectors can be given at most once");
             std::vector<storm::jani::SynchronizationVector> syncVectors;
             if (compositionStructure.count("syncs") > 0) {
-                // TODO add error checks
-                for (auto const& syncEntry : compositionStructure.at("syncs")) {
-                    std::vector<std::string> inputs;
-                    for (auto const& syncInput : syncEntry.at("synchronise")) {
-                        if(syncInput.is_null()) {
-                            // TODO handle null;
-                        } else {
-                            inputs.push_back(syncInput);
-                        }
-                    }
-                    std::string syncResult = syncEntry.at("result");
-                    syncVectors.emplace_back(inputs, syncResult);
-                }
+                syncVectors = parseSyncVectors(compositionStructure.at("syncs"));
             }
             
             return std::shared_ptr<storm::jani::Composition>(new storm::jani::ParallelComposition(compositions, syncVectors));
