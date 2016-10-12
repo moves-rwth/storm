@@ -56,7 +56,10 @@ namespace storm {
         
         // A structure storing information about the location variables of the model.
         struct LocationVariableInformation {
-            LocationVariableInformation(uint64_t highestValue, uint_fast64_t bitOffset, uint_fast64_t bitWidth);
+            LocationVariableInformation(storm::expressions::Variable const& variable, uint64_t highestValue, uint_fast64_t bitOffset, uint_fast64_t bitWidth);
+
+            // The expression variable for this location.
+            storm::expressions::Variable variable;
 
             // The highest possible location value.
             uint64_t highestValue;
