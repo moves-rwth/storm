@@ -105,8 +105,8 @@ namespace storm {
             }
 
             void setHeuristicValues(std::shared_ptr<storm::storage::DFTState<ValueType>> oldState, ValueType rate, ValueType exitRate) {
-                if (hasFailed(mDft.getTopLevelIndex()) || isFailsafe(mDft.getTopLevelIndex()) || (nrFailableDependencies() == 0 && nrFailableBEs() == 0)) {
-                    // Do not skip absorbing state
+                if (hasFailed(mDft.getTopLevelIndex()) || isFailsafe(mDft.getTopLevelIndex()) || nrFailableDependencies() > 0 || (nrFailableDependencies() == 0 && nrFailableBEs() == 0)) {
+                    // Do not skip absorbing state or if reached by dependencies
                     exploreHeuristic.setNotSkip();
                 }
                 exploreHeuristic.setHeuristicValues(oldState->exploreHeuristic.getDepth() + 1, rate, exitRate);
