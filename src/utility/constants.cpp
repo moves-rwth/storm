@@ -40,7 +40,11 @@ namespace storm {
             return true;
         }
 
-        
+        template<typename ValueType>
+        bool isInfinity(ValueType const& a) {
+            return a == infinity<ValueType>();
+        }
+
 #ifdef STORM_HAVE_CARL
         template<>
         bool isOne(storm::RationalFunction const& a) {
@@ -56,7 +60,7 @@ namespace storm {
         bool isConstant(storm::RationalFunction const& a) {
             return a.isConstant();
         }
-        
+
         template<>
         bool isOne(storm::Polynomial const& a) {
             return a.isOne();
@@ -71,13 +75,19 @@ namespace storm {
         bool isConstant(storm::Polynomial const& a) {
             return a.isConstant();
         }
-        
+
         template<>
         storm::RationalFunction infinity() {
             // FIXME: this should be treated more properly.
             return storm::RationalFunction(-1.0);
         }
-        
+
+        template<>
+        bool isInfinity(storm::RationalFunction const& a) {
+            // FIXME: this should be treated more properly.
+            return a == infinity<storm::RationalFunction>();
+        }
+
         template<>
         bool isOne(storm::RationalNumber const& a) {
             return carl::isOne(a);
@@ -166,7 +176,8 @@ namespace storm {
         template bool isOne(double const& value);
         template bool isZero(double const& value);
         template bool isConstant(double const& value);
-        
+        template bool isInfinity(double const& value);
+
 		template double one();
 		template double zero();
 		template double infinity();
@@ -182,7 +193,8 @@ namespace storm {
         template bool isOne(float const& value);
         template bool isZero(float const& value);
         template bool isConstant(float const& value);
-        
+        template bool isInfinity(float const& value);
+
 		template float one();
 		template float zero();
 		template float infinity();
@@ -198,7 +210,8 @@ namespace storm {
         template bool isOne(int const& value);
         template bool isZero(int const& value);
         template bool isConstant(int const& value);
-        
+        template bool isInfinity(int const& value);
+
         template int one();
         template int zero();
         template int infinity();
@@ -214,6 +227,7 @@ namespace storm {
         template bool isOne(storm::storage::sparse::state_type const& value);
         template bool isZero(storm::storage::sparse::state_type const& value);
         template bool isConstant(storm::storage::sparse::state_type const& value);
+        template bool isInfinity(storm::storage::sparse::state_type const& value);
 
         template uint32_t one();
         template uint32_t zero();
@@ -235,7 +249,8 @@ namespace storm {
         template bool isOne(RationalFunction const& value);
         template bool isZero(RationalFunction const& value);
         template bool isConstant(RationalFunction const& value);
-        
+        template bool isInfinity(RationalFunction const& value);
+
         template RationalFunction one();
         template RationalFunction zero();
         template storm::RationalFunction infinity();
@@ -251,7 +266,8 @@ namespace storm {
         template bool isOne(RationalNumber const& value);
         template bool isZero(RationalNumber const& value);
         template bool isConstant(RationalNumber const& value);
-        
+        template bool isInfinity(RationalNumber const& value);
+
         template RationalNumber one();
         template RationalNumber zero();
        
@@ -261,7 +277,8 @@ namespace storm {
         template bool isOne(Interval const& value);
         template bool isZero(Interval const& value);
         template bool isConstant(Interval const& value);
-        
+        template bool isInfinity(Interval const& value);
+
         template Interval one();
         template Interval zero();
         

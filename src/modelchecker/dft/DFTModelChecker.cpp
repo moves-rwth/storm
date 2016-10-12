@@ -187,6 +187,7 @@ namespace storm {
 
                     ++iteration;
                     STORM_LOG_INFO("Result after iteration " << iteration << ": (" << std::setprecision(10) << approxResult.first << ", " << approxResult.second << ")");
+                    STORM_LOG_THROW(!storm::utility::isInfinity<ValueType>(approxResult.first) && !storm::utility::isInfinity<ValueType>(approxResult.second), storm::exceptions::NotSupportedException, "Approximation does not work if result might be infinity.");
                 } while (!isApproximationSufficient(approxResult.first, approxResult.second, approximationError));
 
                 STORM_LOG_INFO("Finished approximation after " << iteration << " iteration" << (iteration > 1 ? "s." : "."));

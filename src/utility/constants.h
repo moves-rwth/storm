@@ -38,7 +38,10 @@ namespace storm {
         
         template<typename ValueType>
         bool isConstant(ValueType const& a);
-                
+
+        template<typename ValueType>
+        bool isInfinity(ValueType const& a);
+
         template<typename ValueType>
         ValueType pow(ValueType const& value, uint_fast64_t exponent);
         
