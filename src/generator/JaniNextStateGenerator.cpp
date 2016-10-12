@@ -178,14 +178,12 @@ namespace storm {
                 std::shared_ptr<storm::solver::SmtSolver::ModelReference> model = solver->getModel();
                 for (auto const& booleanVariable : this->variableInformation.booleanVariables) {
                     bool variableValue = model->getBooleanValue(booleanVariable.variable);
-                    std::cout << booleanVariable.variable.getName() << " has val " << variableValue << std::endl;
                     storm::expressions::Expression localBlockingExpression = variableValue ? !booleanVariable.variable : booleanVariable.variable;
                     blockingExpression = blockingExpression.isInitialized() ? blockingExpression || localBlockingExpression : localBlockingExpression;
                     initialState.set(booleanVariable.bitOffset, variableValue);
                 }
                 for (auto const& integerVariable : this->variableInformation.integerVariables) {
                     int_fast64_t variableValue = model->getIntegerValue(integerVariable.variable);
-                    std::cout << integerVariable.variable.getName() << " has val " << variableValue << std::endl;
                     storm::expressions::Expression localBlockingExpression = integerVariable.variable != model->getManager().integer(variableValue);
                     blockingExpression = blockingExpression.isInitialized() ? blockingExpression || localBlockingExpression : localBlockingExpression;
                     initialState.setFromInt(integerVariable.bitOffset, integerVariable.bitWidth, static_cast<uint_fast64_t>(variableValue - integerVariable.lowerBound));
