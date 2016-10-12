@@ -1,10 +1,14 @@
 #include "src/builder/ExplicitGspnModelBuilder.h"
 #include "src/exceptions/BaseException.h"
+#include "src/exceptions/WrongFormatException.h"
 #include "src/parser/GspnParser.h"
 #include "src/storage/gspn/GSPN.h"
 #include "src/storage/gspn/GspnBuilder.h"
 #include "src/utility/macros.h"
 #include "src/utility/initialize.h"
+
+#include "utility/storm.h"
+#include "src/cli/cli.h"
 
 #include "src/storage/expressions/ExpressionManager.h"
 #include "src/storage/jani/Model.h"
@@ -14,91 +18,47 @@
 #include <iostream>
 #include <string>
 
+#include <boost/algorithm/string.hpp>
+
+#include "src/exceptions/FileIoException.h"
+
+#include "src/settings/modules/GeneralSettings.h"
+#include "src/settings/modules/GspnSettings.h"
+#include "src/settings/modules/CoreSettings.h"
+#include "src/settings/modules/DebugSettings.h"
+#include "src/settings/modules/JaniExportSettings.h"
 
 /*!
- * Parses the arguments to storm-gspn
- * The read data is stored in the different arguments (e.g., inputFile, formula, ...)
- *
- * @param begin pointer to the first argument passed to storm-gspn
- * @param end pointer to one past the last argument passed to storm-gspn
- * @param inputFile the input file is stored in this object
- * @param formula the formula is stored in this object
- * @param outputFile the output file is stored in this object
- * @param outputType the output type is stored in this object
- * @return false if the help flag is set or the input file is missing
+ * Initialize the settings manager.
  */
-bool parseArguments(const char **begin, const char **end, std::string &inputFile, std::string &formula,
-                    std::string &outputFile, std::string &outputType) {
-    bool result = false;
-
-    for (; begin != end; ++begin) {
-        std::string currentArg = *begin;
-
-        // parse input file argument
-        if (currentArg == "--input_file" || currentArg == "-i") {
-            auto next = begin + 1;
-            if (next != end) {
-                inputFile = *next;
-                result = true;
-            } else {
-                return -1;
-            }
-            continue;
-        }
-
-        // parse formula argument
-        if (currentArg == "--formula" || currentArg == "-f") {
-            auto next = begin + 1;
-            if (next != end) {
-                formula = *next;
-            } else {
-                return -1;
-            }
-            continue;
-        }
-
-        // parse output file argument
-        if (currentArg == "--output_file" || currentArg == "-o") {
-            auto next = begin + 1;
-            if (next != end) {
-                outputFile = *next;
-            } else {
-                return -1;
-            }
-            continue;
-        }
-
-        // parse output file type argument
-        if (currentArg == "--output_type" || currentArg == "-ot") {
-            auto next = begin + 1;
-            if (next != end) {
-                outputType = *next;
-            } else {
-                return -1;
-            }
-            continue;
-        }
-
-        // parse help argument
-        if (currentArg == "--help" || currentArg == "-h") {
-            return false;
-        }
-    }
-
-    return result;
+void initializeSettings() {
+    storm::settings::mutableManager().setName("StoRM-GSPN", "storm-gspn");
+    
+    // Register all known settings modules.
+    storm::settings::addModule<storm::settings::modules::GeneralSettings>();
+    storm::settings::addModule<storm::settings::modules::GSPNSettings>();
+    storm::settings::addModule<storm::settings::modules::CoreSettings>();
+    storm::settings::addModule<storm::settings::modules::DebugSettings>();
+    storm::settings::addModule<storm::settings::modules::JaniExportSettings>();
 }
 
-/*!
- * Print the manual of storm-gspn
- */
-void printHelp() {
-    std::cout << "storm-gspn -i input_file [-f formula] [-o output_file] [-ot output_type] [-h]" << std::endl;
-    std::cout << std::endl;
-    std::cout << "-i, --input_file:   file which contains the gspn" << std::endl;
-    std::cout << "-f, --formula:      formula which should be checked on the gspn" << std::endl;
-    std::cout << "-o, -output_file:   file in which the gspn/markov automaton should be stored" << std::endl
-              << "                    requires the option -ot to be set" << std::endl;
-    std::cout << "-ot, --output_type: possible output types are: pnml, pnpro, dot or ma" << std::endl;
+
+std::unordered_map<std::string, uint64_t> parseCapacitiesList(std::string const& filename) {
+    std::unordered_map<std::string, uint64_t> map;
+    
+    std::ifstream ifs;
+    ifs.open(filename);
+    
+    std::string line;
+    while( std::getline(ifs, line) ) {
+        std::vector<std::string> strs;
+        boost::split(strs, line, boost::is_any_of("\t "));
+        STORM_LOG_THROW(strs.size() == 2, storm::exceptions::WrongFormatException, "Expect key value pairs");
+        std::cout << std::stoll(strs[1]) << std::endl;
+        map[strs[0]] = std::stoll(strs[1]);
+    }
+    return map;
+    
 }
 
 void handleJani(storm::gspn::GSPN const& gspn) {
@@ -110,22 +70,33 @@ void handleJani(storm::gspn::GSPN const& gspn) {
 }
 
 int main(const int argc, const char **argv) {
-    std::string inputFile, formula, outputFile, outputType;
-    if (!parseArguments(argv+1, argv+argc, inputFile, formula, outputFile, outputType)) {
-        printHelp();
-        return 1;
-    }
-
     try {
         storm::utility::setUp();
+        storm::cli::printHeader("StoRM-GSPN", argc, argv);
+        initializeSettings();
+        
+        bool optionsCorrect = storm::cli::parseOptions(argc, argv);
+        if (!optionsCorrect) {
+            return -1;
+        }
 
         // parse gspn from file
+        if (!storm::settings::getModule<storm::settings::modules::GSPNSettings>().isGspnFileSet()) {
+            return -1;
+        }
+        
         auto parser = storm::parser::GspnParser();
-        auto gspn = parser.parse(inputFile);
+        auto gspn = parser.parse(storm::settings::getModule<storm::settings::modules::GSPNSettings>().getGspnFilename());
 
         if (!gspn.isValid()) {
             STORM_LOG_ERROR("The gspn is not valid.");
         }
+        
+        if(storm::settings::getModule<storm::settings::modules::GSPNSettings>().isCapacitiesFileSet()) {
+            auto capacities = parseCapacitiesList(storm::settings::getModule<storm::settings::modules::GSPNSettings>().getCapacitiesFilename());
+            gspn.setCapacities(capacities);
+        }
+      
         
         std::ofstream file;
         file.open("gspn.dot");
@@ -137,29 +108,29 @@ int main(const int argc, const char **argv) {
         
         return 0;
         
-
-        // construct ma
-        auto builder = storm::builder::ExplicitGspnModelBuilder<>();
-        auto ma = builder.translateGspn(gspn, formula);
-
-        // write gspn into output file
-        if (!outputFile.empty()) {
-            std::ofstream file;
-            file.open(outputFile);
-            if (outputType == "pnml") {
-                gspn.toPnml(file);
-            }
-            if (outputType == "pnpro") {
-                gspn.toPnpro(file);
-            }
-            if (outputType == "dot") {
-                gspn.writeDotToStream(file);
-            }
-            if (outputType == "ma") {
-                ma.writeDotToStream(file);
-            }
-            file.close();
-        }
+//
+//        // construct ma
+//        auto builder = storm::builder::ExplicitGspnModelBuilder<>();
+//        auto ma = builder.translateGspn(gspn, formula);
+//
+//        // write gspn into output file
+//        if (!outputFile.empty()) {
+//            std::ofstream file;
+//            file.open(outputFile);
+//            if (outputType == "pnml") {
+//                gspn.toPnml(file);
+//            }
+//            if (outputType == "pnpro") {
+//                gspn.toPnpro(file);
+//            }
+//            if (outputType == "dot") {
+//                gspn.writeDotToStream(file);
+//            }
+//            if (outputType == "ma") {
+//                ma.writeDotToStream(file);
+//            }
+//            file.close();
+//        }
 
         // All operations have now been performed, so we clean up everything and terminate.
         storm::utility::cleanUp();

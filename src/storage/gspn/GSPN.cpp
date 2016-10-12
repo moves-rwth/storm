@@ -2,6 +2,7 @@
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidArgumentException.h"
 
+#include <unordered_map>
 
 #include <boost/lexical_cast.hpp>
 
@@ -43,19 +44,30 @@ namespace storm {
             return m;
         }
 
-        std::pair<bool, storm::gspn::Place> GSPN::getPlace(uint_fast64_t const& id) const {
+        
+        std::pair<bool, storm::gspn::Place const*> GSPN::getPlace(uint_fast64_t const& id) const {
             for (auto& place : places) {
                 if (id == place.getID()) {
-                    return std::make_pair<bool, storm::gspn::Place const&>(true, place);
+                    return std::make_pair<bool, storm::gspn::Place const*>(true, &place);
                 }
             }
-            return std::make_pair<bool, storm::gspn::Place>(false, storm::gspn::Place());
+            return std::make_pair<bool, storm::gspn::Place const*>(false, nullptr);
         }
-
-        std::pair<bool, storm::gspn::Place> GSPN::getPlace(std::string const& id) const {
+        
+    
+        std::pair<bool, storm::gspn::Place*> GSPN::getPlace(std::string const& id) {
             for (auto& place : places) {
                 if (id.compare(place.getName()) == 0) {
-                    return std::make_pair<bool, storm::gspn::Place const&>(true, place);
+                    return std::make_pair<bool, storm::gspn::Place*>(true, &place);
+                }
+            }
+            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "No place with name " << id);
+        };
+        
+        std::pair<bool, storm::gspn::Place const*> GSPN::getPlace(std::string const& id) const {
+            for (auto& place : places) {
+                if (id.compare(place.getName()) == 0) {
+                    return std::make_pair<bool, storm::gspn::Place const*>(true, &place);
                 }
             }
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "No place with name " << id);
@@ -78,6 +90,8 @@ namespace storm {
             }
             return std::make_pair<bool, std::shared_ptr<storm::gspn::ImmediateTransition<GSPN::WeightType>> const>(false, nullptr);
         }
+        
+        
 
         std::pair<bool, std::shared_ptr<storm::gspn::Transition> const> GSPN::getTransition(std::string const& id) const {
             auto trans = getTimedTransition(id);
@@ -87,15 +101,30 @@ namespace storm {
 
             return getImmediateTransition(id);
         }
+        
+        void GSPN::setCapacities(std::unordered_map<std::string, uint64_t> const& mapping) {
+            for(auto const& entry : mapping) {
+                std::cout << "restrict " << entry.first << std::endl;
+                auto place = getPlace(entry.first);
+                STORM_LOG_THROW(place.first, storm::exceptions::InvalidArgumentException, "No place with name " << entry.first);
+                place.second->setCapacity(entry.second);
+                
+            }
+        }
 
-        void GSPN::writeDotToStream(std::ostream& outStream) {
+        void GSPN::writeDotToStream(std::ostream& outStream) const {
             outStream << "digraph " << this->getName() << " {" << std::endl;
 
             // print places with initial marking (not printed is the capacity)
             outStream << "\t" << "node [shape=ellipse]" << std::endl;
             for (auto& place : this->getPlaces()) {
                 outStream << "\t" << place.getName() << " [label=\"" << place.getName() << "(" << place.getNumberOfInitialTokens();
-                outStream << ")\"];" << std::endl;
+                outStream << ")";
+                if(place.hasRestrictedCapacity()) {
+                    outStream << "c " << place.getCapacity();
+                }
+                
+                outStream << "\"];" << std::endl;
             }
 
             // print transitions with weight/rate

@@ -379,9 +379,9 @@ namespace storm {
 
                     // incoming arc
                     if (type.second.compare("normal") == 0) {
-                        trans.second->setInputArcMultiplicity(place.second, multiplicity.second);
+                        trans.second->setInputArcMultiplicity(*place.second, multiplicity.second);
                     } else if (type.second.compare("inhibition") == 0) {
-                        trans.second->setInhibitionArcMultiplicity(place.second, multiplicity.second);
+                        trans.second->setInhibitionArcMultiplicity(*place.second, multiplicity.second);
                     } else {
                         // unknown arc type
                         // abort parsing
@@ -395,7 +395,7 @@ namespace storm {
                 auto place = gspn.getPlace(target.second);
                 if (true == place.first && true == trans.first) {
                     // outgoing arc
-                    trans.second->setOutputArcMultiplicity(place.second, multiplicity.second);
+                    trans.second->setOutputArcMultiplicity(*place.second, multiplicity.second);
                     return;
                 }
             }
@@ -883,15 +883,15 @@ namespace storm {
                 if (!place.first) {
                     std::cout << "place not found" << std::endl;
                 }
-                transition.second->setInputArcMultiplicity(place.second, mult);
+                transition.second->setInputArcMultiplicity(*place.second, mult);
             } else if (kind.compare("INHIBITOR") == 0) {
                 auto transition = gspn.getTransition(head);
                 auto place = gspn.getPlace(tail);
-                transition.second->setInhibitionArcMultiplicity(place.second, mult);
+                transition.second->setInhibitionArcMultiplicity(*place.second, mult);
             } else if (kind.compare("OUTPUT") == 0) {
                 auto transition = gspn.getTransition(tail);
                 auto place = gspn.getPlace(head);
-                transition.second->setOutputArcMultiplicity(place.second, mult);
+                transition.second->setOutputArcMultiplicity(*place.second, mult);
             } else {
                 // TODO error!
             }

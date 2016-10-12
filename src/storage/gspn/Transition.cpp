@@ -92,7 +92,7 @@ namespace storm {
             }
 
             for (auto &placePtr : getOutputPlaces()) {
-                if (placePtr->getCapacity() >= 0) {
+                if (placePtr->hasRestrictedCapacity()) {
                     if (marking.getNumberOfTokensAt(placePtr->getID()) + getOutputArcMultiplicity(*placePtr) > placePtr->getCapacity()) {
                         return false;
                     }

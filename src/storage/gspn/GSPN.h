@@ -1,10 +1,10 @@
-#ifndef STORM_STORAGE_GSPN_GSPN_H
-#define STORM_STORAGE_GSPN_GSPN_H
+#pragma once
 
 #include <iostream>
 #include <stdint.h>
 #include <vector>
 #include <memory>
+#include <unordered_map>
 
 #include "src/storage/gspn/ImmediateTransition.h"
 #include "src/storage/gspn/Marking.h"
@@ -83,9 +83,10 @@ namespace storm {
              *         If the first element is true, then the second element is the wanted place.
              *         If the first element is false, then the second element is not defined.
              */
-            std::pair<bool, storm::gspn::Place> getPlace(uint_fast64_t const& id) const;
+            std::pair<bool, storm::gspn::Place const*> getPlace(uint_fast64_t const& id) const;
 
-            std::pair<bool, storm::gspn::Place> getPlace(std::string const& id) const;
+            std::pair<bool, storm::gspn::Place*> getPlace(std::string const& id);
+            std::pair<bool, storm::gspn::Place const*> getPlace(std::string const& id) const;
             /*!
              * Returns the timed transition with the corresponding id.
              *
@@ -120,7 +121,7 @@ namespace storm {
              *
              * @param outStream The stream to which the output is written to.
              */
-            void writeDotToStream(std::ostream& outStream);
+            void writeDotToStream(std::ostream& outStream) const;
 
             /*!
              * Set the name of the gspn to the given name.
@@ -135,6 +136,12 @@ namespace storm {
              * @return The name.
              */
             std::string const& getName() const;
+            
+            
+            /**
+             *  Set Capacities according to name->capacity map.
+             */
+            void setCapacities(std::unordered_map<std::string, uint64_t> const& mapping);
 
             /*!
              * Performe some checks
@@ -180,5 +187,3 @@ namespace storm {
         };
     }
 }
-
-#endif //STORM_STORAGE_GSPN_GSPN_H

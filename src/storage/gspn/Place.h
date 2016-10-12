@@ -2,6 +2,7 @@
 #define STORM_STORAGE_GSPN_PLACE_H_
 
 #include <string>
+#include "boost/optional.hpp"
 
 namespace storm {
     namespace gspn {
@@ -60,14 +61,19 @@ namespace storm {
              * @param capacity The capacity of this place. A non-negative number represents the capacity.
              *                 The value -1 indicates that the capacity is not set.
              */
-            void setCapacity(int_fast64_t const& capacity);
+            void setCapacity(uint64_t capacity);
 
             /*!
              * Returns the capacity of tokens of this place.
              *
-             * @return The capacity of the place. The value -1 indicates that the capacity is not set.
+             * @return The capacity of the place. Only valid if the capacity is restricted.
              */
-            int_fast64_t getCapacity() const;
+            uint64_t getCapacity() const;
+            
+            /*!
+             *
+             */
+            bool hasRestrictedCapacity() const;
         private:
             // contains the number of initial tokens of this place
             uint_fast64_t numberOfInitialTokens = 0;
@@ -81,7 +87,7 @@ namespace storm {
             // capacity of this place
             // -1 indicates that the capacity is not set
             // other non-negative values represents the capacity
-            int_fast64_t capacity = -1;
+            boost::optional<uint64_t> capacity = boost::none;
         };
     }
 }

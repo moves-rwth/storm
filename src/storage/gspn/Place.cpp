@@ -29,13 +29,17 @@ namespace storm {
             return this->numberOfInitialTokens;
         }
 
-        void Place::setCapacity(int_fast64_t const& capacity) {
-            STORM_LOG_THROW(capacity <= -1, storm::exceptions::IllegalArgumentValueException, "The capacity cannot be less than -1.");
-            this->capacity = capacity;
+        void Place::setCapacity(uint64_t cap) {
+            std::cout << this->name << std::endl;
+            this->capacity = cap;
         }
 
-        int_fast64_t Place::getCapacity() const {
-            return this->capacity;
+        uint64_t Place::getCapacity() const {
+            return capacity.get();
+        }
+        
+        bool Place::hasRestrictedCapacity() const {
+            return capacity != boost::none;
         }
     }
 }

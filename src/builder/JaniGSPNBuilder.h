@@ -9,7 +9,7 @@ namespace storm {
         class JaniGSPNBuilder {
         public:
             JaniGSPNBuilder(storm::gspn::GSPN const& gspn, std::shared_ptr<storm::expressions::ExpressionManager> const& expManager) : gspn(gspn), expressionManager(expManager) {
-                
+                gspn.writeDotToStream(std::cout);
             }
             
             virtual ~JaniGSPNBuilder() {
@@ -37,10 +37,11 @@ namespace storm {
             void addVariables(storm::jani::Model* model) {
                 for (auto const& place : gspn.getPlaces()) {
                     storm::jani::Variable* janiVar = nullptr;
-                    if (place.getCapacity() == -1) {
+                    if (!place.hasRestrictedCapacity()) {
                         // Effectively no capacity limit known
                         janiVar = new storm::jani::UnboundedIntegerVariable(place.getName(), expressionManager->declareIntegerVariable(place.getName()), expressionManager->integer(place.getNumberOfInitialTokens()), false);
                     } else {
+                        assert(place.hasRestrictedCapacity());
                         janiVar = new storm::jani::BoundedIntegerVariable(place.getName(), expressionManager->declareIntegerVariable(place.getName()), expressionManager->integer(place.getNumberOfInitialTokens()), expressionManager->integer(0), expressionManager->integer(place.getCapacity()));
                     }
                     assert(janiVar != nullptr);

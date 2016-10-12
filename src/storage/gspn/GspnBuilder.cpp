@@ -48,7 +48,7 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::IllegalFunctionCallException, "The place with the id \"" + std::to_string(from) + "\" does not exist.");
             }
 
-            std::get<1>(transPair)->setInputArcMultiplicity(std::get<1>(placePair), multiplicity);
+            std::get<1>(transPair)->setInputArcMultiplicity(*std::get<1>(placePair), multiplicity);
         }
 
         void GspnBuilder::addInhibitionArc(uint_fast64_t const& from, uint_fast64_t const& to, uint_fast64_t const& multiplicity) {
@@ -62,7 +62,7 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::IllegalFunctionCallException, "The place with the id \"" + std::to_string(from) + "\" does not exist.");
             }
 
-            std::get<1>(transPair)->setInhibitionArcMultiplicity(std::get<1>(placePair), multiplicity);
+            std::get<1>(transPair)->setInhibitionArcMultiplicity(*std::get<1>(placePair), multiplicity);
         }
 
         void GspnBuilder::addOutputArc(uint_fast64_t const& from, uint_fast64_t const& to, uint_fast64_t const& multiplicity) {
@@ -76,7 +76,7 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::IllegalFunctionCallException, "The place with the id \"" + std::to_string(from) + "\" does not exist.");
             }
 
-            std::get<1>(transPair)->setOutputArcMultiplicity(std::get<1>(placePair), multiplicity);
+            std::get<1>(transPair)->setOutputArcMultiplicity(*std::get<1>(placePair), multiplicity);
         }
 
         storm::gspn::GSPN const& GspnBuilder::buildGspn() const {
