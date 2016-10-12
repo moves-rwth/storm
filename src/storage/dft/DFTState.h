@@ -26,7 +26,8 @@ namespace storm {
             // Status is bitvector where each element has two bits with the meaning according to DFTElementState
             storm::storage::BitVector mStatus;
             size_t mId;
-            std::vector<size_t> mIsCurrentlyFailableBE;
+            std::vector<size_t> mCurrentlyFailableBE;
+            std::vector<size_t> mCurrentlyNotFailableBE;
             std::vector<size_t> mFailableDependencies;
             std::vector<size_t> mUsedRepresentants;
             bool mValid = true;
@@ -158,25 +159,58 @@ namespace storm {
              * @param spareId Id of the spare
              */
             void finalizeUses(size_t spareId);
-            
+
+            /**
+             * Claim a new spare child for the given spare gate.
+             *
+             * @param spareId       Id of the spare gate.
+             * @param currentlyUses Id of the currently used spare child.
+             * @param children      List of children of this spare.
+             *
+             * @return True, if claiming was successful.
+             */
             bool claimNew(size_t spareId, size_t currentlyUses, std::vector<std::shared_ptr<DFTElement<ValueType>>> const& children);
             
-            bool hasOutgoingEdges() const {
-                return !mIsCurrentlyFailableBE.empty();
-            }
-            
+            /**
+             * Get number of currently failable BEs.
+             *
+             * @return Number of failable BEs.
+             */
             size_t nrFailableBEs() const {
-                return mIsCurrentlyFailableBE.size();
+                return mCurrentlyFailableBE.size();
             }
 
-            /** Get the failure rate of the currently failable BE on the given index.
+            /**
+             * Get number of currently not failable BEs. These are cold BE which can fail in the future.
              *
-             * @param index Index of BE in list of currently failable BEs.
+             * @return Number of not failable BEs.
+             */
+            size_t nrNotFailableBEs() const {
+                return mCurrentlyNotFailableBE.size();
+            }
+
+            /**
+             * Get the failure rate of the currently failable BE on the given index.
+             *
+             * @param index           Index of BE in list of currently failable BEs.
              *
              * @return Failure rate of the BE.
              */
             ValueType getFailableBERate(size_t index) const;
 
+            /**
+             * Get the failure rate of the currently not failable BE on the given index.
+             *
+             * @param index Index of BE in list of currently not failable BEs.
+             *
+             * @return Failure rate of the BE.
+             */
+            ValueType getNotFailableBERate(size_t index) const;
+
+            /** Get number of currently failable dependencies.
+             *
+             * @return Number of failable dependencies.
+             */
             size_t nrFailableDependencies() const {
                 return mFailableDependencies.size();
             }
@@ -245,13 +279,13 @@ namespace storm {
                     }
                     stream << "} ";
                 } else {
-                    auto it = mIsCurrentlyFailableBE.begin();
+                    auto it = mCurrentlyFailableBE.begin();
                     stream << "{";
-                    if(it != mIsCurrentlyFailableBE.end()) {
+                    if(it != mCurrentlyFailableBE.end()) {
                         stream << *it;
                     }
                     ++it;
-                    while(it != mIsCurrentlyFailableBE.end()) {
+                    while(it != mCurrentlyFailableBE.end()) {
                         stream << ", " << *it;
                         ++it;
                     }
@@ -266,7 +300,18 @@ namespace storm {
             
         private:
             void propagateActivation(size_t representativeId);
-            
+
+            /**
+             * Get the failure rate of the given BE.
+             *
+             * @param id              Id of BE.
+             * @param considerPassive Flag indicating if the passive failure rate should be returned if
+             *                        the BE currently is passive.
+             *
+             * @return Failure rate of the BE.
+             */
+            ValueType getBERate(size_t id, bool considerPassive) const;
+
             /*!
              * Sort failable BEs in decreasing order of their active failure rate.
              */

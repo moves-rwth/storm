@@ -147,6 +147,8 @@ namespace storm {
             buildingTime += buildingEnd - buildingStart;
 
             if (approximationError > 0.0) {
+                // Comparator for checking the error of the approximation
+                storm::utility::ConstantsComparator<ValueType> comparator;
                 // Build approximate Markov Automata for lower and upper bound
                 double currentApproximationError = approximationError;
                 approximation_result approxResult = std::make_pair(storm::utility::zero<ValueType>(), storm::utility::zero<ValueType>());
@@ -173,7 +175,9 @@ namespace storm {
                     // Check lower bound
                     std::unique_ptr<storm::modelchecker::CheckResult> result = checkModel(model, formula);
                     result->filter(storm::modelchecker::ExplicitQualitativeCheckResult(model->getInitialStates()));
-                    approxResult.first = result->asExplicitQuantitativeCheckResult<ValueType>().getValueMap().begin()->second;
+                    ValueType newResult = result->asExplicitQuantitativeCheckResult<ValueType>().getValueMap().begin()->second;
+                    STORM_LOG_ASSERT(iteration == 0 || !comparator.isLess(newResult, approxResult.first), "New under-approximation " << newResult << " is smaller than old result " << approxResult.first);
+                    approxResult.first = newResult;
 
                     // Build model for upper bound
                     STORM_LOG_INFO("Getting model for upper bound...");
@@ -183,7 +187,9 @@ namespace storm {
                     // Check upper bound
                     result = checkModel(model, formula);
                     result->filter(storm::modelchecker::ExplicitQualitativeCheckResult(model->getInitialStates()));
-                    approxResult.second = result->asExplicitQuantitativeCheckResult<ValueType>().getValueMap().begin()->second;
+                    newResult = result->asExplicitQuantitativeCheckResult<ValueType>().getValueMap().begin()->second;
+                    STORM_LOG_ASSERT(iteration == 0 || !comparator.isLess(approxResult.second, newResult), "New over-approximation " << newResult << " is greater than old result " << approxResult.second);
+                    approxResult.second = newResult;
 
                     ++iteration;
                     STORM_LOG_INFO("Result after iteration " << iteration << ": (" << std::setprecision(10) << approxResult.first << ", " << approxResult.second << ")");

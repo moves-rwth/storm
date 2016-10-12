@@ -216,9 +216,9 @@ namespace storm {
                 return mRepresentants.find(id) != mRepresentants.end();
             }
 
-            DFTElementCPointer getRepresentant(size_t id) const {
+            size_t getRepresentant(size_t id) const {
                 STORM_LOG_ASSERT(hasRepresentant(id), "Element has no representant.");
-                return getElement(mRepresentants.find(id)->second);
+                return mRepresentants.find(id)->second;
             }
 
             bool hasFailed(DFTStatePointer const& state) const {

@@ -414,9 +414,15 @@ namespace storm {
             for (auto it = skippedStates.begin(); it != skippedStates.end(); ++it) {
                 auto matrixEntry = matrix.getRow(it->first, 0).begin();
                 STORM_LOG_ASSERT(matrixEntry->getColumn() == failedStateId, "Transition has wrong target state.");
-                // Get the lower bound by considering the failure of the BE with the highest rate
-                // The list is sorted by rate, therefore we consider the first BE for the highest failure rate
-                matrixEntry->setValue(it->second->getFailableBERate(0));
+                // Get the lower bound by considering the failure of all possible BEs
+                ValueType newRate = storm::utility::zero<ValueType>();
+                for (size_t index = 0; index < it->second->nrFailableBEs(); ++index) {
+                    newRate += it->second->getFailableBERate(index);
+                }
+                for (size_t index = 0; index < it->second->nrNotFailableBEs(); ++index) {
+                    newRate += it->second->getNotFailableBERate(index);
+                }
+                matrixEntry->setValue(newRate);
             }
         }
 
@@ -432,6 +438,9 @@ namespace storm {
                 ValueType newRate = storm::utility::zero<ValueType>();
                 for (size_t index = 0; index < it->second->nrFailableBEs(); ++index) {
                     newRate += storm::utility::one<ValueType>() / it->second->getFailableBERate(index);
+                }
+                for (size_t index = 0; index < it->second->nrNotFailableBEs(); ++index) {
+                    newRate += storm::utility::one<ValueType>() / it->second->getNotFailableBERate(index);
                 }
                 newRate = storm::utility::one<ValueType>() / newRate;
                 matrixEntry->setValue(newRate);

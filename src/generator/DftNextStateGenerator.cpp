@@ -168,7 +168,7 @@ namespace storm {
                     bool isActive = true;
                     if (mDft.hasRepresentant(nextBE->id())) {
                         // Active must be checked for the state we are coming from as this state is responsible for the rate
-                        isActive = state->isActive(mDft.getRepresentant(nextBE->id())->id());
+                        isActive = state->isActive(mDft.getRepresentant(nextBE->id()));
                     }
                     ValueType rate = isActive ? nextBE->activeFailureRate() : nextBE->passiveFailureRate();
                     STORM_LOG_ASSERT(!storm::utility::isZero(rate), "Rate is 0.");
