@@ -412,7 +412,7 @@ namespace storm {
         void ExplicitDFTModelBuilderApprox<ValueType, StateType>::changeMatrixLowerBound(storm::storage::SparseMatrix<ValueType> & matrix) const {
             // Set lower bound for skipped states
             for (auto it = skippedStates.begin(); it != skippedStates.end(); ++it) {
-                auto matrixEntry = matrix.getRow(it->first).begin();
+                auto matrixEntry = matrix.getRow(it->first, 0).begin();
                 STORM_LOG_ASSERT(matrixEntry->getColumn() == failedStateId, "Transition has wrong target state.");
                 // Get the lower bound by considering the failure of the BE with the highest rate
                 // The list is sorted by rate, therefore we consider the first BE for the highest failure rate
@@ -424,7 +424,7 @@ namespace storm {
         void ExplicitDFTModelBuilderApprox<ValueType, StateType>::changeMatrixUpperBound(storm::storage::SparseMatrix<ValueType> & matrix) const {
             // Set uppper bound for skipped states
             for (auto it = skippedStates.begin(); it != skippedStates.end(); ++it) {
-                auto matrixEntry = matrix.getRow(it->first).begin();
+                auto matrixEntry = matrix.getRow(it->first, 0).begin();
                 STORM_LOG_ASSERT(matrixEntry->getColumn() == failedStateId, "Transition has wrong target state.");
                 // Get the upper bound by considering the failure of all BEs
                 // The used formula for the rate is 1/( 1/a + 1/b + ...)

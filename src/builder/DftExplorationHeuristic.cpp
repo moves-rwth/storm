@@ -44,9 +44,7 @@ namespace storm {
 
         template<typename ValueType>
         void DFTExplorationHeuristic<ValueType>::setHeuristicValues(size_t depth, ValueType rate, ValueType exitRate) {
-            std::cout << "Set priority: " << depth << ", old: " << this->depth << std::endl;
             this->depth = depth;
-            // TODO Matthias: update rates and exitRates as well
             this->rate = rate;
             this->exitRate = exitRate;
         }
