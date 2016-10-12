@@ -23,9 +23,9 @@ namespace storm {
             
             
             GSPNSettings::GSPNSettings() : ModuleSettings(moduleName) {
-                this->addOption(storm::settings::OptionBuilder(moduleName, gspnFileOptionName, false, "Parses the pgcl program.").setShortName(gspnFileOptionShortName).addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "path to file").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, gspnFileOptionName, false, "Parses the GSPN.").setShortName(gspnFileOptionShortName).addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "path to file").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, gspnToJaniOptionName, false, "Transform to JANI.").setShortName(gspnToJaniOptionShortName).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, capacitiesFileOptionName, false, "Restrictions of program variables").setShortName(capacitiesFileOptionShortName).addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "path to file").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, capacitiesFileOptionName, false, "Capacaties as invariants for places.").setShortName(capacitiesFileOptionShortName).addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "path to file").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
             }
             
             bool GSPNSettings::isGspnFileSet() const {

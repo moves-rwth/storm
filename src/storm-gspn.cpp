@@ -23,7 +23,8 @@
 #include "src/exceptions/FileIoException.h"
 
 #include "src/settings/modules/GeneralSettings.h"
-#include "src/settings/modules/GspnSettings.h"
+#include "src/settings/modules/GSPNSettings.h"
+#include "src/settings/modules/GSPNExportSettings.h"
 #include "src/settings/modules/CoreSettings.h"
 #include "src/settings/modules/DebugSettings.h"
 #include "src/settings/modules/JaniExportSettings.h"
@@ -37,6 +38,7 @@ void initializeSettings() {
     // Register all known settings modules.
     storm::settings::addModule<storm::settings::modules::GeneralSettings>();
     storm::settings::addModule<storm::settings::modules::GSPNSettings>();
+    storm::settings::addModule<storm::settings::modules::GSPNExportSettings>();
     storm::settings::addModule<storm::settings::modules::CoreSettings>();
     storm::settings::addModule<storm::settings::modules::DebugSettings>();
     storm::settings::addModule<storm::settings::modules::JaniExportSettings>();
@@ -65,7 +67,7 @@ void handleJani(storm::gspn::GSPN const& gspn) {
     std::shared_ptr<storm::expressions::ExpressionManager> exprManager(new storm::expressions::ExpressionManager());
     storm::builder::JaniGSPNBuilder builder(gspn, exprManager);
     storm::jani::Model* model = builder.build();
-    storm::jani::JsonExporter::toFile(*model, "gspn.jani");
+    storm::jani::JsonExporter::toFile(*model, storm::settings::getModule<storm::settings::modules::JaniExportSettings>().getJaniFilename());
     delete model;
 }
 
@@ -98,13 +100,16 @@ int main(const int argc, const char **argv) {
         }
       
         
-        std::ofstream file;
-        file.open("gspn.dot");
-
-        gspn.writeDotToStream(file);
-
-        handleJani(gspn);
-
+        if(storm::settings::getModule<storm::settings::modules::GSPNExportSettings>().isWriteToDotSet()) {
+            std::ofstream file;
+            file.open(storm::settings::getModule<storm::settings::modules::GSPNExportSettings>().getWriteToDotFilename());
+            gspn.writeDotToStream(file);
+        }
+        
+        if(storm::settings::getModule<storm::settings::modules::JaniExportSettings>().isJaniFileSet()) {
+            handleJani(gspn);
+        }
+        
         
         return 0;
         
