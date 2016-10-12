@@ -6,6 +6,8 @@
 #include "src/exceptions/NotImplementedException.h"
 #include "src/models/sparse/Dtmc.h"
 #include "src/models/sparse/Mdp.h"
+#include "src/models/sparse/Ctmc.h"
+#include "src/models/sparse/MarkovAutomaton.h"
 
 #include "src/models/sparse/StandardRewardModel.h"
 
@@ -14,10 +16,23 @@ namespace storm {
     namespace exporter {
         template<typename ValueType>
         void explicitExportSparseModel(std::ostream& os, std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel,  std::vector<std::string> const& parameters) {
-            STORM_LOG_THROW(sparseModel->getType() == storm::models::ModelType::Mdp || sparseModel->getType() == storm::models::ModelType::Dtmc , storm::exceptions::NotImplementedException, "This functionality is not yet implemented." );
-            std::shared_ptr<storm::models::sparse::Mdp<ValueType>> mdp = sparseModel->template as<storm::models::sparse::Mdp<ValueType>>();
-
+            bool embedded = false;
+            if(sparseModel->getType() == storm::models::ModelType::Ctmc || sparseModel->getType() == storm::models::ModelType::MarkovAutomaton) {
+                STORM_LOG_WARN("This format only supports discrete time models");
+                embedded = true;
+            }
+            
+            STORM_LOG_THROW(embedded || sparseModel->getType() == storm::models::ModelType::Mdp || sparseModel->getType() == storm::models::ModelType::Dtmc , storm::exceptions::NotImplementedException, "This functionality is not yet implemented." );
+            
+            std::vector<ValueType> exitRates; // Only for CTMCs and MAs.
+            if(sparseModel->getType() == storm::models::ModelType::Ctmc) {
+                exitRates = sparseModel->template as<storm::models::sparse::Ctmc<ValueType>>()->getExitRateVector();
+            } else if(sparseModel->getType() == storm::models::ModelType::MarkovAutomaton) {
+                exitRates = sparseModel->template as<storm::models::sparse::MarkovAutomaton<ValueType>>()->getExitRates();
+            }
+            
             os << "// Exported by Storm" << std::endl;
+            os << "// Original model type: " << sparseModel->getType() << std::endl;
             os << "@type: mdp" << std::endl;
             os << "@parameters" << std::endl;
             for (auto const& p : parameters) {
@@ -31,24 +46,29 @@ namespace storm {
             for (typename storm::storage::SparseMatrix<ValueType>::index_type group = 0; group < matrix.getRowGroupCount(); ++group) {
                 os << "state " << group;
                 
-                bool first = true;
-                for (auto const& rewardModelEntry : sparseModel->getRewardModels()) {
-                    if (first) {
-                        os << " [";
-                        first = false;
-                    } else {
-                        os << ", ";
+                if (!embedded) {
+                   bool first = true;
+                   for (auto const& rewardModelEntry : sparseModel->getRewardModels()) {
+                       if (first) {
+                           os << " [";
+                           first = false;
+                       } else {
+                           os << ", ";
+                       }
+                       
+                       if(rewardModelEntry.second.hasStateRewards()) {
+                           os << rewardModelEntry.second.getStateRewardVector().at(group);
+                       } else {
+                           os << "0";
+                       }
                     }
                     
-                    if(rewardModelEntry.second.hasStateRewards()) {
-                        os << rewardModelEntry.second.getStateRewardVector().at(group);
-                    } else {
-                        os << "0";
+                    if (!first) {
+                        os << "]";
                     }
-                    
-                }
-                if (!first) {
-                    os << "]";
+                } else {
+                    // We currently only support the expected time.
+                    os << " [" << storm::utility::one<ValueType>()/exitRates.at(group) << "]";
                 }
                 
                 for(auto const& label : sparseModel->getStateLabeling().getLabelsOfState(group)) {
@@ -61,24 +81,28 @@ namespace storm {
                 for (typename storm::storage::SparseMatrix<ValueType>::index_type i = start; i < end; ++i) {
                     // Print the actual row.
                     os << "\taction";
-                    bool first = true;
-                    for (auto const& rewardModelEntry : sparseModel->getRewardModels()) {
-                        if (first) {
-                            os << " [";
-                            first = false;
-                        } else {
-                            os << ", ";
+                    if (!embedded) {
+                        bool first = true;
+                        for (auto const& rewardModelEntry : sparseModel->getRewardModels()) {
+                            if (first) {
+                                os << " [";
+                                first = false;
+                            } else {
+                                os << ", ";
+                            }
+                            
+                            if(rewardModelEntry.second.hasStateActionRewards()) {
+                                os << storm::utility::to_string(rewardModelEntry.second.getStateActionRewardVector().at(i));
+                            } else {
+                                os << "0";
+                            }
+                            
                         }
-                        
-                        if(rewardModelEntry.second.hasStateActionRewards()) {
-                            os << storm::utility::to_string(rewardModelEntry.second.getStateActionRewardVector().at(i));
-                        } else {
-                            os << "0";
+                        if (!first) {
+                            os << "]";
                         }
-                        
-                    }
-                    if (!first) {
-                        os << "]";
+                    } else {
+                        // We currently only support the expected time.
                     }
 
                     
@@ -87,8 +111,15 @@ namespace storm {
                         //TODO
                     }
                     os << std::endl;
+                    
+                    
                     for(auto it = matrix.begin(i); it != matrix.end(i); ++it) {
-                        os << "\t\t" << it->getColumn() << " : " << storm::utility::to_string(it->getValue()) << std::endl;
+                        ValueType prob = it->getValue();
+                        if(embedded) {
+                            prob = prob / exitRates.at(group);
+                        }
+                        os << "\t\t" << it->getColumn() << " : ";
+                        os << storm::utility::to_string(prob) << std::endl;
                     }
                     
                 }
