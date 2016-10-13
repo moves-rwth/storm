@@ -36,7 +36,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        DFTState<ValueType>::DFTState(storm::storage::BitVector const& status, DFT<ValueType> const& dft, DFTStateGenerationInfo const& stateGenerationInfo, size_t id) : mStatus(status), mId(id), mDft(dft), mStateGenerationInfo(stateGenerationInfo) {
+        DFTState<ValueType>::DFTState(storm::storage::BitVector const& status, DFT<ValueType> const& dft, DFTStateGenerationInfo const& stateGenerationInfo, size_t id) : mStatus(status), mId(id), mDft(dft), mStateGenerationInfo(stateGenerationInfo), exploreHeuristic() {
             
             for(size_t index = 0; index < mDft.nrElements(); ++index) {
                 // Initialize currently failable BE

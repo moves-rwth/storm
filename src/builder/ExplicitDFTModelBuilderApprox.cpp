@@ -82,18 +82,23 @@ namespace storm {
             modelComponents.deterministicModel = generator.isDeterministicModel();
 
             // Replace pseudo states in matrix
-            // TODO Matthias: avoid hack with fixed int type
-            std::vector<uint_fast64_t> pseudoStatesVector;
-            for (auto const& pseudoStatePair : mPseudoStatesMapping) {
-                pseudoStatesVector.push_back(pseudoStatePair.first);
+            if (!mPseudoStatesMapping.empty()) {
+                // TODO Matthias: avoid hack with fixed int type
+                std::vector<uint_fast64_t> pseudoStatesVector;
+                for (auto const& pseudoStatePair : mPseudoStatesMapping) {
+                    pseudoStatesVector.push_back(matrixBuilder.mappingOffset + pseudoStatePair.first);
+                }
+                STORM_LOG_ASSERT(std::find(pseudoStatesVector.begin(), pseudoStatesVector.end(), 0) == pseudoStatesVector.end(), "Unexplored pseudo state still contained.");
+                STORM_LOG_TRACE("Replace pseudo states: " << pseudoStatesVector << ", offset: " << OFFSET_PSEUDO_STATE);
+                // TODO Matthias: combine replacement with later one
+                matrixBuilder.builder.replaceColumns(pseudoStatesVector, OFFSET_PSEUDO_STATE);
+                mPseudoStatesMapping.clear();
             }
-            STORM_LOG_ASSERT(std::find(pseudoStatesVector.begin(), pseudoStatesVector.end(), 0) == pseudoStatesVector.end(), "Unexplored pseudo state still contained.");
-            matrixBuilder.builder.replaceColumns(pseudoStatesVector, OFFSET_PSEUDO_STATE);
-            mPseudoStatesMapping.clear();
 
             // Fix the entries in the transition matrix according to the mapping of ids to row group indices
             STORM_LOG_ASSERT(matrixBuilder.stateRemapping[initialStateIndex] == initialStateIndex, "Initial state should not be remapped.");
             // TODO Matthias: do not consider all rows?
+            STORM_LOG_TRACE("Remap matrix: " << matrixBuilder.stateRemapping << ", offset: " << matrixBuilder.mappingOffset);
             matrixBuilder.remap();
 
             STORM_LOG_TRACE("State remapping: " << matrixBuilder.stateRemapping);
@@ -251,10 +256,9 @@ namespace storm {
                     for (auto const& choice : behavior) {
                         // Add the probabilistic behavior to the matrix.
                         for (auto const& stateProbabilityPair : choice) {
-
-                            // Check that pseudo state and its instantiation do not appear together
-                            // TODO Matthias: prove that this is not possible and remove
                             if (stateProbabilityPair.first >= OFFSET_PSEUDO_STATE) {
+                                // Check that pseudo state and its instantiation do not appear together
+                                // TODO Matthias: prove that this is not possible and remove
                                 StateType newId = stateProbabilityPair.first - OFFSET_PSEUDO_STATE;
                                 STORM_LOG_ASSERT(newId < mPseudoStatesMapping.size(), "Id is not valid.");
                                 if (mPseudoStatesMapping[newId].first > 0) {
@@ -264,8 +268,12 @@ namespace storm {
                                         STORM_LOG_ASSERT(itFind->first != newId, "Pseudo state and instantiation occur together in a distribution.");
                                     }
                                 }
+                                // Set transtion to pseudo state
+                                matrixBuilder.addTransition(stateProbabilityPair.first, stateProbabilityPair.second);
+                            } else {
+                                // Set transition to state id + offset. This helps in only remapping all previously skipped states.
+                                matrixBuilder.addTransition(matrixBuilder.mappingOffset + stateProbabilityPair.first, stateProbabilityPair.second);
                             }
-                            matrixBuilder.addTransition(matrixBuilder.mappingOffset + stateProbabilityPair.first, stateProbabilityPair.second);
                         }
                         matrixBuilder.finishRow();
                     }
