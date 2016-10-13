@@ -63,7 +63,7 @@ namespace storm {
                 bool isApproximationErrorSet() const;
 
                 /*!
-                 * Retrieves the error allowed for approximation the model checking result.
+                 * Retrieves the relative error allowed for approximating the model checking result.
                  *
                  * @return The allowed errorbound.
                  */

@@ -106,7 +106,8 @@ namespace storm {
             std::unique_ptr<storm::modelchecker::CheckResult> checkModel(std::shared_ptr<storm::models::sparse::Model<ValueType>>& model, std::shared_ptr<const storm::logic::Formula> const& formula);
 
             /*!
-             * Checks if the computed approximation is sufficient, i.e. upperBound - lowerBound <= approximationError.
+             * Checks if the computed approximation is sufficient, i.e.
+             * upperBound - lowerBound <= approximationError * mean(upperBound, lowerBound).
              *
              * @param lowerBound         The lower bound on the result.
              * @param upperBound         The upper bound on the result.

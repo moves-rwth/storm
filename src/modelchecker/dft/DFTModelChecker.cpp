@@ -254,7 +254,7 @@ namespace storm {
 
         template<>
         bool DFTModelChecker<double>::isApproximationSufficient(double lowerBound, double upperBound, double approximationError) {
-            return upperBound - lowerBound <= approximationError;
+            return upperBound - lowerBound <= approximationError * (lowerBound + upperBound) / 2;
         }
 
         template<typename ValueType>
