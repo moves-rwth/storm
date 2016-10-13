@@ -330,7 +330,7 @@ add_dependencies(resources sylvan)
 
 if(${OPERATING_SYSTEM} MATCHES "Linux")
     find_package(Hwloc QUIET REQUIRED)
-    if(Hwloc_FOUND)
+    if(HWLOC_FOUND)
         message(STATUS "StoRM - Linking with hwloc ${Hwloc_VERSION}")
         list(APPEND STORM_LINK_LIBRARIES ${Hwloc_LIBRARIES})
     else()
