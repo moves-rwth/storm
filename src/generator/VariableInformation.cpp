@@ -63,15 +63,19 @@ namespace storm {
             }
             
             for (auto const& variable : model.getGlobalVariables().getBooleanVariables()) {
-                booleanVariables.emplace_back(variable.getExpressionVariable(), totalBitOffset, true);
-                ++totalBitOffset;
+                if (!variable.isTransient()) {
+                    booleanVariables.emplace_back(variable.getExpressionVariable(), totalBitOffset, true);
+                    ++totalBitOffset;
+                }
             }
             for (auto const& variable : model.getGlobalVariables().getBoundedIntegerVariables()) {
-                int_fast64_t lowerBound = variable.getLowerBound().evaluateAsInt();
-                int_fast64_t upperBound = variable.getUpperBound().evaluateAsInt();
-                uint_fast64_t bitwidth = static_cast<uint_fast64_t>(std::ceil(std::log2(upperBound - lowerBound + 1)));
-                integerVariables.emplace_back(variable.getExpressionVariable(), lowerBound, upperBound, totalBitOffset, bitwidth, true);
-                totalBitOffset += bitwidth;
+                if (!variable.isTransient()) {
+                    int_fast64_t lowerBound = variable.getLowerBound().evaluateAsInt();
+                    int_fast64_t upperBound = variable.getUpperBound().evaluateAsInt();
+                    uint_fast64_t bitwidth = static_cast<uint_fast64_t>(std::ceil(std::log2(upperBound - lowerBound + 1)));
+                    integerVariables.emplace_back(variable.getExpressionVariable(), lowerBound, upperBound, totalBitOffset, bitwidth, true);
+                    totalBitOffset += bitwidth;
+                }
             }
             for (auto const& automaton : model.getAutomata()) {
                 uint_fast64_t bitwidth = static_cast<uint_fast64_t>(std::ceil(std::log2(automaton.getNumberOfLocations())));
@@ -79,15 +83,19 @@ namespace storm {
                 totalBitOffset += bitwidth;
                 
                 for (auto const& variable : automaton.getVariables().getBooleanVariables()) {
-                    booleanVariables.emplace_back(variable.getExpressionVariable(), totalBitOffset);
-                    ++totalBitOffset;
+                    if (!variable.isTransient()) {
+                        booleanVariables.emplace_back(variable.getExpressionVariable(), totalBitOffset);
+                        ++totalBitOffset;
+                    }
                 }
                 for (auto const& variable : automaton.getVariables().getBoundedIntegerVariables()) {
-                    int_fast64_t lowerBound = variable.getLowerBound().evaluateAsInt();
-                    int_fast64_t upperBound = variable.getUpperBound().evaluateAsInt();
-                    uint_fast64_t bitwidth = static_cast<uint_fast64_t>(std::ceil(std::log2(upperBound - lowerBound + 1)));
-                    integerVariables.emplace_back(variable.getExpressionVariable(), lowerBound, upperBound, totalBitOffset, bitwidth);
-                    totalBitOffset += bitwidth;
+                    if (!variable.isTransient()) {
+                        int_fast64_t lowerBound = variable.getLowerBound().evaluateAsInt();
+                        int_fast64_t upperBound = variable.getUpperBound().evaluateAsInt();
+                        uint_fast64_t bitwidth = static_cast<uint_fast64_t>(std::ceil(std::log2(upperBound - lowerBound + 1)));
+                        integerVariables.emplace_back(variable.getExpressionVariable(), lowerBound, upperBound, totalBitOffset, bitwidth);
+                        totalBitOffset += bitwidth;
+                    }
                 }
             }
             
