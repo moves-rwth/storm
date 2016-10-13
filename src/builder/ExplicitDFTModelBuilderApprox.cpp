@@ -23,14 +23,17 @@ namespace storm {
         }
 
         template<typename ValueType, typename StateType>
-        ExplicitDFTModelBuilderApprox<ValueType, StateType>::ExplicitDFTModelBuilderApprox(storm::storage::DFT<ValueType> const& dft, storm::storage::DFTIndependentSymmetries const& symmetries, bool enableDC) : dft(dft), stateGenerationInfo(std::make_shared<storm::storage::DFTStateGenerationInfo>(dft.buildStateGenerationInfo(symmetries))), enableDC(enableDC), generator(dft, *stateGenerationInfo, enableDC, mergeFailedStates), matrixBuilder(!generator.isDeterministicModel()), stateStorage(((dft.stateVectorSize() / 64) + 1) * 64) {
+        ExplicitDFTModelBuilderApprox<ValueType, StateType>::ExplicitDFTModelBuilderApprox(storm::storage::DFT<ValueType> const& dft, storm::storage::DFTIndependentSymmetries const& symmetries, bool enableDC) :
+                dft(dft),
+                stateGenerationInfo(std::make_shared<storm::storage::DFTStateGenerationInfo>(dft.buildStateGenerationInfo(symmetries))),
+                enableDC(enableDC),
+                generator(dft, *stateGenerationInfo, enableDC, mergeFailedStates),
+                matrixBuilder(!generator.isDeterministicModel()),
+                stateStorage(((dft.stateVectorSize() / 64) + 1) * 64),
+                statesToExplore(storm::storage::DynamicPriorityQueue<DFTStatePointer, std::vector<DFTStatePointer>, std::function<bool(DFTStatePointer, DFTStatePointer)>>(&storm::builder::compareDepth<ValueType>))
+        {
             // stateVectorSize is bound for size of bitvector
-
             heuristic = storm::settings::getModule<storm::settings::modules::DFTSettings>().getApproximationHeuristic();
-
-            // Compare states by their distance from the initial state
-            // TODO Matthias: customize
-            statesToExplore = std::priority_queue<DFTStatePointer, std::deque<DFTStatePointer>, std::function<bool(DFTStatePointer, DFTStatePointer)>>(&storm::builder::compareDepth<ValueType>);
         }
 
         template<typename ValueType, typename StateType>
@@ -278,6 +281,9 @@ namespace storm {
                         matrixBuilder.finishRow();
                     }
                 }
+
+                // Update priority queue
+                statesToExplore.fix();
 
                 if (statesToExplore.empty()) {
                     explorationFinished = true;

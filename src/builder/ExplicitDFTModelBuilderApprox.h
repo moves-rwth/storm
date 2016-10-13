@@ -10,6 +10,7 @@
 #include "src/storage/sparse/StateStorage.h"
 #include "src/storage/dft/DFT.h"
 #include "src/storage/dft/SymmetricUnits.h"
+#include "src/storage/DynamicPriorityQueue.h"
 #include <boost/container/flat_set.hpp>
 #include <boost/optional/optional.hpp>
 #include <stack>
@@ -286,7 +287,7 @@ namespace storm {
             storm::storage::sparse::StateStorage<StateType> stateStorage;
 
             // A pniority queue of states that still need to be explored.
-            std::priority_queue<DFTStatePointer, std::deque<DFTStatePointer>, std::function<bool(DFTStatePointer, DFTStatePointer)>> statesToExplore;
+            storm::storage::DynamicPriorityQueue<DFTStatePointer, std::vector<DFTStatePointer>, std::function<bool(DFTStatePointer, DFTStatePointer)>> statesToExplore;
 
             // Holds all skipped states which were not yet expanded. More concretely it is a mapping from matrix indices
             // to the corresponding skipped states.
