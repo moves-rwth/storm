@@ -4,6 +4,27 @@
 
 namespace storm {
     namespace jani {
+        
+        enum class FilterType { MIN, MAX, SUM, AVG, COUNT, FORALL, EXISTS, ARGMIN, ARGMAX, VALUES };
+        
+        
+        class PropertyExpression {
+            
+        };
+        
+        class FilterExpression : public PropertyExpression {
+            std::shared_ptr<PropertyExpression> states;
+            std::shared_ptr<PropertyExpression> values;
+            FilterType ft;
+        };
+        
+        class PathExpression : public PropertyExpression {
+            std::shared_ptr<PropertyExpression> leftStateExpression;
+            std::shared_ptr<PropertyExpression> rightStateExpression;
+        };
+        
+        
+        
         class Property {
             /**
              * Constructs the property
@@ -22,16 +43,13 @@ namespace storm {
              * @return the comment
              */
             std::string const& getComment() const;
-            /**
-             * Get the formula
-             * @return the formula
-             */
-            std::shared_ptr<storm::logic::Formula const> const& getFormula() const;
-
+            
+            
+            
         private:
             std::string name;
-            std::shared_ptr<storm::logic::Formula const> formula;
             std::string comment;
+            PropertyExpression propertyExpression;
         };
     }
 }
