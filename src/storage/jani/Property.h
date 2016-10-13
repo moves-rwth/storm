@@ -8,20 +8,25 @@ namespace storm {
         enum class FilterType { MIN, MAX, SUM, AVG, COUNT, FORALL, EXISTS, ARGMIN, ARGMAX, VALUES };
         
         
-        class PropertyExpression {
+        
+        class FilterExpression {
+        public:
+            explicit FilterExpression(std::shared_ptr<storm::logic::Formula const> formula) : values(formula) {}
             
+            std::shared_ptr<storm::logic::Formula const> const& getFormula() const {
+                return values;
+            }
+            
+            FilterType getFilterType() const {
+                return ft;
+            }
+        private:
+            // For now, we assume that the states are always the initial states.
+            
+            std::shared_ptr<storm::logic::Formula const> values;
+            FilterType ft = FilterType::VALUES;
         };
         
-        class FilterExpression : public PropertyExpression {
-            std::shared_ptr<PropertyExpression> states;
-            std::shared_ptr<PropertyExpression> values;
-            FilterType ft;
-        };
-        
-        class PathExpression : public PropertyExpression {
-            std::shared_ptr<PropertyExpression> leftStateExpression;
-            std::shared_ptr<PropertyExpression> rightStateExpression;
-        };
         
         
         
@@ -49,7 +54,7 @@ namespace storm {
         private:
             std::string name;
             std::string comment;
-            PropertyExpression propertyExpression;
+            FilterExpression filterExpression;
         };
     }
 }

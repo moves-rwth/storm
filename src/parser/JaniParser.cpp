@@ -110,6 +110,13 @@ namespace storm {
             for (auto const& automataEntry : parsedStructure.at("automata")) {
                 model.addAutomaton(parseAutomaton(automataEntry, model));
             }
+            STORM_LOG_THROW(parsedStructure.count("restrict-initial") < 2, storm::exceptions::InvalidJaniException, "Model has multiple initial value restrictions");
+            storm::expressions::Expression initialValueRestriction = expressionManager->boolean(true);
+            if(parsedStructure.count("restrict-initial") > 0) {
+                STORM_LOG_THROW(parsedStructure.at("restrict-initial").count("exp") == 1, storm::exceptions::InvalidJaniException, "Model needs an expression inside the initial restricion");
+                initialValueRestriction  = parseExpression(parsedStructure.at("restrict-initial").at("exp"), "Initial value restriction for automaton " + name);
+            }
+            model.setInitialStatesRestriction(initialValueRestriction);
             STORM_LOG_THROW(parsedStructure.count("system") == 1, storm::exceptions::InvalidJaniException, "Exactly one system description must be given");
             std::shared_ptr<storm::jani::Composition> composition = parseComposition(parsedStructure.at("system"));
             model.setSystemComposition(composition);

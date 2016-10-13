@@ -9,6 +9,7 @@
 #include "src/exceptions/NotSupportedException.h"
 
 #include "src/exceptions/InvalidJaniException.h"
+#include "src/exceptions/NotImplementedException.h"
 
 #include "src/storage/expressions/RationalLiteralExpression.h"
 #include "src/storage/expressions/IntegerLiteralExpression.h"
@@ -25,6 +26,7 @@
 
 #include "src/storage/jani/AutomatonComposition.h"
 #include "src/storage/jani/ParallelComposition.h"
+#include "src/storage/jani/Property.h"
 
 namespace storm {
     namespace jani {
@@ -128,6 +130,11 @@ namespace storm {
             return iDecl;
         }
         
+        modernjson::json FormulaToJaniJson::translate(storm::logic::Formula const& formula, bool continuousTime) {
+            FormulaToJaniJson translator(continuousTime);
+            return boost::any_cast<modernjson::json>(formula.accept(translator));
+        }
+        
         boost::any FormulaToJaniJson::visit(storm::logic::AtomicExpressionFormula const& f, boost::any const& data) const {
             return ExpressionToJson::translate(f.getExpression());
         }
@@ -178,16 +185,44 @@ namespace storm {
         }
         
         boost::any FormulaToJaniJson::visit(storm::logic::TimeOperatorFormula const& f, boost::any const& data) const {
-            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Jani currently does not support conditional formulae");
-
+            modernjson::json opDecl;
+            std::vector<std::string> tvec;
+            tvec.push_back("time");
+            if(f.hasBound()) {
+                auto bound = f.getBound();
+                opDecl["op"] = comparisonTypeToJani(bound.comparisonType);
+                if(f.hasOptimalityType()) {
+                    opDecl["left"]["op"] = f.getOptimalityType() == storm::solver::OptimizationDirection::Minimize ? "Emin" : "Emax";
+                    opDecl["left"]["reach"] = boost::any_cast<modernjson::json>(f.getSubformula().accept(*this, boost::none));
+                } else {
+                    opDecl["left"]["op"] = (bound.comparisonType == storm::logic::ComparisonType::Less || bound.comparisonType == storm::logic::ComparisonType::LessEqual) ? "Emax" : "Emin";
+                    opDecl["left"]["reach"] = boost::any_cast<modernjson::json>(f.getSubformula().accept(*this, boost::none));
+                }
+                opDecl["left"]["exp"] = modernjson::json(1);
+                opDecl["left"]["accumulate"] = modernjson::json(tvec);
+                opDecl["right"] = numberToJson(bound.threshold);
+            } else {
+                if(f.hasOptimalityType()) {
+                    opDecl["op"] = f.getOptimalityType() == storm::solver::OptimizationDirection::Minimize ? "Emin" : "Emax";
+                    opDecl["reach"] = boost::any_cast<modernjson::json>(f.getSubformula().accept(*this, boost::none));
+                    
+                } else {
+                    // TODO add checks
+                    opDecl["op"] = "Pmin";
+                    opDecl["reach"] = boost::any_cast<modernjson::json>(f.getSubformula().accept(*this, boost::none));
+                }
+                opDecl["exp"] = modernjson::json(1);
+                opDecl["accumulate"] = modernjson::json(tvec);
+            }
+            return opDecl;
         }
         
         boost::any FormulaToJaniJson::visit(storm::logic::GloballyFormula const& f, boost::any const& data) const {
-            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Jani currently does not support conditional formulae");
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Jani currently does not support conversion of a globally formulae");
         }
         
         boost::any FormulaToJaniJson::visit(storm::logic::InstantaneousRewardFormula const& f, boost::any const& data) const {
-            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Jani currently does not support conditional formulae");
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Jani currently does not support conversion of an instanteneous reward formula");
         }
         
         boost::any FormulaToJaniJson::visit(storm::logic::LongRunAverageOperatorFormula const& f, boost::any const& data) const {
@@ -219,7 +254,30 @@ namespace storm {
         }
         
         boost::any FormulaToJaniJson::visit(storm::logic::LongRunAverageRewardFormula const& f, boost::any const& data) const {
-            
+//            modernjson::json opDecl;
+//            if(f.()) {
+//                auto bound = f.getBound();
+//                opDecl["op"] = comparisonTypeToJani(bound.comparisonType);
+//                if(f.hasOptimalityType()) {
+//                    opDecl["left"]["op"] = f.getOptimalityType() == storm::solver::OptimizationDirection::Minimize ? "Smin" : "Smax";
+//                    opDecl["left"]["exp"] = boost::any_cast<modernjson::json>(f.getSubformula().accept(*this, boost::none));
+//                } else {
+//                    opDecl["left"]["op"] = (bound.comparisonType == storm::logic::ComparisonType::Less || bound.comparisonType == storm::logic::ComparisonType::LessEqual) ? "Smax" : "Smin";
+//                    opDecl["left"]["exp"] = boost::any_cast<modernjson::json>(f.getSubformula().accept(*this, boost::none));
+//                }
+//                opDecl["right"] = numberToJson(bound.threshold);
+//            } else {
+//                if(f.hasOptimalityType()) {
+//                    opDecl["op"] = f.getOptimalityType() == storm::solver::OptimizationDirection::Minimize ? "Smin" : "Smax";
+//                    opDecl["exp"] = boost::any_cast<modernjson::json>(f.getSubformula().accept(*this, boost::none));
+//                    
+//                } else {
+//                    // TODO add checks
+//                    opDecl["op"] = "Pmin";
+//                    opDecl["exp"] = boost::any_cast<modernjson::json>(f.getSubformula().accept(*this, boost::none));
+//                }
+//            }
+//            return opDecl;
         }
         
         boost::any FormulaToJaniJson::visit(storm::logic::NextFormula const& f, boost::any const& data) const {
@@ -263,7 +321,40 @@ namespace storm {
         }
         
         boost::any FormulaToJaniJson::visit(storm::logic::RewardOperatorFormula const& f, boost::any const& data) const {
-            
+            modernjson::json opDecl;
+            std::vector<std::string> accvec;
+            if(continuous) {
+                accvec.push_back("time");
+            } else {
+                accvec.push_back("steps");
+            }
+            if(f.hasBound()) {
+                auto bound = f.getBound();
+                opDecl["op"] = comparisonTypeToJani(bound.comparisonType);
+                if(f.hasOptimalityType()) {
+                    opDecl["left"]["op"] = f.getOptimalityType() == storm::solver::OptimizationDirection::Minimize ? "Emin" : "Emax";
+                    opDecl["left"]["reach"] = boost::any_cast<modernjson::json>(f.getSubformula().accept(*this, boost::none));
+                } else {
+                    opDecl["left"]["op"] = (bound.comparisonType == storm::logic::ComparisonType::Less || bound.comparisonType == storm::logic::ComparisonType::LessEqual) ? "Emax" : "Emin";
+                    opDecl["left"]["reach"] = boost::any_cast<modernjson::json>(f.getSubformula().accept(*this, boost::none));
+                }
+                opDecl["left"]["exp"] = f.hasRewardModelName() ? f.getRewardModelName() : "DEFAULT";
+                opDecl["left"]["accumulate"] = modernjson::json(accvec);
+                opDecl["right"] = numberToJson(bound.threshold);
+            } else {
+                if(f.hasOptimalityType()) {
+                    opDecl["op"] = f.getOptimalityType() == storm::solver::OptimizationDirection::Minimize ? "Emin" : "Emax";
+                    opDecl["reach"] = boost::any_cast<modernjson::json>(f.getSubformula().accept(*this, boost::none));
+                    
+                } else {
+                    // TODO add checks
+                    opDecl["op"] = "Pmin";
+                    opDecl["reach"] = boost::any_cast<modernjson::json>(f.getSubformula().accept(*this, boost::none));
+                }
+                opDecl["exp"] = f.hasRewardModelName() ? f.getRewardModelName() : "DEFAULT";
+                opDecl["accumulate"] = modernjson::json(accvec);
+            }
+            return opDecl;
         }
         
         boost::any FormulaToJaniJson::visit(storm::logic::UnaryBooleanStateFormula const& f, boost::any const& data) const {
@@ -402,22 +493,23 @@ namespace storm {
         
         
         
-        void JsonExporter::toFile(storm::jani::Model const& janiModel, std::string const& filepath, bool checkValid) {
+        void JsonExporter::toFile(storm::jani::Model const& janiModel, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, std::string const& filepath, bool checkValid) {
             std::ofstream ofs;
             ofs.open (filepath, std::ofstream::out );
             if(ofs.is_open()) {
-                toStream(janiModel, ofs, checkValid);
+                toStream(janiModel, formulas, ofs, checkValid);
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::FileIoException, "Cannot open " << filepath);
             }
         }
         
-        void JsonExporter::toStream(storm::jani::Model const& janiModel, std::ostream& os, bool checkValid) {
+        void JsonExporter::toStream(storm::jani::Model const& janiModel,  std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, std::ostream& os, bool checkValid) {
             if(checkValid) {
                 janiModel.checkValid();
             }
             JsonExporter exporter;
             exporter.convertModel(janiModel);
+            exporter.convertProperties(formulas, !janiModel.isDiscreteTimeModel());
             os << exporter.finalize().dump(4) << std::endl;
         }
         
@@ -596,6 +688,54 @@ namespace storm {
             
         }
         
+        
+        std::string janiFilterTypeString(storm::jani::FilterType const& ft) {
+            switch(ft) {
+                case storm::jani::FilterType::MIN:
+                    return "min";
+                case storm::jani::FilterType::MAX:
+                    return "max";
+                case storm::jani::FilterType::SUM:
+                    return "sum";
+                case storm::jani::FilterType::AVG:
+                    return "avg";
+                case storm::jani::FilterType::COUNT:
+                    return "count";
+                case storm::jani::FilterType::EXISTS:
+                    return "∃";
+                case storm::jani::FilterType::FORALL:
+                    return "∀";
+                case storm::jani::FilterType::ARGMIN:
+                    return "argmin";
+                case storm::jani::FilterType::ARGMAX:
+                    return "argmax";
+                case storm::jani::FilterType::VALUES:
+                    return "values";
+                    
+            }
+        }
+        
+        modernjson::json convertFilterExpression(storm::jani::FilterExpression const& fe, bool continuousModel) {
+            modernjson::json propDecl;
+            propDecl["states"] = "initial";
+            propDecl["fun"] = janiFilterTypeString(fe.getFilterType());
+            propDecl["values"] = FormulaToJaniJson::translate(*fe.getFormula(), continuousModel);
+            return propDecl;
+        }
+        
+        
+        void JsonExporter::convertProperties( std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool continuousModel) {
+            std::vector<modernjson::json> properties;
+            uint64_t index = 0;
+            for(auto const& f : formulas) {
+                modernjson::json propDecl;
+                propDecl["name"] = "prop" + std::to_string(index);
+                propDecl["expression"] = convertFilterExpression(storm::jani::FilterExpression(f), continuousModel);
+                ++index;
+                properties.push_back(propDecl);
+            }
+            jsonStruct["properties"] = properties;
+        }
         
         
     }
