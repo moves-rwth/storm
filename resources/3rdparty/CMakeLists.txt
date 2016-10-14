@@ -64,7 +64,7 @@ set(Boost_USE_STATIC_LIBS        ${USE_BOOST_STATIC_LIBRARIES})
 set(Boost_USE_MULTITHREADED      ON)
 set(Boost_USE_STATIC_RUNTIME    OFF)
 
-find_package(Boost 1.57.0 QUIET REQUIRED COMPONENTS filesystem)
+find_package(Boost 1.57.0 QUIET REQUIRED COMPONENTS filesystem system)
 
 if ((NOT Boost_LIBRARY_DIRS) OR ("${Boost_LIBRARY_DIRS}" STREQUAL ""))
     set(Boost_LIBRARY_DIRS "${Boost_INCLUDE_DIRS}/stage/lib")

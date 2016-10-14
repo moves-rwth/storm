@@ -171,7 +171,7 @@ namespace cpptempl
 	public:
 		TemplateException(std::string reason) : m_reason(reason){}
 		~TemplateException() throw() {}
-		const char* what() throw() {
+		const char* what() const throw() {
 			return m_reason.c_str();
 		}
 	private:
@@ -182,6 +182,9 @@ namespace cpptempl
 	class Data
 	{
 	public:
+        virtual ~Data() {
+            // Intentionally left empty.
+        }
 		virtual bool empty() = 0 ;
 		virtual wstring getvalue();
 		virtual data_list& getlist();
