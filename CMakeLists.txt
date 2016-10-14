@@ -123,7 +123,7 @@ set(CONVERSIONHELPER_TARGET "${PROJECT_SOURCE_DIR}/src/utility/ConversionHelper.
 if(CMAKE_COMPILER_IS_GNUCC)
     set(STORM_COMPILED_BY "GCC")
     # Set standard flags for GCC
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -funroll-loops")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -funroll-loops --fast-math -fno-finite-math-only")
     set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -funroll-loops")
 
 	# TODO: remove forcing the old version of optional as soon as the related Spirit bug is fixed:
@@ -165,7 +165,7 @@ else(CLANG)
 	# As CLANG is not set as a variable, we need to set it in case we have not matched another compiler.
 	set (CLANG ON)
     # Set standard flags for clang
-    set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -funroll-loops -O3")
+    set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -funroll-loops -ffast-math -fno-finite-math-only")
 
 	if(UNIX AND NOT APPLE)
 		if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 3.2)

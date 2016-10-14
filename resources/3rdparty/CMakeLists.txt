@@ -64,7 +64,7 @@ set(Boost_USE_STATIC_LIBS        ${USE_BOOST_STATIC_LIBRARIES})
 set(Boost_USE_MULTITHREADED      ON)
 set(Boost_USE_STATIC_RUNTIME    OFF)
 
-find_package(Boost 1.57.0 QUIET REQUIRED)
+find_package(Boost 1.57.0 QUIET REQUIRED COMPONENTS filesystem)
 
 if ((NOT Boost_LIBRARY_DIRS) OR ("${Boost_LIBRARY_DIRS}" STREQUAL ""))
     set(Boost_LIBRARY_DIRS "${Boost_INCLUDE_DIRS}/stage/lib")
@@ -96,6 +96,16 @@ include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/exprtk")
 # Use the shipped version of Sparsepp
 message (STATUS "StoRM - Including Sparsepp")
 include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/sparsepp")
+
+#############################################################
+##
+##	utf8cpp
+##
+#############################################################
+
+# Use the shipped version of utf8cpp
+message (STATUS "StoRM - Including utf8cpp")
+include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/utf8_v2_3_4/source")
 
 #############################################################
 ##
@@ -159,6 +169,13 @@ endif()
 ##
 #############################################################
 include(${STORM_3RDPARTY_SOURCE_DIR}/include_cudd.cmake)
+
+#############################################################
+##
+##	cpptemplate
+##
+#############################################################
+include(${STORM_3RDPARTY_SOURCE_DIR}/include_cpptemplate.cmake)
 
 #############################################################
 ##

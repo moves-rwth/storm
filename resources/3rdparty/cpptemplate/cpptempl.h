@@ -49,6 +49,7 @@ Example:
 #include <boost/shared_ptr.hpp>
 #ifndef _MSC_VER
 #include <boost/locale.hpp>
+#include <utf8.h>
 #else
 #include <boost/scoped_array.hpp>
 #include "windows.h"
@@ -122,7 +123,15 @@ namespace cpptempl
 	// convenience functions for recoding utf8 string to wstring and back
 	inline std::wstring utf8_to_wide(const std::string& text) {
 #ifndef _MSC_VER
-		return boost::locale::conv::to_utf<wchar_t>(text, "UTF-8");
+        std::wstring result;
+        if (sizeof(wchar_t) == 2) {
+            utf8::utf8to16(text.begin(), text.end(), std::back_inserter(result));
+        } else {
+            assert(sizeof(wchar_t) == 4);
+            utf8::utf8to32(text.begin(), text.end(), std::back_inserter(result));
+        }
+        return result;
+        //return boost::locale::conv::to_utf<wchar_t>(text, "UTF-8");
 #else
 		// Calculate the required length of the buffer
 		const size_t len_needed = ::MultiByteToWideChar(CP_UTF8, 0, text.c_str(), (UINT)(text.length()) , NULL, 0 );
@@ -134,7 +143,15 @@ namespace cpptempl
 
 	inline std::string wide_to_utf8(const std::wstring& text) {
 #ifndef _MSC_VER
-		return boost::locale::conv::from_utf<>(text, "UTF-8");
+        std::string result;
+        if (sizeof(wchar_t) == 2) {
+            utf8::utf16to8(text.begin(), text.end(), std::back_inserter(result));
+        } else {
+            assert(sizeof(wchar_t) == 4);
+            utf8::utf32to8(text.begin(), text.end(), std::back_inserter(result));
+        }
+        return result;
+        //return boost::locale::conv::from_utf<>(text, "UTF-8");
 #else
 		const size_t len_needed = ::WideCharToMultiByte(CP_UTF8, 0, text.c_str(), (UINT)(text.length()) , NULL, 0, NULL, NULL) ;
 		boost::scoped_array<char> buff(new char[len_needed+1]) ;
