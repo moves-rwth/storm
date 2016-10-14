@@ -137,3 +137,4 @@ module	channelL
 endmodule
 
 
+label "fatal" = s=5 & T;
