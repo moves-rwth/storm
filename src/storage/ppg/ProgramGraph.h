@@ -49,10 +49,19 @@ namespace storm {
                 return &(probabilisticActions.emplace(newId, ProbabilisticProgramAction(this, newId, var, from, to)).first->second);
             }
             
-            ProgramLocation* addLocation(bool isInitial = false, bool successfulTermination = false, bool aborted = false, std::vector<std::string> const& labels = {}) {
+            ProgramLocation* addLocation(bool isInitial = false, bool successfulTermination = false, bool observeViolated = false, bool aborted = false, std::vector<std::string> const& labels = {}) {
                 ProgramLocationIdentifier newId = freeLocationIndex();
                 assert(!hasLocation(newId));
                 locationLabels[newId] = labels;
+                if (successfulTermination) {
+                    locationLabels[newId].push_back(succesfulTerminationLabel);
+                }
+                if (observeViolated) {
+                    locationLabels[newId].push_back(observeViolatedLabel);
+                }
+                if (aborted) {
+                    locationLabels[newId].push_back(abortLabel);
+                }
                 return &(locations.emplace(newId, ProgramLocation(this, newId, isInitial)).first->second);
             }
             
@@ -98,7 +107,19 @@ namespace storm {
                 return res;
             }
             
+            std::set<std::string> getLabels() const {
+                std::set<std::string> result;
+                for(auto const& locEntry : locationLabels) {
+                    for(auto const& label : locEntry.second) {
+                        result.insert(label);
+                    }
+                }
+                return result;
+            }
             
+            std::vector<std::string> getLabels(ProgramLocationIdentifier loc) const {
+                return locationLabels.at(loc);
+            }
             
             bool hasLabel(ProgramLocationIdentifier loc, std::string const& label) const {
                 return std::find(locationLabels.at(loc).begin(), locationLabels.at(loc).end(), label) != locationLabels.at(loc).end();
@@ -288,8 +309,9 @@ namespace storm {
             ProgramEdgeIdentifier newEdgeId = 0;
             ProgramActionIdentifier newActionId = 1;
             ProgramActionIdentifier noActionId = 0;
-            std::string succesfulTerminationLabel = "__ret0__";
-            std::string abortLabel = "__ret1__";
+            std::string succesfulTerminationLabel = "_ret0_";
+            std::string abortLabel = "_ret1_";
+            std::string observeViolatedLabel = "_viol_";
             
             
         };

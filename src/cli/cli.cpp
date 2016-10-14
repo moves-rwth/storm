@@ -222,20 +222,6 @@ namespace storm {
                     model = storm::parseJaniModel(ioSettings.getJaniInputFilename()).first;
                 }
                 
-                if(model.isJaniModel() && storm::settings::getModule<storm::settings::modules::JaniExportSettings>().isJaniFileSet()) {
-                    if (storm::settings::getModule<storm::settings::modules::JaniExportSettings>().isExportAsStandardJaniSet()) {
-                        storm::jani::Model normalisedModel = storm::jani::Model(model.asJaniModel());
-                        normalisedModel.makeStandardJaniCompliant();
-                        storm::jani::JsonExporter::toFile(normalisedModel, storm::settings::getModule<storm::settings::modules::JaniExportSettings>().getJaniFilename());
-                    } else {
-                        storm::jani::JsonExporter::toFile(model.asJaniModel(), storm::settings::getModule<storm::settings::modules::JaniExportSettings>().getJaniFilename());
-                    }
-                }
-                
-                // Get the string that assigns values to the unknown currently undefined constants in the model.
-                std::string constantDefinitionString = ioSettings.getConstantDefinitionString();
-                model = model.preprocess(constantDefinitionString);
-
                 // Then proceed to parsing the properties (if given), since the model we are building may depend on the property.
                 std::vector<std::shared_ptr<storm::logic::Formula const>> formulas;
                 if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isPropertySet()) {
@@ -245,6 +231,22 @@ namespace storm {
                         formulas = storm::parseFormulasForPrismProgram(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getProperty(), model.asPrismProgram());
                     }
                 }
+                
+                if(model.isJaniModel() && storm::settings::getModule<storm::settings::modules::JaniExportSettings>().isJaniFileSet()) {
+                    if (storm::settings::getModule<storm::settings::modules::JaniExportSettings>().isExportAsStandardJaniSet()) {
+                        storm::jani::Model normalisedModel = storm::jani::Model(model.asJaniModel());
+                        normalisedModel.makeStandardJaniCompliant();
+                        storm::jani::JsonExporter::toFile(normalisedModel, formulas, storm::settings::getModule<storm::settings::modules::JaniExportSettings>().getJaniFilename());
+                    } else {
+                        storm::jani::JsonExporter::toFile(model.asJaniModel(), formulas, storm::settings::getModule<storm::settings::modules::JaniExportSettings>().getJaniFilename());
+                    }
+                }
+                
+                // Get the string that assigns values to the unknown currently undefined constants in the model.
+                std::string constantDefinitionString = ioSettings.getConstantDefinitionString();
+                model = model.preprocess(constantDefinitionString);
+
+                
 
                 if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isParametricSet()) {
 #ifdef STORM_HAVE_CARL

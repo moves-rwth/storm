@@ -1,4 +1,5 @@
 #include <string>
+#include <unordered_map>
 
 #include "src/storage/ppg/ProgramGraph.h"
 #include "src/storage/jani/Model.h"
@@ -45,6 +46,10 @@ namespace storm {
             
         
             void restrictAllVariables(int64_t from, int64_t to) {
+                restrictAllVariables(storm::storage::IntegerInterval(from, to));
+            }
+            
+            void restrictAllVariables(storm::storage::IntegerInterval const& restr) {
                 for (auto const& v : programGraph.getVariables()) {
                     if(isConstant(v.first)) {
                         continue;
@@ -53,7 +58,7 @@ namespace storm {
                         continue; // Currently we ignore user bounds if we have bounded integers;
                     }
                     if(v.second.hasIntegerType() ) {
-                        userVariableRestrictions.emplace(v.first, storm::storage::IntegerInterval(from, to));
+                        userVariableRestrictions.emplace(v.first, restr);
                     }
                 }
             }
@@ -63,7 +68,7 @@ namespace storm {
                 storm::jani::Model* model = new storm::jani::Model(name, storm::jani::ModelType::MDP, janiVersion, expManager);
                 storm::jani::Automaton mainAutomaton("main");
                 addProcedureVariables(*model, mainAutomaton);
-                janiLocId = addProcedureLocations(mainAutomaton);
+                janiLocId = addProcedureLocations(*model, mainAutomaton);
                 addVariableOoBLocations(mainAutomaton);
                 addEdges(mainAutomaton);
                 model->addAutomaton(mainAutomaton);
@@ -117,47 +122,23 @@ namespace storm {
                 return std::find(constants.begin(), constants.end(), i) != constants.end();
             }
             
-            void addProcedureVariables(storm::jani::Model& model, storm::jani::Automaton& automaton) {
-                for (auto const& v : programGraph.getVariables()) {
-                    if (isConstant(v.first)) {
-                        storm::jani::Constant constant(v.second.getName(), v.second, programGraph.getInitialValue(v.first));
-                        model.addConstant(constant);
-                    } else if (v.second.hasBooleanType()) {
-                        storm::jani::BooleanVariable* janiVar = new storm::jani::BooleanVariable(v.second.getName(), v.second, programGraph.getInitialValue(v.first), false);
-                        automaton.addVariable(*janiVar);
-                        variables.emplace(v.first, janiVar);
-                    } else if (isRestrictedVariable(v.first) && !isRewardVariable(v.first)) {
-                        storm::storage::IntegerInterval const& bounds = variableBounds(v.first);
-                        if (bounds.hasLeftBound()) {
-                            if (bounds.hasRightBound()) {
-                                storm::jani::BoundedIntegerVariable* janiVar = new storm::jani::BoundedIntegerVariable (v.second.getName(), v.second, programGraph.getInitialValue(v.first), false, expManager->integer(bounds.getLeftBound().get()), expManager->integer(bounds.getRightBound().get()));
-                                variables.emplace(v.first, janiVar);
-                                automaton.addVariable(*janiVar);
-                            } else {
-                                // Not yet supported.
-                                assert(false);
-                            }
-                        } else {
-                            // Not yet supported.
-                            assert(false);
-                        }
-                    } else {
-                        storm::jani::UnboundedIntegerVariable* janiVar = new storm::jani::UnboundedIntegerVariable(v.second.getName(), v.second, programGraph.getInitialValue(v.first), isRewardVariable(v.first));
-                        if(isRewardVariable(v.first)) {
-                            model.addVariable(*janiVar);
-                        } else {
-                            automaton.addVariable(*janiVar);
-                        }
-                        variables.emplace(v.first, janiVar);
-                        
-                    }
-                }
-            }
+            void addProcedureVariables(storm::jani::Model& model, storm::jani::Automaton& automaton);
             
-            std::map<storm::ppg::ProgramLocationIdentifier, uint64_t> addProcedureLocations(storm::jani::Automaton& automaton) {
+            std::map<storm::ppg::ProgramLocationIdentifier, uint64_t> addProcedureLocations(storm::jani::Model& model, storm::jani::Automaton& automaton) {
                 std::map<storm::ppg::ProgramLocationIdentifier, uint64_t> result;
+                std::map<std::string, storm::jani::BooleanVariable const*> labelVars;
+                std::set<std::string> labels = programGraph.getLabels();
+                for(auto const& label : labels) {
+                    storm::jani::BooleanVariable janiVar(label, expManager->declareBooleanVariable(label), expManager->boolean(false), true);
+                    labelVars.emplace(label, &model.addVariable(janiVar));
+                }
+                
                 for (auto it = programGraph.locationBegin(); it != programGraph.locationEnd(); ++it) {
                     storm::jani::Location janiLoc(janiLocationName(it->second.id()));
+                    for(auto const& label : programGraph.getLabels(it->second.id())) {
+                        assert(labelVars.count(label) > 0);
+                        janiLoc.addTransientAssignment(storm::jani::Assignment(*(labelVars.at(label)), expManager->boolean(true)));
+                    }
                     result[it->second.id()] = automaton.addLocation(janiLoc);
                     if (it->second.isInitial()) {
                         automaton.addInitialLocation(result[it->second.id()]);

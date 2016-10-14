@@ -1,8 +1,8 @@
 #include "Property.h"
 namespace storm {
     namespace jani {
-        Property::Property(std::string const& name, std::shared_ptr<const storm::logic::Formula> const& formula, std::string const& comment)
-        : name(name), formula(formula), comment(comment)
+        Property::Property(std::string const& name, std::shared_ptr<storm::logic::Formula const> const& formula, std::string const& comment)
+        : name(name), filterExpression(FilterExpression(formula)), comment(comment)
         {
 
         }
@@ -14,10 +14,7 @@ namespace storm {
         std::string const& Property::getComment() const {
             return this->comment;
         }
-
-        std::shared_ptr<storm::logic::Formula const> const& Property::getFormula() const {
-            return this->formula;
-        }
+        
 
     }
 }

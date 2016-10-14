@@ -15,6 +15,8 @@
 #include "src/storage/dd/Bdd.h"
 #include "src/adapters/AddExpressionAdapter.h"
 
+#include "src/storage/expressions/ExpressionManager.h"
+
 #include "src/models/symbolic/Dtmc.h"
 #include "src/models/symbolic/Ctmc.h"
 #include "src/models/symbolic/Mdp.h"
@@ -28,6 +30,7 @@
 #include "src/utility/dd.h"
 #include "src/utility/math.h"
 #include "src/exceptions/WrongFormatException.h"
+#include "src/exceptions/InvalidSettingsException.h"
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/exceptions/InvalidStateException.h"
 #include "src/exceptions/NotSupportedException.h"
@@ -36,7 +39,7 @@ namespace storm {
     namespace builder {
         
         template <storm::dd::DdType Type, typename ValueType>
-        DdJaniModelBuilder<Type, ValueType>::Options::Options() : buildAllRewardModels(true), rewardModelsToBuild(), constantDefinitions(), terminalStates(), negatedTerminalStates() {
+        DdJaniModelBuilder<Type, ValueType>::Options::Options(bool buildAllLabels, bool buildAllRewardModels) : buildAllLabels(buildAllLabels), buildAllRewardModels(buildAllRewardModels), rewardModelsToBuild(), constantDefinitions(), terminalStates(), negatedTerminalStates() {
             // Intentionally left empty.
         }
         
@@ -47,7 +50,7 @@ namespace storm {
         }
         
         template <storm::dd::DdType Type, typename ValueType>
-        DdJaniModelBuilder<Type, ValueType>::Options::Options(std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) : buildAllRewardModels(false), rewardModelsToBuild(), constantDefinitions(), terminalStates(), negatedTerminalStates() {
+        DdJaniModelBuilder<Type, ValueType>::Options::Options(std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) : buildAllLabels(false), buildAllRewardModels(false), rewardModelsToBuild(), constantDefinitions(), terminalStates(), negatedTerminalStates() {
             if (formulas.empty()) {
                 this->buildAllRewardModels = true;
             } else {
@@ -74,6 +77,12 @@ namespace storm {
             if (!buildAllRewardModels) {
                 std::set<std::string> referencedRewardModels = formula.getReferencedRewardModels();
                 rewardModelsToBuild.insert(referencedRewardModels.begin(), referencedRewardModels.end());
+            }
+            
+            // Extract all the labels used in the formula.
+            std::vector<std::shared_ptr<storm::logic::AtomicLabelFormula const>> atomicLabelFormulas = formula.getAtomicLabelFormulas();
+            for (auto const& formula : atomicLabelFormulas) {
+                addLabel(formula->getLabel());
             }
         }
         
@@ -112,7 +121,18 @@ namespace storm {
         bool DdJaniModelBuilder<Type, ValueType>::Options::isBuildAllRewardModelsSet() const {
             return buildAllRewardModels;
         }
+
+        template <storm::dd::DdType Type, typename ValueType>
+        bool DdJaniModelBuilder<Type, ValueType>::Options::isBuildAllLabelsSet() const {
+            return buildAllLabels;
+        }
         
+        template <storm::dd::DdType Type, typename ValueType>
+        void DdJaniModelBuilder<Type, ValueType>::Options::addLabel(std::string const& labelName) {
+            STORM_LOG_THROW(!buildAllLabels, storm::exceptions::InvalidSettingsException, "Cannot add label, because all labels are built anyway.");
+            labelNames.insert(labelName);
+        }
+
         template <storm::dd::DdType Type, typename ValueType>
         struct CompositionVariables {
             CompositionVariables() : manager(std::make_shared<storm::dd::DdManager<Type>>()),
@@ -138,8 +158,9 @@ namespace storm {
             // All pairs of row/column meta variables.
             std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> rowColumnMetaVariablePairs;
             
-            // A mapping from automata to the meta variable encoding their location.
-            std::map<std::string, std::pair<storm::expressions::Variable, storm::expressions::Variable>> automatonToLocationVariableMap;
+            // A mapping from automata to the meta variables encoding their location.
+            std::map<std::string, storm::expressions::Variable> automatonToLocationVariableMap;
+            std::map<std::string, std::pair<storm::expressions::Variable, storm::expressions::Variable>> automatonToLocationDdVariableMap;
             
             // A mapping from action indices to the meta variables used to encode these actions.
             std::map<uint64_t, storm::expressions::Variable> actionVariablesMap;
@@ -245,9 +266,14 @@ namespace storm {
                 
                 for (auto const& automaton : this->model.getAutomata()) {
                     // Start by creating a meta variable for the location of the automaton.
+                    storm::expressions::Variable locationExpressionVariable = model.getManager().declareFreshIntegerVariable(false, "loc");
+                    result.automatonToLocationVariableMap[automaton.getName()] = locationExpressionVariable;
                     std::pair<storm::expressions::Variable, storm::expressions::Variable> variablePair = result.manager->addMetaVariable("l_" + automaton.getName(), 0, automaton.getNumberOfLocations() - 1);
-                    result.automatonToLocationVariableMap[automaton.getName()] = variablePair;
+                    result.automatonToLocationDdVariableMap[automaton.getName()] = variablePair;
                     result.rowColumnMetaVariablePairs.push_back(variablePair);
+
+                    result.variableToRowMetaVariableMap->emplace(locationExpressionVariable, variablePair.first);
+                    result.variableToColumnMetaVariableMap->emplace(locationExpressionVariable, variablePair.second);
                     
                     // Add the location variable to the row/column variables.
                     result.rowMetaVariables.insert(variablePair.first);
@@ -277,7 +303,7 @@ namespace storm {
                     storm::dd::Bdd<Type> range = result.manager->getBddOne();
                     
                     // Add the identity and ranges of the location variables to the ones of the automaton.
-                    std::pair<storm::expressions::Variable, storm::expressions::Variable> const& locationVariables = result.automatonToLocationVariableMap[automaton.getName()];
+                    std::pair<storm::expressions::Variable, storm::expressions::Variable> const& locationVariables = result.automatonToLocationDdVariableMap[automaton.getName()];
                     storm::dd::Add<Type, ValueType> variableIdentity = result.manager->template getIdentity<ValueType>(locationVariables.first).equals(result.manager->template getIdentity<ValueType>(locationVariables.second)).template toAdd<ValueType>() * result.manager->getRange(locationVariables.first).template toAdd<ValueType>() * result.manager->getRange(locationVariables.second).template toAdd<ValueType>();
                     identity &= variableIdentity.toBdd();
                     range &= result.manager->getRange(locationVariables.first);
@@ -458,7 +484,7 @@ namespace storm {
                 }
             }
             
-            transitions *= variables.manager->getEncoding(variables.automatonToLocationVariableMap.at(automaton.getName()).second, destination.getLocationIndex()).template toAdd<ValueType>();
+            transitions *= variables.manager->getEncoding(variables.automatonToLocationDdVariableMap.at(automaton.getName()).second, destination.getLocationIndex()).template toAdd<ValueType>();
             
             return EdgeDestinationDd<Type, ValueType>(transitions, assignedGlobalVariables);
         }
@@ -869,7 +895,6 @@ namespace storm {
                     if (action.isInputEnabled()) {
                         // If the action is input-enabled, we add self-loops to all states.
                         transitions *= actionGuard.ite(action.transitions, encodeIndex(0, action.getLowestLocalNondeterminismVariable(), action.getHighestLocalNondeterminismVariable() - action.getLowestLocalNondeterminismVariable(), this->variables) * actionIdentityPair.second);
-                        actionGuard.ite(action.transitions, encodeIndex(0, action.getLowestLocalNondeterminismVariable(), action.getHighestLocalNondeterminismVariable() - action.getLowestLocalNondeterminismVariable(), this->variables) * actionIdentityPair.second).exportToDot("this.dot");
                     } else {
                         transitions *= action.transitions;
                     }
@@ -1081,7 +1106,8 @@ namespace storm {
                     }
                     
                     // Add the source location and the guard.
-                    transitions *= this->variables.manager->getEncoding(this->variables.automatonToLocationVariableMap.at(automaton.getName()).first, edge.getSourceLocationIndex()).template toAdd<ValueType>() * guard;
+                    storm::dd::Add<Type, ValueType> sourceLocationAndGuard = this->variables.manager->getEncoding(this->variables.automatonToLocationDdVariableMap.at(automaton.getName()).first, edge.getSourceLocationIndex()).template toAdd<ValueType>() * guard;
+                    transitions *= sourceLocationAndGuard;
                     
                     // If we multiply the ranges of global variables, make sure everything stays within its bounds.
                     if (!globalVariablesInSomeDestination.empty()) {
@@ -1098,7 +1124,9 @@ namespace storm {
                     // Finally treat the transient assignments.
                     std::map<storm::expressions::Variable, storm::dd::Add<Type, ValueType>> transientEdgeAssignments;
                     if (!this->transientVariables.empty()) {
-                        performTransientAssignments(edge.getAssignments().getTransientAssignments(), [this, &transientEdgeAssignments, &guard] (storm::jani::Assignment const& assignment) { transientEdgeAssignments[assignment.getExpressionVariable()] = guard * this->variables.rowExpressionAdapter->translateExpression(assignment.getAssignedExpression()); } );
+                        performTransientAssignments(edge.getAssignments().getTransientAssignments(), [this, &transientEdgeAssignments, &guard, &sourceLocationAndGuard] (storm::jani::Assignment const& assignment) {
+                            transientEdgeAssignments[assignment.getExpressionVariable()] = sourceLocationAndGuard * this->variables.rowExpressionAdapter->translateExpression(assignment.getAssignedExpression());
+                        } );
                     }
                     
                     return EdgeDd(isMarkovian, guard, guard * transitions, transientEdgeAssignments, globalVariablesInSomeDestination);
@@ -1475,7 +1503,7 @@ namespace storm {
                 for (uint64_t locationIndex = 0; locationIndex < automaton.getNumberOfLocations(); ++locationIndex) {
                     auto const& location = automaton.getLocation(locationIndex);
                     performTransientAssignments(location.getAssignments().getTransientAssignments(), [this,&automatonName,locationIndex,&result] (storm::jani::Assignment const& assignment) {
-                        storm::dd::Add<Type, ValueType> assignedValues = this->variables.manager->getEncoding(this->variables.automatonToLocationVariableMap.at(automatonName).first, locationIndex).template toAdd<ValueType>() * this->variables.rowExpressionAdapter->translateExpression(assignment.getAssignedExpression());
+                        storm::dd::Add<Type, ValueType> assignedValues = this->variables.manager->getEncoding(this->variables.automatonToLocationDdVariableMap.at(automatonName).first, locationIndex).template toAdd<ValueType>() * this->variables.rowExpressionAdapter->translateExpression(assignment.getAssignedExpression());
                         auto it = result.transientLocationAssignments.find(assignment.getExpressionVariable());
                         if (it != result.transientLocationAssignments.end()) {
                             it->second += assignedValues;
@@ -1557,17 +1585,18 @@ namespace storm {
             storm::dd::Bdd<Type> deadlockStates;
             storm::dd::Add<Type, ValueType> transitionMatrix;
             std::unordered_map<std::string, storm::models::symbolic::StandardRewardModel<Type, ValueType>> rewardModels;
+            std::map<std::string, storm::expressions::Expression> labelToExpressionMap;
         };
         
         template <storm::dd::DdType Type, typename ValueType>
         std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> createModel(storm::jani::ModelType const& modelType, CompositionVariables<Type, ValueType> const& variables, ModelComponents<Type, ValueType> const& modelComponents) {
             
             if (modelType == storm::jani::ModelType::DTMC) {
-                return std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>>(new storm::models::symbolic::Dtmc<Type, ValueType>(variables.manager, modelComponents.reachableStates, modelComponents.initialStates, modelComponents.deadlockStates, modelComponents.transitionMatrix, variables.rowMetaVariables, variables.rowExpressionAdapter, variables.columnMetaVariables, variables.columnExpressionAdapter, variables.rowColumnMetaVariablePairs, std::map<std::string, storm::expressions::Expression>(), modelComponents.rewardModels));
+                return std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>>(new storm::models::symbolic::Dtmc<Type, ValueType>(variables.manager, modelComponents.reachableStates, modelComponents.initialStates, modelComponents.deadlockStates, modelComponents.transitionMatrix, variables.rowMetaVariables, variables.rowExpressionAdapter, variables.columnMetaVariables, variables.columnExpressionAdapter, variables.rowColumnMetaVariablePairs, modelComponents.labelToExpressionMap, modelComponents.rewardModels));
             } else if (modelType == storm::jani::ModelType::CTMC) {
-                return std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>>(new storm::models::symbolic::Ctmc<Type, ValueType>(variables.manager, modelComponents.reachableStates, modelComponents.initialStates, modelComponents.deadlockStates, modelComponents.transitionMatrix, variables.rowMetaVariables, variables.rowExpressionAdapter, variables.columnMetaVariables, variables.columnExpressionAdapter, variables.rowColumnMetaVariablePairs, std::map<std::string, storm::expressions::Expression>(), modelComponents.rewardModels));
+                return std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>>(new storm::models::symbolic::Ctmc<Type, ValueType>(variables.manager, modelComponents.reachableStates, modelComponents.initialStates, modelComponents.deadlockStates, modelComponents.transitionMatrix, variables.rowMetaVariables, variables.rowExpressionAdapter, variables.columnMetaVariables, variables.columnExpressionAdapter, variables.rowColumnMetaVariablePairs, modelComponents.labelToExpressionMap, modelComponents.rewardModels));
             } else if (modelType == storm::jani::ModelType::MDP) {
-                return std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>>(new storm::models::symbolic::Mdp<Type, ValueType>(variables.manager, modelComponents.reachableStates, modelComponents.initialStates, modelComponents.deadlockStates, modelComponents.transitionMatrix, variables.rowMetaVariables, variables.rowExpressionAdapter, variables.columnMetaVariables, variables.columnExpressionAdapter, variables.rowColumnMetaVariablePairs, variables.allNondeterminismVariables, std::map<std::string, storm::expressions::Expression>(), modelComponents.rewardModels));
+                return std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>>(new storm::models::symbolic::Mdp<Type, ValueType>(variables.manager, modelComponents.reachableStates, modelComponents.initialStates, modelComponents.deadlockStates, modelComponents.transitionMatrix, variables.rowMetaVariables, variables.rowExpressionAdapter, variables.columnMetaVariables, variables.columnExpressionAdapter, variables.rowColumnMetaVariablePairs, variables.allNondeterminismVariables, modelComponents.labelToExpressionMap, modelComponents.rewardModels));
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Invalid model type.");
             }
@@ -1635,7 +1664,7 @@ namespace storm {
             for (auto const& automaton : model.getAutomata()) {
                 storm::dd::Bdd<Type> initialLocationIndices = variables.manager->getBddZero();
                 for (auto const& locationIndex : automaton.getInitialLocationIndices()) {
-                    initialLocationIndices |= variables.manager->getEncoding(variables.automatonToLocationVariableMap.at(automaton.getName()).first, locationIndex);
+                    initialLocationIndices |= variables.manager->getEncoding(variables.automatonToLocationDdVariableMap.at(automaton.getName()).first, locationIndex);
                 }
                 initialStates &= initialLocationIndices;
             }
@@ -1698,7 +1727,7 @@ namespace storm {
             std::vector<storm::expressions::Variable> result;
             if (options.isBuildAllRewardModelsSet()) {
                 for (auto const& variable : model.getGlobalVariables()) {
-                    if (variable.isTransient()) {
+                    if (variable.isTransient() && (variable.isRealVariable() || variable.isUnboundedIntegerVariable())) {
                         result.push_back(variable.getExpressionVariable());
                     }
                 }
@@ -1709,7 +1738,7 @@ namespace storm {
                         result.push_back(globalVariables.getVariable(rewardModelName).getExpressionVariable());
                     } else {
                         STORM_LOG_THROW(rewardModelName.empty(), storm::exceptions::InvalidArgumentException, "Cannot build unknown reward model '" << rewardModelName << "'.");
-                        STORM_LOG_THROW(globalVariables.getNumberOfTransientVariables() == 1, storm::exceptions::InvalidArgumentException, "Reference to standard reward model is ambiguous.");
+                        STORM_LOG_THROW(globalVariables.getNumberOfRealTransientVariables() + globalVariables.getNumberOfUnboundedIntegerTransientVariables() == 1, storm::exceptions::InvalidArgumentException, "Reference to standard reward model is ambiguous.");
                     }
                 }
                 
@@ -1743,6 +1772,21 @@ namespace storm {
                 }
                 
                 result.emplace(variable.getName(), storm::models::symbolic::StandardRewardModel<Type, ValueType>(stateRewards, stateActionRewards, transitionRewards));
+            }
+            
+            return result;
+        }
+        
+        template <storm::dd::DdType Type, typename ValueType>
+        std::map<std::string, storm::expressions::Expression> buildLabelExpressions(storm::jani::Model const& model, CompositionVariables<Type, ValueType> const& variables, typename DdJaniModelBuilder<Type, ValueType>::Options const& options) {
+            std::map<std::string, storm::expressions::Expression> result;
+            
+            for (auto const& variable : model.getGlobalVariables().getTransientVariables()) {
+                if (variable->isBooleanVariable()) {
+                    if (options.buildAllLabels || options.labelNames.find(variable->getName()) != options.labelNames.end()) {
+                        result[variable->getName()] = model.getLabelExpression(variable->asBooleanVariable(), variables.automatonToLocationVariableMap);
+                    }
+                }
             }
             
             return result;
@@ -1813,6 +1857,9 @@ namespace storm {
             
             // Build the reward models.
             modelComponents.rewardModels = buildRewardModels(system, rewardVariables);
+            
+            // Build the label to expressions mapping.
+            modelComponents.labelToExpressionMap = buildLabelExpressions(model, variables, options);
             
             // Finally, create the model.
             return createModel(model.getModelType(), variables, modelComponents);

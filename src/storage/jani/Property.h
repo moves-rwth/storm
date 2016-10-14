@@ -1,9 +1,35 @@
 #pragma once
 
-#include "src/logic/formulas.h"
+#include "src/logic/Formulas.h"
 
 namespace storm {
     namespace jani {
+        
+        enum class FilterType { MIN, MAX, SUM, AVG, COUNT, FORALL, EXISTS, ARGMIN, ARGMAX, VALUES };
+        
+        
+        
+        class FilterExpression {
+        public:
+            explicit FilterExpression(std::shared_ptr<storm::logic::Formula const> formula) : values(formula) {}
+            
+            std::shared_ptr<storm::logic::Formula const> const& getFormula() const {
+                return values;
+            }
+            
+            FilterType getFilterType() const {
+                return ft;
+            }
+        private:
+            // For now, we assume that the states are always the initial states.
+            
+            std::shared_ptr<storm::logic::Formula const> values;
+            FilterType ft = FilterType::VALUES;
+        };
+        
+        
+        
+        
         class Property {
             /**
              * Constructs the property
@@ -22,16 +48,13 @@ namespace storm {
              * @return the comment
              */
             std::string const& getComment() const;
-            /**
-             * Get the formula
-             * @return the formula
-             */
-            std::shared_ptr<storm::logic::Formula const> const& getFormula() const;
-
+            
+            
+            
         private:
             std::string name;
-            std::shared_ptr<storm::logic::Formula const> formula;
             std::string comment;
+            FilterExpression filterExpression;
         };
     }
 }
