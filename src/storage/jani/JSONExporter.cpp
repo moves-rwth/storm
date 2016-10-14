@@ -140,7 +140,7 @@ namespace storm {
         }
         
         boost::any FormulaToJaniJson::visit(storm::logic::AtomicLabelFormula const& f, boost::any const& data) const {
-            modernjson::json opDecl(f.isTrueFormula() ? "true" : "false");
+            modernjson::json opDecl(f.getLabel());
             return opDecl;
         }
         boost::any FormulaToJaniJson::visit(storm::logic::BinaryBooleanStateFormula const& f, boost::any const& data) const{
@@ -152,7 +152,7 @@ namespace storm {
             return opDecl;
         }
         boost::any FormulaToJaniJson::visit(storm::logic::BooleanLiteralFormula const& f, boost::any const& data) const {
-            modernjson::json opDecl(f.isTrueFormula() ? "true" : "false");
+            modernjson::json opDecl(f.isTrueFormula() ? true : false);
             return opDecl;
         }
         boost::any FormulaToJaniJson::visit(storm::logic::BoundedUntilFormula const& f, boost::any const& data) const {
@@ -173,7 +173,7 @@ namespace storm {
         }
         
         boost::any FormulaToJaniJson::visit(storm::logic::CumulativeRewardFormula const& f, boost::any const& data) const {
-            
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm currently does not support translating  cummulative reward formulae");
         }
         
         boost::any FormulaToJaniJson::visit(storm::logic::EventuallyFormula const& f, boost::any const& data) const {
@@ -718,6 +718,7 @@ namespace storm {
         modernjson::json convertFilterExpression(storm::jani::FilterExpression const& fe, bool continuousModel) {
             modernjson::json propDecl;
             propDecl["states"] = "initial";
+            propDecl["op"] = "filter";
             propDecl["fun"] = janiFilterTypeString(fe.getFilterType());
             propDecl["values"] = FormulaToJaniJson::translate(*fe.getFormula(), continuousModel);
             return propDecl;

@@ -31,6 +31,7 @@ namespace storm {
         
         
         class Property {
+        public:
             /**
              * Constructs the property
              * @param name the name

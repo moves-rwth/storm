@@ -33,16 +33,16 @@ namespace storm {
 
             JaniParser() : expressionManager(new storm::expressions::ExpressionManager()) {}
             JaniParser(std::string const& jsonstring);
-            static std::pair<storm::jani::Model, PropertyVector> parse(std::string const& path);
+            static std::pair<storm::jani::Model, std::map<std::string, storm::jani::Property>> parse(std::string const& path);
 
 
         protected:
             void readFile(std::string const& path);
-            std::pair<storm::jani::Model, PropertyVector> parseModel(bool parseProperties = true);
+            std::pair<storm::jani::Model, std::map<std::string, storm::jani::Property>> parseModel(bool parseProperties = true);
             storm::jani::Property parseProperty(json const& propertyStructure);
             storm::jani::Automaton parseAutomaton(json const& automatonStructure, storm::jani::Model const& parentModel);
             std::shared_ptr<storm::jani::Variable>  parseVariable(json const& variableStructure, std::string const& scopeDescription, bool prefWithScope = false);
-            storm::expressions::Expression parseExpression(json const& expressionStructure, std::string const& scopeDescription, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& localVars = std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>>());
+            storm::expressions::Expression parseExpression(json const& expressionStructure, std::string const& scopeDescription, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& localVars = std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>>(), bool returnNoneOnUnknownOpString = false);
             
         private:
             std::shared_ptr<storm::jani::Constant> parseConstant(json const& constantStructure, std::string const& scopeDescription = "global");
@@ -51,13 +51,19 @@ namespace storm {
              * Helper for parsing the actions of a model.
              */
             void parseActions(json const& actionStructure, storm::jani::Model& parentModel);
-            std::vector<storm::expressions::Expression> parseUnaryExpressionArguments(json const& expressionStructure, std::string const& opstring, std::string const& scopeDescription, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& localVars = {});
-            std::vector<storm::expressions::Expression> parseBinaryExpressionArguments(json const& expressionStructure, std::string const& opstring,  std::string const& scopeDescription, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& localVars = {});
+            std::shared_ptr<storm::logic::Formula const> parseFormula(json const& propertyStructure, std::string const& context);
+            std::vector<storm::expressions::Expression> parseUnaryExpressionArguments(json const& expressionStructure, std::string const& opstring, std::string const& scopeDescription, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& localVars = {}, bool returnNoneOnUnknownOpString = false);
+            std::vector<storm::expressions::Expression> parseBinaryExpressionArguments(json const& expressionStructure, std::string const& opstring,  std::string const& scopeDescription, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& localVars = {}, bool returnNoneOnUnknownOpString = false);
 
+            std::vector<std::shared_ptr<storm::logic::Formula const>> parseUnaryFormulaArgument(json const& propertyStructure, std::string const& opstring, std::string const& context);
+            std::vector<std::shared_ptr<storm::logic::Formula const>> parseBinaryFormulaArguments(json const& propertyStructure, std::string const& opstring, std::string const& context);
+                
+                
+            
             std::shared_ptr<storm::jani::Composition> parseComposition(json const& compositionStructure);
             storm::expressions::Variable getVariableOrConstantExpression(std::string const& ident, std::string const& scopeDescription, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& localVars = {});
 
-
+            
             /**
              * The overall structure currently under inspection.
              */

@@ -15,8 +15,8 @@ namespace storm {
         return program;
     }
 
-    std::pair<storm::jani::Model, std::vector<storm::jani::Property>> parseJaniModel(std::string const& path) {
-        std::pair<storm::jani::Model, std::vector<storm::jani::Property>> modelAndFormulae = storm::parser::JaniParser::parse(path);
+    std::pair<storm::jani::Model, std::map<std::string, storm::jani::Property>> parseJaniModel(std::string const& path) {
+        std::pair<storm::jani::Model, std::map<std::string, storm::jani::Property>> modelAndFormulae = storm::parser::JaniParser::parse(path);
         modelAndFormulae.first.checkValid();
         return modelAndFormulae;
     }

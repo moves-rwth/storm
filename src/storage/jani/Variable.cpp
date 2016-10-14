@@ -12,7 +12,7 @@ namespace storm {
             // Intentionally left empty.
         }
 
-        Variable::Variable(std::string const& name, storm::expressions::Variable const& variable, bool transient) : name(name), variable(variable), transient(transient), init() {
+        Variable::Variable(std::string const& name, storm::expressions::Variable const& variable) : name(name), variable(variable), transient(false), init() {
             // Intentionally left empty.
         }
 
