@@ -27,13 +27,15 @@ namespace storm {
                 dft(dft),
                 stateGenerationInfo(std::make_shared<storm::storage::DFTStateGenerationInfo>(dft.buildStateGenerationInfo(symmetries))),
                 enableDC(enableDC),
+                heuristic(storm::settings::getModule<storm::settings::modules::DFTSettings>().getApproximationHeuristic()),
                 generator(dft, *stateGenerationInfo, enableDC, mergeFailedStates),
                 matrixBuilder(!generator.isDeterministicModel()),
                 stateStorage(((dft.stateVectorSize() / 64) + 1) * 64),
-                statesToExplore(storm::storage::DynamicPriorityQueue<DFTStatePointer, std::vector<DFTStatePointer>, std::function<bool(DFTStatePointer, DFTStatePointer)>>(&storm::builder::compareDepth<ValueType>))
+                explorationQueue([this](StateType idA, StateType idB) {
+                        return isPriorityGreater(idA, idB);
+                    })
         {
-            // stateVectorSize is bound for size of bitvector
-            heuristic = storm::settings::getModule<storm::settings::modules::DFTSettings>().getApproximationHeuristic();
+            // Intentionally left empty.
         }
 
         template<typename ValueType, typename StateType>
@@ -84,20 +86,6 @@ namespace storm {
             modelComponents.markovianStates.resize(stateSize);
             modelComponents.deterministicModel = generator.isDeterministicModel();
 
-            // Replace pseudo states in matrix
-            if (!mPseudoStatesMapping.empty()) {
-                // TODO Matthias: avoid hack with fixed int type
-                std::vector<uint_fast64_t> pseudoStatesVector;
-                for (auto const& pseudoStatePair : mPseudoStatesMapping) {
-                    pseudoStatesVector.push_back(matrixBuilder.mappingOffset + pseudoStatePair.first);
-                }
-                STORM_LOG_ASSERT(std::find(pseudoStatesVector.begin(), pseudoStatesVector.end(), 0) == pseudoStatesVector.end(), "Unexplored pseudo state still contained.");
-                STORM_LOG_TRACE("Replace pseudo states: " << pseudoStatesVector << ", offset: " << OFFSET_PSEUDO_STATE);
-                // TODO Matthias: combine replacement with later one
-                matrixBuilder.builder.replaceColumns(pseudoStatesVector, OFFSET_PSEUDO_STATE);
-                mPseudoStatesMapping.clear();
-            }
-
             // Fix the entries in the transition matrix according to the mapping of ids to row group indices
             STORM_LOG_ASSERT(matrixBuilder.stateRemapping[initialStateIndex] == initialStateIndex, "Initial state should not be remapped.");
             // TODO Matthias: do not consider all rows?
@@ -124,6 +112,14 @@ namespace storm {
         template<typename ValueType, typename StateType>
         void ExplicitDFTModelBuilderApprox<ValueType, StateType>::initializeNextIteration() {
             STORM_LOG_TRACE("Refining DFT state space");
+
+            // TODO Matthias: should be easier now as skipped states all are at the end of the matrix
+            // Push skipped states to explore queue
+            // TODO Matthias: remove
+            for (auto const& skippedState : skippedStates) {
+                statesNotExplored[skippedState.second->getId()] = skippedState.second;
+                explorationQueue.push(skippedState.second->getId());
+            }
 
             // Initialize matrix builder again
             // TODO Matthias: avoid copy
@@ -211,28 +207,33 @@ namespace storm {
             skippedStates = skippedStatesNew;
 
             STORM_LOG_ASSERT(matrixBuilder.getCurrentRowGroup() == nrExpandedStates, "Row group size does not match.");
-
-            // Push skipped states to explore queue
-            // TODO Matthias: remove
-            for (auto const& skippedState : skippedStates) {
-                statesToExplore.push(skippedState.second);
-            }
             skippedStates.clear();
         }
 
         template<typename ValueType, typename StateType>
         void ExplicitDFTModelBuilderApprox<ValueType, StateType>::exploreStateSpace(double approximationThreshold) {
-            bool explorationFinished = false;
-            size_t pseudoStatesToCheck = 0;
-            while (!explorationFinished) {
+            // TODO Matthias: do not empty queue every time but break before
+            while (!explorationQueue.empty()) {
                 // Get the first state in the queue
-                DFTStatePointer currentState = statesToExplore.top();
+                StateType currentId = explorationQueue.popTop();
+                auto itFind = statesNotExplored.find(currentId);
+                STORM_LOG_ASSERT(itFind != statesNotExplored.end(), "Id " << currentId << " not found");
+                DFTStatePointer currentState = itFind->second;
+                STORM_LOG_ASSERT(currentState->getId() == currentId, "Ids do not match");
+                // Remove it from the list of not explored states
+                statesNotExplored.erase(itFind);
                 STORM_LOG_ASSERT(stateStorage.stateToId.contains(currentState->status()), "State is not contained in state storage.");
-                STORM_LOG_ASSERT(stateStorage.stateToId.getValue(currentState->status()) == currentState->getId(), "Ids of states do not coincide.");
-                statesToExplore.pop();
+                STORM_LOG_ASSERT(stateStorage.stateToId.getValue(currentState->status()) == currentId, "Ids of states do not coincide.");
+
+                // Get concrete state if necessary
+                if (currentState->isPseudoState()) {
+                    // Create concrete state from pseudo state
+                    currentState->construct();
+                }
+                STORM_LOG_ASSERT(!currentState->isPseudoState(), "State is pseudo state.");
 
                 // Remember that the current row group was actually filled with the transitions of a different state
-                matrixBuilder.setRemapping(currentState->getId());
+                matrixBuilder.setRemapping(currentId);
 
                 matrixBuilder.newRowGroup();
 
@@ -259,53 +260,17 @@ namespace storm {
                     for (auto const& choice : behavior) {
                         // Add the probabilistic behavior to the matrix.
                         for (auto const& stateProbabilityPair : choice) {
-                            if (stateProbabilityPair.first >= OFFSET_PSEUDO_STATE) {
-                                // Check that pseudo state and its instantiation do not appear together
-                                // TODO Matthias: prove that this is not possible and remove
-                                StateType newId = stateProbabilityPair.first - OFFSET_PSEUDO_STATE;
-                                STORM_LOG_ASSERT(newId < mPseudoStatesMapping.size(), "Id is not valid.");
-                                if (mPseudoStatesMapping[newId].first > 0) {
-                                    // State exists already
-                                    newId = mPseudoStatesMapping[newId].first;
-                                    for (auto itFind = choice.begin(); itFind != choice.end(); ++itFind) {
-                                        STORM_LOG_ASSERT(itFind->first != newId, "Pseudo state and instantiation occur together in a distribution.");
-                                    }
-                                }
-                                // Set transtion to pseudo state
-                                matrixBuilder.addTransition(stateProbabilityPair.first, stateProbabilityPair.second);
-                            } else {
-                                // Set transition to state id + offset. This helps in only remapping all previously skipped states.
-                                matrixBuilder.addTransition(matrixBuilder.mappingOffset + stateProbabilityPair.first, stateProbabilityPair.second);
-                            }
+                            // Set transition to state id + offset. This helps in only remapping all previously skipped states.
+                            matrixBuilder.addTransition(matrixBuilder.mappingOffset + stateProbabilityPair.first, stateProbabilityPair.second);
+                            // TODO Matthias: set heuristic values here
                         }
                         matrixBuilder.finishRow();
                     }
                 }
 
                 // Update priority queue
-                statesToExplore.fix();
-
-                if (statesToExplore.empty()) {
-                    explorationFinished = true;
-                    // Before ending the exploration check for pseudo states which are not initialized yet
-                    for ( ; pseudoStatesToCheck < mPseudoStatesMapping.size(); ++pseudoStatesToCheck) {
-                        std::pair<StateType, storm::storage::BitVector> pseudoStatePair = mPseudoStatesMapping[pseudoStatesToCheck];
-                        if (pseudoStatePair.first == 0) {
-                            // Create state from pseudo state and explore
-                            STORM_LOG_ASSERT(stateStorage.stateToId.contains(pseudoStatePair.second), "Pseudo state not contained.");
-                            STORM_LOG_ASSERT(stateStorage.stateToId.getValue(pseudoStatePair.second) >= OFFSET_PSEUDO_STATE, "State is no pseudo state.");
-                            STORM_LOG_TRACE("Create pseudo state from bit vector " << pseudoStatePair.second);
-                            DFTStatePointer pseudoState = std::make_shared<storm::storage::DFTState<ValueType>>(pseudoStatePair.second, dft, *stateGenerationInfo, newIndex);
-                            STORM_LOG_ASSERT(pseudoStatePair.second == pseudoState->status(), "Pseudo states do not coincide.");
-                            STORM_LOG_TRACE("Explore pseudo state " << dft.getStateString(pseudoState) << " with id " << pseudoState->getId());
-
-                            getOrAddStateIndex(pseudoState);
-                            explorationFinished = false;
-                            break;
-                        }
-                    }
-                }
-
+                // TODO Matthias: only when necessary
+                explorationQueue.fix();
             } // end exploration
         }
 
@@ -476,45 +441,31 @@ namespace storm {
             if (stateStorage.stateToId.contains(state->status())) {
                 // State already exists
                 stateId = stateStorage.stateToId.getValue(state->status());
-                STORM_LOG_TRACE("State " << dft.getStateString(state) << " with id " << stateId << " already exists");
+                STORM_LOG_TRACE("State " << dft.getStateString(state) << " already exists");
 
-                if (!changed && stateId >= OFFSET_PSEUDO_STATE) {
-                    // Pseudo state can be created now
-                    STORM_LOG_ASSERT(stateId >= OFFSET_PSEUDO_STATE, "State is no pseudo state.");
-                    stateId -= OFFSET_PSEUDO_STATE;
-                    STORM_LOG_ASSERT(stateId < mPseudoStatesMapping.size(), "Pseudo state not known.");
-                    STORM_LOG_ASSERT(mPseudoStatesMapping[stateId].first == 0, "Pseudo state already created.");
+                if (!changed && statesNotExplored.at(stateId)->isPseudoState()) {
                     // Create pseudo state now
-                    STORM_LOG_ASSERT(mPseudoStatesMapping[stateId].second == state->status(), "Pseudo states do not coincide.");
-                    state->setId(newIndex++);
-                    mPseudoStatesMapping[stateId].first = state->getId();
-                    stateId = state->getId();
-                    stateStorage.stateToId.setOrAdd(state->status(), stateId);
-                    STORM_LOG_TRACE("Now create state " << dft.getStateString(state) << " with id " << stateId);
-                    statesToExplore.push(state);
+                    STORM_LOG_ASSERT(statesNotExplored.at(stateId)->getId() == stateId, "Ids do not match.");
+                    STORM_LOG_ASSERT(statesNotExplored.at(stateId)->status() == state->status(), "Pseudo states do not coincide.");
+                    state->setId(stateId);
+                    // Update mapping to map to concrete state now
+                    statesNotExplored[stateId] = state;
+                    // We do not push the new state on the exploration queue as the pseudo state was already pushed
+                    STORM_LOG_TRACE("Created pseudo state " << dft.getStateString(state));
                 }
             } else {
                 // State does not exist yet
-                if (changed) {
-                    // Remember state for later creation
-                    state->setId(mPseudoStatesMapping.size() + OFFSET_PSEUDO_STATE);
-                    mPseudoStatesMapping.push_back(std::make_pair(0, state->status()));
-                    stateId = stateStorage.stateToId.findOrAdd(state->status(), state->getId());
-                    STORM_LOG_ASSERT(stateId == state->getId(), "Ids do not match.");
-                    STORM_LOG_TRACE("Remember state for later creation: " << dft.getStateString(state));
-                    // Reserve one slot for the coming state in the remapping
-                    matrixBuilder.stateRemapping.push_back(0);
-                } else {
-                    // Create new state
-                    state->setId(newIndex++);
-                    stateId = stateStorage.stateToId.findOrAdd(state->status(), state->getId());
-                    STORM_LOG_ASSERT(stateId == state->getId(), "Ids do not match.");
-                    STORM_LOG_TRACE("New state: " << dft.getStateString(state));
-                    statesToExplore.push(state);
-
-                    // Reserve one slot for the new state in the remapping
-                    matrixBuilder.stateRemapping.push_back(0);
-                }
+                STORM_LOG_ASSERT(state->isPseudoState() == changed, "State type (pseudo/concrete) wrong.");
+                // Create new state
+                state->setId(newIndex++);
+                stateId = stateStorage.stateToId.findOrAdd(state->status(), state->getId());
+                STORM_LOG_ASSERT(stateId == state->getId(), "Ids do not match.");
+                // Insert state as not yet explored
+                statesNotExplored[stateId] = state;
+                explorationQueue.push(stateId);
+                // Reserve one slot for the new state in the remapping
+                matrixBuilder.stateRemapping.push_back(0);
+                STORM_LOG_TRACE("New " << (state->isPseudoState() ? "pseudo" : "concrete") << " state: " << dft.getStateString(state));
             }
             return stateId;
         }
@@ -526,6 +477,12 @@ namespace storm {
                 modelComponents.markovianStates.resize(modelComponents.markovianStates.size() + INITIAL_BITVECTOR_SIZE);
             }
             modelComponents.markovianStates.set(matrixBuilder.getCurrentRowGroup() - 1, markovian);
+        }
+
+        template<typename ValueType, typename StateType>
+        bool ExplicitDFTModelBuilderApprox<ValueType, StateType>::isPriorityGreater(StateType idA, StateType idB) const {
+            // TODO Matthias: compare directly and according to heuristic
+            return storm::builder::compareDepth(statesNotExplored.at(idA), statesNotExplored.at(idB));
         }
 
 

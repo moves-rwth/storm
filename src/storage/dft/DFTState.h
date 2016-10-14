@@ -30,18 +30,36 @@ namespace storm {
             std::vector<size_t> mCurrentlyNotFailableBE;
             std::vector<size_t> mFailableDependencies;
             std::vector<size_t> mUsedRepresentants;
+            bool mPseudoState;
             bool mValid = true;
             const DFT<ValueType>& mDft;
             const DFTStateGenerationInfo& mStateGenerationInfo;
             storm::builder::DFTExplorationHeuristic<ValueType> exploreHeuristic;
             
         public:
-            DFTState(DFT<ValueType> const& dft, DFTStateGenerationInfo const& stateGenerationInfo, size_t id);
-            
             /**
-             * Construct state from underlying bitvector.
+             * Construct the initial state.
+             *
+             * @param dft                 DFT
+             * @param stateGenerationInfo General information for state generation
+             * @param id                  State id
+             */
+            DFTState(DFT<ValueType> const& dft, DFTStateGenerationInfo const& stateGenerationInfo, size_t id);
+
+            /**
+             * Construct temporary pseudo state. The actual state is constructed later.
+             *
+             * @param status              BitVector representing the status of the state.
+             * @param dft                 DFT
+             * @param stateGenerationInfo General information for state generation
+             * @param id                  Pseudo state id
              */
             DFTState(storm::storage::BitVector const& status, DFT<ValueType> const& dft, DFTStateGenerationInfo const& stateGenerationInfo, size_t id);
+
+            /**
+             * Construct concerete state from pseudo state by using the underlying bitvector.
+             */
+            void construct();
 
             std::shared_ptr<DFTState<ValueType>> copy() const;
 
@@ -99,6 +117,10 @@ namespace storm {
            
             bool isInvalid() const {
                 return !mValid;
+            }
+
+            bool isPseudoState() const {
+                return mPseudoState;
             }
 
             void setHeuristicValues(size_t depth, ValueType rate, ValueType exitRate) {

@@ -15,11 +15,11 @@ namespace storm {
             Compare compare;
 
         public:
-            explicit DynamicPriorityQueue(const Compare& compare) : container(), compare(compare) {
+            explicit DynamicPriorityQueue(Compare const& compare) : container(), compare(compare) {
                 // Intentionally left empty
             }
 
-            explicit DynamicPriorityQueue(Container&& container, const Compare& compare) : container(std::move(container)), compare(compare) {
+            explicit DynamicPriorityQueue(Container&& container, Compare const& compare) : container(std::move(container)), compare(compare) {
                 std::make_heap(container.begin(), container.end(), compare);
             }
 

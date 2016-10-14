@@ -232,6 +232,16 @@ namespace storm {
             void changeMatrixUpperBound(storm::storage::SparseMatrix<ValueType> & matrix) const;
 
             /*!
+             * Compares the priority of two states.
+             *
+             * @param idA Id of first state
+             * @param idB Id of second state
+             *
+             * @return True if the priority of the first state is greater then the priority of the second one.
+             */
+            bool isPriorityGreater(StateType idA, StateType idB) const;
+
+            /*!
              * Create the model model from the model components.
              *
              * @param copy If true, all elements of the model component are copied (used for approximation). If false
@@ -271,9 +281,6 @@ namespace storm {
             // Id of initial state
             size_t initialStateIndex = 0;
 
-            // Mapping from pseudo states to (id of concrete state, bitvector representation)
-            std::vector<std::pair<StateType, storm::storage::BitVector>> mPseudoStatesMapping;
-
             // Next state generator for exploring the state space
             storm::generator::DftNextStateGenerator<ValueType, StateType> generator;
 
@@ -286,12 +293,16 @@ namespace storm {
             // Internal information about the states that were explored.
             storm::storage::sparse::StateStorage<StateType> stateStorage;
 
-            // A pniority queue of states that still need to be explored.
-            storm::storage::DynamicPriorityQueue<DFTStatePointer, std::vector<DFTStatePointer>, std::function<bool(DFTStatePointer, DFTStatePointer)>> statesToExplore;
+            // A priority queue of states that still need to be explored.
+            storm::storage::DynamicPriorityQueue<StateType, std::vector<StateType>, std::function<bool(StateType, StateType)>> explorationQueue;
+
+            // A mapping of not yet explored states from the id to the state object.
+            std::map<StateType, DFTStatePointer> statesNotExplored;
 
             // Holds all skipped states which were not yet expanded. More concretely it is a mapping from matrix indices
             // to the corresponding skipped states.
             // Notice that we need an ordered map here to easily iterate in increasing order over state ids.
+            // TODO remove again
             std::map<StateType, DFTStatePointer> skippedStates;
         };
 

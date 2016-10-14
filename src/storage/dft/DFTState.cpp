@@ -6,7 +6,8 @@ namespace storm {
     namespace storage {
 
         template<typename ValueType>
-        DFTState<ValueType>::DFTState(DFT<ValueType> const& dft, DFTStateGenerationInfo const& stateGenerationInfo, size_t id) : mStatus(dft.stateVectorSize()), mId(id), mDft(dft), mStateGenerationInfo(stateGenerationInfo), exploreHeuristic()  {
+        DFTState<ValueType>::DFTState(DFT<ValueType> const& dft, DFTStateGenerationInfo const& stateGenerationInfo, size_t id) : mStatus(dft.stateVectorSize()), mId(id), mPseudoState(false), mDft(dft), mStateGenerationInfo(stateGenerationInfo), exploreHeuristic()  {
+            // TODO Matthias: use construct()
             
             // Initialize uses
             for(size_t spareId : mDft.getSpareIndices()) {
@@ -34,10 +35,16 @@ namespace storm {
 
             sortFailableBEs();
         }
+
+        template<typename ValueType>
+        DFTState<ValueType>::DFTState(storm::storage::BitVector const& status, DFT<ValueType> const& dft, DFTStateGenerationInfo const& stateGenerationInfo, size_t id) : mStatus(status), mId(id), mPseudoState(true), mDft(dft), mStateGenerationInfo(stateGenerationInfo), exploreHeuristic() {
+            // Intentionally left empty
+        }
         
         template<typename ValueType>
-        DFTState<ValueType>::DFTState(storm::storage::BitVector const& status, DFT<ValueType> const& dft, DFTStateGenerationInfo const& stateGenerationInfo, size_t id) : mStatus(status), mId(id), mDft(dft), mStateGenerationInfo(stateGenerationInfo), exploreHeuristic() {
-            
+        void DFTState<ValueType>::construct() {
+            STORM_LOG_TRACE("Construct concrete state from pseudo state " << mDft.getStateString(mStatus, mStateGenerationInfo, mId));
+            STORM_LOG_ASSERT(mPseudoState, "Only pseudo states can be constructed.");
             for(size_t index = 0; index < mDft.nrElements(); ++index) {
                 // Initialize currently failable BE
                 if (mDft.isBasicElement(index) && isOperational(index)) {
@@ -68,6 +75,7 @@ namespace storm {
                     STORM_LOG_TRACE("New dependency failure: " << dependency->toString());
                 }
             }
+            mPseudoState = false;
         }
 
         template<typename ValueType>
@@ -405,6 +413,9 @@ namespace storm {
                     }
                     n = tmp;
                 } while (n > 0);
+            }
+            if (changed) {
+                mPseudoState = true;
             }
             return changed;
         }
