@@ -78,9 +78,10 @@ namespace storm {
                 typename storm::storage::SparseMatrix<ValueType>::index_type start = matrix.hasTrivialRowGrouping() ? group : matrix.getRowGroupIndices()[group];
                 typename storm::storage::SparseMatrix<ValueType>::index_type end = matrix.hasTrivialRowGrouping() ? group + 1 : matrix.getRowGroupIndices()[group + 1];
                 
+                
                 for (typename storm::storage::SparseMatrix<ValueType>::index_type i = start; i < end; ++i) {
                     // Print the actual row.
-                    os << "\taction";
+                    os << "\taction " << i - start;
                     if (!embedded) {
                         bool first = true;
                         for (auto const& rewardModelEntry : sparseModel->getRewardModels()) {
