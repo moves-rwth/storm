@@ -1,6 +1,6 @@
 #pragma once
 
-#include "src/logic/formulas.h"
+#include "src/logic/Formulas.h"
 
 namespace storm {
     namespace jani {
