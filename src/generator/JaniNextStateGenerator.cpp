@@ -188,7 +188,7 @@ namespace storm {
                     blockingExpression = blockingExpression.isInitialized() ? blockingExpression || localBlockingExpression : localBlockingExpression;
                     initialState.setFromInt(integerVariable.bitOffset, integerVariable.bitWidth, static_cast<uint_fast64_t>(variableValue - integerVariable.lowerBound));
                 }
-                
+                                
                 // Gather iterators to the initial locations of all the automata.
                 std::vector<std::set<uint64_t>::const_iterator> initialLocationsIterators;
                 uint64_t currentLocationVariable = 0;

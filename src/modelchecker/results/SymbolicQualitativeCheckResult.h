@@ -30,6 +30,12 @@ namespace storm {
             virtual QualitativeCheckResult& operator|=(QualitativeCheckResult const& other) override;
             virtual void complement() override;
             
+            
+            virtual bool existsTrue() const override;
+            virtual bool forallTrue() const override;
+            virtual uint64_t count() const override;
+            
+            
             storm::dd::Bdd<Type> const& getTruthValuesVector() const;
             
             virtual std::ostream& writeToStream(std::ostream& out) const override;

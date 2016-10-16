@@ -199,6 +199,10 @@ namespace storm {
                  * @return The string that defines the constants of a symbolic model.
                  */
                 std::string getConstantDefinitionString() const;
+                
+                bool isJaniPropertiesSet() const;
+                
+                std::vector<std::string> getJaniProperties() const;
 
                 /*!
                  * Retrieves whether the PRISM compatibility mode was enabled.
@@ -239,6 +243,8 @@ namespace storm {
                 static const std::string prismCompatibilityOptionName;
                 static const std::string prismCompatibilityOptionShortName;
                 static const std::string fullModelBuildOptionName;
+                static const std::string janiPropertyOptionName;
+                static const std::string janiPropertyOptionShortName;
             };
 
         } // namespace modules

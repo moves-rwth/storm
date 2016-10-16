@@ -3,7 +3,7 @@
 namespace storm {
     namespace jani {
         
-        RealVariable::RealVariable(std::string const& name, storm::expressions::Variable const& variable, bool transient) : storm::jani::Variable(name, variable, transient) {
+        RealVariable::RealVariable(std::string const& name, storm::expressions::Variable const& variable) : storm::jani::Variable(name, variable) {
             // Intentionally left empty.
         }
         

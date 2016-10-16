@@ -5,9 +5,12 @@
 #include "src/storage/jani/ParallelComposition.h"
 #include "src/exceptions/FileIoException.h"
 #include "src/exceptions/InvalidJaniException.h"
+
+#include "src/exceptions/NotSupportedException.h"
 #include "src/exceptions/NotImplementedException.h"
 #include "src/storage/jani/ModelType.h"
 
+#include "src/modelchecker/results/FilterType.h"
 
 #include <iostream>
 #include <sstream>
@@ -49,7 +52,7 @@ namespace storm {
         }
 
 
-        std::pair<storm::jani::Model, std::vector<storm::jani::Property>> JaniParser::parse(std::string const& path) {
+        std::pair<storm::jani::Model, std::map<std::string, storm::jani::Property>> JaniParser::parse(std::string const& path) {
             JaniParser parser;
             parser.readFile(path);
             return parser.parseModel();
@@ -75,7 +78,7 @@ namespace storm {
             file.close();
         }
 
-        std::pair<storm::jani::Model, std::vector<storm::jani::Property>> JaniParser::parseModel(bool parseProperties) {
+        std::pair<storm::jani::Model, std::map<std::string, storm::jani::Property>> JaniParser::parseModel(bool parseProperties) {
             //jani-version
             STORM_LOG_THROW(parsedStructure.count("jani-version") == 1, storm::exceptions::InvalidJaniException, "Jani-version must be given exactly once.");
             uint64_t version = getUnsignedInt(parsedStructure.at("jani-version"), "jani version");
@@ -110,21 +113,185 @@ namespace storm {
             for (auto const& automataEntry : parsedStructure.at("automata")) {
                 model.addAutomaton(parseAutomaton(automataEntry, model));
             }
+            STORM_LOG_THROW(parsedStructure.count("restrict-initial") < 2, storm::exceptions::InvalidJaniException, "Model has multiple initial value restrictions");
+            storm::expressions::Expression initialValueRestriction = expressionManager->boolean(true);
+            if(parsedStructure.count("restrict-initial") > 0) {
+                STORM_LOG_THROW(parsedStructure.at("restrict-initial").count("exp") == 1, storm::exceptions::InvalidJaniException, "Model needs an expression inside the initial restricion");
+                initialValueRestriction  = parseExpression(parsedStructure.at("restrict-initial").at("exp"), "Initial value restriction for automaton " + name);
+            }
+            model.setInitialStatesRestriction(initialValueRestriction);
             STORM_LOG_THROW(parsedStructure.count("system") == 1, storm::exceptions::InvalidJaniException, "Exactly one system description must be given");
             std::shared_ptr<storm::jani::Composition> composition = parseComposition(parsedStructure.at("system"));
             model.setSystemComposition(composition);
             STORM_LOG_THROW(parsedStructure.count("properties") <= 1, storm::exceptions::InvalidJaniException, "At most one list of properties can be given");
-            PropertyVector properties;
+            std::map<std::string, storm::jani::Property> properties;
             if (parseProperties && parsedStructure.count("properties") == 1) {
                 STORM_LOG_THROW(parsedStructure.at("properties").is_array(), storm::exceptions::InvalidJaniException, "Properties should be an array");
                 for(auto const& propertyEntry : parsedStructure.at("properties")) {
-                    properties.push_back(this->parseProperty(propertyEntry));
+                    try {
+                        auto prop = this->parseProperty(propertyEntry);
+                        properties.emplace(prop.getName(), prop);
+                    } catch (storm::exceptions::NotSupportedException const& ex) {
+                        STORM_LOG_WARN("Cannot handle property " << ex.what());
+                    } catch (storm::exceptions::NotImplementedException const&  ex) {
+                        STORM_LOG_WARN("Cannot handle property " << ex.what());
+                    }
                 }
             }
             return {model, properties};
         }
 
+        
+        std::vector<std::shared_ptr<storm::logic::Formula const>> JaniParser::parseUnaryFormulaArgument(json const& propertyStructure, std::string const& opstring, std::string const& context) {
+            STORM_LOG_THROW(propertyStructure.count("exp") == 1, storm::exceptions::InvalidJaniException, "Expecting operand for operator " << opstring << " in  " << context);
+            return  { parseFormula(propertyStructure.at("exp"), "Operand of operator " + opstring) };
+        }
+        
+        
+        std::vector<std::shared_ptr<storm::logic::Formula const>> JaniParser::parseBinaryFormulaArguments(json const& propertyStructure, std::string const& opstring, std::string const& context) {
+            STORM_LOG_THROW(propertyStructure.count("left") == 1, storm::exceptions::InvalidJaniException, "Expecting left operand for operator " << opstring << " in  " << context);
+            STORM_LOG_THROW(propertyStructure.count("right") == 1, storm::exceptions::InvalidJaniException, "Expecting right operand for operator " << opstring << " in  " << context);
+            return { parseFormula(propertyStructure.at("left"), "Operand of operator " + opstring),  parseFormula(propertyStructure.at("right"), "Operand of operator " + opstring)  };
+        }
+        
+        storm::jani::PropertyInterval JaniParser::parsePropertyInterval(json const& piStructure) {
+            storm::jani::PropertyInterval pi;
+            if (piStructure.count("lower") > 0) {
+                pi.lowerBound = parseExpression(piStructure.at("lower"), "Lower bound for property interval");
+                // TODO substitute constants.
+                STORM_LOG_THROW(!pi.lowerBound.containsVariables(), storm::exceptions::NotSupportedException, "Only constant expressions are supported as lower bounds");
+               
+                
+            }
+            if (piStructure.count("lower-exclusive") > 0) {
+                STORM_LOG_THROW(pi.lowerBound.isInitialized(), storm::exceptions::InvalidJaniException, "Lower-exclusive can only be set if a lower bound is present");
+                pi.lowerBoundStrict = piStructure.at("lower-exclusive");
+                
+            }
+            if (piStructure.count("upper") > 0) {
+                pi.upperBound = parseExpression(piStructure.at("upper"), "Upper bound for property interval");
+                // TODO substitute constants.
+                STORM_LOG_THROW(!pi.upperBound.containsVariables(), storm::exceptions::NotSupportedException, "Only constant expressions are supported as upper bounds");
+                
+            }
+            if (piStructure.count("upper-exclusive") > 0) {
+                STORM_LOG_THROW(pi.lowerBound.isInitialized(), storm::exceptions::InvalidJaniException, "Lower-exclusive can only be set if a lower bound is present");
+                pi.lowerBoundStrict = piStructure.at("upper-exclusive");
+            }
+            STORM_LOG_THROW(pi.lowerBound.isInitialized() || pi.upperBound.isInitialized(), storm::exceptions::InvalidJaniException, "Bounded operators must be bounded");
+            return pi;
+            
+            
+        }
 
+        std::shared_ptr<storm::logic::Formula const> JaniParser::parseFormula(json const& propertyStructure, std::string const& context, boost::optional<storm::logic::Bound<storm::RationalNumber>> bound) {
+            
+            storm::expressions::Expression expr = parseExpression(propertyStructure, "expression in property", {}, true);
+            if(expr.isInitialized()) {
+                assert(bound == boost::none);
+                return std::make_shared<storm::logic::AtomicExpressionFormula>(expr);
+            } else if(propertyStructure.count("op") == 1) {
+                std::string opString = getString(propertyStructure.at("op"), "Operation description");
+                
+                if(opString == "Pmin" || opString == "Pmax") {
+                    std::vector<std::shared_ptr<storm::logic::Formula const>> args = parseUnaryFormulaArgument(propertyStructure, opString, "");
+                    assert(args.size() == 1);
+                    storm::logic::OperatorInformation opInfo;
+                    opInfo.optimalityType =  opString == "Pmin" ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize;
+                    opInfo.bound = bound;
+                    return std::make_shared<storm::logic::ProbabilityOperatorFormula>(args[0], opInfo);
+                    
+                } else if (opString == "∀" || opString == "∃") {
+                    assert(bound == boost::none);
+                    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Forall and Exists are currently not supported");
+                } else if (opString == "Emin" || opString == "Emax") {
+                    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Emin and Emax are currently not supported");
+                } else if (opString == "Smin" || opString == "Smax") {
+                    std::vector<std::shared_ptr<storm::logic::Formula const>> args = parseUnaryFormulaArgument(propertyStructure, opString, "");
+                    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Smin and Smax are currently not supported");
+                } else if (opString == "U") {
+                    assert(bound == boost::none);
+                    std::vector<std::shared_ptr<storm::logic::Formula const>> args = parseBinaryFormulaArguments(propertyStructure, opString, "");
+                    if (propertyStructure.count("step-bounds") > 0) {
+                        storm::jani::PropertyInterval pi = parsePropertyInterval(propertyStructure.at("step-bounds"));
+                        STORM_LOG_THROW(pi.hasUpperBound(), storm::exceptions::NotSupportedException, "Storm only supports step-bounded until with an upper bound");
+                        if(pi.hasLowerBound()) {
+                            STORM_LOG_THROW(pi.lowerBound.evaluateAsInt() == 0, storm::exceptions::NotSupportedException, "Storm only supports step-bounded until without a (non-trivial) lower-bound");
+                        }
+                        int64_t upperBound = pi.upperBound.evaluateAsInt();
+                        if(pi.upperBoundStrict) {
+                            upperBound--;
+                        }
+                        STORM_LOG_THROW(upperBound >= 0, storm::exceptions::InvalidJaniException, "Step-bounds cannot be negative");
+                        return std::make_shared<storm::logic::BoundedUntilFormula const>(args[0], args[1], upperBound);
+                    } else if (propertyStructure.count("time-bounds") > 0) {
+                        storm::jani::PropertyInterval pi = parsePropertyInterval(propertyStructure.at("time-bounds"));
+                        STORM_LOG_THROW(pi.hasUpperBound(), storm::exceptions::NotSupportedException, "Storm only supports time-bounded until with an upper bound.");
+                        double lowerBound = 0.0;
+                        if(pi.hasLowerBound()) {
+                            lowerBound = pi.lowerBound.evaluateAsDouble();
+                        }
+                        double upperBound = pi.upperBound.evaluateAsDouble();
+                        STORM_LOG_THROW(lowerBound >= 0, storm::exceptions::InvalidJaniException, "(Lower) time-bounds cannot be negative");
+                        STORM_LOG_THROW(upperBound >= 0, storm::exceptions::InvalidJaniException, "(Upper) time-bounds cannot be negative");
+                        return std::make_shared<storm::logic::BoundedUntilFormula const>(args[0], args[1], upperBound);
+                        
+                    } else if (propertyStructure.count("reward-bounds") > 0 ) {
+                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Reward bounded properties are not supported by Storm");
+                    }
+                    if (args[0]->isTrueFormula()) {
+                        return std::make_shared<storm::logic::EventuallyFormula const>(args[1]);
+                    } else {
+                        return std::make_shared<storm::logic::UntilFormula const>(args[0], args[1]);
+                    }
+                } else if (opString == "W") {
+                    assert(bound == boost::none);
+                    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Weak until is not supported");
+                } else if (opString == "∧" || opString == "∨") {
+                    assert(bound == boost::none);
+                    std::vector<std::shared_ptr<storm::logic::Formula const>> args = parseBinaryFormulaArguments(propertyStructure, opString, "");
+                    assert(args.size() == 2);
+                    storm::logic::BinaryBooleanStateFormula::OperatorType oper = opString ==  "∧" ? storm::logic::BinaryBooleanStateFormula::OperatorType::And : storm::logic::BinaryBooleanStateFormula::OperatorType::Or;
+                    return std::make_shared<storm::logic::BinaryBooleanStateFormula const>(oper, args[0], args[1]);
+                } else if (opString == "¬") {
+                    assert(bound == boost::none);
+                    std::vector<std::shared_ptr<storm::logic::Formula const>> args = parseUnaryFormulaArgument(propertyStructure, opString, "");
+                    assert(args.size() == 1);
+                    return std::make_shared<storm::logic::UnaryBooleanStateFormula const>(storm::logic::UnaryBooleanStateFormula::OperatorType::Not, args[0]);
+                    
+                } else if (opString == "≥" || opString == "≤" || opString == "<" || opString == ">") {
+                    assert(bound == boost::none);
+                    storm::logic::ComparisonType ct;
+                    if(opString == "≥") {
+                        ct = storm::logic::ComparisonType::GreaterEqual;
+                    } else if (opString == "≤") {
+                        ct = storm::logic::ComparisonType::LessEqual;
+                    } else if (opString == "<") {
+                        ct = storm::logic::ComparisonType::Less;
+                    } else if (opString == ">") {
+                        ct = storm::logic::ComparisonType::Greater;
+                    }
+                    if (propertyStructure.at("left").count("op") > 0 && (propertyStructure.at("left").at("op") == "Pmin" || propertyStructure.at("left").at("op") == "Pmax" || propertyStructure.at("left").at("op") == "Emin" || propertyStructure.at("left").at("op") == "Emax" || propertyStructure.at("left").at("op") == "Smin" || propertyStructure.at("left").at("op") == "Smax")) {
+                        auto expr = parseExpression(propertyStructure.at("right"), "Threshold for operator " + propertyStructure.at("left").at("op").get<std::string>());
+                        STORM_LOG_THROW(expr.getVariables().empty(), storm::exceptions::NotSupportedException, "Only constant thresholds supported");
+                        // TODO evaluate this expression directly as rational number
+                        return parseFormula(propertyStructure.at("left"), "", storm::logic::Bound<storm::RationalNumber>(ct, storm::utility::convertNumber<storm::RationalNumber>(expr.evaluateAsDouble())));
+                    } else if(propertyStructure.at("right").count("op") > 0 && (propertyStructure.at("right").at("op") == "Pmin" || propertyStructure.at("right").at("op") == "Pmax" || propertyStructure.at("right").at("op") == "Emin" || propertyStructure.at("right").at("op") == "Emax" || propertyStructure.at("right").at("op") == "Smin" || propertyStructure.at("right").at("op") == "Smax")) {
+                        auto expr = parseExpression(propertyStructure.at("left"), "Threshold for operator " + propertyStructure.at("right").at("op").get<std::string>());
+                        STORM_LOG_THROW(expr.getVariables().empty(), storm::exceptions::NotSupportedException, "Only constant thresholds supported");
+                        // TODO evaluate this expression directly as rational number
+                        return parseFormula(propertyStructure.at("right"), "", storm::logic::Bound<storm::RationalNumber>(ct, storm::utility::convertNumber<storm::RationalNumber>(expr.evaluateAsDouble())));
+                        
+                    } else {
+                         STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "No complex comparisons are allowed.");
+                    }
+                } else {
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Unknown operator " << opString);
+                }
+            }
+            
+        }
+        
         storm::jani::Property JaniParser::parseProperty(json const& propertyStructure) {
             STORM_LOG_THROW(propertyStructure.count("name") ==  1, storm::exceptions::InvalidJaniException, "Property must have a name");
             // TODO check unique name
@@ -133,8 +300,46 @@ namespace storm {
             if (propertyStructure.count("comment") > 0) {
                 comment = getString(propertyStructure.at("comment"), "comment for property named '" + name + "'.");
             }
+            STORM_LOG_THROW(propertyStructure.count("expression") == 1, storm::exceptions::InvalidJaniException, "Property must have an expression");
+            // Parse filter expression.
+            json const& expressionStructure = propertyStructure.at("expression");
             
-
+            STORM_LOG_THROW(expressionStructure.count("op") == 1, storm::exceptions::InvalidJaniException, "Expression in property must have an operation description");
+            STORM_LOG_THROW(expressionStructure.at("op") == "filter", storm::exceptions::InvalidJaniException, "Top level operation of a property must be a filter");
+            STORM_LOG_THROW(expressionStructure.count("fun") == 1, storm::exceptions::InvalidJaniException, "Filter must have a function descritpion");
+            std::string funDescr = getString(expressionStructure.at("fun"), "Filter function in property named " + name);
+            storm::modelchecker::FilterType ft;
+            if (funDescr == "min") {
+                ft = storm::modelchecker::FilterType::MIN;
+            } else if (funDescr == "max") {
+                ft = storm::modelchecker::FilterType::MAX;
+            } else if (funDescr == "sum") {
+                ft = storm::modelchecker::FilterType::SUM;
+            } else if (funDescr == "avg") {
+                ft = storm::modelchecker::FilterType::AVG;
+            } else if (funDescr == "count") {
+                ft = storm::modelchecker::FilterType::COUNT;
+            } else if (funDescr == "∀") {
+                ft = storm::modelchecker::FilterType::FORALL;
+            } else if (funDescr == "∃") {
+                ft = storm::modelchecker::FilterType::EXISTS;
+            } else if (funDescr == "argmin") {
+                ft = storm::modelchecker::FilterType::ARGMIN;
+            } else if (funDescr == "argmax") {
+                ft = storm::modelchecker::FilterType::ARGMAX;
+            } else if (funDescr == "values") {
+                ft = storm::modelchecker::FilterType::VALUES;
+            } else {
+                STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Unknown filter description " << funDescr << " in property named " << name);
+            }
+            
+            STORM_LOG_THROW(expressionStructure.count("states") == 1, storm::exceptions::InvalidJaniException, "Filter must have a states description");
+            STORM_LOG_THROW(expressionStructure.at("states").count("op") > 0, storm::exceptions::NotImplementedException, "We only support properties where the filter has initial states");
+            std::string statesDescr = getString(expressionStructure.at("states").at("op"), "Filtered states in property named " + name);
+            STORM_LOG_THROW(statesDescr == "initial", storm::exceptions::NotImplementedException, "Only initial states are allowed as set of states we are interested in.");
+            STORM_LOG_THROW(expressionStructure.count("values") == 1, storm::exceptions::InvalidJaniException, "Values as input for a filter must be given");
+            auto formula = parseFormula(expressionStructure.at("values"), "Values of property " + name);
+            return storm::jani::Property(name, storm::jani::FilterExpression(formula, ft), comment);
         }
 
         std::shared_ptr<storm::jani::Constant> JaniParser::parseConstant(json const& constantStructure, std::string const& scopeDescription) {
@@ -229,7 +434,6 @@ namespace storm {
             boost::optional<storm::expressions::Expression> initVal;
             if(variableStructure.at("type").is_string()) {
                 if(variableStructure.at("type") == "real") {
-                    expressionManager->declareRationalVariable(name);
                     if(initvalcount == 1) {
                         if(variableStructure.at("initial-value").is_null()) {
                             initVal = expressionManager->rational(defaultRationalInitialValue);
@@ -240,7 +444,8 @@ namespace storm {
                         return std::make_shared<storm::jani::RealVariable>(name, expressionManager->declareRationalVariable(exprManagerName), initVal.get(), transientVar);
                         
                     }
-                    return std::make_shared<storm::jani::RealVariable>(name, expressionManager->declareRationalVariable(exprManagerName), transientVar);
+                    assert(!transientVar);
+                    return std::make_shared<storm::jani::RealVariable>(name, expressionManager->declareRationalVariable(exprManagerName));
                 } else if(variableStructure.at("type") == "bool") {
                     if(initvalcount == 1) {
                         if(variableStructure.at("initial-value").is_null()) {
@@ -251,7 +456,8 @@ namespace storm {
                         }
                         return std::make_shared<storm::jani::BooleanVariable>(name, expressionManager->declareBooleanVariable(exprManagerName), initVal.get(), transientVar);
                     }
-                    return std::make_shared<storm::jani::BooleanVariable>(name, expressionManager->declareBooleanVariable(exprManagerName), transientVar);
+                    assert(!transientVar);
+                    return std::make_shared<storm::jani::BooleanVariable>(name, expressionManager->declareBooleanVariable(exprManagerName));
                 } else if(variableStructure.at("type") == "int") {
                     if(initvalcount == 1) {
                         if(variableStructure.at("initial-value").is_null()) {
@@ -316,14 +522,14 @@ namespace storm {
             STORM_LOG_THROW(expected == actual, storm::exceptions::InvalidJaniException, "Operator " << opstring  << " expects " << expected << " arguments, but got " << actual << " in " << errorInfo << ".");
         }
 
-        std::vector<storm::expressions::Expression> JaniParser::parseUnaryExpressionArguments(json const& expressionDecl, std::string const& opstring, std::string const& scopeDescription, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& localVars) {
-            storm::expressions::Expression left = parseExpression(expressionDecl.at("exp"), "Left argument of operator " + opstring + " in " + scopeDescription, localVars);
+        std::vector<storm::expressions::Expression> JaniParser::parseUnaryExpressionArguments(json const& expressionDecl, std::string const& opstring, std::string const& scopeDescription, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& localVars, bool returnNoneInitializedOnUnknownOperator) {
+            storm::expressions::Expression left = parseExpression(expressionDecl.at("exp"), "Argument of operator " + opstring + " in " + scopeDescription, localVars,returnNoneInitializedOnUnknownOperator);
             return {left};
         }
 
-        std::vector<storm::expressions::Expression> JaniParser::parseBinaryExpressionArguments(json const& expressionDecl, std::string const& opstring, std::string const& scopeDescription, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& localVars) {
-            storm::expressions::Expression left = parseExpression(expressionDecl.at("left"), "Left argument of operator " + opstring + " in " + scopeDescription, localVars);
-            storm::expressions::Expression right = parseExpression(expressionDecl.at("right"), "Right argument of operator " + opstring + " in " + scopeDescription, localVars);
+        std::vector<storm::expressions::Expression> JaniParser::parseBinaryExpressionArguments(json const& expressionDecl, std::string const& opstring, std::string const& scopeDescription, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& localVars, bool returnNoneInitializedOnUnknownOperator) {
+            storm::expressions::Expression left = parseExpression(expressionDecl.at("left"), "Left argument of operator " + opstring + " in " + scopeDescription, localVars, returnNoneInitializedOnUnknownOperator);
+            storm::expressions::Expression right = parseExpression(expressionDecl.at("right"), "Right argument of operator " + opstring + " in " + scopeDescription, localVars, returnNoneInitializedOnUnknownOperator);
             return {left, right};
         }
         /**
@@ -359,7 +565,7 @@ namespace storm {
             }
         }
 
-        storm::expressions::Expression JaniParser::parseExpression(json const& expressionStructure, std::string const& scopeDescription, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& localVars) {
+        storm::expressions::Expression JaniParser::parseExpression(json const& expressionStructure, std::string const& scopeDescription, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& localVars, bool returnNoneInitializedOnUnknownOperator) {
             if(expressionStructure.is_boolean()) {
                 if(expressionStructure.get<bool>()) {
                     return expressionManager->boolean(true);
@@ -382,31 +588,50 @@ namespace storm {
                 if(expressionStructure.count("op") == 1) {
                     std::string opstring = getString(expressionStructure.at("op"), scopeDescription);
                     std::vector<storm::expressions::Expression> arguments = {};
-                    if(opstring == "?:") {
+                    if(opstring == "ite") {
+                        STORM_LOG_THROW(expressionStructure.count("if") == 1, storm::exceptions::InvalidJaniException, "If operator required");
+                        STORM_LOG_THROW(expressionStructure.count("else") == 1, storm::exceptions::InvalidJaniException, "Else operator required");
+                        STORM_LOG_THROW(expressionStructure.count("then") == 1, storm::exceptions::InvalidJaniException, "If operator required");
+                        arguments.push_back(parseExpression(expressionStructure.at("if"), "if-formula in " + scopeDescription));
+                        arguments.push_back(parseExpression(expressionStructure.at("then"), "then-formula in " + scopeDescription));
+                        arguments.push_back(parseExpression(expressionStructure.at("else"), "else-formula in " + scopeDescription));
                         ensureNumberOfArguments(3, arguments.size(), opstring, scopeDescription);
                         assert(arguments.size() == 3);
+                                            ensureBooleanType(arguments[0], opstring, 0, scopeDescription);
                         return storm::expressions::ite(arguments[0], arguments[1], arguments[2]);
                     } else if (opstring == "∨") {
-                        arguments = parseBinaryExpressionArguments(expressionStructure, opstring, scopeDescription, localVars);
+                        arguments = parseBinaryExpressionArguments(expressionStructure, opstring, scopeDescription, localVars, returnNoneInitializedOnUnknownOperator);
                         assert(arguments.size() == 2);
+                        if(!arguments[0].isInitialized() || !arguments[1].isInitialized()) {
+                            return storm::expressions::Expression();
+                        }
                         ensureBooleanType(arguments[0], opstring, 0, scopeDescription);
                         ensureBooleanType(arguments[1], opstring, 1, scopeDescription);
                         return arguments[0] || arguments[1];
                     } else if (opstring == "∧") {
-                        arguments = parseBinaryExpressionArguments(expressionStructure, opstring, scopeDescription, localVars);
+                        arguments = parseBinaryExpressionArguments(expressionStructure, opstring, scopeDescription, localVars, returnNoneInitializedOnUnknownOperator);
                         assert(arguments.size() == 2);
+                        if(!arguments[0].isInitialized() || !arguments[1].isInitialized()) {
+                            return storm::expressions::Expression();
+                        }
                         ensureBooleanType(arguments[0], opstring, 0, scopeDescription);
                         ensureBooleanType(arguments[1], opstring, 1, scopeDescription);
                         return arguments[0] && arguments[1];
                     } else if (opstring == "⇒") {
-                        arguments = parseUnaryExpressionArguments(expressionStructure, opstring, scopeDescription, localVars);
+                        arguments = parseUnaryExpressionArguments(expressionStructure, opstring, scopeDescription, localVars, returnNoneInitializedOnUnknownOperator);
                         assert(arguments.size() == 2);
+                        if(!arguments[0].isInitialized() || !arguments[1].isInitialized()) {
+                            return storm::expressions::Expression();
+                        }
                         ensureBooleanType(arguments[0], opstring, 0, scopeDescription);
-                        ensureBooleanType(arguments[0], opstring, 1, scopeDescription);
+                        ensureBooleanType(arguments[1], opstring, 1, scopeDescription);
                         return (!arguments[0]) || arguments[1];
                     } else if (opstring == "¬") {
-                        arguments = parseUnaryExpressionArguments(expressionStructure, opstring, scopeDescription, localVars);
+                        arguments = parseUnaryExpressionArguments(expressionStructure, opstring, scopeDescription, localVars, returnNoneInitializedOnUnknownOperator);
                         assert(arguments.size() == 1);
+                        if(!arguments[0].isInitialized()) {
+                            return storm::expressions::Expression();
+                        }
                         ensureBooleanType(arguments[0], opstring, 0, scopeDescription);
                         return !arguments[0];
                     } else if (opstring == "=") {
@@ -430,26 +655,38 @@ namespace storm {
                             return arguments[0] != arguments[1];
                         }
                     } else if (opstring == "<") {
-                        arguments = parseBinaryExpressionArguments(expressionStructure, opstring, scopeDescription, localVars);
+                        arguments = parseBinaryExpressionArguments(expressionStructure, opstring, scopeDescription, localVars, returnNoneInitializedOnUnknownOperator);
                         assert(arguments.size() == 2);
+                        if(!arguments[0].isInitialized() || !arguments[1].isInitialized()) {
+                            return storm::expressions::Expression();
+                        }
                         ensureNumericalType(arguments[0], opstring, 0, scopeDescription);
                         ensureNumericalType(arguments[1], opstring, 1, scopeDescription);
                         return arguments[0] < arguments[1];
                     } else if (opstring == "≤") {
-                        arguments = parseBinaryExpressionArguments(expressionStructure, opstring, scopeDescription, localVars);
+                        arguments = parseBinaryExpressionArguments(expressionStructure, opstring, scopeDescription, localVars, returnNoneInitializedOnUnknownOperator);
                         assert(arguments.size() == 2);
+                        if(!arguments[0].isInitialized() || !arguments[1].isInitialized()) {
+                            return storm::expressions::Expression();
+                        }
                         ensureNumericalType(arguments[0], opstring, 0, scopeDescription);
                         ensureNumericalType(arguments[1], opstring, 1, scopeDescription);
                         return arguments[0] <= arguments[1];
                     } else if (opstring == ">") {
-                        arguments = parseBinaryExpressionArguments(expressionStructure, opstring, scopeDescription, localVars);
+                        arguments = parseBinaryExpressionArguments(expressionStructure, opstring, scopeDescription, localVars, returnNoneInitializedOnUnknownOperator);
                         assert(arguments.size() == 2);
+                        if(!arguments[0].isInitialized() || !arguments[1].isInitialized()) {
+                            return storm::expressions::Expression();
+                        }
                         ensureNumericalType(arguments[0], opstring, 0, scopeDescription);
                         ensureNumericalType(arguments[1], opstring, 1, scopeDescription);
                         return arguments[0] > arguments[1];
                     } else if (opstring == "≥") {
-                        arguments = parseBinaryExpressionArguments(expressionStructure, opstring, scopeDescription, localVars);
+                        arguments = parseBinaryExpressionArguments(expressionStructure, opstring, scopeDescription, localVars, returnNoneInitializedOnUnknownOperator);
                         assert(arguments.size() == 2);
+                        if(!arguments[0].isInitialized() || !arguments[1].isInitialized()) {
+                            return storm::expressions::Expression();
+                        }
                         ensureNumericalType(arguments[0], opstring, 0, scopeDescription);
                         ensureNumericalType(arguments[1], opstring, 1, scopeDescription);
                         return arguments[0] >= arguments[1];
@@ -551,6 +788,9 @@ namespace storm {
                         STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Opstring " + opstring + " is not supported by storm");
 
                     } else {
+                        if(returnNoneInitializedOnUnknownOperator) {
+                            return storm::expressions::Expression();
+                        }
                         STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Unknown operator " << opstring << " in  " << scopeDescription << ".");
                     }
                 }

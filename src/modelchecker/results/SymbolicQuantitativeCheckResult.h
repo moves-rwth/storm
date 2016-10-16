@@ -35,9 +35,12 @@ namespace storm {
             
             virtual void filter(QualitativeCheckResult const& filter) override;
             
-            virtual ValueType getMin() const;
+            virtual ValueType getMin() const override;
             
-            virtual ValueType getMax() const;
+            virtual ValueType getMax() const override;
+            
+            virtual ValueType average() const override;
+            virtual ValueType sum() const override;
             
             virtual void oneMinus() override;
             

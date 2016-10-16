@@ -3,6 +3,7 @@
 #include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "src/storage/BitVector.h"
 #include "src/utility/macros.h"
+#include "src/utility/constants.h"
 #include "src/utility/vector.h"
 #include "src/exceptions/InvalidOperationException.h"
 #include "src/exceptions/InvalidAccessException.h"
@@ -78,6 +79,64 @@ namespace storm {
                 STORM_LOG_THROW(newMap.size() == filterTruthValues.getNumberOfSetBits(), storm::exceptions::InvalidOperationException, "The check result fails to contain some results referred to by the filter.");
                 
                 this->values = newMap;
+            }
+        }
+        
+        template<typename ValueType>
+        ValueType ExplicitQuantitativeCheckResult<ValueType>::getMin() const {
+            STORM_LOG_THROW(!values.empty(),storm::exceptions::InvalidOperationException, "Minimum of empty set is not defined");
+            
+            if (this->isResultForAllStates()) {
+                return storm::utility::minimum(boost::get<vector_type>(values));
+            } else {
+                return storm::utility::minimum(boost::get<map_type>(values));
+            }
+        }
+        
+        
+        template<typename ValueType>
+        ValueType ExplicitQuantitativeCheckResult<ValueType>::getMax() const {
+            STORM_LOG_THROW(!values.empty(),storm::exceptions::InvalidOperationException, "Minimum of empty set is not defined");
+            
+            if (this->isResultForAllStates()) {
+                return storm::utility::maximum(boost::get<vector_type>(values));
+            } else {
+                return storm::utility::maximum(boost::get<map_type>(values));
+            }
+        }
+        
+        template<typename ValueType>
+        ValueType ExplicitQuantitativeCheckResult<ValueType>::sum() const {
+            STORM_LOG_THROW(!values.empty(),storm::exceptions::InvalidOperationException, "Minimum of empty set is not defined");
+            
+            ValueType sum = storm::utility::zero<ValueType>();
+            if (this->isResultForAllStates()) {
+                for (auto& element : boost::get<vector_type>(values)) {
+                    sum += element;
+                }
+            } else {
+                for (auto& element : boost::get<map_type>(values)) {
+                    sum += element.second;
+                }
+            }
+            return sum;
+        }
+        
+        template<typename ValueType>
+        ValueType ExplicitQuantitativeCheckResult<ValueType>::average() const {
+            STORM_LOG_THROW(!values.empty(),storm::exceptions::InvalidOperationException, "Minimum of empty set is not defined");
+            
+            ValueType sum = storm::utility::zero<ValueType>();
+            if (this->isResultForAllStates()) {
+                for (auto& element : boost::get<vector_type>(values)) {
+                    sum += element;
+                }
+                return sum / boost::get<vector_type>(values).size();
+            } else {
+                for (auto& element : boost::get<map_type>(values)) {
+                    sum += element.second;
+                }
+                return sum / boost::get<map_type>(values).size();
             }
         }
         

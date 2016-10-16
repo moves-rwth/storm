@@ -13,6 +13,9 @@
 #include <cstdint>
 #include <string>
 
+#include <vector>
+#include <map>
+
 namespace storm {
     
     // Forward-declare MatrixEntry class.
@@ -45,6 +48,19 @@ namespace storm {
         
         template<typename ValueType>
         ValueType simplify(ValueType value);
+        
+        template<typename ValueType>
+        ValueType minimum(std::vector<ValueType> const& values);
+        
+        template<typename ValueType>
+        ValueType maximum(std::vector<ValueType> const& values);
+        
+        template< typename K, typename ValueType>
+        ValueType minimum(std::map<K, ValueType> const& values);
+        
+        template<typename K, typename ValueType>
+        ValueType maximum(std::map<K, ValueType> const& values);
+        
         
         template<typename IndexType, typename ValueType>
         storm::storage::MatrixEntry<IndexType, ValueType>& simplify(storm::storage::MatrixEntry<IndexType, ValueType>& matrixEntry);

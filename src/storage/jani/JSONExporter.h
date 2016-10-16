@@ -2,10 +2,14 @@
 
 
 #include "src/storage/expressions/ExpressionVisitor.h"
+#include "src/logic/FormulaVisitor.h"
 #include "Model.h"
+#include "src/adapters/NumberAdapter.h"
 // JSON parser
 #include "json.hpp"
-namespace modernjson = nlohmann;
+namespace modernjson {
+    using json = nlohmann::basic_json<std::map, std::vector, std::string, bool, int64_t, uint64_t, double, std::allocator>;
+};
 
 namespace storm {
     namespace jani {
@@ -28,15 +32,44 @@ namespace storm {
             
         };
         
+        class FormulaToJaniJson : public storm::logic::FormulaVisitor {
+        
+        public:
+            static modernjson::json translate(storm::logic::Formula const& formula, bool continuousTime);
+            virtual boost::any visit(storm::logic::AtomicExpressionFormula const& f, boost::any const& data) const;
+            virtual boost::any visit(storm::logic::AtomicLabelFormula const& f, boost::any const& data) const;
+            virtual boost::any visit(storm::logic::BinaryBooleanStateFormula const& f, boost::any const& data) const;
+            virtual boost::any visit(storm::logic::BooleanLiteralFormula const& f, boost::any const& data) const;
+            virtual boost::any visit(storm::logic::BoundedUntilFormula const& f, boost::any const& data) const;
+            virtual boost::any visit(storm::logic::ConditionalFormula const& f, boost::any const& data) const;
+            virtual boost::any visit(storm::logic::CumulativeRewardFormula const& f, boost::any const& data) const;
+            virtual boost::any visit(storm::logic::EventuallyFormula const& f, boost::any const& data) const;
+            virtual boost::any visit(storm::logic::TimeOperatorFormula const& f, boost::any const& data) const;
+            virtual boost::any visit(storm::logic::GloballyFormula const& f, boost::any const& data) const;
+            virtual boost::any visit(storm::logic::InstantaneousRewardFormula const& f, boost::any const& data) const;
+            virtual boost::any visit(storm::logic::LongRunAverageOperatorFormula const& f, boost::any const& data) const;
+            virtual boost::any visit(storm::logic::LongRunAverageRewardFormula const& f, boost::any const& data) const;
+            virtual boost::any visit(storm::logic::NextFormula const& f, boost::any const& data) const;
+            virtual boost::any visit(storm::logic::ProbabilityOperatorFormula const& f, boost::any const& data) const;
+            virtual boost::any visit(storm::logic::RewardOperatorFormula const& f, boost::any const& data) const;
+            virtual boost::any visit(storm::logic::UnaryBooleanStateFormula const& f, boost::any const& data) const;
+            virtual boost::any visit(storm::logic::UntilFormula const& f, boost::any const& data) const;
+      
+        private:
+            FormulaToJaniJson(bool continuousModel) : continuous(continuousModel) { }
+            bool continuous;
+        };
+        
         class JsonExporter {
             JsonExporter() = default;
             
         public:
-            static void toFile(storm::jani::Model const& janiModel, std::string const& filepath, bool checkValid = true);
-            static void toStream(storm::jani::Model const& janiModel, std::ostream& ostream, bool checkValid = false);
+            static void toFile(storm::jani::Model const& janiModel, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, std::string const& filepath, bool checkValid = true);
+            static void toStream(storm::jani::Model const& janiModel, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, std::ostream& ostream, bool checkValid = false);
             
         private:
             void convertModel(storm::jani::Model const& model);
+            void convertProperties(std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool timeContinuousModel);
             void appendVariableDeclaration(storm::jani::Variable const& variable);
             
             modernjson::json finalize() {
