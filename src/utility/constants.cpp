@@ -5,7 +5,10 @@
 #include "src/settings/SettingsManager.h"
 #include "src/settings/modules/GeneralSettings.h"
 
+#include "src/exceptions/InvalidArgumentException.h"
+
 #include "src/adapters/CarlAdapter.h"
+#include "src/utility/macros.h"
 
 namespace storm {
     namespace utility {
@@ -141,6 +144,80 @@ namespace storm {
         template<typename ValueType>
         ValueType abs(ValueType const& number) {
             return std::fabs(number);
+        }
+        
+        template<>
+        storm::RationalFunction minimum(std::vector<storm::RationalFunction> const& values)
+        {
+            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Minimum for rational functions is not defined");
+        }
+        
+        template<typename ValueType>
+        ValueType minimum(std::vector<ValueType> const& values) {
+            assert(!values.empty());
+            ValueType min = values.front();
+            for (auto const& vt : values) {
+                if (vt < min) {
+                    min = vt;
+                }
+            }
+            return min;
+        }
+        
+        template<>
+        storm::RationalFunction maximum(std::vector<storm::RationalFunction> const& values)
+        {
+            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Maximum for rational functions is not defined");
+        }
+        
+        
+        template<typename ValueType>
+        ValueType maximum(std::vector<ValueType> const& values) {
+            assert(!values.empty());
+            ValueType max = values.front();
+            for (auto const& vt : values) {
+                if (vt > max) {
+                    max = vt;
+                }
+            }
+            return max;
+        }
+        
+        template<>
+        storm::RationalFunction minimum(std::map<uint64_t, storm::RationalFunction> const& values)
+        {
+            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Minimum for rational functions is not defined");
+        }
+        
+        template< typename K, typename ValueType>
+        ValueType minimum(std::map<K, ValueType> const& values) {
+            assert(!values.empty());
+            ValueType min = values.begin()->second;
+            for (auto const& vt : values) {
+                if (vt.second < min) {
+                    min = vt.second;
+                }
+            }
+            return min;
+        }
+        
+        template<>
+        storm::RationalFunction maximum(std::map<uint64_t, storm::RationalFunction> const& values)
+        {
+            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Maximum for rational functions is not defined");
+        }
+        
+        
+        template<typename K, typename ValueType>
+        ValueType maximum(std::map<K, ValueType> const& values) {
+            assert(!values.empty());
+            ValueType max = values.begin()->second;
+            for (auto const& vt : values) {
+                if (vt.second > max) {
+                    max = vt.second;
+                }
+            }
+            return max;
         }
         
 #ifdef STORM_HAVE_CARL
@@ -317,6 +394,24 @@ namespace storm {
         template storm::storage::MatrixEntry<storm::storage::sparse::state_type, storm::storage::sparse::state_type>& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, storm::storage::sparse::state_type>& matrixEntry);
         template storm::storage::MatrixEntry<storm::storage::sparse::state_type, storm::storage::sparse::state_type>&& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, storm::storage::sparse::state_type>&& matrixEntry);
 
+        
+        template double minimum(std::vector<double> const&);
+        template double maximum(std::vector<double> const&);
+        
+        template storm::RationalNumber minimum(std::vector<storm::RationalNumber> const&);
+        template storm::RationalNumber maximum(std::vector<storm::RationalNumber> const&);
+        
+        template storm::RationalFunction minimum(std::vector<storm::RationalFunction> const&);
+        template storm::RationalFunction maximum(std::vector<storm::RationalFunction> const&);
+        
+        template double minimum(std::map<uint64_t, double> const&);
+        template double maximum(std::map<uint64_t, double> const&);
+        
+        template storm::RationalNumber minimum(std::map<uint64_t, storm::RationalNumber> const&);
+        template storm::RationalNumber maximum(std::map<uint64_t, storm::RationalNumber> const&);
+        
+        template storm::RationalFunction minimum(std::map<uint64_t, storm::RationalFunction> const&);
+        template storm::RationalFunction maximum(std::map<uint64_t, storm::RationalFunction> const&);
 #ifdef STORM_HAVE_CARL
         // Instantiations for rational number.
         template bool isOne(storm::RationalNumber const& value);

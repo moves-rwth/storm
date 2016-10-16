@@ -1,8 +1,10 @@
 #pragma once
 #include <src/storage/jani/Constant.h>
-#include <src/logic/Formula.h>
+#include "src/logic/Formula.h"
+#include "src/logic/Bound.h"
 #include "src/exceptions/FileIoException.h"
 #include "src/storage/expressions/ExpressionManager.h"
+
 
 // JSON parser
 #include "json.hpp"
@@ -16,6 +18,7 @@ namespace storm {
         class Variable;
         class Composition;
         class Property;
+        class PropertyInterval;
     }
 
 
@@ -51,13 +54,13 @@ namespace storm {
              * Helper for parsing the actions of a model.
              */
             void parseActions(json const& actionStructure, storm::jani::Model& parentModel);
-            std::shared_ptr<storm::logic::Formula const> parseFormula(json const& propertyStructure, std::string const& context);
+            std::shared_ptr<storm::logic::Formula const> parseFormula(json const& propertyStructure, std::string const& context, boost::optional<storm::logic::Bound<storm::RationalNumber>> bound = boost::none);
             std::vector<storm::expressions::Expression> parseUnaryExpressionArguments(json const& expressionStructure, std::string const& opstring, std::string const& scopeDescription, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& localVars = {}, bool returnNoneOnUnknownOpString = false);
             std::vector<storm::expressions::Expression> parseBinaryExpressionArguments(json const& expressionStructure, std::string const& opstring,  std::string const& scopeDescription, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& localVars = {}, bool returnNoneOnUnknownOpString = false);
 
             std::vector<std::shared_ptr<storm::logic::Formula const>> parseUnaryFormulaArgument(json const& propertyStructure, std::string const& opstring, std::string const& context);
             std::vector<std::shared_ptr<storm::logic::Formula const>> parseBinaryFormulaArguments(json const& propertyStructure, std::string const& opstring, std::string const& context);
-                
+            storm::jani::PropertyInterval parsePropertyInterval(json const& piStructure);
                 
             
             std::shared_ptr<storm::jani::Composition> parseComposition(json const& compositionStructure);

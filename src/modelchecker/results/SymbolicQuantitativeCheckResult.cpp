@@ -5,6 +5,8 @@
 #include "src/storage/dd/cudd/CuddAddIterator.h"
 
 #include "src/exceptions/InvalidOperationException.h"
+
+#include "src/exceptions/NotImplementedException.h"
 #include "src/utility/macros.h"
 #include "src/utility/constants.h"
 
@@ -87,6 +89,16 @@ namespace storm {
         template<storm::dd::DdType Type, typename ValueType>
         ValueType SymbolicQuantitativeCheckResult<Type, ValueType>::getMax() const {
             return this->values.getMax();
+        }
+        
+        template<storm::dd::DdType Type, typename ValueType>
+        ValueType SymbolicQuantitativeCheckResult<Type, ValueType>::average() const {
+           STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Average not implemented for symbolic results");
+        }
+        
+        template<storm::dd::DdType Type, typename ValueType>
+        ValueType SymbolicQuantitativeCheckResult<Type, ValueType>::sum() const {
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Sum not implemented for symbolic results");
         }
         
         template<storm::dd::DdType Type, typename ValueType>

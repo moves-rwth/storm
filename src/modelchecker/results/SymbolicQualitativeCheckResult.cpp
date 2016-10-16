@@ -3,6 +3,8 @@
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidOperationException.h"
 
+#include "src/exceptions/NotImplementedException.h"
+
 namespace storm {
     namespace modelchecker {
         template <storm::dd::DdType Type>
@@ -47,6 +49,21 @@ namespace storm {
         template <storm::dd::DdType Type>
         storm::dd::Bdd<Type> const& SymbolicQualitativeCheckResult<Type>::getTruthValuesVector() const {
             return truthValues;
+        }
+        
+        template <storm::dd::DdType Type>
+        bool SymbolicQualitativeCheckResult<Type>::existsTrue() const {
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Exists not implemented for symbolic results");
+        }
+        
+        template <storm::dd::DdType Type>
+        bool SymbolicQualitativeCheckResult<Type>::forallTrue() const {
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Forall not implemented for symbolic results");
+        }
+        
+        template <storm::dd::DdType Type>
+        uint64_t SymbolicQualitativeCheckResult<Type>::count() const {
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Count not implemented for symbolic results");
         }
         
         template <storm::dd::DdType Type>
