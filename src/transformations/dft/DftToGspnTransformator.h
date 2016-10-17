@@ -32,8 +32,6 @@ namespace storm {
                 storm::storage::DFT<ValueType> const& mDft;
                 storm::gspn::GSPN mGspn;
 				
-				std::map<int, std::vector<int> > mVoteAssociations; 			// Used to avoid multiple calculations for the same VOTE. 
-				
 				static constexpr const char* STR_FAILING = "_failing";			// Name standard for transitions that point towards a place, which in turn indicates the failure of a gate.
 				static constexpr const char* STR_FAILED = "_failed";			// Name standard for place which indicates the failure of a gate.
 				static constexpr const char* STR_FAILSAVING = "_failsaving";	// Name standard for transition that point towards a place, which in turn indicates the failsave state of a gate.
