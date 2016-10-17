@@ -441,17 +441,22 @@ namespace storm {
             if (stateStorage.stateToId.contains(state->status())) {
                 // State already exists
                 stateId = stateStorage.stateToId.getValue(state->status());
-                STORM_LOG_TRACE("State " << dft.getStateString(state) << " already exists");
-
-                if (!changed && statesNotExplored.at(stateId)->isPseudoState()) {
-                    // Create pseudo state now
-                    STORM_LOG_ASSERT(statesNotExplored.at(stateId)->getId() == stateId, "Ids do not match.");
-                    STORM_LOG_ASSERT(statesNotExplored.at(stateId)->status() == state->status(), "Pseudo states do not coincide.");
-                    state->setId(stateId);
-                    // Update mapping to map to concrete state now
-                    statesNotExplored[stateId] = state;
-                    // We do not push the new state on the exploration queue as the pseudo state was already pushed
-                    STORM_LOG_TRACE("Created pseudo state " << dft.getStateString(state));
+                STORM_LOG_TRACE("State " << dft.getStateString(state) << " with id " << stateId << " already exists");
+                if (!changed) {
+                    // Check if state is pseudo state
+                    // If state is explored already the possible pseudo state was already constructed
+                    auto iter = statesNotExplored.find(stateId);
+                    if (iter != statesNotExplored.end() && iter->second->isPseudoState()) {
+                        // Create pseudo state now
+                        STORM_LOG_ASSERT(iter->second->getId() == stateId, "Ids do not match.");
+                        STORM_LOG_ASSERT(iter->second->status() == state->status(), "Pseudo states do not coincide.");
+                        state->setId(stateId);
+                        // Update mapping to map to concrete state now
+                        statesNotExplored[stateId] = state;
+                        // TODO Matthias: copy explorationHeuristic
+                        // We do not push the new state on the exploration queue as the pseudo state was already pushed
+                        STORM_LOG_TRACE("Created pseudo state " << dft.getStateString(state));
+                    }
                 }
             } else {
                 // State does not exist yet

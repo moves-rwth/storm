@@ -60,6 +60,10 @@ namespace storm {
                 return item;
             }
 
+            Container getContainer() const {
+                return container;
+            }
+
         };
     }
 }

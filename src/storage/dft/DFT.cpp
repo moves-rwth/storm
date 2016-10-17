@@ -481,8 +481,7 @@ namespace storm {
                         } else {
                             useId = getChild(elem->id(), nrUsedChild);
                         }
-                        bool isActive = status[stateGenerationInfo.getSpareActivationIndex(useId)];
-                        if(useId == elem->id() || isActive) {
+                        if(useId == elem->id() || status[stateGenerationInfo.getSpareActivationIndex(useId)]) {
                             stream << "actively ";
                         }
                         stream << "using " << useId << "]";

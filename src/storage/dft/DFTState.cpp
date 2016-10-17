@@ -44,6 +44,11 @@ namespace storm {
         template<typename ValueType>
         void DFTState<ValueType>::construct() {
             STORM_LOG_TRACE("Construct concrete state from pseudo state " << mDft.getStateString(mStatus, mStateGenerationInfo, mId));
+            // Clear information from pseudo state
+            mCurrentlyFailableBE.clear();
+            mCurrentlyNotFailableBE.clear();
+            mFailableDependencies.clear();
+            mUsedRepresentants.clear();
             STORM_LOG_ASSERT(mPseudoState, "Only pseudo states can be constructed.");
             for(size_t index = 0; index < mDft.nrElements(); ++index) {
                 // Initialize currently failable BE
