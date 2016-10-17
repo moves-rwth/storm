@@ -57,7 +57,7 @@ namespace storm {
         
         template<storm::dd::DdType Type, typename ValueType>
         bool HybridQuantitativeCheckResult<Type, ValueType>::isResultForAllStates() const {
-            return true;
+            return (symbolicStates || explicitStates) == reachableStates;
         }
         
         template<storm::dd::DdType Type, typename ValueType>
@@ -169,12 +169,16 @@ namespace storm {
         
         template<storm::dd::DdType Type, typename ValueType>
         ValueType HybridQuantitativeCheckResult<Type, ValueType>::sum() const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Sum not implemented for hybrid results");
+            ValueType sum = symbolicValues.sumAbstract(symbolicValues.getContainedMetaVariables()).getValue();
+            for (auto const& value : explicitValues) {
+                sum += value;
+            }
+            return sum;
         }
         
         template<storm::dd::DdType Type, typename ValueType>
         ValueType HybridQuantitativeCheckResult<Type, ValueType>::average() const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Average not implemented for hybrid results");
+            return this->sum() / (symbolicStates || explicitStates).getNonZeroCount();
         }
         
         template<storm::dd::DdType Type, typename ValueType>
