@@ -150,7 +150,6 @@ namespace storm {
                 // Comparator for checking the error of the approximation
                 storm::utility::ConstantsComparator<ValueType> comparator;
                 // Build approximate Markov Automata for lower and upper bound
-                double currentApproximationError = approximationError;
                 approximation_result approxResult = std::make_pair(storm::utility::zero<ValueType>(), storm::utility::zero<ValueType>());
                 std::chrono::high_resolution_clock::time_point explorationStart;
                 std::shared_ptr<storm::models::sparse::Model<ValueType>> model;
@@ -163,8 +162,7 @@ namespace storm {
                     explorationStart = std::chrono::high_resolution_clock::now();
                     STORM_LOG_INFO("Building model...");
                     // TODO Matthias refine model using existing model and MC results
-                    currentApproximationError = pow(0.1, iteration) * approximationError;
-                    builder.buildModel(labeloptions, iteration < 1, iteration);
+                    builder.buildModel(labeloptions, iteration, approximationError);
 
                     // TODO Matthias: possible to do bisimulation on approximated model and not on concrete one?
 

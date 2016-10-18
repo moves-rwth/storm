@@ -159,10 +159,10 @@ namespace storm {
              * Build model from DFT.
              *
              * @param labelOpts              Options for labeling.
-             * @param firstTime              Flag indicating if the model is built for the first time or rebuilt.
+             * @param iteration              Current number of iteration.
              * @param approximationThreshold Threshold determining when to skip exploring states.
              */
-            void buildModel(LabelOptions const& labelOpts, bool firstTime, double approximationThreshold = 0.0);
+            void buildModel(LabelOptions const& labelOpts, size_t iteration, double approximationThreshold = 0.0);
 
             /*!
              * Get the built model.

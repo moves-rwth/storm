@@ -33,9 +33,11 @@ namespace storm {
 
             size_t getDepth() const;
 
-            double getPriority() const;
-            
+            bool compare(DFTExplorationHeuristic<ValueType> other, ApproximationHeuristic heuristic);
+
         private:
+
+            double getRateRatio() const;
 
             bool skip;
             size_t depth;
@@ -43,9 +45,6 @@ namespace storm {
             ValueType exitRate;
 
         };
-
-        template<typename ValueType>
-        bool compareDepth(std::shared_ptr<storm::storage::DFTState<ValueType>> stateA, std::shared_ptr<storm::storage::DFTState<ValueType>> stateB);
     }
 }
 

@@ -139,10 +139,10 @@ namespace storm {
                 return exploreHeuristic.isSkip(approximationThreshold, heuristic);
             }
 
-            double getPriority() const {
-                return exploreHeuristic.getPriority();
+            bool comparePriority(std::shared_ptr<DFTState> const& other, storm::builder::ApproximationHeuristic heuristic) {
+                return this->exploreHeuristic.compare(other->exploreHeuristic, heuristic);
             }
-            
+
             storm::storage::BitVector const& status() const {
                 return mStatus;
             }

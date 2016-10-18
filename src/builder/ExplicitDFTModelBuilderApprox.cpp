@@ -39,10 +39,10 @@ namespace storm {
         }
 
         template<typename ValueType, typename StateType>
-        void ExplicitDFTModelBuilderApprox<ValueType, StateType>::buildModel(LabelOptions const& labelOpts, bool firstTime, double approximationThreshold) {
+        void ExplicitDFTModelBuilderApprox<ValueType, StateType>::buildModel(LabelOptions const& labelOpts, size_t iteration, double approximationThreshold) {
             STORM_LOG_TRACE("Generating DFT state space");
 
-            if (firstTime) {
+            if (iteration < 1) {
                 // Initialize
                 modelComponents.markovianStates = storm::storage::BitVector(INITIAL_BITVECTOR_SIZE);
 
@@ -80,6 +80,14 @@ namespace storm {
                 initializeNextIteration();
             }
 
+            switch (heuristic) {
+                case storm::builder::ApproximationHeuristic::DEPTH:
+                    approximationThreshold = iteration;
+                    break;
+                case storm::builder::ApproximationHeuristic::RATERATIO:
+                    approximationThreshold = std::pow(0.1, iteration) * approximationThreshold;
+                    break;
+            }
             exploreStateSpace(approximationThreshold);
 
             size_t stateSize = stateStorage.getNumberOfStates() + (mergeFailedStates ? 1 : 0);
@@ -486,8 +494,7 @@ namespace storm {
 
         template<typename ValueType, typename StateType>
         bool ExplicitDFTModelBuilderApprox<ValueType, StateType>::isPriorityGreater(StateType idA, StateType idB) const {
-            // TODO Matthias: compare directly and according to heuristic
-            return storm::builder::compareDepth(statesNotExplored.at(idA), statesNotExplored.at(idB));
+            return statesNotExplored.at(idA)->comparePriority(statesNotExplored.at(idB), heuristic);
         }
 
 
