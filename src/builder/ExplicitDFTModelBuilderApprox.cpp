@@ -75,12 +75,16 @@ namespace storm {
                 STORM_LOG_ASSERT(stateStorage.initialStateIndices.size() == 1, "Only one initial state assumed.");
                 initialStateIndex = stateStorage.initialStateIndices[0];
                 STORM_LOG_TRACE("Initial state: " << initialStateIndex);
-
+                // Initialize heuristic values for inital state
+                statesNotExplored.at(initialStateIndex)->setHeuristicValues(0, storm::utility::zero<ValueType>(), storm::utility::zero<ValueType>());
             } else {
                 initializeNextIteration();
             }
 
             switch (heuristic) {
+                case storm::builder::ApproximationHeuristic::NONE:
+                    // Do not change anything
+                    break;
                 case storm::builder::ApproximationHeuristic::DEPTH:
                     approximationThreshold = iteration;
                     break;
@@ -246,6 +250,7 @@ namespace storm {
                 matrixBuilder.newRowGroup();
 
                 // Try to explore the next state
+                bool fixQueue = false;
                 generator.load(currentState);
 
                 if (currentState->isSkip(approximationThreshold, heuristic)) {
@@ -270,15 +275,21 @@ namespace storm {
                         for (auto const& stateProbabilityPair : choice) {
                             // Set transition to state id + offset. This helps in only remapping all previously skipped states.
                             matrixBuilder.addTransition(matrixBuilder.mappingOffset + stateProbabilityPair.first, stateProbabilityPair.second);
-                            // TODO Matthias: set heuristic values here
+                            // Set heuristic values for reached states
+                            auto iter = statesNotExplored.find(stateProbabilityPair.first);
+                            if (iter != statesNotExplored.end()) {
+                                iter->second->setHeuristicValues(currentState, stateProbabilityPair.second, choice.getTotalMass());
+                                fixQueue = true;
+                            }
                         }
                         matrixBuilder.finishRow();
                     }
                 }
 
                 // Update priority queue
-                // TODO Matthias: only when necessary
-                explorationQueue.fix();
+                if (fixQueue) {
+                    explorationQueue.fix();
+                }
             } // end exploration
         }
 

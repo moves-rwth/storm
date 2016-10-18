@@ -20,7 +20,6 @@ namespace storm {
         template<typename ValueType, typename StateType>
         std::vector<StateType> DftNextStateGenerator<ValueType, StateType>::getInitialStates(StateToIdCallback const& stateToIdCallback) {
             DFTStatePointer initialState = std::make_shared<storm::storage::DFTState<ValueType>>(mDft, mStateGenerationInfo, 0);
-            initialState->setHeuristicValues(0, storm::utility::zero<ValueType>(), storm::utility::zero<ValueType>());
 
             // Register initial state
             StateType id = stateToIdCallback(initialState);
@@ -158,10 +157,8 @@ namespace storm {
                         ValueType remainingProbability = storm::utility::one<ValueType>() - probability;
                         choice.addProbability(unsuccessfulStateId, remainingProbability);
                         STORM_LOG_TRACE("Added transition to " << unsuccessfulStateId << " with remaining probability " << remainingProbability);
-                        unsuccessfulState->setHeuristicValues(state, remainingProbability, storm::utility::one<ValueType>());
                     }
                     result.addChoice(std::move(choice));
-                    newState->setHeuristicValues(state, probability, storm::utility::one<ValueType>());
                 } else {
                     // Failure is due to "normal" BE failure
                     // Set failure rate according to activation
@@ -174,7 +171,6 @@ namespace storm {
                     STORM_LOG_ASSERT(!storm::utility::isZero(rate), "Rate is 0.");
                     choice.addProbability(newStateId, rate);
                     STORM_LOG_TRACE("Added transition to " << newStateId << " with " << (isActive ? "active" : "passive") << " failure rate " << rate);
-                    newState->setHeuristicValues(state, rate, choice.getTotalMass());
                 }
 
                 ++currentFailable;

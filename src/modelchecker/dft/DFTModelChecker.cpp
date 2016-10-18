@@ -204,7 +204,7 @@ namespace storm {
                 if (approximationError >= 0.0) {
                     storm::builder::ExplicitDFTModelBuilderApprox<ValueType> builder(dft, symmetries, enableDC);
                     typename storm::builder::ExplicitDFTModelBuilderApprox<ValueType>::LabelOptions labeloptions; // TODO initialize this with the formula
-                    builder.buildModel(labeloptions, true);
+                    builder.buildModel(labeloptions, 0);
                     model = builder.getModel();
                 } else {
                     storm::builder::ExplicitDFTModelBuilder<ValueType> builder(dft, symmetries, enableDC);
