@@ -313,9 +313,17 @@ namespace storm {
                 } else if (opString == "Smin" || opString == "Smax") {
                     std::vector<std::shared_ptr<storm::logic::Formula const>> args = parseUnaryFormulaArgument(propertyStructure, opString, "");
                     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Smin and Smax are currently not supported");
-                } else if (opString == "U") {
+                } else if (opString == "U" || opString == "F") {
                     assert(bound == boost::none);
-                    std::vector<std::shared_ptr<storm::logic::Formula const>> args = parseBinaryFormulaArguments(propertyStructure, opString, "");
+                    std::vector<std::shared_ptr<storm::logic::Formula const>> args;
+                    if (opString == "U") {
+                        args = parseBinaryFormulaArguments(propertyStructure, opString, "");
+                    } else {
+                        assert(opString == "F");
+                        args = parseUnaryFormulaArgument(propertyStructure, opString, "");
+                        args.push_back(args[0]);
+                        args[0] = storm::logic::BooleanLiteralFormula::getTrueFormula();
+                    }
                     if (propertyStructure.count("step-bounds") > 0) {
                         storm::jani::PropertyInterval pi = parsePropertyInterval(propertyStructure.at("step-bounds"));
                         STORM_LOG_THROW(pi.hasUpperBound(), storm::exceptions::NotSupportedException, "Storm only supports step-bounded until with an upper bound");
@@ -348,9 +356,24 @@ namespace storm {
                     } else {
                         return std::make_shared<storm::logic::UntilFormula const>(args[0], args[1]);
                     }
+                } else if (opString == "G") {
+                    assert(bound == boost::none);
+                    std::vector<std::shared_ptr<storm::logic::Formula const>> args = parseUnaryFormulaArgument(propertyStructure, opString, "Subformula of globally operator " + context);
+                    if (propertyStructure.count("step-bounds") > 0) {
+                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Globally and step-bounds are not supported currently");
+                    } else if (propertyStructure.count("time-bounds") > 0) {
+                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Globally and time bounds are not supported by Storm");
+                    } else if (propertyStructure.count("reward-bounds") > 0 ) {
+                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Reward bounded properties are not supported by Storm");
+                    }
+                    return std::make_shared<storm::logic::GloballyFormula const>(args[1]);
+
                 } else if (opString == "W") {
                     assert(bound == boost::none);
                     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Weak until is not supported");
+                } else if (opString == "R") {
+                    assert(bound == boost::none);
+                    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Release is not supported");
                 } else if (opString == "∧" || opString == "∨") {
                     assert(bound == boost::none);
                     std::vector<std::shared_ptr<storm::logic::Formula const>> args = parseBinaryFormulaArguments(propertyStructure, opString, "");
