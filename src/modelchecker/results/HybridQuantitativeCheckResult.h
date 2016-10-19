@@ -54,7 +54,6 @@ namespace storm {
             
             virtual ValueType average() const override;
             
-            
             virtual void oneMinus() override;
 
         private:

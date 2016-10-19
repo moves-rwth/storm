@@ -93,12 +93,12 @@ namespace storm {
         
         template<storm::dd::DdType Type, typename ValueType>
         ValueType SymbolicQuantitativeCheckResult<Type, ValueType>::average() const {
-           STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Average not implemented for symbolic results");
+            return this->sum() / this->states.getNonZeroCount();
         }
         
         template<storm::dd::DdType Type, typename ValueType>
         ValueType SymbolicQuantitativeCheckResult<Type, ValueType>::sum() const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Sum not implemented for symbolic results");
+            return this->values.sumAbstract(this->values.getContainedMetaVariables()).getValue();
         }
         
         template<storm::dd::DdType Type, typename ValueType>
