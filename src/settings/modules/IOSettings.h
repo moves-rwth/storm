@@ -211,6 +211,11 @@ namespace storm {
                  */
                 bool isPrismCompatibilityEnabled() const;
                 
+                /**
+                 * Retrieves whether no model should be build at all, in case one just want to translate models or parse a file
+                 */
+                bool isNoBuildModelSet() const;
+                
                 /*!
                  * Retrieves whether the full model should be build, that is, the model including all labels and rewards.
                  *
@@ -243,6 +248,7 @@ namespace storm {
                 static const std::string prismCompatibilityOptionName;
                 static const std::string prismCompatibilityOptionShortName;
                 static const std::string fullModelBuildOptionName;
+                static const std::string noBuildOptionName;
                 static const std::string janiPropertyOptionName;
                 static const std::string janiPropertyOptionShortName;
             };

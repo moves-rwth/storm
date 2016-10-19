@@ -258,6 +258,10 @@ namespace storm {
                     }
                 }
                 
+                if (ioSettings.isNoBuildModelSet()) {
+                    return;
+                }
+                
                 // Get the string that assigns values to the unknown currently undefined constants in the model.
                 std::string constantDefinitionString = ioSettings.getConstantDefinitionString();
                 model = model.preprocess(constantDefinitionString);

@@ -335,7 +335,14 @@ namespace storm {
         }
         
         bool Automaton::hasRestrictedInitialStates() const {
-            return hasInitialStatesRestriction() && !(getInitialStatesExpression().evaluateAsBool());
+            if (!hasInitialStatesRestriction()) {
+                return false;
+            }
+            if (getInitialStatesExpression().containsVariables()) {
+                return true;
+            } else {
+                return !getInitialStatesExpression().evaluateAsBool();
+            }
         }
 
         bool Automaton::hasInitialStatesRestriction() const {

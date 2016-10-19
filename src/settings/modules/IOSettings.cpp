@@ -30,6 +30,7 @@ namespace storm {
             const std::string IOSettings::constantsOptionShortName = "const";
             const std::string IOSettings::prismCompatibilityOptionName = "prismcompat";
             const std::string IOSettings::prismCompatibilityOptionShortName = "pc";
+            const std::string IOSettings::noBuildOptionName = "nobuild";
             const std::string IOSettings::fullModelBuildOptionName = "buildfull";
             const std::string IOSettings::janiPropertyOptionName = "janiproperty";
             const std::string IOSettings::janiPropertyOptionShortName = "jprop";
@@ -50,7 +51,7 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file from which to read the JANI input.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, prismToJaniOptionName, false, "If set, the input PRISM model is transformed to JANI.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, fullModelBuildOptionName, false, "If set, include all rewards and labels.").build());
-                
+                this->addOption(storm::settings::OptionBuilder(moduleName, noBuildOptionName, false, "If set, do not build the model.").build());
 
                 std::vector<std::string> explorationOrders = {"dfs", "bfs"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, explorationOrderOptionName, false, "Sets which exploration order to use.").setShortName(explorationOrderOptionShortName)
@@ -185,6 +186,10 @@ namespace storm {
             
             bool IOSettings::isBuildFullModelSet() const {
                 return this->getOption(fullModelBuildOptionName).getHasOptionBeenSet();
+            }
+            
+            bool IOSettings::isNoBuildModelSet() const {
+                return this->getOption(noBuildOptionName).getHasOptionBeenSet();
             }
 
 			void IOSettings::finalize() {

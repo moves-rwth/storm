@@ -20,6 +20,10 @@ namespace storm {
         class Property;
         class PropertyInterval;
     }
+    
+    namespace logic {
+        enum class FormulaContext;
+    }
 
 
     namespace parser {
@@ -54,12 +58,12 @@ namespace storm {
              * Helper for parsing the actions of a model.
              */
             void parseActions(json const& actionStructure, storm::jani::Model& parentModel);
-            std::shared_ptr<storm::logic::Formula const> parseFormula(json const& propertyStructure, std::string const& context, boost::optional<storm::logic::Bound<storm::RationalNumber>> bound = boost::none);
+            std::shared_ptr<storm::logic::Formula const> parseFormula(json const& propertyStructure, storm::logic::FormulaContext formulaContext, std::string const& context, boost::optional<storm::logic::Bound<storm::RationalNumber>> bound = boost::none);
             std::vector<storm::expressions::Expression> parseUnaryExpressionArguments(json const& expressionStructure, std::string const& opstring, std::string const& scopeDescription, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& localVars = {}, bool returnNoneOnUnknownOpString = false);
             std::vector<storm::expressions::Expression> parseBinaryExpressionArguments(json const& expressionStructure, std::string const& opstring,  std::string const& scopeDescription, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& localVars = {}, bool returnNoneOnUnknownOpString = false);
 
-            std::vector<std::shared_ptr<storm::logic::Formula const>> parseUnaryFormulaArgument(json const& propertyStructure, std::string const& opstring, std::string const& context);
-            std::vector<std::shared_ptr<storm::logic::Formula const>> parseBinaryFormulaArguments(json const& propertyStructure, std::string const& opstring, std::string const& context);
+            std::vector<std::shared_ptr<storm::logic::Formula const>> parseUnaryFormulaArgument(json const& propertyStructure, storm::logic::FormulaContext formulaContext,  std::string const& opstring, std::string const& context);
+            std::vector<std::shared_ptr<storm::logic::Formula const>> parseBinaryFormulaArguments(json const& propertyStructure, storm::logic::FormulaContext formulaContext, std::string const& opstring, std::string const& context);
             storm::jani::PropertyInterval parsePropertyInterval(json const& piStructure);
                 
             
@@ -75,6 +79,8 @@ namespace storm {
              * The expression manager to be used.
              */
             std::shared_ptr<storm::expressions::ExpressionManager> expressionManager;
+            
+            std::set<std::string> labels = {};
 
             bool allowRecursion = true;
 
