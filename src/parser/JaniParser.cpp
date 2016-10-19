@@ -184,6 +184,7 @@ namespace storm {
             
         }
 
+        
         std::shared_ptr<storm::logic::Formula const> JaniParser::parseFormula(json const& propertyStructure, std::string const& context, boost::optional<storm::logic::Bound<storm::RationalNumber>> bound) {
             
             storm::expressions::Expression expr = parseExpression(propertyStructure, "expression in property", {}, true);
@@ -205,7 +206,110 @@ namespace storm {
                     assert(bound == boost::none);
                     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Forall and Exists are currently not supported");
                 } else if (opString == "Emin" || opString == "Emax") {
-                    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Emin and Emax are currently not supported");
+                    std::shared_ptr<storm::logic::Formula const> reach;
+                    if (propertyStructure.count("reach") > 0) {
+                        reach = parseFormula(propertyStructure.at("reach"), "Reach-expression of operator " + opString);
+                    } else {
+                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Total reward is currently not supported");
+                    }
+                    storm::logic::OperatorInformation opInfo;
+                    opInfo.optimalityType =  opString == "Emin" ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize;
+                    opInfo.bound = bound;
+
+                    STORM_LOG_THROW(propertyStructure.count("exp") == 1, storm::exceptions::InvalidJaniException, "Expecting reward-expression for operator " << opString << " in  " << context);
+                    storm::expressions::Expression rewExpr = parseExpression(propertyStructure.at("exp"), "Reward expression in " + context);
+                    
+                    bool accTime = false;
+                    bool accSteps = false;
+                    if (propertyStructure.count("accumulate") > 0) {
+                        STORM_LOG_THROW(propertyStructure.at("accumulate").is_array(), storm::exceptions::InvalidJaniException, "Accumulate should be an array");
+                        for(auto const& accEntry : propertyStructure.at("accumulate")) {
+                            if (accEntry == "steps") {
+                                accSteps = true;
+                            } else if (accEntry == "time") {
+                                accTime = true;
+                            } else {
+                                STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "One may only accumulate either 'steps' or 'time', got " << accEntry.dump() << " in "  << context);
+                            }
+                        }
+                    }
+                    STORM_LOG_THROW(!(accTime && accSteps), storm::exceptions::NotSupportedException, "Storm does not allow to accumulate over both time and steps");
+                    
+                    
+                    if (propertyStructure.count("step-instant") > 0) {
+                        storm::expressions::Expression stepInstantExpr = parseExpression(propertyStructure.at("step-instant"), "Step instant in " + context);
+                        STORM_LOG_THROW(!stepInstantExpr.containsVariables(), storm::exceptions::NotSupportedException, "Storm only allows constant step-instants");
+                        int64_t stepInstant = stepInstantExpr.evaluateAsInt();
+                        STORM_LOG_THROW(stepInstant >= 0, storm::exceptions::InvalidJaniException, "Only non-negative step-instants are allowed");
+                        if(!accTime && !accSteps) {
+                            if (rewExpr.isVariable()) {
+                                std::string rewardName = rewExpr.getVariables().begin()->getName();
+                                return std::make_shared<storm::logic::RewardOperatorFormula>(std::make_shared<storm::logic::InstantaneousRewardFormula>(static_cast<uint64_t>(stepInstant)), rewardName, opInfo);
+                            } else {
+                                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Only simple reward expressions are currently supported");
+                            }
+                        } else {
+                            if (rewExpr.isVariable()) {
+                                std::string rewardName = rewExpr.getVariables().begin()->getName();
+                                return std::make_shared<storm::logic::RewardOperatorFormula>(std::make_shared<storm::logic::CumulativeRewardFormula>(static_cast<uint64_t>(stepInstant)), rewardName, opInfo);
+                            } else {
+                                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Only simple reward expressions are currently supported");
+                            }
+                        }
+                    } else if (propertyStructure.count("time-instant") > 0) {
+                        storm::expressions::Expression timeInstantExpr = parseExpression(propertyStructure.at("time-instant"), "time instant in " + context);
+                        STORM_LOG_THROW(!timeInstantExpr.containsVariables(), storm::exceptions::NotSupportedException, "Storm only allows constant time-instants");
+                        double timeInstant = timeInstantExpr.evaluateAsDouble();
+                        STORM_LOG_THROW(timeInstant >= 0, storm::exceptions::InvalidJaniException, "Only non-negative time-instants are allowed");
+                        if(!accTime && !accSteps) {
+                            if (rewExpr.isVariable()) {
+                                std::string rewardName = rewExpr.getVariables().begin()->getName();
+                                return std::make_shared<storm::logic::RewardOperatorFormula>(std::make_shared<storm::logic::InstantaneousRewardFormula>(timeInstant), rewardName, opInfo);
+                            } else {
+                                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Only simple reward expressions are currently supported");
+                            }
+                        } else {
+                            if (rewExpr.isVariable()) {
+                                std::string rewardName = rewExpr.getVariables().begin()->getName();
+                                return std::make_shared<storm::logic::RewardOperatorFormula>(std::make_shared<storm::logic::CumulativeRewardFormula>(timeInstant), rewardName, opInfo);
+                            } else {
+                                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Only simple reward expressions are currently supported");
+                            }
+                        }
+                    } else if (propertyStructure.count("reward-instants") > 0) {
+                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Instant/Cumul. Reward for reward constraints not supported currently.");
+                    }
+                    
+                    STORM_LOG_THROW(accTime || accSteps, storm::exceptions::NotSupportedException, "Storm only allows accumulation if a step- or time-bound is given.");
+                    assert(!accTime && !accSteps);
+                    
+                    if (rewExpr.isVariable()) {
+                        std::string rewardName = rewExpr.getVariables().begin()->getName();
+                        return std::make_shared<storm::logic::RewardOperatorFormula>(reach, rewardName, opInfo);
+                    } else if (!rewExpr.containsVariables()) {
+                        if(rewExpr.hasIntegerType()) {
+                            if (rewExpr.evaluateAsInt() == 1) {
+                                
+                                return std::make_shared<storm::logic::TimeOperatorFormula>(reach, opInfo);
+                            } else {
+                                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Expected steps/time only works with constant one.");
+                            }
+                        } else if (rewExpr.hasRationalType()){
+                            if (rewExpr.evaluateAsDouble() == 1.0) {
+                                
+                                return std::make_shared<storm::logic::TimeOperatorFormula>(reach, opInfo);
+                            } else {
+                                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Expected steps/time only works with constant one.");
+                            }
+                        } else {
+                            STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Only numerical reward expressions are allowed");
+                        }
+                        
+                    } else {
+                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "No complex reward expressions are supported at the moment");
+                    }
+                    
+
                 } else if (opString == "Smin" || opString == "Smax") {
                     std::vector<std::shared_ptr<storm::logic::Formula const>> args = parseUnaryFormulaArgument(propertyStructure, opString, "");
                     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Smin and Smax are currently not supported");
@@ -917,16 +1021,18 @@ namespace storm {
                     std::vector<storm::jani::Assignment> assignments;
                     unsigned assignmentDeclCount = destEntry.count("assignments");
                     STORM_LOG_THROW(assignmentDeclCount < 2, storm::exceptions::InvalidJaniException, "Destination in edge from '" << sourceLoc << "' to '" << targetLoc << "' in automaton '" << name << "' has multiple assignment lists");
-                    for(auto const& assignmentEntry : destEntry.at("assignments")) {
-                        // ref
-                        STORM_LOG_THROW(assignmentEntry.count("ref") == 1, storm::exceptions::InvalidJaniException, "Assignment in edge from '" << sourceLoc << "' to '" << targetLoc << "' in automaton '" << name << "'  must have one ref field");
-                        std::string refstring = getString(assignmentEntry.at("ref"), "assignment in edge from '" + sourceLoc + "' to '" + targetLoc + "' in automaton '" + name + "'");
-                        storm::jani::Variable const& lhs = getLValue(refstring, parentModel.getGlobalVariables(), automaton.getVariables(), "Assignment variable in edge from '" + sourceLoc + "' to '" + targetLoc + "' in automaton '" + name + "'");
-                        // value
-                        STORM_LOG_THROW(assignmentEntry.count("value") == 1, storm::exceptions::InvalidJaniException, "Assignment in edge from '" << sourceLoc << "' to '" << targetLoc << "' in automaton '" << name << "'  must have one value field");
-                        storm::expressions::Expression assignmentExpr = parseExpression(assignmentEntry.at("value"), "assignment in edge from '" + sourceLoc + "' to '" + targetLoc + "' in automaton '" + name + "'", localVars);
-                        // TODO check types
-                        assignments.emplace_back(lhs, assignmentExpr);
+                    if (assignmentDeclCount > 0) {
+                        for (auto const& assignmentEntry : destEntry.at("assignments")) {
+                            // ref
+                            STORM_LOG_THROW(assignmentEntry.count("ref") == 1, storm::exceptions::InvalidJaniException, "Assignment in edge from '" << sourceLoc << "' to '" << targetLoc << "' in automaton '" << name << "'  must have one ref field");
+                            std::string refstring = getString(assignmentEntry.at("ref"), "assignment in edge from '" + sourceLoc + "' to '" + targetLoc + "' in automaton '" + name + "'");
+                            storm::jani::Variable const& lhs = getLValue(refstring, parentModel.getGlobalVariables(), automaton.getVariables(), "Assignment variable in edge from '" + sourceLoc + "' to '" + targetLoc + "' in automaton '" + name + "'");
+                            // value
+                            STORM_LOG_THROW(assignmentEntry.count("value") == 1, storm::exceptions::InvalidJaniException, "Assignment in edge from '" << sourceLoc << "' to '" << targetLoc << "' in automaton '" << name << "'  must have one value field");
+                            storm::expressions::Expression assignmentExpr = parseExpression(assignmentEntry.at("value"), "assignment in edge from '" + sourceLoc + "' to '" + targetLoc + "' in automaton '" + name + "'", localVars);
+                            // TODO check types
+                            assignments.emplace_back(lhs, assignmentExpr);
+                        }
                     }
                     edgeDestinations.emplace_back(locIds.at(targetLoc), probExpr, assignments);
                 }
@@ -945,7 +1051,7 @@ namespace storm {
                 std::vector<std::string> inputs;
                 for (auto const& syncInput : syncEntry.at("synchronise")) {
                     if(syncInput.is_null()) {
-                        // TODO handle null;
+                        inputs.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
                     } else {
                         inputs.push_back(syncInput);
                     }

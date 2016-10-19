@@ -282,6 +282,8 @@ namespace storm {
 //                }
 //            }
 //            return opDecl;
+            
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Jani currently does not support conversion of an LRA reward formula");
         }
         
         boost::any FormulaToJaniJson::visit(storm::logic::NextFormula const& f, boost::any const& data) const {
