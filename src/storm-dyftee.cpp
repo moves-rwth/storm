@@ -117,6 +117,7 @@ int main(const int argc, const char** argv) {
         parametric = generalSettings.isParametricSet();
 #endif
         
+#ifdef STORM_HAVE_Z3
         if (dftSettings.solveWithSMT()) {
             // Solve with SMT
             if (parametric) {
@@ -127,6 +128,7 @@ int main(const int argc, const char** argv) {
             storm::utility::cleanUp();
             return 0;
         }
+#endif
         
         // Set min or max
         bool minimal = true;
