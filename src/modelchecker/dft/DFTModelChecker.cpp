@@ -169,6 +169,9 @@ namespace storm {
                     // Build model for lower bound
                     STORM_LOG_INFO("Getting model for lower bound...");
                     model = builder.getModelApproximation(true);
+                    // We only output the info from the lower bound as the info for the upper bound is the same
+                    STORM_LOG_INFO("No. states: " << model->getNumberOfStates());
+                    STORM_LOG_INFO("No. transitions: " << model->getNumberOfTransitions());
                     explorationTime += std::chrono::high_resolution_clock::now() - explorationStart;
                     // Check lower bound
                     std::unique_ptr<storm::modelchecker::CheckResult> result = checkModel(model, formula);
@@ -201,7 +204,7 @@ namespace storm {
                 STORM_LOG_INFO("Building Model...");
                 std::shared_ptr<storm::models::sparse::Model<ValueType>> model;
                 // TODO Matthias: use only one builder if everything works again
-                if (approximationError >= 0.0) {
+                if (storm::settings::getModule<storm::settings::modules::DFTSettings>().isApproximationErrorSet()) {
                     storm::builder::ExplicitDFTModelBuilderApprox<ValueType> builder(dft, symmetries, enableDC);
                     typename storm::builder::ExplicitDFTModelBuilderApprox<ValueType>::LabelOptions labeloptions; // TODO initialize this with the formula
                     builder.buildModel(labeloptions, 0);

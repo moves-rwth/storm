@@ -58,6 +58,7 @@ namespace storm {
                     STORM_LOG_ASSERT(mStates.getValue(pseudoStatePair.second) >= OFFSET_PSEUDO_STATE, "State is no pseudo state.");
                     STORM_LOG_TRACE("Create pseudo state from bit vector " << pseudoStatePair.second);
                     DFTStatePointer pseudoState = std::make_shared<storm::storage::DFTState<ValueType>>(pseudoStatePair.second, mDft, *mStateGenerationInfo, newIndex);
+                    pseudoState->construct();
                     STORM_LOG_ASSERT(pseudoStatePair.second == pseudoState->status(), "Pseudo states do not coincide.");
                     STORM_LOG_TRACE("Explore pseudo state " << mDft.getStateString(pseudoState) << " with id " << pseudoState->getId());
                     auto exploreResult = exploreStates(pseudoState, rowOffset, transitionMatrixBuilder, tmpMarkovianStates, modelComponents.exitRates);

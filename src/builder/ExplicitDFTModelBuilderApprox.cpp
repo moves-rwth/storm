@@ -106,8 +106,7 @@ namespace storm {
 
             STORM_LOG_TRACE("State remapping: " << matrixBuilder.stateRemapping);
             STORM_LOG_TRACE("Markovian states: " << modelComponents.markovianStates);
-            STORM_LOG_DEBUG("Generated " << stateSize << " states");
-            STORM_LOG_DEBUG("Skipped " << skippedStates.size() << " states");
+            STORM_LOG_DEBUG("Model has " << stateSize << " states");
             STORM_LOG_DEBUG("Model is " << (generator.isDeterministicModel() ? "deterministic" : "non-deterministic"));
 
             // Build transition matrix
@@ -224,6 +223,8 @@ namespace storm {
 
         template<typename ValueType, typename StateType>
         void ExplicitDFTModelBuilderApprox<ValueType, StateType>::exploreStateSpace(double approximationThreshold) {
+            size_t nrExpandedStates = 0;
+            size_t nrSkippedStates = 0;
             // TODO Matthias: do not empty queue every time but break before
             while (!explorationQueue.empty()) {
                 // Get the first state in the queue
@@ -255,6 +256,7 @@ namespace storm {
 
                 if (currentState->isSkip(approximationThreshold, heuristic)) {
                     // Skip the current state
+                    ++nrSkippedStates;
                     STORM_LOG_TRACE("Skip expansion of state: " << dft.getStateString(currentState));
                     setMarkovian(true);
                     // Add transition to target state with temporary value 0
@@ -265,6 +267,7 @@ namespace storm {
                     matrixBuilder.finishRow();
                 } else {
                     // Explore the current state
+                    ++nrExpandedStates;
                     storm::generator::StateBehavior<ValueType, StateType> behavior = generator.expand(std::bind(&ExplicitDFTModelBuilderApprox::getOrAddStateIndex, this, std::placeholders::_1));
                     STORM_LOG_ASSERT(!behavior.empty(), "Behavior is empty.");
                     setMarkovian(behavior.begin()->isMarkovian());
@@ -273,6 +276,7 @@ namespace storm {
                     for (auto const& choice : behavior) {
                         // Add the probabilistic behavior to the matrix.
                         for (auto const& stateProbabilityPair : choice) {
+                            STORM_LOG_ASSERT(!storm::utility::isZero(stateProbabilityPair.second), "Probability zero.");
                             // Set transition to state id + offset. This helps in only remapping all previously skipped states.
                             matrixBuilder.addTransition(matrixBuilder.mappingOffset + stateProbabilityPair.first, stateProbabilityPair.second);
                             // Set heuristic values for reached states
@@ -291,6 +295,10 @@ namespace storm {
                     explorationQueue.fix();
                 }
             } // end exploration
+
+            STORM_LOG_INFO("Expanded " << nrExpandedStates << " states");
+            STORM_LOG_INFO("Skipped " << nrSkippedStates << " states");
+            STORM_LOG_ASSERT(nrSkippedStates == skippedStates.size(), "Nr skipped states is wrong");
         }
 
         template<typename ValueType, typename StateType>
