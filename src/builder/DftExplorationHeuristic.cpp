@@ -14,69 +14,34 @@ namespace storm {
             // Intentionally left empty
         }
 
-        template<typename ValueType>
-        void DFTExplorationHeuristic<ValueType>::updateHeuristicValues(size_t depth, ValueType rate, ValueType exitRate) {
-            this->depth = std::min(this->depth, depth);
-            this->rate = std::max(this->rate, rate);
-            this->exitRate = std::max(this->exitRate, exitRate);
+        template<>
+        bool DFTExplorationHeuristicRateRatio<double>::updateHeuristicValues(size_t depth, double rate, double exitRate) {
+            bool update = false;
+            if (this->rate < rate) {
+                this->rate = rate;
+                update = true;
+            }
+            if (this->exitRate < exitRate) {
+                this->exitRate = exitRate;
+                update = true;
+            }
+            return update;
         }
 
-        template<typename ValueType>
-        DFTExplorationHeuristicNone<ValueType>::DFTExplorationHeuristicNone(size_t id) : DFTExplorationHeuristic<ValueType>(id) {
-            // Intentionally left empty
-        }
-
-        template<typename ValueType>
-        bool DFTExplorationHeuristicNone<ValueType>::isSkip(double approximationThreshold) const {
+        template<>
+        bool DFTExplorationHeuristicRateRatio<storm::RationalFunction>::updateHeuristicValues(size_t depth, storm::RationalFunction rate, storm::RationalFunction exitRate) {
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Heuristic rate ration does not work for rational functions.");
             return false;
         }
 
-        template<typename ValueType>
-        bool DFTExplorationHeuristicNone<ValueType>::operator<(DFTExplorationHeuristicNone<ValueType> const& other) const {
-            // Just use memory address for comparing
-            // TODO Matthias: better idea?
-            return this > &other;
-        }
-
-        template<typename ValueType>
-        DFTExplorationHeuristicDepth<ValueType>::DFTExplorationHeuristicDepth(size_t id) : DFTExplorationHeuristic<ValueType>(id) {
-            // Intentionally left empty
-        }
-
-        template<typename ValueType>
-        bool DFTExplorationHeuristicDepth<ValueType>::isSkip(double approximationThreshold) const {
-            return !this->expand && this->depth > approximationThreshold;
-        }
-
-        template<typename ValueType>
-        bool DFTExplorationHeuristicDepth<ValueType>::operator<(DFTExplorationHeuristicDepth<ValueType> const& other) const {
-            return this->depth > other.depth;
-        }
-
-        template<typename ValueType>
-        DFTExplorationHeuristicRateRatio<ValueType>::DFTExplorationHeuristicRateRatio(size_t id) : DFTExplorationHeuristic<ValueType>(id) {
-            // Intentionally left empty
-        }
-
-        template<typename ValueType>
-        bool DFTExplorationHeuristicRateRatio<ValueType>::isSkip(double approximationThreshold) const {
-            return !this->expand && this->getRateRatio() < approximationThreshold;
-        }
-
-        template<typename ValueType>
-        bool DFTExplorationHeuristicRateRatio<ValueType>::operator<(DFTExplorationHeuristicRateRatio<ValueType> const& other) const {
-            return this->getRateRatio() < other.getRateRatio();
-        }
-
-
         template<>
-        double DFTExplorationHeuristicRateRatio<double>::getRateRatio() const {
+        double DFTExplorationHeuristicRateRatio<double>::getPriority() const {
             return rate/exitRate;
         }
 
         template<>
-        double DFTExplorationHeuristicRateRatio<storm::RationalFunction>::getRateRatio() const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Heuristic rate ration does not work.");
+        double DFTExplorationHeuristicRateRatio<storm::RationalFunction>::getPriority() const {
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Heuristic rate ration does not work for rational functions.");
         }
 
 

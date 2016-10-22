@@ -22,7 +22,9 @@ namespace storm {
         public:
             DFTExplorationHeuristic(size_t id);
 
-            void updateHeuristicValues(size_t depth, ValueType rate, ValueType exitRate);
+            virtual bool updateHeuristicValues(size_t depth, ValueType rate, ValueType exitRate) = 0;
+
+            virtual double getPriority() const = 0;
 
             virtual bool isSkip(double approximationThreshold) const = 0;
 
@@ -50,34 +52,74 @@ namespace storm {
         template<typename ValueType>
         class DFTExplorationHeuristicNone : public DFTExplorationHeuristic<ValueType> {
         public:
-            DFTExplorationHeuristicNone(size_t id);
+            DFTExplorationHeuristicNone(size_t id) : DFTExplorationHeuristic<ValueType>(id) {
+                // Intentionally left empty
+            }
 
-            bool isSkip(double approximationThreshold) const override;
+            bool updateHeuristicValues(size_t depth, ValueType rate, ValueType exitRate) override {
+                return false;
+            }
 
-            bool operator<(DFTExplorationHeuristicNone<ValueType> const& other) const;
+            double getPriority() const override {
+                return this->id;
+            }
+
+            bool isSkip(double approximationThreshold) const override {
+                return false;
+            }
+
+            bool operator<(DFTExplorationHeuristicNone<ValueType> const& other) const {
+                return this->id > other.id;
+            }
         };
 
         template<typename ValueType>
         class DFTExplorationHeuristicDepth : public DFTExplorationHeuristic<ValueType> {
         public:
-            DFTExplorationHeuristicDepth(size_t id);
+            DFTExplorationHeuristicDepth(size_t id) : DFTExplorationHeuristic<ValueType>(id) {
+                // Intentionally left empty
+            }
 
-            bool isSkip(double approximationThreshold) const override;
+            bool updateHeuristicValues(size_t depth, ValueType rate, ValueType exitRate) override {
+                if (depth < this->depth) {
+                    this->depth = depth;
+                    return true;
+                }
+                return false;
+            }
 
-            bool operator<(DFTExplorationHeuristicDepth<ValueType> const& other) const;
+
+            double getPriority() const override {
+                return this->depth;
+            }
+
+            bool isSkip(double approximationThreshold) const override {
+                return !this->expand && this->depth > approximationThreshold;
+            }
+
+            bool operator<(DFTExplorationHeuristicDepth<ValueType> const& other) const {
+                return this->depth > other.depth;
+            }
         };
 
         template<typename ValueType>
         class DFTExplorationHeuristicRateRatio : public DFTExplorationHeuristic<ValueType> {
         public:
-            DFTExplorationHeuristicRateRatio(size_t id);
+            DFTExplorationHeuristicRateRatio(size_t id) : DFTExplorationHeuristic<ValueType>(id) {
+                // Intentionally left empty
+            }
 
-            bool isSkip(double approximationThreshold) const override;
+            bool updateHeuristicValues(size_t depth, ValueType rate, ValueType exitRate) override;
 
-            bool operator<(DFTExplorationHeuristicRateRatio<ValueType> const& other) const;
+            double getPriority() const override;
 
-        private:
-            double getRateRatio() const;
+            bool isSkip(double approximationThreshold) const override {
+                return !this->expand && this->getPriority() < approximationThreshold;
+            }
+
+            bool operator<(DFTExplorationHeuristicRateRatio<ValueType> const& other) const {
+                return this->getPriority() < other.getPriority();
+            }
         };
 
     }

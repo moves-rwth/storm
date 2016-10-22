@@ -290,8 +290,7 @@ namespace storm {
                                     // Do not skip absorbing state or if reached by dependencies
                                     iter->second.second->markExpand();
                                 }
-                                iter->second.second->updateHeuristicValues(currentExplorationHeuristic->getDepth() + 1, stateProbabilityPair.second, choice.getTotalMass());
-                                fixQueue = true;
+                                fixQueue = iter->second.second->updateHeuristicValues(currentExplorationHeuristic->getDepth() + 1, stateProbabilityPair.second, choice.getTotalMass());
                             }
                         }
                         matrixBuilder.finishRow();
