@@ -2,15 +2,8 @@
 #define STORM_BUILDER_DFTEXPLORATIONHEURISTIC_H_
 
 #include <memory>
-#include <algorithm>
 
 namespace storm {
-
-    // Forward declaration
-    namespace storage {
-        template<typename ValueType>
-        class DFTState;
-    }
 
     namespace builder {
 
@@ -19,32 +12,74 @@ namespace storm {
          */
         enum class ApproximationHeuristic { NONE, DEPTH, RATERATIO };
 
+
+        /*!
+         * General super class for appoximation heuristics.
+         */
         template<typename ValueType>
         class DFTExplorationHeuristic {
 
         public:
-            DFTExplorationHeuristic();
+            DFTExplorationHeuristic(size_t id);
 
-            void setHeuristicValues(size_t depth, ValueType rate, ValueType exitRate);
+            void updateHeuristicValues(size_t depth, ValueType rate, ValueType exitRate);
 
-            bool isSkip(double approximationThreshold, ApproximationHeuristic heuristic) const;
+            virtual bool isSkip(double approximationThreshold) const = 0;
 
-            void setNotSkip();
+            void markExpand() {
+                expand = true;
+            }
 
-            size_t getDepth() const;
+            size_t getId() const {
+                return id;
+            }
 
-            bool compare(DFTExplorationHeuristic<ValueType> other, ApproximationHeuristic heuristic);
+            size_t getDepth() const {
+                return depth;
+            }
 
-        private:
-
-            double getRateRatio() const;
-
-            bool skip;
+        protected:
+            size_t id;
+            bool expand;
             size_t depth;
             ValueType rate;
             ValueType exitRate;
 
         };
+
+        template<typename ValueType>
+        class DFTExplorationHeuristicNone : public DFTExplorationHeuristic<ValueType> {
+        public:
+            DFTExplorationHeuristicNone(size_t id);
+
+            bool isSkip(double approximationThreshold) const override;
+
+            bool operator<(DFTExplorationHeuristicNone<ValueType> const& other) const;
+        };
+
+        template<typename ValueType>
+        class DFTExplorationHeuristicDepth : public DFTExplorationHeuristic<ValueType> {
+        public:
+            DFTExplorationHeuristicDepth(size_t id);
+
+            bool isSkip(double approximationThreshold) const override;
+
+            bool operator<(DFTExplorationHeuristicDepth<ValueType> const& other) const;
+        };
+
+        template<typename ValueType>
+        class DFTExplorationHeuristicRateRatio : public DFTExplorationHeuristic<ValueType> {
+        public:
+            DFTExplorationHeuristicRateRatio(size_t id);
+
+            bool isSkip(double approximationThreshold) const override;
+
+            bool operator<(DFTExplorationHeuristicRateRatio<ValueType> const& other) const;
+
+        private:
+            double getRateRatio() const;
+        };
+
     }
 }
 

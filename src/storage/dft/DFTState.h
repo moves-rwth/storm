@@ -34,8 +34,7 @@ namespace storm {
             bool mValid = true;
             const DFT<ValueType>& mDft;
             const DFTStateGenerationInfo& mStateGenerationInfo;
-            storm::builder::DFTExplorationHeuristic<ValueType> exploreHeuristic;
-            
+
         public:
             /**
              * Construct the initial state.
@@ -121,26 +120,6 @@ namespace storm {
 
             bool isPseudoState() const {
                 return mPseudoState;
-            }
-
-            void setHeuristicValues(size_t depth, ValueType rate, ValueType exitRate) {
-                exploreHeuristic.setHeuristicValues(depth, rate, exitRate);
-            }
-
-            void setHeuristicValues(std::shared_ptr<storm::storage::DFTState<ValueType>> oldState, ValueType rate, ValueType exitRate) {
-                if (hasFailed(mDft.getTopLevelIndex()) || isFailsafe(mDft.getTopLevelIndex()) || nrFailableDependencies() > 0 || (nrFailableDependencies() == 0 && nrFailableBEs() == 0)) {
-                    // Do not skip absorbing state or if reached by dependencies
-                    exploreHeuristic.setNotSkip();
-                }
-                exploreHeuristic.setHeuristicValues(oldState->exploreHeuristic.getDepth() + 1, rate, exitRate);
-            }
-
-            bool isSkip(double approximationThreshold, storm::builder::ApproximationHeuristic heuristic) {
-                return exploreHeuristic.isSkip(approximationThreshold, heuristic);
-            }
-
-            bool comparePriority(std::shared_ptr<DFTState> const& other, storm::builder::ApproximationHeuristic heuristic) {
-                return this->exploreHeuristic.compare(other->exploreHeuristic, heuristic);
             }
 
             storm::storage::BitVector const& status() const {

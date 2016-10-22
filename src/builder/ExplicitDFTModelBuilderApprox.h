@@ -26,11 +26,10 @@ namespace storm {
         template<typename ValueType, typename StateType = uint32_t>
         class ExplicitDFTModelBuilderApprox {
 
-            using DFTElementPointer = std::shared_ptr<storm::storage::DFTElement<ValueType>>;
-            using DFTElementCPointer = std::shared_ptr<storm::storage::DFTElement<ValueType> const>;
-            using DFTGatePointer = std::shared_ptr<storm::storage::DFTGate<ValueType>>;
             using DFTStatePointer = std::shared_ptr<storm::storage::DFTState<ValueType>>;
-            using DFTRestrictionPointer = std::shared_ptr<storm::storage::DFTRestriction<ValueType>>;
+            // TODO Matthias: make choosable
+            using ExplorationHeuristic = DFTExplorationHeuristicNone<ValueType>;
+            using ExplorationHeuristicPointer = std::shared_ptr<ExplorationHeuristic>;
 
 
             // A structure holding the individual components of a model.
@@ -294,16 +293,16 @@ namespace storm {
             storm::storage::sparse::StateStorage<StateType> stateStorage;
 
             // A priority queue of states that still need to be explored.
-            storm::storage::DynamicPriorityQueue<StateType, std::vector<StateType>, std::function<bool(StateType, StateType)>> explorationQueue;
+            storm::storage::DynamicPriorityQueue<ExplorationHeuristicPointer, std::vector<ExplorationHeuristicPointer>, std::function<bool(ExplorationHeuristicPointer, ExplorationHeuristicPointer)>> explorationQueue;
 
-            // A mapping of not yet explored states from the id to the state object.
-            std::map<StateType, DFTStatePointer> statesNotExplored;
+            // A mapping of not yet explored states from the id to the tuple (state object, heuristic values).
+            std::map<StateType, std::pair<DFTStatePointer, ExplorationHeuristicPointer>> statesNotExplored;
 
             // Holds all skipped states which were not yet expanded. More concretely it is a mapping from matrix indices
             // to the corresponding skipped states.
             // Notice that we need an ordered map here to easily iterate in increasing order over state ids.
             // TODO remove again
-            std::map<StateType, DFTStatePointer> skippedStates;
+            std::map<StateType, std::pair<DFTStatePointer, ExplorationHeuristicPointer>> skippedStates;
         };
 
     }

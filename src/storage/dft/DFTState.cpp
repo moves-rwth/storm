@@ -6,7 +6,7 @@ namespace storm {
     namespace storage {
 
         template<typename ValueType>
-        DFTState<ValueType>::DFTState(DFT<ValueType> const& dft, DFTStateGenerationInfo const& stateGenerationInfo, size_t id) : mStatus(dft.stateVectorSize()), mId(id), mPseudoState(false), mDft(dft), mStateGenerationInfo(stateGenerationInfo), exploreHeuristic()  {
+        DFTState<ValueType>::DFTState(DFT<ValueType> const& dft, DFTStateGenerationInfo const& stateGenerationInfo, size_t id) : mStatus(dft.stateVectorSize()), mId(id), mPseudoState(false), mDft(dft), mStateGenerationInfo(stateGenerationInfo) {
             // TODO Matthias: use construct()
             
             // Initialize uses
@@ -37,7 +37,7 @@ namespace storm {
         }
 
         template<typename ValueType>
-        DFTState<ValueType>::DFTState(storm::storage::BitVector const& status, DFT<ValueType> const& dft, DFTStateGenerationInfo const& stateGenerationInfo, size_t id) : mStatus(status), mId(id), mPseudoState(true), mDft(dft), mStateGenerationInfo(stateGenerationInfo), exploreHeuristic() {
+        DFTState<ValueType>::DFTState(storm::storage::BitVector const& status, DFT<ValueType> const& dft, DFTStateGenerationInfo const& stateGenerationInfo, size_t id) : mStatus(status), mId(id), mPseudoState(true), mDft(dft), mStateGenerationInfo(stateGenerationInfo) {
             // Intentionally left empty
         }
         
@@ -85,9 +85,7 @@ namespace storm {
 
         template<typename ValueType>
         std::shared_ptr<DFTState<ValueType>> DFTState<ValueType>::copy() const {
-            std::shared_ptr<DFTState<ValueType>> stateCopy = std::make_shared<storm::storage::DFTState<ValueType>>(*this);
-            stateCopy->exploreHeuristic = storm::builder::DFTExplorationHeuristic<ValueType>();
-            return stateCopy;
+            return std::make_shared<storm::storage::DFTState<ValueType>>(*this);
         }
 
         template<typename ValueType>

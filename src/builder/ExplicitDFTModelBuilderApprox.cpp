@@ -31,8 +31,8 @@ namespace storm {
                 generator(dft, *stateGenerationInfo, enableDC, mergeFailedStates),
                 matrixBuilder(!generator.isDeterministicModel()),
                 stateStorage(((dft.stateVectorSize() / 64) + 1) * 64),
-                explorationQueue([this](StateType idA, StateType idB) {
-                        return isPriorityGreater(idA, idB);
+                explorationQueue([this](ExplorationHeuristicPointer a, ExplorationHeuristicPointer b) {
+                        return *a < *b;
                     })
         {
             // Intentionally left empty.
@@ -76,7 +76,7 @@ namespace storm {
                 initialStateIndex = stateStorage.initialStateIndices[0];
                 STORM_LOG_TRACE("Initial state: " << initialStateIndex);
                 // Initialize heuristic values for inital state
-                statesNotExplored.at(initialStateIndex)->setHeuristicValues(0, storm::utility::zero<ValueType>(), storm::utility::zero<ValueType>());
+                statesNotExplored.at(initialStateIndex).second->updateHeuristicValues(0, storm::utility::zero<ValueType>(), storm::utility::zero<ValueType>());
             } else {
                 initializeNextIteration();
             }
@@ -128,8 +128,8 @@ namespace storm {
             // Push skipped states to explore queue
             // TODO Matthias: remove
             for (auto const& skippedState : skippedStates) {
-                statesNotExplored[skippedState.second->getId()] = skippedState.second;
-                explorationQueue.push(skippedState.second->getId());
+                statesNotExplored[skippedState.second.first->getId()] = skippedState.second;
+                explorationQueue.push(skippedState.second.second);
             }
 
             // Initialize matrix builder again
@@ -157,7 +157,7 @@ namespace storm {
             matrixBuilder.mappingOffset = nrStates;
             STORM_LOG_TRACE("# expanded states: " << nrExpandedStates);
             StateType skippedIndex = nrExpandedStates;
-            std::map<StateType, DFTStatePointer> skippedStatesNew;
+            std::map<StateType, std::pair<DFTStatePointer, ExplorationHeuristicPointer>> skippedStatesNew;
             for (size_t id = 0; id < matrixBuilder.stateRemapping.size(); ++id) {
                 StateType index = matrixBuilder.stateRemapping[id];
                 auto itFind = skippedStates.find(index);
@@ -204,7 +204,7 @@ namespace storm {
                             auto itFind = skippedStates.find(itEntry->getColumn());
                             if (itFind != skippedStates.end()) {
                                 // Set id for skipped states as we remap it later
-                                matrixBuilder.addTransition(matrixBuilder.mappingOffset + itFind->second->getId(), itEntry->getValue());
+                                matrixBuilder.addTransition(matrixBuilder.mappingOffset + itFind->second.first->getId(), itEntry->getValue());
                             } else {
                                 // Set newly remapped index for expanded states
                                 matrixBuilder.addTransition(indexRemapping[itEntry->getColumn()], itEntry->getValue());
@@ -228,10 +228,12 @@ namespace storm {
             // TODO Matthias: do not empty queue every time but break before
             while (!explorationQueue.empty()) {
                 // Get the first state in the queue
-                StateType currentId = explorationQueue.popTop();
+                ExplorationHeuristicPointer currentExplorationHeuristic = explorationQueue.popTop();
+                StateType currentId = currentExplorationHeuristic->getId();
                 auto itFind = statesNotExplored.find(currentId);
                 STORM_LOG_ASSERT(itFind != statesNotExplored.end(), "Id " << currentId << " not found");
-                DFTStatePointer currentState = itFind->second;
+                DFTStatePointer currentState = itFind->second.first;
+                STORM_LOG_ASSERT(currentExplorationHeuristic == itFind->second.second, "Exploration heuristics do not match");
                 STORM_LOG_ASSERT(currentState->getId() == currentId, "Ids do not match");
                 // Remove it from the list of not explored states
                 statesNotExplored.erase(itFind);
@@ -254,7 +256,7 @@ namespace storm {
                 bool fixQueue = false;
                 generator.load(currentState);
 
-                if (currentState->isSkip(approximationThreshold, heuristic)) {
+                if (currentExplorationHeuristic->isSkip(approximationThreshold)) {
                     // Skip the current state
                     ++nrSkippedStates;
                     STORM_LOG_TRACE("Skip expansion of state: " << dft.getStateString(currentState));
@@ -263,7 +265,7 @@ namespace storm {
                     // TODO Matthias: what to do when there is no unique target state?
                     matrixBuilder.addTransition(failedStateId, storm::utility::zero<ValueType>());
                     // Remember skipped state
-                    skippedStates[matrixBuilder.getCurrentRowGroup() - 1] = currentState;
+                    skippedStates[matrixBuilder.getCurrentRowGroup() - 1] = std::make_pair(currentState, currentExplorationHeuristic);
                     matrixBuilder.finishRow();
                 } else {
                     // Explore the current state
@@ -282,7 +284,13 @@ namespace storm {
                             // Set heuristic values for reached states
                             auto iter = statesNotExplored.find(stateProbabilityPair.first);
                             if (iter != statesNotExplored.end()) {
-                                iter->second->setHeuristicValues(currentState, stateProbabilityPair.second, choice.getTotalMass());
+                                // Update heuristic values
+                                DFTStatePointer state = iter->second.first;
+                                if (state->hasFailed(dft.getTopLevelIndex()) || state->isFailsafe(dft.getTopLevelIndex()) || state->nrFailableDependencies() > 0 || (state->nrFailableDependencies() == 0 && state->nrFailableBEs() == 0)) {
+                                    // Do not skip absorbing state or if reached by dependencies
+                                    iter->second.second->markExpand();
+                                }
+                                iter->second.second->updateHeuristicValues(currentExplorationHeuristic->getDepth() + 1, stateProbabilityPair.second, choice.getTotalMass());
                                 fixQueue = true;
                             }
                         }
@@ -421,12 +429,13 @@ namespace storm {
                 auto matrixEntry = matrix.getRow(it->first, 0).begin();
                 STORM_LOG_ASSERT(matrixEntry->getColumn() == failedStateId, "Transition has wrong target state.");
                 // Get the lower bound by considering the failure of all possible BEs
+                DFTStatePointer state = it->second.first;
                 ValueType newRate = storm::utility::zero<ValueType>();
-                for (size_t index = 0; index < it->second->nrFailableBEs(); ++index) {
-                    newRate += it->second->getFailableBERate(index);
+                for (size_t index = 0; index < state->nrFailableBEs(); ++index) {
+                    newRate += state->getFailableBERate(index);
                 }
-                for (size_t index = 0; index < it->second->nrNotFailableBEs(); ++index) {
-                    newRate += it->second->getNotFailableBERate(index);
+                for (size_t index = 0; index < state->nrNotFailableBEs(); ++index) {
+                    newRate += state->getNotFailableBERate(index);
                 }
                 matrixEntry->setValue(newRate);
             }
@@ -441,12 +450,13 @@ namespace storm {
                 // Get the upper bound by considering the failure of all BEs
                 // The used formula for the rate is 1/( 1/a + 1/b + ...)
                 // TODO Matthias: improve by using closed formula for AND of all BEs
+                DFTStatePointer state = it->second.first;
                 ValueType newRate = storm::utility::zero<ValueType>();
-                for (size_t index = 0; index < it->second->nrFailableBEs(); ++index) {
-                    newRate += storm::utility::one<ValueType>() / it->second->getFailableBERate(index);
+                for (size_t index = 0; index < state->nrFailableBEs(); ++index) {
+                    newRate += storm::utility::one<ValueType>() / state->getFailableBERate(index);
                 }
-                for (size_t index = 0; index < it->second->nrNotFailableBEs(); ++index) {
-                    newRate += storm::utility::one<ValueType>() / it->second->getNotFailableBERate(index);
+                for (size_t index = 0; index < state->nrNotFailableBEs(); ++index) {
+                    newRate += storm::utility::one<ValueType>() / state->getNotFailableBERate(index);
                 }
                 newRate = storm::utility::one<ValueType>() / newRate;
                 matrixEntry->setValue(newRate);
@@ -473,14 +483,14 @@ namespace storm {
                     // Check if state is pseudo state
                     // If state is explored already the possible pseudo state was already constructed
                     auto iter = statesNotExplored.find(stateId);
-                    if (iter != statesNotExplored.end() && iter->second->isPseudoState()) {
+                    if (iter != statesNotExplored.end() && iter->second.first->isPseudoState()) {
                         // Create pseudo state now
-                        STORM_LOG_ASSERT(iter->second->getId() == stateId, "Ids do not match.");
-                        STORM_LOG_ASSERT(iter->second->status() == state->status(), "Pseudo states do not coincide.");
+                        STORM_LOG_ASSERT(iter->second.first->getId() == stateId, "Ids do not match.");
+                        STORM_LOG_ASSERT(iter->second.first->status() == state->status(), "Pseudo states do not coincide.");
                         state->setId(stateId);
                         // Update mapping to map to concrete state now
-                        statesNotExplored[stateId] = state;
-                        // TODO Matthias: copy explorationHeuristic
+                        // TODO Matthias: just change pointer?
+                        statesNotExplored[stateId] = std::make_pair(state, iter->second.second);
                         // We do not push the new state on the exploration queue as the pseudo state was already pushed
                         STORM_LOG_TRACE("Created pseudo state " << dft.getStateString(state));
                     }
@@ -493,8 +503,9 @@ namespace storm {
                 stateId = stateStorage.stateToId.findOrAdd(state->status(), state->getId());
                 STORM_LOG_ASSERT(stateId == state->getId(), "Ids do not match.");
                 // Insert state as not yet explored
-                statesNotExplored[stateId] = state;
-                explorationQueue.push(stateId);
+                ExplorationHeuristicPointer heuristic = std::make_shared<ExplorationHeuristic>(stateId);
+                statesNotExplored[stateId] = std::make_pair(state, heuristic);
+                explorationQueue.push(heuristic);
                 // Reserve one slot for the new state in the remapping
                 matrixBuilder.stateRemapping.push_back(0);
                 STORM_LOG_TRACE("New " << (state->isPseudoState() ? "pseudo" : "concrete") << " state: " << dft.getStateString(state));
@@ -510,12 +521,6 @@ namespace storm {
             }
             modelComponents.markovianStates.set(matrixBuilder.getCurrentRowGroup() - 1, markovian);
         }
-
-        template<typename ValueType, typename StateType>
-        bool ExplicitDFTModelBuilderApprox<ValueType, StateType>::isPriorityGreater(StateType idA, StateType idB) const {
-            return statesNotExplored.at(idA)->comparePriority(statesNotExplored.at(idB), heuristic);
-        }
-
 
         // Explicitly instantiate the class.
         template class ExplicitDFTModelBuilderApprox<double>;
