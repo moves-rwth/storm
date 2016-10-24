@@ -32,12 +32,12 @@ namespace storm {
                 matrixBuilder(!generator.isDeterministicModel()),
                 stateStorage(((dft.stateVectorSize() / 64) + 1) * 64),
                 // TODO Matthias: make choosable
-                //explorationQueue(dft.nrElements(), 0, 1)
-                explorationQueue(41, 0, 1.0/20)
+                explorationQueue(dft.nrElements()+1, 0, 1)
+                //explorationQueue(141, 0, 0.02)
         {
             // Intentionally left empty.
             // TODO Matthias: remove again
-            heuristic = storm::builder::ApproximationHeuristic::RATERATIO;
+            heuristic = storm::builder::ApproximationHeuristic::NONE;
         }
 
         template<typename ValueType, typename StateType>
@@ -90,7 +90,7 @@ namespace storm {
             switch (heuristic) {
                 case storm::builder::ApproximationHeuristic::NONE:
                     // Do not change anything
-                    approximationThreshold = 0;
+                    approximationThreshold = dft.nrElements()+10;
                     break;
                 case storm::builder::ApproximationHeuristic::DEPTH:
                     approximationThreshold = iteration;
