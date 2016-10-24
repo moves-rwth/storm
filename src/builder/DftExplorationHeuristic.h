@@ -10,7 +10,7 @@ namespace storm {
         /*!
          * Enum representing the heuristic used for deciding which states to expand.
          */
-        enum class ApproximationHeuristic { NONE, DEPTH, RATERATIO };
+        enum class ApproximationHeuristic { NONE, DEPTH, PROBABILITY };
 
 
         /*!
@@ -20,9 +20,11 @@ namespace storm {
         class DFTExplorationHeuristic {
 
         public:
-            DFTExplorationHeuristic(size_t id, size_t depth, ValueType rate, ValueType exitRate);
+            DFTExplorationHeuristic(size_t id);
 
-            virtual bool updateHeuristicValues(size_t depth, ValueType rate, ValueType exitRate) = 0;
+            DFTExplorationHeuristic(size_t id, DFTExplorationHeuristic const& predecessor, ValueType rate, ValueType exitRate);
+
+            virtual bool updateHeuristicValues(DFTExplorationHeuristic const& predecessor, ValueType rate, ValueType exitRate) = 0;
 
             virtual double getPriority() const = 0;
 
@@ -40,21 +42,29 @@ namespace storm {
                 return depth;
             }
 
+            ValueType getProbability() const {
+                return probability;
+            }
+
         protected:
             size_t id;
             bool expand;
             size_t depth;
-            ValueType rateRatio;
+            ValueType probability;
         };
 
         template<typename ValueType>
         class DFTExplorationHeuristicNone : public DFTExplorationHeuristic<ValueType> {
         public:
-            DFTExplorationHeuristicNone(size_t id, size_t depth, ValueType rate, ValueType exitRate) : DFTExplorationHeuristic<ValueType>(id, depth, rate, exitRate) {
+            DFTExplorationHeuristicNone(size_t id) : DFTExplorationHeuristic<ValueType>(id) {
                 // Intentionally left empty
             }
 
-            bool updateHeuristicValues(size_t depth, ValueType rate, ValueType exitRate) override {
+            DFTExplorationHeuristicNone(size_t id, DFTExplorationHeuristicNone<ValueType> const& predecessor, ValueType rate, ValueType exitRate) : DFTExplorationHeuristic<ValueType>(id, predecessor, rate, exitRate) {
+                // Intentionally left empty
+            }
+
+            bool updateHeuristicValues(DFTExplorationHeuristic<ValueType> const& predecessor, ValueType rate, ValueType exitRate) override {
                 return false;
             }
 
@@ -74,13 +84,17 @@ namespace storm {
         template<typename ValueType>
         class DFTExplorationHeuristicDepth : public DFTExplorationHeuristic<ValueType> {
         public:
-            DFTExplorationHeuristicDepth(size_t id, size_t depth, ValueType rate, ValueType exitRate) : DFTExplorationHeuristic<ValueType>(id, depth, rate, exitRate) {
+            DFTExplorationHeuristicDepth(size_t id) : DFTExplorationHeuristic<ValueType>(id) {
                 // Intentionally left empty
             }
 
-            bool updateHeuristicValues(size_t depth, ValueType rate, ValueType exitRate) override {
-                if (depth < this->depth) {
-                    this->depth = depth;
+            DFTExplorationHeuristicDepth(size_t id, DFTExplorationHeuristicDepth<ValueType> const& predecessor, ValueType rate, ValueType exitRate) : DFTExplorationHeuristic<ValueType>(id, predecessor, rate, exitRate) {
+                // Intentionally left empty
+            }
+
+            bool updateHeuristicValues(DFTExplorationHeuristic<ValueType> const& predecessor, ValueType rate, ValueType exitRate) override {
+                if (predecessor.getDepth() < this->depth) {
+                    this->depth = predecessor.getDepth();
                     return true;
                 }
                 return false;
@@ -101,13 +115,17 @@ namespace storm {
         };
 
         template<typename ValueType>
-        class DFTExplorationHeuristicRateRatio : public DFTExplorationHeuristic<ValueType> {
+        class DFTExplorationHeuristicProbability : public DFTExplorationHeuristic<ValueType> {
         public:
-            DFTExplorationHeuristicRateRatio(size_t id, size_t depth, ValueType rate, ValueType exitRate) : DFTExplorationHeuristic<ValueType>(id, depth, rate, exitRate) {
+            DFTExplorationHeuristicProbability(size_t id) : DFTExplorationHeuristic<ValueType>(id) {
                 // Intentionally left empty
             }
 
-            bool updateHeuristicValues(size_t depth, ValueType rate, ValueType exitRate) override;
+            DFTExplorationHeuristicProbability(size_t id, DFTExplorationHeuristicProbability<ValueType> const& predecessor, ValueType rate, ValueType exitRate) : DFTExplorationHeuristic<ValueType>(id, predecessor, rate, exitRate) {
+                // Intentionally left empty
+            }
+
+            bool updateHeuristicValues(DFTExplorationHeuristic<ValueType> const& predecessor, ValueType rate, ValueType exitRate) override;
 
             double getPriority() const override;
 
@@ -115,7 +133,7 @@ namespace storm {
                 return !this->expand && this->getPriority() < approximationThreshold;
             }
 
-            bool operator<(DFTExplorationHeuristicRateRatio<ValueType> const& other) const {
+            bool operator<(DFTExplorationHeuristicProbability<ValueType> const& other) const {
                 return this->getPriority() < other.getPriority();
             }
         };

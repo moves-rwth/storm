@@ -37,7 +37,7 @@ namespace storm {
         {
             // Intentionally left empty.
             // TODO Matthias: remove again
-            heuristic = storm::builder::ApproximationHeuristic::NONE;
+            heuristic = storm::builder::ApproximationHeuristic::PROBABILITY;
         }
 
         template<typename ValueType, typename StateType>
@@ -79,7 +79,7 @@ namespace storm {
                 STORM_LOG_TRACE("Initial state: " << initialStateIndex);
                 // Initialize heuristic values for inital state
                 STORM_LOG_ASSERT(!statesNotExplored.at(initialStateIndex).second, "Heuristic for initial state is already initialized");
-                ExplorationHeuristicPointer heuristic = std::make_shared<ExplorationHeuristic>(initialStateIndex, 0, storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
+                ExplorationHeuristicPointer heuristic = std::make_shared<ExplorationHeuristic>(initialStateIndex);
                 heuristic->markExpand();
                 statesNotExplored[initialStateIndex].second = heuristic;
                 explorationQueue.push(heuristic);
@@ -95,8 +95,9 @@ namespace storm {
                 case storm::builder::ApproximationHeuristic::DEPTH:
                     approximationThreshold = iteration;
                     break;
-                case storm::builder::ApproximationHeuristic::RATERATIO:
-                    approximationThreshold = std::pow(0.1, iteration) * approximationThreshold;
+                case storm::builder::ApproximationHeuristic::PROBABILITY:
+                    //approximationThreshold = std::pow(0.1, iteration) * approximationThreshold;
+                    approximationThreshold = 10 * std::pow(2, iteration);
                     break;
             }
             exploreStateSpace(approximationThreshold);
@@ -298,12 +299,12 @@ namespace storm {
                                 DFTStatePointer state = iter->second.first;
                                 if (!iter->second.second) {
                                     // Initialize heuristic values
-                                    ExplorationHeuristicPointer heuristic = std::make_shared<ExplorationHeuristic>(stateProbabilityPair.first, currentExplorationHeuristic->getDepth() + 1, stateProbabilityPair.second, choice.getTotalMass());
+                                    ExplorationHeuristicPointer heuristic = std::make_shared<ExplorationHeuristic>(stateProbabilityPair.first, *currentExplorationHeuristic, stateProbabilityPair.second, choice.getTotalMass());
                                     iter->second.second = heuristic;
                                     explorationQueue.push(heuristic);
                                 } else {
                                     double oldPriority = iter->second.second->getPriority();
-                                    if (iter->second.second->updateHeuristicValues(currentExplorationHeuristic->getDepth() + 1, stateProbabilityPair.second, choice.getTotalMass())) {
+                                    if (iter->second.second->updateHeuristicValues(*currentExplorationHeuristic, stateProbabilityPair.second, choice.getTotalMass())) {
                                         // Update priority queue
                                         ++fix;
                                         explorationQueue.update(iter->second.second, oldPriority);
