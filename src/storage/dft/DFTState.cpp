@@ -32,8 +32,6 @@ namespace storm {
                 STORM_LOG_ASSERT(it != mCurrentlyNotFailableBE.end(), "Id not found.");
                 mCurrentlyNotFailableBE.erase(it);
             }
-
-            sortFailableBEs();
         }
 
         template<typename ValueType>
@@ -69,8 +67,7 @@ namespace storm {
                     STORM_LOG_TRACE("Spare " << index << " uses " << useId);
                 }
             }
-            sortFailableBEs();
-            
+
             // Initialize failable dependencies
             for (size_t dependencyId : mDft.getDependencies()) {
                 std::shared_ptr<DFTDependency<ValueType> const> dependency = mDft.getDependency(dependencyId);
@@ -324,7 +321,6 @@ namespace storm {
                     propagateActivation(uses(elem));
                 }
             }
-            sortFailableBEs();
         }
 
         template<typename ValueType>
@@ -421,14 +417,6 @@ namespace storm {
                 mPseudoState = true;
             }
             return changed;
-        }
-        
-        template<typename ValueType>
-        void DFTState<ValueType>::sortFailableBEs() {
-            std::sort(mCurrentlyFailableBE.begin( ), mCurrentlyFailableBE.end( ), [&](size_t const& lhs, size_t const& rhs) {
-                // Sort decreasing
-                return getBERate(rhs, true) < getBERate(lhs, true);
-            });
         }
 
 

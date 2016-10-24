@@ -313,11 +313,6 @@ namespace storm {
              */
             ValueType getBERate(size_t id, bool considerPassive) const;
 
-            /*!
-             * Sort failable BEs in decreasing order of their active failure rate.
-             */
-            void sortFailableBEs();
-
         };
 
     }
