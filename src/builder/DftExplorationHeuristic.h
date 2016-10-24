@@ -20,7 +20,7 @@ namespace storm {
         class DFTExplorationHeuristic {
 
         public:
-            DFTExplorationHeuristic(size_t id);
+            DFTExplorationHeuristic(size_t id, size_t depth, ValueType rate, ValueType exitRate);
 
             virtual bool updateHeuristicValues(size_t depth, ValueType rate, ValueType exitRate) = 0;
 
@@ -44,15 +44,13 @@ namespace storm {
             size_t id;
             bool expand;
             size_t depth;
-            ValueType rate;
-            ValueType exitRate;
-
+            ValueType rateRatio;
         };
 
         template<typename ValueType>
         class DFTExplorationHeuristicNone : public DFTExplorationHeuristic<ValueType> {
         public:
-            DFTExplorationHeuristicNone(size_t id) : DFTExplorationHeuristic<ValueType>(id) {
+            DFTExplorationHeuristicNone(size_t id, size_t depth, ValueType rate, ValueType exitRate) : DFTExplorationHeuristic<ValueType>(id, depth, rate, exitRate) {
                 // Intentionally left empty
             }
 
@@ -76,7 +74,7 @@ namespace storm {
         template<typename ValueType>
         class DFTExplorationHeuristicDepth : public DFTExplorationHeuristic<ValueType> {
         public:
-            DFTExplorationHeuristicDepth(size_t id) : DFTExplorationHeuristic<ValueType>(id) {
+            DFTExplorationHeuristicDepth(size_t id, size_t depth, ValueType rate, ValueType exitRate) : DFTExplorationHeuristic<ValueType>(id, depth, rate, exitRate) {
                 // Intentionally left empty
             }
 
@@ -105,7 +103,7 @@ namespace storm {
         template<typename ValueType>
         class DFTExplorationHeuristicRateRatio : public DFTExplorationHeuristic<ValueType> {
         public:
-            DFTExplorationHeuristicRateRatio(size_t id) : DFTExplorationHeuristic<ValueType>(id) {
+            DFTExplorationHeuristicRateRatio(size_t id, size_t depth, ValueType rate, ValueType exitRate) : DFTExplorationHeuristic<ValueType>(id, depth, rate, exitRate) {
                 // Intentionally left empty
             }
 

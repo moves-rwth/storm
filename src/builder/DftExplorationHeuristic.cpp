@@ -4,28 +4,20 @@
 #include "src/utility/constants.h"
 #include "src/exceptions/NotImplementedException.h"
 
-#include <limits>
-
 namespace storm {
     namespace builder {
 
         template<typename ValueType>
-        DFTExplorationHeuristic<ValueType>::DFTExplorationHeuristic(size_t id) : id(id), expand(false), depth(std::numeric_limits<std::size_t>::max()), rate(storm::utility::zero<ValueType>()), exitRate(storm::utility::zero<ValueType>()) {
-            // Intentionally left empty
+        DFTExplorationHeuristic<ValueType>::DFTExplorationHeuristic(size_t id, size_t depth, ValueType rate, ValueType exitRate) : id(id), expand(false), depth(depth) {
+            STORM_LOG_ASSERT(storm::utility::zero<ValueType>() < exitRate, "Exit rate is 0");
+            rateRatio = rate/exitRate;
         }
 
         template<>
         bool DFTExplorationHeuristicRateRatio<double>::updateHeuristicValues(size_t depth, double rate, double exitRate) {
-            bool update = false;
-            if (this->rate < rate) {
-                this->rate = rate;
-                update = true;
-            }
-            if (this->exitRate < exitRate) {
-                this->exitRate = exitRate;
-                update = true;
-            }
-            return update;
+            STORM_LOG_ASSERT(exitRate > 0, "Exit rate is 0");
+            rateRatio += rate/exitRate;
+            return true;
         }
 
         template<>
@@ -36,7 +28,7 @@ namespace storm {
 
         template<>
         double DFTExplorationHeuristicRateRatio<double>::getPriority() const {
-            return rate/exitRate;
+            return rateRatio;
         }
 
         template<>

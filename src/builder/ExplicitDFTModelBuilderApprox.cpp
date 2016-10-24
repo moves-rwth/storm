@@ -31,11 +31,13 @@ namespace storm {
                 generator(dft, *stateGenerationInfo, enableDC, mergeFailedStates),
                 matrixBuilder(!generator.isDeterministicModel()),
                 stateStorage(((dft.stateVectorSize() / 64) + 1) * 64),
-                explorationQueue([this](ExplorationHeuristicPointer a, ExplorationHeuristicPointer b) {
-                        return *a < *b;
-                    })
+                // TODO Matthias: make choosable
+                //explorationQueue(dft.nrElements(), 0, 1)
+                explorationQueue(41, 0, 1.0/20)
         {
             // Intentionally left empty.
+            // TODO Matthias: remove again
+            heuristic = storm::builder::ApproximationHeuristic::RATERATIO;
         }
 
         template<typename ValueType, typename StateType>
@@ -76,7 +78,11 @@ namespace storm {
                 initialStateIndex = stateStorage.initialStateIndices[0];
                 STORM_LOG_TRACE("Initial state: " << initialStateIndex);
                 // Initialize heuristic values for inital state
-                statesNotExplored.at(initialStateIndex).second->updateHeuristicValues(0, storm::utility::zero<ValueType>(), storm::utility::zero<ValueType>());
+                STORM_LOG_ASSERT(!statesNotExplored.at(initialStateIndex).second, "Heuristic for initial state is already initialized");
+                ExplorationHeuristicPointer heuristic = std::make_shared<ExplorationHeuristic>(initialStateIndex, 0, storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
+                heuristic->markExpand();
+                statesNotExplored[initialStateIndex].second = heuristic;
+                explorationQueue.push(heuristic);
             } else {
                 initializeNextIteration();
             }
@@ -84,6 +90,7 @@ namespace storm {
             switch (heuristic) {
                 case storm::builder::ApproximationHeuristic::NONE:
                     // Do not change anything
+                    approximationThreshold = 0;
                     break;
                 case storm::builder::ApproximationHeuristic::DEPTH:
                     approximationThreshold = iteration;
@@ -225,8 +232,12 @@ namespace storm {
         void ExplicitDFTModelBuilderApprox<ValueType, StateType>::exploreStateSpace(double approximationThreshold) {
             size_t nrExpandedStates = 0;
             size_t nrSkippedStates = 0;
+            size_t fix = 0;
             // TODO Matthias: do not empty queue every time but break before
             while (!explorationQueue.empty()) {
+                explorationQueue.fix();
+                //explorationQueue.print(std::cout);
+                //printNotExplored();
                 // Get the first state in the queue
                 ExplorationHeuristicPointer currentExplorationHeuristic = explorationQueue.popTop();
                 StateType currentId = currentExplorationHeuristic->getId();
@@ -253,7 +264,6 @@ namespace storm {
                 matrixBuilder.newRowGroup();
 
                 // Try to explore the next state
-                bool fixQueue = false;
                 generator.load(currentState);
 
                 if (currentExplorationHeuristic->isSkip(approximationThreshold)) {
@@ -286,22 +296,31 @@ namespace storm {
                             if (iter != statesNotExplored.end()) {
                                 // Update heuristic values
                                 DFTStatePointer state = iter->second.first;
+                                if (!iter->second.second) {
+                                    // Initialize heuristic values
+                                    ExplorationHeuristicPointer heuristic = std::make_shared<ExplorationHeuristic>(stateProbabilityPair.first, currentExplorationHeuristic->getDepth() + 1, stateProbabilityPair.second, choice.getTotalMass());
+                                    iter->second.second = heuristic;
+                                    explorationQueue.push(heuristic);
+                                } else {
+                                    double oldPriority = iter->second.second->getPriority();
+                                    if (iter->second.second->updateHeuristicValues(currentExplorationHeuristic->getDepth() + 1, stateProbabilityPair.second, choice.getTotalMass())) {
+                                        // Update priority queue
+                                        ++fix;
+                                        explorationQueue.update(iter->second.second, oldPriority);
+                                    }
+                                }
                                 if (state->hasFailed(dft.getTopLevelIndex()) || state->isFailsafe(dft.getTopLevelIndex()) || state->nrFailableDependencies() > 0 || (state->nrFailableDependencies() == 0 && state->nrFailableBEs() == 0)) {
                                     // Do not skip absorbing state or if reached by dependencies
                                     iter->second.second->markExpand();
+                                    // TODO Matthias give highest priority to ensure expanding before all skipped
                                 }
-                                fixQueue = iter->second.second->updateHeuristicValues(currentExplorationHeuristic->getDepth() + 1, stateProbabilityPair.second, choice.getTotalMass());
                             }
                         }
                         matrixBuilder.finishRow();
                     }
                 }
-
-                // Update priority queue
-                if (fixQueue) {
-                    explorationQueue.fix();
-                }
             } // end exploration
+            std::cout << "Fixed queue " << fix << " times" << std::endl;
 
             STORM_LOG_INFO("Expanded " << nrExpandedStates << " states");
             STORM_LOG_INFO("Skipped " << nrSkippedStates << " states");
@@ -502,9 +521,8 @@ namespace storm {
                 stateId = stateStorage.stateToId.findOrAdd(state->status(), state->getId());
                 STORM_LOG_ASSERT(stateId == state->getId(), "Ids do not match.");
                 // Insert state as not yet explored
-                ExplorationHeuristicPointer heuristic = std::make_shared<ExplorationHeuristic>(stateId);
-                statesNotExplored[stateId] = std::make_pair(state, heuristic);
-                explorationQueue.push(heuristic);
+                ExplorationHeuristicPointer nullHeuristic;
+                statesNotExplored[stateId] = std::make_pair(state, nullHeuristic);
                 // Reserve one slot for the new state in the remapping
                 matrixBuilder.stateRemapping.push_back(0);
                 STORM_LOG_TRACE("New " << (state->isPseudoState() ? "pseudo" : "concrete") << " state: " << dft.getStateString(state));
@@ -520,6 +538,15 @@ namespace storm {
             }
             modelComponents.markovianStates.set(matrixBuilder.getCurrentRowGroup() - 1, markovian);
         }
+
+        template<typename ValueType, typename StateType>
+        void ExplicitDFTModelBuilderApprox<ValueType, StateType>::printNotExplored() const {
+            std::cout << "states not explored:" << std::endl;
+            for (auto it : statesNotExplored) {
+                std::cout << it.first << " -> " << dft.getStateString(it.second.first) << std::endl;
+            }
+        }
+
 
         // Explicitly instantiate the class.
         template class ExplicitDFTModelBuilderApprox<double>;

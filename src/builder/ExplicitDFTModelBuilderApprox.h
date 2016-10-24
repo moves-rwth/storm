@@ -10,7 +10,7 @@
 #include "src/storage/sparse/StateStorage.h"
 #include "src/storage/dft/DFT.h"
 #include "src/storage/dft/SymmetricUnits.h"
-#include "src/storage/DynamicPriorityQueue.h"
+#include "src/storage/BucketPriorityQueue.h"
 #include <boost/container/flat_set.hpp>
 #include <boost/optional/optional.hpp>
 #include <stack>
@@ -28,7 +28,7 @@ namespace storm {
 
             using DFTStatePointer = std::shared_ptr<storm::storage::DFTState<ValueType>>;
             // TODO Matthias: make choosable
-            using ExplorationHeuristic = DFTExplorationHeuristicNone<ValueType>;
+            using ExplorationHeuristic = DFTExplorationHeuristicRateRatio<ValueType>;
             using ExplorationHeuristicPointer = std::shared_ptr<ExplorationHeuristic>;
 
 
@@ -240,6 +240,8 @@ namespace storm {
              */
             bool isPriorityGreater(StateType idA, StateType idB) const;
 
+            void printNotExplored() const;
+
             /*!
              * Create the model model from the model components.
              *
@@ -293,7 +295,8 @@ namespace storm {
             storm::storage::sparse::StateStorage<StateType> stateStorage;
 
             // A priority queue of states that still need to be explored.
-            storm::storage::DynamicPriorityQueue<ExplorationHeuristicPointer, std::vector<ExplorationHeuristicPointer>, std::function<bool(ExplorationHeuristicPointer, ExplorationHeuristicPointer)>> explorationQueue;
+            storm::storage::BucketPriorityQueue<ValueType> explorationQueue;
+            //storm::storage::DynamicPriorityQueue<ExplorationHeuristicPointer, std::vector<ExplorationHeuristicPointer>, std::function<bool(ExplorationHeuristicPointer, ExplorationHeuristicPointer)>> explorationQueue;
 
             // A mapping of not yet explored states from the id to the tuple (state object, heuristic values).
             std::map<StateType, std::pair<DFTStatePointer, ExplorationHeuristicPointer>> statesNotExplored;

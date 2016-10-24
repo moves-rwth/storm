@@ -1,0 +1,191 @@
+#include "src/storage/BucketPriorityQueue.h"
+#include "src/utility/macros.h"
+#include "src/adapters/CarlAdapter.h"
+
+namespace storm {
+    namespace storage {
+
+        template<typename ValueType>
+        BucketPriorityQueue<ValueType>::BucketPriorityQueue(size_t nrBuckets, double lowerValue, double stepPerBucket) : buckets(nrBuckets), currentBucket(nrBuckets), lowerValue(lowerValue), stepPerBucket(stepPerBucket), nrUnsortedItems(0) {
+            compare = ([this](HeuristicPointer a, HeuristicPointer b) {
+                return *a < *b;
+            });
+        }
+
+        template<typename ValueType>
+        void BucketPriorityQueue<ValueType>::fix() {
+            if (currentBucket < buckets.size() && nrUnsortedItems > 0) {
+                // Fix current bucket
+                std::make_heap(buckets[currentBucket].begin(), buckets[currentBucket].end(), compare);
+                nrUnsortedItems = 0;
+            }
+        }
+
+        template<typename ValueType>
+        bool BucketPriorityQueue<ValueType>::empty() const {
+            return currentBucket == buckets.size();
+        }
+
+        template<typename ValueType>
+        std::size_t BucketPriorityQueue<ValueType>::size() const {
+            size_t size = 0;
+            for (size_t i = currentBucket; currentBucket < buckets.size(); ++i) {
+                size += buckets[i].size();
+            }
+            STORM_LOG_ASSERT(size == heuristicMapping.size(), "Sizes to not coincide");
+            return size;
+        }
+
+        template<typename ValueType>
+        typename BucketPriorityQueue<ValueType>::HeuristicPointer const& BucketPriorityQueue<ValueType>::top() const {
+            STORM_LOG_ASSERT(!empty(), "BucketPriorityQueue is empty");
+            STORM_LOG_ASSERT(nrUnsortedItems == 0, "First bucket is not sorted");
+            return buckets[currentBucket].front();
+        }
+
+        template<typename ValueType>
+        void BucketPriorityQueue<ValueType>::push(HeuristicPointer const& item) {
+            size_t bucket = getBucket(item->getPriority());
+            if (bucket < currentBucket) {
+                setMappingBucket(currentBucket);
+                currentBucket = bucket;
+                nrUnsortedItems = 0;
+            }
+            buckets[bucket].push_back(item);
+            if (bucket == currentBucket) {
+                // Insert in first bucket
+                if (AUTOSORT) {
+                    std::push_heap(buckets[currentBucket].begin(), buckets[currentBucket].end(), compare);
+                } else {
+                    ++nrUnsortedItems;
+                }
+            }
+            // Set mapping
+            heuristicMapping[item->getId()] = std::make_pair(bucket, buckets[bucket].size() - 1);
+        }
+
+        template<typename ValueType>
+        void BucketPriorityQueue<ValueType>::update(HeuristicPointer const& item, double oldPriority) {
+            size_t newBucket = getBucket(item->getPriority());
+            size_t oldBucket = getBucket(oldPriority);
+
+            if (oldBucket == newBucket) {
+                if (currentBucket < newBucket) {
+                    // No change as the bucket is not sorted yet
+                } else {
+                    if (AUTOSORT) {
+                        // Sort first bucket
+                        fix();
+                    } else {
+                        ++nrUnsortedItems;
+                    }
+                }
+            } else {
+                // Move to new bucket
+                STORM_LOG_ASSERT(newBucket < oldBucket, "Will update to higher bucket");
+                if (newBucket < currentBucket) {
+                    setMappingBucket(currentBucket);
+                    currentBucket = newBucket;
+                    nrUnsortedItems = 0;
+                }
+                // Remove old entry by swap-and-pop
+                if (buckets[oldBucket].size() >= 2) {
+                    size_t oldIndex = heuristicMapping.at(item->getId()).second;
+                    std::iter_swap(buckets[oldBucket].begin() + oldIndex, buckets[oldBucket].end() - 1);
+                    // Set mapping for swapped item
+                    heuristicMapping[buckets[oldBucket][oldIndex]->getId()] = std::make_pair(oldBucket, oldIndex);
+                }
+                buckets[oldBucket].pop_back();
+                // Insert new element
+                buckets[newBucket].push_back(item);
+                if (newBucket == currentBucket) {
+                    if (AUTOSORT) {
+                        // Sort in first bucket
+                        std::push_heap(buckets[currentBucket].begin(), buckets[currentBucket].end(), compare);
+                    } else {
+                        ++nrUnsortedItems;
+                    }
+                }
+                // Set mapping
+                heuristicMapping[item->getId()] = std::make_pair(newBucket, buckets[newBucket].size() - 1);
+            }
+        }
+
+
+        template<typename ValueType>
+        void BucketPriorityQueue<ValueType>::pop() {
+            STORM_LOG_ASSERT(!empty(), "BucketPriorityQueue is empty");
+            STORM_LOG_ASSERT(nrUnsortedItems == 0, "First bucket is not sorted");
+            std::pop_heap(buckets[currentBucket].begin(), buckets[currentBucket].end(), compare);
+            // Remove from mapping
+            heuristicMapping.erase(buckets[currentBucket].back()->getId());
+            buckets[currentBucket].pop_back();
+            if (buckets[currentBucket].empty()) {
+                // Find next bucket with elements
+                for ( ; currentBucket < buckets.size(); ++currentBucket) {
+                    if (!buckets[currentBucket].empty()) {
+                        nrUnsortedItems = buckets[currentBucket].size();
+                        if (AUTOSORT) {
+                            fix();
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+
+        template<typename ValueType>
+        typename BucketPriorityQueue<ValueType>::HeuristicPointer BucketPriorityQueue<ValueType>::popTop() {
+            HeuristicPointer item = top();
+            pop();
+            return item;
+        }
+
+        template<typename ValueType>
+        size_t BucketPriorityQueue<ValueType>::getBucket(double priority) const {
+            STORM_LOG_ASSERT(priority >= lowerValue, "Priority " << priority << " is too low");
+            size_t newBucket = (priority - lowerValue) / stepPerBucket;
+            if (HIGHER) {
+                newBucket = buckets.size()-1 - newBucket;
+            }
+            //std::cout << "get Bucket: " << priority << ", " << newBucket << ", " << ((priority - lowerValue) / stepPerBucket) << std::endl;
+            STORM_LOG_ASSERT(newBucket < buckets.size(), "Priority " << priority << " is too high");
+            return newBucket;
+        }
+
+        template<typename ValueType>
+        void BucketPriorityQueue<ValueType>::setMappingBucket(size_t bucket) {
+            if (bucket < buckets.size()) {
+                for (size_t index = 0; index < buckets[bucket].size(); ++index) {
+                    heuristicMapping[buckets[bucket][index]->getId()] = std::make_pair(bucket, index);
+                }
+            }
+        }
+
+        template<typename ValueType>
+        void BucketPriorityQueue<ValueType>::print(std::ostream& out) const {
+            out << "Bucket priority queue with size " << buckets.size() << ", lower value: " << lowerValue << " and step per bucket: " << stepPerBucket << std::endl;
+            out << "Current bucket (" << currentBucket << ") has " << nrUnsortedItems  << " unsorted items" << std::endl;
+            for (size_t bucket = 0; bucket < buckets.size(); ++bucket) {
+                if (!buckets[bucket].empty()) {
+                    out << "Bucket " << bucket << " (" << (HIGHER ? buckets.size() -1 - bucket * stepPerBucket : bucket * stepPerBucket) << "):" << std::endl;
+                    for (HeuristicPointer heuristic : buckets[bucket]) {
+                        out << "\t" << heuristic->getId() << ": " << heuristic->getPriority() << std::endl;
+                    }
+                }
+            }
+            out << "Mapping:" << std::endl;
+            for (auto it : heuristicMapping) {
+                out << it.first << " -> " << it.second.first << ", " << it.second.second << std::endl;
+            }
+        }
+
+
+        // Template instantiations
+        template class BucketPriorityQueue<double>;
+
+#ifdef STORM_HAVE_CARL
+        template class BucketPriorityQueue<storm::RationalFunction>;
+#endif
+    }
+}
