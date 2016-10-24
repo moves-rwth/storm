@@ -32,7 +32,6 @@ namespace storm {
             for (size_t i = currentBucket; currentBucket < buckets.size(); ++i) {
                 size += buckets[i].size();
             }
-            STORM_LOG_ASSERT(size == heuristicMapping.size(), "Sizes to not coincide");
             return size;
         }
 
@@ -47,7 +46,6 @@ namespace storm {
         void BucketPriorityQueue<ValueType>::push(HeuristicPointer const& item) {
             size_t bucket = getBucket(item->getPriority());
             if (bucket < currentBucket) {
-                setMappingBucket(currentBucket);
                 currentBucket = bucket;
                 nrUnsortedItems = 0;
             }
@@ -60,8 +58,6 @@ namespace storm {
                     ++nrUnsortedItems;
                 }
             }
-            // Set mapping
-            heuristicMapping[item->getId()] = std::make_pair(bucket, buckets[bucket].size() - 1);
         }
 
         template<typename ValueType>
@@ -84,16 +80,21 @@ namespace storm {
                 // Move to new bucket
                 STORM_LOG_ASSERT(newBucket < oldBucket, "Will update to higher bucket");
                 if (newBucket < currentBucket) {
-                    setMappingBucket(currentBucket);
                     currentBucket = newBucket;
                     nrUnsortedItems = 0;
                 }
                 // Remove old entry by swap-and-pop
                 if (buckets[oldBucket].size() >= 2) {
-                    size_t oldIndex = heuristicMapping.at(item->getId()).second;
+                    // Find old index by linear search
+                    // Notice: using a map to rememeber index was not efficient
+                    size_t oldIndex = 0;
+                    for ( ; oldIndex < buckets[oldBucket].size(); ++oldIndex) {
+                        if (buckets[oldBucket][oldIndex]->getId() == item->getId()) {
+                            break;
+                        }
+                    }
+                    STORM_LOG_ASSERT(oldIndex < buckets[oldBucket].size(), "Id " << item->getId() << " not found");
                     std::iter_swap(buckets[oldBucket].begin() + oldIndex, buckets[oldBucket].end() - 1);
-                    // Set mapping for swapped item
-                    heuristicMapping[buckets[oldBucket][oldIndex]->getId()] = std::make_pair(oldBucket, oldIndex);
                 }
                 buckets[oldBucket].pop_back();
                 // Insert new element
@@ -106,8 +107,6 @@ namespace storm {
                         ++nrUnsortedItems;
                     }
                 }
-                // Set mapping
-                heuristicMapping[item->getId()] = std::make_pair(newBucket, buckets[newBucket].size() - 1);
             }
         }
 
@@ -117,8 +116,6 @@ namespace storm {
             STORM_LOG_ASSERT(!empty(), "BucketPriorityQueue is empty");
             STORM_LOG_ASSERT(nrUnsortedItems == 0, "First bucket is not sorted");
             std::pop_heap(buckets[currentBucket].begin(), buckets[currentBucket].end(), compare);
-            // Remove from mapping
-            heuristicMapping.erase(buckets[currentBucket].back()->getId());
             buckets[currentBucket].pop_back();
             if (buckets[currentBucket].empty()) {
                 // Find next bucket with elements
@@ -154,15 +151,6 @@ namespace storm {
         }
 
         template<typename ValueType>
-        void BucketPriorityQueue<ValueType>::setMappingBucket(size_t bucket) {
-            if (bucket < buckets.size()) {
-                for (size_t index = 0; index < buckets[bucket].size(); ++index) {
-                    heuristicMapping[buckets[bucket][index]->getId()] = std::make_pair(bucket, index);
-                }
-            }
-        }
-
-        template<typename ValueType>
         void BucketPriorityQueue<ValueType>::print(std::ostream& out) const {
             out << "Bucket priority queue with size " << buckets.size() << ", lower value: " << lowerValue << " and step per bucket: " << stepPerBucket << std::endl;
             out << "Current bucket (" << currentBucket << ") has " << nrUnsortedItems  << " unsorted items" << std::endl;
@@ -173,10 +161,6 @@ namespace storm {
                         out << "\t" << heuristic->getId() << ": " << heuristic->getPriority() << std::endl;
                     }
                 }
-            }
-            out << "Mapping:" << std::endl;
-            for (auto it : heuristicMapping) {
-                out << it.first << " -> " << it.second.first << ", " << it.second.second << std::endl;
             }
         }
 

@@ -40,16 +40,11 @@ namespace storm {
 
             size_t getBucket(double priority) const;
 
-            void setMappingBucket(size_t bucket);
-
             // List of buckets
             std::vector<std::vector<HeuristicPointer>> buckets;
 
             // Index of first bucket which contains items
             size_t currentBucket;
-
-            // Mapping from id to (bucket, index in bucket)
-            std::unordered_map<size_t, std::pair<size_t, size_t>> heuristicMapping;
 
             std::function<bool(HeuristicPointer, HeuristicPointer)> compare;
 
