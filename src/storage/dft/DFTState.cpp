@@ -200,8 +200,13 @@ namespace storm {
         template<typename ValueType>
         void DFTState<ValueType>::beNoLongerFailable(size_t id) {
             auto it = std::find(mCurrentlyFailableBE.begin(), mCurrentlyFailableBE.end(), id);
-            if(it != mCurrentlyFailableBE.end()) {
+            if (it != mCurrentlyFailableBE.end()) {
                 mCurrentlyFailableBE.erase(it);
+            } else {
+                it = std::find(mCurrentlyNotFailableBE.begin(), mCurrentlyNotFailableBE.end(), id);
+                if (it != mCurrentlyNotFailableBE.end()) {
+                    mCurrentlyNotFailableBE.erase(it);
+                }
             }
         }
 
@@ -253,7 +258,7 @@ namespace storm {
         ValueType DFTState<ValueType>::getNotFailableBERate(size_t index) const {
             STORM_LOG_ASSERT(index < nrNotFailableBEs(), "Index invalid.");
             STORM_LOG_ASSERT(storm::utility::isZero<ValueType>(mDft.getBasicElement(mCurrentlyNotFailableBE[index])->activeFailureRate()) ||
-                             (mDft.hasRepresentant(mCurrentlyNotFailableBE[index]) && !isActive(mDft.getRepresentant(mCurrentlyNotFailableBE[index]))), "BE " << mCurrentlyNotFailableBE[index] << " can fail");
+                             (mDft.hasRepresentant(mCurrentlyNotFailableBE[index]) && !isActive(mDft.getRepresentant(mCurrentlyNotFailableBE[index]))), "BE " << mCurrentlyNotFailableBE[index] << " can fail in state: " << mDft.getStateString(mStatus, mStateGenerationInfo, mId));
             // Use active failure rate as passive failure rate is 0.
             return getBERate(mCurrentlyNotFailableBE[index], false);
         }
