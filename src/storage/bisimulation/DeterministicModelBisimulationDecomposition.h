@@ -39,11 +39,11 @@ namespace storm {
             
             virtual void buildQuotient() override;
             
-            virtual void refinePartitionBasedOnSplitter(bisimulation::Block<BlockDataType>& splitter, std::deque<bisimulation::Block<BlockDataType>*>& splitterQueue) override;
+            virtual void refinePartitionBasedOnSplitter(bisimulation::Block<BlockDataType>& splitter, std::vector<bisimulation::Block<BlockDataType>*>& splitterVector) override;
 
         private:
             // Refines the predecessor blocks wrt. strong bisimulation.
-            void refinePredecessorBlocksOfSplitterStrong(std::list<bisimulation::Block<BlockDataType>*> const& predecessorBlocks, std::deque<bisimulation::Block<BlockDataType>*>& splitterQueue);
+            void refinePredecessorBlocksOfSplitterStrong(std::list<bisimulation::Block<BlockDataType>*> const& predecessorBlocks, std::vector<bisimulation::Block<BlockDataType>*>& splitterVector);
 
             /*!
              * Performs the necessary steps to compute a weak bisimulation on a DTMC.
@@ -99,10 +99,10 @@ namespace storm {
             void updateSilentProbabilitiesBasedOnTransitions(bisimulation::Block<BlockDataType>& block);
             
             // Refines the predecessor blocks of the splitter wrt. weak bisimulation in DTMCs.
-            void refinePredecessorBlocksOfSplitterWeak(bisimulation::Block<BlockDataType>& splitter, std::list<bisimulation::Block<BlockDataType>*> const& predecessorBlocks, std::deque<bisimulation::Block<BlockDataType>*>& splitterQueue);
+            void refinePredecessorBlocksOfSplitterWeak(bisimulation::Block<BlockDataType>& splitter, std::list<bisimulation::Block<BlockDataType>*> const& predecessorBlocks, std::vector<bisimulation::Block<BlockDataType>*>& splitterVector);
             
             // Refines the given block wrt to weak bisimulation in DTMCs.
-            void refinePredecessorBlockOfSplitterWeak(bisimulation::Block<BlockDataType>& block, std::deque<bisimulation::Block<BlockDataType>*>& splitterQueue);
+            void refinePredecessorBlockOfSplitterWeak(bisimulation::Block<BlockDataType>& block, std::vector<bisimulation::Block<BlockDataType>*>& splitterVector);
             
             // Converts the one-step probabilities of going into the splitter into the conditional probabilities needed
             // for weak bisimulation (on DTMCs).

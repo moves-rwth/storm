@@ -37,7 +37,7 @@ namespace storm {
             
             virtual void buildQuotient() override;
             
-            virtual void refinePartitionBasedOnSplitter(bisimulation::Block<BlockDataType>& splitter, std::deque<bisimulation::Block<BlockDataType>*>& splitterQueue) override;
+            virtual void refinePartitionBasedOnSplitter(bisimulation::Block<BlockDataType>& splitter, std::vector<bisimulation::Block<BlockDataType>*>& splitterVector) override;
             
             virtual void initialize() override;
             
@@ -52,7 +52,7 @@ namespace storm {
             bool possiblyNeedsRefinement(bisimulation::Block<BlockDataType> const& block) const;
             
             // Splits the given block according to the current quotient distributions.
-            bool splitBlockAccordingToCurrentQuotientDistributions(bisimulation::Block<BlockDataType>& block, std::deque<bisimulation::Block<BlockDataType>*>& splitterQueue);
+            bool splitBlockAccordingToCurrentQuotientDistributions(bisimulation::Block<BlockDataType>& block, std::vector<bisimulation::Block<BlockDataType>*>& splitterVector);
             
             // Retrieves whether the quotient distributions of state 1 are considered to be less than the ones of state 2.
             bool quotientDistributionsLess(storm::storage::sparse::state_type state1, storm::storage::sparse::state_type state2) const;
@@ -62,7 +62,7 @@ namespace storm {
             
             // Updates the quotient distributions of the predecessors of the new block by taking the probability mass
             // away from the old block.
-            void updateQuotientDistributionsOfPredecessors(bisimulation::Block<BlockDataType> const& newBlock, bisimulation::Block<BlockDataType> const& oldBlock, std::deque<bisimulation::Block<BlockDataType>*>& splitterQueue);
+            void updateQuotientDistributionsOfPredecessors(bisimulation::Block<BlockDataType> const& newBlock, bisimulation::Block<BlockDataType> const& oldBlock, std::vector<bisimulation::Block<BlockDataType>*>& splitterVector);
             
             bool checkQuotientDistributions() const;
             bool checkBlockStable(bisimulation::Block<BlockDataType> const& newBlock) const;
