@@ -97,8 +97,7 @@ namespace storm {
                     approximationThreshold = iteration;
                     break;
                 case storm::builder::ApproximationHeuristic::PROBABILITY:
-                    //approximationThreshold = std::pow(0.1, iteration) * approximationThreshold;
-                    approximationThreshold = iteration;//10 * std::pow(2, iteration);
+                    approximationThreshold = 10 * std::pow(2, iteration);
                     break;
             }
             exploreStateSpace(approximationThreshold);
@@ -234,7 +233,6 @@ namespace storm {
         void ExplicitDFTModelBuilderApprox<ValueType, StateType>::exploreStateSpace(double approximationThreshold) {
             size_t nrExpandedStates = 0;
             size_t nrSkippedStates = 0;
-            size_t fix = 0;
             // TODO Matthias: do not empty queue every time but break before
             while (!explorationQueue.empty()) {
                 explorationQueue.fix();
@@ -324,7 +322,6 @@ namespace storm {
                                     double oldPriority = iter->second.second->getPriority();
                                     if (iter->second.second->updateHeuristicValues(*currentExplorationHeuristic, stateProbabilityPair.second, choice.getTotalMass())) {
                                         // Update priority queue
-                                        ++fix;
                                         explorationQueue.update(iter->second.second, oldPriority);
                                     }
                                 }
@@ -334,7 +331,6 @@ namespace storm {
                     }
                 }
             } // end exploration
-            std::cout << "Fixed queue " << fix << " times" << std::endl;
 
             STORM_LOG_INFO("Expanded " << nrExpandedStates << " states");
             STORM_LOG_INFO("Skipped " << nrSkippedStates << " states");
