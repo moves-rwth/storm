@@ -103,6 +103,13 @@ namespace storm {
                 std::string getJaniInputFilename() const;
 
                 /*!
+                 * Retrieves whether the option to use the JIT builder is set.
+                 *
+                 * @return True iff the JIT builder is to be used.
+                 */
+                bool isJitSet() const;
+                
+                /*!
                  * Retrieves whether the model exploration order was set.
                  *
                  * @return True if the model exploration option was set.
@@ -206,6 +213,7 @@ namespace storm {
                 static const std::string prismInputOptionName;
                 static const std::string janiInputOptionName;
                 static const std::string prismToJaniOptionName;
+                static const std::string jitOptionName;
                 static const std::string explorationOrderOptionName;
                 static const std::string explorationOrderOptionShortName;
                 static const std::string transitionRewardsOptionName;

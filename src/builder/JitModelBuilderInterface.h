@@ -1,5 +1,9 @@
 #pragma once
 
+#include <memory>
+
+#include "src/models/sparse/Model.h"
+
 namespace storm {
     namespace builder {
         
@@ -10,8 +14,8 @@ namespace storm {
                 // Intentionally left empty.
             }
             
-            virtual void build() {
-                // Intentionally left empty.
+            virtual storm::models::sparse::Model<ValueType>* build() {
+                return nullptr;
             }
         };
         

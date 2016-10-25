@@ -7,6 +7,7 @@
 
 #include "src/exceptions/NotImplementedException.h"
 #include "src/exceptions/InvalidSettingsException.h"
+#include "src/exceptions/UnexpectedException.h"
 
 namespace storm {
     namespace cli {
@@ -201,6 +202,8 @@ namespace storm {
         void buildAndCheckSymbolicModelWithSparseEngine(storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool onlyInitialStatesRelevant = false) {
             // Start by building the model.
             std::shared_ptr<storm::models::ModelBase> markovModel = buildSparseModel<ValueType>(model, formulas);
+
+            STORM_LOG_THROW(markovModel, storm::exceptions::UnexpectedException, "The model was not successfully built.");
             
             // Print some information about the model.
             markovModel->printModelInformationToStream(std::cout);

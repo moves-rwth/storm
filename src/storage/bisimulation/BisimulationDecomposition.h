@@ -90,7 +90,6 @@ namespace storm {
                  */
                 void preserveFormula(ModelType const& model, storm::logic::Formula const& formula);
                 
-                
                 /**
                  * Sets the bisimulation type. If the bisimulation type is set to weak,
                  * we also change the bounded flag (as bounded properties are not preserved under 
@@ -123,6 +122,7 @@ namespace storm {
                     assert(optimalityType);
                     return optimalityType.get();
                 }
+                
                 // A flag that indicates whether a measure driven initial partition is to be used. If this flag is set
                 // to true, the two optional pairs phiStatesAndLabel and psiStatesAndLabel must be set. Then, the
                 // measure driven initial partition wrt. to the states phi and psi is taken.

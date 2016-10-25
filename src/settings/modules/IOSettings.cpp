@@ -20,6 +20,7 @@ namespace storm {
             const std::string IOSettings::prismInputOptionName = "prism";
             const std::string IOSettings::janiInputOptionName = "jani";
             const std::string IOSettings::prismToJaniOptionName = "prism2jani";
+            const std::string IOSettings::jitOptionName = "jit";
             const std::string IOSettings::explorationOrderOptionName = "explorder";
             const std::string IOSettings::explorationOrderOptionShortName = "eo";
             const std::string IOSettings::transitionRewardsOptionName = "transrew";
@@ -44,6 +45,7 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, janiInputOptionName, false, "Parses the model given in the JANI format.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file from which to read the JANI input.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, prismToJaniOptionName, false, "If set, the input PRISM model is transformed to JANI.").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, jitOptionName, false, "If set, the model is built using the JIT model builder if available.").build());
 
                 std::vector<std::string> explorationOrders = {"dfs", "bfs"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, explorationOrderOptionName, false, "Sets which exploration order to use.").setShortName(explorationOrderOptionShortName)
@@ -101,6 +103,10 @@ namespace storm {
 
             std::string IOSettings::getJaniInputFilename() const {
                 return this->getOption(janiInputOptionName).getArgumentByName("filename").getValueAsString();
+            }
+            
+            bool IOSettings::isJitSet() const {
+                return this->getOption(jitOptionName).getHasOptionBeenSet();
             }
 
             bool IOSettings::isExplorationOrderSet() const {

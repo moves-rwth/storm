@@ -47,6 +47,7 @@
 
 // Headers of builders.
 #include "src/builder/ExplicitModelBuilder.h"
+#include "src/builder/ExplicitJitJaniModelBuilder.h"
 #include "src/builder/DdPrismModelBuilder.h"
 #include "src/builder/DdJaniModelBuilder.h"
 
@@ -115,16 +116,22 @@ namespace storm {
             options.setBuildChoiceLabels(true);
         }
 
-        std::shared_ptr<storm::generator::NextStateGenerator<ValueType, uint32_t>> generator;
-        if (model.isPrismProgram()) {
-            generator = std::make_shared<storm::generator::PrismNextStateGenerator<ValueType, uint32_t>>(model.asPrismProgram(), options);
-        } else if (model.isJaniModel()) {
-            generator = std::make_shared<storm::generator::JaniNextStateGenerator<ValueType, uint32_t>>(model.asJaniModel(), options);
+        if (storm::settings::getModule<storm::settings::modules::IOSettings>().isJitSet()) {
+            STORM_LOG_THROW(model.isJaniModel(), storm::exceptions::NotSupportedException, "Cannot use JIT-based model builder for non-JANI model.");
+            storm::builder::ExplicitJitJaniModelBuilder<ValueType> builder(model.asJaniModel());
+            return builder.build();
         } else {
-            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Cannot build sparse model from this symbolic model description.");
+            std::shared_ptr<storm::generator::NextStateGenerator<ValueType, uint32_t>> generator;
+            if (model.isPrismProgram()) {
+                generator = std::make_shared<storm::generator::PrismNextStateGenerator<ValueType, uint32_t>>(model.asPrismProgram(), options);
+            } else if (model.isJaniModel()) {
+                generator = std::make_shared<storm::generator::JaniNextStateGenerator<ValueType, uint32_t>>(model.asJaniModel(), options);
+            } else {
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Cannot build sparse model from this symbolic model description.");
+            }
+            storm::builder::ExplicitModelBuilder<ValueType> builder(generator);
+            return builder.build();
         }
-        storm::builder::ExplicitModelBuilder<ValueType> builder(generator);
-        return builder.build();
     }
 
     template<typename ValueType, storm::dd::DdType LibraryType = storm::dd::DdType::CUDD>
