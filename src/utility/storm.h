@@ -47,7 +47,7 @@
 
 // Headers of builders.
 #include "src/builder/ExplicitModelBuilder.h"
-#include "src/builder/ExplicitJitJaniModelBuilder.h"
+#include "src/builder/jit/ExplicitJitJaniModelBuilder.h"
 #include "src/builder/DdPrismModelBuilder.h"
 #include "src/builder/DdJaniModelBuilder.h"
 
@@ -118,7 +118,7 @@ namespace storm {
 
         if (storm::settings::getModule<storm::settings::modules::IOSettings>().isJitSet()) {
             STORM_LOG_THROW(model.isJaniModel(), storm::exceptions::NotSupportedException, "Cannot use JIT-based model builder for non-JANI model.");
-            storm::builder::ExplicitJitJaniModelBuilder<ValueType> builder(model.asJaniModel());
+            storm::builder::jit::ExplicitJitJaniModelBuilder<ValueType> builder(model.asJaniModel());
             return builder.build();
         } else {
             std::shared_ptr<storm::generator::NextStateGenerator<ValueType, uint32_t>> generator;
