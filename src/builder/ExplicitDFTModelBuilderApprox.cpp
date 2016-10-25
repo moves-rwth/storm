@@ -33,11 +33,11 @@ namespace storm {
                 stateStorage(((dft.stateVectorSize() / 64) + 1) * 64),
                 // TODO Matthias: make choosable
                 explorationQueue(dft.nrElements()+1, 0, 1)
-                //explorationQueue(141, 0, 0.02)
+                //explorationQueue(1001, 0, 0.001)
         {
             // Intentionally left empty.
             // TODO Matthias: remove again
-            heuristic = storm::builder::ApproximationHeuristic::PROBABILITY;
+            heuristic = storm::builder::ApproximationHeuristic::NONE;
         }
 
         template<typename ValueType, typename StateType>
@@ -97,7 +97,7 @@ namespace storm {
                     break;
                 case storm::builder::ApproximationHeuristic::PROBABILITY:
                     //approximationThreshold = std::pow(0.1, iteration) * approximationThreshold;
-                    approximationThreshold = 10 * std::pow(2, iteration);
+                    approximationThreshold = iteration;//10 * std::pow(2, iteration);
                     break;
             }
             exploreStateSpace(approximationThreshold);
@@ -267,6 +267,7 @@ namespace storm {
                 // Try to explore the next state
                 generator.load(currentState);
 
+                //if (nrExpandedStates > approximationThreshold) {
                 if (currentExplorationHeuristic->isSkip(approximationThreshold)) {
                     // Skip the current state
                     ++nrSkippedStates;
