@@ -18,7 +18,9 @@ namespace storm {
             }
 
             for (auto elem : mDft.getBasicElements()) {
-                mCurrentlyNotFailableBE.push_back(elem->id());
+                if (!storm::utility::isZero(elem->activeFailureRate())) {
+                    mCurrentlyNotFailableBE.push_back(elem->id());
+                }
             }
 
             // Initialize activation
@@ -242,8 +244,10 @@ namespace storm {
         ValueType DFTState<ValueType>::getBERate(size_t id, bool considerPassive) const {
             STORM_LOG_ASSERT(mDft.isBasicElement(id), "Element is no BE.");
             if (considerPassive && mDft.hasRepresentant(id) && !isActive(mDft.getRepresentant(id))) {
+                STORM_LOG_ASSERT(!storm::utility::isZero(mDft.getBasicElement(id)->passiveFailureRate()), "Failure rate of BE " << mDft.getBasicElement(id)->id() << " is 0 in state " << mDft.getStateString(mStatus, mStateGenerationInfo, mId));
                 return mDft.getBasicElement(id)->passiveFailureRate();
             } else {
+                STORM_LOG_ASSERT(!storm::utility::isZero(mDft.getBasicElement(id)->activeFailureRate()), "Failure rate of BE " << mDft.getBasicElement(id)->id() << " is 0 in state " << mDft.getStateString(mStatus, mStateGenerationInfo, mId));
                 return mDft.getBasicElement(id)->activeFailureRate();
             }
         }
@@ -257,7 +261,7 @@ namespace storm {
         template<typename ValueType>
         ValueType DFTState<ValueType>::getNotFailableBERate(size_t index) const {
             STORM_LOG_ASSERT(index < nrNotFailableBEs(), "Index invalid.");
-            STORM_LOG_ASSERT(storm::utility::isZero<ValueType>(mDft.getBasicElement(mCurrentlyNotFailableBE[index])->activeFailureRate()) ||
+            STORM_LOG_ASSERT(isPseudoState() || storm::utility::isZero<ValueType>(mDft.getBasicElement(mCurrentlyNotFailableBE[index])->activeFailureRate()) ||
                              (mDft.hasRepresentant(mCurrentlyNotFailableBE[index]) && !isActive(mDft.getRepresentant(mCurrentlyNotFailableBE[index]))), "BE " << mCurrentlyNotFailableBE[index] << " can fail in state: " << mDft.getStateString(mStatus, mStateGenerationInfo, mId));
             // Use active failure rate as passive failure rate is 0.
             return getBERate(mCurrentlyNotFailableBE[index], false);

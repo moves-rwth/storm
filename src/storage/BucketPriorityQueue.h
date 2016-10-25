@@ -13,7 +13,7 @@ namespace storm {
         template<typename ValueType>
         class BucketPriorityQueue {
 
-            using HeuristicPointer = std::shared_ptr<storm::builder::DFTExplorationHeuristicDepth<ValueType>>;
+            using HeuristicPointer = std::shared_ptr<storm::builder::DFTExplorationHeuristicProbability<ValueType>>;
 
         public:
             explicit BucketPriorityQueue(size_t nrBuckets, double lowerValue, double stepPerBucket);
@@ -42,6 +42,9 @@ namespace storm {
 
             // List of buckets
             std::vector<std::vector<HeuristicPointer>> buckets;
+
+            // Bucket containing all items which should be considered immediately
+            std::vector<HeuristicPointer> immediateBucket;
 
             // Index of first bucket which contains items
             size_t currentBucket;

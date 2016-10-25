@@ -255,6 +255,7 @@ namespace storm {
 
         template<>
         bool DFTModelChecker<double>::isApproximationSufficient(double lowerBound, double upperBound, double approximationError) {
+            STORM_LOG_THROW(!std::isnan(lowerBound) && !std::isnan(upperBound), storm::exceptions::NotSupportedException, "Approximation does not work if result is NaN.");
             return upperBound - lowerBound <= approximationError * (lowerBound + upperBound) / 2;
         }
 

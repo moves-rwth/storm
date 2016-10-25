@@ -3,6 +3,7 @@
 #include <src/models/sparse/Ctmc.h>
 #include <src/utility/constants.h>
 #include <src/utility/vector.h>
+#include "src/utility/bitoperations.h"
 #include <src/exceptions/UnexpectedException.h>
 #include "src/settings/modules/DFTSettings.h"
 #include "src/settings/SettingsManager.h"
@@ -32,12 +33,12 @@ namespace storm {
                 matrixBuilder(!generator.isDeterministicModel()),
                 stateStorage(((dft.stateVectorSize() / 64) + 1) * 64),
                 // TODO Matthias: make choosable
-                explorationQueue(dft.nrElements()+1, 0, 1)
-                //explorationQueue(1001, 0, 0.001)
+                //explorationQueue(dft.nrElements()+1, 0, 1)
+                explorationQueue(1001, 0, 0.001)
         {
             // Intentionally left empty.
             // TODO Matthias: remove again
-            heuristic = storm::builder::ApproximationHeuristic::NONE;
+            heuristic = storm::builder::ApproximationHeuristic::PROBABILITY;
         }
 
         template<typename ValueType, typename StateType>
@@ -256,6 +257,9 @@ namespace storm {
                 if (currentState->isPseudoState()) {
                     // Create concrete state from pseudo state
                     currentState->construct();
+                    ValueType lowerBound = getLowerBound(currentState);
+                    ValueType upperBound = getUpperBound(currentState);
+                    currentExplorationHeuristic->setBounds(lowerBound, upperBound);
                 }
                 STORM_LOG_ASSERT(!currentState->isPseudoState(), "State is pseudo state.");
 
@@ -267,8 +271,8 @@ namespace storm {
                 // Try to explore the next state
                 generator.load(currentState);
 
-                //if (nrExpandedStates > approximationThreshold) {
-                if (currentExplorationHeuristic->isSkip(approximationThreshold)) {
+                if (nrExpandedStates > approximationThreshold && !currentExplorationHeuristic->isExpand()) {
+                //if (currentExplorationHeuristic->isSkip(approximationThreshold)) {
                     // Skip the current state
                     ++nrSkippedStates;
                     STORM_LOG_TRACE("Skip expansion of state: " << dft.getStateString(currentState));
@@ -299,22 +303,30 @@ namespace storm {
                                 // Update heuristic values
                                 DFTStatePointer state = iter->second.first;
                                 if (!iter->second.second) {
+                                    ValueType lowerBound;
+                                    ValueType upperBound;
+                                    if (state->isPseudoState()) {
+                                        lowerBound = storm::utility::infinity<ValueType>();
+                                        upperBound = storm::utility::infinity<ValueType>();
+                                    } else {
+                                        lowerBound = getLowerBound(state);
+                                        upperBound = getUpperBound(state);
+                                    }
                                     // Initialize heuristic values
-                                    ExplorationHeuristicPointer heuristic = std::make_shared<ExplorationHeuristic>(stateProbabilityPair.first, *currentExplorationHeuristic, stateProbabilityPair.second, choice.getTotalMass());
+                                    ExplorationHeuristicPointer heuristic = std::make_shared<ExplorationHeuristic>(stateProbabilityPair.first, *currentExplorationHeuristic, stateProbabilityPair.second, choice.getTotalMass(), lowerBound, upperBound);
                                     iter->second.second = heuristic;
+                                    if (state->hasFailed(dft.getTopLevelIndex()) || state->isFailsafe(dft.getTopLevelIndex()) || state->nrFailableDependencies() > 0 || (state->nrFailableDependencies() == 0 && state->nrFailableBEs() == 0)) {
+                                        // Do not skip absorbing state or if reached by dependencies
+                                        iter->second.second->markExpand();
+                                    }
                                     explorationQueue.push(heuristic);
-                                } else {
+                                } else if (!iter->second.second->isExpand()) {
                                     double oldPriority = iter->second.second->getPriority();
                                     if (iter->second.second->updateHeuristicValues(*currentExplorationHeuristic, stateProbabilityPair.second, choice.getTotalMass())) {
                                         // Update priority queue
                                         ++fix;
                                         explorationQueue.update(iter->second.second, oldPriority);
                                     }
-                                }
-                                if (state->hasFailed(dft.getTopLevelIndex()) || state->isFailsafe(dft.getTopLevelIndex()) || state->nrFailableDependencies() > 0 || (state->nrFailableDependencies() == 0 && state->nrFailableBEs() == 0)) {
-                                    // Do not skip absorbing state or if reached by dependencies
-                                    iter->second.second->markExpand();
-                                    // TODO Matthias give highest priority to ensure expanding before all skipped
                                 }
                             }
                         }
@@ -383,11 +395,7 @@ namespace storm {
         template<typename ValueType, typename StateType>
         std::shared_ptr<storm::models::sparse::Model<ValueType>> ExplicitDFTModelBuilderApprox<ValueType, StateType>::getModelApproximation(bool lowerBound) {
             // TODO Matthias: handle case with no skipped states
-            if (lowerBound) {
-                changeMatrixLowerBound(modelComponents.transitionMatrix);
-            } else {
-                changeMatrixUpperBound(modelComponents.transitionMatrix);
-            }
+            changeMatrixBound(modelComponents.transitionMatrix, lowerBound);
             return createModel(true);
         }
 
@@ -443,44 +451,72 @@ namespace storm {
         }
 
         template<typename ValueType, typename StateType>
-        void ExplicitDFTModelBuilderApprox<ValueType, StateType>::changeMatrixLowerBound(storm::storage::SparseMatrix<ValueType> & matrix) const {
+        void ExplicitDFTModelBuilderApprox<ValueType, StateType>::changeMatrixBound(storm::storage::SparseMatrix<ValueType> & matrix, bool lowerBound) const {
             // Set lower bound for skipped states
             for (auto it = skippedStates.begin(); it != skippedStates.end(); ++it) {
                 auto matrixEntry = matrix.getRow(it->first, 0).begin();
                 STORM_LOG_ASSERT(matrixEntry->getColumn() == failedStateId, "Transition has wrong target state.");
-                // Get the lower bound by considering the failure of all possible BEs
-                DFTStatePointer state = it->second.first;
-                ValueType newRate = storm::utility::zero<ValueType>();
-                for (size_t index = 0; index < state->nrFailableBEs(); ++index) {
-                    newRate += state->getFailableBERate(index);
+                STORM_LOG_ASSERT(!it->second.first->isPseudoState(), "State is still pseudo state.");
+                if (lowerBound) {
+                    matrixEntry->setValue(it->second.second->getLowerBound());
+                } else {
+                    matrixEntry->setValue(it->second.second->getUpperBound());
                 }
-                for (size_t index = 0; index < state->nrNotFailableBEs(); ++index) {
-                    newRate += state->getNotFailableBERate(index);
-                }
-                matrixEntry->setValue(newRate);
             }
         }
 
         template<typename ValueType, typename StateType>
-        void ExplicitDFTModelBuilderApprox<ValueType, StateType>::changeMatrixUpperBound(storm::storage::SparseMatrix<ValueType> & matrix) const {
-            // Set uppper bound for skipped states
-            for (auto it = skippedStates.begin(); it != skippedStates.end(); ++it) {
-                auto matrixEntry = matrix.getRow(it->first, 0).begin();
-                STORM_LOG_ASSERT(matrixEntry->getColumn() == failedStateId, "Transition has wrong target state.");
-                // Get the upper bound by considering the failure of all BEs
-                // The used formula for the rate is 1/( 1/a + 1/b + ...)
-                // TODO Matthias: improve by using closed formula for AND of all BEs
-                DFTStatePointer state = it->second.first;
-                ValueType newRate = storm::utility::zero<ValueType>();
-                for (size_t index = 0; index < state->nrFailableBEs(); ++index) {
-                    newRate += storm::utility::one<ValueType>() / state->getFailableBERate(index);
-                }
-                for (size_t index = 0; index < state->nrNotFailableBEs(); ++index) {
-                    newRate += storm::utility::one<ValueType>() / state->getNotFailableBERate(index);
-                }
-                newRate = storm::utility::one<ValueType>() / newRate;
-                matrixEntry->setValue(newRate);
+        ValueType ExplicitDFTModelBuilderApprox<ValueType, StateType>::getLowerBound(DFTStatePointer const& state) const {
+            // Get the lower bound by considering the failure of all possible BEs
+            ValueType lowerBound = storm::utility::zero<ValueType>();
+            for (size_t index = 0; index < state->nrFailableBEs(); ++index) {
+                lowerBound += state->getFailableBERate(index);
             }
+            for (size_t index = 0; index < state->nrNotFailableBEs(); ++index) {
+                lowerBound += state->getNotFailableBERate(index);
+            }
+            return lowerBound;
+        }
+
+        template<typename ValueType, typename StateType>
+        ValueType ExplicitDFTModelBuilderApprox<ValueType, StateType>::getUpperBound(DFTStatePointer const& state) const {
+            // Get the upper bound by considering the failure of all BEs
+            // The used formula for the rate is 1/( 1/a + 1/b + ...)
+            // TODO Matthias: improve by using closed formula for AND of all BEs
+            ValueType upperBound = storm::utility::zero<ValueType>();
+
+            // Get all possible rates
+            std::vector<ValueType> rates(state->nrFailableBEs() + state->nrNotFailableBEs());
+            for (size_t index = 0; index < state->nrFailableBEs(); ++index) {
+                rates[index] = state->getFailableBERate(index);
+            }
+            for (size_t index = 0; index < state->nrNotFailableBEs(); ++index) {
+                rates[index + state->nrFailableBEs()] = state->getNotFailableBERate(index);
+            }
+
+            // TODO Matthias: works only for <64 BEs!
+            for (size_t i = 1; i < 4 && i <= rates.size(); ++i) {
+                size_t permutation = smallestIntWithNBitsSet(static_cast<size_t>(i));
+                ValueType sum = storm::utility::zero<ValueType>();
+                do {
+                    ValueType permResult = storm::utility::zero<ValueType>();
+                    for(size_t j = 0; j < rates.size(); ++j) {
+                        if(permutation & (1 << j)) {
+                            permResult += rates[j];
+                        }
+                    }
+                    permutation = nextBitPermutation(permutation);
+                    STORM_LOG_ASSERT(!storm::utility::isZero(permResult), "PermResult is 0");
+                    sum += storm::utility::one<ValueType>() / permResult;
+                } while(permutation < (1 << rates.size()) && permutation != 0);
+                if (i % 2 == 0) {
+                    upperBound -= sum;
+                } else {
+                    upperBound += sum;
+                }
+            }
+            STORM_LOG_ASSERT(!storm::utility::isZero(upperBound), "UpperBound is 0");
+            return storm::utility::one<ValueType>() / upperBound;
         }
 
         template<typename ValueType, typename StateType>

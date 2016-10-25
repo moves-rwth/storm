@@ -22,7 +22,9 @@ namespace storm {
         public:
             DFTExplorationHeuristic(size_t id);
 
-            DFTExplorationHeuristic(size_t id, DFTExplorationHeuristic const& predecessor, ValueType rate, ValueType exitRate);
+            DFTExplorationHeuristic(size_t id, DFTExplorationHeuristic const& predecessor, ValueType rate, ValueType exitRate, ValueType lowerBound, ValueType upperBound);
+
+            void setBounds(ValueType lowerBound, ValueType upperBound);
 
             virtual bool updateHeuristicValues(DFTExplorationHeuristic const& predecessor, ValueType rate, ValueType exitRate) = 0;
 
@@ -38,6 +40,10 @@ namespace storm {
                 return id;
             }
 
+            bool isExpand() {
+                return expand;
+            }
+
             size_t getDepth() const {
                 return depth;
             }
@@ -46,9 +52,19 @@ namespace storm {
                 return probability;
             }
 
+            ValueType getLowerBound() const {
+                return lowerBound;
+            }
+
+            ValueType getUpperBound() const {
+                return upperBound;
+            }
+
         protected:
             size_t id;
             bool expand;
+            ValueType lowerBound;
+            ValueType upperBound;
             size_t depth;
             ValueType probability;
         };
@@ -60,7 +76,7 @@ namespace storm {
                 // Intentionally left empty
             }
 
-            DFTExplorationHeuristicNone(size_t id, DFTExplorationHeuristicNone<ValueType> const& predecessor, ValueType rate, ValueType exitRate) : DFTExplorationHeuristic<ValueType>(id, predecessor, rate, exitRate) {
+            DFTExplorationHeuristicNone(size_t id, DFTExplorationHeuristicNone<ValueType> const& predecessor, ValueType rate, ValueType exitRate, ValueType lowerBound, ValueType upperBound) : DFTExplorationHeuristic<ValueType>(id, predecessor, rate, exitRate, lowerBound, upperBound) {
                 // Intentionally left empty
             }
 
@@ -88,7 +104,7 @@ namespace storm {
                 // Intentionally left empty
             }
 
-            DFTExplorationHeuristicDepth(size_t id, DFTExplorationHeuristicDepth<ValueType> const& predecessor, ValueType rate, ValueType exitRate) : DFTExplorationHeuristic<ValueType>(id, predecessor, rate, exitRate) {
+            DFTExplorationHeuristicDepth(size_t id, DFTExplorationHeuristicDepth<ValueType> const& predecessor, ValueType rate, ValueType exitRate, ValueType lowerBound, ValueType upperBound) : DFTExplorationHeuristic<ValueType>(id, predecessor, rate, exitRate, lowerBound, upperBound) {
                 // Intentionally left empty
             }
 
@@ -121,7 +137,7 @@ namespace storm {
                 // Intentionally left empty
             }
 
-            DFTExplorationHeuristicProbability(size_t id, DFTExplorationHeuristicProbability<ValueType> const& predecessor, ValueType rate, ValueType exitRate) : DFTExplorationHeuristic<ValueType>(id, predecessor, rate, exitRate) {
+            DFTExplorationHeuristicProbability(size_t id, DFTExplorationHeuristicProbability<ValueType> const& predecessor, ValueType rate, ValueType exitRate, ValueType lowerBound, ValueType upperBound) : DFTExplorationHeuristic<ValueType>(id, predecessor, rate, exitRate, lowerBound, upperBound) {
                 // Intentionally left empty
             }
 
@@ -137,6 +153,37 @@ namespace storm {
                 return this->getPriority() < other.getPriority();
             }
         };
+
+        template<typename ValueType>
+        class DFTExplorationHeuristicBoundDifference : public DFTExplorationHeuristic<ValueType> {
+        public:
+            DFTExplorationHeuristicBoundDifference(size_t id) : DFTExplorationHeuristic<ValueType>(id) {
+                // Intentionally left empty
+            }
+
+            DFTExplorationHeuristicBoundDifference(size_t id, DFTExplorationHeuristicBoundDifference<ValueType> const& predecessor, ValueType rate, ValueType exitRate, ValueType lowerBound, ValueType upperBound) : DFTExplorationHeuristic<ValueType>(id, predecessor, rate, exitRate, lowerBound, upperBound) {
+                // Intentionally left empty
+            }
+
+            bool updateHeuristicValues(DFTExplorationHeuristic<ValueType> const& predecessor, ValueType rate, ValueType exitRate) override {
+                return false;
+            }
+
+            double getPriority() const override;
+
+            bool isSkip(double approximationThreshold) const override {
+                return !this->expand && this->getPriority() < approximationThreshold;
+            }
+
+            bool operator<(DFTExplorationHeuristicBoundDifference<ValueType> const& other) const {
+                return this->getPriority() < other.getPriority();
+            }
+
+        private:
+            ValueType lowerBound;
+            ValueType upperBound;
+        };
+
 
     }
 }

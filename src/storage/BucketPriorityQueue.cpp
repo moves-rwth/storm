@@ -16,19 +16,19 @@ namespace storm {
         void BucketPriorityQueue<ValueType>::fix() {
             if (currentBucket < buckets.size() && nrUnsortedItems > 0) {
                 // Fix current bucket
-                //std::make_heap(buckets[currentBucket].begin(), buckets[currentBucket].end(), compare);
+                std::make_heap(buckets[currentBucket].begin(), buckets[currentBucket].end(), compare);
                 nrUnsortedItems = 0;
             }
         }
 
         template<typename ValueType>
         bool BucketPriorityQueue<ValueType>::empty() const {
-            return currentBucket == buckets.size();
+            return currentBucket == buckets.size() && immediateBucket.empty();
         }
 
         template<typename ValueType>
         std::size_t BucketPriorityQueue<ValueType>::size() const {
-            size_t size = 0;
+            size_t size = immediateBucket.size();
             for (size_t i = currentBucket; currentBucket < buckets.size(); ++i) {
                 size += buckets[i].size();
             }
@@ -37,6 +37,9 @@ namespace storm {
 
         template<typename ValueType>
         typename BucketPriorityQueue<ValueType>::HeuristicPointer const& BucketPriorityQueue<ValueType>::top() const {
+            if (!immediateBucket.empty()) {
+                return immediateBucket.back();
+            }
             STORM_LOG_ASSERT(!empty(), "BucketPriorityQueue is empty");
             STORM_LOG_ASSERT(nrUnsortedItems == 0, "First bucket is not sorted");
             return buckets[currentBucket].front();
@@ -44,6 +47,10 @@ namespace storm {
 
         template<typename ValueType>
         void BucketPriorityQueue<ValueType>::push(HeuristicPointer const& item) {
+            if (item->isExpand()) {
+                immediateBucket.push_back(item);
+                return;
+            }
             size_t bucket = getBucket(item->getPriority());
             if (bucket < currentBucket) {
                 currentBucket = bucket;
@@ -62,6 +69,7 @@ namespace storm {
 
         template<typename ValueType>
         void BucketPriorityQueue<ValueType>::update(HeuristicPointer const& item, double oldPriority) {
+            STORM_LOG_ASSERT(!item->isExpand(), "Item is marked for expansion");
             size_t newBucket = getBucket(item->getPriority());
             size_t oldBucket = getBucket(oldPriority);
 
@@ -113,6 +121,10 @@ namespace storm {
 
         template<typename ValueType>
         void BucketPriorityQueue<ValueType>::pop() {
+            if (!immediateBucket.empty()) {
+                immediateBucket.pop_back();
+                return;
+            }
             STORM_LOG_ASSERT(!empty(), "BucketPriorityQueue is empty");
             STORM_LOG_ASSERT(nrUnsortedItems == 0, "First bucket is not sorted");
             std::pop_heap(buckets[currentBucket].begin(), buckets[currentBucket].end(), compare);
@@ -153,6 +165,11 @@ namespace storm {
         template<typename ValueType>
         void BucketPriorityQueue<ValueType>::print(std::ostream& out) const {
             out << "Bucket priority queue with size " << buckets.size() << ", lower value: " << lowerValue << " and step per bucket: " << stepPerBucket << std::endl;
+            out << "Immediate bucket: ";
+            for (HeuristicPointer heuristic : immediateBucket) {
+                out << heuristic->getId() << ", ";
+            }
+            out << std::endl;
             out << "Current bucket (" << currentBucket << ") has " << nrUnsortedItems  << " unsorted items" << std::endl;
             for (size_t bucket = 0; bucket < buckets.size(); ++bucket) {
                 if (!buckets[bucket].empty()) {

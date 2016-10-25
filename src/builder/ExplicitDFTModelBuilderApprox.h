@@ -28,7 +28,7 @@ namespace storm {
 
             using DFTStatePointer = std::shared_ptr<storm::storage::DFTState<ValueType>>;
             // TODO Matthias: make choosable
-            using ExplorationHeuristic = DFTExplorationHeuristicDepth<ValueType>;
+            using ExplorationHeuristic = DFTExplorationHeuristicProbability<ValueType>;
             using ExplorationHeuristicPointer = std::shared_ptr<ExplorationHeuristic>;
 
 
@@ -217,18 +217,26 @@ namespace storm {
             void setMarkovian(bool markovian);
 
             /**
-             * Change matrix to reflect the lower approximation bound.
+             * Change matrix to reflect the lower or upper approximation bound.
              *
-             * @param matrix Matrix to change. The change are reflected here.
+             * @param matrix     Matrix to change. The change are reflected here.
+             * @param lowerBound Flag indicating if the lower bound should be used. Otherwise the upper bound is used.
              */
-            void changeMatrixLowerBound(storm::storage::SparseMatrix<ValueType> & matrix) const;
+            void changeMatrixBound(storm::storage::SparseMatrix<ValueType> & matrix, bool lowerBound) const;
 
             /*!
-             * Change matrix to reflect the upper approximation bound.
+             * Get lower bound approximation for state.
              *
-             * @param matrix Matrix to change. The change are reflected here.
+             * @return Lower bound approximation.
              */
-            void changeMatrixUpperBound(storm::storage::SparseMatrix<ValueType> & matrix) const;
+            ValueType getLowerBound(DFTStatePointer const& state) const;
+
+            /*!
+             * Get upper bound approximation for state.
+             *
+             * @return Upper bound approximation.
+             */
+            ValueType getUpperBound(DFTStatePointer const& state) const;
 
             /*!
              * Compares the priority of two states.

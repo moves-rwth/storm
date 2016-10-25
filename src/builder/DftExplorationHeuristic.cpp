@@ -8,14 +8,20 @@ namespace storm {
     namespace builder {
 
         template<typename ValueType>
-        DFTExplorationHeuristic<ValueType>::DFTExplorationHeuristic(size_t id) : id(id), expand(false), depth(0), probability(storm::utility::zero<ValueType>()) {
+        DFTExplorationHeuristic<ValueType>::DFTExplorationHeuristic(size_t id) : id(id), expand(false), lowerBound(storm::utility::zero<ValueType>()), upperBound(storm::utility::infinity<ValueType>()), depth(0), probability(storm::utility::one<ValueType>()) {
             // Intentionally left empty
         }
 
         template<typename ValueType>
-        DFTExplorationHeuristic<ValueType>::DFTExplorationHeuristic(size_t id, DFTExplorationHeuristic const& predecessor, ValueType rate, ValueType exitRate) : id(id), expand(false), depth(predecessor.depth + 1) {
+        DFTExplorationHeuristic<ValueType>::DFTExplorationHeuristic(size_t id, DFTExplorationHeuristic const& predecessor, ValueType rate, ValueType exitRate, ValueType lowerBound, ValueType upperBound) : id(id), expand(false), lowerBound(lowerBound), upperBound(upperBound), depth(predecessor.depth + 1) {
             STORM_LOG_ASSERT(storm::utility::zero<ValueType>() < exitRate, "Exit rate is 0");
             probability = predecessor.probability * rate/exitRate;
+        }
+
+        template<typename ValueType>
+        void DFTExplorationHeuristic<ValueType>::setBounds(ValueType lowerBound, ValueType upperBound) {
+            this->lowerBound = lowerBound;
+            this->upperBound = upperBound;
         }
 
         template<>
@@ -41,18 +47,29 @@ namespace storm {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Heuristic rate ration does not work for rational functions.");
         }
 
+        template<>
+        double DFTExplorationHeuristicBoundDifference<double>::getPriority() const {
+            return upperBound / lowerBound;
+        }
+
+        template<>
+        double DFTExplorationHeuristicBoundDifference<storm::RationalFunction>::getPriority() const {
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Heuristic bound difference does not work for rational functions.");
+        }
 
         // Instantiate templates.
         template class DFTExplorationHeuristic<double>;
         template class DFTExplorationHeuristicNone<double>;
         template class DFTExplorationHeuristicDepth<double>;
         template class DFTExplorationHeuristicProbability<double>;
+        template class DFTExplorationHeuristicBoundDifference<double>;
 
 #ifdef STORM_HAVE_CARL
         template class DFTExplorationHeuristic<storm::RationalFunction>;
         template class DFTExplorationHeuristicNone<storm::RationalFunction>;
         template class DFTExplorationHeuristicDepth<storm::RationalFunction>;
         template class DFTExplorationHeuristicProbability<storm::RationalFunction>;
+        template class DFTExplorationHeuristicBoundDifference<storm::RationalFunction>;
 #endif
     }
 }
