@@ -53,6 +53,7 @@ namespace storm {
                 cpptempl::data_list generateInitialStates();
                 cpptempl::data_map generateStateVariables();
                 cpptempl::data_list generateLabels();
+                cpptempl::data_list generateTerminalExpressions();
                 cpptempl::data_list generateNonSynchronizingEdges();
                 
                 cpptempl::data_map generateEdge(storm::jani::Edge const& edge);

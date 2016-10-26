@@ -13,6 +13,7 @@
 
 #include "src/utility/macros.h"
 #include "src/utility/solver.h"
+#include "src/exceptions/WrongFormatException.h"
 #include "src/exceptions/InvalidStateException.h"
 #include "src/exceptions/NotSupportedException.h"
 #include "src/exceptions/UnexpectedException.h"
@@ -189,12 +190,9 @@ namespace storm {
                                     this->modelComponentsBuilder.registerLabel("init", stateIds.size());
                                     this->modelComponentsBuilder.registerLabel("deadlock", stateIds.size());
                                     
-                                    int stateCnt = 0;
                                     for (auto const& stateEntry : stateIds) {
                                         auto const& state = stateEntry.first;
                                         {% for label in labels %}if ({$label.predicate}) {
-                                            ++stateCnt;
-                                            std::cout << "state " << state << " with index " << stateEntry.second << " has label {$label.name} (" << stateCnt << ") " << std::endl;
                                             this->modelComponentsBuilder.addLabel(stateEntry.second, {$loop.index} - 1);
                                         }
                                         {% endfor %}
@@ -226,16 +224,26 @@ namespace storm {
                                     while (!statesToExplore.empty()) {
                                         StateType currentState = statesToExplore.get();
                                         IndexType currentIndex = getIndex(currentState);
+                                        
+                                        if (!isTerminalState(currentState)) {
 #ifndef NDEBUG
-                                        std::cout << "Exploring state " << currentState << ", id " << currentIndex << std::endl;
+                                            std::cout << "Exploring state " << currentState << ", id " << currentIndex << std::endl;
 #endif
                                         
-                                        behaviour.setExpanded();
-                                        exploreNonSynchronizingEdges(currentState, currentIndex, behaviour, statesToExplore);
-                                        
+                                            behaviour.setExpanded();
+                                            exploreNonSynchronizingEdges(currentState, currentIndex, behaviour, statesToExplore);
+                                        }
+                                            
                                         this->addStateBehaviour(currentIndex, behaviour);
                                         behaviour.clear();
                                     }
+                                }
+                                
+                                bool isTerminalState(StateType const& state) const {
+                                    {% for expression in terminalExpressions %}if ({$expression}) {
+                                        return true;
+                                    }
+                                    return false;
                                 }
                                 
                                 void exploreNonSynchronizingEdges(StateType const& sourceState, IndexType const& currentIndex, StateBehaviour<IndexType, ValueType>& behaviour, StateSet& statesToExplore) {
@@ -309,6 +317,8 @@ namespace storm {
                 modelData["nonSynchronizingEdges"] = cpptempl::make_data(nonSynchronizingEdges);
                 cpptempl::data_list labels = generateLabels();
                 modelData["labels"] = cpptempl::make_data(labels);
+                cpptempl::data_list terminalExpressions = generateTerminalExpressions();
+                modelData["terminalExpressions"] = cpptempl::make_data(terminalExpressions);
                 modelData["deterministic_model"] = model.isDeterministicModel() ? "true" : "false";
                 modelData["discrete_time_model"] = model.isDiscreteTimeModel() ? "true" : "false";
                 return cpptempl::parse(sourceTemplate, modelData);
@@ -503,6 +513,32 @@ namespace storm {
                 }
                 
                 return labels;
+            }
+            
+            template <typename ValueType, typename RewardModelType>
+            cpptempl::data_list ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateTerminalExpressions() {
+                cpptempl::data_list terminalExpressions;
+                
+                for (auto const& terminalEntry : options.getTerminalStates()) {
+                    LabelOrExpression const& labelOrExpression = terminalEntry.first;
+                    if (labelOrExpression.isLabel()) {
+                        auto const& variables = model.getGlobalVariables();
+                        STORM_LOG_THROW(variables.hasVariable(labelOrExpression.getLabel()), storm::exceptions::WrongFormatException, "Terminal label refers to unknown identifier '" << labelOrExpression.getLabel() << "'.");
+                        auto const& variable = variables.getVariable(labelOrExpression.getLabel());
+                        STORM_LOG_THROW(variable.isBooleanVariable(), storm::exceptions::WrongFormatException, "Terminal label refers to non-boolean variable '" << variable.getName() << ".");
+                        STORM_LOG_THROW(variable.isTransient(), storm::exceptions::WrongFormatException, "Terminal label refers to non-transient variable '" << variable.getName() << ".");
+                        auto labelExpression = model.getLabelExpression(variable.asBooleanVariable(), locationVariables);
+                        if (terminalEntry.second) {
+                            labelExpression = !labelExpression;
+                        }
+                        terminalExpressions.push_back(expressionTranslator.translate(labelExpression, storm::expressions::ToCppTranslationOptions("state.")));
+                    } else {
+                        auto expression = terminalEntry.second ? labelOrExpression.getExpression() : !labelOrExpression.getExpression();
+                        terminalExpressions.push_back(expressionTranslator.translate(expression, storm::expressions::ToCppTranslationOptions("state.")));
+                    }
+                }
+
+                return terminalExpressions;
             }
             
             template <typename ValueType, typename RewardModelType>

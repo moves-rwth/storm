@@ -114,6 +114,7 @@ namespace storm {
         if (storm::settings::getModule<storm::settings::modules::IOSettings>().isBuildFullModelSet()) {
             options.setBuildAllLabels();
             options.setBuildAllRewardModels();
+            options.clearTerminalStates();
         }
 
         // Generate command labels if we are going to build a counterexample later.

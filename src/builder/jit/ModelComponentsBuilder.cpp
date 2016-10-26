@@ -51,6 +51,7 @@ namespace storm {
                         STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Error while creating sparse matrix from JANI model: found deadlock state and fixing deadlocks was explicitly disabled.");
                     } else {
                         transitionMatrixBuilder->addNextValue(currentRow, currentRowGroup, storm::utility::one<ValueType>());
+                        ++currentRow;
                     }
                 }
                 ++currentRowGroup;
