@@ -28,7 +28,7 @@ namespace storm {
 
             using DFTStatePointer = std::shared_ptr<storm::storage::DFTState<ValueType>>;
             // TODO Matthias: make choosable
-            using ExplorationHeuristic = DFTExplorationHeuristicProbability<ValueType>;
+            using ExplorationHeuristic = DFTExplorationHeuristicNone<ValueType>;
             using ExplorationHeuristicPointer = std::shared_ptr<ExplorationHeuristic>;
 
 

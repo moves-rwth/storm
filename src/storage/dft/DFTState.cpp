@@ -323,7 +323,7 @@ namespace storm {
                         mCurrentlyFailableBE.push_back(elem);
                         // Remove from not failable BEs
                         auto it = std::find(mCurrentlyNotFailableBE.begin(), mCurrentlyNotFailableBE.end(), elem);
-                        STORM_LOG_ASSERT(it != mCurrentlyNotFailableBE.end(), "Element not found.");
+                        STORM_LOG_ASSERT(it != mCurrentlyNotFailableBE.end(), "Element " << elem << " not found.");
                         mCurrentlyNotFailableBE.erase(it);
                     }
                 } else if (mDft.getElement(elem)->isSpareGate() && !isActive(uses(elem))) {

@@ -13,7 +13,7 @@ namespace storm {
         template<typename ValueType>
         class BucketPriorityQueue {
 
-            using HeuristicPointer = std::shared_ptr<storm::builder::DFTExplorationHeuristicProbability<ValueType>>;
+            using HeuristicPointer = std::shared_ptr<storm::builder::DFTExplorationHeuristicNone<ValueType>>;
 
         public:
             explicit BucketPriorityQueue(size_t nrBuckets, double lowerValue, double stepPerBucket);
