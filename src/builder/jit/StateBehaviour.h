@@ -23,7 +23,7 @@ namespace storm {
                 void compress();
                 
                 bool isExpanded() const;
-                void setExpaned();
+                void setExpanded();
                 
                 bool empty() const;
                 std::size_t size() const;

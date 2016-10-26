@@ -9,6 +9,7 @@
 
 #include "src/exceptions/WrongFormatException.h"
 #include "src/utility/macros.h"
+#include "src/utility/constants.h"
 
 namespace storm {
     namespace builder {
@@ -49,7 +50,7 @@ namespace storm {
                     if (behaviour.isExpanded() && dontFixDeadlocks) {
                         STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Error while creating sparse matrix from JANI model: found deadlock state and fixing deadlocks was explicitly disabled.");
                     } else {
-                        // FIXME: fix deadlock
+                        transitionMatrixBuilder->addNextValue(currentRow, currentRowGroup, storm::utility::one<ValueType>());
                     }
                 }
                 ++currentRowGroup;

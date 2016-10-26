@@ -189,9 +189,12 @@ namespace storm {
                                     this->modelComponentsBuilder.registerLabel("init", stateIds.size());
                                     this->modelComponentsBuilder.registerLabel("deadlock", stateIds.size());
                                     
+                                    int stateCnt = 0;
                                     for (auto const& stateEntry : stateIds) {
                                         auto const& state = stateEntry.first;
                                         {% for label in labels %}if ({$label.predicate}) {
+                                            ++stateCnt;
+                                            std::cout << "state " << state << " with index " << stateEntry.second << " has label {$label.name} (" << stateCnt << ") " << std::endl;
                                             this->modelComponentsBuilder.addLabel(stateEntry.second, {$loop.index} - 1);
                                         }
                                         {% endfor %}

@@ -62,7 +62,7 @@ namespace storm {
             }
             
             template <typename IndexType, typename ValueType>
-            void StateBehaviour<IndexType, ValueType>::setExpaned() {
+            void StateBehaviour<IndexType, ValueType>::setExpanded() {
                 expanded = true;
             }
             
