@@ -22,7 +22,7 @@ namespace storm {
         public:
             DFTExplorationHeuristic(size_t id);
 
-            DFTExplorationHeuristic(size_t id, DFTExplorationHeuristic const& predecessor, ValueType rate, ValueType exitRate, ValueType lowerBound, ValueType upperBound);
+            DFTExplorationHeuristic(size_t id, DFTExplorationHeuristic const& predecessor, ValueType rate, ValueType exitRate);
 
             void setBounds(ValueType lowerBound, ValueType upperBound);
 
@@ -76,7 +76,7 @@ namespace storm {
                 // Intentionally left empty
             }
 
-            DFTExplorationHeuristicNone(size_t id, DFTExplorationHeuristicNone<ValueType> const& predecessor, ValueType rate, ValueType exitRate, ValueType lowerBound, ValueType upperBound) : DFTExplorationHeuristic<ValueType>(id, predecessor, rate, exitRate, lowerBound, upperBound) {
+            DFTExplorationHeuristicNone(size_t id, DFTExplorationHeuristicNone<ValueType> const& predecessor, ValueType rate, ValueType exitRate) : DFTExplorationHeuristic<ValueType>(id, predecessor, rate, exitRate) {
                 // Intentionally left empty
             }
 
@@ -85,7 +85,7 @@ namespace storm {
             }
 
             double getPriority() const override {
-                return this->id;
+                return 0;
             }
 
             bool isSkip(double approximationThreshold) const override {
@@ -104,7 +104,7 @@ namespace storm {
                 // Intentionally left empty
             }
 
-            DFTExplorationHeuristicDepth(size_t id, DFTExplorationHeuristicDepth<ValueType> const& predecessor, ValueType rate, ValueType exitRate, ValueType lowerBound, ValueType upperBound) : DFTExplorationHeuristic<ValueType>(id, predecessor, rate, exitRate, lowerBound, upperBound) {
+            DFTExplorationHeuristicDepth(size_t id, DFTExplorationHeuristicDepth<ValueType> const& predecessor, ValueType rate, ValueType exitRate) : DFTExplorationHeuristic<ValueType>(id, predecessor, rate, exitRate) {
                 // Intentionally left empty
             }
 
@@ -137,7 +137,7 @@ namespace storm {
                 // Intentionally left empty
             }
 
-            DFTExplorationHeuristicProbability(size_t id, DFTExplorationHeuristicProbability<ValueType> const& predecessor, ValueType rate, ValueType exitRate, ValueType lowerBound, ValueType upperBound) : DFTExplorationHeuristic<ValueType>(id, predecessor, rate, exitRate, lowerBound, upperBound) {
+            DFTExplorationHeuristicProbability(size_t id, DFTExplorationHeuristicProbability<ValueType> const& predecessor, ValueType rate, ValueType exitRate) : DFTExplorationHeuristic<ValueType>(id, predecessor, rate, exitRate) {
                 // Intentionally left empty
             }
 
@@ -161,7 +161,7 @@ namespace storm {
                 // Intentionally left empty
             }
 
-            DFTExplorationHeuristicBoundDifference(size_t id, DFTExplorationHeuristicBoundDifference<ValueType> const& predecessor, ValueType rate, ValueType exitRate, ValueType lowerBound, ValueType upperBound) : DFTExplorationHeuristic<ValueType>(id, predecessor, rate, exitRate, lowerBound, upperBound) {
+            DFTExplorationHeuristicBoundDifference(size_t id, DFTExplorationHeuristicBoundDifference<ValueType> const& predecessor, ValueType rate, ValueType exitRate) : DFTExplorationHeuristic<ValueType>(id, predecessor, rate, exitRate) {
                 // Intentionally left empty
             }
 

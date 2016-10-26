@@ -8,12 +8,12 @@ namespace storm {
     namespace builder {
 
         template<typename ValueType>
-        DFTExplorationHeuristic<ValueType>::DFTExplorationHeuristic(size_t id) : id(id), expand(false), lowerBound(storm::utility::zero<ValueType>()), upperBound(storm::utility::infinity<ValueType>()), depth(0), probability(storm::utility::one<ValueType>()) {
+        DFTExplorationHeuristic<ValueType>::DFTExplorationHeuristic(size_t id) : id(id), expand(true), lowerBound(storm::utility::zero<ValueType>()), upperBound(storm::utility::infinity<ValueType>()), depth(0), probability(storm::utility::one<ValueType>()) {
             // Intentionally left empty
         }
 
         template<typename ValueType>
-        DFTExplorationHeuristic<ValueType>::DFTExplorationHeuristic(size_t id, DFTExplorationHeuristic const& predecessor, ValueType rate, ValueType exitRate, ValueType lowerBound, ValueType upperBound) : id(id), expand(false), lowerBound(lowerBound), upperBound(upperBound), depth(predecessor.depth + 1) {
+        DFTExplorationHeuristic<ValueType>::DFTExplorationHeuristic(size_t id, DFTExplorationHeuristic const& predecessor, ValueType rate, ValueType exitRate) : id(id), expand(false), lowerBound(storm::utility::zero<ValueType>()), upperBound(storm::utility::zero<ValueType>()), depth(predecessor.depth + 1) {
             STORM_LOG_ASSERT(storm::utility::zero<ValueType>() < exitRate, "Exit rate is 0");
             probability = predecessor.probability * rate/exitRate;
         }

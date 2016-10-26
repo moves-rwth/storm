@@ -255,9 +255,6 @@ namespace storm {
                 if (currentState->isPseudoState()) {
                     // Create concrete state from pseudo state
                     currentState->construct();
-                    ValueType lowerBound = getLowerBound(currentState);
-                    ValueType upperBound = getUpperBound(currentState);
-                    currentExplorationHeuristic->setBounds(lowerBound, upperBound);
                 }
                 STORM_LOG_ASSERT(!currentState->isPseudoState(), "State is pseudo state.");
 
@@ -301,17 +298,8 @@ namespace storm {
                                 // Update heuristic values
                                 DFTStatePointer state = iter->second.first;
                                 if (!iter->second.second) {
-                                    ValueType lowerBound;
-                                    ValueType upperBound;
-                                    if (state->isPseudoState()) {
-                                        lowerBound = storm::utility::infinity<ValueType>();
-                                        upperBound = storm::utility::infinity<ValueType>();
-                                    } else {
-                                        lowerBound = getLowerBound(state);
-                                        upperBound = getUpperBound(state);
-                                    }
                                     // Initialize heuristic values
-                                    ExplorationHeuristicPointer heuristic = std::make_shared<ExplorationHeuristic>(stateProbabilityPair.first, *currentExplorationHeuristic, stateProbabilityPair.second, choice.getTotalMass(), lowerBound, upperBound);
+                                    ExplorationHeuristicPointer heuristic = std::make_shared<ExplorationHeuristic>(stateProbabilityPair.first, *currentExplorationHeuristic, stateProbabilityPair.second, choice.getTotalMass());
                                     iter->second.second = heuristic;
                                     if (state->hasFailed(dft.getTopLevelIndex()) || state->isFailsafe(dft.getTopLevelIndex()) || state->nrFailableDependencies() > 0 || (state->nrFailableDependencies() == 0 && state->nrFailableBEs() == 0)) {
                                         // Do not skip absorbing state or if reached by dependencies
@@ -453,6 +441,16 @@ namespace storm {
                 auto matrixEntry = matrix.getRow(it->first, 0).begin();
                 STORM_LOG_ASSERT(matrixEntry->getColumn() == failedStateId, "Transition has wrong target state.");
                 STORM_LOG_ASSERT(!it->second.first->isPseudoState(), "State is still pseudo state.");
+
+                ExplorationHeuristicPointer heuristic = it->second.second;
+                if (storm::utility::isZero(heuristic->getUpperBound())) {
+                    // Initialize bounds
+                    ValueType lowerBound = getLowerBound(it->second.first);
+                    ValueType upperBound = getUpperBound(it->second.first);
+                    heuristic->setBounds(lowerBound, upperBound);
+                }
+
+                // Change bound
                 if (lowerBound) {
                     matrixEntry->setValue(it->second.second->getLowerBound());
                 } else {
@@ -489,6 +487,7 @@ namespace storm {
             for (size_t index = 0; index < state->nrNotFailableBEs(); ++index) {
                 rates[index + state->nrFailableBEs()] = state->getNotFailableBERate(index);
             }
+            STORM_LOG_ASSERT(rates.size() > 0, "State is absorbing");
 
             // TODO Matthias: works only for <64 BEs!
             for (size_t i = 1; i < 4 && i <= rates.size(); ++i) {
