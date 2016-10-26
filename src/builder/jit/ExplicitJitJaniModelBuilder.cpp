@@ -227,6 +227,7 @@ namespace storm {
                                         std::cout << "Exploring state " << currentState << ", id " << currentIndex << std::endl;
 #endif
                                         
+                                        behaviour.setExpanded();
                                         exploreNonSynchronizingEdges(currentState, currentIndex, behaviour, statesToExplore);
                                         
                                         this->addStateBehaviour(currentIndex, behaviour);

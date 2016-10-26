@@ -22,6 +22,9 @@ namespace storm {
                 void reduce(storm::jani::ModelType const& modelType);
                 void compress();
                 
+                bool isExpanded() const;
+                void setExpaned();
+                
                 bool empty() const;
                 std::size_t size() const;
                 void clear();
@@ -29,6 +32,7 @@ namespace storm {
             private:
                 ContainerType choices;
                 bool compressed;
+                bool expanded;
             };
             
         }

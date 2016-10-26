@@ -46,6 +46,7 @@ namespace storm {
                 storm::jani::ModelType modelType;
                 bool isDeterministicModel;
                 bool isDiscreteTimeModel;
+                bool dontFixDeadlocks;
                 
                 IndexType currentRowGroup;
                 IndexType currentRow;

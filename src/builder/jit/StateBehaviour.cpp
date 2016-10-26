@@ -7,7 +7,7 @@ namespace storm {
         namespace jit {
             
             template <typename IndexType, typename ValueType>
-            StateBehaviour<IndexType, ValueType>::StateBehaviour() : compressed(true) {
+            StateBehaviour<IndexType, ValueType>::StateBehaviour() : compressed(true), expanded(false) {
                 // Intentionally left empty.
             }
             
@@ -57,6 +57,16 @@ namespace storm {
             }
             
             template <typename IndexType, typename ValueType>
+            bool StateBehaviour<IndexType, ValueType>::isExpanded() const {
+                return expanded;
+            }
+            
+            template <typename IndexType, typename ValueType>
+            void StateBehaviour<IndexType, ValueType>::setExpaned() {
+                expanded = true;
+            }
+            
+            template <typename IndexType, typename ValueType>
             bool StateBehaviour<IndexType, ValueType>::empty() const {
                 return choices.empty();
             }
@@ -69,6 +79,7 @@ namespace storm {
             template <typename IndexType, typename ValueType>
             void StateBehaviour<IndexType, ValueType>::clear() {
                 choices.clear();
+                expanded = false;
                 compressed = true;
             }
             

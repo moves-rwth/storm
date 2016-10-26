@@ -4,6 +4,10 @@
 #include "src/models/sparse/Dtmc.h"
 #include "src/models/sparse/StandardRewardModel.h"
 
+#include "src/settings/SettingsManager.h"
+#include "src/settings/modules/CoreSettings.h"
+
+#include "src/exceptions/WrongFormatException.h"
 #include "src/utility/macros.h"
 
 namespace storm {
@@ -12,7 +16,8 @@ namespace storm {
             
             template <typename IndexType, typename ValueType>
             ModelComponentsBuilder<IndexType, ValueType>::ModelComponentsBuilder(storm::jani::ModelType const& modelType) : modelType(modelType), isDeterministicModel(storm::jani::isDeterministicModel(modelType)), isDiscreteTimeModel(storm::jani::isDiscreteTimeModel(modelType)), currentRowGroup(0), currentRow(0), transitionMatrixBuilder(std::make_unique<storm::storage::SparseMatrixBuilder<ValueType>>(0, 0, 0, true, !isDeterministicModel)) {
-                // Intentionally left empty.
+                
+                dontFixDeadlocks = storm::settings::getModule<storm::settings::modules::CoreSettings>().isDontFixDeadlocksSet();
             }
             
             template <typename IndexType, typename ValueType>
@@ -30,14 +35,22 @@ namespace storm {
                 if (!isDeterministicModel) {
                     transitionMatrixBuilder->newRowGroup(currentRow);
                 }
-                for (auto const& choice : behaviour.getChoices()) {
-                    // Add the elements to the transition matrix.
-                    for (auto const& element : choice.getDistribution()) {
-                        transitionMatrixBuilder->addNextValue(currentRow, element.getIndex(), element.getValue());
+                if (!behaviour.empty()) {
+                    for (auto const& choice : behaviour.getChoices()) {
+                        // Add the elements to the transition matrix.
+                        for (auto const& element : choice.getDistribution()) {
+                            transitionMatrixBuilder->addNextValue(currentRow, element.getIndex(), element.getValue());
+                        }
+                        
+                        // Proceed to next row.
+                        ++currentRow;
                     }
-                    
-                    // Proceed to next row.
-                    ++currentRow;
+                } else {
+                    if (behaviour.isExpanded() && dontFixDeadlocks) {
+                        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Error while creating sparse matrix from JANI model: found deadlock state and fixing deadlocks was explicitly disabled.");
+                    } else {
+                        // FIXME: fix deadlock
+                    }
                 }
                 ++currentRowGroup;
             }
