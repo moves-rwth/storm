@@ -1,4 +1,3 @@
-
 #ifndef STORM_H
 #define	STORM_H
 
@@ -109,7 +108,7 @@ namespace storm {
 
     template<typename ValueType>
     std::shared_ptr<storm::models::sparse::Model<ValueType>> buildSparseModel(storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool onlyInitialStatesRelevant = false) {
-        storm::generator::NextStateGeneratorOptions options(formulas);
+        storm::builder::BuilderOptions options(formulas);
 
         // Generate command labels if we are going to build a counterexample later.
         if (storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>().isMinimalCommandSetGenerationSet()) {
@@ -118,7 +117,7 @@ namespace storm {
 
         if (storm::settings::getModule<storm::settings::modules::IOSettings>().isJitSet()) {
             STORM_LOG_THROW(model.isJaniModel(), storm::exceptions::NotSupportedException, "Cannot use JIT-based model builder for non-JANI model.");
-            storm::builder::jit::ExplicitJitJaniModelBuilder<ValueType> builder(model.asJaniModel());
+            storm::builder::jit::ExplicitJitJaniModelBuilder<ValueType> builder(model.asJaniModel(), options);
             return builder.build();
         } else {
             std::shared_ptr<storm::generator::NextStateGenerator<ValueType, uint32_t>> generator;

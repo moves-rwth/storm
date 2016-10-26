@@ -13,16 +13,33 @@ namespace storm {
             public:
                 typedef std::vector<DistributionEntry<IndexType, ValueType>> ContainerType;
                 
+                Distribution();
+                
                 /*!
                  * Adds the given entry to the distribution.
                  */
                 void add(DistributionEntry<IndexType, ValueType> const& entry);
                 
                 /*!
+                 * Adds the given entry to the distribution.
+                 */
+                void add(IndexType const& index, ValueType const& value);
+
+                /*!
+                 * Adds the given other distribution to the distribution.
+                 */
+                void add(Distribution&& distribution);
+
+                /*!
                  * Compresses the internal storage by summing the values of entries which agree on the index. As a side
                  * effect, this sorts the entries in the distribution by their index.
                  */
                 void compress();
+                
+                /*!
+                 * Divides all values in the distribution by the provided value.
+                 */
+                void divide(ValueType const& value);
                 
                 /*!
                  * Access to iterators over the entries of the distribution. Note that there may be multiple entries for
@@ -37,6 +54,8 @@ namespace storm {
             private:
                 // The underlying storage of the distribution.
                 ContainerType storage;
+                
+                bool compressed;
             };
             
         }

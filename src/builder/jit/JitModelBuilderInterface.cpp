@@ -1,5 +1,7 @@
 #include "src/builder/jit/JitModelBuilderInterface.h"
 
+#include "src/adapters/CarlAdapter.h"
+
 namespace storm {
     namespace builder {
         namespace jit {
@@ -15,9 +17,13 @@ namespace storm {
             }
 
             template <typename IndexType, typename ValueType>
-            void JitModelBuilderInterface<IndexType, ValueType>::addStateBehaviour(StateBehaviour<IndexType, ValueType> const& behaviour) {
-                modelComponentsBuilder.addStateBehaviour(behaviour);
+            void JitModelBuilderInterface<IndexType, ValueType>::addStateBehaviour(IndexType const& stateId, StateBehaviour<IndexType, ValueType>& behaviour) {
+                modelComponentsBuilder.addStateBehaviour(stateId, behaviour);
             }
+            
+            template class JitModelBuilderInterface<uint32_t, double>;
+            template class JitModelBuilderInterface<uint32_t, storm::RationalNumber>;
+            template class JitModelBuilderInterface<uint32_t, storm::RationalFunction>;
             
         }
     }
