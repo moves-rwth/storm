@@ -13,11 +13,7 @@ namespace storm {
             // Intentionally left empty.
         }
  
-        BoundedIntegerVariable::BoundedIntegerVariable(std::string const& name, storm::expressions::Variable const& variable, bool transient, storm::expressions::Expression const& lowerBound, storm::expressions::Expression const& upperBound) : Variable(name, variable, transient), lowerBound(lowerBound), upperBound(upperBound) {
-            // Intentionally left empty.
-        }
-
-        BoundedIntegerVariable::BoundedIntegerVariable(std::string const& name, storm::expressions::Variable const& variable, storm::expressions::Expression const& lowerBound, storm::expressions::Expression const& upperBound) : Variable(name, variable), lowerBound(lowerBound), upperBound(upperBound) {
+       BoundedIntegerVariable::BoundedIntegerVariable(std::string const& name, storm::expressions::Variable const& variable, storm::expressions::Expression const& lowerBound, storm::expressions::Expression const& upperBound) : Variable(name, variable), lowerBound(lowerBound), upperBound(upperBound) {
             // Intentionally left empty.
         }
 
@@ -56,7 +52,8 @@ namespace storm {
             if (initValue) {
                 return std::make_shared<BoundedIntegerVariable>(name, variable, initValue.get(), transient, lowerBound.get(), upperBound.get());
             } else {
-                return std::make_shared<BoundedIntegerVariable>(name, variable, transient, lowerBound.get(), upperBound.get());
+                assert(!transient);
+                return std::make_shared<BoundedIntegerVariable>(name, variable, lowerBound.get(), upperBound.get());
             }
         }
     }

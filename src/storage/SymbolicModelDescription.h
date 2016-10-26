@@ -27,6 +27,8 @@ namespace storm {
             storm::jani::Model const& asJaniModel() const;
             storm::prism::Program const& asPrismProgram() const;
             
+            std::vector<std::string> getParameterNames() const;
+            
             SymbolicModelDescription toJani(bool makeVariablesGlobal = true) const;
             
             SymbolicModelDescription preprocess(std::string const& constantDefinitionString = "") const;

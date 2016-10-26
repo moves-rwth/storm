@@ -105,13 +105,17 @@ namespace storm {
         
         modernjson::json numberToJson(storm::RationalNumber rn) {
             modernjson::json numDecl;
-            if(carl::isOne(carl::getDenom(rn))) {
-                numDecl = modernjson::json(carl::toString(carl::getNum(rn)));
-            } else {
-                numDecl["op"] = "/";
-                numDecl["left"] = carl::toString(carl::getNum(rn));
-                numDecl["right"] = carl::toString(carl::getDenom(rn));
-            }
+            numDecl = storm::utility::convertNumber<double>(rn);
+//            if(carl::isOne(carl::getDenom(rn))) {
+//                numDecl = modernjson::json(carl::toString(carl::getNum(rn)));
+//            } else {
+//                numDecl["op"] = "/";
+//                // TODO set json lib to work with arbitrary precision ints.
+//                assert(carl::toInt<int64_t>(carl::getNum(rn)) == carl::getNum(rn));
+//                assert(carl::toInt<int64_t>(carl::getDenom(rn)) == carl::getDenom(rn));
+//                numDecl["left"] = carl::toInt<int64_t>(carl::getNum(rn));
+//                numDecl["right"] = carl::toInt<int64_t>(carl::getDenom(rn));
+//            }
             return numDecl;
         }
         
@@ -140,7 +144,7 @@ namespace storm {
         }
         
         boost::any FormulaToJaniJson::visit(storm::logic::AtomicLabelFormula const& f, boost::any const& data) const {
-            modernjson::json opDecl(f.isTrueFormula() ? "true" : "false");
+            modernjson::json opDecl(f.getLabel());
             return opDecl;
         }
         boost::any FormulaToJaniJson::visit(storm::logic::BinaryBooleanStateFormula const& f, boost::any const& data) const{
@@ -152,7 +156,7 @@ namespace storm {
             return opDecl;
         }
         boost::any FormulaToJaniJson::visit(storm::logic::BooleanLiteralFormula const& f, boost::any const& data) const {
-            modernjson::json opDecl(f.isTrueFormula() ? "true" : "false");
+            modernjson::json opDecl(f.isTrueFormula() ? true : false);
             return opDecl;
         }
         boost::any FormulaToJaniJson::visit(storm::logic::BoundedUntilFormula const& f, boost::any const& data) const {
@@ -173,7 +177,7 @@ namespace storm {
         }
         
         boost::any FormulaToJaniJson::visit(storm::logic::CumulativeRewardFormula const& f, boost::any const& data) const {
-            
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm currently does not support translating  cummulative reward formulae");
         }
         
         boost::any FormulaToJaniJson::visit(storm::logic::EventuallyFormula const& f, boost::any const& data) const {
@@ -278,6 +282,8 @@ namespace storm {
 //                }
 //            }
 //            return opDecl;
+            
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Jani currently does not support conversion of an LRA reward formula");
         }
         
         boost::any FormulaToJaniJson::visit(storm::logic::NextFormula const& f, boost::any const& data) const {
@@ -689,27 +695,27 @@ namespace storm {
         }
         
         
-        std::string janiFilterTypeString(storm::jani::FilterType const& ft) {
+        std::string janiFilterTypeString(storm::modelchecker::FilterType const& ft) {
             switch(ft) {
-                case storm::jani::FilterType::MIN:
+                case storm::modelchecker::FilterType::MIN:
                     return "min";
-                case storm::jani::FilterType::MAX:
+                case storm::modelchecker::FilterType::MAX:
                     return "max";
-                case storm::jani::FilterType::SUM:
+                case storm::modelchecker::FilterType::SUM:
                     return "sum";
-                case storm::jani::FilterType::AVG:
+                case storm::modelchecker::FilterType::AVG:
                     return "avg";
-                case storm::jani::FilterType::COUNT:
+                case storm::modelchecker::FilterType::COUNT:
                     return "count";
-                case storm::jani::FilterType::EXISTS:
+                case storm::modelchecker::FilterType::EXISTS:
                     return "∃";
-                case storm::jani::FilterType::FORALL:
+                case storm::modelchecker::FilterType::FORALL:
                     return "∀";
-                case storm::jani::FilterType::ARGMIN:
+                case storm::modelchecker::FilterType::ARGMIN:
                     return "argmin";
-                case storm::jani::FilterType::ARGMAX:
+                case storm::modelchecker::FilterType::ARGMAX:
                     return "argmax";
-                case storm::jani::FilterType::VALUES:
+                case storm::modelchecker::FilterType::VALUES:
                     return "values";
                     
             }
@@ -717,7 +723,8 @@ namespace storm {
         
         modernjson::json convertFilterExpression(storm::jani::FilterExpression const& fe, bool continuousModel) {
             modernjson::json propDecl;
-            propDecl["states"] = "initial";
+            propDecl["states"]["op"] = "initial";
+            propDecl["op"] = "filter";
             propDecl["fun"] = janiFilterTypeString(fe.getFilterType());
             propDecl["values"] = FormulaToJaniJson::translate(*fe.getFormula(), continuousModel);
             return propDecl;

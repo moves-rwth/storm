@@ -3,10 +3,12 @@
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidOperationException.h"
 
+#include "src/exceptions/NotImplementedException.h"
+
 namespace storm {
     namespace modelchecker {
         template <storm::dd::DdType Type>
-        SymbolicQualitativeCheckResult<Type>::SymbolicQualitativeCheckResult(storm::dd::Bdd<Type> const& reachableStates, storm::dd::Bdd<Type> const& truthValues) : reachableStates(reachableStates), truthValues(truthValues) {
+        SymbolicQualitativeCheckResult<Type>::SymbolicQualitativeCheckResult(storm::dd::Bdd<Type> const& reachableStates, storm::dd::Bdd<Type> const& truthValues) : reachableStates(reachableStates), states(reachableStates), truthValues(truthValues) {
             // Intentionally left empty.
         }
         
@@ -17,7 +19,7 @@ namespace storm {
 
         template <storm::dd::DdType Type>
         bool SymbolicQualitativeCheckResult<Type>::isResultForAllStates() const {
-            return true;
+            return reachableStates == states;
         }
         
         template <storm::dd::DdType Type>
@@ -46,7 +48,22 @@ namespace storm {
         
         template <storm::dd::DdType Type>
         storm::dd::Bdd<Type> const& SymbolicQualitativeCheckResult<Type>::getTruthValuesVector() const {
-            return truthValues;
+            return this->truthValues;
+        }
+        
+        template <storm::dd::DdType Type>
+        bool SymbolicQualitativeCheckResult<Type>::existsTrue() const {
+            return !this->truthValues.isZero();
+        }
+        
+        template <storm::dd::DdType Type>
+        bool SymbolicQualitativeCheckResult<Type>::forallTrue() const {
+            return this->truthValues == this->states;
+        }
+        
+        template <storm::dd::DdType Type>
+        uint64_t SymbolicQualitativeCheckResult<Type>::count() const {
+            return this->truthValues.getNonZeroCount();
         }
         
         template <storm::dd::DdType Type>
@@ -63,6 +80,7 @@ namespace storm {
         void SymbolicQualitativeCheckResult<Type>::filter(QualitativeCheckResult const& filter) {
             STORM_LOG_THROW(filter.isSymbolicQualitativeCheckResult(), storm::exceptions::InvalidOperationException, "Cannot filter symbolic check result with non-symbolic filter.");
             this->truthValues &= filter.asSymbolicQualitativeCheckResult<Type>().getTruthValuesVector();
+            this->states &= filter.asSymbolicQualitativeCheckResult<Type>().getTruthValuesVector();
         }
         
         template class SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>;
