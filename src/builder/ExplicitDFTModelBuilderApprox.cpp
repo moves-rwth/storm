@@ -33,12 +33,12 @@ namespace storm {
                 matrixBuilder(!generator.isDeterministicModel()),
                 stateStorage(((dft.stateVectorSize() / 64) + 1) * 64),
                 // TODO Matthias: make choosable
-                explorationQueue(dft.nrElements()+1, 0, 1)
-                //explorationQueue(1001, 0, 0.001)
+                //explorationQueue(dft.nrElements()+1, 0, 1)
+                explorationQueue(1001, 0, 0.001)
         {
             // Intentionally left empty.
             // TODO Matthias: remove again
-            heuristic = storm::builder::ApproximationHeuristic::NONE;
+            heuristic = storm::builder::ApproximationHeuristic::PROBABILITY;
         }
 
         template<typename ValueType, typename StateType>
@@ -267,8 +267,8 @@ namespace storm {
                 // Try to explore the next state
                 generator.load(currentState);
 
-                //if (nrExpandedStates > approximationThreshold && !currentExplorationHeuristic->isExpand()) {
-                if (currentExplorationHeuristic->isSkip(approximationThreshold)) {
+                if (nrExpandedStates > approximationThreshold && !currentExplorationHeuristic->isExpand()) {
+                //if (currentExplorationHeuristic->isSkip(approximationThreshold)) {
                     // Skip the current state
                     ++nrSkippedStates;
                     STORM_LOG_TRACE("Skip expansion of state: " << dft.getStateString(currentState));
