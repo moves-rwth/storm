@@ -55,9 +55,10 @@ namespace storm {
                 cpptempl::data_list generateLabels();
                 cpptempl::data_list generateTerminalExpressions();
                 cpptempl::data_list generateNonSynchronizingEdges();
+                cpptempl::data_list generateLevels(storm::jani::OrderedAssignments const& assignments);
                 
-                cpptempl::data_map generateEdge(storm::jani::Edge const& edge);
-                cpptempl::data_map generateDestination(storm::jani::EdgeDestination const& destination);
+                cpptempl::data_map generateEdge(storm::jani::Automaton const& automaton, uint64_t edgeIndex, storm::jani::Edge const& edge);
+                cpptempl::data_map generateDestination(uint64_t destinationIndex, storm::jani::EdgeDestination const& destination);
                 
                 template <typename ValueTypePrime>
                 cpptempl::data_map generateAssignment(storm::jani::Variable const& variable, ValueTypePrime value) const;
@@ -73,7 +74,8 @@ namespace storm {
                 std::string getQualifiedVariableName(storm::jani::Automaton const& automaton, storm::expressions::Variable const& variable) const;
                 std::string getLocationVariableName(storm::jani::Automaton const& automaton) const;
                 std::string asString(bool value) const;
-                
+                storm::expressions::Expression shiftVariablesWrtLowerBound(storm::expressions::Expression const& expression);
+
                 template <typename ValueTypePrime>
                 std::string asString(ValueTypePrime value) const;
                 
@@ -87,6 +89,8 @@ namespace storm {
                 
                 std::unordered_map<storm::expressions::Variable, std::string> variableToName;
                 storm::expressions::ToCppVisitor expressionTranslator;
+                std::map<storm::expressions::Variable, storm::expressions::Expression> lowerBoundShiftSubstitution;
+                std::map<storm::expressions::Variable, int_fast64_t> lowerBounds;
             };
 
         }

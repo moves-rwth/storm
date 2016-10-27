@@ -395,15 +395,17 @@ namespace storm {
                     ValueType probabilitySum = storm::utility::zero<ValueType>();
                     for (uint_fast64_t k = 0; k < command.getNumberOfUpdates(); ++k) {
                         storm::prism::Update const& update = command.getUpdate(k);
-                        
-                        // Obtain target state index and add it to the list of known states. If it has not yet been
-                        // seen, we also add it to the set of states that have yet to be explored.
-                        StateType stateIndex = stateToIdCallback(applyUpdate(state, update));
-                        
-                        // Update the choice by adding the probability/target state to it.
+
                         ValueType probability = this->evaluator->asRational(update.getLikelihoodExpression());
-                        choice.addProbability(stateIndex, probability);
-                        probabilitySum += probability;
+                        if (probability != storm::utility::zero<ValueType>()) {
+                            // Obtain target state index and add it to the list of known states. If it has not yet been
+                            // seen, we also add it to the set of states that have yet to be explored.
+                            StateType stateIndex = stateToIdCallback(applyUpdate(state, update));
+                            
+                            // Update the choice by adding the probability/target state to it.
+                            choice.addProbability(stateIndex, probability);
+                            probabilitySum += probability;
+                        }
                     }
                     
                     // Create the state-action reward for the newly created choice.
@@ -458,16 +460,20 @@ namespace storm {
                                 storm::prism::Update const& update = command.getUpdate(j);
                                 
                                 for (auto const& stateProbabilityPair : *currentTargetStates) {
-                                    // Compute the new state under the current update and add it to the set of new target states.
-                                    CompressedState newTargetState = applyUpdate(stateProbabilityPair.first, update);
+                                    auto probability = stateProbabilityPair.second * this->evaluator->asRational(update.getLikelihoodExpression());
                                     
-                                    // If the new state was already found as a successor state, update the probability
-                                    // and otherwise insert it.
-                                    auto targetStateIt = newTargetStates->find(newTargetState);
-                                    if (targetStateIt != newTargetStates->end()) {
-                                        targetStateIt->second += stateProbabilityPair.second * this->evaluator->asRational(update.getLikelihoodExpression());
-                                    } else {
-                                        newTargetStates->emplace(newTargetState, stateProbabilityPair.second * this->evaluator->asRational(update.getLikelihoodExpression()));
+                                    if (probability != storm::utility::zero<ValueType>()) {
+                                        // Compute the new state under the current update and add it to the set of new target states.
+                                        CompressedState newTargetState = applyUpdate(stateProbabilityPair.first, update);
+                                        
+                                        // If the new state was already found as a successor state, update the probability
+                                        // and otherwise insert it.
+                                        auto targetStateIt = newTargetStates->find(newTargetState);
+                                        if (targetStateIt != newTargetStates->end()) {
+                                            targetStateIt->second += probability;
+                                        } else {
+                                            newTargetStates->emplace(newTargetState, probability);
+                                        }
                                     }
                                 }
                             }

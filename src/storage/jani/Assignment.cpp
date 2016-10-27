@@ -48,20 +48,20 @@ namespace storm  {
             return stream;
         }
         
-        bool AssignmentPartialOrderByVariable::operator()(Assignment const& left, Assignment const& right) const {
-            return left.getExpressionVariable() < right.getExpressionVariable();
+        bool AssignmentPartialOrderByLevelAndVariable::operator()(Assignment const& left, Assignment const& right) const {
+            return left.getLevel() < right.getLevel() || (left.getLevel() == right.getLevel() && left.getExpressionVariable() < right.getExpressionVariable());
         }
 
-        bool AssignmentPartialOrderByVariable::operator()(Assignment const& left, std::shared_ptr<Assignment> const& right) const {
-            return left.getExpressionVariable() < right->getExpressionVariable();
+        bool AssignmentPartialOrderByLevelAndVariable::operator()(Assignment const& left, std::shared_ptr<Assignment> const& right) const {
+            return left.getLevel() < right->getLevel() || (left.getLevel() == right->getLevel() && left.getExpressionVariable() < right->getExpressionVariable());
         }
         
-        bool AssignmentPartialOrderByVariable::operator()(std::shared_ptr<Assignment> const& left, std::shared_ptr<Assignment> const& right) const {
-            return left->getExpressionVariable() < right->getExpressionVariable();
+        bool AssignmentPartialOrderByLevelAndVariable::operator()(std::shared_ptr<Assignment> const& left, std::shared_ptr<Assignment> const& right) const {
+            return left->getLevel() < right->getLevel() || (left->getLevel() == right->getLevel() && left->getExpressionVariable() < right->getExpressionVariable());
         }
         
-        bool AssignmentPartialOrderByVariable::operator()(std::shared_ptr<Assignment> const& left, Assignment const& right) const {
-            return left->getExpressionVariable() < right.getExpressionVariable();
+        bool AssignmentPartialOrderByLevelAndVariable::operator()(std::shared_ptr<Assignment> const& left, Assignment const& right) const {
+            return left->getLevel() < right.getLevel() || (left->getLevel() == right.getLevel() && left->getExpressionVariable() < right.getExpressionVariable());
         }
     }
 }

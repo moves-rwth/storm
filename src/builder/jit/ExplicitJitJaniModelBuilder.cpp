@@ -158,6 +158,57 @@ namespace storm {
                             private:
                                 std::queue<StateType> storage;
                             };
+
+                            {% for edge in nonSynchronizingEdges %}static bool enabled_{$edge.name}(StateType const& state) {
+                                if ({$edge.guard}) {
+                                    return true;
+                                }
+                                return false;
+                            }
+                            
+                            static void perform_{$edge.name}(StateType const& state) {
+                                
+                            }
+                            
+                            static void lowestLevel_{$edge.name}() {
+                                return {$edge.lowestLevel};
+                            }
+
+                            static void highestLevel_{$edge.name}() {
+                                return {$edge.highestLevel};
+                            }
+                            {% endfor %}
+                            
+                            
+                            {% for edge in nonSynchronizingEdges %}class Edge_{$edge.name} {
+                            public:
+                                bool isEnabled(StateType const& state) {
+                                    if ({$edge.guard}) {
+                                        return true;
+                                    }
+                                    return false;
+                                }
+                                
+                                {% for destination in edge.destinations %}class Destination_{$destination.name} {
+                                public:
+                                    int_fast64_t lowestLevel() const {
+                                        return {$destination.lowestLevel};
+                                    }
+
+                                    int_fast64_t highestLevel() const {
+                                        return {$destination.highestLevel};
+                                    }
+
+                                    void performAssignments(int_fast64_t level, StateType& state) {
+                                        {% for level in destination.levels %}if (level == {$level.index}) {
+                                            {% for assignment in level.nonTransientAssignments %}state.{$assignment.variable} = {$assignment.value};
+                                            {% endfor %}
+                                        }{% endfor %}
+                                    }
+                                };
+                                {% endfor %}
+                            };
+                            {% endfor %}
                             
                             class JitBuilder : public JitModelBuilderInterface<IndexType, ValueType> {
                             public:
@@ -166,8 +217,7 @@ namespace storm {
                                         StateType state;
                                         {% for assignment in state %}state.{$assignment.variable} = {$assignment.value};
                                         {% endfor %}initialStates.push_back(state);
-                                    }
-                                    {% endfor %}
+                                    }{% endfor %}
                                 }
                                 
                                 virtual storm::models::sparse::Model<ValueType, storm::models::sparse::StandardRewardModel<ValueType>>* build() override {
@@ -243,22 +293,12 @@ namespace storm {
                                     {% for expression in terminalExpressions %}if ({$expression}) {
                                         return true;
                                     }
+                                    {% endfor %}
                                     return false;
                                 }
                                 
                                 void exploreNonSynchronizingEdges(StateType const& sourceState, IndexType const& currentIndex, StateBehaviour<IndexType, ValueType>& behaviour, StateSet& statesToExplore) {
-                                    {% for edge in nonSynchronizingEdges %}if ({$edge.guard}) {
-                                        Choice<IndexType, ValueType>& choice = behaviour.addChoice();
-                                        {% for destination in edge.destinations %}{
-                                            StateType targetState(sourceState);
-                                            {% for assignment in destination.nonTransientAssignments %}targetState.{$assignment.variable} = {$assignment.value};
-                                            {% endfor %}
-                                            IndexType targetStateIndex = getOrAddIndex(targetState, statesToExplore);
-                                            choice.add(targetStateIndex, {$destination.value});
-                                        }
-                                        {% endfor %}
-                                    }
-                                    {% endfor %}
+
                                 }
                                 
                                 IndexType getOrAddIndex(StateType const& state, StateSet& statesToExplore) {
@@ -444,7 +484,14 @@ namespace storm {
                     std::string variableName = getQualifiedVariableName(variable);
                     variableToName[variable.getExpressionVariable()] = variableName;
                     
-                    uint64_t range = static_cast<uint64_t>(variable.getUpperBound().evaluateAsInt() - variable.getLowerBound().evaluateAsInt() + 1);
+                    int_fast64_t lowerBound = variable.getLowerBound().evaluateAsInt();
+                    int_fast64_t upperBound = variable.getUpperBound().evaluateAsInt();
+                    
+                    lowerBounds[variable.getExpressionVariable()] = lowerBound;
+                    if (lowerBound != 0) {
+                        lowerBoundShiftSubstitution[variable.getExpressionVariable()] = variable.getExpressionVariable() + model.getManager().integer(lowerBound);
+                    }
+                    uint64_t range = static_cast<uint64_t>(upperBound - lowerBound + 1);
                     uint64_t numberOfBits = static_cast<uint64_t>(std::ceil(std::log2(range)));
                     
                     boundedIntegerVariable["name"] = variableName;
@@ -463,8 +510,15 @@ namespace storm {
                         cpptempl::data_map boundedIntegerVariable;
                         std::string variableName = getQualifiedVariableName(automaton, variable);
                         variableToName[variable.getExpressionVariable()] = variableName;
-                        
-                        uint64_t range = static_cast<uint64_t>(variable.getUpperBound().evaluateAsInt() - variable.getLowerBound().evaluateAsInt());
+
+                        int_fast64_t lowerBound = variable.getLowerBound().evaluateAsInt();
+                        int_fast64_t upperBound = variable.getUpperBound().evaluateAsInt();
+
+                        lowerBounds[variable.getExpressionVariable()] = lowerBound;
+                        if (lowerBound != 0) {
+                            lowerBoundShiftSubstitution[variable.getExpressionVariable()] = variable.getExpressionVariable() + model.getManager().integer(lowerBound);
+                        }
+                        uint64_t range = static_cast<uint64_t>(upperBound - lowerBound);
                         uint64_t numberOfBits = static_cast<uint64_t>(std::ceil(std::log2(range)));
                         
                         boundedIntegerVariable["name"] = variableName;
@@ -499,7 +553,7 @@ namespace storm {
                         if (this->options.isBuildAllLabelsSet() || this->options.getLabelNames().find(variable->getName()) != this->options.getLabelNames().end()) {
                             cpptempl::data_map label;
                             label["name"] = variable->getName();
-                            label["predicate"] = expressionTranslator.translate(model.getLabelExpression(variable->asBooleanVariable(), locationVariables), storm::expressions::ToCppTranslationOptions("state."));
+                            label["predicate"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(model.getLabelExpression(variable->asBooleanVariable(), locationVariables)), storm::expressions::ToCppTranslationOptions("state."));
                             labels.push_back(label);
                         }
                     }
@@ -508,7 +562,7 @@ namespace storm {
                 for (auto const& expression : this->options.getExpressionLabels()) {
                     cpptempl::data_map label;
                     label["name"] = expression.toString();
-                    label["predicate"] = expressionTranslator.translate(expression, storm::expressions::ToCppTranslationOptions("state."));
+                    label["predicate"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(expression), storm::expressions::ToCppTranslationOptions("state."));
                     labels.push_back(label);
                 }
                 
@@ -531,10 +585,10 @@ namespace storm {
                         if (terminalEntry.second) {
                             labelExpression = !labelExpression;
                         }
-                        terminalExpressions.push_back(expressionTranslator.translate(labelExpression, storm::expressions::ToCppTranslationOptions("state.")));
+                        terminalExpressions.push_back(expressionTranslator.translate(shiftVariablesWrtLowerBound(labelExpression), storm::expressions::ToCppTranslationOptions("state.")));
                     } else {
                         auto expression = terminalEntry.second ? labelOrExpression.getExpression() : !labelOrExpression.getExpression();
-                        terminalExpressions.push_back(expressionTranslator.translate(expression, storm::expressions::ToCppTranslationOptions("state.")));
+                        terminalExpressions.push_back(expressionTranslator.translate(shiftVariablesWrtLowerBound(expression), storm::expressions::ToCppTranslationOptions("state.")));
                     }
                 }
 
@@ -545,10 +599,12 @@ namespace storm {
             cpptempl::data_list ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateNonSynchronizingEdges() {
                 cpptempl::data_list edges;
                 for (auto const& automaton : this->model.getAutomata()) {
+                    uint64_t edgeIndex = 0;
                     for (auto const& edge : automaton.getEdges()) {
                         if (edge.getActionIndex() == storm::jani::Model::SILENT_ACTION_INDEX) {
-                            edges.push_back(generateEdge(edge));
+                            edges.push_back(generateEdge(automaton, edgeIndex, edge));
                         }
+                        ++edgeIndex;
                     }
                 }
                 
@@ -556,31 +612,74 @@ namespace storm {
             }
             
             template <typename ValueType, typename RewardModelType>
-            cpptempl::data_map ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateEdge(storm::jani::Edge const& edge) {
+            cpptempl::data_map ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateEdge(storm::jani::Automaton const& automaton, uint64_t edgeIndex, storm::jani::Edge const& edge) {
                 cpptempl::data_map edgeData;
                 
                 cpptempl::data_list destinations;
+                uint64_t destinationIndex = 0;
                 for (auto const& destination : edge.getDestinations()) {
-                    destinations.push_back(generateDestination(destination));
+                    destinations.push_back(generateDestination(destinationIndex, destination));
+                    ++destinationIndex;
                 }
                 
-                edgeData["guard"] = expressionTranslator.translate(edge.getGuard(), storm::expressions::ToCppTranslationOptions("sourceState."));
+                edgeData["guard"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(edge.getGuard()), storm::expressions::ToCppTranslationOptions("state."));
                 edgeData["destinations"] = cpptempl::make_data(destinations);
+                edgeData["name"] = automaton.getName() + "_" + std::to_string(edgeIndex);
                 return edgeData;
             }
             
             template <typename ValueType, typename RewardModelType>
-            cpptempl::data_map ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateDestination(storm::jani::EdgeDestination const& destination) {
+            cpptempl::data_map ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateDestination(uint64_t destinationIndex, storm::jani::EdgeDestination const& destination) {
                 cpptempl::data_map destinationData;
                 
-                cpptempl::data_list nonTransientAssignments;
-                for (auto const& assignment : destination.getOrderedAssignments().getNonTransientAssignments()) {
-                    nonTransientAssignments.push_back(generateAssignment(assignment, "targetState."));
+                cpptempl::data_list levels = generateLevels(destination.getOrderedAssignments());
+                destinationData["name"] = asString(destinationIndex);
+                destinationData["levels"] = cpptempl::make_data(levels);
+                destinationData["lowestLevel"] = asString(destination.getOrderedAssignments().getLowestLevel());
+                destinationData["highestLevel"] = asString(destination.getOrderedAssignments().getHighestLevel());
+
+                return destinationData;
+            }
+            
+            template <typename ValueType, typename RewardModelType>
+            cpptempl::data_list ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateLevels(storm::jani::OrderedAssignments const& orderedAssignments) {
+                cpptempl::data_list levels;
+                
+                auto const& assignments = orderedAssignments.getAllAssignments();
+                if (!assignments.empty()) {
+                    int_fast64_t currentLevel = assignments.begin()->getLevel();
+                    
+                    cpptempl::data_list nonTransientAssignmentData;
+                    cpptempl::data_list transientAssignmentData;
+                    for (auto const& assignment : assignments) {
+                        if (assignment.getLevel() != currentLevel) {
+                            cpptempl::data_map level;
+                            level["nonTransientAssignments"] = cpptempl::make_data(nonTransientAssignmentData);
+                            level["transientAssignments"] = cpptempl::make_data(transientAssignmentData);
+                            level["index"] = asString(currentLevel);
+                            levels.push_back(level);
+                            
+                            nonTransientAssignmentData = cpptempl::data_list();
+                            transientAssignmentData = cpptempl::data_list();
+                            currentLevel = assignment.getLevel();
+                        }
+                        
+                        if (assignment.isTransient()) {
+                            transientAssignmentData.push_back(generateAssignment(assignment, "state."));
+                        } else {
+                            nonTransientAssignmentData.push_back(generateAssignment(assignment, "state."));
+                        }
+                    }
+
+                    // Close the last (open) level.
+                    cpptempl::data_map level;
+                    level["nonTransientAssignments"] = cpptempl::make_data(nonTransientAssignmentData);
+                    level["transientAssignments"] = cpptempl::make_data(transientAssignmentData);
+                    level["index"] = asString(currentLevel);
+                    levels.push_back(level);
                 }
                 
-                destinationData["nonTransientAssignments"] = cpptempl::make_data(nonTransientAssignments);
-                destinationData["value"] = expressionTranslator.translate(destination.getProbability(), storm::expressions::ToCppTranslationOptions("sourceState.", "double"));
-                return destinationData;
+                return levels;
             }
             
             template <typename ValueType, typename RewardModelType>
@@ -604,7 +703,18 @@ namespace storm {
             cpptempl::data_map ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateAssignment(storm::jani::Assignment const& assignment, std::string const& prefix) {
                 cpptempl::data_map result;
                 result["variable"] = getVariableName(assignment.getExpressionVariable());
-                result["value"] = expressionTranslator.translate(assignment.getAssignedExpression(), prefix);
+                auto lowerBoundIt = lowerBounds.find(assignment.getExpressionVariable());
+                if (lowerBoundIt != lowerBounds.end()) {
+                    if (lowerBoundIt->second < 0) {
+                        result["value"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(assignment.getAssignedExpression()) + model.getManager().integer(lowerBoundIt->second), prefix);
+                    } else if (lowerBoundIt->second == 0) {
+                        result["value"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(assignment.getAssignedExpression()), prefix);
+                    } else {
+                        result["value"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(assignment.getAssignedExpression()) - model.getManager().integer(lowerBoundIt->second), prefix);
+                    }
+                } else {
+                    result["value"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(assignment.getAssignedExpression()), prefix);
+                }
                 return result;
             }
             
@@ -638,6 +748,11 @@ namespace storm {
                 std::stringstream out;
                 out << std::boolalpha << value;
                 return out.str();
+            }
+            
+            template <typename ValueType, typename RewardModelType>
+            storm::expressions::Expression ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::shiftVariablesWrtLowerBound(storm::expressions::Expression const& expression) {
+                return expression.substitute(lowerBoundShiftSubstitution);
             }
             
             template <typename ValueType, typename RewardModelType>

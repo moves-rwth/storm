@@ -1231,7 +1231,7 @@ namespace storm {
                 std::vector<Command> newCommands;
                 for (auto const& command : module.getCommands()) {
                     if (!command.getGuardExpression().isFalse()) {
-                        newCommands.emplace_back(command.removeIdentityAssignmentsFromUpdates());
+                        newCommands.emplace_back(command.simplify());
                     }
                 }
                 

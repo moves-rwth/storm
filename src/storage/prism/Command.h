@@ -128,12 +128,11 @@ namespace storm {
             
             friend std::ostream& operator<<(std::ostream& stream, Command const& command);
             
-            /**
-             * Removes identity assignments from the updates
-             * @return The resulting command
+            /*!
+             * Simplifies this command.
              */
-            Command removeIdentityAssignmentsFromUpdates() const;
-            
+            Command simplify() const;
+                        
         private:
             //  The index of the action associated with this command.
             uint_fast64_t actionIndex;
