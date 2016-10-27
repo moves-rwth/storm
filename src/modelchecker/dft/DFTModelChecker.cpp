@@ -158,6 +158,8 @@ namespace storm {
                 storm::builder::ExplicitDFTModelBuilderApprox<ValueType> builder(dft, symmetries, enableDC);
                 typename storm::builder::ExplicitDFTModelBuilderApprox<ValueType>::LabelOptions labeloptions; // TODO initialize this with the formula
 
+                bool probabilityFormula = formula->isProbabilityOperatorFormula();
+                STORM_LOG_ASSERT((formula->isTimeOperatorFormula() && !probabilityFormula) || (!formula->isTimeOperatorFormula() && probabilityFormula), "Probability formula not initialized correctly");
                 size_t iteration = 0;
                 do {
                     // Iteratively build finer models
@@ -170,7 +172,7 @@ namespace storm {
 
                     // Build model for lower bound
                     STORM_LOG_INFO("Getting model for lower bound...");
-                    model = builder.getModelApproximation(true);
+                    model = builder.getModelApproximation(probabilityFormula ? false : true);
                     // We only output the info from the lower bound as the info for the upper bound is the same
                     STORM_LOG_INFO("No. states: " << model->getNumberOfStates());
                     STORM_LOG_INFO("No. transitions: " << model->getNumberOfTransitions());
@@ -185,7 +187,7 @@ namespace storm {
                     // Build model for upper bound
                     STORM_LOG_INFO("Getting model for upper bound...");
                     explorationStart = std::chrono::high_resolution_clock::now();
-                    model = builder.getModelApproximation(false);
+                    model = builder.getModelApproximation(probabilityFormula ? true : false);
                     explorationTime += std::chrono::high_resolution_clock::now() - explorationStart;
                     // Check upper bound
                     result = checkModel(model, formula);
@@ -197,7 +199,7 @@ namespace storm {
                     ++iteration;
                     STORM_LOG_INFO("Result after iteration " << iteration << ": (" << std::setprecision(10) << approxResult.first << ", " << approxResult.second << ")");
                     STORM_LOG_THROW(!storm::utility::isInfinity<ValueType>(approxResult.first) && !storm::utility::isInfinity<ValueType>(approxResult.second), storm::exceptions::NotSupportedException, "Approximation does not work if result might be infinity.");
-                } while (!isApproximationSufficient(approxResult.first, approxResult.second, approximationError));
+                } while (!isApproximationSufficient(approxResult.first, approxResult.second, approximationError, probabilityFormula));
 
                 STORM_LOG_INFO("Finished approximation after " << iteration << " iteration" << (iteration > 1 ? "s." : "."));
                 return approxResult;
@@ -251,14 +253,18 @@ namespace storm {
         }
 
         template<typename ValueType>
-        bool DFTModelChecker<ValueType>::isApproximationSufficient(ValueType lowerBound, ValueType upperBound, double approximationError) {
+        bool DFTModelChecker<ValueType>::isApproximationSufficient(ValueType lowerBound, ValueType upperBound, double approximationError, bool relative) {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Approximation works only for double.");
         }
 
         template<>
-        bool DFTModelChecker<double>::isApproximationSufficient(double lowerBound, double upperBound, double approximationError) {
+        bool DFTModelChecker<double>::isApproximationSufficient(double lowerBound, double upperBound, double approximationError, bool relative) {
             STORM_LOG_THROW(!std::isnan(lowerBound) && !std::isnan(upperBound), storm::exceptions::NotSupportedException, "Approximation does not work if result is NaN.");
-            return upperBound - lowerBound <= approximationError * (lowerBound + upperBound) / 2;
+            if (relative) {
+                return upperBound - lowerBound <= approximationError;
+            } else {
+                return upperBound - lowerBound <= approximationError * (lowerBound + upperBound) / 2;
+            }
         }
 
         template<typename ValueType>
