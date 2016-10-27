@@ -153,7 +153,8 @@ namespace storm {
             auto iterSkipped = skippedStates.begin();
             size_t skippedBefore = 0;
             for (size_t i = 0; i < indexRemapping.size(); ++i) {
-                while (iterSkipped->first <= i) {
+                while (iterSkipped != skippedStates.end() && iterSkipped->first <= i) {
+                    STORM_LOG_ASSERT(iterSkipped->first < indexRemapping.size(), "Skipped is too high.");
                     ++skippedBefore;
                     ++iterSkipped;
                 }
