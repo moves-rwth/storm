@@ -10,6 +10,6 @@ inline size_t smallestIntWithNBitsSet(size_t n) {
 inline size_t nextBitPermutation(size_t v) {
     if (v==0) return static_cast<size_t>(0);
     // From https://graphics.stanford.edu/~seander/bithacks.html#NextBitPermutation
-    unsigned int t = (v | (v - 1)) + 1;  
+    size_t t = (v | (v - 1)) + 1;
     return t | ((((t & -t) / (v & -v)) >> 1) - 1);  
 }
