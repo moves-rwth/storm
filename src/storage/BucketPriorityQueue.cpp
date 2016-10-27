@@ -14,7 +14,7 @@ namespace storm {
 
         template<typename ValueType>
         void BucketPriorityQueue<ValueType>::fix() {
-            if (currentBucket < buckets.size() && nrUnsortedItems > 0) {
+            if (currentBucket < buckets.size() && nrUnsortedItems > buckets[currentBucket].size() / 10) {
                 // Fix current bucket
                 std::make_heap(buckets[currentBucket].begin(), buckets[currentBucket].end(), compare);
                 nrUnsortedItems = 0;
