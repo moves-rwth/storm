@@ -510,6 +510,25 @@ namespace storm {
                     upperBound += sum;
                 }
             }
+
+            // Compute upper bound with permutations of size <= 3
+            ValueType upperBound2 = storm::utility::zero<ValueType>();
+            for (size_t i1 = 0; i1 < rates.size(); ++i1) {
+                // + 1/a
+                ValueType sum = rates[i1];
+                upperBound2 += storm::utility::one<ValueType>() / sum;
+                for (size_t i2 = 0; i2 < i1; ++i2) {
+                    // - 1/(a+b)
+                    ValueType sum2 = sum + rates[i2];
+                    upperBound2 -= storm::utility::one<ValueType>() / sum2;
+                    for (size_t i3 = 0; i3 < i2; ++i3) {
+                        // + 1/(a+b+c)
+                        upperBound2 += storm::utility::one<ValueType>() / (sum2 + rates[i3]);
+                    }
+                }
+            }
+            STORM_LOG_ASSERT(upperBound == upperBound2, "Upperbounds are different: " << upperBound << " and " << upperBound2);
+
             STORM_LOG_ASSERT(!storm::utility::isZero(upperBound), "UpperBound is 0");
             return storm::utility::one<ValueType>() / upperBound;
         }
