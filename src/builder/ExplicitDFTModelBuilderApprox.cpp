@@ -476,8 +476,7 @@ namespace storm {
         template<typename ValueType, typename StateType>
         ValueType ExplicitDFTModelBuilderApprox<ValueType, StateType>::getUpperBound(DFTStatePointer const& state) const {
             // Get the upper bound by considering the failure of all BEs
-            // The used formula for the rate is 1/( 1/a + 1/b + ...)
-            // TODO Matthias: improve by using closed formula for AND of all BEs
+            // The used formula for the rate is 1/( 1/a + 1/b + 1/c + ... - 1/(a+b) - 1/(a+c) - ... + 1/(a+b+c) + ... - ...)
             ValueType upperBound = storm::utility::zero<ValueType>();
 
             // Get all possible rates
@@ -491,44 +490,45 @@ namespace storm {
             STORM_LOG_ASSERT(rates.size() > 0, "State is absorbing");
 
             // TODO Matthias: works only for <64 BEs!
-            for (size_t i = 1; i < 4 && i <= rates.size(); ++i) {
+            // WARNING: this code produces wrong results for more than 32 BEs
+            /*for (size_t i = 1; i < 4 && i <= rates.size(); ++i) {
                 size_t permutation = smallestIntWithNBitsSet(static_cast<size_t>(i));
                 ValueType sum = storm::utility::zero<ValueType>();
                 do {
                     ValueType permResult = storm::utility::zero<ValueType>();
                     for(size_t j = 0; j < rates.size(); ++j) {
-                        if(permutation & (1 << j)) {
+                        if(permutation & static_cast<size_t>(1 << static_cast<size_t>(j))) {
+                            // WARNING: if the first bit is set, it also recognizes the 32nd bit as set
+                            // TODO: fix
                             permResult += rates[j];
                         }
                     }
                     permutation = nextBitPermutation(permutation);
                     STORM_LOG_ASSERT(!storm::utility::isZero(permResult), "PermResult is 0");
                     sum += storm::utility::one<ValueType>() / permResult;
-                } while(permutation < (1 << rates.size()) && permutation != 0);
+                } while(permutation < (static_cast<size_t>(1) << rates.size()) && permutation != 0);
                 if (i % 2 == 0) {
                     upperBound -= sum;
                 } else {
                     upperBound += sum;
                 }
-            }
+            }*/
 
             // Compute upper bound with permutations of size <= 3
-            ValueType upperBound2 = storm::utility::zero<ValueType>();
             for (size_t i1 = 0; i1 < rates.size(); ++i1) {
                 // + 1/a
                 ValueType sum = rates[i1];
-                upperBound2 += storm::utility::one<ValueType>() / sum;
+                upperBound += storm::utility::one<ValueType>() / sum;
                 for (size_t i2 = 0; i2 < i1; ++i2) {
                     // - 1/(a+b)
                     ValueType sum2 = sum + rates[i2];
-                    upperBound2 -= storm::utility::one<ValueType>() / sum2;
+                    upperBound -= storm::utility::one<ValueType>() / sum2;
                     for (size_t i3 = 0; i3 < i2; ++i3) {
                         // + 1/(a+b+c)
-                        upperBound2 += storm::utility::one<ValueType>() / (sum2 + rates[i3]);
+                        upperBound += storm::utility::one<ValueType>() / (sum2 + rates[i3]);
                     }
                 }
             }
-            STORM_LOG_ASSERT(upperBound == upperBound2, "Upperbounds are different: " << upperBound << " and " << upperBound2);
 
             STORM_LOG_ASSERT(!storm::utility::isZero(upperBound), "UpperBound is 0");
             return storm::utility::one<ValueType>() / upperBound;

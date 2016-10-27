@@ -100,6 +100,8 @@ namespace storm {
                     ValueType result = storm::utility::zero<ValueType>();
                     int limK = invResults ? -1 : nrM+1;
                     int chK = invResults ? -1 : 1;
+                    // WARNING: there is a bug for computing permutations with more than 32 elements
+                    STORM_LOG_ASSERT(res.size() < 32, "Permutations work only for < 32 elements");
                     for(int cK = nrK; cK != limK; cK += chK ) {
                         STORM_LOG_ASSERT(cK >= 0, "ck negative.");
                         size_t permutation = smallestIntWithNBitsSet(static_cast<size_t>(cK));
