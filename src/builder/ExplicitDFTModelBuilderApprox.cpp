@@ -522,9 +522,6 @@ namespace storm {
             for (size_t index = 0; index < state->nrFailableBEs(); ++index) {
                 lowerBound += state->getFailableBERate(index);
             }
-            for (size_t index = 0; index < state->nrNotFailableBEs(); ++index) {
-                lowerBound += state->getNotFailableBERate(index);
-            }
             return lowerBound;
         }
 
@@ -538,20 +535,31 @@ namespace storm {
             for (std::vector<size_t> const& subtree : subtreeBEs) {
                 // Get all possible rates
                 std::vector<ValueType> rates;
-                for (size_t id : subtree) {
+                storm::storage::BitVector coldBEs(subtree.size(), false);
+                for (size_t i = 0; i < subtree.size(); ++i) {
+                    size_t id = subtree[i];
                     if (state->isOperational(id)) {
                         // Get BE rate
-                        rates.push_back(state->getBERate(id, true));
-                        rateSum += rates.back();
+                        ValueType rate = state->getBERate(id);
+                        if (storm::utility::isZero<ValueType>(rate)) {
+                            // Get active failure rate for cold BE
+                            rate = dft.getBasicElement(id)->activeFailureRate();
+                            // Mark BE as cold
+                            coldBEs.set(i, true);
+                        }
+                        rates.push_back(rate);
+                        rateSum += rate;
                     }
                 }
 
-                // We move backwards and start with swapping the last element to itself
-                // Then we do not need to swap back
-                for (auto it = rates.rbegin(); it != rates.rend(); ++it) {
-                    // Compute AND MTTF of subtree without current rate and scale with current rate
-                    std::iter_swap(it, rates.end() - 1);
-                    upperBound += rates.back() * computeMTTFAnd(rates, rates.size() - 1);
+                for (size_t i = 0; i < rates.size(); ++i) {
+                    // Cold BEs cannot fail in the first step
+                    if (!coldBEs.get(i)) {
+                        // Compute AND MTTF of subtree without current rate and scale with current rate
+                        upperBound += rates.back() * computeMTTFAnd(rates, rates.size() - 1);
+                        // Swap here to avoid swapping back
+                        std::iter_swap(rates.begin() + i, rates.end() - 1);
+                    }
                 }
             }
 

@@ -27,7 +27,6 @@ namespace storm {
             storm::storage::BitVector mStatus;
             size_t mId;
             std::vector<size_t> mCurrentlyFailableBE;
-            std::vector<size_t> mCurrentlyNotFailableBE;
             std::vector<size_t> mFailableDependencies;
             std::vector<size_t> mUsedRepresentants;
             bool mPseudoState;
@@ -182,15 +181,6 @@ namespace storm {
             }
 
             /**
-             * Get number of currently not failable BEs. These are cold BE which can fail in the future.
-             *
-             * @return Number of not failable BEs.
-             */
-            size_t nrNotFailableBEs() const {
-                return mCurrentlyNotFailableBE.size();
-            }
-
-            /**
              * Get the failure rate of the currently failable BE on the given index.
              *
              * @param index           Index of BE in list of currently failable BEs.
@@ -200,24 +190,13 @@ namespace storm {
             ValueType getFailableBERate(size_t index) const;
 
             /**
-             * Get the failure rate of the currently not failable BE on the given index.
-             *
-             * @param index Index of BE in list of currently not failable BEs.
-             *
-             * @return Failure rate of the BE.
-             */
-            ValueType getNotFailableBERate(size_t index) const;
-
-            /**
-             * Get the failure rate of the given BE.
+             * Get the current failure rate of the given BE.
              *
              * @param id        Id of BE.
-             * @param avoidCold Flag indicating if a cold passive failure rate should be avoided by giving
-             *                  the active failure rate instead.
              *
              * @return Failure rate of the BE.
              */
-            ValueType getBERate(size_t id, bool avoidCold) const;
+            ValueType getBERate(size_t id) const;
 
             /** Get number of currently failable dependencies.
              *
