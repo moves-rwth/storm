@@ -24,7 +24,6 @@ namespace storm {
                 Distribution<IndexType, ValueType>& getDistribution();
 
                 Distribution<IndexType, ValueType> distribution;
-                bool compressed;
             };
             
         }

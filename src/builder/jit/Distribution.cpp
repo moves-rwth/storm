@@ -14,13 +14,13 @@ namespace storm {
             template <typename IndexType, typename ValueType>
             void Distribution<IndexType, ValueType>::add(DistributionEntry<IndexType, ValueType> const& entry) {
                 storage.push_back(entry);
-                compressed = storage.back().getIndex() < entry.getIndex();
+                compressed &= storage.back().getIndex() < entry.getIndex();
             }
 
             template <typename IndexType, typename ValueType>
             void Distribution<IndexType, ValueType>::add(IndexType const& index, ValueType const& value) {
                 storage.emplace_back(index, value);
-                compressed = storage.back().getIndex() < index;
+                compressed &= storage.back().getIndex() < index;
             }
 
             template <typename IndexType, typename ValueType>
@@ -57,6 +57,7 @@ namespace storm {
                         
                         storage.resize(std::distance(storage.begin(), result));
                     }
+                    compressed = true;
                 }
             }
             

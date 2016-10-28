@@ -43,6 +43,8 @@ namespace storm {
                             choices.front().divideDistribution(static_cast<ValueType>(totalCount));
                         }
                     }
+                } else if (choices.size() == 1) {
+                    choices.front().compress();
                 }
             }
             

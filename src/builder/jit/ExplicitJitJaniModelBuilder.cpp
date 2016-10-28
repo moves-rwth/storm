@@ -159,56 +159,113 @@ namespace storm {
                                 std::queue<StateType> storage;
                             };
 
-                            {% for edge in nonSynchronizingEdges %}static bool enabled_{$edge.name}(StateType const& state) {
+                            {% for edge in nonSynchronizingEdges %}static bool edge_enabled_{$edge.name}(StateType const& state) {
                                 if ({$edge.guard}) {
                                     return true;
                                 }
                                 return false;
                             }
                             
-                            static void perform_{$edge.name}(StateType const& state) {
-                                
+                            {% for destination in edge.destinations %}
+                            static void destination_perform_level_{$edge.name}_{$destination.name}(int_fast64_t level, StateType& state) {
+                                {% for level in destination.levels %}if (level == {$level.index}) {
+                                    {% for assignment in level.nonTransientAssignments %}state.{$assignment.variable} = {$assignment.value};{% endfor %}
+                                }
+                                {% endfor %}
                             }
                             
-                            static void lowestLevel_{$edge.name}() {
-                                return {$edge.lowestLevel};
-                            }
-
-                            static void highestLevel_{$edge.name}() {
-                                return {$edge.highestLevel};
+                            static void destination_perform_{$edge.name}_{$destination.name}(StateType& state) {
+                                {% for level in destination.levels %}
+                                {% for assignment in level.nonTransientAssignments %}state.{$assignment.variable} = {$assignment.value};
+                                {% endfor %}
+                                {% endfor %}
                             }
                             {% endfor %}
+                            {% endfor %}
                             
+                            typedef void (*DestinationLevelFunctionPtr)(int_fast64_t, StateType&);
+                            typedef void (*DestinationFunctionPtr)(StateType&);
                             
-                            {% for edge in nonSynchronizingEdges %}class Edge_{$edge.name} {
+                            class Destination {
                             public:
-                                bool isEnabled(StateType const& state) {
-                                    if ({$edge.guard}) {
-                                        return true;
-                                    }
-                                    return false;
+                                Destination() : mLowestLevel(0), mHighestLevel(0), mValue(), destinationLevelFunction(nullptr), destinationFunction(nullptr) {
+                                    // Intentionally left empty.
                                 }
                                 
-                                {% for destination in edge.destinations %}class Destination_{$destination.name} {
-                                public:
-                                    int_fast64_t lowestLevel() const {
-                                        return {$destination.lowestLevel};
-                                    }
+                                Destination(int_fast64_t lowestLevel, int_fast64_t highestLevel, ValueType const& value, DestinationLevelFunctionPtr destinationLevelFunction, DestinationFunctionPtr destinationFunction) : mLowestLevel(lowestLevel), mHighestLevel(highestLevel), mValue(value), destinationLevelFunction(destinationLevelFunction), destinationFunction(destinationFunction) {
+                                    // Intentionally left empty.
+                                }
+                                
+                                int_fast64_t lowestLevel() const {
+                                    return mLowestLevel;
+                                }
 
-                                    int_fast64_t highestLevel() const {
-                                        return {$destination.highestLevel};
-                                    }
+                                int_fast64_t highestLevel() const {
+                                    return mHighestLevel;
+                                }
+                                
+                                ValueType const& value() const {
+                                    return mValue;
+                                }
+                                
+                                void performLevel(int_fast64_t level, StateType& state) const {
+                                    destinationLevelFunction(level, state);
+                                }
 
-                                    void performAssignments(int_fast64_t level, StateType& state) {
-                                        {% for level in destination.levels %}if (level == {$level.index}) {
-                                            {% for assignment in level.nonTransientAssignments %}state.{$assignment.variable} = {$assignment.value};
-                                            {% endfor %}
-                                        }{% endfor %}
-                                    }
-                                };
-                                {% endfor %}
+                                void perform(StateType& state) const {
+                                    destinationFunction(state);
+                                }
+
+                            private:
+                                int_fast64_t mLowestLevel;
+                                int_fast64_t mHighestLevel;
+                                ValueType mValue;
+                                DestinationLevelFunctionPtr destinationLevelFunction;
+                                DestinationFunctionPtr destinationFunction;
                             };
-                            {% endfor %}
+                            
+                            typedef bool (*EdgeEnabledFunctionPtr)(StateType const&);
+                            
+                            class Edge {
+                            public:
+                                typedef std::vector<Destination> ContainerType;
+                                
+                                Edge() : edgeEnabledFunction(nullptr) {
+                                    // Intentionally left empty.
+                                }
+                                
+                                Edge(EdgeEnabledFunctionPtr edgeEnabledFunction) : edgeEnabledFunction(edgeEnabledFunction) {
+                                    // Intentionally left empty.
+                                }
+                                
+                                bool isEnabled(StateType const& state) const {
+                                    return edgeEnabledFunction(state);
+                                }
+                                
+                                void addDestination(Destination const& destination) {
+                                    destinations.push_back(destination);
+                                }
+
+                                void addDestination(int_fast64_t lowestLevel, int_fast64_t highestLevel, ValueType const& value, DestinationLevelFunctionPtr destinationLevelFunction, DestinationFunctionPtr destinationFunction) {
+                                    destinations.emplace_back(lowestLevel, highestLevel, value, destinationLevelFunction, destinationFunction);
+                                }
+
+                                std::vector<Destination> const& getDestinations() const {
+                                    return destinations;
+                                }
+                                
+                                ContainerType::const_iterator begin() const {
+                                    return destinations.begin();
+                                }
+
+                                ContainerType::const_iterator end() const {
+                                    return destinations.end();
+                                }
+                                
+                            private:
+                                EdgeEnabledFunctionPtr edgeEnabledFunction;
+                                ContainerType destinations;
+                            };
                             
                             class JitBuilder : public JitModelBuilderInterface<IndexType, ValueType> {
                             public:
@@ -216,8 +273,15 @@ namespace storm {
                                     {% for state in initialStates %}{
                                         StateType state;
                                         {% for assignment in state %}state.{$assignment.variable} = {$assignment.value};
-                                        {% endfor %}initialStates.push_back(state);
+                                        {% endfor %}
+                                        initialStates.push_back(state);
                                     }{% endfor %}
+                                    {% for edge in nonSynchronizingEdges %}{
+                                        edge_{$edge.name} = Edge(&edge_enabled_{$edge.name});
+                                        {% for destination in edge.destinations %}edge_{$edge.name}.addDestination({$destination.lowestLevel}, {$destination.highestLevel}, {$destination.value}, &destination_perform_level_{$edge.name}_{$destination.name}, &destination_perform_{$edge.name}_{$destination.name});
+                                        {% endfor %}
+                                    }
+                                    {% endfor %}
                                 }
                                 
                                 virtual storm::models::sparse::Model<ValueType, storm::models::sparse::StandardRewardModel<ValueType>>* build() override {
@@ -297,8 +361,25 @@ namespace storm {
                                     return false;
                                 }
                                 
-                                void exploreNonSynchronizingEdges(StateType const& sourceState, IndexType const& currentIndex, StateBehaviour<IndexType, ValueType>& behaviour, StateSet& statesToExplore) {
-
+                                void exploreNonSynchronizingEdges(StateType const& state, IndexType const& currentIndex, StateBehaviour<IndexType, ValueType>& behaviour, StateSet& statesToExplore) {
+                                    {% for edge in nonSynchronizingEdges %}{
+                                        {% for destination in edge.destinations %}{
+                                            if ({$edge.guard}) {
+                                                Choice<IndexType, ValueType>& choice = behaviour.addChoice();
+                                                {% for destination in edge.destinations %}{
+                                                StateType targetState(state);
+                                                destination_perform_{$edge.name}_{$destination.name}(targetState);
+                                                    //for (auto const& destination : edge_{$edge.name}) {
+                                                    //destination.perform(targetState);
+                                                    IndexType targetStateIndex = getOrAddIndex(targetState, statesToExplore);
+                                                    choice.add(targetStateIndex, {$destination.value});
+                                                    //}
+                                                }{% endfor %}
+                                            }
+                                        }
+                                        {% endfor %}
+                                    }
+                                    {% endfor %}
                                 }
                                 
                                 IndexType getOrAddIndex(StateType const& state, StateSet& statesToExplore) {
@@ -341,6 +422,9 @@ namespace storm {
                                 spp::sparse_hash_map<StateType, IndexType> stateIds;
                                 std::vector<StateType> initialStates;
                                 std::vector<IndexType> deadlockStates;
+                                
+                                {% for edge in nonSynchronizingEdges %}Edge edge_{$edge.name};
+                                {% endfor %}
                             };
                             
                             BOOST_DLL_ALIAS(storm::builder::jit::JitBuilder::create, create_builder)
@@ -635,6 +719,7 @@ namespace storm {
                 cpptempl::data_list levels = generateLevels(destination.getOrderedAssignments());
                 destinationData["name"] = asString(destinationIndex);
                 destinationData["levels"] = cpptempl::make_data(levels);
+                destinationData["value"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(destination.getProbability()), storm::expressions::ToCppTranslationOptions("state.", "double"));
                 destinationData["lowestLevel"] = asString(destination.getOrderedAssignments().getLowestLevel());
                 destinationData["highestLevel"] = asString(destination.getOrderedAssignments().getHighestLevel());
 

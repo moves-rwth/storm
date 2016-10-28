@@ -7,7 +7,7 @@ namespace storm {
         namespace jit {
             
             template <typename IndexType, typename ValueType>
-            Choice<IndexType, ValueType>::Choice() : compressed(true) {
+            Choice<IndexType, ValueType>::Choice() {
                 // Intentionally left empty.
             }
             
@@ -38,10 +38,7 @@ namespace storm {
 
             template <typename IndexType, typename ValueType>
             void Choice<IndexType, ValueType>::compress() {
-                if (!compressed) {
-                    distribution.compress();
-                    compressed = true;
-                }
+                distribution.compress();
             }
 
             template <typename IndexType, typename ValueType>
