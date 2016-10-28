@@ -17,13 +17,13 @@ namespace storm {
         template<typename ValueType>
         void DFTModelChecker<ValueType>::check(storm::storage::DFT<ValueType> const& origDft, std::shared_ptr<const storm::logic::Formula> const& formula, bool symred, bool allowModularisation, bool enableDC, double approximationError) {
             // Initialize
-            this->buildingTime = std::chrono::duration<double>::zero();
             this->explorationTime = std::chrono::duration<double>::zero();
+            this->buildingTime = std::chrono::duration<double>::zero();
             this->bisimulationTime = std::chrono::duration<double>::zero();
             this->modelCheckingTime = std::chrono::duration<double>::zero();
             this->totalTime = std::chrono::duration<double>::zero();
             this->approximationError = approximationError;
-            std::chrono::high_resolution_clock::time_point totalStart = std::chrono::high_resolution_clock::now();
+            totalStart = std::chrono::high_resolution_clock::now();
 
             // Optimizing DFT
             storm::storage::DFT<ValueType> dft = origDft.optimize();
@@ -134,7 +134,7 @@ namespace storm {
 
         template<typename ValueType>
         typename DFTModelChecker<ValueType>::dft_result DFTModelChecker<ValueType>::checkDFT(storm::storage::DFT<ValueType> const& dft, std::shared_ptr<const storm::logic::Formula> const& formula, bool symred, bool enableDC, double approximationError) {
-            std::chrono::high_resolution_clock::time_point buildingStart = std::chrono::high_resolution_clock::now();
+            std::chrono::high_resolution_clock::time_point checkingStart = std::chrono::high_resolution_clock::now();
 
             // Find symmetries
             std::map<size_t, std::vector<std::vector<size_t>>> emptySymmetry;
@@ -145,15 +145,12 @@ namespace storm {
                 STORM_LOG_INFO("Found " << symmetries.groups.size() << " symmetries.");
                 STORM_LOG_TRACE("Symmetries: " << std::endl << symmetries);
             }
-            std::chrono::high_resolution_clock::time_point buildingEnd = std::chrono::high_resolution_clock::now();
-            buildingTime += buildingEnd - buildingStart;
 
             if (approximationError > 0.0) {
                 // Comparator for checking the error of the approximation
                 storm::utility::ConstantsComparator<ValueType> comparator;
                 // Build approximate Markov Automata for lower and upper bound
                 approximation_result approxResult = std::make_pair(storm::utility::zero<ValueType>(), storm::utility::zero<ValueType>());
-                std::chrono::high_resolution_clock::time_point explorationStart;
                 std::shared_ptr<storm::models::sparse::Model<ValueType>> model;
                 storm::builder::ExplicitDFTModelBuilderApprox<ValueType> builder(dft, symmetries, enableDC);
                 typename storm::builder::ExplicitDFTModelBuilderApprox<ValueType>::LabelOptions labeloptions; // TODO initialize this with the formula
@@ -163,10 +160,12 @@ namespace storm {
                 size_t iteration = 0;
                 do {
                     // Iteratively build finer models
-                    explorationStart = std::chrono::high_resolution_clock::now();
+                    std::chrono::high_resolution_clock::time_point explorationStart = std::chrono::high_resolution_clock::now();
                     STORM_LOG_INFO("Building model...");
                     // TODO Matthias refine model using existing model and MC results
                     builder.buildModel(labeloptions, iteration, approximationError);
+                    std::chrono::high_resolution_clock::time_point explorationEnd = std::chrono::high_resolution_clock::now();
+                    explorationTime = explorationEnd - explorationStart;
 
                     // TODO Matthias: possible to do bisimulation on approximated model and not on concrete one?
 
@@ -176,7 +175,8 @@ namespace storm {
                     // We only output the info from the lower bound as the info for the upper bound is the same
                     STORM_LOG_INFO("No. states: " << model->getNumberOfStates());
                     STORM_LOG_INFO("No. transitions: " << model->getNumberOfTransitions());
-                    explorationTime += std::chrono::high_resolution_clock::now() - explorationStart;
+                    buildingTime += std::chrono::high_resolution_clock::now() - explorationEnd;
+
                     // Check lower bound
                     std::unique_ptr<storm::modelchecker::CheckResult> result = checkModel(model, formula);
                     result->filter(storm::modelchecker::ExplicitQualitativeCheckResult(model->getInitialStates()));
@@ -186,9 +186,9 @@ namespace storm {
 
                     // Build model for upper bound
                     STORM_LOG_INFO("Getting model for upper bound...");
-                    explorationStart = std::chrono::high_resolution_clock::now();
+                    explorationEnd = std::chrono::high_resolution_clock::now();
                     model = builder.getModelApproximation(probabilityFormula ? true : false);
-                    explorationTime += std::chrono::high_resolution_clock::now() - explorationStart;
+                    buildingTime += std::chrono::high_resolution_clock::now() - explorationEnd;
                     // Check upper bound
                     result = checkModel(model, formula);
                     result->filter(storm::modelchecker::ExplicitQualitativeCheckResult(model->getInitialStates()));
@@ -198,6 +198,8 @@ namespace storm {
 
                     ++iteration;
                     STORM_LOG_INFO("Result after iteration " << iteration << ": (" << std::setprecision(10) << approxResult.first << ", " << approxResult.second << ")");
+                    totalTime = std::chrono::high_resolution_clock::now() - totalStart;
+                    printTimings();
                     STORM_LOG_THROW(!storm::utility::isInfinity<ValueType>(approxResult.first) && !storm::utility::isInfinity<ValueType>(approxResult.second), storm::exceptions::NotSupportedException, "Approximation does not work if result might be infinity.");
                 } while (!isApproximationSufficient(approxResult.first, approxResult.second, approximationError, probabilityFormula));
 
@@ -221,7 +223,7 @@ namespace storm {
                 //model->printModelInformationToStream(std::cout);
                 STORM_LOG_INFO("No. states (Explored): " << model->getNumberOfStates());
                 STORM_LOG_INFO("No. transitions (Explored): " << model->getNumberOfTransitions());
-                explorationTime += std::chrono::high_resolution_clock::now() - buildingEnd;
+                explorationTime += std::chrono::high_resolution_clock::now() - checkingStart;
 
                 // Model checking
                 std::unique_ptr<storm::modelchecker::CheckResult> result = checkModel(model, formula);
@@ -270,8 +272,8 @@ namespace storm {
         template<typename ValueType>
         void DFTModelChecker<ValueType>::printTimings(std::ostream& os) {
             os << "Times:" << std::endl;
-            os << "Building:\t" << buildingTime.count() << std::endl;
             os << "Exploration:\t" << explorationTime.count() << std::endl;
+            os << "Building:\t" << buildingTime.count() << std::endl;
             os << "Bisimulation:\t" << bisimulationTime.count() << std::endl;
             os << "Modelchecking:\t" << modelCheckingTime.count() << std::endl;
             os << "Total:\t\t" << totalTime.count() << std::endl;

@@ -34,7 +34,7 @@ namespace storm {
                 stateStorage(((dft.stateVectorSize() / 64) + 1) * 64),
                 // TODO Matthias: make choosable
                 //explorationQueue(dft.nrElements()+1, 0, 1)
-                explorationQueue(1001, 0, 0.001)
+                explorationQueue(200, 0, 0.9)
         {
             // Intentionally left empty.
             // TODO Matthias: remove again
@@ -291,9 +291,6 @@ namespace storm {
             size_t nrSkippedStates = 0;
             // TODO Matthias: do not empty queue every time but break before
             while (!explorationQueue.empty()) {
-                explorationQueue.fix();
-                //explorationQueue.print(std::cout);
-                //printNotExplored();
                 // Get the first state in the queue
                 ExplorationHeuristicPointer currentExplorationHeuristic = explorationQueue.popTop();
                 StateType currentId = currentExplorationHeuristic->getId();
@@ -602,17 +599,18 @@ namespace storm {
             }*/
 
             // Compute result with permutations of size <= 3
+            ValueType one = storm::utility::one<ValueType>();
             for (size_t i1 = 0; i1 < size; ++i1) {
                 // + 1/a
                 ValueType sum = rates[i1];
-                result += storm::utility::one<ValueType>() / sum;
+                result += one / sum;
                 for (size_t i2 = 0; i2 < i1; ++i2) {
                     // - 1/(a+b)
                     ValueType sum2 = sum + rates[i2];
-                    result -= storm::utility::one<ValueType>() / sum2;
+                    result -= one / sum2;
                     for (size_t i3 = 0; i3 < i2; ++i3) {
                         // + 1/(a+b+c)
-                        result += storm::utility::one<ValueType>() / (sum2 + rates[i3]);
+                        result += one / (sum2 + rates[i3]);
                     }
                 }
             }

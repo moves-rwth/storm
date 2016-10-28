@@ -16,7 +16,7 @@ namespace storm {
             using HeuristicPointer = std::shared_ptr<storm::builder::DFTExplorationHeuristicProbability<ValueType>>;
 
         public:
-            explicit BucketPriorityQueue(size_t nrBuckets, double lowerValue, double stepPerBucket);
+            explicit BucketPriorityQueue(size_t nrBuckets, double lowerValue, double ratio);
 
             void fix();
 
@@ -36,9 +36,23 @@ namespace storm {
 
             void print(std::ostream& out) const;
 
+            void printSizes(std::ostream& out) const;
+
         private:
 
             size_t getBucket(double priority) const;
+
+            const double lowerValue;
+
+            const bool HIGHER = true;
+
+            const bool AUTOSORT = false;
+
+            const double logBase;
+
+            const size_t nrBuckets;
+
+            size_t nrUnsortedItems;
 
             // List of buckets
             std::vector<std::vector<HeuristicPointer>> buckets;
@@ -51,15 +65,6 @@ namespace storm {
 
             std::function<bool(HeuristicPointer, HeuristicPointer)> compare;
 
-            double lowerValue;
-
-            double stepPerBucket;
-
-            size_t nrUnsortedItems;
-
-            const bool HIGHER = true;
-
-            const bool AUTOSORT = false;
         };
 
     }

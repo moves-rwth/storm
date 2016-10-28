@@ -2,11 +2,13 @@
 #include "src/utility/macros.h"
 #include "src/adapters/CarlAdapter.h"
 
+#include <cmath>
+
 namespace storm {
     namespace storage {
 
         template<typename ValueType>
-        BucketPriorityQueue<ValueType>::BucketPriorityQueue(size_t nrBuckets, double lowerValue, double stepPerBucket) : buckets(nrBuckets), currentBucket(nrBuckets), lowerValue(lowerValue), stepPerBucket(stepPerBucket), nrUnsortedItems(0) {
+        BucketPriorityQueue<ValueType>::BucketPriorityQueue(size_t nrBuckets, double lowerValue, double ratio) : lowerValue(lowerValue), logBase(std::log(ratio)), nrBuckets(nrBuckets), nrUnsortedItems(0), buckets(nrBuckets), currentBucket(nrBuckets) {
             compare = ([this](HeuristicPointer a, HeuristicPointer b) {
                 return *a < *b;
             });
@@ -14,7 +16,7 @@ namespace storm {
 
         template<typename ValueType>
         void BucketPriorityQueue<ValueType>::fix() {
-            if (currentBucket < buckets.size() && nrUnsortedItems > buckets[currentBucket].size() / 10) {
+            if (currentBucket < nrBuckets && nrUnsortedItems > buckets[currentBucket].size() / 10) {
                 // Fix current bucket
                 std::make_heap(buckets[currentBucket].begin(), buckets[currentBucket].end(), compare);
                 nrUnsortedItems = 0;
@@ -23,13 +25,13 @@ namespace storm {
 
         template<typename ValueType>
         bool BucketPriorityQueue<ValueType>::empty() const {
-            return currentBucket == buckets.size() && immediateBucket.empty();
+            return currentBucket == nrBuckets && immediateBucket.empty();
         }
 
         template<typename ValueType>
         std::size_t BucketPriorityQueue<ValueType>::size() const {
             size_t size = immediateBucket.size();
-            for (size_t i = currentBucket; currentBucket < buckets.size(); ++i) {
+            for (size_t i = currentBucket; currentBucket < nrBuckets; ++i) {
                 size += buckets[i].size();
             }
             return size;
@@ -129,7 +131,7 @@ namespace storm {
             buckets[currentBucket].pop_back();
             if (buckets[currentBucket].empty()) {
                 // Find next bucket with elements
-                for ( ; currentBucket < buckets.size(); ++currentBucket) {
+                for ( ; currentBucket < nrBuckets; ++currentBucket) {
                     if (!buckets[currentBucket].empty()) {
                         nrUnsortedItems = buckets[currentBucket].size();
                         if (AUTOSORT) {
@@ -151,18 +153,21 @@ namespace storm {
         template<typename ValueType>
         size_t BucketPriorityQueue<ValueType>::getBucket(double priority) const {
             STORM_LOG_ASSERT(priority >= lowerValue, "Priority " << priority << " is too low");
-            size_t newBucket = (priority - lowerValue) / stepPerBucket;
-            if (HIGHER) {
-                newBucket = buckets.size()-1 - newBucket;
+            size_t newBucket = std::log(priority - lowerValue) / logBase;
+            if (newBucket >= nrBuckets) {
+                newBucket = nrBuckets - 1;
             }
-            //std::cout << "get Bucket: " << priority << ", " << newBucket << ", " << ((priority - lowerValue) / stepPerBucket) << std::endl;
-            STORM_LOG_ASSERT(newBucket < buckets.size(), "Priority " << priority << " is too high");
+            if (!HIGHER) {
+                newBucket = nrBuckets-1 - newBucket;
+            }
+            //std::cout << "get Bucket: " << priority << ", " << newBucket << std::endl;
+            STORM_LOG_ASSERT(newBucket < nrBuckets, "Priority " << priority << " is too high");
             return newBucket;
         }
 
         template<typename ValueType>
         void BucketPriorityQueue<ValueType>::print(std::ostream& out) const {
-            out << "Bucket priority queue with size " << buckets.size() << ", lower value: " << lowerValue << " and step per bucket: " << stepPerBucket << std::endl;
+            out << "Bucket priority queue with size " << buckets.size() << ", lower value: " << lowerValue << " and logBase: " << logBase << std::endl;
             out << "Immediate bucket: ";
             for (HeuristicPointer heuristic : immediateBucket) {
                 out << heuristic->getId() << ", ";
@@ -171,7 +176,7 @@ namespace storm {
             out << "Current bucket (" << currentBucket << ") has " << nrUnsortedItems  << " unsorted items" << std::endl;
             for (size_t bucket = 0; bucket < buckets.size(); ++bucket) {
                 if (!buckets[bucket].empty()) {
-                    out << "Bucket " << bucket << " (" << (HIGHER ? buckets.size() -1 - bucket * stepPerBucket : bucket * stepPerBucket) << "):" << std::endl;
+                    out << "Bucket " << bucket << ":" << std::endl;
                     for (HeuristicPointer heuristic : buckets[bucket]) {
                         out << "\t" << heuristic->getId() << ": " << heuristic->getPriority() << std::endl;
                     }
@@ -179,6 +184,14 @@ namespace storm {
             }
         }
 
+        template<typename ValueType>
+        void BucketPriorityQueue<ValueType>::printSizes(std::ostream& out) const {
+            out << "Bucket sizes: " << immediateBucket.size() << " | ";
+            for (size_t bucket = 0; bucket < buckets.size(); ++bucket) {
+                out << buckets[bucket].size() << " ";
+            }
+            std::cout << std::endl;
+        }
 
         // Template instantiations
         template class BucketPriorityQueue<double>;

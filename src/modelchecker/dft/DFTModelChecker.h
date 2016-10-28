@@ -61,6 +61,7 @@ namespace storm {
             std::chrono::duration<double> bisimulationTime = std::chrono::duration<double>::zero();
             std::chrono::duration<double> modelCheckingTime = std::chrono::duration<double>::zero();
             std::chrono::duration<double> totalTime = std::chrono::duration<double>::zero();
+            std::chrono::high_resolution_clock::time_point totalStart;
 
             // Model checking result
             dft_result checkResult;
