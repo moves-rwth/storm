@@ -41,7 +41,6 @@ namespace storm {
                 return immediateBucket.back();
             }
             STORM_LOG_ASSERT(!empty(), "BucketPriorityQueue is empty");
-            STORM_LOG_ASSERT(nrUnsortedItems == 0, "First bucket is not sorted");
             return buckets[currentBucket].front();
         }
 
@@ -126,7 +125,6 @@ namespace storm {
                 return;
             }
             STORM_LOG_ASSERT(!empty(), "BucketPriorityQueue is empty");
-            STORM_LOG_ASSERT(nrUnsortedItems == 0, "First bucket is not sorted");
             std::pop_heap(buckets[currentBucket].begin(), buckets[currentBucket].end(), compare);
             buckets[currentBucket].pop_back();
             if (buckets[currentBucket].empty()) {

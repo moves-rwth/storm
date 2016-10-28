@@ -239,6 +239,16 @@ namespace storm {
             ValueType getUpperBound(DFTStatePointer const& state) const;
 
             /*!
+             * Compute the MTTF of an AND gate via a closed formula.
+             * The used formula is 1/( 1/a + 1/b + 1/c + ... - 1/(a+b) - 1/(a+c) - ... + 1/(a+b+c) + ... - ...)
+             *
+             * @param rates List of rates of children of AND.
+             * @param size  Only indices < size are considered in the vector.
+             * @return MTTF.
+             */
+            ValueType computeMTTFAnd(std::vector<ValueType> rates, size_t size) const;
+
+            /*!
              * Compares the priority of two states.
              *
              * @param idA Id of first state
@@ -314,6 +324,9 @@ namespace storm {
             // Notice that we need an ordered map here to easily iterate in increasing order over state ids.
             // TODO remove again
             std::map<StateType, std::pair<DFTStatePointer, ExplorationHeuristicPointer>> skippedStates;
+
+            // List of independent subtrees and the BEs contained in them.
+            std::vector<std::vector<size_t>> subtreeBEs;
         };
 
     }

@@ -241,21 +241,26 @@ namespace storm {
         }
 
         template<typename ValueType>
-        ValueType DFTState<ValueType>::getBERate(size_t id, bool considerPassive) const {
+        ValueType DFTState<ValueType>::getBERate(size_t id, bool avoidCold) const {
             STORM_LOG_ASSERT(mDft.isBasicElement(id), "Element is no BE.");
-            if (considerPassive && mDft.hasRepresentant(id) && !isActive(mDft.getRepresentant(id))) {
-                STORM_LOG_ASSERT(!storm::utility::isZero(mDft.getBasicElement(id)->passiveFailureRate()), "Failure rate of BE " << mDft.getBasicElement(id)->id() << " is 0 in state " << mDft.getStateString(mStatus, mStateGenerationInfo, mId));
-                return mDft.getBasicElement(id)->passiveFailureRate();
-            } else {
-                STORM_LOG_ASSERT(!storm::utility::isZero(mDft.getBasicElement(id)->activeFailureRate()), "Failure rate of BE " << mDft.getBasicElement(id)->id() << " is 0 in state " << mDft.getStateString(mStatus, mStateGenerationInfo, mId));
-                return mDft.getBasicElement(id)->activeFailureRate();
+
+            if (mDft.hasRepresentant(id) && !isActive(mDft.getRepresentant(id))) {
+                if (avoidCold && mDft.getBasicElement(id)->isColdBasicElement()) {
+                    // Return active failure rate instead of 0.
+                    return mDft.getBasicElement(id)->activeFailureRate();
+                } else {
+                    // Return passive failure rate
+                    return mDft.getBasicElement(id)->passiveFailureRate();
+                }
             }
+            // Return active failure rate
+            return mDft.getBasicElement(id)->activeFailureRate();
         }
 
         template<typename ValueType>
         ValueType DFTState<ValueType>::getFailableBERate(size_t index) const {
             STORM_LOG_ASSERT(index < nrFailableBEs(), "Index invalid.");
-            return getBERate(mCurrentlyFailableBE[index], true);
+            return getBERate(mCurrentlyFailableBE[index], false);
         }
 
         template<typename ValueType>
@@ -264,7 +269,7 @@ namespace storm {
             STORM_LOG_ASSERT(isPseudoState() || storm::utility::isZero<ValueType>(mDft.getBasicElement(mCurrentlyNotFailableBE[index])->activeFailureRate()) ||
                              (mDft.hasRepresentant(mCurrentlyNotFailableBE[index]) && !isActive(mDft.getRepresentant(mCurrentlyNotFailableBE[index]))), "BE " << mCurrentlyNotFailableBE[index] << " can fail in state: " << mDft.getStateString(mStatus, mStateGenerationInfo, mId));
             // Use active failure rate as passive failure rate is 0.
-            return getBERate(mCurrentlyNotFailableBE[index], false);
+            return getBERate(mCurrentlyNotFailableBE[index], true);
         }
 
         template<typename ValueType>

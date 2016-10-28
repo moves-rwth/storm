@@ -39,6 +39,61 @@ namespace storm {
             // Intentionally left empty.
             // TODO Matthias: remove again
             heuristic = storm::builder::ApproximationHeuristic::PROBABILITY;
+
+            // Compute independent subtrees
+            if (dft.topLevelType() == storm::storage::DFTElementType::OR) {
+                // We only support this for approximation with top level element OR
+                for (auto const& child : dft.getGate(dft.getTopLevelIndex())->children()) {
+                    // Consider all children of the top level gate
+                    std::vector<size_t> isubdft;
+                    if (child->nrParents() > 1 || child->hasOutgoingDependencies()) {
+                        STORM_LOG_TRACE("child " << child->name() << "does not allow modularisation.");
+                        isubdft.clear();
+                    } else if (dft.isGate(child->id())) {
+                        isubdft = dft.getGate(child->id())->independentSubDft(false);
+                    } else {
+                        STORM_LOG_ASSERT(dft.isBasicElement(child->id()), "Child is no BE.");
+                        if(dft.getBasicElement(child->id())->hasIngoingDependencies()) {
+                            STORM_LOG_TRACE("child " << child->name() << "does not allow modularisation.");
+                            isubdft.clear();
+                        } else {
+                            isubdft = {child->id()};
+                        }
+                    }
+                    if(isubdft.empty()) {
+                        subtreeBEs.clear();
+                        break;
+                    } else {
+                        // Add new independent subtree
+                        std::vector<size_t> subtree;
+                        for (size_t id : isubdft) {
+                            if (dft.isBasicElement(id)) {
+                                subtree.push_back(id);
+                            }
+                        }
+                        subtreeBEs.push_back(subtree);
+                    }
+                }
+            }
+            if (subtreeBEs.empty()) {
+                // Consider complete tree
+                std::vector<size_t> subtree;
+                for (size_t id = 0; id < dft.nrElements(); ++id) {
+                    if (dft.isBasicElement(id)) {
+                        subtree.push_back(id);
+                    }
+                }
+                subtreeBEs.push_back(subtree);
+            }
+
+            for (auto tree : subtreeBEs) {
+                std::stringstream stream;
+                stream << "Subtree: ";
+                for (size_t id : tree) {
+                    stream << id << ", ";
+                }
+                STORM_LOG_TRACE(stream.str());
+            }
         }
 
         template<typename ValueType, typename StateType>
@@ -476,18 +531,42 @@ namespace storm {
         template<typename ValueType, typename StateType>
         ValueType ExplicitDFTModelBuilderApprox<ValueType, StateType>::getUpperBound(DFTStatePointer const& state) const {
             // Get the upper bound by considering the failure of all BEs
-            // The used formula for the rate is 1/( 1/a + 1/b + 1/c + ... - 1/(a+b) - 1/(a+c) - ... + 1/(a+b+c) + ... - ...)
-            ValueType upperBound = storm::utility::zero<ValueType>();
+            ValueType upperBound = storm::utility::one<ValueType>();
+            ValueType rateSum = storm::utility::zero<ValueType>();
 
-            // Get all possible rates
-            std::vector<ValueType> rates(state->nrFailableBEs() + state->nrNotFailableBEs());
-            for (size_t index = 0; index < state->nrFailableBEs(); ++index) {
-                rates[index] = state->getFailableBERate(index);
+            // Compute for each independent subtree
+            for (std::vector<size_t> const& subtree : subtreeBEs) {
+                // Get all possible rates
+                std::vector<ValueType> rates;
+                for (size_t id : subtree) {
+                    if (state->isOperational(id)) {
+                        // Get BE rate
+                        rates.push_back(state->getBERate(id, true));
+                        rateSum += rates.back();
+                    }
+                }
+
+                // We move backwards and start with swapping the last element to itself
+                // Then we do not need to swap back
+                for (auto it = rates.rbegin(); it != rates.rend(); ++it) {
+                    // Compute AND MTTF of subtree without current rate and scale with current rate
+                    std::iter_swap(it, rates.end() - 1);
+                    upperBound += rates.back() * computeMTTFAnd(rates, rates.size() - 1);
+                }
             }
-            for (size_t index = 0; index < state->nrNotFailableBEs(); ++index) {
-                rates[index + state->nrFailableBEs()] = state->getNotFailableBERate(index);
+
+            STORM_LOG_TRACE("Upper bound is " << (rateSum / upperBound) << " for state " << state->getId());
+            STORM_LOG_ASSERT(!storm::utility::isZero(upperBound), "Upper bound is 0");
+            STORM_LOG_ASSERT(!storm::utility::isZero(rateSum), "State is absorbing");
+            return rateSum / upperBound;
+        }
+
+        template<typename ValueType, typename StateType>
+        ValueType ExplicitDFTModelBuilderApprox<ValueType, StateType>::computeMTTFAnd(std::vector<ValueType> rates, size_t size) const {
+            ValueType result = storm::utility::zero<ValueType>();
+            if (size == 0) {
+                return result;
             }
-            STORM_LOG_ASSERT(rates.size() > 0, "State is absorbing");
 
             // TODO Matthias: works only for <64 BEs!
             // WARNING: this code produces wrong results for more than 32 BEs
@@ -508,30 +587,30 @@ namespace storm {
                     sum += storm::utility::one<ValueType>() / permResult;
                 } while(permutation < (static_cast<size_t>(1) << rates.size()) && permutation != 0);
                 if (i % 2 == 0) {
-                    upperBound -= sum;
+                    result -= sum;
                 } else {
-                    upperBound += sum;
+                    result += sum;
                 }
             }*/
 
-            // Compute upper bound with permutations of size <= 3
-            for (size_t i1 = 0; i1 < rates.size(); ++i1) {
+            // Compute result with permutations of size <= 3
+            for (size_t i1 = 0; i1 < size; ++i1) {
                 // + 1/a
                 ValueType sum = rates[i1];
-                upperBound += storm::utility::one<ValueType>() / sum;
+                result += storm::utility::one<ValueType>() / sum;
                 for (size_t i2 = 0; i2 < i1; ++i2) {
                     // - 1/(a+b)
                     ValueType sum2 = sum + rates[i2];
-                    upperBound -= storm::utility::one<ValueType>() / sum2;
+                    result -= storm::utility::one<ValueType>() / sum2;
                     for (size_t i3 = 0; i3 < i2; ++i3) {
                         // + 1/(a+b+c)
-                        upperBound += storm::utility::one<ValueType>() / (sum2 + rates[i3]);
+                        result += storm::utility::one<ValueType>() / (sum2 + rates[i3]);
                     }
                 }
             }
 
-            STORM_LOG_ASSERT(!storm::utility::isZero(upperBound), "UpperBound is 0");
-            return storm::utility::one<ValueType>() / upperBound;
+            STORM_LOG_ASSERT(!storm::utility::isZero(result), "UpperBound is 0");
+            return result;
         }
 
         template<typename ValueType, typename StateType>

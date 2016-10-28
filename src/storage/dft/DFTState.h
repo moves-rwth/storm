@@ -208,6 +208,17 @@ namespace storm {
              */
             ValueType getNotFailableBERate(size_t index) const;
 
+            /**
+             * Get the failure rate of the given BE.
+             *
+             * @param id        Id of BE.
+             * @param avoidCold Flag indicating if a cold passive failure rate should be avoided by giving
+             *                  the active failure rate instead.
+             *
+             * @return Failure rate of the BE.
+             */
+            ValueType getBERate(size_t id, bool avoidCold) const;
+
             /** Get number of currently failable dependencies.
              *
              * @return Number of failable dependencies.
@@ -301,17 +312,6 @@ namespace storm {
             
         private:
             void propagateActivation(size_t representativeId);
-
-            /**
-             * Get the failure rate of the given BE.
-             *
-             * @param id              Id of BE.
-             * @param considerPassive Flag indicating if the passive failure rate should be returned if
-             *                        the BE currently is passive.
-             *
-             * @return Failure rate of the BE.
-             */
-            ValueType getBERate(size_t id, bool considerPassive) const;
 
         };
 
