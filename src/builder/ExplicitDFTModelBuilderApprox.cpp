@@ -549,11 +549,24 @@ namespace storm {
                     }
                 }
 
+                STORM_LOG_ASSERT(rates.size() > 0, "No rates failable");
+
+                // Sort rates
+                std::sort(rates.begin(), rates.end());
+                std::vector<size_t> rateCount(rates.size(), 0);
+                size_t lastIndex = 0;
+                for (size_t i = 0; i < rates.size(); ++i) {
+                    if (rates[lastIndex] != rates[i]) {
+                        lastIndex = i;
+                    }
+                    ++rateCount[lastIndex];
+                }
+
                 for (size_t i = 0; i < rates.size(); ++i) {
                     // Cold BEs cannot fail in the first step
-                    if (!coldBEs.get(i)) {
+                    if (!coldBEs.get(i) && rateCount[i] > 0) {
                         // Compute AND MTTF of subtree without current rate and scale with current rate
-                        upperBound += rates.back() * computeMTTFAnd(rates, rates.size() - 1);
+                        upperBound += rates.back() * rateCount[i] * computeMTTFAnd(rates, rates.size() - 1);
                         // Swap here to avoid swapping back
                         std::iter_swap(rates.begin() + i, rates.end() - 1);
                     }
@@ -567,7 +580,7 @@ namespace storm {
         }
 
         template<typename ValueType, typename StateType>
-        ValueType ExplicitDFTModelBuilderApprox<ValueType, StateType>::computeMTTFAnd(std::vector<ValueType> rates, size_t size) const {
+        ValueType ExplicitDFTModelBuilderApprox<ValueType, StateType>::computeMTTFAnd(std::vector<ValueType> const& rates, size_t size) const {
             ValueType result = storm::utility::zero<ValueType>();
             if (size == 0) {
                 return result;

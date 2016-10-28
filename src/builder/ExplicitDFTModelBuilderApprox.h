@@ -246,7 +246,7 @@ namespace storm {
              * @param size  Only indices < size are considered in the vector.
              * @return MTTF.
              */
-            ValueType computeMTTFAnd(std::vector<ValueType> rates, size_t size) const;
+            ValueType computeMTTFAnd(std::vector<ValueType> const& rates, size_t size) const;
 
             /*!
              * Compares the priority of two states.
