@@ -165,7 +165,7 @@ namespace storm {
                     // TODO Matthias refine model using existing model and MC results
                     builder.buildModel(labeloptions, iteration, approximationError);
                     std::chrono::high_resolution_clock::time_point explorationEnd = std::chrono::high_resolution_clock::now();
-                    explorationTime = explorationEnd - explorationStart;
+                    explorationTime += explorationEnd - explorationStart;
 
                     // TODO Matthias: possible to do bisimulation on approximated model and not on concrete one?
 
