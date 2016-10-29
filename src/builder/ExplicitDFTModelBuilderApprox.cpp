@@ -143,17 +143,19 @@ namespace storm {
                 initializeNextIteration();
             }
 
-            switch (heuristic) {
-                case storm::builder::ApproximationHeuristic::NONE:
-                    // Do not change anything
-                    approximationThreshold = dft.nrElements()+10;
-                    break;
-                case storm::builder::ApproximationHeuristic::DEPTH:
-                    approximationThreshold = iteration;
-                    break;
-                case storm::builder::ApproximationHeuristic::PROBABILITY:
-                    approximationThreshold = 10 * std::pow(2, iteration);
-                    break;
+            if (approximationThreshold > 0) {
+                switch (heuristic) {
+                    case storm::builder::ApproximationHeuristic::NONE:
+                        // Do not change anything
+                        approximationThreshold = dft.nrElements()+10;
+                        break;
+                    case storm::builder::ApproximationHeuristic::DEPTH:
+                        approximationThreshold = iteration;
+                        break;
+                    case storm::builder::ApproximationHeuristic::PROBABILITY:
+                        approximationThreshold = 10 * std::pow(2, iteration);
+                        break;
+                }
             }
             exploreStateSpace(approximationThreshold);
 
@@ -319,7 +321,7 @@ namespace storm {
                 // Try to explore the next state
                 generator.load(currentState);
 
-                if (nrExpandedStates > approximationThreshold && !currentExplorationHeuristic->isExpand()) {
+                if (approximationThreshold > 0.0 && nrExpandedStates > approximationThreshold && !currentExplorationHeuristic->isExpand()) {
                 //if (currentExplorationHeuristic->isSkip(approximationThreshold)) {
                     // Skip the current state
                     ++nrSkippedStates;
