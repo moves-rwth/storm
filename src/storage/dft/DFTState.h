@@ -27,15 +27,13 @@ namespace storm {
             storm::storage::BitVector mStatus;
             size_t mId;
             std::vector<size_t> mCurrentlyFailableBE;
-            std::vector<size_t> mCurrentlyNotFailableBE;
             std::vector<size_t> mFailableDependencies;
             std::vector<size_t> mUsedRepresentants;
             bool mPseudoState;
             bool mValid = true;
             const DFT<ValueType>& mDft;
             const DFTStateGenerationInfo& mStateGenerationInfo;
-            storm::builder::DFTExplorationHeuristic<ValueType> exploreHeuristic;
-            
+
         public:
             /**
              * Construct the initial state.
@@ -123,26 +121,6 @@ namespace storm {
                 return mPseudoState;
             }
 
-            void setHeuristicValues(size_t depth, ValueType rate, ValueType exitRate) {
-                exploreHeuristic.setHeuristicValues(depth, rate, exitRate);
-            }
-
-            void setHeuristicValues(std::shared_ptr<storm::storage::DFTState<ValueType>> oldState, ValueType rate, ValueType exitRate) {
-                if (hasFailed(mDft.getTopLevelIndex()) || isFailsafe(mDft.getTopLevelIndex()) || nrFailableDependencies() > 0 || (nrFailableDependencies() == 0 && nrFailableBEs() == 0)) {
-                    // Do not skip absorbing state or if reached by dependencies
-                    exploreHeuristic.setNotSkip();
-                }
-                exploreHeuristic.setHeuristicValues(oldState->exploreHeuristic.getDepth() + 1, rate, exitRate);
-            }
-
-            bool isSkip(double approximationThreshold, storm::builder::ApproximationHeuristic heuristic) {
-                return exploreHeuristic.isSkip(approximationThreshold, heuristic);
-            }
-
-            double getPriority() const {
-                return exploreHeuristic.getPriority();
-            }
-            
             storm::storage::BitVector const& status() const {
                 return mStatus;
             }
@@ -203,15 +181,6 @@ namespace storm {
             }
 
             /**
-             * Get number of currently not failable BEs. These are cold BE which can fail in the future.
-             *
-             * @return Number of not failable BEs.
-             */
-            size_t nrNotFailableBEs() const {
-                return mCurrentlyNotFailableBE.size();
-            }
-
-            /**
              * Get the failure rate of the currently failable BE on the given index.
              *
              * @param index           Index of BE in list of currently failable BEs.
@@ -221,13 +190,13 @@ namespace storm {
             ValueType getFailableBERate(size_t index) const;
 
             /**
-             * Get the failure rate of the currently not failable BE on the given index.
+             * Get the current failure rate of the given BE.
              *
-             * @param index Index of BE in list of currently not failable BEs.
+             * @param id        Id of BE.
              *
              * @return Failure rate of the BE.
              */
-            ValueType getNotFailableBERate(size_t index) const;
+            ValueType getBERate(size_t id) const;
 
             /** Get number of currently failable dependencies.
              *
@@ -322,22 +291,6 @@ namespace storm {
             
         private:
             void propagateActivation(size_t representativeId);
-
-            /**
-             * Get the failure rate of the given BE.
-             *
-             * @param id              Id of BE.
-             * @param considerPassive Flag indicating if the passive failure rate should be returned if
-             *                        the BE currently is passive.
-             *
-             * @return Failure rate of the BE.
-             */
-            ValueType getBERate(size_t id, bool considerPassive) const;
-
-            /*!
-             * Sort failable BEs in decreasing order of their active failure rate.
-             */
-            void sortFailableBEs();
 
         };
 

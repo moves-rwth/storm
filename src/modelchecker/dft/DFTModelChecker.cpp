@@ -17,13 +17,13 @@ namespace storm {
         template<typename ValueType>
         void DFTModelChecker<ValueType>::check(storm::storage::DFT<ValueType> const& origDft, std::shared_ptr<const storm::logic::Formula> const& formula, bool symred, bool allowModularisation, bool enableDC, double approximationError) {
             // Initialize
-            this->buildingTime = std::chrono::duration<double>::zero();
             this->explorationTime = std::chrono::duration<double>::zero();
+            this->buildingTime = std::chrono::duration<double>::zero();
             this->bisimulationTime = std::chrono::duration<double>::zero();
             this->modelCheckingTime = std::chrono::duration<double>::zero();
             this->totalTime = std::chrono::duration<double>::zero();
             this->approximationError = approximationError;
-            std::chrono::high_resolution_clock::time_point totalStart = std::chrono::high_resolution_clock::now();
+            totalStart = std::chrono::high_resolution_clock::now();
 
             // Optimizing DFT
             storm::storage::DFT<ValueType> dft = origDft.optimize();
@@ -100,6 +100,8 @@ namespace storm {
                     ValueType result = storm::utility::zero<ValueType>();
                     int limK = invResults ? -1 : nrM+1;
                     int chK = invResults ? -1 : 1;
+                    // WARNING: there is a bug for computing permutations with more than 32 elements
+                    STORM_LOG_ASSERT(res.size() < 32, "Permutations work only for < 32 elements");
                     for(int cK = nrK; cK != limK; cK += chK ) {
                         STORM_LOG_ASSERT(cK >= 0, "ck negative.");
                         size_t permutation = smallestIntWithNBitsSet(static_cast<size_t>(cK));
@@ -132,7 +134,7 @@ namespace storm {
 
         template<typename ValueType>
         typename DFTModelChecker<ValueType>::dft_result DFTModelChecker<ValueType>::checkDFT(storm::storage::DFT<ValueType> const& dft, std::shared_ptr<const storm::logic::Formula> const& formula, bool symred, bool enableDC, double approximationError) {
-            std::chrono::high_resolution_clock::time_point buildingStart = std::chrono::high_resolution_clock::now();
+            std::chrono::high_resolution_clock::time_point checkingStart = std::chrono::high_resolution_clock::now();
 
             // Find symmetries
             std::map<size_t, std::vector<std::vector<size_t>>> emptySymmetry;
@@ -143,35 +145,38 @@ namespace storm {
                 STORM_LOG_INFO("Found " << symmetries.groups.size() << " symmetries.");
                 STORM_LOG_TRACE("Symmetries: " << std::endl << symmetries);
             }
-            std::chrono::high_resolution_clock::time_point buildingEnd = std::chrono::high_resolution_clock::now();
-            buildingTime += buildingEnd - buildingStart;
 
             if (approximationError > 0.0) {
                 // Comparator for checking the error of the approximation
                 storm::utility::ConstantsComparator<ValueType> comparator;
                 // Build approximate Markov Automata for lower and upper bound
-                double currentApproximationError = approximationError;
                 approximation_result approxResult = std::make_pair(storm::utility::zero<ValueType>(), storm::utility::zero<ValueType>());
-                std::chrono::high_resolution_clock::time_point explorationStart;
                 std::shared_ptr<storm::models::sparse::Model<ValueType>> model;
                 storm::builder::ExplicitDFTModelBuilderApprox<ValueType> builder(dft, symmetries, enableDC);
                 typename storm::builder::ExplicitDFTModelBuilderApprox<ValueType>::LabelOptions labeloptions; // TODO initialize this with the formula
 
+                bool probabilityFormula = formula->isProbabilityOperatorFormula();
+                STORM_LOG_ASSERT((formula->isTimeOperatorFormula() && !probabilityFormula) || (!formula->isTimeOperatorFormula() && probabilityFormula), "Probability formula not initialized correctly");
                 size_t iteration = 0;
                 do {
                     // Iteratively build finer models
-                    explorationStart = std::chrono::high_resolution_clock::now();
+                    std::chrono::high_resolution_clock::time_point explorationStart = std::chrono::high_resolution_clock::now();
                     STORM_LOG_INFO("Building model...");
                     // TODO Matthias refine model using existing model and MC results
-                    currentApproximationError = pow(0.1, iteration) * approximationError;
-                    builder.buildModel(labeloptions, iteration < 1, iteration);
+                    builder.buildModel(labeloptions, iteration, approximationError);
+                    std::chrono::high_resolution_clock::time_point explorationEnd = std::chrono::high_resolution_clock::now();
+                    explorationTime = explorationEnd - explorationStart;
 
                     // TODO Matthias: possible to do bisimulation on approximated model and not on concrete one?
 
                     // Build model for lower bound
                     STORM_LOG_INFO("Getting model for lower bound...");
-                    model = builder.getModelApproximation(true);
-                    explorationTime += std::chrono::high_resolution_clock::now() - explorationStart;
+                    model = builder.getModelApproximation(probabilityFormula ? false : true);
+                    // We only output the info from the lower bound as the info for the upper bound is the same
+                    STORM_LOG_INFO("No. states: " << model->getNumberOfStates());
+                    STORM_LOG_INFO("No. transitions: " << model->getNumberOfTransitions());
+                    buildingTime += std::chrono::high_resolution_clock::now() - explorationEnd;
+
                     // Check lower bound
                     std::unique_ptr<storm::modelchecker::CheckResult> result = checkModel(model, formula);
                     result->filter(storm::modelchecker::ExplicitQualitativeCheckResult(model->getInitialStates()));
@@ -181,9 +186,9 @@ namespace storm {
 
                     // Build model for upper bound
                     STORM_LOG_INFO("Getting model for upper bound...");
-                    explorationStart = std::chrono::high_resolution_clock::now();
-                    model = builder.getModelApproximation(false);
-                    explorationTime += std::chrono::high_resolution_clock::now() - explorationStart;
+                    explorationEnd = std::chrono::high_resolution_clock::now();
+                    model = builder.getModelApproximation(probabilityFormula ? true : false);
+                    buildingTime += std::chrono::high_resolution_clock::now() - explorationEnd;
                     // Check upper bound
                     result = checkModel(model, formula);
                     result->filter(storm::modelchecker::ExplicitQualitativeCheckResult(model->getInitialStates()));
@@ -193,8 +198,10 @@ namespace storm {
 
                     ++iteration;
                     STORM_LOG_INFO("Result after iteration " << iteration << ": (" << std::setprecision(10) << approxResult.first << ", " << approxResult.second << ")");
+                    totalTime = std::chrono::high_resolution_clock::now() - totalStart;
+                    printTimings();
                     STORM_LOG_THROW(!storm::utility::isInfinity<ValueType>(approxResult.first) && !storm::utility::isInfinity<ValueType>(approxResult.second), storm::exceptions::NotSupportedException, "Approximation does not work if result might be infinity.");
-                } while (!isApproximationSufficient(approxResult.first, approxResult.second, approximationError));
+                } while (!isApproximationSufficient(approxResult.first, approxResult.second, approximationError, probabilityFormula));
 
                 STORM_LOG_INFO("Finished approximation after " << iteration << " iteration" << (iteration > 1 ? "s." : "."));
                 return approxResult;
@@ -203,10 +210,10 @@ namespace storm {
                 STORM_LOG_INFO("Building Model...");
                 std::shared_ptr<storm::models::sparse::Model<ValueType>> model;
                 // TODO Matthias: use only one builder if everything works again
-                if (approximationError >= 0.0) {
+                if (storm::settings::getModule<storm::settings::modules::DFTSettings>().isApproximationErrorSet()) {
                     storm::builder::ExplicitDFTModelBuilderApprox<ValueType> builder(dft, symmetries, enableDC);
                     typename storm::builder::ExplicitDFTModelBuilderApprox<ValueType>::LabelOptions labeloptions; // TODO initialize this with the formula
-                    builder.buildModel(labeloptions, true);
+                    builder.buildModel(labeloptions, 0);
                     model = builder.getModel();
                 } else {
                     storm::builder::ExplicitDFTModelBuilder<ValueType> builder(dft, symmetries, enableDC);
@@ -216,7 +223,7 @@ namespace storm {
                 //model->printModelInformationToStream(std::cout);
                 STORM_LOG_INFO("No. states (Explored): " << model->getNumberOfStates());
                 STORM_LOG_INFO("No. transitions (Explored): " << model->getNumberOfTransitions());
-                explorationTime += std::chrono::high_resolution_clock::now() - buildingEnd;
+                explorationTime += std::chrono::high_resolution_clock::now() - checkingStart;
 
                 // Model checking
                 std::unique_ptr<storm::modelchecker::CheckResult> result = checkModel(model, formula);
@@ -248,20 +255,25 @@ namespace storm {
         }
 
         template<typename ValueType>
-        bool DFTModelChecker<ValueType>::isApproximationSufficient(ValueType lowerBound, ValueType upperBound, double approximationError) {
+        bool DFTModelChecker<ValueType>::isApproximationSufficient(ValueType lowerBound, ValueType upperBound, double approximationError, bool relative) {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Approximation works only for double.");
         }
 
         template<>
-        bool DFTModelChecker<double>::isApproximationSufficient(double lowerBound, double upperBound, double approximationError) {
-            return upperBound - lowerBound <= approximationError * (lowerBound + upperBound) / 2;
+        bool DFTModelChecker<double>::isApproximationSufficient(double lowerBound, double upperBound, double approximationError, bool relative) {
+            STORM_LOG_THROW(!std::isnan(lowerBound) && !std::isnan(upperBound), storm::exceptions::NotSupportedException, "Approximation does not work if result is NaN.");
+            if (relative) {
+                return upperBound - lowerBound <= approximationError;
+            } else {
+                return upperBound - lowerBound <= approximationError * (lowerBound + upperBound) / 2;
+            }
         }
 
         template<typename ValueType>
         void DFTModelChecker<ValueType>::printTimings(std::ostream& os) {
             os << "Times:" << std::endl;
-            os << "Building:\t" << buildingTime.count() << std::endl;
             os << "Exploration:\t" << explorationTime.count() << std::endl;
+            os << "Building:\t" << buildingTime.count() << std::endl;
             os << "Bisimulation:\t" << bisimulationTime.count() << std::endl;
             os << "Modelchecking:\t" << modelCheckingTime.count() << std::endl;
             os << "Total:\t\t" << totalTime.count() << std::endl;

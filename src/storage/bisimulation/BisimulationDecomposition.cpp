@@ -230,25 +230,25 @@ namespace storm {
         
         template<typename ModelType, typename BlockDataType>
         void BisimulationDecomposition<ModelType, BlockDataType>::performPartitionRefinement() {
-            // Insert all blocks into the splitter queue as a (potential) splitter.
-            std::deque<Block<BlockDataType>*> splitterQueue;
-            std::for_each(partition.getBlocks().begin(), partition.getBlocks().end(), [&] (std::unique_ptr<Block<BlockDataType>> const& block) { block->data().setSplitter(); splitterQueue.push_back(block.get()); } );
+            // Insert all blocks into the splitter vector as a (potential) splitter.
+            std::vector<Block<BlockDataType>*> splitterVector;
+            std::for_each(partition.getBlocks().begin(), partition.getBlocks().end(), [&] (std::unique_ptr<Block<BlockDataType>> const& block) { block->data().setSplitter(); splitterVector.push_back(block.get()); } );
             
             // Then perform the actual splitting until there are no more splitters.
             uint_fast64_t iterations = 0;
-            while (!splitterQueue.empty()) {
+            while (!splitterVector.empty()) {
                 ++iterations;
 
                 // Get and prepare the next splitter.
                 // Sort the splitters according to their sizes to prefer small splitters. That is just a heuristic, but
                 // tends to work well.
-                std::sort(splitterQueue.begin(), splitterQueue.end(), [] (Block<BlockDataType> const* b1, Block<BlockDataType> const* b2) { return b1->getNumberOfStates() < b2->getNumberOfStates(); } );
-                Block<BlockDataType>* splitter = splitterQueue.front();
-                splitterQueue.pop_front();
+                std::sort(splitterVector.begin(), splitterVector.end(), [] (Block<BlockDataType> const* b1, Block<BlockDataType> const* b2) { return b1->getNumberOfStates() > b2->getNumberOfStates(); } );
+                Block<BlockDataType>* splitter = splitterVector.back();
+                splitterVector.pop_back();
                 splitter->data().setSplitter(false);
                 
                 // Now refine the partition using the current splitter.
-                refinePartitionBasedOnSplitter(*splitter, splitterQueue);
+                refinePartitionBasedOnSplitter(*splitter, splitterVector);
             }
         }
         

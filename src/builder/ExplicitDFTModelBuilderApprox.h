@@ -10,7 +10,7 @@
 #include "src/storage/sparse/StateStorage.h"
 #include "src/storage/dft/DFT.h"
 #include "src/storage/dft/SymmetricUnits.h"
-#include "src/storage/DynamicPriorityQueue.h"
+#include "src/storage/BucketPriorityQueue.h"
 #include <boost/container/flat_set.hpp>
 #include <boost/optional/optional.hpp>
 #include <stack>
@@ -26,11 +26,10 @@ namespace storm {
         template<typename ValueType, typename StateType = uint32_t>
         class ExplicitDFTModelBuilderApprox {
 
-            using DFTElementPointer = std::shared_ptr<storm::storage::DFTElement<ValueType>>;
-            using DFTElementCPointer = std::shared_ptr<storm::storage::DFTElement<ValueType> const>;
-            using DFTGatePointer = std::shared_ptr<storm::storage::DFTGate<ValueType>>;
             using DFTStatePointer = std::shared_ptr<storm::storage::DFTState<ValueType>>;
-            using DFTRestrictionPointer = std::shared_ptr<storm::storage::DFTRestriction<ValueType>>;
+            // TODO Matthias: make choosable
+            using ExplorationHeuristic = DFTExplorationHeuristicProbability<ValueType>;
+            using ExplorationHeuristicPointer = std::shared_ptr<ExplorationHeuristic>;
 
 
             // A structure holding the individual components of a model.
@@ -159,10 +158,10 @@ namespace storm {
              * Build model from DFT.
              *
              * @param labelOpts              Options for labeling.
-             * @param firstTime              Flag indicating if the model is built for the first time or rebuilt.
+             * @param iteration              Current number of iteration.
              * @param approximationThreshold Threshold determining when to skip exploring states.
              */
-            void buildModel(LabelOptions const& labelOpts, bool firstTime, double approximationThreshold = 0.0);
+            void buildModel(LabelOptions const& labelOpts, size_t iteration, double approximationThreshold = 0.0);
 
             /*!
              * Get the built model.
@@ -218,18 +217,36 @@ namespace storm {
             void setMarkovian(bool markovian);
 
             /**
-             * Change matrix to reflect the lower approximation bound.
+             * Change matrix to reflect the lower or upper approximation bound.
              *
-             * @param matrix Matrix to change. The change are reflected here.
+             * @param matrix     Matrix to change. The change are reflected here.
+             * @param lowerBound Flag indicating if the lower bound should be used. Otherwise the upper bound is used.
              */
-            void changeMatrixLowerBound(storm::storage::SparseMatrix<ValueType> & matrix) const;
+            void changeMatrixBound(storm::storage::SparseMatrix<ValueType> & matrix, bool lowerBound) const;
 
             /*!
-             * Change matrix to reflect the upper approximation bound.
+             * Get lower bound approximation for state.
              *
-             * @param matrix Matrix to change. The change are reflected here.
+             * @return Lower bound approximation.
              */
-            void changeMatrixUpperBound(storm::storage::SparseMatrix<ValueType> & matrix) const;
+            ValueType getLowerBound(DFTStatePointer const& state) const;
+
+            /*!
+             * Get upper bound approximation for state.
+             *
+             * @return Upper bound approximation.
+             */
+            ValueType getUpperBound(DFTStatePointer const& state) const;
+
+            /*!
+             * Compute the MTTF of an AND gate via a closed formula.
+             * The used formula is 1/( 1/a + 1/b + 1/c + ... - 1/(a+b) - 1/(a+c) - ... + 1/(a+b+c) + ... - ...)
+             *
+             * @param rates List of rates of children of AND.
+             * @param size  Only indices < size are considered in the vector.
+             * @return MTTF.
+             */
+            ValueType computeMTTFAnd(std::vector<ValueType> const& rates, size_t size) const;
 
             /*!
              * Compares the priority of two states.
@@ -240,6 +257,8 @@ namespace storm {
              * @return True if the priority of the first state is greater then the priority of the second one.
              */
             bool isPriorityGreater(StateType idA, StateType idB) const;
+
+            void printNotExplored() const;
 
             /*!
              * Create the model model from the model components.
@@ -294,16 +313,20 @@ namespace storm {
             storm::storage::sparse::StateStorage<StateType> stateStorage;
 
             // A priority queue of states that still need to be explored.
-            storm::storage::DynamicPriorityQueue<StateType, std::vector<StateType>, std::function<bool(StateType, StateType)>> explorationQueue;
+            storm::storage::BucketPriorityQueue<ValueType> explorationQueue;
+            //storm::storage::DynamicPriorityQueue<ExplorationHeuristicPointer, std::vector<ExplorationHeuristicPointer>, std::function<bool(ExplorationHeuristicPointer, ExplorationHeuristicPointer)>> explorationQueue;
 
-            // A mapping of not yet explored states from the id to the state object.
-            std::map<StateType, DFTStatePointer> statesNotExplored;
+            // A mapping of not yet explored states from the id to the tuple (state object, heuristic values).
+            std::map<StateType, std::pair<DFTStatePointer, ExplorationHeuristicPointer>> statesNotExplored;
 
             // Holds all skipped states which were not yet expanded. More concretely it is a mapping from matrix indices
             // to the corresponding skipped states.
             // Notice that we need an ordered map here to easily iterate in increasing order over state ids.
             // TODO remove again
-            std::map<StateType, DFTStatePointer> skippedStates;
+            std::map<StateType, std::pair<DFTStatePointer, ExplorationHeuristicPointer>> skippedStates;
+
+            // List of independent subtrees and the BEs contained in them.
+            std::vector<std::vector<size_t>> subtreeBEs;
         };
 
     }

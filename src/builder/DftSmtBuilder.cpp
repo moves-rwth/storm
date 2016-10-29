@@ -1,4 +1,4 @@
-#include "src/builder/DFTSMTBuilder.h"
+#include "src/builder/DftSmtBuilder.h"
 #include "src/exceptions/NotImplementedException.h"
 
 namespace storm {

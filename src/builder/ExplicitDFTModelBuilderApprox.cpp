@@ -3,6 +3,7 @@
 #include <src/models/sparse/Ctmc.h>
 #include <src/utility/constants.h>
 #include <src/utility/vector.h>
+#include "src/utility/bitoperations.h"
 #include <src/exceptions/UnexpectedException.h>
 #include "src/settings/modules/DFTSettings.h"
 #include "src/settings/SettingsManager.h"
@@ -31,18 +32,75 @@ namespace storm {
                 generator(dft, *stateGenerationInfo, enableDC, mergeFailedStates),
                 matrixBuilder(!generator.isDeterministicModel()),
                 stateStorage(((dft.stateVectorSize() / 64) + 1) * 64),
-                explorationQueue([this](StateType idA, StateType idB) {
-                        return isPriorityGreater(idA, idB);
-                    })
+                // TODO Matthias: make choosable
+                //explorationQueue(dft.nrElements()+1, 0, 1)
+                explorationQueue(200, 0, 0.9)
         {
             // Intentionally left empty.
+            // TODO Matthias: remove again
+            heuristic = storm::builder::ApproximationHeuristic::PROBABILITY;
+
+            // Compute independent subtrees
+            if (dft.topLevelType() == storm::storage::DFTElementType::OR) {
+                // We only support this for approximation with top level element OR
+                for (auto const& child : dft.getGate(dft.getTopLevelIndex())->children()) {
+                    // Consider all children of the top level gate
+                    std::vector<size_t> isubdft;
+                    if (child->nrParents() > 1 || child->hasOutgoingDependencies()) {
+                        STORM_LOG_TRACE("child " << child->name() << "does not allow modularisation.");
+                        isubdft.clear();
+                    } else if (dft.isGate(child->id())) {
+                        isubdft = dft.getGate(child->id())->independentSubDft(false);
+                    } else {
+                        STORM_LOG_ASSERT(dft.isBasicElement(child->id()), "Child is no BE.");
+                        if(dft.getBasicElement(child->id())->hasIngoingDependencies()) {
+                            STORM_LOG_TRACE("child " << child->name() << "does not allow modularisation.");
+                            isubdft.clear();
+                        } else {
+                            isubdft = {child->id()};
+                        }
+                    }
+                    if(isubdft.empty()) {
+                        subtreeBEs.clear();
+                        break;
+                    } else {
+                        // Add new independent subtree
+                        std::vector<size_t> subtree;
+                        for (size_t id : isubdft) {
+                            if (dft.isBasicElement(id)) {
+                                subtree.push_back(id);
+                            }
+                        }
+                        subtreeBEs.push_back(subtree);
+                    }
+                }
+            }
+            if (subtreeBEs.empty()) {
+                // Consider complete tree
+                std::vector<size_t> subtree;
+                for (size_t id = 0; id < dft.nrElements(); ++id) {
+                    if (dft.isBasicElement(id)) {
+                        subtree.push_back(id);
+                    }
+                }
+                subtreeBEs.push_back(subtree);
+            }
+
+            for (auto tree : subtreeBEs) {
+                std::stringstream stream;
+                stream << "Subtree: ";
+                for (size_t id : tree) {
+                    stream << id << ", ";
+                }
+                STORM_LOG_TRACE(stream.str());
+            }
         }
 
         template<typename ValueType, typename StateType>
-        void ExplicitDFTModelBuilderApprox<ValueType, StateType>::buildModel(LabelOptions const& labelOpts, bool firstTime, double approximationThreshold) {
+        void ExplicitDFTModelBuilderApprox<ValueType, StateType>::buildModel(LabelOptions const& labelOpts, size_t iteration, double approximationThreshold) {
             STORM_LOG_TRACE("Generating DFT state space");
 
-            if (firstTime) {
+            if (iteration < 1) {
                 // Initialize
                 modelComponents.markovianStates = storm::storage::BitVector(INITIAL_BITVECTOR_SIZE);
 
@@ -75,11 +133,28 @@ namespace storm {
                 STORM_LOG_ASSERT(stateStorage.initialStateIndices.size() == 1, "Only one initial state assumed.");
                 initialStateIndex = stateStorage.initialStateIndices[0];
                 STORM_LOG_TRACE("Initial state: " << initialStateIndex);
-
+                // Initialize heuristic values for inital state
+                STORM_LOG_ASSERT(!statesNotExplored.at(initialStateIndex).second, "Heuristic for initial state is already initialized");
+                ExplorationHeuristicPointer heuristic = std::make_shared<ExplorationHeuristic>(initialStateIndex);
+                heuristic->markExpand();
+                statesNotExplored[initialStateIndex].second = heuristic;
+                explorationQueue.push(heuristic);
             } else {
                 initializeNextIteration();
             }
 
+            switch (heuristic) {
+                case storm::builder::ApproximationHeuristic::NONE:
+                    // Do not change anything
+                    approximationThreshold = dft.nrElements()+10;
+                    break;
+                case storm::builder::ApproximationHeuristic::DEPTH:
+                    approximationThreshold = iteration;
+                    break;
+                case storm::builder::ApproximationHeuristic::PROBABILITY:
+                    approximationThreshold = 10 * std::pow(2, iteration);
+                    break;
+            }
             exploreStateSpace(approximationThreshold);
 
             size_t stateSize = stateStorage.getNumberOfStates() + (mergeFailedStates ? 1 : 0);
@@ -94,8 +169,7 @@ namespace storm {
 
             STORM_LOG_TRACE("State remapping: " << matrixBuilder.stateRemapping);
             STORM_LOG_TRACE("Markovian states: " << modelComponents.markovianStates);
-            STORM_LOG_DEBUG("Generated " << stateSize << " states");
-            STORM_LOG_DEBUG("Skipped " << skippedStates.size() << " states");
+            STORM_LOG_DEBUG("Model has " << stateSize << " states");
             STORM_LOG_DEBUG("Model is " << (generator.isDeterministicModel() ? "deterministic" : "non-deterministic"));
 
             // Build transition matrix
@@ -117,8 +191,8 @@ namespace storm {
             // Push skipped states to explore queue
             // TODO Matthias: remove
             for (auto const& skippedState : skippedStates) {
-                statesNotExplored[skippedState.second->getId()] = skippedState.second;
-                explorationQueue.push(skippedState.second->getId());
+                statesNotExplored[skippedState.second.first->getId()] = skippedState.second;
+                explorationQueue.push(skippedState.second.second);
             }
 
             // Initialize matrix builder again
@@ -134,7 +208,8 @@ namespace storm {
             auto iterSkipped = skippedStates.begin();
             size_t skippedBefore = 0;
             for (size_t i = 0; i < indexRemapping.size(); ++i) {
-                while (iterSkipped->first <= i) {
+                while (iterSkipped != skippedStates.end() && iterSkipped->first <= i) {
+                    STORM_LOG_ASSERT(iterSkipped->first < indexRemapping.size(), "Skipped is too high.");
                     ++skippedBefore;
                     ++iterSkipped;
                 }
@@ -146,7 +221,7 @@ namespace storm {
             matrixBuilder.mappingOffset = nrStates;
             STORM_LOG_TRACE("# expanded states: " << nrExpandedStates);
             StateType skippedIndex = nrExpandedStates;
-            std::map<StateType, DFTStatePointer> skippedStatesNew;
+            std::map<StateType, std::pair<DFTStatePointer, ExplorationHeuristicPointer>> skippedStatesNew;
             for (size_t id = 0; id < matrixBuilder.stateRemapping.size(); ++id) {
                 StateType index = matrixBuilder.stateRemapping[id];
                 auto itFind = skippedStates.find(index);
@@ -193,7 +268,7 @@ namespace storm {
                             auto itFind = skippedStates.find(itEntry->getColumn());
                             if (itFind != skippedStates.end()) {
                                 // Set id for skipped states as we remap it later
-                                matrixBuilder.addTransition(matrixBuilder.mappingOffset + itFind->second->getId(), itEntry->getValue());
+                                matrixBuilder.addTransition(matrixBuilder.mappingOffset + itFind->second.first->getId(), itEntry->getValue());
                             } else {
                                 // Set newly remapped index for expanded states
                                 matrixBuilder.addTransition(indexRemapping[itEntry->getColumn()], itEntry->getValue());
@@ -212,13 +287,17 @@ namespace storm {
 
         template<typename ValueType, typename StateType>
         void ExplicitDFTModelBuilderApprox<ValueType, StateType>::exploreStateSpace(double approximationThreshold) {
+            size_t nrExpandedStates = 0;
+            size_t nrSkippedStates = 0;
             // TODO Matthias: do not empty queue every time but break before
             while (!explorationQueue.empty()) {
                 // Get the first state in the queue
-                StateType currentId = explorationQueue.popTop();
+                ExplorationHeuristicPointer currentExplorationHeuristic = explorationQueue.popTop();
+                StateType currentId = currentExplorationHeuristic->getId();
                 auto itFind = statesNotExplored.find(currentId);
                 STORM_LOG_ASSERT(itFind != statesNotExplored.end(), "Id " << currentId << " not found");
-                DFTStatePointer currentState = itFind->second;
+                DFTStatePointer currentState = itFind->second.first;
+                STORM_LOG_ASSERT(currentExplorationHeuristic == itFind->second.second, "Exploration heuristics do not match");
                 STORM_LOG_ASSERT(currentState->getId() == currentId, "Ids do not match");
                 // Remove it from the list of not explored states
                 statesNotExplored.erase(itFind);
@@ -240,18 +319,21 @@ namespace storm {
                 // Try to explore the next state
                 generator.load(currentState);
 
-                if (currentState->isSkip(approximationThreshold, heuristic)) {
+                if (nrExpandedStates > approximationThreshold && !currentExplorationHeuristic->isExpand()) {
+                //if (currentExplorationHeuristic->isSkip(approximationThreshold)) {
                     // Skip the current state
+                    ++nrSkippedStates;
                     STORM_LOG_TRACE("Skip expansion of state: " << dft.getStateString(currentState));
                     setMarkovian(true);
                     // Add transition to target state with temporary value 0
                     // TODO Matthias: what to do when there is no unique target state?
                     matrixBuilder.addTransition(failedStateId, storm::utility::zero<ValueType>());
                     // Remember skipped state
-                    skippedStates[matrixBuilder.getCurrentRowGroup() - 1] = currentState;
+                    skippedStates[matrixBuilder.getCurrentRowGroup() - 1] = std::make_pair(currentState, currentExplorationHeuristic);
                     matrixBuilder.finishRow();
                 } else {
                     // Explore the current state
+                    ++nrExpandedStates;
                     storm::generator::StateBehavior<ValueType, StateType> behavior = generator.expand(std::bind(&ExplicitDFTModelBuilderApprox::getOrAddStateIndex, this, std::placeholders::_1));
                     STORM_LOG_ASSERT(!behavior.empty(), "Behavior is empty.");
                     setMarkovian(behavior.begin()->isMarkovian());
@@ -260,18 +342,40 @@ namespace storm {
                     for (auto const& choice : behavior) {
                         // Add the probabilistic behavior to the matrix.
                         for (auto const& stateProbabilityPair : choice) {
+                            STORM_LOG_ASSERT(!storm::utility::isZero(stateProbabilityPair.second), "Probability zero.");
                             // Set transition to state id + offset. This helps in only remapping all previously skipped states.
                             matrixBuilder.addTransition(matrixBuilder.mappingOffset + stateProbabilityPair.first, stateProbabilityPair.second);
-                            // TODO Matthias: set heuristic values here
+                            // Set heuristic values for reached states
+                            auto iter = statesNotExplored.find(stateProbabilityPair.first);
+                            if (iter != statesNotExplored.end()) {
+                                // Update heuristic values
+                                DFTStatePointer state = iter->second.first;
+                                if (!iter->second.second) {
+                                    // Initialize heuristic values
+                                    ExplorationHeuristicPointer heuristic = std::make_shared<ExplorationHeuristic>(stateProbabilityPair.first, *currentExplorationHeuristic, stateProbabilityPair.second, choice.getTotalMass());
+                                    iter->second.second = heuristic;
+                                    if (state->hasFailed(dft.getTopLevelIndex()) || state->isFailsafe(dft.getTopLevelIndex()) || state->nrFailableDependencies() > 0 || (state->nrFailableDependencies() == 0 && state->nrFailableBEs() == 0)) {
+                                        // Do not skip absorbing state or if reached by dependencies
+                                        iter->second.second->markExpand();
+                                    }
+                                    explorationQueue.push(heuristic);
+                                } else if (!iter->second.second->isExpand()) {
+                                    double oldPriority = iter->second.second->getPriority();
+                                    if (iter->second.second->updateHeuristicValues(*currentExplorationHeuristic, stateProbabilityPair.second, choice.getTotalMass())) {
+                                        // Update priority queue
+                                        explorationQueue.update(iter->second.second, oldPriority);
+                                    }
+                                }
+                            }
                         }
                         matrixBuilder.finishRow();
                     }
                 }
-
-                // Update priority queue
-                // TODO Matthias: only when necessary
-                explorationQueue.fix();
             } // end exploration
+
+            STORM_LOG_INFO("Expanded " << nrExpandedStates << " states");
+            STORM_LOG_INFO("Skipped " << nrSkippedStates << " states");
+            STORM_LOG_ASSERT(nrSkippedStates == skippedStates.size(), "Nr skipped states is wrong");
         }
 
         template<typename ValueType, typename StateType>
@@ -328,11 +432,7 @@ namespace storm {
         template<typename ValueType, typename StateType>
         std::shared_ptr<storm::models::sparse::Model<ValueType>> ExplicitDFTModelBuilderApprox<ValueType, StateType>::getModelApproximation(bool lowerBound) {
             // TODO Matthias: handle case with no skipped states
-            if (lowerBound) {
-                changeMatrixLowerBound(modelComponents.transitionMatrix);
-            } else {
-                changeMatrixUpperBound(modelComponents.transitionMatrix);
-            }
+            changeMatrixBound(modelComponents.transitionMatrix, lowerBound);
             return createModel(true);
         }
 
@@ -388,42 +488,148 @@ namespace storm {
         }
 
         template<typename ValueType, typename StateType>
-        void ExplicitDFTModelBuilderApprox<ValueType, StateType>::changeMatrixLowerBound(storm::storage::SparseMatrix<ValueType> & matrix) const {
+        void ExplicitDFTModelBuilderApprox<ValueType, StateType>::changeMatrixBound(storm::storage::SparseMatrix<ValueType> & matrix, bool lowerBound) const {
             // Set lower bound for skipped states
             for (auto it = skippedStates.begin(); it != skippedStates.end(); ++it) {
                 auto matrixEntry = matrix.getRow(it->first, 0).begin();
                 STORM_LOG_ASSERT(matrixEntry->getColumn() == failedStateId, "Transition has wrong target state.");
-                // Get the lower bound by considering the failure of all possible BEs
-                ValueType newRate = storm::utility::zero<ValueType>();
-                for (size_t index = 0; index < it->second->nrFailableBEs(); ++index) {
-                    newRate += it->second->getFailableBERate(index);
+                STORM_LOG_ASSERT(!it->second.first->isPseudoState(), "State is still pseudo state.");
+
+                ExplorationHeuristicPointer heuristic = it->second.second;
+                if (storm::utility::isZero(heuristic->getUpperBound())) {
+                    // Initialize bounds
+                    ValueType lowerBound = getLowerBound(it->second.first);
+                    ValueType upperBound = getUpperBound(it->second.first);
+                    heuristic->setBounds(lowerBound, upperBound);
                 }
-                for (size_t index = 0; index < it->second->nrNotFailableBEs(); ++index) {
-                    newRate += it->second->getNotFailableBERate(index);
+
+                // Change bound
+                if (lowerBound) {
+                    matrixEntry->setValue(it->second.second->getLowerBound());
+                } else {
+                    matrixEntry->setValue(it->second.second->getUpperBound());
                 }
-                matrixEntry->setValue(newRate);
             }
         }
 
         template<typename ValueType, typename StateType>
-        void ExplicitDFTModelBuilderApprox<ValueType, StateType>::changeMatrixUpperBound(storm::storage::SparseMatrix<ValueType> & matrix) const {
-            // Set uppper bound for skipped states
-            for (auto it = skippedStates.begin(); it != skippedStates.end(); ++it) {
-                auto matrixEntry = matrix.getRow(it->first, 0).begin();
-                STORM_LOG_ASSERT(matrixEntry->getColumn() == failedStateId, "Transition has wrong target state.");
-                // Get the upper bound by considering the failure of all BEs
-                // The used formula for the rate is 1/( 1/a + 1/b + ...)
-                // TODO Matthias: improve by using closed formula for AND of all BEs
-                ValueType newRate = storm::utility::zero<ValueType>();
-                for (size_t index = 0; index < it->second->nrFailableBEs(); ++index) {
-                    newRate += storm::utility::one<ValueType>() / it->second->getFailableBERate(index);
-                }
-                for (size_t index = 0; index < it->second->nrNotFailableBEs(); ++index) {
-                    newRate += storm::utility::one<ValueType>() / it->second->getNotFailableBERate(index);
-                }
-                newRate = storm::utility::one<ValueType>() / newRate;
-                matrixEntry->setValue(newRate);
+        ValueType ExplicitDFTModelBuilderApprox<ValueType, StateType>::getLowerBound(DFTStatePointer const& state) const {
+            // Get the lower bound by considering the failure of all possible BEs
+            ValueType lowerBound = storm::utility::zero<ValueType>();
+            for (size_t index = 0; index < state->nrFailableBEs(); ++index) {
+                lowerBound += state->getFailableBERate(index);
             }
+            return lowerBound;
+        }
+
+        template<typename ValueType, typename StateType>
+        ValueType ExplicitDFTModelBuilderApprox<ValueType, StateType>::getUpperBound(DFTStatePointer const& state) const {
+            // Get the upper bound by considering the failure of all BEs
+            ValueType upperBound = storm::utility::one<ValueType>();
+            ValueType rateSum = storm::utility::zero<ValueType>();
+
+            // Compute for each independent subtree
+            for (std::vector<size_t> const& subtree : subtreeBEs) {
+                // Get all possible rates
+                std::vector<ValueType> rates;
+                storm::storage::BitVector coldBEs(subtree.size(), false);
+                for (size_t i = 0; i < subtree.size(); ++i) {
+                    size_t id = subtree[i];
+                    if (state->isOperational(id)) {
+                        // Get BE rate
+                        ValueType rate = state->getBERate(id);
+                        if (storm::utility::isZero<ValueType>(rate)) {
+                            // Get active failure rate for cold BE
+                            rate = dft.getBasicElement(id)->activeFailureRate();
+                            // Mark BE as cold
+                            coldBEs.set(i, true);
+                        }
+                        rates.push_back(rate);
+                        rateSum += rate;
+                    }
+                }
+
+                STORM_LOG_ASSERT(rates.size() > 0, "No rates failable");
+
+                // Sort rates
+                std::sort(rates.begin(), rates.end());
+                std::vector<size_t> rateCount(rates.size(), 0);
+                size_t lastIndex = 0;
+                for (size_t i = 0; i < rates.size(); ++i) {
+                    if (rates[lastIndex] != rates[i]) {
+                        lastIndex = i;
+                    }
+                    ++rateCount[lastIndex];
+                }
+
+                for (size_t i = 0; i < rates.size(); ++i) {
+                    // Cold BEs cannot fail in the first step
+                    if (!coldBEs.get(i) && rateCount[i] > 0) {
+                        // Compute AND MTTF of subtree without current rate and scale with current rate
+                        upperBound += rates.back() * rateCount[i] * computeMTTFAnd(rates, rates.size() - 1);
+                        // Swap here to avoid swapping back
+                        std::iter_swap(rates.begin() + i, rates.end() - 1);
+                    }
+                }
+            }
+
+            STORM_LOG_TRACE("Upper bound is " << (rateSum / upperBound) << " for state " << state->getId());
+            STORM_LOG_ASSERT(!storm::utility::isZero(upperBound), "Upper bound is 0");
+            STORM_LOG_ASSERT(!storm::utility::isZero(rateSum), "State is absorbing");
+            return rateSum / upperBound;
+        }
+
+        template<typename ValueType, typename StateType>
+        ValueType ExplicitDFTModelBuilderApprox<ValueType, StateType>::computeMTTFAnd(std::vector<ValueType> const& rates, size_t size) const {
+            ValueType result = storm::utility::zero<ValueType>();
+            if (size == 0) {
+                return result;
+            }
+
+            // TODO Matthias: works only for <64 BEs!
+            // WARNING: this code produces wrong results for more than 32 BEs
+            /*for (size_t i = 1; i < 4 && i <= rates.size(); ++i) {
+                size_t permutation = smallestIntWithNBitsSet(static_cast<size_t>(i));
+                ValueType sum = storm::utility::zero<ValueType>();
+                do {
+                    ValueType permResult = storm::utility::zero<ValueType>();
+                    for(size_t j = 0; j < rates.size(); ++j) {
+                        if(permutation & static_cast<size_t>(1 << static_cast<size_t>(j))) {
+                            // WARNING: if the first bit is set, it also recognizes the 32nd bit as set
+                            // TODO: fix
+                            permResult += rates[j];
+                        }
+                    }
+                    permutation = nextBitPermutation(permutation);
+                    STORM_LOG_ASSERT(!storm::utility::isZero(permResult), "PermResult is 0");
+                    sum += storm::utility::one<ValueType>() / permResult;
+                } while(permutation < (static_cast<size_t>(1) << rates.size()) && permutation != 0);
+                if (i % 2 == 0) {
+                    result -= sum;
+                } else {
+                    result += sum;
+                }
+            }*/
+
+            // Compute result with permutations of size <= 3
+            ValueType one = storm::utility::one<ValueType>();
+            for (size_t i1 = 0; i1 < size; ++i1) {
+                // + 1/a
+                ValueType sum = rates[i1];
+                result += one / sum;
+                for (size_t i2 = 0; i2 < i1; ++i2) {
+                    // - 1/(a+b)
+                    ValueType sum2 = sum + rates[i2];
+                    result -= one / sum2;
+                    for (size_t i3 = 0; i3 < i2; ++i3) {
+                        // + 1/(a+b+c)
+                        result += one / (sum2 + rates[i3]);
+                    }
+                }
+            }
+
+            STORM_LOG_ASSERT(!storm::utility::isZero(result), "UpperBound is 0");
+            return result;
         }
 
         template<typename ValueType, typename StateType>
@@ -446,14 +652,14 @@ namespace storm {
                     // Check if state is pseudo state
                     // If state is explored already the possible pseudo state was already constructed
                     auto iter = statesNotExplored.find(stateId);
-                    if (iter != statesNotExplored.end() && iter->second->isPseudoState()) {
+                    if (iter != statesNotExplored.end() && iter->second.first->isPseudoState()) {
                         // Create pseudo state now
-                        STORM_LOG_ASSERT(iter->second->getId() == stateId, "Ids do not match.");
-                        STORM_LOG_ASSERT(iter->second->status() == state->status(), "Pseudo states do not coincide.");
+                        STORM_LOG_ASSERT(iter->second.first->getId() == stateId, "Ids do not match.");
+                        STORM_LOG_ASSERT(iter->second.first->status() == state->status(), "Pseudo states do not coincide.");
                         state->setId(stateId);
                         // Update mapping to map to concrete state now
-                        statesNotExplored[stateId] = state;
-                        // TODO Matthias: copy explorationHeuristic
+                        // TODO Matthias: just change pointer?
+                        statesNotExplored[stateId] = std::make_pair(state, iter->second.second);
                         // We do not push the new state on the exploration queue as the pseudo state was already pushed
                         STORM_LOG_TRACE("Created pseudo state " << dft.getStateString(state));
                     }
@@ -466,8 +672,8 @@ namespace storm {
                 stateId = stateStorage.stateToId.findOrAdd(state->status(), state->getId());
                 STORM_LOG_ASSERT(stateId == state->getId(), "Ids do not match.");
                 // Insert state as not yet explored
-                statesNotExplored[stateId] = state;
-                explorationQueue.push(stateId);
+                ExplorationHeuristicPointer nullHeuristic;
+                statesNotExplored[stateId] = std::make_pair(state, nullHeuristic);
                 // Reserve one slot for the new state in the remapping
                 matrixBuilder.stateRemapping.push_back(0);
                 STORM_LOG_TRACE("New " << (state->isPseudoState() ? "pseudo" : "concrete") << " state: " << dft.getStateString(state));
@@ -485,9 +691,11 @@ namespace storm {
         }
 
         template<typename ValueType, typename StateType>
-        bool ExplicitDFTModelBuilderApprox<ValueType, StateType>::isPriorityGreater(StateType idA, StateType idB) const {
-            // TODO Matthias: compare directly and according to heuristic
-            return storm::builder::compareDepth(statesNotExplored.at(idA), statesNotExplored.at(idB));
+        void ExplicitDFTModelBuilderApprox<ValueType, StateType>::printNotExplored() const {
+            std::cout << "states not explored:" << std::endl;
+            for (auto it : statesNotExplored) {
+                std::cout << it.first << " -> " << dft.getStateString(it.second.first) << std::endl;
+            }
         }
 
 

@@ -61,6 +61,7 @@ namespace storm {
             std::chrono::duration<double> bisimulationTime = std::chrono::duration<double>::zero();
             std::chrono::duration<double> modelCheckingTime = std::chrono::duration<double>::zero();
             std::chrono::duration<double> totalTime = std::chrono::duration<double>::zero();
+            std::chrono::high_resolution_clock::time_point totalStart;
 
             // Model checking result
             dft_result checkResult;
@@ -107,15 +108,17 @@ namespace storm {
 
             /*!
              * Checks if the computed approximation is sufficient, i.e.
-             * upperBound - lowerBound <= approximationError * mean(upperBound, lowerBound).
+             * upperBound - lowerBound <= approximationError * mean(lowerBound, upperBound).
              *
              * @param lowerBound         The lower bound on the result.
              * @param upperBound         The upper bound on the result.
              * @param approximationError The allowed error for approximating.
+             * @param relative           Flag indicating if the error should be relative to 1 or
+                                         to the mean of lower and upper bound.
              *
              * @return True, if the approximation is sufficient.
              */
-            bool isApproximationSufficient(ValueType lowerBound, ValueType upperBound, double approximationError);
+            bool isApproximationSufficient(ValueType lowerBound, ValueType upperBound, double approximationError, bool relative);
 
         };
     }
