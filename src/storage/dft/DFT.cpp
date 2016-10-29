@@ -243,7 +243,7 @@ namespace storm {
             std::map<size_t, std::vector<size_t>> subdfts;
             for(auto const& child : children) {
                 std::vector<size_t> isubdft;
-                if(child->nrParents() > 1 || child->hasOutgoingDependencies()) {
+                if(child->nrParents() > 1 || child->hasOutgoingDependencies() || child->hasRestrictions()) {
                     STORM_LOG_TRACE("child " << child->name() << "does not allow modularisation.");
                     return {*this};
                 }
@@ -696,6 +696,8 @@ namespace storm {
                    // suitable parent gate! - Lets check the independent submodules of the children
                    auto const& children = std::static_pointer_cast<DFTGate<ValueType>>(e)->children();
                    for(auto const& child : children) {
+                       
+                       
                        auto ISD = std::static_pointer_cast<DFTGate<ValueType>>(child)->independentSubDft(true);
                        // In the ISD, check for other children:
                        
