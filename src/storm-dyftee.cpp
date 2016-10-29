@@ -3,6 +3,8 @@
 #include "src/utility/storm.h"
 #include "src/parser/DFTGalileoParser.h"
 #include "src/modelchecker/dft/DFTModelChecker.h"
+
+#include "src/modelchecker/dft/DFTASFChecker.h"
 #include "src/cli/cli.h"
 #include "src/exceptions/BaseException.h"
 #include "src/utility/macros.h"
@@ -58,10 +60,11 @@ void analyzeWithSMT(std::string filename) {
     
     storm::parser::DFTGalileoParser<ValueType> parser;
     storm::storage::DFT<ValueType> dft = parser.parseDFT(filename);
-    storm::builder::DFTSMTBuilder<ValueType> dftSmtBuilder;
-    dftSmtBuilder.convertToSMT(dft);
-    bool sat = dftSmtBuilder.check();
-    std::cout << "SMT result: " << sat << std::endl;
+    storm::modelchecker::DFTASFChecker asfChecker(dft);
+    asfChecker.convert();
+    asfChecker.toFile("test.smt2");
+    //bool sat = dftSmtBuilder.check();
+    //std::cout << "SMT result: " << sat << std::endl;
 }
 
 /*!
@@ -120,7 +123,7 @@ int main(const int argc, const char** argv) {
         if (dftSettings.solveWithSMT()) {
             // Solve with SMT
             if (parametric) {
-                analyzeWithSMT<storm::RationalFunction>(dftSettings.getDftFilename());
+            //    analyzeWithSMT<storm::RationalFunction>(dftSettings.getDftFilename());
             } else {
                 analyzeWithSMT<double>(dftSettings.getDftFilename());
             }
