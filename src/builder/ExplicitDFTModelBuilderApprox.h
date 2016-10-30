@@ -28,7 +28,7 @@ namespace storm {
 
             using DFTStatePointer = std::shared_ptr<storm::storage::DFTState<ValueType>>;
             // TODO Matthias: make choosable
-            using ExplorationHeuristic = DFTExplorationHeuristicProbability<ValueType>;
+            using ExplorationHeuristic = DFTExplorationHeuristicBoundDifference<ValueType>;
             using ExplorationHeuristicPointer = std::shared_ptr<ExplorationHeuristic>;
 
 
@@ -289,7 +289,7 @@ namespace storm {
             const bool mergeFailedStates = true;
 
             // Heuristic used for approximation
-            storm::builder::ApproximationHeuristic heuristic;
+            storm::builder::ApproximationHeuristic usedHeuristic;
 
             // Current id for new state
             size_t newIndex = 0;

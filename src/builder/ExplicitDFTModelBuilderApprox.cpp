@@ -28,7 +28,7 @@ namespace storm {
                 dft(dft),
                 stateGenerationInfo(std::make_shared<storm::storage::DFTStateGenerationInfo>(dft.buildStateGenerationInfo(symmetries))),
                 enableDC(enableDC),
-                heuristic(storm::settings::getModule<storm::settings::modules::DFTSettings>().getApproximationHeuristic()),
+                usedHeuristic(storm::settings::getModule<storm::settings::modules::DFTSettings>().getApproximationHeuristic()),
                 generator(dft, *stateGenerationInfo, enableDC, mergeFailedStates),
                 matrixBuilder(!generator.isDeterministicModel()),
                 stateStorage(((dft.stateVectorSize() / 64) + 1) * 64),
@@ -38,7 +38,7 @@ namespace storm {
         {
             // Intentionally left empty.
             // TODO Matthias: remove again
-            heuristic = storm::builder::ApproximationHeuristic::PROBABILITY;
+            usedHeuristic = storm::builder::ApproximationHeuristic::BOUNDDIFFERENCE;
 
             // Compute independent subtrees
             if (dft.topLevelType() == storm::storage::DFTElementType::OR) {
@@ -144,7 +144,7 @@ namespace storm {
             }
 
             if (approximationThreshold > 0) {
-                switch (heuristic) {
+                switch (usedHeuristic) {
                     case storm::builder::ApproximationHeuristic::NONE:
                         // Do not change anything
                         approximationThreshold = dft.nrElements()+10;
@@ -153,6 +153,7 @@ namespace storm {
                         approximationThreshold = iteration;
                         break;
                     case storm::builder::ApproximationHeuristic::PROBABILITY:
+                    case storm::builder::ApproximationHeuristic::BOUNDDIFFERENCE:
                         approximationThreshold = 10 * std::pow(2, iteration);
                         break;
                 }
@@ -360,6 +361,20 @@ namespace storm {
                                         // Do not skip absorbing state or if reached by dependencies
                                         iter->second.second->markExpand();
                                     }
+                                    if (usedHeuristic == storm::builder::ApproximationHeuristic::BOUNDDIFFERENCE) {
+                                        // Compute bounds for heuristic now
+                                        if (state->isPseudoState()) {
+                                            // Create concrete state from pseudo state
+                                            state->construct();
+                                        }
+                                        STORM_LOG_ASSERT(!currentState->isPseudoState(), "State is pseudo state.");
+
+                                        // Initialize bounds
+                                        ValueType lowerBound = getLowerBound(state);
+                                        ValueType upperBound = getUpperBound(state);
+                                        heuristic->setBounds(lowerBound, upperBound);
+                                    }
+
                                     explorationQueue.push(heuristic);
                                 } else if (!iter->second.second->isExpand()) {
                                     double oldPriority = iter->second.second->getPriority();
@@ -567,9 +582,11 @@ namespace storm {
                 for (size_t i = 0; i < rates.size(); ++i) {
                     // Cold BEs cannot fail in the first step
                     if (!coldBEs.get(i) && rateCount[i] > 0) {
+                        std::iter_swap(rates.begin() + i, rates.end() - 1);
                         // Compute AND MTTF of subtree without current rate and scale with current rate
                         upperBound += rates.back() * rateCount[i] * computeMTTFAnd(rates, rates.size() - 1);
-                        // Swap here to avoid swapping back
+                        // Swap back
+                        // TODO try to avoid swapping back
                         std::iter_swap(rates.begin() + i, rates.end() - 1);
                     }
                 }

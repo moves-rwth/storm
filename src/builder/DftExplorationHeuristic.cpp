@@ -48,8 +48,28 @@ namespace storm {
         }
 
         template<>
+        bool DFTExplorationHeuristicBoundDifference<double>::updateHeuristicValues(DFTExplorationHeuristic<double> const& predecessor, double rate, double exitRate) {
+            STORM_LOG_ASSERT(exitRate > 0, "Exit rate is 0");
+            probability += predecessor.getProbability() * rate/exitRate;
+            return true;
+        }
+
+        template<>
+        bool DFTExplorationHeuristicBoundDifference<storm::RationalFunction>::updateHeuristicValues(DFTExplorationHeuristic<storm::RationalFunction> const& predecessor, storm::RationalFunction rate, storm::RationalFunction exitRate) {
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Heuristic rate ration does not work for rational functions.");
+            return false;
+        }
+
+        template<typename ValueType>
+        void DFTExplorationHeuristicBoundDifference<ValueType>::setBounds(ValueType lowerBound, ValueType upperBound) {
+            this->lowerBound = lowerBound;
+            this->upperBound = upperBound;
+            difference = (storm::utility::one<ValueType>() / upperBound) - (storm::utility::one<ValueType>() / lowerBound);
+        }
+
+        template<>
         double DFTExplorationHeuristicBoundDifference<double>::getPriority() const {
-            return upperBound / lowerBound;
+            return probability * difference;
         }
 
         template<>

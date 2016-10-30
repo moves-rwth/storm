@@ -153,7 +153,16 @@ namespace storm {
         template<typename ValueType>
         size_t BucketPriorityQueue<ValueType>::getBucket(double priority) const {
             STORM_LOG_ASSERT(priority >= lowerValue, "Priority " << priority << " is too low");
-            size_t newBucket = std::log(priority - lowerValue) / logBase;
+
+            // For possible values greater 1
+            double tmpBucket = std::log(priority - lowerValue) / logBase;
+            tmpBucket += buckets.size() / 2;
+            if (tmpBucket < 0) {
+                tmpBucket = 0;
+            }
+            size_t newBucket = tmpBucket;
+            // For values ensured to be lower 1
+            //size_t newBucket = std::log(priority - lowerValue) / logBase;
             if (newBucket >= nrBuckets) {
                 newBucket = nrBuckets - 1;
             }
