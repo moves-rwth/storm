@@ -9,7 +9,7 @@
 namespace storm {
     namespace jani {
         
-        CompositionInformation::CompositionInformation() : nonStandardParallelComposition(false) {
+        CompositionInformation::CompositionInformation() : nonStandardParallelComposition(false), nestedParallelComposition(false), parallelComposition(false) {
             // Intentionally left empty.
         }
         
@@ -39,6 +39,22 @@ namespace storm {
         
         bool CompositionInformation::containsNonStandardParallelComposition() const {
             return nonStandardParallelComposition;
+        }
+        
+        void CompositionInformation::setContainsNestedParallelComposition(bool value) {
+            nestedParallelComposition = value;
+        }
+        
+        bool CompositionInformation::containsNestedParallelComposition() const {
+            return nestedParallelComposition;
+        }
+        
+        void CompositionInformation::setContainsParallelComposition(bool value) {
+            parallelComposition = value;
+        }
+        
+        bool CompositionInformation::containsParallelComposition() const {
+            return parallelComposition;
         }
         
         std::string const& CompositionInformation::getActionName(uint64_t index) const {
@@ -130,9 +146,11 @@ namespace storm {
             }
             
             bool containsNonStandardParallelComposition = false;
+            bool containsSubParallelComposition = false;
             
             for (auto const& subinfo : subinformation) {
                 containsNonStandardParallelComposition |= subinfo.containsNonStandardParallelComposition();
+                containsSubParallelComposition |= subinfo.containsParallelComposition();
                 result.addMultiplicityMap(subinfo.getAutomatonToMultiplicityMap());
             }
             
@@ -217,6 +235,8 @@ namespace storm {
             containsNonStandardParallelComposition |= !std::includes(synchVectorSet.begin(), synchVectorSet.end(), expectedSynchVectorSetUnderApprox.begin(), expectedSynchVectorSetUnderApprox.end(), SynchronizationVectorLexicographicalLess());
 
             result.setContainsNonStandardParallelComposition(containsNonStandardParallelComposition);
+            result.setContainsParallelComposition(true);
+            result.setContainsNestedParallelComposition(containsSubParallelComposition);
             
             result.addNonSilentActionIndices(nonSilentActionIndices);
             return result;

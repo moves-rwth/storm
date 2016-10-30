@@ -19,7 +19,7 @@ namespace storm {
             return inputEnabledActions;
         }
         
-        bool AutomatonComposition::isAutomaton() const {
+        bool AutomatonComposition::isAutomatonComposition() const {
             return true;
         }
         

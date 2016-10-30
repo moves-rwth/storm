@@ -7,6 +7,8 @@
 #include "src/adapters/CarlAdapter.h"
 
 #include "src/solver/SmtSolver.h"
+#include "src/storage/jani/AutomatonComposition.h"
+#include "src/storage/jani/ParallelComposition.h"
 
 #include "src/models/sparse/Dtmc.h"
 #include "src/models/sparse/StandardRewardModel.h"
@@ -57,6 +59,7 @@ namespace storm {
                 
 #include "resources/3rdparty/sparsepp/sparsepp.h"
                 
+#include "src/builder/jit/StateSet.h"
 #include "src/builder/jit/JitModelBuilderInterface.h"
 #include "src/builder/jit/StateBehaviour.h"
 #include "src/builder/jit/ModelComponentsBuilder.h"
@@ -93,7 +96,7 @@ namespace storm {
                             
                             std::ostream& operator<<(std::ostream& out, StateType const& state) {
                                 out << "<";
-                                {% for variable in stateVariables.boolean %}out << "{$variable.name}=" << state.{$variable.name} << ", ";
+                                {% for variable in stateVariables.boolean %}out << "{$variable.name}=" << std::boolalpha << state.{$variable.name} << ", ";
                                 {% endfor %}
                                 {% for variable in stateVariables.boundedInteger %}out << "{$variable.name}=" << state.{$variable.name} << ", ";
                                 {% endfor %}
@@ -127,39 +130,15 @@ namespace storm {
                     namespace builder {
                         namespace jit {
                             
-                            static bool model_is_deterministic() {
+                            bool model_is_deterministic() {
                                 return {$deterministic_model};
                             }
                             
-                            static bool model_is_discrete_time() {
+                            bool model_is_discrete_time() {
                                 return {$discrete_time_model};
                             }
-                            
-                            class StateSet {
-                            public:
-                                StateType const& peek() const {
-                                    return storage.front();
-                                }
-                                
-                                StateType get() {
-                                    StateType result = std::move(storage.front());
-                                    storage.pop();
-                                    return result;
-                                }
-                                
-                                void add(StateType const& state) {
-                                    storage.push(state);
-                                }
-                                
-                                bool empty() const {
-                                    return storage.empty();
-                                }
-                                
-                            private:
-                                std::queue<StateType> storage;
-                            };
 
-                            {% for edge in nonSynchronizingEdges %}static bool edge_enabled_{$edge.name}(StateType const& state) {
+                            {% for edge in nonsynch_edges %}static bool edge_enabled_{$edge.name}(StateType const& state) {
                                 if ({$edge.guard}) {
                                     return true;
                                 }
@@ -167,14 +146,15 @@ namespace storm {
                             }
                             
                             {% for destination in edge.destinations %}
-                            static void destination_perform_level_{$edge.name}_{$destination.name}(int_fast64_t level, StateType& state) {
+                            void destination_perform_level_{$edge.name}_{$destination.name}(int_fast64_t level, StateType& state) {
                                 {% for level in destination.levels %}if (level == {$level.index}) {
-                                    {% for assignment in level.nonTransientAssignments %}state.{$assignment.variable} = {$assignment.value};{% endfor %}
+                                    {% for assignment in level.nonTransientAssignments %}state.{$assignment.variable} = {$assignment.value};
+                                    {% endfor %}
                                 }
                                 {% endfor %}
                             }
                             
-                            static void destination_perform_{$edge.name}_{$destination.name}(StateType& state) {
+                            void destination_perform_{$edge.name}_{$destination.name}(StateType& state) {
                                 {% for level in destination.levels %}
                                 {% for assignment in level.nonTransientAssignments %}state.{$assignment.variable} = {$assignment.value};
                                 {% endfor %}
@@ -182,6 +162,31 @@ namespace storm {
                             }
                             {% endfor %}
                             {% endfor %}
+
+                            {% for edge in synch_edges %}static bool edge_enabled_{$edge.name}(StateType const& state) {
+                                if ({$edge.guard}) {
+                                    return true;
+                                }
+                                return false;
+                            }
+                            
+                            {% for destination in edge.destinations %}
+                            void destination_perform_level_{$edge.name}_{$destination.name}(int_fast64_t level, StateType& state) {
+                                {% for level in destination.levels %}if (level == {$level.index}) {
+                                    {% for assignment in level.nonTransientAssignments %}state.{$assignment.variable} = {$assignment.value};{% endfor %}
+                                }
+                                {% endfor %}
+                            }
+                            
+                            void destination_perform_{$edge.name}_{$destination.name}(StateType& state) {
+                                {% for level in destination.levels %}
+                                {% for assignment in level.nonTransientAssignments %}state.{$assignment.variable} = {$assignment.value};
+                                {% endfor %}
+                                {% endfor %}
+                            }
+                            {% endfor %}
+                            {% endfor %}
+
                             
                             typedef void (*DestinationLevelFunctionPtr)(int_fast64_t, StateType&);
                             typedef void (*DestinationFunctionPtr)(StateType&);
@@ -276,7 +281,13 @@ namespace storm {
                                         {% endfor %}
                                         initialStates.push_back(state);
                                     }{% endfor %}
-                                    {% for edge in nonSynchronizingEdges %}{
+                                    {% for edge in nonsynch_edges %}{
+                                        edge_{$edge.name} = Edge(&edge_enabled_{$edge.name});
+                                        {% for destination in edge.destinations %}edge_{$edge.name}.addDestination({$destination.lowestLevel}, {$destination.highestLevel}, {$destination.value}, &destination_perform_level_{$edge.name}_{$destination.name}, &destination_perform_{$edge.name}_{$destination.name});
+                                        {% endfor %}
+                                    }
+                                    {% endfor %}
+                                    {% for edge in synch_edges %}{
                                         edge_{$edge.name} = Edge(&edge_enabled_{$edge.name});
                                         {% for destination in edge.destinations %}edge_{$edge.name}.addDestination({$destination.lowestLevel}, {$destination.highestLevel}, {$destination.value}, &destination_perform_level_{$edge.name}_{$destination.name}, &destination_perform_{$edge.name}_{$destination.name});
                                         {% endfor %}
@@ -306,6 +317,7 @@ namespace storm {
                                     
                                     for (auto const& stateEntry : stateIds) {
                                         auto const& state = stateEntry.first;
+                                        std::cout << state << std::endl;
                                         {% for label in labels %}if ({$label.predicate}) {
                                             this->modelComponentsBuilder.addLabel(stateEntry.second, {$loop.index} - 1);
                                         }
@@ -331,7 +343,7 @@ namespace storm {
                                 }
                                 
                                 void explore(StateType const& initialState) {
-                                    StateSet statesToExplore;
+                                    StateSet<StateType> statesToExplore;
                                     getOrAddIndex(initialState, statesToExplore);
                                     
                                     StateBehaviour<IndexType, ValueType> behaviour;
@@ -345,7 +357,8 @@ namespace storm {
 #endif
                                         
                                             behaviour.setExpanded();
-                                            exploreNonSynchronizingEdges(currentState, currentIndex, behaviour, statesToExplore);
+                                            exploreNonSynchronizingEdges(currentState, behaviour, statesToExplore);
+                                            exploreSynchronizingEdges(currentState, behaviour, statesToExplore);
                                         }
                                             
                                         this->addStateBehaviour(currentIndex, behaviour);
@@ -361,28 +374,32 @@ namespace storm {
                                     return false;
                                 }
                                 
-                                void exploreNonSynchronizingEdges(StateType const& state, IndexType const& currentIndex, StateBehaviour<IndexType, ValueType>& behaviour, StateSet& statesToExplore) {
-                                    {% for edge in nonSynchronizingEdges %}{
-                                        {% for destination in edge.destinations %}{
-                                            if ({$edge.guard}) {
-                                                Choice<IndexType, ValueType>& choice = behaviour.addChoice();
-                                                {% for destination in edge.destinations %}{
+                                void exploreNonSynchronizingEdges(StateType const& state, StateBehaviour<IndexType, ValueType>& behaviour, StateSet<StateType>& statesToExplore) {
+                                    {% for edge in nonsynch_edges %}{
+                                        if ({$edge.guard}) {
+                                            Choice<IndexType, ValueType>& choice = behaviour.addChoice();
+                                            {% for destination in edge.destinations %}{
                                                 StateType targetState(state);
                                                 destination_perform_{$edge.name}_{$destination.name}(targetState);
-                                                    //for (auto const& destination : edge_{$edge.name}) {
-                                                    //destination.perform(targetState);
-                                                    IndexType targetStateIndex = getOrAddIndex(targetState, statesToExplore);
-                                                    choice.add(targetStateIndex, {$destination.value});
-                                                    //}
-                                                }{% endfor %}
-                                            }
+                                                IndexType targetStateIndex = getOrAddIndex(targetState, statesToExplore);
+                                                choice.add(targetStateIndex, {$destination.value});
+                                            }{% endfor %}
                                         }
-                                        {% endfor %}
                                     }
                                     {% endfor %}
                                 }
                                 
-                                IndexType getOrAddIndex(StateType const& state, StateSet& statesToExplore) {
+                                {% for vector in synch_vectors %}{$vector.functions}
+                                {% endfor %}
+
+                                void exploreSynchronizingEdges(StateType const& state, StateBehaviour<IndexType, ValueType>& behaviour, StateSet<StateType>& statesToExplore) {
+                                    {% for vector in synch_vectors %}{
+                                        exploreSynchronizationVector_{$vector.index}(state, behaviour, statesToExplore);
+                                    }
+                                    {% endfor %}
+                                }
+                                
+                                IndexType getOrAddIndex(StateType const& state, StateSet<StateType>& statesToExplore) {
                                     auto it = stateIds.find(state);
                                     if (it != stateIds.end()) {
                                         return it->second;
@@ -423,7 +440,9 @@ namespace storm {
                                 std::vector<StateType> initialStates;
                                 std::vector<IndexType> deadlockStates;
                                 
-                                {% for edge in nonSynchronizingEdges %}Edge edge_{$edge.name};
+                                {% for edge in nonsynch_edges %}Edge edge_{$edge.name};
+                                {% endfor %}
+                                {% for edge in synch_edges %}Edge edge_{$edge.name};
                                 {% endfor %}
                             };
                             
@@ -437,8 +456,7 @@ namespace storm {
                 modelData["stateVariables"] = generateStateVariables();
                 cpptempl::data_list initialStates = generateInitialStates();
                 modelData["initialStates"] = cpptempl::make_data(initialStates);
-                cpptempl::data_list nonSynchronizingEdges = generateNonSynchronizingEdges();
-                modelData["nonSynchronizingEdges"] = cpptempl::make_data(nonSynchronizingEdges);
+                generateEdges(modelData);
                 cpptempl::data_list labels = generateLabels();
                 modelData["labels"] = cpptempl::make_data(labels);
                 cpptempl::data_list terminalExpressions = generateTerminalExpressions();
@@ -678,21 +696,220 @@ namespace storm {
 
                 return terminalExpressions;
             }
+
+            template <typename ValueType, typename RewardModelType>
+            cpptempl::data_map ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateSynchronizationVector(storm::jani::ParallelComposition const& parallelComposition, storm::jani::SynchronizationVector const& synchronizationVector, uint64_t synchronizationVectorIndex) {
+                std::stringstream vectorSource;
+                uint64_t numberOfActionInputs = synchronizationVector.getNumberOfActionInputs();
+                
+                vectorSource << "void performSynchronizedDestinations_" << synchronizationVectorIndex << "(StateType const& state, StateBehaviour<IndexType, ValueType>& behaviour, StateSet<StateType>& statesToExplore, ";
+                for (uint64_t index = 0; index < numberOfActionInputs; ++index) {
+                    vectorSource << "Destination const& destination" << index << ", ";
+                }
+                vectorSource << "Choice<IndexType, ValueType>& choice) {" << std::endl;
+                vectorSource << "StateType targetState(state);" << std::endl;
+                for (uint64_t index = 0; index < numberOfActionInputs; ++index) {
+                    vectorSource << "destination" << index << ".perform(targetState);" << std::endl;
+                }
+                vectorSource << "IndexType targetStateIndex = getOrAddIndex(targetState, statesToExplore);" << std::endl;
+                vectorSource << "choice.add(targetStateIndex, ";
+                for (uint64_t index = 0; index < numberOfActionInputs; ++index) {
+                    vectorSource << "destination" << index << ".value()";
+                    if (index + 1 < numberOfActionInputs) {
+                        vectorSource << " * ";
+                    }
+                }
+                vectorSource << ");" << std::endl;
+                vectorSource << "}" << std::endl;
+                
+                vectorSource << "void performSynchronizedDestinations_" << synchronizationVectorIndex << "(StateType const& state, StateBehaviour<IndexType, ValueType>& behaviour, StateSet<StateType>& statesToExplore, ";
+                for (uint64_t index = 0; index < numberOfActionInputs; ++index) {
+                    vectorSource << "Edge const& edge" << index << ", ";
+                }
+                vectorSource << "Choice<IndexType, ValueType>& choice) {" << std::endl;
+                for (uint64_t index = 0; index < numberOfActionInputs; ++index) {
+                    vectorSource << "for (auto const& destination" << index << " : edge" << index << ") {" << std::endl;
+                }
+                vectorSource << "performSynchronizedDestinations_" << synchronizationVectorIndex << "(state, behaviour, statesToExplore, ";
+                for (uint64_t index = 0; index < numberOfActionInputs; ++index) {
+                    vectorSource << "destination" << index << ", ";
+                }
+                vectorSource << "choice);" << std::endl;
+                for (uint64_t index = 0; index < numberOfActionInputs; ++index) {
+                    vectorSource << "}" << std::endl;
+                }
+                vectorSource << "}" << std::endl;
+            
+                for (uint64_t index = 0; index < numberOfActionInputs; ++index) {
+                    vectorSource << "void performSynchronizedEdges_" << synchronizationVectorIndex << "_" << index << "(StateType const& state, std::vector<std::vector<std::reference_wrapper<Edge const>>> const& edges,  StateBehaviour<IndexType, ValueType>& behaviour, StateSet<StateType>& statesToExplore";
+                    if (index > 0) {
+                        vectorSource << ", ";
+                    }
+                    for (uint64_t innerIndex = 0; innerIndex < index; ++innerIndex) {
+                        vectorSource << "Edge const& edge" << innerIndex;
+                        if (innerIndex + 1 < index) {
+                            vectorSource << ", ";
+                        }
+                    }
+                    vectorSource << ") {" << std::endl;
+                    vectorSource << "for (auto const& edge" << index << " : edges[" << index << "]) {" << std::endl;
+                    if (index + 1 < numberOfActionInputs) {
+                        vectorSource << "performSynchronizedEdges_" << synchronizationVectorIndex << "_" << (index + 1) << "(state, edges, behaviour, statesToExplore, ";
+                        for (uint64_t innerIndex = 0; innerIndex <= index; ++innerIndex) {
+                            vectorSource << "edge" << innerIndex;
+                            if (innerIndex + 1 <= index) {
+                                vectorSource << ", ";
+                            }
+                        }
+                        vectorSource << ");" << std::endl;
+                    } else {
+                        vectorSource << "Choice<IndexType, ValueType>& choice = behaviour.addChoice();" << std::endl;
+                        vectorSource << "performSynchronizedDestinations_" << synchronizationVectorIndex << "(state, behaviour, statesToExplore, ";
+                        for (uint64_t innerIndex = 0; innerIndex <= index; ++innerIndex) {
+                            vectorSource << "edge" << innerIndex << ", ";
+                        }
+                        vectorSource << " choice);" << std::endl;
+
+                    }
+                    vectorSource << "}" << std::endl;
+                    vectorSource << "}" << std::endl;
+                }
+                
+                vectorSource << "void get_edges_" << synchronizationVectorIndex << "(StateType const& state, std::vector<std::reference_wrapper<Edge const>>& edges, uint64_t position) {" << std::endl;
+                uint64_t position = 0;
+                uint64_t participatingPosition = 0;
+                std::cout << "synch vector " << synchronizationVector << std::endl;
+                for (auto const& inputActionName : synchronizationVector.getInput()) {
+                    if (!storm::jani::SynchronizationVector::isNoActionInput(inputActionName)) {
+                        vectorSource << "if (position == " << participatingPosition << ") {" << std::endl;
+                        
+                        storm::jani::Automaton const& automaton = model.getAutomaton(parallelComposition.getSubcomposition(position).asAutomatonComposition().getAutomatonName());
+                        uint64_t actionIndex = model.getActionIndex(inputActionName);
+                        uint64_t edgeIndex = 0;
+                        for (auto const& edge : automaton.getEdges()) {
+                            std::cout << "[" << automaton.getName() << "], edge " << edgeIndex << " with guard " << edge.getGuard() << " has action " << model.getAction(edge.getActionIndex()).getName() << "[" << edge.getActionIndex() << "]" << std::endl;
+                            if (edge.getActionIndex() == actionIndex) {
+                                std::string edgeName = automaton.getName() + "_" + std::to_string(edgeIndex);
+                                vectorSource << "if (edge_enabled_" << edgeName  << "(state)) {" << std::endl;
+                                vectorSource << "edges.emplace_back(edge_" << edgeName << ");" << std::endl;
+                                vectorSource << "}" << std::endl;
+                            }
+                            ++edgeIndex;
+                        }
+                        
+                        vectorSource << "}" << std::endl;
+                        ++participatingPosition;
+                    }
+                    ++position;
+                }
+                vectorSource << "}" << std::endl;
+                
+                vectorSource << "void exploreSynchronizationVector_" << synchronizationVectorIndex << "(StateType const& state, StateBehaviour<IndexType, ValueType>& behaviour, StateSet<StateType>& statesToExplore) {" << std::endl;
+                vectorSource << "std::vector<std::vector<std::reference_wrapper<Edge const>>> edges(" << synchronizationVector.getNumberOfActionInputs() << ");" << std::endl;
+                
+                participatingPosition = 0;
+                for (auto const& input : synchronizationVector.getInput()) {
+                    if (!storm::jani::SynchronizationVector::isNoActionInput(input)) {
+                        vectorSource << "get_edges_" << synchronizationVectorIndex << "(state, edges[" << participatingPosition << "], " << participatingPosition << ");" << std::endl;
+                        vectorSource << "if (edges[" << participatingPosition << "].empty()) {" << std::endl;
+                        vectorSource << "return;" << std::endl;
+                        vectorSource << "};" << std::endl;
+                        ++participatingPosition;
+                    }
+                }
+                vectorSource << "performSynchronizedEdges_" << synchronizationVectorIndex << "_0(state, edges, behaviour, statesToExplore);" << std::endl;
+                vectorSource << "}" << std::endl;
+                
+                cpptempl::data_map vector;
+                vector["functions"] = vectorSource.str();
+                vector["index"] = asString(synchronizationVectorIndex);
+                return vector;
+            }
             
             template <typename ValueType, typename RewardModelType>
-            cpptempl::data_list ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateNonSynchronizingEdges() {
-                cpptempl::data_list edges;
-                for (auto const& automaton : this->model.getAutomata()) {
+            void ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateEdges(cpptempl::data_map& modelData) {
+                STORM_LOG_THROW(model.hasStandardCompliantComposition(), storm::exceptions::WrongFormatException, "Model builder only supports non-nested parallel compositions.");
+                
+                cpptempl::data_list nonSynchronizingEdges;
+                cpptempl::data_list synchronizingEdges;
+                cpptempl::data_list vectors;
+                
+                storm::jani::Composition const& topLevelComposition = model.getSystemComposition();
+                if (topLevelComposition.isAutomatonComposition()) {
+                    storm::jani::Automaton const& automaton = model.getAutomaton(topLevelComposition.asAutomatonComposition().getAutomatonName());
                     uint64_t edgeIndex = 0;
                     for (auto const& edge : automaton.getEdges()) {
-                        if (edge.getActionIndex() == storm::jani::Model::SILENT_ACTION_INDEX) {
-                            edges.push_back(generateEdge(automaton, edgeIndex, edge));
-                        }
+                        nonSynchronizingEdges.push_back(generateEdge(automaton, edgeIndex, edge));
                         ++edgeIndex;
+                    }
+                } else {
+                    STORM_LOG_ASSERT(topLevelComposition.isParallelComposition(), "Expected parallel composition.");
+                    storm::jani::ParallelComposition const& parallelComposition = topLevelComposition.asParallelComposition();
+                    for (auto const& composition : parallelComposition.getSubcompositions()) {
+                        STORM_LOG_ASSERT(composition->isAutomatonComposition(), "Expected flat parallel composition.");
+                    }
+
+                    std::vector<std::set<uint64_t>> synchronizingActions(parallelComposition.getNumberOfSubcompositions());
+                    uint64_t synchronizationVectorIndex = 0;
+                    for (auto const& synchronizationVector : parallelComposition.getSynchronizationVectors()) {
+                        // If the synchronization vector has at most one action input, there is no synchronization going on.
+                        if (synchronizationVector.getNumberOfActionInputs() <= 1) {
+                            continue;
+                        }
+                        
+                        bool createVector = true;
+                        uint64_t position = 0;
+                        for (auto const& inputActionName : synchronizationVector.getInput()) {
+                            if (!storm::jani::SynchronizationVector::isNoActionInput(inputActionName)) {
+                                uint64_t actionIndex = model.getActionIndex(inputActionName);
+                                synchronizingActions[position].insert(actionIndex);
+                                
+                                storm::jani::Automaton const& automaton = model.getAutomaton(parallelComposition.getSubcomposition(position).asAutomatonComposition().getAutomatonName());
+                                bool hasParticipatingEdge = false;
+                                for (auto const& edge : automaton.getEdges()) {
+                                    if (edge.getActionIndex() == actionIndex) {
+                                        hasParticipatingEdge = true;
+                                        break;
+                                    }
+                                }
+                                
+                                if (!hasParticipatingEdge) {
+                                    createVector = false;
+                                }
+                            }
+                            ++position;
+                        }
+                        
+                        if (createVector) {
+                            cpptempl::data_map vector = generateSynchronizationVector(parallelComposition, synchronizationVector, synchronizationVectorIndex);
+                            vectors.push_back(vector);
+                        }
+                        ++synchronizationVectorIndex;
+                    }
+                    
+                    uint64_t position = 0;
+                    for (auto const& composition : parallelComposition.getSubcompositions()) {
+                        storm::jani::Automaton const& automaton = model.getAutomaton(composition->asAutomatonComposition().getAutomatonName());
+                        
+                        // Add all edges with an action index that is not mentioned in any synchronization vector as
+                        // non-synchronizing edges.
+                        uint64_t edgeIndex = 0;
+                        for (auto const& edge : automaton.getEdges()) {
+                            if (synchronizingActions[position].find(edge.getActionIndex()) != synchronizingActions[position].end()) {
+                                synchronizingEdges.push_back(generateEdge(automaton, edgeIndex, edge));
+                            } else {
+                                nonSynchronizingEdges.push_back(generateEdge(automaton, edgeIndex, edge));
+                            }
+                            ++edgeIndex;
+                        }
+                        
+                        ++position;
                     }
                 }
                 
-                return edges;
+                modelData["nonsynch_edges"] = cpptempl::make_data(nonSynchronizingEdges);
+                modelData["synch_edges"] = cpptempl::make_data(synchronizingEdges);
+                modelData["synch_vectors"] = cpptempl::make_data(vectors);
             }
             
             template <typename ValueType, typename RewardModelType>
@@ -720,8 +937,13 @@ namespace storm {
                 destinationData["name"] = asString(destinationIndex);
                 destinationData["levels"] = cpptempl::make_data(levels);
                 destinationData["value"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(destination.getProbability()), storm::expressions::ToCppTranslationOptions("state.", "double"));
-                destinationData["lowestLevel"] = asString(destination.getOrderedAssignments().getLowestLevel());
-                destinationData["highestLevel"] = asString(destination.getOrderedAssignments().getHighestLevel());
+                if (destination.getOrderedAssignments().empty()) {
+                    destinationData["lowestLevel"] = "0";
+                    destinationData["highestLevel"] = "0";
+                } else {
+                    destinationData["lowestLevel"] = asString(destination.getOrderedAssignments().getLowestLevel());
+                    destinationData["highestLevel"] = asString(destination.getOrderedAssignments().getHighestLevel());
+                }
 
                 return destinationData;
             }

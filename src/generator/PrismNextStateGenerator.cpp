@@ -354,12 +354,13 @@ namespace storm {
                 // If there was no enabled command although the module has some command with the required action label,
                 // we must not return anything.
                 if (commands.size() == 0) {
-                    return boost::optional<std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>>>();
+                    return boost::none;
                 }
                 
                 result.get().push_back(std::move(commands));
             }
             
+            STORM_LOG_ASSERT(!result->empty(), "Expected non-empty list.");
             return result;
         }
         
@@ -434,6 +435,8 @@ namespace storm {
             std::vector<Choice<ValueType>> result;
             
             for (uint_fast64_t actionIndex : program.getSynchronizingActionIndices()) {
+                std::cout << "got act " << actionIndex << std::endl;
+                std::cout << "name: " << program.getActionName(actionIndex) << std::endl;
                 boost::optional<std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>>> optionalActiveCommandLists = getActiveCommandsByActionIndex(actionIndex);
                 
                 // Only process this action label, if there is at least one feasible solution.
@@ -456,6 +459,7 @@ namespace storm {
                         
                         for (uint_fast64_t i = 0; i < iteratorList.size(); ++i) {
                             storm::prism::Command const& command = *iteratorList[i];
+                            std::cout << command << std::endl;
                             for (uint_fast64_t j = 0; j < command.getNumberOfUpdates(); ++j) {
                                 storm::prism::Update const& update = command.getUpdate(j);
                                 

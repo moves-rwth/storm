@@ -112,8 +112,6 @@ namespace storm {
 
 
         std::string SimpleValuation::toString(bool pretty) const {
-
-
             std::stringstream sstr;
             if(pretty) {
                 sstr << "valuation {" << std::endl;

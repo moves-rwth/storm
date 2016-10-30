@@ -107,6 +107,7 @@ namespace storm {
             }
             for (auto const& stateIndexPair : states) {
                 unpackStateIntoEvaluator(stateIndexPair.first, variableInformation, *this->evaluator);
+                std::cout << toValuation(stateIndexPair.first).toString(true) << std::endl;
                 
                 for (auto const& label : labelsAndExpressions) {
                     // Add label to state, if the corresponding expression is true.

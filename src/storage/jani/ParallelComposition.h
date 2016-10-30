@@ -40,7 +40,11 @@ namespace storm {
              * Retrieves the position of the first participating action.
              */
             uint64_t getPositionOfFirstParticipatingAction() const;
-
+            
+            /*!
+             * Retrieves the number of action inputs, i.e. participating subcompositions.
+             */
+            uint64_t getNumberOfActionInputs() const;
             
             // A marker that can be used as one of the inputs. The semantics is that no action of the corresponding
             // automaton takes part in the synchronization.
@@ -85,6 +89,8 @@ namespace storm {
              */
             ParallelComposition(std::shared_ptr<Composition> const& leftSubcomposition, std::shared_ptr<Composition> const& rightSubcomposition, std::set<std::string> const& synchronizationAlphabet);
 
+            virtual bool isParallelComposition() const override;
+            
             /*!
              * Retrieves the subcomposition with the given index.
              */

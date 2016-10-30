@@ -82,6 +82,10 @@ namespace storm {
             return false;
         }
         
+        bool OrderedAssignments::empty() const {
+            return allAssignments.empty();
+        }
+        
         int_fast64_t OrderedAssignments::getLowestLevel() const {
             return allAssignments.front()->getLevel();
         }

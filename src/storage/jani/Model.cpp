@@ -506,6 +506,15 @@ namespace storm {
             return true;
         }
         
+        bool Model::hasStandardCompliantComposition() const {
+            CompositionInformationVisitor visitor(*this, this->getSystemComposition());
+            CompositionInformation info = visitor.getInformation();
+            if (info.containsNestedParallelComposition()) {
+                return false;
+            }
+            return true;
+        }
+        
         bool Model::undefinedConstantsAreGraphPreserving() const {
             if (!this->hasUndefinedConstants()) {
                 return true;

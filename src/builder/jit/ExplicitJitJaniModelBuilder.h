@@ -9,6 +9,7 @@
 #include "cpptempl.h"
 
 #include "src/storage/jani/Model.h"
+#include "src/storage/jani/ParallelComposition.h"
 #include "src/storage/expressions/ToCppVisitor.h"
 
 #include "src/builder/BuilderOptions.h"
@@ -54,7 +55,8 @@ namespace storm {
                 cpptempl::data_map generateStateVariables();
                 cpptempl::data_list generateLabels();
                 cpptempl::data_list generateTerminalExpressions();
-                cpptempl::data_list generateNonSynchronizingEdges();
+                void generateEdges(cpptempl::data_map& modelData);
+                cpptempl::data_map generateSynchronizationVector(storm::jani::ParallelComposition const& parallelComposition, storm::jani::SynchronizationVector const& synchronizationVector, uint64_t synchronizationVectorIndex);
                 cpptempl::data_list generateLevels(storm::jani::OrderedAssignments const& assignments);
                 
                 cpptempl::data_map generateEdge(storm::jani::Automaton const& automaton, uint64_t edgeIndex, storm::jani::Edge const& edge);

@@ -2,6 +2,9 @@
 
 #include "src/models/sparse/StateLabeling.h"
 #include "src/models/sparse/Dtmc.h"
+#include "src/models/sparse/Ctmc.h"
+#include "src/models/sparse/Mdp.h"
+#include "src/models/sparse/MarkovAutomaton.h"
 #include "src/models/sparse/StandardRewardModel.h"
 
 #include "src/settings/SettingsManager.h"
@@ -67,6 +70,10 @@ namespace storm {
                 
                 if (modelType == storm::jani::ModelType::DTMC) {
                     return new storm::models::sparse::Dtmc<ValueType, storm::models::sparse::StandardRewardModel<ValueType>>(this->transitionMatrixBuilder->build(), std::move(stateLabeling));
+                } else if (modelType == storm::jani::ModelType::CTMC) {
+                    return new storm::models::sparse::Ctmc<ValueType, storm::models::sparse::StandardRewardModel<ValueType>>(this->transitionMatrixBuilder->build(), std::move(stateLabeling));
+                } else if (modelType == storm::jani::ModelType::MDP) {
+                    return new storm::models::sparse::Mdp<ValueType, storm::models::sparse::StandardRewardModel<ValueType>>(this->transitionMatrixBuilder->build(), std::move(stateLabeling));
                 } else {
                     return nullptr;
                 }

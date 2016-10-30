@@ -59,7 +59,7 @@ namespace storm {
                 std::vector<modernjson::json> elems;
                 for (auto const& subcomp : composition.getSubcompositions()) {
                     modernjson::json elemDecl;
-                    if (subcomp->isAutomaton()) {
+                    if (subcomp->isAutomatonComposition()) {
                         modernjson::json autDecl;
                         autDecl["automaton"] = std::static_pointer_cast<AutomatonComposition>(subcomp)->getAutomatonName();
                         std::vector<modernjson::json> elements;

@@ -74,6 +74,16 @@ namespace storm {
             STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Synchronization vector must have at least one participating action.");
         }
         
+        uint64_t SynchronizationVector::getNumberOfActionInputs() const {
+            uint64_t result = 0;
+            for (auto const& inputEntry : input) {
+                if (!isNoActionInput(inputEntry)) {
+                    ++result;
+                }
+            }
+            return result;
+        }
+        
         bool SynchronizationVector::isNoActionInput(std::string const& action) {
             return action == NO_ACTION_INPUT;
         }
@@ -149,6 +159,10 @@ namespace storm {
             for (auto const& action : synchronizationAlphabet) {
                 synchronizationVectors.emplace_back(std::vector<std::string>(this->subcompositions.size(), action), action);
             }
+        }
+        
+        bool ParallelComposition::isParallelComposition() const {
+            return true;
         }
         
         Composition const& ParallelComposition::getSubcomposition(uint64_t index) const {

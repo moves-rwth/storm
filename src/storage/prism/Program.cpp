@@ -764,7 +764,7 @@ namespace storm {
                 auto const& constant = newConstants[constantIndex];
                 
                 // Put the corresponding expression in the substitution.
-                if(constant.isDefined()) {
+                if (constant.isDefined()) {
                     constantSubstitution.emplace(constant.getExpressionVariable(), constant.getExpression().simplify());
                     
                     // If there is at least one more constant to come, we substitute the constants we have so far.
@@ -1306,7 +1306,7 @@ namespace storm {
                 std::vector<Module> cleanedModules;
                 cleanedModules.reserve(newModules.size());
                 for (auto const& module : newModules) {
-                    cleanedModules.emplace_back(module.restrictCommands(actionsToKeep));
+                    cleanedModules.emplace_back(module.restrictActionIndices(actionsToKeep));
                 }
                 newModules = std::move(cleanedModules);
                 

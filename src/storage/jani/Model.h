@@ -227,6 +227,7 @@ namespace storm {
              * @see getStandardSystemComposition
              */
             void setStandardSystemComposition();
+            
             /*!
              * Gets the system composition as the standard, fully-synchronizing parallel composition.
              */
@@ -313,6 +314,11 @@ namespace storm {
              * and synchronizes over all common actions.
              */
             bool hasStandardComposition() const;
+            
+            /*!
+             * Checks whether the composition has no nesting.
+             */
+            bool hasStandardCompliantComposition() const;
             
             /*!
              * After adding all components to the model, this method has to be called. It recursively calls

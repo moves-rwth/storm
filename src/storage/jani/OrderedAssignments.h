@@ -43,6 +43,11 @@ namespace storm {
             bool hasMultipleLevels() const;
             
             /*!
+             * Retrieves whether this set of assignments is empty.
+             */
+            bool empty() const;
+            
+            /*!
              * Retrieves the lowest level among all assignments. Note that this may only be called if there is at least
              * one assignment.
              */

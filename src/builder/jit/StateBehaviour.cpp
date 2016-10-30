@@ -42,6 +42,10 @@ namespace storm {
                         if (modelType == storm::jani::ModelType::DTMC) {
                             choices.front().divideDistribution(static_cast<ValueType>(totalCount));
                         }
+                    } else {
+                        for (auto& choice : choices) {
+                            choice.compress();
+                        }
                     }
                 } else if (choices.size() == 1) {
                     choices.front().compress();
