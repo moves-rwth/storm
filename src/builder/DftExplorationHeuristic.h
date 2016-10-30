@@ -10,7 +10,7 @@ namespace storm {
         /*!
          * Enum representing the heuristic used for deciding which states to expand.
          */
-        enum class ApproximationHeuristic { NONE, DEPTH, PROBABILITY };
+        enum class ApproximationHeuristic { NONE, DEPTH, PROBABILITY, BOUNDDIFFERENCE };
 
 
         /*!
@@ -165,9 +165,9 @@ namespace storm {
                 // Intentionally left empty
             }
 
-            bool updateHeuristicValues(DFTExplorationHeuristic<ValueType> const& predecessor, ValueType rate, ValueType exitRate) override {
-                return false;
-            }
+            void setBounds(ValueType lowerBound, ValueType upperBound);
+
+            bool updateHeuristicValues(DFTExplorationHeuristic<ValueType> const& predecessor, ValueType rate, ValueType exitRate) override;
 
             double getPriority() const override;
 
@@ -180,8 +180,7 @@ namespace storm {
             }
 
         private:
-            ValueType lowerBound;
-            ValueType upperBound;
+            ValueType difference;
         };
 
 
