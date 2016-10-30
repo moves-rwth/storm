@@ -84,6 +84,20 @@ namespace storm {
             dft_result checkHelper(storm::storage::DFT<ValueType> const& dft, std::shared_ptr<const storm::logic::Formula> const& formula, bool symred, bool allowModularisation, bool enableDC, double approximationError);
 
             /*!
+             * Internal helper for building a CTMC from a DFT via parallel composition.
+             *
+             * @param dft                 DFT
+             * @param formula             Formula to check for
+             * @param symred              Flag indicating if symmetry reduction should be used
+             * @param allowModularisation Flag indication if modularisation is allowed
+             * @param enableDC            Flag indicating if dont care propagation should be used
+             * @param approximationError  Error allowed for approximation. Value 0 indicates no approximation
+             *
+             * @return CTMC representing the DFT
+             */
+            std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> buildModelComposition(storm::storage::DFT<ValueType> const& dft, std::shared_ptr<const storm::logic::Formula> const& formula, bool symred, bool allowModularisation, bool enableDC);
+
+            /*!
              * Check model generated from DFT.
              *
              * @param dft                The DFT

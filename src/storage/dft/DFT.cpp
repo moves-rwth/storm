@@ -244,7 +244,7 @@ namespace storm {
             for(auto const& child : children) {
                 std::vector<size_t> isubdft;
                 if(child->nrParents() > 1 || child->hasOutgoingDependencies() || child->hasRestrictions()) {
-                    STORM_LOG_TRACE("child " << child->name() << "does not allow modularisation.");
+                    STORM_LOG_TRACE("child " << child->name() << " does not allow modularisation.");
                     return {*this};
                 }
                 if (isGate(child->id())) {

@@ -142,7 +142,6 @@ int main(const int argc, const char** argv) {
         
         // Construct pctlFormula
         std::string pctlFormula = "";
-        bool allowModular = true;
         std::string operatorType = "";
         std::string targetFormula = "";
         
@@ -153,7 +152,6 @@ int main(const int argc, const char** argv) {
             STORM_LOG_THROW(!dftSettings.usePropProbability() && !dftSettings.usePropTimebound(), storm::exceptions::InvalidSettingsException, "More than one property given.");
             operatorType = "T";
             targetFormula = "F \"failed\"";
-            allowModular = false;
         } else if (dftSettings.usePropProbability()) {
             STORM_LOG_THROW(!dftSettings.usePropTimebound(), storm::exceptions::InvalidSettingsException, "More than one property given.");
             operatorType = "P";;
@@ -180,9 +178,9 @@ int main(const int argc, const char** argv) {
 
         // From this point on we are ready to carry out the actual computations.
         if (parametric) {
-            analyzeDFT<storm::RationalFunction>(dftSettings.getDftFilename(), pctlFormula, dftSettings.useSymmetryReduction(), allowModular && dftSettings.useModularisation(), !dftSettings.isDisableDC(), approximationError);
+            analyzeDFT<storm::RationalFunction>(dftSettings.getDftFilename(), pctlFormula, dftSettings.useSymmetryReduction(), dftSettings.useModularisation(), !dftSettings.isDisableDC(), approximationError);
         } else {
-            analyzeDFT<double>(dftSettings.getDftFilename(), pctlFormula, dftSettings.useSymmetryReduction(), allowModular && dftSettings.useModularisation(), !dftSettings.isDisableDC(), approximationError);
+            analyzeDFT<double>(dftSettings.getDftFilename(), pctlFormula, dftSettings.useSymmetryReduction(), dftSettings.useModularisation(), !dftSettings.isDisableDC(), approximationError);
         }
         
         // All operations have now been performed, so we clean up everything and terminate.

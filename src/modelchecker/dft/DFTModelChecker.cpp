@@ -2,6 +2,7 @@
 
 #include "src/builder/ExplicitDFTModelBuilder.h"
 #include "src/builder/ExplicitDFTModelBuilderApprox.h"
+#include "src/builder/ParallelCompositionBuilder.h"
 #include "src/storage/dft/DFTIsomorphism.h"
 #include "src/settings/modules/DFTSettings.h"
 #include "src/utility/bitoperations.h"
@@ -28,10 +29,19 @@ namespace storm {
             // Optimizing DFT
             storm::storage::DFT<ValueType> dft = origDft.optimize();
 
-            // TODO Matthias: check that all paths reach the target state!
+            // TODO Matthias: check that all paths reach the target state for approximation
 
             // Checking DFT
-            checkResult = checkHelper(dft, formula, symred, allowModularisation, enableDC, approximationError);
+            if (formula->isProbabilityOperatorFormula() || !allowModularisation) {
+                checkResult = checkHelper(dft, formula, symred, allowModularisation, enableDC, approximationError);
+            } else {
+                std::shared_ptr<storm::models::sparse::Model<ValueType>> model = buildModelComposition(dft, formula, symred, allowModularisation, enableDC);
+                // Model checking
+                std::unique_ptr<storm::modelchecker::CheckResult> result = checkModel(model, formula);
+                result->filter(storm::modelchecker::ExplicitQualitativeCheckResult(model->getInitialStates()));
+                checkResult = result->asExplicitQuantitativeCheckResult<ValueType>().getValueMap().begin()->second;
+
+            }
             this->totalTime = std::chrono::high_resolution_clock::now() - totalStart;
         }
 
@@ -85,51 +95,181 @@ namespace storm {
 
                 if(modularisationPossible) {
                     STORM_LOG_TRACE("Recursive CHECK Call");
-                    // TODO Matthias: enable modularisation for approximation
-                    STORM_LOG_ASSERT(approximationError == 0.0, "Modularisation not possible for approximation.");
+                    if (formula->isProbabilityOperatorFormula()) {
+                        // Recursively call model checking
+                        std::vector<ValueType> res;
+                        for(auto const ft : dfts) {
+                            dft_result ftResult = checkHelper(ft, formula, symred, true, enableDC, 0.0);
+                            res.push_back(boost::get<ValueType>(ftResult));
+                        }
 
-                    // Recursively call model checking
-                    std::vector<ValueType> res;
-                    for(auto const ft : dfts) {
-                        dft_result ftResult = checkHelper(ft, formula, symred, true, enableDC, 0.0);
-                        res.push_back(boost::get<ValueType>(ftResult));
-                    }
-
-                    // Combine modularisation results
-                    STORM_LOG_TRACE("Combining all results... K=" << nrK << "; M=" << nrM << "; invResults=" << (invResults?"On":"Off"));
-                    ValueType result = storm::utility::zero<ValueType>();
-                    int limK = invResults ? -1 : nrM+1;
-                    int chK = invResults ? -1 : 1;
-                    // WARNING: there is a bug for computing permutations with more than 32 elements
-                    STORM_LOG_ASSERT(res.size() < 32, "Permutations work only for < 32 elements");
-                    for(int cK = nrK; cK != limK; cK += chK ) {
-                        STORM_LOG_ASSERT(cK >= 0, "ck negative.");
-                        size_t permutation = smallestIntWithNBitsSet(static_cast<size_t>(cK));
-                        do {
-                            STORM_LOG_TRACE("Permutation="<<permutation);
-                            ValueType permResult = storm::utility::one<ValueType>();
-                            for(size_t i = 0; i < res.size(); ++i) {
-                                if(permutation & (1 << i)) {
-                                    permResult *= res[i];
-                                } else {
-                                    permResult *= storm::utility::one<ValueType>() - res[i];
+                        // Combine modularisation results
+                        STORM_LOG_TRACE("Combining all results... K=" << nrK << "; M=" << nrM << "; invResults=" << (invResults?"On":"Off"));
+                        ValueType result = storm::utility::zero<ValueType>();
+                        int limK = invResults ? -1 : nrM+1;
+                        int chK = invResults ? -1 : 1;
+                        // WARNING: there is a bug for computing permutations with more than 32 elements
+                        STORM_LOG_ASSERT(res.size() < 32, "Permutations work only for < 32 elements");
+                        for(int cK = nrK; cK != limK; cK += chK ) {
+                            STORM_LOG_ASSERT(cK >= 0, "ck negative.");
+                            size_t permutation = smallestIntWithNBitsSet(static_cast<size_t>(cK));
+                            do {
+                                STORM_LOG_TRACE("Permutation="<<permutation);
+                                ValueType permResult = storm::utility::one<ValueType>();
+                                for(size_t i = 0; i < res.size(); ++i) {
+                                    if(permutation & (1 << i)) {
+                                        permResult *= res[i];
+                                    } else {
+                                        permResult *= storm::utility::one<ValueType>() - res[i];
+                                    }
                                 }
-                            }
-                            STORM_LOG_TRACE("Result for permutation:"<<permResult);
-                            permutation = nextBitPermutation(permutation);
-                            result += permResult;
-                        } while(permutation < (1 << nrM) && permutation != 0);
+                                STORM_LOG_TRACE("Result for permutation:"<<permResult);
+                                permutation = nextBitPermutation(permutation);
+                                result += permResult;
+                            } while(permutation < (1 << nrM) && permutation != 0);
+                        }
+                        if(invResults) {
+                            result = storm::utility::one<ValueType>() - result;
+                        }
+                        return result;
                     }
-                    if(invResults) {
-                        result = storm::utility::one<ValueType>() - result;
-                    }
-                    return result;
                 }
             }
 
             // If we are here, no modularisation was possible
             STORM_LOG_ASSERT(!modularisationPossible, "Modularisation should not be possible.");
             return checkDFT(dft, formula, symred, enableDC, approximationError);
+        }
+
+        template<typename ValueType>
+        std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> DFTModelChecker<ValueType>::buildModelComposition(storm::storage::DFT<ValueType> const& dft, std::shared_ptr<const storm::logic::Formula> const& formula, bool symred, bool allowModularisation, bool enableDC)  {
+            STORM_LOG_TRACE("Build model via composition");
+            // Use parallel composition for CTMCs for expected time
+            STORM_LOG_ASSERT(formula->isTimeOperatorFormula(), "Formula is not a time operator formula");
+            bool modularisationPossible = allowModularisation;
+
+            // Try modularisation
+            if(modularisationPossible) {
+                std::vector<storm::storage::DFT<ValueType>> dfts;
+                bool isAnd = true;
+
+                switch (dft.topLevelType()) {
+                    case storm::storage::DFTElementType::AND:
+                        STORM_LOG_TRACE("top modularisation called AND");
+                        dfts = dft.topModularisation();
+                        STORM_LOG_TRACE("Modularisation into " << dfts.size() << " submodules.");
+                        modularisationPossible = dfts.size() > 1;
+                        isAnd = true;
+                        break;
+                    case storm::storage::DFTElementType::OR:
+                        STORM_LOG_TRACE("top modularisation called OR");
+                        dfts = dft.topModularisation();
+                        STORM_LOG_TRACE("Modularsation into " << dfts.size() << " submodules.");
+                        modularisationPossible = dfts.size() > 1;
+                        isAnd = false;
+                        break;
+                    case storm::storage::DFTElementType::VOT:
+                        /*STORM_LOG_TRACE("top modularisation called VOT");
+                        dfts = dft.topModularisation();
+                        STORM_LOG_TRACE("Modularsation into " << dfts.size() << " submodules.");
+                        std::static_pointer_cast<storm::storage::DFTVot<ValueType> const>(dft.getTopLevelGate())->threshold();
+                         */
+                        // TODO enable modularisation for voting gate
+                        modularisationPossible = false;
+                        break;
+                    default:
+                        // No static gate -> no modularisation applicable
+                        modularisationPossible = false;
+                        break;
+                }
+
+                if(modularisationPossible) {
+                    STORM_LOG_TRACE("Recursive CHECK Call");
+                    bool firstTime = true;
+                    std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> composedModel;
+                    for (auto const ft : dfts) {
+                        STORM_LOG_INFO("Building Model via parallel composition...");
+                        std::chrono::high_resolution_clock::time_point checkingStart = std::chrono::high_resolution_clock::now();
+
+                        // Find symmetries
+                        std::map<size_t, std::vector<std::vector<size_t>>> emptySymmetry;
+                        storm::storage::DFTIndependentSymmetries symmetries(emptySymmetry);
+                        if(symred) {
+                            auto colouring = ft.colourDFT();
+                            symmetries = ft.findSymmetries(colouring);
+                            STORM_LOG_INFO("Found " << symmetries.groups.size() << " symmetries.");
+                            STORM_LOG_TRACE("Symmetries: " << std::endl << symmetries);
+                        }
+
+                        // Build a single CTMC
+                        STORM_LOG_INFO("Building Model...");
+                        storm::builder::ExplicitDFTModelBuilderApprox<ValueType> builder(ft, symmetries, enableDC);
+                        typename storm::builder::ExplicitDFTModelBuilderApprox<ValueType>::LabelOptions labeloptions; // TODO initialize this with the formula
+                        builder.buildModel(labeloptions, 0, 0.0);
+                        std::shared_ptr<storm::models::sparse::Model<ValueType>> model = builder.getModel();
+                        //model->printModelInformationToStream(std::cout);
+                        STORM_LOG_INFO("No. states (Explored): " << model->getNumberOfStates());
+                        STORM_LOG_INFO("No. transitions (Explored): " << model->getNumberOfTransitions());
+                        explorationTime += std::chrono::high_resolution_clock::now() - checkingStart;
+
+                        STORM_LOG_THROW(model->isOfType(storm::models::ModelType::Ctmc), storm::exceptions::NotSupportedException, "Parallel composition only applicable for CTMCs");
+                        std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> ctmc = model->template as<storm::models::sparse::Ctmc<ValueType>>();
+
+                        ctmc =  storm::performDeterministicSparseBisimulationMinimization<storm::models::sparse::Ctmc<ValueType>>(ctmc, {formula}, storm::storage::BisimulationType::Weak)->template as<storm::models::sparse::Ctmc<ValueType>>();
+
+                        if (firstTime) {
+                            composedModel = ctmc;
+                            firstTime = false;
+                        } else {
+                            composedModel = storm::builder::ParallelCompositionBuilder<ValueType>::compose(composedModel, ctmc, isAnd);
+                        }
+
+                        // Apply bisimulation
+                        std::chrono::high_resolution_clock::time_point bisimulationStart = std::chrono::high_resolution_clock::now();
+                        composedModel =  storm::performDeterministicSparseBisimulationMinimization<storm::models::sparse::Ctmc<ValueType>>(composedModel, {formula}, storm::storage::BisimulationType::Weak)->template as<storm::models::sparse::Ctmc<ValueType>>();
+                        std::chrono::high_resolution_clock::time_point bisimulationEnd = std::chrono::high_resolution_clock::now();
+                        bisimulationTime += bisimulationEnd - bisimulationStart;
+
+                        STORM_LOG_INFO("No. states (Composed): " << composedModel->getNumberOfStates());
+                        STORM_LOG_INFO("No. transitions (Composed): " << composedModel->getNumberOfTransitions());
+                        if (composedModel->getNumberOfStates() <= 15) {
+                            STORM_LOG_TRACE("Transition matrix: " << std::endl << composedModel->getTransitionMatrix());
+                        } else {
+                            STORM_LOG_TRACE("Transition matrix: too big to print");
+                        }
+
+                    }
+                    return composedModel;
+                }
+            }
+
+            // If we are here, no composition was possible
+            STORM_LOG_ASSERT(!modularisationPossible, "Modularisation should not be possible.");
+            std::chrono::high_resolution_clock::time_point checkingStart = std::chrono::high_resolution_clock::now();
+            // Find symmetries
+            std::map<size_t, std::vector<std::vector<size_t>>> emptySymmetry;
+            storm::storage::DFTIndependentSymmetries symmetries(emptySymmetry);
+            if(symred) {
+                auto colouring = dft.colourDFT();
+                symmetries = dft.findSymmetries(colouring);
+                STORM_LOG_INFO("Found " << symmetries.groups.size() << " symmetries.");
+                STORM_LOG_TRACE("Symmetries: " << std::endl << symmetries);
+            }
+            // Build a single CTMC
+            STORM_LOG_INFO("Building Model...");
+
+
+            storm::builder::ExplicitDFTModelBuilderApprox<ValueType> builder(dft, symmetries, enableDC);
+            typename storm::builder::ExplicitDFTModelBuilderApprox<ValueType>::LabelOptions labeloptions; // TODO initialize this with the formula
+            builder.buildModel(labeloptions, 0, 0.0);
+            std::shared_ptr<storm::models::sparse::Model<ValueType>> model = builder.getModel();
+            //model->printModelInformationToStream(std::cout);
+            STORM_LOG_INFO("No. states (Explored): " << model->getNumberOfStates());
+            STORM_LOG_INFO("No. transitions (Explored): " << model->getNumberOfTransitions());
+            explorationTime += std::chrono::high_resolution_clock::now() - checkingStart;
+            STORM_LOG_THROW(model->isOfType(storm::models::ModelType::Ctmc), storm::exceptions::NotSupportedException, "Parallel composition only applicable for CTMCs");
+
+            return model->template as<storm::models::sparse::Ctmc<ValueType>>();
         }
 
         template<typename ValueType>
@@ -213,7 +353,7 @@ namespace storm {
                 if (storm::settings::getModule<storm::settings::modules::DFTSettings>().isApproximationErrorSet()) {
                     storm::builder::ExplicitDFTModelBuilderApprox<ValueType> builder(dft, symmetries, enableDC);
                     typename storm::builder::ExplicitDFTModelBuilderApprox<ValueType>::LabelOptions labeloptions; // TODO initialize this with the formula
-                    builder.buildModel(labeloptions, 0);
+                    builder.buildModel(labeloptions, 0, 0.0);
                     model = builder.getModel();
                 } else {
                     storm::builder::ExplicitDFTModelBuilder<ValueType> builder(dft, symmetries, enableDC);
