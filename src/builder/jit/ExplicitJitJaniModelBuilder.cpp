@@ -94,13 +94,13 @@ namespace storm {
                                 return result;
                             }
                             
-                            std::ostream& operator<<(std::ostream& out, StateType const& state) {
+                            std::ostream& operator<<(std::ostream& out, StateType const& in) {
                                 out << "<";
-                                {% for variable in stateVariables.boolean %}out << "{$variable.name}=" << std::boolalpha << state.{$variable.name} << ", ";
+                                {% for variable in stateVariables.boolean %}out << "{$variable.name}=" << std::boolalpha << in.{$variable.name} << ", ";
                                 {% endfor %}
-                                {% for variable in stateVariables.boundedInteger %}out << "{$variable.name}=" << state.{$variable.name} << ", ";
+                                {% for variable in stateVariables.boundedInteger %}out << "{$variable.name}=" << in.{$variable.name} << ", ";
                                 {% endfor %}
-                                {% for variable in stateVariables.locations %}out << "{$variable.name}=" << state.{$variable.name} << ", ";
+                                {% for variable in stateVariables.locations %}out << "{$variable.name}=" << in.{$variable.name} << ", ";
                                 {% endfor %}
                                 out << ">";
                                 return out;
@@ -112,14 +112,14 @@ namespace storm {
                 namespace std {
                     template <>
                     struct hash<storm::builder::jit::StateType> {
-                        std::size_t operator()(storm::builder::jit::StateType const& state) const {
+                        std::size_t operator()(storm::builder::jit::StateType const& in) const {
                             // Note: this is faster than viewing the struct as a bit field and taking hash_combine of the bytes.
                             std::size_t seed = 0;
-                            {% for variable in stateVariables.boolean %}spp::hash_combine(seed, state.{$variable.name});
+                            {% for variable in stateVariables.boolean %}spp::hash_combine(seed, in.{$variable.name});
                             {% endfor %}
-                            {% for variable in stateVariables.boundedInteger %}spp::hash_combine(seed, state.{$variable.name});
+                            {% for variable in stateVariables.boundedInteger %}spp::hash_combine(seed, in.{$variable.name});
                             {% endfor %}
-                            {% for variable in stateVariables.locations %}spp::hash_combine(seed, state.{$variable.name});
+                            {% for variable in stateVariables.locations %}spp::hash_combine(seed, in.{$variable.name});
                             {% endfor %}
                             return seed;
                         }
@@ -138,7 +138,7 @@ namespace storm {
                                 return {$discrete_time_model};
                             }
 
-                            {% for edge in nonsynch_edges %}static bool edge_enabled_{$edge.name}(StateType const& state) {
+                            {% for edge in nonsynch_edges %}static bool edge_enabled_{$edge.name}(StateType const& in) {
                                 if ({$edge.guard}) {
                                     return true;
                                 }
@@ -146,24 +146,24 @@ namespace storm {
                             }
                             
                             {% for destination in edge.destinations %}
-                            void destination_perform_level_{$edge.name}_{$destination.name}(int_fast64_t level, StateType& state) {
+                            void destination_perform_level_{$edge.name}_{$destination.name}(int_fast64_t level, StateType const& in, StateType& out) {
                                 {% for level in destination.levels %}if (level == {$level.index}) {
-                                    {% for assignment in level.nonTransientAssignments %}state.{$assignment.variable} = {$assignment.value};
+                                    {% for assignment in level.nonTransientAssignments %}out.{$assignment.variable} = {$assignment.value};
                                     {% endfor %}
                                 }
                                 {% endfor %}
                             }
                             
-                            void destination_perform_{$edge.name}_{$destination.name}(StateType& state) {
+                            void destination_perform_{$edge.name}_{$destination.name}(StateType const& in, StateType& out) {
                                 {% for level in destination.levels %}
-                                {% for assignment in level.nonTransientAssignments %}state.{$assignment.variable} = {$assignment.value};
+                                {% for assignment in level.nonTransientAssignments %}out.{$assignment.variable} = {$assignment.value};
                                 {% endfor %}
                                 {% endfor %}
                             }
                             {% endfor %}
                             {% endfor %}
 
-                            {% for edge in synch_edges %}static bool edge_enabled_{$edge.name}(StateType const& state) {
+                            {% for edge in synch_edges %}static bool edge_enabled_{$edge.name}(StateType const& in) {
                                 if ({$edge.guard}) {
                                     return true;
                                 }
@@ -171,16 +171,17 @@ namespace storm {
                             }
                             
                             {% for destination in edge.destinations %}
-                            void destination_perform_level_{$edge.name}_{$destination.name}(int_fast64_t level, StateType& state) {
+                            void destination_perform_level_{$edge.name}_{$destination.name}(int_fast64_t level, StateType const& in, StateType& out) {
                                 {% for level in destination.levels %}if (level == {$level.index}) {
-                                    {% for assignment in level.nonTransientAssignments %}state.{$assignment.variable} = {$assignment.value};{% endfor %}
+                                    {% for assignment in level.nonTransientAssignments %}out.{$assignment.variable} = {$assignment.value};
+                                    {% endfor %}
                                 }
                                 {% endfor %}
                             }
                             
-                            void destination_perform_{$edge.name}_{$destination.name}(StateType& state) {
+                            void destination_perform_{$edge.name}_{$destination.name}(StateType const& in, StateType& out) {
                                 {% for level in destination.levels %}
-                                {% for assignment in level.nonTransientAssignments %}state.{$assignment.variable} = {$assignment.value};
+                                {% for assignment in level.nonTransientAssignments %}out.{$assignment.variable} = {$assignment.value};
                                 {% endfor %}
                                 {% endfor %}
                             }
@@ -188,8 +189,8 @@ namespace storm {
                             {% endfor %}
 
                             
-                            typedef void (*DestinationLevelFunctionPtr)(int_fast64_t, StateType&);
-                            typedef void (*DestinationFunctionPtr)(StateType&);
+                            typedef void (*DestinationLevelFunctionPtr)(int_fast64_t, StateType const&, StateType&);
+                            typedef void (*DestinationFunctionPtr)(StateType const&, StateType&);
                             
                             class Destination {
                             public:
@@ -213,12 +214,12 @@ namespace storm {
                                     return mValue;
                                 }
                                 
-                                void performLevel(int_fast64_t level, StateType& state) const {
-                                    destinationLevelFunction(level, state);
+                                void performLevel(int_fast64_t level, StateType const& in, StateType& out) const {
+                                    destinationLevelFunction(level, in, out);
                                 }
 
-                                void perform(StateType& state) const {
-                                    destinationFunction(state);
+                                void perform(StateType const& in, StateType& out) const {
+                                    destinationFunction(in, out);
                                 }
 
                             private:
@@ -243,8 +244,8 @@ namespace storm {
                                     // Intentionally left empty.
                                 }
                                 
-                                bool isEnabled(StateType const& state) const {
-                                    return edgeEnabledFunction(state);
+                                bool isEnabled(StateType const& in) const {
+                                    return edgeEnabledFunction(in);
                                 }
                                 
                                 void addDestination(Destination const& destination) {
@@ -317,7 +318,6 @@ namespace storm {
                                     
                                     for (auto const& stateEntry : stateIds) {
                                         auto const& state = stateEntry.first;
-                                        std::cout << state << std::endl;
                                         {% for label in labels %}if ({$label.predicate}) {
                                             this->modelComponentsBuilder.addLabel(stateEntry.second, {$loop.index} - 1);
                                         }
@@ -374,15 +374,15 @@ namespace storm {
                                     return false;
                                 }
                                 
-                                void exploreNonSynchronizingEdges(StateType const& state, StateBehaviour<IndexType, ValueType>& behaviour, StateSet<StateType>& statesToExplore) {
+                                void exploreNonSynchronizingEdges(StateType const& in, StateBehaviour<IndexType, ValueType>& behaviour, StateSet<StateType>& statesToExplore) {
                                     {% for edge in nonsynch_edges %}{
                                         if ({$edge.guard}) {
                                             Choice<IndexType, ValueType>& choice = behaviour.addChoice();
                                             {% for destination in edge.destinations %}{
-                                                StateType targetState(state);
-                                                destination_perform_{$edge.name}_{$destination.name}(targetState);
-                                                IndexType targetStateIndex = getOrAddIndex(targetState, statesToExplore);
-                                                choice.add(targetStateIndex, {$destination.value});
+                                                StateType out(in);
+                                                destination_perform_{$edge.name}_{$destination.name}(in, out);
+                                                IndexType outStateIndex = getOrAddIndex(out, statesToExplore);
+                                                choice.add(outStateIndex, {$destination.value});
                                             }{% endfor %}
                                         }
                                     }
@@ -655,7 +655,7 @@ namespace storm {
                         if (this->options.isBuildAllLabelsSet() || this->options.getLabelNames().find(variable->getName()) != this->options.getLabelNames().end()) {
                             cpptempl::data_map label;
                             label["name"] = variable->getName();
-                            label["predicate"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(model.getLabelExpression(variable->asBooleanVariable(), locationVariables)), storm::expressions::ToCppTranslationOptions("state."));
+                            label["predicate"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(model.getLabelExpression(variable->asBooleanVariable(), locationVariables)), storm::expressions::ToCppTranslationOptions("in."));
                             labels.push_back(label);
                         }
                     }
@@ -664,7 +664,7 @@ namespace storm {
                 for (auto const& expression : this->options.getExpressionLabels()) {
                     cpptempl::data_map label;
                     label["name"] = expression.toString();
-                    label["predicate"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(expression), storm::expressions::ToCppTranslationOptions("state."));
+                    label["predicate"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(expression), storm::expressions::ToCppTranslationOptions("in."));
                     labels.push_back(label);
                 }
                 
@@ -687,10 +687,10 @@ namespace storm {
                         if (terminalEntry.second) {
                             labelExpression = !labelExpression;
                         }
-                        terminalExpressions.push_back(expressionTranslator.translate(shiftVariablesWrtLowerBound(labelExpression), storm::expressions::ToCppTranslationOptions("state.")));
+                        terminalExpressions.push_back(expressionTranslator.translate(shiftVariablesWrtLowerBound(labelExpression), storm::expressions::ToCppTranslationOptions("in.")));
                     } else {
                         auto expression = terminalEntry.second ? labelOrExpression.getExpression() : !labelOrExpression.getExpression();
-                        terminalExpressions.push_back(expressionTranslator.translate(shiftVariablesWrtLowerBound(expression), storm::expressions::ToCppTranslationOptions("state.")));
+                        terminalExpressions.push_back(expressionTranslator.translate(shiftVariablesWrtLowerBound(expression), storm::expressions::ToCppTranslationOptions("in.")));
                     }
                 }
 
@@ -702,17 +702,17 @@ namespace storm {
                 std::stringstream vectorSource;
                 uint64_t numberOfActionInputs = synchronizationVector.getNumberOfActionInputs();
                 
-                vectorSource << "void performSynchronizedDestinations_" << synchronizationVectorIndex << "(StateType const& state, StateBehaviour<IndexType, ValueType>& behaviour, StateSet<StateType>& statesToExplore, ";
+                vectorSource << "void performSynchronizedDestinations_" << synchronizationVectorIndex << "(StateType const& in, StateBehaviour<IndexType, ValueType>& behaviour, StateSet<StateType>& statesToExplore, ";
                 for (uint64_t index = 0; index < numberOfActionInputs; ++index) {
                     vectorSource << "Destination const& destination" << index << ", ";
                 }
                 vectorSource << "Choice<IndexType, ValueType>& choice) {" << std::endl;
-                vectorSource << "StateType targetState(state);" << std::endl;
+                vectorSource << "StateType out(in);" << std::endl;
                 for (uint64_t index = 0; index < numberOfActionInputs; ++index) {
-                    vectorSource << "destination" << index << ".perform(targetState);" << std::endl;
+                    vectorSource << "destination" << index << ".perform(in, out);" << std::endl;
                 }
-                vectorSource << "IndexType targetStateIndex = getOrAddIndex(targetState, statesToExplore);" << std::endl;
-                vectorSource << "choice.add(targetStateIndex, ";
+                vectorSource << "IndexType outStateIndex = getOrAddIndex(out, statesToExplore);" << std::endl;
+                vectorSource << "choice.add(outStateIndex, ";
                 for (uint64_t index = 0; index < numberOfActionInputs; ++index) {
                     vectorSource << "destination" << index << ".value()";
                     if (index + 1 < numberOfActionInputs) {
@@ -722,7 +722,7 @@ namespace storm {
                 vectorSource << ");" << std::endl;
                 vectorSource << "}" << std::endl;
                 
-                vectorSource << "void performSynchronizedDestinations_" << synchronizationVectorIndex << "(StateType const& state, StateBehaviour<IndexType, ValueType>& behaviour, StateSet<StateType>& statesToExplore, ";
+                vectorSource << "void performSynchronizedDestinations_" << synchronizationVectorIndex << "(StateType const& in, StateBehaviour<IndexType, ValueType>& behaviour, StateSet<StateType>& statesToExplore, ";
                 for (uint64_t index = 0; index < numberOfActionInputs; ++index) {
                     vectorSource << "Edge const& edge" << index << ", ";
                 }
@@ -730,7 +730,7 @@ namespace storm {
                 for (uint64_t index = 0; index < numberOfActionInputs; ++index) {
                     vectorSource << "for (auto const& destination" << index << " : edge" << index << ") {" << std::endl;
                 }
-                vectorSource << "performSynchronizedDestinations_" << synchronizationVectorIndex << "(state, behaviour, statesToExplore, ";
+                vectorSource << "performSynchronizedDestinations_" << synchronizationVectorIndex << "(in, behaviour, statesToExplore, ";
                 for (uint64_t index = 0; index < numberOfActionInputs; ++index) {
                     vectorSource << "destination" << index << ", ";
                 }
@@ -741,7 +741,7 @@ namespace storm {
                 vectorSource << "}" << std::endl;
             
                 for (uint64_t index = 0; index < numberOfActionInputs; ++index) {
-                    vectorSource << "void performSynchronizedEdges_" << synchronizationVectorIndex << "_" << index << "(StateType const& state, std::vector<std::vector<std::reference_wrapper<Edge const>>> const& edges,  StateBehaviour<IndexType, ValueType>& behaviour, StateSet<StateType>& statesToExplore";
+                    vectorSource << "void performSynchronizedEdges_" << synchronizationVectorIndex << "_" << index << "(StateType const& in, std::vector<std::vector<std::reference_wrapper<Edge const>>> const& edges,  StateBehaviour<IndexType, ValueType>& behaviour, StateSet<StateType>& statesToExplore";
                     if (index > 0) {
                         vectorSource << ", ";
                     }
@@ -754,7 +754,7 @@ namespace storm {
                     vectorSource << ") {" << std::endl;
                     vectorSource << "for (auto const& edge" << index << " : edges[" << index << "]) {" << std::endl;
                     if (index + 1 < numberOfActionInputs) {
-                        vectorSource << "performSynchronizedEdges_" << synchronizationVectorIndex << "_" << (index + 1) << "(state, edges, behaviour, statesToExplore, ";
+                        vectorSource << "performSynchronizedEdges_" << synchronizationVectorIndex << "_" << (index + 1) << "(in, edges, behaviour, statesToExplore, ";
                         for (uint64_t innerIndex = 0; innerIndex <= index; ++innerIndex) {
                             vectorSource << "edge" << innerIndex;
                             if (innerIndex + 1 <= index) {
@@ -764,7 +764,7 @@ namespace storm {
                         vectorSource << ");" << std::endl;
                     } else {
                         vectorSource << "Choice<IndexType, ValueType>& choice = behaviour.addChoice();" << std::endl;
-                        vectorSource << "performSynchronizedDestinations_" << synchronizationVectorIndex << "(state, behaviour, statesToExplore, ";
+                        vectorSource << "performSynchronizedDestinations_" << synchronizationVectorIndex << "(in, behaviour, statesToExplore, ";
                         for (uint64_t innerIndex = 0; innerIndex <= index; ++innerIndex) {
                             vectorSource << "edge" << innerIndex << ", ";
                         }
@@ -778,7 +778,6 @@ namespace storm {
                 vectorSource << "void get_edges_" << synchronizationVectorIndex << "(StateType const& state, std::vector<std::reference_wrapper<Edge const>>& edges, uint64_t position) {" << std::endl;
                 uint64_t position = 0;
                 uint64_t participatingPosition = 0;
-                std::cout << "synch vector " << synchronizationVector << std::endl;
                 for (auto const& inputActionName : synchronizationVector.getInput()) {
                     if (!storm::jani::SynchronizationVector::isNoActionInput(inputActionName)) {
                         vectorSource << "if (position == " << participatingPosition << ") {" << std::endl;
@@ -787,7 +786,6 @@ namespace storm {
                         uint64_t actionIndex = model.getActionIndex(inputActionName);
                         uint64_t edgeIndex = 0;
                         for (auto const& edge : automaton.getEdges()) {
-                            std::cout << "[" << automaton.getName() << "], edge " << edgeIndex << " with guard " << edge.getGuard() << " has action " << model.getAction(edge.getActionIndex()).getName() << "[" << edge.getActionIndex() << "]" << std::endl;
                             if (edge.getActionIndex() == actionIndex) {
                                 std::string edgeName = automaton.getName() + "_" + std::to_string(edgeIndex);
                                 vectorSource << "if (edge_enabled_" << edgeName  << "(state)) {" << std::endl;
@@ -923,7 +921,7 @@ namespace storm {
                     ++destinationIndex;
                 }
                 
-                edgeData["guard"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(edge.getGuard()), storm::expressions::ToCppTranslationOptions("state."));
+                edgeData["guard"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(edge.getGuard()), storm::expressions::ToCppTranslationOptions("in."));
                 edgeData["destinations"] = cpptempl::make_data(destinations);
                 edgeData["name"] = automaton.getName() + "_" + std::to_string(edgeIndex);
                 return edgeData;
@@ -936,7 +934,7 @@ namespace storm {
                 cpptempl::data_list levels = generateLevels(destination.getOrderedAssignments());
                 destinationData["name"] = asString(destinationIndex);
                 destinationData["levels"] = cpptempl::make_data(levels);
-                destinationData["value"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(destination.getProbability()), storm::expressions::ToCppTranslationOptions("state.", "double"));
+                destinationData["value"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(destination.getProbability()), storm::expressions::ToCppTranslationOptions("in.", "double"));
                 if (destination.getOrderedAssignments().empty()) {
                     destinationData["lowestLevel"] = "0";
                     destinationData["highestLevel"] = "0";
@@ -972,9 +970,9 @@ namespace storm {
                         }
                         
                         if (assignment.isTransient()) {
-                            transientAssignmentData.push_back(generateAssignment(assignment, "state."));
+                            transientAssignmentData.push_back(generateAssignment(assignment, "in."));
                         } else {
-                            nonTransientAssignmentData.push_back(generateAssignment(assignment, "state."));
+                            nonTransientAssignmentData.push_back(generateAssignment(assignment, "in."));
                         }
                     }
 

@@ -14,7 +14,7 @@ namespace storm {
         
         storm::jani::Model ToJaniConverter::convert(storm::prism::Program const& program, bool allVariablesGlobal) const {
             std::shared_ptr<storm::expressions::ExpressionManager> manager = program.getManager().getSharedPointer();
-            
+                        
             // Start by creating an empty JANI model.
             storm::jani::ModelType modelType;
             switch (program.getModelType()) {
