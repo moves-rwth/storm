@@ -128,16 +128,17 @@ namespace storm {
             std::cout << "Current working directory: " << getCurrentWorkingDirectory() << std::endl << std::endl;
         }
 
-
-        void printUsage() {
+        void showTimeAndMemoryStatistics(uint64_t wallclockMilliseconds) {
 #ifndef WINDOWS
             struct rusage ru;
             getrusage(RUSAGE_SELF, &ru);
 
-            std::cout << "===== Statistics ==============================" << std::endl;
-            std::cout << "peak memory usage: " << ru.ru_maxrss/1024/1024 << "MB" << std::endl;
-            std::cout << "CPU time: " << ru.ru_utime.tv_sec << "." << std::setw(3) << std::setfill('0') << ru.ru_utime.tv_usec/1000 << " seconds" << std::endl;
-            std::cout << "===============================================" << std::endl;
+            std::cout << "Performance statistics:" << std::endl;
+            std::cout << "  * peak memory usage: " << ru.ru_maxrss/1024/1024 << " mb" << std::endl;
+            std::cout << "  * CPU time: " << ru.ru_utime.tv_sec << "." << std::setw(3) << std::setfill('0') << ru.ru_utime.tv_usec/1000 << " seconds" << std::endl;
+            if (wallclockMilliseconds != 0) {
+                std::cout << "  * wallclock time: " << (wallclockMilliseconds/1000) << "." << std::setw(3) << std::setfill('0') << (wallclockMilliseconds % 1000) << " seconds" << std::endl;
+            }
 #else
             HANDLE hProcess = GetCurrentProcess ();
             FILETIME ftCreation, ftExit, ftUser, ftKernel;
@@ -265,9 +266,7 @@ namespace storm {
                 // Get the string that assigns values to the unknown currently undefined constants in the model.
                 std::string constantDefinitionString = ioSettings.getConstantDefinitionString();
                 model = model.preprocess(constantDefinitionString);
-
                 
-
                 if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isParametricSet()) {
 #ifdef STORM_HAVE_CARL
                     buildAndCheckSymbolicModel<storm::RationalFunction>(model, properties, true);
@@ -302,7 +301,6 @@ namespace storm {
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "No input model.");
             }
-
         }
 
     }

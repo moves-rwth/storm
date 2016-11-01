@@ -73,13 +73,7 @@ namespace storm {
             if (allAssignments.empty()) {
                 return false;
             }
-            uint64_t firstLevel = allAssignments.front()->getLevel();
-            for (auto const& assignment : allAssignments) {
-                if (assignment->getLevel() != firstLevel) {
-                    return true;
-                }
-            }
-            return false;
+            return getLowestLevel() == getHighestLevel();
         }
         
         bool OrderedAssignments::empty() const {

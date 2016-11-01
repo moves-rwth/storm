@@ -52,7 +52,14 @@ namespace storm {
                 
                 // Functions that generate data maps or data templates.
                 cpptempl::data_list generateInitialStates();
-                cpptempl::data_map generateStateVariables();
+                
+                cpptempl::data_map generateBooleanVariable(storm::jani::BooleanVariable const& variable);
+                cpptempl::data_map generateBoundedIntegerVariable(storm::jani::BoundedIntegerVariable const& variable);
+                cpptempl::data_map generateUnboundedIntegerVariable(storm::jani::UnboundedIntegerVariable const& variable);
+                cpptempl::data_map generateRealVariable(storm::jani::RealVariable const& variable);
+                cpptempl::data_map generateLocationVariable(storm::jani::Automaton const& automaton);
+                void generateVariables(cpptempl::data_map& modelData);
+                
                 cpptempl::data_list generateLabels();
                 cpptempl::data_list generateTerminalExpressions();
                 void generateEdges(cpptempl::data_map& modelData);
@@ -71,10 +78,8 @@ namespace storm {
                 
                 // Auxiliary functions that perform regularly needed steps.
                 std::string const& getVariableName(storm::expressions::Variable const& variable) const;
-                std::string getQualifiedVariableName(storm::jani::Automaton const& automaton, storm::jani::Variable const& variable) const;
-                std::string getQualifiedVariableName(storm::jani::Variable const& variable) const;
-                std::string getQualifiedVariableName(storm::jani::Automaton const& automaton, storm::expressions::Variable const& variable) const;
-                std::string getLocationVariableName(storm::jani::Automaton const& automaton) const;
+                std::string const& registerVariableName(storm::expressions::Variable const& variable);
+                storm::expressions::Variable const& getLocationVariable(storm::jani::Automaton const& automaton) const;
                 std::string asString(bool value) const;
                 storm::expressions::Expression shiftVariablesWrtLowerBound(storm::expressions::Expression const& expression);
 
@@ -83,16 +88,18 @@ namespace storm {
                 
                 storm::builder::BuilderOptions options;
                 storm::jani::Model model;
-                std::map<std::string, storm::expressions::Variable> locationVariables;
                 
                 ModelComponentsBuilder<IndexType, ValueType> modelComponentsBuilder;
                 typename ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::ImportFunctionType jitBuilderGetFunction;
                 std::unique_ptr<JitModelBuilderInterface<IndexType, ValueType>> builder;
                 
                 std::unordered_map<storm::expressions::Variable, std::string> variableToName;
+                std::map<std::string, storm::expressions::Variable> automatonToLocationVariable;
+                
                 storm::expressions::ToCppVisitor expressionTranslator;
                 std::map<storm::expressions::Variable, storm::expressions::Expression> lowerBoundShiftSubstitution;
                 std::map<storm::expressions::Variable, int_fast64_t> lowerBounds;
+                std::set<storm::expressions::Variable> transientVariables;
             };
 
         }

@@ -1,7 +1,9 @@
 #pragma once
 
 #include <sstream>
+#include <unordered_map>
 
+#include "src/storage/expressions/Variable.h"
 #include "src/storage/expressions/ExpressionVisitor.h"
 
 namespace storm {
@@ -14,6 +16,10 @@ namespace storm {
             
             std::string const& getPrefix() const;
             
+            void setSpecificPrefixes(std::unordered_map<storm::expressions::Variable, std::string> const& prefixes);
+            std::unordered_map<storm::expressions::Variable, std::string> const& getSpecificPrefixes() const;
+            void clearSpecificPrefixes();
+            
             bool hasValueTypeCast() const;
             std::string const& getValueTypeCast() const;
             void clearValueTypeCast();
@@ -21,6 +27,7 @@ namespace storm {
         private:
             std::string valueTypeCast;
             std::string prefix;
+            std::unordered_map<storm::expressions::Variable, std::string> specificPrefixes;
         };
         
         class ToCppVisitor : public ExpressionVisitor {

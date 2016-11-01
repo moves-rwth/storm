@@ -37,9 +37,15 @@ namespace storm {
             
             template <typename ValueType, typename RewardModelType>
             ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::ExplicitJitJaniModelBuilder(storm::jani::Model const& model, storm::builder::BuilderOptions const& options) : options(options), model(model), modelComponentsBuilder(model.getModelType()) {
-
+                for (auto const& variable : this->model.getGlobalVariables().getTransientVariables()) {
+                    transientVariables.insert(variable->getExpressionVariable());
+                }
+                
                 for (auto const& automaton : this->model.getAutomata()) {
-                    locationVariables.emplace(automaton.getName(), model.getManager().declareFreshIntegerVariable(false, automaton.getName() + "_"));
+                    automatonToLocationVariable.emplace(automaton.getName(), model.getManager().declareFreshIntegerVariable(false, automaton.getName() + "_"));
+                    for (auto const& variable : automaton.getVariables().getTransientVariables()) {
+                        transientVariables.insert(variable->getExpressionVariable());
+                    }
                 }
             }
             
@@ -73,38 +79,95 @@ namespace storm {
                             
                             struct StateType {
                                 // Boolean variables.
-                                {% for variable in stateVariables.boolean %}bool {$variable.name} : 1;
+                                {% for variable in nontransient_variables.boolean %}bool {$variable.name} : 1;
                                 {% endfor %}
                                 // Bounded integer variables.
-                                {% for variable in stateVariables.boundedInteger %}uint64_t {$variable.name} : {$variable.numberOfBits};
+                                {% for variable in nontransient_variables.boundedInteger %}uint64_t {$variable.name} : {$variable.numberOfBits};
+                                {% endfor %}
+                                // Unbounded integer variables.
+                                {% for variable in nontransient_variables.unboundedInteger %}int64_t {$variable.name};
+                                {% endfor %}
+                                // Real variables.
+                                {% for variable in nontransient_variables.real %}double {$variable.name};
                                 {% endfor %}
                                 // Location variables.
-                                {% for variable in stateVariables.locations %}uint64_t {$variable.name} : {$variable.numberOfBits};
+                                {% for variable in nontransient_variables.locations %}uint64_t {$variable.name} : {$variable.numberOfBits};
                                 {% endfor %}
                             };
                             
                             bool operator==(StateType const& first, StateType const& second) {
                                 bool result = true;
-                                {% for variable in stateVariables.boolean %}result &= !(first.{$variable.name} ^ second.{$variable.name});
+                                {% for variable in nontransient_variables.boolean %}result &= !(first.{$variable.name} ^ second.{$variable.name});
                                 {% endfor %}
-                                {% for variable in stateVariables.boundedInteger %}result &= first.{$variable.name} == second.{$variable.name};
+                                {% for variable in nontransient_variables.boundedInteger %}result &= first.{$variable.name} == second.{$variable.name};
                                 {% endfor %}
-                                {% for variable in stateVariables.locations %}result &= first.{$variable.name} == second.{$variable.name};
+                                {% for variable in nontransient_variables.unboundedInteger %}result &= first.{$variable.name} == second.{$variable.name};
+                                {% endfor %}
+                                {% for variable in nontransient_variables.real %}result &= first.{$variable.name} == second.{$variable.name};
+                                {% endfor %}
+                                {% for variable in nontransient_variables.locations %}result &= first.{$variable.name} == second.{$variable.name};
                                 {% endfor %}
                                 return result;
                             }
                             
                             std::ostream& operator<<(std::ostream& out, StateType const& in) {
                                 out << "<";
-                                {% for variable in stateVariables.boolean %}out << "{$variable.name}=" << std::boolalpha << in.{$variable.name} << ", ";
+                                {% for variable in nontransient_variables.boolean %}out << "{$variable.name}=" << std::boolalpha << in.{$variable.name} << ", ";
                                 {% endfor %}
-                                {% for variable in stateVariables.boundedInteger %}out << "{$variable.name}=" << in.{$variable.name} << ", ";
+                                {% for variable in nontransient_variables.boundedInteger %}out << "{$variable.name}=" << in.{$variable.name} << ", ";
                                 {% endfor %}
-                                {% for variable in stateVariables.locations %}out << "{$variable.name}=" << in.{$variable.name} << ", ";
+                                {% for variable in nontransient_variables.unboundedInteger %}out << "{$variable.name}=" << in.{$variable.name} << ", ";
+                                {% endfor %}
+                                {% for variable in nontransient_variables.real %}out << "{$variable.name}=" << in.{$variable.name} << ", ";
+                                {% endfor %}
+                                {% for variable in nontransient_variables.locations %}out << "{$variable.name}=" << in.{$variable.name} << ", ";
                                 {% endfor %}
                                 out << ">";
                                 return out;
                             }
+                            
+                            {% if transient_variables %}
+                            struct TransientVariableType {
+                                TransientVariableType() {
+                                    {% for variable in transient_variables.boolean %}{$variable.name} = {$variable.init};
+                                    {% endfor %}
+                                    {% for variable in transient_variables.boundedInteger %}{$variable.name} = {$variable.init};
+                                    {% endfor %}
+                                    {% for variable in transient_variables.unboundedInteger %}{$variable.name} = {$variable.init};
+                                    {% endfor %}
+                                    {% for variable in transient_variables.real %}{$variable.name} = {$variable.init};
+                                    {% endfor %}
+                                }
+                                
+                                // Boolean variables.
+                                {% for variable in transient_variables.boolean %}bool {$variable.name} : 1;
+                                {% endfor %}
+                                // Bounded integer variables.
+                                {% for variable in transient_variables.boundedInteger %}uint64_t {$variable.name} : {$variable.numberOfBits};
+                                {% endfor %}
+                                // Unbounded integer variables.
+                                {% for variable in transient_variables.unboundedInteger %}int64_t {$variable.name};
+                                {% endfor %}
+                                // Real variables.
+                                {% for variable in transient_variables.real %}double {$variable.name};
+                                {% endfor %}
+                            };
+                            
+                            std::ostream& operator<<(std::ostream& out, TransientVariableType const& in) {
+                                out << "<";
+                                {% for variable in transient_variables.boolean %}out << "{$variable.name}=" << std::boolalpha << in.{$variable.name} << ", ";
+                                {% endfor %}
+                                {% for variable in transient_variables.boundedInteger %}out << "{$variable.name}=" << in.{$variable.name} << ", ";
+                                {% endfor %}
+                                {% for variable in transient_variables.unboundedInteger %}out << "{$variable.name}=" << in.{$variable.name} << ", ";
+                                {% endfor %}
+                                {% for variable in transient_variables.real %}out << "{$variable.name}=" << in.{$variable.name} << ", ";
+                                {% endfor %}
+                                out << ">";
+                                return out;
+                            }
+                            {% endif %}
+
                         }
                     }
                 }
@@ -115,11 +178,15 @@ namespace storm {
                         std::size_t operator()(storm::builder::jit::StateType const& in) const {
                             // Note: this is faster than viewing the struct as a bit field and taking hash_combine of the bytes.
                             std::size_t seed = 0;
-                            {% for variable in stateVariables.boolean %}spp::hash_combine(seed, in.{$variable.name});
+                            {% for variable in nontransient_variables.boolean %}spp::hash_combine(seed, in.{$variable.name});
                             {% endfor %}
-                            {% for variable in stateVariables.boundedInteger %}spp::hash_combine(seed, in.{$variable.name});
+                            {% for variable in nontransient_variables.boundedInteger %}spp::hash_combine(seed, in.{$variable.name});
                             {% endfor %}
-                            {% for variable in stateVariables.locations %}spp::hash_combine(seed, in.{$variable.name});
+                            {% for variable in nontransient_variables.unboundedInteger %}spp::hash_combine(seed, in.{$variable.name});
+                            {% endfor %}
+                            {% for variable in nontransient_variables.real %}spp::hash_combine(seed, in.{$variable.name});
+                            {% endfor %}
+                            {% for variable in nontransient_variables.locations %}spp::hash_combine(seed, in.{$variable.name});
                             {% endfor %}
                             return seed;
                         }
@@ -130,11 +197,11 @@ namespace storm {
                     namespace builder {
                         namespace jit {
                             
-                            bool model_is_deterministic() {
+                            static bool model_is_deterministic() {
                                 return {$deterministic_model};
                             }
                             
-                            bool model_is_discrete_time() {
+                            static bool model_is_discrete_time() {
                                 return {$discrete_time_model};
                             }
 
@@ -146,18 +213,21 @@ namespace storm {
                             }
                             
                             {% for destination in edge.destinations %}
-                            void destination_perform_level_{$edge.name}_{$destination.name}(int_fast64_t level, StateType const& in, StateType& out) {
+                            static void destination_perform_level_{$edge.name}_{$destination.name}(int_fast64_t level, StateType const& in, StateType& out{% if edge.referenced_transient_variables %}, TransientVariableType const& transientIn, TransientVariableType& transientOut{% endif %}) {
                                 {% for level in destination.levels %}if (level == {$level.index}) {
                                     {% for assignment in level.nonTransientAssignments %}out.{$assignment.variable} = {$assignment.value};
+                                    {% endfor %}
+                                    {% for assignment in level.transientAssignments %}transientOut.{$assignment.variable} = {$assignment.value};
                                     {% endfor %}
                                 }
                                 {% endfor %}
                             }
                             
-                            void destination_perform_{$edge.name}_{$destination.name}(StateType const& in, StateType& out) {
+                            static void destination_perform_{$edge.name}_{$destination.name}(StateType const& in, StateType& out) {
+                                {% if edge.referenced_transient_variables %}TransientVariableType transientIn;
+                                TransientVariableType transientOut;{% endif %}
                                 {% for level in destination.levels %}
-                                {% for assignment in level.nonTransientAssignments %}out.{$assignment.variable} = {$assignment.value};
-                                {% endfor %}
+                                destination_perform_level_{$edge.name}_{$destination.name}({$level.index}, in, out{% if edge.referenced_transient_variables %}, transientIn, transientOut{% endif %});
                                 {% endfor %}
                             }
                             {% endfor %}
@@ -171,18 +241,19 @@ namespace storm {
                             }
                             
                             {% for destination in edge.destinations %}
-                            void destination_perform_level_{$edge.name}_{$destination.name}(int_fast64_t level, StateType const& in, StateType& out) {
+                            static void destination_perform_level_{$edge.name}_{$destination.name}(int_fast64_t level, StateType const& in, StateType& out{% if edge.referenced_transient_variables %}, TransientVariableType const& transientIn, TransientVariableType& transientOut{% endif %}) {
                                 {% for level in destination.levels %}if (level == {$level.index}) {
                                     {% for assignment in level.nonTransientAssignments %}out.{$assignment.variable} = {$assignment.value};
+                                    {% endfor %}
+                                    {% for assignment in level.transientAssignments %}transientOut.{$assignment.variable} = {$assignment.value};
                                     {% endfor %}
                                 }
                                 {% endfor %}
                             }
                             
-                            void destination_perform_{$edge.name}_{$destination.name}(StateType const& in, StateType& out) {
+                            static void destination_perform_{$edge.name}_{$destination.name}(StateType const& in, StateType& out{% if edge.referenced_transient_variables %}, TransientVariableType const& transientIn, TransientVariableType& transientOut{% endif %}) {
                                 {% for level in destination.levels %}
-                                {% for assignment in level.nonTransientAssignments %}out.{$assignment.variable} = {$assignment.value};
-                                {% endfor %}
+                                destination_perform_level_{$edge.name}_{$destination.name}({$level.index}, in, out{% if edge.referenced_transient_variables %}, transientIn, transientOut{% endif %});
                                 {% endfor %}
                             }
                             {% endfor %}
@@ -191,6 +262,10 @@ namespace storm {
                             
                             typedef void (*DestinationLevelFunctionPtr)(int_fast64_t, StateType const&, StateType&);
                             typedef void (*DestinationFunctionPtr)(StateType const&, StateType&);
+
+                            {% if transient_variables %}typedef void (*DestinationTransientLevelFunctionPtr)(int_fast64_t, StateType const&, StateType&, TransientVariableType const&, TransientVariableType&);
+                            typedef void (*DestinationTransientFunctionPtr)(StateType const&, StateType&, TransientVariableType const&, TransientVariableType&);
+                            {% endif %}
                             
                             class Destination {
                             public:
@@ -229,7 +304,46 @@ namespace storm {
                                 DestinationLevelFunctionPtr destinationLevelFunction;
                                 DestinationFunctionPtr destinationFunction;
                             };
-                            
+
+                            {% if transient_variables %}class DestinationTransient {
+                            public:
+                                DestinationTransient() : mLowestLevel(0), mHighestLevel(0), mValue(), destinationLevelFunction(nullptr), destinationFunction(nullptr) {
+                                    // Intentionally left empty.
+                                }
+                                
+                                DestinationTransient(int_fast64_t lowestLevel, int_fast64_t highestLevel, ValueType const& value, DestinationTransientLevelFunctionPtr destinationLevelFunction, DestinationTransientFunctionPtr destinationFunction) : mLowestLevel(lowestLevel), mHighestLevel(highestLevel), mValue(value), destinationLevelFunction(destinationLevelFunction), destinationFunction(destinationFunction) {
+                                    // Intentionally left empty.
+                                }
+                                
+                                int_fast64_t lowestLevel() const {
+                                    return mLowestLevel;
+                                }
+                                
+                                int_fast64_t highestLevel() const {
+                                    return mHighestLevel;
+                                }
+                                
+                                ValueType const& value() const {
+                                    return mValue;
+                                }
+                                
+                                void performLevel(int_fast64_t level, StateType const& in, StateType& out, TransientVariableType const& transientIn, TransientVariableType& transientOut) const {
+                                    destinationLevelFunction(level, in, out, transientIn, transientOut);
+                                }
+                                
+                                void perform(StateType const& in, StateType& out, TransientVariableType const& transientIn, TransientVariableType& transientOut) const {
+                                    destinationFunction(in, out, transientIn, transientOut);
+                                }
+                                
+                            private:
+                                int_fast64_t mLowestLevel;
+                                int_fast64_t mHighestLevel;
+                                ValueType mValue;
+                                DestinationTransientLevelFunctionPtr destinationLevelFunction;
+                                DestinationTransientFunctionPtr destinationFunction;
+                            };
+                            {% endif %}
+
                             typedef bool (*EdgeEnabledFunctionPtr)(StateType const&);
                             
                             class Edge {
@@ -272,7 +386,49 @@ namespace storm {
                                 EdgeEnabledFunctionPtr edgeEnabledFunction;
                                 ContainerType destinations;
                             };
-                            
+
+                            {% if transient_variables %}class EdgeTransient {
+                            public:
+                                typedef std::vector<DestinationTransient> ContainerType;
+                                
+                                EdgeTransient() : edgeEnabledFunction(nullptr) {
+                                    // Intentionally left empty.
+                                }
+                                
+                                EdgeTransient(EdgeEnabledFunctionPtr edgeEnabledFunction) : edgeEnabledFunction(edgeEnabledFunction) {
+                                    // Intentionally left empty.
+                                }
+                                
+                                bool isEnabled(StateType const& in) const {
+                                    return edgeEnabledFunction(in);
+                                }
+                                
+                                void addDestination(DestinationTransient const& destination) {
+                                    destinations.push_back(destination);
+                                }
+                                
+                                void addDestination(int_fast64_t lowestLevel, int_fast64_t highestLevel, ValueType const& value, DestinationTransientLevelFunctionPtr destinationLevelFunction, DestinationTransientFunctionPtr destinationFunction) {
+                                    destinations.emplace_back(lowestLevel, highestLevel, value, destinationLevelFunction, destinationFunction);
+                                }
+                                
+                                std::vector<DestinationTransient> const& getDestinations() const {
+                                    return destinations;
+                                }
+                                
+                                ContainerType::const_iterator begin() const {
+                                    return destinations.begin();
+                                }
+                                
+                                ContainerType::const_iterator end() const {
+                                    return destinations.end();
+                                }
+                                
+                            private:
+                                EdgeEnabledFunctionPtr edgeEnabledFunction;
+                                ContainerType destinations;
+                            };
+                            {% endif %}
+
                             class JitBuilder : public JitModelBuilderInterface<IndexType, ValueType> {
                             public:
                                 JitBuilder(ModelComponentsBuilder<IndexType, ValueType>& modelComponentsBuilder) : JitModelBuilderInterface(modelComponentsBuilder) {
@@ -440,9 +596,9 @@ namespace storm {
                                 std::vector<StateType> initialStates;
                                 std::vector<IndexType> deadlockStates;
                                 
-                                {% for edge in nonsynch_edges %}Edge edge_{$edge.name};
+                                {% for edge in nonsynch_edges %}{% if edge.referenced_transient_variables %}EdgeTransient {% endif %}{% if not edge.referenced_transient_variables %}Edge {% endif %} edge_{$edge.name};
                                 {% endfor %}
-                                {% for edge in synch_edges %}Edge edge_{$edge.name};
+                                {% for edge in synch_edges %}{% if edge.referenced_transient_variables %}EdgeTransient {% endif %}{% if not edge.referenced_transient_variables %}Edge {% endif %} edge_{$edge.name};
                                 {% endfor %}
                             };
                             
@@ -453,7 +609,7 @@ namespace storm {
                 )";
                 
                 cpptempl::data_map modelData;
-                modelData["stateVariables"] = generateStateVariables();
+                generateVariables(modelData);
                 cpptempl::data_list initialStates = generateInitialStates();
                 modelData["initialStates"] = cpptempl::make_data(initialStates);
                 generateEdges(modelData);
@@ -569,79 +725,170 @@ namespace storm {
             }
             
             template <typename ValueType, typename RewardModelType>
-            cpptempl::data_map ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateStateVariables() {
-                cpptempl::data_list booleanVariables;
-                cpptempl::data_list boundedIntegerVariables;
+            cpptempl::data_map ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateBooleanVariable(storm::jani::BooleanVariable const& variable) {
+                cpptempl::data_map result;
+                result["name"] = registerVariableName(variable.getExpressionVariable());
+                if (variable.hasInitExpression()) {
+                    result["init"] = asString(variable.getInitExpression().evaluateAsBool());
+                }
+                return result;
+            }
+
+            template <typename ValueType, typename RewardModelType>
+            cpptempl::data_map ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateBoundedIntegerVariable(storm::jani::BoundedIntegerVariable const& variable) {
+                cpptempl::data_map result;
+
+                int_fast64_t lowerBound = variable.getLowerBound().evaluateAsInt();
+                int_fast64_t upperBound = variable.getUpperBound().evaluateAsInt();
+                
+                lowerBounds[variable.getExpressionVariable()] = lowerBound;
+                if (lowerBound != 0) {
+                    lowerBoundShiftSubstitution[variable.getExpressionVariable()] = variable.getExpressionVariable() + model.getManager().integer(lowerBound);
+                }
+                uint64_t range = static_cast<uint64_t>(upperBound - lowerBound + 1);
+                uint64_t numberOfBits = static_cast<uint64_t>(std::ceil(std::log2(range)));
+                
+                result["name"] = registerVariableName(variable.getExpressionVariable());
+                result["numberOfBits"] = std::to_string(numberOfBits);
+                if (variable.hasInitExpression()) {
+                    result["init"] = asString(variable.getInitExpression().evaluateAsInt() - lowerBound);
+                }
+
+                return result;
+            }
+            
+            template <typename ValueType, typename RewardModelType>
+            cpptempl::data_map ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateUnboundedIntegerVariable(storm::jani::UnboundedIntegerVariable const& variable) {
+                cpptempl::data_map result;
+                
+                result["name"] = registerVariableName(variable.getExpressionVariable());
+                if (variable.hasInitExpression()) {
+                    result["init"] = asString(variable.getInitExpression().evaluateAsInt());
+                }
+                
+                return result;
+            }
+
+            template <typename ValueType, typename RewardModelType>
+            cpptempl::data_map ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateRealVariable(storm::jani::RealVariable const& variable) {
+                cpptempl::data_map result;
+                
+                result["name"] = registerVariableName(variable.getExpressionVariable());
+                if (variable.hasInitExpression()) {
+                    result["init"] = asString(variable.getInitExpression().evaluateAsDouble());
+                }
+
+                return result;
+            }
+
+            template <typename ValueType, typename RewardModelType>
+            cpptempl::data_map ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateLocationVariable(storm::jani::Automaton const& automaton) {
+                cpptempl::data_map result;
+                
+                result["name"] = registerVariableName(getLocationVariable(automaton));
+                result["numberOfBits"] = static_cast<uint64_t>(std::ceil(std::log2(automaton.getNumberOfLocations())));
+                
+                return result;
+            }
+
+            template <typename ValueType, typename RewardModelType>
+            void ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateVariables(cpptempl::data_map& modelData) {
+                cpptempl::data_list nonTransientBooleanVariables;
+                cpptempl::data_list transientBooleanVariables;
+                cpptempl::data_list nonTransientBoundedIntegerVariables;
+                cpptempl::data_list transientBoundedIntegerVariables;
+                cpptempl::data_list nonTransientUnboundedIntegerVariables;
+                cpptempl::data_list transientUnboundedIntegerVariables;
+                cpptempl::data_list nonTransientRealVariables;
+                cpptempl::data_list transientRealVariables;
                 cpptempl::data_list locationVariables;
                 
                 for (auto const& variable : model.getGlobalVariables().getBooleanVariables()) {
-                    cpptempl::data_map booleanVariable;
-                    std::string variableName = getQualifiedVariableName(variable);
-                    variableToName[variable.getExpressionVariable()] = variableName;
-                    booleanVariable["name"] = variableName;
-                    booleanVariables.push_back(booleanVariable);
+                    cpptempl::data_map newBooleanVariable = generateBooleanVariable(variable.asBooleanVariable());
+                    if (variable.isTransient()) {
+                        transientBooleanVariables.push_back(newBooleanVariable);
+                    } else {
+                        nonTransientBooleanVariables.push_back(newBooleanVariable);
+                    }
                 }
                 for (auto const& variable : model.getGlobalVariables().getBoundedIntegerVariables()) {
-                    cpptempl::data_map boundedIntegerVariable;
-                    std::string variableName = getQualifiedVariableName(variable);
-                    variableToName[variable.getExpressionVariable()] = variableName;
-                    
-                    int_fast64_t lowerBound = variable.getLowerBound().evaluateAsInt();
-                    int_fast64_t upperBound = variable.getUpperBound().evaluateAsInt();
-                    
-                    lowerBounds[variable.getExpressionVariable()] = lowerBound;
-                    if (lowerBound != 0) {
-                        lowerBoundShiftSubstitution[variable.getExpressionVariable()] = variable.getExpressionVariable() + model.getManager().integer(lowerBound);
+                    cpptempl::data_map newBoundedIntegerVariable = generateBoundedIntegerVariable(variable.asBoundedIntegerVariable());
+                    if (variable.isTransient()) {
+                        transientBoundedIntegerVariables.push_back(newBoundedIntegerVariable);
+                    } else {
+                        nonTransientBoundedIntegerVariables.push_back(newBoundedIntegerVariable);
                     }
-                    uint64_t range = static_cast<uint64_t>(upperBound - lowerBound + 1);
-                    uint64_t numberOfBits = static_cast<uint64_t>(std::ceil(std::log2(range)));
-                    
-                    boundedIntegerVariable["name"] = variableName;
-                    boundedIntegerVariable["numberOfBits"] = std::to_string(numberOfBits);
-                    boundedIntegerVariables.push_back(boundedIntegerVariable);
+                }
+                for (auto const& variable : model.getGlobalVariables().getUnboundedIntegerVariables()) {
+                    cpptempl::data_map newUnboundedIntegerVariable = generateUnboundedIntegerVariable(variable.asUnboundedIntegerVariable());
+                    if (variable.isTransient()) {
+                        transientUnboundedIntegerVariables.push_back(newUnboundedIntegerVariable);
+                    } else {
+                        nonTransientUnboundedIntegerVariables.push_back(newUnboundedIntegerVariable);
+                    }
+                }
+                for (auto const& variable : model.getGlobalVariables().getRealVariables()) {
+                    cpptempl::data_map newRealVariable = generateRealVariable(variable.asRealVariable());
+                    if (variable.isTransient()) {
+                        transientRealVariables.push_back(newRealVariable);
+                    } else {
+                        nonTransientRealVariables.push_back(newRealVariable);
+                    }
                 }
                 for (auto const& automaton : model.getAutomata()) {
                     for (auto const& variable : automaton.getVariables().getBooleanVariables()) {
-                        cpptempl::data_map booleanVariable;
-                        std::string variableName = getQualifiedVariableName(automaton, variable);
-                        variableToName[variable.getExpressionVariable()] = variableName;
-                        booleanVariable["name"] = variableName;
-                        booleanVariables.push_back(booleanVariable);
+                        cpptempl::data_map newBooleanVariable = generateBooleanVariable(variable.asBooleanVariable());
+                        if (variable.isTransient()) {
+                            transientBooleanVariables.push_back(newBooleanVariable);
+                        } else {
+                            nonTransientBooleanVariables.push_back(newBooleanVariable);
+                        }
                     }
                     for (auto const& variable : automaton.getVariables().getBoundedIntegerVariables()) {
-                        cpptempl::data_map boundedIntegerVariable;
-                        std::string variableName = getQualifiedVariableName(automaton, variable);
-                        variableToName[variable.getExpressionVariable()] = variableName;
-
-                        int_fast64_t lowerBound = variable.getLowerBound().evaluateAsInt();
-                        int_fast64_t upperBound = variable.getUpperBound().evaluateAsInt();
-
-                        lowerBounds[variable.getExpressionVariable()] = lowerBound;
-                        if (lowerBound != 0) {
-                            lowerBoundShiftSubstitution[variable.getExpressionVariable()] = variable.getExpressionVariable() + model.getManager().integer(lowerBound);
+                        cpptempl::data_map newBoundedIntegerVariable = generateBoundedIntegerVariable(variable.asBoundedIntegerVariable());
+                        if (variable.isTransient()) {
+                            transientBoundedIntegerVariables.push_back(newBoundedIntegerVariable);
+                        } else {
+                            nonTransientBoundedIntegerVariables.push_back(newBoundedIntegerVariable);
                         }
-                        uint64_t range = static_cast<uint64_t>(upperBound - lowerBound);
-                        uint64_t numberOfBits = static_cast<uint64_t>(std::ceil(std::log2(range)));
-                        
-                        boundedIntegerVariable["name"] = variableName;
-                        boundedIntegerVariable["numberOfBits"] = std::to_string(numberOfBits);
-                        boundedIntegerVariables.push_back(boundedIntegerVariable);
+                    }
+                    for (auto const& variable : automaton.getVariables().getUnboundedIntegerVariables()) {
+                        cpptempl::data_map newUnboundedIntegerVariable = generateUnboundedIntegerVariable(variable.asUnboundedIntegerVariable());
+                        if (variable.isTransient()) {
+                            transientUnboundedIntegerVariables.push_back(newUnboundedIntegerVariable);
+                        } else {
+                            nonTransientUnboundedIntegerVariables.push_back(newUnboundedIntegerVariable);
+                        }
+                    }
+                    for (auto const& variable : automaton.getVariables().getRealVariables()) {
+                        cpptempl::data_map newRealVariable = generateRealVariable(variable.asRealVariable());
+                        if (variable.isTransient()) {
+                            transientRealVariables.push_back(newRealVariable);
+                        } else {
+                            nonTransientRealVariables.push_back(newRealVariable);
+                        }
                     }
                     
                     // Only generate a location variable if there is more than one location for the automaton.
                     if (automaton.getNumberOfLocations() > 1) {
-                        cpptempl::data_map locationVariable;
-                        locationVariable["name"] = getQualifiedVariableName(automaton, this->locationVariables.at(automaton.getName()));
-                        locationVariable["numberOfBits"] = static_cast<uint64_t>(std::ceil(std::log2(automaton.getNumberOfLocations())));
-                        locationVariables.push_back(locationVariable);
+                        locationVariables.push_back(generateLocationVariable(automaton));
                     }
                 }
                 
-                cpptempl::data_map stateVariables;
-                stateVariables["boolean"] = cpptempl::make_data(booleanVariables);
-                stateVariables["boundedInteger"] = cpptempl::make_data(boundedIntegerVariables);
-                stateVariables["locations"] = cpptempl::make_data(locationVariables);
-                return stateVariables;
+                cpptempl::data_map nonTransientVariables;
+                nonTransientVariables["boolean"] = cpptempl::make_data(nonTransientBooleanVariables);
+                nonTransientVariables["boundedInteger"] = cpptempl::make_data(nonTransientBoundedIntegerVariables);
+                nonTransientVariables["unboundedInteger"] = cpptempl::make_data(nonTransientUnboundedIntegerVariables);
+                nonTransientVariables["real"] = cpptempl::make_data(nonTransientRealVariables);
+                nonTransientVariables["locations"] = cpptempl::make_data(locationVariables);
+                modelData["nontransient_variables"] = nonTransientVariables;
+                
+                cpptempl::data_map transientVariables;
+                transientVariables["boolean"] = cpptempl::make_data(transientBooleanVariables);
+                transientVariables["boundedInteger"] = cpptempl::make_data(transientBoundedIntegerVariables);
+                transientVariables["unboundedInteger"] = cpptempl::make_data(transientUnboundedIntegerVariables);
+                transientVariables["real"] = cpptempl::make_data(transientRealVariables);
+                modelData["transient_variables"] = transientVariables;
             }
             
             template <typename ValueType, typename RewardModelType>
@@ -655,7 +902,7 @@ namespace storm {
                         if (this->options.isBuildAllLabelsSet() || this->options.getLabelNames().find(variable->getName()) != this->options.getLabelNames().end()) {
                             cpptempl::data_map label;
                             label["name"] = variable->getName();
-                            label["predicate"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(model.getLabelExpression(variable->asBooleanVariable(), locationVariables)), storm::expressions::ToCppTranslationOptions("in."));
+                            label["predicate"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(model.getLabelExpression(variable->asBooleanVariable(), automatonToLocationVariable)), storm::expressions::ToCppTranslationOptions("in."));
                             labels.push_back(label);
                         }
                     }
@@ -683,7 +930,7 @@ namespace storm {
                         auto const& variable = variables.getVariable(labelOrExpression.getLabel());
                         STORM_LOG_THROW(variable.isBooleanVariable(), storm::exceptions::WrongFormatException, "Terminal label refers to non-boolean variable '" << variable.getName() << ".");
                         STORM_LOG_THROW(variable.isTransient(), storm::exceptions::WrongFormatException, "Terminal label refers to non-transient variable '" << variable.getName() << ".");
-                        auto labelExpression = model.getLabelExpression(variable.asBooleanVariable(), locationVariables);
+                        auto labelExpression = model.getLabelExpression(variable.asBooleanVariable(), automatonToLocationVariable);
                         if (terminalEntry.second) {
                             labelExpression = !labelExpression;
                         }
@@ -697,22 +944,62 @@ namespace storm {
                 return terminalExpressions;
             }
 
+            std::ostream& indent(std::ostream& out, uint64_t indentLevel) {
+                for (uint64_t i = 0; i < indentLevel; ++i) {
+                    out << "\t";
+                }
+                return out;
+            }
+            
             template <typename ValueType, typename RewardModelType>
             cpptempl::data_map ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateSynchronizationVector(storm::jani::ParallelComposition const& parallelComposition, storm::jani::SynchronizationVector const& synchronizationVector, uint64_t synchronizationVectorIndex) {
                 std::stringstream vectorSource;
                 uint64_t numberOfActionInputs = synchronizationVector.getNumberOfActionInputs();
                 
-                vectorSource << "void performSynchronizedDestinations_" << synchronizationVectorIndex << "(StateType const& in, StateBehaviour<IndexType, ValueType>& behaviour, StateSet<StateType>& statesToExplore, ";
+                // First, we check whether we need to generate code for a) different assignment levels and b) transient variables.
+                uint64_t position = 0;
+                bool generateLevelCode = false;
+                bool generateTransientVariableCode = false;
+                for (auto const& inputActionName : synchronizationVector.getInput()) {
+                    if (!storm::jani::SynchronizationVector::isNoActionInput(inputActionName)) {
+                        storm::jani::Automaton const& automaton = model.getAutomaton(parallelComposition.getSubcomposition(position).asAutomatonComposition().getAutomatonName());
+                        uint64_t actionIndex = model.getActionIndex(inputActionName);
+                        for (auto const& edge : automaton.getEdges()) {
+                            if (edge.getActionIndex() == actionIndex) {
+                                for (auto const& destination : edge.getDestinations()) {
+                                    if (destination.getOrderedAssignments().hasMultipleLevels()) {
+                                        generateLevelCode = true;
+                                    }
+                                    for (auto const& assignment : destination.getOrderedAssignments().getAllAssignments()) {
+                                        if (assignment.isTransient()) {
+                                            
+                                        }
+                                        std::set<storm::expressions::Variable> usedVariables;
+                                        for (auto const& variable : usedVariables) {
+                                            if (transientVariables.find(variable) != transientVariables.end()) {
+                                                generateTransientVariableCode = true;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    ++position;
+                }
+                
+                uint64_t indentLevel = 4;
+                indent(vectorSource, indentLevel - 4) << "void performSynchronizedDestinations_" << synchronizationVectorIndex << "(StateType const& in, StateBehaviour<IndexType, ValueType>& behaviour, StateSet<StateType>& statesToExplore, ";
                 for (uint64_t index = 0; index < numberOfActionInputs; ++index) {
                     vectorSource << "Destination const& destination" << index << ", ";
                 }
                 vectorSource << "Choice<IndexType, ValueType>& choice) {" << std::endl;
-                vectorSource << "StateType out(in);" << std::endl;
+                indent(vectorSource, indentLevel + 1) << "StateType out(in);" << std::endl;
                 for (uint64_t index = 0; index < numberOfActionInputs; ++index) {
-                    vectorSource << "destination" << index << ".perform(in, out);" << std::endl;
+                    indent(vectorSource, indentLevel + 1) << "destination" << index << ".perform(in, out);" << std::endl;
                 }
-                vectorSource << "IndexType outStateIndex = getOrAddIndex(out, statesToExplore);" << std::endl;
-                vectorSource << "choice.add(outStateIndex, ";
+                indent(vectorSource, indentLevel + 1) << "IndexType outStateIndex = getOrAddIndex(out, statesToExplore);" << std::endl;
+                indent(vectorSource, indentLevel + 1) << "choice.add(outStateIndex, ";
                 for (uint64_t index = 0; index < numberOfActionInputs; ++index) {
                     vectorSource << "destination" << index << ".value()";
                     if (index + 1 < numberOfActionInputs) {
@@ -720,28 +1007,28 @@ namespace storm {
                     }
                 }
                 vectorSource << ");" << std::endl;
-                vectorSource << "}" << std::endl;
+                indent(vectorSource, indentLevel) << "}" << std::endl << std::endl;
                 
-                vectorSource << "void performSynchronizedDestinations_" << synchronizationVectorIndex << "(StateType const& in, StateBehaviour<IndexType, ValueType>& behaviour, StateSet<StateType>& statesToExplore, ";
+                indent(vectorSource, indentLevel) << "void performSynchronizedDestinations_" << synchronizationVectorIndex << "(StateType const& in, StateBehaviour<IndexType, ValueType>& behaviour, StateSet<StateType>& statesToExplore, ";
                 for (uint64_t index = 0; index < numberOfActionInputs; ++index) {
                     vectorSource << "Edge const& edge" << index << ", ";
                 }
                 vectorSource << "Choice<IndexType, ValueType>& choice) {" << std::endl;
                 for (uint64_t index = 0; index < numberOfActionInputs; ++index) {
-                    vectorSource << "for (auto const& destination" << index << " : edge" << index << ") {" << std::endl;
+                    indent(vectorSource, indentLevel + 1 + index) << "for (auto const& destination" << index << " : edge" << index << ") {" << std::endl;
                 }
-                vectorSource << "performSynchronizedDestinations_" << synchronizationVectorIndex << "(in, behaviour, statesToExplore, ";
+                indent(vectorSource, indentLevel + 1 + numberOfActionInputs) << "performSynchronizedDestinations_" << synchronizationVectorIndex << "(in, behaviour, statesToExplore, ";
                 for (uint64_t index = 0; index < numberOfActionInputs; ++index) {
                     vectorSource << "destination" << index << ", ";
                 }
                 vectorSource << "choice);" << std::endl;
                 for (uint64_t index = 0; index < numberOfActionInputs; ++index) {
-                    vectorSource << "}" << std::endl;
+                    indent(vectorSource, indentLevel + numberOfActionInputs - index) << "}" << std::endl;
                 }
-                vectorSource << "}" << std::endl;
+                indent(vectorSource, indentLevel) << "}" << std::endl << std::endl;
             
                 for (uint64_t index = 0; index < numberOfActionInputs; ++index) {
-                    vectorSource << "void performSynchronizedEdges_" << synchronizationVectorIndex << "_" << index << "(StateType const& in, std::vector<std::vector<std::reference_wrapper<Edge const>>> const& edges,  StateBehaviour<IndexType, ValueType>& behaviour, StateSet<StateType>& statesToExplore";
+                    indent(vectorSource, indentLevel) << "void performSynchronizedEdges_" << synchronizationVectorIndex << "_" << index << "(StateType const& in, std::vector<std::vector<std::reference_wrapper<Edge const>>> const& edges,  StateBehaviour<IndexType, ValueType>& behaviour, StateSet<StateType>& statesToExplore";
                     if (index > 0) {
                         vectorSource << ", ";
                     }
@@ -752,9 +1039,9 @@ namespace storm {
                         }
                     }
                     vectorSource << ") {" << std::endl;
-                    vectorSource << "for (auto const& edge" << index << " : edges[" << index << "]) {" << std::endl;
+                    indent(vectorSource, indentLevel + 1) << "for (auto const& edge" << index << " : edges[" << index << "]) {" << std::endl;
                     if (index + 1 < numberOfActionInputs) {
-                        vectorSource << "performSynchronizedEdges_" << synchronizationVectorIndex << "_" << (index + 1) << "(in, edges, behaviour, statesToExplore, ";
+                        indent(vectorSource, indentLevel + 2) << "performSynchronizedEdges_" << synchronizationVectorIndex << "_" << (index + 1) << "(in, edges, behaviour, statesToExplore, ";
                         for (uint64_t innerIndex = 0; innerIndex <= index; ++innerIndex) {
                             vectorSource << "edge" << innerIndex;
                             if (innerIndex + 1 <= index) {
@@ -763,24 +1050,24 @@ namespace storm {
                         }
                         vectorSource << ");" << std::endl;
                     } else {
-                        vectorSource << "Choice<IndexType, ValueType>& choice = behaviour.addChoice();" << std::endl;
-                        vectorSource << "performSynchronizedDestinations_" << synchronizationVectorIndex << "(in, behaviour, statesToExplore, ";
+                        indent(vectorSource, indentLevel + 2) << "Choice<IndexType, ValueType>& choice = behaviour.addChoice();" << std::endl;
+                        indent(vectorSource, indentLevel + 2) << "performSynchronizedDestinations_" << synchronizationVectorIndex << "(in, behaviour, statesToExplore, ";
                         for (uint64_t innerIndex = 0; innerIndex <= index; ++innerIndex) {
                             vectorSource << "edge" << innerIndex << ", ";
                         }
                         vectorSource << " choice);" << std::endl;
 
                     }
-                    vectorSource << "}" << std::endl;
-                    vectorSource << "}" << std::endl;
+                    indent(vectorSource, indentLevel + 1) << "}" << std::endl;
+                    indent(vectorSource, indentLevel) << "}" << std::endl << std::endl;
                 }
                 
-                vectorSource << "void get_edges_" << synchronizationVectorIndex << "(StateType const& state, std::vector<std::reference_wrapper<Edge const>>& edges, uint64_t position) {" << std::endl;
-                uint64_t position = 0;
+                indent(vectorSource, indentLevel) << "void get_edges_" << synchronizationVectorIndex << "(StateType const& state, std::vector<std::reference_wrapper<Edge const>>& edges, uint64_t position) {" << std::endl;
+                position = 0;
                 uint64_t participatingPosition = 0;
                 for (auto const& inputActionName : synchronizationVector.getInput()) {
                     if (!storm::jani::SynchronizationVector::isNoActionInput(inputActionName)) {
-                        vectorSource << "if (position == " << participatingPosition << ") {" << std::endl;
+                        indent(vectorSource, indentLevel + 1) << "if (position == " << participatingPosition << ") {" << std::endl;
                         
                         storm::jani::Automaton const& automaton = model.getAutomaton(parallelComposition.getSubcomposition(position).asAutomatonComposition().getAutomatonName());
                         uint64_t actionIndex = model.getActionIndex(inputActionName);
@@ -788,35 +1075,35 @@ namespace storm {
                         for (auto const& edge : automaton.getEdges()) {
                             if (edge.getActionIndex() == actionIndex) {
                                 std::string edgeName = automaton.getName() + "_" + std::to_string(edgeIndex);
-                                vectorSource << "if (edge_enabled_" << edgeName  << "(state)) {" << std::endl;
-                                vectorSource << "edges.emplace_back(edge_" << edgeName << ");" << std::endl;
-                                vectorSource << "}" << std::endl;
+                                indent(vectorSource, indentLevel + 2) << "if (edge_enabled_" << edgeName  << "(state)) {" << std::endl;
+                                indent(vectorSource, indentLevel + 3) << "edges.emplace_back(edge_" << edgeName << ");" << std::endl;
+                                indent(vectorSource, indentLevel + 2) << "}" << std::endl;
                             }
                             ++edgeIndex;
                         }
                         
-                        vectorSource << "}" << std::endl;
+                        indent(vectorSource, indentLevel + 1) << "}" << std::endl;
                         ++participatingPosition;
                     }
                     ++position;
                 }
-                vectorSource << "}" << std::endl;
+                indent(vectorSource, indentLevel) << "}" << std::endl << std::endl;
                 
-                vectorSource << "void exploreSynchronizationVector_" << synchronizationVectorIndex << "(StateType const& state, StateBehaviour<IndexType, ValueType>& behaviour, StateSet<StateType>& statesToExplore) {" << std::endl;
-                vectorSource << "std::vector<std::vector<std::reference_wrapper<Edge const>>> edges(" << synchronizationVector.getNumberOfActionInputs() << ");" << std::endl;
+                indent(vectorSource, indentLevel) << "void exploreSynchronizationVector_" << synchronizationVectorIndex << "(StateType const& state, StateBehaviour<IndexType, ValueType>& behaviour, StateSet<StateType>& statesToExplore) {" << std::endl;
+                indent(vectorSource, indentLevel + 1) << "std::vector<std::vector<std::reference_wrapper<Edge const>>> edges(" << synchronizationVector.getNumberOfActionInputs() << ");" << std::endl;
                 
                 participatingPosition = 0;
                 for (auto const& input : synchronizationVector.getInput()) {
                     if (!storm::jani::SynchronizationVector::isNoActionInput(input)) {
-                        vectorSource << "get_edges_" << synchronizationVectorIndex << "(state, edges[" << participatingPosition << "], " << participatingPosition << ");" << std::endl;
-                        vectorSource << "if (edges[" << participatingPosition << "].empty()) {" << std::endl;
-                        vectorSource << "return;" << std::endl;
-                        vectorSource << "};" << std::endl;
+                        indent(vectorSource, indentLevel + 1) << "get_edges_" << synchronizationVectorIndex << "(state, edges[" << participatingPosition << "], " << participatingPosition << ");" << std::endl;
+                        indent(vectorSource, indentLevel + 1) << "if (edges[" << participatingPosition << "].empty()) {" << std::endl;
+                        indent(vectorSource, indentLevel + 2) << "return;" << std::endl;
+                        indent(vectorSource, indentLevel + 1) << "}" << std::endl;
                         ++participatingPosition;
                     }
                 }
-                vectorSource << "performSynchronizedEdges_" << synchronizationVectorIndex << "_0(state, edges, behaviour, statesToExplore);" << std::endl;
-                vectorSource << "}" << std::endl;
+                indent(vectorSource, indentLevel + 1) << "performSynchronizedEdges_" << synchronizationVectorIndex << "_0(state, edges, behaviour, statesToExplore);" << std::endl;
+                indent(vectorSource, indentLevel) << "}" << std::endl << std::endl;
                 
                 cpptempl::data_map vector;
                 vector["functions"] = vectorSource.str();
@@ -843,9 +1130,11 @@ namespace storm {
                 } else {
                     STORM_LOG_ASSERT(topLevelComposition.isParallelComposition(), "Expected parallel composition.");
                     storm::jani::ParallelComposition const& parallelComposition = topLevelComposition.asParallelComposition();
+#ifndef NDEBUG
                     for (auto const& composition : parallelComposition.getSubcompositions()) {
                         STORM_LOG_ASSERT(composition->isAutomatonComposition(), "Expected flat parallel composition.");
                     }
+#endif
 
                     std::vector<std::set<uint64_t>> synchronizingActions(parallelComposition.getNumberOfSubcompositions());
                     uint64_t synchronizationVectorIndex = 0;
@@ -916,14 +1205,34 @@ namespace storm {
                 
                 cpptempl::data_list destinations;
                 uint64_t destinationIndex = 0;
+                std::set<storm::expressions::Variable> referencedTransientVariables;
                 for (auto const& destination : edge.getDestinations()) {
                     destinations.push_back(generateDestination(destinationIndex, destination));
+                    
+                    for (auto const& assignment : destination.getOrderedAssignments().getAllAssignments()) {
+                        if (assignment.isTransient()) {
+                            referencedTransientVariables.insert(assignment.getExpressionVariable());
+                        }
+                        std::set<storm::expressions::Variable> usedVariables = assignment.getAssignedExpression().getVariables();
+                        for (auto const& variable : usedVariables) {
+                            if (transientVariables.find(variable) != transientVariables.end()) {
+                                referencedTransientVariables.insert(variable);
+                            }
+                        }
+                    }
+                    
                     ++destinationIndex;
                 }
                 
                 edgeData["guard"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(edge.getGuard()), storm::expressions::ToCppTranslationOptions("in."));
                 edgeData["destinations"] = cpptempl::make_data(destinations);
                 edgeData["name"] = automaton.getName() + "_" + std::to_string(edgeIndex);
+
+                cpptempl::data_list referencedTransientVariableData;
+                for (auto const& variable : referencedTransientVariables) {
+                    referencedTransientVariableData.push_back(getVariableName(variable));
+                }
+                edgeData["referenced_transient_variables"] = cpptempl::make_data(referencedTransientVariableData);
                 return edgeData;
             }
             
@@ -999,7 +1308,7 @@ namespace storm {
             template <typename ValueType, typename RewardModelType>
             cpptempl::data_map ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateLocationAssignment(storm::jani::Automaton const& automaton, uint64_t value) const {
                 cpptempl::data_map result;
-                result["variable"] = getLocationVariableName(automaton);
+                result["variable"] = getVariableName(getLocationVariable(automaton));
                 result["value"] = asString(value);
                 return result;
             }
@@ -1027,25 +1336,16 @@ namespace storm {
             std::string const& ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::getVariableName(storm::expressions::Variable const& variable) const {
                 return variableToName.at(variable);
             }
-            
+
             template <typename ValueType, typename RewardModelType>
-            std::string ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::getQualifiedVariableName(storm::jani::Variable const& variable) const {
+            std::string const& ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::registerVariableName(storm::expressions::Variable const& variable) {
+                variableToName[variable] = variable.getName();
                 return variable.getName();
             }
             
             template <typename ValueType, typename RewardModelType>
-            std::string ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::getQualifiedVariableName(storm::jani::Automaton const& automaton, storm::jani::Variable const& variable) const {
-                return variable.getExpressionVariable().getName();
-            }
-
-            template <typename ValueType, typename RewardModelType>
-            std::string ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::getQualifiedVariableName(storm::jani::Automaton const& automaton, storm::expressions::Variable const& variable) const {
-                return variable.getName();
-            }
-
-            template <typename ValueType, typename RewardModelType>
-            std::string ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::getLocationVariableName(storm::jani::Automaton const& automaton) const {
-                return automaton.getName() + "_location";
+            storm::expressions::Variable const& ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::getLocationVariable(storm::jani::Automaton const& automaton) const {
+                return automatonToLocationVariable.at(automaton.getName());
             }
             
             template <typename ValueType, typename RewardModelType>

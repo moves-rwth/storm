@@ -13,6 +13,18 @@ namespace storm {
             return prefix;
         }
         
+        void ToCppTranslationOptions::setSpecificPrefixes(std::unordered_map<storm::expressions::Variable, std::string> const& prefixes) {
+            specificPrefixes = prefixes;
+        }
+        
+        std::unordered_map<storm::expressions::Variable, std::string> const& ToCppTranslationOptions::getSpecificPrefixes() const {
+            return specificPrefixes;
+        }
+        
+        void ToCppTranslationOptions::clearSpecificPrefixes() {
+            specificPrefixes.clear();
+        }
+        
         bool ToCppTranslationOptions::hasValueTypeCast() const {
             return !valueTypeCast.empty();
         }
@@ -200,7 +212,14 @@ namespace storm {
             if (options.hasValueTypeCast()) {
                 stream << "static_cast<" << options.getValueTypeCast() << ">(";
             }
-            stream << options.getPrefix() << expression.getVariableName();
+            
+            auto prefixIt = options.getSpecificPrefixes().find(expression.getVariable());
+            if (prefixIt != options.getSpecificPrefixes().end()) {
+                stream << prefixIt->second << expression.getVariableName();
+            } else {
+                stream << options.getPrefix() << expression.getVariableName();
+            }
+            
             if (options.hasValueTypeCast()) {
                 stream << ")";
             }

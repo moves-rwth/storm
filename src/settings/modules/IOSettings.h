@@ -35,14 +35,12 @@ namespace storm {
                  */
                 std::string getExportDotFilename() const;
 
-                
                 /*!
                  * Retrieves whether the export-to-explicit option was set
                  *
                  * @return True if the export-to-explicit option was set
                  */
                 bool isExportExplicitSet() const;
-                
                 
                 /*!
                  * Retrieves thename in which to write the model in explicit format, if the option was set.
@@ -219,7 +217,7 @@ namespace storm {
                 bool isPrismCompatibilityEnabled() const;
                 
                 /**
-                 * Retrieves whether no model should be build at all, in case one just want to translate models or parse a file
+                 * Retrieves whether no model should be build at all, in case one just want to translate models or parse a file.
                  */
                 bool isNoBuildModelSet() const;
                 

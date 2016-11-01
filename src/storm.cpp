@@ -29,10 +29,9 @@ int main(const int argc, const char** argv) {
         // All operations have now been performed, so we clean up everything and terminate.
         storm::utility::cleanUp();
         auto end = std::chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-        auto durationSec = std::chrono::duration_cast<std::chrono::seconds>(end - start);
-        if(storm::settings::getModule<storm::settings::modules::GeneralSettings>().isPrintTimingsSet()) {
-            std::cout << "Overal runtime: " << duration.count() << " ms. (approximately " << durationSec.count() << " seconds)." << std::endl;
+
+        if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isPrintTimeAndMemorySet()) {
+            storm::cli::showTimeAndMemoryStatistics(std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count());
         }
         return 0;
     } catch (storm::exceptions::BaseException const& exception) {

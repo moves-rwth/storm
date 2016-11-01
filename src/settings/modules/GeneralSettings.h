@@ -129,12 +129,11 @@ namespace storm {
                 bool isMinMaxEquationSolvingTechniqueSet() const;
                 
                 /*!
-                 * Retrieves whether timings should be printed after running
+                 * Retrieves whether time and memory consumption shall be printed at the end of a run.
                  *
                  * @return True iff the option was set.
                  */
-                bool isPrintTimingsSet() const;
-
+                bool isPrintTimeAndMemorySet() const;
 
                 /*!
                  * Retrieves whether the option enabling exact model checking is set.
@@ -153,8 +152,8 @@ namespace storm {
                 // Define the string names of the options as constants.
                 static const std::string helpOptionName;
                 static const std::string helpOptionShortName;
-                static const std::string printTimingsOptionName;
-                static const std::string printTimingsOptionShortName;
+                static const std::string printTimeAndMemoryOptionName;
+                static const std::string printTimeAndMemoryOptionShortName;
                 static const std::string versionOptionName;
                 static const std::string verboseOptionName;
                 static const std::string verboseOptionShortName;
