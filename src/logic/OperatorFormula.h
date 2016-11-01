@@ -47,6 +47,9 @@ namespace storm {
             virtual bool isOperatorFormula() const override;
             
             OperatorInformation const& getOperatorInformation() const;
+            void setOperatorInformation(OperatorInformation newOperatorInformation) {
+                this->operatorInformation = newOperatorInformation;
+            }
             
             virtual bool hasQualitativeResult() const override;
             virtual bool hasQuantitativeResult() const override;

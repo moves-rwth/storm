@@ -30,11 +30,11 @@ TEST(SparseMdpMultiObjectiveModelCheckerTest, probEqual1Objective) {
     
     std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(storm::modelchecker::CheckTask<storm::logic::Formula, double>(*formulas[0], true));
     ASSERT_TRUE(result->isExplicitQuantitativeCheckResult());
-    EXPECT_NEAR(7.647058824, result->asExplicitQuantitativeCheckResult<double>()[initState], storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
+    EXPECT_NEAR(7.647057, result->asExplicitQuantitativeCheckResult<double>()[initState], storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
     
     result = checker.check(storm::modelchecker::CheckTask<storm::logic::Formula, double>(*formulas[1], true));
     ASSERT_TRUE(result->isExplicitQuantitativeCheckResult());
-    EXPECT_NEAR(7.647058824, result->asExplicitQuantitativeCheckResult<double>()[initState], storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
+    EXPECT_NEAR(7.647057, result->asExplicitQuantitativeCheckResult<double>()[initState], storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
     
 }
 

@@ -68,6 +68,7 @@ namespace storm {
             
             /// The factory used to obtain linear equation solvers.
             std::unique_ptr<LinearEquationSolverFactory<ValueType>> linearEquationSolverFactory;
+            mutable std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver;
             
             // If the solver takes posession of the matrix, we store the moved matrix in this member, so it gets deleted
             // when the solver is destructed.

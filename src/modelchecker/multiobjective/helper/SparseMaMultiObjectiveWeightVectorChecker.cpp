@@ -8,8 +8,10 @@
 #include "src/transformer/EndComponentEliminator.h"
 #include "src/utility/macros.h"
 #include "src/utility/vector.h"
+#include "src/solver/GmmxxLinearEquationSolver.h"
 
 #include "src/exceptions/InvalidOperationException.h"
+
 
 namespace storm {
     namespace modelchecker {
@@ -67,6 +69,8 @@ namespace storm {
                 auto lowerTimeBoundIt = lowerTimeBounds.begin();
                 auto upperTimeBoundIt = upperTimeBounds.begin();
                 uint_fast64_t currentEpoch = std::max(lowerTimeBounds.empty() ? 0 : lowerTimeBoundIt->first, upperTimeBounds.empty() ? 0 : upperTimeBoundIt->first);
+                
+                std::cout << "Checking " << currentEpoch << " epochs for current weight vector" << std::endl;
                 while(true) {
                     // Update the objectives that are considered at the current time epoch as well as the (weighted) reward vectors.
                     updateDataToCurrentEpoch(MS, PS, *minMax, consideredObjectives, currentEpoch, weightVector, lowerTimeBoundIt, lowerTimeBounds, upperTimeBoundIt, upperTimeBounds);
@@ -78,10 +82,6 @@ namespace storm {
                     // Only perform such a step if there is time left.
                     if(currentEpoch>0) {
                         performMSStep(MS, PS, consideredObjectives);
-      //                  if(currentEpoch % 1000 == 0) {
-      //                      STORM_LOG_DEBUG(currentEpoch << " digitized time steps left. Current weighted value is " << PS.weightedSolutionVector[0]);
-      //                      std::cout << std::endl << currentEpoch << " digitized time steps left. Current weighted value is " << PS.weightedSolutionVector[0] << std::endl;
-      //                  }
                         --currentEpoch;
                     } else {
                         break;
@@ -365,27 +365,47 @@ namespace storm {
             
             template <class SparseMaModelType>
             void SparseMaMultiObjectiveWeightVectorChecker<SparseMaModelType>::performPSStep(SubModel& PS, SubModel const& MS, MinMaxSolverData& minMax, LinEqSolverData& linEq, std::vector<uint_fast64_t>& optimalChoicesAtCurrentEpoch,  storm::storage::BitVector const& consideredObjectives) const {
-                
                 // compute a choice vector for the probabilistic states that is optimal w.r.t. the weighted reward vector
                 std::vector<uint_fast64_t> newOptimalChoices(PS.getNumberOfStates());
                 minMax.solver->solveEquations(minMax.x, minMax.b);
                 this->transformReducedSolutionToOriginalModel(minMax.matrix, minMax.x, minMax.solver->getScheduler()->getChoices(), minMax.toPSChoiceMapping, minMax.fromPSStateMapping, PS.toPS, PS.weightedSolutionVector, newOptimalChoices);
-                
                 // check whether the linEqSolver needs to be updated, i.e., whether the scheduler has changed
-                if(newOptimalChoices != optimalChoicesAtCurrentEpoch) {
-         //           std::cout << "X";
+                if(linEq.solver == nullptr || newOptimalChoices != optimalChoicesAtCurrentEpoch) {
                     optimalChoicesAtCurrentEpoch.swap(newOptimalChoices);
                     linEq.solver = nullptr;
                     storm::storage::SparseMatrix<ValueType> linEqMatrix = PS.toPS.selectRowsFromRowGroups(optimalChoicesAtCurrentEpoch, true);
                     linEqMatrix.convertToEquationSystem();
                     linEq.solver = linEq.factory.create(std::move(linEqMatrix));
-                } else {
-        //            std::cout << " ";
+                    // For a gmm solver, switch the method to jacobi since this is 'usually' faster.
+                    storm::solver::GmmxxLinearEquationSolver<ValueType>* gmmSolver = dynamic_cast<storm::solver::GmmxxLinearEquationSolver<ValueType>*>(linEq.solver.get());
+                    if(gmmSolver!=nullptr) {
+                        STORM_LOG_INFO("Switching to Jacobi method");
+                        gmmSolver->getSettings().setSolutionMethod(storm::solver::GmmxxLinearEquationSolverSettings<ValueType>::SolutionMethod::Jacobi);
+                        gmmSolver->getSettings().setPreconditioner(storm::solver::GmmxxLinearEquationSolverSettings<ValueType>::Preconditioner::None);
+                    }
+                    linEq.solver->allocateAuxMemory(storm::solver::LinearEquationSolverOperation::SolveEquations);
                 }
+                
+                // Get the results for the individual objectives.
+                // Note that we do not consider an estimate for each objective (as done in the unbounded phase) since the results from the previous epoch are already pretty close
+                
                 for(auto objIndex : consideredObjectives) {
-                    PS.toMS.multiplyWithVector(MS.objectiveSolutionVectors[objIndex], PS.auxChoiceValues);
-                    storm::utility::vector::addVectors(PS.auxChoiceValues, PS.objectiveRewardVectors[objIndex], PS.auxChoiceValues);
-                    storm::utility::vector::selectVectorValues(linEq.b, optimalChoicesAtCurrentEpoch, PS.toPS.getRowGroupIndices(), PS.auxChoiceValues);
+                    auto const& objectiveRewardVectorPS = PS.objectiveRewardVectors[objIndex];
+                    auto const& objectiveSolutionVectorMS = MS.objectiveSolutionVectors[objIndex];
+                    // compute rhs of equation system, i.e., PS.toMS * x + Rewards
+                    // To safe some time, only do this for the obtained optimal choices
+                    auto itGroupIndex = PS.toPS.getRowGroupIndices().begin();
+                    auto itChoiceOffset = optimalChoicesAtCurrentEpoch.begin();
+                    for(auto& bValue : linEq.b) {
+                        uint_fast64_t row = (*itGroupIndex) + (*itChoiceOffset);
+                        bValue = objectiveRewardVectorPS[row];
+                        for(auto const& entry : PS.toMS.getRow(row)){
+                            bValue += entry.getValue() * objectiveSolutionVectorMS[entry.getColumn()];
+                        }
+                        ++itGroupIndex;
+                        ++itChoiceOffset;
+                    }
+                    
                     linEq.solver->solveEquations(PS.objectiveSolutionVectors[objIndex], linEq.b);
                 }
             }
@@ -412,10 +432,10 @@ namespace storm {
             template void SparseMaMultiObjectiveWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>::digitize<double>(SparseMaMultiObjectiveWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>::SubModel& subModel, double const& digitizationConstant) const;
             template void SparseMaMultiObjectiveWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>::digitizeTimeBounds<double>(SparseMaMultiObjectiveWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>::TimeBoundMap& lowerTimeBounds, SparseMaMultiObjectiveWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>::TimeBoundMap& upperTimeBounds, double const& digitizationConstant);
 #ifdef STORM_HAVE_CARL
-            template class SparseMaMultiObjectiveWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>;
-            template storm::RationalNumber SparseMaMultiObjectiveWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>::getDigitizationConstant<storm::RationalNumber>() const;
-            template void SparseMaMultiObjectiveWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>::digitize<storm::RationalNumber>(SparseMaMultiObjectiveWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>::SubModel& subModel, storm::RationalNumber const& digitizationConstant) const;
-            template void SparseMaMultiObjectiveWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>::digitizeTimeBounds<storm::RationalNumber>(SparseMaMultiObjectiveWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>::TimeBoundMap& lowerTimeBounds, SparseMaMultiObjectiveWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>::TimeBoundMap& upperTimeBounds, storm::RationalNumber const& digitizationConstant);
+//            template class SparseMaMultiObjectiveWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>;
+   //         template storm::RationalNumber SparseMaMultiObjectiveWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>::getDigitizationConstant<storm::RationalNumber>() const;
+ //           template void SparseMaMultiObjectiveWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>::digitize<storm::RationalNumber>(SparseMaMultiObjectiveWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>::SubModel& subModel, storm::RationalNumber const& digitizationConstant) const;
+//            template void SparseMaMultiObjectiveWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>::digitizeTimeBounds<storm::RationalNumber>(SparseMaMultiObjectiveWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>::TimeBoundMap& lowerTimeBounds, SparseMaMultiObjectiveWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>::TimeBoundMap& upperTimeBounds, storm::RationalNumber const& digitizationConstant);
 #endif
             
         }

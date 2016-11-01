@@ -8,6 +8,7 @@
 #include "src/modelchecker/multiobjective/helper/SparseMultiObjectiveRefinementStep.h"
 #include "src/storage/geometry/Polytope.h"
 #include "src/utility/macros.h"
+#include "src/utility/Stopwatch.h"
 
 #include "src/exceptions/InvalidStateException.h"
 
@@ -98,6 +99,9 @@ namespace storm {
                     return maxStepsPerformed;
                 }
                 
+                //Keeps track of the time we spent with weight vector checking (i.e., computation of optimal points)
+                storm::utility::Stopwatch stopWatchWeightVectorChecker;
+                
             private:
                 
                 enum class Tribool { False, True, Indeterminate };
@@ -126,6 +130,7 @@ namespace storm {
 
                 //Stores whether the computation was aborted due to performing too many refinement steps
                 bool maxStepsPerformed = false;
+
             };
         }
     }

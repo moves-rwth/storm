@@ -14,6 +14,7 @@
 #include "src/settings//SettingsManager.h"
 #include "src/settings/modules/MultiObjectiveSettings.h"
 #include "src/settings/modules/GeneralSettings.h"
+#include "src/settings/modules/IOSettings.h"
 #include "src/utility/export.h"
 #include "src/utility/macros.h"
 #include "src/utility/vector.h"
@@ -40,7 +41,8 @@ namespace storm {
                     STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unknown Query Type");
                 }
                 
-                STORM_LOG_INFO(getInfo(result, preprocessorData, resultData, preprocessorStopwatch, helperStopwatch, postprocessorStopwatch));
+                //STORM_LOG_INFO(getInfo(result, preprocessorData, resultData, preprocessorStopwatch, helperStopwatch, postprocessorStopwatch));
+                std:: cout << getInfo(result, preprocessorData, resultData, preprocessorStopwatch, helperStopwatch, postprocessorStopwatch);
                 
                 exportPlot(result, preprocessorData, resultData, preprocessorStopwatch, helperStopwatch, postprocessorStopwatch);
                 
@@ -191,7 +193,12 @@ namespace storm {
             
             template<typename SparseModelType, typename RationalNumberType>
             std::shared_ptr<storm::storage::geometry::Polytope<RationalNumberType>> SparseMultiObjectivePostprocessor<SparseModelType, RationalNumberType>::transformToOriginalValues(std::shared_ptr<storm::storage::geometry::Polytope<RationalNumberType>> const& polytope, PreprocessorData const& preprocessorData) {
-                
+                if(polytope->isEmpty()) {
+                    return storm::storage::geometry::Polytope<RationalNumberType>::createEmptyPolytope();
+                }
+                if(polytope->isUniversal()) {
+                    return storm::storage::geometry::Polytope<RationalNumberType>::createUniversalPolytope();
+                }
                 uint_fast64_t numObjectives = preprocessorData.objectives.size();
                 std::vector<std::vector<RationalNumberType>> transformationMatrix(numObjectives, std::vector<RationalNumberType>(numObjectives, storm::utility::zero<RationalNumberType>()));
                 std::vector<RationalNumberType> transformationVector;
@@ -299,7 +306,7 @@ namespace storm {
                     combinedTime.addToAccumulatedSeconds(preprocessorStopwatch->getAccumulatedSeconds());
                 }
                 if(helperStopwatch) {
-                    statistics << "\t Value Iterations: " << std::setw(8) << *helperStopwatch << std::endl;
+                    statistics << "\t       Iterations: " << std::setw(8) << *helperStopwatch << std::endl;
                     combinedTime.addToAccumulatedSeconds(helperStopwatch->getAccumulatedSeconds());
                 }
                 if(postprocessorStopwatch) {
@@ -317,7 +324,32 @@ namespace storm {
                 statistics << "Convergence precision for iterative solvers: " << settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision() << std::endl;
                 statistics << std::endl;
                 statistics << "---------------------------------------------------------------------------------------------------------------------------------------" << std::endl;
-                
+                statistics << "                                                 Data in CSV format                                                                    " << std::endl;
+                statistics << "---------------------------------------------------------------------------------------------------------------------------------------" << std::endl;
+                statistics << "model_Header;Constants;States;Choices;Transitions;Properties;" << std::endl;
+                statistics << "model_data;"
+                                << storm::settings::modules::IOSettings().getConstantDefinitionString() << ";"
+                                << preprocessorData.originalModel.getNumberOfStates() << ";"
+                                << preprocessorData.originalModel.getNumberOfChoices() << ";"
+                                << preprocessorData.originalModel.getNumberOfTransitions() << ";"
+                                << preprocessorData.originalFormula << ";"
+                                << std::endl;
+                statistics << "result_Header;Iterations;Time Combined;Accuracy;Time Iterations;Time Computation Optimal Points" << std::endl;
+                statistics << "result_data;"
+                                << resultData.refinementSteps().size() << ";"
+                                << combinedTime << ";";
+                if(resultData.isPrecisionOfResultSet()) {
+                                statistics << storm::utility::convertNumber<double>(resultData.getPrecisionOfResult()) << ";";
+                } else {
+                    statistics << ";";
+                }
+                if(helperStopwatch) {
+                    statistics << *helperStopwatch << ";";
+                } else {
+                    statistics << ";";
+                }
+                statistics << resultData.stopWatchWeightVectorChecker << ";";
+                statistics << std::endl;
                 return statistics.str();
             }
             

@@ -360,6 +360,7 @@ namespace storm {
                 this->printModelInformationHeaderToStream(out);
                 out << "Choices: \t" << this->getNumberOfChoices() << std::endl;
                 out << "Markovian St.: \t" << this->getMarkovianStates().getNumberOfSetBits() << std::endl;
+                out << "Max. Rate.: \t" << this->getMaximalExitRate() << std::endl;
                 this->printModelInformationFooterToStream(out);
             }
             

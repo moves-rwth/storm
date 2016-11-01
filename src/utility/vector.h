@@ -101,7 +101,22 @@ namespace storm {
             }
 
 
-                        
+            
+            /*!
+             * Retrieves a list of indices such that the first index points to the entry of the given vector
+             * with the highest value, the second index points to the entry with the second highest value, ...
+             * Example:  v={3,8,4,5,1} yields res={1,3,2,0,4}
+             */
+            template<typename T>
+            std::vector<uint_fast64_t> getSortedIndices(std::vector<T> const& v){
+                std::vector<uint_fast64_t> res = buildVectorForRange(0, v.size());
+                std::sort(res.begin(), res.end(), [&v](uint_fast64_t index1, uint_fast64_t index2) { return v[index1] > v[index2];});
+                return res;
+            }
+            
+            
+            
+            
             /*!
              * Selects the elements from a vector at the specified positions and writes them consecutively into another vector.
              * @param vector The vector into which the selected elements are to be written.
@@ -383,7 +398,7 @@ namespace storm {
             }
             
             /*!
-             * Adds each element of the first vector and (the corresponding element of the second vector times the given factor) and writes the result into the first vector.
+             * Computes x:= x + a*y, i.e., adds each element of the first vector and (the corresponding element of the second vector times the given factor) and writes the result into the first vector.
              *
              * @param firstOperand The first operand.
              * @param secondOperand The second operand
@@ -802,7 +817,7 @@ namespace storm {
             bool hasNonZeroEntry(std::vector<T> const& v){
                 return std::any_of(v.begin(), v.end(), [](T value){return !storm::utility::isZero(value);});
             }
-            
+
             /*!
              * Output vector as string.
              *

@@ -125,6 +125,7 @@ namespace storm {
             localA.reset();
             this->A = &A;
             gmmxxMatrix = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<ValueType>(A);
+            jacobiDecomposition.reset();
         }
         
         template<typename ValueType>
@@ -213,23 +214,25 @@ namespace storm {
                 this->allocateAuxMemory(LinearEquationSolverOperation::SolveEquations);
             }
             
-            // Get a Jacobi decomposition of the matrix A.
-            std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> jacobiDecomposition = A.getJacobiDecomposition();
-            
-            // Convert the LU matrix to gmm++'s format.
-            std::unique_ptr<gmm::csr_matrix<ValueType>> gmmLU = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<ValueType>(std::move(jacobiDecomposition.first));
+            // Get a Jacobi decomposition of the matrix A (if not already available).
+            if(jacobiDecomposition == nullptr) {
+                std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> nativeJacobiDecomposition = A.getJacobiDecomposition();
+                // Convert the LU matrix to gmm++'s format.
+                jacobiDecomposition = std::make_unique<std::pair<gmm::csr_matrix<ValueType>, std::vector<ValueType>>>(*storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<ValueType>(std::move(nativeJacobiDecomposition.first)),
+                                                                                                                      std::move(nativeJacobiDecomposition.second));
+            }
         
             std::vector<ValueType>* currentX = &x;
-            std::vector<ValueType>* nextX = auxiliaryJacobiMemory.get();
             
+            std::vector<ValueType>* nextX = auxiliaryJacobiMemory.get();
             // Set up additional environment variables.
             uint_fast64_t iterationCount = 0;
             bool converged = false;
             
             while (!converged && iterationCount < this->getSettings().getMaximalNumberOfIterations() && !(this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(*currentX))) {
                 // Compute D^-1 * (b - LU * x) and store result in nextX.
-                gmm::mult_add(*gmmLU, gmm::scaled(*currentX, -storm::utility::one<ValueType>()), b, *nextX);
-                storm::utility::vector::multiplyVectorsPointwise(jacobiDecomposition.second, *nextX, *nextX);
+                gmm::mult_add(jacobiDecomposition->first, gmm::scaled(*currentX, -storm::utility::one<ValueType>()), b, *nextX);
+                storm::utility::vector::multiplyVectorsPointwise(jacobiDecomposition->second, *nextX, *nextX);
                 
                 // Now check if the process already converged within our precision.
                 converged = storm::utility::vector::equalModuloPrecision(*currentX, *nextX, this->getSettings().getPrecision(), this->getSettings().getRelativeTerminationCriterion());

@@ -13,6 +13,8 @@
 
 #include "src/exceptions/UnexpectedException.h"
 
+#include "src/logic/CloneVisitor.h"
+
 namespace storm {
     namespace modelchecker {
         namespace helper {
@@ -23,6 +25,17 @@ namespace storm {
                 ResultData resultData;
                 resultData.overApproximation() = storm::storage::geometry::Polytope<RationalNumberType>::createUniversalPolytope();
                 resultData.underApproximation() = storm::storage::geometry::Polytope<RationalNumberType>::createEmptyPolytope();
+                resultData.stopWatchWeightVectorChecker.pause();
+                resultData.stopWatchWeightVectorChecker.reset();
+                
+                // Set the maximum gap between lower and upper bound of the weightVectorChecker result.
+                // This is the maximal edge length of the box we have to consider around each computed point
+                // We pick the gap such that the maximal distance between two points within this box is less than the given precision divided by two.
+                SparseModelValueType gap = storm::utility::convertNumber<SparseModelValueType>(storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>().getPrecision());
+                gap /= (storm::utility::one<SparseModelValueType>() + storm::utility::one<SparseModelValueType>());
+                gap /= storm::utility::sqrt(static_cast<SparseModelValueType>(preprocessorData.objectives.size()));
+                weightVectorChecker->setMaximumLowerUpperBoundGap(gap);
+                
                 if(!checkIfPreprocessingWasConclusive(preprocessorData)) {
                     switch(preprocessorData.queryType) {
                         case PreprocessorData::QueryType::Achievability:
@@ -57,8 +70,6 @@ namespace storm {
             
             template <class SparseModelType, typename RationalNumberType>
             void SparseMultiObjectiveHelper<SparseModelType, RationalNumberType>::achievabilityQuery(PreprocessorData const& preprocessorData, WeightVectorCheckerType weightVectorChecker, ResultData& resultData) {
-                //Set the maximum gap between lower and upper bound of the weightVectorChecker result we initially allow for this query type.  Note that we could also try other values
-                weightVectorChecker->setMaximumLowerUpperBoundGap(storm::utility::convertNumber<SparseModelValueType>(0.1));
                 // Get a point that represents the thresholds
                 Point thresholds;
                 thresholds.reserve(preprocessorData.objectives.size());
@@ -84,8 +95,6 @@ namespace storm {
             template <class SparseModelType, typename RationalNumberType>
             void SparseMultiObjectiveHelper<SparseModelType, RationalNumberType>::numericalQuery(PreprocessorData const& preprocessorData, WeightVectorCheckerType weightVectorChecker, ResultData& resultData) {
                 STORM_LOG_ASSERT(preprocessorData.indexOfOptimizingObjective, "Detected numerical query but index of optimizing objective is not set.");
-                // Set the maximum gap between lower and upper bound of the weightVectorChecker result we initially allow for this query type. Note that we could also try other values
-                weightVectorChecker->setMaximumLowerUpperBoundGap(storm::utility::convertNumber<SparseModelValueType>(0.1));
                 // initialize some data
                 uint_fast64_t optimizingObjIndex = *preprocessorData.indexOfOptimizingObjective;
                 Point thresholds;
@@ -131,12 +140,6 @@ namespace storm {
                     // Note that we do not have to care whether a threshold is strict anymore, because the resulting optimum should be
                     // the supremum over all strategies. Hence, one could combine a scheduler inducing the optimum value (but possibly violating strict
                     // thresholds) and (with very low probability) a scheduler that satisfies all (possibly strict) thresholds.
-                    
-                    // Pick the maximum gap between lower and upper bound of the weightVectorChecker result.
-                    SparseModelValueType gap = storm::utility::convertNumber<SparseModelValueType>(storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>().getPrecision());
-                    gap /= (storm::utility::one<SparseModelValueType>() + storm::utility::one<SparseModelValueType>());
-                    weightVectorChecker->setMaximumLowerUpperBoundGap(gap);
-                    
                     while(true) {
                         std::pair<Point, bool> optimizationRes = resultData.underApproximation()->intersection(thresholdsAsPolytope)->optimize(directionOfOptimizingObjective);
                         STORM_LOG_THROW(optimizationRes.second, storm::exceptions::UnexpectedException, "The underapproximation is either unbounded or empty.");
@@ -148,6 +151,7 @@ namespace storm {
                         if(optimizationRes.second) {
                             resultData.setPrecisionOfResult(optimizationRes.first[optimizingObjIndex] - thresholds[optimizingObjIndex]);
                             STORM_LOG_DEBUG("Solution can be improved by at most " << resultData.template getPrecisionOfResult<double>());
+                            std::cout << "Current precision of the numerical result is " << resultData.template getPrecisionOfResult<double>() << std::endl;
                         }
                         if(targetPrecisionReached(resultData) || maxStepsPerformed(resultData)) {
                             resultData.setOptimumIsAchievable(checkIfThresholdsAreSatisfied(resultData.underApproximation(), thresholds, strictThresholds));
@@ -161,19 +165,63 @@ namespace storm {
             
             template <class SparseModelType, typename RationalNumberType>
             void SparseMultiObjectiveHelper<SparseModelType, RationalNumberType>::paretoQuery(PreprocessorData const& preprocessorData, WeightVectorCheckerType weightVectorChecker, ResultData& resultData) {
-                // Set the maximum gap between lower and upper bound of the weightVectorChecker result.
-                // This is the maximal edge length of the box we have to consider around each computed point
-                // We pick the gap such that the maximal distance between two points within this box is less than the given precision divided by two.
-                SparseModelValueType gap = storm::utility::convertNumber<SparseModelValueType>(storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>().getPrecision());
-                gap /= (storm::utility::one<SparseModelValueType>() + storm::utility::one<SparseModelValueType>());
-                gap /= storm::utility::sqrt(static_cast<SparseModelValueType>(preprocessorData.objectives.size()));
-                weightVectorChecker->setMaximumLowerUpperBoundGap(gap);
-                
                 //First consider the objectives individually
                 for(uint_fast64_t objIndex = 0; objIndex<preprocessorData.objectives.size() && !maxStepsPerformed(resultData); ++objIndex) {
                     WeightVector direction(preprocessorData.objectives.size(), storm::utility::zero<RationalNumberType>());
                     direction[objIndex] = storm::utility::one<RationalNumberType>();
                     performRefinementStep(std::move(direction), preprocessorData.produceSchedulers, weightVectorChecker, resultData);
+                    
+                    
+                    
+                    //TODO remove this code..
+                    std::cout << "multi(" <<  preprocessorData.originalFormula.getSubformula(0);
+                    for(uint_fast64_t subFIndex = 1; subFIndex < preprocessorData.originalFormula.getNumberOfSubformulas(); ++subFIndex) {
+                        std::cout << ", ";
+                        RationalNumberType thresholdValue =
+                        storm::utility::convertNumber<RationalNumberType>(resultData.refinementSteps().back().getLowerBoundPoint()[subFIndex]) * storm::utility::convertNumber<RationalNumberType>(preprocessorData.objectives[subFIndex].toOriginalValueTransformationFactor) + storm::utility::convertNumber<RationalNumberType>(preprocessorData.objectives[subFIndex].toOriginalValueTransformationOffset);
+                        
+                        auto const& subF = preprocessorData.originalFormula.getSubformula(subFIndex);
+                        if(subF.isOperatorFormula() && subF.asOperatorFormula().hasOptimalityType()) {
+                            storm::logic::CloneVisitor cv;
+                            auto copySubF = cv.clone(subF);
+                            
+                            if(subF.asOperatorFormula().getOptimalityType() == storm::solver::OptimizationDirection::Maximize) {
+                                storm::logic::OperatorInformation opInfo(boost::none, storm::logic::Bound<storm::RationalNumber>(storm::logic::ComparisonType::GreaterEqual, thresholdValue));
+                                copySubF->asOperatorFormula().setOperatorInformation(opInfo);
+                            } else {
+                                storm::logic::OperatorInformation opInfo(boost::none, storm::logic::Bound<storm::RationalNumber>(storm::logic::ComparisonType::LessEqual, thresholdValue));
+                                copySubF->asOperatorFormula().setOperatorInformation(opInfo);
+                            }
+                            std::cout << *copySubF;
+                        }
+                    }
+                    std::cout << ")" << std::endl;
+                    //TODO remove this code..
+                    std::cout << "multi(";
+                    for(uint_fast64_t subFIndex = 0; subFIndex < preprocessorData.originalFormula.getNumberOfSubformulas(); ++subFIndex) {
+                        if(subFIndex != 0) {
+                            std::cout << ", ";
+                        }
+                        RationalNumberType thresholdValue =
+                        storm::utility::convertNumber<RationalNumberType>(resultData.refinementSteps().back().getLowerBoundPoint()[subFIndex]) * storm::utility::convertNumber<RationalNumberType>(preprocessorData.objectives[subFIndex].toOriginalValueTransformationFactor) + storm::utility::convertNumber<RationalNumberType>(preprocessorData.objectives[subFIndex].toOriginalValueTransformationOffset);
+                        
+                        auto const& subF = preprocessorData.originalFormula.getSubformula(subFIndex);
+                        if(subF.isOperatorFormula() && subF.asOperatorFormula().hasOptimalityType()) {
+                            storm::logic::CloneVisitor cv;
+                            auto copySubF = cv.clone(subF);
+                            
+                            if(subF.asOperatorFormula().getOptimalityType() == storm::solver::OptimizationDirection::Maximize) {
+                                storm::logic::OperatorInformation opInfo(boost::none, storm::logic::Bound<storm::RationalNumber>(storm::logic::ComparisonType::GreaterEqual, thresholdValue));
+                                copySubF->asOperatorFormula().setOperatorInformation(opInfo);
+                            } else {
+                                storm::logic::OperatorInformation opInfo(boost::none, storm::logic::Bound<storm::RationalNumber>(storm::logic::ComparisonType::LessEqual, thresholdValue));
+                                copySubF->asOperatorFormula().setOperatorInformation(opInfo);
+                            }
+                            std::cout << *copySubF;
+                        }
+                    }
+                    std::cout << ")" << std::endl;
+                    
                 }
                 
                 while(true) {
@@ -192,6 +240,65 @@ namespace storm {
                         }
                     }
                     resultData.setPrecisionOfResult(farestDistance);
+                    std::cout << "Current precision of the approximation of the pareto curve is " << resultData.template getPrecisionOfResult<double>() << std::endl;
+                    
+                    
+                    
+                    
+                    //TODO remove this code..
+                    std::cout << "multi(" <<  preprocessorData.originalFormula.getSubformula(0);
+                    for(uint_fast64_t subFIndex = 1; subFIndex < preprocessorData.originalFormula.getNumberOfSubformulas(); ++subFIndex) {
+                        std::cout << ", ";
+                        RationalNumberType thresholdValue =
+                        storm::utility::convertNumber<RationalNumberType>(resultData.refinementSteps().back().getLowerBoundPoint()[subFIndex]) * storm::utility::convertNumber<RationalNumberType>(preprocessorData.objectives[subFIndex].toOriginalValueTransformationFactor) + storm::utility::convertNumber<RationalNumberType>(preprocessorData.objectives[subFIndex].toOriginalValueTransformationOffset);
+                        
+                        auto const& subF = preprocessorData.originalFormula.getSubformula(subFIndex);
+                        if(subF.isOperatorFormula() && subF.asOperatorFormula().hasOptimalityType()) {
+                            storm::logic::CloneVisitor cv;
+                            auto copySubF = cv.clone(subF);
+                            
+                            if(subF.asOperatorFormula().getOptimalityType() == storm::solver::OptimizationDirection::Maximize) {
+                                storm::logic::OperatorInformation opInfo(boost::none, storm::logic::Bound<storm::RationalNumber>(storm::logic::ComparisonType::GreaterEqual, thresholdValue));
+                                copySubF->asOperatorFormula().setOperatorInformation(opInfo);
+                            } else {
+                                storm::logic::OperatorInformation opInfo(boost::none, storm::logic::Bound<storm::RationalNumber>(storm::logic::ComparisonType::LessEqual, thresholdValue));
+                                copySubF->asOperatorFormula().setOperatorInformation(opInfo);
+                            }
+                            std::cout << *copySubF;
+                        }
+                    }
+                    std::cout << ")" << std::endl;
+                    //TODO remove this code..
+                    std::cout << "multi(";
+                    for(uint_fast64_t subFIndex = 0; subFIndex < preprocessorData.originalFormula.getNumberOfSubformulas(); ++subFIndex) {
+                        if(subFIndex != 0) {
+                            std::cout << ", ";
+                        }
+                        RationalNumberType thresholdValue =
+                        storm::utility::convertNumber<RationalNumberType>(resultData.refinementSteps().back().getLowerBoundPoint()[subFIndex]) * storm::utility::convertNumber<RationalNumberType>(preprocessorData.objectives[subFIndex].toOriginalValueTransformationFactor) + storm::utility::convertNumber<RationalNumberType>(preprocessorData.objectives[subFIndex].toOriginalValueTransformationOffset);
+                        
+                        auto const& subF = preprocessorData.originalFormula.getSubformula(subFIndex);
+                        if(subF.isOperatorFormula() && subF.asOperatorFormula().hasOptimalityType()) {
+                            storm::logic::CloneVisitor cv;
+                            auto copySubF = cv.clone(subF);
+                            
+                            if(subF.asOperatorFormula().getOptimalityType() == storm::solver::OptimizationDirection::Maximize) {
+                                storm::logic::OperatorInformation opInfo(boost::none, storm::logic::Bound<storm::RationalNumber>(storm::logic::ComparisonType::GreaterEqual, thresholdValue));
+                                copySubF->asOperatorFormula().setOperatorInformation(opInfo);
+                            } else {
+                                storm::logic::OperatorInformation opInfo(boost::none, storm::logic::Bound<storm::RationalNumber>(storm::logic::ComparisonType::LessEqual, thresholdValue));
+                                copySubF->asOperatorFormula().setOperatorInformation(opInfo);
+                            }
+                            std::cout << *copySubF;
+                        }
+                    }
+                    std::cout << ")" << std::endl;
+                    
+                    
+                    
+                    
+                    
+                    
                     STORM_LOG_DEBUG("Current precision of the approximation of the pareto curve is " << resultData.template getPrecisionOfResult<double>());
                     if(targetPrecisionReached(resultData) || maxStepsPerformed(resultData)) {
                         break;
@@ -264,7 +371,11 @@ namespace storm {
                         break;
                     }
                 }
+                
+                result.stopWatchWeightVectorChecker.unpause();
                 weightVectorChecker->check(storm::utility::vector::convertNumericVector<SparseModelValueType>(direction));
+                result.stopWatchWeightVectorChecker.pause();
+                
                 if(oldMaximumLowerUpperBoundGap) {
                     // Reset the precision back to the previous values
                     weightVectorChecker->setMaximumLowerUpperBoundGap(*oldMaximumLowerUpperBoundGap);
@@ -283,6 +394,7 @@ namespace storm {
                 }
                 updateOverApproximation(result.refinementSteps(), result.overApproximation());
                 updateUnderApproximation(result.refinementSteps(), result.underApproximation());
+                std::cout << "number of performed refinement Steps is: " << result.refinementSteps().size() << std::endl;
             }
             
             template <class SparseModelType, typename RationalNumberType>

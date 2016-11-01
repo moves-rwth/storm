@@ -107,7 +107,7 @@ namespace storm {
             storm::utility::vector::selectVectorValues<ValueType>(subB, scheduler, this->A.getRowGroupIndices(), b);
 
             // Create a solver that we will use throughout the procedure. We will modify the matrix in each iteration.
-            auto solver = linearEquationSolverFactory->create(std::move(submatrix));
+            solver = linearEquationSolverFactory->create(std::move(submatrix));
             solver->allocateAuxMemory(LinearEquationSolverOperation::SolveEquations);
             
             Status status = Status::InProgress;
@@ -165,6 +165,8 @@ namespace storm {
             if (this->isTrackSchedulerSet()) {
                 this->scheduler = std::make_unique<storm::storage::TotalScheduler>(std::move(scheduler));
             }
+            
+            solver.reset();
 
             if(status == Status::Converged || status == Status::TerminatedEarly) {
                 return true;
@@ -202,7 +204,9 @@ namespace storm {
 
         template<typename ValueType>
         bool StandardMinMaxLinearEquationSolver<ValueType>::solveEquationsValueIteration(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
-            std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory->create(A);
+            if(solver == nullptr) {
+                solver = linearEquationSolverFactory->create(A);
+            }
             bool allocatedAuxMemory = !this->hasAuxMemory(MinMaxLinearEquationSolverOperation::SolveEquations);
             if (allocatedAuxMemory) {
                 this->allocateAuxMemory(MinMaxLinearEquationSolverOperation::SolveEquations);
@@ -274,7 +278,9 @@ namespace storm {
                 this->allocateAuxMemory(MinMaxLinearEquationSolverOperation::MultiplyRepeatedly);
             }
             
-            std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory->create(A);
+            if(solver == nullptr) {
+                solver = linearEquationSolverFactory->create(A);
+            }
             
             for (uint64_t i = 0; i < n; ++i) {
                 solver->multiply(x, b, *auxiliaryRepeatedMultiplyMemory);

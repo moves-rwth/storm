@@ -132,10 +132,13 @@ namespace storm {
                 storm::storage::SparseMatrix<ValueType> deterministicBackwardTransitions = deterministicMatrix.transpose();
                 std::vector<ValueType> deterministicStateRewards(deterministicMatrix.getRowCount());
                 storm::solver::GeneralLinearEquationSolverFactory<ValueType> linearEquationSolverFactory;
-                //TODO check if all but one entry of weightVector is zero
-                //Also only compute values for objectives with weightVector != zero,
-                //one check can be omitted as the result can be computed back from the weighed result and the results from the remaining objectives
-                for(uint_fast64_t objIndex = 0; objIndex < data.objectives.size(); ++objIndex) {
+                
+                // We compute an estimate for the results of the individual objectives which is obtained from the weighted result and the result of the objectives computed so far.
+                // Note that weightedResult = Sum_{i=1}^{n} w_i * objectiveResult_i.
+                std::vector<ValueType> weightedSumOfUncheckedObjectives = weightedResult;
+                ValueType sumOfWeightsOfUncheckedObjectives = storm::utility::vector::sum_if(weightVector, objectivesWithNoUpperTimeBound);
+                
+                for(uint_fast64_t const& objIndex : storm::utility::vector::getSortedIndices(weightVector)) {
                     if(objectivesWithNoUpperTimeBound.get(objIndex)){
                         offsetsToLowerBound[objIndex] = storm::utility::zero<ValueType>();
                         offsetsToUpperBound[objIndex] = storm::utility::zero<ValueType>();
@@ -144,13 +147,28 @@ namespace storm {
                         // As target states, we pick the states from which no reward is reachable.
                         storm::storage::BitVector targetStates = ~storm::utility::graph::performProbGreater0(deterministicBackwardTransitions, storm::storage::BitVector(deterministicMatrix.getRowCount(), true), statesWithRewards);
                         
-                        //TODO: we could give the solver some hint for the result (e.g., weightVector[ObjIndex] * weightedResult or  (weightedResult - sum_i=0^objIndex-1 objectiveResult) * weightVector[objIndex]/ sum_i=objIndex^n weightVector[i] )
+                        // Compute the estimate for this objective
+                        if(!storm::utility::isZero(weightVector[objIndex])) {
+                            objectiveResults[objIndex] = weightedSumOfUncheckedObjectives;
+                            storm::utility::vector::scaleVectorInPlace(objectiveResults[objIndex], storm::utility::one<ValueType>() / sumOfWeightsOfUncheckedObjectives);
+                        }
+                        
+                        // Make sure that the objectiveResult is initialized in some way
+                        objectiveResults[objIndex].resize(data.preprocessedModel.getNumberOfStates(), storm::utility::zero<ValueType>());
+                        
+                        // Invoke the linear equation solver
                         objectiveResults[objIndex] = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeReachabilityRewards(deterministicMatrix,
                                                                                                                                                deterministicBackwardTransitions,
                                                                                                                                                deterministicStateRewards,
                                                                                                                                                targetStates,
                                                                                                                                                false, //no qualitative checking,
-                                                                                                                                               linearEquationSolverFactory);
+                                                                                                                                               linearEquationSolverFactory,
+                                                                                                                                               objectiveResults[objIndex]);
+                        // Update the estimate for the next objectives.
+                        if(!storm::utility::isZero(weightVector[objIndex])) {
+                            storm::utility::vector::addScaledVector(weightedSumOfUncheckedObjectives, objectiveResults[objIndex], -weightVector[objIndex]);
+                            sumOfWeightsOfUncheckedObjectives -= weightVector[objIndex];
+                        }
                     } else {
                         objectiveResults[objIndex] = std::vector<ValueType>(data.preprocessedModel.getNumberOfStates(), storm::utility::zero<ValueType>());
                     }

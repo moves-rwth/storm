@@ -4,7 +4,7 @@ ma
 const int N; // num packages
 
 const double inRate = 4;
-const double processingRate = 5;
+const double processingRate = 4;
 
 module streamingclient
 	
@@ -12,12 +12,13 @@ module streamingclient
 	// 0: decide whether to start	
 	// 1: buffering
 	// 2: running
-	// 3: done
+	// 3: success
 	
 	n : [0..N]; // number of received packages
 	k : [0..N]; // number of processed packages 	
 	
-	[buffer]  s=0 & n<N -> 1 : (s'=1);
+	[buffer]  s=0 & n<N & k=n -> 1 : (s'=1);
+	[buffer]  s=0 & n<N & k<n -> 0.99: (s'=1) + 0.01 : (s'=2) & (k'=k+1);
 	[start] s=0 & k<n -> 1 : (s'=2) & (k'=k+1);
 	
 	<> s=1 -> inRate : (n'=n+1) & (s'=0);
@@ -30,21 +31,15 @@ module streamingclient
 	<> s=3 -> 1 : true;
 endmodule
 
-// All packages received and buffer empty
+
+label "underrun" = (s=0 & k>0);
+label "running" = (s=2);
 label "done" = (s=3);
 
 rewards "buffering"
 	s=1 : 1;
 endrewards
 
-rewards "initialbuffering"
-	s=1 & k = 0: 1;
-endrewards
-
-rewards "intermediatebuffering"
-	s=1 & k > 0: 1;
-endrewards
-
-rewards "numRestarts"
+rewards "numrestarts"
 	[start] k > 0 : 1;
 endrewards

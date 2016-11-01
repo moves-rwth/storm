@@ -52,7 +52,7 @@ namespace storm {
                 static WeightVector findSeparatingVector(Point const& pointToBeSeparated, std::shared_ptr<storm::storage::geometry::Polytope<RationalNumberType>> const& underApproximation, storm::storage::BitVector& individualObjectivesToBeChecked);
 
                 /*
-                 * Refines the current result w.r.t. the given direction vector
+                 * Refines the current result w.r.t. the given direction vector.
                  */
                 static void performRefinementStep(WeightVector&& direction, bool saveScheduler, WeightVectorCheckerType weightVectorChecker, ResultData& resultData);
                 

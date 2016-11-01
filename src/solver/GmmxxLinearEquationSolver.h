@@ -138,6 +138,7 @@ namespace storm {
             
             // Auxiliary storage for the Jacobi method.
             mutable std::unique_ptr<std::vector<ValueType>> auxiliaryJacobiMemory;
+            mutable std::unique_ptr<std::pair<gmm::csr_matrix<ValueType>, std::vector<ValueType>>> jacobiDecomposition;
         };
         
         template<typename ValueType>

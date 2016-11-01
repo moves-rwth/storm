@@ -76,11 +76,11 @@ label "allqueuesfull" = q1Size=Q & q2Size=Q;
 // Rewards adapted from   Guck et al.: Modelling and Analysis of Markov Reward Automata
 
 rewards "processedjobs1"
-	[copy1] true : 1;
+	[copy1] true : 0.1;
 endrewards
 
 rewards "processedjobs2"
-	[copy1] true : 1;
+	[copy1] true : 0.1;
 endrewards
 
 rewards "processedjobs"
