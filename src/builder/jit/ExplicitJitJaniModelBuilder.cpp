@@ -17,6 +17,7 @@
 #include "src/utility/solver.h"
 #include "src/exceptions/WrongFormatException.h"
 #include "src/exceptions/InvalidStateException.h"
+#include "src/exceptions/InvalidArgumentException.h"
 #include "src/exceptions/NotSupportedException.h"
 #include "src/exceptions/UnexpectedException.h"
 
@@ -41,12 +42,39 @@ namespace storm {
                     transientVariables.insert(variable->getExpressionVariable());
                 }
                 
-                for (auto const& automaton : this->model.getAutomata()) {
+                for (auto& automaton : this->model.getAutomata()) {
+                    // FIXME: just for testing purposes.
+                    automaton.pushEdgeAssignmentsToDestinations();
+                    
                     automatonToLocationVariable.emplace(automaton.getName(), model.getManager().declareFreshIntegerVariable(false, automaton.getName() + "_"));
-                    for (auto const& variable : automaton.getVariables().getTransientVariables()) {
-                        transientVariables.insert(variable->getExpressionVariable());
-                    }
                 }
+                
+                // If the program still contains undefined constants and we are not in a parametric setting, assemble an appropriate error message.
+#ifdef STORM_HAVE_CARL
+                if (!std::is_same<ValueType, storm::RationalFunction>::value && model.hasUndefinedConstants()) {
+#else
+                    if (model.hasUndefinedConstants()) {
+#endif
+                        std::vector<std::reference_wrapper<storm::jani::Constant const>> undefinedConstants = model.getUndefinedConstants();
+                        std::stringstream stream;
+                        bool printComma = false;
+                        for (auto const& constant : undefinedConstants) {
+                            if (printComma) {
+                                stream << ", ";
+                            } else {
+                                printComma = true;
+                            }
+                            stream << constant.get().getName() << " (" << constant.get().getType() << ")";
+                        }
+                        stream << ".";
+                        STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Model still contains these undefined constants: " + stream.str());
+                    }
+                    
+#ifdef STORM_HAVE_CARL
+                    else if (std::is_same<ValueType, storm::RationalFunction>::value && !model.undefinedConstantsAreGraphPreserving()) {
+                        STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The input model contains undefined constants that influence the graph structure of the underlying model, which is not allowed.");
+                    }
+#endif
             }
             
             template <typename ValueType, typename RewardModelType>
@@ -112,7 +140,7 @@ namespace storm {
                             
                             std::ostream& operator<<(std::ostream& out, StateType const& in) {
                                 out << "<";
-                                {% for variable in nontransient_variables.boolean %}out << "{$variable.name}=" << std::boolalpha << in.{$variable.name} << ", ";
+                                {% for variable in nontransient_variables.boolean %}out << "{$variable.name}=" << std::boolalpha << in.{$variable.name} << ", " << std::noboolalpha;
                                 {% endfor %}
                                 {% for variable in nontransient_variables.boundedInteger %}out << "{$variable.name}=" << in.{$variable.name} << ", ";
                                 {% endfor %}
@@ -126,9 +154,12 @@ namespace storm {
                                 return out;
                             }
                             
-                            {% if transient_variables %}
-                            struct TransientVariableType {
-                                TransientVariableType() {
+                            struct TransientVariables {
+                                TransientVariables() {
+                                    reset();
+                                }
+                                
+                                void reset() {
                                     {% for variable in transient_variables.boolean %}{$variable.name} = {$variable.init};
                                     {% endfor %}
                                     {% for variable in transient_variables.boundedInteger %}{$variable.name} = {$variable.init};
@@ -153,9 +184,9 @@ namespace storm {
                                 {% endfor %}
                             };
                             
-                            std::ostream& operator<<(std::ostream& out, TransientVariableType const& in) {
+                            std::ostream& operator<<(std::ostream& out, TransientVariables const& in) {
                                 out << "<";
-                                {% for variable in transient_variables.boolean %}out << "{$variable.name}=" << std::boolalpha << in.{$variable.name} << ", ";
+                                {% for variable in transient_variables.boolean %}out << "{$variable.name}=" << std::boolalpha << in.{$variable.name} << ", " << std::noboolalpha;
                                 {% endfor %}
                                 {% for variable in transient_variables.boundedInteger %}out << "{$variable.name}=" << in.{$variable.name} << ", ";
                                 {% endfor %}
@@ -166,7 +197,6 @@ namespace storm {
                                 out << ">";
                                 return out;
                             }
-                            {% endif %}
 
                         }
                     }
@@ -213,7 +243,21 @@ namespace storm {
                             }
                             
                             {% for destination in edge.destinations %}
-                            static void destination_perform_level_{$edge.name}_{$destination.name}(int_fast64_t level, StateType const& in, StateType& out{% if edge.referenced_transient_variables %}, TransientVariableType const& transientIn, TransientVariableType& transientOut{% endif %}) {
+                            static void destination_perform_level_{$edge.name}_{$destination.name}(int_fast64_t level, StateType const& in, StateType& out) {
+                                {% for level in destination.levels %}if (level == {$level.index}) {
+                                    {% for assignment in level.nonTransientAssignments %}out.{$assignment.variable} = {$assignment.value};
+                                    {% endfor %}
+                                }
+                                {% endfor %}
+                            }
+                            
+                            static void destination_perform_{$edge.name}_{$destination.name}(StateType const& in, StateType& out) {
+                                {% for level in destination.levels %}
+                                destination_perform_level_{$edge.name}_{$destination.name}({$level.index}, in, out);
+                                {% endfor %}
+                            }
+
+                            static void destination_perform_level_{$edge.name}_{$destination.name}(int_fast64_t level, StateType const& in, StateType& out, TransientVariables const& transientIn, TransientVariables& transientOut) {
                                 {% for level in destination.levels %}if (level == {$level.index}) {
                                     {% for assignment in level.nonTransientAssignments %}out.{$assignment.variable} = {$assignment.value};
                                     {% endfor %}
@@ -223,11 +267,9 @@ namespace storm {
                                 {% endfor %}
                             }
                             
-                            static void destination_perform_{$edge.name}_{$destination.name}(StateType const& in, StateType& out) {
-                                {% if edge.referenced_transient_variables %}TransientVariableType transientIn;
-                                TransientVariableType transientOut;{% endif %}
+                            static void destination_perform_{$edge.name}_{$destination.name}(StateType const& in, StateType& out, TransientVariables const& transientIn, TransientVariables& transientOut) {
                                 {% for level in destination.levels %}
-                                destination_perform_level_{$edge.name}_{$destination.name}({$level.index}, in, out{% if edge.referenced_transient_variables %}, transientIn, transientOut{% endif %});
+                                destination_perform_level_{$edge.name}_{$destination.name}({$level.index}, in, out, transientIn, transientOut);
                                 {% endfor %}
                             }
                             {% endfor %}
@@ -241,7 +283,21 @@ namespace storm {
                             }
                             
                             {% for destination in edge.destinations %}
-                            static void destination_perform_level_{$edge.name}_{$destination.name}(int_fast64_t level, StateType const& in, StateType& out{% if edge.referenced_transient_variables %}, TransientVariableType const& transientIn, TransientVariableType& transientOut{% endif %}) {
+                            static void destination_perform_level_{$edge.name}_{$destination.name}(int_fast64_t level, StateType const& in, StateType& out) {
+                                {% for level in destination.levels %}if (level == {$level.index}) {
+                                    {% for assignment in level.nonTransientAssignments %}out.{$assignment.variable} = {$assignment.value};
+                                    {% endfor %}
+                                }
+                                {% endfor %}
+                            }
+                            
+                            static void destination_perform_{$edge.name}_{$destination.name}(StateType const& in, StateType& out) {
+                                {% for level in destination.levels %}
+                                destination_perform_level_{$edge.name}_{$destination.name}({$level.index}, in, out);
+                                {% endfor %}
+                            }
+                            
+                            static void destination_perform_level_{$edge.name}_{$destination.name}(int_fast64_t level, StateType const& in, StateType& out, TransientVariables const& transientIn, TransientVariables& transientOut) {
                                 {% for level in destination.levels %}if (level == {$level.index}) {
                                     {% for assignment in level.nonTransientAssignments %}out.{$assignment.variable} = {$assignment.value};
                                     {% endfor %}
@@ -251,29 +307,27 @@ namespace storm {
                                 {% endfor %}
                             }
                             
-                            static void destination_perform_{$edge.name}_{$destination.name}(StateType const& in, StateType& out{% if edge.referenced_transient_variables %}, TransientVariableType const& transientIn, TransientVariableType& transientOut{% endif %}) {
+                            static void destination_perform_{$edge.name}_{$destination.name}(StateType const& in, StateType& out, TransientVariables const& transientIn, TransientVariables& transientOut) {
                                 {% for level in destination.levels %}
-                                destination_perform_level_{$edge.name}_{$destination.name}({$level.index}, in, out{% if edge.referenced_transient_variables %}, transientIn, transientOut{% endif %});
+                                destination_perform_level_{$edge.name}_{$destination.name}({$level.index}, in, out, transientIn, transientOut);
                                 {% endfor %}
                             }
                             {% endfor %}
                             {% endfor %}
 
                             
-                            typedef void (*DestinationLevelFunctionPtr)(int_fast64_t, StateType const&, StateType&);
-                            typedef void (*DestinationFunctionPtr)(StateType const&, StateType&);
-
-                            {% if transient_variables %}typedef void (*DestinationTransientLevelFunctionPtr)(int_fast64_t, StateType const&, StateType&, TransientVariableType const&, TransientVariableType&);
-                            typedef void (*DestinationTransientFunctionPtr)(StateType const&, StateType&, TransientVariableType const&, TransientVariableType&);
-                            {% endif %}
+                            typedef void (*DestinationLevelFunctionPtr)(int_fast64_t, StateType const&, StateType&, TransientVariables const&, TransientVariables&);
+                            typedef void (*DestinationFunctionPtr)(StateType const&, StateType&, TransientVariables const&, TransientVariables&);
+                            typedef void (*DestinationWithoutTransientLevelFunctionPtr)(int_fast64_t, StateType const&, StateType&);
+                            typedef void (*DestinationWithoutTransientFunctionPtr)(StateType const&, StateType&);
                             
                             class Destination {
                             public:
-                                Destination() : mLowestLevel(0), mHighestLevel(0), mValue(), destinationLevelFunction(nullptr), destinationFunction(nullptr) {
+                                Destination() : mLowestLevel(0), mHighestLevel(0), mValue(), destinationLevelFunction(nullptr), destinationFunction(nullptr), destinationWithoutTransientLevelFunction(nullptr), destinationWithoutTransientFunction(nullptr) {
                                     // Intentionally left empty.
                                 }
                                 
-                                Destination(int_fast64_t lowestLevel, int_fast64_t highestLevel, ValueType const& value, DestinationLevelFunctionPtr destinationLevelFunction, DestinationFunctionPtr destinationFunction) : mLowestLevel(lowestLevel), mHighestLevel(highestLevel), mValue(value), destinationLevelFunction(destinationLevelFunction), destinationFunction(destinationFunction) {
+                                Destination(int_fast64_t lowestLevel, int_fast64_t highestLevel, ValueType const& value, DestinationLevelFunctionPtr destinationLevelFunction, DestinationFunctionPtr destinationFunction, DestinationWithoutTransientLevelFunctionPtr destinationWithoutTransientLevelFunction, DestinationWithoutTransientFunctionPtr destinationWithoutTransientFunction) : mLowestLevel(lowestLevel), mHighestLevel(highestLevel), mValue(value), destinationLevelFunction(destinationLevelFunction), destinationFunction(destinationFunction), destinationWithoutTransientLevelFunction(destinationWithoutTransientLevelFunction), destinationWithoutTransientFunction(destinationWithoutTransientFunction) {
                                     // Intentionally left empty.
                                 }
                                 
@@ -289,12 +343,20 @@ namespace storm {
                                     return mValue;
                                 }
                                 
-                                void performLevel(int_fast64_t level, StateType const& in, StateType& out) const {
-                                    destinationLevelFunction(level, in, out);
+                                void perform(int_fast64_t level, StateType const& in, StateType& out, TransientVariables const& transientIn, TransientVariables& transientOut) const {
+                                    destinationLevelFunction(level, in, out, transientIn, transientOut);
                                 }
 
+                                void perform(StateType const& in, StateType& out, TransientVariables const& transientIn, TransientVariables& transientOut) const {
+                                    destinationFunction(in, out, transientIn, transientOut);
+                                }
+
+                                void perform(int_fast64_t level, StateType const& in, StateType& out) const {
+                                    destinationWithoutTransientLevelFunction(level, in, out);
+                                }
+                                
                                 void perform(StateType const& in, StateType& out) const {
-                                    destinationFunction(in, out);
+                                    destinationWithoutTransientFunction(in, out);
                                 }
 
                             private:
@@ -303,46 +365,9 @@ namespace storm {
                                 ValueType mValue;
                                 DestinationLevelFunctionPtr destinationLevelFunction;
                                 DestinationFunctionPtr destinationFunction;
+                                DestinationWithoutTransientLevelFunctionPtr destinationWithoutTransientLevelFunction;
+                                DestinationWithoutTransientFunctionPtr destinationWithoutTransientFunction;
                             };
-
-                            {% if transient_variables %}class DestinationTransient {
-                            public:
-                                DestinationTransient() : mLowestLevel(0), mHighestLevel(0), mValue(), destinationLevelFunction(nullptr), destinationFunction(nullptr) {
-                                    // Intentionally left empty.
-                                }
-                                
-                                DestinationTransient(int_fast64_t lowestLevel, int_fast64_t highestLevel, ValueType const& value, DestinationTransientLevelFunctionPtr destinationLevelFunction, DestinationTransientFunctionPtr destinationFunction) : mLowestLevel(lowestLevel), mHighestLevel(highestLevel), mValue(value), destinationLevelFunction(destinationLevelFunction), destinationFunction(destinationFunction) {
-                                    // Intentionally left empty.
-                                }
-                                
-                                int_fast64_t lowestLevel() const {
-                                    return mLowestLevel;
-                                }
-                                
-                                int_fast64_t highestLevel() const {
-                                    return mHighestLevel;
-                                }
-                                
-                                ValueType const& value() const {
-                                    return mValue;
-                                }
-                                
-                                void performLevel(int_fast64_t level, StateType const& in, StateType& out, TransientVariableType const& transientIn, TransientVariableType& transientOut) const {
-                                    destinationLevelFunction(level, in, out, transientIn, transientOut);
-                                }
-                                
-                                void perform(StateType const& in, StateType& out, TransientVariableType const& transientIn, TransientVariableType& transientOut) const {
-                                    destinationFunction(in, out, transientIn, transientOut);
-                                }
-                                
-                            private:
-                                int_fast64_t mLowestLevel;
-                                int_fast64_t mHighestLevel;
-                                ValueType mValue;
-                                DestinationTransientLevelFunctionPtr destinationLevelFunction;
-                                DestinationTransientFunctionPtr destinationFunction;
-                            };
-                            {% endif %}
 
                             typedef bool (*EdgeEnabledFunctionPtr)(StateType const&);
                             
@@ -366,8 +391,8 @@ namespace storm {
                                     destinations.push_back(destination);
                                 }
 
-                                void addDestination(int_fast64_t lowestLevel, int_fast64_t highestLevel, ValueType const& value, DestinationLevelFunctionPtr destinationLevelFunction, DestinationFunctionPtr destinationFunction) {
-                                    destinations.emplace_back(lowestLevel, highestLevel, value, destinationLevelFunction, destinationFunction);
+                                void addDestination(int_fast64_t lowestLevel, int_fast64_t highestLevel, ValueType const& value, DestinationLevelFunctionPtr destinationLevelFunction, DestinationFunctionPtr destinationFunction, DestinationWithoutTransientLevelFunctionPtr destinationWithoutTransientLevelFunction, DestinationWithoutTransientFunctionPtr destinationWithoutTransientFunction) {
+                                    destinations.emplace_back(lowestLevel, highestLevel, value, destinationLevelFunction, destinationFunction, destinationWithoutTransientLevelFunction, destinationWithoutTransientFunction);
                                 }
 
                                 std::vector<Destination> const& getDestinations() const {
@@ -387,48 +412,6 @@ namespace storm {
                                 ContainerType destinations;
                             };
 
-                            {% if transient_variables %}class EdgeTransient {
-                            public:
-                                typedef std::vector<DestinationTransient> ContainerType;
-                                
-                                EdgeTransient() : edgeEnabledFunction(nullptr) {
-                                    // Intentionally left empty.
-                                }
-                                
-                                EdgeTransient(EdgeEnabledFunctionPtr edgeEnabledFunction) : edgeEnabledFunction(edgeEnabledFunction) {
-                                    // Intentionally left empty.
-                                }
-                                
-                                bool isEnabled(StateType const& in) const {
-                                    return edgeEnabledFunction(in);
-                                }
-                                
-                                void addDestination(DestinationTransient const& destination) {
-                                    destinations.push_back(destination);
-                                }
-                                
-                                void addDestination(int_fast64_t lowestLevel, int_fast64_t highestLevel, ValueType const& value, DestinationTransientLevelFunctionPtr destinationLevelFunction, DestinationTransientFunctionPtr destinationFunction) {
-                                    destinations.emplace_back(lowestLevel, highestLevel, value, destinationLevelFunction, destinationFunction);
-                                }
-                                
-                                std::vector<DestinationTransient> const& getDestinations() const {
-                                    return destinations;
-                                }
-                                
-                                ContainerType::const_iterator begin() const {
-                                    return destinations.begin();
-                                }
-                                
-                                ContainerType::const_iterator end() const {
-                                    return destinations.end();
-                                }
-                                
-                            private:
-                                EdgeEnabledFunctionPtr edgeEnabledFunction;
-                                ContainerType destinations;
-                            };
-                            {% endif %}
-
                             class JitBuilder : public JitModelBuilderInterface<IndexType, ValueType> {
                             public:
                                 JitBuilder(ModelComponentsBuilder<IndexType, ValueType>& modelComponentsBuilder) : JitModelBuilderInterface(modelComponentsBuilder) {
@@ -440,13 +423,13 @@ namespace storm {
                                     }{% endfor %}
                                     {% for edge in nonsynch_edges %}{
                                         edge_{$edge.name} = Edge(&edge_enabled_{$edge.name});
-                                        {% for destination in edge.destinations %}edge_{$edge.name}.addDestination({$destination.lowestLevel}, {$destination.highestLevel}, {$destination.value}, &destination_perform_level_{$edge.name}_{$destination.name}, &destination_perform_{$edge.name}_{$destination.name});
+                                        {% for destination in edge.destinations %}edge_{$edge.name}.addDestination({$destination.lowestLevel}, {$destination.highestLevel}, {$destination.value}, &destination_perform_level_{$edge.name}_{$destination.name}, &destination_perform_{$edge.name}_{$destination.name}, &destination_perform_level_{$edge.name}_{$destination.name}, &destination_perform_{$edge.name}_{$destination.name});
                                         {% endfor %}
                                     }
                                     {% endfor %}
                                     {% for edge in synch_edges %}{
                                         edge_{$edge.name} = Edge(&edge_enabled_{$edge.name});
-                                        {% for destination in edge.destinations %}edge_{$edge.name}.addDestination({$destination.lowestLevel}, {$destination.highestLevel}, {$destination.value}, &destination_perform_level_{$edge.name}_{$destination.name}, &destination_perform_{$edge.name}_{$destination.name});
+                                        {% for destination in edge.destinations %}edge_{$edge.name}.addDestination({$destination.lowestLevel}, {$destination.highestLevel}, {$destination.value}, &destination_perform_level_{$edge.name}_{$destination.name}, &destination_perform_{$edge.name}_{$destination.name}, &destination_perform_level_{$edge.name}_{$destination.name}, &destination_perform_{$edge.name}_{$destination.name});
                                         {% endfor %}
                                     }
                                     {% endfor %}
@@ -533,13 +516,18 @@ namespace storm {
                                 void exploreNonSynchronizingEdges(StateType const& in, StateBehaviour<IndexType, ValueType>& behaviour, StateSet<StateType>& statesToExplore) {
                                     {% for edge in nonsynch_edges %}{
                                         if ({$edge.guard}) {
+                                            {% if edge.referenced_transient_variables %}
+                                            TransientVariables transientIn;
+                                            TransientVariables transientOut;
+                                            {% endif %}
                                             Choice<IndexType, ValueType>& choice = behaviour.addChoice();
                                             {% for destination in edge.destinations %}{
                                                 StateType out(in);
-                                                destination_perform_{$edge.name}_{$destination.name}(in, out);
+                                                destination_perform_{$edge.name}_{$destination.name}(in, out{% if edge.referenced_transient_variables %}, transientIn, transientOut{% endif %});
                                                 IndexType outStateIndex = getOrAddIndex(out, statesToExplore);
                                                 choice.add(outStateIndex, {$destination.value});
-                                            }{% endfor %}
+                                            }
+                                            {% endfor %}
                                         }
                                     }
                                     {% endfor %}
@@ -596,9 +584,9 @@ namespace storm {
                                 std::vector<StateType> initialStates;
                                 std::vector<IndexType> deadlockStates;
                                 
-                                {% for edge in nonsynch_edges %}{% if edge.referenced_transient_variables %}EdgeTransient {% endif %}{% if not edge.referenced_transient_variables %}Edge {% endif %} edge_{$edge.name};
+                                {% for edge in nonsynch_edges %}Edge edge_{$edge.name};
                                 {% endfor %}
-                                {% for edge in synch_edges %}{% if edge.referenced_transient_variables %}EdgeTransient {% endif %}{% if not edge.referenced_transient_variables %}Edge {% endif %} edge_{$edge.name};
+                                {% for edge in synch_edges %}Edge edge_{$edge.name};
                                 {% endfor %}
                             };
                             
@@ -727,7 +715,7 @@ namespace storm {
             template <typename ValueType, typename RewardModelType>
             cpptempl::data_map ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateBooleanVariable(storm::jani::BooleanVariable const& variable) {
                 cpptempl::data_map result;
-                result["name"] = registerVariableName(variable.getExpressionVariable());
+                result["name"] = registerVariable(variable.getExpressionVariable());
                 if (variable.hasInitExpression()) {
                     result["init"] = asString(variable.getInitExpression().evaluateAsBool());
                 }
@@ -748,7 +736,7 @@ namespace storm {
                 uint64_t range = static_cast<uint64_t>(upperBound - lowerBound + 1);
                 uint64_t numberOfBits = static_cast<uint64_t>(std::ceil(std::log2(range)));
                 
-                result["name"] = registerVariableName(variable.getExpressionVariable());
+                result["name"] = registerVariable(variable.getExpressionVariable());
                 result["numberOfBits"] = std::to_string(numberOfBits);
                 if (variable.hasInitExpression()) {
                     result["init"] = asString(variable.getInitExpression().evaluateAsInt() - lowerBound);
@@ -761,7 +749,7 @@ namespace storm {
             cpptempl::data_map ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateUnboundedIntegerVariable(storm::jani::UnboundedIntegerVariable const& variable) {
                 cpptempl::data_map result;
                 
-                result["name"] = registerVariableName(variable.getExpressionVariable());
+                result["name"] = registerVariable(variable.getExpressionVariable());
                 if (variable.hasInitExpression()) {
                     result["init"] = asString(variable.getInitExpression().evaluateAsInt());
                 }
@@ -773,7 +761,7 @@ namespace storm {
             cpptempl::data_map ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateRealVariable(storm::jani::RealVariable const& variable) {
                 cpptempl::data_map result;
                 
-                result["name"] = registerVariableName(variable.getExpressionVariable());
+                result["name"] = registerVariable(variable.getExpressionVariable());
                 if (variable.hasInitExpression()) {
                     result["init"] = asString(variable.getInitExpression().evaluateAsDouble());
                 }
@@ -785,7 +773,7 @@ namespace storm {
             cpptempl::data_map ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateLocationVariable(storm::jani::Automaton const& automaton) {
                 cpptempl::data_map result;
                 
-                result["name"] = registerVariableName(getLocationVariable(automaton));
+                result["name"] = registerVariable(getLocationVariable(automaton));
                 result["numberOfBits"] = static_cast<uint64_t>(std::ceil(std::log2(automaton.getNumberOfLocations())));
                 
                 return result;
@@ -902,7 +890,7 @@ namespace storm {
                         if (this->options.isBuildAllLabelsSet() || this->options.getLabelNames().find(variable->getName()) != this->options.getLabelNames().end()) {
                             cpptempl::data_map label;
                             label["name"] = variable->getName();
-                            label["predicate"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(model.getLabelExpression(variable->asBooleanVariable(), automatonToLocationVariable)), storm::expressions::ToCppTranslationOptions("in."));
+                            label["predicate"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(model.getLabelExpression(variable->asBooleanVariable(), automatonToLocationVariable)), storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName));
                             labels.push_back(label);
                         }
                     }
@@ -911,7 +899,7 @@ namespace storm {
                 for (auto const& expression : this->options.getExpressionLabels()) {
                     cpptempl::data_map label;
                     label["name"] = expression.toString();
-                    label["predicate"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(expression), storm::expressions::ToCppTranslationOptions("in."));
+                    label["predicate"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(expression), storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName));
                     labels.push_back(label);
                 }
                 
@@ -934,10 +922,10 @@ namespace storm {
                         if (terminalEntry.second) {
                             labelExpression = !labelExpression;
                         }
-                        terminalExpressions.push_back(expressionTranslator.translate(shiftVariablesWrtLowerBound(labelExpression), storm::expressions::ToCppTranslationOptions("in.")));
+                        terminalExpressions.push_back(expressionTranslator.translate(shiftVariablesWrtLowerBound(labelExpression), storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName)));
                     } else {
                         auto expression = terminalEntry.second ? labelOrExpression.getExpression() : !labelOrExpression.getExpression();
-                        terminalExpressions.push_back(expressionTranslator.translate(shiftVariablesWrtLowerBound(expression), storm::expressions::ToCppTranslationOptions("in.")));
+                        terminalExpressions.push_back(expressionTranslator.translate(shiftVariablesWrtLowerBound(expression), storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName)));
                     }
                 }
 
@@ -958,8 +946,10 @@ namespace storm {
                 
                 // First, we check whether we need to generate code for a) different assignment levels and b) transient variables.
                 uint64_t position = 0;
-                bool generateLevelCode = false;
-                bool generateTransientVariableCode = false;
+                int_fast64_t lowestLevel;
+                int_fast64_t highestLevel;
+                bool firstDestination = true;
+                bool generateTransient = false;
                 for (auto const& inputActionName : synchronizationVector.getInput()) {
                     if (!storm::jani::SynchronizationVector::isNoActionInput(inputActionName)) {
                         storm::jani::Automaton const& automaton = model.getAutomaton(parallelComposition.getSubcomposition(position).asAutomatonComposition().getAutomatonName());
@@ -967,17 +957,26 @@ namespace storm {
                         for (auto const& edge : automaton.getEdges()) {
                             if (edge.getActionIndex() == actionIndex) {
                                 for (auto const& destination : edge.getDestinations()) {
-                                    if (destination.getOrderedAssignments().hasMultipleLevels()) {
-                                        generateLevelCode = true;
-                                    }
-                                    for (auto const& assignment : destination.getOrderedAssignments().getAllAssignments()) {
-                                        if (assignment.isTransient()) {
-                                            
+                                    if (!destination.getOrderedAssignments().empty()) {
+                                        if (firstDestination) {
+                                            lowestLevel = destination.getOrderedAssignments().getLowestLevel();
+                                            highestLevel = destination.getOrderedAssignments().getHighestLevel();
+                                            firstDestination = false;
+                                        } else {
+                                            lowestLevel = std::min(lowestLevel, destination.getOrderedAssignments().getLowestLevel());
+                                            highestLevel = std::max(highestLevel, destination.getOrderedAssignments().getHighestLevel());
                                         }
-                                        std::set<storm::expressions::Variable> usedVariables;
-                                        for (auto const& variable : usedVariables) {
-                                            if (transientVariables.find(variable) != transientVariables.end()) {
-                                                generateTransientVariableCode = true;
+                                    }
+                                    if (!generateTransient) {
+                                        for (auto const& assignment : destination.getOrderedAssignments()) {
+                                            if (assignment.isTransient()) {
+                                                generateTransient = true;
+                                            }
+                                            std::set<storm::expressions::Variable> usedVariables = assignment.getAssignedExpression().getVariables();
+                                            for (auto const& variable : usedVariables) {
+                                                if (transientVariables.find(variable) != transientVariables.end()) {
+                                                    generateTransient = true;
+                                                }
                                             }
                                         }
                                     }
@@ -987,16 +986,35 @@ namespace storm {
                     }
                     ++position;
                 }
+                bool generateLevelCode = lowestLevel != highestLevel;
                 
                 uint64_t indentLevel = 4;
                 indent(vectorSource, indentLevel - 4) << "void performSynchronizedDestinations_" << synchronizationVectorIndex << "(StateType const& in, StateBehaviour<IndexType, ValueType>& behaviour, StateSet<StateType>& statesToExplore, ";
                 for (uint64_t index = 0; index < numberOfActionInputs; ++index) {
                     vectorSource << "Destination const& destination" << index << ", ";
                 }
+                if (generateLevelCode) {
+                    vectorSource << "int64_t lowestLevel, int64_t highestLevel, ";
+                }
                 vectorSource << "Choice<IndexType, ValueType>& choice) {" << std::endl;
                 indent(vectorSource, indentLevel + 1) << "StateType out(in);" << std::endl;
+                indent(vectorSource, indentLevel + 1) << "TransientVariables transientIn;" << std::endl;
+                indent(vectorSource, indentLevel + 1) << "TransientVariables transientOut;" << std::endl;
+                
+                if (generateLevelCode) {
+                    indent(vectorSource, indentLevel + 1) << "for (int64_t level = lowestLevel; level <= highestLevel; ++level) {" << std::endl;
+                    ++indentLevel;
+                }
                 for (uint64_t index = 0; index < numberOfActionInputs; ++index) {
-                    indent(vectorSource, indentLevel + 1) << "destination" << index << ".perform(in, out);" << std::endl;
+                    indent(vectorSource, indentLevel + 1) << "destination" << index << ".perform(";
+                    if (generateLevelCode) {
+                        vectorSource << "level, ";
+                    }
+                    vectorSource << "in, out, transientIn, transientOut);" << std::endl;
+                }
+                if (generateLevelCode) {
+                    --indentLevel;
+                    indent(vectorSource, indentLevel + 1) << "}" << std::endl;
                 }
                 indent(vectorSource, indentLevel + 1) << "IndexType outStateIndex = getOrAddIndex(out, statesToExplore);" << std::endl;
                 indent(vectorSource, indentLevel + 1) << "choice.add(outStateIndex, ";
@@ -1014,12 +1032,27 @@ namespace storm {
                     vectorSource << "Edge const& edge" << index << ", ";
                 }
                 vectorSource << "Choice<IndexType, ValueType>& choice) {" << std::endl;
+                if (generateLevelCode) {
+                    indent(vectorSource, indentLevel + 1) << "int64_t lowestLevel; int64_t highestLevel;";
+                }
                 for (uint64_t index = 0; index < numberOfActionInputs; ++index) {
                     indent(vectorSource, indentLevel + 1 + index) << "for (auto const& destination" << index << " : edge" << index << ") {" << std::endl;
+                    if (generateLevelCode) {
+                        if (index == 0) {
+                            indent(vectorSource, indentLevel + 2 + index) << "lowestLevel = edge0.lowestLevel();" << std::endl;
+                            indent(vectorSource, indentLevel + 2 + index) << "highestLevel = edge0.highestLevel();" << std::endl;
+                        } else {
+                            indent(vectorSource, indentLevel + 2 + index) << "lowestLevel = std::min(lowestLevel, edge0.lowestLevel());" << std::endl;
+                            indent(vectorSource, indentLevel + 2 + index) << "highestLevel = std::max(highestLevel, edge0.highestLevel());" << std::endl;
+                        }
+                    }
                 }
                 indent(vectorSource, indentLevel + 1 + numberOfActionInputs) << "performSynchronizedDestinations_" << synchronizationVectorIndex << "(in, behaviour, statesToExplore, ";
                 for (uint64_t index = 0; index < numberOfActionInputs; ++index) {
                     vectorSource << "destination" << index << ", ";
+                }
+                if (generateLevelCode) {
+                    vectorSource << "lowestLevel, highestLevel, ";
                 }
                 vectorSource << "choice);" << std::endl;
                 for (uint64_t index = 0; index < numberOfActionInputs; ++index) {
@@ -1224,7 +1257,7 @@ namespace storm {
                     ++destinationIndex;
                 }
                 
-                edgeData["guard"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(edge.getGuard()), storm::expressions::ToCppTranslationOptions("in."));
+                edgeData["guard"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(edge.getGuard()), storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName));
                 edgeData["destinations"] = cpptempl::make_data(destinations);
                 edgeData["name"] = automaton.getName() + "_" + std::to_string(edgeIndex);
 
@@ -1243,7 +1276,7 @@ namespace storm {
                 cpptempl::data_list levels = generateLevels(destination.getOrderedAssignments());
                 destinationData["name"] = asString(destinationIndex);
                 destinationData["levels"] = cpptempl::make_data(levels);
-                destinationData["value"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(destination.getProbability()), storm::expressions::ToCppTranslationOptions("in.", "double"));
+                destinationData["value"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(destination.getProbability()), storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName, "double"));
                 if (destination.getOrderedAssignments().empty()) {
                     destinationData["lowestLevel"] = "0";
                     destinationData["highestLevel"] = "0";
@@ -1279,9 +1312,9 @@ namespace storm {
                         }
                         
                         if (assignment.isTransient()) {
-                            transientAssignmentData.push_back(generateAssignment(assignment, "in."));
+                            transientAssignmentData.push_back(generateAssignment(assignment));
                         } else {
-                            nonTransientAssignmentData.push_back(generateAssignment(assignment, "in."));
+                            nonTransientAssignmentData.push_back(generateAssignment(assignment));
                         }
                     }
 
@@ -1314,20 +1347,20 @@ namespace storm {
             }
             
             template <typename ValueType, typename RewardModelType>
-            cpptempl::data_map ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateAssignment(storm::jani::Assignment const& assignment, std::string const& prefix) {
+            cpptempl::data_map ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateAssignment(storm::jani::Assignment const& assignment) {
                 cpptempl::data_map result;
                 result["variable"] = getVariableName(assignment.getExpressionVariable());
                 auto lowerBoundIt = lowerBounds.find(assignment.getExpressionVariable());
                 if (lowerBoundIt != lowerBounds.end()) {
                     if (lowerBoundIt->second < 0) {
-                        result["value"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(assignment.getAssignedExpression()) + model.getManager().integer(lowerBoundIt->second), prefix);
+                        result["value"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(assignment.getAssignedExpression()) + model.getManager().integer(lowerBoundIt->second), storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName));
                     } else if (lowerBoundIt->second == 0) {
-                        result["value"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(assignment.getAssignedExpression()), prefix);
+                        result["value"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(assignment.getAssignedExpression()), storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName));
                     } else {
-                        result["value"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(assignment.getAssignedExpression()) - model.getManager().integer(lowerBoundIt->second), prefix);
+                        result["value"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(assignment.getAssignedExpression()) - model.getManager().integer(lowerBoundIt->second), storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName));
                     }
                 } else {
-                    result["value"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(assignment.getAssignedExpression()), prefix);
+                    result["value"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(assignment.getAssignedExpression()), storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName));
                 }
                 return result;
             }
@@ -1338,9 +1371,25 @@ namespace storm {
             }
 
             template <typename ValueType, typename RewardModelType>
-            std::string const& ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::registerVariableName(storm::expressions::Variable const& variable) {
-                variableToName[variable] = variable.getName();
-                return variable.getName();
+            std::string const& ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::registerVariable(storm::expressions::Variable const& variable, bool transient) {
+                std::string variableName;
+                
+                // Technically, we would need to catch all keywords here...
+                if (variable.getName() == "default") {
+                    variableName = "__default";
+                } else {
+                    variableName = variable.getName();
+                }
+                
+                variableToName[variable] = variableName;
+                if (transient) {
+                    transientVariables.insert(variable);
+                    variablePrefixes[variable] = "transientIn.";
+                } else {
+                    nontransientVariables.insert(variable);
+                    variablePrefixes[variable] = "in.";
+                }
+                return variableToName[variable] ;
             }
             
             template <typename ValueType, typename RewardModelType>

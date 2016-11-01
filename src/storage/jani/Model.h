@@ -355,6 +355,11 @@ namespace storm {
              */
             bool hasTransientEdgeDestinationAssignments() const;
             
+            /*!
+             * Retrieves whether the model uses an assignment level other than zero.
+             */
+            bool usesAssignmentLevels() const;
+            
             void makeStandardJaniCompliant();
             
             /// The name of the silent action.

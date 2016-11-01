@@ -74,11 +74,11 @@ namespace storm {
                 
                 cpptempl::data_map generateLocationAssignment(storm::jani::Automaton const& automaton, uint64_t value) const;
                 
-                cpptempl::data_map generateAssignment(storm::jani::Assignment const& assignment, std::string const& prefix = "");
+                cpptempl::data_map generateAssignment(storm::jani::Assignment const& assignment);
                 
                 // Auxiliary functions that perform regularly needed steps.
                 std::string const& getVariableName(storm::expressions::Variable const& variable) const;
-                std::string const& registerVariableName(storm::expressions::Variable const& variable);
+                std::string const& registerVariable(storm::expressions::Variable const& variable, bool transient = false);
                 storm::expressions::Variable const& getLocationVariable(storm::jani::Automaton const& automaton) const;
                 std::string asString(bool value) const;
                 storm::expressions::Expression shiftVariablesWrtLowerBound(storm::expressions::Expression const& expression);
@@ -100,6 +100,8 @@ namespace storm {
                 std::map<storm::expressions::Variable, storm::expressions::Expression> lowerBoundShiftSubstitution;
                 std::map<storm::expressions::Variable, int_fast64_t> lowerBounds;
                 std::set<storm::expressions::Variable> transientVariables;
+                std::set<storm::expressions::Variable> nontransientVariables;
+                std::unordered_map<storm::expressions::Variable, std::string> variablePrefixes;
             };
 
         }

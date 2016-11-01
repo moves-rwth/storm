@@ -577,5 +577,14 @@ namespace storm {
             }
             return false;
         }
+        
+        bool Model::usesAssignmentLevels() const {
+            for (auto const& automaton : this->getAutomata()) {
+                if (automaton.usesAssignmentLevels()) {
+                    return true;
+                }
+            }
+            return false;
+        }
     }
 }

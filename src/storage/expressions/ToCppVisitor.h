@@ -12,27 +12,24 @@ namespace storm {
         
         class ToCppTranslationOptions {
         public:
-            ToCppTranslationOptions(std::string const& prefix = "", std::string const& valueTypeCast = "");
+            ToCppTranslationOptions(std::unordered_map<storm::expressions::Variable, std::string> const& prefixes, std::unordered_map<storm::expressions::Variable, std::string> const& names, std::string const& valueTypeCast = "");
             
-            std::string const& getPrefix() const;
-            
-            void setSpecificPrefixes(std::unordered_map<storm::expressions::Variable, std::string> const& prefixes);
-            std::unordered_map<storm::expressions::Variable, std::string> const& getSpecificPrefixes() const;
-            void clearSpecificPrefixes();
+            std::unordered_map<storm::expressions::Variable, std::string> const& getPrefixes() const;
+            std::unordered_map<storm::expressions::Variable, std::string> const& getNames() const;
             
             bool hasValueTypeCast() const;
             std::string const& getValueTypeCast() const;
             void clearValueTypeCast();
             
         private:
+            std::unordered_map<storm::expressions::Variable, std::string> const& prefixes;
+            std::unordered_map<storm::expressions::Variable, std::string> const& names;
             std::string valueTypeCast;
-            std::string prefix;
-            std::unordered_map<storm::expressions::Variable, std::string> specificPrefixes;
         };
         
         class ToCppVisitor : public ExpressionVisitor {
         public:
-            std::string translate(storm::expressions::Expression const& expression, ToCppTranslationOptions const& options = ToCppTranslationOptions());
+            std::string translate(storm::expressions::Expression const& expression, ToCppTranslationOptions const& options);
             
             virtual boost::any visit(IfThenElseExpression const& expression, boost::any const& data) override;
             virtual boost::any visit(BinaryBooleanFunctionExpression const& expression, boost::any const& data) override;

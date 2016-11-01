@@ -55,5 +55,12 @@ namespace storm {
             return !assignments.getTransientAssignments().empty();
         }
         
+        bool EdgeDestination::usesAssignmentLevels() const {
+            if (this->getOrderedAssignments().empty()) {
+                return false;
+            }
+            return this->getOrderedAssignments().getLowestLevel() != 0 || this->getOrderedAssignments().getHighestLevel() != 0;
+        }
+        
     }
 }

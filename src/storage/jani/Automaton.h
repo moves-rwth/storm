@@ -327,6 +327,11 @@ namespace storm {
              */
             void liftTransientEdgeDestinationAssignments();
             
+            /*!
+             * Retrieves whether the automaton uses an assignment level other than zero.
+             */
+            bool usesAssignmentLevels() const;
+            
         private:
             /// The name of the automaton.
             std::string name;

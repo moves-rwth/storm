@@ -5,24 +5,16 @@
 namespace storm {
     namespace expressions {
         
-        ToCppTranslationOptions::ToCppTranslationOptions(std::string const& prefix, std::string const& valueTypeCast) : valueTypeCast(valueTypeCast), prefix(prefix) {
+        ToCppTranslationOptions::ToCppTranslationOptions(std::unordered_map<storm::expressions::Variable, std::string> const& prefixes, std::unordered_map<storm::expressions::Variable, std::string> const& names, std::string const& valueTypeCast) : prefixes(prefixes), names(names), valueTypeCast(valueTypeCast) {
             // Intentionally left empty.
         }
         
-        std::string const& ToCppTranslationOptions::getPrefix() const {
-            return prefix;
+        std::unordered_map<storm::expressions::Variable, std::string> const& ToCppTranslationOptions::getPrefixes() const {
+            return prefixes;
         }
         
-        void ToCppTranslationOptions::setSpecificPrefixes(std::unordered_map<storm::expressions::Variable, std::string> const& prefixes) {
-            specificPrefixes = prefixes;
-        }
-        
-        std::unordered_map<storm::expressions::Variable, std::string> const& ToCppTranslationOptions::getSpecificPrefixes() const {
-            return specificPrefixes;
-        }
-        
-        void ToCppTranslationOptions::clearSpecificPrefixes() {
-            specificPrefixes.clear();
+        std::unordered_map<storm::expressions::Variable, std::string> const& ToCppTranslationOptions::getNames() const {
+            return names;
         }
         
         bool ToCppTranslationOptions::hasValueTypeCast() const {
@@ -213,11 +205,21 @@ namespace storm {
                 stream << "static_cast<" << options.getValueTypeCast() << ">(";
             }
             
-            auto prefixIt = options.getSpecificPrefixes().find(expression.getVariable());
-            if (prefixIt != options.getSpecificPrefixes().end()) {
-                stream << prefixIt->second << expression.getVariableName();
+            auto prefixIt = options.getPrefixes().find(expression.getVariable());
+            if (prefixIt != options.getPrefixes().end()) {
+                auto nameIt = options.getNames().find(expression.getVariable());
+                if (nameIt != options.getNames().end()) {
+                    stream << prefixIt->second << nameIt->second;
+                } else {
+                    stream << prefixIt->second << expression.getVariableName();
+                }
             } else {
-                stream << options.getPrefix() << expression.getVariableName();
+                auto nameIt = options.getNames().find(expression.getVariable());
+                if (nameIt != options.getNames().end()) {
+                    stream << nameIt->second;
+                } else {
+                    stream << expression.getVariableName();
+                }
             }
             
             if (options.hasValueTypeCast()) {

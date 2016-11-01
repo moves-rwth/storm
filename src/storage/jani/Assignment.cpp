@@ -11,8 +11,7 @@ namespace storm  {
         }
         
         bool Assignment::operator==(Assignment const& other) const {
-            // FIXME: the level is currently ignored as we do not support it 
-            return this->isTransient() == other.isTransient() && this->getExpressionVariable() == other.getExpressionVariable() && this->getAssignedExpression().isSyntacticallyEqual(other.getAssignedExpression());
+            return this->isTransient() == other.isTransient() && this->getExpressionVariable() == other.getExpressionVariable() && this->getAssignedExpression().isSyntacticallyEqual(other.getAssignedExpression()) && this->getLevel() == other.getLevel();
         }
         
         storm::jani::Variable const& Assignment::getVariable() const {

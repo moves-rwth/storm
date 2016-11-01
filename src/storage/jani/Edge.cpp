@@ -146,5 +146,14 @@ namespace storm {
             }
             return false;
         }
+        
+        bool Edge::usesAssignmentLevels() const {
+            for (auto const& destination : this->getDestinations()) {
+                if (destination.usesAssignmentLevels()) {
+                    return true;
+                }
+            }
+            return false;
+        }
     }
 }
