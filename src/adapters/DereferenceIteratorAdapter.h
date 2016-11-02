@@ -42,11 +42,11 @@ namespace storm {
             }
             
             decltype((*std::declval<value_type>())) front() const {
-                return *it;
+                return **it;
             }
 
             decltype((*std::declval<value_type>())) back() const {
-                return *(ite - 1);
+                return **(ite - 1);
             }
             
             std::size_t size() const {

@@ -64,8 +64,8 @@ namespace storm {
                 if (rewardVariables.empty() && !this->options.getRewardModelNames().empty()) {
                     bool foundTransientVariable = false;
                     for (auto const& transientVariable : globalVariables.getTransientVariables()) {
-                        if (transientVariable->isUnboundedIntegerVariable() || transientVariable->isRealVariable()) {
-                            rewardVariables.push_back(transientVariable->getExpressionVariable());
+                        if (transientVariable.isUnboundedIntegerVariable() || transientVariable.isRealVariable()) {
+                            rewardVariables.push_back(transientVariable.getExpressionVariable());
                             foundTransientVariable = true;
                             break;
                         }
@@ -632,9 +632,9 @@ namespace storm {
             // create a list of boolean transient variables and the expressions that define them.
             std::unordered_map<storm::expressions::Variable, storm::expressions::Expression> transientVariableToExpressionMap;
             for (auto const& variable : model.getGlobalVariables().getTransientVariables()) {
-                if (variable->isBooleanVariable()) {
-                    if (this->options.isBuildAllLabelsSet() || this->options.getLabelNames().find(variable->getName()) != this->options.getLabelNames().end()) {
-                        transientVariableToExpressionMap[variable->getExpressionVariable()] = model.getLabelExpression(variable->asBooleanVariable(), locationVariables);
+                if (variable.isBooleanVariable()) {
+                    if (this->options.isBuildAllLabelsSet() || this->options.getLabelNames().find(variable.getName()) != this->options.getLabelNames().end()) {
+                        transientVariableToExpressionMap[variable.getExpressionVariable()] = model.getLabelExpression(variable.asBooleanVariable(), locationVariables);
                     }
                 }
             }
