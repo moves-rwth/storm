@@ -486,6 +486,8 @@ namespace storm {
                                 currentTargetStates = newTargetStates;
                                 newTargetStates = new boost::container::flat_map<CompressedState, ValueType>();
                             }
+                            
+                            ++locationVariableIt;
                         }
                         
                         // At this point, we applied all commands of the current command combination and newTargetStates
@@ -541,7 +543,6 @@ namespace storm {
             // Iterate over all automata.
             uint64_t automatonIndex = 0;
             for (auto const& automaton : model.getAutomata()) {
-                
                 // If the automaton has no edge labeled with the given action, we can skip it.
                 if (!automaton.hasEdgeLabeledWithActionIndex(actionIndex)) {
                     continue;
