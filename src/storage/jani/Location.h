@@ -10,7 +10,7 @@ namespace storm {
         /**
          * Jani Location:
          * 
-         * Whereas Jani Locations also support invariants, we do not have support for them (as we do not support any of the allowed model types)
+         * Whereas Jani Locations also support invariants, we do not have support for them (as we do not support any of the allowed model types).
          */
         class Location {
         public:

@@ -39,7 +39,7 @@ namespace storm {
             template <typename ValueType, typename RewardModelType>
             ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::ExplicitJitJaniModelBuilder(storm::jani::Model const& model, storm::builder::BuilderOptions const& options) : options(options), model(model), modelComponentsBuilder(model.getModelType()) {
                 for (auto const& variable : this->model.getGlobalVariables().getTransientVariables()) {
-                    transientVariables.insert(variable->getExpressionVariable());
+                    transientVariables.insert(variable.getExpressionVariable());
                 }
                 
                 for (auto& automaton : this->model.getAutomata()) {
@@ -235,17 +235,23 @@ namespace storm {
                                 return {$discrete_time_model};
                             }
 
+                            // Non-synchronizing edges.
                             {% for edge in nonsynch_edges %}static bool edge_enabled_{$edge.name}(StateType const& in) {
                                 if ({$edge.guard}) {
                                     return true;
                                 }
                                 return false;
                             }
+
+                            static void edge_perform_{$edge.name}(StateType const& in, TransientVariables const& transientIn, TransientVariables& transientOut) {
+                                {% for assignment in edge.transient_assignments %}transientOut.{$assignment.variable} = {$assignment.value};
+                                {% endfor %}
+                            }
                             
                             {% for destination in edge.destinations %}
                             static void destination_perform_level_{$edge.name}_{$destination.name}(int_fast64_t level, StateType const& in, StateType& out) {
                                 {% for level in destination.levels %}if (level == {$level.index}) {
-                                    {% for assignment in level.nonTransientAssignments %}out.{$assignment.variable} = {$assignment.value};
+                                    {% for assignment in level.non_transient_assignments %}out.{$assignment.variable} = {$assignment.value};
                                     {% endfor %}
                                 }
                                 {% endfor %}
@@ -259,9 +265,9 @@ namespace storm {
 
                             static void destination_perform_level_{$edge.name}_{$destination.name}(int_fast64_t level, StateType const& in, StateType& out, TransientVariables const& transientIn, TransientVariables& transientOut) {
                                 {% for level in destination.levels %}if (level == {$level.index}) {
-                                    {% for assignment in level.nonTransientAssignments %}out.{$assignment.variable} = {$assignment.value};
+                                    {% for assignment in level.non_transient_assignments %}out.{$assignment.variable} = {$assignment.value};
                                     {% endfor %}
-                                    {% for assignment in level.transientAssignments %}transientOut.{$assignment.variable} = {$assignment.value};
+                                    {% for assignment in level.transient_assignments %}transientOut.{$assignment.variable} = {$assignment.value};
                                     {% endfor %}
                                 }
                                 {% endfor %}
@@ -272,9 +278,9 @@ namespace storm {
                                 destination_perform_level_{$edge.name}_{$destination.name}({$level.index}, in, out, transientIn, transientOut);
                                 {% endfor %}
                             }
-                            {% endfor %}
-                            {% endfor %}
+                            {% endfor %}{% endfor %}
 
+                            // Synchronizing edges.
                             {% for edge in synch_edges %}static bool edge_enabled_{$edge.name}(StateType const& in) {
                                 if ({$edge.guard}) {
                                     return true;
@@ -282,10 +288,15 @@ namespace storm {
                                 return false;
                             }
                             
+                            static void edge_perform_{$edge.name}(StateType const& in, TransientVariables const& transientIn, TransientVariables& transientOut) {
+                                {% for assignment in edge.transient_assignments %}transientOut.{$assignment.variable} = {$assignment.value};
+                                {% endfor %}
+                            }
+                            
                             {% for destination in edge.destinations %}
                             static void destination_perform_level_{$edge.name}_{$destination.name}(int_fast64_t level, StateType const& in, StateType& out) {
                                 {% for level in destination.levels %}if (level == {$level.index}) {
-                                    {% for assignment in level.nonTransientAssignments %}out.{$assignment.variable} = {$assignment.value};
+                                    {% for assignment in level.non_transient_assignments %}out.{$assignment.variable} = {$assignment.value};
                                     {% endfor %}
                                 }
                                 {% endfor %}
@@ -299,9 +310,9 @@ namespace storm {
                             
                             static void destination_perform_level_{$edge.name}_{$destination.name}(int_fast64_t level, StateType const& in, StateType& out, TransientVariables const& transientIn, TransientVariables& transientOut) {
                                 {% for level in destination.levels %}if (level == {$level.index}) {
-                                    {% for assignment in level.nonTransientAssignments %}out.{$assignment.variable} = {$assignment.value};
+                                    {% for assignment in level.non_transient_assignments %}out.{$assignment.variable} = {$assignment.value};
                                     {% endfor %}
-                                    {% for assignment in level.transientAssignments %}transientOut.{$assignment.variable} = {$assignment.value};
+                                    {% for assignment in level.transient_assignments %}transientOut.{$assignment.variable} = {$assignment.value};
                                     {% endfor %}
                                 }
                                 {% endfor %}
@@ -312,9 +323,7 @@ namespace storm {
                                 destination_perform_level_{$edge.name}_{$destination.name}({$level.index}, in, out, transientIn, transientOut);
                                 {% endfor %}
                             }
-                            {% endfor %}
-                            {% endfor %}
-
+                            {% endfor %}{% endfor %}
                             
                             typedef void (*DestinationLevelFunctionPtr)(int_fast64_t, StateType const&, StateType&, TransientVariables const&, TransientVariables&);
                             typedef void (*DestinationFunctionPtr)(StateType const&, StateType&, TransientVariables const&, TransientVariables&);
@@ -370,6 +379,7 @@ namespace storm {
                             };
 
                             typedef bool (*EdgeEnabledFunctionPtr)(StateType const&);
+                            typedef void (*EdgeTransientFunctionPtr)(StateType const&, TransientVariables const& transientIn, TransientVariables& out);
                             
                             class Edge {
                             public:
@@ -379,7 +389,7 @@ namespace storm {
                                     // Intentionally left empty.
                                 }
                                 
-                                Edge(EdgeEnabledFunctionPtr edgeEnabledFunction) : edgeEnabledFunction(edgeEnabledFunction) {
+                                Edge(EdgeEnabledFunctionPtr edgeEnabledFunction, EdgeTransientFunctionPtr edgeTransientFunction = nullptr) : edgeEnabledFunction(edgeEnabledFunction), edgeTransientFunction(edgeTransientFunction) {
                                     // Intentionally left empty.
                                 }
                                 
@@ -407,10 +417,22 @@ namespace storm {
                                     return destinations.end();
                                 }
                                 
+                                void perform(StateType const& in, TransientVariables const& transientIn, TransientVariables& transientOut) const {
+                                    edgeTransientFunction(in, transientIn, transientOut);
+                                }
+                                
                             private:
                                 EdgeEnabledFunctionPtr edgeEnabledFunction;
+                                EdgeTransientFunctionPtr edgeTransientFunction;
                                 ContainerType destinations;
                             };
+                            
+                            void locations_perform(StateType const& in, TransientVariables const& transientIn, TransientVariables& out) {
+                                {% for location in locations %}if ({$location.guard}) {
+                                    {% for assignment in location.assignments %}transientOut.{$assignment.variable} = {$assignment.value};{% endfor %}
+                                }
+                                {% endfor %}
+                            }
 
                             class JitBuilder : public JitModelBuilderInterface<IndexType, ValueType> {
                             public:
@@ -422,13 +444,13 @@ namespace storm {
                                         initialStates.push_back(state);
                                     }{% endfor %}
                                     {% for edge in nonsynch_edges %}{
-                                        edge_{$edge.name} = Edge(&edge_enabled_{$edge.name});
+                                        edge_{$edge.name} = Edge(&edge_enabled_{$edge.name}{% if edge.transient_assignments %}, edge_perform_{$edge.name}{% endif %});
                                         {% for destination in edge.destinations %}edge_{$edge.name}.addDestination({$destination.lowestLevel}, {$destination.highestLevel}, {$destination.value}, &destination_perform_level_{$edge.name}_{$destination.name}, &destination_perform_{$edge.name}_{$destination.name}, &destination_perform_level_{$edge.name}_{$destination.name}, &destination_perform_{$edge.name}_{$destination.name});
                                         {% endfor %}
                                     }
                                     {% endfor %}
                                     {% for edge in synch_edges %}{
-                                        edge_{$edge.name} = Edge(&edge_enabled_{$edge.name});
+                                        edge_{$edge.name} = Edge(&edge_enabled_{$edge.name}{% if edge.transient_assignments %}, edge_perform_{$edge.name}{% endif %});
                                         {% for destination in edge.destinations %}edge_{$edge.name}.addDestination({$destination.lowestLevel}, {$destination.highestLevel}, {$destination.value}, &destination_perform_level_{$edge.name}_{$destination.name}, &destination_perform_{$edge.name}_{$destination.name}, &destination_perform_level_{$edge.name}_{$destination.name}, &destination_perform_{$edge.name}_{$destination.name});
                                         {% endfor %}
                                     }
@@ -496,7 +518,16 @@ namespace storm {
 #endif
                                         
                                             behaviour.setExpanded();
+                                            
+                                            // Perform transient location assignments.
+                                            TransientVariables transientIn;
+                                            TransientVariables transientOut;
+                                            locations_perform(currentState, transientIn, transientOut);
+                                            
+                                            // Explore all edges that do not take part in synchronization vectors.
                                             exploreNonSynchronizingEdges(currentState, behaviour, statesToExplore);
+                                            
+                                            // Explore all edges that participate in synchronization vectors.
                                             exploreSynchronizingEdges(currentState, behaviour, statesToExplore);
                                         }
                                             
@@ -516,14 +547,15 @@ namespace storm {
                                 void exploreNonSynchronizingEdges(StateType const& in, StateBehaviour<IndexType, ValueType>& behaviour, StateSet<StateType>& statesToExplore) {
                                     {% for edge in nonsynch_edges %}{
                                         if ({$edge.guard}) {
-                                            {% if edge.referenced_transient_variables %}
                                             TransientVariables transientIn;
                                             TransientVariables transientOut;
+                                            {% if edge.transient_assignments %}
+                                            edge_perform_{$edge.name}(in, transientIn, transientOut);
                                             {% endif %}
                                             Choice<IndexType, ValueType>& choice = behaviour.addChoice();
                                             {% for destination in edge.destinations %}{
                                                 StateType out(in);
-                                                destination_perform_{$edge.name}_{$destination.name}(in, out{% if edge.referenced_transient_variables %}, transientIn, transientOut{% endif %});
+                                                destination_perform_{$edge.name}_{$destination.name}(in, out{% if edge.transient_variables_in_destinations %}, transientIn, transientOut{% endif %});
                                                 IndexType outStateIndex = getOrAddIndex(out, statesToExplore);
                                                 choice.add(outStateIndex, {$destination.value});
                                             }
@@ -601,6 +633,8 @@ namespace storm {
                 cpptempl::data_list initialStates = generateInitialStates();
                 modelData["initialStates"] = cpptempl::make_data(initialStates);
                 generateEdges(modelData);
+                generateLocations(modelData);
+                generateRewards(modelData);
                 cpptempl::data_list labels = generateLabels();
                 modelData["labels"] = cpptempl::make_data(labels);
                 cpptempl::data_list terminalExpressions = generateTerminalExpressions();
@@ -880,17 +914,76 @@ namespace storm {
             }
             
             template <typename ValueType, typename RewardModelType>
+            void ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateLocations(cpptempl::data_map& modelData) {
+                cpptempl::data_list locations;
+
+                for (auto const& automaton : this->model.getAutomata()) {
+                    cpptempl::data_map locationData;
+                    uint64_t locationIndex = 0;
+                    for (auto const& location : automaton.getLocations()) {
+                        cpptempl::data_list assignments;
+                        for (auto const& assignment : location.getAssignments()) {
+                            assignments.push_back(generateAssignment(assignment));
+                        }
+                        locationData["assignments"] = cpptempl::make_data(assignments);
+                        locationData["guard"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(getLocationVariable(automaton) == this->model.getManager().integer(locationIndex)), storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName));
+                        ++locationIndex;
+                    }
+                    if (!locationData["assignments"]->empty()) {
+                        locations.push_back(locationData);
+                    }
+                }
+                    
+                modelData["locations"] = cpptempl::make_data(locations);
+            }
+                
+            template <typename ValueType, typename RewardModelType>
+            void ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateRewards(cpptempl::data_map& modelData) {
+                cpptempl::data_list rewards;
+                
+                // Extract the reward models from the program based on the names we were given.
+                std::vector<std::reference_wrapper<storm::jani::Variable const>> rewardVariables;
+                auto const& globalVariables = model.getGlobalVariables();
+                for (auto const& rewardModelName : this->options.getRewardModelNames()) {
+                    if (globalVariables.hasVariable(rewardModelName)) {
+                        rewardVariables.push_back(globalVariables.getVariable(rewardModelName));
+                    } else {
+                        STORM_LOG_THROW(rewardModelName.empty(), storm::exceptions::InvalidArgumentException, "Cannot build unknown reward model '" << rewardModelName << "'.");
+                        STORM_LOG_THROW(globalVariables.getNumberOfRealTransientVariables() + globalVariables.getNumberOfUnboundedIntegerTransientVariables() == 1, storm::exceptions::InvalidArgumentException, "Reference to standard reward model is ambiguous.");
+                    }
+                }
+                
+                // If no reward model was yet added, but there was one that was given in the options, we try to build the
+                // standard reward model.
+                if (rewardVariables.empty() && !this->options.getRewardModelNames().empty()) {
+                    bool foundTransientVariable = false;
+                    for (auto const& transientVariable : globalVariables.getTransientVariables()) {
+                        if (transientVariable.isUnboundedIntegerVariable() || transientVariable.isRealVariable()) {
+                            rewardVariables.push_back(transientVariable);
+                            foundTransientVariable = true;
+                            break;
+                        }
+                    }
+                    STORM_LOG_ASSERT(foundTransientVariable, "Expected to find a fitting transient variable.");
+                }
+                
+                
+                
+                modelData["rewards"] = cpptempl::make_data(rewards);
+            }
+                
+            template <typename ValueType, typename RewardModelType>
             cpptempl::data_list ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateLabels() {
                 cpptempl::data_list labels;
                 
                 // As in JANI we can use transient boolean variable assignments in locations to identify states, we need to
                 // create a list of boolean transient variables and the expressions that define them.
                 for (auto const& variable : model.getGlobalVariables().getTransientVariables()) {
-                    if (variable->isBooleanVariable()) {
-                        if (this->options.isBuildAllLabelsSet() || this->options.getLabelNames().find(variable->getName()) != this->options.getLabelNames().end()) {
+                    if (variable.isBooleanVariable()) {
+                        if (this->options.isBuildAllLabelsSet() || this->options.getLabelNames().find(variable.getName()) != this->options.getLabelNames().end()) {
                             cpptempl::data_map label;
-                            label["name"] = variable->getName();
-                            label["predicate"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(model.getLabelExpression(variable->asBooleanVariable(), automatonToLocationVariable)), storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName));
+                            label["name"] = variable.getName();
+                            label["predicate"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(model.getLabelExpression(variable.asBooleanVariable(), automatonToLocationVariable)), storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName));
                             labels.push_back(label);
                         }
                     }
@@ -1236,20 +1329,33 @@ namespace storm {
             cpptempl::data_map ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateEdge(storm::jani::Automaton const& automaton, uint64_t edgeIndex, storm::jani::Edge const& edge) {
                 cpptempl::data_map edgeData;
                 
+                std::set<storm::expressions::Variable> transientVariablesInEdge;
+                cpptempl::data_list edgeAssignments;
+                for (auto const& assignment : edge.getAssignments()) {
+                    transientVariablesInEdge.insert(assignment.getExpressionVariable());
+                    std::set<storm::expressions::Variable> usedVariables = assignment.getAssignedExpression().getVariables();
+                    for (auto const& variable : usedVariables) {
+                        if (transientVariables.find(variable) != transientVariables.end()) {
+                            transientVariablesInEdge.insert(variable);
+                        }
+                    }
+                    edgeAssignments.push_back(generateAssignment(assignment));
+                }
+                
                 cpptempl::data_list destinations;
                 uint64_t destinationIndex = 0;
-                std::set<storm::expressions::Variable> referencedTransientVariables;
+                std::set<storm::expressions::Variable> transientVariablesInDestinations;
                 for (auto const& destination : edge.getDestinations()) {
                     destinations.push_back(generateDestination(destinationIndex, destination));
                     
                     for (auto const& assignment : destination.getOrderedAssignments().getAllAssignments()) {
                         if (assignment.isTransient()) {
-                            referencedTransientVariables.insert(assignment.getExpressionVariable());
+                            transientVariablesInDestinations.insert(assignment.getExpressionVariable());
                         }
                         std::set<storm::expressions::Variable> usedVariables = assignment.getAssignedExpression().getVariables();
                         for (auto const& variable : usedVariables) {
                             if (transientVariables.find(variable) != transientVariables.end()) {
-                                referencedTransientVariables.insert(variable);
+                                transientVariablesInDestinations.insert(variable);
                             }
                         }
                     }
@@ -1260,12 +1366,18 @@ namespace storm {
                 edgeData["guard"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(edge.getGuard()), storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName));
                 edgeData["destinations"] = cpptempl::make_data(destinations);
                 edgeData["name"] = automaton.getName() + "_" + std::to_string(edgeIndex);
+                edgeData["transient_assignments"] = cpptempl::make_data(edgeAssignments);
 
-                cpptempl::data_list referencedTransientVariableData;
-                for (auto const& variable : referencedTransientVariables) {
-                    referencedTransientVariableData.push_back(getVariableName(variable));
+                cpptempl::data_list transientVariablesInDestinationsData;
+                for (auto const& variable : transientVariablesInDestinations) {
+                    transientVariablesInDestinationsData.push_back(getVariableName(variable));
                 }
-                edgeData["referenced_transient_variables"] = cpptempl::make_data(referencedTransientVariableData);
+                edgeData["transient_variables_in_destinations"] = cpptempl::make_data(transientVariablesInDestinationsData);
+                cpptempl::data_list transientVariablesInEdgeData;
+                for (auto const& variable : transientVariablesInEdge) {
+                    transientVariablesInEdgeData.push_back(getVariableName(variable));
+                }
+                edgeData["transient_variables_in_edge"] = cpptempl::make_data(transientVariablesInEdgeData);
                 return edgeData;
             }
             
@@ -1301,8 +1413,8 @@ namespace storm {
                     for (auto const& assignment : assignments) {
                         if (assignment.getLevel() != currentLevel) {
                             cpptempl::data_map level;
-                            level["nonTransientAssignments"] = cpptempl::make_data(nonTransientAssignmentData);
-                            level["transientAssignments"] = cpptempl::make_data(transientAssignmentData);
+                            level["non_transient_assignments"] = cpptempl::make_data(nonTransientAssignmentData);
+                            level["transient_assignments"] = cpptempl::make_data(transientAssignmentData);
                             level["index"] = asString(currentLevel);
                             levels.push_back(level);
                             
@@ -1320,8 +1432,8 @@ namespace storm {
 
                     // Close the last (open) level.
                     cpptempl::data_map level;
-                    level["nonTransientAssignments"] = cpptempl::make_data(nonTransientAssignmentData);
-                    level["transientAssignments"] = cpptempl::make_data(transientAssignmentData);
+                    level["non_transient_assignments"] = cpptempl::make_data(nonTransientAssignmentData);
+                    level["transient_assignments"] = cpptempl::make_data(transientAssignmentData);
                     level["index"] = asString(currentLevel);
                     levels.push_back(level);
                 }

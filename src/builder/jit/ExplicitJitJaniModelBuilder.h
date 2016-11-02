@@ -59,6 +59,9 @@ namespace storm {
                 cpptempl::data_map generateRealVariable(storm::jani::RealVariable const& variable);
                 cpptempl::data_map generateLocationVariable(storm::jani::Automaton const& automaton);
                 void generateVariables(cpptempl::data_map& modelData);
+
+                void generateLocations(cpptempl::data_map& modelData);
+                void generateRewards(cpptempl::data_map& modelData);
                 
                 cpptempl::data_list generateLabels();
                 cpptempl::data_list generateTerminalExpressions();

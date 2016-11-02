@@ -1745,7 +1745,7 @@ namespace storm {
                 // If no reward model was yet added, but there was one that was given in the options, we try to build the
                 // standard reward model.
                 if (result.empty() && !options.getRewardModelNames().empty()) {
-                    result.push_back(globalVariables.getTransientVariables().front()->getExpressionVariable());
+                    result.push_back(globalVariables.getTransientVariables().front().getExpressionVariable());
                 }
             }
             
@@ -1782,9 +1782,9 @@ namespace storm {
             std::map<std::string, storm::expressions::Expression> result;
             
             for (auto const& variable : model.getGlobalVariables().getTransientVariables()) {
-                if (variable->isBooleanVariable()) {
-                    if (options.buildAllLabels || options.labelNames.find(variable->getName()) != options.labelNames.end()) {
-                        result[variable->getName()] = model.getLabelExpression(variable->asBooleanVariable(), variables.automatonToLocationVariableMap);
+                if (variable.isBooleanVariable()) {
+                    if (options.buildAllLabels || options.labelNames.find(variable.getName()) != options.labelNames.end()) {
+                        result[variable.getName()] = model.getLabelExpression(variable.asBooleanVariable(), variables.automatonToLocationVariableMap);
                     }
                 }
             }

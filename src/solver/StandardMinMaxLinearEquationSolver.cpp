@@ -198,8 +198,6 @@ namespace storm {
             return this->getSettings().getRelativeTerminationCriterion();
         }
 
-
-
         template<typename ValueType>
         bool StandardMinMaxLinearEquationSolver<ValueType>::solveEquationsValueIteration(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory->create(A);
@@ -235,7 +233,6 @@ namespace storm {
             
             reportStatus(status, iterations);
             
-            
             // If we performed an odd number of iterations, we need to swap the x and currentX, because the newest result
             // is currently stored in currentX, but x is the output vector.
             if (currentX == auxiliarySolvingVectorMemory.get()) {
@@ -244,21 +241,21 @@ namespace storm {
             
             // If requested, we store the scheduler for retrieval.
             if (this->isTrackSchedulerSet()) {
-                if(iterations==0){ //may happen due to custom termination condition. Then we need to compute x'= A*x+b
+                // Due to a custom termination condition, it may be the case that no iterations are performed. In this
+                // case we need to compute x'= A*x+b once.
+                if (iterations==0) {
                     solver->multiply(x, &b, *auxiliarySolvingMultiplyMemory);
                 }
                 std::vector<storm::storage::sparse::state_type> choices(this->A.getRowGroupCount());
-                // Reduce the multiplyResult and keep track of the choices made
+                // Reduce the multiplyResult and keep track of the choices made.
                 storm::utility::vector::reduceVectorMinOrMax(dir, *auxiliarySolvingMultiplyMemory, x, this->A.getRowGroupIndices(), &choices);
                 this->scheduler = std::make_unique<storm::storage::TotalScheduler>(std::move(choices));
             }
+            
             // If we allocated auxiliary memory, we need to dispose of it now.
             if (allocatedAuxMemory) {
                 this->deallocateAuxMemory(MinMaxLinearEquationSolverOperation::SolveEquations);
             }
-            
-           
-            
 
             if(status == Status::Converged || status == Status::TerminatedEarly) {
                 return true;
