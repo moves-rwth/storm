@@ -1236,7 +1236,7 @@ namespace storm {
                     }
                 }
                 vectorSource << ";" << std::endl;
-                indent(vectorSource, indentLevel + 1) << "choice.add(outStateIndex, probability);";
+                indent(vectorSource, indentLevel + 1) << "choice.add(outStateIndex, probability);" << std::endl;
                 
                 std::stringstream tmp;
                 indent(tmp, indentLevel + 1) << "{% for reward in destination_rewards %}choice.addReward({$reward.index}, probability * transientOut.{$reward.variable});" << std::endl;
@@ -1296,7 +1296,7 @@ namespace storm {
                         indent(vectorSource, indentLevel + 1) << "TransientVariables transientOut;" << std::endl;
                     }
                     indent(vectorSource, indentLevel + 1) << "for (auto const& edge" << index << " : edges[" << index << "]) {" << std::endl;
-                    indent(vectorSource, indentLevel + 2) << "edge" << index << ".perform(in, transientIn, transientOut);" << std::endl;
+                    indent(vectorSource, indentLevel + 2) << "edge" << index << ".get().perform(in, transientIn, transientOut);" << std::endl;
                     if (index + 1 < numberOfActionInputs) {
                         indent(vectorSource, indentLevel + 2) << "performSynchronizedEdges_" << synchronizationVectorIndex << "_" << (index + 1) << "(in, edges, behaviour, statesToExplore, ";
                         for (uint64_t innerIndex = 0; innerIndex <= index; ++innerIndex) {
