@@ -166,11 +166,15 @@ namespace storm {
             storm::utility::solver::SmtSolverFactory factory;
             std::unique_ptr<storm::solver::SmtSolver> solver = factory.create(model.getExpressionManager());
             
-            std::vector<storm::expressions::Expression> rangeExpressions = model.getAllRangeExpressions();
+            std::vector<std::reference_wrapper<storm::jani::Automaton const>> allAutomata;
+            for (auto const& automaton : model.getAutomata()) {
+                allAutomata.push_back(automaton);
+            }
+            std::vector<storm::expressions::Expression> rangeExpressions = model.getAllRangeExpressions(allAutomata);
             for (auto const& expression : rangeExpressions) {
                 solver->add(expression);
             }
-            solver->add(model.getInitialStatesExpression(true));
+            solver->add(model.getInitialStatesExpression(allAutomata));
             
             // Proceed as long as the solver can still enumerate initial states.
             std::vector<StateType> initialStateIndices;
@@ -613,7 +617,7 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
-        RewardModelInformation JaniNextStateGenerator<ValueType, StateType>::getRewardModelInformation(uint64_t const& index) const {
+        storm::builder::RewardModelInformation JaniNextStateGenerator<ValueType, StateType>::getRewardModelInformation(uint64_t const& index) const {
             return rewardModelInformation[index];
         }
         

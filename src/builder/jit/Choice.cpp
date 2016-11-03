@@ -37,6 +37,21 @@ namespace storm {
             }
 
             template <typename IndexType, typename ValueType>
+            void Choice<IndexType, ValueType>::addReward(ValueType const& value) {
+                rewards.push_back(value);
+            }
+            
+            template <typename IndexType, typename ValueType>
+            void Choice<IndexType, ValueType>::addRewards(std::vector<ValueType>&& values) {
+                rewards = std::move(values);
+            }
+            
+            template <typename IndexType, typename ValueType>
+            std::vector<ValueType> const& Choice<IndexType, ValueType>::getRewards() const {
+                return rewards;
+            }
+            
+            template <typename IndexType, typename ValueType>
             void Choice<IndexType, ValueType>::compress() {
                 distribution.compress();
             }

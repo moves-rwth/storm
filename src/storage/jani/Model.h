@@ -289,10 +289,9 @@ namespace storm {
             /*!
              * Retrieves the expression defining the legal initial values of the variables.
              *
-             * @param includeAutomataInitialStatesExpressions If set to true, the expression defines the legal initial
-             * states not only for the global variables but also for the variables of each automaton.
+             * @param automata The resulting expression will also characterize the legal initial states for these automata.
              */
-            storm::expressions::Expression getInitialStatesExpression(bool includeAutomataInitialStatesExpressions = false) const;
+            storm::expressions::Expression getInitialStatesExpression(std::vector<std::reference_wrapper<storm::jani::Automaton const>> const& automata = {}) const;
             
             /*!
              * Determines whether this model is a deterministic one in the sense that each state only has one choice.
@@ -306,8 +305,10 @@ namespace storm {
             
             /*!
              * Retrieves a list of expressions that characterize the legal values of the variables in this model.
+             *
+             * @param automata If provided only range expressions from these automata will be created.
              */
-            std::vector<storm::expressions::Expression> getAllRangeExpressions() const;
+            std::vector<storm::expressions::Expression> getAllRangeExpressions(std::vector<std::reference_wrapper<storm::jani::Automaton const>> const& automata = {}) const;
             
             /*!
              * Retrieves whether this model has the standard composition, that is it composes all automata in parallel

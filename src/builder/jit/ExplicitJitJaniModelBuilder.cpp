@@ -38,15 +38,32 @@ namespace storm {
             
             template <typename ValueType, typename RewardModelType>
             ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::ExplicitJitJaniModelBuilder(storm::jani::Model const& model, storm::builder::BuilderOptions const& options) : options(options), model(model), modelComponentsBuilder(model.getModelType()) {
+                // Register all transient variables as transient.
                 for (auto const& variable : this->model.getGlobalVariables().getTransientVariables()) {
                     transientVariables.insert(variable.getExpressionVariable());
                 }
-                
-                for (auto& automaton : this->model.getAutomata()) {
-                    // FIXME: just for testing purposes.
-                    automaton.pushEdgeAssignmentsToDestinations();
+
+                // Construct vector of the automata to be put in parallel.
+                storm::jani::Composition const& topLevelComposition = model.getSystemComposition();
+                if (topLevelComposition.isAutomatonComposition()) {
+                    parallelAutomata.push_back(model.getAutomaton(topLevelComposition.asAutomatonComposition().getAutomatonName()));
+                } else {
+                    STORM_LOG_ASSERT(topLevelComposition.isParallelComposition(), "Expected parallel composition.");
+                    storm::jani::ParallelComposition const& parallelComposition = topLevelComposition.asParallelComposition();
                     
-                    automatonToLocationVariable.emplace(automaton.getName(), model.getManager().declareFreshIntegerVariable(false, automaton.getName() + "_"));
+                    for (auto const& composition : parallelComposition.getSubcompositions()) {
+                        STORM_LOG_ASSERT(composition->isAutomatonComposition(), "Expected flat parallel composition.");
+                        parallelAutomata.push_back(model.getAutomaton(composition->asAutomatonComposition().getAutomatonName()));
+                    }
+                }
+                
+                // FIXME: just for testing purposes.
+                for (auto& automaton : this->model.getAutomata()) {
+                    automaton.pushEdgeAssignmentsToDestinations();
+                }
+                
+                for (auto const& automaton : parallelAutomata) {
+                    automatonToLocationVariable.emplace(automaton.get().getName(), model.getManager().declareFreshIntegerVariable(false, automaton.get().getName() + "_"));
                 }
                 
                 // If the program still contains undefined constants and we are not in a parametric setting, assemble an appropriate error message.
@@ -656,7 +673,7 @@ namespace storm {
                 for (auto const& expression : rangeExpressions) {
                     solver->add(expression);
                 }
-                solver->add(model.getInitialStatesExpression(true));
+                solver->add(model.getInitialStatesExpression(parallelAutomata));
                 
                 // Proceed as long as the solver can still enumerate initial states.
                 while (solver->check() == storm::solver::SmtSolver::CheckResult::Sat) {
@@ -683,7 +700,8 @@ namespace storm {
                         storm::expressions::Expression localBlockingExpression = expressionVariable != model->getManager().integer(variableValue);
                         blockingExpression = blockingExpression.isInitialized() ? blockingExpression || localBlockingExpression : localBlockingExpression;
                     }
-                    for (auto const& automaton : this->model.getAutomata()) {
+                    for (auto const& automatonRef : parallelAutomata) {
+                        storm::jani::Automaton const& automaton = automatonRef.get();
                         for (auto const& variable : automaton.getVariables().getBooleanVariables()) {
                             storm::expressions::Variable const& expressionVariable = variable.getExpressionVariable();
                             bool variableValue = model->getBooleanValue(expressionVariable);
@@ -704,8 +722,8 @@ namespace storm {
                     
                     // Gather iterators to the initial locations of all the automata.
                     std::vector<std::set<uint64_t>::const_iterator> initialLocationsIterators;
-                    for (auto const& automaton : this->model.getAutomata()) {
-                        initialLocationsIterators.push_back(automaton.getInitialLocationIndices().cbegin());
+                    for (auto const& automaton : parallelAutomata) {
+                        initialLocationsIterators.push_back(automaton.get().getInitialLocationIndices().cbegin());
                     }
                     
                     // Now iterate through all combinations of initial locations.
@@ -713,7 +731,7 @@ namespace storm {
                         cpptempl::data_list completeAssignment(initialStateAssignment);
                         
                         for (uint64_t index = 0; index < initialLocationsIterators.size(); ++index) {
-                            storm::jani::Automaton const& automaton = this->model.getAutomata()[index];
+                            storm::jani::Automaton const& automaton = parallelAutomata[index].get();
                             if (automaton.getNumberOfLocations() > 1) {
                                 completeAssignment.push_back(generateLocationAssignment(automaton, *initialLocationsIterators[index]));
                             }
@@ -723,8 +741,8 @@ namespace storm {
                         uint64_t index = 0;
                         for (; index < initialLocationsIterators.size(); ++index) {
                             ++initialLocationsIterators[index];
-                            if (initialLocationsIterators[index] == this->model.getAutomata()[index].getInitialLocationIndices().cend()) {
-                                initialLocationsIterators[index] = this->model.getAutomata()[index].getInitialLocationIndices().cbegin();
+                            if (initialLocationsIterators[index] == parallelAutomata[index].get().getInitialLocationIndices().cend()) {
+                                initialLocationsIterators[index] = parallelAutomata[index].get().getInitialLocationIndices().cbegin();
                             } else {
                                 break;
                             }
@@ -857,7 +875,8 @@ namespace storm {
                         nonTransientRealVariables.push_back(newRealVariable);
                     }
                 }
-                for (auto const& automaton : model.getAutomata()) {
+                for (auto const& automatonRef : parallelAutomata) {
+                    storm::jani::Automaton const& automaton = automatonRef.get();
                     for (auto const& variable : automaton.getVariables().getBooleanVariables()) {
                         cpptempl::data_map newBooleanVariable = generateBooleanVariable(variable.asBooleanVariable());
                         if (variable.isTransient()) {
@@ -917,7 +936,8 @@ namespace storm {
             void ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateLocations(cpptempl::data_map& modelData) {
                 cpptempl::data_list locations;
 
-                for (auto const& automaton : this->model.getAutomata()) {
+                for (auto const& automatonRef : parallelAutomata) {
+                    storm::jani::Automaton const& automaton = automatonRef.get();
                     cpptempl::data_map locationData;
                     uint64_t locationIndex = 0;
                     for (auto const& location : automaton.getLocations()) {
@@ -1254,14 +1274,8 @@ namespace storm {
                         ++edgeIndex;
                     }
                 } else {
-                    STORM_LOG_ASSERT(topLevelComposition.isParallelComposition(), "Expected parallel composition.");
                     storm::jani::ParallelComposition const& parallelComposition = topLevelComposition.asParallelComposition();
-#ifndef NDEBUG
-                    for (auto const& composition : parallelComposition.getSubcompositions()) {
-                        STORM_LOG_ASSERT(composition->isAutomatonComposition(), "Expected flat parallel composition.");
-                    }
-#endif
-
+                    
                     std::vector<std::set<uint64_t>> synchronizingActions(parallelComposition.getNumberOfSubcompositions());
                     uint64_t synchronizationVectorIndex = 0;
                     for (auto const& synchronizationVector : parallelComposition.getSynchronizationVectors()) {

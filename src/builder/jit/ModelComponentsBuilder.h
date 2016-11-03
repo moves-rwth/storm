@@ -27,6 +27,11 @@ namespace storm {
     }
     
     namespace builder {
+        class RewardModelInformation;
+        
+        template<typename ValueType>
+        class RewardModelBuilder;
+        
         namespace jit {
             
             template <typename IndexType, typename ValueType>
@@ -38,6 +43,8 @@ namespace storm {
                 void addStateBehaviour(IndexType const& stateIndex, StateBehaviour<IndexType, ValueType>& behaviour);
 
                 storm::models::sparse::Model<ValueType, storm::models::sparse::StandardRewardModel<ValueType>>* build(IndexType const& stateCount);
+                
+                void registerRewardModel(RewardModelInformation const& rewardModelInformation);
                 
                 void registerLabel(std::string const& name, IndexType const& stateCount);
                 void addLabel(IndexType const& stateId, IndexType const& labelIndex);
@@ -51,6 +58,7 @@ namespace storm {
                 IndexType currentRowGroup;
                 IndexType currentRow;
                 std::unique_ptr<storm::storage::SparseMatrixBuilder<ValueType>> transitionMatrixBuilder;
+                std::vector<storm::builder::RewardModelBuilder<ValueType>> rewardModelBuilders;
                 std::vector<std::pair<std::string, storm::storage::BitVector>> labels;
             };
             

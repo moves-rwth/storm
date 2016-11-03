@@ -578,9 +578,9 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
-        RewardModelInformation PrismNextStateGenerator<ValueType, StateType>::getRewardModelInformation(uint64_t const& index) const {
+        storm::builder::RewardModelInformation PrismNextStateGenerator<ValueType, StateType>::getRewardModelInformation(uint64_t const& index) const {
             storm::prism::RewardModel const& rewardModel = rewardModels[index].get();
-            return RewardModelInformation(rewardModel.getName(), rewardModel.hasStateRewards(), rewardModel.hasStateActionRewards(), rewardModel.hasTransitionRewards());
+            return storm::builder::RewardModelInformation(rewardModel.getName(), rewardModel.hasStateRewards(), rewardModel.hasStateActionRewards(), rewardModel.hasTransitionRewards());
         }
                 
         template class PrismNextStateGenerator<double>;

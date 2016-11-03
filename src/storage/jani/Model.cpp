@@ -396,7 +396,7 @@ namespace storm {
             return initialStatesRestriction;
         }
         
-        storm::expressions::Expression Model::getInitialStatesExpression(bool includeAutomataInitialStatesExpressions) const {
+        storm::expressions::Expression Model::getInitialStatesExpression(std::vector<std::reference_wrapper<storm::jani::Automaton const>> const& automata) const {
             // Start with the restriction of variables.
             storm::expressions::Expression result = initialStatesRestriction;
             
@@ -412,13 +412,12 @@ namespace storm {
             }
             
             // If we are to include the expressions for the automata, do so now.
-            if (includeAutomataInitialStatesExpressions) {
-                for (auto const& automaton : automata) {
-                    if (!automaton.getVariables().empty()) {
-                        storm::expressions::Expression automatonInitialStatesExpression = automaton.getInitialStatesExpression();
-                        if (automatonInitialStatesExpression.isInitialized() && !automatonInitialStatesExpression.isTrue()) {
-                            result = result && automatonInitialStatesExpression;
-                        }
+            for (auto const& automatonReference : automata) {
+                storm::jani::Automaton const& automaton = automatonReference.get();
+                if (!automaton.getVariables().empty()) {
+                    storm::expressions::Expression automatonInitialStatesExpression = automaton.getInitialStatesExpression();
+                    if (automatonInitialStatesExpression.isInitialized() && !automatonInitialStatesExpression.isTrue()) {
+                        result = result && automatonInitialStatesExpression;
                     }
                 }
             }
@@ -433,15 +432,22 @@ namespace storm {
             return this->getModelType() == ModelType::DTMC || this->getModelType() == ModelType::MDP;
         }
         
-        std::vector<storm::expressions::Expression> Model::getAllRangeExpressions() const {
+        std::vector<storm::expressions::Expression> Model::getAllRangeExpressions(std::vector<std::reference_wrapper<storm::jani::Automaton const>> const& automata) const {
             std::vector<storm::expressions::Expression> result;
             for (auto const& variable : this->getGlobalVariables().getBoundedIntegerVariables()) {
                 result.push_back(variable.getRangeExpression());
             }
             
-            for (auto const& automaton : automata) {
-                std::vector<storm::expressions::Expression> automatonRangeExpressions = automaton.getAllRangeExpressions();
-                result.insert(result.end(), automatonRangeExpressions.begin(), automatonRangeExpressions.end());
+            if (automata.empty()) {
+                for (auto const& automaton : this->getAutomata()) {
+                    std::vector<storm::expressions::Expression> automatonRangeExpressions = automaton.getAllRangeExpressions();
+                    result.insert(result.end(), automatonRangeExpressions.begin(), automatonRangeExpressions.end());
+                }
+            } else {
+                for (auto const& automaton : automata) {
+                    std::vector<storm::expressions::Expression> automatonRangeExpressions = automaton.get().getAllRangeExpressions();
+                    result.insert(result.end(), automatonRangeExpressions.begin(), automatonRangeExpressions.end());
+                }
             }
             return result;
         }

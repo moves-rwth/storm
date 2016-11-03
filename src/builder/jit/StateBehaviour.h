@@ -16,11 +16,24 @@ namespace storm {
                 
                 void addChoice(Choice<IndexType, ValueType>&& choice);
                 Choice<IndexType, ValueType>& addChoice();
-                
                 ContainerType const& getChoices() const;
                 
+                /*!
+                 * Adds the given state reward to the behavior of the state.
+                 */
+                void addStateReward(ValueType const& stateReward);
+                
+                /*!
+                 * Adds the given state rewards to the behavior of the state.
+                 */
+                void addStateRewards(std::vector<ValueType>&& stateRewards);
+                
+                /*!
+                 * Retrieves the rewards for this state.
+                 */
+                std::vector<ValueType> const& getStateRewards() const;
+                
                 void reduce(storm::jani::ModelType const& modelType);
-                void compress();
                 
                 bool isExpanded() const;
                 void setExpanded();
@@ -31,6 +44,10 @@ namespace storm {
                 
             private:
                 ContainerType choices;
+                
+                // The state rewards (under the different, selected reward models) of the state.
+                std::vector<ValueType> stateRewards;
+                
                 bool compressed;
                 bool expanded;
             };

@@ -264,7 +264,6 @@ namespace storm {
             boost::any Z3ExpressionAdapter::visit(storm::expressions::VariableExpression const& expression, boost::any const& data)  {
                 return this->translateExpression(expression.getVariable());
             }
-                        
 
             z3::expr Z3ExpressionAdapter::createVariable(storm::expressions::Variable const& variable) {
                 z3::expr z3Variable(context);

@@ -1660,7 +1660,11 @@ namespace storm {
         
         template <storm::dd::DdType Type, typename ValueType>
         storm::dd::Bdd<Type> computeInitialStates(storm::jani::Model const& model, CompositionVariables<Type, ValueType> const& variables) {
-            storm::dd::Bdd<Type> initialStates = variables.rowExpressionAdapter->translateExpression(model.getInitialStatesExpression(true)).toBdd();
+            std::vector<std::reference_wrapper<storm::jani::Automaton const>> allAutomata;
+            for (auto const& automaton : model.getAutomata()) {
+                allAutomata.push_back(automaton);
+            }
+            storm::dd::Bdd<Type> initialStates = variables.rowExpressionAdapter->translateExpression(model.getInitialStatesExpression(allAutomata)).toBdd();
             for (auto const& automaton : model.getAutomata()) {
                 storm::dd::Bdd<Type> initialLocationIndices = variables.manager->getBddZero();
                 for (auto const& locationIndex : automaton.getInitialLocationIndices()) {

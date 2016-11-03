@@ -7,14 +7,13 @@ namespace storm {
         namespace jit {
             
             template <typename IndexType, typename ValueType>
-            StateBehaviour<IndexType, ValueType>::StateBehaviour() : compressed(true), expanded(false) {
+            StateBehaviour<IndexType, ValueType>::StateBehaviour() : expanded(false) {
                 // Intentionally left empty.
             }
             
             template <typename IndexType, typename ValueType>
             void StateBehaviour<IndexType, ValueType>::addChoice(Choice<IndexType, ValueType>&& choice) {
                 choices.emplace_back(std::move(choice));
-                
             }
             
             template <typename IndexType, typename ValueType>
@@ -27,7 +26,22 @@ namespace storm {
             typename StateBehaviour<IndexType, ValueType>::ContainerType const& StateBehaviour<IndexType, ValueType>::getChoices() const {
                 return choices;
             }
+            
+            template <typename IndexType, typename ValueType>
+            void StateBehaviour<IndexType, ValueType>::addStateReward(ValueType const& stateReward) {
+                stateRewards.push_back(stateReward);
+            }
+            
+            template <typename IndexType, typename ValueType>
+            void StateBehaviour<IndexType, ValueType>::addStateRewards(std::vector<ValueType>&& stateRewards) {
+                this->stateRewards = std::move(stateRewards);
+            }
 
+            template <typename IndexType, typename ValueType>
+            std::vector<ValueType> const& StateBehaviour<IndexType, ValueType>::getStateRewards() const {
+                return stateRewards;
+            }
+            
             template <typename IndexType, typename ValueType>
             void StateBehaviour<IndexType, ValueType>::reduce(storm::jani::ModelType const& modelType) {
                 if (choices.size() > 1) {
@@ -49,16 +63,6 @@ namespace storm {
                     }
                 } else if (choices.size() == 1) {
                     choices.front().compress();
-                }
-            }
-            
-            template <typename IndexType, typename ValueType>
-            void StateBehaviour<IndexType, ValueType>::compress() {
-                if (!compressed) {
-                    for (auto& choice : choices) {
-                        choice.compress();
-                    }
-                    compressed = true;
                 }
             }
             
@@ -86,7 +90,6 @@ namespace storm {
             void StateBehaviour<IndexType, ValueType>::clear() {
                 choices.clear();
                 expanded = false;
-                compressed = true;
             }
             
             template class StateBehaviour<uint32_t, double>;

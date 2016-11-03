@@ -11,6 +11,7 @@
 #include "src/storage/expressions/ExpressionEvaluator.h"
 
 #include "src/builder/BuilderOptions.h"
+#include "src/builder/RewardModelInformation.h"
 
 #include "src/generator/VariableInformation.h"
 #include "src/generator/CompressedState.h"
@@ -27,25 +28,6 @@ namespace storm {
             CTMC,
             MDP,
             MA
-        };
-        
-        class RewardModelInformation {
-        public:
-            RewardModelInformation(std::string const& name, bool stateRewards, bool stateActionRewards, bool transitionRewards);
-            
-            std::string const& getName() const;
-            bool hasStateRewards() const;
-            bool hasStateActionRewards() const;
-            bool hasTransitionRewards() const;
-            
-            void setHasStateRewards();
-            void setHasStateActionRewards();
-            void setHasTransitionRewards();
-        private:
-            std::string name;
-            bool stateRewards;
-            bool stateActionRewards;
-            bool transitionRewards;
         };
         
         template<typename ValueType, typename StateType = uint32_t>
@@ -72,7 +54,7 @@ namespace storm {
             bool satisfies(storm::expressions::Expression const& expression) const;
             
             virtual std::size_t getNumberOfRewardModels() const = 0;
-            virtual RewardModelInformation getRewardModelInformation(uint64_t const& index) const = 0;
+            virtual storm::builder::RewardModelInformation getRewardModelInformation(uint64_t const& index) const = 0;
             
             storm::expressions::SimpleValuation toValuation(CompressedState const& state) const;
             

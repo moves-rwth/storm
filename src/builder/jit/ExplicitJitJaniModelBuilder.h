@@ -91,6 +91,7 @@ namespace storm {
                 
                 storm::builder::BuilderOptions options;
                 storm::jani::Model model;
+                std::vector<std::reference_wrapper<storm::jani::Automaton const>> parallelAutomata;
                 
                 ModelComponentsBuilder<IndexType, ValueType> modelComponentsBuilder;
                 typename ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::ImportFunctionType jitBuilderGetFunction;
