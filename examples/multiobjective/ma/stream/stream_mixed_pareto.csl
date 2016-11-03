@@ -1,2 +1,2 @@
-multi(Pmax=? [ F<=2.5 s=2], R{"numRestarts"}min=? [ F "done"])
+multi(Pmax=? [ F<=2.5 s=2], R{"numrestarts"}min=? [ F "done"])
 // best looking on stream50

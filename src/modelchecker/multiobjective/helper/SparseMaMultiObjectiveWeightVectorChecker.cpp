@@ -8,10 +8,8 @@
 #include "src/transformer/EndComponentEliminator.h"
 #include "src/utility/macros.h"
 #include "src/utility/vector.h"
-#include "src/solver/GmmxxLinearEquationSolver.h"
 
 #include "src/exceptions/InvalidOperationException.h"
-
 
 namespace storm {
     namespace modelchecker {
@@ -60,7 +58,10 @@ namespace storm {
                 
                 // create a linear equation solver for the model induced by the optimal choice vector.
                 // the solver will be updated whenever the optimal choice vector has changed.
+                // We choose Jacobi since we call the solver very frequently on 'easy' inputs (note that jacobi without preconditioning has very little overhead).
                 LinEqSolverData linEq;
+                linEq.factory.getSettings().setSolutionMethod(storm::solver::GmmxxLinearEquationSolverSettings<ValueType>::SolutionMethod::Jacobi);
+                linEq.factory.getSettings().setPreconditioner(storm::solver::GmmxxLinearEquationSolverSettings<ValueType>::Preconditioner::None);
                 linEq.b.resize(PS.getNumberOfStates());
                 
                 // Stores the objectives for which we need to compute values in the current time epoch.
@@ -69,8 +70,6 @@ namespace storm {
                 auto lowerTimeBoundIt = lowerTimeBounds.begin();
                 auto upperTimeBoundIt = upperTimeBounds.begin();
                 uint_fast64_t currentEpoch = std::max(lowerTimeBounds.empty() ? 0 : lowerTimeBoundIt->first, upperTimeBounds.empty() ? 0 : upperTimeBoundIt->first);
-                
-                std::cout << "Checking " << currentEpoch << " epochs for current weight vector" << std::endl;
                 while(true) {
                     // Update the objectives that are considered at the current time epoch as well as the (weighted) reward vectors.
                     updateDataToCurrentEpoch(MS, PS, *minMax, consideredObjectives, currentEpoch, weightVector, lowerTimeBoundIt, lowerTimeBounds, upperTimeBoundIt, upperTimeBounds);
@@ -376,19 +375,11 @@ namespace storm {
                     storm::storage::SparseMatrix<ValueType> linEqMatrix = PS.toPS.selectRowsFromRowGroups(optimalChoicesAtCurrentEpoch, true);
                     linEqMatrix.convertToEquationSystem();
                     linEq.solver = linEq.factory.create(std::move(linEqMatrix));
-                    // For a gmm solver, switch the method to jacobi since this is 'usually' faster.
-                    storm::solver::GmmxxLinearEquationSolver<ValueType>* gmmSolver = dynamic_cast<storm::solver::GmmxxLinearEquationSolver<ValueType>*>(linEq.solver.get());
-                    if(gmmSolver!=nullptr) {
-                        STORM_LOG_INFO("Switching to Jacobi method");
-                        gmmSolver->getSettings().setSolutionMethod(storm::solver::GmmxxLinearEquationSolverSettings<ValueType>::SolutionMethod::Jacobi);
-                        gmmSolver->getSettings().setPreconditioner(storm::solver::GmmxxLinearEquationSolverSettings<ValueType>::Preconditioner::None);
-                    }
                     linEq.solver->allocateAuxMemory(storm::solver::LinearEquationSolverOperation::SolveEquations);
                 }
                 
                 // Get the results for the individual objectives.
                 // Note that we do not consider an estimate for each objective (as done in the unbounded phase) since the results from the previous epoch are already pretty close
-                
                 for(auto objIndex : consideredObjectives) {
                     auto const& objectiveRewardVectorPS = PS.objectiveRewardVectors[objIndex];
                     auto const& objectiveSolutionVectorMS = MS.objectiveSolutionVectors[objIndex];
@@ -405,7 +396,6 @@ namespace storm {
                         ++itGroupIndex;
                         ++itChoiceOffset;
                     }
-                    
                     linEq.solver->solveEquations(PS.objectiveSolutionVectors[objIndex], linEq.b);
                 }
             }

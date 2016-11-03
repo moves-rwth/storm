@@ -6,6 +6,7 @@
 
 #include "src/modelchecker/multiobjective/helper/SparseMultiObjectiveWeightVectorChecker.h"
 #include "src/solver/LinearEquationSolver.h"
+#include "src/solver/GmmxxLinearEquationSolver.h"
 #include "src/solver/MinMaxLinearEquationSolver.h"
 #include "src/utility/NumberTraits.h"
 
@@ -71,7 +72,7 @@ namespace storm {
                 };
                 
                 struct LinEqSolverData {
-                    storm::solver::GeneralLinearEquationSolverFactory<ValueType> factory;
+                    storm::solver::GmmxxLinearEquationSolverFactory<ValueType> factory;
                     std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver;
                     
                     std::vector<ValueType> b;

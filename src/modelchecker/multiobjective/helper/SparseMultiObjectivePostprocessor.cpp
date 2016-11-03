@@ -251,7 +251,7 @@ namespace storm {
                 for(auto const& v : underApproxVertices) {
                     pointsForPlotting.push_back(storm::utility::vector::convertNumericVector<double>(v));
                 }
-                storm::utility::exportDataToCSVFile(storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>().getExportPlotUnderApproximationFileName(), pointsForPlotting, columnHeaders);
+                storm::utility::exportDataToCSVFile(storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>().getExportPlotDirectory() + "underapproximation.csv", pointsForPlotting, columnHeaders);
                                                     
                 pointsForPlotting.clear();
                 overApproxVertices = transformedOverApprox->intersection(boundariesAsPolytope)->getVerticesInClockwiseOrder();
@@ -259,14 +259,14 @@ namespace storm {
                 for(auto const& v : overApproxVertices) {
                     pointsForPlotting.push_back(storm::utility::vector::convertNumericVector<double>(v));
                 }
-                storm::utility::exportDataToCSVFile(storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>().getExportPlotOverApproximationFileName(), pointsForPlotting, columnHeaders);
+                storm::utility::exportDataToCSVFile(storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>().getExportPlotDirectory() + "overapproximation.csv", pointsForPlotting, columnHeaders);
                                                     
                 pointsForPlotting.clear();
                 pointsForPlotting.reserve(paretoPoints.size());
                 for(auto const& v : paretoPoints) {
                     pointsForPlotting.push_back(storm::utility::vector::convertNumericVector<double>(v));
                 }
-                storm::utility::exportDataToCSVFile(storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>().getExportPlotParetoPointsFileName(), pointsForPlotting, columnHeaders);
+                storm::utility::exportDataToCSVFile(storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>().getExportPlotDirectory() + "paretopoints.csv", pointsForPlotting, columnHeaders);
                                                     
                 pointsForPlotting.clear();
                 auto boundVertices = boundariesAsPolytope->getVerticesInClockwiseOrder();
@@ -274,10 +274,8 @@ namespace storm {
                 for(auto const& v : boundVertices) {
                     pointsForPlotting.push_back(storm::utility::vector::convertNumericVector<double>(v));
                 }
-                storm::utility::exportDataToCSVFile(storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>().getExportPlotBoundariesFileName(), pointsForPlotting, columnHeaders);
-                                                    
+                storm::utility::exportDataToCSVFile(storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>().getExportPlotDirectory() + "boundaries.csv", pointsForPlotting, columnHeaders);
             }
-            
             
             template<typename SparseModelType, typename RationalNumberType>
             std::string SparseMultiObjectivePostprocessor<SparseModelType, RationalNumberType>::getInfo(std::unique_ptr<CheckResult> const& checkResult, PreprocessorData const& preprocessorData, ResultData const& resultData, boost::optional<storm::utility::Stopwatch> const& preprocessorStopwatch, boost::optional<storm::utility::Stopwatch> const& helperStopwatch, boost::optional<storm::utility::Stopwatch> const& postprocessorStopwatch) {

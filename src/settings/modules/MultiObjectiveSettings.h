@@ -25,32 +25,14 @@ namespace storm {
 				bool isExportPlotSet() const;
 				
 				/*!
-				 * The path to a file in which vertices of the underapproximation of achievable values should be stored.
-                 * @return A path to a file.
+				 * The path to a directory in which the plot data should be stored.
+                 * @return A path to a directory.
                  */
-				std::string getExportPlotUnderApproximationFileName() const;
-				
-				/*!
-				 * The path to a file in which vertices of the overapproximation of achievable values should be stored.
-                 * @return A path to a file.
-                 */
-				std::string getExportPlotOverApproximationFileName() const;
-				
-				/*!
-				 * The path to a file in which the computed pareto optimal points should be stored.
-                 * @return A path to a file.
-                 */
-				std::string getExportPlotParetoPointsFileName() const;
-				
-				/*!
-				 * The path to a file in which the computed pareto optimal points should be stored.
-                 * @return A path to a file.
-                 */
-				std::string getExportPlotBoundariesFileName() const;
+				std::string getExportPlotDirectory() const;
 				
 				/**
-				 * Retrieves the desired precision for numerical- and pareto queries.
-                 * @return the desired precision for numerical- and pareto queries.
+				 * Retrieves the desired precision for quantitative- and pareto queries.
+                 * @return the desired precision for quantitative- and pareto queries.
 				 */
 				double getPrecision() const;
 				
