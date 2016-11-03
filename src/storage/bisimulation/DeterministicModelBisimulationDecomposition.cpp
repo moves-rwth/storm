@@ -157,7 +157,7 @@ namespace storm {
         }
         
         template<typename ModelType>
-        void DeterministicModelBisimulationDecomposition<ModelType>::refinePredecessorBlocksOfSplitterStrong(std::list<Block<BlockDataType>*> const& predecessorBlocks, std::vector<bisimulation::Block<BlockDataType>*>& splitterVector) {
+        void DeterministicModelBisimulationDecomposition<ModelType>::refinePredecessorBlocksOfSplitterStrong(std::list<Block<BlockDataType>*> const& predecessorBlocks, std::vector<bisimulation::Block<BlockDataType>*>& splitterQueue) {
             for (auto block : predecessorBlocks) {
                 STORM_LOG_TRACE("Refining predecessor " << block->getId() << " of splitter");
 
@@ -176,15 +176,15 @@ namespace storm {
                                                     [this] (storm::storage::sparse::state_type state1, storm::storage::sparse::state_type state2) {
                                                         return this->comparator.isLess(getProbabilityToSplitter(state1), getProbabilityToSplitter(state2));
                                                     },
-                                                    [&splitterVector] (Block<BlockDataType>& block) {
-                                                        splitterVector.emplace_back(&block); block.data().setSplitter();
+                                                    [&splitterQueue] (Block<BlockDataType>& block) {
+                                                        splitterQueue.emplace_back(&block); block.data().setSplitter();
                                                     });
                 
                 
                 // If the predecessor block was split, we need to insert it into the splitter vector if it is not already
                 // marked as a splitter.
                 if (split && !blockToRefineProbabilistically->data().splitter()) {
-                    splitterVector.emplace_back(blockToRefineProbabilistically);
+                    splitterQueue.emplace_back(blockToRefineProbabilistically);
                     blockToRefineProbabilistically->data().setSplitter();
                 }
                 
@@ -378,7 +378,7 @@ namespace storm {
         }
         
         template<typename ModelType>
-        void DeterministicModelBisimulationDecomposition<ModelType>::refinePredecessorBlockOfSplitterWeak(bisimulation::Block<BlockDataType>& block, std::vector<bisimulation::Block<BlockDataType>*>& splitterVector) {
+        void DeterministicModelBisimulationDecomposition<ModelType>::refinePredecessorBlockOfSplitterWeak(bisimulation::Block<BlockDataType>& block, std::vector<bisimulation::Block<BlockDataType>*>& splitterQueue) {
             // First, we need to turn the one-step probabilities to go to the splitter to the conditional probabilities
             // for all non-silent states.
             computeConditionalProbabilitiesForNonSilentStates(block);
@@ -395,12 +395,12 @@ namespace storm {
                                                      [&weakStateLabels,&block,originalBlockIndex,this] (storm::storage::sparse::state_type state1, storm::storage::sparse::state_type state2) {
                                                          return weakStateLabels[this->partition.getPosition(state1) - originalBlockIndex] < weakStateLabels[this->partition.getPosition(state2) - originalBlockIndex];
                                                      },
-                                                     [this, &splitterVector] (bisimulation::Block<BlockDataType>& block) {
+                                                     [this, &splitterQueue] (bisimulation::Block<BlockDataType>& block) {
                                                          updateSilentProbabilitiesBasedOnTransitions(block);
                                                          
                                                          // Insert the new block as a splitter.
                                                          block.data().setSplitter();
-                                                         splitterVector.emplace_back(&block);
+                                                         splitterQueue.emplace_back(&block);
                                                      });
             
             // If the block was split, we also update the silent probabilities.
@@ -410,16 +410,16 @@ namespace storm {
                 if (!block.data().splitter()) {
                     // Insert the new block as a splitter.
                     block.data().setSplitter();
-                    splitterVector.emplace_back(&block);
+                    splitterQueue.emplace_back(&block);
                 }
             }
         }
         
         template<typename ModelType>
-        void DeterministicModelBisimulationDecomposition<ModelType>::refinePredecessorBlocksOfSplitterWeak(bisimulation::Block<BlockDataType>& splitter, std::list<bisimulation::Block<BlockDataType>*> const& predecessorBlocks, std::vector<bisimulation::Block<BlockDataType>*>& splitterVector) {
+        void DeterministicModelBisimulationDecomposition<ModelType>::refinePredecessorBlocksOfSplitterWeak(bisimulation::Block<BlockDataType>& splitter, std::list<bisimulation::Block<BlockDataType>*> const& predecessorBlocks, std::vector<bisimulation::Block<BlockDataType>*>& splitterQueue) {
             for (auto block : predecessorBlocks) {
                 if (*block != splitter) {
-                    refinePredecessorBlockOfSplitterWeak(*block, splitterVector);
+                    refinePredecessorBlockOfSplitterWeak(*block, splitterQueue);
                 } else {
                     // If the block to split is the splitter itself, we must not do any splitting here.
                 }
@@ -439,7 +439,7 @@ namespace storm {
         }
         
         template<typename ModelType>
-        void DeterministicModelBisimulationDecomposition<ModelType>::refinePartitionBasedOnSplitter(bisimulation::Block<BlockDataType>& splitter, std::vector<bisimulation::Block<BlockDataType>*>& splitterVector) {
+        void DeterministicModelBisimulationDecomposition<ModelType>::refinePartitionBasedOnSplitter(bisimulation::Block<BlockDataType>& splitter, std::vector<bisimulation::Block<BlockDataType>*>& splitterQueue) {
             STORM_LOG_TRACE("Refining partition based on splitter " << splitter.getId());
 
             // The outline of the refinement is as follows.
@@ -513,7 +513,7 @@ namespace storm {
             if (this->options.getType() == BisimulationType::Strong || this->model.getType() == storm::models::ModelType::Ctmc) {
                 // In the case of CTMCs and weak bisimulation, we still call the "splitStrong" method, but we already have
                 // taken care of not adding the splitter to the predecessor blocks, so this is safe.
-                refinePredecessorBlocksOfSplitterStrong(predecessorBlocks, splitterVector);
+                refinePredecessorBlocksOfSplitterStrong(predecessorBlocks, splitterQueue);
             } else {
                 // If the splitter is a predecessor of we can use the computed probabilities to update the silent
                 // probabilities.
@@ -521,7 +521,7 @@ namespace storm {
                     updateSilentProbabilitiesBasedOnProbabilitiesToSplitter(splitter);
                 }
                 
-                refinePredecessorBlocksOfSplitterWeak(splitter, predecessorBlocks, splitterVector);
+                refinePredecessorBlocksOfSplitterWeak(splitter, predecessorBlocks, splitterQueue);
             }
         }
         
@@ -651,8 +651,11 @@ namespace storm {
         
         template class DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>>;
         template class DeterministicModelBisimulationDecomposition<storm::models::sparse::Ctmc<double>>;
-        
+
 #ifdef STORM_HAVE_CARL
+        template class DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<storm::RationalNumber>>;
+        template class DeterministicModelBisimulationDecomposition<storm::models::sparse::Ctmc<storm::RationalNumber>>;
+
         template class DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<storm::RationalFunction>>;
         template class DeterministicModelBisimulationDecomposition<storm::models::sparse::Ctmc<storm::RationalFunction>>;
 #endif

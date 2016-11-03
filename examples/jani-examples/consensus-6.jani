@@ -1,0 +1,2129 @@
+﻿{
+	"jani-version": 1,
+	"name": "modelName",
+	"type": "mdp",
+	"actions": [
+		{
+			"name": "done"
+		}
+	],
+	"variables": [
+		{
+			"name": "counter",
+			"type": {
+				"kind": "bounded",
+				"base": "int",
+				"lower-bound": 0,
+				"upper-bound": 60
+			},
+			"initial-value": 30
+		},
+		{
+			"name": "fin1",
+			"type": {
+				"kind": "bounded",
+				"base": "int",
+				"lower-bound": 0,
+				"upper-bound": 1
+			},
+			"initial-value": 0
+		},
+		{
+			"name": "fin2",
+			"type": {
+				"kind": "bounded",
+				"base": "int",
+				"lower-bound": 0,
+				"upper-bound": 1
+			},
+			"initial-value": 0
+		},
+		{
+			"name": "fin3",
+			"type": {
+				"kind": "bounded",
+				"base": "int",
+				"lower-bound": 0,
+				"upper-bound": 1
+			},
+			"initial-value": 0
+		},
+		{
+			"name": "fin4",
+			"type": {
+				"kind": "bounded",
+				"base": "int",
+				"lower-bound": 0,
+				"upper-bound": 1
+			},
+			"initial-value": 0
+		},
+		{
+			"name": "fin5",
+			"type": {
+				"kind": "bounded",
+				"base": "int",
+				"lower-bound": 0,
+				"upper-bound": 1
+			},
+			"initial-value": 0
+		},
+		{
+			"name": "fin6",
+			"type": {
+				"kind": "bounded",
+				"base": "int",
+				"lower-bound": 0,
+				"upper-bound": 1
+			},
+			"initial-value": 0
+		},
+		{
+			"name": "coin1",
+			"type": {
+				"kind": "bounded",
+				"base": "int",
+				"lower-bound": 0,
+				"upper-bound": 1
+			},
+			"initial-value": 0
+		},
+		{
+			"name": "coin2",
+			"type": {
+				"kind": "bounded",
+				"base": "int",
+				"lower-bound": 0,
+				"upper-bound": 1
+			},
+			"initial-value": 0
+		},
+		{
+			"name": "coin3",
+			"type": {
+				"kind": "bounded",
+				"base": "int",
+				"lower-bound": 0,
+				"upper-bound": 1
+			},
+			"initial-value": 0
+		},
+		{
+			"name": "coin4",
+			"type": {
+				"kind": "bounded",
+				"base": "int",
+				"lower-bound": 0,
+				"upper-bound": 1
+			},
+			"initial-value": 0
+		},
+		{
+			"name": "coin5",
+			"type": {
+				"kind": "bounded",
+				"base": "int",
+				"lower-bound": 0,
+				"upper-bound": 1
+			},
+			"initial-value": 0
+		},
+		{
+			"name": "coin6",
+			"type": {
+				"kind": "bounded",
+				"base": "int",
+				"lower-bound": 0,
+				"upper-bound": 1
+			},
+			"initial-value": 0
+		}
+	],
+	"rewards": [
+		{
+			"name": "coin_flips"
+		}
+	],
+	"properties": [
+		{
+			"name": "C1",
+			"bound": 1,
+			"op": "≥",
+			"reach": {
+				"op": "∧",
+				"args": [
+					{
+						"op": "∧",
+						"args": [
+							{
+								"op": "∧",
+								"args": [
+									{
+										"op": "∧",
+										"args": [
+											{
+												"op": "∧",
+												"args": [
+													{
+														"op": "=",
+														"args": [
+															"fin1",
+															1
+														]
+													},
+													{
+														"op": "=",
+														"args": [
+															"fin2",
+															1
+														]
+													}
+												]
+											},
+											{
+												"op": "=",
+												"args": [
+													"fin3",
+													1
+												]
+											}
+										]
+									},
+									{
+										"op": "=",
+										"args": [
+											"fin4",
+											1
+										]
+									}
+								]
+							},
+							{
+								"op": "=",
+								"args": [
+									"fin5",
+									1
+								]
+							}
+						]
+					},
+					{
+						"op": "=",
+						"args": [
+							"fin6",
+							1
+						]
+					}
+				]
+			},
+			"type": "probability-comparison"
+		},
+		{
+			"name": "C2",
+			"reach": {
+				"op": "∧",
+				"args": [
+					{
+						"op": "∧",
+						"args": [
+							{
+								"op": "∧",
+								"args": [
+									{
+										"op": "∧",
+										"args": [
+											{
+												"op": "∧",
+												"args": [
+													{
+														"op": "∧",
+														"args": [
+															{
+																"op": "∧",
+																"args": [
+																	{
+																		"op": "∧",
+																		"args": [
+																			{
+																				"op": "∧",
+																				"args": [
+																					{
+																						"op": "∧",
+																						"args": [
+																							{
+																								"op": "∧",
+																								"args": [
+																									{
+																										"op": "=",
+																										"args": [
+																											"fin1",
+																											1
+																										]
+																									},
+																									{
+																										"op": "=",
+																										"args": [
+																											"fin2",
+																											1
+																										]
+																									}
+																								]
+																							},
+																							{
+																								"op": "=",
+																								"args": [
+																									"fin3",
+																									1
+																								]
+																							}
+																						]
+																					},
+																					{
+																						"op": "=",
+																						"args": [
+																							"fin4",
+																							1
+																						]
+																					}
+																				]
+																			},
+																			{
+																				"op": "=",
+																				"args": [
+																					"fin5",
+																					1
+																				]
+																			}
+																		]
+																	},
+																	{
+																		"op": "=",
+																		"args": [
+																			"fin6",
+																			1
+																		]
+																	}
+																]
+															},
+															{
+																"op": "=",
+																"args": [
+																	"coin1",
+																	1
+																]
+															}
+														]
+													},
+													{
+														"op": "=",
+														"args": [
+															"coin2",
+															1
+														]
+													}
+												]
+											},
+											{
+												"op": "=",
+												"args": [
+													"coin3",
+													1
+												]
+											}
+										]
+									},
+									{
+										"op": "=",
+										"args": [
+											"coin4",
+											1
+										]
+									}
+								]
+							},
+							{
+								"op": "=",
+								"args": [
+									"coin5",
+									1
+								]
+							}
+						]
+					},
+					{
+						"op": "=",
+						"args": [
+							"coin6",
+							1
+						]
+					}
+				]
+			},
+			"type": "probability-min-query"
+		}
+	],
+	"automata": [
+		{
+			"name": "Tourist1",
+			"variables": [],
+			"locations": [
+				{
+					"name": "l_0"
+				},
+				{
+					"name": "l_1"
+				},
+				{
+					"name": "l_2"
+				},
+				{
+					"name": "l_3"
+				}
+			],
+			"initial-location": "l_0",
+			"edges": [
+				{
+					"location": "l_0",
+					"guard": true,
+					"destinations": [
+						{
+							"probability": {
+								"op": "/",
+								"args": [
+									1,
+									2
+								]
+							},
+							"location": "l_1",
+							"assignments": [
+								{
+									"ref": "coin1",
+									"value": 0
+								}
+							],
+							"reward": [
+								{
+									"ref": "coin_flips",
+									"value": 1
+								}
+							]
+						},
+						{
+							"probability": {
+								"op": "/",
+								"args": [
+									1,
+									2
+								]
+							},
+							"location": "l_1",
+							"assignments": [
+								{
+									"ref": "coin1",
+									"value": 1
+								}
+							],
+							"reward": [
+								{
+									"ref": "coin_flips",
+									"value": 1
+								}
+							]
+						}
+					]
+				},
+				{
+					"location": "l_1",
+					"guard": {
+						"op": "∧",
+						"args": [
+							{
+								"op": "=",
+								"args": [
+									"coin1",
+									0
+								]
+							},
+							{
+								"op": ">",
+								"args": [
+									"counter",
+									0
+								]
+							}
+						]
+					},
+					"destinations": [
+						{
+							"probability": 1,
+							"location": "l_2",
+							"assignments": [
+								{
+									"ref": "counter",
+									"value": {
+										"op": "-",
+										"args": [
+											"counter",
+											1
+										]
+									}
+								}
+							]
+						}
+					]
+				},
+				{
+					"location": "l_1",
+					"guard": {
+						"op": "∧",
+						"args": [
+							{
+								"op": "=",
+								"args": [
+									"coin1",
+									1
+								]
+							},
+							{
+								"op": "<",
+								"args": [
+									"counter",
+									60
+								]
+							}
+						]
+					},
+					"destinations": [
+						{
+							"probability": 1,
+							"location": "l_2",
+							"assignments": [
+								{
+									"ref": "counter",
+									"value": {
+										"op": "+",
+										"args": [
+											"counter",
+											1
+										]
+									}
+								},
+								{
+									"ref": "coin1",
+									"value": 0
+								}
+							]
+						}
+					]
+				},
+				{
+					"location": "l_2",
+					"guard": {
+						"op": "≤",
+						"args": [
+							"counter",
+							6
+						]
+					},
+					"destinations": [
+						{
+							"probability": 1,
+							"location": "l_3",
+							"assignments": [
+								{
+									"ref": "coin1",
+									"value": 0
+								},
+								{
+									"ref": "fin1",
+									"value": 1
+								}
+							]
+						}
+					]
+				},
+				{
+					"location": "l_2",
+					"guard": {
+						"op": "≥",
+						"args": [
+							"counter",
+							54
+						]
+					},
+					"destinations": [
+						{
+							"probability": 1,
+							"location": "l_3",
+							"assignments": [
+								{
+									"ref": "coin1",
+									"value": 1
+								},
+								{
+									"ref": "fin1",
+									"value": 1
+								}
+							]
+						}
+					]
+				},
+				{
+					"location": "l_2",
+					"guard": {
+						"op": "∧",
+						"args": [
+							{
+								"op": ">",
+								"args": [
+									"counter",
+									6
+								]
+							},
+							{
+								"op": "<",
+								"args": [
+									"counter",
+									54
+								]
+							}
+						]
+					},
+					"destinations": [
+						{
+							"probability": {
+								"op": "/",
+								"args": [
+									1,
+									2
+								]
+							},
+							"location": "l_1",
+							"assignments": [
+								{
+									"ref": "coin1",
+									"value": 0
+								}
+							],
+							"reward": [
+								{
+									"ref": "coin_flips",
+									"value": 1
+								}
+							]
+						},
+						{
+							"probability": {
+								"op": "/",
+								"args": [
+									1,
+									2
+								]
+							},
+							"location": "l_1",
+							"assignments": [
+								{
+									"ref": "coin1",
+									"value": 1
+								}
+							],
+							"reward": [
+								{
+									"ref": "coin_flips",
+									"value": 1
+								}
+							]
+						}
+					]
+				},
+				{
+					"location": "l_3",
+					"action": "done",
+					"guard": true,
+					"destinations": [
+						{
+							"probability": 1,
+							"location": "l_3"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Tourist2",
+			"variables": [],
+			"locations": [
+				{
+					"name": "l_0"
+				},
+				{
+					"name": "l_1"
+				},
+				{
+					"name": "l_2"
+				},
+				{
+					"name": "l_3"
+				}
+			],
+			"initial-location": "l_0",
+			"edges": [
+				{
+					"location": "l_0",
+					"guard": true,
+					"destinations": [
+						{
+							"probability": {
+								"op": "/",
+								"args": [
+									1,
+									2
+								]
+							},
+							"location": "l_1",
+							"assignments": [
+								{
+									"ref": "coin2",
+									"value": 0
+								}
+							],
+							"reward": [
+								{
+									"ref": "coin_flips",
+									"value": 1
+								}
+							]
+						},
+						{
+							"probability": {
+								"op": "/",
+								"args": [
+									1,
+									2
+								]
+							},
+							"location": "l_1",
+							"assignments": [
+								{
+									"ref": "coin2",
+									"value": 1
+								}
+							],
+							"reward": [
+								{
+									"ref": "coin_flips",
+									"value": 1
+								}
+							]
+						}
+					]
+				},
+				{
+					"location": "l_1",
+					"guard": {
+						"op": "∧",
+						"args": [
+							{
+								"op": "=",
+								"args": [
+									"coin2",
+									0
+								]
+							},
+							{
+								"op": ">",
+								"args": [
+									"counter",
+									0
+								]
+							}
+						]
+					},
+					"destinations": [
+						{
+							"probability": 1,
+							"location": "l_2",
+							"assignments": [
+								{
+									"ref": "counter",
+									"value": {
+										"op": "-",
+										"args": [
+											"counter",
+											1
+										]
+									}
+								}
+							]
+						}
+					]
+				},
+				{
+					"location": "l_1",
+					"guard": {
+						"op": "∧",
+						"args": [
+							{
+								"op": "=",
+								"args": [
+									"coin2",
+									1
+								]
+							},
+							{
+								"op": "<",
+								"args": [
+									"counter",
+									60
+								]
+							}
+						]
+					},
+					"destinations": [
+						{
+							"probability": 1,
+							"location": "l_2",
+							"assignments": [
+								{
+									"ref": "counter",
+									"value": {
+										"op": "+",
+										"args": [
+											"counter",
+											1
+										]
+									}
+								},
+								{
+									"ref": "coin2",
+									"value": 0
+								}
+							]
+						}
+					]
+				},
+				{
+					"location": "l_2",
+					"guard": {
+						"op": "≤",
+						"args": [
+							"counter",
+							6
+						]
+					},
+					"destinations": [
+						{
+							"probability": 1,
+							"location": "l_3",
+							"assignments": [
+								{
+									"ref": "coin2",
+									"value": 0
+								},
+								{
+									"ref": "fin2",
+									"value": 1
+								}
+							]
+						}
+					]
+				},
+				{
+					"location": "l_2",
+					"guard": {
+						"op": "≥",
+						"args": [
+							"counter",
+							54
+						]
+					},
+					"destinations": [
+						{
+							"probability": 1,
+							"location": "l_3",
+							"assignments": [
+								{
+									"ref": "coin2",
+									"value": 1
+								},
+								{
+									"ref": "fin2",
+									"value": 1
+								}
+							]
+						}
+					]
+				},
+				{
+					"location": "l_2",
+					"guard": {
+						"op": "∧",
+						"args": [
+							{
+								"op": ">",
+								"args": [
+									"counter",
+									6
+								]
+							},
+							{
+								"op": "<",
+								"args": [
+									"counter",
+									54
+								]
+							}
+						]
+					},
+					"destinations": [
+						{
+							"probability": {
+								"op": "/",
+								"args": [
+									1,
+									2
+								]
+							},
+							"location": "l_1",
+							"assignments": [
+								{
+									"ref": "coin2",
+									"value": 0
+								}
+							],
+							"reward": [
+								{
+									"ref": "coin_flips",
+									"value": 1
+								}
+							]
+						},
+						{
+							"probability": {
+								"op": "/",
+								"args": [
+									1,
+									2
+								]
+							},
+							"location": "l_1",
+							"assignments": [
+								{
+									"ref": "coin2",
+									"value": 1
+								}
+							],
+							"reward": [
+								{
+									"ref": "coin_flips",
+									"value": 1
+								}
+							]
+						}
+					]
+				},
+				{
+					"location": "l_3",
+					"action": "done",
+					"guard": true,
+					"destinations": [
+						{
+							"probability": 1,
+							"location": "l_3"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Tourist3",
+			"variables": [],
+			"locations": [
+				{
+					"name": "l_0"
+				},
+				{
+					"name": "l_1"
+				},
+				{
+					"name": "l_2"
+				},
+				{
+					"name": "l_3"
+				}
+			],
+			"initial-location": "l_0",
+			"edges": [
+				{
+					"location": "l_0",
+					"guard": true,
+					"destinations": [
+						{
+							"probability": {
+								"op": "/",
+								"args": [
+									1,
+									2
+								]
+							},
+							"location": "l_1",
+							"assignments": [
+								{
+									"ref": "coin3",
+									"value": 0
+								}
+							],
+							"reward": [
+								{
+									"ref": "coin_flips",
+									"value": 1
+								}
+							]
+						},
+						{
+							"probability": {
+								"op": "/",
+								"args": [
+									1,
+									2
+								]
+							},
+							"location": "l_1",
+							"assignments": [
+								{
+									"ref": "coin3",
+									"value": 1
+								}
+							],
+							"reward": [
+								{
+									"ref": "coin_flips",
+									"value": 1
+								}
+							]
+						}
+					]
+				},
+				{
+					"location": "l_1",
+					"guard": {
+						"op": "∧",
+						"args": [
+							{
+								"op": "=",
+								"args": [
+									"coin3",
+									0
+								]
+							},
+							{
+								"op": ">",
+								"args": [
+									"counter",
+									0
+								]
+							}
+						]
+					},
+					"destinations": [
+						{
+							"probability": 1,
+							"location": "l_2",
+							"assignments": [
+								{
+									"ref": "counter",
+									"value": {
+										"op": "-",
+										"args": [
+											"counter",
+											1
+										]
+									}
+								}
+							]
+						}
+					]
+				},
+				{
+					"location": "l_1",
+					"guard": {
+						"op": "∧",
+						"args": [
+							{
+								"op": "=",
+								"args": [
+									"coin3",
+									1
+								]
+							},
+							{
+								"op": "<",
+								"args": [
+									"counter",
+									60
+								]
+							}
+						]
+					},
+					"destinations": [
+						{
+							"probability": 1,
+							"location": "l_2",
+							"assignments": [
+								{
+									"ref": "counter",
+									"value": {
+										"op": "+",
+										"args": [
+											"counter",
+											1
+										]
+									}
+								},
+								{
+									"ref": "coin3",
+									"value": 0
+								}
+							]
+						}
+					]
+				},
+				{
+					"location": "l_2",
+					"guard": {
+						"op": "≤",
+						"args": [
+							"counter",
+							6
+						]
+					},
+					"destinations": [
+						{
+							"probability": 1,
+							"location": "l_3",
+							"assignments": [
+								{
+									"ref": "coin3",
+									"value": 0
+								},
+								{
+									"ref": "fin3",
+									"value": 1
+								}
+							]
+						}
+					]
+				},
+				{
+					"location": "l_2",
+					"guard": {
+						"op": "≥",
+						"args": [
+							"counter",
+							54
+						]
+					},
+					"destinations": [
+						{
+							"probability": 1,
+							"location": "l_3",
+							"assignments": [
+								{
+									"ref": "coin3",
+									"value": 1
+								},
+								{
+									"ref": "fin3",
+									"value": 1
+								}
+							]
+						}
+					]
+				},
+				{
+					"location": "l_2",
+					"guard": {
+						"op": "∧",
+						"args": [
+							{
+								"op": ">",
+								"args": [
+									"counter",
+									6
+								]
+							},
+							{
+								"op": "<",
+								"args": [
+									"counter",
+									54
+								]
+							}
+						]
+					},
+					"destinations": [
+						{
+							"probability": {
+								"op": "/",
+								"args": [
+									1,
+									2
+								]
+							},
+							"location": "l_1",
+							"assignments": [
+								{
+									"ref": "coin3",
+									"value": 0
+								}
+							],
+							"reward": [
+								{
+									"ref": "coin_flips",
+									"value": 1
+								}
+							]
+						},
+						{
+							"probability": {
+								"op": "/",
+								"args": [
+									1,
+									2
+								]
+							},
+							"location": "l_1",
+							"assignments": [
+								{
+									"ref": "coin3",
+									"value": 1
+								}
+							],
+							"reward": [
+								{
+									"ref": "coin_flips",
+									"value": 1
+								}
+							]
+						}
+					]
+				},
+				{
+					"location": "l_3",
+					"action": "done",
+					"guard": true,
+					"destinations": [
+						{
+							"probability": 1,
+							"location": "l_3"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Tourist4",
+			"variables": [],
+			"locations": [
+				{
+					"name": "l_0"
+				},
+				{
+					"name": "l_1"
+				},
+				{
+					"name": "l_2"
+				},
+				{
+					"name": "l_3"
+				}
+			],
+			"initial-location": "l_0",
+			"edges": [
+				{
+					"location": "l_0",
+					"guard": true,
+					"destinations": [
+						{
+							"probability": {
+								"op": "/",
+								"args": [
+									1,
+									2
+								]
+							},
+							"location": "l_1",
+							"assignments": [
+								{
+									"ref": "coin4",
+									"value": 0
+								}
+							],
+							"reward": [
+								{
+									"ref": "coin_flips",
+									"value": 1
+								}
+							]
+						},
+						{
+							"probability": {
+								"op": "/",
+								"args": [
+									1,
+									2
+								]
+							},
+							"location": "l_1",
+							"assignments": [
+								{
+									"ref": "coin4",
+									"value": 1
+								}
+							],
+							"reward": [
+								{
+									"ref": "coin_flips",
+									"value": 1
+								}
+							]
+						}
+					]
+				},
+				{
+					"location": "l_1",
+					"guard": {
+						"op": "∧",
+						"args": [
+							{
+								"op": "=",
+								"args": [
+									"coin4",
+									0
+								]
+							},
+							{
+								"op": ">",
+								"args": [
+									"counter",
+									0
+								]
+							}
+						]
+					},
+					"destinations": [
+						{
+							"probability": 1,
+							"location": "l_2",
+							"assignments": [
+								{
+									"ref": "counter",
+									"value": {
+										"op": "-",
+										"args": [
+											"counter",
+											1
+										]
+									}
+								}
+							]
+						}
+					]
+				},
+				{
+					"location": "l_1",
+					"guard": {
+						"op": "∧",
+						"args": [
+							{
+								"op": "=",
+								"args": [
+									"coin4",
+									1
+								]
+							},
+							{
+								"op": "<",
+								"args": [
+									"counter",
+									60
+								]
+							}
+						]
+					},
+					"destinations": [
+						{
+							"probability": 1,
+							"location": "l_2",
+							"assignments": [
+								{
+									"ref": "counter",
+									"value": {
+										"op": "+",
+										"args": [
+											"counter",
+											1
+										]
+									}
+								},
+								{
+									"ref": "coin4",
+									"value": 0
+								}
+							]
+						}
+					]
+				},
+				{
+					"location": "l_2",
+					"guard": {
+						"op": "≤",
+						"args": [
+							"counter",
+							6
+						]
+					},
+					"destinations": [
+						{
+							"probability": 1,
+							"location": "l_3",
+							"assignments": [
+								{
+									"ref": "coin4",
+									"value": 0
+								},
+								{
+									"ref": "fin4",
+									"value": 1
+								}
+							]
+						}
+					]
+				},
+				{
+					"location": "l_2",
+					"guard": {
+						"op": "≥",
+						"args": [
+							"counter",
+							54
+						]
+					},
+					"destinations": [
+						{
+							"probability": 1,
+							"location": "l_3",
+							"assignments": [
+								{
+									"ref": "coin4",
+									"value": 1
+								},
+								{
+									"ref": "fin4",
+									"value": 1
+								}
+							]
+						}
+					]
+				},
+				{
+					"location": "l_2",
+					"guard": {
+						"op": "∧",
+						"args": [
+							{
+								"op": ">",
+								"args": [
+									"counter",
+									6
+								]
+							},
+							{
+								"op": "<",
+								"args": [
+									"counter",
+									54
+								]
+							}
+						]
+					},
+					"destinations": [
+						{
+							"probability": {
+								"op": "/",
+								"args": [
+									1,
+									2
+								]
+							},
+							"location": "l_1",
+							"assignments": [
+								{
+									"ref": "coin4",
+									"value": 0
+								}
+							],
+							"reward": [
+								{
+									"ref": "coin_flips",
+									"value": 1
+								}
+							]
+						},
+						{
+							"probability": {
+								"op": "/",
+								"args": [
+									1,
+									2
+								]
+							},
+							"location": "l_1",
+							"assignments": [
+								{
+									"ref": "coin4",
+									"value": 1
+								}
+							],
+							"reward": [
+								{
+									"ref": "coin_flips",
+									"value": 1
+								}
+							]
+						}
+					]
+				},
+				{
+					"location": "l_3",
+					"action": "done",
+					"guard": true,
+					"destinations": [
+						{
+							"probability": 1,
+							"location": "l_3"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Tourist5",
+			"variables": [],
+			"locations": [
+				{
+					"name": "l_0"
+				},
+				{
+					"name": "l_1"
+				},
+				{
+					"name": "l_2"
+				},
+				{
+					"name": "l_3"
+				}
+			],
+			"initial-location": "l_0",
+			"edges": [
+				{
+					"location": "l_0",
+					"guard": true,
+					"destinations": [
+						{
+							"probability": {
+								"op": "/",
+								"args": [
+									1,
+									2
+								]
+							},
+							"location": "l_1",
+							"assignments": [
+								{
+									"ref": "coin5",
+									"value": 0
+								}
+							],
+							"reward": [
+								{
+									"ref": "coin_flips",
+									"value": 1
+								}
+							]
+						},
+						{
+							"probability": {
+								"op": "/",
+								"args": [
+									1,
+									2
+								]
+							},
+							"location": "l_1",
+							"assignments": [
+								{
+									"ref": "coin5",
+									"value": 1
+								}
+							],
+							"reward": [
+								{
+									"ref": "coin_flips",
+									"value": 1
+								}
+							]
+						}
+					]
+				},
+				{
+					"location": "l_1",
+					"guard": {
+						"op": "∧",
+						"args": [
+							{
+								"op": "=",
+								"args": [
+									"coin5",
+									0
+								]
+							},
+							{
+								"op": ">",
+								"args": [
+									"counter",
+									0
+								]
+							}
+						]
+					},
+					"destinations": [
+						{
+							"probability": 1,
+							"location": "l_2",
+							"assignments": [
+								{
+									"ref": "counter",
+									"value": {
+										"op": "-",
+										"args": [
+											"counter",
+											1
+										]
+									}
+								}
+							]
+						}
+					]
+				},
+				{
+					"location": "l_1",
+					"guard": {
+						"op": "∧",
+						"args": [
+							{
+								"op": "=",
+								"args": [
+									"coin5",
+									1
+								]
+							},
+							{
+								"op": "<",
+								"args": [
+									"counter",
+									60
+								]
+							}
+						]
+					},
+					"destinations": [
+						{
+							"probability": 1,
+							"location": "l_2",
+							"assignments": [
+								{
+									"ref": "counter",
+									"value": {
+										"op": "+",
+										"args": [
+											"counter",
+											1
+										]
+									}
+								},
+								{
+									"ref": "coin5",
+									"value": 0
+								}
+							]
+						}
+					]
+				},
+				{
+					"location": "l_2",
+					"guard": {
+						"op": "≤",
+						"args": [
+							"counter",
+							6
+						]
+					},
+					"destinations": [
+						{
+							"probability": 1,
+							"location": "l_3",
+							"assignments": [
+								{
+									"ref": "coin5",
+									"value": 0
+								},
+								{
+									"ref": "fin5",
+									"value": 1
+								}
+							]
+						}
+					]
+				},
+				{
+					"location": "l_2",
+					"guard": {
+						"op": "≥",
+						"args": [
+							"counter",
+							54
+						]
+					},
+					"destinations": [
+						{
+							"probability": 1,
+							"location": "l_3",
+							"assignments": [
+								{
+									"ref": "coin5",
+									"value": 1
+								},
+								{
+									"ref": "fin5",
+									"value": 1
+								}
+							]
+						}
+					]
+				},
+				{
+					"location": "l_2",
+					"guard": {
+						"op": "∧",
+						"args": [
+							{
+								"op": ">",
+								"args": [
+									"counter",
+									6
+								]
+							},
+							{
+								"op": "<",
+								"args": [
+									"counter",
+									54
+								]
+							}
+						]
+					},
+					"destinations": [
+						{
+							"probability": {
+								"op": "/",
+								"args": [
+									1,
+									2
+								]
+							},
+							"location": "l_1",
+							"assignments": [
+								{
+									"ref": "coin5",
+									"value": 0
+								}
+							],
+							"reward": [
+								{
+									"ref": "coin_flips",
+									"value": 1
+								}
+							]
+						},
+						{
+							"probability": {
+								"op": "/",
+								"args": [
+									1,
+									2
+								]
+							},
+							"location": "l_1",
+							"assignments": [
+								{
+									"ref": "coin5",
+									"value": 1
+								}
+							],
+							"reward": [
+								{
+									"ref": "coin_flips",
+									"value": 1
+								}
+							]
+						}
+					]
+				},
+				{
+					"location": "l_3",
+					"action": "done",
+					"guard": true,
+					"destinations": [
+						{
+							"probability": 1,
+							"location": "l_3"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Tourist6",
+			"variables": [],
+			"locations": [
+				{
+					"name": "l_0"
+				},
+				{
+					"name": "l_1"
+				},
+				{
+					"name": "l_2"
+				},
+				{
+					"name": "l_3"
+				}
+			],
+			"initial-location": "l_0",
+			"edges": [
+				{
+					"location": "l_0",
+					"guard": true,
+					"destinations": [
+						{
+							"probability": {
+								"op": "/",
+								"args": [
+									1,
+									2
+								]
+							},
+							"location": "l_1",
+							"assignments": [
+								{
+									"ref": "coin6",
+									"value": 0
+								}
+							],
+							"reward": [
+								{
+									"ref": "coin_flips",
+									"value": 1
+								}
+							]
+						},
+						{
+							"probability": {
+								"op": "/",
+								"args": [
+									1,
+									2
+								]
+							},
+							"location": "l_1",
+							"assignments": [
+								{
+									"ref": "coin6",
+									"value": 1
+								}
+							],
+							"reward": [
+								{
+									"ref": "coin_flips",
+									"value": 1
+								}
+							]
+						}
+					]
+				},
+				{
+					"location": "l_1",
+					"guard": {
+						"op": "∧",
+						"args": [
+							{
+								"op": "=",
+								"args": [
+									"coin6",
+									0
+								]
+							},
+							{
+								"op": ">",
+								"args": [
+									"counter",
+									0
+								]
+							}
+						]
+					},
+					"destinations": [
+						{
+							"probability": 1,
+							"location": "l_2",
+							"assignments": [
+								{
+									"ref": "counter",
+									"value": {
+										"op": "-",
+										"args": [
+											"counter",
+											1
+										]
+									}
+								}
+							]
+						}
+					]
+				},
+				{
+					"location": "l_1",
+					"guard": {
+						"op": "∧",
+						"args": [
+							{
+								"op": "=",
+								"args": [
+									"coin6",
+									1
+								]
+							},
+							{
+								"op": "<",
+								"args": [
+									"counter",
+									60
+								]
+							}
+						]
+					},
+					"destinations": [
+						{
+							"probability": 1,
+							"location": "l_2",
+							"assignments": [
+								{
+									"ref": "counter",
+									"value": {
+										"op": "+",
+										"args": [
+											"counter",
+											1
+										]
+									}
+								},
+								{
+									"ref": "coin6",
+									"value": 0
+								}
+							]
+						}
+					]
+				},
+				{
+					"location": "l_2",
+					"guard": {
+						"op": "≤",
+						"args": [
+							"counter",
+							6
+						]
+					},
+					"destinations": [
+						{
+							"probability": 1,
+							"location": "l_3",
+							"assignments": [
+								{
+									"ref": "coin6",
+									"value": 0
+								},
+								{
+									"ref": "fin6",
+									"value": 1
+								}
+							]
+						}
+					]
+				},
+				{
+					"location": "l_2",
+					"guard": {
+						"op": "≥",
+						"args": [
+							"counter",
+							54
+						]
+					},
+					"destinations": [
+						{
+							"probability": 1,
+							"location": "l_3",
+							"assignments": [
+								{
+									"ref": "coin6",
+									"value": 1
+								},
+								{
+									"ref": "fin6",
+									"value": 1
+								}
+							]
+						}
+					]
+				},
+				{
+					"location": "l_2",
+					"guard": {
+						"op": "∧",
+						"args": [
+							{
+								"op": ">",
+								"args": [
+									"counter",
+									6
+								]
+							},
+							{
+								"op": "<",
+								"args": [
+									"counter",
+									54
+								]
+							}
+						]
+					},
+					"destinations": [
+						{
+							"probability": {
+								"op": "/",
+								"args": [
+									1,
+									2
+								]
+							},
+							"location": "l_1",
+							"assignments": [
+								{
+									"ref": "coin6",
+									"value": 0
+								}
+							],
+							"reward": [
+								{
+									"ref": "coin_flips",
+									"value": 1
+								}
+							]
+						},
+						{
+							"probability": {
+								"op": "/",
+								"args": [
+									1,
+									2
+								]
+							},
+							"location": "l_1",
+							"assignments": [
+								{
+									"ref": "coin6",
+									"value": 1
+								}
+							],
+							"reward": [
+								{
+									"ref": "coin_flips",
+									"value": 1
+								}
+							]
+						}
+					]
+				},
+				{
+					"location": "l_3",
+					"action": "done",
+					"guard": true,
+					"destinations": [
+						{
+							"probability": 1,
+							"location": "l_3"
+						}
+					]
+				}
+			]
+		}
+	],
+	"system": {
+		"composition": "parallel",
+		"elements": [
+			{
+				"composition": "parallel",
+				"elements": [
+					{
+						"composition": "parallel",
+						"elements": [
+							{
+								"composition": "parallel",
+								"elements": [
+									{
+										"composition": "parallel",
+										"elements": [
+											"Tourist1",
+											"Tourist2"
+										],
+										"alphabet": [
+											"done"
+										]
+									},
+									"Tourist3"
+								],
+								"alphabet": [
+									"done"
+								]
+							},
+							"Tourist4"
+						],
+						"alphabet": [
+							"done"
+						]
+					},
+					"Tourist5"
+				],
+				"alphabet": [
+					"done"
+				]
+			},
+			"Tourist6"
+		],
+		"alphabet": [
+			"done"
+		]
+	}
+}

@@ -17,6 +17,11 @@ namespace storm {
         class BitVector;
     }
     
+    namespace utility {
+        template<typename ParametricModelType, typename ConstantModelType>
+        class ModelInstantiator;
+    }
+    
     namespace models {
         namespace sparse {
             
@@ -31,6 +36,9 @@ namespace storm {
              */
             template<class CValueType, class CRewardModelType = StandardRewardModel<CValueType>>
             class Model : public storm::models::ModelBase {
+                template<typename ParametricModelType, typename ConstantModelType>
+                friend class storm::utility::ModelInstantiator;
+                
             public:
                 typedef CValueType ValueType;
                 typedef CRewardModelType RewardModelType;
@@ -175,6 +183,13 @@ namespace storm {
                  * @return An iterator to the name and the reward model.
                  */
                 typename std::unordered_map<std::string, RewardModelType>::const_iterator getUniqueRewardModel() const;
+                
+                /*!
+                 * Retrieves the unique reward model, if there exists exactly one. Otherwise, an exception is thrown.
+                 *
+                 * @return An iterator to the name and the reward model.
+                 */
+                typename std::unordered_map<std::string, RewardModelType>::iterator getUniqueRewardModel();
                 
                 /*!
                  * Retrieves whether the model has a unique reward model.
@@ -342,7 +357,7 @@ namespace storm {
                  * @param out The stream the information is to be printed to.
                  */
                 void printRewardModelsInformationToStream(std::ostream& out) const;
-                
+                                
             private:
                 //  A matrix representing transition relation.
                 storm::storage::SparseMatrix<ValueType> transitionMatrix;
@@ -357,7 +372,9 @@ namespace storm {
                 boost::optional<std::vector<LabelSet>> choiceLabeling;
             };
             
-            std::set<storm::Variable> getProbabilityParameters(Model<storm::RationalFunction> const& model);
+#ifdef STORM_HAVE_CARL
+            std::set<storm::RationalFunctionVariable> getProbabilityParameters(Model<storm::RationalFunction> const& model);
+#endif
         } // namespace sparse
     } // namespace models
 } // namespace storm

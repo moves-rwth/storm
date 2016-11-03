@@ -26,7 +26,7 @@ namespace storm {
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        storm::dd::Add<DdType, ValueType>  SymbolicLinearEquationSolver<DdType, ValueType>::solveEquationSystem(storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const {
+        storm::dd::Add<DdType, ValueType>  SymbolicLinearEquationSolver<DdType, ValueType>::solveEquations(storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const {
             // Start by computing the Jacobi decomposition of the matrix A.
             storm::dd::Bdd<DdType> diagonal = x.getDdManager().getBddOne();
             for (auto const& pair : rowColumnMetaVariablePairs) {
@@ -68,7 +68,7 @@ namespace storm {
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        storm::dd::Add<DdType, ValueType> SymbolicLinearEquationSolver<DdType, ValueType>::performMatrixVectorMultiplication(storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const* b, uint_fast64_t n) const {
+        storm::dd::Add<DdType, ValueType> SymbolicLinearEquationSolver<DdType, ValueType>::multiply(storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const* b, uint_fast64_t n) const {
             storm::dd::Add<DdType, ValueType> xCopy = x;
             
             // Perform matrix-vector multiplication while the bound is met.

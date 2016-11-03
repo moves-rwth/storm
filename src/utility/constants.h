@@ -56,6 +56,12 @@ namespace storm {
         
         template<typename TargetType, typename SourceType>
         TargetType convertNumber(SourceType const& number);
+        
+        template<typename ValueType>
+        ValueType abs(ValueType const& number);
+        
+        template<typename ValueType>
+        bool isInteger(ValueType const& number);
     }
 }
 

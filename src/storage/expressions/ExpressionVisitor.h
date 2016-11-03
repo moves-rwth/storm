@@ -15,7 +15,7 @@ namespace storm {
         class UnaryNumericalFunctionExpression;
         class BooleanLiteralExpression;
         class IntegerLiteralExpression;
-        class DoubleLiteralExpression;
+        class RationalLiteralExpression;
         
         class ExpressionVisitor {
         public:
@@ -28,7 +28,7 @@ namespace storm {
             virtual boost::any visit(UnaryNumericalFunctionExpression const& expression) = 0;
             virtual boost::any visit(BooleanLiteralExpression const& expression) = 0;
             virtual boost::any visit(IntegerLiteralExpression const& expression) = 0;
-            virtual boost::any visit(DoubleLiteralExpression const& expression) = 0;
+            virtual boost::any visit(RationalLiteralExpression const& expression) = 0;
         };
     }
 }

@@ -30,17 +30,18 @@ namespace storm {
         
         using namespace exploration_detail;
         
-        template<typename ValueType, typename StateType = uint32_t>
-        class SparseExplorationModelChecker : public AbstractModelChecker {
+        template<typename ModelType, typename StateType = uint32_t>
+        class SparseExplorationModelChecker : public AbstractModelChecker<ModelType> {
         public:
+            typedef typename ModelType::ValueType ValueType;
             typedef StateType ActionType;
             typedef std::vector<std::pair<StateType, ActionType>> StateActionStack;
             
-            SparseExplorationModelChecker(storm::prism::Program const& program, boost::optional<std::map<storm::expressions::Variable, storm::expressions::Expression>> const& constantDefinitions = boost::none);
+            SparseExplorationModelChecker(storm::prism::Program const& program);
             
-            virtual bool canHandle(CheckTask<storm::logic::Formula> const& checkTask) const override;
+            virtual bool canHandle(CheckTask<storm::logic::Formula, ValueType> const& checkTask) const override;
             
-            virtual std::unique_ptr<CheckResult> computeUntilProbabilities(CheckTask<storm::logic::UntilFormula> const& checkTask) override;
+            virtual std::unique_ptr<CheckResult> computeUntilProbabilities(CheckTask<storm::logic::UntilFormula, ValueType> const& checkTask) override;
             
         private:
             std::tuple<StateType, ValueType, ValueType> performExploration(StateGeneration<StateType, ValueType>& stateGeneration, ExplorationInformation<StateType, ValueType>& explorationInformation) const;
@@ -73,9 +74,6 @@ namespace storm {
             
             // The program that defines the model to check.
             storm::prism::Program program;
-            
-            // The variable information.
-            storm::generator::VariableInformation variableInformation;
             
             // The random number generator.
             mutable std::default_random_engine randomGenerator;

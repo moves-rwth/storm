@@ -51,16 +51,6 @@ namespace storm {
                 Options(std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas);
                 
                 /*!
-                 * Sets the constants definitions from the given string. The string must be of the form 'X=a,Y=b,Z=c',
-                 * etc. where X,Y,Z are the variable names and a,b,c are the values of the constants.
-                 *
-                 * @param program The program managing the constants that shall be defined. Note that the program itself
-                 * is not modified whatsoever.
-                 * @param constantDefinitionString The string from which to parse the constants' values.
-                 */
-                void addConstantDefinitionsFromString(storm::prism::Program const& program, std::string const& constantDefinitionString);
-                
-                /*!
                  * Changes the options in a way that ensures that the given formula can be checked on the model once it
                  * has been built.
                  *
@@ -84,9 +74,6 @@ namespace storm {
                 // A list of reward models to be build in case not all reward models are to be build.
                 std::set<std::string> rewardModelsToBuild;
                 
-                // An optional mapping that, if given, contains defining expressions for undefined constants.
-                boost::optional<std::map<storm::expressions::Variable, storm::expressions::Expression>> constantDefinitions;
-                
                 // A flag indicating whether all labels are to be build.
                 bool buildAllLabels;
                 
@@ -109,7 +96,7 @@ namespace storm {
              * @param program The program to translate.
              * @return A pointer to the resulting model.
              */
-            std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> translateProgram(storm::prism::Program const& program, Options const& options = Options());
+            std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> build(storm::prism::Program const& program, Options const& options = Options());
             
             /*!
              * Retrieves the program that was actually translated (i.e. including constant substitutions etc.). Note
@@ -188,6 +175,14 @@ namespace storm {
                     return synchronizingActionToDecisionDiagramMap.find(actionIndex) != synchronizingActionToDecisionDiagramMap.end();
                 }
                 
+                std::set<uint_fast64_t> getSynchronizingActionIndices() const {
+                    std::set<uint_fast64_t> result;
+                    for (auto const& entry : synchronizingActionToDecisionDiagramMap) {
+                        result.insert(entry.first);
+                    }
+                    return result;
+                }
+                
                 // The decision diagram for the independent action.
                 ActionDecisionDiagram independentAction;
                 
@@ -210,7 +205,11 @@ namespace storm {
              * Structure to store the result of the system creation phase.
              */
             struct SystemResult;
+            
         private:
+            template <storm::dd::DdType TypePrime, typename ValueTypePrime>
+            friend class ModuleComposer;
+            
             static std::set<storm::expressions::Variable> equalizeAssignedGlobalVariables(GenerationInformation const& generationInfo, ActionDecisionDiagram& action1, ActionDecisionDiagram& action2);
             
             static std::set<storm::expressions::Variable> equalizeAssignedGlobalVariables(GenerationInformation const& generationInfo, std::vector<ActionDecisionDiagram>& actionDds);
@@ -230,6 +229,8 @@ namespace storm {
             static ActionDecisionDiagram combineSynchronizingActions(GenerationInformation const& generationInfo, ActionDecisionDiagram const& action1, ActionDecisionDiagram const& action2);
 
             static ActionDecisionDiagram combineUnsynchronizedActions(GenerationInformation const& generationInfo, ActionDecisionDiagram& action1, ActionDecisionDiagram& action2, storm::dd::Add<Type, ValueType> const& identityDd1, storm::dd::Add<Type, ValueType> const& identityDd2);
+            
+            static ActionDecisionDiagram combineUnsynchronizedActions(GenerationInformation const& generationInfo, ActionDecisionDiagram& action1, ActionDecisionDiagram& action2);
 
             static ModuleDecisionDiagram createModuleDecisionDiagram(GenerationInformation& generationInfo, storm::prism::Module const& module, std::map<uint_fast64_t, uint_fast64_t> const& synchronizingActionToOffsetMap);
 
@@ -237,13 +238,11 @@ namespace storm {
             
             static storm::dd::Add<Type, ValueType> createSystemFromModule(GenerationInformation& generationInfo, ModuleDecisionDiagram const& module);
             
-            static storm::models::symbolic::StandardRewardModel<Type, double> createRewardModelDecisionDiagrams(GenerationInformation& generationInfo, storm::prism::RewardModel const& rewardModel, ModuleDecisionDiagram const& globalModule, storm::dd::Add<Type, ValueType> const& transitionMatrix, storm::dd::Add<Type, ValueType> const& reachableStatesAdd, storm::dd::Add<Type, ValueType> const& stateActionDd);
+            static storm::models::symbolic::StandardRewardModel<Type, ValueType> createRewardModelDecisionDiagrams(GenerationInformation& generationInfo, storm::prism::RewardModel const& rewardModel, ModuleDecisionDiagram const& globalModule, storm::dd::Add<Type, ValueType> const& transitionMatrix, storm::dd::Add<Type, ValueType> const& reachableStatesAdd, storm::dd::Add<Type, ValueType> const& stateActionDd);
             
             static SystemResult createSystemDecisionDiagram(GenerationInformation& generationInfo);
             
             static storm::dd::Bdd<Type> createInitialStatesDecisionDiagram(GenerationInformation& generationInfo);
-
-            static storm::dd::Bdd<Type> computeReachableStates(GenerationInformation& generationInfo, storm::dd::Bdd<Type> const& initialStates, storm::dd::Bdd<Type> const& transitions);
             
             // This member holds the program that was most recently translated (if any).
             boost::optional<storm::prism::Program> preparedProgram;

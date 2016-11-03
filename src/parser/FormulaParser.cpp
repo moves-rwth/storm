@@ -7,6 +7,8 @@
 // If the parser fails due to ill-formed data, this exception is thrown.
 #include "src/exceptions/WrongFormatException.h"
 
+#include "src/storage/expressions/ExpressionEvaluator.h"
+
 namespace storm {
     namespace parser {
         
@@ -99,6 +101,9 @@ namespace storm {
             // A parser used for recognizing the reward measure types.
             rewardMeasureTypeStruct rewardMeasureType_;
             
+            // The manager used to parse expressions.
+            std::shared_ptr<storm::expressions::ExpressionManager const> manager;
+            
             // Parser and manager used for recognizing expressions.
             storm::parser::ExpressionParser expressionParser;
             
@@ -108,7 +113,7 @@ namespace storm {
             
             qi::rule<Iterator, std::vector<std::shared_ptr<storm::logic::Formula const>>(), Skipper> start;
             
-            qi::rule<Iterator, storm::logic::OperatorInformation(), qi::locals<boost::optional<storm::OptimizationDirection>, boost::optional<storm::logic::ComparisonType>, boost::optional<double>>, Skipper> operatorInformation;
+            qi::rule<Iterator, storm::logic::OperatorInformation(), qi::locals<boost::optional<storm::OptimizationDirection>, boost::optional<storm::logic::ComparisonType>, boost::optional<storm::expressions::Expression>>, Skipper> operatorInformation;
             qi::rule<Iterator, storm::logic::RewardMeasureType(), Skipper> rewardMeasureType;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> probabilityOperator;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> rewardOperator;
@@ -159,7 +164,7 @@ namespace storm {
             std::shared_ptr<storm::logic::Formula const> createNextFormula(std::shared_ptr<storm::logic::Formula const> const& subformula) const;
             std::shared_ptr<storm::logic::Formula const> createUntilFormula(std::shared_ptr<storm::logic::Formula const> const& leftSubformula, boost::optional<boost::variant<std::pair<double, double>, uint_fast64_t>> const& timeBound, std::shared_ptr<storm::logic::Formula const> const& rightSubformula);
             std::shared_ptr<storm::logic::Formula const> createConditionalFormula(std::shared_ptr<storm::logic::Formula const> const& leftSubformula, std::shared_ptr<storm::logic::Formula const> const& rightSubformula, storm::logic::FormulaContext context) const;
-            storm::logic::OperatorInformation createOperatorInformation(boost::optional<storm::OptimizationDirection> const& optimizationDirection, boost::optional<storm::logic::ComparisonType> const& comparisonType, boost::optional<double> const& threshold) const;
+            storm::logic::OperatorInformation createOperatorInformation(boost::optional<storm::OptimizationDirection> const& optimizationDirection, boost::optional<storm::logic::ComparisonType> const& comparisonType, boost::optional<storm::expressions::Expression> const& threshold) const;
             std::shared_ptr<storm::logic::Formula const> createLongRunAverageOperatorFormula(storm::logic::OperatorInformation const& operatorInformation, std::shared_ptr<storm::logic::Formula const> const& subformula) const;
             std::shared_ptr<storm::logic::Formula const> createRewardOperatorFormula(boost::optional<storm::logic::RewardMeasureType> const& rewardMeasureType, boost::optional<std::string> const& rewardModelName, storm::logic::OperatorInformation const& operatorInformation, std::shared_ptr<storm::logic::Formula const> const& subformula) const;
             std::shared_ptr<storm::logic::Formula const> createTimeOperatorFormula(boost::optional<storm::logic::RewardMeasureType> const& rewardMeasureType, storm::logic::OperatorInformation const& operatorInformation, std::shared_ptr<storm::logic::Formula const> const& subformula) const;
@@ -248,7 +253,7 @@ namespace storm {
             grammar->addIdentifierExpression(identifier, expression);
         }
                 
-        FormulaParserGrammar::FormulaParserGrammar(std::shared_ptr<storm::expressions::ExpressionManager const> const& manager) : FormulaParserGrammar::base_type(start), expressionParser(*manager, keywords_, true, true) {
+        FormulaParserGrammar::FormulaParserGrammar(std::shared_ptr<storm::expressions::ExpressionManager const> const& manager) : FormulaParserGrammar::base_type(start), manager(manager), expressionParser(*manager, keywords_, true, true) {
             // Register all variables so we can parse them in the expressions.
             for (auto variableTypePair : *manager) {
                 identifiers_.add(variableTypePair.first.getName(), variableTypePair.first);
@@ -265,7 +270,7 @@ namespace storm {
             cumulativeRewardFormula = (qi::lit("C<=") >> strict_double)[qi::_val = phoenix::bind(&FormulaParserGrammar::createCumulativeRewardFormula, phoenix::ref(*this), qi::_1)] | (qi::lit("C<=") > qi::uint_)[qi::_val = phoenix::bind(&FormulaParserGrammar::createCumulativeRewardFormula, phoenix::ref(*this), qi::_1)];
             cumulativeRewardFormula.name("cumulative reward formula");
             
-            rewardPathFormula = conditionalFormula(storm::logic::FormulaContext::Reward) | eventuallyFormula(storm::logic::FormulaContext::Reward) | cumulativeRewardFormula | instantaneousRewardFormula | longRunAverageRewardFormula;
+            rewardPathFormula = longRunAverageRewardFormula | conditionalFormula(storm::logic::FormulaContext::Reward) | eventuallyFormula(storm::logic::FormulaContext::Reward) | cumulativeRewardFormula | instantaneousRewardFormula;
             rewardPathFormula.name("reward path formula");
             
             expressionFormula = expressionParser[qi::_val = phoenix::bind(&FormulaParserGrammar::createAtomicExpressionFormula, phoenix::ref(*this), qi::_1)];
@@ -316,7 +321,7 @@ namespace storm {
             rewardMeasureType = qi::lit("[") >> rewardMeasureType_ >> qi::lit("]");
             rewardMeasureType.name("reward measure type");
             
-            operatorInformation = (-optimalityOperator_[qi::_a = qi::_1] >> ((relationalOperator_[qi::_b = qi::_1] > qi::double_[qi::_c = qi::_1]) | (qi::lit("=") > qi::lit("?"))))[qi::_val = phoenix::bind(&FormulaParserGrammar::createOperatorInformation, phoenix::ref(*this), qi::_a, qi::_b, qi::_c)];
+            operatorInformation = (-optimalityOperator_[qi::_a = qi::_1] >> ((relationalOperator_[qi::_b = qi::_1] > expressionParser[qi::_c = qi::_1]) | (qi::lit("=") > qi::lit("?"))))[qi::_val = phoenix::bind(&FormulaParserGrammar::createOperatorInformation, phoenix::ref(*this), qi::_a, qi::_b, qi::_c)];
             operatorInformation.name("operator information");
             
             longRunAverageOperator = ((qi::lit("LRA") | qi::lit("S")) > operatorInformation > qi::lit("[") > stateFormula > qi::lit("]"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createLongRunAverageOperatorFormula, phoenix::ref(*this), qi::_1, qi::_2)];
@@ -406,8 +411,8 @@ namespace storm {
                 return std::shared_ptr<storm::logic::Formula const>(new storm::logic::InstantaneousRewardFormula(static_cast<uint_fast64_t>(boost::get<unsigned>(timeBound))));
             } else {
                 double timeBoundAsDouble = boost::get<double>(timeBound);
-                STORM_LOG_THROW(timeBoundAsDouble >= 0, storm::exceptions::WrongFormatException, "Cumulative reward property must have non-negative bound.");
-                return std::shared_ptr<storm::logic::Formula const>(new storm::logic::InstantaneousRewardFormula(static_cast<uint_fast64_t>(timeBoundAsDouble)));
+                STORM_LOG_THROW(timeBoundAsDouble >= 0, storm::exceptions::WrongFormatException, "Instantaneous reward property must have non-negative bound.");
+                return std::shared_ptr<storm::logic::Formula const>(new storm::logic::InstantaneousRewardFormula(timeBoundAsDouble));
             }
         }
         
@@ -476,9 +481,10 @@ namespace storm {
             return std::shared_ptr<storm::logic::Formula const>(new storm::logic::ConditionalFormula(leftSubformula, rightSubformula, context));
         }
         
-        storm::logic::OperatorInformation FormulaParserGrammar::createOperatorInformation(boost::optional<storm::OptimizationDirection> const& optimizationDirection, boost::optional<storm::logic::ComparisonType> const& comparisonType, boost::optional<double> const& threshold) const {
+        storm::logic::OperatorInformation FormulaParserGrammar::createOperatorInformation(boost::optional<storm::OptimizationDirection> const& optimizationDirection, boost::optional<storm::logic::ComparisonType> const& comparisonType, boost::optional<storm::expressions::Expression> const& threshold) const {
             if (comparisonType && threshold) {
-                return storm::logic::OperatorInformation(optimizationDirection, storm::logic::Bound<double>(comparisonType.get(), threshold.get()));
+                storm::expressions::ExpressionEvaluator<storm::RationalNumber> evaluator(*manager);
+                return storm::logic::OperatorInformation(optimizationDirection, storm::logic::Bound<RationalNumber>(comparisonType.get(), evaluator.asRational(threshold.get())));
             } else {
                 return storm::logic::OperatorInformation(optimizationDirection, boost::none);
             }

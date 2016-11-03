@@ -14,7 +14,7 @@ namespace storm {
          * queries and insertions are supported. Also, the keys must be bit vectors with a length that is a multiple of
          * 64.
          */
-        template<class ValueType, class Hash1 = std::hash<storm::storage::BitVector>, class Hash2 = storm::storage::NonZeroBitVectorHash>
+        template<typename ValueType, typename Hash1 = std::hash<storm::storage::BitVector>, class Hash2 = storm::storage::NonZeroBitVectorHash>
         class BitVectorHashMap {
         public:
             class BitVectorHashMapIterator {

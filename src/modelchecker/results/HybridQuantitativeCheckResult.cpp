@@ -17,7 +17,7 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type, typename ValueType>
-        std::unique_ptr<CheckResult> HybridQuantitativeCheckResult<Type, ValueType>::compareAgainstBound(storm::logic::ComparisonType comparisonType, double bound) const {
+        std::unique_ptr<CheckResult> HybridQuantitativeCheckResult<Type, ValueType>::compareAgainstBound(storm::logic::ComparisonType comparisonType, ValueType const& bound) const {
             storm::dd::Bdd<Type> symbolicResult;
 
             // First compute the symbolic part of the result.

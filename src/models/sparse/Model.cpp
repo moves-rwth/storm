@@ -148,6 +148,12 @@ namespace storm {
             }
             
             template<typename ValueType, typename RewardModelType>
+            typename std::unordered_map<std::string, RewardModelType>::iterator Model<ValueType, RewardModelType>::getUniqueRewardModel() {
+                STORM_LOG_THROW(this->getNumberOfRewardModels() == 1, storm::exceptions::IllegalFunctionCallException, "The reward model is not unique.");
+                return this->rewardModels.begin();
+            }
+            
+            template<typename ValueType, typename RewardModelType>
             uint_fast64_t Model<ValueType, RewardModelType>::getNumberOfRewardModels() const {
                 return this->rewardModels.size();
             }
@@ -312,7 +318,11 @@ namespace storm {
             
             template<typename ValueType, typename RewardModelType>
             bool Model<ValueType, RewardModelType>::supportsParameters() const {
+#ifdef STORM_HAVE_CARL
                 return std::is_same<ValueType, storm::RationalFunction>::value;
+#else
+		return false;
+#endif
             }
             
             template<typename ValueType, typename RewardModelType>
@@ -346,21 +356,21 @@ namespace storm {
                 return this->rewardModels;
             }
             
-            
-
-            std::set<storm::Variable> getProbabilityParameters(Model<storm::RationalFunction> const& model) {
+#ifdef STORM_HAVE_CARL
+            std::set<storm::RationalFunctionVariable> getProbabilityParameters(Model<storm::RationalFunction> const& model) {
                 return storm::storage::getVariables(model.getTransitionMatrix());
             }
+#endif
             
             template class Model<double>;
             template class Model<float>;
-            
-#ifdef STORM_HAVE_CARL
-            template class Model<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
 
+#ifdef STORM_HAVE_CARL
+            template class Model<storm::RationalNumber>;
+
+            template class Model<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
             template class Model<storm::RationalFunction>;
 #endif
-            
         }
     }
 }

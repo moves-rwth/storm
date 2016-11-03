@@ -7,10 +7,10 @@
 #include "src/storage/expressions/ExpressionVisitor.h"
 #include "src/storage/expressions/Variable.h"
 
-#ifdef STORM_HAVE_CARL
 namespace storm {
     namespace expressions {
 
+#ifdef STORM_HAVE_CARL
         template<typename RationalFunctionType>
         class ToRationalFunctionVisitor : public ExpressionVisitor {
         public:
@@ -27,7 +27,7 @@ namespace storm {
             virtual boost::any visit(UnaryNumericalFunctionExpression const& expression) override;
             virtual boost::any visit(BooleanLiteralExpression const& expression) override;
             virtual boost::any visit(IntegerLiteralExpression const& expression) override;
-            virtual boost::any visit(DoubleLiteralExpression const& expression) override;
+            virtual boost::any visit(RationalLiteralExpression const& expression) override;
             
         private:
             template<typename TP = typename RationalFunctionType::PolyType, carl::EnableIf<carl::needs_cache<TP>> = carl::dummy>
@@ -46,8 +46,8 @@ namespace storm {
             // The cache that is used in case the underlying type needs a cache.
             std::shared_ptr<carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>>> cache;
         };
+#endif
     }
 }
-#endif
 
 #endif /* STORM_STORAGE_EXPRESSIONS_TORATIONALFUNCTIONVISITOR_H_ */

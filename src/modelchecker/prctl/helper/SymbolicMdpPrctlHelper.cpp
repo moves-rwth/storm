@@ -66,7 +66,7 @@ namespace storm {
                         
                         // Now solve the resulting equation system.
                         std::unique_ptr<storm::solver::SymbolicMinMaxLinearEquationSolver<DdType, ValueType>> solver = linearEquationSolverFactory.create(submatrix, maybeStates, model.getIllegalMask() && maybeStates, model.getRowVariables(), model.getColumnVariables(), model.getNondeterminismVariables(), model.getRowColumnMetaVariablePairs());
-                        storm::dd::Add<DdType, ValueType> result = solver->solveEquationSystem(dir == OptimizationDirection::Minimize, model.getManager().template getAddZero<ValueType>(), subvector);
+                        storm::dd::Add<DdType, ValueType> result = solver->solveEquations(dir == OptimizationDirection::Minimize, model.getManager().template getAddZero<ValueType>(), subvector);
                         
                         return std::unique_ptr<CheckResult>(new storm::modelchecker::SymbolicQuantitativeCheckResult<DdType>(model.getReachableStates(), statesWithProbability01.second.template toAdd<ValueType>() + result));
                     } else {
@@ -78,7 +78,7 @@ namespace storm {
             template<storm::dd::DdType DdType, typename ValueType>
             std::unique_ptr<CheckResult> SymbolicMdpPrctlHelper<DdType, ValueType>::computeGloballyProbabilities(OptimizationDirection dir, storm::models::symbolic::NondeterministicModel<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Bdd<DdType> const& psiStates, bool qualitative, storm::utility::solver::SymbolicMinMaxLinearEquationSolverFactory<DdType, ValueType> const& linearEquationSolverFactory) {
                 std::unique_ptr<CheckResult> result = computeUntilProbabilities(dir == OptimizationDirection::Minimize ? OptimizationDirection::Maximize : OptimizationDirection::Minimize, model, transitionMatrix, model.getReachableStates(), !psiStates && model.getReachableStates(), qualitative, linearEquationSolverFactory);
-                result->asQuantitativeCheckResult().oneMinus();
+                result->asQuantitativeCheckResult<ValueType>().oneMinus();
                 return result;
             }
             
@@ -118,7 +118,7 @@ namespace storm {
                     submatrix *= maybeStatesAdd.swapVariables(model.getRowColumnMetaVariablePairs());
                     
                     std::unique_ptr<storm::solver::SymbolicMinMaxLinearEquationSolver<DdType, ValueType>> solver = linearEquationSolverFactory.create(submatrix, maybeStates, model.getIllegalMask() && maybeStates, model.getRowVariables(), model.getColumnVariables(), model.getNondeterminismVariables(), model.getRowColumnMetaVariablePairs());
-                    storm::dd::Add<DdType, ValueType> result = solver->performMatrixVectorMultiplication(dir == OptimizationDirection::Minimize, model.getManager().template getAddZero<ValueType>(), &subvector, stepBound);
+                    storm::dd::Add<DdType, ValueType> result = solver->multiply(dir == OptimizationDirection::Minimize, model.getManager().template getAddZero<ValueType>(), &subvector, stepBound);
                     
                     return std::unique_ptr<CheckResult>(new storm::modelchecker::SymbolicQuantitativeCheckResult<DdType>(model.getReachableStates(), psiStates.template toAdd<ValueType>() + result));
                 } else {
@@ -133,7 +133,7 @@ namespace storm {
                 
                 // Perform the matrix-vector multiplication.
                 std::unique_ptr<storm::solver::SymbolicMinMaxLinearEquationSolver<DdType, ValueType>> solver = linearEquationSolverFactory.create(model.getTransitionMatrix(), model.getReachableStates(), model.getIllegalMask(), model.getRowVariables(), model.getColumnVariables(), model.getNondeterminismVariables(), model.getRowColumnMetaVariablePairs());
-                storm::dd::Add<DdType, ValueType> result = solver->performMatrixVectorMultiplication(dir == OptimizationDirection::Minimize, rewardModel.getStateRewardVector(), nullptr, stepBound);
+                storm::dd::Add<DdType, ValueType> result = solver->multiply(dir == OptimizationDirection::Minimize, rewardModel.getStateRewardVector(), nullptr, stepBound);
 
                 return std::unique_ptr<CheckResult>(new SymbolicQuantitativeCheckResult<DdType>(model.getReachableStates(), result));
             }
@@ -148,7 +148,7 @@ namespace storm {
                 
                 // Perform the matrix-vector multiplication.
                 std::unique_ptr<storm::solver::SymbolicMinMaxLinearEquationSolver<DdType, ValueType>> solver = linearEquationSolverFactory.create(model.getTransitionMatrix(), model.getReachableStates(), model.getIllegalMask(), model.getRowVariables(), model.getColumnVariables(), model.getNondeterminismVariables(), model.getRowColumnMetaVariablePairs());
-                storm::dd::Add<DdType, ValueType> result = solver->performMatrixVectorMultiplication(dir == OptimizationDirection::Minimize, model.getManager().template getAddZero<ValueType>(), &totalRewardVector, stepBound);
+                storm::dd::Add<DdType, ValueType> result = solver->multiply(dir == OptimizationDirection::Minimize, model.getManager().template getAddZero<ValueType>(), &totalRewardVector, stepBound);
                 
                 return std::unique_ptr<CheckResult>(new SymbolicQuantitativeCheckResult<DdType>(model.getReachableStates(), result));
             }
@@ -192,12 +192,17 @@ namespace storm {
                         // Then compute the state reward vector to use in the computation.
                         storm::dd::Add<DdType, ValueType> subvector = rewardModel.getTotalRewardVector(maybeStatesAdd, submatrix, model.getColumnVariables());
                         
+                        // Since we are cutting away target and infinity states, we need to account for this by giving
+                        // choices the value infinity that have some successor contained in the infinity states.
+                        storm::dd::Bdd<DdType> choicesWithInfinitySuccessor = (maybeStates && transitionMatrixBdd && infinityStates.swapVariables(model.getRowColumnMetaVariablePairs())).existsAbstract(model.getColumnVariables());
+                        subvector = choicesWithInfinitySuccessor.ite(model.getManager().template getInfinity<ValueType>(), subvector);
+                        
                         // Finally cut away all columns targeting non-maybe states.
                         submatrix *= maybeStatesAdd.swapVariables(model.getRowColumnMetaVariablePairs());
                         
                         // Now solve the resulting equation system.
                         std::unique_ptr<storm::solver::SymbolicMinMaxLinearEquationSolver<DdType, ValueType>> solver = linearEquationSolverFactory.create(submatrix, maybeStates, model.getIllegalMask() && maybeStates, model.getRowVariables(), model.getColumnVariables(), model.getNondeterminismVariables(), model.getRowColumnMetaVariablePairs());
-                        storm::dd::Add<DdType, ValueType> result = solver->solveEquationSystem(dir == OptimizationDirection::Minimize, model.getManager().template getAddZero<ValueType>(), subvector);
+                        storm::dd::Add<DdType, ValueType> result = solver->solveEquations(dir == OptimizationDirection::Minimize, model.getManager().template getAddZero<ValueType>(), subvector);
 
                         return std::unique_ptr<CheckResult>(new storm::modelchecker::SymbolicQuantitativeCheckResult<DdType>(model.getReachableStates(), infinityStates.ite(model.getManager().getConstant(storm::utility::infinity<ValueType>()), result)));
                     } else {

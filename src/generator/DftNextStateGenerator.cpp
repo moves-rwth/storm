@@ -29,7 +29,7 @@ namespace storm {
         }
 
         template<typename ValueType, typename StateType>
-        void DftNextStateGenerator<ValueType, StateType>::load(CompressedState const& state) {
+        void DftNextStateGenerator<ValueType, StateType>::load(storm::storage::BitVector const& state) {
             // Load the state from bitvector
             size_t id = 0; //TODO Matthias: set correct id
             this->state = std::make_shared<storm::storage::DFTState<ValueType>>(state, mDft, mStateGenerationInfo, id);
@@ -39,11 +39,6 @@ namespace storm {
         void DftNextStateGenerator<ValueType, StateType>::load(DFTStatePointer const& state) {
             // Store a pointer to the state itself, because we need to be able to access it when expanding it.
             this->state = state;
-        }
-        
-        template<typename ValueType, typename StateType>
-        bool DftNextStateGenerator<ValueType, StateType>::satisfies(storm::expressions::Expression const& expression) const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "The method 'satisfies' is not yet implemented.");
         }
         
         template<typename ValueType, typename StateType>

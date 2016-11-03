@@ -14,19 +14,23 @@
 #include "src/exceptions/OptionParserException.h"
 #include "src/utility/storm-version.h"
 #include "src/settings/modules/GeneralSettings.h"
-#include "src/settings/modules/MarkovChainSettings.h"
+#include "src/settings/modules/CoreSettings.h"
 #include "src/settings/modules/IOSettings.h"
 #include "src/settings/modules/DebugSettings.h"
 #include "src/settings/modules/CounterexampleGeneratorSettings.h"
 #include "src/settings/modules/CuddSettings.h"
 #include "src/settings/modules/SylvanSettings.h"
+#include "src/settings/modules/EigenEquationSolverSettings.h"
 #include "src/settings/modules/GmmxxEquationSolverSettings.h"
 #include "src/settings/modules/NativeEquationSolverSettings.h"
+#include "src/settings/modules/EliminationSettings.h"
+#include "src/settings/modules/MinMaxEquationSolverSettings.h"
 #include "src/settings/modules/BisimulationSettings.h"
 #include "src/settings/modules/GlpkSettings.h"
 #include "src/settings/modules/GurobiSettings.h"
+#include "src/settings/modules/Smt2SmtSolverSettings.h"
 #include "src/settings/modules/ParametricSettings.h"
-#include "src/settings/modules/SparseDtmcEliminationModelCheckerSettings.h"
+#include "src/settings/modules/RegionSettings.h"
 #include "src/settings/modules/TopologicalValueIterationEquationSolverSettings.h"
 #include "src/settings/modules/ExplorationSettings.h"
 #include "src/utility/macros.h"
@@ -53,7 +57,7 @@ namespace storm {
             this->executableName = executableName;
         }
 
-        
+
         void SettingsManager::setFromCommandLine(int const argc, char const * const argv[]) {
             // We convert the arguments to a vector of strings and strip off the first element since it refers to the
             // name of the program.
@@ -488,8 +492,8 @@ namespace storm {
             return SettingsManager::manager();
         }
         
-        storm::settings::modules::MarkovChainSettings& mutableMarkovChainSettings() {
-            return dynamic_cast<storm::settings::modules::MarkovChainSettings&>(mutableManager().getModule(storm::settings::modules::MarkovChainSettings::moduleName));
+        storm::settings::modules::CoreSettings& mutableCoreSettings() {
+            return dynamic_cast<storm::settings::modules::CoreSettings&>(mutableManager().getModule(storm::settings::modules::CoreSettings::moduleName));
         }
         
         storm::settings::modules::IOSettings& mutableIOSettings() {
@@ -498,23 +502,27 @@ namespace storm {
         
         void initializeAll(std::string const& name, std::string const& executableName) {
             storm::settings::mutableManager().setName(name, executableName);
-            
+
             // Register all known settings modules.
             storm::settings::addModule<storm::settings::modules::GeneralSettings>();
             storm::settings::addModule<storm::settings::modules::IOSettings>();
-            storm::settings::addModule<storm::settings::modules::MarkovChainSettings>();
+            storm::settings::addModule<storm::settings::modules::CoreSettings>();
             storm::settings::addModule<storm::settings::modules::DebugSettings>();
             storm::settings::addModule<storm::settings::modules::CounterexampleGeneratorSettings>();
             storm::settings::addModule<storm::settings::modules::CuddSettings>();
             storm::settings::addModule<storm::settings::modules::SylvanSettings>();
             storm::settings::addModule<storm::settings::modules::GmmxxEquationSolverSettings>();
+            storm::settings::addModule<storm::settings::modules::EigenEquationSolverSettings>();
             storm::settings::addModule<storm::settings::modules::NativeEquationSolverSettings>();
+            storm::settings::addModule<storm::settings::modules::EliminationSettings>();
+            storm::settings::addModule<storm::settings::modules::MinMaxEquationSolverSettings>();
             storm::settings::addModule<storm::settings::modules::BisimulationSettings>();
             storm::settings::addModule<storm::settings::modules::GlpkSettings>();
             storm::settings::addModule<storm::settings::modules::GurobiSettings>();
             storm::settings::addModule<storm::settings::modules::TopologicalValueIterationEquationSolverSettings>();
             storm::settings::addModule<storm::settings::modules::ParametricSettings>();
-            storm::settings::addModule<storm::settings::modules::SparseDtmcEliminationModelCheckerSettings>();
+            storm::settings::addModule<storm::settings::modules::RegionSettings>();
+            storm::settings::addModule<storm::settings::modules::Smt2SmtSolverSettings>();
             storm::settings::addModule<storm::settings::modules::ExplorationSettings>();
         }
 

@@ -1,5 +1,7 @@
 #include "src/parser/PrismParser.h"
 
+#include "src/storage/prism/Compositions.h"
+
 #include "src/settings/SettingsManager.h"
 
 #include "src/exceptions/InvalidArgumentException.h"
@@ -63,6 +65,8 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << lineNumber << " of file " << filename << ".");
             }
             
+            STORM_LOG_TRACE("Parsed PRISM input: " << result);
+            
             return result;
         }
         
@@ -101,10 +105,10 @@ namespace storm {
             formulaDefinition = (qi::lit("formula") > identifier > qi::lit("=") > expressionParser > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createFormula, phoenix::ref(*this), qi::_1, qi::_2)];
             formulaDefinition.name("formula definition");
             
-            booleanVariableDefinition = ((identifier >> qi::lit(":") >> qi::lit("bool")) > ((qi::lit("init") > expressionParser) | qi::attr(manager->boolean(false))) > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createBooleanVariable, phoenix::ref(*this), qi::_1, qi::_2)];
+            booleanVariableDefinition = ((identifier >> qi::lit(":") >> qi::lit("bool")) > -((qi::lit("init") > expressionParser[qi::_a = qi::_1]) | qi::attr(manager->boolean(false))) > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createBooleanVariable, phoenix::ref(*this), qi::_1, qi::_a)];
             booleanVariableDefinition.name("boolean variable definition");
             
-            integerVariableDefinition = ((identifier >> qi::lit(":") >> qi::lit("[")[phoenix::bind(&PrismParser::allowDoubleLiterals, phoenix::ref(*this), false)]) > expressionParser[qi::_a = qi::_1] > qi::lit("..") > expressionParser > qi::lit("]")[phoenix::bind(&PrismParser::allowDoubleLiterals, phoenix::ref(*this), true)] > -(qi::lit("init") > expressionParser[qi::_a = qi::_1]) > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createIntegerVariable, phoenix::ref(*this), qi::_1, qi::_2, qi::_3, qi::_a)];
+            integerVariableDefinition = ((identifier >> qi::lit(":") >> qi::lit("[")[phoenix::bind(&PrismParser::allowDoubleLiterals, phoenix::ref(*this), false)]) > expressionParser > qi::lit("..") > expressionParser > qi::lit("]")[phoenix::bind(&PrismParser::allowDoubleLiterals, phoenix::ref(*this), true)] > -(qi::lit("init") > expressionParser[qi::_a = qi::_1]) > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createIntegerVariable, phoenix::ref(*this), qi::_1, qi::_2, qi::_3, qi::_a)];
             integerVariableDefinition.name("integer variable definition");
             
             variableDefinition = (booleanVariableDefinition[phoenix::push_back(qi::_r1, qi::_1)] | integerVariableDefinition[phoenix::push_back(qi::_r2, qi::_1)]);
@@ -132,6 +136,45 @@ namespace storm {
             
             initialStatesConstruct = (qi::lit("init") > expressionParser > qi::lit("endinit"))[qi::_pass = phoenix::bind(&PrismParser::addInitialStatesConstruct, phoenix::ref(*this), qi::_1, qi::_r1)];
             initialStatesConstruct.name("initial construct");
+            
+            systemCompositionConstruct = (qi::lit("system") > parallelComposition > qi::lit("endsystem"))[phoenix::bind(&PrismParser::addSystemCompositionConstruct, phoenix::ref(*this), qi::_1, qi::_r1)];
+            systemCompositionConstruct.name("system composition construct");
+            
+            actionNameList %= identifier[phoenix::insert(qi::_val, qi::_1)] >> *("," >> identifier[phoenix::insert(qi::_val, qi::_1)]);
+            actionNameList.name("action list");
+            
+            parallelComposition = hidingOrRenamingComposition[qi::_val = qi::_1] >> *((interleavingParallelComposition > hidingOrRenamingComposition)[qi::_val = phoenix::bind(&PrismParser::createInterleavingParallelComposition, phoenix::ref(*this), qi::_val, qi::_1)] |
+                                                                                      (synchronizingParallelComposition > hidingOrRenamingComposition)[qi::_val = phoenix::bind(&PrismParser::createSynchronizingParallelComposition, phoenix::ref(*this), qi::_val, qi::_1)] |
+                                                                                      (restrictedParallelComposition > hidingOrRenamingComposition)[qi::_val = phoenix::bind(&PrismParser::createRestrictedParallelComposition, phoenix::ref(*this), qi::_val, qi::_1, qi::_2)]
+                                                                                      );
+            parallelComposition.name("parallel composition");
+
+            synchronizingParallelComposition = qi::lit("||");
+            synchronizingParallelComposition.name("synchronizing parallel composition");
+            
+            interleavingParallelComposition = qi::lit("|||");
+            interleavingParallelComposition.name("interleaving parallel composition");
+
+            restrictedParallelComposition = qi::lit("|[") > actionNameList > qi::lit("]|");
+            restrictedParallelComposition.name("restricted parallel composition");
+            
+            hidingOrRenamingComposition = hidingComposition | renamingComposition | atomicComposition;
+            hidingOrRenamingComposition.name("hiding/renaming composition");
+            
+            hidingComposition = (atomicComposition >> (qi::lit("/") > (qi::lit("{") > actionNameList > qi::lit("}"))))[qi::_val = phoenix::bind(&PrismParser::createHidingComposition, phoenix::ref(*this), qi::_1, qi::_2)];
+            hidingComposition.name("hiding composition");
+            
+            actionRenamingList = +(identifier >> (qi::lit("<-") >> identifier))[phoenix::insert(qi::_val, phoenix::construct<std::pair<std::string, std::string>>(qi::_1, qi::_2))];
+            actionRenamingList.name("action renaming list");
+            
+            renamingComposition = (atomicComposition >> (qi::lit("{") > (actionRenamingList > qi::lit("}"))))[qi::_val = phoenix::bind(&PrismParser::createRenamingComposition, phoenix::ref(*this), qi::_1, qi::_2)];
+            renamingComposition.name("renaming composition");
+            
+            atomicComposition = qi::lit("(") > parallelComposition > qi::lit(")") | moduleComposition;
+            atomicComposition.name("atomic composition");
+            
+            moduleComposition = identifier[qi::_val = phoenix::bind(&PrismParser::createModuleComposition, phoenix::ref(*this), qi::_1)];
+            moduleComposition.name("module composition");
             
             labelDefinition = (qi::lit("label") > -qi::lit("\"") > identifier > -qi::lit("\"") > qi::lit("=") > expressionParser >> qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createLabel, phoenix::ref(*this), qi::_1, qi::_2)];
             labelDefinition.name("label definition");
@@ -167,7 +210,7 @@ namespace storm {
             moduleDefinitionList %= +(moduleRenaming(qi::_r1) | moduleDefinition(qi::_r1))[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::modules, qi::_r1), qi::_1)];
             moduleDefinitionList.name("module list");
             
-            start = (qi::eps
+            start = (qi::eps[phoenix::bind(&PrismParser::removeInitialConstruct, phoenix::ref(*this), qi::_a)]
                      > modelTypeDefinition[phoenix::bind(&GlobalProgramInformation::modelType, qi::_a) = qi::_1]
                      > *(definedConstantDefinition[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::constants, qi::_a), qi::_1)] 
                          | undefinedConstantDefinition[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::constants, qi::_a), qi::_1)]
@@ -179,7 +222,7 @@ namespace storm {
                          | labelDefinition[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::labels, qi::_a), qi::_1)] 
                          | formulaDefinition[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::formulas, qi::_a), qi::_1)]
                      )
-                     > qi::eoi)[qi::_val = phoenix::bind(&PrismParser::createProgram, phoenix::ref(*this), qi::_a)];
+                     > -(systemCompositionConstruct(qi::_a)) > qi::eoi)[qi::_val = phoenix::bind(&PrismParser::createProgram, phoenix::ref(*this), qi::_a)];
             start.name("probabilistic program");
             
             // Enable location tracking for important entities.
@@ -235,7 +278,7 @@ namespace storm {
             return true;
         }
         
-        bool PrismParser::addInitialStatesConstruct(storm::expressions::Expression initialStatesExpression, GlobalProgramInformation& globalProgramInformation) {
+        bool PrismParser::addInitialStatesConstruct(storm::expressions::Expression const& initialStatesExpression, GlobalProgramInformation& globalProgramInformation) {
             STORM_LOG_THROW(!globalProgramInformation.hasInitialConstruct, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": Program must not define two initial constructs.");
             if (globalProgramInformation.hasInitialConstruct) {
                 return false;
@@ -243,6 +286,35 @@ namespace storm {
             globalProgramInformation.hasInitialConstruct = true;
             globalProgramInformation.initialConstruct = storm::prism::InitialConstruct(initialStatesExpression, this->getFilename(), get_line(qi::_3));
             return true;
+        }
+        
+        bool PrismParser::addSystemCompositionConstruct(std::shared_ptr<storm::prism::Composition> const& composition, GlobalProgramInformation& globalProgramInformation) {
+            globalProgramInformation.systemCompositionConstruct = storm::prism::SystemCompositionConstruct(composition, this->getFilename(), get_line(qi::_3));
+            return true;
+        }
+        
+        std::shared_ptr<storm::prism::Composition> PrismParser::createModuleComposition(std::string const& moduleName) const {
+            return std::make_shared<storm::prism::ModuleComposition>(moduleName);
+        }
+        
+        std::shared_ptr<storm::prism::Composition> PrismParser::createRenamingComposition(std::shared_ptr<storm::prism::Composition> const& subcomposition, std::map<std::string, std::string> const& renaming) const {
+            return std::make_shared<storm::prism::RenamingComposition>(subcomposition, renaming);
+        }
+        
+        std::shared_ptr<storm::prism::Composition> PrismParser::createHidingComposition(std::shared_ptr<storm::prism::Composition> const& subcomposition, std::set<std::string> const& actionsToHide) const {
+            return std::make_shared<storm::prism::HidingComposition>(subcomposition, actionsToHide);
+        }
+        
+        std::shared_ptr<storm::prism::Composition> PrismParser::createSynchronizingParallelComposition(std::shared_ptr<storm::prism::Composition> const& left, std::shared_ptr<storm::prism::Composition> const& right) const {
+            return std::make_shared<storm::prism::SynchronizingParallelComposition>(left, right);
+        }
+        
+        std::shared_ptr<storm::prism::Composition> PrismParser::createInterleavingParallelComposition(std::shared_ptr<storm::prism::Composition> const& left, std::shared_ptr<storm::prism::Composition> const& right) const {
+            return std::make_shared<storm::prism::InterleavingParallelComposition>(left, right);
+        }
+        
+        std::shared_ptr<storm::prism::Composition> PrismParser::createRestrictedParallelComposition(std::shared_ptr<storm::prism::Composition> const& left, std::set<std::string> const& synchronizingActions, std::shared_ptr<storm::prism::Composition> const& right) const {
+            return std::make_shared<storm::prism::RestrictedParallelComposition>(left, synchronizingActions, right);
         }
         
         storm::prism::Constant PrismParser::createUndefinedBooleanConstant(std::string const& newConstant) const {
@@ -515,7 +587,7 @@ namespace storm {
                     auto const& renamingPair = renaming.find(variable.getName());
                     STORM_LOG_THROW(renamingPair != renaming.end(), storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": Boolean variable '" << variable.getName() << " was not renamed.");
                     
-                    booleanVariables.push_back(storm::prism::BooleanVariable(manager->getVariable(renamingPair->second), variable.getInitialValueExpression().substitute(expressionRenaming), this->getFilename(), get_line(qi::_1)));
+                    booleanVariables.push_back(storm::prism::BooleanVariable(manager->getVariable(renamingPair->second), variable.hasInitialValue() ? variable.getInitialValueExpression().substitute(expressionRenaming) : variable.getInitialValueExpression(), this->getFilename(), get_line(qi::_1)));
                 }
                 
                 // Rename the integer variables.
@@ -524,7 +596,7 @@ namespace storm {
                     auto const& renamingPair = renaming.find(variable.getName());
                     STORM_LOG_THROW(renamingPair != renaming.end(), storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ", line " << get_line(qi::_3) << ": Integer variable '" << variable.getName() << " was not renamed.");
                     
-                    integerVariables.push_back(storm::prism::IntegerVariable(manager->getVariable(renamingPair->second), variable.getLowerBoundExpression().substitute(expressionRenaming), variable.getUpperBoundExpression().substitute(expressionRenaming), variable.getInitialValueExpression().substitute(expressionRenaming), this->getFilename(), get_line(qi::_1)));
+                    integerVariables.push_back(storm::prism::IntegerVariable(manager->getVariable(renamingPair->second), variable.getLowerBoundExpression().substitute(expressionRenaming), variable.getUpperBoundExpression().substitute(expressionRenaming), variable.hasInitialValue() ? variable.getInitialValueExpression().substitute(expressionRenaming) : variable.getInitialValueExpression(), this->getFilename(), get_line(qi::_1)));
                 }
                 
                 // Rename commands.
@@ -570,7 +642,11 @@ namespace storm {
         }
         
         storm::prism::Program PrismParser::createProgram(GlobalProgramInformation const& globalProgramInformation) const {
-            return storm::prism::Program(manager, globalProgramInformation.modelType, globalProgramInformation.constants, globalProgramInformation.globalBooleanVariables, globalProgramInformation.globalIntegerVariables, globalProgramInformation.formulas, globalProgramInformation.modules, globalProgramInformation.actionIndices, globalProgramInformation.rewardModels, this->secondRun && !globalProgramInformation.hasInitialConstruct, globalProgramInformation.initialConstruct, globalProgramInformation.labels, this->getFilename(), 1, this->secondRun);
+            return storm::prism::Program(manager, globalProgramInformation.modelType, globalProgramInformation.constants, globalProgramInformation.globalBooleanVariables, globalProgramInformation.globalIntegerVariables, globalProgramInformation.formulas, globalProgramInformation.modules, globalProgramInformation.actionIndices, globalProgramInformation.rewardModels, globalProgramInformation.labels, secondRun && !globalProgramInformation.hasInitialConstruct ? boost::none : boost::make_optional(globalProgramInformation.initialConstruct), globalProgramInformation.systemCompositionConstruct, this->getFilename(), 1, this->secondRun);
+        }
+        
+        void PrismParser::removeInitialConstruct(GlobalProgramInformation& globalProgramInformation) const {
+            globalProgramInformation.hasInitialConstruct = false;
         }
     } // namespace parser
 } // namespace storm

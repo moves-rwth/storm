@@ -3,7 +3,7 @@
 
 #include "src/storage/expressions/BinaryNumericalFunctionExpression.h"
 #include "src/storage/expressions/IntegerLiteralExpression.h"
-#include "src/storage/expressions/DoubleLiteralExpression.h"
+#include "src/storage/expressions/RationalLiteralExpression.h"
 #include "src/storage/expressions/ExpressionVisitor.h"
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidTypeException.h"
@@ -102,7 +102,7 @@ namespace storm {
                         case OperatorType::Power: newValue = static_cast<int_fast64_t>(std::pow(firstOperandEvaluation, secondOperandEvaluation)); break;
                         case OperatorType::Divide: STORM_LOG_THROW(false, storm::exceptions::InvalidStateException, "Unable to simplify division."); break;
                     }
-                    return std::shared_ptr<BaseExpression>(new DoubleLiteralExpression(this->getManager(), newValue));
+                    return std::shared_ptr<BaseExpression>(new RationalLiteralExpression(this->getManager(), newValue));
                 }
             }
             

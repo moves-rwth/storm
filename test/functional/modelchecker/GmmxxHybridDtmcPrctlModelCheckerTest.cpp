@@ -3,7 +3,7 @@
 
 #include "src/parser/FormulaParser.h"
 #include "src/logic/Formulas.h"
-#include "src/utility/solver.h"
+#include "src/solver/GmmxxLinearEquationSolver.h"
 #include "src/modelchecker/prctl/HybridDtmcPrctlModelChecker.h"
 #include "src/modelchecker/results/HybridQuantitativeCheckResult.h"
 #include "src/modelchecker/results/SymbolicQualitativeCheckResult.h"
@@ -32,7 +32,7 @@ TEST(GmmxxHybridDtmcPrctlModelCheckerTest, Die_Cudd) {
 #endif
     options.buildAllRewardModels = false;
     options.rewardModelsToBuild.insert("coin_flips");
-    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().translateProgram(program, options);
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().build(program, options);
     EXPECT_EQ(13ul, model->getNumberOfStates());
     EXPECT_EQ(20ul, model->getNumberOfTransitions());
 
@@ -40,7 +40,7 @@ TEST(GmmxxHybridDtmcPrctlModelCheckerTest, Die_Cudd) {
     
     std::shared_ptr<storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD>> dtmc = model->as<storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD>>();
     
-    storm::modelchecker::HybridDtmcPrctlModelChecker<storm::dd::DdType::CUDD, double> checker(*dtmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::GmmxxLinearEquationSolverFactory<double>()));
+    storm::modelchecker::HybridDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD, double>> checker(*dtmc, std::make_unique<storm::solver::GmmxxLinearEquationSolverFactory<double>>());
     
     std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"one\"]");
     
@@ -93,15 +93,15 @@ TEST(GmmxxHybridDtmcPrctlModelCheckerTest, Die_Sylvan) {
 #endif
     options.buildAllRewardModels = false;
     options.rewardModelsToBuild.insert("coin_flips");
-    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().translateProgram(program, options);
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().build(program, options);
     EXPECT_EQ(13ul, model->getNumberOfStates());
     EXPECT_EQ(20ul, model->getNumberOfTransitions());
     
     ASSERT_EQ(model->getType(), storm::models::ModelType::Dtmc);
     
     std::shared_ptr<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan>> dtmc = model->as<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan>>();
-    
-    storm::modelchecker::HybridDtmcPrctlModelChecker<storm::dd::DdType::Sylvan, double> checker(*dtmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::GmmxxLinearEquationSolverFactory<double>()));
+
+    storm::modelchecker::HybridDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, double>> checker(*dtmc, std::make_unique<storm::solver::GmmxxLinearEquationSolverFactory<double>>());
     
     std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"one\"]");
     
@@ -146,15 +146,15 @@ TEST(GmmxxHybridDtmcPrctlModelCheckerTest, Crowds_Cudd) {
     // A parser that we use for conveniently constructing the formulas.
     storm::parser::FormulaParser formulaParser;
     
-    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().translateProgram(program);
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().build(program);
     EXPECT_EQ(8607ul, model->getNumberOfStates());
     EXPECT_EQ(15113ul, model->getNumberOfTransitions());
     
     ASSERT_EQ(model->getType(), storm::models::ModelType::Dtmc);
     
     std::shared_ptr<storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD>> dtmc = model->as<storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD>>();
-    
-    storm::modelchecker::HybridDtmcPrctlModelChecker<storm::dd::DdType::CUDD, double> checker(*dtmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::GmmxxLinearEquationSolverFactory<double>()));
+
+    storm::modelchecker::HybridDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD, double>> checker(*dtmc, std::make_unique<storm::solver::GmmxxLinearEquationSolverFactory<double>>());
     
     std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"observe0Greater1\"]");
     
@@ -190,15 +190,15 @@ TEST(GmmxxHybridDtmcPrctlModelCheckerTest, Crowds_Sylvan) {
     // A parser that we use for conveniently constructing the formulas.
     storm::parser::FormulaParser formulaParser;
     
-    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().translateProgram(program);
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().build(program);
     EXPECT_EQ(8607ul, model->getNumberOfStates());
     EXPECT_EQ(15113ul, model->getNumberOfTransitions());
     
     ASSERT_EQ(model->getType(), storm::models::ModelType::Dtmc);
     
     std::shared_ptr<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan>> dtmc = model->as<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan>>();
-    
-    storm::modelchecker::HybridDtmcPrctlModelChecker<storm::dd::DdType::Sylvan, double> checker(*dtmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::GmmxxLinearEquationSolverFactory<double>()));
+
+    storm::modelchecker::HybridDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, double>> checker(*dtmc, std::make_unique<storm::solver::GmmxxLinearEquationSolverFactory<double>>());
     
     std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"observe0Greater1\"]");
     
@@ -242,15 +242,15 @@ TEST(GmmxxHybridDtmcPrctlModelCheckerTest, SynchronousLeader_Cudd) {
 #endif
     options.buildAllRewardModels = false;
     options.rewardModelsToBuild.insert("num_rounds");
-    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().translateProgram(program, options);
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().build(program, options);
     EXPECT_EQ(273ul, model->getNumberOfStates());
     EXPECT_EQ(397ul, model->getNumberOfTransitions());
     
     ASSERT_EQ(model->getType(), storm::models::ModelType::Dtmc);
     
     std::shared_ptr<storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD>> dtmc = model->as<storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD>>();
-    
-    storm::modelchecker::HybridDtmcPrctlModelChecker<storm::dd::DdType::CUDD, double> checker(*dtmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::GmmxxLinearEquationSolverFactory<double>()));
+
+    storm::modelchecker::HybridDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD, double>> checker(*dtmc, std::make_unique<storm::solver::GmmxxLinearEquationSolverFactory<double>>());
     
     std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"elected\"]");
     
@@ -294,15 +294,15 @@ TEST(GmmxxHybridDtmcPrctlModelCheckerTest, SynchronousLeader_Sylvan) {
 #endif
     options.buildAllRewardModels = false;
     options.rewardModelsToBuild.insert("num_rounds");
-    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().translateProgram(program, options);
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().build(program, options);
     EXPECT_EQ(273ul, model->getNumberOfStates());
     EXPECT_EQ(397ul, model->getNumberOfTransitions());
     
     ASSERT_EQ(model->getType(), storm::models::ModelType::Dtmc);
     
     std::shared_ptr<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan>> dtmc = model->as<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan>>();
-    
-    storm::modelchecker::HybridDtmcPrctlModelChecker<storm::dd::DdType::Sylvan, double> checker(*dtmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::GmmxxLinearEquationSolverFactory<double>()));
+
+    storm::modelchecker::HybridDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, double>> checker(*dtmc, std::make_unique<storm::solver::GmmxxLinearEquationSolverFactory<double>>());
     
     std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"elected\"]");
     

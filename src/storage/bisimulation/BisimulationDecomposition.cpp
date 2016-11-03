@@ -13,7 +13,7 @@
 #include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
 
 #include "src/settings/SettingsManager.h"
-#include "src/settings/modules/MarkovChainSettings.h"
+#include "src/settings/modules/CoreSettings.h"
 
 #include "src/logic/FormulaInformation.h"
 #include "src/logic/FragmentSpecification.h"
@@ -210,7 +210,7 @@ namespace storm {
             
             std::chrono::high_resolution_clock::duration totalTime = std::chrono::high_resolution_clock::now() - totalStart;
             
-            if (storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().isShowStatisticsSet()) {
+            if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
                 std::chrono::milliseconds initialPartitionTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(initialPartitionTime);
                 std::chrono::milliseconds refinementTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(refinementTime);
                 std::chrono::milliseconds extractionTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(extractionTime);
@@ -230,25 +230,25 @@ namespace storm {
         
         template<typename ModelType, typename BlockDataType>
         void BisimulationDecomposition<ModelType, BlockDataType>::performPartitionRefinement() {
-            // Insert all blocks into the splitter vector as a (potential) splitter.
-            std::vector<Block<BlockDataType>*> splitterVector;
-            std::for_each(partition.getBlocks().begin(), partition.getBlocks().end(), [&] (std::unique_ptr<Block<BlockDataType>> const& block) { block->data().setSplitter(); splitterVector.push_back(block.get()); } );
+            // Insert all blocks into the splitter queue as a (potential) splitter.
+            std::vector<Block<BlockDataType>*> splitterQueue;
+            std::for_each(partition.getBlocks().begin(), partition.getBlocks().end(), [&] (std::unique_ptr<Block<BlockDataType>> const& block) { block->data().setSplitter(); splitterQueue.push_back(block.get()); } );
             
             // Then perform the actual splitting until there are no more splitters.
             uint_fast64_t iterations = 0;
-            while (!splitterVector.empty()) {
+            while (!splitterQueue.empty()) {
                 ++iterations;
 
                 // Get and prepare the next splitter.
                 // Sort the splitters according to their sizes to prefer small splitters. That is just a heuristic, but
                 // tends to work well.
-                std::sort(splitterVector.begin(), splitterVector.end(), [] (Block<BlockDataType> const* b1, Block<BlockDataType> const* b2) { return b1->getNumberOfStates() > b2->getNumberOfStates(); } );
-                Block<BlockDataType>* splitter = splitterVector.back();
-                splitterVector.pop_back();
+                std::sort(splitterQueue.begin(), splitterQueue.end(), [] (Block<BlockDataType> const* b1, Block<BlockDataType> const* b2) { return b1->getNumberOfStates() > b2->getNumberOfStates(); } );
+                Block<BlockDataType>* splitter = splitterQueue.back();
+                splitterQueue.pop_back();
                 splitter->data().setSplitter(false);
                 
                 // Now refine the partition using the current splitter.
-                refinePartitionBasedOnSplitter(*splitter, splitterVector);
+                refinePartitionBasedOnSplitter(*splitter, splitterQueue);
             }
         }
         
@@ -322,8 +322,12 @@ namespace storm {
         template class BisimulationDecomposition<storm::models::sparse::Dtmc<double>, bisimulation::DeterministicBlockData>;
         template class BisimulationDecomposition<storm::models::sparse::Ctmc<double>, bisimulation::DeterministicBlockData>;
         template class BisimulationDecomposition<storm::models::sparse::Mdp<double>, bisimulation::DeterministicBlockData>;
-        
+
 #ifdef STORM_HAVE_CARL
+        template class BisimulationDecomposition<storm::models::sparse::Dtmc<storm::RationalNumber>, bisimulation::DeterministicBlockData>;
+        template class BisimulationDecomposition<storm::models::sparse::Ctmc<storm::RationalNumber>, bisimulation::DeterministicBlockData>;
+        template class BisimulationDecomposition<storm::models::sparse::Mdp<storm::RationalNumber>, bisimulation::DeterministicBlockData>;
+
         template class BisimulationDecomposition<storm::models::sparse::Dtmc<storm::RationalFunction>, bisimulation::DeterministicBlockData>;
         template class BisimulationDecomposition<storm::models::sparse::Ctmc<storm::RationalFunction>, bisimulation::DeterministicBlockData>;
         template class BisimulationDecomposition<storm::models::sparse::Mdp<storm::RationalFunction>, bisimulation::DeterministicBlockData>;

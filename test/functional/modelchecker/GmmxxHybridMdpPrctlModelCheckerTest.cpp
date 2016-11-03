@@ -2,7 +2,7 @@
 #include "storm-config.h"
 
 #include "src/logic/Formulas.h"
-#include "src/utility/solver.h"
+#include "src/solver/StandardMinMaxLinearEquationSolver.h"
 #include "src/modelchecker/prctl/HybridMdpPrctlModelChecker.h"
 #include "src/modelchecker/results/HybridQuantitativeCheckResult.h"
 #include "src/modelchecker/results/SymbolicQualitativeCheckResult.h"
@@ -34,7 +34,7 @@ TEST(GmmxxHybridMdpPrctlModelCheckerTest, Dice_Cudd) {
 #endif
     options.buildAllRewardModels = false;
     options.rewardModelsToBuild.insert("coinflips");
-    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().translateProgram(program, options);
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().build(program, options);
     EXPECT_EQ(169ul, model->getNumberOfStates());
     EXPECT_EQ(436ul, model->getNumberOfTransitions());
     
@@ -42,7 +42,7 @@ TEST(GmmxxHybridMdpPrctlModelCheckerTest, Dice_Cudd) {
     
     std::shared_ptr<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>> mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>();
     
-    storm::modelchecker::HybridMdpPrctlModelChecker<storm::dd::DdType::CUDD, double> checker(*mdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::MinMaxLinearEquationSolverFactory<double>(storm::solver::EquationSolverTypeSelection::Gmmxx)));
+    storm::modelchecker::HybridMdpPrctlModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD, double>> checker(*mdp, std::make_unique<storm::solver::GmmxxMinMaxLinearEquationSolverFactory<double>>());
     
     std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("Pmin=? [F \"two\"]");
     
@@ -131,15 +131,15 @@ TEST(GmmxxHybridMdpPrctlModelCheckerTest, Dice_Sylvan) {
 #endif
     options.buildAllRewardModels = false;
     options.rewardModelsToBuild.insert("coinflips");
-    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().translateProgram(program, options);
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().build(program, options);
     EXPECT_EQ(169ul, model->getNumberOfStates());
     EXPECT_EQ(436ul, model->getNumberOfTransitions());
     
     ASSERT_EQ(model->getType(), storm::models::ModelType::Mdp);
     
     std::shared_ptr<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan>> mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan>>();
-    
-    storm::modelchecker::HybridMdpPrctlModelChecker<storm::dd::DdType::Sylvan, double> checker(*mdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::MinMaxLinearEquationSolverFactory<double>(storm::solver::EquationSolverTypeSelection::Gmmxx)));
+
+    storm::modelchecker::HybridMdpPrctlModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan, double>> checker(*mdp, std::make_unique<storm::solver::GmmxxMinMaxLinearEquationSolverFactory<double>>());
     
     std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("Pmin=? [F \"two\"]");
     
@@ -228,15 +228,15 @@ TEST(GmmxxHybridMdpPrctlModelCheckerTest, AsynchronousLeader_Cudd) {
 #endif
     options.buildAllRewardModels = false;
     options.rewardModelsToBuild.insert("rounds");
-    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().translateProgram(program, options);
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().build(program, options);
     EXPECT_EQ(3172ul, model->getNumberOfStates());
     EXPECT_EQ(7144ul, model->getNumberOfTransitions());
     
     ASSERT_EQ(model->getType(), storm::models::ModelType::Mdp);
     
     std::shared_ptr<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>> mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>();
-    
-    storm::modelchecker::HybridMdpPrctlModelChecker<storm::dd::DdType::CUDD, double> checker(*mdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::MinMaxLinearEquationSolverFactory<double>(storm::solver::EquationSolverTypeSelection::Gmmxx)));
+
+    storm::modelchecker::HybridMdpPrctlModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD, double>> checker(*mdp, std::make_unique<storm::solver::GmmxxMinMaxLinearEquationSolverFactory<double>>());
     
     std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("Pmin=? [F \"elected\"]");
     
@@ -307,15 +307,15 @@ TEST(GmmxxHybridMdpPrctlModelCheckerTest, AsynchronousLeader_Sylvan) {
 #endif
     options.buildAllRewardModels = false;
     options.rewardModelsToBuild.insert("rounds");
-    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().translateProgram(program, options);
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().build(program, options);
     EXPECT_EQ(3172ul, model->getNumberOfStates());
     EXPECT_EQ(7144ul, model->getNumberOfTransitions());
     
     ASSERT_EQ(model->getType(), storm::models::ModelType::Mdp);
     
     std::shared_ptr<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan>> mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan>>();
-    
-    storm::modelchecker::HybridMdpPrctlModelChecker<storm::dd::DdType::Sylvan, double> checker(*mdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::MinMaxLinearEquationSolverFactory<double>(storm::solver::EquationSolverTypeSelection::Gmmxx)));
+
+    storm::modelchecker::HybridMdpPrctlModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan, double>> checker(*mdp, std::make_unique<storm::solver::GmmxxMinMaxLinearEquationSolverFactory<double>>());
     
     std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("Pmin=? [F \"elected\"]");
     

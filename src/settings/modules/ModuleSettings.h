@@ -30,6 +30,7 @@ namespace storm {
                  * @param moduleName The name of the module for which to build the settings.
                  */
                 ModuleSettings(std::string const& moduleName);
+                virtual ~ModuleSettings() {}
                 
                 /*!
                  * Checks whether the settings are consistent. If they are inconsistent, an exception is thrown.

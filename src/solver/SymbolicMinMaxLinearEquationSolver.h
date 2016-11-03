@@ -72,7 +72,7 @@ namespace storm {
              * of A.
              * @return The solution of the equation system.
              */
-            virtual storm::dd::Add<DdType, ValueType> solveEquationSystem(bool minimize, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const;
+            virtual storm::dd::Add<DdType, ValueType> solveEquations(bool minimize, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const;
             
             /*!
              * Performs repeated matrix-vector multiplication, using x[0] = x and x[i + 1] = A*x[i] + b. After
@@ -87,8 +87,9 @@ namespace storm {
              * to the number of row groups of A.
              * @return The solution of the equation system.
              */
-            virtual storm::dd::Add<DdType, ValueType> performMatrixVectorMultiplication(bool minimize, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const* b = nullptr, uint_fast64_t n = 1) const;
-            
+            virtual storm::dd::Add<DdType, ValueType> multiply(bool minimize, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const* b = nullptr, uint_fast64_t n = 1) const;
+
+            virtual ValueType const& getPrecision() const;// override;
         protected:
             // The matrix defining the coefficients of the linear equation system.
             storm::dd::Add<DdType, ValueType> const& A;
@@ -111,7 +112,7 @@ namespace storm {
             // The pairs of meta variables used for renaming.
             std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs;
             
-            // The precision to achive.
+            // The precision to achieve.
             double precision;
             
             // The maximal number of iterations to perform.

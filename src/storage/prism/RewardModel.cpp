@@ -81,6 +81,24 @@ namespace storm {
             return true;
         }
         
+        RewardModel RewardModel::restrictActionRelatedRewards(boost::container::flat_set<uint_fast64_t> const& actionIndicesToKeep) const {
+            std::vector<StateActionReward> newStateActionRewards;
+            for (auto const& stateActionReward : this->getStateActionRewards()) {
+                if (actionIndicesToKeep.find(stateActionReward.getActionIndex()) != actionIndicesToKeep.end()) {
+                    newStateActionRewards.emplace_back(stateActionReward);
+                }
+            }
+
+            std::vector<TransitionReward> newTransitionRewards;
+            for (auto const& transitionReward : this->getTransitionRewards()) {
+                if (actionIndicesToKeep.find(transitionReward.getActionIndex()) != actionIndicesToKeep.end()) {
+                    newTransitionRewards.emplace_back(transitionReward);
+                }
+            }
+
+            return RewardModel(this->getName(), this->getStateRewards(), newStateActionRewards, newTransitionRewards, this->getFilename(), this->getLineNumber());
+        }
+        
         std::ostream& operator<<(std::ostream& stream, RewardModel const& rewardModel) {
             stream << "rewards";
             if (rewardModel.getName() != "") {

@@ -10,9 +10,8 @@
 #include "src/storage/expressions/Expression.h"
 #include "src/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
 #include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
-#include "src/solver/GmmxxMinMaxLinearEquationSolver.h"
 #include "src/settings/SettingsManager.h"
-#include "src/settings/modules/MarkovChainSettings.h"
+#include "src/settings/modules/CoreSettings.h"
 
 #include "src/utility/counterexamples.h"
 #include "src/utility/prism.h"
@@ -1628,7 +1627,7 @@ namespace storm {
                 if (checkThresholdFeasible) {
                     storm::modelchecker::helper::SparseMdpPrctlHelper<T> modelCheckerHelper;
                     STORM_LOG_DEBUG("Invoking model checker.");
-                    std::vector<T> result = std::move(modelCheckerHelper.computeUntilProbabilities(false, labeledMdp.getTransitionMatrix(), labeledMdp.getBackwardTransitions(), phiStates, psiStates, false, false, storm::utility::solver::MinMaxLinearEquationSolverFactory<T>()).values);
+                    std::vector<T> result = std::move(modelCheckerHelper.computeUntilProbabilities(false, labeledMdp.getTransitionMatrix(), labeledMdp.getBackwardTransitions(), phiStates, psiStates, false, false, storm::solver::GeneralMinMaxLinearEquationSolverFactory<T>()).values);
                     for (auto state : labeledMdp.getInitialStates()) {
                         maximalReachabilityProbability = std::max(maximalReachabilityProbability, result[state]);
                     }
@@ -1692,7 +1691,7 @@ namespace storm {
                     storm::models::sparse::Mdp<T> subMdp = labeledMdp.restrictChoiceLabels(commandSet);
                     storm::modelchecker::helper::SparseMdpPrctlHelper<T> modelCheckerHelper;
                     STORM_LOG_DEBUG("Invoking model checker.");
-                    std::vector<T> result = std::move(modelCheckerHelper.computeUntilProbabilities(false, subMdp.getTransitionMatrix(), subMdp.getBackwardTransitions(), phiStates, psiStates, false, false, storm::utility::solver::MinMaxLinearEquationSolverFactory<T>()).values);
+                    std::vector<T> result = std::move(modelCheckerHelper.computeUntilProbabilities(false, subMdp.getTransitionMatrix(), subMdp.getBackwardTransitions(), phiStates, psiStates, false, false, storm::solver::GeneralMinMaxLinearEquationSolverFactory<T>()).values);
                     STORM_LOG_DEBUG("Computed model checking results.");
                     totalModelCheckingTime += std::chrono::high_resolution_clock::now() - modelCheckingClock;
 
@@ -1729,7 +1728,7 @@ namespace storm {
 
                 // Compute and emit the time measurements if the corresponding flag was set.
                 totalTime = std::chrono::high_resolution_clock::now() - totalClock;
-                if (storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().isShowStatisticsSet()) {
+                if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
                     std::cout << std::endl;
                     std::cout << "Time breakdown:" << std::endl;
                     std::cout << "    * time for setup: " << std::chrono::duration_cast<std::chrono::milliseconds>(totalSetupTime).count() << "ms" << std::endl;
@@ -1763,7 +1762,7 @@ namespace storm {
                 STORM_LOG_THROW(probabilityOperator.getSubformula().isUntilFormula() || probabilityOperator.getSubformula().isEventuallyFormula(), storm::exceptions::InvalidPropertyException, "Path formula is required to be of the form 'phi U psi' for counterexample generation.");
                 
                 bool strictBound = comparisonType == storm::logic::ComparisonType::Less;
-                double threshold = probabilityOperator.getThreshold();
+                double threshold = probabilityOperator.getThresholdAs<double>();
                 
                 storm::storage::BitVector phiStates;
                 storm::storage::BitVector psiStates;

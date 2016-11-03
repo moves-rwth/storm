@@ -1,8 +1,6 @@
 #ifndef STORM_STORAGE_BISIMULATIONDECOMPOSITION_H_
 #define STORM_STORAGE_BISIMULATIONDECOMPOSITION_H_
 
-#include <vector>
-
 #include "src/settings/SettingsManager.h"
 #include "src/settings/modules/BisimulationSettings.h"
 #include "src/storage/sparse/StateType.h"
@@ -224,7 +222,7 @@ namespace storm {
              * @param splitter The splitter to use.
              * @param splitterVector The vector into which to insert the newly discovered potential splitters.
              */
-            virtual void refinePartitionBasedOnSplitter(bisimulation::Block<BlockDataType>& splitter, std::vector<bisimulation::Block<BlockDataType>*>& splitterVector) = 0;
+            virtual void refinePartitionBasedOnSplitter(bisimulation::Block<BlockDataType>& splitter, std::vector<bisimulation::Block<BlockDataType>*>& splitterQueue) = 0;
             
             /*!
              * Builds the quotient model based on the previously computed equivalence classes (stored in the blocks

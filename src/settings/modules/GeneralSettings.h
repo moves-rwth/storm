@@ -106,15 +106,43 @@ namespace storm {
                  */
                 bool isBisimulationSet() const;
 
-#ifdef STORM_HAVE_CARL
                 /*!
                  * Retrieves whether the option enabling parametric model checking is set.
                  *
                  * @return True iff the option was set.
                  */
                 bool isParametricSet() const;
-#endif
+
                 
+                /*!
+                 * Retrieves whether the option enabling parametric region model checking is set.
+                 *
+                 * @return True iff the option was set.
+                 */
+                bool isParametricRegionSet() const;
+
+                /*!
+                 * Retrieves whether a min/max equation solving technique has been set.
+                 *
+                 * @return True iff an equation solving technique has been set.
+                 */
+                bool isMinMaxEquationSolvingTechniqueSet() const;
+                
+                /*!
+                 * Retrieves whether timings should be printed after running
+                 *
+                 * @return True iff the option was set.
+                 */
+                bool isPrintTimingsSet() const;
+
+
+                /*!
+                 * Retrieves whether the option enabling exact model checking is set.
+                 *
+                 * @return True iff the option was set.
+                 */
+                bool isExactSet() const;
+
                 bool check() const override;
                 void finalize() override;
 
@@ -125,6 +153,8 @@ namespace storm {
                 // Define the string names of the options as constants.
                 static const std::string helpOptionName;
                 static const std::string helpOptionShortName;
+                static const std::string printTimingsOptionName;
+                static const std::string printTimingsOptionShortName;
                 static const std::string versionOptionName;
                 static const std::string verboseOptionName;
                 static const std::string verboseOptionShortName;
@@ -138,10 +168,11 @@ namespace storm {
                 static const std::string timeoutOptionShortName;
                 static const std::string bisimulationOptionName;
                 static const std::string bisimulationOptionShortName;
-
-#ifdef STORM_HAVE_CARL
                 static const std::string parametricOptionName;
-#endif
+
+                static const std::string parametricRegionOptionName;
+
+                static const std::string exactOptionName;
             };
 
         } // namespace modules

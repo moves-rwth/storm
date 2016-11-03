@@ -2,41 +2,41 @@
 #define STORM_GENERATOR_PRISMNEXTSTATEGENERATOR_H_
 
 #include "src/generator/NextStateGenerator.h"
-#include "src/generator/VariableInformation.h"
 
 #include "src/storage/prism/Program.h"
-#include "src/storage/expressions/ExpressionEvaluator.h"
-
-#include "src/utility/ConstantsComparator.h"
 
 namespace storm {
     namespace generator {
         
         template<typename ValueType, typename StateType = uint32_t>
-        class PrismNextStateGenerator : public NextStateGenerator<ValueType, CompressedState, StateType> {
+        class PrismNextStateGenerator : public NextStateGenerator<ValueType, StateType> {
         public:
-            typedef typename NextStateGenerator<ValueType, CompressedState, StateType>::StateToIdCallback StateToIdCallback;
+            typedef typename NextStateGenerator<ValueType, StateType>::StateToIdCallback StateToIdCallback;
             
-            PrismNextStateGenerator(storm::prism::Program const& program, VariableInformation const& variableInformation, bool buildChoiceLabeling);
-                        
-            /*!
-             * Adds a reward model to the list of selected reward models ()
-             */
-            void addRewardModel(storm::prism::RewardModel const& rewardModel);
+            PrismNextStateGenerator(storm::prism::Program const& program, NextStateGeneratorOptions const& options = NextStateGeneratorOptions());
             
-            /*!
-             * Sets an expression such that if it evaluates to true in a state, prevents the exploration.
-             */
-            void setTerminalExpression(storm::expressions::Expression const& terminalExpression);
-            
+            virtual ModelType getModelType() const override;
             virtual bool isDeterministicModel() const override;
+            virtual bool isDiscreteTimeModel() const override;
             virtual std::vector<StateType> getInitialStates(StateToIdCallback const& stateToIdCallback) override;
 
-            virtual void load(CompressedState const& state) override;
             virtual StateBehavior<ValueType, StateType> expand(StateToIdCallback const& stateToIdCallback) override;
-            virtual bool satisfies(storm::expressions::Expression const& expression) const override;
+
+            virtual std::size_t getNumberOfRewardModels() const override;
+            virtual RewardModelInformation getRewardModelInformation(uint64_t const& index) const override;
+            
+            virtual storm::models::sparse::StateLabeling label(storm::storage::BitVectorHashMap<StateType> const& states, std::vector<StateType> const& initialStateIndices = {}, std::vector<StateType> const& deadlockStateIndices = {}) override;
+
+            static void checkValid(storm::prism::Program const& program);
 
         private:
+            /*!
+             * A delegate constructor that is used to preprocess the program before the constructor of the superclass is
+             * being called. The last argument is only present to distinguish the signature of this constructor from the
+             * public one.
+             */
+            PrismNextStateGenerator(storm::prism::Program const& program, NextStateGeneratorOptions const& options, bool flag);
+            
             /*!
              * Applies an update to the state currently loaded into the evaluator and applies the resulting values to
              * the given compressed state.
@@ -81,30 +81,13 @@ namespace storm {
             std::vector<Choice<ValueType>> getLabeledChoices(CompressedState const& state, StateToIdCallback stateToIdCallback);
             
             // The program used for the generation of next states.
-            storm::prism::Program const& program;
+            storm::prism::Program program;
             
             // The reward models that need to be considered.
-            std::vector<std::reference_wrapper<storm::prism::RewardModel const>> selectedRewardModels;
+            std::vector<std::reference_wrapper<storm::prism::RewardModel const>> rewardModels;
             
             // A flag that stores whether at least one of the selected reward models has state-action rewards.
             bool hasStateActionRewards;
-            
-            // A flag that stores whether or not to build the choice labeling.
-            bool buildChoiceLabeling;
-            
-            // An optional expression that governs which states must not be explored.
-            boost::optional<storm::expressions::Expression> terminalExpression;
-
-            // Information about how the variables are packed.
-            VariableInformation const& variableInformation;
-            
-            // An evaluator used to evaluate expressions.
-            storm::expressions::ExpressionEvaluator<ValueType> evaluator;
-            
-            CompressedState const* state;
-            
-            // A comparator used to compare constants.
-            storm::utility::ConstantsComparator<ValueType> comparator;
         };
         
     }

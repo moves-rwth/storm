@@ -89,7 +89,7 @@ namespace storm {
             } else {
                 STORM_LOG_TRACE("Transition matrix: too big to print");
             }
-            STORM_LOG_TRACE("Exit rates: " << modelComponents.exitRates);
+            STORM_LOG_TRACE("Exit rates: " << storm::utility::vector::toString<ValueType>(modelComponents.exitRates));
             STORM_LOG_TRACE("Markovian states: " << modelComponents.markovianStates);
             
             // Build state labeling

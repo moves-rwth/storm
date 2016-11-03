@@ -13,7 +13,8 @@ namespace storm {
          * Next state generator for DFTs.
          */
         template<typename ValueType, typename StateType = uint32_t>
-        class DftNextStateGenerator : public NextStateGenerator<ValueType, std::shared_ptr<storm::storage::DFTState<ValueType>>, StateType> {
+        class DftNextStateGenerator {
+            // TODO: inherit from NextStateGenerator
 
             using DFTStatePointer = std::shared_ptr<storm::storage::DFTState<ValueType>>;
             using DFTElementPointer = std::shared_ptr<storm::storage::DFTElement<ValueType>>;
@@ -21,17 +22,16 @@ namespace storm {
             using DFTRestrictionPointer = std::shared_ptr<storm::storage::DFTRestriction<ValueType>>;
 
         public:
-            typedef typename NextStateGenerator<ValueType, DFTStatePointer, StateType>::StateToIdCallback StateToIdCallback;
+            typedef std::function<StateType (DFTStatePointer const&)> StateToIdCallback;
             
             DftNextStateGenerator(storm::storage::DFT<ValueType> const& dft, storm::storage::DFTStateGenerationInfo const& stateGenerationInfo, bool enableDC, bool mergeFailedStates);
                         
-            virtual bool isDeterministicModel() const override;
-            virtual std::vector<StateType> getInitialStates(StateToIdCallback const& stateToIdCallback) override;
+            bool isDeterministicModel() const;
+            std::vector<StateType> getInitialStates(StateToIdCallback const& stateToIdCallback);
 
-            virtual void load(DFTStatePointer const& state) override;
-            void load(CompressedState const& state);
-            virtual StateBehavior<ValueType, StateType> expand(StateToIdCallback const& stateToIdCallback) override;
-            virtual bool satisfies(storm::expressions::Expression const& expression) const override;
+            void load(storm::storage::BitVector const& state);
+            void load(DFTStatePointer const& state);
+            StateBehavior<ValueType, StateType> expand(StateToIdCallback const& stateToIdCallback);
 
             /*!
              * Create unique failed state.

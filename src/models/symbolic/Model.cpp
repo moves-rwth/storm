@@ -21,6 +21,7 @@ namespace storm {
                                           std::shared_ptr<storm::dd::DdManager<Type>> manager,
                                           storm::dd::Bdd<Type> reachableStates,
                                           storm::dd::Bdd<Type> initialStates,
+                                          storm::dd::Bdd<Type> deadlockStates,
                                           storm::dd::Add<Type, ValueType> transitionMatrix,
                                           std::set<storm::expressions::Variable> const& rowVariables,
                                           std::shared_ptr<storm::adapters::AddExpressionAdapter<Type, ValueType>> rowExpressionAdapter,
@@ -29,7 +30,7 @@ namespace storm {
                                           std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs,
                                           std::map<std::string, storm::expressions::Expression> labelToExpressionMap,
                                           std::unordered_map<std::string, RewardModelType> const& rewardModels)
-            : ModelBase(modelType), manager(manager), reachableStates(reachableStates), initialStates(initialStates), transitionMatrix(transitionMatrix), rowVariables(rowVariables), rowExpressionAdapter(rowExpressionAdapter), columnVariables(columnVariables), columnExpressionAdapter(columnExpressionAdapter), rowColumnMetaVariablePairs(rowColumnMetaVariablePairs), labelToExpressionMap(labelToExpressionMap), rewardModels(rewardModels) {
+            : ModelBase(modelType), manager(manager), reachableStates(reachableStates), initialStates(initialStates), deadlockStates(deadlockStates), transitionMatrix(transitionMatrix), rowVariables(rowVariables), rowExpressionAdapter(rowExpressionAdapter), columnVariables(columnVariables), columnExpressionAdapter(columnExpressionAdapter), rowColumnMetaVariablePairs(rowColumnMetaVariablePairs), labelToExpressionMap(labelToExpressionMap), rewardModels(rewardModels) {
                 // Intentionally left empty.
             }
             
@@ -65,8 +66,17 @@ namespace storm {
             
             template<storm::dd::DdType Type, typename ValueType>
             storm::dd::Bdd<Type> Model<Type, ValueType>::getStates(std::string const& label) const {
-                STORM_LOG_THROW(labelToExpressionMap.find(label) != labelToExpressionMap.end(), storm::exceptions::IllegalArgumentException, "The label " << label << " is invalid for the labeling of the model.");
-                return rowExpressionAdapter->translateExpression(labelToExpressionMap.at(label)).toBdd() && this->reachableStates;
+                auto labelIt = labelToExpressionMap.find(label);
+                if (labelIt != labelToExpressionMap.end()) {
+                    return rowExpressionAdapter->translateExpression(labelIt->second).toBdd() && this->reachableStates;
+                } else {
+                    if (label == "init") {
+                        return initialStates;
+                    } else if (label == "deadlock") {
+                        return deadlockStates;
+                    }
+                }
+                STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "The label " << label << " is invalid for the labeling of the model.");
             }
             
             template<storm::dd::DdType Type, typename ValueType>
@@ -76,7 +86,12 @@ namespace storm {
             
             template<storm::dd::DdType Type, typename ValueType>
             bool Model<Type, ValueType>::hasLabel(std::string const& label) const {
-                return labelToExpressionMap.find(label) != labelToExpressionMap.end();
+                auto labelIt = labelToExpressionMap.find(label);
+                if (labelIt != labelToExpressionMap.end()) {
+                    return true;
+                } else {
+                    return label == "init" || label == "deadlock";
+                }
             }
             
             template<storm::dd::DdType Type, typename ValueType>

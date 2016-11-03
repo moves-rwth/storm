@@ -8,6 +8,9 @@
 #include "src/logic/Bound.h"
 #include "src/storage/BitVector.h"
 
+#include "src/solver/LinearEquationSolver.h"
+#include "src/solver/MinMaxLinearEquationSolver.h"
+
 namespace storm {
     namespace storage {
         template<typename ValueType> class SparseMatrix;
@@ -84,7 +87,27 @@ namespace storm {
             ValueType const& thresholdValue() const {
                 return bound.threshold;
             }
-            
+
+            bool achieved(std::vector<ValueType> const& result) const{
+                for(std::size_t i : relevantValueVector){
+                    switch(bound.comparisonType) {
+                    case storm::logic::ComparisonType::Greater:
+                        if( result[i] <= bound.threshold) return false;
+                        break;
+                    case storm::logic::ComparisonType::GreaterEqual:
+                        if( result[i] < bound.threshold) return false;
+                        break;
+                    case storm::logic::ComparisonType::Less:
+                        if( result[i] >= bound.threshold) return false;
+                        break;
+                    case storm::logic::ComparisonType::LessEqual:
+                        if( result[i] > bound.threshold) return false;
+                        break;
+                    }
+                }
+                return true;
+            }
+       
             storm::storage::BitVector const& relevantValues() const {
                 return relevantValueVector;
             }
@@ -95,16 +118,16 @@ namespace storm {
         };
         
         template<typename ValueType>
-        std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> configureMinMaxLinearEquationSolver(BoundedGoal<ValueType> const& goal, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& factory, storm::storage::SparseMatrix<ValueType> const& matrix);
+        std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> configureMinMaxLinearEquationSolver(BoundedGoal<ValueType> const& goal, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& factory, storm::storage::SparseMatrix<ValueType> const& matrix);
         
         template<typename ValueType> 
-        std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> configureMinMaxLinearEquationSolver(SolveGoal const& goal, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& factory, storm::storage::SparseMatrix<ValueType> const& matrix);
+        std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> configureMinMaxLinearEquationSolver(SolveGoal const& goal, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& factory, storm::storage::SparseMatrix<ValueType> const& matrix);
 
         template<typename ValueType>
-        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> configureLinearEquationSolver(BoundedGoal<ValueType> const& goal, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& factory, storm::storage::SparseMatrix<ValueType> const& matrix);
+        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> configureLinearEquationSolver(BoundedGoal<ValueType> const& goal, storm::solver::LinearEquationSolverFactory<ValueType> const& factory, storm::storage::SparseMatrix<ValueType> const& matrix);
         
         template<typename ValueType>
-        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> configureLinearEquationSolver(SolveGoal const& goal, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& factory, storm::storage::SparseMatrix<ValueType> const& matrix);
+        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> configureLinearEquationSolver(SolveGoal const& goal, storm::solver::LinearEquationSolverFactory<ValueType> const& factory, storm::storage::SparseMatrix<ValueType> const& matrix);
 
     }
 }

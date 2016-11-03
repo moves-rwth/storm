@@ -14,12 +14,26 @@ namespace storm {
             return this->upperBoundExpression;
         }
         
+        storm::expressions::Expression IntegerVariable::getRangeExpression() const {
+            return this->getLowerBoundExpression() <= this->getExpressionVariable() && this->getExpressionVariable() <= this->getUpperBoundExpression();
+        }
+        
         IntegerVariable IntegerVariable::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
-            return IntegerVariable(this->getExpressionVariable(), this->getLowerBoundExpression().substitute(substitution), this->getUpperBoundExpression().substitute(substitution), this->getInitialValueExpression().substitute(substitution), this->getFilename(), this->getLineNumber());
+            return IntegerVariable(this->getExpressionVariable(), this->getLowerBoundExpression().substitute(substitution), this->getUpperBoundExpression().substitute(substitution), this->getInitialValueExpression().isInitialized() ? this->getInitialValueExpression().substitute(substitution) : this->getInitialValueExpression(), this->getFilename(), this->getLineNumber());
+        }
+        
+        void IntegerVariable::createMissingInitialValue() {
+            if (!this->hasInitialValue()) {
+                this->setInitialValueExpression(this->getLowerBoundExpression());
+            }
         }
         
         std::ostream& operator<<(std::ostream& stream, IntegerVariable const& variable) {
-            stream << variable.getName() << ": [" << variable.getLowerBoundExpression() << ".." << variable.getUpperBoundExpression() << "]" << " init " << variable.getInitialValueExpression() << ";";
+            stream << variable.getName() << ": [" << variable.getLowerBoundExpression() << ".." << variable.getUpperBoundExpression() << "]";
+            if (variable.hasInitialValue()) {
+                stream << " init " << variable.getInitialValueExpression();
+            }
+            stream << ";";
             return stream;
         }
     } // namespace prism

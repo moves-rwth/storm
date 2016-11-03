@@ -252,6 +252,17 @@ namespace storm {
                 truncateLastBucket();
             }
         }
+        
+        void BitVector::enlargeLiberally(uint_fast64_t minimumLength, bool init) {
+            if(minimumLength > this->size()) {
+                uint_fast64_t newLength = this->bucketCount();
+                newLength = std::max(newLength, static_cast<decltype(newLength)>(1u)) << 6;
+                while(newLength < minimumLength) {
+                    newLength = newLength << 1;
+                }
+                resize(newLength, init);
+            }
+        }
 
         BitVector BitVector::operator&(BitVector const& other) const {
             STORM_LOG_ASSERT(bitCount == other.bitCount, "Length of the bit vectors does not match.");

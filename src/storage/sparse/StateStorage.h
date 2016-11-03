@@ -21,6 +21,9 @@ namespace storm {
                 // A list of initial states in terms of their global indices.
                 std::vector<StateType> initialStateIndices;
                 
+                // A list of deadlock states.
+                std::vector<StateType> deadlockStateIndices;
+                
                 // The number of bits of each state.
                 uint64_t bitsPerState;
                 

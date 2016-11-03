@@ -55,7 +55,10 @@ namespace storm {
                  */
                 ConstantSparseModelType const& instantiate(std::map<VariableType, CoefficientType>const& valuation);
                 
-
+                /*!
+                 *  Check validity
+                 */
+                void checkValid() const;
             private:
                 /*!
                  * Initializes the instantiatedModel with dummy data by considering the model-specific ingredients.
@@ -82,7 +85,7 @@ namespace storm {
                     auto markovianStatesCopy = parametricModel.getMarkovianStates();
                     auto choiceLabelingCopy = parametricModel.getOptionalChoiceLabeling();
                     std::vector<ConstantType> exitRates(parametricModel.getExitRates().size(), storm::utility::one<ConstantType>());
-                    this->instantiatedModel = std::make_shared<ConstantSparseModelType>(buildDummyMatrix(parametricModel.getTransitionMatrix()), std::move(stateLabelingCopy), std::move(markovianStatesCopy), std::move(exitRates), buildDummyRewardModels(parametricModel.getRewardModels()), std::move(choiceLabelingCopy));
+                    this->instantiatedModel = std::make_shared<ConstantSparseModelType>(buildDummyMatrix(parametricModel.getTransitionMatrix()), std::move(stateLabelingCopy), std::move(markovianStatesCopy), std::move(exitRates), true, buildDummyRewardModels(parametricModel.getRewardModels()), std::move(choiceLabelingCopy));
                     
                     initializeVectorMapping(this->instantiatedModel->getExitRates(), this->functions, this->vectorMapping, parametricModel.getExitRates());
                 }

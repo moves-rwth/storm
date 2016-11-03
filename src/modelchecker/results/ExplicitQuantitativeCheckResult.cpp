@@ -5,6 +5,7 @@
 #include "src/utility/macros.h"
 #include "src/utility/vector.h"
 #include "src/exceptions/InvalidOperationException.h"
+#include "src/exceptions/InvalidAccessException.h"
 #include "src/adapters/CarlAdapter.h"
 
 
@@ -60,6 +61,7 @@ namespace storm {
             if (this->isResultForAllStates()) {
                 map_type newMap;
                 for (auto const& element : filterTruthValues) {
+                    STORM_LOG_THROW(element < this->getValueVector().size(), storm::exceptions::InvalidAccessException, "Invalid index in results.");
                     newMap.emplace(element, this->getValueVector()[element]);
                 }
                 this->values = newMap;
@@ -126,7 +128,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        std::unique_ptr<CheckResult> ExplicitQuantitativeCheckResult<ValueType>::compareAgainstBound(storm::logic::ComparisonType comparisonType, double bound) const {
+        std::unique_ptr<CheckResult> ExplicitQuantitativeCheckResult<ValueType>::compareAgainstBound(storm::logic::ComparisonType comparisonType, ValueType const& bound) const {
             if (this->isResultForAllStates()) {
                 vector_type const& valuesAsVector = boost::get<vector_type>(values);
                 storm::storage::BitVector result(valuesAsVector.size());
@@ -192,7 +194,7 @@ namespace storm {
         
 #ifdef STORM_HAVE_CARL
         template<>
-        std::unique_ptr<CheckResult> ExplicitQuantitativeCheckResult<storm::RationalFunction>::compareAgainstBound(storm::logic::ComparisonType comparisonType, double bound) const {
+        std::unique_ptr<CheckResult> ExplicitQuantitativeCheckResult<storm::RationalFunction>::compareAgainstBound(storm::logic::ComparisonType comparisonType, storm::RationalFunction const& bound) const {
             // Since it is not possible to compare rational functions against bounds, we simply call the base class method.
             return QuantitativeCheckResult::compareAgainstBound(comparisonType, bound);
         }
@@ -248,8 +250,9 @@ namespace storm {
         }
         
         template class ExplicitQuantitativeCheckResult<double>;
-        
+
 #ifdef STORM_HAVE_CARL
+        template class ExplicitQuantitativeCheckResult<storm::RationalNumber>;
         template class ExplicitQuantitativeCheckResult<storm::RationalFunction>;
 #endif
     }

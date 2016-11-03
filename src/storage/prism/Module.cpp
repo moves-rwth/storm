@@ -42,6 +42,25 @@ namespace storm {
         std::vector<storm::prism::IntegerVariable> const& Module::getIntegerVariables() const {
             return this->integerVariables;
         }
+
+        std::set<storm::expressions::Variable> Module::getAllExpressionVariables() const {
+            std::set<storm::expressions::Variable> result;
+            for (auto const& var : this->getBooleanVariables()) {
+                result.insert(var.getExpressionVariable());
+            }
+            for (auto const& var : this->getIntegerVariables()) {
+                result.insert(var.getExpressionVariable());
+            }
+            return result;
+        }
+        
+        std::vector<storm::expressions::Expression> Module::getAllRangeExpressions() const {
+            std::vector<storm::expressions::Expression> result;
+            for (auto const& integerVariable : this->integerVariables) {
+                result.push_back(integerVariable.getRangeExpression());
+            }
+            return result;
+        }
         
         std::size_t Module::getNumberOfCommands() const {
             return this->commands.size();
@@ -169,10 +188,7 @@ namespace storm {
             std::vector<Command> newCommands;
             newCommands.reserve(this->getNumberOfCommands());
             for (auto const& command : this->getCommands()) {
-                Command newCommand = command.substitute(substitution);
-                if (!newCommand.getGuardExpression().isFalse()) {
-                    newCommands.emplace_back(newCommand);
-                }
+                newCommands.emplace_back(command.substitute(substitution));
             }
             
             return Module(this->getName(), newBooleanVariables, newIntegerVariables, newCommands, this->getFilename(), this->getLineNumber());
@@ -197,10 +213,21 @@ namespace storm {
             }
             
             for (auto const& command : this->getCommands()) {
-                command.containsVariablesOnlyInUpdateProbabilities(undefinedConstantVariables);
+                if (!command.containsVariablesOnlyInUpdateProbabilities(undefinedConstantVariables)) {
+                    return false;
+                }
             }
             
             return true;
+        }
+        
+        void Module::createMissingInitialValues() {
+            for (auto& variable : booleanVariables) {
+                variable.createMissingInitialValue();
+            }
+            for (auto& variable : integerVariables) {
+                variable.createMissingInitialValue();
+            }
         }
         
         std::ostream& operator<<(std::ostream& stream, Module const& module) {

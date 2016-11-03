@@ -2,7 +2,7 @@
 
 namespace storm {
     namespace logic {
-        OperatorInformation::OperatorInformation(boost::optional<storm::solver::OptimizationDirection> const& optimizationDirection, boost::optional<Bound<double>> const& bound) : optimalityType(optimizationDirection), bound(bound) {
+        OperatorInformation::OperatorInformation(boost::optional<storm::solver::OptimizationDirection> const& optimizationDirection, boost::optional<Bound<RationalNumber>> const& bound) : optimalityType(optimizationDirection), bound(bound) {
             // Intentionally left empty.
         }
         
@@ -22,19 +22,19 @@ namespace storm {
             operatorInformation.bound.get().comparisonType = newComparisonType;
         }
         
-        double OperatorFormula::getThreshold() const {
+        RationalNumber const& OperatorFormula::getThreshold() const {
             return operatorInformation.bound.get().threshold;
         }
         
-        void OperatorFormula::setThreshold(double newThreshold) {
+        void OperatorFormula::setThreshold(RationalNumber const& newThreshold) {
             operatorInformation.bound.get().threshold = newThreshold;
         }
         
-        Bound<double> const& OperatorFormula::getBound() const {
+        Bound<RationalNumber> const& OperatorFormula::getBound() const {
             return operatorInformation.bound.get();
         }
         
-        void OperatorFormula::setBound(Bound<double> const& newBound) {
+        void OperatorFormula::setBound(Bound<RationalNumber> const& newBound) {
             operatorInformation.bound = newBound;
         }
         

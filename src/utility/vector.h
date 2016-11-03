@@ -12,6 +12,7 @@
 #include <functional>
 
 #include "src/storage/BitVector.h"
+#include "src/utility/constants.h"
 #include "src/utility/macros.h"
 #include "src/solver/OptimizationDirection.h"
 
@@ -25,6 +26,27 @@ namespace storm {
     namespace utility {
         namespace vector {
 
+            /*!
+             * Finds the given element in the given vector.
+             * If the vector does not contain the element, it is inserted (at the end of vector).
+             * Either way, the returned value will be the position of the element inside the vector,
+             * 
+             * @note old indices to other elements remain valid, as the vector will not be sorted.
+             * 
+             * @param vector The vector in which the element is searched and possibly insert
+             * @param element The element that will be searched for (or inserted)
+             * 
+             * @return The position at which the element is located
+             */
+            template<class T>
+            std::size_t findOrInsert(std::vector<T>& vector, T&& element){
+                std::size_t position=std::find(vector.begin(), vector.end(), element) - vector.begin();
+                if(position==vector.size()){
+                    vector.emplace_back(std::move(element));
+                }
+                return position;
+            }
+            
             /*!
              * Sets the provided values at the provided positions in the given vector.
              *
@@ -126,6 +148,20 @@ namespace storm {
             void selectVectorValues(std::vector<T>& vector, std::vector<uint_fast64_t> const& rowGroupToRowIndexMapping, std::vector<uint_fast64_t> const& rowGrouping, std::vector<T> const& values) {
                 for (uint_fast64_t i = 0; i < vector.size(); ++i) {
                     vector[i] = values[rowGrouping[i] + rowGroupToRowIndexMapping[i]];
+                }
+            }
+            
+            /*!
+             * Selects values from a vector at the specified sequence of indices and writes them into another vector
+             *
+             * @param vector The vector into which the selected elements are written.
+             * @param indexSequence a sequence of indices at which the desired values can be found
+             * @param values the values from which to select
+             */
+            template<class T>
+            void selectVectorValues(std::vector<T>& vector, std::vector<uint_fast64_t> const& indexSequence, std::vector<T> const& values) {
+                for (uint_fast64_t vectorIndex = 0; vectorIndex < vector.size(); ++vectorIndex){
+                    vector[vectorIndex] = values[indexSequence[vectorIndex]];
                 }
             }
             
@@ -591,13 +627,13 @@ namespace storm {
             bool equalModuloPrecision(T const& val1, T const& val2, T precision, bool relativeError = true) {
                 if (relativeError) {
 					if (val2 == 0) {
-						return (std::abs(val1) <= precision);
+                        return (storm::utility::abs(val1) <= precision);
 					}
-                    if (std::abs((val1 - val2)/val2) > precision) {
+                    if (storm::utility::abs((val1 - val2)/val2) > precision) {
                         return false;
                     }
                 } else {
-                    if (std::abs(val1 - val2) > precision) return false;
+                    if (storm::utility::abs(val1 - val2) > precision) return false;
                 }
                 return true;
             }

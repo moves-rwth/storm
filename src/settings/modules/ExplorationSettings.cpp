@@ -1,5 +1,5 @@
 #include "src/settings/modules/ExplorationSettings.h"
-#include "src/settings/modules/MarkovChainSettings.h"
+#include "src/settings/modules/CoreSettings.h"
 #include "src/settings/Option.h"
 #include "src/settings/OptionBuilder.h"
 #include "src/settings/ArgumentBuilder.h"
@@ -88,7 +88,7 @@ namespace storm {
                                     this->getOption(numberOfExplorationStepsUntilPrecomputationOptionName).getHasOptionBeenSet() ||
                                     this->getOption(numberOfSampledPathsUntilPrecomputationOptionName).getHasOptionBeenSet() ||
                                     this->getOption(nextStateHeuristicOptionName).getHasOptionBeenSet();
-                STORM_LOG_WARN_COND(storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEngine() == storm::settings::modules::MarkovChainSettings::Engine::Exploration || !optionsSet, "Exploration engine is not selected, so setting options for it has no effect.");
+                STORM_LOG_WARN_COND(storm::settings::getModule<storm::settings::modules::CoreSettings>().getEngine() == storm::settings::modules::CoreSettings::Engine::Exploration || !optionsSet, "Exploration engine is not selected, so setting options for it has no effect.");
                 return true;
             }
         } // namespace modules

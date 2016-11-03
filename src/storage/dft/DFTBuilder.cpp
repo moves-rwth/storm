@@ -79,7 +79,7 @@ namespace storm {
 
         template<typename ValueType>
         unsigned DFTBuilder<ValueType>::computeRank(DFTElementPointer const& elem) {
-            if(elem->rank() == -1) {
+            if(elem->rank() == static_cast<decltype(elem->rank())>(-1)) {
                 if(elem->nrChildren() == 0 || elem->isDependency()) {
                     elem->setRank(0);
                 } else {

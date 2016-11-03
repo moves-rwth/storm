@@ -12,19 +12,20 @@
 
 #include "src/settings/modules/GeneralSettings.h"
 #include "src/settings/modules/DFTSettings.h"
-#include "src/settings/modules/MarkovChainSettings.h"
+#include "src/settings/modules/CoreSettings.h"
 #include "src/settings/modules/DebugSettings.h"
 //#include "src/settings/modules/CounterexampleGeneratorSettings.h"
 //#include "src/settings/modules/CuddSettings.h"
 //#include "src/settings/modules/SylvanSettings.h"
 #include "src/settings/modules/GmmxxEquationSolverSettings.h"
+#include "src/settings/modules/MinMaxEquationSolverSettings.h"
 #include "src/settings/modules/NativeEquationSolverSettings.h"
 //#include "src/settings/modules/BisimulationSettings.h"
 //#include "src/settings/modules/GlpkSettings.h"
 //#include "src/settings/modules/GurobiSettings.h"
 //#include "src/settings/modules/TopologicalValueIterationEquationSolverSettings.h"
 //#include "src/settings/modules/ParametricSettings.h"
-#include "src/settings/modules/SparseDtmcEliminationModelCheckerSettings.h"
+#include "src/settings/modules/EliminationSettings.h"
 
 #include <boost/lexical_cast.hpp>
 
@@ -76,19 +77,20 @@ void initializeSettings() {
     // Register all known settings modules.
     storm::settings::addModule<storm::settings::modules::GeneralSettings>();
     storm::settings::addModule<storm::settings::modules::DFTSettings>();
-    storm::settings::addModule<storm::settings::modules::MarkovChainSettings>();
+    storm::settings::addModule<storm::settings::modules::CoreSettings>();
     storm::settings::addModule<storm::settings::modules::DebugSettings>();
     //storm::settings::addModule<storm::settings::modules::CounterexampleGeneratorSettings>();
     //storm::settings::addModule<storm::settings::modules::CuddSettings>();
     //storm::settings::addModule<storm::settings::modules::SylvanSettings>();
     storm::settings::addModule<storm::settings::modules::GmmxxEquationSolverSettings>();
+    storm::settings::addModule<storm::settings::modules::MinMaxEquationSolverSettings>();
     storm::settings::addModule<storm::settings::modules::NativeEquationSolverSettings>();
     //storm::settings::addModule<storm::settings::modules::BisimulationSettings>();
     //storm::settings::addModule<storm::settings::modules::GlpkSettings>();
     //storm::settings::addModule<storm::settings::modules::GurobiSettings>();
     //storm::settings::addModule<storm::settings::modules::TopologicalValueIterationEquationSolverSettings>();
     //storm::settings::addModule<storm::settings::modules::ParametricSettings>();
-    storm::settings::addModule<storm::settings::modules::SparseDtmcEliminationModelCheckerSettings>();
+    storm::settings::addModule<storm::settings::modules::EliminationSettings>();
 }
 
 /*!
@@ -178,7 +180,11 @@ int main(const int argc, const char** argv) {
 
         // From this point on we are ready to carry out the actual computations.
         if (parametric) {
+#ifdef STORM_HAVE_CARL
             analyzeDFT<storm::RationalFunction>(dftSettings.getDftFilename(), pctlFormula, dftSettings.useSymmetryReduction(), dftSettings.useModularisation(), !dftSettings.isDisableDC(), approximationError);
+#else
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Parameters are not supported in this build.");
+#endif
         } else {
             analyzeDFT<double>(dftSettings.getDftFilename(), pctlFormula, dftSettings.useSymmetryReduction(), dftSettings.useModularisation(), !dftSettings.isDisableDC(), approximationError);
         }

@@ -8,6 +8,8 @@
 #include "src/utility/macros.h"
 #include "src/exceptions/NotImplementedException.h"
 
+#include <cmath>
+
 namespace storm {
     namespace dd {
         template<typename ValueType>

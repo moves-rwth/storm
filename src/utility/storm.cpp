@@ -1,19 +1,28 @@
+#include <src/parser/JaniParser.h>
 #include "storm.h"
 
 // Headers related to parsing.
 #include "src/parser/PrismParser.h"
 #include "src/parser/FormulaParser.h"
-
+#include "src/utility/macros.h"
 
 
 namespace storm {
    
      storm::prism::Program parseProgram(std::string const& path) {
-        storm::prism::Program program= storm::parser::PrismParser::parse(path).simplify().simplify();
+        storm::prism::Program program = storm::parser::PrismParser::parse(path).simplify().simplify();
         program.checkValidity();
         return program;
     }
-     
+
+    storm::jani::Model parseJaniModel(std::string const& path) {
+        storm::jani::Model model = storm::parser::JaniParser::parse(path);
+        if(!model.checkValidity(true)) {
+            STORM_LOG_THROW(false, storm::exceptions::FileIoException, "Jani file parsing yields invalid model.");
+        }
+        return model;
+    }
+
     /**
      * Helper
      * @param FormulaParser

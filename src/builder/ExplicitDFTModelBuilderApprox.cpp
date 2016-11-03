@@ -167,10 +167,10 @@ namespace storm {
             // Fix the entries in the transition matrix according to the mapping of ids to row group indices
             STORM_LOG_ASSERT(matrixBuilder.stateRemapping[initialStateIndex] == initialStateIndex, "Initial state should not be remapped.");
             // TODO Matthias: do not consider all rows?
-            STORM_LOG_TRACE("Remap matrix: " << matrixBuilder.stateRemapping << ", offset: " << matrixBuilder.mappingOffset);
+            //STORM_LOG_TRACE("Remap matrix: " << matrixBuilder.stateRemapping << ", offset: " << matrixBuilder.mappingOffset);
             matrixBuilder.remap();
 
-            STORM_LOG_TRACE("State remapping: " << matrixBuilder.stateRemapping);
+            //STORM_LOG_TRACE("State remapping: " << matrixBuilder.stateRemapping);
             STORM_LOG_TRACE("Markovian states: " << modelComponents.markovianStates);
             STORM_LOG_DEBUG("Model has " << stateSize << " states");
             STORM_LOG_DEBUG("Model is " << (generator.isDeterministicModel() ? "deterministic" : "non-deterministic"));
@@ -239,7 +239,7 @@ namespace storm {
                     matrixBuilder.stateRemapping[id] = indexRemapping[index];
                 }
             }
-            STORM_LOG_TRACE("New state remapping: " << matrixBuilder.stateRemapping);
+            //STORM_LOG_TRACE("New state remapping: " << matrixBuilder.stateRemapping);
             std::stringstream ss;
             ss << "Index remapping:" << std::endl;
             for (auto tmp : indexRemapping) {
@@ -477,7 +477,7 @@ namespace storm {
                         modelComponents.exitRates[stateIndex] = storm::utility::zero<ValueType>();
                     }
                 }
-                STORM_LOG_TRACE("Exit rates: " << modelComponents.exitRates);
+                //STORM_LOG_TRACE("Exit rates: " << modelComponents.exitRates);
 
                 std::shared_ptr<storm::models::sparse::MarkovAutomaton<ValueType>> ma;
                 if (copy) {
