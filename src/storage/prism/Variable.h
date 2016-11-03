@@ -28,19 +28,27 @@ namespace storm {
             std::string const& getName() const;
             
             /*!
-             * Retrieves the expression defining the initial value of the variable.
+             * Retrieves whether the variable has an initial value.
+             *
+             * @return True iff the variable has an initial value.
+             */
+            bool hasInitialValue() const;
+            
+            /*!
+             * Retrieves the expression defining the initial value of the variable. This can only be called if there is
+             * an initial value (expression).
              *
              * @return The expression defining the initial value of the variable.
              */
             storm::expressions::Expression const& getInitialValueExpression() const;
-            
+
             /*!
-             * Retrieves whether the variable has the default initial value with respect to its type.
+             * Sets the expression defining the initial value of the variable.
              *
-             * @return True iff the variable has the default initial value.
+             * @param initialValueExpression The expression defining the initial value of the variable.
              */
-            bool hasDefaultInitialValue() const;
-            
+            void setInitialValueExpression(storm::expressions::Expression const& initialValueExpression);
+
             /*!
              * Retrieves the expression variable associated with this variable.
              *
@@ -55,6 +63,10 @@ namespace storm {
              */
             storm::expressions::Expression getExpression() const;
             
+            /*!
+             * Equips the variable with an initial value based on its type if not initial value is present.
+             */
+            virtual void createMissingInitialValue() = 0;
             
             // Make the constructors protected to forbid instantiation of this class.
         protected:
@@ -90,9 +102,6 @@ namespace storm {
             
             // The constant expression defining the initial value of the variable.
             storm::expressions::Expression initialValueExpression;
-            
-            // A flag that stores whether the variable has its default initial expression.
-            bool defaultInitialValue;
         };
         
     } // namespace prism

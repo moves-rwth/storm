@@ -198,7 +198,7 @@ namespace storm {
         }
         
         template<typename ModelType>
-        void NondeterministicModelBisimulationDecomposition<ModelType>::updateQuotientDistributionsOfPredecessors(Block<BlockDataType> const& newBlock, Block<BlockDataType> const& oldBlock, std::deque<Block<BlockDataType>*>& splitterQueue) {
+        void NondeterministicModelBisimulationDecomposition<ModelType>::updateQuotientDistributionsOfPredecessors(Block<BlockDataType> const& newBlock, Block<BlockDataType> const& oldBlock, std::vector<Block<BlockDataType>*>& splitterQueue) {
             uint_fast64_t lastState = 0;
             bool lastStateInitialized = false;
             
@@ -332,35 +332,22 @@ namespace storm {
         }
         
         template<typename ModelType>
-        bool NondeterministicModelBisimulationDecomposition<ModelType>::splitBlockAccordingToCurrentQuotientDistributions(Block<BlockDataType>& block, std::deque<Block<BlockDataType>*>& splitterQueue) {
+        bool NondeterministicModelBisimulationDecomposition<ModelType>::splitBlockAccordingToCurrentQuotientDistributions(Block<BlockDataType>& block, std::vector<Block<BlockDataType>*>& splitterQueue) {
             std::list<Block<BlockDataType>*> newBlocks;
             bool split = this->partition.splitBlock(block,
                                                     [this] (storm::storage::sparse::state_type state1, storm::storage::sparse::state_type state2) {
                                                         bool result = quotientDistributionsLess(state1, state2);
-//                                                        std::cout << state1 << " is " << (!result ? "not" : "") << " smaller than " << state2 << std::endl;
                                                         return result;
                                                     },
                                                     [this, &block, &splitterQueue, &newBlocks] (Block<BlockDataType>& newBlock) {
                                                         newBlocks.push_back(&newBlock);
-                                                        
-//                                                        this->checkBlockStable(newBlock);
-//                                                        this->checkDistributionsDifferent(block, block.getEndIndex());
-//                                                        this->checkQuotientDistributions();
                                                     });
             
-            // The quotient distributions of the predecessors of block do not need to be updated, since the probability
-            // will go to the block with the same id as before.
-            
-//            std::cout << "partition after split: " << std::endl;
-//            this->partition.print();
-            
-            // defer updating the quotient distributions until *after* all splits, because
+            // Defer updating the quotient distributions until *after* all splits, because
             // it otherwise influences the subsequent splits!
             for (auto el : newBlocks) {
                 this->updateQuotientDistributionsOfPredecessors(*el, block, splitterQueue);
             }
-            
-//            this->checkQuotientDistributions();
             
             return split;
         }
@@ -369,11 +356,6 @@ namespace storm {
         bool NondeterministicModelBisimulationDecomposition<ModelType>::quotientDistributionsLess(storm::storage::sparse::state_type state1, storm::storage::sparse::state_type state2) const {
             STORM_LOG_TRACE("Comparing the quotient distributions of state " << state1 << " and " << state2 << ".");
             std::vector<uint_fast64_t> nondeterministicChoiceIndices = this->model.getTransitionMatrix().getRowGroupIndices();
-
-//            std::cout << "distributions of state " << state1 << std::endl;
-//            this->printDistributions(state1);
-//            std::cout << "distributions of state " << state2 << std::endl;
-//            this->printDistributions(state2);
             
             auto firstIt = orderedQuotientDistributions.begin() + nondeterministicChoiceIndices[state1];
             auto firstIte = orderedQuotientDistributions.begin() + nondeterministicChoiceIndices[state1 + 1];
@@ -405,7 +387,7 @@ namespace storm {
         }
         
         template<typename ModelType>
-        void NondeterministicModelBisimulationDecomposition<ModelType>::refinePartitionBasedOnSplitter(bisimulation::Block<BlockDataType>& splitter, std::deque<bisimulation::Block<BlockDataType>*>& splitterQueue) {
+        void NondeterministicModelBisimulationDecomposition<ModelType>::refinePartitionBasedOnSplitter(bisimulation::Block<BlockDataType>& splitter, std::vector<bisimulation::Block<BlockDataType>*>& splitterQueue) {
             if (!possiblyNeedsRefinement(splitter)) {
                 return;
             }
