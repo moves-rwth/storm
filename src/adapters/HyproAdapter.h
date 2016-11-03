@@ -6,10 +6,10 @@
 
 #ifdef STORM_HAVE_HYPRO
 
-#include <lib/datastructures/Halfspace.h>
-#include <lib/typedefs.h>
-#include <lib/representations/conversion/Converter.h>
-#include <lib/representations/Polytopes/HPolytope/HPolytope.h>
+#include <hypro/datastructures/Halfspace.h>
+#include <hypro/types.h>
+#include <hypro/representations/GeometricObject.h>
+#include <hypro/representations/Polytopes/HPolytope/HPolytope.h>
 
 #include "src/adapters/CarlAdapter.h"
 #include "src/storage/geometry/HalfSpace.h"

@@ -216,7 +216,7 @@ namespace storm {
             }
             
             template <typename ValueType>
-            std::shared_ptr<Polytope<ValueType>> Polytope<ValueType>::linearTransformation(std::vector<Point> const& matrix, Point const& vector) const {
+            std::shared_ptr<Polytope<ValueType>> Polytope<ValueType>::affineTransformation(std::vector<Point> const& matrix, Point const& vector) const {
                 STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Functionality not implemented.");
                 return nullptr;
             }

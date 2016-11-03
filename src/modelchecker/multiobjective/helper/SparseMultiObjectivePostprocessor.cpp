@@ -207,7 +207,7 @@ namespace storm {
                     transformationMatrix[objIndex][objIndex] = storm::utility::convertNumber<RationalNumberType>(preprocessorData.objectives[objIndex].toOriginalValueTransformationFactor);
                     transformationVector.push_back(storm::utility::convertNumber<RationalNumberType>(preprocessorData.objectives[objIndex].toOriginalValueTransformationOffset));
                 }
-                return polytope->linearTransformation(transformationMatrix, transformationVector);
+                return polytope->affineTransformation(transformationMatrix, transformationVector);
             }
             
             
