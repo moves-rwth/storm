@@ -71,7 +71,14 @@ namespace storm {
                 std::vector<modernjson::json> synElems;
                 for (auto const& syncs : composition.getSynchronizationVectors()) {
                     modernjson::json syncDecl;
-                    syncDecl["synchronise"] = syncs.getInput();
+                    syncDecl["synchronise"] = std::vector<std::string>();
+                    for (auto const& syncIn : syncs.getInput()) {
+                        if (syncIn == SynchronizationVector::NO_ACTION_INPUT) {
+                            syncDecl["synchronise"].push_back(nullptr);
+                        } else {
+                            syncDecl["synchronise"].push_back(syncIn);
+                        }
+                    }
                     syncDecl["result"] = syncs.getOutput();
                     synElems.push_back(syncDecl);
                 }
