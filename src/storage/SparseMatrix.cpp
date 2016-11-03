@@ -688,6 +688,9 @@ namespace storm {
                         *writeIt = std::move(intermediateRowEntry);
                         ++writeIt;
                     }
+                } else {
+                    // skip the intermediate rows
+                    writeIt = getRow(smallerRow).begin();
                 }
                 
                 // Write the larger row to its new position.
@@ -720,6 +723,9 @@ namespace storm {
                         *writeIt = std::move(*intermediateRowEntryIt);
                         --writeIt;
                     }
+                } else {
+                    // skip the intermediate rows
+                    writeIt = getRow(smallerRow).end() - 1;
                 }
                 
                 // Write the larger row to its new position.
