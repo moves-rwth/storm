@@ -41,8 +41,7 @@ namespace storm {
                     STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unknown Query Type");
                 }
                 
-                //STORM_LOG_INFO(getInfo(result, preprocessorData, resultData, preprocessorStopwatch, helperStopwatch, postprocessorStopwatch));
-                std:: cout << getInfo(result, preprocessorData, resultData, preprocessorStopwatch, helperStopwatch, postprocessorStopwatch);
+                STORM_LOG_INFO(getInfo(result, preprocessorData, resultData, preprocessorStopwatch, helperStopwatch, postprocessorStopwatch));
                 
                 exportPlot(result, preprocessorData, resultData, preprocessorStopwatch, helperStopwatch, postprocessorStopwatch);
                 
@@ -334,7 +333,7 @@ namespace storm {
                                 << preprocessorData.originalModel.getNumberOfTransitions() << ";"
                                 << preprocessorData.originalFormula << ";"
                                 << std::endl;
-                statistics << "result_Header;Iterations;Time Combined;Accuracy;Time Iterations;Time Computation Optimal Points" << std::endl;
+                statistics << "result_Header;Iterations;Time Combined;Accuracy;Time Iterations;" << std::endl;
                 statistics << "result_data;"
                                 << resultData.refinementSteps().size() << ";"
                                 << combinedTime << ";";
@@ -348,7 +347,6 @@ namespace storm {
                 } else {
                     statistics << ";";
                 }
-                statistics << resultData.stopWatchWeightVectorChecker << ";";
                 statistics << std::endl;
                 return statistics.str();
             }

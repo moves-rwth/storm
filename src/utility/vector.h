@@ -99,13 +99,11 @@ namespace storm {
                 iota_n(std::back_inserter(v), diff, min);
                 return v;
             }
-
-
             
             /*!
-             * Retrieves a list of indices such that the first index points to the entry of the given vector
-             * with the highest value, the second index points to the entry with the second highest value, ...
-             * Example:  v={3,8,4,5,1} yields res={1,3,2,0,4}
+             * Returns a list of indices such that the first index refers to the highest entry of the given vector,
+             *  the second index refers to the entry with the second highest value, ...
+             * Example:  v={3,8,4,5} yields res={1,3,2,0}
              */
             template<typename T>
             std::vector<uint_fast64_t> getSortedIndices(std::vector<T> const& v){
@@ -113,9 +111,6 @@ namespace storm {
                 std::sort(res.begin(), res.end(), [&v](uint_fast64_t index1, uint_fast64_t index2) { return v[index1] > v[index2];});
                 return res;
             }
-            
-            
-            
             
             /*!
              * Selects the elements from a vector at the specified positions and writes them consecutively into another vector.

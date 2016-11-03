@@ -8,7 +8,6 @@
 #include "src/modelchecker/multiobjective/helper/SparseMultiObjectiveRefinementStep.h"
 #include "src/storage/geometry/Polytope.h"
 #include "src/utility/macros.h"
-#include "src/utility/Stopwatch.h"
 
 #include "src/exceptions/InvalidStateException.h"
 
@@ -98,9 +97,6 @@ namespace storm {
                 bool getMaxStepsPerformed() const {
                     return maxStepsPerformed;
                 }
-                
-                //Keeps track of the time we spent with weight vector checking (i.e., computation of optimal points)
-                storm::utility::Stopwatch stopWatchWeightVectorChecker;
                 
             private:
                 

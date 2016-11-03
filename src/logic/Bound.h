@@ -26,7 +26,7 @@ namespace storm {
 
         template<typename ValueType>
         std::ostream& operator<<(std::ostream& out, Bound<ValueType> const& bound) {
-            out << bound.comparisonType << storm::utility::convertNumber<double>(bound.threshold);
+            out << bound.comparisonType << bound.threshold;
             return out;
         }
     }
