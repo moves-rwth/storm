@@ -80,6 +80,12 @@ namespace storm {
             return allAssignments.empty();
         }
         
+        void OrderedAssignments::clear() {
+            allAssignments.clear();
+            transientAssignments.clear();
+            nonTransientAssignments.clear();
+        }
+        
         int_fast64_t OrderedAssignments::getLowestLevel() const {
             return allAssignments.front()->getLevel();
         }

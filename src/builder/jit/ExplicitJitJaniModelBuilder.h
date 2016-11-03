@@ -66,7 +66,7 @@ namespace storm {
                 cpptempl::data_list generateLabels();
                 cpptempl::data_list generateTerminalExpressions();
                 void generateEdges(cpptempl::data_map& modelData);
-                cpptempl::data_map generateSynchronizationVector(storm::jani::ParallelComposition const& parallelComposition, storm::jani::SynchronizationVector const& synchronizationVector, uint64_t synchronizationVectorIndex);
+                cpptempl::data_map generateSynchronizationVector(cpptempl::data_map& modelData, storm::jani::ParallelComposition const& parallelComposition, storm::jani::SynchronizationVector const& synchronizationVector, uint64_t synchronizationVectorIndex);
                 cpptempl::data_list generateLevels(storm::jani::OrderedAssignments const& assignments);
                 
                 cpptempl::data_map generateEdge(storm::jani::Automaton const& automaton, uint64_t edgeIndex, storm::jani::Edge const& edge);

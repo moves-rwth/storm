@@ -315,6 +315,9 @@ namespace storm {
              */
             bool containsVariablesOnlyInProbabilitiesOrTransientAssignments(std::set<storm::expressions::Variable> const& variables) const;
             
+            /*!
+             * Pushes the edge assignments to the corresponding destinations.
+             */
             void pushEdgeAssignmentsToDestinations();
             
             /*!

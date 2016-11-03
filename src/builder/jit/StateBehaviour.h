@@ -27,7 +27,7 @@ namespace storm {
                  * Adds the given state rewards to the behavior of the state.
                  */
                 void addStateRewards(std::vector<ValueType>&& stateRewards);
-                
+                                
                 /*!
                  * Retrieves the rewards for this state.
                  */

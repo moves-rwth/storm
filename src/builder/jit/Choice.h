@@ -24,6 +24,11 @@ namespace storm {
                 void addReward(ValueType const& value);
                 
                 /*!
+                 * Adds the given value to the reward with the given index of this choice.
+                 */
+                void addReward(uint64_t index, ValueType const& value);
+                
+                /*!
                  * Adds the given choices rewards to this choice.
                  */
                 void addRewards(std::vector<ValueType>&& values);
@@ -34,12 +39,27 @@ namespace storm {
                 std::vector<ValueType> const& getRewards() const;
                 
                 /*!
+                 * Sets the given values as the rewards of this choice.
+                 */
+                void setRewards(std::vector<ValueType>&& rewards);
+                
+                /*!
+                 * Resizes the rewards to the desired size and filles newly created values with the provided value.
+                 */
+                void resizeRewards(std::size_t numberOfRewards, ValueType const& fillValue);
+                
+                /*!
+                 * Retrieves the number of rewards of this choice.
+                 */
+                std::size_t getNumberOfRewards() const;
+                
+                /*!
                  * Compresses the underlying distribution.
                  */
                 void compress();
                 
             private:
-                Distribution<IndexType, ValueType>& getDistribution();
+                Distribution<IndexType, ValueType>& getMutableDistribution();
 
                 /// The distribution of this choice.
                 Distribution<IndexType, ValueType> distribution;

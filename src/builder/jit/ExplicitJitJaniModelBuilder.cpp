@@ -10,6 +10,8 @@
 #include "src/storage/jani/AutomatonComposition.h"
 #include "src/storage/jani/ParallelComposition.h"
 
+#include "src/builder/RewardModelInformation.h"
+
 #include "src/models/sparse/Dtmc.h"
 #include "src/models/sparse/StandardRewardModel.h"
 
@@ -44,35 +46,34 @@ namespace storm {
                 }
 
                 // Construct vector of the automata to be put in parallel.
-                storm::jani::Composition const& topLevelComposition = model.getSystemComposition();
+                storm::jani::Composition const& topLevelComposition = this->model.getSystemComposition();
                 if (topLevelComposition.isAutomatonComposition()) {
-                    parallelAutomata.push_back(model.getAutomaton(topLevelComposition.asAutomatonComposition().getAutomatonName()));
+                    parallelAutomata.push_back(this->model.getAutomaton(topLevelComposition.asAutomatonComposition().getAutomatonName()));
                 } else {
                     STORM_LOG_ASSERT(topLevelComposition.isParallelComposition(), "Expected parallel composition.");
                     storm::jani::ParallelComposition const& parallelComposition = topLevelComposition.asParallelComposition();
                     
                     for (auto const& composition : parallelComposition.getSubcompositions()) {
                         STORM_LOG_ASSERT(composition->isAutomatonComposition(), "Expected flat parallel composition.");
-                        parallelAutomata.push_back(model.getAutomaton(composition->asAutomatonComposition().getAutomatonName()));
+                        parallelAutomata.push_back(this->model.getAutomaton(composition->asAutomatonComposition().getAutomatonName()));
                     }
                 }
                 
-                // FIXME: just for testing purposes.
                 for (auto& automaton : this->model.getAutomata()) {
                     automaton.pushEdgeAssignmentsToDestinations();
                 }
                 
                 for (auto const& automaton : parallelAutomata) {
-                    automatonToLocationVariable.emplace(automaton.get().getName(), model.getManager().declareFreshIntegerVariable(false, automaton.get().getName() + "_"));
+                    automatonToLocationVariable.emplace(automaton.get().getName(), this->model.getManager().declareFreshIntegerVariable(false, automaton.get().getName() + "_"));
                 }
                 
                 // If the program still contains undefined constants and we are not in a parametric setting, assemble an appropriate error message.
 #ifdef STORM_HAVE_CARL
-                if (!std::is_same<ValueType, storm::RationalFunction>::value && model.hasUndefinedConstants()) {
+                if (!std::is_same<ValueType, storm::RationalFunction>::value && this->model.hasUndefinedConstants()) {
 #else
-                    if (model.hasUndefinedConstants()) {
+                    if (this->model.hasUndefinedConstants()) {
 #endif
-                        std::vector<std::reference_wrapper<storm::jani::Constant const>> undefinedConstants = model.getUndefinedConstants();
+                        std::vector<std::reference_wrapper<storm::jani::Constant const>> undefinedConstants = this->model.getUndefinedConstants();
                         std::stringstream stream;
                         bool printComma = false;
                         for (auto const& constant : undefinedConstants) {
@@ -88,7 +89,7 @@ namespace storm {
                     }
                     
 #ifdef STORM_HAVE_CARL
-                    else if (std::is_same<ValueType, storm::RationalFunction>::value && !model.undefinedConstantsAreGraphPreserving()) {
+                    else if (std::is_same<ValueType, storm::RationalFunction>::value && !this->model.undefinedConstantsAreGraphPreserving()) {
                         STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The input model contains undefined constants that influence the graph structure of the underlying model, which is not allowed.");
                     }
 #endif
@@ -114,6 +115,7 @@ namespace storm {
 #include "src/builder/jit/JitModelBuilderInterface.h"
 #include "src/builder/jit/StateBehaviour.h"
 #include "src/builder/jit/ModelComponentsBuilder.h"
+#include "src/builder/RewardModelInformation.h"
                 
                 namespace storm {
                     namespace builder {
@@ -402,7 +404,7 @@ namespace storm {
                             public:
                                 typedef std::vector<Destination> ContainerType;
                                 
-                                Edge() : edgeEnabledFunction(nullptr) {
+                                Edge() : edgeEnabledFunction(nullptr), edgeTransientFunction(nullptr) {
                                     // Intentionally left empty.
                                 }
                                 
@@ -444,7 +446,7 @@ namespace storm {
                                 ContainerType destinations;
                             };
                             
-                            void locations_perform(StateType const& in, TransientVariables const& transientIn, TransientVariables& out) {
+                            void locations_perform(StateType const& in, TransientVariables const& transientIn, TransientVariables& transientOut) {
                                 {% for location in locations %}if ({$location.guard}) {
                                     {% for assignment in location.assignments %}transientOut.{$assignment.variable} = {$assignment.value};{% endfor %}
                                 }
@@ -461,16 +463,19 @@ namespace storm {
                                         initialStates.push_back(state);
                                     }{% endfor %}
                                     {% for edge in nonsynch_edges %}{
-                                        edge_{$edge.name} = Edge(&edge_enabled_{$edge.name}{% if edge.transient_assignments %}, edge_perform_{$edge.name}{% endif %});
+                                        edge_{$edge.name} = Edge(&edge_enabled_{$edge.name}, edge_perform_{$edge.name});
                                         {% for destination in edge.destinations %}edge_{$edge.name}.addDestination({$destination.lowestLevel}, {$destination.highestLevel}, {$destination.value}, &destination_perform_level_{$edge.name}_{$destination.name}, &destination_perform_{$edge.name}_{$destination.name}, &destination_perform_level_{$edge.name}_{$destination.name}, &destination_perform_{$edge.name}_{$destination.name});
                                         {% endfor %}
                                     }
                                     {% endfor %}
                                     {% for edge in synch_edges %}{
-                                        edge_{$edge.name} = Edge(&edge_enabled_{$edge.name}{% if edge.transient_assignments %}, edge_perform_{$edge.name}{% endif %});
+                                        edge_{$edge.name} = Edge(&edge_enabled_{$edge.name}, edge_perform_{$edge.name});
                                         {% for destination in edge.destinations %}edge_{$edge.name}.addDestination({$destination.lowestLevel}, {$destination.highestLevel}, {$destination.value}, &destination_perform_level_{$edge.name}_{$destination.name}, &destination_perform_{$edge.name}_{$destination.name}, &destination_perform_level_{$edge.name}_{$destination.name}, &destination_perform_{$edge.name}_{$destination.name});
                                         {% endfor %}
                                     }
+                                    {% endfor %}
+                                    {% for reward in rewards %}
+                                    modelComponentsBuilder.registerRewardModel(RewardModelInformation("{$reward.name}", {$reward.location_rewards}, {$reward.edge_rewards} || {$reward.destination_rewards}, false));
                                     {% endfor %}
                                 }
                                 
@@ -495,7 +500,7 @@ namespace storm {
                                     this->modelComponentsBuilder.registerLabel("deadlock", stateIds.size());
                                     
                                     for (auto const& stateEntry : stateIds) {
-                                        auto const& state = stateEntry.first;
+                                        auto const& in = stateEntry.first;
                                         {% for label in labels %}if ({$label.predicate}) {
                                             this->modelComponentsBuilder.addLabel(stateEntry.second, {$loop.index} - 1);
                                         }
@@ -540,6 +545,9 @@ namespace storm {
                                             TransientVariables transientIn;
                                             TransientVariables transientOut;
                                             locations_perform(currentState, transientIn, transientOut);
+                                            {% for reward in location_rewards %}
+                                            behaviour.addStateReward(transientOut.{$reward.variable});
+                                            {% endfor %}
                                             
                                             // Explore all edges that do not take part in synchronization vectors.
                                             exploreNonSynchronizingEdges(currentState, behaviour, statesToExplore);
@@ -564,17 +572,27 @@ namespace storm {
                                 void exploreNonSynchronizingEdges(StateType const& in, StateBehaviour<IndexType, ValueType>& behaviour, StateSet<StateType>& statesToExplore) {
                                     {% for edge in nonsynch_edges %}{
                                         if ({$edge.guard}) {
-                                            TransientVariables transientIn;
-                                            TransientVariables transientOut;
-                                            {% if edge.transient_assignments %}
-                                            edge_perform_{$edge.name}(in, transientIn, transientOut);
-                                            {% endif %}
                                             Choice<IndexType, ValueType>& choice = behaviour.addChoice();
+                                            choice.resizeRewards({$edge_destination_rewards_count}, 0);
+                                            {
+                                                TransientVariables transient;
+                                                {% if edge.transient_assignments %}
+                                                edge_perform_{$edge.name}(in, transient, transient);
+                                                {% endif %}
+                                                {% for reward in edge_rewards %}
+                                                choice.addReward({$reward.index}, transient.{$reward.variable});
+                                                {% endfor %}
+                                            }
                                             {% for destination in edge.destinations %}{
                                                 StateType out(in);
+                                                TransientVariables transientIn;
+                                                TransientVariables transientOut;
                                                 destination_perform_{$edge.name}_{$destination.name}(in, out{% if edge.transient_variables_in_destinations %}, transientIn, transientOut{% endif %});
                                                 IndexType outStateIndex = getOrAddIndex(out, statesToExplore);
                                                 choice.add(outStateIndex, {$destination.value});
+                                                {% for reward in destination_rewards %}
+                                                choice.addReward({$reward.index}, transientOut.{$reward.variable});
+                                                {% endfor %}
                                             }
                                             {% endfor %}
                                         }
@@ -649,9 +667,11 @@ namespace storm {
                 generateVariables(modelData);
                 cpptempl::data_list initialStates = generateInitialStates();
                 modelData["initialStates"] = cpptempl::make_data(initialStates);
+                
+                // We need to generate the reward information before the edges, because we already use it there.
+                generateRewards(modelData);
                 generateEdges(modelData);
                 generateLocations(modelData);
-                generateRewards(modelData);
                 cpptempl::data_list labels = generateLabels();
                 modelData["labels"] = cpptempl::make_data(labels);
                 cpptempl::data_list terminalExpressions = generateTerminalExpressions();
@@ -767,7 +787,7 @@ namespace storm {
             template <typename ValueType, typename RewardModelType>
             cpptempl::data_map ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateBooleanVariable(storm::jani::BooleanVariable const& variable) {
                 cpptempl::data_map result;
-                result["name"] = registerVariable(variable.getExpressionVariable());
+                result["name"] = registerVariable(variable.getExpressionVariable(), variable.isTransient());
                 if (variable.hasInitExpression()) {
                     result["init"] = asString(variable.getInitExpression().evaluateAsBool());
                 }
@@ -788,7 +808,7 @@ namespace storm {
                 uint64_t range = static_cast<uint64_t>(upperBound - lowerBound + 1);
                 uint64_t numberOfBits = static_cast<uint64_t>(std::ceil(std::log2(range)));
                 
-                result["name"] = registerVariable(variable.getExpressionVariable());
+                result["name"] = registerVariable(variable.getExpressionVariable(), variable.isTransient());
                 result["numberOfBits"] = std::to_string(numberOfBits);
                 if (variable.hasInitExpression()) {
                     result["init"] = asString(variable.getInitExpression().evaluateAsInt() - lowerBound);
@@ -801,7 +821,7 @@ namespace storm {
             cpptempl::data_map ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateUnboundedIntegerVariable(storm::jani::UnboundedIntegerVariable const& variable) {
                 cpptempl::data_map result;
                 
-                result["name"] = registerVariable(variable.getExpressionVariable());
+                result["name"] = registerVariable(variable.getExpressionVariable(), variable.isTransient());
                 if (variable.hasInitExpression()) {
                     result["init"] = asString(variable.getInitExpression().evaluateAsInt());
                 }
@@ -813,7 +833,7 @@ namespace storm {
             cpptempl::data_map ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateRealVariable(storm::jani::RealVariable const& variable) {
                 cpptempl::data_map result;
                 
-                result["name"] = registerVariable(variable.getExpressionVariable());
+                result["name"] = registerVariable(variable.getExpressionVariable(), variable.isTransient());
                 if (variable.hasInitExpression()) {
                     result["init"] = asString(variable.getInitExpression().evaluateAsDouble());
                 }
@@ -825,7 +845,7 @@ namespace storm {
             cpptempl::data_map ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateLocationVariable(storm::jani::Automaton const& automaton) {
                 cpptempl::data_map result;
                 
-                result["name"] = registerVariable(getLocationVariable(automaton));
+                result["name"] = registerVariable(getLocationVariable(automaton), false);
                 result["numberOfBits"] = static_cast<uint64_t>(std::ceil(std::log2(automaton.getNumberOfLocations())));
                 
                 return result;
@@ -946,7 +966,11 @@ namespace storm {
                             assignments.push_back(generateAssignment(assignment));
                         }
                         locationData["assignments"] = cpptempl::make_data(assignments);
-                        locationData["guard"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(getLocationVariable(automaton) == this->model.getManager().integer(locationIndex)), storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName));
+                        if (automaton.getNumberOfLocations() > 1) {
+                            locationData["guard"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(getLocationVariable(automaton) == this->model.getManager().integer(locationIndex)), storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName));
+                        } else {
+                            locationData["guard"] = asString(true);
+                        }
                         ++locationIndex;
                     }
                     if (!locationData["assignments"]->empty()) {
@@ -959,14 +983,12 @@ namespace storm {
                 
             template <typename ValueType, typename RewardModelType>
             void ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateRewards(cpptempl::data_map& modelData) {
-                cpptempl::data_list rewards;
-                
                 // Extract the reward models from the program based on the names we were given.
-                std::vector<std::reference_wrapper<storm::jani::Variable const>> rewardVariables;
+                std::vector<storm::expressions::Variable> rewardVariables;
                 auto const& globalVariables = model.getGlobalVariables();
                 for (auto const& rewardModelName : this->options.getRewardModelNames()) {
                     if (globalVariables.hasVariable(rewardModelName)) {
-                        rewardVariables.push_back(globalVariables.getVariable(rewardModelName));
+                        rewardVariables.push_back(globalVariables.getVariable(rewardModelName).getExpressionVariable());
                     } else {
                         STORM_LOG_THROW(rewardModelName.empty(), storm::exceptions::InvalidArgumentException, "Cannot build unknown reward model '" << rewardModelName << "'.");
                         STORM_LOG_THROW(globalVariables.getNumberOfRealTransientVariables() + globalVariables.getNumberOfUnboundedIntegerTransientVariables() == 1, storm::exceptions::InvalidArgumentException, "Reference to standard reward model is ambiguous.");
@@ -979,17 +1001,93 @@ namespace storm {
                     bool foundTransientVariable = false;
                     for (auto const& transientVariable : globalVariables.getTransientVariables()) {
                         if (transientVariable.isUnboundedIntegerVariable() || transientVariable.isRealVariable()) {
-                            rewardVariables.push_back(transientVariable);
+                            rewardVariables.push_back(transientVariable.getExpressionVariable());
                             foundTransientVariable = true;
                             break;
                         }
                     }
                     STORM_LOG_ASSERT(foundTransientVariable, "Expected to find a fitting transient variable.");
                 }
+
+                std::vector<storm::builder::RewardModelInformation> rewardModels;
+                cpptempl::data_list rewards;
+                cpptempl::data_list locationRewards;
+                cpptempl::data_list edgeRewards;
+                cpptempl::data_list destinationRewards;
+                uint64_t rewardModelIndex = 0;
+                uint64_t stateActionRewardCount = 0;
+                for (auto const& variable : rewardVariables) {
+                    bool hasLocationRewards = false;
+                    bool hasEdgeRewards = false;
+                    bool hasDestinationRewards = false;
+                    
+                    for (auto const& automatonRef : parallelAutomata) {
+                        storm::jani::Automaton const& automaton = automatonRef.get();
+                        
+                        for (auto const& location : automaton.getLocations()) {
+                            for (auto const& assignment : location.getAssignments()) {
+                                if (assignment.getExpressionVariable() == variable) {
+                                    hasLocationRewards = true;
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        for (auto const& edge : automaton.getEdges()) {
+                            for (auto const& assignment : edge.getAssignments()) {
+                                if (assignment.getExpressionVariable() == variable) {
+                                    hasEdgeRewards = true;
+                                }
+                            }
+                            
+                            for (auto const& destination : edge.getDestinations()) {
+                                for (auto const& assignment : destination.getOrderedAssignments()) {
+                                    if (assignment.getExpressionVariable() == variable) {
+                                        hasDestinationRewards = true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
+                    rewardModels.emplace_back(variable.getName(), hasLocationRewards, hasEdgeRewards || hasDestinationRewards, false);
+                    
+                    if (hasEdgeRewards || hasDestinationRewards) {
+                        ++stateActionRewardCount;
+                    }
+                    
+                    cpptempl::data_map reward;
+                    reward["name"] = variable.getName();
+                    reward["location_rewards"] = asString(hasLocationRewards);
+                    reward["edge_rewards"] = asString(hasEdgeRewards);
+                    reward["destination_rewards"] = asString(hasDestinationRewards);
+                    rewards.push_back(reward);
+                    
+                    if (hasLocationRewards) {
+                        cpptempl::data_map locationReward;
+                        locationReward["variable"] = variable.getName();
+                        locationRewards.push_back(locationReward);
+                    }
+                    if (hasEdgeRewards) {
+                        cpptempl::data_map edgeReward;
+                        edgeReward["variable"] = variable.getName();
+                        edgeReward["index"] = asString(rewardModelIndex);
+                        edgeRewards.push_back(edgeReward);
+                    }
+                    if (hasDestinationRewards) {
+                        cpptempl::data_map destinationReward;
+                        destinationReward["index"] = asString(rewardModelIndex);
+                        destinationReward["variable"] = variable.getName();
+                        destinationRewards.push_back(destinationReward);
+                    }
+                    ++rewardModelIndex;
+                }
                 
-                
-                
+                modelData["location_rewards"] = cpptempl::make_data(locationRewards);
+                modelData["edge_rewards"] = cpptempl::make_data(edgeRewards);
+                modelData["destination_rewards"] = cpptempl::make_data(destinationRewards);
                 modelData["rewards"] = cpptempl::make_data(rewards);
+                modelData["edge_destination_rewards_count"] = asString(stateActionRewardCount);
             }
                 
             template <typename ValueType, typename RewardModelType>
@@ -1053,7 +1151,7 @@ namespace storm {
             }
             
             template <typename ValueType, typename RewardModelType>
-            cpptempl::data_map ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateSynchronizationVector(storm::jani::ParallelComposition const& parallelComposition, storm::jani::SynchronizationVector const& synchronizationVector, uint64_t synchronizationVectorIndex) {
+            cpptempl::data_map ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateSynchronizationVector(cpptempl::data_map& modelData, storm::jani::ParallelComposition const& parallelComposition, storm::jani::SynchronizationVector const& synchronizationVector, uint64_t synchronizationVectorIndex) {
                 std::stringstream vectorSource;
                 uint64_t numberOfActionInputs = synchronizationVector.getNumberOfActionInputs();
                 
@@ -1130,14 +1228,19 @@ namespace storm {
                     indent(vectorSource, indentLevel + 1) << "}" << std::endl;
                 }
                 indent(vectorSource, indentLevel + 1) << "IndexType outStateIndex = getOrAddIndex(out, statesToExplore);" << std::endl;
-                indent(vectorSource, indentLevel + 1) << "choice.add(outStateIndex, ";
+                indent(vectorSource, indentLevel + 1) << "ValueType probability = ";
                 for (uint64_t index = 0; index < numberOfActionInputs; ++index) {
                     vectorSource << "destination" << index << ".value()";
                     if (index + 1 < numberOfActionInputs) {
                         vectorSource << " * ";
                     }
                 }
-                vectorSource << ");" << std::endl;
+                vectorSource << ";" << std::endl;
+                indent(vectorSource, indentLevel + 1) << "choice.add(outStateIndex, probability);";
+                
+                std::stringstream tmp;
+                indent(tmp, indentLevel + 1) << "{% for reward in destination_rewards %}choice.addReward({$reward.index}, probability * transientOut.{$reward.variable});" << std::endl;
+                indent(tmp, indentLevel + 1) << "{% endfor %}" << std::endl;
                 indent(vectorSource, indentLevel) << "}" << std::endl << std::endl;
                 
                 indent(vectorSource, indentLevel) << "void performSynchronizedDestinations_" << synchronizationVectorIndex << "(StateType const& in, StateBehaviour<IndexType, ValueType>& behaviour, StateSet<StateType>& statesToExplore, ";
@@ -1184,19 +1287,32 @@ namespace storm {
                             vectorSource << ", ";
                         }
                     }
+                    if (index > 0) {
+                        vectorSource << ", TransientVariables const& transientIn, TransientVariables& transientOut";
+                    }
                     vectorSource << ") {" << std::endl;
+                    if (index == 0) {
+                        indent(vectorSource, indentLevel + 1) << "TransientVariables transientIn;" << std::endl;
+                        indent(vectorSource, indentLevel + 1) << "TransientVariables transientOut;" << std::endl;
+                    }
                     indent(vectorSource, indentLevel + 1) << "for (auto const& edge" << index << " : edges[" << index << "]) {" << std::endl;
+                    indent(vectorSource, indentLevel + 2) << "edge" << index << ".perform(in, transientIn, transientOut);" << std::endl;
                     if (index + 1 < numberOfActionInputs) {
                         indent(vectorSource, indentLevel + 2) << "performSynchronizedEdges_" << synchronizationVectorIndex << "_" << (index + 1) << "(in, edges, behaviour, statesToExplore, ";
                         for (uint64_t innerIndex = 0; innerIndex <= index; ++innerIndex) {
-                            vectorSource << "edge" << innerIndex;
-                            if (innerIndex + 1 <= index) {
-                                vectorSource << ", ";
-                            }
+                            vectorSource << "edge" << innerIndex << ", ";
                         }
-                        vectorSource << ");" << std::endl;
+                        vectorSource << "transientIn, transientOut);" << std::endl;
                     } else {
                         indent(vectorSource, indentLevel + 2) << "Choice<IndexType, ValueType>& choice = behaviour.addChoice();" << std::endl;
+                        
+                        std::stringstream tmp;
+                        indent(tmp, indentLevel + 2) << "choice.resizeRewards({$edge_destination_rewards_count}, 0);" << std::endl;
+                        indent(tmp, indentLevel + 2) << "{% for reward in edge_rewards %}choice.addReward({$reward.index}, transientOut.{$reward.variable});" << std::endl;
+                        indent(tmp, indentLevel + 2) << "{% endfor %}" << std::endl;
+                        
+                        vectorSource << cpptempl::parse(tmp.str(), modelData);
+                        
                         indent(vectorSource, indentLevel + 2) << "performSynchronizedDestinations_" << synchronizationVectorIndex << "(in, behaviour, statesToExplore, ";
                         for (uint64_t innerIndex = 0; innerIndex <= index; ++innerIndex) {
                             vectorSource << "edge" << innerIndex << ", ";
@@ -1308,7 +1424,7 @@ namespace storm {
                         }
                         
                         if (createVector) {
-                            cpptempl::data_map vector = generateSynchronizationVector(parallelComposition, synchronizationVector, synchronizationVectorIndex);
+                            cpptempl::data_map vector = generateSynchronizationVector(modelData, parallelComposition, synchronizationVector, synchronizationVectorIndex);
                             vectors.push_back(vector);
                         }
                         ++synchronizationVectorIndex;
@@ -1500,7 +1616,7 @@ namespace storm {
             std::string const& ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::registerVariable(storm::expressions::Variable const& variable, bool transient) {
                 std::string variableName;
                 
-                // Technically, we would need to catch all keywords here...
+                // FIXME: Technically, we would need to catch all keywords here...
                 if (variable.getName() == "default") {
                     variableName = "__default";
                 } else {

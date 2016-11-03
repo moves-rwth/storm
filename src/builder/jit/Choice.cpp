@@ -23,7 +23,7 @@ namespace storm {
 
             template <typename IndexType, typename ValueType>
             void Choice<IndexType, ValueType>::add(Choice<IndexType, ValueType>&& choice) {
-                distribution.add(std::move(choice.getDistribution()));
+                distribution.add(std::move(choice.getMutableDistribution()));
             }
             
             template <typename IndexType, typename ValueType>
@@ -42,6 +42,11 @@ namespace storm {
             }
             
             template <typename IndexType, typename ValueType>
+            void Choice<IndexType, ValueType>::addReward(uint64_t index, ValueType const& value) {
+                rewards[index] += value;
+            }
+            
+            template <typename IndexType, typename ValueType>
             void Choice<IndexType, ValueType>::addRewards(std::vector<ValueType>&& values) {
                 rewards = std::move(values);
             }
@@ -52,12 +57,27 @@ namespace storm {
             }
             
             template <typename IndexType, typename ValueType>
+            void Choice<IndexType, ValueType>::setRewards(std::vector<ValueType>&& rewards) {
+                this->rewards = std::move(rewards);
+            }
+        
+            template <typename IndexType, typename ValueType>
+            void Choice<IndexType, ValueType>::resizeRewards(std::size_t numberOfRewards, ValueType const& fillValue) {
+                rewards.resize(numberOfRewards, fillValue);
+            }
+            
+            template <typename IndexType, typename ValueType>
+            std::size_t Choice<IndexType, ValueType>::getNumberOfRewards() const {
+                return rewards.size();
+            }
+        
+            template <typename IndexType, typename ValueType>
             void Choice<IndexType, ValueType>::compress() {
                 distribution.compress();
             }
 
             template <typename IndexType, typename ValueType>
-            Distribution<IndexType, ValueType>& Choice<IndexType, ValueType>::getDistribution() {
+            Distribution<IndexType, ValueType>& Choice<IndexType, ValueType>::getMutableDistribution() {
                 return distribution;
             }
             

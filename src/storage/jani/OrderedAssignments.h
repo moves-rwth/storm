@@ -48,6 +48,11 @@ namespace storm {
             bool empty() const;
             
             /*!
+             * Removes all assignments from this set.
+             */
+            void clear();
+            
+            /*!
              * Retrieves the lowest level among all assignments. Note that this may only be called if there is at least
              * one assignment.
              */

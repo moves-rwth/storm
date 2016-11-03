@@ -2,6 +2,8 @@
 
 #include "src/adapters/CarlAdapter.h"
 
+#include "src/utility/constants.h"
+
 namespace storm {
     namespace builder {
         namespace jit {
@@ -47,9 +49,42 @@ namespace storm {
                 if (choices.size() > 1) {
                     if (modelType == storm::jani::ModelType::DTMC || modelType == storm::jani::ModelType::CTMC) {
                         std::size_t totalCount = choices.size();
+
+                        ValueType totalExitRate = modelType == storm::jani::ModelType::DTMC ? static_cast<ValueType>(totalCount) : storm::utility::zero<ValueType>();
+
+                        if (choices.front().getNumberOfRewards() > 0) {
+                            std::vector<ValueType> newRewards(choices.front().getNumberOfRewards());
+                            
+                            if (modelType == storm::jani::ModelType::CTMC) {
+                                for (auto const& choice : choices) {
+                                    ValueType massOfChoice = storm::utility::zero<ValueType>();
+                                    for (auto const& entry : choices.front().getDistribution()) {
+                                        massOfChoice += entry.getValue();
+                                    }
+                                    
+                                    auto outIt = newRewards.begin();
+                                    for (auto const& reward : choice.getRewards()) {
+                                        *outIt += reward * massOfChoice / totalExitRate;
+                                        ++outIt;
+                                    }
+                                }
+                            } else {
+                                for (auto const& choice : choices) {
+                                    auto outIt = newRewards.begin();
+                                    for (auto const& reward : choice.getRewards()) {
+                                        *outIt += reward / totalExitRate;
+                                        ++outIt;
+                                    }
+                                }
+                            }
+
+                            choices.front().setRewards(std::move(newRewards));
+                        }
+                        
                         for (auto it = ++choices.begin(), ite = choices.end(); it != ite; ++it) {
                             choices.front().add(std::move(*it));
                         }
+                        
                         choices.resize(1);
                         choices.front().compress();
 
@@ -89,6 +124,7 @@ namespace storm {
             template <typename IndexType, typename ValueType>
             void StateBehaviour<IndexType, ValueType>::clear() {
                 choices.clear();
+                stateRewards.clear();
                 expanded = false;
             }
             
