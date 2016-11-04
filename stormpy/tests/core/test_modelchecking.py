@@ -25,8 +25,8 @@ class TestModelChecking:
     def test_parametric_state_elimination(self):
         import pycarl
         import pycarl.formula
-        program = stormpy.parse_prism_program(get_example_path("pdtmc", "brp", "brp_16_2.pm"))
-        prop = "P=? [F \"target\"]"
+        program = stormpy.parse_prism_program(get_example_path("pdtmc", "brp", "brp16_2.pm"))
+        prop = "P=? [F s=5]"
         formulas = stormpy.parse_formulas_for_prism_program(prop, program)
         model = stormpy.build_parametric_model_from_prism_program(program, formulas)
         assert model.nr_states() == 613

@@ -15,11 +15,11 @@ class TestModel:
         assert type(model) is stormpy.SparseDtmc
  
     def test_build_parametric_dtmc_from_prism_program(self):
-        program = stormpy.parse_prism_program(get_example_path("pdtmc", "brp", "brp_16_2.pm"))
+        program = stormpy.parse_prism_program(get_example_path("pdtmc", "brp", "brp16_2.pm"))
         assert program.nr_modules() == 5
         assert program.model_type() == stormpy.PrismModelType.DTMC
         assert program.has_undefined_constants()
-        prop = "P=? [F \"target\"]"
+        prop = "P=? [F s=5]"
         formulas = stormpy.parse_formulas_for_prism_program(prop, program)
         model = stormpy.build_parametric_model_from_prism_program(program, formulas)
         assert model.nr_states() == 613
@@ -40,8 +40,8 @@ class TestModel:
         assert type(model) is stormpy.SparseDtmc
     
     def test_build_parametric_dtmc(self):
-        program = stormpy.parse_prism_program(get_example_path("pdtmc", "brp", "brp_16_2.pm"))
-        formulas = stormpy.parse_formulas_for_prism_program("P=? [ F \"target\" ]", program)
+        program = stormpy.parse_prism_program(get_example_path("pdtmc", "brp", "brp16_2.pm"))
+        formulas = stormpy.parse_formulas_for_prism_program("P=? [ F s=5 ]", program)
         model = stormpy.build_parametric_model(program, formulas[0])
         assert model.nr_states() == 613
         assert model.nr_transitions() == 803
@@ -81,16 +81,16 @@ class TestModel:
         assert 0 in initial_states
     
     def test_label_parametric(self):
-        program = stormpy.parse_prism_program(get_example_path("pdtmc", "brp", "brp_16_2.pm"))
-        formulas = stormpy.parse_formulas_for_prism_program("P=? [ F \"target\" ]", program)
+        program = stormpy.parse_prism_program(get_example_path("pdtmc", "brp", "brp16_2.pm"))
+        formulas = stormpy.parse_formulas_for_prism_program("P=? [ F s=5 ]", program)
         model = stormpy.build_parametric_model(program, formulas[0])
         labels = model.labels()
         assert len(labels) == 3
         assert "init" in labels
-        assert "target" in labels
+        assert "(s = 5)" in labels
         assert "init" in model.labels_state(0)
-        assert "target" in model.labels_state(28)
-        assert "target" in model.labels_state(611)
+        assert "(s = 5)" in model.labels_state(28)
+        assert "(s = 5)" in model.labels_state(611)
         initial_states = model.initial_states()
         assert len(initial_states) == 1
         assert 0 in initial_states

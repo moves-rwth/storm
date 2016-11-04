@@ -68,8 +68,8 @@ class TestMatrix:
     def test_change_parametric_sparse_matrix_modelchecking(self):
         import stormpy.logic
         import pycarl
-        program = stormpy.parse_prism_program(get_example_path("pdtmc", "brp", "brp_16_2.pm"))
-        formulas = stormpy.parse_formulas_for_prism_program("P=? [ F \"target\" ]", program)
+        program = stormpy.parse_prism_program(get_example_path("pdtmc", "brp", "brp16_2.pm"))
+        formulas = stormpy.parse_formulas_for_prism_program("P=? [ F s=5 ]", program)
         model = stormpy.build_parametric_model(program, formulas[0])
         matrix = model.transition_matrix()
         # Check matrix
