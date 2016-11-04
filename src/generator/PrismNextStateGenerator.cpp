@@ -308,8 +308,10 @@ namespace storm {
                     ++integerIt;
                 }
                 int_fast64_t assignedValue = this->evaluator->asInt(assignmentIt->getExpression());
-                STORM_LOG_THROW(assignedValue <= integerIt->upperBound, storm::exceptions::WrongFormatException, "The update " << update << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getVariableName() << "'.");
-                STORM_LOG_THROW(assignedValue >= integerIt->lowerBound, storm::exceptions::WrongFormatException, "The update " << update << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getVariableName() << "'.");
+                if (this->options.isExplorationChecksSet()) {
+                    STORM_LOG_THROW(assignedValue >= integerIt->lowerBound, storm::exceptions::WrongFormatException, "The update " << update << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getVariableName() << "'.");
+                    STORM_LOG_THROW(assignedValue <= integerIt->upperBound, storm::exceptions::WrongFormatException, "The update " << update << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getVariableName() << "'.");
+                }
                 newState.setFromInt(integerIt->bitOffset, integerIt->bitWidth, assignedValue - integerIt->lowerBound);
                 STORM_LOG_ASSERT(static_cast<int_fast64_t>(newState.getAsInt(integerIt->bitOffset, integerIt->bitWidth)) + integerIt->lowerBound == assignedValue, "Writing to the bit vector bucket failed (read " << newState.getAsInt(integerIt->bitOffset, integerIt->bitWidth) << " but wrote " << assignedValue << ").");
             }
@@ -422,8 +424,10 @@ namespace storm {
                         choice.addReward(stateActionRewardValue);
                     }
                     
-                    // Check that the resulting distribution is in fact a distribution.
-                    STORM_LOG_THROW(!program.isDiscreteTimeModel() || this->comparator.isOne(probabilitySum), storm::exceptions::WrongFormatException, "Probabilities do not sum to one for command '" << command << "' (actually sum to " << probabilitySum << ").");
+                    if (this->options.isExplorationChecksSet()) {
+                        // Check that the resulting distribution is in fact a distribution.
+                        STORM_LOG_THROW(!program.isDiscreteTimeModel() || this->comparator.isOne(probabilitySum), storm::exceptions::WrongFormatException, "Probabilities do not sum to one for command '" << command << "' (actually sum to " << probabilitySum << ").");
+                    }
                 }
             }
             
@@ -508,11 +512,15 @@ namespace storm {
                         for (auto const& stateProbabilityPair : *newTargetStates) {
                             StateType actualIndex = stateToIdCallback(stateProbabilityPair.first);
                             choice.addProbability(actualIndex, stateProbabilityPair.second);
-                            probabilitySum += stateProbabilityPair.second;
+                            if (this->options.isExplorationChecksSet()) {
+                                probabilitySum += stateProbabilityPair.second;
+                            }
                         }
                         
-                        // Check that the resulting distribution is in fact a distribution.
-                        STORM_LOG_THROW(!program.isDiscreteTimeModel() || !this->comparator.isConstant(probabilitySum) || this->comparator.isOne(probabilitySum), storm::exceptions::WrongFormatException, "Sum of update probabilities do not some to one for some command (actually sum to " << probabilitySum << ").");
+                        if (this->options.isExplorationChecksSet()) {
+                            // Check that the resulting distribution is in fact a distribution.
+                            STORM_LOG_THROW(!program.isDiscreteTimeModel() || !this->comparator.isConstant(probabilitySum) || this->comparator.isOne(probabilitySum), storm::exceptions::WrongFormatException, "Sum of update probabilities do not some to one for some command (actually sum to " << probabilitySum << ").");
+                        }
                         
                         // Create the state-action reward for the newly created choice.
                         for (auto const& rewardModel : rewardModels) {

@@ -7,8 +7,18 @@ namespace storm {
         namespace jit {
             
             template <typename IndexType, typename ValueType>
-            Choice<IndexType, ValueType>::Choice() {
+            Choice<IndexType, ValueType>::Choice() : markovian(false) {
                 // Intentionally left empty.
+            }
+            
+            template <typename IndexType, typename ValueType>
+            void Choice<IndexType, ValueType>::setMarkovian(bool value) {
+                markovian = value;
+            }
+            
+            template <typename IndexType, typename ValueType>
+            bool Choice<IndexType, ValueType>::isMarkovian() const {
+                return markovian;
             }
             
             template <typename IndexType, typename ValueType>

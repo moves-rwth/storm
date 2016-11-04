@@ -14,6 +14,9 @@
 // The path used in the functional and performance tests to load the supplied example files
 #define STORM_CPP_TESTS_BASE_PATH "@STORM_CPP_TESTS_BASE_PATH@"
 
+// The path to boost used during compilation. 
+#define STORM_BOOST_INCLUDE_DIR "@STORM_BOOST_INCLUDE_DIR@"
+
 // Whether Gurobi is available and to be used (define/undef)
 #cmakedefine STORM_HAVE_GUROBI
 

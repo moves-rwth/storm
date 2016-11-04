@@ -74,8 +74,8 @@ link_directories(${Boost_LIBRARY_DIRS})
 include_directories(${Boost_INCLUDE_DIRS})
 list(APPEND STORM_LINK_LIBRARIES ${Boost_LIBRARIES})
 message(STATUS "StoRM - Using Boost ${Boost_VERSION} (lib ${Boost_LIB_VERSION})")
-#message(STATUS "StoRM - BOOST_INCLUDE_DIRS is ${Boost_INCLUDE_DIRS}")
-#message(STATUS "StoRM - BOOST_LIBRARY_DIRS is ${Boost_LIBRARY_DIRS}")
+# set the information for the config header
+set(STORM_BOOST_INCLUDE_DIR "${Boost_INCLUDE_DIRS}")
 
 #############################################################
 ##

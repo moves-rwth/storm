@@ -426,7 +426,6 @@ namespace storm {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Unknown operator " << opString);
                 }
             }
-            
         }
         
         storm::jani::Property JaniParser::parseProperty(json const& propertyStructure) {

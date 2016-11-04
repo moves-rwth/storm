@@ -43,9 +43,20 @@ namespace storm {
                 void clear();
                 
             private:
+                /*!
+                 * Reduces the choices of this state to make it a valid DTMC/CTMC behaviour.
+                 */
+                void reduceDeterministic(storm::jani::ModelType const& modelType);
+
+                /*!
+                 * Reduces the choices of this state to make it a valid MA behaviour.
+                 */
+                void reduceMarkovAutomaton();
+
+                /// The actual choices of this behaviour.
                 ContainerType choices;
                 
-                // The state rewards (under the different, selected reward models) of the state.
+                /// The state rewards (under the different, selected reward models) of the state.
                 std::vector<ValueType> stateRewards;
                 
                 bool compressed;

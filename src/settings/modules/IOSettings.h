@@ -131,6 +131,13 @@ namespace storm {
                 bool isExplorationOrderSet() const;
                 
                 /*!
+                 * Retrieves whether to perform additional checks during model exploration (e.g. out-of-bounds, etc.).
+                 *
+                 * @return True if additional checks are to be performed.
+                 */
+                bool isExplorationChecksSet() const;
+                
+                /*!
                  * Retrieves the exploration order if it was set.
                  *
                  * @return The chosen exploration order.
@@ -244,6 +251,8 @@ namespace storm {
                 static const std::string janiInputOptionName;
                 static const std::string prismToJaniOptionName;
                 static const std::string jitOptionName;
+                static const std::string explorationChecksOptionName;
+                static const std::string explorationChecksOptionShortName;
                 static const std::string explorationOrderOptionName;
                 static const std::string explorationOrderOptionShortName;
                 static const std::string transitionRewardsOptionName;

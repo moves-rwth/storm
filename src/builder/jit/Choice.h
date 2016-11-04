@@ -11,6 +11,9 @@ namespace storm {
             public:
                 Choice();
                 
+                void setMarkovian(bool value);
+                bool isMarkovian() const;
+                
                 void add(DistributionEntry<IndexType, ValueType> const& entry);
                 void add(IndexType const& index, ValueType const& value);
                 void add(Choice<IndexType, ValueType>&& choice);
@@ -66,6 +69,9 @@ namespace storm {
                 
                 /// The reward values associated with this choice.
                 std::vector<ValueType> rewards;
+                
+                /// A flag storing whether this choice is Markovian.
+                bool markovian;
             };
             
         }

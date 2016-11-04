@@ -273,7 +273,10 @@ namespace storm {
                     ++integerIt;
                 }
                 int_fast64_t assignedValue = this->evaluator->asInt(assignmentIt->getAssignedExpression());
-                STORM_LOG_THROW(assignedValue <= integerIt->upperBound, storm::exceptions::WrongFormatException, "The update " << assignmentIt->getExpressionVariable().getName() << " := " << assignmentIt->getAssignedExpression() << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getExpressionVariable().getName() << "'.");
+                if (this->options.isExplorationChecksSet()) {
+                    STORM_LOG_THROW(assignedValue >= integerIt->lowerBound, storm::exceptions::WrongFormatException, "The update " << assignmentIt->getExpressionVariable().getName() << " := " << assignmentIt->getAssignedExpression() << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getExpressionVariable().getName() << "'.");
+                    STORM_LOG_THROW(assignedValue <= integerIt->upperBound, storm::exceptions::WrongFormatException, "The update " << assignmentIt->getExpressionVariable().getName() << " := " << assignmentIt->getAssignedExpression() << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getExpressionVariable().getName() << "'.");
+                }
                 newState.setFromInt(integerIt->bitOffset, integerIt->bitWidth, assignedValue - integerIt->lowerBound);
                 STORM_LOG_ASSERT(static_cast<int_fast64_t>(newState.getAsInt(integerIt->bitOffset, integerIt->bitWidth)) + integerIt->lowerBound == assignedValue, "Writing to the bit vector bucket failed (read " << newState.getAsInt(integerIt->bitOffset, integerIt->bitWidth) << " but wrote " << assignedValue << ").");
             }
@@ -424,15 +427,20 @@ namespace storm {
                             // Update the choice by adding the probability/target state to it.
                             probability = exitRate ? exitRate.get() * probability : probability;
                             choice.addProbability(stateIndex, probability);
-                            probabilitySum += probability;
+                            
+                            if (this->options.isExplorationChecksSet()) {
+                                probabilitySum += probability;
+                            }
                         }
                     }
                     
                     // Create the state-action reward for the newly created choice.
                     performTransientAssignments(edge.getAssignments().getTransientAssignments(), [&choice] (ValueType const& value) { choice.addReward(value); } );
                     
-                    // Check that the resulting distribution is in fact a distribution.
-                    STORM_LOG_THROW(!this->isDiscreteTimeModel() || this->comparator.isOne(probabilitySum), storm::exceptions::WrongFormatException, "Probabilities do not sum to one for edge (actually sum to " << probabilitySum << ").");
+                    if (this->options.isExplorationChecksSet()) {
+                        // Check that the resulting distribution is in fact a distribution.
+                        STORM_LOG_THROW(!this->isDiscreteTimeModel() || this->comparator.isOne(probabilitySum), storm::exceptions::WrongFormatException, "Probabilities do not sum to one for edge (actually sum to " << probabilitySum << ").");
+                    }
                 }
                 
                 ++automatonIndex;
@@ -450,8 +458,10 @@ namespace storm {
                 
                 // Only process this action, if there is at least one feasible solution.
                 if (!enabledEdges.empty()) {
-                    // Check whether a global variable is written multiple times in any combination.
-                    checkGlobalVariableWritesValid(enabledEdges);
+                    if (this->options.isExplorationChecksSet()) {
+                        // Check whether a global variable is written multiple times in any combination.
+                        checkGlobalVariableWritesValid(enabledEdges);
+                    }
                     
                     std::vector<std::vector<storm::jani::Edge const*>::const_iterator> iteratorList(enabledEdges.size());
                     
@@ -525,8 +535,10 @@ namespace storm {
                             probabilitySum += stateProbabilityPair.second;
                         }
                         
-                        // Check that the resulting distribution is in fact a distribution.
-                        STORM_LOG_THROW(!this->isDiscreteTimeModel() || !this->comparator.isConstant(probabilitySum) || this->comparator.isOne(probabilitySum), storm::exceptions::WrongFormatException, "Sum of update probabilities do not sum to one for some command (actually sum to " << probabilitySum << ").");
+                        if (this->options.isExplorationChecksSet()) {
+                            // Check that the resulting distribution is in fact a distribution.
+                            STORM_LOG_THROW(!this->isDiscreteTimeModel() || !this->comparator.isConstant(probabilitySum) || this->comparator.isOne(probabilitySum), storm::exceptions::WrongFormatException, "Sum of update probabilities do not sum to one for some command (actually sum to " << probabilitySum << ").");
+                        }
                         
                         // Dispose of the temporary maps.
                         delete currentTargetStates;

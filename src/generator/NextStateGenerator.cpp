@@ -120,7 +120,7 @@ namespace storm {
                             
                             // Swap the choice to the end to indicate it can be removed (if it's not already there).
                             if (index != result.getNumberOfChoices() - 1) {
-                                std::swap(choice, result.getChoices().back());
+                                choice = std::move(result.getChoices()[result.getNumberOfChoices() - 1 - numberOfChoicesToDelete]);
                             }
                             ++numberOfChoicesToDelete;
                         } else {

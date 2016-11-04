@@ -2,6 +2,9 @@
 
 #include "src/logic/Formulas.h"
 
+#include "src/settings/SettingsManager.h"
+#include "src/settings/modules/IOSettings.h"
+
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidSettingsException.h"
 
@@ -50,6 +53,8 @@ namespace storm {
                     this->setTerminalStatesFromFormula(*formulas.front());
                 }
             }
+            
+            explorationChecks = storm::settings::getModule<storm::settings::modules::IOSettings>().isExplorationChecksSet();
         }
         
         void BuilderOptions::preserveFormula(storm::logic::Formula const& formula) {
@@ -144,6 +149,15 @@ namespace storm {
         
         BuilderOptions& BuilderOptions::setBuildAllRewardModels() {
             buildAllRewardModels = true;
+            return *this;
+        }
+
+        bool BuilderOptions::isExplorationChecksSet() const {
+            return explorationChecks;
+        }
+
+        BuilderOptions& BuilderOptions::setExplorationChecks(bool newValue) {
+            explorationChecks = newValue;
             return *this;
         }
         

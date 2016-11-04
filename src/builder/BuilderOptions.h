@@ -91,6 +91,7 @@ namespace storm {
             bool isBuildChoiceLabelsSet() const;
             bool isBuildAllRewardModelsSet() const;
             bool isBuildAllLabelsSet() const;
+            bool isExplorationChecksSet() const;
             
             BuilderOptions& setBuildAllRewardModels();
             BuilderOptions& addRewardModel(std::string const& rewardModelName);
@@ -100,6 +101,7 @@ namespace storm {
             BuilderOptions& addTerminalExpression(storm::expressions::Expression const& expression, bool value);
             BuilderOptions& addTerminalLabel(std::string const& label, bool value);
             BuilderOptions& setBuildChoiceLabels(bool newValue);
+            BuilderOptions& setExplorationChecks(bool newValue);
             
         private:
             /// A flag that indicates whether all reward models are to be built. In this case, the reward model names are
@@ -123,6 +125,9 @@ namespace storm {
             
             /// A flag indicating whether or not to build choice labels.
             bool buildChoiceLabels;
+            
+            /// A flag that stores whether exploration checks are to be performed.
+            bool explorationChecks;
         };
         
     }

@@ -115,7 +115,7 @@ namespace storm {
             /// A vector storing information about the corresponding reward models (variables).
             std::vector<storm::builder::RewardModelInformation> rewardModelInformation;
             
-            // A flag that stores whether at least one of the selected reward models has state-action rewards.
+            /// A flag that stores whether at least one of the selected reward models has state-action rewards.
             bool hasStateActionRewards;
         };
         

@@ -22,7 +22,7 @@
 #include "src/settings/modules/ParametricSettings.h"
 #include "src/settings/modules/RegionSettings.h"
 #include "src/settings/modules/EliminationSettings.h"
-#include "src/settings/modules/CoreSettings.h"
+#include "src/settings/modules/JitBuilderSettings.h"
 
 // Formula headers.
 #include "src/logic/Formulas.h"
@@ -124,7 +124,15 @@ namespace storm {
 
         if (storm::settings::getModule<storm::settings::modules::IOSettings>().isJitSet()) {
             STORM_LOG_THROW(model.isJaniModel(), storm::exceptions::NotSupportedException, "Cannot use JIT-based model builder for non-JANI model.");
+
             storm::builder::jit::ExplicitJitJaniModelBuilder<ValueType> builder(model.asJaniModel(), options);
+
+            if (storm::settings::getModule<storm::settings::modules::JitBuilderSettings>().isDoctorSet()) {
+                bool result = builder.doctor();
+                STORM_LOG_THROW(result, storm::exceptions::InvalidSettingsException, "The JIT-based model builder cannot be used on your system.");
+                STORM_LOG_INFO("The JIT-based model builder seems to be working.");
+            }
+            
             return builder.build();
         } else {
             std::shared_ptr<storm::generator::NextStateGenerator<ValueType, uint32_t>> generator;
