@@ -1,3 +1,4 @@
+import pycarl
 import stormpy
 import stormpy.logic
 
@@ -37,14 +38,14 @@ class TestFormulas:
         prop = "P<0.4 [F \"one\"]"
         formula = stormpy.parse_formulas(prop)[0]
         assert formula.has_bound()
-        assert formula.threshold == 0.4
+        assert formula.threshold == pycarl.Rational("0.4")
         assert formula.comparison_type == stormpy.logic.ComparisonType.LESS
 
     def test_set_bounds(self):
         prop = "P<0.4 [F \"one\"]"
         formula = stormpy.parse_formulas(prop)[0]
-        formula.threshold = 0.2
+        formula.threshold = pycarl.Rational("0.2")
         formula.comparison_type = stormpy.logic.ComparisonType.GEQ
-        assert formula.threshold == 0.2
+        assert formula.threshold == pycarl.Rational("0.2")
         assert formula.comparison_type == stormpy.logic.ComparisonType.GEQ
-        assert str(formula) == "P>=0.2 [F \"one\"]"
+        assert str(formula) == "P>=1/5 [F \"one\"]"
