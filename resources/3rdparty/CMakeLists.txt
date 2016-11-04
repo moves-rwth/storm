@@ -355,10 +355,10 @@ ExternalProject_Add(
         PREFIX "sylvan"
         SOURCE_DIR ${STORM_3RDPARTY_SOURCE_DIR}/sylvan
         CMAKE_ARGS -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DSYLVAN_BUILD_TEST=Off -DSYLVAN_BUILD_EXAMPLES=Off -DCMAKE_BUILD_TYPE=Release
-        BINARY_DIR "${PROJECT_BINARY_DIR}/sylvan"
+        BINARY_DIR ${PROJECT_BINARY_DIR}/sylvan
         BUILD_IN_SOURCE 0
         INSTALL_COMMAND ""
-        INSTALL_DIR "${STORM_3RDPARTY_BINARY_DIR}/sylvan"
+        INSTALL_DIR ${STORM_3RDPARTY_BINARY_DIR}/sylvan
         LOG_CONFIGURE ON
         LOG_BUILD ON
         BUILD_BYPRODUCTS ${PROJECT_BINARY_DIR}/sylvan/src/libsylvan${STATIC_EXT}
@@ -366,7 +366,7 @@ ExternalProject_Add(
 ExternalProject_Get_Property(sylvan source_dir)
 ExternalProject_Get_Property(sylvan binary_dir)
 set(Sylvan_INCLUDE_DIR "${source_dir}/src")
-set(Sylvan_LIBRARY "${binary_dir}/src/libsylvan.a")
+set(Sylvan_LIBRARY "${binary_dir}/src/libsylvan${STATIC_EXT}")
 message(STATUS "Storm - Using shipped version of sylvan.")
 message(STATUS "Storm - Linking with sylvan.")
 include_directories("${Sylvan_INCLUDE_DIR}")
@@ -414,7 +414,7 @@ ExternalProject_Get_Property(googletest source_dir)
 set(GTEST_INCLUDE_DIR ${source_dir}/include)
 # Specify MainTest's link libraries
 ExternalProject_Get_Property(googletest binary_dir)
-set(GTEST_LIBRARIES ${binary_dir}/libgtest.a ${binary_dir}/libgtest_main.a)
+set(GTEST_LIBRARIES ${binary_dir}/libgtest${LIB_EXT} ${binary_dir}/libgtest_main${LIB_EXT})
 
 add_dependencies(test-resources googletest)
 list(APPEND STORM_TEST_LINK_LIBRARIES ${GTEST_LIBRARIES})

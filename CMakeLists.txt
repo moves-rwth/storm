@@ -122,6 +122,14 @@ endif()
 message(STATUS "Assuming extension for shared libraries: ${DYNAMIC_EXT}")
 message(STATUS "Assuming extension for static libraries: ${STATIC_EXT}")
 
+if(BUILD_SHARED_LIBS)
+    set(LIB_EXT ${DYNAMIC_EXT})
+    message(STATUS "Build dynamic libraries.")
+else()
+    set(LIB_EXT ${STATIC_EXT})
+    message(STATUS "Build static libraries.")
+endif()
+
 #############################################################
 ##
 ##	Compiler detection and initial configuration
