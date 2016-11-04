@@ -45,7 +45,7 @@ namespace storm {
              * Note that only reachable states are kept.
              * Gate states will always belong to the second copy.
              * Rewards and labels are duplicated accordingly.
-             * However, the non-gate-states in the second copy will not get the label for initial states.
+             * However, the non-gateStates in the second copy will not get the label for initial states.
              *
              * @param originalModel The model to be duplicated
              * @param gateStates The states for which the incoming transitions are redirected
