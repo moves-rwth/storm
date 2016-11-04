@@ -414,7 +414,7 @@ ExternalProject_Get_Property(googletest source_dir)
 set(GTEST_INCLUDE_DIR ${source_dir}/include)
 # Specify MainTest's link libraries
 ExternalProject_Get_Property(googletest binary_dir)
-set(GTEST_LIBRARIES ${binary_dir}/libgtest${LIB_EXT} ${binary_dir}/libgtest_main${LIB_EXT})
+set(GTEST_LIBRARIES ${binary_dir}/libgtest${STATIC_EXT} ${binary_dir}/libgtest_main${STATIC_EXT})
 
 add_dependencies(test-resources googletest)
 list(APPEND STORM_TEST_LINK_LIBRARIES ${GTEST_LIBRARIES})
