@@ -2,6 +2,7 @@
 #define STORM_STORAGE_EXPRESSIONS_EXPRESSIONVISITOR_H_
 
 #include <boost/any.hpp>
+#include <boost/none.hpp>
 
 namespace storm {
     namespace expressions {

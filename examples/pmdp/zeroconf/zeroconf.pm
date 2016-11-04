@@ -256,3 +256,14 @@ module host0
 	[] l=4 -> 1 : true;
 	
 endmodule
+
+// reward structure
+const double err; // cost associated with using a IP address already in use
+
+rewards
+	[time] true : 1;
+	[send] l=3 & mess=0 & y=CONSEC & probes=1 & ip=1 : err;
+endrewards
+
+label "selected_ip" = l = 4;
+label "selected_ip_in_use" = l = 4 & ip = 1;

@@ -7,7 +7,16 @@
 #include "src/utility/macros.h"
 #include "src/storage/jani/Property.h"
 
-namespace storm {
+namespace storm{
+    
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulasInProperties(std::vector<storm::jani::Property> const& properties) {
+        
+        std::vector<std::shared_ptr<storm::logic::Formula const>> formulas;
+        for (auto const& prop : properties) {
+            formulas.push_back(prop.getFilter().getFormula());
+        }
+        return formulas;
+    }
    
      storm::prism::Program parseProgram(std::string const& path) {
         storm::prism::Program program = storm::parser::PrismParser::parse(path).simplify().simplify();
@@ -16,8 +25,8 @@ namespace storm {
         return program;
     }
 
-    std::pair<storm::jani::Model, std::vector<storm::jani::Property>> parseJaniModel(std::string const& path) {
-        std::pair<storm::jani::Model, std::vector<storm::jani::Property>> modelAndFormulae = storm::parser::JaniParser::parse(path);
+    std::pair<storm::jani::Model, std::map<std::string, storm::jani::Property>> parseJaniModel(std::string const& path) {
+        std::pair<storm::jani::Model, std::map<std::string, storm::jani::Property>> modelAndFormulae = storm::parser::JaniParser::parse(path);
         modelAndFormulae.first.checkValid();
         return modelAndFormulae;
     }

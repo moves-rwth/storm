@@ -11,7 +11,7 @@ namespace storm {
             /*!
              * Creates a Boolean variable with initial value
              */
-            BooleanVariable(std::string const& name, storm::expressions::Variable const& variable, bool transient=false);
+            BooleanVariable(std::string const& name, storm::expressions::Variable const& variable);
             
             /*!
              * Creates a Boolean variable with initial value

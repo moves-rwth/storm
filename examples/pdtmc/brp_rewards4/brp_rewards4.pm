@@ -144,3 +144,6 @@ rewards
 endrewards
 
 
+
+label "fatal" = s=5 & T;
+label "false_neg" = srep=1 & rrep=3 & recv;

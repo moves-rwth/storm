@@ -10,7 +10,7 @@ namespace storm {
             /*!
              * Creates a real variable without initial value.
              */
-            RealVariable(std::string const& name, storm::expressions::Variable const& variable, bool transient=false);
+            RealVariable(std::string const& name, storm::expressions::Variable const& variable);
             
             /*!
              * Creates a real variable with initial value.

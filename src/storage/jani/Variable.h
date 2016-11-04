@@ -25,7 +25,7 @@ namespace storm {
             /*!
              * Creates a new variable without initial value construct.
              */
-            Variable(std::string const& name, storm::expressions::Variable const& variable, bool transient = false);
+            Variable(std::string const& name, storm::expressions::Variable const& variable);
             
             virtual ~Variable();
             

@@ -3,7 +3,7 @@
 namespace storm {
     namespace jani {
         
-        BooleanVariable::BooleanVariable(std::string const& name, storm::expressions::Variable const& variable, bool transient) : Variable(name, variable, transient) {
+        BooleanVariable::BooleanVariable(std::string const& name, storm::expressions::Variable const& variable) : Variable(name, variable) {
             // Intentionally left empty.
         }
         
@@ -19,7 +19,8 @@ namespace storm {
             if (initValue) {
                 return std::make_shared<BooleanVariable>(name, variable, initValue.get(), transient);
             } else {
-                return std::make_shared<BooleanVariable>(name, variable, transient);
+                assert(!transient);
+                return std::make_shared<BooleanVariable>(name, variable);
             }
         }
         

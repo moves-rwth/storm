@@ -1,6 +1,8 @@
 #pragma once
 #include <cassert>
 #include <vector>
+#include <cstdint>
+
 namespace storm {
     namespace ppg {
         class ProgramGraph;

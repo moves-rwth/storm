@@ -17,10 +17,6 @@ namespace storm {
              */
             BoundedIntegerVariable(std::string const& name, storm::expressions::Variable const& variable, storm::expressions::Expression const& initValue, storm::expressions::Expression const& lowerBound, storm::expressions::Expression const& upperBound);
             /*!
-             * Creates a bounded integer variable without initial value.
-             */
-            BoundedIntegerVariable(std::string const& name, storm::expressions::Variable const& variable, bool transient, storm::expressions::Expression const& lowerBound, storm::expressions::Expression const& upperBound);
-            /*!
              * Creates a bounded integer variable with transient set to false and no initial value.
              */
             BoundedIntegerVariable(std::string const& name, storm::expressions::Variable const& variable, storm::expressions::Expression const& lowerBound, storm::expressions::Expression const& upperBound);

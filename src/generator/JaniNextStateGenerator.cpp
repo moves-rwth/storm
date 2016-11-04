@@ -188,7 +188,7 @@ namespace storm {
                     blockingExpression = blockingExpression.isInitialized() ? blockingExpression || localBlockingExpression : localBlockingExpression;
                     initialState.setFromInt(integerVariable.bitOffset, integerVariable.bitWidth, static_cast<uint_fast64_t>(variableValue - integerVariable.lowerBound));
                 }
-                
+                                
                 // Gather iterators to the initial locations of all the automata.
                 std::vector<std::set<uint64_t>::const_iterator> initialLocationsIterators;
                 uint64_t currentLocationVariable = 0;
@@ -486,6 +486,8 @@ namespace storm {
                                 currentTargetStates = newTargetStates;
                                 newTargetStates = new boost::container::flat_map<CompressedState, ValueType>();
                             }
+                            
+                            ++locationVariableIt;
                         }
                         
                         // At this point, we applied all commands of the current command combination and newTargetStates
@@ -541,7 +543,6 @@ namespace storm {
             // Iterate over all automata.
             uint64_t automatonIndex = 0;
             for (auto const& automaton : model.getAutomata()) {
-                
                 // If the automaton has no edge labeled with the given action, we can skip it.
                 if (!automaton.hasEdgeLabeledWithActionIndex(actionIndex)) {
                     continue;

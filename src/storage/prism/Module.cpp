@@ -196,12 +196,12 @@ namespace storm {
         
         bool Module::containsVariablesOnlyInUpdateProbabilities(std::set<storm::expressions::Variable> const& undefinedConstantVariables) const {
             for (auto const& booleanVariable : this->getBooleanVariables()) {
-                if (booleanVariable.getInitialValueExpression().containsVariable(undefinedConstantVariables)) {
+                if (booleanVariable.hasInitialValue() && booleanVariable.getInitialValueExpression().containsVariable(undefinedConstantVariables)) {
                     return false;
                 }
             }
             for (auto const& integerVariable : this->getIntegerVariables()) {
-                if (integerVariable.getInitialValueExpression().containsVariable(undefinedConstantVariables)) {
+                if (integerVariable.hasInitialValue() && integerVariable.getInitialValueExpression().containsVariable(undefinedConstantVariables)) {
                     return false;
                 }
                 if (integerVariable.getLowerBoundExpression().containsVariable(undefinedConstantVariables)) {

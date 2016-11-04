@@ -12,6 +12,10 @@ namespace storm {
             virtual QualitativeCheckResult& operator|=(QualitativeCheckResult const& other);
             virtual void complement();
             
+            virtual bool existsTrue() const = 0;
+            virtual bool forallTrue() const = 0;
+            virtual uint64_t count() const = 0;
+            
             virtual bool isQualitative() const override;
         };
     }

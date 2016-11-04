@@ -35,6 +35,22 @@ namespace storm {
                  */
                 std::string getExportDotFilename() const;
 
+                
+                /*!
+                 * Retrieves whether the export-to-explicit option was set
+                 *
+                 * @return True if the export-to-explicit option was set
+                 */
+                bool isExportExplicitSet() const;
+                
+                
+                /*!
+                 * Retrieves thename in which to write the model in explicit format, if the option was set.
+                 *
+                 * @return The name of the file in which to write the exported mode.
+                 */
+                std::string getExportExplicitFilename() const;
+                
                 /*!
                  * Retrieves whether the explicit option was set.
                  *
@@ -183,6 +199,10 @@ namespace storm {
                  * @return The string that defines the constants of a symbolic model.
                  */
                 std::string getConstantDefinitionString() const;
+                
+                bool isJaniPropertiesSet() const;
+                
+                std::vector<std::string> getJaniProperties() const;
 
                 /*!
                  * Retrieves whether the PRISM compatibility mode was enabled.
@@ -190,6 +210,18 @@ namespace storm {
                  * @return True iff the PRISM compatibility mode was enabled.
                  */
                 bool isPrismCompatibilityEnabled() const;
+                
+                /**
+                 * Retrieves whether no model should be build at all, in case one just want to translate models or parse a file
+                 */
+                bool isNoBuildModelSet() const;
+                
+                /*!
+                 * Retrieves whether the full model should be build, that is, the model including all labels and rewards.
+                 *
+                 * @return true iff the full model should be build.
+                 */
+                bool isBuildFullModelSet() const;
 
                 bool check() const override;
                 void finalize() override;
@@ -200,7 +232,7 @@ namespace storm {
             private:
                 // Define the string names of the options as constants.
                 static const std::string exportDotOptionName;
-                static const std::string exportMatOptionName;
+                static const std::string exportExplicitOptionName;
                 static const std::string explicitOptionName;
                 static const std::string explicitOptionShortName;
                 static const std::string prismInputOptionName;
@@ -215,6 +247,10 @@ namespace storm {
                 static const std::string constantsOptionShortName;
                 static const std::string prismCompatibilityOptionName;
                 static const std::string prismCompatibilityOptionShortName;
+                static const std::string fullModelBuildOptionName;
+                static const std::string noBuildOptionName;
+                static const std::string janiPropertyOptionName;
+                static const std::string janiPropertyOptionShortName;
             };
 
         } // namespace modules

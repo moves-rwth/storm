@@ -100,7 +100,8 @@ namespace storm {
         return storm::parser::AutoParser<>::parseModel(transitionsFile, labelingFile, stateRewardsFile ? stateRewardsFile.get() : "", transitionRewardsFile ? transitionRewardsFile.get() : "", choiceLabelingFile ? choiceLabelingFile.get() : "" );
     }
 
-    std::pair<storm::jani::Model, std::vector<storm::jani::Property>> parseJaniModel(std::string const& path);
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulasInProperties(std::vector<storm::jani::Property> const& properties);
+    std::pair<storm::jani::Model, std::map<std::string, storm::jani::Property>> parseJaniModel(std::string const& path);
     storm::prism::Program parseProgram(std::string const& path);
     std::vector<std::shared_ptr<storm::logic::Formula const>> parseFormulasForExplicit(std::string const& inputString);
     std::vector<std::shared_ptr<storm::logic::Formula const>> parseFormulasForPrismProgram(std::string const& inputString, storm::prism::Program const& program);
@@ -108,7 +109,15 @@ namespace storm {
 
     template<typename ValueType>
     std::shared_ptr<storm::models::sparse::Model<ValueType>> buildSparseModel(storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool onlyInitialStatesRelevant = false) {
+        
+        
         storm::generator::NextStateGeneratorOptions options(formulas);
+        
+        
+        if (storm::settings::getModule<storm::settings::modules::IOSettings>().isBuildFullModelSet()) {
+            options.setBuildAllLabels();
+            options.setBuildAllRewardModels();
+        }
 
         // Generate command labels if we are going to build a counterexample later.
         if (storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>().isMinimalCommandSetGenerationSet()) {
