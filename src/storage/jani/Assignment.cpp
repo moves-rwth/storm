@@ -38,7 +38,7 @@ namespace storm  {
             this->setAssignedExpression(this->getAssignedExpression().substitute(substitution));
         }
         
-        uint64_t Assignment::getLevel() const {
+        int64_t Assignment::getLevel() const {
             return level;
         }
         

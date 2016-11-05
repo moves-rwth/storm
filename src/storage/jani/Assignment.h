@@ -50,7 +50,7 @@ namespace storm {
             /*!
              * Retrieves the level of the assignment.
              */
-            uint64_t getLevel() const;
+            int64_t getLevel() const;
             
             friend std::ostream& operator<<(std::ostream& stream, Assignment const& assignment);
             
