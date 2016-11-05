@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 #include "src/builder/jit/Distribution.h"
 
 namespace storm {

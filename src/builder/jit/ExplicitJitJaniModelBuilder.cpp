@@ -57,10 +57,10 @@ namespace storm {
                     compilerFlags = settings.getCompilerFlags();
                 } else {
 #ifdef LINUX
-                    compilerFlags = "-std=c++11 -fPIC -O3 -shared -funroll-loops -undefined dynamic_lookup";
+                    compilerFlags = "-std=c++14 -fPIC -O3 -shared";
 #endif
 #ifdef MACOSX
-                    compilerFlags = "-std=c++11 -stdlib=libc++ -fPIC -O3 -shared -funroll-loops -undefined dynamic_lookup";
+                    compilerFlags = "-std=c++14 -stdlib=libc++ -fPIC -O3 -shared -undefined dynamic_lookup";
 #endif
                 }
                 if (settings.isBoostIncludeDirectorySet()) {
@@ -184,8 +184,6 @@ namespace storm {
                 std::string problem = "Unable to compile empty program with C++ compiler. Is the C++ compiler '" + compiler + "' installed and working?";
                 try {
                     std::string emptyProgram = R"(
-#include <cstdint>
-                    
                     int main() {
                         return 0;
                     }
@@ -252,7 +250,6 @@ namespace storm {
                 std::string problem = "Unable to compile program using boost. Is boosts's include directory '" + boostIncludeDirectory + "' set correctly?";
                 try {
                     std::string program = R"(
-#include <cstdint>
 #include <boost/optional.hpp>
                         
                     int main() {
@@ -264,7 +261,7 @@ namespace storm {
                     boost::filesystem::path outputFile = temporaryFile;
                     outputFile += ".out";
                     std::string outputFilename = boost::filesystem::absolute(outputFile).string();
-                    boost::optional<std::string> error = execute(compiler + " " + temporaryFilename + " -I" + boostIncludeDirectory + " -o " + outputFilename);
+                    boost::optional<std::string> error = execute(compiler + " " + compilerFlags + " " + temporaryFilename + " -I" + boostIncludeDirectory + " -o " + outputFilename);
                         
                     if (error) {
                         result = false;
@@ -286,7 +283,6 @@ namespace storm {
                 std::string problem = "Unable to compile program using boost's dll library. Is boosts's include directory '" + boostIncludeDirectory + "' pointing to a boost installation with version at least 1.61?";
                 try {
                     std::string program = R"(
-#include <cstdint>
 #include <boost/dll/alias.hpp>
                     
                     int main() {
@@ -298,7 +294,7 @@ namespace storm {
                     boost::filesystem::path outputFile = temporaryFile;
                     outputFile += ".out";
                     std::string outputFilename = boost::filesystem::absolute(outputFile).string();
-                    boost::optional<std::string> error = execute(compiler + " " + temporaryFilename + " -I" + boostIncludeDirectory + " -o " + outputFilename);
+                    boost::optional<std::string> error = execute(compiler + " " + compilerFlags + " " + temporaryFilename + " -I" + boostIncludeDirectory + " -o " + outputFilename);
                     
                     if (error) {
                         result = false;
@@ -320,7 +316,6 @@ namespace storm {
                 std::string problem = "Unable to compile program using Storm data structures. Is Storm's root directory '" + stormRoot + "' set correctly? Does the directory contain the source subtree under src/ ?";
                 try {
                     std::string program = R"(
-#include <cstdint>
 #include "src/builder/RewardModelInformation.h"
                     
                     int main() {
@@ -332,7 +327,7 @@ namespace storm {
                     boost::filesystem::path outputFile = temporaryFile;
                     outputFile += ".out";
                     std::string outputFilename = boost::filesystem::absolute(outputFile).string();
-                    boost::optional<std::string> error = execute(compiler + " " + temporaryFilename + " -I" + stormRoot + " -o " + outputFilename);
+                    boost::optional<std::string> error = execute(compiler + " " + compilerFlags + " " + temporaryFilename + " -I" + stormRoot + " -o " + outputFilename);
                     
                     if (error) {
                         result = false;
