@@ -42,7 +42,7 @@ namespace storm {
         std::vector<storm::prism::IntegerVariable> const& Module::getIntegerVariables() const {
             return this->integerVariables;
         }
-        
+
         std::set<storm::expressions::Variable> Module::getAllExpressionVariables() const {
             std::set<storm::expressions::Variable> result;
             for (auto const& var : this->getBooleanVariables()) {
@@ -219,6 +219,15 @@ namespace storm {
             }
             
             return true;
+        }
+        
+        void Module::createMissingInitialValues() {
+            for (auto& variable : booleanVariables) {
+                variable.createMissingInitialValue();
+            }
+            for (auto& variable : integerVariables) {
+                variable.createMissingInitialValue();
+            }
         }
         
         std::ostream& operator<<(std::ostream& stream, Module const& module) {

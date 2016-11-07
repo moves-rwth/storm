@@ -225,6 +225,11 @@ namespace storm {
              */
             bool containsVariablesOnlyInUpdateProbabilities(std::set<storm::expressions::Variable> const& undefinedConstantVariables) const;
             
+            /*!
+             * Equips all of the modules' variables without initial values with initial values based on their type.
+             */
+            void createMissingInitialValues();
+            
             friend std::ostream& operator<<(std::ostream& stream, Module const& module);
 
         private:

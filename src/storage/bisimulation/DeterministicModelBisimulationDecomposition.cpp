@@ -157,7 +157,7 @@ namespace storm {
         }
         
         template<typename ModelType>
-        void DeterministicModelBisimulationDecomposition<ModelType>::refinePredecessorBlocksOfSplitterStrong(std::list<Block<BlockDataType>*> const& predecessorBlocks, std::deque<bisimulation::Block<BlockDataType>*>& splitterQueue) {
+        void DeterministicModelBisimulationDecomposition<ModelType>::refinePredecessorBlocksOfSplitterStrong(std::list<Block<BlockDataType>*> const& predecessorBlocks, std::vector<bisimulation::Block<BlockDataType>*>& splitterQueue) {
             for (auto block : predecessorBlocks) {
                 STORM_LOG_TRACE("Refining predecessor " << block->getId() << " of splitter");
 
@@ -378,7 +378,7 @@ namespace storm {
         }
         
         template<typename ModelType>
-        void DeterministicModelBisimulationDecomposition<ModelType>::refinePredecessorBlockOfSplitterWeak(bisimulation::Block<BlockDataType>& block, std::deque<bisimulation::Block<BlockDataType>*>& splitterQueue) {
+        void DeterministicModelBisimulationDecomposition<ModelType>::refinePredecessorBlockOfSplitterWeak(bisimulation::Block<BlockDataType>& block, std::vector<bisimulation::Block<BlockDataType>*>& splitterQueue) {
             // First, we need to turn the one-step probabilities to go to the splitter to the conditional probabilities
             // for all non-silent states.
             computeConditionalProbabilitiesForNonSilentStates(block);
@@ -416,7 +416,7 @@ namespace storm {
         }
         
         template<typename ModelType>
-        void DeterministicModelBisimulationDecomposition<ModelType>::refinePredecessorBlocksOfSplitterWeak(bisimulation::Block<BlockDataType>& splitter, std::list<bisimulation::Block<BlockDataType>*> const& predecessorBlocks, std::deque<bisimulation::Block<BlockDataType>*>& splitterQueue) {
+        void DeterministicModelBisimulationDecomposition<ModelType>::refinePredecessorBlocksOfSplitterWeak(bisimulation::Block<BlockDataType>& splitter, std::list<bisimulation::Block<BlockDataType>*> const& predecessorBlocks, std::vector<bisimulation::Block<BlockDataType>*>& splitterQueue) {
             for (auto block : predecessorBlocks) {
                 if (*block != splitter) {
                     refinePredecessorBlockOfSplitterWeak(*block, splitterQueue);
@@ -439,7 +439,7 @@ namespace storm {
         }
         
         template<typename ModelType>
-        void DeterministicModelBisimulationDecomposition<ModelType>::refinePartitionBasedOnSplitter(bisimulation::Block<BlockDataType>& splitter, std::deque<bisimulation::Block<BlockDataType>*>& splitterQueue) {
+        void DeterministicModelBisimulationDecomposition<ModelType>::refinePartitionBasedOnSplitter(bisimulation::Block<BlockDataType>& splitter, std::vector<bisimulation::Block<BlockDataType>*>& splitterQueue) {
             STORM_LOG_TRACE("Refining partition based on splitter " << splitter.getId());
 
             // The outline of the refinement is as follows.
