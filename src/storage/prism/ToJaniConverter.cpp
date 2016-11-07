@@ -100,7 +100,7 @@ namespace storm {
             std::vector<storm::jani::Assignment> transientLocationAssignments;
             for (auto const& rewardModel : program.getRewardModels()) {
                 auto newExpressionVariable = manager->declareRationalVariable(rewardModel.getName().empty() ? "default" : rewardModel.getName());
-                storm::jani::RealVariable const& newTransientVariable = janiModel.addVariable(storm::jani::RealVariable(rewardModel.getName().empty() ? "defaultReward" : rewardModel.getName(), newExpressionVariable, manager->rational(0.0), true));
+                storm::jani::RealVariable const& newTransientVariable = janiModel.addVariable(storm::jani::RealVariable(rewardModel.getName().empty() ? "default" : rewardModel.getName(), newExpressionVariable, manager->rational(0.0), true));
                 
                 if (rewardModel.hasStateRewards()) {
                     storm::expressions::Expression transientLocationExpression;
