@@ -11,9 +11,19 @@ namespace storm {
             template <typename IndexType, typename ValueType>
             class Choice {
             public:
-                Choice();
+                /*!
+                 * Creates a new probabilistic/Markovian choice.
+                 */
+                Choice(bool markovian = false);
                 
+                /*!
+                 * Marks the choice as being Markovian (rather than probabilistic).
+                 */
                 void setMarkovian(bool value);
+                
+                /*!
+                 * Retrieves whether the choice is Markovian.
+                 */
                 bool isMarkovian() const;
                 
                 void add(DistributionEntry<IndexType, ValueType> const& entry);

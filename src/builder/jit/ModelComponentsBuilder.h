@@ -57,6 +57,7 @@ namespace storm {
                 
                 IndexType currentRowGroup;
                 IndexType currentRow;
+                std::unique_ptr<storm::storage::BitVector> markovianStates;
                 std::unique_ptr<storm::storage::SparseMatrixBuilder<ValueType>> transitionMatrixBuilder;
                 std::vector<storm::builder::RewardModelBuilder<ValueType>> rewardModelBuilders;
                 std::vector<std::pair<std::string, storm::storage::BitVector>> labels;

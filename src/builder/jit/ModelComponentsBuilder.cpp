@@ -21,7 +21,11 @@ namespace storm {
         namespace jit {
             
             template <typename IndexType, typename ValueType>
-            ModelComponentsBuilder<IndexType, ValueType>::ModelComponentsBuilder(storm::jani::ModelType const& modelType) : modelType(modelType), isDeterministicModel(storm::jani::isDeterministicModel(modelType)), isDiscreteTimeModel(storm::jani::isDiscreteTimeModel(modelType)), currentRowGroup(0), currentRow(0), transitionMatrixBuilder(std::make_unique<storm::storage::SparseMatrixBuilder<ValueType>>(0, 0, 0, true, !isDeterministicModel)) {
+            ModelComponentsBuilder<IndexType, ValueType>::ModelComponentsBuilder(storm::jani::ModelType const& modelType) : modelType(modelType), isDeterministicModel(storm::jani::isDeterministicModel(modelType)), isDiscreteTimeModel(storm::jani::isDiscreteTimeModel(modelType)), currentRowGroup(0), currentRow(0), markovianStates(nullptr), transitionMatrixBuilder(std::make_unique<storm::storage::SparseMatrixBuilder<ValueType>>(0, 0, 0, true, !isDeterministicModel)) {
+                
+                if (modelType == storm::jani::ModelType::MA) {
+                    markovianStates = std::make_unique<storm::storage::BitVector>(10);
+                }
                 
                 dontFixDeadlocks = storm::settings::getModule<storm::settings::modules::CoreSettings>().isDontFixDeadlocksSet();
             }
@@ -69,6 +73,12 @@ namespace storm {
                         // Proceed to next row.
                         ++currentRow;
                     }
+                    
+                    // Mark the state as Markovian, if there is at least one Markovian choice.
+                    if (markovianStates) {
+                        markovianStates->grow(currentRowGroup + 1, false);
+                        markovianStates->set(currentRowGroup, behaviour.isMarkovianOrHybrid());
+                    }
                 } else {
                     if (behaviour.isExpanded() && dontFixDeadlocks) {
                         STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Error while creating sparse matrix from JANI model: found deadlock state and fixing deadlocks was explicitly disabled.");
@@ -87,6 +97,12 @@ namespace storm {
                             if (rewardModelBuilder.hasStateActionRewards()) {
                                 rewardModelBuilder.addStateActionReward(storm::utility::zero<ValueType>());
                             }
+                        }
+                        
+                        // Mark the state as Markovian.
+                        if (markovianStates) {
+                            markovianStates->grow(currentRowGroup + 1, false);
+                            markovianStates->set(currentRowGroup);
                         }
                     }
                 }

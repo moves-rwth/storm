@@ -154,16 +154,6 @@ namespace storm {
             ModelComponents buildModelComponents();
             
             /*!
-             * Set the markovian states of the given modelComponents,
-             * makes sure that each state has at most one markovian choice,
-             * and makes this choice the first one of the corresponding state
-             *
-             * @param modelComponents The components of the model build so far
-             * @markovianChoices bit vector storing whether a choice is markovian
-             */
-            void buildMarkovianStates(ModelComponents& modelComponents, storm::storage::BitVector const& markovianChoices) const;
-            
-            /*!
              * Builds the state labeling for the given program.
              *
              * @return The state labeling of the given program.

@@ -149,6 +149,21 @@ namespace storm {
             }
             
             template <typename IndexType, typename ValueType>
+            bool StateBehaviour<IndexType, ValueType>::isHybrid() const {
+                return choices.size() > 1 && choices.front().isMarkovian() && !choices.back().isMarkovian();
+            }
+            
+            template <typename IndexType, typename ValueType>
+            bool StateBehaviour<IndexType, ValueType>::isMarkovian() const {
+                return choices.size() == 1 && choices.front().isMarkovian();
+            }
+            
+            template <typename IndexType, typename ValueType>
+            bool StateBehaviour<IndexType, ValueType>::isMarkovianOrHybrid() const {
+                return choices.front().isMarkovian();
+            }
+            
+            template <typename IndexType, typename ValueType>
             bool StateBehaviour<IndexType, ValueType>::isExpanded() const {
                 return expanded;
             }

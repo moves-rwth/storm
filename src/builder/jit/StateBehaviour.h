@@ -32,8 +32,28 @@ namespace storm {
                  * Retrieves the rewards for this state.
                  */
                 std::vector<ValueType> const& getStateRewards() const;
-                
+
+                /*!
+                 * Reduces this behaviour to one that is suitable for the provided model type.
+                 */
                 void reduce(storm::jani::ModelType const& modelType);
+                
+                /*!
+                 * Determines whether the state behaviour has Markovian as well as probabilistic choices. Note that this
+                 * only yields the desired result after the state behaviour has been reduced.
+                 */
+                bool isHybrid() const;
+                
+                /*!
+                 * Determines whether the behaviour has Markovian choices only. Note that this only yields the desired
+                 * result after the state behaviour has been reduced.
+                 */
+                bool isMarkovian() const;
+                
+                /*!
+                 * Retrieves whether the state behaviour has any Markovian choices.
+                 */
+                bool isMarkovianOrHybrid() const;
                 
                 bool isExpanded() const;
                 void setExpanded();
