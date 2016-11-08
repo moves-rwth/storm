@@ -18,30 +18,35 @@ namespace storm {
                 // The resulting matrix
                 storm::storage::SparseMatrix<ValueType> matrix;
                 // Index mapping that gives for each row of the resulting matrix the corresponding row in the original matrix.
-                // For the empty rows added to EC states, some row of the original matrix that stays inside the EC is given.
+                // For the empty rows added to EC states, an arbitrary row of the original matrix that stays inside the EC is given.
                 std::vector<uint_fast64_t> newToOldRowMapping;
                 // Gives for each state (=rowGroup) of the original matrix the corresponding state in the resulting matrix.
-                // States of a removed end component are mapped to the state that substitutes the EC.
-                // If the given state does not exist in the result (e.g. it belonged to a bottom EC), the returned value will be std::numeric_limits<uint_fast64_t>::max(), i.e., an invalid index.
+                // States of a removed ECs are mapped to the state that substitutes the EC.
+                // If the given state does not exist in the result (i.e., it is not in the provided subsystem), the returned value will be std::numeric_limits<uint_fast64_t>::max(), i.e., an invalid index.
                 std::vector<uint_fast64_t> oldToNewStateMapping;
             };
             
             /*
              * Identifies end components and substitutes them by a single state.
              *
-             * Only ECs for which the given bit vector is true for all choices are considered.
-             * For each such EC (that is not contained by another EC), we add a new state and redirect all incoming and outgoing
+             * Only states in the given subsystem are kept. Transitions leading to a state outside of the subsystem will be
+             * removed (but the corresponding row is kept, possibly yielding empty rows). 
+             * The ECs are then identified on the subsystem.
+             *
+             * Only ECs for which possibleECRows is true for all choices are considered.
+             * Furthermore, the rows that contain a transition leading outside of the subsystem are not considered for an EC.
+             *
+             * For each such EC (that is not contained in another EC), we add a new state and redirect all incoming and outgoing
              * transitions of the EC to (and from) this state.
-             * If allowEmptyRow is true for at least one state of an EC, an empty row is added to the new state (representing the choice to stay at the EC forever).
-             * States for which all reachable choices are selected by the given bit vector will be removed!
+             * If addEmptyRowStates is true for at least one state of an eliminated EC, an empty row is added to the new state (representing the choice to stay at the EC forever).
              */
-            static EndComponentEliminatorReturnType transform(storm::storage::SparseMatrix<ValueType> const& originalMatrix, storm::storage::BitVector const& consideredRows, storm::storage::BitVector const& allowEmptyRow) {
+            static EndComponentEliminatorReturnType transform(storm::storage::SparseMatrix<ValueType> const& originalMatrix, storm::storage::BitVector const& subsystemStates, storm::storage::BitVector const& possibleECRows, storm::storage::BitVector const& addEmptyRowStates) {
                 STORM_LOG_DEBUG("Invoked EndComponentEliminator on matrix with " << originalMatrix.getRowGroupCount() << " row groups.");
                 
-                storm::storage::BitVector keptStates = computeStatesFromWhichNonConsideredRowIsReachable(originalMatrix, consideredRows);
-                storm::storage::MaximalEndComponentDecomposition<ValueType> ecs = computeECs(originalMatrix, consideredRows, keptStates);
+                storm::storage::MaximalEndComponentDecomposition<ValueType> ecs = computeECs(originalMatrix, possibleECRows, subsystemStates);
                 
                 //further shrink the set of kept states by removing all states that are part of an EC
+                storm::storage::BitVector keptStates = subsystemStates;
                 for (auto const& ec : ecs) {
                      for (auto const& stateActionsPair : ec) {
                          keptStates.set(stateActionsPair.first, false);
@@ -71,7 +76,7 @@ namespace storm {
                                 result.newToOldRowMapping.push_back(row);
                             }
                         }
-                        ecGetsEmptyRow |= allowEmptyRow.get(stateActionsPair.first);
+                        ecGetsEmptyRow |= addEmptyRowStates.get(stateActionsPair.first);
                     }
                     if(ecGetsEmptyRow) {
                         STORM_LOG_ASSERT(result.newToOldRowMapping.size() < originalMatrix.getRowCount(), "Didn't expect to see more rows in the reduced matrix than in the original one.");
@@ -89,31 +94,20 @@ namespace storm {
             
         private:
             
-            static storm::storage::BitVector computeStatesFromWhichNonConsideredRowIsReachable(storm::storage::SparseMatrix<ValueType> const& originalMatrix, storm::storage::BitVector const& consideredRows) {
-                storm::storage::BitVector nonConsideredRows = ~consideredRows;
-                storm::storage::BitVector groupsWithNonConsideredRow(originalMatrix.getRowGroupCount(), false);
-                for(uint_fast64_t rowGroup = 0; rowGroup < originalMatrix.getRowGroupCount(); ++rowGroup){
-                    if(nonConsideredRows.getNextSetIndex(originalMatrix.getRowGroupIndices()[rowGroup]) < originalMatrix.getRowGroupIndices()[rowGroup+1]) {
-                        groupsWithNonConsideredRow.set(rowGroup);
-                    }
-                }
-                return storm::utility::graph::performProbGreater0E(originalMatrix, originalMatrix.getRowGroupIndices(), originalMatrix.transpose(true), storm::storage::BitVector(originalMatrix.getRowGroupCount(), true), groupsWithNonConsideredRow);
-            }
-            
-            static storm::storage::MaximalEndComponentDecomposition<ValueType> computeECs(storm::storage::SparseMatrix<ValueType> const& originalMatrix, storm::storage::BitVector const& consideredRows, storm::storage::BitVector const& keptStates) {
-                // Get an auxiliary matrix to identify the correct end components w.r.t. the considered choices and the kept states.
+            static storm::storage::MaximalEndComponentDecomposition<ValueType> computeECs(storm::storage::SparseMatrix<ValueType> const& originalMatrix, storm::storage::BitVector const& possibleECRows, storm::storage::BitVector const& subsystemStates) {
+                // Get an auxiliary matrix to identify the correct end components w.r.t. the possible EC rows and the subsystem.
                 // This is done by redirecting choices that can never be part of an EC to a sink state.
-                // Such choices are either non-considered choices or choices that lead to a state that is not in keptStates.
+                // Such choices are either non-possible EC rows or rows that lead to a state that is not in the subsystem.
                 uint_fast64_t sinkState = originalMatrix.getRowGroupCount();
                 storm::storage::SparseMatrixBuilder<ValueType> builder(originalMatrix.getRowCount() + 1, originalMatrix.getColumnCount() + 1, originalMatrix.getEntryCount() + 1, false, true,  originalMatrix.getRowGroupCount()+1);
                 uint_fast64_t row = 0;
                 for(uint_fast64_t rowGroup = 0; rowGroup < originalMatrix.getRowGroupCount(); ++rowGroup) {
                     builder.newRowGroup(row);
                     for (; row < originalMatrix.getRowGroupIndices()[rowGroup+1]; ++row ){
-                        bool keepRow = consideredRows.get(row);
-                        if(keepRow) { //Also check whether all successors are kept
+                        bool keepRow = possibleECRows.get(row);
+                        if(keepRow) { //Also check whether all successors are in the subsystem
                             for(auto const& entry : originalMatrix.getRow(row)){
-                                keepRow &= keptStates.get(entry.getColumn());
+                                keepRow &= subsystemStates.get(entry.getColumn());
                             }
                         }
                         if(keepRow) {
@@ -131,11 +125,11 @@ namespace storm {
                 storm::storage::SparseMatrix<ValueType> backwardsTransitions = auxiliaryMatrix.transpose(true);
                 storm::storage::BitVector sinkStateAsBitVector(auxiliaryMatrix.getRowGroupCount(), false);
                 sinkStateAsBitVector.set(sinkState);
-                storm::storage::BitVector subsystem = keptStates;
-                subsystem.resize(keptStates.size() + 1, true);
-                // The states for which sinkState is reachable under any scheduler can not be part of an EC
-                subsystem &= ~(storm::utility::graph::performProbGreater0A(auxiliaryMatrix, auxiliaryMatrix.getRowGroupIndices(), backwardsTransitions, subsystem, sinkStateAsBitVector));
-                return storm::storage::MaximalEndComponentDecomposition<ValueType>(auxiliaryMatrix, backwardsTransitions, subsystem);
+                storm::storage::BitVector auxSubsystemStates = subsystemStates;
+                auxSubsystemStates.resize(subsystemStates.size() + 1, true);
+                // The states for which sinkState is reachable under every scheduler can not be part of an EC
+                auxSubsystemStates &= ~(storm::utility::graph::performProbGreater0A(auxiliaryMatrix, auxiliaryMatrix.getRowGroupIndices(), backwardsTransitions, auxSubsystemStates, sinkStateAsBitVector));
+                return storm::storage::MaximalEndComponentDecomposition<ValueType>(auxiliaryMatrix, backwardsTransitions, auxSubsystemStates);
             }
             
             static storm::storage::SparseMatrix<ValueType> buildTransformedMatrix(storm::storage::SparseMatrix<ValueType> const& originalMatrix,

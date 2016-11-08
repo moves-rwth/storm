@@ -1,4 +1,4 @@
- #include "src/modelchecker/multiobjective/pcaa/SparsePCAAPreprocessor.h"
+ #include "src/modelchecker/multiobjective/pcaa/SparsePcaaPreprocessor.h"
 
 #include "src/models/sparse/Mdp.h"
 #include "src/models/sparse/MarkovAutomaton.h"
@@ -20,7 +20,7 @@ namespace storm {
         namespace multiobjective {
                 
             template<typename SparseModelType>
-            typename SparsePCAAPreprocessor<SparseModelType>::ReturnType SparsePCAAPreprocessor<SparseModelType>::preprocess(storm::logic::MultiObjectiveFormula const& originalFormula, SparseModelType const& originalModel) {
+            typename SparsePcaaPreprocessor<SparseModelType>::ReturnType SparsePcaaPreprocessor<SparseModelType>::preprocess(SparseModelType const& originalModel, storm::logic::MultiObjectiveFormula const& originalFormula) {
                 
                 ReturnType result(originalFormula, originalModel, SparseModelType(originalModel));
                 result.newToOldStateIndexMapping = storm::utility::vector::buildVectorForRange(0, originalModel.getNumberOfStates());
@@ -29,7 +29,7 @@ namespace storm {
                 for(auto const& subFormula : originalFormula.getSubformulas()){
                     STORM_LOG_DEBUG("Preprocessing objective " << *subFormula<< ".");
                     result.objectives.emplace_back();
-                    PCAAObjective<ValueType>& currentObjective = result.objectives.back();
+                    PcaaObjective<ValueType>& currentObjective = result.objectives.back();
                     currentObjective.originalFormula = subFormula;
                     if(currentObjective.originalFormula->isOperatorFormula()) {
                         preprocessFormula(currentObjective.originalFormula->asOperatorFormula(), result, currentObjective);
@@ -62,13 +62,26 @@ namespace storm {
                     result.preprocessedModel.removeRewardModel(rewModel);
                 }
                 
-                ensureRewardFiniteness(result);
+                //Get actions to which a positive or negative reward is assigned for at least one objective
+                result.actionsWithPositiveReward = storm::storage::BitVector(result.preprocessedModel.getNumberOfChoices(), false);
+                result.actionsWithNegativeReward = storm::storage::BitVector(result.preprocessedModel.getNumberOfChoices(), false);
+                for(uint_fast64_t objIndex = 0; objIndex < result.objectives.size(); ++objIndex) {
+                    if(result.objectives[objIndex].rewardsArePositive) {
+                        result.actionsWithPositiveReward |= ~storm::utility::vector::filterZero(result.preprocessedModel.getRewardModel(result.objectives[objIndex].rewardModelName).getTotalRewardVector(result.preprocessedModel.getTransitionMatrix()));
+                    } else {
+                        result.actionsWithNegativeReward |= ~storm::utility::vector::filterZero(result.preprocessedModel.getRewardModel(result.objectives[objIndex].rewardModelName).getTotalRewardVector(result.preprocessedModel.getTransitionMatrix()));
+                    }
+                }
+                
+                auto backwardTransitions = result.preprocessedModel.getBackwardTransitions();
+                analyzeEndComponents(result, backwardTransitions);
+                ensureRewardFiniteness(result, backwardTransitions);
                 
                 return result;
             }
             
             template<typename SparseModelType>
-            void SparsePCAAPreprocessor<SparseModelType>::updatePreprocessedModel(ReturnType& result, SparseModelType& newPreprocessedModel, std::vector<uint_fast64_t>& newToOldStateIndexMapping) {
+            void SparsePcaaPreprocessor<SparseModelType>::updatePreprocessedModel(ReturnType& result, SparseModelType& newPreprocessedModel, std::vector<uint_fast64_t>& newToOldStateIndexMapping) {
                 result.preprocessedModel = std::move(newPreprocessedModel);
                 // the given newToOldStateIndexMapping reffers to the indices of the former preprocessedModel as 'old indices'
                 for(auto & preprocessedModelStateIndex : newToOldStateIndexMapping){
@@ -78,7 +91,7 @@ namespace storm {
             }
             
             template<typename SparseModelType>
-            void SparsePCAAPreprocessor<SparseModelType>::preprocessFormula(storm::logic::OperatorFormula const& formula, ReturnType& result, PCAAObjective<ValueType>& currentObjective) {
+            void SparsePcaaPreprocessor<SparseModelType>::preprocessFormula(storm::logic::OperatorFormula const& formula, ReturnType& result, PcaaObjective<ValueType>& currentObjective) {
                 
                 // Get a unique name for the new reward model.
                 currentObjective.rewardModelName = "objective" + std::to_string(result.objectives.size());
@@ -125,8 +138,7 @@ namespace storm {
             }
             
             template<typename SparseModelType>
-            void SparsePCAAPreprocessor<SparseModelType>::preprocessFormula(storm::logic::ProbabilityOperatorFormula const& formula, ReturnType& result, PCAAObjective<ValueType>& currentObjective) {
-                currentObjective.rewardFinitenessChecked = true;
+            void SparsePcaaPreprocessor<SparseModelType>::preprocessFormula(storm::logic::ProbabilityOperatorFormula const& formula, ReturnType& result, PcaaObjective<ValueType>& currentObjective) {
                 
                 if(formula.getSubformula().isUntilFormula()){
                     preprocessFormula(formula.getSubformula().asUntilFormula(), result, currentObjective);
@@ -142,16 +154,13 @@ namespace storm {
             }
 
             template<typename SparseModelType>
-            void SparsePCAAPreprocessor<SparseModelType>::preprocessFormula(storm::logic::RewardOperatorFormula const& formula, ReturnType& result, PCAAObjective<ValueType>& currentObjective) {
+            void SparsePcaaPreprocessor<SparseModelType>::preprocessFormula(storm::logic::RewardOperatorFormula const& formula, ReturnType& result, PcaaObjective<ValueType>& currentObjective) {
                 // Check if the reward model is uniquely specified
                 STORM_LOG_THROW((formula.hasRewardModelName() && result.preprocessedModel.hasRewardModel(formula.getRewardModelName()))
                                 || result.preprocessedModel.hasUniqueRewardModel(), storm::exceptions::InvalidPropertyException, "The reward model is not unique and the formula " << formula << " does not specify a reward model.");
                 
-                // reward finiteness has to be checked later iff infinite reward is possible for the subformula
-                currentObjective.rewardFinitenessChecked = formula.getSubformula().isCumulativeRewardFormula();
-                
                 if(formula.getSubformula().isEventuallyFormula()){
-                    preprocessFormula(formula.getSubformula().asEventuallyFormula(), result, currentObjective, false, false, formula.getOptionalRewardModelName());
+                    preprocessFormula(formula.getSubformula().asEventuallyFormula(), result, currentObjective, formula.getOptionalRewardModelName());
                 } else if(formula.getSubformula().isCumulativeRewardFormula()) {
                     preprocessFormula(formula.getSubformula().asCumulativeRewardFormula(), result, currentObjective, formula.getOptionalRewardModelName());
                 } else if(formula.getSubformula().isTotalRewardFormula()) {
@@ -162,22 +171,19 @@ namespace storm {
             }
 
             template<typename SparseModelType>
-            void SparsePCAAPreprocessor<SparseModelType>::preprocessFormula(storm::logic::TimeOperatorFormula const& formula, ReturnType& result, PCAAObjective<ValueType>& currentObjective) {
+            void SparsePcaaPreprocessor<SparseModelType>::preprocessFormula(storm::logic::TimeOperatorFormula const& formula, ReturnType& result, PcaaObjective<ValueType>& currentObjective) {
                 // Time formulas are only supported for Markov automata
                 STORM_LOG_THROW(result.originalModel.isOfType(storm::models::ModelType::MarkovAutomaton), storm::exceptions::InvalidPropertyException, "Time operator formulas are only supported for Markov automata.");
                 
-                // reward finiteness does not need to be checked if we want to minimize time
-                currentObjective.rewardFinitenessChecked = !currentObjective.rewardsArePositive;
-                
                 if(formula.getSubformula().isEventuallyFormula()){
-                    preprocessFormula(formula.getSubformula().asEventuallyFormula(), result, currentObjective, false, false);
+                    preprocessFormula(formula.getSubformula().asEventuallyFormula(), result, currentObjective);
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "The subformula of " << formula << " is not supported.");
                 }
             }
             
             template<typename SparseModelType>
-            void SparsePCAAPreprocessor<SparseModelType>::preprocessFormula(storm::logic::UntilFormula const& formula, ReturnType& result, PCAAObjective<ValueType>& currentObjective) {
+            void SparsePcaaPreprocessor<SparseModelType>::preprocessFormula(storm::logic::UntilFormula const& formula, ReturnType& result, PcaaObjective<ValueType>& currentObjective) {
                 CheckTask<storm::logic::Formula, ValueType> phiTask(formula.getLeftSubformula());
                 CheckTask<storm::logic::Formula, ValueType> psiTask(formula.getRightSubformula());
                 storm::modelchecker::SparsePropositionalModelChecker<SparseModelType> mc(result.preprocessedModel);
@@ -215,7 +221,7 @@ namespace storm {
             }
             
             template<typename SparseModelType>
-            void SparsePCAAPreprocessor<SparseModelType>::preprocessFormula(storm::logic::BoundedUntilFormula const& formula, ReturnType& result, PCAAObjective<ValueType>& currentObjective) {
+            void SparsePcaaPreprocessor<SparseModelType>::preprocessFormula(storm::logic::BoundedUntilFormula const& formula, ReturnType& result, PcaaObjective<ValueType>& currentObjective) {
                 
                 if(formula.hasDiscreteTimeBound()) {
                     currentObjective.upperTimeBound = storm::utility::convertNumber<ValueType>(formula.getDiscreteTimeBound());
@@ -232,11 +238,11 @@ namespace storm {
                     }
                     currentObjective.upperTimeBound = storm::utility::convertNumber<ValueType>(formula.getIntervalBounds().second);
                 }
-                preprocessFormula(storm::logic::UntilFormula(formula.getLeftSubformula().asSharedPointer(), formula.getRightSubformula().asSharedPointer()), result, currentObjective, false, false);
+                preprocessFormula(storm::logic::UntilFormula(formula.getLeftSubformula().asSharedPointer(), formula.getRightSubformula().asSharedPointer()), result, currentObjective);
             }
             
             template<typename SparseModelType>
-            void SparsePCAAPreprocessor<SparseModelType>::preprocessFormula(storm::logic::GloballyFormula const& formula, ReturnType& result, PCAAObjective<ValueType>& currentObjective) {
+            void SparsePcaaPreprocessor<SparseModelType>::preprocessFormula(storm::logic::GloballyFormula const& formula, ReturnType& result, PcaaObjective<ValueType>& currentObjective) {
                 // The formula will be transformed to an until formula for the complementary event.
                 // If the original formula minimizes, the complementary one will maximize and vice versa.
                 // Hence, the decision whether to consider positive or negative rewards flips.
@@ -247,14 +253,13 @@ namespace storm {
                 
                 auto negatedSubformula = std::make_shared<storm::logic::UnaryBooleanStateFormula>(storm::logic::UnaryBooleanStateFormula::OperatorType::Not, formula.getSubformula().asSharedPointer());
                 
-                // We need to swap the two flags isProb0Formula and isProb1Formula
-                preprocessFormula(storm::logic::UntilFormula(storm::logic::Formula::getTrueFormula(), negatedSubformula), result, currentObjective, isProb1Formula, isProb0Formula);
+                preprocessFormula(storm::logic::UntilFormula(storm::logic::Formula::getTrueFormula(), negatedSubformula), result, currentObjective);
             }
             
             template<typename SparseModelType>
-            void SparsePCAAPreprocessor<SparseModelType>::preprocessFormula(storm::logic::EventuallyFormula const& formula, ReturnType& result, PCAAObjective<ValueType>& currentObjective, boost::optional<std::string> const& optionalRewardModelName) {
+            void SparsePcaaPreprocessor<SparseModelType>::preprocessFormula(storm::logic::EventuallyFormula const& formula, ReturnType& result, PcaaObjective<ValueType>& currentObjective, boost::optional<std::string> const& optionalRewardModelName) {
                 if(formula.isReachabilityProbabilityFormula()){
-                    preprocessFormula(storm::logic::UntilFormula(storm::logic::Formula::getTrueFormula(), formula.getSubformula().asSharedPointer()), result, currentObjective, isProb0Formula, isProb1Formula);
+                    preprocessFormula(storm::logic::UntilFormula(storm::logic::Formula::getTrueFormula(), formula.getSubformula().asSharedPointer()), result, currentObjective);
                     return;
                 }
                 
@@ -297,7 +302,7 @@ namespace storm {
             }
             
             template<typename SparseModelType>
-            void SparsePCAAPreprocessor<SparseModelType>::preprocessFormula(storm::logic::CumulativeRewardFormula const& formula, ReturnType& result, PCAAObjective<ValueType>& currentObjective, boost::optional<std::string> const& optionalRewardModelName) {
+            void SparsePcaaPreprocessor<SparseModelType>::preprocessFormula(storm::logic::CumulativeRewardFormula const& formula, ReturnType& result, PcaaObjective<ValueType>& currentObjective, boost::optional<std::string> const& optionalRewardModelName) {
                 STORM_LOG_THROW(result.originalModel.isOfType(storm::models::ModelType::Mdp), storm::exceptions::InvalidPropertyException, "Cumulative reward formulas are not supported for the given model type.");
                 STORM_LOG_THROW(formula.hasDiscreteTimeBound(), storm::exceptions::InvalidPropertyException, "Expected a cumulativeRewardFormula with a discrete time bound but got " << formula << ".");
                 STORM_LOG_THROW(formula.getDiscreteTimeBound()>0, storm::exceptions::InvalidPropertyException, "Expected a cumulativeRewardFormula with a positive discrete time bound but got " << formula << ".");
@@ -317,7 +322,7 @@ namespace storm {
             }
             
             template<typename SparseModelType>
-            void SparsePCAAPreprocessor<SparseModelType>::preprocessFormula(storm::logic::TotalRewardFormula const& formula, ReturnType& result, PCAAObjective<ValueType>& currentObjective, boost::optional<std::string> const& optionalRewardModelName) {
+            void SparsePcaaPreprocessor<SparseModelType>::preprocessFormula(storm::logic::TotalRewardFormula const& formula, ReturnType& result, PcaaObjective<ValueType>& currentObjective, boost::optional<std::string> const& optionalRewardModelName) {
                 RewardModelType objectiveRewards = result.preprocessedModel.getRewardModel(optionalRewardModelName ? optionalRewardModelName.get() : "");
                 objectiveRewards.reduceToStateBasedRewards(result.preprocessedModel.getTransitionMatrix(), false);
                 if(!currentObjective.rewardsArePositive){
@@ -333,87 +338,76 @@ namespace storm {
             
             
             template<typename SparseModelType>
-            void SparsePCAAPreprocessor<SparseModelType>::ensureRewardFiniteness(ReturnType& result) {
-                storm::storage::BitVector actionsWithNegativeReward(result.preprocessedModel.getTransitionMatrix().getRowCount(), false);
-                storm::storage::BitVector actionsWithPositiveReward(result.preprocessedModel.getTransitionMatrix().getRowCount(), false);
-                for(uint_fast64_t objIndex = 0; objIndex < result.objectives.size(); ++objIndex) {
-                    if (!result.objectives[objIndex].rewardFinitenessChecked) {
-                        result.objectives[objIndex].rewardFinitenessChecked = true;
-                        if(result.objectives[objIndex].rewardsArePositive) {
-                            actionsWithPositiveReward |= storm::utility::vector::filter(result.preprocessedModel.getRewardModel(result.objectives[objIndex].rewardModelName).getTotalRewardVector(result.preprocessedModel.getTransitionMatrix()), [&] (ValueType const& value) -> bool { return !storm::utility::isZero<ValueType>(value);});
-                        } else {
-                            actionsWithNegativeReward |= storm::utility::vector::filter(result.preprocessedModel.getRewardModel(result.objectives[objIndex].rewardModelName).getTotalRewardVector(result.preprocessedModel.getTransitionMatrix()), [&] (ValueType const& value) -> bool { return !storm::utility::isZero<ValueType>(value);});
-                        }
-                    }
-                }
-                if(actionsWithPositiveReward.empty() && actionsWithNegativeReward.empty()) {
-                    // No rewards for which we need to ensure finiteness
-                    result.possibleEcActions = storm::storage::BitVector(result.preprocessedModel.getNumberOfChoices(), true);
-                    result.statesWhichCanBeVisitedInfinitelyOften = storm::storage::BitVector(result.preprocessedModel.getNumberOfStates(), true);
-                    return;
-                }
+            void SparsePcaaPreprocessor<SparseModelType>::analyzeEndComponents(ReturnType& result, storm::storage::SparseMatrix<ValueType> const& backwardTransitions) {
                 
-                result.possibleEcActions = storm::storage::BitVector(result.preprocessedModel.getNumberOfChoices(), false);
-                result.statesWhichCanBeVisitedInfinitelyOften = storm::storage::BitVector(result.preprocessedModel.getNumberOfStates(), false);
-                auto backwardTransitions = result.preprocessedModel.getBackwardTransitions();
+                result.ecActions = storm::storage::BitVector(result.preprocessedModel.getNumberOfChoices(), false);
+                std::vector<storm::storage::MaximalEndComponent> ecs;
                 auto mecDecomposition = storm::storage::MaximalEndComponentDecomposition<ValueType>(result.preprocessedModel.getTransitionMatrix(), backwardTransitions);
                 STORM_LOG_ASSERT(!mecDecomposition.empty(), "Empty maximal end component decomposition.");
-                std::vector<storm::storage::MaximalEndComponent> ecs;
                 ecs.reserve(mecDecomposition.size());
                 for(auto& mec : mecDecomposition) {
                     for(auto const& stateActionsPair : mec) {
                         for(auto const& action : stateActionsPair.second) {
-                            result.possibleEcActions.set(action);
-                            STORM_LOG_THROW(!actionsWithPositiveReward.get(action), storm::exceptions::InvalidPropertyException, "Infinite reward: Found an end componet that induces infinite reward for at least one objective");
+                            result.ecActions.set(action);
                         }
                     }
                     ecs.push_back(std::move(mec));
                 }
                 
-                storm::storage::BitVector currentECStates(result.preprocessedModel.getNumberOfStates(), false);
+                result.possiblyRecurrentStates = storm::storage::BitVector(result.preprocessedModel.getNumberOfStates(), false);
+                storm::storage::BitVector neutralActions = ~(result.actionsWithNegativeReward | result.actionsWithPositiveReward);
+                storm::storage::BitVector statesInCurrentECWithNeutralAction(result.preprocessedModel.getNumberOfStates(), false);
                 for(uint_fast64_t ecIndex = 0; ecIndex < ecs.size(); ++ecIndex) { //we will insert new ecs in the vector (thus no iterators for the loop)
                     bool currentECIsNeutral = true;
                     for(auto const& stateActionsPair : ecs[ecIndex]) {
                         bool stateHasNeutralActionWithinEC = false;
                         for(auto const& action : stateActionsPair.second) {
-                            stateHasNeutralActionWithinEC |= !actionsWithNegativeReward.get(action);
+                            stateHasNeutralActionWithinEC |= neutralActions.get(action);
                         }
-                        currentECStates.set(stateActionsPair.first, stateHasNeutralActionWithinEC);
+                        statesInCurrentECWithNeutralAction.set(stateActionsPair.first, stateHasNeutralActionWithinEC);
                         currentECIsNeutral &= stateHasNeutralActionWithinEC;
                     }
                     if(currentECIsNeutral) {
-                        result.statesWhichCanBeVisitedInfinitelyOften |= currentECStates;
+                        result.possiblyRecurrentStates |= statesInCurrentECWithNeutralAction;
                     }else{
                         // Check if the ec contains neutral sub ecs. This is done by adding the subECs to our list of ECs
-                        auto subECs = storm::storage::MaximalEndComponentDecomposition<ValueType>(result.preprocessedModel.getTransitionMatrix(), backwardTransitions, currentECStates);
+                        auto subECs = storm::storage::MaximalEndComponentDecomposition<ValueType>(result.preprocessedModel.getTransitionMatrix(), backwardTransitions, statesInCurrentECWithNeutralAction);
                         ecs.reserve(ecs.size() + subECs.size());
                         for(auto& ec : subECs){
                             ecs.push_back(std::move(ec));
                         }
                     }
-                    currentECStates.clear();
+                    statesInCurrentECWithNeutralAction.clear();
                 }
+            }
+            
+            template<typename SparseModelType>
+            void SparsePcaaPreprocessor<SparseModelType>::ensureRewardFiniteness(ReturnType& result, storm::storage::SparseMatrix<ValueType> const& backwardTransitions) {
+                STORM_LOG_THROW((result.actionsWithPositiveReward & result.ecActions).empty(), storm::exceptions::InvalidPropertyException, "Infinite reward: There is one maximizing objective for which infinite reward is possible. This is not supported.");
                 
                 //Check whether the states that can be visited inf. often are reachable with prob. 1 under some scheduler
-                storm::storage::BitVector statesReachingNegativeRewardsFinitelyOftenForSomeScheduler = storm::utility::graph::performProb1E(result.preprocessedModel.getTransitionMatrix(), result.preprocessedModel.getTransitionMatrix().getRowGroupIndices(), backwardTransitions, storm::storage::BitVector(result.preprocessedModel.getNumberOfStates()), result.statesWhichCanBeVisitedInfinitelyOften);
-                STORM_LOG_Throw(!(statesReachingNegativeRewardsFinitelyOftenForSomeScheduler & result.preprocessedModel.getInitialStates()).empty(), storm::exceptions::InvalidPropertyException, "Infinite Rewards: For every scheduler, the induced reward for one or more of the objectives that minimize rewards is infinity.");
+                storm::storage::BitVector statesReachingNegativeRewardsFinitelyOftenForSomeScheduler = storm::utility::graph::performProb1E(result.preprocessedModel.getTransitionMatrix(), result.preprocessedModel.getTransitionMatrix().getRowGroupIndices(), backwardTransitions, storm::storage::BitVector(result.preprocessedModel.getNumberOfStates(), true), result.possiblyRecurrentStates);
+                STORM_LOG_THROW(!(statesReachingNegativeRewardsFinitelyOftenForSomeScheduler & result.preprocessedModel.getInitialStates()).empty(), storm::exceptions::InvalidPropertyException, "Infinite Rewards: For every scheduler, the induced reward for one or more of the objectives that minimize rewards is infinity.");
                 
                 if(!statesReachingNegativeRewardsFinitelyOftenForSomeScheduler.full()) {
-                    auto subsystemBuilderResult = storm::transformer::SubsystemBuilder<SparseModelType>::transform(result.preprocessedModel, statesReachingNegativeRewardsFinitelyOftenForSomeScheduler, storm::storage::BitVector(result.preprocessedModel.getTransitionMatrix().getRowCount(), true));
+                    // Remove the states that for any scheduler have one objective with infinite expected reward.
+                    auto subsystemBuilderResult = storm::transformer::SubsystemBuilder<SparseModelType>::transform(result.preprocessedModel, statesReachingNegativeRewardsFinitelyOftenForSomeScheduler, storm::storage::BitVector(result.preprocessedModel.getNumberOfChoices(), true));
                     updatePreprocessedModel(result, *subsystemBuilderResult.model, subsystemBuilderResult.newToOldStateIndexMapping);
-                    result.possibleEcActions = result.possibleEcActions % subsystemBuilderResult.subsystemActions;
-                    result.statesWhichCanBeVisitedInfinitelyOften = result.statesWhichCanBeVisitedInfinitelyOften % statesReachingNegativeRewardsFinitelyOftenForSomeScheduler;
+                    result.ecActions = result.ecActions % subsystemBuilderResult.subsystemActions;
+                    result.actionsWithPositiveReward = result.actionsWithPositiveReward % subsystemBuilderResult.subsystemActions;
+                    result.actionsWithNegativeReward = result.actionsWithNegativeReward % subsystemBuilderResult.subsystemActions;
+                    result.possiblyRecurrentStates = result.possiblyRecurrentStates % statesReachingNegativeRewardsFinitelyOftenForSomeScheduler;
                 }
             }
         
         
         
-            template class SparsePCAAPreprocessor<storm::models::sparse::Mdp<double>>;
-            template class SparsePCAAPreprocessor<storm::models::sparse::MarkovAutomaton<double>>;
+            template class SparsePcaaPreprocessor<storm::models::sparse::Mdp<double>>;
+            template class SparsePcaaPreprocessor<storm::models::sparse::MarkovAutomaton<double>>;
             
 #ifdef STORM_HAVE_CARL
-            template class SparsePCAAPreprocessor<storm::models::sparse::Mdp<storm::RationalNumber>>;
-            template class SparsePCAAPreprocessor<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>;
+            template class SparsePcaaPreprocessor<storm::models::sparse::Mdp<storm::RationalNumber>>;
+            template class SparsePcaaPreprocessor<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>;
 #endif
         }
     }

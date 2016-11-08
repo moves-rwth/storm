@@ -105,7 +105,7 @@ namespace storm {
                 }
                 // Remove end components in which no reward is earned
                 
-                auto ecEliminatorResult = storm::transformer::EndComponentEliminator<ValueType>::transform(data.preprocessedModel.getTransitionMatrix(), storm::utility::vector::filterZero(weightedRewardVector), storm::storage::BitVector(data.preprocessedModel.getTransitionMatrix().getRowGroupCount(), true));
+                auto ecEliminatorResult = storm::transformer::EndComponentEliminator<ValueType>::transform(data.preprocessedModel.getTransitionMatrix(), storm::utility::vector::filterZero(weightedRewardVector), storm::storage::BitVector(data.preprocessedModel.getTransitionMatrix().getRowGroupCount(), true), storm::storage::BitVector(data.preprocessedModel.getTransitionMatrix().getRowGroupCount(), true));
                 
                 std::vector<ValueType> subRewardVector(ecEliminatorResult.newToOldRowMapping.size());
                 storm::utility::vector::selectVectorValues(subRewardVector, ecEliminatorResult.newToOldRowMapping, weightedRewardVector);

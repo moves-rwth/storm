@@ -10,7 +10,7 @@ namespace storm {
     namespace modelchecker {
         namespace multiobjective {
             template <typename ValueType>
-            struct PCAAObjective {
+            struct PcaaObjective {
                 // the original input formula
                 std::shared_ptr<storm::logic::Formula const> originalFormula;
                 
@@ -34,8 +34,6 @@ namespace storm {
                 // The time bound(s) for the formula (if given by the originalFormula)
                 boost::optional<ValueType> lowerTimeBound;
                 boost::optional<ValueType> upperTimeBound;
-                
-                bool rewardFinitenessChecked;
                 
                 void printToStream(std::ostream& out) const {
                     out << std::setw(30) << originalFormula->toString();

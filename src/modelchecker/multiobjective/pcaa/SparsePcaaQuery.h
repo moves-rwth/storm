@@ -1,0 +1,122 @@
+#ifndef STORM_MODELCHECKER_MULTIOBJECTIVE_PCAA_SPARSEPCAAQUERY_H_
+#define STORM_MODELCHECKER_MULTIOBJECTIVE_PCAA_SPARSEPCAAQUERY_H_
+
+#include "src/modelchecker/results/CheckResult.h"
+#include "src/modelchecker/multiobjective/pcaa/SparsePcaaPreprocessorReturnType.h"
+#include "src/modelchecker/multiobjective/pcaa/SparsePcaaWeightVectorChecker.h"
+#include "src/storage/geometry/Polytope.h"
+
+namespace storm {
+    namespace modelchecker {
+        namespace multiobjective {
+            
+            /*
+             * This class represents a query for the Pareto curve approximation algorithm (Pcaa).
+             * It implements the necessary computations for the different query types.
+             */
+            template <class SparseModelType, typename GeometryValueType>
+            class SparsePcaaQuery {
+            public:
+                
+                // Typedefs for simple geometric objects
+                typedef std::vector<GeometryValueType> Point;
+                typedef std::vector<GeometryValueType> WeightVector;
+                
+                /*
+                 * Invokes the computation and retrieves the result
+                 */
+                virtual std::unique_ptr<CheckResult> check() = 0;
+                
+            protected:
+                
+                /*
+                 * Initializes the weight vector checker with the provided data from preprocessing
+                 */
+                void initializeWeightVectorChecker(SparseModelType const& model,
+                                                   std::vector<PcaaObjective<typename SparseModelType::ValueType>> const& objectives,
+                                                   storm::storage::BitVector const& actionsWithNegativeReward,
+                                                   storm::storage::BitVector const& ecActions,
+                                                   storm::storage::BitVector const& possiblyRecurrentStates);
+                
+                /*
+                 * Represents the information obtained in a single iteration of the algorithm
+                 */
+                struct RefinementStep {
+                    WeightVector weightVector;
+                    Point lowerBoundPoint;
+                    Point upperBoundPoint;
+                };
+                
+                /* 
+                 * Creates a new query for the Pareto curve approximation algorithm (Pcaa)
+                 * @param preprocessorResult the result from preprocessing
+                 */
+                SparsePcaaQuery(SparsePcaaPreprocessorReturnType<SparseModelType>& preprocessorResult);
+                
+                /*
+                 * Returns a weight vector w that separates the under approximation from the given point p, i.e.,
+                 * For each x in the under approximation, it holds that w*x <= w*p
+                 *
+                 * @param pointToBeSeparated the point that is to be seperated
+                 */
+                WeightVector findSeparatingVector(Point const& pointToBeSeparated);
+
+                /*
+                 * Refines the current result w.r.t. the given direction vector.
+                 */
+                void performRefinementStep(WeightVector&& direction);
+                
+                /*
+                 * Updates the overapproximation after a refinement step has been performed
+                 *
+                 * @note The last entry of this->refinementSteps should be the newest step whose information is not yet included in the approximation.
+                 */
+                void updateOverApproximation();
+                
+                /*
+                 * Updates the underapproximation after a refinement step has been performed
+                 *
+                 * @note The last entry of this->refinementSteps should be the newest step whose information is not yet included in the approximation.
+                 */
+                void updateUnderApproximation();
+                
+                /*
+                 * Returns true iff the maximum number of refinement steps (as possibly specified in the settings) has been reached
+                 */
+                bool maxStepsPerformed() const;
+                
+                /*
+                 * Transforms the given point (or polytope) to values w.r.t. the original model (e.g. negates negative rewards for minimizing objectives).
+                 */
+                Point transformPointToOriginalModel(Point const& polytope) const;
+                std::shared_ptr<storm::storage::geometry::Polytope<GeometryValueType>> transformPolytopeToOriginalModel(std::shared_ptr<storm::storage::geometry::Polytope<GeometryValueType>> const& polytope) const;
+
+                
+                SparseModelType const& originalModel;
+                storm::logic::MultiObjectiveFormula const& originalFormula;
+                
+                SparseModelType preprocessedModel;
+                std::vector<PcaaObjective<typename SparseModelType::ValueType>> objectives;
+                
+                
+                // The corresponding weight vector checker
+                std::unique_ptr<SparsePcaaWeightVectorChecker<SparseModelType>> weightVectorChecker;
+
+                //The results in each iteration of the algorithm
+                std::vector<RefinementStep> refinementSteps;
+                //Overapproximation of the set of achievable values
+                std::shared_ptr<storm::storage::geometry::Polytope<GeometryValueType>> overApproximation;
+                //Underapproximation of the set of achievable values
+                std::shared_ptr<storm::storage::geometry::Polytope<GeometryValueType>> underApproximation;
+                
+                 // stores for each objective whether it still makes sense to check for this objective individually (i.e., with weight vector given by w_{i}>0 iff i=objIndex )
+                storm::storage::BitVector diracWeightVectorsToBeChecked;
+                
+                
+            };
+            
+        }
+    }
+}
+
+#endif /* STORM_MODELCHECKER_MULTIOBJECTIVE_PCAA_SPARSEPCAAQUERY_H_ */
