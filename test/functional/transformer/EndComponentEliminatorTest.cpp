@@ -35,17 +35,19 @@ TEST(NeutralECRemover, SimpleModelTest) {
     ASSERT_NO_THROW(matrix = builder.build());
     
     storm::storage::BitVector possibleEcRows(12, true);
-    consideredRows.set(3, false);
-    consideredRows.set(6, false);
-    consideredRows.set(7, false);
-    consideredRows.set(8, false);
-    consideredRows.set(11, false);
+    possibleEcRows.set(3, false);
+    possibleEcRows.set(6, false);
+    possibleEcRows.set(7, false);
+    possibleEcRows.set(8, false);
+    possibleEcRows.set(11, false);
     
     storm::storage::BitVector allowEmptyRows(5, true);
     allowEmptyRows.set(1, false);
     allowEmptyRows.set(4, false);
+    storm::storage::BitVector subsystem(5, true);
+    allowEmptyRows.set(2, false);
     
-    auto res = storm::transformer::EndComponentEliminator<double>::transform(matrix, possibleEcRows, allowEmptyRows);
+    auto res = storm::transformer::EndComponentEliminator<double>::transform(matrix, subsystem, possibleEcRows, allowEmptyRows);
     
     // Expected data
     storm::storage::SparseMatrixBuilder<double> expectedBuilder(8, 3, 8, true, true, 3);
