@@ -207,6 +207,7 @@ namespace storm {
         }
 
         void processOptions() {
+            STORM_LOG_TRACE("Processing options.");
             if (storm::settings::getModule<storm::settings::modules::DebugSettings>().isLogfileSet()) {
                 storm::utility::initializeFileLogging();
             }
@@ -216,6 +217,7 @@ namespace storm {
                 storm::storage::SymbolicModelDescription model;
                 std::vector<storm::jani::Property> properties;
                 
+                STORM_LOG_TRACE("Parsing symbolic input.");
                 if (ioSettings.isPrismInputSet()) {
                     model = storm::parseProgram(ioSettings.getPrismInputFilename());
                     if (ioSettings.isPrismToJaniSet()) {
@@ -226,7 +228,7 @@ namespace storm {
                     model = input.first;
                     if (ioSettings.isJaniPropertiesSet()) {
                         for (auto const& propName : ioSettings.getJaniProperties()) {
-                            STORM_LOG_THROW( input.second.count(propName) == 1, storm::exceptions::InvalidArgumentException, "No property with name " << propName << " known.");
+                            STORM_LOG_THROW(input.second.count(propName) == 1, storm::exceptions::InvalidArgumentException, "No property with name " << propName << " known.");
                             properties.push_back(input.second.at(propName));
                         }
                     }
@@ -234,6 +236,7 @@ namespace storm {
                 }
                 
                 // Then proceed to parsing the properties (if given), since the model we are building may depend on the property.
+                STORM_LOG_TRACE("Parsing properties.");
                 uint64_t i = 0;
                 if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isPropertySet()) {
                     if (model.isJaniModel()) {
@@ -249,7 +252,8 @@ namespace storm {
                     }
                 }
                 
-                if(model.isJaniModel() && storm::settings::getModule<storm::settings::modules::JaniExportSettings>().isJaniFileSet()) {
+                if (model.isJaniModel() && storm::settings::getModule<storm::settings::modules::JaniExportSettings>().isJaniFileSet()) {
+                    STORM_LOG_TRACE("Exporting JANI model.");
                     if (storm::settings::getModule<storm::settings::modules::JaniExportSettings>().isExportAsStandardJaniSet()) {
                         storm::jani::Model normalisedModel = storm::jani::Model(model.asJaniModel());
                         normalisedModel.makeStandardJaniCompliant();
@@ -267,6 +271,7 @@ namespace storm {
                 std::string constantDefinitionString = ioSettings.getConstantDefinitionString();
                 model = model.preprocess(constantDefinitionString);
                 
+                STORM_LOG_TRACE("Building and checking symbolic model.");
                 if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isParametricSet()) {
 #ifdef STORM_HAVE_CARL
                     buildAndCheckSymbolicModel<storm::RationalFunction>(model, properties, true);
