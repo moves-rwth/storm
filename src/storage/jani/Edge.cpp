@@ -28,6 +28,10 @@ namespace storm {
             return rate.get();
         }
         
+        boost::optional<storm::expressions::Expression> const& Edge::getOptionalRate() const {
+            return rate;
+        }
+        
         void Edge::setRate(storm::expressions::Expression const& rate) {
             this->rate = rate;
         }

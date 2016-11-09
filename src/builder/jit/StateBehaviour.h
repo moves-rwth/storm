@@ -15,7 +15,7 @@ namespace storm {
                 StateBehaviour();
                 
                 void addChoice(Choice<IndexType, ValueType>&& choice);
-                Choice<IndexType, ValueType>& addChoice();
+                Choice<IndexType, ValueType>& addChoice(bool markovian = false);
                 ContainerType const& getChoices() const;
                 
                 /*!

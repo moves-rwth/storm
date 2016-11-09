@@ -218,13 +218,16 @@ namespace storm {
                     // Create the edge object so we can add transient assignments.
                     storm::jani::Edge newEdge(onlyLocationIndex, janiModel.getActionIndex(command.getActionName()), rateExpression, command.getGuardExpression(), destinations);
                     
-                    // Then add the transient assignments for the rewards.
+                    // Then add the transient assignments for the rewards. Note that we may do this only for the first
+                    // module that has this action, so we remove the assignments from the global list of assignments
+                    // to add after adding them to the created edge.
                     auto transientEdgeAssignmentsToAdd = transientEdgeAssignments.find(janiModel.getActionIndex(command.getActionName()));
                     if (transientEdgeAssignmentsToAdd != transientEdgeAssignments.end()) {
                         for (auto const& assignment : transientEdgeAssignmentsToAdd->second) {
                             newEdge.addTransientAssignment(assignment);
                         }
                     }
+                    transientEdgeAssignments.erase(transientEdgeAssignmentsToAdd);
                     
                     // Finally add the constructed edge.
                     automaton.addEdge(newEdge);

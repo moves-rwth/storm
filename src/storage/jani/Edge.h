@@ -39,6 +39,11 @@ namespace storm {
              * Retrieves the rate of this edge. Note that calling this is only valid if the edge has an associated rate.
              */
             storm::expressions::Expression const& getRate() const;
+            
+            /*!
+             * Retrieves an optional that stores the rate if there is any and none otherwise.
+             */
+            boost::optional<storm::expressions::Expression> const& getOptionalRate() const;
 
             /*!
              * Sets a new rate for this edge.

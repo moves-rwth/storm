@@ -19,8 +19,8 @@ namespace storm {
             }
             
             template <typename IndexType, typename ValueType>
-            Choice<IndexType, ValueType>& StateBehaviour<IndexType, ValueType>::addChoice() {
-                choices.emplace_back();
+            Choice<IndexType, ValueType>& StateBehaviour<IndexType, ValueType>::addChoice(bool markovian) {
+                choices.emplace_back(markovian);
                 return choices.back();
             }
             
