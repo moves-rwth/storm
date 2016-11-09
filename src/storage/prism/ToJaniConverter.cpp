@@ -226,8 +226,8 @@ namespace storm {
                         for (auto const& assignment : transientEdgeAssignmentsToAdd->second) {
                             newEdge.addTransientAssignment(assignment);
                         }
+                        transientEdgeAssignments.erase(transientEdgeAssignmentsToAdd);
                     }
-                    transientEdgeAssignments.erase(transientEdgeAssignmentsToAdd);
                     
                     // Finally add the constructed edge.
                     automaton.addEdge(newEdge);

@@ -132,7 +132,17 @@ namespace storm {
                 } else if (modelType == storm::jani::ModelType::MDP) {
                     return new storm::models::sparse::Mdp<ValueType, storm::models::sparse::StandardRewardModel<ValueType>>(std::move(transitionMatrix), std::move(stateLabeling), std::move(rewardModels));
                 } else {
-                    return nullptr;
+                    std::vector<ValueType> exitRates(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
+                    for (auto state : *markovianStates) {
+                        for (auto const& element : transitionMatrix.getRow(transitionMatrix.getRowGroupIndices()[state])) {
+                            exitRates[state] += element.getValue();
+                        }
+                        for (auto& element : transitionMatrix.getRow(transitionMatrix.getRowGroupIndices()[state])) {
+                            element.setValue(element.getValue() / exitRates[state]);
+                        }
+                    }
+                    
+                    return new storm::models::sparse::MarkovAutomaton<ValueType, storm::models::sparse::StandardRewardModel<ValueType>>(std::move(transitionMatrix), std::move(stateLabeling), std::move(*markovianStates), std::move(exitRates), std::move(rewardModels));
                 }
             }
             

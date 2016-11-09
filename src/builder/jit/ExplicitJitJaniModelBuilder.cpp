@@ -85,11 +85,11 @@ namespace storm {
                 if (topLevelComposition.isAutomatonComposition()) {
                     parallelAutomata.push_back(this->model.getAutomaton(topLevelComposition.asAutomatonComposition().getAutomatonName()));
                 } else {
-                    STORM_LOG_ASSERT(topLevelComposition.isParallelComposition(), "Expected parallel composition.");
+                    STORM_LOG_THROW(topLevelComposition.isParallelComposition(), storm::exceptions::WrongFormatException, "Expected parallel composition.");
                     storm::jani::ParallelComposition const& parallelComposition = topLevelComposition.asParallelComposition();
                     
                     for (auto const& composition : parallelComposition.getSubcompositions()) {
-                        STORM_LOG_ASSERT(composition->isAutomatonComposition(), "Expected flat parallel composition.");
+                        STORM_LOG_THROW(composition->isAutomatonComposition(), storm::exceptions::WrongFormatException, "Expected flat parallel composition.");
                         parallelAutomata.push_back(this->model.getAutomaton(composition->asAutomatonComposition().getAutomatonName()));
                     }
                 }
