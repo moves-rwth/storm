@@ -165,7 +165,7 @@ else(CLANG)
 	# As CLANG is not set as a variable, we need to set it in case we have not matched another compiler.
 	set (CLANG ON)
     # Set standard flags for clang
-    set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -flto -fprefetch-loop-arrays -ffast-math -fno-finite-math-only")
+    set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -flto -ffast-math -fno-finite-math-only")
 
 	if(UNIX AND NOT APPLE)
 		if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 3.2)
