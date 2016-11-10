@@ -131,8 +131,11 @@ if(CMAKE_COMPILER_IS_GNUCC)
 	# Fix thanks to: https://github.com/freeorion/freeorion/issues/777
     add_definitions(-DBOOST_RESULT_OF_USE_DECLTYPE -DBOOST_OPTIONAL_CONFIG_USE_OLD_IMPLEMENTATION_OF_OPTIONAL)
 
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -flto -Wall -pedantic -fprefetch-loop-arrays -ffast-math -fno-finite-math-only -Wno-deprecated-declarations -Wno-unused-local-typedefs -Wno-unknown-pragmas")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -Wall -pedantic -Wno-deprecated-declarations -Wno-unused-local-typedefs -Wno-unknown-pragmas")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -pedantic -Wno-deprecated-declarations")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -flto -fprefetch-loop-arrays -ffast-math -fno-finite-math-only")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -rdynamic")
+    
 	if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.0)
 		message(FATAL_ERROR "GCC version must be at least 5.0.")
 	endif()
@@ -166,6 +169,8 @@ else(CLANG)
 	set (CLANG ON)
     # Set standard flags for clang
     set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -flto -ffast-math -fno-finite-math-only")
+    set (CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-export_dynamic")
+    set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-export_dynamic")
 
 	if(UNIX AND NOT APPLE)
 		if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 3.2)
