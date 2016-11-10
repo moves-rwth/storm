@@ -2,6 +2,8 @@
 
 #include "src/modelchecker/csl/helper/SparseMarkovAutomatonCslHelper.h"
 
+#include "src/modelchecker/multiobjective/pcaa.h"
+
 #include "src/models/sparse/StandardRewardModel.h"
 
 #include "src/utility/macros.h"
@@ -34,7 +36,15 @@ namespace storm {
             storm::logic::Formula const& formula = checkTask.getFormula();
             storm::logic::FragmentSpecification fragment = storm::logic::csl().setGloballyFormulasAllowed(false).setNextFormulasAllowed(false).setReachabilityRewardFormulasAllowed(true);
             fragment.setTimeAllowed(true).setLongRunAverageProbabilitiesAllowed(true);
-            return formula.isInFragment(fragment);
+            if(formula.isInFragment(fragment)) {
+                return true;
+            } else {
+                fragment = storm::logic::multiObjective().setTimeAllowed(true).setTimeBoundedUntilFormulasAllowed(true);
+                //In general, each initial state requires an individual scheduler (in contrast to single objective model checking). Let's exclude multiple initial states.
+                if(this->getModel().getInitialStates().getNumberOfSetBits() > 1) return false;
+                if(!checkTask.isOnlyInitialStatesRelevantSet()) return false;
+                return formula.isInFragment(fragment);
+            }
         }
         
         template<typename SparseMarkovAutomatonModelType>
@@ -107,7 +117,12 @@ namespace storm {
             std::vector<ValueType> result = storm::modelchecker::helper::SparseMarkovAutomatonCslHelper<ValueType>::computeTimes(checkTask.getOptimizationDirection(), this->getModel().getTransitionMatrix(), this->getModel().getBackwardTransitions(), this->getModel().getExitRates(), this->getModel().getMarkovianStates(), subResult.getTruthValuesVector(), checkTask.isQualitativeSet(), *minMaxLinearEquationSolverFactory);
             return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(result)));
         }
-                
+        
+        template<typename SparseMarkovAutomatonModelType>
+        std::unique_ptr<CheckResult> SparseMarkovAutomatonCslModelChecker<SparseMarkovAutomatonModelType>::checkMultiObjectiveFormula(CheckTask<storm::logic::MultiObjectiveFormula, ValueType> const& checkTask) {
+            return multiobjective::performPcaa(this->getModel(), checkTask.getFormula());
+        }
+        
         template class SparseMarkovAutomatonCslModelChecker<storm::models::sparse::MarkovAutomaton<double>>;
     }
 }

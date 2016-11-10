@@ -27,6 +27,14 @@ namespace storm {
                  */
                 virtual std::unique_ptr<CheckResult> check() = 0;
                 
+                /*
+                 * Exports the current approximations and the currently processed points into respective .csv files located at the given directory.
+                 * The polytopes are represented as the set of vertices. 
+                 * Note that the approximations will be intersected with a  (sufficiently large) hyperrectangle in order to ensure that the polytopes are bounded
+                 * This only works for 2 dimensional queries.
+                 */
+                void exportPlotOfCurrentApproximation(std::string const& destinationDir) const;
+                
             protected:
                 
                 /*

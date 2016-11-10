@@ -3,7 +3,7 @@
 
 #ifdef STORM_HAVE_HYPRO
 
-#include "src/modelchecker/multiobjective/SparseMaMultiObjectiveModelChecker.h"
+#include "src/modelchecker/multiobjective/pcaa.h"
 #include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "src/modelchecker/results/ParetoCurveCheckResult.h"
@@ -16,7 +16,7 @@
 
 
 /* Rationals for MAs not supported at this point
-TEST(SparseMaMultiObjectiveModelCheckerTest, serverRationalNumbers) {
+TEST(SparseMaPcaaModelCheckerTest, serverRationalNumbers) {
     
     std::string programFile = STORM_CPP_BASE_PATH "/examples/multiobjective/ma/server/server.ma";
     std::string formulasAsString = "multi(Tmax=? [ F \"error\" ], Pmax=? [ F \"processB\" ]) "; // pareto
@@ -29,7 +29,7 @@ TEST(SparseMaMultiObjectiveModelCheckerTest, serverRationalNumbers) {
     storm::generator::NextStateGeneratorOptions options(formulas);
     std::shared_ptr<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>> ma = storm::builder::ExplicitModelBuilder<storm::RationalNumber>(program, options).build()->as<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>();
     
-    storm::modelchecker::SparseMaMultiObjectiveModelChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>> checker(*ma);
+    storm::modelchecker::SparseMarkovAutomatonCslModelChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>> checker(*ma);
     
     std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(storm::modelchecker::CheckTask<storm::logic::Formula>(*formulas[0], true));
     ASSERT_TRUE(result->isParetoCurveCheckResult());
@@ -47,7 +47,7 @@ TEST(SparseMaMultiObjectiveModelCheckerTest, serverRationalNumbers) {
 }*/
 
 
-TEST(SparseMaMultiObjectiveModelCheckerTest, server) {
+TEST(SparseMaPcaaModelCheckerTest, server) {
     
     std::string programFile = STORM_CPP_BASE_PATH "/examples/multiobjective/ma/server/server.ma";
     std::string formulasAsString = "multi(Tmax=? [ F \"error\" ], Pmax=? [ F \"processB\" ]) "; // pareto
@@ -59,9 +59,9 @@ TEST(SparseMaMultiObjectiveModelCheckerTest, server) {
     program = storm::utility::prism::preprocess(program, "");
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::parseFormulasForProgram(formulasAsString, program);
     std::shared_ptr<storm::models::sparse::MarkovAutomaton<double>> ma = storm::buildSparseModel<double>(program, formulas, true)->as<storm::models::sparse::MarkovAutomaton<double>>();
-    storm::modelchecker::SparseMaMultiObjectiveModelChecker<storm::models::sparse::MarkovAutomaton<double>> checker(*ma);
+    storm::modelchecker::SparseMarkovAutomatonCslModelChecker<storm::models::sparse::MarkovAutomaton<double>> checker(*ma);
     
-    std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(storm::modelchecker::CheckTask<storm::logic::Formula, double>(*formulas[0], true));
+    std::unique_ptr<storm::modelchecker::CheckResult> result = storm::modelchecker::multiobjective::performPcaa(*ma, formulas[0]->asMultiObjectiveFormula());
     ASSERT_TRUE(result->isParetoCurveCheckResult());
     
     std::vector<double> p = {11.0/6.0, 1.0/2.0};

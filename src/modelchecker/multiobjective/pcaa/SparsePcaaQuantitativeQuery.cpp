@@ -115,7 +115,6 @@ namespace storm {
                     STORM_LOG_THROW(optimizationRes.second, storm::exceptions::UnexpectedException, "The underapproximation is either unbounded or empty.");
                     result = optimizationRes.first[indexOfOptimizingObjective];
                     STORM_LOG_DEBUG("Best solution found so far is ~" << storm::utility::convertNumber<double>(result) << ".");
-                    thresholds[indexOfOptimizingObjective] = result;
                     //Compute an upper bound for the optimum and check for convergence
                     optimizationRes = this->overApproximation->intersection(thresholdsAsPolytope)->optimize(directionOfOptimizingObjective);
                     if(optimizationRes.second) {
@@ -125,7 +124,10 @@ namespace storm {
                             return result;
                         } else {
                             STORM_LOG_DEBUG("Solution can be improved by at most " << storm::utility::convertNumber<double>(precisionOfResult));
+                            thresholds[indexOfOptimizingObjective] = optimizationRes.first[indexOfOptimizingObjective];
                         }
+                    } else {
+                        thresholds[indexOfOptimizingObjective] = result + storm::utility::one<GeometryValueType>();
                     }
                     WeightVector separatingVector = this->findSeparatingVector(thresholds);
                     this->performRefinementStep(std::move(separatingVector));

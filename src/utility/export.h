@@ -41,7 +41,7 @@ namespace storm {
         }
         */
             
-        void exportStringToFile(std::string const& str, std::string filepath) {
+        inline void exportStringToFile(std::string const& str, std::string filepath) {
             std::ofstream filestream;
             filestream.open(filepath);
             STORM_LOG_THROW(filestream.is_open(), storm::exceptions::FileIoException , "Could not open file " << filepath << ".");
@@ -49,7 +49,7 @@ namespace storm {
         }
         
         template <typename ValueType>
-        void exportDataToCSVFile(std::string filepath, std::vector<std::vector<ValueType>> const& data, boost::optional<std::vector<std::string>> const& columnHeaders) {
+        inline void exportDataToCSVFile(std::string filepath, std::vector<std::vector<ValueType>> const& data, boost::optional<std::vector<std::string>> const& columnHeaders) {
             std::ofstream filestream;
             filestream.open(filepath);
             STORM_LOG_THROW(filestream.is_open(), storm::exceptions::FileIoException , "Could not open file " << filepath << ".");

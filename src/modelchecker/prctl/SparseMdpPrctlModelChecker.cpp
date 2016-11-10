@@ -14,6 +14,8 @@
 
 #include "src/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
 
+#include "src/modelchecker/multiobjective/pcaa.h"
+
 #include "src/solver/LpSolver.h"
 
 #include "src/settings/modules/GeneralSettings.h"
@@ -41,7 +43,15 @@ namespace storm {
         template<typename SparseMdpModelType>
         bool SparseMdpPrctlModelChecker<SparseMdpModelType>::canHandle(CheckTask<storm::logic::Formula, ValueType> const& checkTask) const {
             storm::logic::Formula const& formula = checkTask.getFormula();
-            return formula.isInFragment(storm::logic::prctl().setLongRunAverageRewardFormulasAllowed(false).setLongRunAverageProbabilitiesAllowed(true).setConditionalProbabilityFormulasAllowed(true).setOnlyEventuallyFormuluasInConditionalFormulasAllowed(true));
+            if(formula.isInFragment(storm::logic::prctl().setLongRunAverageRewardFormulasAllowed(false).setLongRunAverageProbabilitiesAllowed(true).setConditionalProbabilityFormulasAllowed(true).setOnlyEventuallyFormuluasInConditionalFormulasAllowed(true))) {
+                return true;
+            } else {
+                // Check whether we consider a multi-objective formula
+                // For multi-objective model checking, each initial state requires an individual scheduler (in contrast to single-objective model checking). Let's exclude multiple initial states.
+                if(this->getModel().getInitialStates().getNumberOfSetBits() > 1) return false;
+                if(!checkTask.isOnlyInitialStatesRelevantSet()) return false;
+                return checkTask.getFormula().isInFragment(storm::logic::multiObjective().setCumulativeRewardFormulasAllowed(true));
+            }
         }
         
         template<typename SparseMdpModelType>
@@ -145,7 +155,12 @@ namespace storm {
             std::vector<ValueType> numericResult = storm::modelchecker::helper::SparseMdpPrctlHelper<ValueType>::computeLongRunAverageProbabilities(checkTask.getOptimizationDirection(), this->getModel().getTransitionMatrix(), this->getModel().getBackwardTransitions(),  subResult.getTruthValuesVector(), checkTask.isQualitativeSet(), *minMaxLinearEquationSolverFactory);
             return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));
 		}
-                
+        
+        template<typename SparseMdpModelType>
+        std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::checkMultiObjectiveFormula(CheckTask<storm::logic::MultiObjectiveFormula, ValueType> const& checkTask) {
+            return multiobjective::performPcaa(this->getModel(), checkTask.getFormula());
+        }
+        
         template class SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>>;
 
 #ifdef STORM_HAVE_CARL

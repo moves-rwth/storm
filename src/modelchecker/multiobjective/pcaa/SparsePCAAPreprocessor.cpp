@@ -66,10 +66,12 @@ namespace storm {
                 result.actionsWithPositiveReward = storm::storage::BitVector(result.preprocessedModel.getNumberOfChoices(), false);
                 result.actionsWithNegativeReward = storm::storage::BitVector(result.preprocessedModel.getNumberOfChoices(), false);
                 for(uint_fast64_t objIndex = 0; objIndex < result.objectives.size(); ++objIndex) {
-                    if(result.objectives[objIndex].rewardsArePositive) {
-                        result.actionsWithPositiveReward |= ~storm::utility::vector::filterZero(result.preprocessedModel.getRewardModel(result.objectives[objIndex].rewardModelName).getTotalRewardVector(result.preprocessedModel.getTransitionMatrix()));
-                    } else {
-                        result.actionsWithNegativeReward |= ~storm::utility::vector::filterZero(result.preprocessedModel.getRewardModel(result.objectives[objIndex].rewardModelName).getTotalRewardVector(result.preprocessedModel.getTransitionMatrix()));
+                    if(!result.objectives[objIndex].upperTimeBound) {
+                        if(result.objectives[objIndex].rewardsArePositive) {
+                            result.actionsWithPositiveReward |= ~storm::utility::vector::filterZero(result.preprocessedModel.getRewardModel(result.objectives[objIndex].rewardModelName).getTotalRewardVector(result.preprocessedModel.getTransitionMatrix()));
+                        } else {
+                            result.actionsWithNegativeReward |= ~storm::utility::vector::filterZero(result.preprocessedModel.getRewardModel(result.objectives[objIndex].rewardModelName).getTotalRewardVector(result.preprocessedModel.getTransitionMatrix()));
+                        }
                     }
                 }
                 
@@ -371,6 +373,8 @@ namespace storm {
                         result.possiblyRecurrentStates |= statesInCurrentECWithNeutralAction;
                     }else{
                         // Check if the ec contains neutral sub ecs. This is done by adding the subECs to our list of ECs
+                        // A neutral subEC only consist of states that can stay in statesInCurrentECWithNeutralAction
+                        statesInCurrentECWithNeutralAction = storm::utility::graph::performProb0E(result.preprocessedModel.getTransitionMatrix(), result.preprocessedModel.getTransitionMatrix().getRowGroupIndices(), backwardTransitions,statesInCurrentECWithNeutralAction, ~statesInCurrentECWithNeutralAction);
                         auto subECs = storm::storage::MaximalEndComponentDecomposition<ValueType>(result.preprocessedModel.getTransitionMatrix(), backwardTransitions, statesInCurrentECWithNeutralAction);
                         ecs.reserve(ecs.size() + subECs.size());
                         for(auto& ec : subECs){

@@ -39,9 +39,9 @@ namespace storm {
                 // Maps any state of the preprocessed model to the corresponding state of the original Model
                 std::vector<uint_fast64_t> newToOldStateIndexMapping;
                 
-                // The actions of the preprocessed model that have positive reward assigned for at least one objective
+                // The actions of the preprocessed model that have positive reward assigned for at least one objective (objectives with an upper time-bound are ignored!)
                 storm::storage::BitVector actionsWithPositiveReward;
-                // The actions of the preprocessed model that have negative reward assigned for at least one objective
+                // The actions of the preprocessed model that have negative reward assigned for at least one objective (objectives with an upper time-bound are ignored!)
                 storm::storage::BitVector actionsWithNegativeReward;
                 // The actions of the preprocessed model that are part of an EC
                 storm::storage::BitVector ecActions;

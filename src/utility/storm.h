@@ -71,8 +71,6 @@
 #include "src/modelchecker/csl/SparseMarkovAutomatonCslModelChecker.h"
 #include "src/modelchecker/csl/HybridCtmcCslModelChecker.h"
 #include "src/modelchecker/csl/SparseMarkovAutomatonCslModelChecker.h"
-#include "src/modelchecker/multiobjective/SparseMdpMultiObjectiveModelChecker.h"
-#include "src/modelchecker/multiobjective/SparseMaMultiObjectiveModelChecker.h"
 #include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "src/modelchecker/results/SymbolicQualitativeCheckResult.h"
 
@@ -306,20 +304,11 @@ namespace storm {
     template<typename ValueType>
     std::unique_ptr<storm::modelchecker::CheckResult> verifySparseMdp(std::shared_ptr<storm::models::sparse::Mdp<ValueType>> mdp, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
         std::unique_ptr<storm::modelchecker::CheckResult> result;
-        if(task.getFormula().isMultiObjectiveFormula()) {
-            storm::modelchecker::SparseMdpMultiObjectiveModelChecker<storm::models::sparse::Mdp<ValueType>> modelchecker(*mdp);
-            if (modelchecker.canHandle(task)) {
-                result = modelchecker.check(task);
-            } else {
-                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The property " << task.getFormula() << " is not supported.");
-            }
+        storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ValueType>> modelchecker(*mdp);
+        if (modelchecker.canHandle(task)) {
+            result = modelchecker.check(task);
         } else {
-            storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ValueType>> modelchecker(*mdp);
-            if (modelchecker.canHandle(task)) {
-                result = modelchecker.check(task);
-            } else {
-                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The property " << task.getFormula() << " is not supported.");
-            }
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The property " << task.getFormula() << " is not supported.");
         }
         return result;
     }
@@ -331,20 +320,11 @@ namespace storm {
         if (!ma->isClosed()) {
             ma->close();
         }
-        if(task.getFormula().isMultiObjectiveFormula()) {
-            storm::modelchecker::SparseMaMultiObjectiveModelChecker<storm::models::sparse::MarkovAutomaton<ValueType>> modelchecker(*ma);
-            if (modelchecker.canHandle(task)) {
-                result = modelchecker.check(task);
-            } else {
-                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The property " << task.getFormula() << " is not supported.");
-            }
+        storm::modelchecker::SparseMarkovAutomatonCslModelChecker<storm::models::sparse::MarkovAutomaton<ValueType>> modelchecker(*ma);
+        if (modelchecker.canHandle(task)) {
+            result = modelchecker.check(task);
         } else {
-            storm::modelchecker::SparseMarkovAutomatonCslModelChecker<storm::models::sparse::MarkovAutomaton<ValueType>> modelchecker(*ma);
-            if (modelchecker.canHandle(task)) {
-                result = modelchecker.check(task);
-            } else {
-                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The property " << task.getFormula() << " is not supported.");
-            }
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The property " << task.getFormula() << " is not supported.");
         }
         return result;
     }

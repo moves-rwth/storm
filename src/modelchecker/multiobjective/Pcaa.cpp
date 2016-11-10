@@ -9,6 +9,8 @@
 #include "src/modelchecker/multiobjective/pcaa/SparsePcaaAchievabilityQuery.h"
 #include "src/modelchecker/multiobjective/pcaa/SparsePcaaQuantitativeQuery.h"
 #include "src/modelchecker/multiobjective/pcaa/SparsePcaaParetoQuery.h"
+#include "src/settings//SettingsManager.h"
+#include "src/settings/modules/MultiObjectiveSettings.h"
 
 #include "src/exceptions/InvalidArgumentException.h"
 
@@ -22,6 +24,12 @@ namespace storm {
                 STORM_LOG_ASSERT(model.getInitialStates().getNumberOfSetBits() == 1, "Multi-objective Model checking on model with multiple initial states is not supported.");
                 
 #ifdef STORM_HAVE_CARL
+                
+                // If we consider an MA, ensure that it is closed
+                if(model.isOfType(storm::models::ModelType::MarkovAutomaton)) {
+                    STORM_LOG_THROW(dynamic_cast<storm::models::sparse::MarkovAutomaton<typename SparseModelType::ValueType> const *>(&model)->isClosed(), storm::exceptions::InvalidArgumentException, "Unable to check multi-objective formula on non-closed Markov automaton.");
+                }
+                
                 auto preprocessorResult = SparsePcaaPreprocessor<SparseModelType>::preprocess(model, formula);
                 STORM_LOG_DEBUG("Preprocessing done. Result: " << preprocessorResult);
                 
@@ -41,7 +49,12 @@ namespace storm {
                         break;
                 }
 
-                return query->check();
+                auto result = query->check();
+                
+                if(settings::getModule<storm::settings::modules::MultiObjectiveSettings>().isExportPlotSet()) {
+                    query->exportPlotOfCurrentApproximation(storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>().getExportPlotDirectory());
+                }
+                return result;
 #else
                 STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Multi-objective model checking requires carl.");
                 return nullptr;
