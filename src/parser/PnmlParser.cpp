@@ -36,7 +36,7 @@ namespace storm {
                 auto child = element->getChildNodes()->item(i);
                 auto name = storm::adapters::getName(child);
 
-                if (name.compare("net") == 0) {
+                if (name == "net") {
                     traverseNetOrPage(child);
                 } else if (std::all_of(name.begin(), name.end(), isspace)) {
                     // ignore node (contains only whitespace)
@@ -54,7 +54,7 @@ namespace storm {
                 auto attr = node->getAttributes()->item(i);
                 auto name = storm::adapters::getName(attr);
 
-                if (name.compare("id") == 0) {
+                if (name == "id") {
                     builder.setGspnName(storm::adapters::XMLtoString(attr->getNodeValue()));
                 } else {
                     // Found node or attribute which is at the moment nod handled by this parser.
@@ -68,13 +68,13 @@ namespace storm {
                 auto child = node->getChildNodes()->item(i);
                 auto name = storm::adapters::getName(child);
 
-                if (name.compare("place") == 0) {
+                if (name == "place") {
                     traversePlace(child);
-                } else if (name.compare("transition") == 0) {
+                } else if (name == "transition") {
                     traverseTransition(child);
-                } else if (name.compare("arc") == 0) {
+                } else if (name == "arc") {
                     traverseArc(child);
-                } else if (name.compare("page") == 0) {
+                } else if (name == "page") {
                     // Some pnml files have a child named page.
                     // The page node has the same children like the net node (e.g., place, transition, arc)
                     traverseNetOrPage(child);
@@ -99,7 +99,7 @@ namespace storm {
                 auto attr = node->getAttributes()->item(i);
                 auto name = storm::adapters::getName(attr);
 
-                if (name.compare("id") == 0) {
+                if (name == "id") {
                     placeName = storm::adapters::XMLtoString(attr->getNodeValue());
                 } else {
                     // Found node or attribute which is at the moment nod handled by this parser.
@@ -113,16 +113,16 @@ namespace storm {
                 auto child = node->getChildNodes()->item(i);
                 auto name = storm::adapters::getName(child);
 
-                if (name.compare("initialMarking") == 0) {
+                if (name == "initialMarking") {
                     numberOfInitialTokens.first = true;
                     numberOfInitialTokens.second = traverseInitialMarking(child);
-                } else if(name.compare("capacity") == 0) {
+                } else if(name == "capacity") {
                     capacity.first = true;
                     capacity.second = traverseCapacity(child);
                 } else if (std::all_of(name.begin(), name.end(), isspace)) {
                     // ignore node (contains only whitespace)
-                } else if (name.compare("name") == 0 ||
-                           name.compare("graphics") == 0) {
+                } else if (name == "name" ||
+                           name == "graphics") {
                     // ignore these tags
                 } else {
                     // Found node or attribute which is at the moment nod handled by this parser.
@@ -156,7 +156,7 @@ namespace storm {
                 auto attr = node->getAttributes()->item(i);
                 auto name = storm::adapters::getName(attr);
 
-                if (name.compare("id") == 0) {
+                if (name == "id") {
                     id = storm::adapters::XMLtoString(attr->getNodeValue());
                 } else {
                     // Found node or attribute which is at the moment nod handled by this parser.
@@ -170,19 +170,19 @@ namespace storm {
                 auto child = node->getChildNodes()->item(i);
                 auto name = storm::adapters::getName(child);
 
-                if (name.compare("rate") == 0) {
+                if (name == "rate") {
                     value.first = true;
                     value.second = traverseTransitionValue(child);
-                } else if (name.compare("timed") == 0) {
+                } else if (name == "timed") {
                     timed.first = true;
                     timed.second = traverseTransitionType(child);
-                } else if (name.compare("priority") == 0) {
+                } else if (name == "priority") {
                     priority = traversePriority(child);
                 } else if (std::all_of(name.begin(), name.end(), isspace)) {
                     // ignore node (contains only whitespace)
-                } else if (name.compare("graphics") == 0 ||
-                           name.compare("name") == 0 ||
-                           name.compare("orientation") == 0) {
+                } else if (name == "graphics" ||
+                           name == "name" ||
+                           name == "orientation") {
                     // ignore these tags
                 } else {
                     // Found node or attribute which is at the moment nod handled by this parser.
@@ -229,13 +229,13 @@ namespace storm {
                 auto attr = node->getAttributes()->item(i);
                 auto name = storm::adapters::getName(attr);
 
-                if (name.compare("source") == 0) {
+                if (name == "source") {
                     source.first = true;
                     source.second = storm::adapters::XMLtoString(attr->getNodeValue());
-                } else if (name.compare("target") == 0) {
+                } else if (name == "target") {
                     target.first = true;
                     target.second = storm::adapters::XMLtoString(attr->getNodeValue());
-                } else if (name.compare("id") == 0) {
+                } else if (name == "id") {
                     id = storm::adapters::XMLtoString(attr->getNodeValue());
                 } else {
                     // Found node or attribute which is at the moment nod handled by this parser.
@@ -248,17 +248,15 @@ namespace storm {
             for (uint_fast64_t i = 0; i < node->getChildNodes()->getLength(); ++i) {
                 auto child = node->getChildNodes()->item(i);
                 auto name = storm::adapters::getName(child);
-                if (name.compare("type") == 0) {
+                if (name == "type") {
                     type.first = true;
                     type.second = traverseArcType(child);
-                } else if(name.compare("inscription") == 0) {
+                } else if(name == "inscription") {
                     multiplicity.first = true;
                     multiplicity.second = traverseMultiplicity(child);
                 } else if (std::all_of(name.begin(), name.end(), isspace)) {
                     // ignore node (contains only whitespace)
-                } else if (name.compare("graphics") == 0 ||
-                           name.compare("arcpath") == 0 ||
-                           name.compare("tagged") == 0) {
+                } else if (name == "graphics" || name == "arcpath" || name == "tagged") {
                     // ignore these tags
                 } else {
                     // Found node or attribute which is at the moment nod handled by this parser.
@@ -299,15 +297,15 @@ namespace storm {
             for (uint_fast64_t i = 0; i < node->getChildNodes()->getLength(); ++i) {
                 auto child = node->getChildNodes()->item(i);
                 auto name = storm::adapters::getName(child);
-                if (name.compare("text") == 0) {
+                if (name == "text") {
                     result = std::stoull(storm::adapters::getName(child->getFirstChild()));
-                } else if (name.compare("value") == 0) {
+                } else if (name == "value") {
                     auto value = storm::adapters::getName(child->getFirstChild());
                     value = value.substr(std::string("Default,").length());
                     result = std::stoull(value);
                 } else if (std::all_of(name.begin(), name.end(), isspace)) {
                     // ignore node (contains only whitespace)
-                } else if (name.compare("graphics") == 0) {
+                } else if (name == "graphics") {
                     // ignore these tags
                 } else {
                     // Found node or attribute which is at the moment nod handled by this parser.
@@ -323,13 +321,13 @@ namespace storm {
             for (uint_fast64_t i = 0; i < node->getChildNodes()->getLength(); ++i) {
                 auto child = node->getChildNodes()->item(i);
                 auto name = storm::adapters::getName(child);
-                if (name.compare("value") == 0) {
+                if (name == "value") {
                     auto value = storm::adapters::getName(child->getFirstChild());
                     if (value.find("Default,") == 0) {
                         value = value.substr(std::string("Default,").length());
                     }
                     result = std::stoull(value);
-                } else if (name.compare("graphics") == 0) {
+                } else if (name == "graphics") {
                     // ignore these nodes
                 } else if (std::all_of(name.begin(), name.end(), isspace)) {
                     // ignore node (contains only whitespace)
@@ -347,13 +345,13 @@ namespace storm {
             for (uint_fast64_t i = 0; i < node->getChildNodes()->getLength(); ++i) {
                 auto child = node->getChildNodes()->item(i);
                 auto name = storm::adapters::getName(child);
-                if (name.compare("value") == 0) {
+                if (name == "value") {
                     auto value = storm::adapters::getName(child->getFirstChild());
                     if (value.find("Default,") == 0) {
                         value = value.substr(std::string("Default,").length());
                     }
                     result = std::stoull(value);
-                } else if (name.compare("graphics") == 0) {
+                } else if (name == "graphics") {
                     // ignore these nodes
                 } else if (std::all_of(name.begin(), name.end(), isspace)) {
                     // ignore node (contains only whitespace)
@@ -372,7 +370,7 @@ namespace storm {
             for (uint_fast64_t i = 0; i < node->getChildNodes()->getLength(); ++i) {
                 auto child = node->getChildNodes()->item(i);
                 auto name = storm::adapters::getName(child);
-                if (name.compare("value") == 0) {
+                if (name == "value") {
                     result = storm::adapters::getName(child->getFirstChild());
                 } else  if (std::all_of(name.begin(), name.end(), isspace)) {
                     // ignore node (contains only whitespace)
@@ -390,8 +388,8 @@ namespace storm {
             for (uint_fast64_t i = 0; i < node->getChildNodes()->getLength(); ++i) {
                 auto child = node->getChildNodes()->item(i);
                 auto name = storm::adapters::getName(child);
-                if (name.compare("value") == 0) {
-                    result = storm::adapters::getName(child->getFirstChild()).compare("true") == 0 ? true : false;
+                if (name == "value") {
+                    result = storm::adapters::getName(child->getFirstChild()) == "true" ? true : false;
                 } else  if (std::all_of(name.begin(), name.end(), isspace)) {
                     // ignore node (contains only whitespace)
                 } else {
@@ -407,7 +405,7 @@ namespace storm {
             for (uint_fast64_t i = 0; i < node->getAttributes()->getLength(); ++i) {
                 auto attr = node->getAttributes()->item(i);
                 auto name = storm::adapters::getName(attr);
-                if (name.compare("value") == 0) {
+                if (name == "value") {
                     return storm::adapters::XMLtoString(attr->getNodeValue());
                 } else {
                     // Found node or attribute which is at the moment nod handled by this parser.
@@ -423,15 +421,15 @@ namespace storm {
             for (uint_fast64_t i = 0; i < node->getChildNodes()->getLength(); ++i) {
                 auto child = node->getChildNodes()->item(i);
                 auto name = storm::adapters::getName(child);
-                if (name.compare("text") == 0) {
+                if (name == "text") {
                     result = std::stoull(storm::adapters::getName(child->getFirstChild()));
-                } else if (name.compare("value") == 0) {
+                } else if (name == "value") {
                     auto value = storm::adapters::getName(child->getFirstChild());
                     value = value.substr(std::string("Default,").length());
                     result = std::stoull(value);
                 } else if (std::all_of(name.begin(), name.end(), isspace)) {
                     // ignore node (contains only whitespace)
-                } else if (name.compare("graphics") == 0) {
+                } else if (name == "graphics") {
                     // ignore these tags
                 } else {
                     // Found node or attribute which is at the moment nod handled by this parser.
