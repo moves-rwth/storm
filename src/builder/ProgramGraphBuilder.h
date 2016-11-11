@@ -110,9 +110,11 @@ namespace storm {
             {
                 graph = new storm::ppg::ProgramGraph(program.getExpressionManager(), program.getVariableDeclarations());
                 noActionId = graph->getNoActionId();
-                
             }
-             
+
+            /**
+             * Runs the translator.
+             */
             void run() {
                 currentStack.push_back(graph->addLocation(true));
                 // Terminal state.
@@ -124,24 +126,25 @@ namespace storm {
                 buildBlock(program);
             }
             
-            
+            /**
+             * Extracts the program graph from the builder.
+             * @return
+             */
             storm::ppg::ProgramGraph* finalize() {
                 storm::ppg::ProgramGraph* tmp = graph;
                 graph = nullptr;
                 return tmp;
             }
-            
-            
-            
-            
+
             std::vector<storm::ppg::ProgramLocation*> currentStack;
             std::vector<storm::ppg::ProgramLocation*> nextStack;
-            
+            /// Action id if no action is to be executed.
             storm::ppg::ProgramActionIdentifier noActionId;
-            
+            /// Resulting state of an failed observation.
             storm::ppg::ProgramLocation* observeFailedState = nullptr;
-            
+            /// PGCL Program to translate.
             storm::pgcl::PgclProgram const& program;
+            /// Obtained Program Graph.
             storm::ppg::ProgramGraph* graph;
             
             
