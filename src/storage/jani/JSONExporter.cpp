@@ -103,6 +103,8 @@ namespace storm {
                     return ">";
                 case storm::logic::ComparisonType::GreaterEqual:
                     return "≥";
+                default:
+                    assert(false);
             }
         }
         
@@ -724,6 +726,8 @@ namespace storm {
                     return "argmax";
                 case storm::modelchecker::FilterType::VALUES:
                     return "values";
+                default:
+                    assert(false);
                     
             }
         }
