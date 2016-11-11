@@ -11,6 +11,8 @@ namespace storm {
          */
         class Place {
         public:
+            Place(uint64_t id);
+
             /*!
              * Sets the name of this place. The name is not used to identify a place (and therefore do not have to be unique).
              * Some input and output formats use the name to identify a place. If you want to use the export or import
@@ -28,32 +30,25 @@ namespace storm {
             std::string getName() const;
 
             /*!
-             * Sets the id of this place. The id must be unique for a gspn.
-             *
-             * @param id The new id of this place.
-             */
-            void setID(uint_fast64_t const& id);
-
-            /*!
              * Returns the id of this place.
              *
              * @return The id of this place.
              */
-            uint_fast64_t getID() const;
+            uint64_t getID() const;
 
             /*!
              * Sets the number of initial tokens of this place.
              *
              * @param tokens The number of initial tokens.
              */
-            void setNumberOfInitialTokens(uint_fast64_t const& tokens);
+            void setNumberOfInitialTokens(uint64_t tokens);
 
             /*!
              * Returns the number of initial tokens of this place.
              *
              * @return The number of initial tokens of this place.
              */
-            uint_fast64_t getNumberOfInitialTokens() const;
+            uint64_t getNumberOfInitialTokens() const;
 
             /*!
              * Sets the capacity of tokens of this place.
@@ -76,10 +71,10 @@ namespace storm {
             bool hasRestrictedCapacity() const;
         private:
             // contains the number of initial tokens of this place
-            uint_fast64_t numberOfInitialTokens = 0;
+            uint64_t numberOfInitialTokens = 0;
 
             // unique id (is used to refer to a specific place in a bitvector)
-            uint_fast64_t id = 0;
+            uint64_t id = 0;
 
             // name which is used in pnml file
             std::string name;

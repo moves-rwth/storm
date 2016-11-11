@@ -13,10 +13,9 @@ namespace storm {
         }
         
         uint_fast64_t GspnBuilder::addPlace(int_fast64_t const& capacity, uint_fast64_t const& initialTokens, std::string const& name) {
-            auto place = storm::gspn::Place();
-            place.setCapacity(capacity);
             auto newId = places.size();
-            place.setID(newId);
+            auto place = storm::gspn::Place(newId);
+            place.setCapacity(capacity);
             place.setNumberOfInitialTokens(initialTokens);
             places.push_back(place);
             return newId;
