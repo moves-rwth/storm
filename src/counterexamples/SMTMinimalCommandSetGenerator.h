@@ -1488,7 +1488,6 @@ namespace storm {
                 storm::storage::BitVector reachableStates(subMdp.getNumberOfStates());
                 
                 // Initialize the stack for the DFS.
-                bool targetStateIsReachable = false;
                 std::vector<uint_fast64_t> stack;
                 stack.reserve(subMdp.getNumberOfStates());
                 for (auto initialState : subMdp.getInitialStates()) {
@@ -1516,9 +1515,9 @@ namespace storm {
                                     reachableStates.set(successorEntry.getColumn(), true);
                                     stack.push_back(successorEntry.getColumn());
                                 }
-                            } else if (psiStates.get(successorEntry.getColumn())) {
-                                targetStateIsReachable = true;
-                            }
+                            } //else if (psiStates.get(successorEntry.getColumn())) {
+                                //targetStateIsReachable = true;
+                            //}
                         }
                         
                         if (choiceTargetsRelevantState) {
