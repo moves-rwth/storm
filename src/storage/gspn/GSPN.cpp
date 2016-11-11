@@ -8,27 +8,37 @@
 
 namespace storm {
     namespace gspn {
-        void GSPN::addImmediateTransition(storm::gspn::ImmediateTransition<WeightType> const& transition) {
-            this->immediateTransitions.push_back(std::make_shared<storm::gspn::ImmediateTransition<WeightType>>(transition));
+        uint64_t GSPN::timedTransitionIdToTransitionId(uint64_t ttId) {
+            return ttId | (1ull << ((sizeof(ttId) * CHAR_BIT) - 1));
         }
-
-        void GSPN::addTimedTransition(storm::gspn::TimedTransition<RateType> const& transition) {
-            this->timedTransitions.push_back(std::make_shared<storm::gspn::TimedTransition<RateType>>(transition));
+        
+        uint64_t GSPN::immediateTransitionIdToTransitionId(uint64_t itId) {
+            return itId;
         }
-
-        void GSPN::addPlace(Place const& place) {
-            this->places.push_back(place);
+        
+        uint64_t GSPN::transitionIdToTimedTransitionId(uint64_t tId) {
+            return (tId << 1) >> 1;
         }
-
+        
+        uint64_t GSPN::transitionIdToImmediateTransitionId(uint64_t tId) {
+            return tId;
+        }
+        
+        GSPN::GSPN(std::string const& name, std::vector<Place> const& places, std::vector<ImmediateTransition<WeightType>> const& itransitions, std::vector<TimedTransition<RateType>> const& ttransitions)
+        : name(name), places(places), immediateTransitions(itransitions), timedTransitions(ttransitions)
+        {
+            
+        }
+        
         uint_fast64_t GSPN::getNumberOfPlaces() const {
             return places.size();
         }
 
-        std::vector<std::shared_ptr<storm::gspn::TimedTransition<GSPN::RateType>>> const& GSPN::getTimedTransitions() const {
+        std::vector<storm::gspn::TimedTransition<GSPN::RateType>> const& GSPN::getTimedTransitions() const {
             return this->timedTransitions;
         }
 
-        std::vector<std::shared_ptr<storm::gspn::ImmediateTransition<GSPN::WeightType>>> const& GSPN::getImmediateTransitions() const {
+        std::vector<storm::gspn::ImmediateTransition<GSPN::WeightType>> const& GSPN::getImmediateTransitions() const {
             return this->immediateTransitions;
         }
 
@@ -45,57 +55,65 @@ namespace storm {
         }
 
         
-        std::pair<bool, storm::gspn::Place const*> GSPN::getPlace(uint_fast64_t const& id) const {
-            for (auto& place : places) {
-                if (id == place.getID()) {
-                    return std::make_pair<bool, storm::gspn::Place const*>(true, &place);
-                }
+        storm::gspn::Place const* GSPN::getPlace(uint64_t id) const {
+            if(id < places.size()) {
+                assert(places.at(id).getID() == id);
+                return &places.at(id);
             }
-            return std::make_pair<bool, storm::gspn::Place const*>(false, nullptr);
+            return nullptr;
         }
         
-    
-        std::pair<bool, storm::gspn::Place*> GSPN::getPlace(std::string const& id) {
+        
+        storm::gspn::Place* GSPN::getPlace(uint64_t id) {
+            if(id < places.size()) {
+                assert(places.at(id).getID() == id);
+                return &places.at(id);
+            }
+            return nullptr;
+        }
+        
+      
+        storm::gspn::Place const* GSPN::getPlace(std::string const& name) const {
             for (auto& place : places) {
-                if (id.compare(place.getName()) == 0) {
-                    return std::make_pair<bool, storm::gspn::Place*>(true, &place);
+                if (place.getName() == name) {
+                    return &place;
                 }
             }
-            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "No place with name " << id);
+            return nullptr;
         };
         
-        std::pair<bool, storm::gspn::Place const*> GSPN::getPlace(std::string const& id) const {
+        storm::gspn::Place* GSPN::getPlace(std::string const& name) {
             for (auto& place : places) {
-                if (id.compare(place.getName()) == 0) {
-                    return std::make_pair<bool, storm::gspn::Place const*>(true, &place);
+                if (place.getName() == name) {
+                    return &place;
                 }
             }
-            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "No place with name " << id);
+            return nullptr;
         };
 
-        std::pair<bool, std::shared_ptr<storm::gspn::TimedTransition<GSPN::RateType>> const> GSPN::getTimedTransition(std::string const& id) const {
+        storm::gspn::TimedTransition<GSPN::RateType> const* GSPN::getTimedTransition(std::string const& name) const {
             for (auto& trans : timedTransitions) {
-                if (id.compare(trans->getName()) == 0) {
-                    return std::make_pair<bool, std::shared_ptr<storm::gspn::TimedTransition<GSPN::RateType>> const>(true, static_cast<std::shared_ptr<storm::gspn::TimedTransition<GSPN::RateType>> const>(trans));
+                if (name == trans.getName()) {
+                    return &trans;
                 }
             }
-            return std::make_pair<bool, std::shared_ptr<storm::gspn::TimedTransition<GSPN::RateType>> const>(false, nullptr);
+            return nullptr;
         }
 
-        std::pair<bool, std::shared_ptr<storm::gspn::ImmediateTransition<GSPN::WeightType>> const> GSPN::getImmediateTransition(std::string const& id) const {
+        storm::gspn::ImmediateTransition<GSPN::WeightType> const* GSPN::getImmediateTransition(std::string const& name) const {
             for (auto& trans : immediateTransitions) {
-                if (id.compare(trans->getName()) == 0) {
-                    return std::make_pair<bool, std::shared_ptr<storm::gspn::ImmediateTransition<GSPN::WeightType>> const>(true, static_cast<std::shared_ptr<storm::gspn::ImmediateTransition<GSPN::WeightType>> const>(trans));
+                if (name == trans.getName()) {
+                    return &trans;
                 }
             }
-            return std::make_pair<bool, std::shared_ptr<storm::gspn::ImmediateTransition<GSPN::WeightType>> const>(false, nullptr);
+            return nullptr;
         }
         
         
 
-        std::pair<bool, std::shared_ptr<storm::gspn::Transition> const> GSPN::getTransition(std::string const& id) const {
+        storm::gspn::Transition const* GSPN::getTransition(std::string const& id) const {
             auto trans = getTimedTransition(id);
-            if (trans.first == true) {
+            if (trans != nullptr) {
                 return trans;
             }
 
@@ -104,10 +122,9 @@ namespace storm {
         
         void GSPN::setCapacities(std::unordered_map<std::string, uint64_t> const& mapping) {
             for(auto const& entry : mapping) {
-                std::cout << "restrict " << entry.first << std::endl;
-                auto place = getPlace(entry.first);
-                STORM_LOG_THROW(place.first, storm::exceptions::InvalidArgumentException, "No place with name " << entry.first);
-                place.second->setCapacity(entry.second);
+                storm::gspn::Place* place = getPlace(entry.first);
+                STORM_LOG_THROW(place != nullptr, storm::exceptions::InvalidArgumentException, "No place with name " << entry.first);
+                place->setCapacity(entry.second);
                 
             }
         }
@@ -130,52 +147,52 @@ namespace storm {
             // print transitions with weight/rate
             outStream << "\t" << "node [shape=box]" << std::endl;
             for (auto& trans : this->getImmediateTransitions()) {
-                outStream << "\t" << trans->getName() << " [fontcolor=white, style=filled, fillcolor=black, label=\"" << trans->getName() << "\"];" << std::endl;
+                outStream << "\t" << trans.getName() << " [fontcolor=white, style=filled, fillcolor=black, label=\"" << trans.getName() << "\"];" << std::endl;
             }
 
             for (auto& trans : this->getTimedTransitions()) {
-                outStream << "\t" << trans->getName() << " [label=\"" << trans->getName();
-                outStream << " (" << trans->getRate() << ")\"];" << std::endl;
+                outStream << "\t" << trans.getName() << " [label=\"" << trans.getName();
+                outStream << " (" << trans.getRate() << ")\"];" << std::endl;
             }
 
             // print arcs
             for (auto& trans : this->getImmediateTransitions()) {
 
-                for (auto &placePtr : trans->getInputPlaces()) {
-                    outStream << "\t" << placePtr->getName() << " -> " << trans->getName() << "[label=\"" <<
-                            trans->getInputArcMultiplicity(*placePtr);
+                for (auto &placePtr : trans.getInputPlaces()) {
+                    outStream << "\t" << placePtr->getName() << " -> " << trans.getName() << "[label=\"" <<
+                            trans.getInputArcMultiplicity(*placePtr);
                     outStream << "\"];" << std::endl;
                 }
 
-                for (auto &placePtr : trans->getInhibitionPlaces()) {
-                    outStream << "\t" << placePtr->getName() << " -> " << trans->getName() << "[arrowhead=\"dot\", label=\"" <<
-                            trans->getInhibitionArcMultiplicity(*placePtr);
+                for (auto &placePtr : trans.getInhibitionPlaces()) {
+                    outStream << "\t" << placePtr->getName() << " -> " << trans.getName() << "[arrowhead=\"dot\", label=\"" <<
+                            trans.getInhibitionArcMultiplicity(*placePtr);
                     outStream << "\"];" << std::endl;
                 }
 
-                for (auto &placePtr : trans->getOutputPlaces()) {
-                    outStream << "\t" << trans->getName() << " -> " << placePtr->getName() << "[label=\"" <<
-                            trans->getOutputArcMultiplicity(*placePtr);
+                for (auto &placePtr : trans.getOutputPlaces()) {
+                    outStream << "\t" << trans.getName() << " -> " << placePtr->getName() << "[label=\"" <<
+                            trans.getOutputArcMultiplicity(*placePtr);
                     outStream << "\"];" << std::endl;
                 }
             }
 
             for (auto& trans : this->getTimedTransitions()) {
-                for (auto &placePtr : trans->getInputPlaces()) {
-                    outStream << "\t" << placePtr->getName() << " -> " << trans->getName() << "[label=\"" <<
-                            trans->getInputArcMultiplicity(*placePtr);
+                for (auto &placePtr : trans.getInputPlaces()) {
+                    outStream << "\t" << placePtr->getName() << " -> " << trans.getName() << "[label=\"" <<
+                            trans.getInputArcMultiplicity(*placePtr);
                     outStream << "\"];" << std::endl;
                 }
 
-                for (auto &placePtr : trans->getInhibitionPlaces()) {
-                    outStream << "\t" << placePtr->getName() << " -> " << trans->getName() << "[arrowhead=\"dot\", label=\""  <<
-                              trans->getInhibitionArcMultiplicity(*placePtr);
+                for (auto &placePtr : trans.getInhibitionPlaces()) {
+                    outStream << "\t" << placePtr->getName() << " -> " << trans.getName() << "[arrowhead=\"dot\", label=\""  <<
+                              trans.getInhibitionArcMultiplicity(*placePtr);
                     outStream << "\"];" << std::endl;
                 }
 
-                for (auto &placePtr : trans->getOutputPlaces()) {
-                    outStream << "\t" << trans->getName() << " -> " << placePtr->getName() << "[label=\"" <<
-                              trans->getOutputArcMultiplicity(*placePtr);
+                for (auto &placePtr : trans.getOutputPlaces()) {
+                    outStream << "\t" << trans.getName() << " -> " << placePtr->getName() << "[label=\"" <<
+                              trans.getOutputArcMultiplicity(*placePtr);
                     outStream << "\"];" << std::endl;
                 }
             }
@@ -229,34 +246,34 @@ namespace storm {
             bool result = true;
 
             for (auto const& transition : this->getImmediateTransitions()) {
-                if (transition->getInputPlaces().empty() &&
-                    transition->getInhibitionPlaces().empty()) {
-                    STORM_PRINT_AND_LOG("transition \"" + transition->getName() + "\" has no input or inhibition place\n")
+                if (transition.getInputPlaces().empty() &&
+                    transition.getInhibitionPlaces().empty()) {
+                    STORM_PRINT_AND_LOG("transition \"" + transition.getName() + "\" has no input or inhibition place\n")
                     result = false;
                 }
 
-                if (transition->getOutputPlaces().empty()) {
-                    STORM_PRINT_AND_LOG("transition \"" + transition->getName() + "\" has no output place\n")
+                if (transition.getOutputPlaces().empty()) {
+                    STORM_PRINT_AND_LOG("transition \"" + transition.getName() + "\" has no output place\n")
                     result = false;
                 }
             }
 
             for (auto const& transition : this->getTimedTransitions()) {
-                if (transition->getInputPlaces().empty() &&
-                    transition->getInputPlaces().empty()) {
-                    STORM_PRINT_AND_LOG("transition \"" + transition->getName() + "\" has no input or inhibition place\n")
+                if (transition.getInputPlaces().empty() &&
+                    transition.getInputPlaces().empty()) {
+                    STORM_PRINT_AND_LOG("transition \"" + transition.getName() + "\" has no input or inhibition place\n")
                     result = false;
                 }
 
-                if (transition->getOutputPlaces().empty()) {
-                    STORM_PRINT_AND_LOG("transition \"" + transition->getName() + "\" has no output place\n")
+                if (transition.getOutputPlaces().empty()) {
+                    STORM_PRINT_AND_LOG("transition \"" + transition.getName() + "\" has no output place\n")
                     result = false;
                 }
             }
 
             //test if places exists in the gspn
             for (auto const& transition : this->getImmediateTransitions()) {
-                for (auto &placePtr : transition->getInputPlaces()) {
+                for (auto &placePtr : transition.getInputPlaces()) {
                     bool foundPlace = false;
                     for (auto const& place : places) {
                         if (place.getName() == placePtr->getName()) {
@@ -264,12 +281,12 @@ namespace storm {
                         }
                     }
                     if (!foundPlace) {
-                        STORM_PRINT_AND_LOG("input place \"" + placePtr->getName() + "\" of transition \"" + transition->getName() + "\" was not found \n")
+                        STORM_PRINT_AND_LOG("input place \"" + placePtr->getName() + "\" of transition \"" + transition.getName() + "\" was not found \n")
                         result = false;
                     }
                 }
 
-                for (auto &placePtr : transition->getInhibitionPlaces()) {
+                for (auto &placePtr : transition.getInhibitionPlaces()) {
                     bool foundPlace = false;
                     for (auto const& place : places) {
                         if (place.getName() == placePtr->getName()) {
@@ -277,12 +294,12 @@ namespace storm {
                         }
                     }
                     if (!foundPlace) {
-                        STORM_PRINT_AND_LOG("inhibition place \"" + placePtr->getName() + "\" of transition \"" + transition->getName() + "\" was not found \n")
+                        STORM_PRINT_AND_LOG("inhibition place \"" + placePtr->getName() + "\" of transition \"" + transition.getName() + "\" was not found \n")
                         result = false;
                     }
                 }
 
-                for (auto &placePtr : transition->getOutputPlaces()) {
+                for (auto &placePtr : transition.getOutputPlaces()) {
                     bool foundPlace = false;
                     for (auto const& place : places) {
                         if (place.getName() == placePtr->getName()) {
@@ -290,14 +307,14 @@ namespace storm {
                         }
                     }
                     if (!foundPlace) {
-                        STORM_PRINT_AND_LOG("output place \"" + placePtr->getName() + "\" of transition \"" + transition->getName() + "\" was not found \n")
+                        STORM_PRINT_AND_LOG("output place \"" + placePtr->getName() + "\" of transition \"" + transition.getName() + "\" was not found \n")
                         result = false;
                     }
                 }
             }
 
             for (auto const& transition : this->getTimedTransitions()) {
-                for (auto &placePtr : transition->getInputPlaces()) {
+                for (auto &placePtr : transition.getInputPlaces()) {
                     bool foundPlace = false;
                     for (auto const& place : places) {
                         if (place.getName() == placePtr->getName()) {
@@ -305,12 +322,12 @@ namespace storm {
                         }
                     }
                     if (!foundPlace) {
-                        STORM_PRINT_AND_LOG("input place \"" + placePtr->getName() + "\" of transition \"" + transition->getName() + "\" was not found \n")
+                        STORM_PRINT_AND_LOG("input place \"" + placePtr->getName() + "\" of transition \"" + transition.getName() + "\" was not found \n")
                         result = false;
                     }
                 }
 
-                for (auto &placePtr : transition->getInhibitionPlaces()) {
+                for (auto &placePtr : transition.getInhibitionPlaces()) {
                     bool foundPlace = false;
                     for (auto const& place : places) {
                         if (place.getName() == placePtr->getName()) {
@@ -318,12 +335,12 @@ namespace storm {
                         }
                     }
                     if (!foundPlace) {
-                        STORM_PRINT_AND_LOG("inhibition place \"" + placePtr->getName() + "\" of transition \"" + transition->getName() + "\" was not found \n")
+                        STORM_PRINT_AND_LOG("inhibition place \"" + placePtr->getName() + "\" of transition \"" + transition.getName() + "\" was not found \n")
                         result = false;
                     }
                 }
 
-                for (auto &placePtr : transition->getOutputPlaces()) {
+                for (auto &placePtr : transition.getOutputPlaces()) {
                     bool foundPlace = false;
                     for (auto const& place : places) {
                         if (place.getName() == placePtr->getName()) {
@@ -331,7 +348,7 @@ namespace storm {
                         }
                     }
                     if (!foundPlace) {
-                        STORM_PRINT_AND_LOG("output place \"" + placePtr->getName() + "\" of transition \"" + transition->getName() + "\" was not found \n")
+                        STORM_PRINT_AND_LOG("output place \"" + placePtr->getName() + "\" of transition \"" + transition.getName() + "\" was not found \n")
                         result = false;
                     }
                 }
@@ -361,16 +378,16 @@ namespace storm {
             }
             x = 1;
             for (auto& trans : timedTransitions) {
-                stream << space3 << "<transition name=\"" << trans->getName() << "\" ";
+                stream << space3 << "<transition name=\"" << trans.getName() << "\" ";
                 stream << "type=\"EXP\" ";
-                stream << "nservers-x=\"" << trans->getRate() << "\" ";
+                stream << "nservers-x=\"" << trans.getRate() << "\" ";
                 stream << "x=\"" << x << "\" ";
                 stream << "y=\"4\" ";
                 stream << "/>" << std::endl;
                 x = x + 3;
             }
             for (auto& trans : immediateTransitions) {
-                stream << space3 << "<transition name=\"" << trans->getName() << "\" ";
+                stream << space3 << "<transition name=\"" << trans.getName() << "\" ";
                 stream << "type=\"IMM\" ";
                 stream << "x=\"" << x << "\" ";
                 stream << "y=\"4\" ";
@@ -381,54 +398,54 @@ namespace storm {
 
             stream << space2 << "<edges>" << std::endl;
             for (auto& trans : timedTransitions) {
-                for (auto &placePtr : trans->getInputPlaces()) {
+                for (auto &placePtr : trans.getInputPlaces()) {
                     stream << space3 << "<arc ";
-                    stream << "head=\"" << trans->getName() << "\" ";
+                    stream << "head=\"" << trans.getName() << "\" ";
                     stream << "tail=\"" << placePtr->getName() << "\" ";
                     stream << "kind=\"INPUT\" ";
-                    stream << "mult=\"" << trans->getInputArcMultiplicity(*placePtr) << "\" ";
+                    stream << "mult=\"" << trans.getInputArcMultiplicity(*placePtr) << "\" ";
                     stream << "/>" << std::endl;
                 }
-                for (auto &placePtr : trans->getInhibitionPlaces()) {
+                for (auto &placePtr : trans.getInhibitionPlaces()) {
                     stream << space3 << "<arc ";
-                    stream << "head=\"" << trans->getName() << "\" ";
+                    stream << "head=\"" << trans.getName() << "\" ";
                     stream << "tail=\"" << placePtr->getName() << "\" ";
                     stream << "kind=\"INHIBITOR\" ";
-                    stream << "mult=\"" << trans->getInhibitionArcMultiplicity(*placePtr) << "\" ";
+                    stream << "mult=\"" << trans.getInhibitionArcMultiplicity(*placePtr) << "\" ";
                     stream << "/>" << std::endl;
                 }
-                for (auto &placePtr : trans->getOutputPlaces()) {
+                for (auto &placePtr : trans.getOutputPlaces()) {
                     stream << space3 << "<arc ";
                     stream << "head=\"" << placePtr->getName() << "\" ";
-                    stream << "tail=\"" << trans->getName() << "\" ";
+                    stream << "tail=\"" << trans.getName() << "\" ";
                     stream << "kind=\"OUTPUT\" ";
-                    stream << "mult=\"" << trans->getOutputArcMultiplicity(*placePtr) << "\" ";
+                    stream << "mult=\"" << trans.getOutputArcMultiplicity(*placePtr) << "\" ";
                     stream << "/>" << std::endl;
                 }
             }
             for (auto& trans : immediateTransitions) {
-                for (auto &placePtr : trans->getInputPlaces()) {
+                for (auto &placePtr : trans.getInputPlaces()) {
                     stream << space3 << "<arc ";
-                    stream << "head=\"" << trans->getName() << "\" ";
+                    stream << "head=\"" << trans.getName() << "\" ";
                     stream << "tail=\"" << placePtr->getName() << "\" ";
                     stream << "kind=\"INPUT\" ";
-                    stream << "mult=\"" << trans->getInputArcMultiplicity(*placePtr) << "\" ";
+                    stream << "mult=\"" << trans.getInputArcMultiplicity(*placePtr) << "\" ";
                     stream << "/>" << std::endl;
                 }
-                for (auto &placePtr : trans->getInhibitionPlaces()) {
+                for (auto &placePtr : trans.getInhibitionPlaces()) {
                     stream << space3 << "<arc ";
-                    stream << "head=\"" << trans->getName() << "\" ";
+                    stream << "head=\"" << trans.getName() << "\" ";
                     stream << "tail=\"" << placePtr->getName() << "\" ";
                     stream << "kind=\"INHIBITOR\" ";
-                    stream << "mult=\"" << trans->getInhibitionArcMultiplicity(*placePtr) << "\" ";
+                    stream << "mult=\"" << trans.getInhibitionArcMultiplicity(*placePtr) << "\" ";
                     stream << "/>" << std::endl;
                 }
-                for (auto &placePtr : trans->getOutputPlaces()) {
+                for (auto &placePtr : trans.getOutputPlaces()) {
                     stream << space3 << "<arc ";
                     stream << "head=\"" << placePtr->getName() << "\" ";
-                    stream << "tail=\"" << trans->getName() << "\" ";
+                    stream << "tail=\"" << trans.getName() << "\" ";
                     stream << "kind=\"OUTPUT\" ";
-                    stream << "mult=\"" << trans->getOutputArcMultiplicity(*placePtr) << "\" ";
+                    stream << "mult=\"" << trans.getOutputArcMultiplicity(*placePtr) << "\" ";
                     stream << "/>" << std::endl;
                 }
             }
@@ -457,9 +474,9 @@ namespace storm {
 
             // add immediate transitions
             for (const auto &trans : immediateTransitions) {
-                stream << space2 << "<transition id=\"" << trans->getName() << "\">" << std::endl;
+                stream << space2 << "<transition id=\"" << trans.getName() << "\">" << std::endl;
                 stream << space3 << "<rate>" << std::endl;
-                stream << space4 << "<value>" << trans->getWeight() << "</value>" << std::endl;
+                stream << space4 << "<value>" << trans.getWeight() << "</value>" << std::endl;
                 stream << space3 << "</rate>" << std::endl;
                 stream << space3 << "<timed>" << std::endl;
                 stream << space4 << "<value>false</value>" << std::endl;
@@ -469,9 +486,9 @@ namespace storm {
 
             // add timed transitions
             for (const auto &trans : timedTransitions) {
-                stream << space2 << "<transition id=\"" << trans->getName() << "\">" << std::endl;
+                stream << space2 << "<transition id=\"" << trans.getName() << "\">" << std::endl;
                 stream << space3 << "<rate>" << std::endl;
-                stream << space4 << "<value>" << trans->getRate() << "</value>" << std::endl;
+                stream << space4 << "<value>" << trans.getRate() << "</value>" << std::endl;
                 stream << space3 << "</rate>" << std::endl;
                 stream << space3 << "<timed>" << std::endl;
                 stream << space4 << "<value>true</value>" << std::endl;
@@ -483,15 +500,15 @@ namespace storm {
             // add arcs for immediate transitions
             for (const auto &trans : immediateTransitions) {
                 // add input arcs
-                for (auto &placePtr : trans->getInputPlaces()) {
+                for (auto &placePtr : trans.getInputPlaces()) {
                     stream << space2 << "<arc ";
                     stream << "id=\"arc" << i++ << "\" ";
                     stream << "source=\"" << placePtr->getName() << "\" ";
-                    stream << "target=\"" << trans->getName() << "\" ";
+                    stream << "target=\"" << trans.getName() << "\" ";
                     stream << ">" << std::endl;
 
                     stream << space3 << "<inscription>" << std::endl;
-                    stream << space4 << "<value>Default," << trans->getInputArcMultiplicity(*placePtr) << "</value>" << std::endl;
+                    stream << space4 << "<value>Default," << trans.getInputArcMultiplicity(*placePtr) << "</value>" << std::endl;
                     stream << space3 << "</inscription>" << std::endl;
 
                     stream << space3 << "<type value=\"normal\" />" << std::endl;
@@ -500,15 +517,15 @@ namespace storm {
                 }
 
                 // add inhibition arcs
-                for (auto &placePtr : trans->getInhibitionPlaces()) {
+                for (auto &placePtr : trans.getInhibitionPlaces()) {
                     stream << space2 << "<arc ";
                     stream << "id=\"arc" << i++ << "\" ";
                     stream << "source=\"" << placePtr->getName() << "\" ";
-                    stream << "target=\"" << trans->getName() << "\" ";
+                    stream << "target=\"" << trans.getName() << "\" ";
                     stream << ">" << std::endl;
 
                     stream << space3 << "<inscription>" << std::endl;
-                    stream << space4 << "<value>Default," << trans->getInputArcMultiplicity(*placePtr) << "</value>" << std::endl;
+                    stream << space4 << "<value>Default," << trans.getInputArcMultiplicity(*placePtr) << "</value>" << std::endl;
                     stream << space3 << "</inscription>" << std::endl;
 
                     stream << space3 << "<type value=\"inhibition\" />" << std::endl;
@@ -517,15 +534,15 @@ namespace storm {
                 }
 
                 // add output arcs
-                for (auto &placePtr : trans->getOutputPlaces()) {
+                for (auto &placePtr : trans.getOutputPlaces()) {
                     stream << space2 << "<arc ";
                     stream << "id=\"arc" << i++ << "\" ";
-                    stream << "source=\"" << trans->getName() << "\" ";
+                    stream << "source=\"" << trans.getName() << "\" ";
                     stream << "target=\"" << placePtr->getName() << "\" ";
                     stream << ">" << std::endl;
 
                     stream << space3 << "<inscription>" << std::endl;
-                    stream << space4 << "<value>Default," << trans->getInputArcMultiplicity(*placePtr) << "</value>" << std::endl;
+                    stream << space4 << "<value>Default," << trans.getInputArcMultiplicity(*placePtr) << "</value>" << std::endl;
                     stream << space3 << "</inscription>" << std::endl;
 
                     stream << space3 << "<type value=\"normal\" />" << std::endl;

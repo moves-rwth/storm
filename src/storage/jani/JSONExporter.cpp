@@ -215,7 +215,7 @@ namespace storm {
                     
                 } else {
                     // TODO add checks
-                    opDecl["op"] = "Pmin";
+                    opDecl["op"] = "Emin";
                     opDecl["reach"] = boost::any_cast<modernjson::json>(f.getSubformula().accept(*this, boost::none));
                 }
                 opDecl["exp"] = modernjson::json(1);
@@ -357,7 +357,7 @@ namespace storm {
                     
                 } else {
                     // TODO add checks
-                    opDecl["op"] = "Pmin";
+                    opDecl["op"] = "Emin";
                     opDecl["reach"] = boost::any_cast<modernjson::json>(f.getSubformula().accept(*this, boost::none));
                 }
                 opDecl["exp"] = f.hasRewardModelName() ? f.getRewardModelName() : "DEFAULT";

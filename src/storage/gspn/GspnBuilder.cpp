@@ -3,84 +3,133 @@
 
 #include "src/utility/macros.h"
 #include "src/exceptions/IllegalFunctionCallException.h"
+#include "src/exceptions/InvalidArgumentException.h"
 #include "Place.h"
 
 namespace storm {
     namespace gspn {
-        uint_fast64_t GspnBuilder::addPlace(int_fast64_t const& capacity, uint_fast64_t const& initialTokens) {
+        void GspnBuilder::setGspnName(std::string const& name) {
+            gspnName = name;
+        }
+        
+        uint_fast64_t GspnBuilder::addPlace(int_fast64_t const& capacity, uint_fast64_t const& initialTokens, std::string const& name) {
             auto place = storm::gspn::Place();
             place.setCapacity(capacity);
-            place.setID(nextStateID);
+            auto newId = places.size();
+            place.setID(newId);
             place.setNumberOfInitialTokens(initialTokens);
-            gspn.addPlace(place);
-            return nextStateID++;
+            places.push_back(place);
+            return newId;
         }
 
-        uint_fast64_t GspnBuilder::addImmediateTransition(uint_fast64_t const& priority, double const& weight) {
+        uint_fast64_t GspnBuilder::addImmediateTransition(uint_fast64_t const& priority, double const& weight, std::string const& name) {
             auto trans = storm::gspn::ImmediateTransition<double>();
-            trans.setName(std::to_string(nextTransitionID));
+            auto newId = GSPN::immediateTransitionIdToTransitionId(immediateTransitions.size());
+            trans.setName(std::to_string(newId));
             trans.setPriority(priority);
             trans.setWeight(weight);
-            trans.setID(nextTransitionID);
-            gspn.addImmediateTransition(trans);
-            return nextTransitionID++;
+            trans.setID(newId);
+            immediateTransitions.push_back(trans);
+            return newId;
+            
         }
 
-        uint_fast64_t GspnBuilder::addTimedTransition(uint_fast64_t const &priority, double const &rate) {
+        uint_fast64_t GspnBuilder::addTimedTransition(uint_fast64_t const &priority, double const &rate, std::string const& name) {
             auto trans = storm::gspn::TimedTransition<double>();
-            trans.setName(std::to_string(nextTransitionID));
+            auto newId = GSPN::timedTransitionIdToTransitionId(timedTransitions.size());
+            trans.setName(std::to_string(newId));
             trans.setPriority(priority);
             trans.setRate(rate);
-            trans.setID(nextTransitionID);
-            gspn.addTimedTransition(trans);
-            return nextTransitionID++;
+            trans.setID(newId);
+            timedTransitions.push_back(trans);
+            return newId;
         }
+        
 
         void GspnBuilder::addInputArc(uint_fast64_t const &from, uint_fast64_t const &to,
                                       uint_fast64_t const &multiplicity) {
-            auto transPair = gspn.getTransition(std::to_string(to));
-            if (!std::get<0>(transPair)) {
-                STORM_LOG_THROW(false, storm::exceptions::IllegalFunctionCallException, "The transition with the name \"" + std::to_string(to) + "\" does not exist.");
-            }
-
-            auto placePair = gspn.getPlace(from);
-            if (!std::get<0>(placePair)) {
-                STORM_LOG_THROW(false, storm::exceptions::IllegalFunctionCallException, "The place with the id \"" + std::to_string(from) + "\" does not exist.");
-            }
-
-            std::get<1>(transPair)->setInputArcMultiplicity(*std::get<1>(placePair), multiplicity);
+            STORM_LOG_THROW(from < places.size(), storm::exceptions::InvalidArgumentException, "No place with id " << from << " known.");
+            auto place = places.at(from);
+            getTransition(to).setInputArcMultiplicity(place, multiplicity);
+        }
+        
+        void GspnBuilder::addInputArc(std::string const& from, std::string const& to, uint64_t multiplicity) {
+            STORM_LOG_THROW(placeNames.count(from) != 0, storm::exceptions::InvalidArgumentException, "Could not find a place with name '" << from << "'");
+            STORM_LOG_THROW(transitionNames.count(to) != 0, storm::exceptions::InvalidArgumentException, "Could not find a transition with name << '" << to << "'");
+            addInputArc(placeNames.at(from), transitionNames.at(to));
         }
 
         void GspnBuilder::addInhibitionArc(uint_fast64_t const& from, uint_fast64_t const& to, uint_fast64_t const& multiplicity) {
-            auto transPair = gspn.getTransition(std::to_string(to));
-            if (!std::get<0>(transPair)) {
-                STORM_LOG_THROW(false, storm::exceptions::IllegalFunctionCallException, "The transition with the name \"" + std::to_string(to) + "\" does not exist.");
-            }
+            STORM_LOG_THROW(from < places.size(), storm::exceptions::InvalidArgumentException, "No place with id " << from << " known.");
+            auto place = places.at(from);
 
-            auto placePair = gspn.getPlace(from);
-            if (!std::get<0>(placePair)) {
-                STORM_LOG_THROW(false, storm::exceptions::IllegalFunctionCallException, "The place with the id \"" + std::to_string(from) + "\" does not exist.");
-            }
-
-            std::get<1>(transPair)->setInhibitionArcMultiplicity(*std::get<1>(placePair), multiplicity);
+            getTransition(to).setInhibitionArcMultiplicity(place, multiplicity);
+        }
+        
+        void GspnBuilder::addInhibitionArc(std::string const& from, std::string const& to, uint64_t multiplicity) {
+            STORM_LOG_THROW(placeNames.count(from) != 0, storm::exceptions::InvalidArgumentException, "Could not find a place with name '" << from << "'");
+            STORM_LOG_THROW(transitionNames.count(to) != 0, storm::exceptions::InvalidArgumentException, "Could not find a transition with name << '" << to << "'");
+            addInhibitionArc(placeNames.at(from), transitionNames.at(to));
         }
 
         void GspnBuilder::addOutputArc(uint_fast64_t const& from, uint_fast64_t const& to, uint_fast64_t const& multiplicity) {
-            auto transPair = gspn.getTransition(std::to_string(from));
-            if (!std::get<0>(transPair)) {
-                STORM_LOG_THROW(false, storm::exceptions::IllegalFunctionCallException, "The transition with the name \"" + std::to_string(to) + "\" does not exist.");
-            }
-
-            auto placePair = gspn.getPlace(to);
-            if (!std::get<0>(placePair)) {
-                STORM_LOG_THROW(false, storm::exceptions::IllegalFunctionCallException, "The place with the id \"" + std::to_string(from) + "\" does not exist.");
-            }
-
-            std::get<1>(transPair)->setOutputArcMultiplicity(*std::get<1>(placePair), multiplicity);
+            STORM_LOG_THROW(to < places.size(), storm::exceptions::InvalidArgumentException, "No place with id " << to << " known.");
+            auto place = places.at(to);
+            getTransition(from).setOutputArcMultiplicity(place, multiplicity);
         }
+        
+        void GspnBuilder::addOutputArc(std::string const& from, std::string const& to, uint64_t multiplicity) {
+            STORM_LOG_THROW(placeNames.count(to) != 0, storm::exceptions::InvalidArgumentException, "Could not find a place with name '" << to << "'");
+            STORM_LOG_THROW(transitionNames.count(from) != 0, storm::exceptions::InvalidArgumentException, "Could not find a transition with name << '" << from << "'");
+            addOutputArc(transitionNames.at(from), placeNames.at(to));
+        }
+        
+        Transition& GspnBuilder::getTransition(uint64_t id) {
+            if (isTimedTransitionId(id)) {
+                return timedTransitions.at(id);
+            } else if(isImmediateTransitionId(id)) {
+                return immediateTransitions.at(id);
+            } else {
+                STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "No transitition with id '" << id << "' known.");
+            }
+        }
+        
+        void GspnBuilder::addNormalArc(std::string const& from, std::string const& to, uint64_t multiplicity) {
+            if (placeNames.count(from) > 0 && transitionNames.count(to) > 0) {
+                addInputArc(placeNames.at(from), transitionNames.at(to), multiplicity);
+            } else if (transitionNames.count(from) > 0 && placeNames.count(to) > 0) {
+                addOutputArc(transitionNames.at(from), placeNames.at(to), multiplicity);
+            } else {
+                // No suitable combination. Provide error message:
+                if (placeNames.count(from) > 0) {
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expected a transition with name " << to << " for arc from '" << from <<  "' to '" << to << "'.");
+                }
+                if (transitionNames.count(from) > 0) {
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expected a place named " << to << " for arc from '" << from << "' to '" << to << "'.");
+                }
+                STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expected a place named " << from << " for arc from '" << from << "' to '" << to << "'.");
+                
+            }
+        }
+        
+        bool GspnBuilder::isTimedTransitionId(uint64_t tid) const {
+            if (tid >> 63) {
+                return GSPN::transitionIdToTimedTransitionId(tid) < timedTransitions.size();
+            }
+            return false;
+        }
+        
+        bool GspnBuilder::isImmediateTransitionId(uint64_t tid) const {
+            if (tid >> 63) {
+                return false;
+            }
+            return GSPN::transitionIdToImmediateTransitionId(tid) < immediateTransitions.size();
+        }
+        
+        
 
-        storm::gspn::GSPN const& GspnBuilder::buildGspn() const {
-            return gspn;
+        storm::gspn::GSPN* GspnBuilder::buildGspn() const {
+            return new GSPN(gspnName, places, immediateTransitions, timedTransitions);
         }
     }
 }

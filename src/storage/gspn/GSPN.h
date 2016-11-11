@@ -16,31 +16,19 @@ namespace storm {
         // Stores a GSPN
         class GSPN {
         public:
+            static uint64_t timedTransitionIdToTransitionId(uint64_t);
+            static uint64_t immediateTransitionIdToTransitionId(uint64_t);
+            static uint64_t transitionIdToTimedTransitionId(uint64_t);
+            static uint64_t transitionIdToImmediateTransitionId(uint64_t);
+            
+            
             // Later, the rates and probabilities type should become a template, for now, let it be doubles.
             typedef double RateType;
             typedef double WeightType;
-
-            /*!
-             * Adds an immediate transition to the gspn.
-             *
-             * @param transition The transition which is added to the gspn.
-             */
-            void addImmediateTransition(ImmediateTransition<WeightType> const& transition);
-
-            /*!
-             * Adds a timed transition to the gspn.
-             *
-             * @param transition The transition which is added to the gspn.
-             */
-            void addTimedTransition(TimedTransition<RateType> const& transition);
-
-            /*!
-             * Adds a place to the gspn.
-             *
-             * @param place The place which is added to the gspn.
-             */
-            void addPlace(Place const& place);
-
+            
+            
+            GSPN(std::string const& name, std::vector<Place> const& places, std::vector<ImmediateTransition<WeightType>> const& itransitions, std::vector<TimedTransition<RateType>> const& ttransitions);
+            
             /*!
              * Returns the number of places in this gspn.
              *
@@ -53,14 +41,14 @@ namespace storm {
              *
              * @return The vector of timed transitions.
              */
-            std::vector<std::shared_ptr<TimedTransition<GSPN::RateType>>> const& getTimedTransitions() const;
+            std::vector<TimedTransition<GSPN::RateType>> const& getTimedTransitions() const;
 
             /*!
              * Returns the vector of immediate transitions in this gspn.
              *
              * @return The vector of immediate tansitions.
              */
-            std::vector<std::shared_ptr<ImmediateTransition<GSPN::WeightType>>> const& getImmediateTransitions() const;
+            std::vector<ImmediateTransition<GSPN::WeightType>> const& getImmediateTransitions() const;
 
             /*!
              * Returns the places of this gspn
@@ -83,38 +71,29 @@ namespace storm {
              *         If the first element is true, then the second element is the wanted place.
              *         If the first element is false, then the second element is not defined.
              */
-            std::pair<bool, storm::gspn::Place const*> getPlace(uint_fast64_t const& id) const;
-
-            std::pair<bool, storm::gspn::Place*> getPlace(std::string const& id);
-            std::pair<bool, storm::gspn::Place const*> getPlace(std::string const& id) const;
+            storm::gspn::Place const* getPlace(uint64_t id) const;
+            storm::gspn::Place const* getPlace(std::string const& name) const;
+            
             /*!
              * Returns the timed transition with the corresponding id.
              *
              * @param id The ID of the timed transition.
-             * @return The first element is true if the transition was found.
-             *         If the first element is true, then the second element is the wanted transition.
-             *         If the first element is false, then the second element is the nullptr.
              */
-            std::pair<bool, std::shared_ptr<storm::gspn::TimedTransition<GSPN::RateType>> const> getTimedTransition(std::string const& id) const;
+            storm::gspn::TimedTransition<GSPN::RateType> const* getTimedTransition(std::string const& id) const;
 
             /*!
              * Returns the immediate transition with the corresponding id.
              *
              * @param id The ID of the timed transition.
-             * @return The first element is true if the transition was found.
-             *         If the first element is true, then the second element is the wanted transition.
              *         If the first element is false, then the second element is the nullptr.
              */
-            std::pair<bool, std::shared_ptr<storm::gspn::ImmediateTransition<GSPN::WeightType>> const> getImmediateTransition(std::string const& id) const;
+            storm::gspn::ImmediateTransition<GSPN::WeightType> const* getImmediateTransition(std::string const& id) const;
 
             /*!
              * Returns the transition with the corresponding id.
              *
-             * @param id The ID of the transition.
-             * @return Pointer to the corresponding transition or nullptr if the place does not exists.
              */
-            //            std::shared_ptr<storm::gspn::Transition> getTransition(std::string const& id) const;
-            std::pair<bool, std::shared_ptr<storm::gspn::Transition> const> getTransition(std::string const& id) const;
+            storm::gspn::Transition const* getTransition(std::string const& id) const;
 
             /*!
              * Write the gspn in a dot(graphviz) configuration.
@@ -156,6 +135,9 @@ namespace storm {
             // TODO doc
             void toPnml(std::ostream &stream) const;
         private:
+            storm::gspn::Place* getPlace(uint64_t id);
+            storm::gspn::Place* getPlace(std::string const& name);
+            
             /*!
              * Test
              *  - if places are unique (ids and names)
@@ -173,14 +155,16 @@ namespace storm {
              */
             bool testTransitions() const;
 
-            // set containing all immediate transitions
-            std::vector<std::shared_ptr<storm::gspn::ImmediateTransition<WeightType>>> immediateTransitions;
-
-            // set containing all timed transitions
-            std::vector<std::shared_ptr<storm::gspn::TimedTransition<RateType>>> timedTransitions;
-
+            
             // set containing all places
             std::vector<storm::gspn::Place> places;
+            
+            // set containing all immediate transitions
+            std::vector<storm::gspn::ImmediateTransition<WeightType>> immediateTransitions;
+
+            // set containing all timed transitions
+            std::vector<storm::gspn::TimedTransition<RateType>> timedTransitions;
+
 
             // name of the gspn
             std::string name;

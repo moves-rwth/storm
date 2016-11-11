@@ -18,7 +18,7 @@ namespace storm {
                 }
             }
             
-            bool setIgnoreWeights(bool ignore = true)  {
+            void setIgnoreWeights(bool ignore = true)  {
                 ignoreWeights = ignore;
             }
             
@@ -61,17 +61,17 @@ namespace storm {
                 
                 storm::expressions::Expression guard = expressionManager->boolean(true);
                 for (auto const& trans : gspn.getImmediateTransitions()) {
-                    if (ignoreWeights || trans->noWeightAttached()) {
+                    if (ignoreWeights || trans.noWeightAttached()) {
                         std::vector<storm::jani::Assignment> assignments;
-                        for (auto const& inPlace : trans->getInputPlaces()) {
-                            guard = guard && (vars[(*inPlace).getID()]->getExpressionVariable() > trans->getInputArcMultiplicity(*inPlace));
-                            assignments.emplace_back( *vars[(*inPlace).getID()], (vars[(*inPlace).getID()]->getExpressionVariable() - trans->getInputArcMultiplicity(*inPlace)) );
+                        for (auto const& inPlace : trans.getInputPlaces()) {
+                            guard = guard && (vars[(*inPlace).getID()]->getExpressionVariable() > trans.getInputArcMultiplicity(*inPlace));
+                            assignments.emplace_back( *vars[(*inPlace).getID()], (vars[(*inPlace).getID()]->getExpressionVariable() - trans.getInputArcMultiplicity(*inPlace)) );
                         }
-                        for (auto const& inhibPlace : trans->getInhibitionPlaces()) {
-                            guard = guard && (vars[(*inhibPlace).getID()]->getExpressionVariable() > trans->getInhibitionArcMultiplicity(*inhibPlace));
+                        for (auto const& inhibPlace : trans.getInhibitionPlaces()) {
+                            guard = guard && (vars[(*inhibPlace).getID()]->getExpressionVariable() > trans.getInhibitionArcMultiplicity(*inhibPlace));
                         }
-                        for (auto const& outputPlace : trans->getOutputPlaces()) {
-                            assignments.emplace_back( *vars[(*outputPlace).getID()], (vars[(*outputPlace).getID()]->getExpressionVariable() + trans->getOutputArcMultiplicity(*outputPlace)) );
+                        for (auto const& outputPlace : trans.getOutputPlaces()) {
+                            assignments.emplace_back( *vars[(*outputPlace).getID()], (vars[(*outputPlace).getID()]->getExpressionVariable() + trans.getOutputArcMultiplicity(*outputPlace)) );
                         }
                         storm::jani::OrderedAssignments oa(assignments);
                         storm::jani::EdgeDestination dest(locId, expressionManager->integer(1), oa);
@@ -89,41 +89,41 @@ namespace storm {
                     // Compute enabled weight expression.
                     storm::expressions::Expression totalWeight = expressionManager->rational(0.0);
                     for (auto const& trans : gspn.getImmediateTransitions()) {
-                        if (trans->noWeightAttached()) {
+                        if (trans.noWeightAttached()) {
                             continue;
                         }
                         storm::expressions::Expression destguard = expressionManager->boolean(true);
-                        for (auto const& inPlace : trans->getInputPlaces()) {
-                            destguard = destguard && (vars[(*inPlace).getID()]->getExpressionVariable() > trans->getInputArcMultiplicity(*inPlace));
+                        for (auto const& inPlace : trans.getInputPlaces()) {
+                            destguard = destguard && (vars[(*inPlace).getID()]->getExpressionVariable() > trans.getInputArcMultiplicity(*inPlace));
                         }
-                        for (auto const& inhibPlace : trans->getInhibitionPlaces()) {
-                            destguard = destguard && (vars[(*inhibPlace).getID()]->getExpressionVariable() > trans->getInhibitionArcMultiplicity(*inhibPlace));
+                        for (auto const& inhibPlace : trans.getInhibitionPlaces()) {
+                            destguard = destguard && (vars[(*inhibPlace).getID()]->getExpressionVariable() > trans.getInhibitionArcMultiplicity(*inhibPlace));
                         }
-                        totalWeight = totalWeight + storm::expressions::ite(destguard, expressionManager->rational(trans->getWeight()), expressionManager->rational(0.0));
+                        totalWeight = totalWeight + storm::expressions::ite(destguard, expressionManager->rational(trans.getWeight()), expressionManager->rational(0.0));
                         
                     }
                     totalWeight = totalWeight.simplify();
                     
                     for (auto const& trans : gspn.getImmediateTransitions()) {
-                        if (trans->noWeightAttached()) {
+                        if (trans.noWeightAttached()) {
                             continue;
                         }
                         storm::expressions::Expression destguard = expressionManager->boolean(true);
                         std::vector<storm::jani::Assignment> assignments;
-                        for (auto const& inPlace : trans->getInputPlaces()) {
-                            destguard = destguard && (vars[(*inPlace).getID()]->getExpressionVariable() > trans->getInputArcMultiplicity(*inPlace));
-                            assignments.emplace_back( *vars[(*inPlace).getID()], (vars[(*inPlace).getID()]->getExpressionVariable() - trans->getInputArcMultiplicity(*inPlace)) );
+                        for (auto const& inPlace : trans.getInputPlaces()) {
+                            destguard = destguard && (vars[(*inPlace).getID()]->getExpressionVariable() > trans.getInputArcMultiplicity(*inPlace));
+                            assignments.emplace_back( *vars[(*inPlace).getID()], (vars[(*inPlace).getID()]->getExpressionVariable() - trans.getInputArcMultiplicity(*inPlace)) );
                         }
-                        for (auto const& inhibPlace : trans->getInhibitionPlaces()) {
-                            destguard = destguard && (vars[(*inhibPlace).getID()]->getExpressionVariable() > trans->getInhibitionArcMultiplicity(*inhibPlace));
+                        for (auto const& inhibPlace : trans.getInhibitionPlaces()) {
+                            destguard = destguard && (vars[(*inhibPlace).getID()]->getExpressionVariable() > trans.getInhibitionArcMultiplicity(*inhibPlace));
                         }
-                        for (auto const& outputPlace : trans->getOutputPlaces()) {
-                            assignments.emplace_back( *vars[(*outputPlace).getID()], (vars[(*outputPlace).getID()]->getExpressionVariable() + trans->getOutputArcMultiplicity(*outputPlace)) );
+                        for (auto const& outputPlace : trans.getOutputPlaces()) {
+                            assignments.emplace_back( *vars[(*outputPlace).getID()], (vars[(*outputPlace).getID()]->getExpressionVariable() + trans.getOutputArcMultiplicity(*outputPlace)) );
                         }
                         destguard = destguard.simplify();
                         guard = guard || destguard;
                         storm::jani::OrderedAssignments oa(assignments);
-                        storm::jani::EdgeDestination dest(locId, storm::expressions::ite(destguard, (expressionManager->rational(trans->getWeight()) / totalWeight), expressionManager->rational(0.0)), oa);
+                        storm::jani::EdgeDestination dest(locId, storm::expressions::ite(destguard, (expressionManager->rational(trans.getWeight()) / totalWeight), expressionManager->rational(0.0)), oa);
                         weightedDestinations.push_back(dest);
                     }
                     storm::jani::Edge e(locId, storm::jani::Model::SILENT_ACTION_INDEX, boost::none, guard.simplify(), weightedDestinations);
@@ -133,19 +133,19 @@ namespace storm {
                     storm::expressions::Expression guard = expressionManager->boolean(true);
                     
                     std::vector<storm::jani::Assignment> assignments;
-                    for (auto const& inPlace : trans->getInputPlaces()) {
-                        guard = guard && (vars[(*inPlace).getID()]->getExpressionVariable() > trans->getInputArcMultiplicity(*inPlace));
-                        assignments.emplace_back( *vars[(*inPlace).getID()], (vars[(*inPlace).getID()]->getExpressionVariable() - trans->getInputArcMultiplicity(*inPlace)) );
+                    for (auto const& inPlace : trans.getInputPlaces()) {
+                        guard = guard && (vars[(*inPlace).getID()]->getExpressionVariable() > trans.getInputArcMultiplicity(*inPlace));
+                        assignments.emplace_back( *vars[(*inPlace).getID()], (vars[(*inPlace).getID()]->getExpressionVariable() - trans.getInputArcMultiplicity(*inPlace)) );
                     }
-                    for (auto const& inhibPlace : trans->getInhibitionPlaces()) {
-                        guard = guard && (vars[(*inhibPlace).getID()]->getExpressionVariable() > trans->getInhibitionArcMultiplicity(*inhibPlace));
+                    for (auto const& inhibPlace : trans.getInhibitionPlaces()) {
+                        guard = guard && (vars[(*inhibPlace).getID()]->getExpressionVariable() > trans.getInhibitionArcMultiplicity(*inhibPlace));
                     }
-                    for (auto const& outputPlace : trans->getOutputPlaces()) {
-                        assignments.emplace_back( *vars[(*outputPlace).getID()], (vars[(*outputPlace).getID()]->getExpressionVariable() + trans->getOutputArcMultiplicity(*outputPlace)) );
+                    for (auto const& outputPlace : trans.getOutputPlaces()) {
+                        assignments.emplace_back( *vars[(*outputPlace).getID()], (vars[(*outputPlace).getID()]->getExpressionVariable() + trans.getOutputArcMultiplicity(*outputPlace)) );
                     }
                     storm::jani::OrderedAssignments oa(assignments);
                     storm::jani::EdgeDestination dest(locId, expressionManager->integer(1), oa);
-                    storm::jani::Edge e(locId, storm::jani::Model::SILENT_ACTION_INDEX, expressionManager->rational(trans->getRate()), guard, {dest});
+                    storm::jani::Edge e(locId, storm::jani::Model::SILENT_ACTION_INDEX, expressionManager->rational(trans.getRate()), guard, {dest});
                     automaton.addEdge(e);
                 }
             }

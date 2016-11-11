@@ -30,7 +30,7 @@ namespace storm {
             /**
              * True iff no weight is attached.
              */
-            bool noWeightAttached() {
+            bool noWeightAttached() const {
                 return storm::utility::isZero(weight);
             }
         private:
