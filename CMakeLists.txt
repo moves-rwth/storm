@@ -30,7 +30,7 @@ option(STORM_USE_COTIRE "Sets whether Cotire should be used (for building precom
 option(LINK_LIBCXXABI "Sets whether libc++abi should be linked." OFF)
 option(USE_LIBCXX "Sets whether the standard library is libc++." OFF)
 option(USE_CARL "Sets whether carl should be included." ON)
-option(USE_XERCES "Sets whether xerces should be used." OFF)
+option(XML_SUPPORT "Sets whether xml based format parsing should be included." ON)
 option(FORCE_COLOR "Force color output" OFF)
 mark_as_advanced(FORCE_COLOR)
 option(STORM_PYTHON "Builds the API for Python" OFF)
@@ -45,7 +45,8 @@ set(CUDA_ROOT "" CACHE STRING "The hint to the root directory of CUDA (optional)
 set(MSAT_ROOT "" CACHE STRING "The hint to the root directory of MathSAT (optional).")
 set(ADDITIONAL_INCLUDE_DIRS "" CACHE STRING "Additional directories added to the include directories.")
 set(ADDITIONAL_LINK_DIRS "" CACHE STRING "Additional directories added to the link directories.")
-
+set(USE_XERCES ${XML_SUPPORT})
+mark_as_advanced(USE_XERCES)
 
 # Set some CMAKE Variables as advanced
 mark_as_advanced(CMAKE_OSX_ARCHITECTURES)
