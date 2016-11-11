@@ -46,6 +46,8 @@
 
 #cmakedefine STORM_USE_CLN_NUMBERS
 
+#cmakedefine USE_XERCES
+
 // Whether smtrat is available and to be used. 
 #cmakedefine STORM_HAVE_SMTRAT
 
