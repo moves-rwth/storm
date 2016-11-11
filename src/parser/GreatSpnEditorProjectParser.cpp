@@ -1,5 +1,5 @@
 #include "GreatSpnEditorProjectParser.h"
-
+#ifdef USE_XERCES
 
 #include <iostream>
 
@@ -339,5 +339,4 @@ namespace storm {
         
     }
 }
-
-
+#endif

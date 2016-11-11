@@ -1,5 +1,7 @@
 #pragma once
 
+#include "storm-config.h"
+#ifdef USE_XERCES
 #include <string>
 
 #include <xercesc/parsers/XercesDOMParser.hpp>
@@ -40,3 +42,4 @@ namespace storm {
         };
     }
 }
+#endif

@@ -1,5 +1,6 @@
-#include "src/parser/PnmlParser.h"
 
+#include "src/parser/PnmlParser.h"
+#ifdef USE_XERCES
 #include <iostream>
 
 #include "src/adapters/XercesAdapter.h"
@@ -442,3 +443,4 @@ namespace storm {
     }
 }
 
+#endif
