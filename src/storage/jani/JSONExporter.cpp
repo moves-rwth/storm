@@ -60,11 +60,7 @@ namespace storm {
                 for (auto const& subcomp : composition.getSubcompositions()) {
                     modernjson::json elemDecl;
                     if (subcomp->isAutomaton()) {
-                        modernjson::json autDecl;
-                        autDecl["automaton"] = std::static_pointer_cast<AutomatonComposition>(subcomp)->getAutomatonName();
-                        std::vector<modernjson::json> elements;
-                        elements.push_back(autDecl);
-                        elemDecl["elements"] = elements;
+                        elemDecl["automaton"] = std::static_pointer_cast<AutomatonComposition>(subcomp)->getAutomatonName();
                     } else {
                         STORM_LOG_THROW(allowRecursion, storm::exceptions::InvalidJaniException, "Nesting composition " << *subcomp << " is not supported by JANI.");
                         elemDecl = boost::any_cast<modernjson::json>(subcomp->accept(*this, boost::none));
@@ -75,7 +71,14 @@ namespace storm {
                 std::vector<modernjson::json> synElems;
                 for (auto const& syncs : composition.getSynchronizationVectors()) {
                     modernjson::json syncDecl;
-                    syncDecl["synchronise"] = syncs.getInput();
+                    syncDecl["synchronise"] = std::vector<std::string>();
+                    for (auto const& syncIn : syncs.getInput()) {
+                        if (syncIn == SynchronizationVector::NO_ACTION_INPUT) {
+                            syncDecl["synchronise"].push_back(nullptr);
+                        } else {
+                            syncDecl["synchronise"].push_back(syncIn);
+                        }
+                    }
                     syncDecl["result"] = syncs.getOutput();
                     synElems.push_back(syncDecl);
                 }
@@ -691,8 +694,12 @@ namespace storm {
             jsonStruct["restrict-initial"]["exp"] = buildExpression(janiModel.getInitialStatesRestriction());
             jsonStruct["automata"] = buildAutomataArray(janiModel.getAutomata(), janiModel.getActionIndexToNameMap());
             jsonStruct["system"] = CompositionJsonExporter::translate(janiModel.getSystemComposition());
+            std::vector<std::string> standardFeatureVector = {"derived-operators"};
+            jsonStruct["features"] = standardFeatureVector;
             
         }
+        
+        
         
         
         std::string janiFilterTypeString(storm::modelchecker::FilterType const& ft) {
