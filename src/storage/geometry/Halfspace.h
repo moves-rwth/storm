@@ -35,23 +35,39 @@ namespace storm {
                 }
                 
                 /*
-                 * Returns the (scaled) distance of the given point from the hyperplane defined by normalVector*x = offset.
-                 * The point is inside this halfspace iff the returned value is >=0
+                 * Returns the (scaled) distance of the given point from this halfspace.
+                 * If the point is inside this halfspace, the distance is 0.
                  * The returned value is the euclidean distance times the 2-norm of the normalVector.
                  * In contrast to the euclideanDistance method, there are no inaccuracies introduced (providing ValueType is exact for +, -, and *)
                  */
                 ValueType distance(std::vector<ValueType> const& point) const {
-                    return offset() - storm::utility::vector::dotProduct(point, normalVector());
+                    return std::max(storm::utility::zero<ValueType>(), storm::utility::vector::dotProduct(point, normalVector()) - offset());
                 }
                 
                 /*
-                 * Returns the euclidean distance of the point from the hyperplane defined by this.
-                 * The point is inside this halfspace iff the distance is >=0
+                 * Returns the euclidean distance of the point from this halfspace.
+                 * If the point is inside this halfspace, the distance is 0.
                  * Note that the euclidean distance is in general not a rational number (which can introduce inaccuracies).
                  */
                 ValueType euclideanDistance(std::vector<ValueType> const& point) const {
-                    // divide with the 2-norm of the normal vector
+                    // divide the distance with the 2-norm of the normal vector
                     return distance(point) / storm::utility::sqrt(storm::utility::vector::dotProduct(normalVector(), normalVector()));
+                }
+                
+                /*
+                 * Returns true iff the given point lies on the boundary of this halfspace (i.e., on the hyperplane given by normalVector()*x =offset
+                 */
+                bool isPointOnBoundary(std::vector<ValueType> const& point) const {
+                    return storm::utility::vector::dotProduct(point, normalVector()) == offset();
+                }
+                
+                /*
+                 * Returns the inverted Halfspace of this which represents the set (R^n \ this) union { x | x is on the boundary of this}
+                 */
+                Halfspace<ValueType> invert() const {
+                    std::vector<ValueType> resNormalVector = normalVector();
+                    storm::utility::vector::scaleVectorInPlace(resNormalVector, -storm::utility::one<ValueType>());
+                    return Halfspace<ValueType>(std::move(resNormalVector), -offset());
                 }
 
                 /*

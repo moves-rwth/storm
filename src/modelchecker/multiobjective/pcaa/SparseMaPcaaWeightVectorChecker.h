@@ -92,9 +92,9 @@ namespace storm {
                  * Retrieves the delta used for digitization
                  */
                 template <typename VT = ValueType, typename std::enable_if<storm::NumberTraits<VT>::SupportsExponential, int>::type = 0>
-                VT getDigitizationConstant() const;
+                VT getDigitizationConstant(std::vector<ValueType> const& weightVector) const;
                 template <typename VT = ValueType, typename std::enable_if<!storm::NumberTraits<VT>::SupportsExponential, int>::type = 0>
-                VT getDigitizationConstant() const;
+                VT getDigitizationConstant(std::vector<ValueType> const& weightVector) const;
                 
                 /*!
                  * Digitizes the given matrix and vectors w.r.t. the given digitization constant and the given rate vector.

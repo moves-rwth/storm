@@ -112,7 +112,7 @@ namespace storm {
                 for(auto const& h : halfspaces) {
                     storm::storage::BitVector verticesOnHalfspace(vertices.size(), false);
                     for(uint_fast64_t v = 0; v<vertices.size(); ++v) {
-                        if(storm::utility::isZero(h.distance(vertices[v]))) {
+                        if(h.isPointOnBoundary(vertices[v])) {
                             verticesOnHalfspace.set(v);
                         }
                     }

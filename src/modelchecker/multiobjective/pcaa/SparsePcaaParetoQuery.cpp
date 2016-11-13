@@ -20,13 +20,10 @@ namespace storm {
             SparsePcaaParetoQuery<SparseModelType, GeometryValueType>::SparsePcaaParetoQuery(SparsePcaaPreprocessorReturnType<SparseModelType>& preprocessorResult) : SparsePcaaQuery<SparseModelType, GeometryValueType>(preprocessorResult) {
                 STORM_LOG_ASSERT(preprocessorResult.queryType==SparsePcaaPreprocessorReturnType<SparseModelType>::QueryType::Pareto, "Invalid query Type");
                 
-                // Set the maximum gap between lower and upper bound of the weightVectorChecker result.
-                // This is the maximal edge length of the box we have to consider around each computed point
-                // We pick the gap such that the maximal distance between two points within this box is less than the given precision divided by two.
-                typename SparseModelType::ValueType gap = storm::utility::convertNumber<typename SparseModelType::ValueType>(storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>().getPrecision());
-                gap /= (storm::utility::one<typename SparseModelType::ValueType>() + storm::utility::one<typename SparseModelType::ValueType>());
-                gap /= storm::utility::sqrt(static_cast<typename SparseModelType::ValueType>(this->objectives.size()));
-                this->weightVectorChecker->setMaximumLowerUpperBoundGap(gap);
+                // Set the precision of the weight vector checker
+                typename SparseModelType::ValueType weightedPrecision = storm::utility::convertNumber<typename SparseModelType::ValueType>(storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>().getPrecision());
+                weightedPrecision /= typename SparseModelType::ValueType(2);
+                this->weightVectorChecker->setWeightedPrecision(weightedPrecision);
                 
             }
             
@@ -68,7 +65,7 @@ namespace storm {
                     GeometryValueType farestDistance = storm::utility::zero<GeometryValueType>();
                     for(uint_fast64_t halfspaceIndex = 0; halfspaceIndex < underApproxHalfspaces.size(); ++halfspaceIndex) {
                         for(auto const& vertex : overApproxVertices) {
-                            GeometryValueType distance = -underApproxHalfspaces[halfspaceIndex].euclideanDistance(vertex);
+                            GeometryValueType distance = underApproxHalfspaces[halfspaceIndex].euclideanDistance(vertex);
                             if(distance > farestDistance) {
                                 farestHalfspaceIndex = halfspaceIndex;
                                 farestDistance = distance;

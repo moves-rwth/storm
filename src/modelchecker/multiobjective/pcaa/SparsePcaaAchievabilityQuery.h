@@ -41,6 +41,11 @@ namespace storm {
                 bool checkAchievability();
                 
                 /*
+                 * Updates the precision of the weightVectorChecker w.r.t. the provided weights
+                 */
+                void updateWeightedPrecision(WeightVector const& weights);
+                
+                /*
                  * Returns true iff there is one point in the given polytope that satisfies the given thresholds.
                  * It is assumed that the given polytope contains the downward closure of its vertices.
                  */

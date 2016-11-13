@@ -24,14 +24,8 @@ namespace storm {
                 indexOfOptimizingObjective = *preprocessorResult.indexOfOptimizingObjective;
                 initializeThresholdData();
                 
-                // Set the maximum gap between lower and upper bound of the weightVectorChecker result.
-                // This is the maximal edge length of the box we have to consider around each computed point
-                // We pick the gap such that the maximal distance between two points within this box is less than the given precision divided by two.
-                typename SparseModelType::ValueType gap = storm::utility::convertNumber<typename SparseModelType::ValueType>(storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>().getPrecision());
-                gap /= (storm::utility::one<typename SparseModelType::ValueType>() + storm::utility::one<typename SparseModelType::ValueType>());
-                gap /= storm::utility::sqrt(static_cast<typename SparseModelType::ValueType>(this->objectives.size()));
-                this->weightVectorChecker->setMaximumLowerUpperBoundGap(gap);
-                
+                // Set the maximum distance between lower and upper bound of the weightVectorChecker result.
+                this->weightVectorChecker->setWeightedPrecision(storm::utility::convertNumber<typename SparseModelType::ValueType>(0.1));
             }
             
             template <class SparseModelType, typename GeometryValueType>
@@ -84,6 +78,7 @@ namespace storm {
                 
                 while(!this->maxStepsPerformed()){
                     WeightVector separatingVector = this->findSeparatingVector(thresholds);
+                    this->updateWeightedPrecisionInAchievabilityPhase(separatingVector);
                     this->performRefinementStep(std::move(separatingVector));
                     //Pick the threshold for the optimizing objective low enough so valid solutions are not excluded
                     thresholds[indexOfOptimizingObjective] = std::min(thresholds[indexOfOptimizingObjective], this->refinementSteps.back().lowerBoundPoint[indexOfOptimizingObjective]);
@@ -96,6 +91,24 @@ namespace storm {
                 }
                 STORM_LOG_ERROR("Could not check whether thresholds are achievable: Exceeded maximum number of refinement steps");
                 return false;
+            }
+            
+            template <class SparseModelType, typename GeometryValueType>
+            void SparsePcaaQuantitativeQuery<SparseModelType, GeometryValueType>::updateWeightedPrecisionInAchievabilityPhase(WeightVector const& weights) {
+                // Our heuristic considers the distance between the under- and the over approximation w.r.t. the given direction
+                std::pair<Point, bool> optimizationResOverApprox = this->overApproximation->optimize(weights);
+                if(optimizationResOverApprox.second) {
+                    std::pair<Point, bool> optimizationResUnderApprox = this->underApproximation->optimize(weights);
+                    if(optimizationResUnderApprox.second) {
+                        GeometryValueType distance = storm::utility::vector::dotProduct(optimizationResOverApprox.first, weights) - storm::utility::vector::dotProduct(optimizationResUnderApprox.first, weights);
+                        STORM_LOG_ASSERT(distance >= storm::utility::zero<GeometryValueType>(), "Negative distance between under- and over approximation was not expected");
+                        // Normalize the distance by dividing it with the Euclidean Norm of the weight-vector
+                        distance /= storm::utility::sqrt(storm::utility::vector::dotProduct(weights, weights));
+                        distance /= GeometryValueType(2);
+                        this->weightVectorChecker->setWeightedPrecision(storm::utility::convertNumber<typename SparseModelType::ValueType>(distance));
+                    }
+                }
+                // do not update the precision if one of the approximations is unbounded in the provided direction
             }
 
             template <class SparseModelType, typename GeometryValueType>
@@ -130,28 +143,42 @@ namespace storm {
                         thresholds[indexOfOptimizingObjective] = result + storm::utility::one<GeometryValueType>();
                     }
                     WeightVector separatingVector = this->findSeparatingVector(thresholds);
+                    this->updateWeightedPrecisionInImprovingPhase(separatingVector);
                     this->performRefinementStep(std::move(separatingVector));
                 }
                STORM_LOG_ERROR("Could not reach the desired precision: Exceeded maximum number of refinement steps");
                return result;
             }
             
+            
+            template <class SparseModelType, typename GeometryValueType>
+            void SparsePcaaQuantitativeQuery<SparseModelType, GeometryValueType>::updateWeightedPrecisionInImprovingPhase(WeightVector const& weights) {
+                STORM_LOG_THROW(!storm::utility::isZero(weights[this->indexOfOptimizingObjective]), exceptions::UnexpectedException, "The chosen weight-vector gives zero weight for the objective that is to be optimized.");
+                // If weighs[indexOfOptimizingObjective] is low, the computation of the weightVectorChecker needs to be more precise.
+                // Our heuristic ensures that if p is the new vertex of the under-approximation, then max{ eps | p' = p + (0..0 eps 0..0) is in the over-approximation } <= multiobjective_precision/2
+                    GeometryValueType weightedPrecision = weights[this->indexOfOptimizingObjective] * storm::utility::convertNumber<GeometryValueType>(storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>().getPrecision());
+                    // Normalize by division with the Euclidean Norm of the weight-vector
+                    weightedPrecision /= storm::utility::sqrt(storm::utility::vector::dotProduct(weights, weights));
+                    weightedPrecision /= GeometryValueType(2);
+                    this->weightVectorChecker->setWeightedPrecision(storm::utility::convertNumber<typename SparseModelType::ValueType>(weightedPrecision));
+            }
+            
+            
             template <class SparseModelType, typename GeometryValueType>
             bool SparsePcaaQuantitativeQuery<SparseModelType, GeometryValueType>::checkIfThresholdsAreSatisfied(std::shared_ptr<storm::storage::geometry::Polytope<GeometryValueType>> const& polytope) {
                 std::vector<storm::storage::geometry::Halfspace<GeometryValueType>> halfspaces = polytope->getHalfspaces();
                 for(auto const& h : halfspaces) {
-                    GeometryValueType distance = h.distance(thresholds);
-                    if(distance < storm::utility::zero<GeometryValueType>()) {
-                        return false;
-                    }
-                    if(distance == storm::utility::zero<GeometryValueType>()) {
-                        // In this case, the thresholds point is on the boundary of the polytope.
-                        // Check if this is problematic for the strict thresholds
-                        for(auto strictThreshold : strictThresholds) {
-                            if(h.normalVector()[strictThreshold] > storm::utility::zero<GeometryValueType>()) {
-                                return false;
+                    if(storm::utility::isZero(h.distance(thresholds))) {
+                        // Check if the threshold point is on the boundary of the halfspace and whether this is violates strict thresholds
+                        if(h.isPointOnBoundary(thresholds)) {
+                            for(auto strictThreshold : strictThresholds) {
+                                if(h.normalVector()[strictThreshold] > storm::utility::zero<GeometryValueType>()) {
+                                    return false;
+                                }
                             }
                         }
+                    } else {
+                        return false;
                     }
                 }
                 return true;

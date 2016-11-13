@@ -61,13 +61,14 @@ namespace storm {
                 
                 // Reaching this point means that the underApproximation contains halfspaces. The seperating vector has to be the normal vector of one of these halfspaces.
                 // We pick one with maximal distance to the given point. However, Dirac weight vectors that only assign a non-zero weight to a single objective take precedence.
+                STORM_LOG_ASSERT(!underApproximation->contains(pointToBeSeparated), "Tried to find a separating point but the point is already contained in the underApproximation");
                 std::vector<storm::storage::geometry::Halfspace<GeometryValueType>> halfspaces = underApproximation->getHalfspaces();
                 uint_fast64_t farestHalfspaceIndex = halfspaces.size();
                 GeometryValueType farestDistance = -storm::utility::one<GeometryValueType>();
                 bool foundSeparatingDiracVector = false;
                 for(uint_fast64_t halfspaceIndex = 0; halfspaceIndex < halfspaces.size(); ++halfspaceIndex) {
-                    GeometryValueType distance = -halfspaces[halfspaceIndex].euclideanDistance(pointToBeSeparated);
-                    if(distance >= storm::utility::zero<GeometryValueType>()) {
+                    GeometryValueType distance = halfspaces[halfspaceIndex].euclideanDistance(pointToBeSeparated);
+                    if(!storm::utility::isZero(distance)) {
                         storm::storage::BitVector nonZeroVectorEntries = ~storm::utility::vector::filterZero<GeometryValueType>(halfspaces[halfspaceIndex].normalVector());
                         bool isSingleObjectiveVector = nonZeroVectorEntries.getNumberOfSetBits() == 1 && diracWeightVectorsToBeChecked.get(nonZeroVectorEntries.getNextSetIndex(0));
                         // Check if this halfspace is a better candidate than the current one
@@ -91,27 +92,7 @@ namespace storm {
             void SparsePcaaQuery<SparseModelType, GeometryValueType>::performRefinementStep(WeightVector&& direction) {
                 // Normalize the direction vector so that the entries sum up to one
                 storm::utility::vector::scaleVectorInPlace(direction, storm::utility::one<GeometryValueType>() / std::accumulate(direction.begin(), direction.end(), storm::utility::zero<GeometryValueType>()));
-                // Check if we already did a refinement step with that direction vector. If this is the case, we increase the precision.
-                // We start with the most recent steps to consider the most recent result for this direction vector
-                boost::optional<typename SparseModelType::ValueType> oldMaximumLowerUpperBoundGap;
-                for(auto stepIt = refinementSteps.rbegin(); stepIt != refinementSteps.rend(); ++stepIt) {
-                    if(stepIt->weightVector == direction) {
-                        STORM_LOG_WARN("Performing multiple refinement steps with the same direction vector.");
-                        oldMaximumLowerUpperBoundGap = weightVectorChecker->getMaximumLowerUpperBoundGap();
-                        std::vector<GeometryValueType> lowerUpperDistances = stepIt->upperBoundPoint;
-                        storm::utility::vector::subtractVectors(lowerUpperDistances, stepIt->lowerBoundPoint, lowerUpperDistances);
-                        // shorten the distance between lower and upper bound for the new result by multiplying the current distance with 0.5
-                        // TODO: try other values/strategies?
-                        GeometryValueType distance = storm::utility::sqrt(storm::utility::vector::dotProduct(lowerUpperDistances, lowerUpperDistances));
-                        weightVectorChecker->setMaximumLowerUpperBoundGap(std::min(*oldMaximumLowerUpperBoundGap, storm::utility::convertNumber<typename SparseModelType::ValueType>(distance) * storm::utility::convertNumber<typename SparseModelType::ValueType>(0.5)));
-                        break;
-                    }
-                }
                 weightVectorChecker->check(storm::utility::vector::convertNumericVector<typename SparseModelType::ValueType>(direction));
-                if(oldMaximumLowerUpperBoundGap) {
-                    // Reset the precision back to the previous values
-                    weightVectorChecker->setMaximumLowerUpperBoundGap(*oldMaximumLowerUpperBoundGap);
-                }
                 STORM_LOG_DEBUG("weighted objectives checker result (lower bounds) is " << storm::utility::vector::toString(storm::utility::vector::convertNumericVector<double>(weightVectorChecker->getLowerBoundsOfInitialStateResults())));
                 RefinementStep step;
                 step.weightVector = direction;
@@ -136,7 +117,7 @@ namespace storm {
                 if(maximumOffset > h.offset()){
                     // We correct the issue by shifting the halfspace such that it contains the underapproximation
                     h.offset() = maximumOffset;
-                    STORM_LOG_WARN("Numerical issues: The overapproximation would not contain the underapproximation. Hence, a halfspace is shifted by " << storm::utility::convertNumber<double>(h.euclideanDistance(refinementSteps.back().upperBoundPoint)) << ".");
+                    STORM_LOG_WARN("Numerical issues: The overapproximation would not contain the underapproximation. Hence, a halfspace is shifted by " << storm::utility::convertNumber<double>(h.invert().euclideanDistance(refinementSteps.back().upperBoundPoint)) << ".");
                 }
                 overApproximation = overApproximation->intersection(h);
                 STORM_LOG_DEBUG("Updated OverApproximation to " << overApproximation->toString(true));

@@ -45,7 +45,7 @@ namespace storm {
                 SubModel PS = createSubModel(false, weightedRewardVector);
 
                 // Apply digitization to Markovian transitions
-                ValueType digitizationConstant = getDigitizationConstant();
+                ValueType digitizationConstant = getDigitizationConstant(weightVector);
                 digitize(MS, digitizationConstant);
                 
                 // Get for each occurring (digitized) timeBound the indices of the objectives with that bound.
@@ -145,13 +145,15 @@ namespace storm {
             
             template <class SparseMaModelType>
             template <typename VT, typename std::enable_if<storm::NumberTraits<VT>::SupportsExponential, int>::type>
-            VT SparseMaPcaaWeightVectorChecker<SparseMaModelType>::getDigitizationConstant() const {
+            VT SparseMaPcaaWeightVectorChecker<SparseMaModelType>::getDigitizationConstant(std::vector<ValueType> const& weightVector) const {
                 STORM_LOG_DEBUG("Retrieving digitization constant");
                 // We need to find a delta such that for each objective it holds that lowerbound/delta , upperbound/delta are natural numbers and
-                // If there is a lower and an upper bound:
-                //     1 - e^(-maxRate lowerbound) * (1 + maxRate delta) ^ (lowerbound / delta) + 1-e^(-maxRate upperbound) * (1 + maxRate delta) ^ (upperbound / delta) + (1-e^(-maxRate delta) <= maximumLowerUpperBoundGap
-                // If there is only an upper bound:
-                //     1-e^(-maxRate upperbound) * (1 + maxRate delta) ^ (upperbound / delta) <= maximumLowerUpperBoundGap
+                // sum_{obj_i} (
+                //   If obj_i has a lower and an upper bound:
+                //     weightVector_i * (1 - e^(-maxRate lowerbound) * (1 + maxRate delta) ^ (lowerbound / delta) + 1-e^(-maxRate upperbound) * (1 + maxRate delta) ^ (upperbound / delta) + (1-e^(-maxRate delta)))
+                //   If there is only an upper bound:
+                //     weightVector_i * ( 1-e^(-maxRate upperbound) * (1 + maxRate delta) ^ (upperbound / delta))
+                // ) <= this->maximumLowerUpperDistance
                 
                 // Initialize some data for fast and easy access
                 VT const maxRate = this->model.getMaximalExitRate();
@@ -175,6 +177,7 @@ namespace storm {
                     // There are no time bounds. In this case, one is a valid digitization constant.
                     return storm::utility::one<VT>();
                 }
+                VT goalPrecisionTimesNorm = this->weightedPrecision * storm::utility::sqrt(storm::utility::vector::dotProduct(weightVector, weightVector));
                 
                 // We brute-force a delta, since a direct computation is apparently not easy.
                 // Also note that the number of times this loop runs is a lower bound for the number of minMaxSolver invocations.
@@ -191,6 +194,7 @@ namespace storm {
                         }
                     }
                     if(deltaValid) {
+                        VT weightedPrecisionForCurrentDelta = storm::utility::zero<VT>();
                         for(uint_fast64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
                             auto const& obj = this->objectives[objIndex];
                             VT precisionOfObj = storm::utility::zero<VT>();
@@ -201,11 +205,9 @@ namespace storm {
                             if(obj.upperTimeBound) {
                                 precisionOfObj += storm::utility::one<VT>() - (eToPowerOfMinusMaxRateTimesBound[objIndex].second * storm::utility::pow(storm::utility::one<VT>() + maxRate * delta, *obj.upperTimeBound / delta) );
                             }
-                            if(precisionOfObj > this->maximumLowerUpperBoundGap) {
-                                deltaValid = false;
-                                break;
-                            }
+                            weightedPrecisionForCurrentDelta += weightVector[objIndex] * precisionOfObj;
                         }
+                        deltaValid &= weightedPrecisionForCurrentDelta <= goalPrecisionTimesNorm;
                     }
                     if(deltaValid) {
                         break;
@@ -220,7 +222,7 @@ namespace storm {
             
             template <class SparseMaModelType>
             template <typename VT, typename std::enable_if<!storm::NumberTraits<VT>::SupportsExponential, int>::type>
-            VT SparseMaPcaaWeightVectorChecker<SparseMaModelType>::getDigitizationConstant() const {
+            VT SparseMaPcaaWeightVectorChecker<SparseMaModelType>::getDigitizationConstant(std::vector<ValueType> const& weightVector) const {
                   STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Computing bounded probabilities of MAs is unsupported for this value type.");
             }
             
@@ -282,7 +284,6 @@ namespace storm {
                         digitizationError -= std::exp(-maxRate * (*obj.upperTimeBound)) * storm::utility::pow(storm::utility::one<VT>() + maxRate * digitizationConstant, digitizedBound);
                         errorAwayFromZero += digitizationError;
                     }
-                    STORM_LOG_ASSERT(errorTowardsZero + errorAwayFromZero <= this->maximumLowerUpperBoundGap, "Precision not sufficient.");
                     if (obj.rewardsArePositive) {
                         this->offsetsToLowerBound[objIndex] = -errorTowardsZero;
                         this->offsetsToUpperBound[objIndex] = errorAwayFromZero;
@@ -408,12 +409,12 @@ namespace storm {
             
             
             template class SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>;
-            template double SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>::getDigitizationConstant<double>() const;
+            template double SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>::getDigitizationConstant<double>(std::vector<double> const& direction) const;
             template void SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>::digitize<double>(SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>::SubModel& subModel, double const& digitizationConstant) const;
             template void SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>::digitizeTimeBounds<double>(SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>::TimeBoundMap& lowerTimeBounds, SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>::TimeBoundMap& upperTimeBounds, double const& digitizationConstant);
 #ifdef STORM_HAVE_CARL
 //            template class SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>;
-   //         template storm::RationalNumber SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>::getDigitizationConstant<storm::RationalNumber>() const;
+   //         template storm::RationalNumber SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>::getDigitizationConstant<storm::RationalNumber>(std::vector<double> const& direction) const;
  //           template void SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>::digitize<storm::RationalNumber>(SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>::SubModel& subModel, storm::RationalNumber const& digitizationConstant) const;
 //            template void SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>::digitizeTimeBounds<storm::RationalNumber>(SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>::TimeBoundMap& lowerTimeBounds, SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>::TimeBoundMap& upperTimeBounds, storm::RationalNumber const& digitizationConstant);
 #endif

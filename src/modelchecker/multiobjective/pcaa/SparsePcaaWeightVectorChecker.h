@@ -48,16 +48,6 @@ namespace storm {
                 void check(std::vector<ValueType> const& weightVector);
                 
                 /*!
-                 * Sets the maximum gap that is allowed between the lower and upper bound of the result of some objective.
-                 */
-                void setMaximumLowerUpperBoundGap(ValueType const& value);
-                
-                /*!
-                 * Retrieves the maximum gap that is allowed between the lower and upper bound of the result of some objective.
-                 */
-                ValueType const& getMaximumLowerUpperBoundGap() const;
-                
-                /*!
                  * Retrieves the results of the individual objectives at the initial state of the given model.
                  * Note that check(..) has to be called before retrieving results. Otherwise, an exception is thrown.
                  * Also note that there is no guarantee that the lower/upper bounds are sound
@@ -65,6 +55,22 @@ namespace storm {
                  */
                 std::vector<ValueType> getLowerBoundsOfInitialStateResults() const;
                 std::vector<ValueType> getUpperBoundsOfInitialStateResults() const;
+                
+                
+                /*!
+                 * Sets the precision of this weight vector checker. After calling check() the following will hold:
+                 * Let h_lower and h_upper be two hyperplanes such that
+                 * * the normal vector is the provided weight-vector
+                 * * getLowerBoundsOfInitialStateResults() lies on h_lower and
+                 * * getUpperBoundsOfInitialStateResults() lies on h_upper.
+                 * Then the distance between the two hyperplanes is at most weightedPrecision
+                 */
+                void setWeightedPrecision(ValueType const& weightedPrecision);
+                
+                /*!
+                 * Returns the precision of this weight vector checker.
+                 */
+                ValueType const& getWeightedPrecision() const;
                 
                 /*!
                  * Retrieves a scheduler that induces the current values
@@ -128,19 +134,22 @@ namespace storm {
                 storm::storage::BitVector objectivesWithNoUpperTimeBound;
                 // stores the (discretized) state action rewards for each objective.
                 std::vector<std::vector<ValueType>> discreteActionRewards;
-                // stores the maximum gap that is allowed between the lower and upper bound of the result of some objective.
-                ValueType maximumLowerUpperBoundGap;
-
+                /* stores the precision of this weight vector checker. After calling check() the following will hold:
+                * Let h_lower and h_upper be two hyperplanes such that
+                * * the normal vector is the provided weight-vector
+                * * getLowerBoundsOfInitialStateResults() lies on h_lower and
+                * * getUpperBoundsOfInitialStateResults() lies on h_upper.
+                * Then the distance between the two hyperplanes is at most weightedPrecision */
+                ValueType weightedPrecision;
                 // Memory for the solution of the most recent call of check(..)
                 // becomes true after the first call of check(..)
                 bool checkHasBeenCalled;
                 // The result for the weighted reward vector (for all states of the model)
                 std::vector<ValueType> weightedResult;
-                // The lower bounds of the results for the individual objectives (w.r.t. all states of the model)
+                // The results for the individual objectives (w.r.t. all states of the model)
                 std::vector<std::vector<ValueType>> objectiveResults;
                 // Stores for each objective the distance between the computed result (w.r.t. the initial state) and a lower/upper bound for the actual result.
-                // The distances are stored as a (possibly negative) offset that has to be added to to the objectiveResults.
-                // Note that there is no guarantee that the lower/upper bounds are sound as long as the underlying solution method is not sound (e.g. standard value iteration).
+                // The distances are stored as a (possibly negative) offset that has to be added (+) to to the objectiveResults.
                 std::vector<ValueType> offsetsToLowerBound;
                 std::vector<ValueType> offsetsToUpperBound;
                 // The scheduler that maximizes the weighted rewards

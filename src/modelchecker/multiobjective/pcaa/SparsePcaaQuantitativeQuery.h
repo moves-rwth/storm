@@ -41,6 +41,12 @@ namespace storm {
                 bool checkAchievability();
                 
                 /*
+                 * Updates the precision of the weightVectorChecker w.r.t. the provided weights
+                 */
+                void updateWeightedPrecisionInAchievabilityPhase(WeightVector const& weights);
+                void updateWeightedPrecisionInImprovingPhase(WeightVector const& weights);
+                
+                /*
                  * Given that the thresholds are achievable, this function further refines the approximations and returns the optimized value
                  */
                 GeometryValueType improveSolution();

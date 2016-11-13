@@ -14,6 +14,7 @@
 #include "src/utility/vector.h"
 
 #include "src/exceptions/IllegalFunctionCallException.h"
+#include "src/exceptions/UnexpectedException.h"
 #include "src/exceptions/NotImplementedException.h"
 
 namespace storm {
@@ -64,16 +65,21 @@ namespace storm {
                     }
                 }
                 STORM_LOG_DEBUG("Weight vector check done. Lower bounds for results in initial state: " << storm::utility::vector::toString(storm::utility::vector::convertNumericVector<double>(getLowerBoundsOfInitialStateResults())));
+                // Validate that the results are sufficiently precise
+                ValueType resultingWeightedPrecision = storm::utility::vector::dotProduct(getUpperBoundsOfInitialStateResults(), weightVector) - storm::utility::vector::dotProduct(getLowerBoundsOfInitialStateResults(), weightVector);
+                STORM_LOG_THROW(resultingWeightedPrecision >= storm::utility::zero<ValueType>(), storm::exceptions::UnexpectedException, "The distance between the lower and the upper result is negative.");
+                resultingWeightedPrecision /= storm::utility::sqrt(storm::utility::vector::dotProduct(weightVector, weightVector));
+                STORM_LOG_THROW(resultingWeightedPrecision <= weightedPrecision, storm::exceptions::UnexpectedException, "The desired precision was not reached");
             }
             
             template <class SparseModelType>
-            void SparsePcaaWeightVectorChecker<SparseModelType>::setMaximumLowerUpperBoundGap(ValueType const& value) {
-                this->maximumLowerUpperBoundGap = value;
+            void SparsePcaaWeightVectorChecker<SparseModelType>::setWeightedPrecision(ValueType const& weightedPrecision) {
+                this->weightedPrecision = weightedPrecision;
             }
             
             template <class SparseModelType>
-            typename SparsePcaaWeightVectorChecker<SparseModelType>::ValueType const& SparsePcaaWeightVectorChecker<SparseModelType>::getMaximumLowerUpperBoundGap() const {
-                return this->maximumLowerUpperBoundGap;
+            typename SparsePcaaWeightVectorChecker<SparseModelType>::ValueType const& SparsePcaaWeightVectorChecker<SparseModelType>::getWeightedPrecision() const {
+                return this->weightedPrecision;
             }
             
             template <class SparseModelType>
