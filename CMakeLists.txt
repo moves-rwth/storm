@@ -122,9 +122,6 @@ set(CONVERSIONHELPER_TARGET "${PROJECT_SOURCE_DIR}/src/utility/ConversionHelper.
 
 if(CMAKE_COMPILER_IS_GNUCC)
     set(STORM_COMPILED_BY "GCC")
-    # Set standard flags for GCC
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -funroll-loops --fast-math -fno-finite-math-only")
-    set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -funroll-loops")
 
 	# TODO: remove forcing the old version of optional as soon as the related Spirit bug is fixed:
 	# https://svn.boost.org/trac/boost/ticket/12349
