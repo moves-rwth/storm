@@ -2,6 +2,8 @@
 
 #include "src/adapters/CarlAdapter.h"
 
+#include "src/utility/constants.h"
+
 namespace storm {
     namespace builder {
         namespace jit {
@@ -72,8 +74,8 @@ namespace storm {
             }
         
             template <typename IndexType, typename ValueType>
-            void Choice<IndexType, ValueType>::resizeRewards(std::size_t numberOfRewards, ValueType const& fillValue) {
-                rewards.resize(numberOfRewards, fillValue);
+            void Choice<IndexType, ValueType>::resizeRewards(std::size_t numberOfRewards) {
+                rewards.resize(numberOfRewards, storm::utility::zero<ValueType>());
             }
             
             template <typename IndexType, typename ValueType>

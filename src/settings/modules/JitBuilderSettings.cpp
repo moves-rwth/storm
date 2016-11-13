@@ -18,6 +18,7 @@ namespace storm {
             const std::string JitBuilderSettings::compilerOptionName = "compiler";
             const std::string JitBuilderSettings::stormRootOptionName = "storm";
             const std::string JitBuilderSettings::boostIncludeDirectoryOptionName = "boost";
+            const std::string JitBuilderSettings::carlIncludeDirectoryOptionName = "carl";
             const std::string JitBuilderSettings::compilerFlagsOptionName = "cxxflags";
 
             JitBuilderSettings::JitBuilderSettings() : ModuleSettings(moduleName) {
@@ -28,6 +29,8 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("dir", "The directory that contains the src/ subtree of Storm.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, boostIncludeDirectoryOptionName, false, "The include directory of boost.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("dir", "The directory containing the boost headers version >= 1.61.").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, carlIncludeDirectoryOptionName, false, "The include directory of carl.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("dir", "The directory containing the carl headers.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, compilerFlagsOptionName, false, "The flags passed to the compiler.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("flags", "The compiler flags.").build()).build());
             }
@@ -54,6 +57,14 @@ namespace storm {
             
             std::string JitBuilderSettings::getBoostIncludeDirectory() const {
                 return this->getOption(boostIncludeDirectoryOptionName).getArgumentByName("dir").getValueAsString();
+            }
+
+            bool JitBuilderSettings::isCarlIncludeDirectorySet() const {
+                return this->getOption(carlIncludeDirectoryOptionName).getHasOptionBeenSet();
+            }
+            
+            std::string JitBuilderSettings::getCarlIncludeDirectory() const {
+                return this->getOption(carlIncludeDirectoryOptionName).getArgumentByName("dir").getValueAsString();
             }
 
             bool JitBuilderSettings::isDoctorSet() const {

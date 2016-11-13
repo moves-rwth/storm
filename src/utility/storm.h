@@ -223,7 +223,7 @@ namespace storm {
     
     template<typename ModelType>
     std::shared_ptr<storm::models::ModelBase> preprocessModel(std::shared_ptr<storm::models::ModelBase> model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
-        if(model->getType() == storm::models::ModelType::MarkovAutomaton && model->isSparseModel()) {
+        if (model->getType() == storm::models::ModelType::MarkovAutomaton && model->isSparseModel()) {
             std::shared_ptr<storm::models::sparse::MarkovAutomaton<typename ModelType::ValueType>> ma = model->template as<storm::models::sparse::MarkovAutomaton<typename ModelType::ValueType>>();
             if (ma->hasOnlyTrivialNondeterminism()) {
                 // Markov automaton can be converted into CTMC
@@ -459,7 +459,7 @@ namespace storm {
         auto const& regionSettings = storm::settings::getModule<storm::settings::modules::RegionSettings>();
         storm::modelchecker::region::SparseRegionModelCheckerSettings settings(regionSettings.getSampleMode(), regionSettings.getApproxMode(), regionSettings.getSmtMode());
         // Preprocessing and ModelChecker
-        if(model->isOfType(storm::models::ModelType::Dtmc)){
+        if (model->isOfType(storm::models::ModelType::Dtmc)){
             preprocessModel<storm::models::sparse::Dtmc<storm::RationalFunction>>(model,formulas);
             regionModelChecker = std::make_shared<storm::modelchecker::region::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>>(model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>(), settings);
         } else if (model->isOfType(storm::models::ModelType::Mdp)){

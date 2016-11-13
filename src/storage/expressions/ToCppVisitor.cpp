@@ -5,28 +5,20 @@
 namespace storm {
     namespace expressions {
         
-        ToCppTranslationOptions::ToCppTranslationOptions(std::unordered_map<storm::expressions::Variable, std::string> const& prefixes, std::unordered_map<storm::expressions::Variable, std::string> const& names, std::string const& valueTypeCast) : prefixes(prefixes), names(names), valueTypeCast(valueTypeCast) {
+        ToCppTranslationOptions::ToCppTranslationOptions(std::unordered_map<storm::expressions::Variable, std::string> const& prefixes, std::unordered_map<storm::expressions::Variable, std::string> const& names, ToCppTranslationMode mode) : prefixes(prefixes), names(names), mode(mode) {
             // Intentionally left empty.
         }
         
         std::unordered_map<storm::expressions::Variable, std::string> const& ToCppTranslationOptions::getPrefixes() const {
-            return prefixes;
+            return prefixes.get();
         }
         
         std::unordered_map<storm::expressions::Variable, std::string> const& ToCppTranslationOptions::getNames() const {
-            return names;
+            return names.get();
         }
         
-        bool ToCppTranslationOptions::hasValueTypeCast() const {
-            return !valueTypeCast.empty();
-        }
-        
-        std::string const& ToCppTranslationOptions::getValueTypeCast() const {
-            return valueTypeCast;
-        }
-        
-        void ToCppTranslationOptions::clearValueTypeCast() {
-            valueTypeCast = "";
+        ToCppTranslationMode const& ToCppTranslationOptions::getMode() const {
+            return mode;
         }
         
         std::string ToCppVisitor::translate(storm::expressions::Expression const& expression, ToCppTranslationOptions const& options) {
@@ -37,8 +29,10 @@ namespace storm {
         }
         
         boost::any ToCppVisitor::visit(IfThenElseExpression const& expression, boost::any const& data) {
-            ToCppTranslationOptions conditionOptions = boost::any_cast<ToCppTranslationOptions>(data);
-            conditionOptions.clearValueTypeCast();
+            ToCppTranslationOptions const& options = boost::any_cast<ToCppTranslationOptions>(data);
+            
+            // Clear the type cast for the condition.
+            ToCppTranslationOptions conditionOptions(options.getPrefixes(), options.getNames());
             stream << "(";
             expression.getCondition()->accept(*this, conditionOptions);
             stream << " ? ";
@@ -51,7 +45,6 @@ namespace storm {
         
         boost::any ToCppVisitor::visit(BinaryBooleanFunctionExpression const& expression, boost::any const& data) {
             ToCppTranslationOptions newOptions = boost::any_cast<ToCppTranslationOptions>(data);
-            newOptions.clearValueTypeCast();
             
             switch (expression.getOperatorType()) {
                     case BinaryBooleanFunctionExpression::OperatorType::And:
@@ -150,7 +143,6 @@ namespace storm {
         
         boost::any ToCppVisitor::visit(BinaryRelationExpression const& expression, boost::any const& data) {
             ToCppTranslationOptions newOptions = boost::any_cast<ToCppTranslationOptions>(data);
-            newOptions.clearValueTypeCast();
 
             switch (expression.getRelationType()) {
                 case BinaryRelationExpression::RelationType::Equal:
@@ -198,39 +190,55 @@ namespace storm {
             }
             return boost::none;
         }
+
+        std::string getVariableName(storm::expressions::Variable const& variable, std::unordered_map<storm::expressions::Variable, std::string> const& prefixes, std::unordered_map<storm::expressions::Variable, std::string> const& names) {
+            auto prefixIt = prefixes.find(variable);
+            if (prefixIt != prefixes.end()) {
+                auto nameIt = names.find(variable);
+                if (nameIt != names.end()) {
+                    return prefixIt->second + nameIt->second;
+                } else {
+                    return prefixIt->second + variable.getName();
+                }
+            } else {
+                auto nameIt = names.find(variable);
+                if (nameIt != names.end()) {
+                    return nameIt->second;
+                } else {
+                    return variable.getName();
+                }
+            }
+        }
         
         boost::any ToCppVisitor::visit(VariableExpression const& expression, boost::any const& data) {
             ToCppTranslationOptions const& options = boost::any_cast<ToCppTranslationOptions const&>(data);
-            if (options.hasValueTypeCast()) {
-                stream << "static_cast<" << options.getValueTypeCast() << ">(";
-            }
+            storm::expressions::Variable const& variable = expression.getVariable();
+            std::string variableName = getVariableName(variable, options.getPrefixes(), options.getNames());
             
-            auto prefixIt = options.getPrefixes().find(expression.getVariable());
-            if (prefixIt != options.getPrefixes().end()) {
-                auto nameIt = options.getNames().find(expression.getVariable());
-                if (nameIt != options.getNames().end()) {
-                    stream << prefixIt->second << nameIt->second;
-                } else {
-                    stream << prefixIt->second << expression.getVariableName();
-                }
+            if (variable.hasBooleanType()) {
+                stream << variableName;
             } else {
-                auto nameIt = options.getNames().find(expression.getVariable());
-                if (nameIt != options.getNames().end()) {
-                    stream << nameIt->second;
-                } else {
-                    stream << expression.getVariableName();
+                switch (options.getMode()) {
+                    case ToCppTranslationMode::KeepType:
+                        stream << variableName;
+                        break;
+                    case ToCppTranslationMode::CastDouble:
+                        stream << "static_cast<double>(" << variableName << ")";
+                        break;
+                    case ToCppTranslationMode::CastRationalNumber:
+                        stream << "carl::rationalize<storm::RationalNumber>(" << variableName << ")";
+                        break;
+                    case ToCppTranslationMode::CastRationalFunction:
+                        // Here, we rely on the variable name mapping to a rational function representing the variable being available.
+                        stream << variableName;
+                        break;
                 }
-            }
-            
-            if (options.hasValueTypeCast()) {
-                stream << ")";
             }
             return boost::none;
         }
-        
+
         boost::any ToCppVisitor::visit(UnaryBooleanFunctionExpression const& expression, boost::any const& data) {
             ToCppTranslationOptions newOptions = boost::any_cast<ToCppTranslationOptions>(data);
-            newOptions.clearValueTypeCast();
             
             switch (expression.getOperatorType()) {
                 case UnaryBooleanFunctionExpression::OperatorType::Not:
@@ -270,18 +278,39 @@ namespace storm {
         
         boost::any ToCppVisitor::visit(IntegerLiteralExpression const& expression, boost::any const& data) {
             ToCppTranslationOptions const& options = boost::any_cast<ToCppTranslationOptions const&>(data);
-            if (options.hasValueTypeCast()) {
-                stream << "static_cast<" << options.getValueTypeCast() << ">(";
-            }
-            stream << expression.getValue();
-            if (options.hasValueTypeCast()) {
-                stream << ")";
+            switch (options.getMode()) {
+                case ToCppTranslationMode::KeepType:
+                    stream << expression.getValue();
+                    break;
+                case ToCppTranslationMode::CastDouble:
+                    stream << "static_cast<double>(" << expression.getValue() << ")";
+                    break;
+                case ToCppTranslationMode::CastRationalNumber:
+                    stream << "carl::rationalize<storm::RationalNumber>(\"" << expression.getValue() << "\")";
+                    break;
+                case ToCppTranslationMode::CastRationalFunction:
+                    stream << "storm::RationalFunction(carl::rationalize<storm::RationalNumber>(\"" << expression.getValue() << "\"))";
+                    break;
             }
             return boost::none;
         }
-        
+
         boost::any ToCppVisitor::visit(RationalLiteralExpression const& expression, boost::any const& data) {
-            stream << expression.getValueAsDouble();
+            ToCppTranslationOptions const& options = boost::any_cast<ToCppTranslationOptions const&>(data);
+            switch (options.getMode()) {
+                case ToCppTranslationMode::KeepType:
+                    stream << expression.getValue();
+                    break;
+                case ToCppTranslationMode::CastDouble:
+                    stream << "static_cast<double>(" << expression.getValueAsDouble() << ")";
+                    break;
+                case ToCppTranslationMode::CastRationalNumber:
+                    stream << "carl::rationalize<storm::RationalNumber>(\"" << expression.getValue() << "\")";
+                    break;
+                case ToCppTranslationMode::CastRationalFunction:
+                    stream << "storm::RationalFunction(carl::rationalize<storm::RationalNumber>(\"" << expression.getValue() << "\"))";
+                    break;
+            }
             return boost::none;
         }
 

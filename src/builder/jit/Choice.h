@@ -59,9 +59,9 @@ namespace storm {
                 void setRewards(std::vector<ValueType>&& rewards);
                 
                 /*!
-                 * Resizes the rewards to the desired size and filles newly created values with the provided value.
+                 * Resizes the rewards to the desired size and filles newly created values the zero value of the value type.
                  */
-                void resizeRewards(std::size_t numberOfRewards, ValueType const& fillValue);
+                void resizeRewards(std::size_t numberOfRewards);
                 
                 /*!
                  * Retrieves the number of rewards of this choice.

@@ -23,7 +23,10 @@ namespace storm {
                 
                 bool isBoostIncludeDirectorySet() const;
                 std::string getBoostIncludeDirectory() const;
-                
+
+                bool isCarlIncludeDirectorySet() const;
+                std::string getCarlIncludeDirectory() const;
+
                 bool isCompilerFlagsSet() const;
                 std::string getCompilerFlags() const;
                 
@@ -36,6 +39,7 @@ namespace storm {
                 static const std::string compilerOptionName;
                 static const std::string stormRootOptionName;
                 static const std::string boostIncludeDirectoryOptionName;
+                static const std::string carlIncludeDirectoryOptionName;
                 static const std::string compilerFlagsOptionName;
                 static const std::string doctorOptionName;
             };

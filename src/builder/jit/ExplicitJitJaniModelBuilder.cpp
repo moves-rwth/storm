@@ -4,8 +4,6 @@
 #include <cstdio>
 #include <chrono>
 
-#include "src/adapters/CarlAdapter.h"
-
 #include "src/solver/SmtSolver.h"
 #include "src/storage/jani/AutomatonComposition.h"
 #include "src/storage/jani/ParallelComposition.h"
@@ -74,6 +72,11 @@ namespace storm {
                 } else {
                     stormRoot = STORM_CPP_BASE_PATH;
                 }
+                if (settings.isCarlIncludeDirectorySet()) {
+                    carlIncludeDir = settings.getCarlIncludeDirectory();
+                } else {
+                    carlIncludeDir = STORM_CARL_INCLUDE_DIR;
+                }
                 
                 // Register all transient variables as transient.
                 for (auto const& variable : this->model.getGlobalVariables().getTransientVariables()) {
@@ -125,7 +128,7 @@ namespace storm {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The input model contains undefined constants that influence the graph structure of the underlying model, which is not allowed.");
                 }
 #endif
-      
+                    
                 // Comment this in to print the JANI model for debugging purposes. 
                 // this->model.makeStandardJaniCompliant();
                 // storm::jani::JsonExporter::toStream(this->model, std::vector<std::shared_ptr<storm::logic::Formula const>>(), std::cout, false);
@@ -347,7 +350,41 @@ namespace storm {
                 }
                 return result;
             }
-                
+
+            template <typename ValueType, typename RewardModelType>
+            bool ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::checkCarlAvailable() const {
+                bool result = true;
+                std::string problem = "Unable to compile program using Carl data structures. Is Carls's include directory '" + carlIncludeDir + "' set correctly?";
+                try {
+                    std::string program = R"(
+#include "src/adapters/NumberAdapter.h"
+                        
+                    int main() {
+                        return 0;
+                    }
+                    )";
+                    boost::filesystem::path temporaryFile = writeToTemporaryFile(program);
+                    std::string temporaryFilename = boost::filesystem::absolute(temporaryFile).string();
+                    boost::filesystem::path outputFile = temporaryFile;
+                    outputFile += ".out";
+                    std::string outputFilename = boost::filesystem::absolute(outputFile).string();
+                    // FIXME: get right of build_xcode
+                    boost::optional<std::string> error = execute(compiler + " " + compilerFlags + " " + temporaryFilename + " -I" + stormRoot + " -I" + stormRoot + "/build_xcode/include -I" + carlIncludeDir + " -o " + outputFilename);
+                    
+                    if (error) {
+                        result = false;
+                        STORM_LOG_ERROR(problem);
+                        STORM_LOG_TRACE(error.get());
+                    } else {
+                        boost::filesystem::remove(outputFile);
+                    }
+                } catch(std::exception const& e) {
+                    result = false;
+                    STORM_LOG_ERROR(problem);
+                }
+                return result;
+            }
+
             template <typename ValueType, typename RewardModelType>
             bool ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::doctor() const {
                 bool result = true;
@@ -389,9 +426,20 @@ namespace storm {
                 
                 STORM_LOG_DEBUG("Checking whether Storm's headers are available.");
                 result = checkStormAvailable();
-                if (result) {
+                if (!result) {
+                    return result;
+                }
+                STORM_LOG_DEBUG("Success.");
+
+                if (std::is_same<storm::RationalNumber, ValueType>::value) {
+                    STORM_LOG_DEBUG("Checking whether Carl's headers are available.");
+                    result = checkCarlAvailable();
+                    if (!result) {
+                        return result;
+                    }
                     STORM_LOG_DEBUG("Success.");
                 }
+                
                 return result;
             }
             
@@ -428,6 +476,8 @@ namespace storm {
                 std::shared_ptr<storm::models::sparse::Model<ValueType, storm::models::sparse::StandardRewardModel<ValueType>>> sparseModel(nullptr);
                 try {
                     sparseModel = std::shared_ptr<storm::models::sparse::Model<ValueType, storm::models::sparse::StandardRewardModel<ValueType>>>(builder->build());
+                    STORM_LOG_THROW(sparseModel, storm::exceptions::UnexpectedException, "An unexpected error occurred.");
+                    STORM_LOG_TRACE("Successfully got model from jit-builder.");
                 } catch (std::exception const& e) {
                     STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Model building failed. Reason: " << e.what());
                 }
@@ -448,13 +498,33 @@ namespace storm {
                 modelData["deterministic_model"] = asString(model.isDeterministicModel());
                 modelData["discrete_time_model"] = asString(model.isDiscreteTimeModel());
                 
-                // Use a list here to enable if query in skeleton program.
+                // Use lists here to enable if query in skeleton program even if the property is just boolean.
                 cpptempl::data_list list;
                 if (options.isExplorationChecksSet()) {
                     list.push_back(cpptempl::data_map());
                 }
                 modelData["exploration_checks"] = cpptempl::make_data(list);
+                list = cpptempl::data_list();
+                if (std::is_same<storm::RationalNumber, ValueType>::value) {
+                    list.push_back(cpptempl::data_map());
+                }
+                modelData["exact"] = cpptempl::make_data(list);
+                list = cpptempl::data_list();
+                if (std::is_same<storm::RationalFunction, ValueType>::value) {
+                    list.push_back(cpptempl::data_map());
+                }
+                modelData["parametric"] = cpptempl::make_data(list);
+                list = cpptempl::data_list();
+                if (std::is_same<double, ValueType>::value) {
+                    list.push_back(cpptempl::data_map());
+                }
+                modelData["double"] = cpptempl::make_data(list);
 
+                // If we are building a possibly parametric model, we need to create the parameters.
+                if (std::is_same<storm::RationalFunction, ValueType>::value) {
+                    generateParameters(modelData);
+                }
+                
                 // Generate non-trivial model-information.
                 generateVariables(modelData);
                 generateInitialStates(modelData);
@@ -517,8 +587,15 @@ namespace storm {
                 cpptempl::data_map result;
                 
                 result["name"] = registerVariable(variable.getExpressionVariable(), variable.isTransient());
+                realVariables.insert(variable.getExpressionVariable());
                 if (variable.hasInitExpression()) {
-                    result["init"] = asString(variable.getInitExpression().evaluateAsDouble());
+                    if (std::is_same<double, ValueType>::value) {
+                        result["init"] = expressionTranslator.translate(variable.getInitExpression(), storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName, storm::expressions::ToCppTranslationMode::CastDouble));
+                    } else if (std::is_same<storm::RationalNumber, ValueType>::value) {
+                        result["init"] = expressionTranslator.translate(variable.getInitExpression(), storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName, storm::expressions::ToCppTranslationMode::CastRationalNumber));
+                    } else if (std::is_same<storm::RationalFunction, ValueType>::value) {
+                        result["init"] = expressionTranslator.translate(variable.getInitExpression(), storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName, storm::expressions::ToCppTranslationMode::CastRationalFunction));
+                    }
                 }
                 
                 return result;
@@ -1032,7 +1109,7 @@ namespace storm {
                         indent(vectorSource, indentLevel + 2) << "Choice<IndexType, ValueType>& choice = behaviour.addChoice();" << std::endl;
                         
                         std::stringstream tmp;
-                        indent(tmp, indentLevel + 2) << "choice.resizeRewards({$edge_destination_rewards_count}, 0);" << std::endl;
+                        indent(tmp, indentLevel + 2) << "choice.resizeRewards({$edge_destination_rewards_count});" << std::endl;
                         indent(tmp, indentLevel + 2) << "{% for reward in edge_rewards %}choice.addReward({$reward.index}, transientOut.{$reward.variable});" << std::endl;
                         indent(tmp, indentLevel + 2) << "{% endfor %}" << std::endl;
                         
@@ -1247,10 +1324,13 @@ namespace storm {
                 cpptempl::data_list levels = generateLevels(destination.getOrderedAssignments());
                 destinationData["name"] = asString(destinationIndex);
                 destinationData["levels"] = cpptempl::make_data(levels);
-                if (rate) {
-                    destinationData["value"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(rate.get() * destination.getProbability()), storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName, "double"));
-                } else {
-                    destinationData["value"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(destination.getProbability()), storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName, "double"));
+                storm::expressions::Expression expressionToTranslate = rate ? shiftVariablesWrtLowerBound(rate.get() * destination.getProbability()) : shiftVariablesWrtLowerBound(destination.getProbability());
+                if (std::is_same<double, ValueType>::value) {
+                    destinationData["value"] = expressionTranslator.translate(expressionToTranslate, storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName, storm::expressions::ToCppTranslationMode::CastDouble));
+                } else if (std::is_same<storm::RationalNumber, ValueType>::value) {
+                    destinationData["value"] = expressionTranslator.translate(expressionToTranslate, storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName, storm::expressions::ToCppTranslationMode::CastRationalNumber));
+                } else if (std::is_same<storm::RationalFunction, ValueType>::value) {
+                    destinationData["value"] = expressionTranslator.translate(expressionToTranslate, storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName, storm::expressions::ToCppTranslationMode::CastRationalFunction));
                 }
                 if (destination.getOrderedAssignments().empty()) {
                     destinationData["lowestLevel"] = "0";
@@ -1333,16 +1413,28 @@ namespace storm {
                 cpptempl::data_map result;
                 result["variable"] = getVariableName(assignment.getExpressionVariable());
                 auto lowerBoundIt = lowerBounds.find(assignment.getExpressionVariable());
+                
+                storm::expressions::ToCppTranslationOptions options(variablePrefixes, variableToName);
+                if (realVariables.find(assignment.getExpressionVariable()) != realVariables.end()) {
+                    if (std::is_same<double, ValueType>::value) {
+                        options = storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName, storm::expressions::ToCppTranslationMode::CastDouble);
+                    } else if (std::is_same<storm::RationalNumber, ValueType>::value) {
+                        options = storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName, storm::expressions::ToCppTranslationMode::CastRationalNumber);
+                    } else if (std::is_same<storm::RationalFunction, ValueType>::value) {
+                        options = storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName, storm::expressions::ToCppTranslationMode::CastRationalFunction);
+                    }
+                }
+                
                 if (lowerBoundIt != lowerBounds.end()) {
                     if (lowerBoundIt->second < 0) {
-                        result["value"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(assignment.getAssignedExpression()) + model.getManager().integer(lowerBoundIt->second), storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName));
+                        result["value"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(assignment.getAssignedExpression()) + model.getManager().integer(lowerBoundIt->second), options);
                     } else if (lowerBoundIt->second == 0) {
-                        result["value"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(assignment.getAssignedExpression()), storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName));
+                        result["value"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(assignment.getAssignedExpression()), options);
                     } else {
-                        result["value"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(assignment.getAssignedExpression()) - model.getManager().integer(lowerBoundIt->second), storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName));
+                        result["value"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(assignment.getAssignedExpression()) - model.getManager().integer(lowerBoundIt->second), options);
                     }
                 } else {
-                    result["value"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(assignment.getAssignedExpression()), storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName));
+                    result["value"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(assignment.getAssignedExpression()), options);
                 }
                 return result;
             }
@@ -1428,6 +1520,19 @@ namespace storm {
                 
                 modelData["terminalExpressions"] = cpptempl::make_data(terminalExpressions);
             }
+                
+            template <typename ValueType, typename RewardModelType>
+            void ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateParameters(cpptempl::data_map& modelData) {
+                cpptempl::data_list parameters;
+                for (auto const& constant : model.getConstants()) {
+                    if (!constant.isDefined() && constant.isRealConstant()) {
+                        cpptempl::data_map parameter;
+                        parameter["name"] = constant.getName();
+                        parameters.push_back(parameter);
+                    }
+                }
+                modelData["parameters"] = cpptempl::make_data(parameters);
+            }
 
             template <typename ValueType, typename RewardModelType>
             std::string const& ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::getVariableName(storm::expressions::Variable const& variable) const {
@@ -1470,7 +1575,7 @@ namespace storm {
             std::string ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::asString(ValueTypePrime value) const {
                 return std::to_string(value);
             }
-            
+                
             template <typename ValueType, typename RewardModelType>
             std::string ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::createSourceCodeFromSkeleton(cpptempl::data_map& modelData) {
                 std::string sourceTemplate = R"(
@@ -1484,6 +1589,13 @@ namespace storm {
 #include <unordered_map>
 #include <boost/dll/alias.hpp>
                 
+{% if exact %}
+#include "src/adapters/NumberAdapter.h"
+{% endif %}
+{% if parametric %}
+#include "src/adapters/CarlAdapter.h"
+{% endif %}
+                
 #include "resources/3rdparty/sparsepp/sparsepp.h"
                 
 #include "src/builder/jit/StateSet.h"
@@ -1492,6 +1604,8 @@ namespace storm {
 #include "src/builder/jit/ModelComponentsBuilder.h"
 #include "src/builder/RewardModelInformation.h"
                 
+#include "src/utility/constants.h"
+                
 #include "src/exceptions/WrongFormatException.h"
                 
                 namespace storm {
@@ -1499,7 +1613,16 @@ namespace storm {
                         namespace jit {
                             
                             typedef uint32_t IndexType;
+                            
+                            {% if double %}
                             typedef double ValueType;
+                            {% endif %}
+                            {% if exact %}
+                            typedef storm::RationalNumber ValueType;
+                            {% endif %}
+                            {% if parametric %}
+                            typedef storm::RationalFunction ValueType;
+                            {% endif %}
                             
                             struct StateType {
                                 // Boolean variables.
@@ -1576,8 +1699,18 @@ namespace storm {
                                 {% for variable in transient_variables.unboundedInteger %}int64_t {$variable.name};
                                 {% endfor %}
                                 // Real variables.
+                                {% if double %}
                                 {% for variable in transient_variables.real %}double {$variable.name};
                                 {% endfor %}
+                                {% endif %}
+                                {% if exact %}
+                                {% for variable in transient_variables.real %}storm::RationalNumber {$variable.name};
+                                {% endfor %}
+                                {% endif %}
+                                {% if parametric %}
+                                {% for variable in transient_variables.real %}storm::RationalFunction {$variable.name};
+                                {% endfor %}
+                                {% endif %}
                             };
                             
                             std::ostream& operator<<(std::ostream& out, TransientVariables const& in) {
@@ -1693,6 +1826,19 @@ namespace storm {
                                 return false;
                                 {% endif %}
                             }
+                            
+                            {% if parametric %}
+                            {% for parameter in parameters %}static storm::RationalFunction {$parameter.name};
+                            {% endfor %}
+                            
+                            void initialize_parameters(std::vector<storm::RationalFunction> const& parameters) {
+#ifndef NDEBUG
+                                std::cout << "initializing parameters" << std::endl;
+#endif
+                                {% for parameter in parameters %}{$parameter.name} = parameters[{$loop.index} - 1];
+                                {% endfor %}
+                            }
+                            {% endif %}
                             
                             // Non-synchronizing edges.
                             {% for edge in nonsynch_edges %}static bool edge_enabled_{$edge.name}(StateType const& in) {
@@ -2085,7 +2231,7 @@ namespace storm {
                                     }
                                 }
                                 
-                                bool isTerminalState(StateType const& state) const {
+                                bool isTerminalState(StateType const& in) const {
                                     {% for expression in terminalExpressions %}if ({$expression}) {
                                         return true;
                                     }
@@ -2097,7 +2243,7 @@ namespace storm {
                                     {% for edge in nonsynch_edges %}{
                                         if ({$edge.guard}) {
                                             Choice<IndexType, ValueType>& choice = behaviour.addChoice(!model_is_deterministic() && !model_is_discrete_time() && {$edge.markovian});
-                                            choice.resizeRewards({$edge_destination_rewards_count}, 0);
+                                            choice.resizeRewards({$edge_destination_rewards_count});
                                             {
                                                 {% if exploration_checks %}VariableWrites variableWrites;
                                                 {% endif %}
@@ -2188,6 +2334,7 @@ namespace storm {
                             };
                             
                             BOOST_DLL_ALIAS(storm::builder::jit::JitBuilder::create, create_builder)
+                            BOOST_DLL_ALIAS(storm::builder::jit::initialize_parameters, initialize_parameters)
                         }
                     }
                 }
@@ -2203,7 +2350,8 @@ namespace storm {
                 dynamicLibraryPath += DYLIB_EXTENSION;
                 std::string dynamicLibraryFilename = boost::filesystem::absolute(dynamicLibraryPath).string();
                 
-                std::string command = compiler + " " + sourceFilename + " " + compilerFlags + " -I" + stormRoot + " -I" + stormRoot + "/build_xcode/include -I" + boostIncludeDirectory + " -o " + dynamicLibraryFilename;
+                // FIXME: get right of build_xcode/include
+                std::string command = compiler + " " + sourceFilename + " " + compilerFlags + " -I" + stormRoot + " -I" + stormRoot + "/build_xcode/include -I" + boostIncludeDirectory + " -I" + carlIncludeDir + " -o " + dynamicLibraryFilename;
                 boost::optional<std::string> error = execute(command);
                 
                 if (error) {
@@ -2214,10 +2362,48 @@ namespace storm {
                 return dynamicLibraryPath;
             }
             
+            template<typename RationalFunctionType, typename TP = typename RationalFunctionType::PolyType, carl::EnableIf<carl::needs_cache<TP>> = carl::dummy>
+            RationalFunctionType convertVariableToPolynomial(carl::Variable const& variable, std::shared_ptr<carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>>> cache) {
+                return RationalFunctionType(typename RationalFunctionType::PolyType(typename RationalFunctionType::PolyType::PolyType(variable), cache));
+            }
+                
+            template<typename RationalFunctionType, typename TP = typename RationalFunctionType::PolyType, carl::DisableIf<carl::needs_cache<TP>> = carl::dummy>
+            RationalFunctionType convertVariableToPolynomial(carl::Variable const& variable, std::shared_ptr<carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>>> cache) {
+                return RationalFunctionType(variable);
+            }
+            
+            template<typename ValueType>
+            std::vector<storm::RationalFunction> getParameters(storm::jani::Model const& model, std::shared_ptr<carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>>> cache) {
+                STORM_LOG_THROW(false, storm::exceptions::InvalidStateException, "This function must not be called for this type.");
+            }
+                
+            template<>
+            std::vector<storm::RationalFunction> getParameters<storm::RationalFunction>(storm::jani::Model const& model, std::shared_ptr<carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>>> cache) {
+                std::vector<storm::RationalFunction> parameters;
+                for (auto const& constant : model.getConstants()) {
+                    if (!constant.isDefined() && constant.isRealConstant()) {
+                        parameters.push_back(convertVariableToPolynomial<storm::RationalFunction>(carl::freshRealVariable(constant.getName()), cache));
+                    }
+                }
+                return parameters;
+            }
+                
             template <typename ValueType, typename RewardModelType>
             void ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::createBuilder(boost::filesystem::path const& dynamicLibraryPath) {
                 jitBuilderCreateFunction = boost::dll::import_alias<typename ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::CreateFunctionType>(dynamicLibraryPath, "create_builder");
                 builder = std::unique_ptr<JitModelBuilderInterface<IndexType, ValueType>>(jitBuilderCreateFunction(modelComponentsBuilder));
+                
+                if (std::is_same<storm::RationalFunction, ValueType>::value) {
+                    typedef void (InitializeParametersFunctionType)(std::vector<storm::RationalFunction> const&);
+                    typedef boost::function<InitializeParametersFunctionType> ImportInitializeParametersFunctionType;
+
+                    // Create the carl cache if we are building a parametric model.
+                    cache = std::make_shared<carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>>>();
+
+                    ImportInitializeParametersFunctionType initializeParametersFunction = boost::dll::import_alias<InitializeParametersFunctionType>(dynamicLibraryPath, "initialize_parameters");
+                    std::vector<storm::RationalFunction> parameters = getParameters<ValueType>(this->model, cache);
+                    initializeParametersFunction(parameters);
+                }
             }
             
             template class ExplicitJitJaniModelBuilder<double, storm::models::sparse::StandardRewardModel<double>>;

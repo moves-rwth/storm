@@ -232,11 +232,13 @@ if(USE_CARL)
         )
 
         add_dependencies(resources carl)
-        include_directories(${STORM_3RDPARTY_BINARY_DIR}/carl/include)
+        set(carl_INCLUDE_DIR "${STORM_3RDPARTY_BINARY_DIR}/carl/include")
+        include_directories("${carl_INCLUDE_DIR}")
         list(APPEND STORM_LINK_LIBRARIES ${STORM_3RDPARTY_BINARY_DIR}/carl/lib/libcarl${DYNAMIC_EXT})
         set(STORM_HAVE_CARL ON)
     endif()
 endif()
+set(STORM_CARL_INCLUDE_DIR "${carl_INCLUDE_DIR}")
 
 #############################################################
 ##

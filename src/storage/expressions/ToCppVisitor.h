@@ -10,21 +10,22 @@ namespace storm {
     namespace expressions {
         class Expression;
         
+        enum class ToCppTranslationMode {
+            KeepType, CastDouble, CastRationalNumber, CastRationalFunction
+        };
+        
         class ToCppTranslationOptions {
         public:
-            ToCppTranslationOptions(std::unordered_map<storm::expressions::Variable, std::string> const& prefixes, std::unordered_map<storm::expressions::Variable, std::string> const& names, std::string const& valueTypeCast = "");
+            ToCppTranslationOptions(std::unordered_map<storm::expressions::Variable, std::string> const& prefixes, std::unordered_map<storm::expressions::Variable, std::string> const& names, ToCppTranslationMode mode = ToCppTranslationMode::KeepType);
             
             std::unordered_map<storm::expressions::Variable, std::string> const& getPrefixes() const;
             std::unordered_map<storm::expressions::Variable, std::string> const& getNames() const;
-            
-            bool hasValueTypeCast() const;
-            std::string const& getValueTypeCast() const;
-            void clearValueTypeCast();
+            ToCppTranslationMode const& getMode() const;
             
         private:
-            std::unordered_map<storm::expressions::Variable, std::string> const& prefixes;
-            std::unordered_map<storm::expressions::Variable, std::string> const& names;
-            std::string valueTypeCast;
+            std::reference_wrapper<std::unordered_map<storm::expressions::Variable, std::string> const> prefixes;
+            std::reference_wrapper<std::unordered_map<storm::expressions::Variable, std::string> const> names;
+            ToCppTranslationMode mode;
         };
         
         class ToCppVisitor : public ExpressionVisitor {

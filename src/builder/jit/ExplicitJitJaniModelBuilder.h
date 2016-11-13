@@ -8,6 +8,8 @@
 
 #include "cpptempl.h"
 
+#include "src/adapters/CarlAdapter.h"
+
 #include "src/storage/jani/Model.h"
 #include "src/storage/jani/ParallelComposition.h"
 #include "src/storage/expressions/ToCppVisitor.h"
@@ -36,7 +38,7 @@ namespace storm {
             class ExplicitJitJaniModelBuilder {
             public:
                 typedef JitModelBuilderInterface<IndexType, ValueType>* (CreateFunctionType)(ModelComponentsBuilder<IndexType, ValueType>& modelComponentsBuilder);
-                typedef boost::function<CreateFunctionType> ImportFunctionType;
+                typedef boost::function<CreateFunctionType> ImportCreateFunctionType;
                 
                 /*!
                  * Creates a model builder for the given model. The provided options are used to determine which part of
@@ -63,6 +65,7 @@ namespace storm {
                 bool checkBoostAvailable() const;
                 bool checkBoostDllAvailable() const;
                 bool checkStormAvailable() const;
+                bool checkCarlAvailable() const;
                 
                 /*!
                  * Executes the given command. If the command fails with a non-zero error code, the error stream content
@@ -92,7 +95,8 @@ namespace storm {
                 void generateLocations(cpptempl::data_map& modelData);
                 void generateLabels(cpptempl::data_map& modelData);
                 void generateTerminalExpressions(cpptempl::data_map& modelData);
-
+                void generateParameters(cpptempl::data_map& modelData);
+                
                 // Functions related to the generation of edge data.
                 void generateEdges(cpptempl::data_map& modelData);
                 cpptempl::data_map generateSynchronizationVector(cpptempl::data_map& modelData, storm::jani::ParallelComposition const& parallelComposition, storm::jani::SynchronizationVector const& synchronizationVector, uint64_t synchronizationVectorIndex);
@@ -149,7 +153,7 @@ namespace storm {
                 
                 /// The function that was loaded from the shared library. We have to keep this function around, because
                 /// otherwise the shared library gets unloaded.
-                typename ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::ImportFunctionType jitBuilderCreateFunction;
+                typename ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::ImportCreateFunctionType jitBuilderCreateFunction;
                 
                 /// The pointer to the builder object created via the shared library.
                 std::unique_ptr<JitModelBuilderInterface<IndexType, ValueType>> builder;
@@ -163,6 +167,7 @@ namespace storm {
                 std::map<storm::expressions::Variable, int_fast64_t> lowerBounds;
                 std::set<storm::expressions::Variable> transientVariables;
                 std::set<storm::expressions::Variable> nontransientVariables;
+                std::set<storm::expressions::Variable> realVariables;
                 std::unordered_map<storm::expressions::Variable, std::string> variablePrefixes;
 
                 /// The compiler binary.
@@ -176,6 +181,12 @@ namespace storm {
                 
                 /// The root directory of storm.
                 std::string stormRoot;
+                
+                /// The include directory of carl.
+                std::string carlIncludeDir;
+                
+                /// A cache that is used by carl.
+                std::shared_ptr<carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>>> cache;
             };
 
         }
