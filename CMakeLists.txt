@@ -118,6 +118,11 @@ endif()
 message(STATUS "Assuming extension for shared libraries: ${DYNAMIC_EXT}")
 message(STATUS "Assuming extension for static libraries: ${STATIC_EXT}")
 
+# Python bindings need shared library
+if(STORM_PYTHON)
+    set(BUILD_SHARED_LIBS ON CACHE BOOL "Build the Storm library dynamically" FORCE)
+endif()
+
 if(BUILD_SHARED_LIBS)
     set(LIB_EXT ${DYNAMIC_EXT})
     message(STATUS "Build dynamic libraries.")
