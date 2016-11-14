@@ -1,4 +1,5 @@
 [build_ext]
+compile_flags=@STORMPY_COMPILE_ARGS@
 use-cln=@STORMPY_USE_CLN@
 include_dirs=@STORMPY_INCLUDE_DIRS@
 library_dirs=@STORMPY_LIBRARY_DIRS@

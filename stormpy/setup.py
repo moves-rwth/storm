@@ -17,9 +17,9 @@ storage_sources = glob(os.path.join('src', 'storage', '*.cpp'))
 # Configuration shared between external modules follows
 include_dirs = [PROJECT_DIR, os.path.join(PROJECT_DIR, 'src'),
                 os.path.join(PROJECT_DIR, 'resources', 'pybind11', 'include')]
-library_dirs = []
 libraries = ['storm']
-extra_compile_args = ['-std=c++11']
+library_dirs = []
+extra_compile_args = []
 define_macros = []
 extra_link_args = []
 
@@ -84,6 +84,8 @@ class build_ext(orig_build_ext):
     user_options = orig_build_ext.user_options + [
         ('use-cln', None,
          "use cln numbers instead of gmpxx"),
+        ('compile-flags', None,
+         "compile flags for C++"),
         ]
 
     boolean_options = orig_build_ext.boolean_options + ['use-cln']
@@ -91,6 +93,7 @@ class build_ext(orig_build_ext):
     def initialize_options (self):
         super(build_ext, self).initialize_options()
         self.use_cln = None
+        self.compile_flags = None
 
     def finalize_options(self):
         super(build_ext, self).finalize_options()
@@ -116,6 +119,9 @@ class build_ext(orig_build_ext):
             for e in self.extensions:
                 # If rpath is used on OS X, set this option
                 e.extra_link_args.append('-Wl,-rpath,'+self.rpath[0])
+
+        for e in self.extensions:
+            e.extra_compile_args += self.compile_flags.split()
 
 setup(name="stormpy",
       version="0.9",
