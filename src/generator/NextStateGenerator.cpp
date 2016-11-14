@@ -211,13 +211,25 @@ namespace storm {
             return transitionRewards;
         }
         
+        void RewardModelInformation::setHasStateRewards() {
+            stateRewards = true;
+        }
+        
+        void RewardModelInformation::setHasStateActionRewards() {
+            stateActionRewards = true;
+        }
+        
+        void RewardModelInformation::setHasTransitionRewards() {
+            transitionRewards = true;
+        }
+        
         template<typename ValueType, typename StateType>
-        NextStateGenerator<ValueType, StateType>::NextStateGenerator(storm::expressions::ExpressionManager const& expressionManager, VariableInformation const& variableInformation, NextStateGeneratorOptions const& options) : options(options), expressionManager(expressionManager.getSharedPointer()), variableInformation(variableInformation), evaluator(expressionManager), state(nullptr) {
+        NextStateGenerator<ValueType, StateType>::NextStateGenerator(storm::expressions::ExpressionManager const& expressionManager, VariableInformation const& variableInformation, NextStateGeneratorOptions const& options) : options(options), expressionManager(expressionManager.getSharedPointer()), variableInformation(variableInformation), evaluator(nullptr), state(nullptr) {
             // Intentionally left empty.
         }
         
         template<typename ValueType, typename StateType>
-        NextStateGenerator<ValueType, StateType>::NextStateGenerator(storm::expressions::ExpressionManager const& expressionManager, NextStateGeneratorOptions const& options) : options(options), expressionManager(expressionManager.getSharedPointer()), variableInformation(), evaluator(expressionManager), state(nullptr) {
+        NextStateGenerator<ValueType, StateType>::NextStateGenerator(storm::expressions::ExpressionManager const& expressionManager, NextStateGeneratorOptions const& options) : options(options), expressionManager(expressionManager.getSharedPointer()), variableInformation(), evaluator(nullptr), state(nullptr) {
             // Intentionally left empty.
         }
         
@@ -234,7 +246,7 @@ namespace storm {
         template<typename ValueType, typename StateType>
         void NextStateGenerator<ValueType, StateType>::load(CompressedState const& state) {
             // Since almost all subsequent operations are based on the evaluator, we load the state into it now.
-            unpackStateIntoEvaluator(state, variableInformation, evaluator);
+            unpackStateIntoEvaluator(state, variableInformation, *evaluator);
             
             // Also, we need to store a pointer to the state itself, because we need to be able to access it when expanding it.
             this->state = &state;
@@ -245,7 +257,7 @@ namespace storm {
             if (expression.isTrue()) {
                 return true;
             }
-            return evaluator.asBool(expression);
+            return evaluator->asBool(expression);
         }
         
         template<typename ValueType, typename StateType>
@@ -270,11 +282,11 @@ namespace storm {
                 result.addLabel(label.first);
             }
             for (auto const& stateIndexPair : states) {
-                unpackStateIntoEvaluator(stateIndexPair.first, variableInformation, this->evaluator);
+                unpackStateIntoEvaluator(stateIndexPair.first, variableInformation, *this->evaluator);
                 
                 for (auto const& label : labelsAndExpressions) {
                     // Add label to state, if the corresponding expression is true.
-                    if (evaluator.asBool(label.second)) {
+                    if (evaluator->asBool(label.second)) {
                         result.addLabelToState(label.first, stateIndexPair.second);
                     }
                 }
@@ -295,6 +307,48 @@ namespace storm {
             }
             
             return result;
+        }
+        
+        template<typename ValueType, typename StateType>
+        void NextStateGenerator<ValueType, StateType>::postprocess(StateBehavior<ValueType, StateType>& result) {
+            // If the model we build is a Markov Automaton, we postprocess the choices to sum all Markovian choices
+            // and make the Markovian choice the very first one (if there is any).
+            bool foundPreviousMarkovianChoice = false;
+            if (this->getModelType() == ModelType::MA) {
+                uint64_t numberOfChoicesToDelete = 0;
+                
+                for (uint_fast64_t index = 0; index + numberOfChoicesToDelete < result.getNumberOfChoices();) {
+                    Choice<ValueType>& choice = result.getChoices()[index];
+                    
+                    if (choice.isMarkovian()) {
+                        if (foundPreviousMarkovianChoice) {
+                            // If there was a previous Markovian choice, we need to sum them. Note that we can assume
+                            // that the previous Markovian choice is the very first one in the choices vector.
+                            result.getChoices().front().add(choice);
+                            
+                            // Swap the choice to the end to indicate it can be removed (if it's not already there).
+                            if (index != result.getNumberOfChoices() - 1) {
+                                std::swap(choice, result.getChoices().back());
+                            }
+                            ++numberOfChoicesToDelete;
+                        } else {
+                            // If there is no previous Markovian choice, just move the Markovian choice to the front.
+                            if (index != 0) {
+                                std::swap(result.getChoices().front(), choice);
+                                foundPreviousMarkovianChoice = true;
+                            }
+                            ++index;
+                        }
+                    } else {
+                        ++index;
+                    }
+                }
+                
+                // Finally remove the choices that were added to other Markovian choices.
+                if (numberOfChoicesToDelete > 0) {
+                    result.getChoices().resize(result.getChoices().size() - numberOfChoicesToDelete);
+                }
+            }
         }
         
         template<typename ValueType, typename StateType>

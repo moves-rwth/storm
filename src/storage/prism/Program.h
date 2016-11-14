@@ -94,13 +94,13 @@ namespace storm {
             bool hasUndefinedConstants() const;
 
             /*!
-             * Retrieves whether there are undefined constants appearing in any place other than the update probabilities
-             * of the commands and the reward expressions. This is to be used for parametric model checking where the
-             * parameters are only allowed to govern the probabilities, not the underlying graph of the model.
+             * Checks that undefined constants (parameters) of the model preserve the graph of the underlying model.
+             * That is, undefined constants may only appear in the probability expressions of updates as well as in the
+             * values in reward models.
              *
-             * @return True iff all undefined constants of the model only appear in update probabilities.
+             * @return True iff the undefined constants are graph-preserving. 
              */
-            bool hasUndefinedConstantsOnlyInUpdateProbabilitiesAndRewards() const;
+            bool undefinedConstantsAreGraphPreserving() const;
             
             /*!
              * Retrieves the undefined constants in the program.
@@ -286,11 +286,30 @@ namespace storm {
             std::map<std::string, uint_fast64_t> const& getActionNameToIndexMapping() const;
             
             /*!
+             * Retrieves whether the program specifies an initial construct.
+             */
+            bool hasInitialConstruct() const;
+            
+            /*!
              * Retrieves the initial construct of the program.
              *
              * @return The initial construct of the program.
              */
             InitialConstruct const& getInitialConstruct() const;
+
+            /*!
+             * Retrieves an optional containing the initial construct of the program if there is any and nothing otherwise.
+             *
+             * @return The initial construct of the program.
+             */
+            boost::optional<InitialConstruct> const& getOptionalInitialConstruct() const;
+
+            /*!
+             * Retrieves an expression characterizing the initial states.
+             *
+             * @return an expression characterizing the initial states.
+             */
+            storm::expressions::Expression getInitialStatesExpression() const;
             
             /*!
              * Retrieves whether the program specifies a system composition in terms of process algebra operations over
@@ -547,28 +566,14 @@ namespace storm {
              *
              * @return The manager responsible for the expressions of this program.
              */
-            storm::expressions::ExpressionManager const& getManager() const;
+            storm::expressions::ExpressionManager& getManager() const;
 
-            /*!
-             * Retrieves the manager responsible for the expressions of this program.
-             *
-             * @return The manager responsible for the expressions of this program.
-             */
-            storm::expressions::ExpressionManager& getManager();
-
-            /*!
-             *
-             */
             std::unordered_map<uint_fast64_t, std::string> buildCommandIndexToActionNameMap() const;
 
             std::unordered_map<uint_fast64_t, uint_fast64_t> buildCommandIndexToActionIndex() const;
 
             std::unordered_map<uint_fast64_t, std::string> buildActionIndexToActionNameMap() const;
 
-            uint_fast64_t numberOfActions() const;
-
-            uint_fast64_t largestActionIndex() const;
-            
             /*!
              * Converts the PRISM model into an equivalent JANI model.
              */
@@ -638,7 +643,7 @@ namespace storm {
             std::map<std::string, uint_fast64_t> rewardModelToIndexMap;
             
             // The initial construct of the program.
-            InitialConstruct initialConstruct;
+            boost::optional<InitialConstruct> initialConstruct;
             
             // If set, this specifies the way the modules are composed to obtain the full system.
             boost::optional<SystemCompositionConstruct> systemCompositionConstruct;

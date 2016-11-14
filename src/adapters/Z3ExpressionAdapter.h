@@ -55,25 +55,25 @@ namespace storm {
              */
             storm::expressions::Variable const& getVariable(z3::func_decl z3Declaration);
 
-            virtual boost::any visit(storm::expressions::BinaryBooleanFunctionExpression const& expression) override;
+            virtual boost::any visit(storm::expressions::BinaryBooleanFunctionExpression const& expression, boost::any const& data) override;
             
-            virtual boost::any visit(storm::expressions::BinaryNumericalFunctionExpression const& expression) override;
+            virtual boost::any visit(storm::expressions::BinaryNumericalFunctionExpression const& expression, boost::any const& data) override;
             
-            virtual boost::any visit(storm::expressions::BinaryRelationExpression const& expression) override;
+            virtual boost::any visit(storm::expressions::BinaryRelationExpression const& expression, boost::any const& data) override;
             
-            virtual boost::any visit(storm::expressions::BooleanLiteralExpression const& expression) override;
+            virtual boost::any visit(storm::expressions::BooleanLiteralExpression const& expression, boost::any const& data) override;
             
-            virtual boost::any visit(storm::expressions::RationalLiteralExpression const& expression) override;
+            virtual boost::any visit(storm::expressions::RationalLiteralExpression const& expression, boost::any const& data) override;
             
-            virtual boost::any visit(storm::expressions::IntegerLiteralExpression const& expression) override;
+            virtual boost::any visit(storm::expressions::IntegerLiteralExpression const& expression, boost::any const& data) override;
             
-            virtual boost::any visit(storm::expressions::UnaryBooleanFunctionExpression const& expression) override;
+            virtual boost::any visit(storm::expressions::UnaryBooleanFunctionExpression const& expression, boost::any const& data) override;
             
-            virtual boost::any visit(storm::expressions::UnaryNumericalFunctionExpression const& expression) override;
+            virtual boost::any visit(storm::expressions::UnaryNumericalFunctionExpression const& expression, boost::any const& data) override;
 
-            virtual boost::any visit(storm::expressions::IfThenElseExpression const& expression) override;
+            virtual boost::any visit(storm::expressions::IfThenElseExpression const& expression, boost::any const& data) override;
             
-            virtual boost::any visit(storm::expressions::VariableExpression const& expression) override;
+            virtual boost::any visit(storm::expressions::VariableExpression const& expression, boost::any const& data) override;
 
         private:
             /*!

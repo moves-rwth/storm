@@ -5,6 +5,7 @@
 #include "src/storage/expressions/ExpressionManager.h"
 #include "src/storage/expressions/SubstitutionVisitor.h"
 #include "src/storage/expressions/LinearityCheckVisitor.h"
+#include "src/storage/expressions/SyntacticalEqualityCheckVisitor.h"
 #include "src/storage/expressions/Expressions.h"
 #include "src/exceptions/InvalidTypeException.h"
 #include "src/exceptions/InvalidArgumentException.h"
@@ -158,8 +159,8 @@ namespace storm {
             return this->getBaseExpression().hasBitVectorType();
         }
         
-        boost::any Expression::accept(ExpressionVisitor& visitor) const {
-            return this->getBaseExpression().accept(visitor);
+        boost::any Expression::accept(ExpressionVisitor& visitor, boost::any const& data) const {
+            return this->getBaseExpression().accept(visitor, data);
         }
 
         bool Expression::isInitialized() const {
@@ -167,6 +168,14 @@ namespace storm {
                 return true;
             }
             return false;
+        }
+        
+        bool Expression::isSyntacticallyEqual(storm::expressions::Expression const& other) const {
+            if (this->getBaseExpressionPointer() == other.getBaseExpressionPointer()) {
+                return true;
+            }
+            SyntacticalEqualityCheckVisitor checker;
+            return checker.isSyntaticallyEqual(*this, other);
         }
 
         std::string Expression::toString() const {
@@ -185,10 +194,25 @@ namespace storm {
             return Expression(std::shared_ptr<BaseExpression>(new BinaryNumericalFunctionExpression(first.getManager(), first.getType().plusMinusTimes(second.getType()), first.getBaseExpressionPointer(), second.getBaseExpressionPointer(), BinaryNumericalFunctionExpression::OperatorType::Plus)));
         }
         
+        Expression operator+(Expression const& first, int64_t second) {
+            return first + Expression(std::shared_ptr<BaseExpression>(new IntegerLiteralExpression(first.getBaseExpression().getManager(), second)));
+        }
+        
+        Expression operator+(int64_t first, Expression const& second) {
+            return second + first;
+        }
+        
         Expression operator-(Expression const& first, Expression const& second) {
             assertSameManager(first.getBaseExpression(), second.getBaseExpression());
             return Expression(std::shared_ptr<BaseExpression>(new BinaryNumericalFunctionExpression(first.getBaseExpression().getManager(), first.getType().plusMinusTimes(second.getType()), first.getBaseExpressionPointer(), second.getBaseExpressionPointer(), BinaryNumericalFunctionExpression::OperatorType::Minus)));
         }
+        
+        Expression operator-(Expression const& first, int64_t second) {
+            return first - Expression(std::shared_ptr<BaseExpression>(new IntegerLiteralExpression(first.getBaseExpression().getManager(), second)));
+        }
+        
+        Expression operator-(int64_t first, Expression const& second) {
+            return Expression(std::shared_ptr<BaseExpression>(new IntegerLiteralExpression(second.getBaseExpression().getManager(), first))) - second;        }
         
         Expression operator-(Expression const& first) {
             return Expression(std::shared_ptr<BaseExpression>(new UnaryNumericalFunctionExpression(first.getBaseExpression().getManager(), first.getType().minus(), first.getBaseExpressionPointer(), UnaryNumericalFunctionExpression::OperatorType::Minus)));
@@ -256,6 +280,22 @@ namespace storm {
             assertSameManager(first.getBaseExpression(), second.getBaseExpression());
             return Expression(std::shared_ptr<BaseExpression>(new BinaryRelationExpression(first.getBaseExpression().getManager(), first.getType().numericalComparison(second.getType()), first.getBaseExpressionPointer(), second.getBaseExpressionPointer(), BinaryRelationExpression::RelationType::LessOrEqual)));
         }
+        
+        Expression operator<(Expression const& first, int64_t second) {
+            return first < Expression(std::shared_ptr<BaseExpression>(new IntegerLiteralExpression(first.getBaseExpression().getManager(), second)));
+        }
+        
+        Expression operator>(Expression const& first, int64_t second) {
+            return first > Expression(std::shared_ptr<BaseExpression>(new IntegerLiteralExpression(first.getBaseExpression().getManager(), second)));
+        }
+        
+        Expression operator<=(Expression const& first, int64_t second) {
+            return first <= Expression(std::shared_ptr<BaseExpression>(new IntegerLiteralExpression(first.getBaseExpression().getManager(), second)));
+        }
+        
+        Expression operator>=(Expression const& first, int64_t second) {
+            return first >= Expression(std::shared_ptr<BaseExpression>(new IntegerLiteralExpression(first.getBaseExpression().getManager(), second)));
+        }
 
         Expression minimum(Expression const& first, Expression const& second) {
             assertSameManager(first.getBaseExpression(), second.getBaseExpression());
@@ -300,19 +340,17 @@ namespace storm {
 
         Expression abs(Expression const& first) {
             STORM_LOG_THROW(first.hasNumericalType(), storm::exceptions::InvalidTypeException, "Abs is only defined for numerical operands");
-            return ite(first < first.getManager().integer(0), -first, first);
+            return ite(first < 0, -first, first);
         }
 
         Expression sign(Expression const& first) {
             STORM_LOG_THROW(first.hasNumericalType(), storm::exceptions::InvalidTypeException, "Sign is only defined for numerical operands");
-            // TODO implement (via Ite?)
-            STORM_LOG_ERROR("Not yet implemented");
+            return ite(first > 0, first.getManager().integer(1), ite(first < 0, first.getManager().integer(0), first.getManager().integer(0)));
         }
 
         Expression truncate(Expression const& first) {
             STORM_LOG_THROW(first.hasNumericalType(), storm::exceptions::InvalidTypeException, "Truncate is only defined for numerical operands");
-            // TODO implement (via Ite?)
-            STORM_LOG_ERROR("Not yet implemented");
+            return ite(first < 0, floor(first), ceil(first));
         }
 
         Expression disjunction(std::vector<storm::expressions::Expression> const& expressions) {

@@ -2,6 +2,7 @@
 
 #include "src/storage/prism/Program.h"
 #include "src/storage/jani/Model.h"
+#include "src/storage/expressions/ExpressionManager.h"
 
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidArgumentException.h"
@@ -19,7 +20,7 @@ namespace storm {
             // Intentionally left empty.
         }
         
-        LocationVariableInformation::LocationVariableInformation(uint64_t highestValue, uint_fast64_t bitOffset, uint_fast64_t bitWidth) : highestValue(highestValue), bitOffset(bitOffset), bitWidth(bitWidth) {
+        LocationVariableInformation::LocationVariableInformation(storm::expressions::Variable const& variable, uint64_t highestValue, uint_fast64_t bitOffset, uint_fast64_t bitWidth) : variable(variable), highestValue(highestValue), bitOffset(bitOffset), bitWidth(bitWidth) {
             // Intentionally left empty.
         }
         
@@ -53,32 +54,48 @@ namespace storm {
         }
         
         VariableInformation::VariableInformation(storm::jani::Model const& model) : totalBitOffset(0) {
-            for (auto const& variable : model.getGlobalVariables().getBooleanVariables()) {
-                booleanVariables.emplace_back(variable.getExpressionVariable(), totalBitOffset, true);
-                ++totalBitOffset;
-            }
-            for (auto const& variable : model.getGlobalVariables().getBoundedIntegerVariables()) {
-                int_fast64_t lowerBound = variable.getLowerBound().evaluateAsInt();
-                int_fast64_t upperBound = variable.getUpperBound().evaluateAsInt();
-                uint_fast64_t bitwidth = static_cast<uint_fast64_t>(std::ceil(std::log2(upperBound - lowerBound + 1)));
-                integerVariables.emplace_back(variable.getExpressionVariable(), lowerBound, upperBound, totalBitOffset, bitwidth, true);
-                totalBitOffset += bitwidth;
-            }
+            // Check that the model does not contain non-transient unbounded integer or non-transient real variables.
+            STORM_LOG_THROW(!model.getGlobalVariables().containsNonTransientRealVariables(), storm::exceptions::InvalidArgumentException, "Cannot build model from JANI model that contains global non-transient real variables.");
+            STORM_LOG_THROW(!model.getGlobalVariables().containsNonTransientUnboundedIntegerVariables(), storm::exceptions::InvalidArgumentException, "Cannot build model from JANI model that contains non-transient unbounded integer variables.");
             for (auto const& automaton : model.getAutomata()) {
-                uint_fast64_t bitwidth = static_cast<uint_fast64_t>(std::ceil(std::log2(automaton.getNumberOfLocations())));
-                locationVariables.emplace_back(automaton.getNumberOfLocations() - 1, totalBitOffset, bitwidth);
-                totalBitOffset += bitwidth;
-                
-                for (auto const& variable : automaton.getVariables().getBooleanVariables()) {
-                    booleanVariables.emplace_back(variable.getExpressionVariable(), totalBitOffset);
+                STORM_LOG_THROW(!automaton.getVariables().containsNonTransientUnboundedIntegerVariables(), storm::exceptions::InvalidArgumentException, "Cannot build model from JANI model that contains non-transient unbounded integer variables in automaton '" << automaton.getName() << "'.");
+                STORM_LOG_THROW(!automaton.getVariables().containsNonTransientRealVariables(), storm::exceptions::InvalidArgumentException, "Cannot build model from JANI model that contains non-transient real variables in automaton '" << automaton.getName() << "'.");
+            }
+            
+            for (auto const& variable : model.getGlobalVariables().getBooleanVariables()) {
+                if (!variable.isTransient()) {
+                    booleanVariables.emplace_back(variable.getExpressionVariable(), totalBitOffset, true);
                     ++totalBitOffset;
                 }
-                for (auto const& variable : automaton.getVariables().getBoundedIntegerVariables()) {
+            }
+            for (auto const& variable : model.getGlobalVariables().getBoundedIntegerVariables()) {
+                if (!variable.isTransient()) {
                     int_fast64_t lowerBound = variable.getLowerBound().evaluateAsInt();
                     int_fast64_t upperBound = variable.getUpperBound().evaluateAsInt();
                     uint_fast64_t bitwidth = static_cast<uint_fast64_t>(std::ceil(std::log2(upperBound - lowerBound + 1)));
-                    integerVariables.emplace_back(variable.getExpressionVariable(), lowerBound, upperBound, totalBitOffset, bitwidth);
+                    integerVariables.emplace_back(variable.getExpressionVariable(), lowerBound, upperBound, totalBitOffset, bitwidth, true);
                     totalBitOffset += bitwidth;
+                }
+            }
+            for (auto const& automaton : model.getAutomata()) {
+                uint_fast64_t bitwidth = static_cast<uint_fast64_t>(std::ceil(std::log2(automaton.getNumberOfLocations())));
+                locationVariables.emplace_back(model.getManager().declareFreshIntegerVariable(false, "loc"), automaton.getNumberOfLocations() - 1, totalBitOffset, bitwidth);
+                totalBitOffset += bitwidth;
+                
+                for (auto const& variable : automaton.getVariables().getBooleanVariables()) {
+                    if (!variable.isTransient()) {
+                        booleanVariables.emplace_back(variable.getExpressionVariable(), totalBitOffset);
+                        ++totalBitOffset;
+                    }
+                }
+                for (auto const& variable : automaton.getVariables().getBoundedIntegerVariables()) {
+                    if (!variable.isTransient()) {
+                        int_fast64_t lowerBound = variable.getLowerBound().evaluateAsInt();
+                        int_fast64_t upperBound = variable.getUpperBound().evaluateAsInt();
+                        uint_fast64_t bitwidth = static_cast<uint_fast64_t>(std::ceil(std::log2(upperBound - lowerBound + 1)));
+                        integerVariables.emplace_back(variable.getExpressionVariable(), lowerBound, upperBound, totalBitOffset, bitwidth);
+                        totalBitOffset += bitwidth;
+                    }
                 }
             }
             

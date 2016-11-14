@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 3.0)
 
 # define the project
-project(nlohmann_json VERSION 2.0.0 LANGUAGES CXX)
+project(nlohmann_json VERSION 2.0.5 LANGUAGES CXX)
+
+enable_testing()
 
 option(BuildTests "Build the unit tests" ON)
 

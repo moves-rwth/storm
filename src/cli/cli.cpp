@@ -3,12 +3,16 @@
 
 #include "../utility/storm.h"
 
+#include "src/storage/SymbolicModelDescription.h"
+
 #include "src/settings/modules/DebugSettings.h"
 #include "src/settings/modules/IOSettings.h"
 #include "src/settings/modules/CoreSettings.h"
 #include "src/exceptions/OptionParserException.h"
+#include "src/settings/modules/JaniExportSettings.h"
 
 #include "src/utility/storm-version.h"
+#include "src/storage/jani/JSONExporter.h"
 
 
 // Includes for the linked libraries and versions header.
@@ -206,54 +210,95 @@ namespace storm {
                 storm::utility::initializeFileLogging();
             }
 
-            if (storm::settings::getModule<storm::settings::modules::IOSettings>().isSymbolicSet()) {
-                // If we have to build the model from a symbolic representation, we need to parse the representation first.
-                storm::prism::Program program = storm::parseProgram(storm::settings::getModule<storm::settings::modules::IOSettings>().getSymbolicModelFilename());
+            auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
+            if (ioSettings.isPrismOrJaniInputSet()) {
+                storm::storage::SymbolicModelDescription model;
+                std::vector<storm::jani::Property> properties;
+                
+                if (ioSettings.isPrismInputSet()) {
+                    model = storm::parseProgram(ioSettings.getPrismInputFilename());
+                    if (ioSettings.isPrismToJaniSet()) {
+                        model = model.toJani(true);
+                    }
+                } else if (ioSettings.isJaniInputSet()) {
+                    auto input = storm::parseJaniModel(ioSettings.getJaniInputFilename());
+                    model = input.first;
+                    if (ioSettings.isJaniPropertiesSet()) {
+                        for (auto const& propName : ioSettings.getJaniProperties()) {
+                            STORM_LOG_THROW( input.second.count(propName) == 1, storm::exceptions::InvalidArgumentException, "No property with name " << propName << " known.");
+                            properties.push_back(input.second.at(propName));
+                        }
+                    }
+                    
+                }
+                
+                // Then proceed to parsing the properties (if given), since the model we are building may depend on the property.
+                uint64_t i = 0;
+                if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isPropertySet()) {
+                    if (model.isJaniModel()) {
+                        for(auto const& formula : storm::parseFormulasForJaniModel(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getProperty(), model.asJaniModel())) {
+                            properties.emplace_back(std::to_string(i), formula);
+                            ++i;
+                        }
+                    } else {
+                        for(auto const& formula :storm::parseFormulasForPrismProgram(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getProperty(), model.asPrismProgram())) {
+                            properties.emplace_back(std::to_string(i), formula);
+                            ++i;
+                        }
+                    }
+                }
+                
+                if(model.isJaniModel() && storm::settings::getModule<storm::settings::modules::JaniExportSettings>().isJaniFileSet()) {
+                    if (storm::settings::getModule<storm::settings::modules::JaniExportSettings>().isExportAsStandardJaniSet()) {
+                        storm::jani::Model normalisedModel = storm::jani::Model(model.asJaniModel());
+                        normalisedModel.makeStandardJaniCompliant();
+                        storm::jani::JsonExporter::toFile(normalisedModel, formulasInProperties(properties), storm::settings::getModule<storm::settings::modules::JaniExportSettings>().getJaniFilename());
+                    } else {
+                        storm::jani::JsonExporter::toFile(model.asJaniModel(), formulasInProperties(properties), storm::settings::getModule<storm::settings::modules::JaniExportSettings>().getJaniFilename());
+                    }
+                }
+                
+                if (ioSettings.isNoBuildModelSet()) {
+                    return;
+                }
                 
                 // Get the string that assigns values to the unknown currently undefined constants in the model.
-                std::string constantDefinitionString = storm::settings::getModule<storm::settings::modules::IOSettings>().getConstantDefinitionString();
-                storm::prism::Program preprocessedProgram = storm::utility::prism::preprocess(program, constantDefinitionString);
-                std::map<storm::expressions::Variable, storm::expressions::Expression> constantsSubstitution = preprocessedProgram.getConstantsSubstitution();
+                std::string constantDefinitionString = ioSettings.getConstantDefinitionString();
+                model = model.preprocess(constantDefinitionString);
 
-                // Then proceed to parsing the properties (if given), since the model we are building may depend on the property.
-                std::vector<std::shared_ptr<storm::logic::Formula const>> formulas;
-                if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isPropertySet()) {
-                    formulas = storm::parseFormulasForProgram(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getProperty(), preprocessedProgram);
-                }
-
-                // There may be constants of the model appearing in the formulas, so we replace all their occurrences
-                // by their definitions in the translated program.
-                std::vector<std::shared_ptr<storm::logic::Formula const>> preprocessedFormulas;
-                for (auto const& formula : formulas) {
-                    preprocessedFormulas.emplace_back(formula->substitute(constantsSubstitution));
-                }
+                
 
                 if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isParametricSet()) {
 #ifdef STORM_HAVE_CARL
-                    buildAndCheckSymbolicModel<storm::RationalFunction>(preprocessedProgram, preprocessedFormulas, true);
+                    buildAndCheckSymbolicModel<storm::RationalFunction>(model, properties, true);
 #else
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "No parameters are supported in this build.");
 #endif
                 } else if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isExactSet()) {
 #ifdef STORM_HAVE_CARL
-                    buildAndCheckSymbolicModel<storm::RationalNumber>(preprocessedProgram, preprocessedFormulas, true);
+                    buildAndCheckSymbolicModel<storm::RationalNumber>(model, properties, true);
 #else
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "No exact numbers are supported in this build.");
 #endif
                 } else {
-                    buildAndCheckSymbolicModel<double>(preprocessedProgram, preprocessedFormulas, true);
+                    buildAndCheckSymbolicModel<double>(model, properties, true);
                 }
             } else if (storm::settings::getModule<storm::settings::modules::IOSettings>().isExplicitSet()) {
                 STORM_LOG_THROW(storm::settings::getModule<storm::settings::modules::CoreSettings>().getEngine() == storm::settings::modules::CoreSettings::Engine::Sparse, storm::exceptions::InvalidSettingsException, "Only the sparse engine supports explicit model input.");
 
                 // If the model is given in an explicit format, we parse the properties without allowing expressions
                 // in formulas.
-                std::vector<std::shared_ptr<storm::logic::Formula const>> formulas;
+                std::vector<storm::jani::Property> properties;
                 if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isPropertySet()) {
-                    formulas = storm::parseFormulasForExplicit(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getProperty());
+                    uint64_t i = 0;
+                    for(auto const& formula : storm::parseFormulasForExplicit(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getProperty())) {
+                        properties.emplace_back(std::to_string(i), formula);
+                        ++i;
+                        
+                    }
                 }
 
-                buildAndCheckExplicitModel<double>(formulas, true);
+                buildAndCheckExplicitModel<double>(properties, true);
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "No input model.");
             }

@@ -30,6 +30,11 @@ namespace storm {
              * Creates an empty model with the given type.
              */
             Model(std::string const& name, ModelType const& modelType, uint64_t version = 1, boost::optional<std::shared_ptr<storm::expressions::ExpressionManager>> const& expressionManager = boost::none);
+
+            /*!
+             * Retrieves the expression manager responsible for the expressions in the model.
+             */
+            storm::expressions::ExpressionManager& getManager() const;
             
             /*!
              * Retrieves the JANI-version of the model.
@@ -60,6 +65,11 @@ namespace storm {
              */
             uint64_t getActionIndex(std::string const& name) const;
             
+            /*!
+             * Retrieves the mapping from action names to their indices.
+             */
+            std::unordered_map<std::string, uint64_t> const& getActionToIndexMap() const;
+            
             /**
              * Adds an action to the model.
              *
@@ -76,6 +86,11 @@ namespace storm {
              * Retrieves the actions of the model.
              */
             std::vector<Action> const& getActions() const;
+    
+            /*!
+             *  Builds a map with action indices mapped to their names
+             */
+            std::map<uint64_t, std::string> getActionIndexToNameMap() const;
             
             /*!
              * Retrieves all non-silent action indices of the model.
@@ -108,19 +123,29 @@ namespace storm {
             Constant const& getConstant(std::string const& name) const;
             
             /*!
+             * Adds the given variable to this model.
+             */
+            Variable const& addVariable(Variable const& variable);
+
+            /*!
              * Adds the given boolean variable to this model.
              */
-            void addBooleanVariable(BooleanVariable const& variable);
+            BooleanVariable const& addVariable(BooleanVariable const& variable);
             
             /*!
              * Adds the given bounded integer variable to this model.
              */
-            void addBoundedIntegerVariable(BoundedIntegerVariable const& variable);
+            BoundedIntegerVariable const& addVariable(BoundedIntegerVariable const& variable);
             
             /*!
              * Adds the given unbounded integer variable to this model.
              */
-            void addUnboundedIntegerVariable(UnboundedIntegerVariable const& variable);
+            UnboundedIntegerVariable const& addVariable(UnboundedIntegerVariable const& variable);
+
+            /*!
+             * Adds the given real variable to this model.
+             */
+            RealVariable const& addVariable(RealVariable const& variable);
 
             /*!
              * Retrieves the variables of this automaton.
@@ -131,6 +156,21 @@ namespace storm {
              * Retrieves the variables of this automaton.
              */
             VariableSet const& getGlobalVariables() const;
+
+            /*!
+             * Retrieves whether this model has a global variable with the given name.
+             */
+            bool hasGlobalVariable(std::string const& name) const;
+            
+            /*!
+             * Retrieves the global variable with the given name if one exists.
+             */
+            Variable const& getGlobalVariable(std::string const& name) const;
+            
+            /*!
+             * Retrieves whether this model has a non-global transient variable.
+             */
+            bool hasNonGlobalTransientVariable() const;
             
             /*!
              * Retrieves the manager responsible for the expressions in the JANI model.
@@ -166,6 +206,11 @@ namespace storm {
              * Retrieves the automaton with the given name.
              */
             Automaton const& getAutomaton(std::string const& name) const;
+            
+            /*!
+             * Retrieves the index of the given automaton.
+             */
+            uint64_t getAutomatonIndex(std::string const& name) const;
 
             /*!
              * Retrieves the number of automata in this model.
@@ -177,6 +222,11 @@ namespace storm {
              */
             void setSystemComposition(std::shared_ptr<Composition> const& composition);
             
+            /*!
+             * Sets the system composition to be the fully-synchronizing parallel composition of all automat
+             * @see getStandardSystemComposition
+             */
+            void setStandardSystemComposition();
             /*!
              * Gets the system composition as the standard, fully-synchronizing parallel composition.
              */
@@ -191,16 +241,6 @@ namespace storm {
              * Retrieves the set of action names.
              */
             std::set<std::string> getActionNames(bool includeSilent = true) const;
-            
-            /*!
-             * Retrieves the name of the silent action.
-             */
-            std::string const& getSilentActionName() const;
-            
-            /*!
-             * Retrieves the index of the silent action.
-             */
-            uint64_t getSilentActionIndex() const;
             
             /*!
              * Defines the undefined constants of the model by the given expressions. The original model is not modified,
@@ -231,9 +271,19 @@ namespace storm {
             std::map<storm::expressions::Variable, storm::expressions::Expression> getConstantsSubstitution() const;
             
             /*!
-             * Retrieves whether there is an expression defining the legal initial values of the global variables.
+             * Retrieves whether there is an expression restricting the legal initial values of the global variables.
              */
-            bool hasInitialStatesExpression() const;
+            bool hasInitialStatesRestriction() const;
+            
+            /*!
+             * Sets the expression restricting the legal initial values of the global variables.
+             */
+            void setInitialStatesRestriction(storm::expressions::Expression const& initialStatesRestriction);
+
+            /*!
+             * Gets the expression restricting the legal initial values of the global variables.
+             */
+            storm::expressions::Expression const& getInitialStatesRestriction() const;
             
             /*!
              * Retrieves the expression defining the legal initial values of the variables.
@@ -242,11 +292,6 @@ namespace storm {
              * states not only for the global variables but also for the variables of each automaton.
              */
             storm::expressions::Expression getInitialStatesExpression(bool includeAutomataInitialStatesExpressions = false) const;
-            
-            /*!
-             * Sets the expression defining the legal initial values of the global variables.
-             */
-            void setInitialStatesExpression(storm::expressions::Expression const& initialStatesExpression);
             
             /*!
              * Determines whether this model is a deterministic one in the sense that each state only has one choice.
@@ -264,10 +309,10 @@ namespace storm {
             std::vector<storm::expressions::Expression> getAllRangeExpressions() const;
             
             /*!
-             * Retrieves whether this model has the default composition, that is it composes all automata in parallel
+             * Retrieves whether this model has the standard composition, that is it composes all automata in parallel
              * and synchronizes over all common actions.
              */
-            bool hasDefaultComposition() const;
+            bool hasStandardComposition() const;
             
             /*!
              * After adding all components to the model, this method has to be called. It recursively calls
@@ -279,7 +324,38 @@ namespace storm {
             /*!
              *  Checks if the model is valid JANI, which should be verified before any further operations are applied to a model.
              */
-            bool checkValidity(bool logdbg = true) const;
+            void checkValid() const;
+            
+            /*!
+             * Creates the expression that characterizes all states in which the provided transient boolean variable is
+             * true. The provided location variables are used to encode the location of the automata.
+             */
+            storm::expressions::Expression getLabelExpression(BooleanVariable const& transientVariable, std::map<std::string, storm::expressions::Variable> const& automatonToLocationVariableMap) const;
+            
+            /*!
+             * Checks that undefined constants (parameters) of the model preserve the graph of the underlying model.
+             * That is, undefined constants may only appear in the probability expressions of edge destinations as well
+             * as on the right-hand sides of transient assignments.
+             */
+            bool undefinedConstantsAreGraphPreserving() const;
+            
+            /*!
+             * Lifts the common edge destination assignments to edge assignments.
+             */
+            void liftTransientEdgeDestinationAssignments();
+            
+            /*!
+             * Retrieves whether there is any transient edge destination assignment in the model.
+             */
+            bool hasTransientEdgeDestinationAssignments() const;
+            
+            void makeStandardJaniCompliant();
+            
+            /// The name of the silent action.
+            static const std::string SILENT_ACTION_NAME;
+            
+            /// The index of the silent action.
+            static const uint64_t SILENT_ACTION_INDEX;
             
         private:
             /// The model name.
@@ -303,9 +379,6 @@ namespace storm {
             /// The set of non-silent action indices.
             boost::container::flat_set<uint64_t> nonsilentActionIndices;
             
-            /// The index of the silent action.
-            uint64_t silentActionIndex;
-            
             /// The constants defined by the model.
             std::vector<Constant> constants;
             
@@ -324,8 +397,8 @@ namespace storm {
             /// An expression describing how the system is composed of the automata.
             std::shared_ptr<Composition> composition;
             
-            // The expression characterizing the legal initial values of the global variables.
-            storm::expressions::Expression initialStatesExpression;
+            // The expression restricting the legal initial values of the global variables.
+            storm::expressions::Expression initialStatesRestriction;
         };
     }
 }

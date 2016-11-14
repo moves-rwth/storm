@@ -57,7 +57,7 @@ namespace storm {
              * @return An equivalent term for MathSAT.
              */
 			msat_term translateExpression(storm::expressions::Expression const& expression) {
-                msat_term result = boost::any_cast<msat_term>(expression.getBaseExpression().accept(*this));
+                msat_term result = boost::any_cast<msat_term>(expression.getBaseExpression().accept(*this, boost::none));
                 STORM_LOG_THROW(!MSAT_ERROR_TERM(result), storm::exceptions::ExpressionEvaluationException, "Could not translate expression to MathSAT's format.");
 				return result;
 			}
@@ -90,9 +90,9 @@ namespace storm {
                 return declarationVariablePair->second;
             }
 
-			virtual boost::any visit(expressions::BinaryBooleanFunctionExpression const& expression) override {
-                msat_term leftResult = boost::any_cast<msat_term>(expression.getFirstOperand()->accept(*this));
-				msat_term rightResult = boost::any_cast<msat_term>(expression.getSecondOperand()->accept(*this));
+            virtual boost::any visit(storm::expressions::BinaryBooleanFunctionExpression const& expression, boost::any const& data) override {
+                msat_term leftResult = boost::any_cast<msat_term>(expression.getFirstOperand()->accept(*this, data));
+				msat_term rightResult = boost::any_cast<msat_term>(expression.getSecondOperand()->accept(*this, data));
 
 				switch (expression.getOperatorType()) {
 					case storm::expressions::BinaryBooleanFunctionExpression::OperatorType::And:
@@ -108,9 +108,9 @@ namespace storm {
 				}
 			}
 
-			virtual boost::any visit(expressions::BinaryNumericalFunctionExpression const& expression) override {
-                msat_term leftResult = boost::any_cast<msat_term>(expression.getFirstOperand()->accept(*this));
-                msat_term rightResult = boost::any_cast<msat_term>(expression.getSecondOperand()->accept(*this));
+			virtual boost::any visit(storm::expressions::BinaryNumericalFunctionExpression const& expression, boost::any const& data) override {
+                msat_term leftResult = boost::any_cast<msat_term>(expression.getFirstOperand()->accept(*this, data));
+                msat_term rightResult = boost::any_cast<msat_term>(expression.getSecondOperand()->accept(*this, data));
 
 				switch (expression.getOperatorType()) {
 					case storm::expressions::BinaryNumericalFunctionExpression::OperatorType::Plus:
@@ -130,9 +130,9 @@ namespace storm {
 				}
 			}
 
-			virtual boost::any visit(expressions::BinaryRelationExpression const& expression) override {
-                msat_term leftResult = boost::any_cast<msat_term>(expression.getFirstOperand()->accept(*this));
-                msat_term rightResult = boost::any_cast<msat_term>(expression.getSecondOperand()->accept(*this));
+			virtual boost::any visit(storm::expressions::BinaryRelationExpression const& expression, boost::any const& data) override {
+                msat_term leftResult = boost::any_cast<msat_term>(expression.getFirstOperand()->accept(*this, data));
+                msat_term rightResult = boost::any_cast<msat_term>(expression.getSecondOperand()->accept(*this, data));
 
 				switch (expression.getRelationType()) {
 					case storm::expressions::BinaryRelationExpression::RelationType::Equal:
@@ -160,27 +160,27 @@ namespace storm {
 				}
 			}
 
-			virtual boost::any visit(storm::expressions::IfThenElseExpression const& expression) override {
-                msat_term conditionResult = boost::any_cast<msat_term>(expression.getCondition()->accept(*this));
-				msat_term thenResult = boost::any_cast<msat_term>(expression.getThenExpression()->accept(*this));
-				msat_term elseResult = boost::any_cast<msat_term>(expression.getElseExpression()->accept(*this));
+			virtual boost::any visit(storm::expressions::IfThenElseExpression const& expression, boost::any const& data) override {
+                msat_term conditionResult = boost::any_cast<msat_term>(expression.getCondition()->accept(*this, data));
+				msat_term thenResult = boost::any_cast<msat_term>(expression.getThenExpression()->accept(*this, data));
+				msat_term elseResult = boost::any_cast<msat_term>(expression.getElseExpression()->accept(*this, data));
 				return msat_make_term_ite(env, conditionResult, thenResult, elseResult);
 			}
 
-			virtual boost::any visit(expressions::BooleanLiteralExpression const& expression) override {
+			virtual boost::any visit(storm::expressions::BooleanLiteralExpression const& expression, boost::any const& data) override {
                 return expression.getValue() ? msat_make_true(env) : msat_make_false(env);
 			}
 
-			virtual boost::any visit(expressions::RationalLiteralExpression const& expression) override {
+			virtual boost::any visit(storm::expressions::RationalLiteralExpression const& expression, boost::any const& data) override {
 				return msat_make_number(env, std::to_string(expression.getValueAsDouble()).c_str());
 			}
 
-			virtual boost::any visit(expressions::IntegerLiteralExpression const& expression) override {
+			virtual boost::any visit(storm::expressions::IntegerLiteralExpression const& expression, boost::any const& data) override {
 				return msat_make_number(env, std::to_string(static_cast<int>(expression.getValue())).c_str());
 			}
 
-			virtual boost::any visit(expressions::UnaryBooleanFunctionExpression const& expression) override {
-                msat_term childResult = boost::any_cast<msat_term>(expression.getOperand()->accept(*this));
+			virtual boost::any visit(storm::expressions::UnaryBooleanFunctionExpression const& expression, boost::any const& data) override {
+                msat_term childResult = boost::any_cast<msat_term>(expression.getOperand()->accept(*this, data));
 
 				switch (expression.getOperatorType()) {
 					case storm::expressions::UnaryBooleanFunctionExpression::OperatorType::Not:
@@ -191,8 +191,8 @@ namespace storm {
 				}
 			}
 
-			virtual boost::any visit(expressions::UnaryNumericalFunctionExpression const& expression) override {
-				msat_term childResult = boost::any_cast<msat_term>(expression.getOperand()->accept(*this));
+			virtual boost::any visit(storm::expressions::UnaryNumericalFunctionExpression const& expression, boost::any const& data) override {
+				msat_term childResult = boost::any_cast<msat_term>(expression.getOperand()->accept(*this, data));
 
 				switch (expression.getOperatorType()) {
 					case storm::expressions::UnaryNumericalFunctionExpression::OperatorType::Minus:
@@ -209,7 +209,7 @@ namespace storm {
 				}
 			}
 
-			virtual boost::any visit(expressions::VariableExpression const& expression) override {
+			virtual boost::any visit(storm::expressions::VariableExpression const& expression, boost::any const& data) override {
                 return translateExpression(expression.getVariable());
 			}
 

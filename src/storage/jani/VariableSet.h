@@ -3,65 +3,26 @@
 #include <vector>
 #include <set>
 
-#include <boost/iterator/transform_iterator.hpp>
+#include "src/adapters/DereferenceIteratorAdapter.h"
 
 #include "src/storage/jani/BooleanVariable.h"
 #include "src/storage/jani/UnboundedIntegerVariable.h"
 #include "src/storage/jani/BoundedIntegerVariable.h"
+#include "src/storage/jani/RealVariable.h"
 
 namespace storm {
     namespace jani {
-        
-        class VariableSet;
-        
+                
         namespace detail {
-            
-            template<typename VariableType>
-            class Dereferencer {
-            public:
-                VariableType& operator()(std::shared_ptr<VariableType> const& d) const;
-            };
-            
-            template<typename VariableType>
-            class Variables {
-            public:
-                typedef typename std::vector<std::shared_ptr<VariableType>>::iterator input_iterator;
-                typedef boost::transform_iterator<Dereferencer<VariableType>, input_iterator> iterator;
-                
-                Variables(input_iterator it, input_iterator ite);
-                
-                iterator begin();
-                iterator end();
-                
-            private:
-                input_iterator it;
-                input_iterator ite;
-            };
+            template <typename VariableType>
+            using Variables = storm::adapters::DereferenceIteratorAdapter<std::vector<std::shared_ptr<VariableType>>>;
 
-            template<typename VariableType>
-            class ConstVariables {
-            public:
-                typedef typename std::vector<std::shared_ptr<VariableType>>::const_iterator const_input_iterator;
-                typedef boost::transform_iterator<Dereferencer<VariableType const>, const_input_iterator> const_iterator;
-                
-                ConstVariables(const_input_iterator it, const_input_iterator ite);
-                
-                const_iterator begin();
-                const_iterator end();
-                
-            private:
-                const_input_iterator it;
-                const_input_iterator ite;
-            };
+            template <typename VariableType>
+            using ConstVariables = storm::adapters::DereferenceIteratorAdapter<std::vector<std::shared_ptr<VariableType>> const>;
         }
         
         class VariableSet {
         public:
-            typedef typename std::vector<std::shared_ptr<Variable>>::iterator input_iterator;
-            typedef typename std::vector<std::shared_ptr<Variable>>::const_iterator const_input_iterator;
-            typedef boost::transform_iterator<detail::Dereferencer<Variable>, input_iterator> iterator;
-            typedef boost::transform_iterator<detail::Dereferencer<Variable const>, const_input_iterator> const_iterator;
-            
             /*!
              * Creates an empty variable set.
              */
@@ -98,19 +59,34 @@ namespace storm {
             detail::ConstVariables<UnboundedIntegerVariable> getUnboundedIntegerVariables() const;
             
             /*!
+             * Retrieves the real variables in this set.
+             */
+            detail::Variables<RealVariable> getRealVariables();
+            
+            /*!
+             * Retrieves the real variables in this set.
+             */
+            detail::ConstVariables<RealVariable> getRealVariables() const;
+            
+            /*!
              * Adds the given boolean variable to this set.
              */
-            void addBooleanVariable(BooleanVariable const& variable);
+            BooleanVariable const& addVariable(BooleanVariable const& variable);
 
             /*!
              * Adds the given bounded integer variable to this set.
              */
-            void addBoundedIntegerVariable(BoundedIntegerVariable const& variable);
+            BoundedIntegerVariable const& addVariable(BoundedIntegerVariable const& variable);
 
             /*!
              * Adds the given unbounded integer variable to this set.
              */
-            void addUnboundedIntegerVariable(UnboundedIntegerVariable const& variable);
+            UnboundedIntegerVariable const& addVariable(UnboundedIntegerVariable const& variable);
+            
+            /*!
+             * Adds the given real variable to this set.
+             */
+            RealVariable const& addVariable(RealVariable const& variable);
 
             /*!
              * Retrieves whether this variable set contains a variable with the given name.
@@ -133,24 +109,29 @@ namespace storm {
             Variable const& getVariable(storm::expressions::Variable const& variable) const;
 
             /*!
+             * Retrieves whether this variable set contains a transient variable.
+             */
+            bool hasTransientVariable() const;
+            
+            /*!
              * Retrieves an iterator to the variables in this set.
              */
-            iterator begin();
+            typename detail::Variables<Variable>::iterator begin();
 
             /*!
              * Retrieves an iterator to the variables in this set.
              */
-            const_iterator begin() const;
+            typename detail::ConstVariables<Variable>::iterator begin() const;
 
             /*!
              * Retrieves the end iterator to the variables in this set.
              */
-            iterator end();
+            typename detail::Variables<Variable>::iterator end();
 
             /*!
              * Retrieves the end iterator to the variables in this set.
              */
-            const_iterator end() const;
+            typename detail::ConstVariables<Variable>::iterator end() const;
 
             /*!
              * Retrieves whether the set of variables contains a boolean variable.
@@ -168,9 +149,50 @@ namespace storm {
             bool containsUnboundedIntegerVariables() const;
 
             /*!
+             * Retrieves whether the set of variables contains a real variable.
+             */
+            bool containsRealVariables() const;
+
+            /*!
+             * Retrieves whether the set of variables contains a non-transient real variable.
+             */
+            bool containsNonTransientRealVariables() const;
+
+            /*!
+             * Retrieves whether the set of variables contains a non-transient unbounded integer variable.
+             */
+            bool containsNonTransientUnboundedIntegerVariables() const;
+
+            /*!
              * Retrieves whether this variable set is empty.
              */
             bool empty() const;
+            
+            /*!
+             * Retrieves the number of transient variables in this variable set.
+             */
+            uint_fast64_t getNumberOfTransientVariables() const;
+            
+            /*!
+             * Retrieves the number of real transient variables in this variable set.
+             */
+            uint_fast64_t getNumberOfRealTransientVariables() const;
+
+            /*!
+             * Retrieves the number of unbounded integer transient variables in this variable set.
+             */
+            uint_fast64_t getNumberOfUnboundedIntegerTransientVariables() const;
+
+            /*!
+             * Retrieves a vector of transient variables in this variable set.
+             */
+            std::vector<std::shared_ptr<Variable const>> getTransientVariables() const;
+            
+            /*!
+             * Checks whether any of the provided variables appears in bound expressions or initial values of the
+             * variables contained in this variable set.
+             */
+            bool containsVariablesInBoundExpressionsOrInitialValues(std::set<storm::expressions::Variable> const& variables) const;
             
         private:
             /// The vector of all variables.
@@ -184,6 +206,9 @@ namespace storm {
 
             /// The unbounded integer variables in this set.
             std::vector<std::shared_ptr<UnboundedIntegerVariable>> unboundedIntegerVariables;
+            
+            /// The real variables in this set.
+            std::vector<std::shared_ptr<RealVariable>> realVariables;
             
             /// A set of all variable names currently in use.
             std::map<std::string, storm::expressions::Variable> nameToVariable;

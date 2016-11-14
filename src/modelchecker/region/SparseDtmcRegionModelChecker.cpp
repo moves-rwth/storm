@@ -317,7 +317,7 @@ namespace storm {
                 } else {
                     STORM_LOG_THROW(this->getModel()->hasRewardModel(), storm::exceptions::InvalidArgumentException, "No reward model specified");
                     STORM_LOG_THROW(this->getModel()->hasUniqueRewardModel(), storm::exceptions::InvalidArgumentException, "Ambiguous reward model. Specify it in the formula!");
-                    rewardModel=&(this->getModel()->getUniqueRewardModel()->second);
+                    rewardModel=&(this->getModel()->getUniqueRewardModel());
                 }
                 //Get target states
                 storm::modelchecker::SparsePropositionalModelChecker<ParametricSparseModelType> modelChecker(*(this->getModel()));
@@ -416,7 +416,7 @@ namespace storm {
                 storm::storage::BitVector phiStates(simpleModel.getNumberOfStates(), true);
                 std::vector<ParametricType> values;
                 if(this->isComputeRewards()){
-                    values = simpleModel.getUniqueRewardModel()->second.getTotalRewardVector(maybeStates.getNumberOfSetBits(), simpleModel.getTransitionMatrix(), maybeStates);
+                    values = simpleModel.getUniqueRewardModel().getTotalRewardVector(maybeStates.getNumberOfSetBits(), simpleModel.getTransitionMatrix(), maybeStates);
                 } else {
                     values = oneStepProbabilities;
                 }

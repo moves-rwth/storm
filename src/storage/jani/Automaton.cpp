@@ -3,6 +3,7 @@
 #include "src/utility/macros.h"
 #include "src/exceptions/WrongFormatException.h"
 #include "src/exceptions/InvalidArgumentException.h"
+#include "src/exceptions/InvalidTypeException.h"
 
 namespace storm {
     namespace jani {
@@ -57,17 +58,35 @@ namespace storm {
         std::string const& Automaton::getName() const {
             return name;
         }
-        
-        void Automaton::addBooleanVariable(BooleanVariable const& variable) {
-            variables.addBooleanVariable(variable);
+
+        Variable const& Automaton::addVariable(Variable const &variable) {
+            if (variable.isBooleanVariable()) {
+                return addVariable(variable.asBooleanVariable());
+            } else if (variable.isBoundedIntegerVariable()) {
+                return addVariable(variable.asBoundedIntegerVariable());
+            } else if (variable.isUnboundedIntegerVariable()) {
+                return addVariable(variable.asUnboundedIntegerVariable());
+            } else if (variable.isRealVariable()) {
+                return addVariable(variable.asRealVariable());
+            } else {
+                STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Variable has invalid type.");
+            }
         }
         
-        void Automaton::addBoundedIntegerVariable(BoundedIntegerVariable const& variable) {
-            variables.addBoundedIntegerVariable(variable);
+        BooleanVariable const& Automaton::addVariable(BooleanVariable const& variable) {
+            return variables.addVariable(variable);
+        }
+        
+        BoundedIntegerVariable const& Automaton::addVariable(BoundedIntegerVariable const& variable) {
+            return variables.addVariable(variable);
         }
 
-        void Automaton::addUnboundedIntegerVariable(UnboundedIntegerVariable const& variable) {
-            variables.addUnboundedIntegerVariable(variable);
+        UnboundedIntegerVariable const& Automaton::addVariable(UnboundedIntegerVariable const& variable) {
+            return variables.addVariable(variable);
+        }
+
+        RealVariable const& Automaton::addVariable(RealVariable const& variable) {
+            return variables.addVariable(variable);
         }
 
         VariableSet& Automaton::getVariables() {
@@ -78,6 +97,10 @@ namespace storm {
             return variables;
         }
         
+        bool Automaton::hasTransientVariable() const {
+            return variables.hasTransientVariable();
+        }
+        
         bool Automaton::hasLocation(std::string const& name) const {
             return locationToIndex.find(name) != locationToIndex.end();
         }
@@ -85,11 +108,19 @@ namespace storm {
         std::vector<Location> const& Automaton::getLocations() const {
             return locations;
         }
-        
+
+        std::vector<Location>& Automaton::getLocations() {
+            return locations;
+        }
+
         Location const& Automaton::getLocation(uint64_t index) const {
             return locations[index];
         }
-        
+
+        Location& Automaton::getLocation(uint64_t index) {
+            return locations[index];
+        }
+
         uint64_t Automaton::addLocation(Location const& location) {
             STORM_LOG_THROW(!this->hasLocation(location.getName()), storm::exceptions::WrongFormatException, "Cannot add location with name '" << location.getName() << "', because a location with this name already exists.");
             locationToIndex.emplace(location.getName(), locations.size());
@@ -116,6 +147,16 @@ namespace storm {
         
         std::set<uint64_t> const& Automaton::getInitialLocationIndices() const {
             return initialLocationIndices;
+        }
+        
+        std::map<uint64_t, std::string> Automaton::buildIdToLocationNameMap() const {
+            std::map<uint64_t, std::string> mapping;
+            uint64_t i = 0;
+            for(auto const& loc : locations) {
+                mapping[i] = loc.getName();
+                ++i;
+            }
+            return mapping;
         }
 
         Automaton::Edges Automaton::getEdgesFromLocation(std::string const& name) {
@@ -268,6 +309,7 @@ namespace storm {
             actionIndices.insert(edge.getActionIndex());
         }
         
+        
         std::vector<Edge>& Automaton::getEdges() {
             return edges;
         }
@@ -291,17 +333,55 @@ namespace storm {
         uint64_t Automaton::getNumberOfEdges() const {
             return edges.size();
         }
+        
+        bool Automaton::hasRestrictedInitialStates() const {
+            if (!hasInitialStatesRestriction()) {
+                return false;
+            }
+            if (getInitialStatesExpression().containsVariables()) {
+                return true;
+            } else {
+                return !getInitialStatesExpression().evaluateAsBool();
+            }
+        }
 
-        bool Automaton::hasInitialStatesExpression() const {
-            return initialStatesExpression.isInitialized();
+        bool Automaton::hasInitialStatesRestriction() const {
+            return initialStatesRestriction.isInitialized();
         }
         
-        storm::expressions::Expression const& Automaton::getInitialStatesExpression() const {
-            return initialStatesExpression;
+        storm::expressions::Expression const& Automaton::getInitialStatesRestriction() const {
+            return initialStatesRestriction;
         }
         
-        void Automaton::setInitialStatesExpression(storm::expressions::Expression const& initialStatesExpression) {
-            this->initialStatesExpression = initialStatesExpression;
+        void Automaton::setInitialStatesRestriction(storm::expressions::Expression const& initialStatesRestriction) {
+            this->initialStatesRestriction = initialStatesRestriction;
+        }
+        
+        storm::expressions::Expression Automaton::getInitialStatesExpression() const {
+            storm::expressions::Expression result;
+            
+            // Add initial state restriction if there is one.
+            if (this->hasInitialStatesRestriction()) {
+                result = this->getInitialStatesRestriction();
+            }
+            
+            // Add the expressions for all non-transient variables that have initial expressions.
+            for (auto const& variable : this->getVariables()) {
+                if (variable.isTransient()) {
+                    continue;
+                }
+                
+                if (variable.hasInitExpression()) {
+                    storm::expressions::Expression newInitExpression = variable.isBooleanVariable() ? storm::expressions::iff(variable.getExpressionVariable(), variable.getInitExpression()) : variable.getExpressionVariable() == variable.getInitExpression();
+                    if (result.isInitialized()) {
+                        result = result && newInitExpression;
+                    } else {
+                        result = newInitExpression;
+                    }
+                }
+            }
+            
+            return result;
         }
         
         bool Automaton::hasEdgeLabeledWithActionIndex(uint64_t actionIndex) const {
@@ -316,11 +396,70 @@ namespace storm {
             return result;
         }
         
+        void Automaton::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
+            for (auto& variable : this->getVariables().getBoundedIntegerVariables()) {
+                variable.substitute(substitution);
+            }
+            
+            for (auto& location : this->getLocations()) {
+                location.substitute(substitution);
+            }
+            
+            this->setInitialStatesRestriction(this->getInitialStatesRestriction().substitute(substitution));
+            
+            for (auto& edge : this->getEdges()) {
+                edge.substitute(substitution);
+            }
+        }
+        
         void Automaton::finalize(Model const& containingModel) {
             for (auto& edge : edges) {
                 edge.finalize(containingModel);
             }
         }
-
+        
+        bool Automaton::containsVariablesOnlyInProbabilitiesOrTransientAssignments(std::set<storm::expressions::Variable> const& variables) const {
+            // Check initial states restriction expression.
+            if (this->hasInitialStatesRestriction()) {
+                if (this->getInitialStatesRestriction().containsVariable(variables)) {
+                    return false;
+                }
+            }
+            
+            // Check global variable definitions.
+            if (this->getVariables().containsVariablesInBoundExpressionsOrInitialValues(variables)) {
+                return false;
+            }
+            
+            // Check edges.
+            for (auto const& edge : edges) {
+                if (edge.usesVariablesInNonTransientAssignments(variables)) {
+                    return false;
+                }
+            }
+            
+            return true;
+        }
+        
+        void Automaton::pushEdgeAssignmentsToDestinations() {
+            for (auto& edge : edges) {
+                edge.pushAssignmentsToDestinations();
+            }
+        }
+        
+        bool Automaton::hasTransientEdgeDestinationAssignments() const {
+            for (auto const& edge : this->getEdges()) {
+                if (edge.hasTransientEdgeDestinationAssignments()) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        
+        void Automaton::liftTransientEdgeDestinationAssignments() {
+            for (auto& edge : this->getEdges()) {
+                edge.liftTransientDestinationAssignments();
+            }
+        }
     }
 }

@@ -49,7 +49,8 @@ namespace storm {
                 } else if (Mode == ScalingMode::DivideOneMinus) {
                     if (hasEntryInColumn) {
                         STORM_LOG_ASSERT(columnValue != storm::utility::one<ValueType>(), "The scaling mode 'divide-one-minus' requires a non-one value in the given column.");
-                        columnValue = storm::utility::simplify(storm::utility::one<ValueType>() / (storm::utility::one<ValueType>() - columnValue));
+                        columnValue = storm::utility::one<ValueType>() / (storm::utility::one<ValueType>() - columnValue);
+                        columnValue = storm::utility::simplify(columnValue);
                     }
                 }
                 
@@ -57,7 +58,8 @@ namespace storm {
                     for (auto entryIt = entriesInRow.begin(), entryIte = entriesInRow.end(); entryIt != entryIte; ++entryIt) {
                         // Only scale the entries in a different column.
                         if (entryIt->getColumn() != column) {
-                            entryIt->setValue(storm::utility::simplify(entryIt->getValue() * columnValue));
+                            auto tmpVal = entryIt->getValue() * columnValue;
+                            entryIt->setValue(storm::utility::simplify(tmpVal));
                         }
                     }
                     updateValue(column, columnValue);
@@ -145,7 +147,9 @@ namespace storm {
                             *result = *first1;
                             ++first1;
                         } else {
-                            auto probability = storm::utility::simplify(first1->getValue() + storm::utility::simplify(multiplyFactor * first2->getValue()));
+                            ValueType sprod = multiplyFactor * first2->getValue();
+                            ValueType sum = first1->getValue() + storm::utility::simplify(sprod);
+                            auto probability = storm::utility::simplify(sum);
                             *result = storm::storage::MatrixEntry<typename storm::storage::FlexibleSparseMatrix<ValueType>::index_type, typename storm::storage::FlexibleSparseMatrix<ValueType>::value_type>(first1->getColumn(), probability);
                             newBackwardEntries[successorOffsetInNewBackwardTransitions].emplace_back(predecessor, probability);
                             ++first1;

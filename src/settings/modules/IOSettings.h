@@ -35,6 +35,22 @@ namespace storm {
                  */
                 std::string getExportDotFilename() const;
 
+                
+                /*!
+                 * Retrieves whether the export-to-explicit option was set
+                 *
+                 * @return True if the export-to-explicit option was set
+                 */
+                bool isExportExplicitSet() const;
+                
+                
+                /*!
+                 * Retrieves thename in which to write the model in explicit format, if the option was set.
+                 *
+                 * @return The name of the file in which to write the exported mode.
+                 */
+                std::string getExportExplicitFilename() const;
+                
                 /*!
                  * Retrieves whether the explicit option was set.
                  *
@@ -59,20 +75,49 @@ namespace storm {
                 std::string getLabelingFilename() const;
 
                 /*!
-                 * Retrieves whether the symbolic option was set.
+                 * Retrieves whether the PRISM language option was set.
                  *
-                 * @return True if the symbolic option was set.
+                 * @return True if the PRISM input option was set.
                  */
-                bool isSymbolicSet() const;
+                bool isPrismInputSet() const;
+                
+                /*!
+                 * Retrieves whether the JANI input option was set.
+                 *
+                 * @return True if the JANI input option was set.
+                 */
+                bool isJaniInputSet() const;
 
                 /*!
-                 * Retrieves the name of the file that contains the symbolic model specification if the model was given
-                 * using the symbolic option.
+                 * Retrieves whether the JANI or PRISM input option was set.
                  *
-                 * @return The name of the file that contains the symbolic model specification.
+                 * @return True if either of the two options was set.
                  */
-                std::string getSymbolicModelFilename() const;
+                bool isPrismOrJaniInputSet() const;
                 
+                /*!
+                 * Retrieves whether the option to convert PRISM to JANI input was set.
+                 *
+                 * @return True if the option was set.
+                 */
+                bool isPrismToJaniSet() const;
+                
+                /*!
+                 * Retrieves the name of the file that contains the PRISM model specification if the model was given
+                 * using the PRISM input option.
+                 *
+                 * @return The name of the file that contains the PRISM model specification.
+                 */
+                std::string getPrismInputFilename() const;
+
+                /*!
+                 * Retrieves the name of the file that contains the JANI model specification if the model was given
+                 * using the JANI input option.
+                 *
+                 * @return The name of the file that contains the JANI model specification.
+                 */
+                std::string getJaniInputFilename() const;
+
                 /*!
                  * Retrieves whether the model exploration order was set.
                  *
@@ -154,6 +199,10 @@ namespace storm {
                  * @return The string that defines the constants of a symbolic model.
                  */
                 std::string getConstantDefinitionString() const;
+                
+                bool isJaniPropertiesSet() const;
+                
+                std::vector<std::string> getJaniProperties() const;
 
                 /*!
                  * Retrieves whether the PRISM compatibility mode was enabled.
@@ -161,6 +210,18 @@ namespace storm {
                  * @return True iff the PRISM compatibility mode was enabled.
                  */
                 bool isPrismCompatibilityEnabled() const;
+                
+                /**
+                 * Retrieves whether no model should be build at all, in case one just want to translate models or parse a file
+                 */
+                bool isNoBuildModelSet() const;
+                
+                /*!
+                 * Retrieves whether the full model should be build, that is, the model including all labels and rewards.
+                 *
+                 * @return true iff the full model should be build.
+                 */
+                bool isBuildFullModelSet() const;
 
                 bool check() const override;
                 void finalize() override;
@@ -171,11 +232,12 @@ namespace storm {
             private:
                 // Define the string names of the options as constants.
                 static const std::string exportDotOptionName;
-                static const std::string exportMatOptionName;
+                static const std::string exportExplicitOptionName;
                 static const std::string explicitOptionName;
                 static const std::string explicitOptionShortName;
-                static const std::string symbolicOptionName;
-                static const std::string symbolicOptionShortName;
+                static const std::string prismInputOptionName;
+                static const std::string janiInputOptionName;
+                static const std::string prismToJaniOptionName;
                 static const std::string explorationOrderOptionName;
                 static const std::string explorationOrderOptionShortName;
                 static const std::string transitionRewardsOptionName;
@@ -185,6 +247,10 @@ namespace storm {
                 static const std::string constantsOptionShortName;
                 static const std::string prismCompatibilityOptionName;
                 static const std::string prismCompatibilityOptionShortName;
+                static const std::string fullModelBuildOptionName;
+                static const std::string noBuildOptionName;
+                static const std::string janiPropertyOptionName;
+                static const std::string janiPropertyOptionShortName;
             };
 
         } // namespace modules

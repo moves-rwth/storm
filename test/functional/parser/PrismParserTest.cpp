@@ -79,10 +79,6 @@ TEST(PrismParser, ComplexTest) {
     module mod3 = mod1 [ i = i1, j = j1, k = k1 ] endmodule
                                                                
     label "mal" = max(a, 10) > 0;
-                                                               
-    init
-        true
-    endinit
     
     rewards "testrewards"
         [a] true : a + 7;

@@ -148,6 +148,9 @@ namespace storm {
             bool hasStateActionRewards() const;
             bool hasTransitionRewards() const;
             
+            void setHasStateRewards();
+            void setHasStateActionRewards();
+            void setHasTransitionRewards();
         private:
             std::string name;
             bool stateRewards;
@@ -193,6 +196,8 @@ namespace storm {
              */
             storm::models::sparse::StateLabeling label(storm::storage::BitVectorHashMap<StateType> const& states, std::vector<StateType> const& initialStateIndices, std::vector<StateType> const& deadlockStateIndices, std::vector<std::pair<std::string, storm::expressions::Expression>> labelsAndExpressions);
             
+            void postprocess(StateBehavior<ValueType, StateType>& result);
+            
             /// The options to be used for next-state generation.
             NextStateGeneratorOptions options;
             
@@ -206,7 +211,7 @@ namespace storm {
             VariableInformation variableInformation;
             
             /// An evaluator used to evaluate expressions.
-            storm::expressions::ExpressionEvaluator<ValueType> evaluator;
+            std::unique_ptr<storm::expressions::ExpressionEvaluator<ValueType>> evaluator;
             
             /// The currently loaded state.
             CompressedState const* state;

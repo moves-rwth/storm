@@ -47,6 +47,12 @@ namespace storm {
             vector_type const& getTruthValuesVector() const;
             map_type const& getTruthValuesVectorMap() const;
             
+            
+            virtual bool existsTrue() const override;
+            virtual bool forallTrue() const override;
+            virtual uint64_t count() const override;
+            
+            
             virtual std::ostream& writeToStream(std::ostream& out) const override;
             
             virtual void filter(QualitativeCheckResult const& filter) override;

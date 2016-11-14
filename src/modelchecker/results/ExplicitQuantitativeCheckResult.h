@@ -53,6 +53,12 @@ namespace storm {
 
             virtual void oneMinus() override;
             
+            
+            virtual ValueType getMin() const override;
+            virtual ValueType getMax() const override;
+            virtual ValueType average() const override;
+            virtual ValueType sum() const override;
+            
             bool hasScheduler() const;
             void setScheduler(std::unique_ptr<storm::storage::Scheduler>&& scheduler);
             storm::storage::Scheduler const& getScheduler() const;

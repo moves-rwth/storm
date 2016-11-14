@@ -15,7 +15,6 @@ namespace storm {
              * Returns the name of the location.
              */
             std::string const& getName() const;
-
         private:
             /// The name of the action.
             std::string name;

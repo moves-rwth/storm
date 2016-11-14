@@ -101,19 +101,29 @@ namespace storm {
             std::string const& getName() const;
             
             /*!
-             * Adds the given boolean variable to this automaton.
+             * Adds the given variable to this automaton
              */
-            void addBooleanVariable(BooleanVariable const& variable);
+            Variable const& addVariable(Variable const& variable);
+
+            /*!
+             * Adds the given Boolean variable to this automaton.
+             */
+            BooleanVariable const& addVariable(BooleanVariable const& variable);
             
             /*!
              * Adds the given bounded integer variable to this automaton.
              */
-            void addBoundedIntegerVariable(BoundedIntegerVariable const& variable);
+            BoundedIntegerVariable const& addVariable(BoundedIntegerVariable const& variable);
             
             /*!
              * Adds the given unbounded integer variable to this automaton.
              */
-            void addUnboundedIntegerVariable(UnboundedIntegerVariable const& variable);
+            UnboundedIntegerVariable const& addVariable(UnboundedIntegerVariable const& variable);
+
+            /*!
+             * Adds the given real variable to this automaton.
+             */
+            RealVariable const& addVariable(RealVariable const& variable);
 
             /*!
              * Retrieves the variables of this automaton.
@@ -124,6 +134,11 @@ namespace storm {
              * Retrieves the variables of this automaton.
              */
             VariableSet const& getVariables() const;
+            
+            /*!
+             * Retrieves whether this automaton has a transient variable.
+             */
+            bool hasTransientVariable() const;
             
             /*!
              * Retrieves whether the automaton has a location with the given name.
@@ -142,11 +157,21 @@ namespace storm {
              * Retrieves the locations of the automaton.
              */
             std::vector<Location> const& getLocations() const;
-            
+
+            /*!
+             * Retrieves the locations of the automaton.
+             */
+            std::vector<Location>& getLocations();
+
             /*!
              * Retrieves the location with the given index.
              */
             Location const& getLocation(uint64_t index) const;
+            
+            /*!
+             * Retrieves the location with the given index.
+             */
+            Location& getLocation(uint64_t index);
             
             /*!
              * Adds the given location to the automaton.
@@ -168,6 +193,11 @@ namespace storm {
              */
             std::set<uint64_t> const& getInitialLocationIndices() const;
 
+            /*!
+             * Builds a map from ID to Location Name.
+             */
+            std::map<uint64_t, std::string> buildIdToLocationNameMap() const;
+            
             /*!
              * Retrieves the edges of the location with the given name.
              */
@@ -227,21 +257,31 @@ namespace storm {
              * Retrieves the number of edges.
              */
             uint64_t getNumberOfEdges() const;
-
+            
             /*!
-             * Retrieves whether there is an expression defining the legal initial values of the automaton's variables.
+             * Retrieves whether the initial restriction is set and unequal to true
              */
-            bool hasInitialStatesExpression() const;
+            bool hasRestrictedInitialStates() const;
+            
+            /*!
+             * Retrieves whether this automaton has an initial states restriction.
+             */
+            bool hasInitialStatesRestriction() const;
+            
+            /*!
+             * Gets the expression restricting the legal initial values of the automaton's variables.
+             */
+            storm::expressions::Expression const& getInitialStatesRestriction() const;
+            
+            /*!
+             * Sets the expression restricting the legal initial values of the automaton's variables.
+             */
+            void setInitialStatesRestriction(storm::expressions::Expression const& initialStatesRestriction);
             
             /*!
              * Retrieves the expression defining the legal initial values of the automaton's variables.
              */
-            storm::expressions::Expression const& getInitialStatesExpression() const;
-            
-            /*!
-             * Sets the expression defining the legal initial values of the automaton's variables.
-             */
-            void setInitialStatesExpression(storm::expressions::Expression const& initialStatesExpression);
+            storm::expressions::Expression getInitialStatesExpression() const;
             
             /*!
              * Retrieves whether there is an edge labeled with the action with the given index in this automaton.
@@ -254,10 +294,38 @@ namespace storm {
             std::vector<storm::expressions::Expression> getAllRangeExpressions() const;
             
             /*!
+             * Substitutes all variables in all expressions according to the given substitution.
+             */
+            void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution);
+            
+            /*!
              * Finalizes the building of this automaton. Subsequent changes to the automaton require another call to this
              * method. Note that this method is invoked by a call to <code>finalize</code> to the containing model.
              */
             void finalize(Model const& containingModel);
+            
+            /*!
+             * Retrieves the action indices appearing at some edge of the automaton.
+             */
+            std::set<uint64_t> getUsedActionIndices() const;
+            
+            /*!
+             * Checks whether the provided variables only appear in the probability expressions or the expressions being
+             * assigned in transient assignments.
+             */
+            bool containsVariablesOnlyInProbabilitiesOrTransientAssignments(std::set<storm::expressions::Variable> const& variables) const;
+            
+            void pushEdgeAssignmentsToDestinations();
+            
+            /*!
+             * Retrieves whether there is any transient edge destination assignment in the automaton.
+             */
+            bool hasTransientEdgeDestinationAssignments() const;
+            
+            /*!
+             * Lifts the common edge destination assignments to edge assignments.
+             */
+            void liftTransientEdgeDestinationAssignments();
             
         private:
             /// The name of the automaton.
@@ -282,8 +350,8 @@ namespace storm {
             /// The indices of the initial locations.
             std::set<uint64_t> initialLocationIndices;
             
-            /// The expression characterizing the legal initial values of the variables of the automaton.
-            storm::expressions::Expression initialStatesExpression;
+            /// The expression restricting the legal initial values of the variables of the automaton.
+            storm::expressions::Expression initialStatesRestriction;
             
             /// The set of action indices that label some action in this automaton.
             std::set<uint64_t> actionIndices;

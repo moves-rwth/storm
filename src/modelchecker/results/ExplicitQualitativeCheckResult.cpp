@@ -70,6 +70,47 @@ namespace storm {
             return *this;
         }
         
+        
+        bool ExplicitQualitativeCheckResult::existsTrue() const {
+            if (this->isResultForAllStates()) {
+                return !boost::get<vector_type>(truthValues).empty();
+            } else {
+                for (auto& element : boost::get<map_type>(truthValues)) {
+                    if(element.second) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+        }
+        bool ExplicitQualitativeCheckResult::forallTrue() const {
+            if (this->isResultForAllStates()) {
+                return boost::get<vector_type>(truthValues).full();
+            } else {
+                for (auto& element : boost::get<map_type>(truthValues)) {
+                    if(!element.second) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+        }
+        
+        uint64_t ExplicitQualitativeCheckResult::count() const {
+            if (this->isResultForAllStates()) {
+                return boost::get<vector_type>(truthValues).getNumberOfSetBits();
+            } else {
+                uint64_t result = 0;
+                for (auto& element : boost::get<map_type>(truthValues)) {
+                    if(element.second) {
+                        ++result;
+                    }
+                }
+                return result;
+            }
+        }
+        
+        
         bool ExplicitQualitativeCheckResult::operator[](storm::storage::sparse::state_type state) const {
             if (this->isResultForAllStates()) {
                 return boost::get<vector_type>(truthValues).get(state);

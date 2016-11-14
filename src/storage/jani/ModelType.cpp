@@ -4,36 +4,44 @@ namespace storm {
     namespace jani {
         
         std::ostream& operator<<(std::ostream& stream, ModelType const& type) {
+            return stream << to_string(type);
+        }
+        
+        std::string to_string(ModelType const& type) {
             switch (type) {
                 case ModelType::UNDEFINED:
-                    stream << "undefined";
-                    break;
+                    return "undefined";
+                case ModelType::LTS:
+                    return "lts";
                 case ModelType::DTMC:
-                    stream << "dtmc";
-                    break;
+                    return "dtmc";
                 case ModelType::CTMC:
-                    stream << "ctmc";
-                    break;
+                    return "ctmc";
                 case ModelType::MDP:
-                    stream << "mdp";
-                    break;
+                    return "mdp";
                 case ModelType::CTMDP:
-                    stream << "ctmdp";
-                    break;
+                    return "ctmdp";
                 case ModelType::MA:
-                    stream << "ma";
-                    break;
+                    return "ma";
+                case ModelType::TA:
+                    return "ta";
                 case ModelType::PTA:
-                    stream << "pta";
-                    break;
+                    return "pta";
                 case ModelType::STA:
-                    stream << "sta";
-                    break;
+                    return "sta";
+                case ModelType::HA:
+                    return "ha";
+                case ModelType::PHA:
+                    return "pha";
+                case ModelType::SHA:
+                    return "sha";
             }
-            return stream;
         }
 
         ModelType getModelType(std::string const& input) {
+            if (input == "lts") {
+                return ModelType::LTS;
+            }
             if (input == "dtmc") {
                 return ModelType::DTMC;
             }
@@ -49,11 +57,23 @@ namespace storm {
             if (input == "ma") {
                 return ModelType::MA;
             }
+            if (input == "ta") {
+                return ModelType::TA;
+            }
             if (input == "pta") {
                 return ModelType::PTA;
             }
             if (input == "sta") {
                 return ModelType::STA;
+            }
+            if (input == "ha") {
+                return ModelType::HA;
+            }
+            if (input == "pha") {
+                return ModelType::PHA;
+            }
+            if (input == "sha") {
+                return ModelType::SHA;
             }
             return ModelType::UNDEFINED;
         }

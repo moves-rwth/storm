@@ -54,9 +54,10 @@ namespace storm {
              * the given compressed state.
              * @params state The state to which to apply the new values.
              * @params update The update to apply.
+             * @params locationVariable The location variable that is being updated.
              * @return The resulting state.
              */
-            CompressedState applyUpdate(CompressedState const& state, storm::jani::EdgeDestination const& update);
+            CompressedState applyUpdate(CompressedState const& state, storm::jani::EdgeDestination const& update, storm::generator::LocationVariableInformation const& locationVariable);
             
             /*!
              * Retrieves all choices labeled with the silent action possible from the given state.
@@ -89,8 +90,33 @@ namespace storm {
              */
             void checkGlobalVariableWritesValid(std::vector<std::vector<storm::jani::Edge const*>> const& enabledEdges) const;
             
+            /*!
+             * Treats the given transient assignments by calling the callback function whenever a transient assignment
+             * to one of the reward variables of this generator is performed.
+             */
+            void performTransientAssignments(storm::jani::detail::ConstAssignments const& transientAssignments, std::function<void (ValueType const&)> const& callback);
+            
+            /*!
+             * Builds the information structs for the reward models.
+             */
+            void buildRewardModelInformation();
+            
+            /*!
+             * Checks the underlying model for validity for this next-state generator.
+             */
+            void checkValid() const;
+                        
             /// The model used for the generation of next states.
             storm::jani::Model model;
+            
+            /// The transient variables of reward models that need to be considered.
+            std::vector<storm::expressions::Variable> rewardVariables;
+            
+            /// A vector storing information about the corresponding reward models (variables).
+            std::vector<RewardModelInformation> rewardModelInformation;
+            
+            // A flag that stores whether at least one of the selected reward models has state-action rewards.
+            bool hasStateActionRewards;
         };
         
     }

@@ -5,8 +5,11 @@
 #include "src/storage/dd/cudd/CuddAddIterator.h"
 
 #include "src/exceptions/InvalidOperationException.h"
+
+#include "src/exceptions/NotImplementedException.h"
 #include "src/utility/macros.h"
 #include "src/utility/constants.h"
+
 
 namespace storm {
     namespace modelchecker {
@@ -54,7 +57,7 @@ namespace storm {
         
         template<storm::dd::DdType Type, typename ValueType>
         bool HybridQuantitativeCheckResult<Type, ValueType>::isResultForAllStates() const {
-            return true;
+            return (symbolicStates || explicitStates) == reachableStates;
         }
         
         template<storm::dd::DdType Type, typename ValueType>
@@ -165,6 +168,20 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type, typename ValueType>
+        ValueType HybridQuantitativeCheckResult<Type, ValueType>::sum() const {
+            ValueType sum = symbolicValues.sumAbstract(symbolicValues.getContainedMetaVariables()).getValue();
+            for (auto const& value : explicitValues) {
+                sum += value;
+            }
+            return sum;
+        }
+        
+        template<storm::dd::DdType Type, typename ValueType>
+        ValueType HybridQuantitativeCheckResult<Type, ValueType>::average() const {
+            return this->sum() / (symbolicStates || explicitStates).getNonZeroCount();
+        }
+        
+        template<storm::dd::DdType Type, typename ValueType>
         void HybridQuantitativeCheckResult<Type, ValueType>::oneMinus() {
             storm::dd::Add<Type> one = symbolicValues.getDdManager().template getAddOne<ValueType>();
             storm::dd::Add<Type> zero = symbolicValues.getDdManager().template getAddZero<ValueType>();
@@ -174,6 +191,7 @@ namespace storm {
                 element = storm::utility::one<ValueType>() - element;
             }
         }
+        
         
         // Explicitly instantiate the class.
         template class HybridQuantitativeCheckResult<storm::dd::DdType::CUDD>;

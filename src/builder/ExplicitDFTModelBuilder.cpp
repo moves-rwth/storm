@@ -2,7 +2,7 @@
 #include <src/models/sparse/MarkovAutomaton.h>
 #include <src/models/sparse/Ctmc.h>
 #include <src/utility/constants.h>
-#include <src/utility/vector.h>
+#include "src/utility/vector.h"
 #include <src/exceptions/UnexpectedException.h>
 #include "src/settings/modules/DFTSettings.h"
 #include "src/settings/SettingsManager.h"

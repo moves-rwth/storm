@@ -25,7 +25,7 @@ namespace storm {
                 /*!
                  * Creates an object representing the default building options.
                  */
-                Options();
+                Options(bool buildAllLabels = false, bool buildAllRewardModels = false);
                 
                 /*! Creates an object representing the suggested building options assuming that the given formula is the
                  * only one to check. Additional formulas may be preserved by calling <code>preserveFormula</code>.
@@ -59,6 +59,32 @@ namespace storm {
                  */
                 void setTerminalStatesFromFormula(storm::logic::Formula const& formula);
                 
+                /*!
+                 * Retrieves the names of the reward models to build.
+                 */
+                std::set<std::string> const& getRewardModelNames() const;
+
+                /*!
+                 * Adds the given label to the ones that are supposed to be built.
+                 */
+                void addLabel(std::string const& labelName);
+
+                /*!
+                 * Retrieves whether the flag to build all labels is set.
+                 */
+                bool isBuildAllLabelsSet() const;
+
+                /// A flag that indicates whether all labels are to be built. In this case, the label names are to be ignored.
+                bool buildAllLabels;
+                
+                /// A set of labels to build.
+                std::set<std::string> labelNames;
+
+                /*!
+                 * Retrieves whether the flag to build all reward models is set.
+                 */
+                bool isBuildAllRewardModelsSet() const;
+                
                 // A flag that indicates whether or not all reward models are to be build.
                 bool buildAllRewardModels;
                 
@@ -78,33 +104,13 @@ namespace storm {
             };
             
             /*!
-             * Creates a builder for the given model that uses the given options.
-             */
-            DdJaniModelBuilder(storm::jani::Model const& model, Options const& options = Options());
-            
-            /*!
              * Translates the given program into a symbolic model (i.e. one that stores the transition relation as a
              * decision diagram).
              *
              * @param model The model to translate.
              * @return A pointer to the resulting model.
              */
-            std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> build();
-            
-            /*!
-             * Retrieves the model that was actually translated (i.e. including constant substitutions etc.). Note
-             * that this function may only be called after a succesful translation.
-             *
-             * @return The translated model.
-             */
-            storm::jani::Model const& getTranslatedModel() const;
-                        
-        private:
-            /// The model to translate.
-            boost::optional<storm::jani::Model> model;
-            
-            /// The options to use for building the model.
-            Options options;
+            std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> build(storm::jani::Model const& model, Options const& options = Options());
         };
         
     }

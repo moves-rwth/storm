@@ -2,7 +2,9 @@
 #include "src/storage/expressions/ExpressionManager.h"
 
 #include "src/adapters/CarlAdapter.h"
+
 #include "src/utility/macros.h"
+#include "src/exceptions/UnexpectedException.h"
 
 namespace storm {
     namespace expressions {
@@ -49,7 +51,7 @@ namespace storm {
             CompiledExpressionType& compiledExpression = result.first->second;
             compiledExpression.register_symbol_table(symbolTable);
             bool parsingOk = parser.compile(ToExprtkStringVisitor().toString(expression), compiledExpression);
-            STORM_LOG_ASSERT(parsingOk, "Expression was not properly parsed by ExprTk: " << expression);
+            STORM_LOG_THROW(parsingOk, storm::exceptions::UnexpectedException, "Expression was not properly parsed by ExprTk: " << expression << ". (Returned error: " << parser.error() << ")");
             return compiledExpression;
         }
         

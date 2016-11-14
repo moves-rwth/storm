@@ -1,16 +1,19 @@
-#ifndef STORM_PARSER_EXPRESSIONPARSER_H_
-#define	STORM_PARSER_EXPRESSIONPARSER_H_
+#pragma once
 
 #include <sstream>
 
 #include "src/parser/SpiritParserDefinitions.h"
 #include "src/parser/SpiritErrorHandler.h"
-#include "src/storage/expressions/Expression.h"
-#include "src/storage/expressions/ExpressionManager.h"
+#include "src/storage/expressions/OperatorType.h"
 
-#include "src/adapters/CarlAdapter.h"
+#include "src/adapters/NumberAdapter.h"
 
 namespace storm {
+    namespace expressions {
+        class Expression;
+        class ExpressionManager;
+    }
+    
     namespace parser {
         template<typename NumberType>
         struct RationalPolicies : boost::spirit::qi::strict_real_policies<NumberType> {
@@ -21,6 +24,8 @@ namespace storm {
             template <typename It, typename Attr>
             static bool parse_inf(It&, It const&, Attr&) { return false; }
         };
+        
+        class ExpressionCreator;
         
         class ExpressionParser : public qi::grammar<Iterator, storm::expressions::Expression(), Skipper> {
         public:
@@ -197,33 +202,9 @@ namespace storm {
             // A parser used for recognizing the operators at the "power" precedence level.
             prefixPowerOperatorStruct prefixPowerOperator_;
             
-            struct trueFalseOperatorStruct : qi::symbols<char, storm::expressions::Expression> {
-                trueFalseOperatorStruct(storm::expressions::ExpressionManager const& manager) {
-                    add
-                    ("true", manager.boolean(true))
-                    ("false", manager.boolean(false));
-                }
-            };
             
-            // A parser used for recognizing the literals true and false.
-            trueFalseOperatorStruct trueFalse_;
+            ExpressionCreator* expressionCreator;
             
-            // The manager responsible for the expressions.
-            std::shared_ptr<storm::expressions::ExpressionManager const> manager;
-            
-            // A flag that indicates whether expressions should actually be generated or just a syntax check shall be
-            // performed.
-            bool createExpressions;
-            
-            // A flag that indicates whether double literals are accepted.
-            bool acceptDoubleLiterals;
-            
-            // A flag that indicates whether the mapping must be deleted on unsetting.
-            bool deleteIdentifierMapping;
-            
-            // The currently used mapping of identifiers to expressions. This is used if the parser is set to create
-            // expressions.
-            qi::symbols<char, storm::expressions::Expression> const* identifiers_;
             
             // The symbol table of invalid identifiers.
             qi::symbols<char, uint_fast64_t> invalidIdentifiers_;
@@ -250,21 +231,6 @@ namespace storm {
             // Parser that is used to recognize doubles only (as opposed to Spirit's double_ parser).
             boost::spirit::qi::real_parser<storm::RationalNumber, RationalPolicies<storm::RationalNumber>> rationalLiteral_;
             
-            // Helper functions to create expressions.
-            storm::expressions::Expression createIteExpression(storm::expressions::Expression e1, storm::expressions::Expression e2, storm::expressions::Expression e3, bool& pass) const;
-            storm::expressions::Expression createOrExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2, bool& pass) const;
-            storm::expressions::Expression createAndExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2, bool& pass) const;
-            storm::expressions::Expression createRelationalExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2, bool& pass) const;
-            storm::expressions::Expression createEqualsExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2, bool& pass) const;
-            storm::expressions::Expression createPlusExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2, bool& pass) const;
-            storm::expressions::Expression createMultExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2, bool& pass) const;
-            storm::expressions::Expression createPowerExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2, bool& pass) const;
-            storm::expressions::Expression createUnaryExpression(boost::optional<storm::expressions::OperatorType> const& operatorType, storm::expressions::Expression const& e1, bool& pass) const;
-            storm::expressions::Expression createRationalLiteralExpression(storm::RationalNumber const& value, bool& pass) const;
-            storm::expressions::Expression createIntegerLiteralExpression(int value, bool& pass) const;
-            storm::expressions::Expression createMinimumMaximumExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2, bool& pass) const;
-            storm::expressions::Expression createFloorCeilExpression(storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e1, bool& pass) const;
-            storm::expressions::Expression getIdentifierExpression(std::string const& identifier, bool allowBacktracking, bool& pass) const;
             
             bool isValidIdentifier(std::string const& identifier);
             
@@ -274,4 +240,3 @@ namespace storm {
     } // namespace parser
 } // namespace storm
 
-#endif /* STORM_PARSER_EXPRESSIONPARSER_H_ */

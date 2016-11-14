@@ -47,7 +47,10 @@ endmodule
 
 module process2 = process1[pc1=pc2,coin1=coin2,p1=p2] endmodule
 label "finished" = pc1=3 &pc2=3 ;
-label "all_coins_equal_1" = coin1=1 &coin2=1 ;
+label "all_coins_equal_0" = coin1=0 & coin2=0;
+label "all_coins_equal_1" = coin1=1 & coin2=1;
+label "agree" = coin1 = coin2;
+
 rewards "steps"
 	true : 1;
 endrewards

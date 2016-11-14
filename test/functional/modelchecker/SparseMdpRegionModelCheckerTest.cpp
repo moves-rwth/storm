@@ -23,7 +23,7 @@ TEST(SparseMdpRegionModelCheckerTest, two_dice_Prob) {
     carl::VariablePool::getInstance().clear();
 
     storm::prism::Program program = storm::parseProgram(programFile);
-    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::parseFormulasForProgram(formulaFile, program);
+    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::parseFormulasForPrismProgram(formulaFile, program);
     std::shared_ptr<storm::models::sparse::Mdp<storm::RationalFunction>> model = storm::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Mdp<storm::RationalFunction>>();
     auto const& regionSettings = storm::settings::getModule<storm::settings::modules::RegionSettings>();
     storm::modelchecker::region::SparseRegionModelCheckerSettings settings(regionSettings.getSampleMode(), regionSettings.getApproxMode(), regionSettings.getSmtMode());
@@ -91,7 +91,7 @@ TEST(SparseMdpRegionModelCheckerTest, coin_Prob) {
     carl::VariablePool::getInstance().clear();
 
     storm::prism::Program program = storm::parseProgram(programFile);
-    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::parseFormulasForProgram(formulaAsString, program);
+    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::parseFormulasForPrismProgram(formulaAsString, program);
     std::shared_ptr<storm::models::sparse::Mdp<storm::RationalFunction>> model = storm::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Mdp<storm::RationalFunction>>();
     auto const& regionSettings = storm::settings::getModule<storm::settings::modules::RegionSettings>();
     storm::modelchecker::region::SparseRegionModelCheckerSettings settings(regionSettings.getSampleMode(), regionSettings.getApproxMode(), regionSettings.getSmtMode());

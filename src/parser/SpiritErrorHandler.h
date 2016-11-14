@@ -1,5 +1,4 @@
-#ifndef STORM_PARSER_SPIRITERRORHANDLER_H_
-#define STORM_PARSER_SPIRITERRORHANDLER_H_
+#pragma once
 
 #include "src/parser/SpiritParserDefinitions.h"
 
@@ -30,5 +29,3 @@ namespace storm {
         };
     }
 }
-
-#endif /* STORM_PARSER_SPIRITERRORHANDLER_H_ */

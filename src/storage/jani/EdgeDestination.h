@@ -4,8 +4,7 @@
 
 #include "src/storage/expressions/Expression.h"
 
-#include "src/storage/jani/Assignment.h"
-#include "src/storage/jani/RewardIncrement.h"
+#include "src/storage/jani/OrderedAssignments.h"
 
 namespace storm {
     namespace jani {
@@ -15,17 +14,15 @@ namespace storm {
             /*!
              * Creates a new edge destination.
              */
-            EdgeDestination(uint64_t locationIndex, storm::expressions::Expression const& probability, std::vector<Assignment> const& assignments = {}, std::vector<RewardIncrement> const& rewardIncrements = {});
+            EdgeDestination(uint64_t locationIndex, storm::expressions::Expression const& probability, OrderedAssignments const& assignments);
+            
+            EdgeDestination(uint64_t locationIndex, storm::expressions::Expression const& probability, Assignment const& assignment);
+            EdgeDestination(uint64_t locationIndex, storm::expressions::Expression const& probability, std::vector<Assignment> const& assignments = {});
             
             /*!
              * Additionally performs the given assignment when choosing this destination.
              */
             void addAssignment(Assignment const& assignment);
-
-            /*!
-             * Additionally performs the given reward increment when choosing this destination.
-             */
-            void addRewardIncrement(RewardIncrement const& rewardIncrement);
             
             /*!
              * Retrieves the id of the destination location.
@@ -45,36 +42,31 @@ namespace storm {
             /*!
              * Retrieves the assignments to make when choosing this destination.
              */
-            std::vector<Assignment>& getAssignments();
-
-            /*!
-             * Retrieves the assignments to make when choosing this destination.
-             */
-            std::vector<Assignment> const& getAssignments() const;
+            OrderedAssignments const& getOrderedAssignments() const;
             
             /*!
-             * Retrieves the reward increments to make when choosing this destination.
+             * Substitutes all variables in all expressions according to the given substitution.
              */
-            std::vector<RewardIncrement> const& getRewardIncrements() const;
+            void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution);
+            
+            // Convenience methods to access the assignments.
+            bool hasAssignment(Assignment const& assignment) const;
+            bool removeAssignment(Assignment const& assignment);
+            
+            /*!
+             * Retrieves whether this destination has transient assignments.
+             */
+            bool hasTransientAssignment() const;
             
         private:
-            /*!
-             * Sorts the assignments to make all assignments to boolean variables precede all others and order the
-             * assignments within one variable group by the expression variables.
-             */
-            void sortAssignments();
-            
             // The index of the destination location.
             uint64_t locationIndex;
 
             // The probability to go to the destination.
             storm::expressions::Expression probability;
             
-            // The assignments to make when choosing this destination.
-            std::vector<Assignment> assignments;
-            
-            // The increments to rewards to make when choosing this destination.
-            std::vector<RewardIncrement> rewardIncrements;
+            // The (ordered) assignments to make when choosing this destination.
+            OrderedAssignments assignments;
         };
         
     }

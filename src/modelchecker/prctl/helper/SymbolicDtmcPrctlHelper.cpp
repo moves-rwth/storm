@@ -172,7 +172,7 @@ namespace storm {
                         // for solving the equation system (i.e. compute (I-A)).
                         submatrix *= maybeStatesAdd.swapVariables(model.getRowColumnMetaVariablePairs());
                         submatrix = (model.getRowColumnIdentity() * maybeStatesAdd) - submatrix;
-                        
+
                         // Solve the equation system.
                         std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, ValueType>> solver = linearEquationSolverFactory.create(submatrix, maybeStates, model.getRowVariables(), model.getColumnVariables(), model.getRowColumnMetaVariablePairs());
                         storm::dd::Add<DdType, ValueType> result = solver->solveEquations(model.getManager().getConstant(0.5) * maybeStatesAdd, subvector);

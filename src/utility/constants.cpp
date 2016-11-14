@@ -5,7 +5,10 @@
 #include "src/settings/SettingsManager.h"
 #include "src/settings/modules/GeneralSettings.h"
 
+#include "src/exceptions/InvalidArgumentException.h"
+
 #include "src/adapters/CarlAdapter.h"
+#include "src/utility/macros.h"
 
 namespace storm {
     namespace utility {
@@ -14,27 +17,27 @@ namespace storm {
         ValueType one() {
             return ValueType(1);
         }
-        
+
         template<typename ValueType>
         ValueType zero() {
             return ValueType(0);
         }
-        
+
         template<typename ValueType>
         ValueType infinity() {
             return std::numeric_limits<ValueType>::infinity();
         }
-        
+
         template<typename ValueType>
         bool isOne(ValueType const& a) {
             return a == one<ValueType>();
         }
-        
+
         template<typename ValueType>
         bool isZero(ValueType const& a) {
             return a == zero<ValueType>();
         }
-        
+
         template<typename ValueType>
         bool isConstant(ValueType const& a) {
             return true;
@@ -61,28 +64,51 @@ namespace storm {
         bool isInteger(uint_fast64_t const& number) {
             return true;
         }
-
+        
+        template<typename ValueType>
+        std::string to_string(ValueType const& value) {
+            std::stringstream ss;
+            ss << value;
+            return ss.str();
+        }
+        
+        template<>
+        std::string to_string(RationalFunction const& f) {
+            std::stringstream ss;
+            if (f.isConstant())  {
+                if (f.denominator().isOne()) {
+                    ss << f.nominatorAsNumber();
+                } else {
+                    ss << f.nominatorAsNumber() << "/" << f.denominatorAsNumber();
+                }
+            } else if (f.denominator().isOne()) {
+                ss << f.nominatorAsPolynomial().coefficient() * f.nominatorAsPolynomial().polynomial();
+            } else {
+                ss << "(" << f.nominatorAsPolynomial() << ")/(" << f.denominatorAsPolynomial() << ")";
+            }
+            return ss.str();
+        }
+ 
 #ifdef STORM_HAVE_CARL
         template<>
         bool isOne(storm::RationalNumber const& a) {
             return carl::isOne(a);
         }
-        
+
         template<>
         bool isZero(storm::RationalNumber const& a) {
             return carl::isZero(a);
         }
-        
         template<>
         bool isOne(storm::RationalFunction const& a) {
             return a.isOne();
         }
-        
+
         template<>
         bool isZero(storm::RationalFunction const& a) {
             return a.isZero();
         }
-        
+
         template<>
         bool isConstant(storm::RationalFunction const& a) {
             return a.isConstant();
@@ -92,12 +118,12 @@ namespace storm {
         bool isOne(storm::Polynomial const& a) {
             return a.isOne();
         }
-        
+
         template<>
         bool isZero(storm::Polynomial const& a) {
             return a.isZero();
         }
-        
+
         template<>
         bool isConstant(storm::Polynomial const& a) {
             return a.isConstant();
@@ -148,16 +174,90 @@ namespace storm {
         double convertNumber(double const& number){
             return number;
         }
-        
+
         template<typename ValueType>
         ValueType abs(ValueType const& number) {
             return std::fabs(number);
         }
         
+        template<>
+        storm::RationalFunction minimum(std::vector<storm::RationalFunction> const& values)
+        {
+            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Minimum for rational functions is not defined");
+        }
+        
+        template<typename ValueType>
+        ValueType minimum(std::vector<ValueType> const& values) {
+            assert(!values.empty());
+            ValueType min = values.front();
+            for (auto const& vt : values) {
+                if (vt < min) {
+                    min = vt;
+                }
+            }
+            return min;
+        }
+        
+        template<>
+        storm::RationalFunction maximum(std::vector<storm::RationalFunction> const& values)
+        {
+            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Maximum for rational functions is not defined");
+        }
+        
+        
+        template<typename ValueType>
+        ValueType maximum(std::vector<ValueType> const& values) {
+            assert(!values.empty());
+            ValueType max = values.front();
+            for (auto const& vt : values) {
+                if (vt > max) {
+                    max = vt;
+                }
+            }
+            return max;
+        }
+        
+        template<>
+        storm::RationalFunction minimum(std::map<uint64_t, storm::RationalFunction> const& values)
+        {
+            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Minimum for rational functions is not defined");
+        }
+        
+        template< typename K, typename ValueType>
+        ValueType minimum(std::map<K, ValueType> const& values) {
+            assert(!values.empty());
+            ValueType min = values.begin()->second;
+            for (auto const& vt : values) {
+                if (vt.second < min) {
+                    min = vt.second;
+                }
+            }
+            return min;
+        }
+        
+        template<>
+        storm::RationalFunction maximum(std::map<uint64_t, storm::RationalFunction> const& values)
+        {
+            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Maximum for rational functions is not defined");
+        }
+        
+        
+        template<typename K, typename ValueType>
+        ValueType maximum(std::map<K, ValueType> const& values) {
+            assert(!values.empty());
+            ValueType max = values.begin()->second;
+            for (auto const& vt : values) {
+                if (vt.second > max) {
+                    max = vt.second;
+                }
+            }
+            return max;
+        }
+        
 #ifdef STORM_HAVE_CARL
         template<>
         RationalFunction& simplify(RationalFunction& value);
-        
+
         template<>
         RationalFunction&& simplify(RationalFunction&& value);
 
@@ -183,7 +283,7 @@ namespace storm {
             value.simplify();
             return std::move(value);
         }
-        
+
         template<>
         double convertNumber(RationalNumber const& number){
             return carl::toDouble(number);
@@ -273,6 +373,7 @@ namespace storm {
         template storm::storage::MatrixEntry<storm::storage::sparse::state_type, double>&& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, double>&& matrixEntry);
 
         template double abs(double const& number);
+
         template bool isInteger(double const& number);
         
         template bool isOne(float const& value);
@@ -288,6 +389,11 @@ namespace storm {
         template bool isInteger(float const& number);
 
         template float simplify(float value);
+        
+        template std::string to_string(float const& value);
+        template std::string to_string(double const& value);
+        template std::string to_string(storm::RationalNumber const& value);
+        template std::string to_string(storm::RationalFunction const& value);
 
         template storm::storage::MatrixEntry<storm::storage::sparse::state_type, float> simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, float> matrixEntry);
         template storm::storage::MatrixEntry<storm::storage::sparse::state_type, float>& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, float>& matrixEntry);
@@ -301,12 +407,13 @@ namespace storm {
         template int one();
         template int zero();
         template int infinity();
-        
+
         template int pow(int const& value, uint_fast64_t exponent);
+
         template bool isInteger(int const& number);
 
         template int simplify(int value);
-        
+
         template storm::storage::MatrixEntry<storm::storage::sparse::state_type, int> simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, int> matrixEntry);
         template storm::storage::MatrixEntry<storm::storage::sparse::state_type, int>& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, int>& matrixEntry);
         template storm::storage::MatrixEntry<storm::storage::sparse::state_type, int>&& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, int>&& matrixEntry);
@@ -319,7 +426,7 @@ namespace storm {
         template uint32_t one();
         template uint32_t zero();
         template uint32_t infinity();
-                
+
         template storm::storage::sparse::state_type one();
         template storm::storage::sparse::state_type zero();
         template storm::storage::sparse::state_type infinity();
@@ -332,6 +439,24 @@ namespace storm {
         template storm::storage::MatrixEntry<storm::storage::sparse::state_type, storm::storage::sparse::state_type>& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, storm::storage::sparse::state_type>& matrixEntry);
         template storm::storage::MatrixEntry<storm::storage::sparse::state_type, storm::storage::sparse::state_type>&& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, storm::storage::sparse::state_type>&& matrixEntry);
 
+        
+        template double minimum(std::vector<double> const&);
+        template double maximum(std::vector<double> const&);
+        
+        template storm::RationalNumber minimum(std::vector<storm::RationalNumber> const&);
+        template storm::RationalNumber maximum(std::vector<storm::RationalNumber> const&);
+        
+        template storm::RationalFunction minimum(std::vector<storm::RationalFunction> const&);
+        template storm::RationalFunction maximum(std::vector<storm::RationalFunction> const&);
+        
+        template double minimum(std::map<uint64_t, double> const&);
+        template double maximum(std::map<uint64_t, double> const&);
+        
+        template storm::RationalNumber minimum(std::map<uint64_t, storm::RationalNumber> const&);
+        template storm::RationalNumber maximum(std::map<uint64_t, storm::RationalNumber> const&);
+        
+        template storm::RationalFunction minimum(std::map<uint64_t, storm::RationalFunction> const&);
+        template storm::RationalFunction maximum(std::map<uint64_t, storm::RationalFunction> const&);
 #ifdef STORM_HAVE_CARL
         // Instantiations for rational number.
         template bool isOne(storm::RationalNumber const& value);
@@ -351,7 +476,7 @@ namespace storm {
         template storm::RationalNumber abs(storm::RationalNumber const& number);
 
         template storm::RationalNumber pow(storm::RationalNumber const& value, uint_fast64_t exponent);
-        
+
         template storm::RationalNumber simplify(storm::RationalNumber value);
         template storm::storage::MatrixEntry<storm::storage::sparse::state_type, storm::RationalNumber> simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, storm::RationalNumber> matrixEntry);
         template storm::storage::MatrixEntry<storm::storage::sparse::state_type, storm::RationalNumber>& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, storm::RationalNumber>& matrixEntry);
@@ -366,15 +491,15 @@ namespace storm {
         template RationalFunction one();
         template RationalFunction zero();
         template storm::RationalFunction infinity();
-        
+
         template RationalFunction pow(RationalFunction const& value, uint_fast64_t exponent);
         template RationalFunction simplify(RationalFunction value);
         template RationalFunction& simplify(RationalFunction& value);
         template RationalFunction&& simplify(RationalFunction&& value);
-        
+
         template Polynomial one();
         template Polynomial zero();
-        
+
         template bool isOne(Interval const& value);
         template bool isZero(Interval const& value);
         template bool isConstant(Interval const& value);
@@ -382,7 +507,7 @@ namespace storm {
 
         template Interval one();
         template Interval zero();
-        
+
         template storm::storage::MatrixEntry<storm::storage::sparse::state_type, RationalFunction> simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, RationalFunction> matrixEntry);
         template storm::storage::MatrixEntry<storm::storage::sparse::state_type, RationalFunction>& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, RationalFunction>& matrixEntry);
         template storm::storage::MatrixEntry<storm::storage::sparse::state_type, RationalFunction>&& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, RationalFunction>&& matrixEntry);

@@ -16,46 +16,65 @@ namespace storm {
         class CompositionInformation {
         public:
             CompositionInformation();
-            CompositionInformation(std::map<std::string, uint64_t> const& automatonNameToMultiplicity, std::set<std::string> const& nonsilentActions, bool containsRenaming, bool containsRestrictedParallelComposition);
 
             void increaseAutomatonMultiplicity(std::string const& automatonName, uint64_t count = 1);
-            
-            void addNonsilentAction(std::string const& actionName);
-            std::set<std::string> const& getNonsilentActions() const;
-            static std::set<std::string> renameNonsilentActions(std::set<std::string> const& nonsilentActions, std::map<std::string, boost::optional<std::string>> const& renaming);
-            
-            void setContainsRenameComposition();
-            bool containsRenameComposition() const;
-            
-            void setContainsRestrictedParallelComposition();
-            bool containsRestrictedParallelComposition() const;
-            
-            static std::map<std::string, uint64_t> joinMultiplicityMaps(std::map<std::string, uint64_t> const& first, std::map<std::string, uint64_t> const& second);
             std::map<std::string, uint64_t> const& getAutomatonToMultiplicityMap() const;
+            static std::map<std::string, uint64_t> joinMultiplicityMaps(std::map<std::string, uint64_t> const& first, std::map<std::string, uint64_t> const& second);
+            void addMultiplicityMap(std::map<std::string, uint64_t> const& multiplicityMap);
+            
+            void setContainsNonStandardParallelComposition(bool value);
+            bool containsNonStandardParallelComposition() const;
+            
+            std::string const& getActionName(uint64_t index) const;
+            uint64_t getActionIndex(std::string const& name) const;
+
+            void addNonSilentActionIndex(uint64_t index);
+            void addNonSilentActionIndices(std::set<uint64_t> const& indices);
+            bool hasNonSilentActionIndex(uint64_t index);
+            void addInputEnabledActionIndex(uint64_t index);
+
+            std::set<uint64_t> const& getNonSilentActionIndices() const;
+            std::set<uint64_t> const& getInputEnabledActionIndices() const;
+            
+            void setMappings(std::map<uint64_t, std::string> const& indexToNameMap, std::map<std::string, uint64_t> const& nameToIndexMap);
             
         private:
+            /// The indices of the non-silent actions appearing in the topmost element of the composition.
+            std::set<uint64_t> nonSilentActionIndices;
+
+            /// The set of indices of actions for which the topmost element of the composition is input-enabled.
+            std::set<uint64_t> inputEnabledActionIndices;
+            
+            /// A mapping from action indices to names. Since the composition may introduce new action names, this may
+            /// extend the one from the underlying model.
+            std::map<uint64_t, std::string> indexToNameMap;
+            
+            /// A mapping from action names to their indices.
+            std::map<std::string, uint64_t> nameToIndexMap;
+
             /// A mapping from the automata's names to the amount of times they occur in the composition.
             std::map<std::string, uint64_t> automatonNameToMultiplicity;
             
-            /// The set of non-silent actions contained in the composition.
-            std::set<std::string> nonsilentActions;
-            
-            /// A flag indicating whether the composition contains a renaming composition.
-            bool renameComposition;
-            
-            /// A flag indicating whether the composition contains
-            bool restrictedParallelComposition;
+            /// A flag indicating whether the composition contains any non-standard parallel composition.
+            bool nonStandardParallelComposition;
         };
         
         class CompositionInformationVisitor : public CompositionVisitor {
         public:
-            CompositionInformationVisitor() = default;
-            
-            CompositionInformation getInformation(Composition const& composition, Model const& model);
-            
+            CompositionInformationVisitor(Model const& model, Composition const& composition);
+            CompositionInformation getInformation();
+
             virtual boost::any visit(AutomatonComposition const& composition, boost::any const& data) override;
-            virtual boost::any visit(RenameComposition const& composition, boost::any const& data) override;
             virtual boost::any visit(ParallelComposition const& composition, boost::any const& data) override;
+            
+        private:
+            uint64_t addOrGetActionIndex(std::string const& name);
+            
+            storm::jani::Model const& model;
+            Composition const& composition;
+            uint64_t nextFreeActionIndex;
+            std::map<std::string, uint64_t> nameToIndexMap;
+            std::map<uint64_t, std::string> indexToNameMap;
         };
         
     }

@@ -85,20 +85,20 @@ namespace storm {
         }
         
         LinearCoefficientVisitor::VariableCoefficients LinearCoefficientVisitor::getLinearCoefficients(Expression const& expression) {
-            return boost::any_cast<VariableCoefficients>(expression.getBaseExpression().accept(*this));
+            return boost::any_cast<VariableCoefficients>(expression.getBaseExpression().accept(*this, boost::none));
         }
         
-        boost::any LinearCoefficientVisitor::visit(IfThenElseExpression const& expression) {
+        boost::any LinearCoefficientVisitor::visit(IfThenElseExpression const& expression, boost::any const& data) {
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression is non-linear.");
         }
         
-        boost::any LinearCoefficientVisitor::visit(BinaryBooleanFunctionExpression const& expression) {
+        boost::any LinearCoefficientVisitor::visit(BinaryBooleanFunctionExpression const& expression, boost::any const& data) {
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression is non-linear.");
         }
         
-        boost::any LinearCoefficientVisitor::visit(BinaryNumericalFunctionExpression const& expression) {
-            VariableCoefficients leftResult = boost::any_cast<VariableCoefficients>(expression.getFirstOperand()->accept(*this));
-            VariableCoefficients rightResult = boost::any_cast<VariableCoefficients>(expression.getSecondOperand()->accept(*this));
+        boost::any LinearCoefficientVisitor::visit(BinaryNumericalFunctionExpression const& expression, boost::any const& data) {
+            VariableCoefficients leftResult = boost::any_cast<VariableCoefficients>(expression.getFirstOperand()->accept(*this, data));
+            VariableCoefficients rightResult = boost::any_cast<VariableCoefficients>(expression.getSecondOperand()->accept(*this, data));
 
             if (expression.getOperatorType() == BinaryNumericalFunctionExpression::OperatorType::Plus) {
                 leftResult += std::move(rightResult);
@@ -114,11 +114,11 @@ namespace storm {
             return leftResult;
         }
         
-        boost::any LinearCoefficientVisitor::visit(BinaryRelationExpression const& expression) {
+        boost::any LinearCoefficientVisitor::visit(BinaryRelationExpression const& expression, boost::any const& data) {
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression is non-linear.");
         }
         
-        boost::any LinearCoefficientVisitor::visit(VariableExpression const& expression) {
+        boost::any LinearCoefficientVisitor::visit(VariableExpression const& expression, boost::any const& data) {
             VariableCoefficients coefficients;
             if (expression.getType().isNumericalType()) {
                 coefficients.setCoefficient(expression.getVariable(), 1);
@@ -128,12 +128,12 @@ namespace storm {
             return coefficients;
         }
         
-        boost::any LinearCoefficientVisitor::visit(UnaryBooleanFunctionExpression const& expression) {
+        boost::any LinearCoefficientVisitor::visit(UnaryBooleanFunctionExpression const& expression, boost::any const& data) {
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression is non-linear.");
         }
         
-        boost::any LinearCoefficientVisitor::visit(UnaryNumericalFunctionExpression const& expression) {
-            VariableCoefficients childResult = boost::any_cast<VariableCoefficients>(expression.getOperand()->accept(*this));
+        boost::any LinearCoefficientVisitor::visit(UnaryNumericalFunctionExpression const& expression, boost::any const& data) {
+            VariableCoefficients childResult = boost::any_cast<VariableCoefficients>(expression.getOperand()->accept(*this, data));
             
             if (expression.getOperatorType() == UnaryNumericalFunctionExpression::OperatorType::Minus) {
                 childResult.negate();
@@ -143,15 +143,15 @@ namespace storm {
             }
         }
         
-        boost::any LinearCoefficientVisitor::visit(BooleanLiteralExpression const& expression) {
+        boost::any LinearCoefficientVisitor::visit(BooleanLiteralExpression const& expression, boost::any const& data) {
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression is non-linear.");
         }
         
-        boost::any LinearCoefficientVisitor::visit(IntegerLiteralExpression const& expression) {
+        boost::any LinearCoefficientVisitor::visit(IntegerLiteralExpression const& expression, boost::any const& data) {
             return VariableCoefficients(static_cast<double>(expression.getValue()));
         }
         
-        boost::any LinearCoefficientVisitor::visit(RationalLiteralExpression const& expression) {
+        boost::any LinearCoefficientVisitor::visit(RationalLiteralExpression const& expression, boost::any const& data) {
             return VariableCoefficients(expression.getValueAsDouble());
         }
     }

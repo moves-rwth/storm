@@ -259,15 +259,15 @@ namespace storm {
                 this->exitRates.resize(this->getNumberOfStates());
                 for (uint_fast64_t state = 0; state< this->getNumberOfStates(); ++state) {
                     uint_fast64_t row = this->getTransitionMatrix().getRowGroupIndices()[state];
-                    if(this->markovianStates.get(state)) {
+                    if (this->markovianStates.get(state)) {
                         this->exitRates[state] = this->getTransitionMatrix().getRowSum(row);
                         for (auto& transition : this->getTransitionMatrix().getRow(row)) {
                             transition.setValue(transition.getValue() / this->exitRates[state]);
                         }
                         ++row;
                     }
-                    for(; row < this->getTransitionMatrix().getRowGroupIndices()[state+1]; ++row) {
-                        STORM_LOG_THROW(storm::utility::isOne(this->getTransitionMatrix().getRowSum(row)), storm::exceptions::InvalidArgumentException, "Transitions of rateMatrix do not sum up to one for some non-Markovian choice. Sum is " << this->getTransitionMatrix().getRowSum(row) << ". State is " << state << ". Choice is " << row << ".");
+                    for (; row < this->getTransitionMatrix().getRowGroupIndices()[state+1]; ++row) {
+                        STORM_LOG_THROW(storm::utility::isOne(this->getTransitionMatrix().getRowSum(row)), storm::exceptions::InvalidArgumentException, "Entries of transition matrix do not sum up to one for (non-Markovian) choice " << row << " of state " << state << " (sum is " << this->getTransitionMatrix().getRowSum(row) << ").");
                     }
                 }
             }

@@ -27,8 +27,11 @@ namespace storm {
             STORM_LOG_THROW(!this->program.specifiesSystemComposition(), storm::exceptions::WrongFormatException, "The explicit next-state generator currently does not support custom system compositions.");
                         
             // Only after checking validity of the program, we initialize the variable information.
-            this->checkValid(program);
+            this->checkValid();
             this->variableInformation = VariableInformation(program);
+            
+            // Create a proper evalator.
+            this->evaluator = std::make_unique<storm::expressions::ExpressionEvaluator<ValueType>>(program.getManager());
             
             if (this->options.isBuildAllRewardModelsSet()) {
                 for (auto const& rewardModel : this->program.getRewardModels()) {
@@ -42,11 +45,10 @@ namespace storm {
                     } else {
                         STORM_LOG_THROW(rewardModelName.empty(), storm::exceptions::InvalidArgumentException, "Cannot build unknown reward model '" << rewardModelName << "'.");
                         STORM_LOG_THROW(this->program.getNumberOfRewardModels() == 1, storm::exceptions::InvalidArgumentException, "Reference to standard reward model is ambiguous.");
-                        STORM_LOG_THROW(this->program.getNumberOfRewardModels() > 0, storm::exceptions::InvalidArgumentException, "Reference to standard reward model is invalid, because there is no reward model.");
                     }
                 }
                 
-                // If no reward model was yet added, but there was one that was given in the options, we try to build
+                // If no reward model was yet added, but there was one that was given in the options, we try to build the
                 // standard reward model.
                 if (rewardModels.empty() && !this->options.getRewardModelNames().empty()) {
                     rewardModels.push_back(this->program.getRewardModel(0));
@@ -76,7 +78,7 @@ namespace storm {
         }
 
         template<typename ValueType, typename StateType>
-        void PrismNextStateGenerator<ValueType, StateType>::checkValid(storm::prism::Program const& program) {
+        void PrismNextStateGenerator<ValueType, StateType>::checkValid() const {
             // If the program still contains undefined constants and we are not in a parametric setting, assemble an appropriate error message.
 #ifdef STORM_HAVE_CARL
             if (!std::is_same<ValueType, storm::RationalFunction>::value && program.hasUndefinedConstants()) {
@@ -99,7 +101,7 @@ namespace storm {
             }
 
 #ifdef STORM_HAVE_CARL
-            else if (std::is_same<ValueType, storm::RationalFunction>::value && !program.hasUndefinedConstantsOnlyInUpdateProbabilitiesAndRewards()) {
+            else if (std::is_same<ValueType, storm::RationalFunction>::value && !program.undefinedConstantsAreGraphPreserving()) {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The program contains undefined constants that appear in some places other than update probabilities and reward value expressions, which is not admitted.");
             }
 #endif
@@ -137,7 +139,7 @@ namespace storm {
             for (auto const& expression : rangeExpressions) {
                 solver->add(expression);
             }
-            solver->add(program.getInitialConstruct().getInitialStatesExpression());
+            solver->add(program.getInitialStatesExpression());
             
             // Proceed ss long as the solver can still enumerate initial states.
             std::vector<StateType> initialStateIndices;
@@ -187,8 +189,8 @@ namespace storm {
                 ValueType stateRewardValue = storm::utility::zero<ValueType>();
                 if (rewardModel.get().hasStateRewards()) {
                     for (auto const& stateReward : rewardModel.get().getStateRewards()) {
-                        if (this->evaluator.asBool(stateReward.getStatePredicateExpression())) {
-                            stateRewardValue += ValueType(this->evaluator.asRational(stateReward.getRewardValueExpression()));
+                        if (this->evaluator->asBool(stateReward.getStatePredicateExpression())) {
+                            stateRewardValue += ValueType(this->evaluator->asRational(stateReward.getRewardValueExpression()));
                         }
                     }
                 }
@@ -198,7 +200,7 @@ namespace storm {
             // If a terminal expression was set and we must not expand this state, return now.
             if (!this->terminalStates.empty()) {
                 for (auto const& expressionBool : this->terminalStates) {
-                    if (this->evaluator.asBool(expressionBool.first) == expressionBool.second) {
+                    if (this->evaluator->asBool(expressionBool.first) == expressionBool.second) {
                         return result;
                     }
                 }
@@ -243,7 +245,7 @@ namespace storm {
                     }
                     
                     if (this->options.isBuildChoiceLabelsSet()) {
-                        globalChoice.addChoiceLabels(choice.getChoiceLabels());
+                        globalChoice.addLabels(choice.getLabels());
                     }
                 }
                 
@@ -253,14 +255,14 @@ namespace storm {
                     if (rewardModel.get().hasStateActionRewards()) {
                         for (auto const& stateActionReward : rewardModel.get().getStateActionRewards()) {
                             for (auto const& choice : allChoices) {
-                                if (stateActionReward.getActionIndex() == choice.getActionIndex() && this->evaluator.asBool(stateActionReward.getStatePredicateExpression())) {
-                                    stateActionRewardValue += ValueType(this->evaluator.asRational(stateActionReward.getRewardValueExpression())) * choice.getTotalMass() / totalExitRate;
+                                if (stateActionReward.getActionIndex() == choice.getActionIndex() && this->evaluator->asBool(stateActionReward.getStatePredicateExpression())) {
+                                    stateActionRewardValue += ValueType(this->evaluator->asRational(stateActionReward.getRewardValueExpression())) * choice.getTotalMass() / totalExitRate;
                                 }
                             }
                             
                         }
                     }
-                    globalChoice.addChoiceReward(stateActionRewardValue);
+                    globalChoice.addReward(stateActionRewardValue);
                 }
                 
                 // Move the newly fused choice in place.
@@ -273,6 +275,8 @@ namespace storm {
                 result.addChoice(std::move(choice));
             }
             
+            this->postprocess(result);
+                        
             return result;
         }
         
@@ -294,7 +298,7 @@ namespace storm {
                 while (assignmentIt->getVariable() != boolIt->variable) {
                     ++boolIt;
                 }
-                newState.set(boolIt->bitOffset, this->evaluator.asBool(assignmentIt->getExpression()));
+                newState.set(boolIt->bitOffset, this->evaluator->asBool(assignmentIt->getExpression()));
             }
             
             // Iterate over all integer assignments and carry them out.
@@ -303,7 +307,7 @@ namespace storm {
                 while (assignmentIt->getVariable() != integerIt->variable) {
                     ++integerIt;
                 }
-                int_fast64_t assignedValue = this->evaluator.asInt(assignmentIt->getExpression());
+                int_fast64_t assignedValue = this->evaluator->asInt(assignmentIt->getExpression());
                 STORM_LOG_THROW(assignedValue <= integerIt->upperBound, storm::exceptions::WrongFormatException, "The update " << update << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getVariableName() << "'.");
                 STORM_LOG_THROW(assignedValue >= integerIt->lowerBound, storm::exceptions::WrongFormatException, "The update " << update << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getVariableName() << "'.");
                 newState.setFromInt(integerIt->bitOffset, integerIt->bitWidth, assignedValue - integerIt->lowerBound);
@@ -342,7 +346,7 @@ namespace storm {
                 // Look up commands by their indices and add them if the guard evaluates to true in the given state.
                 for (uint_fast64_t commandIndex : commandIndices) {
                     storm::prism::Command const& command = module.getCommand(commandIndex);
-                    if (this->evaluator.asBool(command.getGuardExpression())) {
+                    if (this->evaluator->asBool(command.getGuardExpression())) {
                         commands.push_back(command);
                     }
                 }
@@ -375,7 +379,7 @@ namespace storm {
                     if (command.isLabeled()) continue;
                     
                     // Skip the command, if it is not enabled.
-                    if (!this->evaluator.asBool(command.getGuardExpression())) {
+                    if (!this->evaluator->asBool(command.getGuardExpression())) {
                         continue;
                     }
                     
@@ -384,7 +388,7 @@ namespace storm {
                     
                     // Remember the command labels only if we were asked to.
                     if (this->options.isBuildChoiceLabelsSet()) {
-                        choice.addChoiceLabel(command.getGlobalIndex());
+                        choice.addLabel(command.getGlobalIndex());
                     }
                     
                     // Iterate over all updates of the current command.
@@ -397,7 +401,7 @@ namespace storm {
                         StateType stateIndex = stateToIdCallback(applyUpdate(state, update));
                         
                         // Update the choice by adding the probability/target state to it.
-                        ValueType probability = this->evaluator.asRational(update.getLikelihoodExpression());
+                        ValueType probability = this->evaluator->asRational(update.getLikelihoodExpression());
                         choice.addProbability(stateIndex, probability);
                         probabilitySum += probability;
                     }
@@ -407,12 +411,12 @@ namespace storm {
                         ValueType stateActionRewardValue = storm::utility::zero<ValueType>();
                         if (rewardModel.get().hasStateActionRewards()) {
                             for (auto const& stateActionReward : rewardModel.get().getStateActionRewards()) {
-                                if (stateActionReward.getActionIndex() == choice.getActionIndex() && this->evaluator.asBool(stateActionReward.getStatePredicateExpression())) {
-                                    stateActionRewardValue += ValueType(this->evaluator.asRational(stateActionReward.getRewardValueExpression()));
+                                if (stateActionReward.getActionIndex() == choice.getActionIndex() && this->evaluator->asBool(stateActionReward.getStatePredicateExpression())) {
+                                    stateActionRewardValue += ValueType(this->evaluator->asRational(stateActionReward.getRewardValueExpression()));
                                 }
                             }
                         }
-                        choice.addChoiceReward(stateActionRewardValue);
+                        choice.addReward(stateActionRewardValue);
                     }
                     
                     // Check that the resulting distribution is in fact a distribution.
@@ -461,9 +465,9 @@ namespace storm {
                                     // and otherwise insert it.
                                     auto targetStateIt = newTargetStates->find(newTargetState);
                                     if (targetStateIt != newTargetStates->end()) {
-                                        targetStateIt->second += stateProbabilityPair.second * this->evaluator.asRational(update.getLikelihoodExpression());
+                                        targetStateIt->second += stateProbabilityPair.second * this->evaluator->asRational(update.getLikelihoodExpression());
                                     } else {
-                                        newTargetStates->emplace(newTargetState, stateProbabilityPair.second * this->evaluator.asRational(update.getLikelihoodExpression()));
+                                        newTargetStates->emplace(newTargetState, stateProbabilityPair.second * this->evaluator->asRational(update.getLikelihoodExpression()));
                                     }
                                 }
                             }
@@ -488,7 +492,7 @@ namespace storm {
                         if (this->options.isBuildChoiceLabelsSet()) {
                             // Add the labels of all commands to this choice.
                             for (uint_fast64_t i = 0; i < iteratorList.size(); ++i) {
-                                choice.addChoiceLabel(iteratorList[i]->get().getGlobalIndex());
+                                choice.addLabel(iteratorList[i]->get().getGlobalIndex());
                             }
                         }
                         
@@ -508,12 +512,12 @@ namespace storm {
                             ValueType stateActionRewardValue = storm::utility::zero<ValueType>();
                             if (rewardModel.get().hasStateActionRewards()) {
                                 for (auto const& stateActionReward : rewardModel.get().getStateActionRewards()) {
-                                    if (stateActionReward.getActionIndex() == choice.getActionIndex() && this->evaluator.asBool(stateActionReward.getStatePredicateExpression())) {
-                                        stateActionRewardValue += ValueType(this->evaluator.asRational(stateActionReward.getRewardValueExpression()));
+                                    if (stateActionReward.getActionIndex() == choice.getActionIndex() && this->evaluator->asBool(stateActionReward.getStatePredicateExpression())) {
+                                        stateActionRewardValue += ValueType(this->evaluator->asRational(stateActionReward.getRewardValueExpression()));
                                     }
                                 }
                             }
-                            choice.addChoiceReward(stateActionRewardValue);
+                            choice.addReward(stateActionRewardValue);
                         }
                         
                         // Dispose of the temporary maps.

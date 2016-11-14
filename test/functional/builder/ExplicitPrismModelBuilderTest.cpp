@@ -122,7 +122,6 @@ TEST(ExplicitPrismModelBuilderTest, Ma) {
     EXPECT_EQ(14ul, model->getNumberOfTransitions());
     ASSERT_TRUE(model->isOfType(storm::models::ModelType::MarkovAutomaton));
     EXPECT_EQ(7ul, model->as<storm::models::sparse::MarkovAutomaton<double>>()->getMarkovianStates().getNumberOfSetBits());
-    
 }
 
 TEST(ExplicitPrismModelBuilderTest, FailComposition) {

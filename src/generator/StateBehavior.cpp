@@ -21,6 +21,11 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
+        void StateBehavior<ValueType, StateType>::addStateRewards(std::vector<ValueType>&& stateRewards) {
+            this->stateRewards = std::move(stateRewards);
+        }
+        
+        template<typename ValueType, typename StateType>
         void StateBehavior<ValueType, StateType>::setExpanded(bool newValue) {
             this->expanded = newValue;
         }
@@ -43,6 +48,16 @@ namespace storm {
         template<typename ValueType, typename StateType>
         typename std::vector<Choice<ValueType, StateType>>::const_iterator StateBehavior<ValueType, StateType>::end() const {
             return choices.end();
+        }
+        
+        template<typename ValueType, typename StateType>
+        std::vector<Choice<ValueType, StateType>> const& StateBehavior<ValueType, StateType>::getChoices() const {
+            return choices;
+        }
+        
+        template<typename ValueType, typename StateType>
+        std::vector<Choice<ValueType, StateType>>& StateBehavior<ValueType, StateType>::getChoices() {
+            return choices;
         }
         
         template<typename ValueType, typename StateType>

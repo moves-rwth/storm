@@ -1,5 +1,4 @@
-#ifndef STORM_MODELCHECKER_QUANTITATIVECHECKRESULT_H_
-#define STORM_MODELCHECKER_QUANTITATIVECHECKRESULT_H_
+#pragma once
 
 #include "src/modelchecker/results/CheckResult.h"
 
@@ -14,9 +13,16 @@ namespace storm {
             
             virtual void oneMinus() = 0;
             
+            
+            virtual ValueType getMin() const = 0;
+            
+            virtual ValueType getMax() const = 0;
+            
+            virtual ValueType average() const = 0;
+            virtual ValueType sum() const = 0;
+            
             virtual bool isQuantitative() const override;
         };
     }
 }
 
-#endif /* STORM_MODELCHECKER_QUANTITATIVECHECKRESULT_H_ */

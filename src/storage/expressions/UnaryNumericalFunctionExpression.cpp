@@ -98,8 +98,8 @@ namespace storm {
             }
         }
         
-        boost::any UnaryNumericalFunctionExpression::accept(ExpressionVisitor& visitor) const {
-            return visitor.visit(*this);
+        boost::any UnaryNumericalFunctionExpression::accept(ExpressionVisitor& visitor, boost::any const& data) const {
+            return visitor.visit(*this, data);
         }
         
         void UnaryNumericalFunctionExpression::printToStream(std::ostream& stream) const {

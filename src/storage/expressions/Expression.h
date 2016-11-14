@@ -23,7 +23,11 @@ namespace storm {
             template<typename MapType> friend class SubstitutionVisitor;
             
             friend Expression operator+(Expression const& first, Expression const& second);
+            friend Expression operator+(Expression const& first, int64_t second);
+            friend Expression operator+(int64_t first, Expression const& second);
             friend Expression operator-(Expression const& first, Expression const& second);
+            friend Expression operator-(Expression const& first, int64_t second);
+            friend Expression operator-(int64_t first, Expression const& second);
             friend Expression operator-(Expression const& first);
             friend Expression operator*(Expression const& first, Expression const& second);
             friend Expression operator/(Expression const& first, Expression const& second);
@@ -37,6 +41,10 @@ namespace storm {
             friend Expression operator>=(Expression const& first, Expression const& second);
             friend Expression operator<(Expression const& first, Expression const& second);
             friend Expression operator<=(Expression const& first, Expression const& second);
+            friend Expression operator>(Expression const& first, int64_t second);
+            friend Expression operator>=(Expression const& first, int64_t second);
+            friend Expression operator<(Expression const& first, int64_t second);
+            friend Expression operator<=(Expression const& first, int64_t second);
             friend Expression ite(Expression const& condition, Expression const& thenExpression, Expression const& elseExpression);
             friend Expression implies(Expression const& first, Expression const& second);
             friend Expression iff(Expression const& first, Expression const& second);
@@ -294,7 +302,7 @@ namespace storm {
              *
              * @param visitor The visitor to accept.
              */
-            boost::any accept(ExpressionVisitor& visitor) const;
+            boost::any accept(ExpressionVisitor& visitor, boost::any const& data) const;
             
             /*!
              * Converts the expression into a string.
@@ -303,11 +311,16 @@ namespace storm {
              */
             std::string toString() const;
 
-            /**
+            /*!
              * Checks whether the object encapsulates a base-expression.
              */
             bool isInitialized() const;
 
+            /*!
+             * Checks whether the two expressions are syntatically the same.
+             */
+            bool isSyntacticallyEqual(storm::expressions::Expression const& other) const;
+            
             friend std::ostream& operator<<(std::ostream& stream, Expression const& expression);
 
         private:
@@ -324,7 +337,11 @@ namespace storm {
         
         // Provide operator overloads to conveniently construct new expressions from other expressions.
         Expression operator+(Expression const& first, Expression const& second);
+        Expression operator+(Expression const& first, int64_t second);
+        Expression operator+(int64_t first, Expression const& second);
         Expression operator-(Expression const& first, Expression const& second);
+        Expression operator-(Expression const& first, int64_t second);
+        Expression operator-(int64_t first, Expression const& second);
         Expression operator-(Expression const& first);
         Expression operator*(Expression const& first, Expression const& second);
         Expression operator/(Expression const& first, Expression const& second);
@@ -338,6 +355,10 @@ namespace storm {
         Expression operator>=(Expression const& first, Expression const& second);
         Expression operator<(Expression const& first, Expression const& second);
         Expression operator<=(Expression const& first, Expression const& second);
+        Expression operator>(Expression const& first, int64_t second);
+        Expression operator>=(Expression const& first, int64_t second);
+        Expression operator<(Expression const& first, int64_t second);
+        Expression operator<=(Expression const& first, int64_t second);
         Expression ite(Expression const& condition, Expression const& thenExpression, Expression const& elseExpression);
         Expression implies(Expression const& first, Expression const& second);
         Expression iff(Expression const& first, Expression const& second);

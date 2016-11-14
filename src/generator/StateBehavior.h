@@ -25,7 +25,12 @@ namespace storm {
              * Adds the given state reward to the behavior of the state.
              */
             void addStateReward(ValueType const& stateReward);
-            
+
+            /*!
+             * Adds the given state rewards to the behavior of the state.
+             */
+            void addStateRewards(std::vector<ValueType>&& stateRewards);
+
             /*!
              * Sets whether the state was expanded.
              */
@@ -50,6 +55,16 @@ namespace storm {
              * Retrieves an iterator past the choices available in the behavior.
              */
             typename std::vector<Choice<ValueType, StateType>>::const_iterator end() const;
+
+            /*!
+             * Retrieves the vector of choices.
+             */
+            std::vector<Choice<ValueType, StateType>> const& getChoices() const;
+
+            /*!
+             * Retrieves the vector of choices.
+             */
+            std::vector<Choice<ValueType, StateType>>& getChoices();
 
             /*!
              * Retrieves the list of state rewards under selected reward models.
