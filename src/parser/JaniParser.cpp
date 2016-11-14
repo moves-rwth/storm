@@ -223,7 +223,7 @@ namespace storm {
                     }
                     std::shared_ptr<storm::logic::Formula const> reach;
                     if (propertyStructure.count("reach") > 0) {
-                        reach = parseFormula(propertyStructure.at("reach"), time ? storm::logic::FormulaContext::Time : storm::logic::FormulaContext::Reward, "Reach-expression of operator " + opString);
+                        reach = std::make_shared<storm::logic::EventuallyFormula>(parseFormula(propertyStructure.at("reach"), time ? storm::logic::FormulaContext::Time : storm::logic::FormulaContext::Reward, "Reach-expression of operator " + opString));
                     } else {
                         STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Total reward is currently not supported");
                     }
@@ -425,6 +425,8 @@ namespace storm {
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Unknown operator " << opString);
                 }
+            } else {
+                STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Looking for operator for formula " << propertyStructure.dump() << ", but did not find one");
             }
             
         }

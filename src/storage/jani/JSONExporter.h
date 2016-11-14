@@ -33,9 +33,9 @@ namespace storm {
         };
         
         class FormulaToJaniJson : public storm::logic::FormulaVisitor {
-        
+            
         public:
-            static modernjson::json translate(storm::logic::Formula const& formula, bool continuousTime);
+            static modernjson::json translate(storm::logic::Formula const& formula, storm::jani::Model const& modeln);
             virtual boost::any visit(storm::logic::AtomicExpressionFormula const& f, boost::any const& data) const;
             virtual boost::any visit(storm::logic::AtomicLabelFormula const& f, boost::any const& data) const;
             virtual boost::any visit(storm::logic::BinaryBooleanStateFormula const& f, boost::any const& data) const;
@@ -56,8 +56,8 @@ namespace storm {
             virtual boost::any visit(storm::logic::UntilFormula const& f, boost::any const& data) const;
       
         private:
-            FormulaToJaniJson(bool continuousModel) : continuous(continuousModel) { }
-            bool continuous;
+            FormulaToJaniJson(storm::jani::Model const& model) : model(model) { }
+            storm::jani::Model const& model;
         };
         
         class JsonExporter {
@@ -69,7 +69,7 @@ namespace storm {
             
         private:
             void convertModel(storm::jani::Model const& model);
-            void convertProperties(std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool timeContinuousModel);
+            void convertProperties(std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, storm::jani::Model const& model);
             void appendVariableDeclaration(storm::jani::Variable const& variable);
             
             modernjson::json finalize() {
