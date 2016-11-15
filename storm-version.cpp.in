@@ -4,34 +4,17 @@
 
 namespace storm {
     namespace utility {
-        // The major version of StoRM
+
         const unsigned StormVersion::versionMajor = @STORM_CPP_VERSION_MAJOR@;
-
-        // The minor version of StoRM
         const unsigned StormVersion::versionMinor = @STORM_CPP_VERSION_MINOR@;
-
-        // The patch version of StoRM
         const unsigned StormVersion::versionPatch = @STORM_CPP_VERSION_PATCH@;
-
-        // The short hash of the git commit this build is bases on
         const std::string StormVersion::gitRevisionHash = "@STORM_CPP_VERSION_HASH@";
-
-        // How many commits passed since the tag was last set
         const unsigned StormVersion::commitsAhead = @STORM_CPP_VERSION_COMMITS_AHEAD@;
-
-        // 0 iff there no files were modified in the checkout, 1 else
         const unsigned StormVersion::dirty = @STORM_CPP_VERSION_DIRTY@;
-
-        // The system which has compiled storm
         const std::string StormVersion::systemName = "@CMAKE_SYSTEM_NAME@";
-
-        // The system version which has compiled storm
         const std::string StormVersion::systemVersion = "@CMAKE_SYSTEM_VERSION@";
-
-        // The build type that was used to build storm
         const std::string StormVersion::buildType = "@CMAKE_BUILD_TYPE@";
-        
-        // The compiler version that was used to build storm
         const std::string StormVersion::cxxCompiler = "@STORM_COMPILED_BY@ @CMAKE_CXX_COMPILER_VERSION@";
+
     }
 }

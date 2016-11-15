@@ -65,6 +65,7 @@ namespace storm {
                 bool checkBoostAvailable() const;
                 bool checkBoostDllAvailable() const;
                 bool checkStormAvailable() const;
+                bool checkStormConfigurationAvailable() const;
                 bool checkCarlAvailable() const;
                 
                 /*!
@@ -182,8 +183,11 @@ namespace storm {
                 /// The root directory of storm.
                 std::string stormRoot;
                 
+                /// The configuration directory of storm.
+                std::string stormConfigurationDirectory;
+                
                 /// The include directory of carl.
-                std::string carlIncludeDir;
+                std::string carlIncludeDirectory;
                 
                 /// A cache that is used by carl.
                 std::shared_ptr<carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>>> cache;

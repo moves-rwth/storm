@@ -56,10 +56,10 @@ namespace storm {
                     compilerFlags = settings.getCompilerFlags();
                 } else {
 #ifdef LINUX
-                    compilerFlags = "-std=c++14 -fPIC -O3 -shared";
+                    compilerFlags = "-std=c++14 -fPIC -O3 -march=native -shared";
 #endif
 #ifdef MACOSX
-                    compilerFlags = "-std=c++14 -stdlib=libc++ -fPIC -O3 -shared -undefined dynamic_lookup";
+                    compilerFlags = "-std=c++14 -stdlib=libc++ -fPIC -march=native -O3 -shared -undefined dynamic_lookup ";
 #endif
                 }
                 if (settings.isBoostIncludeDirectorySet()) {
@@ -73,9 +73,14 @@ namespace storm {
                     stormRoot = STORM_CPP_BASE_PATH;
                 }
                 if (settings.isCarlIncludeDirectorySet()) {
-                    carlIncludeDir = settings.getCarlIncludeDirectory();
+                    carlIncludeDirectory = settings.getCarlIncludeDirectory();
                 } else {
-                    carlIncludeDir = STORM_CARL_INCLUDE_DIR;
+                    carlIncludeDirectory = STORM_CARL_INCLUDE_DIR;
+                }
+                if (settings.isStormConfigDirectorySet()) {
+                    stormConfigurationDirectory = settings.getStormConfigDirectory();
+                } else {
+                    stormConfigurationDirectory = STORM_BUILD_DIR "/include";
                 }
                 
                 // Register all transient variables as transient.
@@ -352,9 +357,42 @@ namespace storm {
             }
 
             template <typename ValueType, typename RewardModelType>
+            bool ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::checkStormConfigurationAvailable() const {
+                bool result = true;
+                std::string problem = "Unable to compile program using Storm configuration. Is Storm's configuration directory '" + stormConfigurationDirectory + "' set correctly? Does the directory contain the file storm-config.h?";
+                try {
+                    std::string program = R"(
+#include "storm-config.h"
+                        
+                    int main() {
+                        return 0;
+                    }
+                    )";
+                    boost::filesystem::path temporaryFile = writeToTemporaryFile(program);
+                    std::string temporaryFilename = boost::filesystem::absolute(temporaryFile).string();
+                    boost::filesystem::path outputFile = temporaryFile;
+                    outputFile += ".out";
+                    std::string outputFilename = boost::filesystem::absolute(outputFile).string();
+                    boost::optional<std::string> error = execute(compiler + " " + compilerFlags + " " + temporaryFilename + " -I" + stormRoot + " -o " + outputFilename);
+                    
+                    if (error) {
+                        result = false;
+                        STORM_LOG_ERROR(problem);
+                        STORM_LOG_TRACE(error.get());
+                    } else {
+                        boost::filesystem::remove(outputFile);
+                    }
+                } catch(std::exception const& e) {
+                    result = false;
+                    STORM_LOG_ERROR(problem);
+                }
+                return result;
+            }
+                
+            template <typename ValueType, typename RewardModelType>
             bool ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::checkCarlAvailable() const {
                 bool result = true;
-                std::string problem = "Unable to compile program using Carl data structures. Is Carls's include directory '" + carlIncludeDir + "' set correctly?";
+                std::string problem = "Unable to compile program using Carl data structures. Is Carls's include directory '" + carlIncludeDirectory + "' set correctly?";
                 try {
                     std::string program = R"(
 #include "src/adapters/NumberAdapter.h"
@@ -368,8 +406,7 @@ namespace storm {
                     boost::filesystem::path outputFile = temporaryFile;
                     outputFile += ".out";
                     std::string outputFilename = boost::filesystem::absolute(outputFile).string();
-                    // FIXME: get right of build_xcode
-                    boost::optional<std::string> error = execute(compiler + " " + compilerFlags + " " + temporaryFilename + " -I" + stormRoot + " -I" + stormRoot + "/build_xcode/include -I" + carlIncludeDir + " -o " + outputFilename);
+                    boost::optional<std::string> error = execute(compiler + " " + compilerFlags + " " + temporaryFilename + " -I" + stormRoot + " -I" + stormConfigurationDirectory + " -I" + carlIncludeDirectory + " -o " + outputFilename);
                     
                     if (error) {
                         result = false;
@@ -430,6 +467,14 @@ namespace storm {
                     return result;
                 }
                 STORM_LOG_DEBUG("Success.");
+                
+                STORM_LOG_DEBUG("Checking whether Storm's configuration is available.");
+                result = checkStormConfigurationAvailable();
+                if (!result) {
+                    return result;
+                }
+                STORM_LOG_DEBUG("Success.");
+                
 
                 if (std::is_same<storm::RationalNumber, ValueType>::value) {
                     STORM_LOG_DEBUG("Checking whether Carl's headers are available.");
@@ -2334,7 +2379,9 @@ namespace storm {
                             };
                             
                             BOOST_DLL_ALIAS(storm::builder::jit::JitBuilder::create, create_builder)
+                            {% if parametric %}
                             BOOST_DLL_ALIAS(storm::builder::jit::initialize_parameters, initialize_parameters)
+                            {% endif %}
                         }
                     }
                 }
@@ -2350,8 +2397,7 @@ namespace storm {
                 dynamicLibraryPath += DYLIB_EXTENSION;
                 std::string dynamicLibraryFilename = boost::filesystem::absolute(dynamicLibraryPath).string();
                 
-                // FIXME: get right of build_xcode/include
-                std::string command = compiler + " " + sourceFilename + " " + compilerFlags + " -I" + stormRoot + " -I" + stormRoot + "/build_xcode/include -I" + boostIncludeDirectory + " -I" + carlIncludeDir + " -o " + dynamicLibraryFilename;
+                std::string command = compiler + " " + sourceFilename + " " + compilerFlags + " -I" + stormRoot + " -I" + stormConfigurationDirectory + " -I" + boostIncludeDirectory + " -I" + carlIncludeDirectory + " -o " + dynamicLibraryFilename;
                 boost::optional<std::string> error = execute(command);
                 
                 if (error) {

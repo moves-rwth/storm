@@ -16,5 +16,5 @@ set(CPPTEMPLATE_STATIC_LIBRARY ${STORM_3RDPARTY_BINARY_DIR}/cpptemplate/cpptempl
 list(APPEND STORM_LINK_LIBRARIES ${CPPTEMPLATE_STATIC_LIBRARY})
 add_dependencies(resources cpptemplate)
 
-message(STATUS "StoRM - Linking with cpptemplate")
+message(STATUS "Storm - Linking with cpptemplate.")
 include_directories(${CPPTEMPLATE_INCLUDE_DIR})

@@ -17,6 +17,7 @@ namespace storm {
             const std::string JitBuilderSettings::doctorOptionName = "doctor";
             const std::string JitBuilderSettings::compilerOptionName = "compiler";
             const std::string JitBuilderSettings::stormRootOptionName = "storm";
+            const std::string JitBuilderSettings::stormConfigDirectoryOptionName = "stormconf";
             const std::string JitBuilderSettings::boostIncludeDirectoryOptionName = "boost";
             const std::string JitBuilderSettings::carlIncludeDirectoryOptionName = "carl";
             const std::string JitBuilderSettings::compilerFlagsOptionName = "cxxflags";
@@ -27,6 +28,8 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the executable. Defaults to c++.").setDefaultValueString("c++").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, stormRootOptionName, false, "The root directory of Storm.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("dir", "The directory that contains the src/ subtree of Storm.").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, stormConfigDirectoryOptionName, false, "The directory containing Storm's configuration (storm-config.h).")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("dir", "The directory that contains storm-config.h.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, boostIncludeDirectoryOptionName, false, "The include directory of boost.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("dir", "The directory containing the boost headers version >= 1.61.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, carlIncludeDirectoryOptionName, false, "The include directory of carl.")
@@ -49,6 +52,14 @@ namespace storm {
             
             std::string JitBuilderSettings::getStormRoot() const {
                 return this->getOption(stormRootOptionName).getArgumentByName("dir").getValueAsString();
+            }
+            
+            bool JitBuilderSettings::isStormConfigDirectorySet() const {
+                return this->getOption(stormConfigDirectoryOptionName).getHasOptionBeenSet();
+            }
+            
+            std::string JitBuilderSettings::getStormConfigDirectory() const {
+                return this->getOption(stormConfigDirectoryOptionName).getArgumentByName("dir").getValueAsString();
             }
             
             bool JitBuilderSettings::isBoostIncludeDirectorySet() const {

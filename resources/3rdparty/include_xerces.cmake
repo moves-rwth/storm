@@ -1,9 +1,9 @@
 if(USE_XERCES)
     find_package(Xerces QUIET REQUIRED)
     if(XERCES_FOUND)
-        message(STATUS "StoRM - Use system version of xerces")
+        message(STATUS "Storm - Use system version of xerces.")
     else()
-        message(STATUS "StoRM - Use shipped version of xerces")
+        message(STATUS "Storm - Use shipped version of xerces.")
         ExternalProject_Add(
                 xercesc
                 SOURCE_DIR ${STORM_3RDPARTY_SOURCE_DIR}/xercesc-3.1.2
@@ -24,7 +24,7 @@ if(USE_XERCES)
         add_dependencies(resources xercesc)
     endif()
 
-    message (STATUS "StoRM - Linking with xercesc")
+    message (STATUS "Storm - Linking with xercesc.")
     set(STORM_HAVE_XERCES ON)
     include_directories(${XERCESC_INCLUDE})
     if(APPLE)

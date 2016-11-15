@@ -1,4 +1,3 @@
-
 #############################################################
 ##
 ##	Source file aggregation and clustering
@@ -28,6 +27,7 @@ set(STORM_MAIN_HEADERS ${STORM_HEADERS_CLI})
 file(GLOB_RECURSE ALL_FILES ${PROJECT_SOURCE_DIR}/src/*.h ${PROJECT_SOURCE_DIR}/src/*.cpp)
 
 register_source_groups_from_filestructure("${ALL_FILES}")
+
 # Add custom additional include or link directories
 if (ADDITIONAL_INCLUDE_DIRS)
 	message(STATUS "StoRM - Using additional include directories ${ADDITIONAL_INCLUDE_DIRS}")
@@ -39,29 +39,32 @@ if (ADDITIONAL_LINK_DIRS)
 endif(ADDITIONAL_LINK_DIRS)
 
 ###############################################################################
-##                                                                            #
-##	Executable Creation                                                       #
-##                                                                            #
-##  All link_directories() calls MUST be made before this point               #
-##                                                                            #
+##                                                                            
+##	Binary creation (All link_directories() calls must be made before this point.)
+##
 ###############################################################################
-add_library(storm SHARED ${STORM_LIB_SOURCES} ${STORM_LIB_HEADERS}) # Adding headers for xcode
+
+# Create libstorm.
+add_library(storm SHARED ${STORM_LIB_SOURCES} ${STORM_LIB_HEADERS})
+# Remove define symbol for shared libstorm.
+set_target_properties(storm PROPERTIES DEFINE_SYMBOL "")
 add_dependencies(storm resources)
+target_link_libraries(storm ${STORM_LINK_LIBRARIES})
+
+# Create storm.
 add_executable(storm-main ${STORM_MAIN_SOURCES} ${STORM_MAIN_HEADERS})
-target_link_libraries(storm-main storm) # Adding headers for xcode
+target_link_libraries(storm-main storm)
 set_target_properties(storm-main PROPERTIES OUTPUT_NAME "storm")
 
+# Create storm-dft.
 add_executable(storm-dft-main ${STORM_DFT_MAIN_SOURCES} ${STORM_MAIN_HEADERS})
 target_link_libraries(storm-dft-main storm) # Adding headers for xcode
 set_target_properties(storm-dft-main PROPERTIES OUTPUT_NAME "storm-dft")
 
+# Create storm-pgcl.
 add_executable(storm-pgcl-main ${STORM_PGCL_MAIN_SOURCES} ${STORM_MAIN_HEADERS})
 target_link_libraries(storm-pgcl-main storm)
 set_target_properties(storm-pgcl-main PROPERTIES OUTPUT_NAME "storm-pgcl")
-
-target_link_libraries(storm ${STORM_LINK_LIBRARIES})
-
-
 
 INSTALL(TARGETS storm-main
 	RUNTIME DESTINATION bin

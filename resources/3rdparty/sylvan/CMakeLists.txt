@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 2.6)
 project(sylvan C CXX)
 enable_testing()
 
-set(CMAKE_C_FLAGS "-O3 -Wextra -Wall -Werror -fno-strict-aliasing -std=gnu11 -fPIC")
-set(CMAKE_CXX_FLAGS "-O3 -Wextra -Wall -Werror -fno-strict-aliasing -Wno-deprecated-register -std=gnu++11 -fPIC")
+set(CMAKE_C_FLAGS "-O3 -Wextra -Wall -fno-strict-aliasing -std=gnu11 -fPIC")
+set(CMAKE_CXX_FLAGS "-O3 -Wextra -Wall -fno-strict-aliasing -Wno-deprecated-register -std=gnu++11 -fPIC")
 
 option(WITH_COVERAGE "Add generation of test coverage" OFF)
 if(WITH_COVERAGE)

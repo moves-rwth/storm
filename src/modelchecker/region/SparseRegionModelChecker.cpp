@@ -93,7 +93,7 @@ namespace storm {
             }
             
             template<typename ParametricSparseModelType, typename ConstantType>
-            bool const SparseRegionModelChecker<ParametricSparseModelType, ConstantType>::isResultConstant() const {
+            bool SparseRegionModelChecker<ParametricSparseModelType, ConstantType>::isResultConstant() const {
                 return this->constantResult.operator bool();
             }
 
