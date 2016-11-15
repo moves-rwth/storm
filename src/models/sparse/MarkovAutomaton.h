@@ -186,7 +186,12 @@ namespace storm {
                 
                 bool hasOnlyTrivialNondeterminism() const;
                 
-                std::shared_ptr<storm::models::sparse::Ctmc<ValueType, RewardModelType>> convertToCTMC();
+                /*!
+                 * Convert the MA into a MA by eliminating all states with probabilistic choices.
+                 *
+                 * @return Ctmc.
+                 */
+                std::shared_ptr<storm::models::sparse::Ctmc<ValueType, RewardModelType>> convertToCTMC() const;
                 
                 virtual void writeDotToStream(std::ostream& outStream, bool includeLabeling = true, storm::storage::BitVector const* subsystem = nullptr, std::vector<ValueType> const* firstValue = nullptr, std::vector<ValueType> const* secondValue = nullptr, std::vector<uint_fast64_t> const* stateColoring = nullptr, std::vector<std::string> const* colors = nullptr, std::vector<uint_fast64_t>* scheduler = nullptr, bool finalizeOutput = true) const override;
                 

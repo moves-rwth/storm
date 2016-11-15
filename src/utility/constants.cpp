@@ -42,12 +42,17 @@ namespace storm {
         bool isConstant(ValueType const& a) {
             return true;
         }
-        
+
         template<typename ValueType>
         bool isInteger(ValueType const& number) {
             ValueType iPart;
             ValueType result = std::modf(number, &iPart);
             return result = zero<ValueType>();
+        }
+        
+        template<typename ValueType>
+        bool isInfinity(ValueType const& a) {
+            return a == infinity<ValueType>();
         }
 
         template<>
@@ -129,7 +134,13 @@ namespace storm {
             // FIXME: this should be treated more properly.
             return storm::RationalFunction(-1.0);
         }
-        
+
+        template<>
+        bool isInfinity(storm::RationalFunction const& a) {
+            // FIXME: this should be treated more properly.
+            return a == infinity<storm::RationalFunction>();
+        }
+
         template<>
         storm::RationalNumber infinity() {
         	// FIXME: this should be treated more properly.
@@ -347,10 +358,11 @@ namespace storm {
         template bool isOne(double const& value);
         template bool isZero(double const& value);
         template bool isConstant(double const& value);
-        
-        template double one();
-        template double zero();
-        template double infinity();
+        template bool isInfinity(double const& value);
+
+		template double one();
+		template double zero();
+		template double infinity();
 
         template double pow(double const& value, uint_fast64_t exponent);
 
@@ -367,10 +379,11 @@ namespace storm {
         template bool isOne(float const& value);
         template bool isZero(float const& value);
         template bool isConstant(float const& value);
-        
-        template float one();
-        template float zero();
-        template float infinity();
+        template bool isInfinity(float const& value);
+
+		template float one();
+		template float zero();
+		template float infinity();
 
         template float pow(float const& value, uint_fast64_t exponent);
         template bool isInteger(float const& number);
@@ -389,6 +402,7 @@ namespace storm {
         template bool isOne(int const& value);
         template bool isZero(int const& value);
         template bool isConstant(int const& value);
+        template bool isInfinity(int const& value);
 
         template int one();
         template int zero();
@@ -407,6 +421,7 @@ namespace storm {
         template bool isOne(storm::storage::sparse::state_type const& value);
         template bool isZero(storm::storage::sparse::state_type const& value);
         template bool isConstant(storm::storage::sparse::state_type const& value);
+        template bool isInfinity(storm::storage::sparse::state_type const& value);
 
         template uint32_t one();
         template uint32_t zero();
@@ -471,6 +486,7 @@ namespace storm {
         template bool isOne(RationalFunction const& value);
         template bool isZero(RationalFunction const& value);
         template bool isConstant(RationalFunction const& value);
+        template bool isInfinity(RationalFunction const& value);
 
         template RationalFunction one();
         template RationalFunction zero();
@@ -487,6 +503,7 @@ namespace storm {
         template bool isOne(Interval const& value);
         template bool isZero(Interval const& value);
         template bool isConstant(Interval const& value);
+        template bool isInfinity(Interval const& value);
 
         template Interval one();
         template Interval zero();

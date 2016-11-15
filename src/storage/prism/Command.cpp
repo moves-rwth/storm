@@ -1,5 +1,4 @@
 #include "Command.h"
-#include <cassert>
 
 namespace storm {
     namespace prism {
@@ -32,7 +31,7 @@ namespace storm {
         }
         
         storm::prism::Update const& Command::getUpdate(uint_fast64_t index) const {
-            assert(index < getNumberOfUpdates());
+            STORM_LOG_ASSERT(index < getNumberOfUpdates(), "Invalid index.");
             return this->updates[index];
         }
         

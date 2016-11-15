@@ -91,7 +91,7 @@ namespace storm {
 
             template<typename ValueType, typename RewardModelType>
             RewardModelType& Model<ValueType, RewardModelType>::rewardModel(std::string const& rewardModelName) {
-                assert(this->hasRewardModel(rewardModelName));
+                STORM_LOG_ASSERT(this->hasRewardModel(rewardModelName), "Model has no reward model.");
                 return this->rewardModels.find(rewardModelName)->second;
             }
 
@@ -117,7 +117,7 @@ namespace storm {
                 if(this->hasRewardModel(rewardModelName)) {
                     STORM_LOG_THROW(!(this->hasRewardModel(rewardModelName)), storm::exceptions::IllegalArgumentException, "A reward model with the given name '" << rewardModelName << "' already exists.");
                 }
-                assert(newRewardModel.isCompatible(this->getNumberOfStates(), this->getTransitionMatrix().getRowCount()));
+                STORM_LOG_ASSERT(newRewardModel.isCompatible(this->getNumberOfStates(), this->getTransitionMatrix().getRowCount()), "New reward model is not compatible.");
                 this->rewardModels.emplace(rewardModelName, newRewardModel);
             }
 

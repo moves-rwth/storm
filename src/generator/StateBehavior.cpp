@@ -69,7 +69,8 @@ namespace storm {
         std::size_t StateBehavior<ValueType, StateType>::getNumberOfChoices() const {
             return choices.size();
         }
-        
+    
+    
         template class StateBehavior<double>;
 
 #ifdef STORM_HAVE_CARL

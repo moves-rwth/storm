@@ -15,11 +15,6 @@
 #include "src/utility/macros.h"
 #include "src/solver/OptimizationDirection.h"
 
-// Template was causing problems as Carl has the same function
-//template<typename ValueType>
-//std::ostream& operator<<(std::ostream& out, std::vector<ValueType> const& vector);
-std::ostream& operator<<(std::ostream& out, std::vector<double> const& vector);
-
 namespace storm {
     namespace utility {
         namespace vector {

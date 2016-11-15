@@ -30,7 +30,7 @@ namespace storm {
             }
 
             void set(uint_fast64_t state, uint_fast64_t action, double penalty) {
-                assert(penalty >= 1.0);
+                STORM_LOG_ASSERT(penalty >= 1.0, "Penalty too low.");
                 if(penalty == 1.0) {
                     auto it = mPenalties.find(std::make_pair(state, action));
                     if(it != mPenalties.end()) {

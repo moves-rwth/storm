@@ -2,7 +2,7 @@
 #ifndef DFTELEMENTSTATE_H
 #define	DFTELEMENTSTATE_H
 
-#include <cassert>
+#include "src/utility/macros.h"
 
 namespace storm {
     namespace storage {
@@ -18,8 +18,10 @@ namespace storm {
                     return os << "Failsafe";
                 case DFTElementState::DontCare:
                     return os << "Don't Care";
+                default:
+                    STORM_LOG_ASSERT(false, "Element state not known.");
+                    return os;
             }
-            assert(false);
         }
         
         inline char toChar(DFTElementState st) {
@@ -32,8 +34,10 @@ namespace storm {
                     return 'S';
                 case DFTElementState::DontCare:
                     return '-';
+                default:
+                    STORM_LOG_ASSERT(false, "Element state not known.");
+                    return ' ';
             }
-            assert(false);
         }
         
         enum class DFTDependencyState {Passive = 0, Unsuccessful = 1, Successful = 2, DontCare = 3};
@@ -48,8 +52,10 @@ namespace storm {
                     return os << "Unsuccessful";
                 case DFTDependencyState::DontCare:
                     return os << "Don't Care";
+                default:
+                    STORM_LOG_ASSERT(false, "Element state not known.");
+                    return os;
             }
-            assert(false);
         }
         
         inline char toChar(DFTDependencyState st) {
@@ -62,8 +68,10 @@ namespace storm {
                     return 'U';
                 case DFTDependencyState::DontCare:
                     return '-';
+                default:
+                    STORM_LOG_ASSERT(false, "Element state not known.");
+                    return ' ';
             }
-            assert(false);
         }
 
     }

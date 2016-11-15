@@ -14,6 +14,7 @@
 #include "src/solver/OptimizationDirection.h"
 
 #include "src/exceptions/InvalidSettingsException.h"
+#include "src/utility/macros.h"
 
 namespace storm {
     namespace storage {

@@ -574,8 +574,6 @@ namespace storm {
 
             std::unordered_map<uint_fast64_t, std::string> buildActionIndexToActionNameMap() const;
 
-            uint_fast64_t getNumberOfActions() const;
-            
             /*!
              * Converts the PRISM model into an equivalent JANI model.
              */

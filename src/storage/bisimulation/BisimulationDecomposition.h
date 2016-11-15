@@ -118,7 +118,7 @@ namespace storm {
                 }
                 
                 OptimizationDirection getOptimizationDirection() const {
-                    assert(optimalityType);
+                    STORM_LOG_ASSERT(optimalityType, "Optimality type not set.");
                     return optimalityType.get();
                 }
                 // A flag that indicates whether a measure driven initial partition is to be used. If this flag is set
@@ -217,10 +217,10 @@ namespace storm {
             
             /*!
              * Refines the partition by considering the given splitter. All blocks that become potential splitters
-             * because of this refinement, are marked as splitters and inserted into the splitter queue.
+             * because of this refinement, are marked as splitters and inserted into the splitter vector.
              *
              * @param splitter The splitter to use.
-             * @param splitterQueue The queue into which to insert the newly discovered potential splitters.
+             * @param splitterVector The vector into which to insert the newly discovered potential splitters.
              */
             virtual void refinePartitionBasedOnSplitter(bisimulation::Block<BlockDataType>& splitter, std::vector<bisimulation::Block<BlockDataType>*>& splitterQueue) = 0;
             

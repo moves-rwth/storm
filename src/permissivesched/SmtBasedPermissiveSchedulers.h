@@ -34,12 +34,12 @@ namespace storm {
             }
             
             bool foundSolution() const override {
-                assert(mPerformedSmtLoop);
+                STORM_LOG_ASSERT(mPerformedSmtLoop, "SMT loop not performed.");
                 return mFoundSolution;
             }
             
             SubMDPPermissiveScheduler<RM> getScheduler() const override {
-                assert(foundSolution());
+                STORM_LOG_ASSERT(foundSolution(), "Solution not found.");
                 SubMDPPermissiveScheduler<RM> result(this->mdp, true);
                 for(auto const& entry : multistrategyVariables) {
                     if(!multistrategyVariablesToTakenMap.at(entry.second)) {
@@ -98,9 +98,9 @@ namespace storm {
                 // (4) and (7) are omitted on purpose (-- we currenty do not support controllability of actions -- )
                 
                 // (1)
-                assert(this->mdp.getInitialStates().getNumberOfSetBits() == 1);
+                STORM_LOG_ASSERT(this->mdp.getInitialStates().getNumberOfSetBits() == 1, "No unique initial state.");
                 uint_fast64_t initialStateIndex = this->mdp.getInitialStates().getNextSetIndex(0);
-                assert(relevantStates[initialStateIndex]);
+                STORM_LOG_ASSERT(relevantStates[initialStateIndex], "Initial state not relevant.");
                 if(lowerBound) {
                     solver.add(mProbVariables[initialStateIndex] >= manager.rational(boundary));
                 } else {
@@ -162,9 +162,9 @@ namespace storm {
 //                                    std::string satstring = to_string(sat);
 //                                    // (8)
 //                                    if(relevantStates[entry.getColumn()]) {
-//                                        assert(mGammaVariables.count(entry.getColumn()) > 0);
-//                                        assert(mGammaVariables.count(s) > 0);
-//                                        assert(mBetaVariables.count(sat) > 0);
+//                                        STORM_LOG_ASSERT(mGammaVariables.count(entry.getColumn()) > 0, "Entry not found.");
+//                                        STORM_LOG_ASSERT(mGammaVariables.count(s) > 0, "Entry not found.");
+//                                        STORM_LOG_ASSERT(mBetaVariables.count(sat) > 0, "Entry not found.");
 //                                        solver.addConstraint("c8-" + satstring, mGammaVariables[entry.getColumn()] < mGammaVariables[s] + (solver.getConstant(1) - mBetaVariables[sat]) + mProbVariables[s]); // With rewards, we have to change this.
 //                                    }
 //                                }

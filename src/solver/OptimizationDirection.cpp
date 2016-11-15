@@ -1,6 +1,6 @@
 #include "OptimizationDirection.h"
 #include <iostream>
-#include <cassert>
+#include "src/utility/macros.h"
 
 namespace storm {
     namespace solver {
@@ -18,7 +18,7 @@ namespace storm {
         }
         
         OptimizationDirection convert(OptimizationDirectionSetting s) {
-            assert(isSet(s));
+            STORM_LOG_ASSERT(isSet(s), "Setting is not set.");
             return static_cast<OptimizationDirection>(s);
         }
         

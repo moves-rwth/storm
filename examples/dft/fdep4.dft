@@ -1,0 +1,7 @@
+toplevel "A";
+"A" or "F" "B";
+"F" fdep "E" "C" "D";
+"B" wsp "C" "D";
+"C" lambda=1 dorm=0;
+"D" lambda=1 dorm=0.5;
+"E" lambda=0.5 dorm=0;
