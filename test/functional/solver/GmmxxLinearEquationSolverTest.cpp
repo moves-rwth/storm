@@ -54,11 +54,13 @@ TEST(GmmxxLinearEquationSolver, gmres) {
     std::vector<double> b = {16, -4, -7};
     
     storm::solver::GmmxxLinearEquationSolver<double> solver(A);
-    solver.getSettings().setSolutionMethod(storm::solver::GmmxxLinearEquationSolverSettings<double>::SolutionMethod::Gmres);
-    solver.getSettings().setPrecision(1e-6);
-    solver.getSettings().setMaximalNumberOfIterations(10000);
-    solver.getSettings().setPreconditioner(storm::solver::GmmxxLinearEquationSolverSettings<double>::Preconditioner::None);
-    solver.getSettings().setNumberOfIterationsUntilRestart(50);
+    auto settings = solver.getSettings();
+    settings.setSolutionMethod(storm::solver::GmmxxLinearEquationSolverSettings<double>::SolutionMethod::Gmres);
+    settings.setPrecision(1e-6);
+    settings.setMaximalNumberOfIterations(10000);
+    settings.setPreconditioner(storm::solver::GmmxxLinearEquationSolverSettings<double>::Preconditioner::None);
+    settings.setNumberOfIterationsUntilRestart(50);
+    solver.setSettings(settings);
     
     ASSERT_NO_THROW(solver.solveEquations(x, b));
     ASSERT_LT(std::abs(x[0] - 1), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
@@ -86,16 +88,20 @@ TEST(GmmxxLinearEquationSolver, qmr) {
     std::vector<double> b = {16, -4, -7};
     
     storm::solver::GmmxxLinearEquationSolver<double> solver(A);
-    solver.getSettings().setSolutionMethod(storm::solver::GmmxxLinearEquationSolverSettings<double>::SolutionMethod::Qmr);
-    solver.getSettings().setPrecision(1e-6);
-    solver.getSettings().setMaximalNumberOfIterations(10000);
-    solver.getSettings().setPreconditioner(storm::solver::GmmxxLinearEquationSolverSettings<double>::Preconditioner::None);
+    auto settings = solver.getSettings();
+    settings.setSolutionMethod(storm::solver::GmmxxLinearEquationSolverSettings<double>::SolutionMethod::Qmr);
+    settings.setPrecision(1e-6);
+    settings.setMaximalNumberOfIterations(10000);
+    settings.setPreconditioner(storm::solver::GmmxxLinearEquationSolverSettings<double>::Preconditioner::None);
+    solver.setSettings(settings);
     
     storm::solver::GmmxxLinearEquationSolver<double> solver2(A);
-    solver2.getSettings().setSolutionMethod(storm::solver::GmmxxLinearEquationSolverSettings<double>::SolutionMethod::Qmr);
-    solver2.getSettings().setPrecision(1e-6);
-    solver2.getSettings().setMaximalNumberOfIterations(10000);
-    solver2.getSettings().setPreconditioner(storm::solver::GmmxxLinearEquationSolverSettings<double>::Preconditioner::None);
+    auto settings2 = solver2.getSettings();
+    settings2.setSolutionMethod(storm::solver::GmmxxLinearEquationSolverSettings<double>::SolutionMethod::Qmr);
+    settings2.setPrecision(1e-6);
+    settings2.setMaximalNumberOfIterations(10000);
+    settings2.setPreconditioner(storm::solver::GmmxxLinearEquationSolverSettings<double>::Preconditioner::None);
+    solver2.setSettings(settings2);
     
     ASSERT_NO_THROW(solver2.solveEquations(x, b));
     ASSERT_LT(std::abs(x[0] - 1), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
@@ -123,10 +129,12 @@ TEST(GmmxxLinearEquationSolver, bicgstab) {
     std::vector<double> b = {16, -4, -7};
     
     storm::solver::GmmxxLinearEquationSolver<double> solver(A);
-    solver.getSettings().setSolutionMethod(storm::solver::GmmxxLinearEquationSolverSettings<double>::SolutionMethod::Bicgstab);
-    solver.getSettings().setPrecision(1e-6);
-    solver.getSettings().setMaximalNumberOfIterations(10000);
-    solver.getSettings().setPreconditioner(storm::solver::GmmxxLinearEquationSolverSettings<double>::Preconditioner::None);
+    auto settings = solver.getSettings();
+    settings.setSolutionMethod(storm::solver::GmmxxLinearEquationSolverSettings<double>::SolutionMethod::Bicgstab);
+    settings.setPrecision(1e-6);
+    settings.setMaximalNumberOfIterations(10000);
+    settings.setPreconditioner(storm::solver::GmmxxLinearEquationSolverSettings<double>::Preconditioner::None);
+    solver.setSettings(settings);
     
     ASSERT_NO_THROW(solver.solveEquations(x, b));
     ASSERT_LT(std::abs(x[0] - 1), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
@@ -154,10 +162,12 @@ TEST(GmmxxLinearEquationSolver, jacobi) {
     std::vector<double> b = {11, -16, 1};
     
     storm::solver::GmmxxLinearEquationSolver<double> solver(A);
-    solver.getSettings().setSolutionMethod(storm::solver::GmmxxLinearEquationSolverSettings<double>::SolutionMethod::Jacobi);
-    solver.getSettings().setPrecision(1e-6);
-    solver.getSettings().setMaximalNumberOfIterations(10000);
-    solver.getSettings().setPreconditioner(storm::solver::GmmxxLinearEquationSolverSettings<double>::Preconditioner::None);
+    auto settings = solver.getSettings();
+    settings.setSolutionMethod(storm::solver::GmmxxLinearEquationSolverSettings<double>::SolutionMethod::Jacobi);
+    settings.setPrecision(1e-6);
+    settings.setMaximalNumberOfIterations(10000);
+    settings.setPreconditioner(storm::solver::GmmxxLinearEquationSolverSettings<double>::Preconditioner::None);
+    solver.setSettings(settings);
     ASSERT_NO_THROW(solver.solveEquations(x, b));
     ASSERT_LT(std::abs(x[0] - 1), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
     ASSERT_LT(std::abs(x[1] - 3), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
@@ -184,11 +194,13 @@ TEST(GmmxxLinearEquationSolver, gmresilu) {
     std::vector<double> b = {16, -4, -7};
     
     storm::solver::GmmxxLinearEquationSolver<double> solver(A);
-    solver.getSettings().setSolutionMethod(storm::solver::GmmxxLinearEquationSolverSettings<double>::SolutionMethod::Gmres);
-    solver.getSettings().setPrecision(1e-6);
-    solver.getSettings().setMaximalNumberOfIterations(10000);
-    solver.getSettings().setPreconditioner(storm::solver::GmmxxLinearEquationSolverSettings<double>::Preconditioner::Ilu);
-    solver.getSettings().setNumberOfIterationsUntilRestart(50);
+    auto settings = solver.getSettings();
+    settings.setSolutionMethod(storm::solver::GmmxxLinearEquationSolverSettings<double>::SolutionMethod::Gmres);
+    settings.setPrecision(1e-6);
+    settings.setMaximalNumberOfIterations(10000);
+    settings.setPreconditioner(storm::solver::GmmxxLinearEquationSolverSettings<double>::Preconditioner::Ilu);
+    settings.setNumberOfIterationsUntilRestart(50);
+    solver.setSettings(settings);
     ASSERT_NO_THROW(solver.solveEquations(x, b));
     ASSERT_LT(std::abs(x[0] - 1), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
     ASSERT_LT(std::abs(x[1] - 3), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
@@ -215,11 +227,13 @@ TEST(GmmxxLinearEquationSolver, gmresdiag) {
     std::vector<double> b = {16, -4, -7};
     
     storm::solver::GmmxxLinearEquationSolver<double> solver(A);
-    solver.getSettings().setSolutionMethod(storm::solver::GmmxxLinearEquationSolverSettings<double>::SolutionMethod::Gmres);
-    solver.getSettings().setPrecision(1e-6);
-    solver.getSettings().setMaximalNumberOfIterations(10000);
-    solver.getSettings().setPreconditioner(storm::solver::GmmxxLinearEquationSolverSettings<double>::Preconditioner::Diagonal);
-    solver.getSettings().setNumberOfIterationsUntilRestart(50);
+    auto settings = solver.getSettings();
+    settings.setSolutionMethod(storm::solver::GmmxxLinearEquationSolverSettings<double>::SolutionMethod::Gmres);
+    settings.setPrecision(1e-6);
+    settings.setMaximalNumberOfIterations(10000);
+    settings.setPreconditioner(storm::solver::GmmxxLinearEquationSolverSettings<double>::Preconditioner::Diagonal);
+    settings.setNumberOfIterationsUntilRestart(50);
+    solver.setSettings(settings);
 
     ASSERT_NO_THROW(solver.solveEquations(x, b));
     ASSERT_LT(std::abs(x[0] - 1), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());

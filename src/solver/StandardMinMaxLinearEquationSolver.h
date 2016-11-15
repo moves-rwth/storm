@@ -60,13 +60,9 @@ namespace storm {
                 Converged, TerminatedEarly, MaximalIterationsExceeded, InProgress
             };
             
-            struct AuxiliaryData {
-                std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> linEqSolver;
-                std::unique_ptr<std::vector<ValueType>> rowVector; // A.rowCount() entries
-                std::unique_ptr<std::vector<ValueType>> rowGroupVector; // A.rowGroupCount() entries
-            };
-            
-            mutable AuxiliaryData auxiliaryData;
+            mutable std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> linEqSolverA;
+            mutable std::unique_ptr<std::vector<ValueType>> auxiliaryRowVector; // A.rowCount() entries
+            mutable std::unique_ptr<std::vector<ValueType>> auxiliaryRowGroupVector; // A.rowGroupCount() entries
 
             Status updateStatusIfNotConverged(Status status, std::vector<ValueType> const& x, uint64_t iterations) const;
             void reportStatus(Status status, uint64_t iterations) const;

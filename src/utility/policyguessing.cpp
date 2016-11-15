@@ -171,14 +171,16 @@ namespace storm {
                 storm::utility::vector::selectVectorValues(subB, probGreater0States, b);
 
                 std::unique_ptr<storm::solver::GmmxxLinearEquationSolver<ValueType>> linEqSysSolver(static_cast<storm::solver::GmmxxLinearEquationSolver<ValueType>*>(storm::solver::GmmxxLinearEquationSolverFactory<ValueType>().create(eqSysA).release()));
-                auto& eqSettings = linEqSysSolver->getSettings();
+                auto eqSettings = linEqSysSolver->getSettings();
                 eqSettings.setRelativeTerminationCriterion(relative);
                 eqSettings.setMaximalNumberOfIterations(500);
+                linEqSysSolver->setSettings(eqSettings);
                 std::size_t iterations = 0;
                 std::vector<ValueType> copyX(subX.size());
                 ValueType precisionChangeFactor = storm::utility::one<ValueType>();
                 do {
                     eqSettings.setPrecision(eqSettings.getPrecision() * precisionChangeFactor);
+                    linEqSysSolver->setSettings(eqSettings);
                     if(!linEqSysSolver->solveEquations(subX, subB)){
               //          break; //Solver did not converge.. so we have to go on with the current solution.
                     }

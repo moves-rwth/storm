@@ -99,10 +99,10 @@ namespace storm {
             std::vector<storm::storage::sparse::state_type> scheduler(this->A.getRowGroupCount());
             
             // Get a vector for storing the right-hand side of the inner equation system.
-            if(!auxiliaryData.rowGroupVector) {
-                auxiliaryData.rowGroupVector = std::make_unique<std::vector<ValueType>>(this->A.getRowGroupCount());
+            if(!auxiliaryRowGroupVector) {
+                auxiliaryRowGroupVector = std::make_unique<std::vector<ValueType>>(this->A.getRowGroupCount());
             }
-            std::vector<ValueType>& subB = *auxiliaryData.rowGroupVector;
+            std::vector<ValueType>& subB = *auxiliaryRowGroupVector;
 
             // Resolve the nondeterminism according to the current scheduler.
             storm::storage::SparseMatrix<ValueType> submatrix = this->A.selectRowsFromRowGroups(scheduler, true);
@@ -111,7 +111,6 @@ namespace storm {
 
             // Create a solver that we will use throughout the procedure. We will modify the matrix in each iteration.
             auto solver = linearEquationSolverFactory->create(std::move(submatrix));
-            solver->allocateAuxMemory(LinearEquationSolverOperation::SolveEquations);
             
             Status status = Status::InProgress;
             uint64_t iterations = 0;
@@ -139,6 +138,8 @@ namespace storm {
                         choiceValue += b[choice];
                         
                         // If the value is strictly better than the solution of the inner system, we need to improve the scheduler.
+                        // TODO: If the underlying solver is not precise, this might run forever (i.e. when a state has two choices where the (exact) values are equal).
+                        // only changing the scheduler if the values are not equal (modulo precision) would make this unsound.
                         if (valueImproved(dir, x[group], choiceValue)) {
                             schedulerImproved = true;
                             scheduler[group] = choice - this->A.getRowGroupIndices()[group];
@@ -205,19 +206,19 @@ namespace storm {
 
         template<typename ValueType>
         bool StandardMinMaxLinearEquationSolver<ValueType>::solveEquationsValueIteration(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
-            if(!auxiliaryData.linEqSolver) {
-                auxiliaryData.linEqSolver = linearEquationSolverFactory->create(A);
+            if(!linEqSolverA) {
+                linEqSolverA = linearEquationSolverFactory->create(A);
             }
             
-            if (!auxiliaryData.rowVector.get()) {
-                auxiliaryData.rowVector = std::make_unique<std::vector<ValueType>>(A.getRowCount());
+            if (!auxiliaryRowVector.get()) {
+                auxiliaryRowVector = std::make_unique<std::vector<ValueType>>(A.getRowCount());
             }
-            std::vector<ValueType>& multiplyResult = *auxiliaryData.rowVector;
+            std::vector<ValueType>& multiplyResult = *auxiliaryRowVector;
             
-            if (!auxiliaryData.rowGroupVector.get()) {
-                auxiliaryData.rowGroupVector = std::make_unique<std::vector<ValueType>>(A.getRowGroupCount());
+            if (!auxiliaryRowGroupVector.get()) {
+                auxiliaryRowGroupVector = std::make_unique<std::vector<ValueType>>(A.getRowGroupCount());
             }
-            std::vector<ValueType>* newX = auxiliaryData.rowGroupVector.get();
+            std::vector<ValueType>* newX = auxiliaryRowGroupVector.get();
             
             std::vector<ValueType>* currentX = &x;
             
@@ -227,7 +228,7 @@ namespace storm {
             Status status = Status::InProgress;
             while (status == Status::InProgress) {
                 // Compute x' = A*x + b.
-                auxiliaryData.linEqSolver->multiply(*currentX, &b, multiplyResult);
+                linEqSolverA->multiply(*currentX, &b, multiplyResult);
                 
                 // Reduce the vector x' by applying min/max for all non-deterministic choices.
                 storm::utility::vector::reduceVectorMinOrMax(dir, multiplyResult, *newX, this->A.getRowGroupIndices());
@@ -248,14 +249,14 @@ namespace storm {
             
             // If we performed an odd number of iterations, we need to swap the x and currentX, because the newest result
             // is currently stored in currentX, but x is the output vector.
-            if (currentX == auxiliaryData.rowGroupVector.get()) {
+            if (currentX == auxiliaryRowGroupVector.get()) {
                 std::swap(x, *currentX);
             }
             
             // If requested, we store the scheduler for retrieval.
             if (this->isTrackSchedulerSet()) {
                 if(iterations==0){ //may happen due to custom termination condition. Then we need to compute x'= A*x+b
-                    auxiliaryData.linEqSolver->multiply(x, &b, multiplyResult);
+                    linEqSolverA->multiply(x, &b, multiplyResult);
                 }
                 std::vector<storm::storage::sparse::state_type> choices(this->A.getRowGroupCount());
                 // Reduce the multiplyResult and keep track of the choices made
@@ -272,17 +273,17 @@ namespace storm {
         
         template<typename ValueType>
         void StandardMinMaxLinearEquationSolver<ValueType>::repeatedMultiply(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType>* b, uint_fast64_t n) const {
-            if(!auxiliaryData.linEqSolver) {
-                auxiliaryData.linEqSolver = linearEquationSolverFactory->create(A);
+            if(!linEqSolverA) {
+                linEqSolverA = linearEquationSolverFactory->create(A);
             }
             
-            if (!auxiliaryData.rowVector.get()) {
-                auxiliaryData.rowVector = std::make_unique<std::vector<ValueType>>(A.getRowCount());
+            if (!auxiliaryRowVector.get()) {
+                auxiliaryRowVector = std::make_unique<std::vector<ValueType>>(A.getRowCount());
             }
-            std::vector<ValueType>& multiplyResult = *auxiliaryData.rowVector;
+            std::vector<ValueType>& multiplyResult = *auxiliaryRowVector;
             
             for (uint64_t i = 0; i < n; ++i) {
-                auxiliaryData.linEqSolver->multiply(x, b, multiplyResult);
+                linEqSolverA->multiply(x, b, multiplyResult);
                 
                 // Reduce the vector x' by applying min/max for all non-deterministic choices as given by the topmost
                 // element of the min/max operator stack.
@@ -325,9 +326,10 @@ namespace storm {
         
         template<typename ValueType>
         void StandardMinMaxLinearEquationSolver<ValueType>::resetAuxiliaryData() const {
-            auxiliaryData.linEqSolver.reset();
-            auxiliaryData.rowVector.reset();
-            auxiliaryData.rowGroupVector.reset();
+            linEqSolverA.reset();
+            auxiliaryRowVector.reset();
+            auxiliaryRowGroupVector.reset();
+            MinMaxLinearEquationSolver<ValueType>::resetAuxiliaryData();
         }
 
         template<typename ValueType>

@@ -129,7 +129,7 @@ namespace storm {
             virtual bool getRelative() const = 0;
 
             /*
-             * Resets the auxiliary data that has been stored during previous calls of this solver
+             * Clears auxiliary data that has possibly been stored during previous calls of the solver.
              */
             virtual void resetAuxiliaryData() const;
 

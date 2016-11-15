@@ -365,7 +365,6 @@ namespace storm {
                     storm::storage::SparseMatrix<ValueType> linEqMatrix = PS.toPS.selectRowsFromRowGroups(optimalChoicesAtCurrentEpoch, true);
                     linEqMatrix.convertToEquationSystem();
                     linEq.solver = linEq.factory.create(std::move(linEqMatrix));
-                    linEq.solver->allocateAuxMemory(storm::solver::LinearEquationSolverOperation::SolveEquations);
                 }
                 
                 // Get the results for the individual objectives.
