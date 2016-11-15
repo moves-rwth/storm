@@ -34,7 +34,7 @@ namespace storm {
              *
              * @return The number of places.
              */
-            uint_fast64_t getNumberOfPlaces() const;
+            uint64_t getNumberOfPlaces() const;
 
             /*!
              * Returns the vector of timed transitions in this gspn.
@@ -61,7 +61,7 @@ namespace storm {
              * @param map The Map determines the number of bits for each place.
              * @return The initial Marking
              */
-            std::shared_ptr<storm::gspn::Marking> getInitialMarking(std::map<uint_fast64_t, uint_fast64_t>& numberOfBits, uint_fast64_t const& numberOfTotalBits) const;
+            std::shared_ptr<storm::gspn::Marking> getInitialMarking(std::map<uint64_t, uint64_t>& numberOfBits, uint64_t const& numberOfTotalBits) const;
 
             /*!
              * Returns the place with the corresponding id.
@@ -156,6 +156,9 @@ namespace storm {
             bool testTransitions() const;
 
             
+            // name of the gspn
+            std::string name;
+            
             // set containing all places
             std::vector<storm::gspn::Place> places;
             
@@ -166,8 +169,6 @@ namespace storm {
             std::vector<storm::gspn::TimedTransition<RateType>> timedTransitions;
 
 
-            // name of the gspn
-            std::string name;
         };
     }
 }

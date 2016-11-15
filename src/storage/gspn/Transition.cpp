@@ -5,17 +5,13 @@
 namespace storm {
     namespace gspn {
 
-        void Transition::setInputArcMultiplicity(storm::gspn::Place const& place, uint_fast64_t multiplicity) {
-            auto ptr = std::make_shared<storm::gspn::Place>(place);
-            inputMultiplicities[ptr->getID()] = multiplicity;
-            inputPlaces.push_back(ptr);
+        void Transition::setInputArcMultiplicity(storm::gspn::Place const& place, uint64_t multiplicity) {
+            inputMultiplicities[place.getID()] = multiplicity;
         }
 
         bool Transition::removeInputArc(storm::gspn::Place const& place) {
             if (existsInputArc(place)) {
-                auto ptr = std::make_shared<storm::gspn::Place>(place);
-                inputMultiplicities.erase(ptr->getID());
-                inputPlaces.erase(std::find(inputPlaces.begin(), inputPlaces.end(), ptr));
+                inputMultiplicities.erase(place.getID());
                 return true;
             } else {
                 return false;
@@ -23,21 +19,16 @@ namespace storm {
         }
 
         bool Transition::existsInputArc(storm::gspn::Place const& place) const {
-            auto ptr = std::make_shared<storm::gspn::Place>(place);
-            return inputMultiplicities.end() != inputMultiplicities.find(ptr->getID());
+            return inputMultiplicities.end() != inputMultiplicities.find(place.getID());
         }
 
-        void Transition::setOutputArcMultiplicity(storm::gspn::Place const& place, uint_fast64_t multiplicity) {
-            auto ptr = std::make_shared<storm::gspn::Place>(place);
-            outputMultiplicities[ptr->getID()] = multiplicity;
-            outputPlaces.push_back(ptr);
+        void Transition::setOutputArcMultiplicity(storm::gspn::Place const& place, uint64_t multiplicity) {
+            outputMultiplicities[place.getID()] = multiplicity;
         }
 
         bool Transition::removeOutputArc(storm::gspn::Place const& place) {
             if (existsOutputArc(place)) {
-                auto ptr = std::make_shared<storm::gspn::Place>(place);
-                outputMultiplicities.erase(ptr->getID());
-                outputPlaces.erase(std::find(outputPlaces.begin(), outputPlaces.end(), ptr));
+                outputMultiplicities.erase(place.getID());
                 return true;
             } else {
                 return false;
@@ -45,22 +36,17 @@ namespace storm {
         }
 
         bool Transition::existsOutputArc(storm::gspn::Place const& place) const {
-            auto ptr = std::make_shared<storm::gspn::Place>(place);
-            return outputMultiplicities.end() != outputMultiplicities.find(ptr->getID());
+            return outputMultiplicities.end() != outputMultiplicities.find(place.getID());
         }
 
-        void Transition::setInhibitionArcMultiplicity(storm::gspn::Place const& place,
-                                                      uint_fast64_t multiplicity) {
-            auto ptr = std::make_shared<storm::gspn::Place>(place);
-            inhibitionMultiplicities[ptr->getID()] = multiplicity;
-            inhibitionPlaces.push_back(ptr);
+        void Transition::setInhibitionArcMultiplicity(storm::gspn::Place const& place, uint64_t multiplicity) {
+
+            inhibitionMultiplicities[place.getID()] = multiplicity;
         }
 
         bool Transition::removeInhibitionArc(storm::gspn::Place const& place) {
             if (existsInhibitionArc(place)) {
-                auto ptr = std::make_shared<storm::gspn::Place>(place);
-                inhibitionMultiplicities.erase(ptr->getID());
-                inhibitionPlaces.erase(std::find(inhibitionPlaces.begin(), inhibitionPlaces.end(), ptr));
+                inhibitionMultiplicities.erase(place.getID());
                 return true;
             } else {
                 return false;
@@ -68,8 +54,7 @@ namespace storm {
         }
 
         bool Transition::existsInhibitionArc(storm::gspn::Place const& place) const {
-            auto ptr = std::make_shared<storm::gspn::Place>(place);
-            return inhibitionMultiplicities.end() != inhibitionMultiplicities.find(ptr->getID());
+            return inhibitionMultiplicities.end() != inhibitionMultiplicities.find(place.getID());
         }
 
         bool Transition::isEnabled(storm::gspn::Marking const& marking) const {
@@ -89,14 +74,6 @@ namespace storm {
                 }
 
                 ++inhibitionIterator;
-            }
-
-            for (auto &placePtr : getOutputPlaces()) {
-                if (placePtr->hasRestrictedCapacity()) {
-                    if (marking.getNumberOfTokensAt(placePtr->getID()) + getOutputArcMultiplicity(*placePtr) > placePtr->getCapacity()) {
-                        return false;
-                    }
-                }
             }
 
             return true;
@@ -130,50 +107,47 @@ namespace storm {
             return this->name;
         }
 
-        const std::vector<std::shared_ptr<storm::gspn::Place>> &Transition::getInputPlaces() const {
-            return inputPlaces;
+        std::unordered_map<uint64_t, uint64_t> const& Transition::getInputPlaces() const {
+            return inputMultiplicities;
         }
 
-        const std::vector<std::shared_ptr<storm::gspn::Place>> &Transition::getOutputPlaces() const {
-            return outputPlaces;
+        std::unordered_map<uint64_t, uint64_t> const& Transition::getOutputPlaces() const {
+            return outputMultiplicities;
         }
 
-        const std::vector<std::shared_ptr<storm::gspn::Place>> &Transition::getInhibitionPlaces() const {
-            return inhibitionPlaces;
+        std::unordered_map<uint64_t, uint64_t> const& Transition::getInhibitionPlaces() const {
+            return inhibitionMultiplicities;
         }
 
-        uint_fast64_t Transition::getInputArcMultiplicity(storm::gspn::Place const& place) const {
+        uint64_t Transition::getInputArcMultiplicity(storm::gspn::Place const& place) const {
             if (existsInputArc(place)) {
-                auto ptr = std::make_shared<storm::gspn::Place>(place);
-                return inputMultiplicities.at(ptr->getID());
+                return inputMultiplicities.at(place.getID());
             } else {
                 return 0;
             }
         }
 
-        uint_fast64_t Transition::getInhibitionArcMultiplicity(storm::gspn::Place const& place) const {
+        uint64_t Transition::getInhibitionArcMultiplicity(storm::gspn::Place const& place) const {
             if (existsInhibitionArc(place)) {
-                auto ptr = std::make_shared<storm::gspn::Place>(place);
-                return inhibitionMultiplicities.at(ptr->getID());
+                return inhibitionMultiplicities.at(place.getID());
             } else {
                 return 0;
             }
         }
 
-        uint_fast64_t Transition::getOutputArcMultiplicity(storm::gspn::Place const& place) const {
+        uint64_t Transition::getOutputArcMultiplicity(storm::gspn::Place const& place) const {
             if (existsOutputArc(place)) {
-                auto ptr = std::make_shared<storm::gspn::Place>(place);
-                return outputMultiplicities.at(ptr->getID());
+                return outputMultiplicities.at(place.getID());
             } else {
                 return 0;
             }
         }
 
-        void Transition::setPriority(uint_fast64_t const& priority) {
+        void Transition::setPriority(uint64_t const& priority) {
             this->priority = priority;
         }
 
-        uint_fast64_t Transition::getPriority() const {
+        uint64_t Transition::getPriority() const {
             return this->priority;
         }
     }
