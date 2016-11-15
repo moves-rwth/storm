@@ -86,12 +86,11 @@ namespace storm {
                 buckets = new uint64_t[bucketCount]();
             }
         }
-        
+
         BitVector::~BitVector() {
             if (buckets != nullptr) {
-                delete buckets;
+                delete[] buckets;
             }
-            
         }
 
         template<typename InputIterator>
@@ -219,7 +218,7 @@ namespace storm {
                         std::fill_n(newBuckets + this->bucketCount(), newBucketCount - this->bucketCount(), 0);
                     }
                     if (buckets != nullptr) {
-                        delete buckets;
+                        delete[] buckets;
                     }
                     buckets = newBuckets;
                     bitCount = newLength;
@@ -243,7 +242,7 @@ namespace storm {
                     uint64_t* newBuckets = new uint64_t[newBucketCount];
                     std::copy_n(buckets, newBucketCount, newBuckets);
                     if (buckets != nullptr) {
-                        delete buckets;
+                        delete[] buckets;
                     }
                     buckets = newBuckets;
                     bitCount = newLength;
