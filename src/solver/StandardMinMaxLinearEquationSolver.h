@@ -11,6 +11,8 @@ namespace storm {
         public:
             StandardMinMaxLinearEquationSolverSettings();
             
+            StandardMinMaxLinearEquationSolverSettings<ValueType>& operator=(StandardMinMaxLinearEquationSolverSettings<ValueType> const& other) = default;
+            
             enum class SolutionMethod {
                 ValueIteration, PolicyIteration
             };
@@ -42,11 +44,9 @@ namespace storm {
             virtual void repeatedMultiply(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType>* b, uint_fast64_t n) const override;
 
             StandardMinMaxLinearEquationSolverSettings<ValueType> const& getSettings() const;
-            StandardMinMaxLinearEquationSolverSettings<ValueType>& getSettings();
+            void setSettings(StandardMinMaxLinearEquationSolverSettings<ValueType> const& newSettings);
             
-            virtual bool allocateAuxMemory(MinMaxLinearEquationSolverOperation operation) const override;
-            virtual bool deallocateAuxMemory(MinMaxLinearEquationSolverOperation operation) const override;
-            virtual bool hasAuxMemory(MinMaxLinearEquationSolverOperation operation) const override;
+            virtual void resetAuxiliaryData() const override;
 
             virtual ValueType getPrecision() const override;
             virtual bool getRelative() const override;
@@ -59,6 +59,14 @@ namespace storm {
             enum class Status {
                 Converged, TerminatedEarly, MaximalIterationsExceeded, InProgress
             };
+            
+            struct AuxiliaryData {
+                std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> linEqSolver;
+                std::unique_ptr<std::vector<ValueType>> rowVector; // A.rowCount() entries
+                std::unique_ptr<std::vector<ValueType>> rowGroupVector; // A.rowGroupCount() entries
+            };
+            
+            mutable AuxiliaryData auxiliaryData;
 
             Status updateStatusIfNotConverged(Status status, std::vector<ValueType> const& x, uint64_t iterations) const;
             void reportStatus(Status status, uint64_t iterations) const;
@@ -68,7 +76,6 @@ namespace storm {
             
             /// The factory used to obtain linear equation solvers.
             std::unique_ptr<LinearEquationSolverFactory<ValueType>> linearEquationSolverFactory;
-            mutable std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver;
             
             // If the solver takes posession of the matrix, we store the moved matrix in this member, so it gets deleted
             // when the solver is destructed.
@@ -78,12 +85,6 @@ namespace storm {
             // the reference refers to localA.
             storm::storage::SparseMatrix<ValueType> const& A;
             
-            // Auxiliary memory for equation solving.
-            mutable std::unique_ptr<std::vector<ValueType>> auxiliarySolvingMultiplyMemory;
-            mutable std::unique_ptr<std::vector<ValueType>> auxiliarySolvingVectorMemory;
-            
-            // Auxiliary memory for repeated matrix-vector multiplication.
-            mutable std::unique_ptr<std::vector<ValueType>> auxiliaryRepeatedMultiplyMemory;
         };
      
         template<typename ValueType>

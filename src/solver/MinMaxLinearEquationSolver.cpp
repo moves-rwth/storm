@@ -80,19 +80,10 @@ namespace storm {
         }
         
         template<typename ValueType>
-        bool MinMaxLinearEquationSolver<ValueType>::allocateAuxMemory(MinMaxLinearEquationSolverOperation operation) const {
-            return false;
+        void MinMaxLinearEquationSolver<ValueType>::resetAuxiliaryData() const {
+            // Intentionally left empty.
         }
         
-        template<typename ValueType>
-        bool MinMaxLinearEquationSolver<ValueType>::deallocateAuxMemory(MinMaxLinearEquationSolverOperation operation) const {
-            return false;
-        }
-        
-        template<typename ValueType>
-        bool MinMaxLinearEquationSolver<ValueType>::hasAuxMemory(MinMaxLinearEquationSolverOperation operation) const {
-            return false;
-        }
         
         template<typename ValueType>
         MinMaxLinearEquationSolverFactory<ValueType>::MinMaxLinearEquationSolverFactory(bool trackScheduler) : trackScheduler(trackScheduler) {

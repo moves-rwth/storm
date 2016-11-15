@@ -307,7 +307,6 @@ namespace storm {
                 result->solver = minMaxSolverFactory.create(PS.toPS);
                 result->solver->setOptimizationDirection(storm::solver::OptimizationDirection::Maximize);
                 result->solver->setTrackScheduler(true);
-                result->solver->allocateAuxMemory(storm::solver::MinMaxLinearEquationSolverOperation::SolveEquations);
                 
                 result->b.resize(PS.getNumberOfChoices());
                 

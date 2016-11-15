@@ -22,10 +22,6 @@ namespace storm {
     
     namespace solver {
         
-        enum class MinMaxLinearEquationSolverOperation {
-            SolveEquations, MultiplyRepeatedly
-        };
-        
         /*!
          * A class representing the interface that all min-max linear equation solvers shall implement.
          */
@@ -132,31 +128,10 @@ namespace storm {
              */
             virtual bool getRelative() const = 0;
 
-            // Methods related to allocating/freeing auxiliary storage.
-
-            /*!
-             * Allocates auxiliary storage that can be used to perform the provided operation. Repeated calls to the
-             * corresponding function can then be run without allocating/deallocating this storage repeatedly.
-             * Note: Since the allocated storage is fit to the currently selected options of the solver, they must not
-             * be changed any more after allocating the auxiliary storage until the storage is deallocated again.
-             *
-             * @return True iff auxiliary storage was allocated.
+            /*
+             * Resets the auxiliary data that has been stored during previous calls of this solver
              */
-            virtual bool allocateAuxMemory(MinMaxLinearEquationSolverOperation operation) const;
-
-            /*!
-             * Destroys previously allocated auxiliary storage for the provided operation.
-             *
-             * @return True iff auxiliary storage was deallocated.
-             */
-            virtual bool deallocateAuxMemory(MinMaxLinearEquationSolverOperation operation) const;
-
-            /*!
-             * Checks whether the solver has allocated auxiliary storage for the provided operation.
-             *
-             * @return True iff auxiliary storage was previously allocated (and not yet deallocated).
-             */
-            virtual bool hasAuxMemory(MinMaxLinearEquationSolverOperation operation) const;
+            virtual void resetAuxiliaryData() const;
 
 
         protected:
