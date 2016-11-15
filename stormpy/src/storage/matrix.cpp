@@ -19,7 +19,7 @@ void define_sparse_matrix(py::module& m) {
         //def_property threw "pointer being freed not allocated" after exiting
         .def("value", &storm::storage::MatrixEntry<entry_index, double>::getValue, "Value")
         .def("set_value", &storm::storage::MatrixEntry<entry_index, double>::setValue, py::arg("value"), "Set value")
-        .def("column", &storm::storage::MatrixEntry<entry_index, double>::getColumn, "Column")
+        .def_property_readonly("column", &storm::storage::MatrixEntry<entry_index, double>::getColumn, "Column")
     ;
  
     py::class_<storm::storage::MatrixEntry<parametric_entry_index, storm::RationalFunction>>(m, "ParametricSparseMatrixEntry", "Entry of parametric sparse matrix")
@@ -31,7 +31,7 @@ void define_sparse_matrix(py::module& m) {
         //def_property threw "pointer being freed not allocated" after exiting
         .def("value", &storm::storage::MatrixEntry<parametric_entry_index, storm::RationalFunction>::getValue, "Value")
         .def("set_value", &storm::storage::MatrixEntry<parametric_entry_index, storm::RationalFunction>::setValue, py::arg("value"), "Set value")
-        .def("column", &storm::storage::MatrixEntry<parametric_entry_index, storm::RationalFunction>::getColumn, "Column")
+        .def_property_readonly("column", &storm::storage::MatrixEntry<parametric_entry_index, storm::RationalFunction>::getColumn, "Column")
     ;
 
     // SparseMatrix
@@ -44,10 +44,10 @@ void define_sparse_matrix(py::module& m) {
                 stream << matrix;
                 return stream.str();
             })
-        .def("nr_rows", &storm::storage::SparseMatrix<double>::getRowCount, "Number of rows")
-        .def("nr_columns", &storm::storage::SparseMatrix<double>::getColumnCount, "Number of columns")
-        .def("nr_entries", &storm::storage::SparseMatrix<double>::getEntryCount, "Number of non-zero entries")
-        .def("_row_group_indices", &storm::storage::SparseMatrix<double>::getRowGroupIndices, "Get starting rows of row groups")
+        .def_property_readonly("nr_rows", &storm::storage::SparseMatrix<double>::getRowCount, "Number of rows")
+        .def_property_readonly("nr_columns", &storm::storage::SparseMatrix<double>::getColumnCount, "Number of columns")
+        .def_property_readonly("nr_entries", &storm::storage::SparseMatrix<double>::getEntryCount, "Number of non-zero entries")
+        .def_property_readonly("_row_group_indices", &storm::storage::SparseMatrix<double>::getRowGroupIndices, "Starting rows of row groups")
         .def("get_row", [](storm::storage::SparseMatrix<double>& matrix, entry_index row) {
                 return matrix.getRows(row, row+1);
             }, py::return_value_policy::reference, py::keep_alive<1, 0>(), py::arg("row"), "Get row")
@@ -62,7 +62,7 @@ void define_sparse_matrix(py::module& m) {
                 }
                 return stream.str();
             }, py::arg("row"), "Print row")
-	// Entry_index lead to problems
+        // Entry_index lead to problems
         .def("row_iter", [](storm::storage::SparseMatrix<double>& matrix, row_index start, row_index end) {
                 return py::make_iterator(matrix.begin(start), matrix.end(end));
             }, py::keep_alive<0, 1>() /* keep object alive while iterator exists */, py::arg("row_start"), py::arg("row_end"), "Get iterator from start to end")
@@ -77,10 +77,10 @@ void define_sparse_matrix(py::module& m) {
                 stream << matrix;
                 return stream.str();
             })
-        .def("nr_rows", &storm::storage::SparseMatrix<storm::RationalFunction>::getRowCount, "Number of rows")
-        .def("nr_columns", &storm::storage::SparseMatrix<storm::RationalFunction>::getColumnCount, "Number of columns")
-        .def("nr_entries", &storm::storage::SparseMatrix<storm::RationalFunction>::getEntryCount, "Number of non-zero entries")
-        .def("_row_group_indices", &storm::storage::SparseMatrix<storm::RationalFunction>::getRowGroupIndices, "Get starting rows of row groups")
+        .def_property_readonly("nr_rows", &storm::storage::SparseMatrix<storm::RationalFunction>::getRowCount, "Number of rows")
+        .def_property_readonly("nr_columns", &storm::storage::SparseMatrix<storm::RationalFunction>::getColumnCount, "Number of columns")
+        .def_property_readonly("nr_entries", &storm::storage::SparseMatrix<storm::RationalFunction>::getEntryCount, "Number of non-zero entries")
+        .def_property_readonly("_row_group_indices", &storm::storage::SparseMatrix<storm::RationalFunction>::getRowGroupIndices, "Starting rows of row groups")
         .def("get_row", [](storm::storage::SparseMatrix<storm::RationalFunction>& matrix, parametric_entry_index row) {
                 return matrix.getRows(row, row+1);
             }, py::return_value_policy::reference, py::keep_alive<1, 0>(), py::arg("row"), "Get row")
@@ -95,7 +95,7 @@ void define_sparse_matrix(py::module& m) {
                 }
                 return stream.str();
             }, py::arg("row"), "Print row")
-	// Entry_index lead to problems
+        // Entry_index lead to problems
         .def("row_iter", [](storm::storage::SparseMatrix<storm::RationalFunction>& matrix, parametric_row_index start, parametric_row_index end) {
                 return py::make_iterator(matrix.begin(start), matrix.end(end));
             }, py::keep_alive<0, 1>() /* keep object alive while iterator exists */, py::arg("row_start"), py::arg("row_end"), "Get iterator from start to end")

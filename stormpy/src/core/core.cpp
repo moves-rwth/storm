@@ -16,10 +16,10 @@ void define_parse(py::module& m) {
 
     // Pair <Model,Formulas>
     py::class_<storm::storage::ModelFormulasPair>(m, "ModelFormulasPair", "Pair of model and formulas")
-        .def("model", [](storm::storage::ModelFormulasPair const& pair) {
+        .def_property_readonly("model", [](storm::storage::ModelFormulasPair const& pair) {
                 return pair.model;
             }, "The model")
-        .def("formulas", [](storm::storage::ModelFormulasPair const& pair) {
+        .def_property_readonly("formulas", [](storm::storage::ModelFormulasPair const& pair) {
                 return pair.formulas;
             }, "The formulas")
     ;
@@ -35,8 +35,7 @@ std::shared_ptr<storm::models::ModelBase> buildModel(storm::prism::Program const
 }
 
 template<typename ValueType>
-std::shared_ptr<storm::models::ModelBase> buildSparseModel(storm::prism::Program const& program, std::shared_ptr<storm::logic::Formula const> const& formula,
-    bool onlyInitialStatesRelevant = false) {
+std::shared_ptr<storm::models::ModelBase> buildSparseModel(storm::prism::Program const& program, std::shared_ptr<storm::logic::Formula const> const& formula, bool onlyInitialStatesRelevant = false) {
     return storm::buildSparseModel<ValueType>(program, std::vector<std::shared_ptr<storm::logic::Formula const>>(1,formula), onlyInitialStatesRelevant);
 }
 

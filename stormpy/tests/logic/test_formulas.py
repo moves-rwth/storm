@@ -34,10 +34,10 @@ class TestFormulas:
     def test_bounds(self):
         prop = "P=? [F \"one\"]"
         formula = stormpy.parse_formulas(prop)[0]
-        assert not formula.has_bound()
+        assert not formula.has_bound
         prop = "P<0.4 [F \"one\"]"
         formula = stormpy.parse_formulas(prop)[0]
-        assert formula.has_bound()
+        assert formula.has_bound
         assert formula.threshold == pycarl.Rational("0.4")
         assert formula.comparison_type == stormpy.logic.ComparisonType.LESS
 

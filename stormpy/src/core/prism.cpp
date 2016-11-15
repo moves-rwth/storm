@@ -18,9 +18,9 @@ void define_prism(py::module& m) {
     
     // PrismProgram
     py::class_<storm::prism::Program>(m, "PrismProgram", "Prism program")
-        .def("nr_modules", &storm::prism::Program::getNumberOfModules, "Get number of modules")
-        .def("model_type", &storm::prism::Program::getModelType, "Get model type")
-        .def("has_undefined_constants", &storm::prism::Program::hasUndefinedConstants, "Check if program has undefined constants")
+        .def_property_readonly("nr_modules", &storm::prism::Program::getNumberOfModules, "Number of modules")
+        .def_property_readonly("model_type", &storm::prism::Program::getModelType, "Model type")
+        .def_property_readonly("has_undefined_constants", &storm::prism::Program::hasUndefinedConstants, "Flag if program has undefined constants")
     ;
     
 }

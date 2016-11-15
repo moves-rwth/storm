@@ -4,17 +4,17 @@ from helpers.helper import get_example_path
 class TestMatrix:
     def test_sparse_matrix(self):
         model = stormpy.parse_explicit_model(get_example_path("dtmc", "die", "die.tra"), get_example_path("dtmc", "die", "die.lab"))
-        matrix = model.transition_matrix()
+        matrix = model.transition_matrix
         assert type(matrix) is stormpy.storage.SparseMatrix
-        assert matrix.nr_rows() == model.nr_states()
-        assert matrix.nr_columns() == model.nr_states()
-        assert matrix.nr_entries() == 27 #model.nr_transitions()
+        assert matrix.nr_rows == model.nr_states
+        assert matrix.nr_columns == model.nr_states
+        assert matrix.nr_entries == 27 #model.nr_transitions
         for e in matrix:
-            assert e.value() == 0.5 or e.value() == 0 or (e.value() == 1 and e.column() > 6)
+            assert e.value() == 0.5 or e.value() == 0 or (e.value() == 1 and e.column > 6)
     
     def test_change_sparse_matrix(self):
         model = stormpy.parse_explicit_model(get_example_path("dtmc", "die", "die.tra"), get_example_path("dtmc", "die", "die.lab"))
-        matrix = model.transition_matrix()
+        matrix = model.transition_matrix
         for e in matrix:
             assert e.value() == 0.5 or e.value() == 0 or e.value() == 1
         i = 0
@@ -29,7 +29,7 @@ class TestMatrix:
     def test_change_sparse_matrix_modelchecking(self):
         import stormpy.logic
         model = stormpy.parse_explicit_model(get_example_path("dtmc", "die", "die.tra"), get_example_path("dtmc", "die", "die.lab"))
-        matrix = model.transition_matrix()
+        matrix = model.transition_matrix
         # Check matrix
         for e in matrix:
             assert e.value() == 0.5 or e.value() == 0 or e.value() == 1
@@ -71,7 +71,7 @@ class TestMatrix:
         program = stormpy.parse_prism_program(get_example_path("pdtmc", "brp", "brp16_2.pm"))
         formulas = stormpy.parse_formulas_for_prism_program("P=? [ F s=5 ]", program)
         model = stormpy.build_parametric_model(program, formulas[0])
-        matrix = model.transition_matrix()
+        matrix = model.transition_matrix
         # Check matrix
         one_pol = pycarl.Rational(1)
         one_pol = pycarl.FactorizedPolynomial(one_pol)
@@ -80,7 +80,7 @@ class TestMatrix:
             assert e.value() == one or len(e.value().gather_variables()) > 0
         # First model checking
         result = stormpy.model_checking(model, formulas[0])
-        assert len(result.result_function().gather_variables()) > 0
+        assert len(result.result_function.gather_variables()) > 0
         
         # Change probabilities
         two_pol = pycarl.Rational(2)
@@ -93,4 +93,4 @@ class TestMatrix:
             assert e.value() == new_val or e.value() == one
         # Second model checking
         result = stormpy.model_checking(model, formulas[0])
-        assert len(result.result_function().gather_variables()) == 0
+        assert len(result.result_function.gather_variables()) == 0

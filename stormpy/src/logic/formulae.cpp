@@ -46,7 +46,7 @@ void define_formulae(py::module& m) {
     py::class_<storm::logic::UnaryStateFormula, std::shared_ptr<storm::logic::UnaryStateFormula const>>(m, "UnaryStateFormula", "State formula with one operand", py::base<storm::logic::StateFormula>());
     py::class_<storm::logic::UnaryBooleanStateFormula, std::shared_ptr<storm::logic::UnaryBooleanStateFormula const>>(m, "UnaryBooleanStateFormula", "Unary boolean state formula", py::base<storm::logic::UnaryStateFormula>());
     py::class_<storm::logic::OperatorFormula, std::shared_ptr<storm::logic::OperatorFormula const>>(m, "OperatorFormula", "Operator formula", py::base<storm::logic::UnaryStateFormula>())
-        .def("has_bound", &storm::logic::OperatorFormula::hasBound, "Check if formula is bounded")
+        .def_property_readonly("has_bound", &storm::logic::OperatorFormula::hasBound, "Flag if formula is bounded")
         .def_property("threshold", &storm::logic::OperatorFormula::getThreshold, &storm::logic::OperatorFormula::setThreshold, "Threshold of bound")
         .def_property("comparison_type", &storm::logic::OperatorFormula::getComparisonType, &storm::logic::OperatorFormula::setComparisonType, "Comparison type of bound")
     ;
