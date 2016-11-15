@@ -63,37 +63,45 @@ namespace storm {
              */
             std::shared_ptr<storm::gspn::Marking> getInitialMarking(std::map<uint64_t, uint64_t>& numberOfBits, uint64_t const& numberOfTotalBits) const;
 
+            
             /*!
              * Returns the place with the corresponding id.
              *
-             * @param id The ID of the place.
-             * @return The first element is true if the place was found.
-             *         If the first element is true, then the second element is the wanted place.
-             *         If the first element is false, then the second element is not defined.
+             * @param id The id of the place.
+             * @return A pointer to the place with the given id, and nullptr otherwise
              */
             storm::gspn::Place const* getPlace(uint64_t id) const;
+            
+            /*!
+             * Returns the place with the corresponding name.
+             *
+             * @param name The name of the place.
+             * @return A pointer to the place with the given name, and nullptr otherwise
+             */
             storm::gspn::Place const* getPlace(std::string const& name) const;
             
             /*!
-             * Returns the timed transition with the corresponding id.
+             * Returns the timed transition with the corresponding name.
              *
-             * @param id The ID of the timed transition.
+             * @param name The ID of the timed transition.
              */
-            storm::gspn::TimedTransition<GSPN::RateType> const* getTimedTransition(std::string const& id) const;
+            storm::gspn::TimedTransition<GSPN::RateType> const* getTimedTransition(std::string const& name) const;
 
             /*!
-             * Returns the immediate transition with the corresponding id.
+             * Returns the immediate transition with the corresponding name.
              *
-             * @param id The ID of the timed transition.
-             *         If the first element is false, then the second element is the nullptr.
+             * @param name The name of the timed transition.
+             * @return A pointer to the transition, and nullptr otherwise
              */
-            storm::gspn::ImmediateTransition<GSPN::WeightType> const* getImmediateTransition(std::string const& id) const;
+            storm::gspn::ImmediateTransition<GSPN::WeightType> const* getImmediateTransition(std::string const& name) const;
 
             /*!
-             * Returns the transition with the corresponding id.
-             *
+             * Returns the transition with the corresponding name
+             * 
+             * @param name The name of the timed transition
+             * @return A pointer to the transition, and nullptr otherwise
              */
-            storm::gspn::Transition const* getTransition(std::string const& id) const;
+            storm::gspn::Transition const* getTransition(std::string const& name) const;
 
             /*!
              * Write the gspn in a dot(graphviz) configuration.
