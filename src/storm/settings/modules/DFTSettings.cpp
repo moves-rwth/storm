@@ -29,11 +29,10 @@ namespace storm {
             const std::string DFTSettings::propTimeBoundOptionName = "timebound";
             const std::string DFTSettings::minValueOptionName = "min";
             const std::string DFTSettings::maxValueOptionName = "max";
+            const std::string DFTSettings::transformToGspnOptionName = "gspn";
 #ifdef STORM_HAVE_Z3
             const std::string DFTSettings::solveWithSmtOptionName = "smt";
 #endif
-            
-            const std::string DFTSettings::transformToGspnOptionName = "gspn";
 
             DFTSettings::DFTSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, dftFileOptionName, false, "Parses the model given in the Galileo format.").setShortName(dftFileOptionShortName)
