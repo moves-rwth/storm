@@ -11,11 +11,11 @@ class PmcResult {
             return resultFunction;
         }
 
-        std::unordered_set<storm::ArithConstraint<storm::RationalFunction>>  getConstraintsWellFormed() const {
+        std::unordered_set<storm::ArithConstraint<storm::RationalFunction>> getConstraintsWellFormed() const {
             return constraintsWellFormed;
         }
 
-        std::unordered_set<storm::ArithConstraint<storm::RationalFunction>>  getConstraintsGraphPreserving() const {
+        std::unordered_set<storm::ArithConstraint<storm::RationalFunction>> getConstraintsGraphPreserving() const {
             return constraintsGraphPreserving;
         }
 
