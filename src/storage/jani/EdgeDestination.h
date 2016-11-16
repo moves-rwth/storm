@@ -58,6 +58,11 @@ namespace storm {
              */
             bool hasTransientAssignment() const;
             
+            /*!
+             * Retrieves whether the edge uses an assignment level other than zero.
+             */
+            bool usesAssignmentLevels() const;
+            
         private:
             // The index of the destination location.
             uint64_t locationIndex;

@@ -79,7 +79,7 @@ std::string demangle(char const* symbol) {
 	return symbol;
 }
 
-void printUsage();
+void showPerformanceStatistics(uint64_t wallclockMilliseconds);
 
 /*
  * Handles the given signal. This will display the received signal and a backtrace.
@@ -88,7 +88,7 @@ void printUsage();
  */
 void signalHandler(int sig) {
 	STORM_LOG_ERROR("The program received signal " << sig << ". The following backtrace shows the status upon reception of the signal.");
-    printUsage();
+    showPerformanceStatistics(0);
 #ifndef WINDOWS
 #	define SIZE 128
 	void *buffer[SIZE];

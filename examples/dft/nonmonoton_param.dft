@@ -1,8 +1,0 @@
-param x;
-param y;
-toplevel "A";
-"A" or "B" "Z";
-"Z" pand "C" "D";
-"B" lambda=y dorm=0;
-"C" lambda=100 dorm=0;
-"D" lambda=100*x dorm=0;

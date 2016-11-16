@@ -78,5 +78,19 @@ namespace storm {
             return ModelType::UNDEFINED;
         }
         
+        bool isDeterministicModel(ModelType const& modelType) {
+            if (modelType == ModelType::DTMC && modelType == ModelType::DTMC) {
+                return true;
+            }
+            return false;
+        }
+        
+        bool isDiscreteTimeModel(ModelType const& modelType) {
+            if (modelType == ModelType::DTMC || modelType == ModelType::MDP) {
+                return true;
+            }
+            return false;
+        }
+        
     }
 }

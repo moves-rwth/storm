@@ -59,7 +59,7 @@ namespace storm {
                 std::vector<modernjson::json> elems;
                 for (auto const& subcomp : composition.getSubcompositions()) {
                     modernjson::json elemDecl;
-                    if (subcomp->isAutomaton()) {
+                    if (subcomp->isAutomatonComposition()) {
                         elemDecl["automaton"] = std::static_pointer_cast<AutomatonComposition>(subcomp)->getAutomatonName();
                     } else {
                         STORM_LOG_THROW(allowRecursion, storm::exceptions::InvalidJaniException, "Nesting composition " << *subcomp << " is not supported by JANI.");

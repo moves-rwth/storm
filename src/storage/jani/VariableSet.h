@@ -184,9 +184,9 @@ namespace storm {
             uint_fast64_t getNumberOfUnboundedIntegerTransientVariables() const;
 
             /*!
-             * Retrieves a vector of transient variables in this variable set.
+             * Retrieves the transient variables in this variable set.
              */
-            std::vector<std::shared_ptr<Variable const>> getTransientVariables() const;
+            typename detail::ConstVariables<Variable> getTransientVariables() const;
             
             /*!
              * Checks whether any of the provided variables appears in bound expressions or initial values of the
@@ -209,6 +209,9 @@ namespace storm {
             
             /// The real variables in this set.
             std::vector<std::shared_ptr<RealVariable>> realVariables;
+            
+            /// The transient variables in this set.
+            std::vector<std::shared_ptr<Variable>> transientVariables;
             
             /// A set of all variable names currently in use.
             std::map<std::string, storm::expressions::Variable> nameToVariable;

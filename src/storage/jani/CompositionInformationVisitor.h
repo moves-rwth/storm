@@ -24,6 +24,12 @@ namespace storm {
             
             void setContainsNonStandardParallelComposition(bool value);
             bool containsNonStandardParallelComposition() const;
+
+            void setContainsNestedParallelComposition(bool value);
+            bool containsNestedParallelComposition() const;
+
+            void setContainsParallelComposition(bool value);
+            bool containsParallelComposition() const;
             
             std::string const& getActionName(uint64_t index) const;
             uint64_t getActionIndex(std::string const& name) const;
@@ -57,6 +63,12 @@ namespace storm {
             
             /// A flag indicating whether the composition contains any non-standard parallel composition.
             bool nonStandardParallelComposition;
+            
+            /// A flag indicating whether the composition contains nested parallel compositions;
+            bool nestedParallelComposition;
+            
+            /// A flag indicating whether the composition contains a parallel composition;
+            bool parallelComposition;
         };
         
         class CompositionInformationVisitor : public CompositionVisitor {

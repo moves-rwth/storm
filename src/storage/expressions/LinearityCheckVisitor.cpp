@@ -1,4 +1,5 @@
 #include "src/storage/expressions/LinearityCheckVisitor.h"
+
 #include "src/storage/expressions/Expressions.h"
 
 #include "src/utility/macros.h"

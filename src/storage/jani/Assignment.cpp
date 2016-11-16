@@ -11,8 +11,7 @@ namespace storm  {
         }
         
         bool Assignment::operator==(Assignment const& other) const {
-            // FIXME: the level is currently ignored as we do not support it 
-            return this->isTransient() == other.isTransient() && this->getExpressionVariable() == other.getExpressionVariable() && this->getAssignedExpression().isSyntacticallyEqual(other.getAssignedExpression());
+            return this->isTransient() == other.isTransient() && this->getExpressionVariable() == other.getExpressionVariable() && this->getAssignedExpression().isSyntacticallyEqual(other.getAssignedExpression()) && this->getLevel() == other.getLevel();
         }
         
         storm::jani::Variable const& Assignment::getVariable() const {
@@ -39,7 +38,7 @@ namespace storm  {
             this->setAssignedExpression(this->getAssignedExpression().substitute(substitution));
         }
         
-        uint64_t Assignment::getLevel() const {
+        int64_t Assignment::getLevel() const {
             return level;
         }
         
@@ -48,20 +47,20 @@ namespace storm  {
             return stream;
         }
         
-        bool AssignmentPartialOrderByVariable::operator()(Assignment const& left, Assignment const& right) const {
-            return left.getExpressionVariable() < right.getExpressionVariable();
+        bool AssignmentPartialOrderByLevelAndVariable::operator()(Assignment const& left, Assignment const& right) const {
+            return left.getLevel() < right.getLevel() || (left.getLevel() == right.getLevel() && left.getExpressionVariable() < right.getExpressionVariable());
         }
 
-        bool AssignmentPartialOrderByVariable::operator()(Assignment const& left, std::shared_ptr<Assignment> const& right) const {
-            return left.getExpressionVariable() < right->getExpressionVariable();
+        bool AssignmentPartialOrderByLevelAndVariable::operator()(Assignment const& left, std::shared_ptr<Assignment> const& right) const {
+            return left.getLevel() < right->getLevel() || (left.getLevel() == right->getLevel() && left.getExpressionVariable() < right->getExpressionVariable());
         }
         
-        bool AssignmentPartialOrderByVariable::operator()(std::shared_ptr<Assignment> const& left, std::shared_ptr<Assignment> const& right) const {
-            return left->getExpressionVariable() < right->getExpressionVariable();
+        bool AssignmentPartialOrderByLevelAndVariable::operator()(std::shared_ptr<Assignment> const& left, std::shared_ptr<Assignment> const& right) const {
+            return left->getLevel() < right->getLevel() || (left->getLevel() == right->getLevel() && left->getExpressionVariable() < right->getExpressionVariable());
         }
         
-        bool AssignmentPartialOrderByVariable::operator()(std::shared_ptr<Assignment> const& left, Assignment const& right) const {
-            return left->getExpressionVariable() < right.getExpressionVariable();
+        bool AssignmentPartialOrderByLevelAndVariable::operator()(std::shared_ptr<Assignment> const& left, Assignment const& right) const {
+            return left->getLevel() < right.getLevel() || (left->getLevel() == right.getLevel() && left->getExpressionVariable() < right.getExpressionVariable());
         }
     }
 }

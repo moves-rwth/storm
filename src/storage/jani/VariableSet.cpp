@@ -48,6 +48,9 @@ namespace storm {
             std::shared_ptr<BooleanVariable> newVariable = std::make_shared<BooleanVariable>(variable);
             variables.push_back(newVariable);
             booleanVariables.push_back(newVariable);
+            if (variable.isTransient()) {
+                transientVariables.push_back(newVariable);
+            }
             nameToVariable.emplace(variable.getName(), variable.getExpressionVariable());
             variableToVariable.emplace(variable.getExpressionVariable(), newVariable);
             return *newVariable;
@@ -58,6 +61,9 @@ namespace storm {
             std::shared_ptr<BoundedIntegerVariable> newVariable = std::make_shared<BoundedIntegerVariable>(variable);
             variables.push_back(newVariable);
             boundedIntegerVariables.push_back(newVariable);
+            if (variable.isTransient()) {
+                transientVariables.push_back(newVariable);
+            }
             nameToVariable.emplace(variable.getName(), variable.getExpressionVariable());
             variableToVariable.emplace(variable.getExpressionVariable(), newVariable);
             return *newVariable;
@@ -68,6 +74,9 @@ namespace storm {
             std::shared_ptr<UnboundedIntegerVariable> newVariable = std::make_shared<UnboundedIntegerVariable>(variable);
             variables.push_back(newVariable);
             unboundedIntegerVariables.push_back(newVariable);
+            if (variable.isTransient()) {
+                transientVariables.push_back(newVariable);
+            }
             nameToVariable.emplace(variable.getName(), variable.getExpressionVariable());
             variableToVariable.emplace(variable.getExpressionVariable(), newVariable);
             return *newVariable;
@@ -78,6 +87,9 @@ namespace storm {
             std::shared_ptr<RealVariable> newVariable = std::make_shared<RealVariable>(variable);
             variables.push_back(newVariable);
             realVariables.push_back(newVariable);
+            if (variable.isTransient()) {
+                transientVariables.push_back(newVariable);
+            }
             nameToVariable.emplace(variable.getName(), variable.getExpressionVariable());
             variableToVariable.emplace(variable.getExpressionVariable(), newVariable);
             return *newVariable;
@@ -196,14 +208,8 @@ namespace storm {
             return result;
         }
         
-        std::vector<std::shared_ptr<Variable const>> VariableSet::getTransientVariables() const {
-            std::vector<std::shared_ptr<Variable const>> result;
-            for (auto const& variable : variables) {
-                if (variable->isTransient()) {
-                    result.push_back(variable);
-                }
-            }
-            return result;
+        typename detail::ConstVariables<Variable> VariableSet::getTransientVariables() const {
+            return detail::ConstVariables<Variable>(transientVariables.begin(), transientVariables.end());
         }
         
         bool VariableSet::containsVariablesInBoundExpressionsOrInitialValues(std::set<storm::expressions::Variable> const& variables) const {

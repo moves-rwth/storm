@@ -110,29 +110,16 @@ namespace storm {
             return "[" + boost::join(assignments, ", ") + "]";
         }
 
-
         std::string SimpleValuation::toString(bool pretty) const {
-
-
-            std::stringstream sstr;
-            if(pretty) {
-                sstr << "valuation {" << std::endl;
-                for(auto const& e : getManager()) {
-                    sstr << e.first.getName() << "=";
-                    if (e.first.hasBooleanType()) {
-                        sstr << std::boolalpha << this->getBooleanValue(e.first) << std::noboolalpha;
-                    } else if (e.first.hasIntegerType()) {
-                        sstr << this->getIntegerValue(e.first);
-                    } else if (e.first.hasRationalType()) {
-                        sstr << this->getRationalValue(e.first);
-                    } else {
-                        STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Unexpected variable type.");
-                    }
-                    sstr << std::endl;
+            if (pretty) {
+                std::set<storm::expressions::Variable> allVariables;
+                for (auto const& e : getManager()) {
+                    allVariables.insert(e.first);
                 }
-                sstr << "}";
+                return toPrettyString(allVariables);
             } else {
-                sstr << "valuation {" << std::endl;
+                std::stringstream sstr;
+                sstr << "[" << std::endl;
                 sstr << getManager() << std::endl;
                 if (!booleanValues.empty()) {
                     for (auto const& element : booleanValues) {
@@ -152,11 +139,9 @@ namespace storm {
                     }
                     sstr << std::endl;
                 }
-                sstr << "}";
+                sstr << "]";
+                return sstr.str();
             }
-
-
-            return sstr.str();
         }
         
         std::ostream& operator<<(std::ostream& out, SimpleValuation const& valuation) {

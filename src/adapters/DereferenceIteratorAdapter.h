@@ -41,6 +41,14 @@ namespace storm {
                 return it == ite;
             }
             
+            decltype((*std::declval<value_type>())) front() const {
+                return **it;
+            }
+
+            decltype((*std::declval<value_type>())) back() const {
+                return **(ite - 1);
+            }
+            
             std::size_t size() const {
                 return std::distance(it, ite);
             }

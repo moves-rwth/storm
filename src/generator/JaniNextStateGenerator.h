@@ -22,7 +22,7 @@ namespace storm {
             virtual StateBehavior<ValueType, StateType> expand(StateToIdCallback const& stateToIdCallback) override;
             
             virtual std::size_t getNumberOfRewardModels() const override;
-            virtual RewardModelInformation getRewardModelInformation(uint64_t const& index) const override;
+            virtual storm::builder::RewardModelInformation getRewardModelInformation(uint64_t const& index) const override;
                         
             virtual storm::models::sparse::StateLabeling label(storm::storage::BitVectorHashMap<StateType> const& states, std::vector<StateType> const& initialStateIndices = {}, std::vector<StateType> const& deadlockStateIndices = {}) override;
             
@@ -113,9 +113,9 @@ namespace storm {
             std::vector<storm::expressions::Variable> rewardVariables;
             
             /// A vector storing information about the corresponding reward models (variables).
-            std::vector<RewardModelInformation> rewardModelInformation;
+            std::vector<storm::builder::RewardModelInformation> rewardModelInformation;
             
-            // A flag that stores whether at least one of the selected reward models has state-action rewards.
+            /// A flag that stores whether at least one of the selected reward models has state-action rewards.
             bool hasStateActionRewards;
         };
         

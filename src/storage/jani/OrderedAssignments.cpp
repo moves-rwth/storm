@@ -70,16 +70,28 @@ namespace storm {
         }
         
         bool OrderedAssignments::hasMultipleLevels() const {
-            if(allAssignments.empty()) {
+            if (allAssignments.empty()) {
                 return false;
             }
-            uint64_t firstLevel = allAssignments.front()->getLevel();
-            for(auto const& assignment : allAssignments) {
-                if(assignment->getLevel() != firstLevel) {
-                    return true;
-                }
-            }
-            return false;
+            return getLowestLevel() == getHighestLevel();
+        }
+        
+        bool OrderedAssignments::empty() const {
+            return allAssignments.empty();
+        }
+        
+        void OrderedAssignments::clear() {
+            allAssignments.clear();
+            transientAssignments.clear();
+            nonTransientAssignments.clear();
+        }
+        
+        int_fast64_t OrderedAssignments::getLowestLevel() const {
+            return allAssignments.front()->getLevel();
+        }
+        
+        int_fast64_t OrderedAssignments::getHighestLevel() const {
+            return allAssignments.back()->getLevel();
         }
         
         bool OrderedAssignments::contains(Assignment const& assignment) const {
@@ -126,7 +138,7 @@ namespace storm {
         }
         
         std::vector<std::shared_ptr<Assignment>>::const_iterator OrderedAssignments::lowerBound(Assignment const& assignment, std::vector<std::shared_ptr<Assignment>> const& assignments) {
-            return std::lower_bound(assignments.begin(), assignments.end(), assignment, storm::jani::AssignmentPartialOrderByVariable());
+            return std::lower_bound(assignments.begin(), assignments.end(), assignment, storm::jani::AssignmentPartialOrderByLevelAndVariable());
         }
         
     }

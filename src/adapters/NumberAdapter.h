@@ -2,8 +2,6 @@
 
 #include "storm-config.h"
 
-#include <boost/multiprecision/gmp.hpp>
-
 #ifdef STORM_HAVE_CARL
 
 #include <carl/numbers/numbers.h>

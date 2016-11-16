@@ -210,6 +210,14 @@ namespace storm {
             Module restrictCommands(boost::container::flat_set<uint_fast64_t> const& indexSet) const;
             
             /*!
+             * Creates a new module that drops all commands whose action indices are not in the given set.
+             *
+             * @param indexSet The set of action indices for which to keep the commands.
+             * @return The module resulting from erasing all commands whose action indices are not in the given set.
+             */
+            Module restrictActionIndices(boost::container::flat_set<uint_fast64_t> const& actionIndices) const;
+            
+            /*!
              * Substitutes all variables in the module according to the given map.
              *
              * @param substitution The substitution to perform.

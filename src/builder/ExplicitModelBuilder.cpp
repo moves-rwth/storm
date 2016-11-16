@@ -13,6 +13,8 @@
 #include "src/settings/modules/CoreSettings.h"
 #include "src/settings/modules/IOSettings.h"
 
+#include "src/builder/RewardModelBuilder.h"
+
 #include "src/generator/PrismNextStateGenerator.h"
 #include "src/generator/JaniNextStateGenerator.h"
 
@@ -27,65 +29,6 @@
 
 namespace storm {
     namespace builder {
-       
-        /*!
-         * A structure that is used to keep track of a reward model currently being built.
-         */
-        template <typename ValueType>
-        class RewardModelBuilder {
-        public:
-            RewardModelBuilder(storm::generator::RewardModelInformation const& rewardModelInformation) : rewardModelName(rewardModelInformation.getName()), stateRewards(rewardModelInformation.hasStateRewards()), stateActionRewards(rewardModelInformation.hasStateActionRewards()), stateRewardVector(), stateActionRewardVector() {
-                STORM_LOG_THROW(!rewardModelInformation.hasTransitionRewards(), storm::exceptions::InvalidArgumentException, "Unable to treat transition rewards.");
-            }
-            
-            storm::models::sparse::StandardRewardModel<ValueType> build(uint_fast64_t rowCount, uint_fast64_t columnCount, uint_fast64_t rowGroupCount) {
-                boost::optional<std::vector<ValueType>> optionalStateRewardVector;
-                if (hasStateRewards()) {
-                    stateRewardVector.resize(rowGroupCount);
-                    optionalStateRewardVector = std::move(stateRewardVector);
-                }
-                
-                boost::optional<std::vector<ValueType>> optionalStateActionRewardVector;
-                if (hasStateActionRewards()) {
-                    stateActionRewardVector.resize(rowCount);
-                    optionalStateActionRewardVector = std::move(stateActionRewardVector);
-                }
-                
-                return storm::models::sparse::StandardRewardModel<ValueType>(std::move(optionalStateRewardVector), std::move(optionalStateActionRewardVector));
-            }
-            
-            std::string const& getName() const {
-                return rewardModelName;
-            }
-            
-            void addStateReward(ValueType const& value) {
-                stateRewardVector.push_back(value);
-            }
-
-            void addStateActionReward(ValueType const& value) {
-                stateActionRewardVector.push_back(value);
-            }
-            
-            bool hasStateRewards() const {
-                return stateRewards;
-            }
-            
-            bool hasStateActionRewards() const {
-                return stateActionRewards;
-            }
-            
-        private:
-            std::string rewardModelName;
-
-            bool stateRewards;
-            bool stateActionRewards;
-            
-            // The state reward vector.
-            std::vector<ValueType> stateRewardVector;
-            
-            // The state-action reward vector.
-            std::vector<ValueType> stateActionRewardVector;
-        };
                         
         template <typename ValueType, typename RewardModelType, typename StateType>
         ExplicitModelBuilder<ValueType, RewardModelType, StateType>::ModelComponents::ModelComponents() : transitionMatrix(), stateLabeling(), rewardModels(), choiceLabeling() {

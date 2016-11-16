@@ -50,7 +50,7 @@ namespace storm {
             /*!
              * Retrieves the level of the assignment.
              */
-            uint64_t getLevel() const;
+            int64_t getLevel() const;
             
             friend std::ostream& operator<<(std::ostream& stream, Assignment const& assignment);
             
@@ -66,9 +66,10 @@ namespace storm {
         };
         
         /*!
-         * This functor enables ordering the assignments by variable. Note that this is a partial order.
+         * This functor enables ordering the assignments first by the assignment level and then by variable.
+         * Note that this is a partial order.
          */
-        struct AssignmentPartialOrderByVariable {
+        struct AssignmentPartialOrderByLevelAndVariable {
             bool operator()(Assignment const& left, Assignment const& right) const;
             bool operator()(Assignment const& left, std::shared_ptr<Assignment> const& right) const;
             bool operator()(std::shared_ptr<Assignment> const& left, std::shared_ptr<Assignment> const& right) const;

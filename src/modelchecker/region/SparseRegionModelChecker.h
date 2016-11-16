@@ -163,7 +163,7 @@ namespace storm {
                 ConstantType getSpecifiedFormulaBound() const;
                 bool specifiedFormulaHasLowerBound() const;
                 bool const& isComputeRewards() const;
-                bool const isResultConstant() const;
+                bool isResultConstant() const;
                 std::shared_ptr<ParametricSparseModelType> const& getSimpleModel() const;
                 std::shared_ptr<storm::logic::OperatorFormula> const& getSimpleFormula() const;
                 

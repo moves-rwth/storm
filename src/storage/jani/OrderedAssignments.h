@@ -43,6 +43,28 @@ namespace storm {
             bool hasMultipleLevels() const;
             
             /*!
+             * Retrieves whether this set of assignments is empty.
+             */
+            bool empty() const;
+            
+            /*!
+             * Removes all assignments from this set.
+             */
+            void clear();
+            
+            /*!
+             * Retrieves the lowest level among all assignments. Note that this may only be called if there is at least
+             * one assignment.
+             */
+            int_fast64_t getLowestLevel() const;
+
+            /*!
+             * Retrieves the highest level among all assignments. Note that this may only be called if there is at least
+             * one assignment.
+             */
+            int_fast64_t getHighestLevel() const;
+
+            /*!
              * Retrieves whether the given assignment is contained in this set of assignments.
              */
             bool contains(Assignment const& assignment) const;

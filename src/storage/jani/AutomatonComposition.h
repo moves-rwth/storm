@@ -25,7 +25,7 @@ namespace storm {
             
             std::set<std::string> const& getInputEnabledActions() const;
 
-            bool isAutomaton() const override;
+            virtual bool isAutomatonComposition() const override;
             
         private:
             /// The name of the automaton this composition element refers to.

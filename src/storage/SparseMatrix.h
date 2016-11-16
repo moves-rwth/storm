@@ -25,19 +25,18 @@ namespace storm {
 		template<typename T>
 		class TopologicalValueIterationMinMaxLinearEquationSolver;
 	}
-        
-        
 }
 
 namespace storm {
     namespace storage {
         
         class BitVector;
+        
         // Forward declare matrix class.
-        template<typename T> class SparseMatrix;
+        template<typename T>
+        class SparseMatrix;
         
         typedef uint_fast64_t SparseMatrixIndexType;
-        
         
         template<typename IndexType, typename ValueType>
         class MatrixEntry {

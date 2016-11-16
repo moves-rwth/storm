@@ -202,8 +202,6 @@ namespace storm {
             return this->getSettings().getRelativeTerminationCriterion();
         }
 
-
-
         template<typename ValueType>
         bool StandardMinMaxLinearEquationSolver<ValueType>::solveEquationsValueIteration(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             if(!linEqSolverA) {
@@ -246,7 +244,6 @@ namespace storm {
             
             reportStatus(status, iterations);
             
-            
             // If we performed an odd number of iterations, we need to swap the x and currentX, because the newest result
             // is currently stored in currentX, but x is the output vector.
             if (currentX == auxiliaryRowGroupVector.get()) {
@@ -255,7 +252,9 @@ namespace storm {
             
             // If requested, we store the scheduler for retrieval.
             if (this->isTrackSchedulerSet()) {
-                if(iterations==0){ //may happen due to custom termination condition. Then we need to compute x'= A*x+b
+                // Due to a custom termination condition, it may be the case that no iterations are performed. In this
+                // case we need to compute x'= A*x+b once.
+                if (iterations==0) {
                     linEqSolverA->multiply(x, &b, multiplyResult);
                 }
                 std::vector<storm::storage::sparse::state_type> choices(this->A.getRowGroupCount());

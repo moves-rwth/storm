@@ -1,4 +1,3 @@
-
 #ifndef STORM_H
 #define	STORM_H
 
@@ -23,7 +22,7 @@
 #include "src/settings/modules/ParametricSettings.h"
 #include "src/settings/modules/RegionSettings.h"
 #include "src/settings/modules/EliminationSettings.h"
-#include "src/settings/modules/CoreSettings.h"
+#include "src/settings/modules/JitBuilderSettings.h"
 
 // Formula headers.
 #include "src/logic/Formulas.h"
@@ -47,6 +46,7 @@
 
 // Headers of builders.
 #include "src/builder/ExplicitModelBuilder.h"
+#include "src/builder/jit/ExplicitJitJaniModelBuilder.h"
 #include "src/builder/DdPrismModelBuilder.h"
 #include "src/builder/DdJaniModelBuilder.h"
 
@@ -109,14 +109,12 @@ namespace storm {
 
     template<typename ValueType>
     std::shared_ptr<storm::models::sparse::Model<ValueType>> buildSparseModel(storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool onlyInitialStatesRelevant = false) {
-        
-        
-        storm::generator::NextStateGeneratorOptions options(formulas);
-        
+        storm::builder::BuilderOptions options(formulas);
         
         if (storm::settings::getModule<storm::settings::modules::IOSettings>().isBuildFullModelSet()) {
             options.setBuildAllLabels();
             options.setBuildAllRewardModels();
+            options.clearTerminalStates();
         }
 
         // Generate command labels if we are going to build a counterexample later.
@@ -124,16 +122,30 @@ namespace storm {
             options.setBuildChoiceLabels(true);
         }
 
-        std::shared_ptr<storm::generator::NextStateGenerator<ValueType, uint32_t>> generator;
-        if (model.isPrismProgram()) {
-            generator = std::make_shared<storm::generator::PrismNextStateGenerator<ValueType, uint32_t>>(model.asPrismProgram(), options);
-        } else if (model.isJaniModel()) {
-            generator = std::make_shared<storm::generator::JaniNextStateGenerator<ValueType, uint32_t>>(model.asJaniModel(), options);
+        if (storm::settings::getModule<storm::settings::modules::IOSettings>().isJitSet()) {
+            STORM_LOG_THROW(model.isJaniModel(), storm::exceptions::NotSupportedException, "Cannot use JIT-based model builder for non-JANI model.");
+
+            storm::builder::jit::ExplicitJitJaniModelBuilder<ValueType> builder(model.asJaniModel(), options);
+
+            if (storm::settings::getModule<storm::settings::modules::JitBuilderSettings>().isDoctorSet()) {
+                bool result = builder.doctor();
+                STORM_LOG_THROW(result, storm::exceptions::InvalidSettingsException, "The JIT-based model builder cannot be used on your system.");
+                STORM_LOG_INFO("The JIT-based model builder seems to be working.");
+            }
+            
+            return builder.build();
         } else {
-            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Cannot build sparse model from this symbolic model description.");
+            std::shared_ptr<storm::generator::NextStateGenerator<ValueType, uint32_t>> generator;
+            if (model.isPrismProgram()) {
+                generator = std::make_shared<storm::generator::PrismNextStateGenerator<ValueType, uint32_t>>(model.asPrismProgram(), options);
+            } else if (model.isJaniModel()) {
+                generator = std::make_shared<storm::generator::JaniNextStateGenerator<ValueType, uint32_t>>(model.asJaniModel(), options);
+            } else {
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Cannot build sparse model from this symbolic model description.");
+            }
+            storm::builder::ExplicitModelBuilder<ValueType> builder(generator);
+            return builder.build();
         }
-        storm::builder::ExplicitModelBuilder<ValueType> builder(generator);
-        return builder.build();
     }
 
     template<typename ValueType, storm::dd::DdType LibraryType = storm::dd::DdType::CUDD>
@@ -211,10 +223,10 @@ namespace storm {
     
     template<typename ModelType>
     std::shared_ptr<storm::models::ModelBase> preprocessModel(std::shared_ptr<storm::models::ModelBase> model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
-        if(model->getType() == storm::models::ModelType::MarkovAutomaton && model->isSparseModel()) {
+        if (model->getType() == storm::models::ModelType::MarkovAutomaton && model->isSparseModel()) {
             std::shared_ptr<storm::models::sparse::MarkovAutomaton<typename ModelType::ValueType>> ma = model->template as<storm::models::sparse::MarkovAutomaton<typename ModelType::ValueType>>();
             if (ma->hasOnlyTrivialNondeterminism()) {
-                // Markov automaton can be converted into CTMC
+                // Markov automaton can be converted into CTMC.
                 model = ma->convertToCTMC();
             }
         }
@@ -456,7 +468,7 @@ namespace storm {
         auto const& regionSettings = storm::settings::getModule<storm::settings::modules::RegionSettings>();
         storm::modelchecker::region::SparseRegionModelCheckerSettings settings(regionSettings.getSampleMode(), regionSettings.getApproxMode(), regionSettings.getSmtMode());
         // Preprocessing and ModelChecker
-        if(model->isOfType(storm::models::ModelType::Dtmc)){
+        if (model->isOfType(storm::models::ModelType::Dtmc)){
             preprocessModel<storm::models::sparse::Dtmc<storm::RationalFunction>>(model,formulas);
             regionModelChecker = std::make_shared<storm::modelchecker::region::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>>(model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>(), settings);
         } else if (model->isOfType(storm::models::ModelType::Mdp)){

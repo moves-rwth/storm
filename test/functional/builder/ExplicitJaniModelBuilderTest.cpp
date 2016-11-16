@@ -5,6 +5,7 @@
 #include "src/settings/SettingMemento.h"
 #include "src/parser/PrismParser.h"
 #include "src/builder/ExplicitModelBuilder.h"
+#include "src/generator/JaniNextStateGenerator.h"
 #include "src/storage/jani/Model.h"
 
 #include "src/settings/modules/IOSettings.h"
@@ -154,7 +155,10 @@ TEST(ExplicitJaniModelBuilderTest, FailComposition) {
 TEST(ExplicitJaniModelBuilderTest, IllegalSynchronizingWrites) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/coin2-2-illegalSynchronizingWrite.nm");
     storm::jani::Model janiModel = program.toJani();
+    storm::generator::NextStateGeneratorOptions options;
+    options.setExplorationChecks(true);
+    std::shared_ptr<storm::generator::NextStateGenerator<double, uint32_t>> nextStateGenerator = std::make_shared<storm::generator::JaniNextStateGenerator<double, uint32_t>>(janiModel, options);
     
-    ASSERT_THROW(storm::builder::ExplicitModelBuilder<double>(janiModel).build(), storm::exceptions::WrongFormatException);
+    ASSERT_THROW(storm::builder::ExplicitModelBuilder<double>(nextStateGenerator).build(), storm::exceptions::WrongFormatException);
 }
 

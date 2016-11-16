@@ -291,7 +291,6 @@ TEST(SylvanDd, AddIteratorTest) {
     ASSERT_NO_THROW(ite = dd.end());
     std::pair<storm::expressions::SimpleValuation, double> valuationValuePair;
     uint_fast64_t numberOfValuations = 0;
-    dd.exportToDot("dd.dot");
     while (it != ite) {
         ASSERT_NO_THROW(valuationValuePair = *it);
         ASSERT_NO_THROW(++it);

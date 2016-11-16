@@ -1,5 +1,0 @@
-param x;
-toplevel "A";
-"A" and "B" "C";
-"B" lambda=0.5 dorm=0.3;
-"C" lambda=x dorm=0.3;

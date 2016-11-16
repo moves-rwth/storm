@@ -308,8 +308,10 @@ namespace storm {
                     ++integerIt;
                 }
                 int_fast64_t assignedValue = this->evaluator->asInt(assignmentIt->getExpression());
-                STORM_LOG_THROW(assignedValue <= integerIt->upperBound, storm::exceptions::WrongFormatException, "The update " << update << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getVariableName() << "'.");
-                STORM_LOG_THROW(assignedValue >= integerIt->lowerBound, storm::exceptions::WrongFormatException, "The update " << update << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getVariableName() << "'.");
+                if (this->options.isExplorationChecksSet()) {
+                    STORM_LOG_THROW(assignedValue >= integerIt->lowerBound, storm::exceptions::WrongFormatException, "The update " << update << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getVariableName() << "'.");
+                    STORM_LOG_THROW(assignedValue <= integerIt->upperBound, storm::exceptions::WrongFormatException, "The update " << update << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getVariableName() << "'.");
+                }
                 newState.setFromInt(integerIt->bitOffset, integerIt->bitWidth, assignedValue - integerIt->lowerBound);
                 STORM_LOG_ASSERT(static_cast<int_fast64_t>(newState.getAsInt(integerIt->bitOffset, integerIt->bitWidth)) + integerIt->lowerBound == assignedValue, "Writing to the bit vector bucket failed (read " << newState.getAsInt(integerIt->bitOffset, integerIt->bitWidth) << " but wrote " << assignedValue << ").");
             }
@@ -354,12 +356,13 @@ namespace storm {
                 // If there was no enabled command although the module has some command with the required action label,
                 // we must not return anything.
                 if (commands.size() == 0) {
-                    return boost::optional<std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>>>();
+                    return boost::none;
                 }
                 
                 result.get().push_back(std::move(commands));
             }
             
+            STORM_LOG_ASSERT(!result->empty(), "Expected non-empty list.");
             return result;
         }
         
@@ -382,7 +385,7 @@ namespace storm {
                     if (!this->evaluator->asBool(command.getGuardExpression())) {
                         continue;
                     }
-                    
+                                        
                     result.push_back(Choice<ValueType>(command.getActionIndex(), command.isMarkovian()));
                     Choice<ValueType>& choice = result.back();
                     
@@ -395,15 +398,19 @@ namespace storm {
                     ValueType probabilitySum = storm::utility::zero<ValueType>();
                     for (uint_fast64_t k = 0; k < command.getNumberOfUpdates(); ++k) {
                         storm::prism::Update const& update = command.getUpdate(k);
-                        
-                        // Obtain target state index and add it to the list of known states. If it has not yet been
-                        // seen, we also add it to the set of states that have yet to be explored.
-                        StateType stateIndex = stateToIdCallback(applyUpdate(state, update));
-                        
-                        // Update the choice by adding the probability/target state to it.
+
                         ValueType probability = this->evaluator->asRational(update.getLikelihoodExpression());
-                        choice.addProbability(stateIndex, probability);
-                        probabilitySum += probability;
+                        if (probability != storm::utility::zero<ValueType>()) {
+                            // Obtain target state index and add it to the list of known states. If it has not yet been
+                            // seen, we also add it to the set of states that have yet to be explored.
+                            StateType stateIndex = stateToIdCallback(applyUpdate(state, update));
+                            
+                            // Update the choice by adding the probability/target state to it.
+                            choice.addProbability(stateIndex, probability);
+                            if (this->options.isExplorationChecksSet()) {
+                                probabilitySum += probability;
+                            }
+                        }
                     }
                     
                     // Create the state-action reward for the newly created choice.
@@ -419,8 +426,10 @@ namespace storm {
                         choice.addReward(stateActionRewardValue);
                     }
                     
-                    // Check that the resulting distribution is in fact a distribution.
-                    STORM_LOG_THROW(!program.isDiscreteTimeModel() || this->comparator.isOne(probabilitySum), storm::exceptions::WrongFormatException, "Probabilities do not sum to one for command '" << command << "' (actually sum to " << probabilitySum << ").");
+                    if (this->options.isExplorationChecksSet()) {
+                        // Check that the resulting distribution is in fact a distribution.
+                        STORM_LOG_THROW(!program.isDiscreteTimeModel() || this->comparator.isOne(probabilitySum), storm::exceptions::WrongFormatException, "Probabilities do not sum to one for command '" << command << "' (actually sum to " << probabilitySum << ").");
+                    }
                 }
             }
             
@@ -458,16 +467,20 @@ namespace storm {
                                 storm::prism::Update const& update = command.getUpdate(j);
                                 
                                 for (auto const& stateProbabilityPair : *currentTargetStates) {
-                                    // Compute the new state under the current update and add it to the set of new target states.
-                                    CompressedState newTargetState = applyUpdate(stateProbabilityPair.first, update);
+                                    auto probability = stateProbabilityPair.second * this->evaluator->asRational(update.getLikelihoodExpression());
                                     
-                                    // If the new state was already found as a successor state, update the probability
-                                    // and otherwise insert it.
-                                    auto targetStateIt = newTargetStates->find(newTargetState);
-                                    if (targetStateIt != newTargetStates->end()) {
-                                        targetStateIt->second += stateProbabilityPair.second * this->evaluator->asRational(update.getLikelihoodExpression());
-                                    } else {
-                                        newTargetStates->emplace(newTargetState, stateProbabilityPair.second * this->evaluator->asRational(update.getLikelihoodExpression()));
+                                    if (probability != storm::utility::zero<ValueType>()) {
+                                        // Compute the new state under the current update and add it to the set of new target states.
+                                        CompressedState newTargetState = applyUpdate(stateProbabilityPair.first, update);
+                                        
+                                        // If the new state was already found as a successor state, update the probability
+                                        // and otherwise insert it.
+                                        auto targetStateIt = newTargetStates->find(newTargetState);
+                                        if (targetStateIt != newTargetStates->end()) {
+                                            targetStateIt->second += probability;
+                                        } else {
+                                            newTargetStates->emplace(newTargetState, probability);
+                                        }
                                     }
                                 }
                             }
@@ -501,11 +514,15 @@ namespace storm {
                         for (auto const& stateProbabilityPair : *newTargetStates) {
                             StateType actualIndex = stateToIdCallback(stateProbabilityPair.first);
                             choice.addProbability(actualIndex, stateProbabilityPair.second);
-                            probabilitySum += stateProbabilityPair.second;
+                            if (this->options.isExplorationChecksSet()) {
+                                probabilitySum += stateProbabilityPair.second;
+                            }
                         }
                         
-                        // Check that the resulting distribution is in fact a distribution.
-                        STORM_LOG_THROW(!program.isDiscreteTimeModel() || !this->comparator.isConstant(probabilitySum) || this->comparator.isOne(probabilitySum), storm::exceptions::WrongFormatException, "Sum of update probabilities do not some to one for some command (actually sum to " << probabilitySum << ").");
+                        if (this->options.isExplorationChecksSet()) {
+                            // Check that the resulting distribution is in fact a distribution.
+                            STORM_LOG_THROW(!program.isDiscreteTimeModel() || !this->comparator.isConstant(probabilitySum) || this->comparator.isOne(probabilitySum), storm::exceptions::WrongFormatException, "Sum of update probabilities do not some to one for some command (actually sum to " << probabilitySum << ").");
+                        }
                         
                         // Create the state-action reward for the newly created choice.
                         for (auto const& rewardModel : rewardModels) {
@@ -571,9 +588,9 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
-        RewardModelInformation PrismNextStateGenerator<ValueType, StateType>::getRewardModelInformation(uint64_t const& index) const {
+        storm::builder::RewardModelInformation PrismNextStateGenerator<ValueType, StateType>::getRewardModelInformation(uint64_t const& index) const {
             storm::prism::RewardModel const& rewardModel = rewardModels[index].get();
-            return RewardModelInformation(rewardModel.getName(), rewardModel.hasStateRewards(), rewardModel.hasStateActionRewards(), rewardModel.hasTransitionRewards());
+            return storm::builder::RewardModelInformation(rewardModel.getName(), rewardModel.hasStateRewards(), rewardModel.hasStateActionRewards(), rewardModel.hasTransitionRewards());
         }
                 
         template class PrismNextStateGenerator<double>;

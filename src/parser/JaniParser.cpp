@@ -428,7 +428,6 @@ namespace storm {
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Looking for operator for formula " << propertyStructure.dump() << ", but did not find one");
             }
-            
         }
         
         storm::jani::Property JaniParser::parseProperty(json const& propertyStructure) {

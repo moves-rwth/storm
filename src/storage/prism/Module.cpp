@@ -172,6 +172,18 @@ namespace storm {
             return Module(this->getName(), this->getBooleanVariables(), this->getIntegerVariables(), newCommands);
         }
         
+        Module Module::restrictActionIndices(boost::container::flat_set<uint_fast64_t> const& actionIndices) const {
+            // First construct the new vector of commands.
+            std::vector<storm::prism::Command> newCommands;
+            for (auto const& command : commands) {
+                if (actionIndices.find(command.getActionIndex()) != actionIndices.end()) {
+                    newCommands.push_back(command);
+                }
+            }
+            
+            return Module(this->getName(), this->getBooleanVariables(), this->getIntegerVariables(), newCommands);
+        }
+        
         Module Module::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
             std::vector<BooleanVariable> newBooleanVariables;
             newBooleanVariables.reserve(this->getNumberOfBooleanVariables());

@@ -10,7 +10,7 @@ namespace storm {
             
         void printHeader(std::string name, const int argc, const char* argv[]);
             
-        void printUsage();
+        void showTimeAndMemoryStatistics(uint64_t wallclockMilliseconds = 0);
         
         /*!
          * Parses the given command line arguments.

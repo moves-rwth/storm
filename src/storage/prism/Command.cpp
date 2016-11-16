@@ -72,14 +72,13 @@ namespace storm {
             return true;
         }
         
-        Command Command::removeIdentityAssignmentsFromUpdates() const {
+        Command Command::simplify() const {
             std::vector<Update> newUpdates;
             newUpdates.reserve(this->getNumberOfUpdates());
             for (auto const& update : this->getUpdates()) {
                 newUpdates.emplace_back(update.removeIdentityAssignments());
             }
             return copyWithNewUpdates(std::move(newUpdates));
-            
         }
         
         Command Command::copyWithNewUpdates(std::vector<Update> && newUpdates) const {

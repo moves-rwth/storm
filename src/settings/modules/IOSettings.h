@@ -35,14 +35,12 @@ namespace storm {
                  */
                 std::string getExportDotFilename() const;
 
-                
                 /*!
                  * Retrieves whether the export-to-explicit option was set
                  *
                  * @return True if the export-to-explicit option was set
                  */
                 bool isExportExplicitSet() const;
-                
                 
                 /*!
                  * Retrieves thename in which to write the model in explicit format, if the option was set.
@@ -119,11 +117,25 @@ namespace storm {
                 std::string getJaniInputFilename() const;
 
                 /*!
+                 * Retrieves whether the option to use the JIT builder is set.
+                 *
+                 * @return True iff the JIT builder is to be used.
+                 */
+                bool isJitSet() const;
+                
+                /*!
                  * Retrieves whether the model exploration order was set.
                  *
                  * @return True if the model exploration option was set.
                  */
                 bool isExplorationOrderSet() const;
+                
+                /*!
+                 * Retrieves whether to perform additional checks during model exploration (e.g. out-of-bounds, etc.).
+                 *
+                 * @return True if additional checks are to be performed.
+                 */
+                bool isExplorationChecksSet() const;
                 
                 /*!
                  * Retrieves the exploration order if it was set.
@@ -212,7 +224,7 @@ namespace storm {
                 bool isPrismCompatibilityEnabled() const;
                 
                 /**
-                 * Retrieves whether no model should be build at all, in case one just want to translate models or parse a file
+                 * Retrieves whether no model should be build at all, in case one just want to translate models or parse a file.
                  */
                 bool isNoBuildModelSet() const;
                 
@@ -238,6 +250,9 @@ namespace storm {
                 static const std::string prismInputOptionName;
                 static const std::string janiInputOptionName;
                 static const std::string prismToJaniOptionName;
+                static const std::string jitOptionName;
+                static const std::string explorationChecksOptionName;
+                static const std::string explorationChecksOptionShortName;
                 static const std::string explorationOrderOptionName;
                 static const std::string explorationOrderOptionShortName;
                 static const std::string transitionRewardsOptionName;

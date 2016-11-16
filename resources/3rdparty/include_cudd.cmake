@@ -1,7 +1,6 @@
-if(NOT AUTORECONF)
-    message(ERROR "Cannot find autoreconf, cannot compile cudd3")
+if (NOT AUTORECONF)
+    message(FATAL_ERROR "Cannot find autoreconf, cannot compile cudd3.")
 endif()
-
 
 ExternalProject_Add(
         cudd3
@@ -26,6 +25,5 @@ set(CUDD_VERSION_STRING 3.0.0)
 list(APPEND STORM_LINK_LIBRARIES ${CUDD_SHARED_LIBRARY})
 add_dependencies(resources cudd3)
 
-message(STATUS "StoRM - Linking with CUDD ${CUDD_VERSION_STRING}")
-#message("StoRM - CUDD include dir: ${CUDD_INCLUDE_DIR}")
+message(STATUS "Storm - Linking with CUDD ${CUDD_VERSION_STRING}.")
 include_directories(${CUDD_INCLUDE_DIR})

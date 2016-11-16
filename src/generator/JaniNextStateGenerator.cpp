@@ -26,7 +26,13 @@ namespace storm {
             STORM_LOG_THROW(model.hasStandardComposition(), storm::exceptions::WrongFormatException, "The explicit next-state generator currently does not support custom system compositions.");
             STORM_LOG_THROW(!model.hasNonGlobalTransientVariable(), storm::exceptions::InvalidSettingsException, "The explicit next-state generator currently does not support automata-local transient variables.");
             STORM_LOG_THROW(!model.hasTransientEdgeDestinationAssignments(), storm::exceptions::InvalidSettingsException, "The explicit next-state generator currently does not support transient edge destination assignments.");
+            STORM_LOG_THROW(!model.usesAssignmentLevels(), storm::exceptions::InvalidSettingsException, "The explicit next-state generator currently does not support assignment levels.");
             STORM_LOG_THROW(!this->options.isBuildChoiceLabelsSet(), storm::exceptions::InvalidSettingsException, "JANI next-state generator cannot generate choice labels.");
+            
+            // Lift the transient edge destinations. We can do so, as we know that there are no assignment levels (because that's not supported anyway).
+            if (this->model.hasTransientEdgeDestinationAssignments()) {
+                this->model.liftTransientEdgeDestinationAssignments();
+            }
             
             // Only after checking validity of the program, we initialize the variable information.
             this->checkValid();
@@ -58,8 +64,8 @@ namespace storm {
                 if (rewardVariables.empty() && !this->options.getRewardModelNames().empty()) {
                     bool foundTransientVariable = false;
                     for (auto const& transientVariable : globalVariables.getTransientVariables()) {
-                        if (transientVariable->isUnboundedIntegerVariable() || transientVariable->isRealVariable()) {
-                            rewardVariables.push_back(transientVariable->getExpressionVariable());
+                        if (transientVariable.isUnboundedIntegerVariable() || transientVariable.isRealVariable()) {
+                            rewardVariables.push_back(transientVariable.getExpressionVariable());
                             foundTransientVariable = true;
                             break;
                         }
@@ -92,7 +98,7 @@ namespace storm {
                             storm::jani::Variable const& variable = model.getGlobalVariables().getVariable(expressionOrLabelAndBool.first.getLabel());
                             STORM_LOG_THROW(variable.isBooleanVariable(), storm::exceptions::InvalidSettingsException, "Terminal states refer to non-boolean variable '" << expressionOrLabelAndBool.first.getLabel() << "'.");
                             STORM_LOG_THROW(variable.isTransient(), storm::exceptions::InvalidSettingsException, "Terminal states refer to non-transient variable '" << expressionOrLabelAndBool.first.getLabel() << "'.");
-
+                            
                             this->terminalStates.push_back(std::make_pair(this->model.getLabelExpression(variable.asBooleanVariable(), locationVariables), expressionOrLabelAndBool.second));
                         }
                     }
@@ -160,11 +166,15 @@ namespace storm {
             storm::utility::solver::SmtSolverFactory factory;
             std::unique_ptr<storm::solver::SmtSolver> solver = factory.create(model.getExpressionManager());
             
-            std::vector<storm::expressions::Expression> rangeExpressions = model.getAllRangeExpressions();
+            std::vector<std::reference_wrapper<storm::jani::Automaton const>> allAutomata;
+            for (auto const& automaton : model.getAutomata()) {
+                allAutomata.push_back(automaton);
+            }
+            std::vector<storm::expressions::Expression> rangeExpressions = model.getAllRangeExpressions(allAutomata);
             for (auto const& expression : rangeExpressions) {
                 solver->add(expression);
             }
-            solver->add(model.getInitialStatesExpression(true));
+            solver->add(model.getInitialStatesExpression(allAutomata));
             
             // Proceed as long as the solver can still enumerate initial states.
             std::vector<StateType> initialStateIndices;
@@ -188,7 +198,7 @@ namespace storm {
                     blockingExpression = blockingExpression.isInitialized() ? blockingExpression || localBlockingExpression : localBlockingExpression;
                     initialState.setFromInt(integerVariable.bitOffset, integerVariable.bitWidth, static_cast<uint_fast64_t>(variableValue - integerVariable.lowerBound));
                 }
-                                
+                
                 // Gather iterators to the initial locations of all the automata.
                 std::vector<std::set<uint64_t>::const_iterator> initialLocationsIterators;
                 uint64_t currentLocationVariable = 0;
@@ -263,14 +273,17 @@ namespace storm {
                     ++integerIt;
                 }
                 int_fast64_t assignedValue = this->evaluator->asInt(assignmentIt->getAssignedExpression());
-                STORM_LOG_THROW(assignedValue <= integerIt->upperBound, storm::exceptions::WrongFormatException, "The update " << assignmentIt->getExpressionVariable().getName() << " := " << assignmentIt->getAssignedExpression() << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getExpressionVariable().getName() << "'.");
+                if (this->options.isExplorationChecksSet()) {
+                    STORM_LOG_THROW(assignedValue >= integerIt->lowerBound, storm::exceptions::WrongFormatException, "The update " << assignmentIt->getExpressionVariable().getName() << " := " << assignmentIt->getAssignedExpression() << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getExpressionVariable().getName() << "'.");
+                    STORM_LOG_THROW(assignedValue <= integerIt->upperBound, storm::exceptions::WrongFormatException, "The update " << assignmentIt->getExpressionVariable().getName() << " := " << assignmentIt->getAssignedExpression() << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getExpressionVariable().getName() << "'.");
+                }
                 newState.setFromInt(integerIt->bitOffset, integerIt->bitWidth, assignedValue - integerIt->lowerBound);
                 STORM_LOG_ASSERT(static_cast<int_fast64_t>(newState.getAsInt(integerIt->bitOffset, integerIt->bitWidth)) + integerIt->lowerBound == assignedValue, "Writing to the bit vector bucket failed (read " << newState.getAsInt(integerIt->bitOffset, integerIt->bitWidth) << " but wrote " << assignedValue << ").");
             }
             
             // Check that we processed all assignments.
             STORM_LOG_ASSERT(assignmentIt == assignmentIte, "Not all assignments were consumed.");
-
+            
             return newState;
         }
         
@@ -281,7 +294,7 @@ namespace storm {
             
             // Retrieve the locations from the state.
             std::vector<uint64_t> locations = getLocations(*this->state);
-
+            
             // First, construct the state rewards, as we may return early if there are no choices later and we already
             // need the state rewards then.
             std::vector<ValueType> stateRewards(this->rewardVariables.size(), storm::utility::zero<ValueType>());
@@ -327,7 +340,7 @@ namespace storm {
                 // For CTMCs, we need to keep track of the total exit rate to scale the action rewards later. For DTMCs
                 // this is equal to the number of choices, which is why we initialize it like this here.
                 ValueType totalExitRate = this->isDiscreteTimeModel() ? static_cast<ValueType>(totalNumberOfChoices) : storm::utility::zero<ValueType>();
-
+                
                 // Iterate over all choices and combine the probabilities/rates into one choice.
                 for (auto const& choice : allChoices) {
                     for (auto const& stateProbabilityPair : choice) {
@@ -346,7 +359,7 @@ namespace storm {
                         globalChoice.addLabels(choice.getLabels());
                     }
                 }
-             
+                
                 std::vector<ValueType> stateActionRewards(rewardVariables.size(), storm::utility::zero<ValueType>());
                 for (auto const& choice : allChoices) {
                     for (uint_fast64_t rewardVariableIndex = 0; rewardVariableIndex < rewardVariables.size(); ++rewardVariableIndex) {
@@ -354,7 +367,7 @@ namespace storm {
                     }
                 }
                 globalChoice.addRewards(std::move(stateActionRewards));
-                                
+                
                 // Move the newly fused choice in place.
                 allChoices.clear();
                 allChoices.push_back(std::move(globalChoice));
@@ -404,22 +417,30 @@ namespace storm {
                     // Iterate over all updates of the current command.
                     ValueType probabilitySum = storm::utility::zero<ValueType>();
                     for (auto const& destination : edge.getDestinations()) {
-                        // Obtain target state index and add it to the list of known states. If it has not yet been
-                        // seen, we also add it to the set of states that have yet to be explored.
-                        StateType stateIndex = stateToIdCallback(applyUpdate(state, destination, this->variableInformation.locationVariables[automatonIndex]));
-                        
-                        // Update the choice by adding the probability/target state to it.
                         ValueType probability = this->evaluator->asRational(destination.getProbability());
-                        probability = exitRate ? exitRate.get() * probability : probability;
-                        choice.addProbability(stateIndex, probability);
-                        probabilitySum += probability;
+                        
+                        if (probability != storm::utility::zero<ValueType>()) {
+                            // Obtain target state index and add it to the list of known states. If it has not yet been
+                            // seen, we also add it to the set of states that have yet to be explored.
+                            StateType stateIndex = stateToIdCallback(applyUpdate(state, destination, this->variableInformation.locationVariables[automatonIndex]));
+                            
+                            // Update the choice by adding the probability/target state to it.
+                            probability = exitRate ? exitRate.get() * probability : probability;
+                            choice.addProbability(stateIndex, probability);
+                            
+                            if (this->options.isExplorationChecksSet()) {
+                                probabilitySum += probability;
+                            }
+                        }
                     }
                     
                     // Create the state-action reward for the newly created choice.
                     performTransientAssignments(edge.getAssignments().getTransientAssignments(), [&choice] (ValueType const& value) { choice.addReward(value); } );
-
-                    // Check that the resulting distribution is in fact a distribution.
-                    STORM_LOG_THROW(!this->isDiscreteTimeModel() || this->comparator.isOne(probabilitySum), storm::exceptions::WrongFormatException, "Probabilities do not sum to one for edge (actually sum to " << probabilitySum << ").");
+                    
+                    if (this->options.isExplorationChecksSet()) {
+                        // Check that the resulting distribution is in fact a distribution.
+                        STORM_LOG_THROW(!this->isDiscreteTimeModel() || this->comparator.isOne(probabilitySum), storm::exceptions::WrongFormatException, "Probabilities do not sum to one for edge (actually sum to " << probabilitySum << ").");
+                    }
                 }
                 
                 ++automatonIndex;
@@ -437,8 +458,10 @@ namespace storm {
                 
                 // Only process this action, if there is at least one feasible solution.
                 if (!enabledEdges.empty()) {
-                    // Check whether a global variable is written multiple times in any combination.
-                    checkGlobalVariableWritesValid(enabledEdges);
+                    if (this->options.isExplorationChecksSet()) {
+                        // Check whether a global variable is written multiple times in any combination.
+                        checkGlobalVariableWritesValid(enabledEdges);
+                    }
                     
                     std::vector<std::vector<storm::jani::Edge const*>::const_iterator> iteratorList(enabledEdges.size());
                     
@@ -467,11 +490,14 @@ namespace storm {
                                     
                                     // If the new state was already found as a successor state, update the probability
                                     // and otherwise insert it.
-                                    auto targetStateIt = newTargetStates->find(newTargetState);
-                                    if (targetStateIt != newTargetStates->end()) {
-                                        targetStateIt->second += stateProbabilityPair.second * this->evaluator->asRational(destination.getProbability());
-                                    } else {
-                                        newTargetStates->emplace(newTargetState, stateProbabilityPair.second * this->evaluator->asRational(destination.getProbability()));
+                                    auto probability = stateProbabilityPair.second * this->evaluator->asRational(destination.getProbability());
+                                    if (probability != storm::utility::zero<ValueType>()) {
+                                        auto targetStateIt = newTargetStates->find(newTargetState);
+                                        if (targetStateIt != newTargetStates->end()) {
+                                            targetStateIt->second += probability;
+                                        } else {
+                                            newTargetStates->emplace(newTargetState, probability);
+                                        }
                                     }
                                 }
                                 
@@ -500,17 +526,22 @@ namespace storm {
                         
                         // Add the rewards to the choice.
                         choice.addRewards(std::move(stateActionRewards));
-
+                        
                         // Add the probabilities/rates to the newly created choice.
                         ValueType probabilitySum = storm::utility::zero<ValueType>();
                         for (auto const& stateProbabilityPair : *newTargetStates) {
                             StateType actualIndex = stateToIdCallback(stateProbabilityPair.first);
                             choice.addProbability(actualIndex, stateProbabilityPair.second);
-                            probabilitySum += stateProbabilityPair.second;
+                            
+                            if (this->options.isExplorationChecksSet()) {
+                                probabilitySum += stateProbabilityPair.second;
+                            }
                         }
                         
-                        // Check that the resulting distribution is in fact a distribution.
-                        STORM_LOG_THROW(!this->isDiscreteTimeModel() || !this->comparator.isConstant(probabilitySum) || this->comparator.isOne(probabilitySum), storm::exceptions::WrongFormatException, "Sum of update probabilities do not some to one for some command (actually sum to " << probabilitySum << ").");
+                        if (this->options.isExplorationChecksSet()) {
+                            // Check that the resulting distribution is in fact a distribution.
+                            STORM_LOG_THROW(!this->isDiscreteTimeModel() || !this->comparator.isConstant(probabilitySum) || this->comparator.isOne(probabilitySum), storm::exceptions::WrongFormatException, "Sum of update probabilities do not sum to one for some command (actually sum to " << probabilitySum << ").");
+                        }
                         
                         // Dispose of the temporary maps.
                         delete currentTargetStates;
@@ -601,7 +632,7 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
-        RewardModelInformation JaniNextStateGenerator<ValueType, StateType>::getRewardModelInformation(uint64_t const& index) const {
+        storm::builder::RewardModelInformation JaniNextStateGenerator<ValueType, StateType>::getRewardModelInformation(uint64_t const& index) const {
             return rewardModelInformation[index];
         }
         
@@ -620,9 +651,9 @@ namespace storm {
             // create a list of boolean transient variables and the expressions that define them.
             std::unordered_map<storm::expressions::Variable, storm::expressions::Expression> transientVariableToExpressionMap;
             for (auto const& variable : model.getGlobalVariables().getTransientVariables()) {
-                if (variable->isBooleanVariable()) {
-                    if (this->options.isBuildAllLabelsSet() || this->options.getLabelNames().find(variable->getName()) != this->options.getLabelNames().end()) {
-                        transientVariableToExpressionMap[variable->getExpressionVariable()] = model.getLabelExpression(variable->asBooleanVariable(), locationVariables);
+                if (variable.isBooleanVariable()) {
+                    if (this->options.isBuildAllLabelsSet() || this->options.getLabelNames().find(variable.getName()) != this->options.getLabelNames().end()) {
+                        transientVariableToExpressionMap[variable.getExpressionVariable()] = model.getLabelExpression(variable.asBooleanVariable(), locationVariables);
                     }
                 }
             }
@@ -689,7 +720,7 @@ namespace storm {
                         }
                     }
                 }
-
+                
                 for (auto const& edge : automaton.getEdges()) {
                     auto rewardVariableIt = rewardVariables.begin();
                     auto rewardVariableIte = rewardVariables.end();
@@ -717,35 +748,35 @@ namespace storm {
 #ifdef STORM_HAVE_CARL
             if (!std::is_same<ValueType, storm::RationalFunction>::value && model.hasUndefinedConstants()) {
 #else
-            if (model.hasUndefinedConstants()) {
+                if (model.hasUndefinedConstants()) {
 #endif
-                std::vector<std::reference_wrapper<storm::jani::Constant const>> undefinedConstants = model.getUndefinedConstants();
-                std::stringstream stream;
-                bool printComma = false;
-                for (auto const& constant : undefinedConstants) {
-                    if (printComma) {
-                        stream << ", ";
-                    } else {
-                        printComma = true;
+                    std::vector<std::reference_wrapper<storm::jani::Constant const>> undefinedConstants = model.getUndefinedConstants();
+                    std::stringstream stream;
+                    bool printComma = false;
+                    for (auto const& constant : undefinedConstants) {
+                        if (printComma) {
+                            stream << ", ";
+                        } else {
+                            printComma = true;
+                        }
+                        stream << constant.get().getName() << " (" << constant.get().getType() << ")";
                     }
-                    stream << constant.get().getName() << " (" << constant.get().getType() << ")";
+                    stream << ".";
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Program still contains these undefined constants: " + stream.str());
                 }
-                stream << ".";
-                STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Program still contains these undefined constants: " + stream.str());
-            }
                 
 #ifdef STORM_HAVE_CARL
-            else if (std::is_same<ValueType, storm::RationalFunction>::value && !model.undefinedConstantsAreGraphPreserving()) {
-                STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The input model contains undefined constants that influence the graph structure of the underlying model, which is not allowed.");
+                else if (std::is_same<ValueType, storm::RationalFunction>::value && !model.undefinedConstantsAreGraphPreserving()) {
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The input model contains undefined constants that influence the graph structure of the underlying model, which is not allowed.");
+                }
+#endif
             }
+            
+            template class JaniNextStateGenerator<double>;
+            
+#ifdef STORM_HAVE_CARL
+            template class JaniNextStateGenerator<storm::RationalNumber>;
+            template class JaniNextStateGenerator<storm::RationalFunction>;
 #endif
         }
-        
-        template class JaniNextStateGenerator<double>;
-
-#ifdef STORM_HAVE_CARL
-        template class JaniNextStateGenerator<storm::RationalNumber>;
-        template class JaniNextStateGenerator<storm::RationalFunction>;
-#endif
     }
-}

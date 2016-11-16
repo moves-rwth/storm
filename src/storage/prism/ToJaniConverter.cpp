@@ -14,7 +14,7 @@ namespace storm {
         
         storm::jani::Model ToJaniConverter::convert(storm::prism::Program const& program, bool allVariablesGlobal) const {
             std::shared_ptr<storm::expressions::ExpressionManager> manager = program.getManager().getSharedPointer();
-            
+                        
             // Start by creating an empty JANI model.
             storm::jani::ModelType modelType;
             switch (program.getModelType()) {
@@ -100,7 +100,7 @@ namespace storm {
             std::vector<storm::jani::Assignment> transientLocationAssignments;
             for (auto const& rewardModel : program.getRewardModels()) {
                 auto newExpressionVariable = manager->declareRationalVariable(rewardModel.getName().empty() ? "default" : rewardModel.getName());
-                storm::jani::RealVariable const& newTransientVariable = janiModel.addVariable(storm::jani::RealVariable(rewardModel.getName().empty() ? "defaultReward" : rewardModel.getName(), newExpressionVariable, manager->rational(0.0), true));
+                storm::jani::RealVariable const& newTransientVariable = janiModel.addVariable(storm::jani::RealVariable(rewardModel.getName().empty() ? "default" : rewardModel.getName(), newExpressionVariable, manager->rational(0.0), true));
                 
                 if (rewardModel.hasStateRewards()) {
                     storm::expressions::Expression transientLocationExpression;
@@ -218,12 +218,15 @@ namespace storm {
                     // Create the edge object so we can add transient assignments.
                     storm::jani::Edge newEdge(onlyLocationIndex, janiModel.getActionIndex(command.getActionName()), rateExpression, command.getGuardExpression(), destinations);
                     
-                    // Then add the transient assignments for the rewards.
+                    // Then add the transient assignments for the rewards. Note that we may do this only for the first
+                    // module that has this action, so we remove the assignments from the global list of assignments
+                    // to add after adding them to the created edge.
                     auto transientEdgeAssignmentsToAdd = transientEdgeAssignments.find(janiModel.getActionIndex(command.getActionName()));
                     if (transientEdgeAssignmentsToAdd != transientEdgeAssignments.end()) {
                         for (auto const& assignment : transientEdgeAssignmentsToAdd->second) {
                             newEdge.addTransientAssignment(assignment);
                         }
+                        transientEdgeAssignments.erase(transientEdgeAssignmentsToAdd);
                     }
                     
                     // Finally add the constructed edge.

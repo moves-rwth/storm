@@ -13,5 +13,8 @@ namespace storm {
         std::string to_string(ModelType const& type);
         std::ostream& operator<<(std::ostream& stream, ModelType const& type);
         
+        bool isDeterministicModel(ModelType const& modelType);
+        bool isDiscreteTimeModel(ModelType const& modelType);
+        
     }
 }

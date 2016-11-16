@@ -34,7 +34,7 @@ namespace storm {
         }
 
         template<typename ValueType>
-        void MinMaxLinearEquationSolver<ValueType>::repeatedMultiply( std::vector<ValueType>& x, std::vector<ValueType>* b, uint_fast64_t n) const {
+        void MinMaxLinearEquationSolver<ValueType>::repeatedMultiply(std::vector<ValueType>& x, std::vector<ValueType>* b, uint_fast64_t n) const {
             STORM_LOG_THROW(isSet(this->direction), storm::exceptions::IllegalFunctionCallException, "Optimization direction not set.");
             return repeatedMultiply(convert(this->direction), x, b, n);
         }

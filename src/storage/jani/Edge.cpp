@@ -28,6 +28,10 @@ namespace storm {
             return rate.get();
         }
         
+        boost::optional<storm::expressions::Expression> const& Edge::getOptionalRate() const {
+            return rate;
+        }
+        
         void Edge::setRate(storm::expressions::Expression const& rate) {
             this->rate = rate;
         }
@@ -114,13 +118,13 @@ namespace storm {
         }
         
         void Edge::pushAssignmentsToDestinations() {
-            assert(!destinations.empty());
+            STORM_LOG_ASSERT(!destinations.empty(), "Need non-empty destinations for this transformation.");
             for (auto const& assignment : this->getAssignments()) {
                 for (auto& destination : destinations) {
                     destination.addAssignment(assignment);
                 }
             }
-            assignments = OrderedAssignments();
+            this->assignments.clear();
         }
         
         boost::container::flat_set<storm::expressions::Variable> const& Edge::getWrittenGlobalVariables() const {
@@ -141,6 +145,15 @@ namespace storm {
         bool Edge::hasTransientEdgeDestinationAssignments() const {
             for (auto const& destination : this->getDestinations()) {
                 if (destination.hasTransientAssignment()) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        
+        bool Edge::usesAssignmentLevels() const {
+            for (auto const& destination : this->getDestinations()) {
+                if (destination.usesAssignmentLevels()) {
                     return true;
                 }
             }

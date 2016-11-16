@@ -39,6 +39,11 @@ namespace storm {
              * Retrieves the rate of this edge. Note that calling this is only valid if the edge has an associated rate.
              */
             storm::expressions::Expression const& getRate() const;
+            
+            /*!
+             * Retrieves an optional that stores the rate if there is any and none otherwise.
+             */
+            boost::optional<storm::expressions::Expression> const& getOptionalRate() const;
 
             /*!
              * Sets a new rate for this edge.
@@ -102,7 +107,8 @@ namespace storm {
 
             /*!
              * Finds the transient assignments common to all destinations and lifts them to the edge. Afterwards, these
-             * assignments are no longer contained in the destination.
+             * assignments are no longer contained in the destination. Note that this may modify the semantics of the
+             * model if assignment levels are being used somewhere in the model.
              */
             void liftTransientDestinationAssignments();
             
@@ -120,6 +126,11 @@ namespace storm {
              * Retrieves whether there is any transient edge destination assignment in the edge.
              */
             bool hasTransientEdgeDestinationAssignments() const;
+            
+            /*!
+             * Retrieves whether the edge uses an assignment level other than zero.
+             */
+            bool usesAssignmentLevels() const;
             
         private:
             /// The index of the source location.

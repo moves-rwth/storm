@@ -8,6 +8,7 @@
 
 #include "src/exceptions/NotImplementedException.h"
 #include "src/exceptions/InvalidSettingsException.h"
+#include "src/exceptions/UnexpectedException.h"
 
 namespace storm {
     namespace cli {
@@ -123,30 +124,30 @@ namespace storm {
 
             for (auto const& property : formulas) {
                 std::cout << std::endl << "Model checking property: " << property << " ...";
-                bool supportFormula;
+                bool formulaSupported = false;
                 std::unique_ptr<storm::modelchecker::CheckResult> result;
 
-                if(program.getModelType() == storm::prism::Program::ModelType::DTMC) {
+                if (program.getModelType() == storm::prism::Program::ModelType::DTMC) {
                     storm::modelchecker::SparseExplorationModelChecker<storm::models::sparse::Dtmc<ValueType>> checker(program);
                     storm::modelchecker::CheckTask<storm::logic::Formula> task(*property.getFilter().getFormula(), onlyInitialStatesRelevant);
 
-                    supportFormula = checker.canHandle(task);
-                    if (supportFormula) {
+                    formulaSupported = checker.canHandle(task);
+                    if (formulaSupported) {
                         result = checker.check(task);
                     }
-                } else if(program.getModelType() == storm::prism::Program::ModelType::MDP) {
+                } else if (program.getModelType() == storm::prism::Program::ModelType::MDP) {
                     storm::modelchecker::SparseExplorationModelChecker<storm::models::sparse::Mdp<ValueType>> checker(program);
                     storm::modelchecker::CheckTask<storm::logic::Formula> task(*property.getFilter().getFormula(), onlyInitialStatesRelevant);
 
-                    supportFormula = checker.canHandle(task);
-                    if (supportFormula) {
+                    formulaSupported = checker.canHandle(task);
+                    if (formulaSupported) {
                         result = checker.check(task);
                     }
                 } else {
                     // Should be catched before.
                     assert(false);
                 }
-                if(!supportFormula) {
+                if (!formulaSupported) {
                     std::cout << " skipped, because the formula cannot be handled by the selected engine/method." << std::endl;
                 }
 
@@ -264,6 +265,8 @@ namespace storm {
             auto formulas = formulasInProperties(properties);
             // Start by building the model.
             std::shared_ptr<storm::models::ModelBase> markovModel = buildSparseModel<ValueType>(model, formulas);
+
+            STORM_LOG_THROW(markovModel, storm::exceptions::UnexpectedException, "The model was not successfully built.");
             
             // Print some information about the model.
             markovModel->printModelInformationToStream(std::cout);
