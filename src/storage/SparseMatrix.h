@@ -565,6 +565,14 @@ namespace storm {
             std::vector<index_type> const& getRowGroupIndices() const;
             
             /*!
+             * Returns the indices of the rows that belong to one of the selected row groups.
+             *
+             * @param groups the selected row groups
+             * @return a bit vector that is true at position i iff the row group of row i is selected.
+             */
+            storm::storage::BitVector getRowIndicesOfRowGroups(storm::storage::BitVector const& groups) const;
+            
+            /*!
              * This function makes the given rows absorbing.
              *
              * @param rows A bit vector indicating which rows are to be made absorbing.

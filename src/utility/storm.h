@@ -344,6 +344,22 @@ namespace storm {
     }
 
     template<typename ValueType>
+    std::unique_ptr<storm::modelchecker::CheckResult> verifySparseMarkovAutomaton(std::shared_ptr<storm::models::sparse::MarkovAutomaton<ValueType>> ma, storm::modelchecker::CheckTask<storm::logic::Formula> const& task) {
+        std::unique_ptr<storm::modelchecker::CheckResult> result;
+        // Close the MA, if it is not already closed.
+        if (!ma->isClosed()) {
+            ma->close();
+        }
+        storm::modelchecker::SparseMarkovAutomatonCslModelChecker<storm::models::sparse::MarkovAutomaton<ValueType>> modelchecker(*ma);
+        if (modelchecker.canHandle(task)) {
+            result = modelchecker.check(task);
+        } else {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The property " << task.getFormula() << " is not supported.");
+        }
+        return result;
+    }
+
+    template<typename ValueType>
     std::unique_ptr<storm::modelchecker::CheckResult> verifySparseModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> model, std::shared_ptr<storm::logic::Formula const> const& formula, bool onlyInitialStatesRelevant = false) {
         storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> task(*formula, onlyInitialStatesRelevant);
 
@@ -355,18 +371,11 @@ namespace storm {
         } else if (model->getType() == storm::models::ModelType::Ctmc) {
             result = verifySparseCtmc(model->template as<storm::models::sparse::Ctmc<ValueType>>(), task);
         } else if (model->getType() == storm::models::ModelType::MarkovAutomaton) {
-            std::shared_ptr<storm::models::sparse::MarkovAutomaton<ValueType>> ma = model->template as<storm::models::sparse::MarkovAutomaton<ValueType>>();
-            // Close the MA, if it is not already closed.
-            if (!ma->isClosed()) {
-                ma->close();
-            }
-            storm::modelchecker::SparseMarkovAutomatonCslModelChecker<storm::models::sparse::MarkovAutomaton<ValueType>> modelchecker(*ma);
-            result = modelchecker.check(task);
+            result = verifySparseMarkovAutomaton(model->template as<storm::models::sparse::MarkovAutomaton<ValueType>>(), task);
         } else {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The model type " << model->getType() << " is not supported.");
         }
         return result;
-
     }
 
 #ifdef STORM_HAVE_CARL

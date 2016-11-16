@@ -291,6 +291,11 @@ namespace storm {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Jani currently does not support conversion of an LRA reward formula");
         }
         
+        
+        boost::any FormulaToJaniJson::visit(storm::logic::MultiObjectiveFormula const& f, boost::any const& data) const {
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Jani currently does not support conversion of a multi-objective formula");
+        }
+        
         boost::any FormulaToJaniJson::visit(storm::logic::NextFormula const& f, boost::any const& data) const {
             modernjson::json opDecl;
             opDecl["op"] = "U";
@@ -369,6 +374,11 @@ namespace storm {
             }
             return opDecl;
         }
+        
+        boost::any FormulaToJaniJson::visit(storm::logic::TotalRewardFormula const& f, boost::any const& data) const {
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Jani currently does not support a total reward formula");
+        }
+
         
         boost::any FormulaToJaniJson::visit(storm::logic::UnaryBooleanStateFormula const& f, boost::any const& data) const {
             modernjson::json opDecl;

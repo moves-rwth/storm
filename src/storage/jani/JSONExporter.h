@@ -49,9 +49,11 @@ namespace storm {
             virtual boost::any visit(storm::logic::InstantaneousRewardFormula const& f, boost::any const& data) const;
             virtual boost::any visit(storm::logic::LongRunAverageOperatorFormula const& f, boost::any const& data) const;
             virtual boost::any visit(storm::logic::LongRunAverageRewardFormula const& f, boost::any const& data) const;
+            virtual boost::any visit(storm::logic::MultiObjectiveFormula const& f, boost::any const& data) const;
             virtual boost::any visit(storm::logic::NextFormula const& f, boost::any const& data) const;
             virtual boost::any visit(storm::logic::ProbabilityOperatorFormula const& f, boost::any const& data) const;
             virtual boost::any visit(storm::logic::RewardOperatorFormula const& f, boost::any const& data) const;
+            virtual boost::any visit(storm::logic::TotalRewardFormula const& f, boost::any const& data) const;
             virtual boost::any visit(storm::logic::UnaryBooleanStateFormula const& f, boost::any const& data) const;
             virtual boost::any visit(storm::logic::UntilFormula const& f, boost::any const& data) const;
       

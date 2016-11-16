@@ -95,29 +95,26 @@ namespace storm {
             virtual bool solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const override;
             virtual void multiply(std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const override;
 
-            GmmxxLinearEquationSolverSettings<ValueType>& getSettings();
+            void setSettings(GmmxxLinearEquationSolverSettings<ValueType> const& newSettings);
             GmmxxLinearEquationSolverSettings<ValueType> const& getSettings() const;
 
-            virtual bool allocateAuxMemory(LinearEquationSolverOperation operation) const override;
-            virtual bool deallocateAuxMemory(LinearEquationSolverOperation operation) const override;
-            virtual bool reallocateAuxMemory(LinearEquationSolverOperation operation) const override;
-            virtual bool hasAuxMemory(LinearEquationSolverOperation operation) const override;
+            /*
+             * Clears auxiliary data that has possibly been stored during previous calls of the solver.
+             */
+            virtual void resetAuxiliaryData() const override;
 
 
         private:
             /*!
              * Solves the linear equation system A*x = b given by the parameters using the Jacobi method.
              *
-             * @param A The matrix specifying the coefficients of the linear equations.
              * @param x The solution vector x. The initial values of x represent a guess of the real values to the
              * solver, but may be set to zero.
              * @param b The right-hand side of the equation system.
              * @return The number of iterations needed until convergence if the solver converged and
              * maximalNumberOfIteration otherwise.
-             * @param multiplyResult If non-null, this memory is used as a scratch memory. If given, the length of this
-             * vector must be equal to the number of rows of A.
              */
-            uint_fast64_t solveLinearEquationSystemWithJacobi(storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
+            uint_fast64_t solveLinearEquationSystemWithJacobi(std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
             
             virtual uint64_t getMatrixRowCount() const override;
             virtual uint64_t getMatrixColumnCount() const override;
@@ -130,14 +127,14 @@ namespace storm {
             // the pointer refers to localA.
             storm::storage::SparseMatrix<ValueType> const* A;
             
-            // The (gmm++) matrix associated with this equation solver.
-            std::unique_ptr<gmm::csr_matrix<ValueType>> gmmxxMatrix;
-            
             // The settings used by the solver.
             GmmxxLinearEquationSolverSettings<ValueType> settings;
             
-            // Auxiliary storage for the Jacobi method.
-            mutable std::unique_ptr<std::vector<ValueType>> auxiliaryJacobiMemory;
+            // Auxiliary data obtained during solving
+            mutable std::unique_ptr<gmm::csr_matrix<ValueType>> gmmxxA;
+            mutable std::unique_ptr<gmm::ilu_precond<gmm::csr_matrix<ValueType>>> iluPreconditioner;
+            mutable std::unique_ptr<gmm::diagonal_precond<gmm::csr_matrix<ValueType>>> diagonalPreconditioner;
+            mutable std::unique_ptr<std::pair<gmm::csr_matrix<ValueType>, std::vector<ValueType>>> jacobiDecomposition;
         };
         
         template<typename ValueType>

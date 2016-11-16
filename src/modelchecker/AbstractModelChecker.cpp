@@ -30,6 +30,8 @@ namespace storm {
             STORM_LOG_THROW(this->canHandle(checkTask), storm::exceptions::InvalidArgumentException, "The model checker is not able to check the formula '" << formula << "'.");
             if (formula.isStateFormula()) {
                 return this->checkStateFormula(checkTask.substituteFormula(formula.asStateFormula()));
+            } else if (formula.isMultiObjectiveFormula()){
+                return this->checkMultiObjectiveFormula(checkTask.substituteFormula(formula.asMultiObjectiveFormula()));
             }
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The given formula '" << formula << "' is invalid.");
         }
@@ -279,6 +281,11 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The given formula '" << stateFormula << "' is invalid.");
             }
             return subResult;
+        }
+
+        template<typename ModelType>
+        std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::checkMultiObjectiveFormula(CheckTask<storm::logic::MultiObjectiveFormula, ValueType> const& checkTask) {
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker does not support the formula: " << checkTask.getFormula() << ".");
         }
 
         ///////////////////////////////////////////////

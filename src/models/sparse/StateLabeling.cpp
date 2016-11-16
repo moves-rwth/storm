@@ -96,6 +96,18 @@ namespace storm {
                 STORM_LOG_THROW(this->containsLabel(label), storm::exceptions::InvalidArgumentException, "The label " << label << " is invalid for the labeling of the model.");
                 return this->labelings[nameToLabelingIndexMap.at(label)];
             }
+
+            void StateLabeling::setStates(std::string const& label, storage::BitVector const& labeling) {
+                STORM_LOG_THROW(this->containsLabel(label), storm::exceptions::InvalidArgumentException, "The label " << label << " is invalid for the labeling of the model.");
+                STORM_LOG_THROW(labeling.size() == stateCount, storm::exceptions::InvalidArgumentException, "Labeling vector has invalid size.");
+                this->labelings[nameToLabelingIndexMap.at(label)] = labeling;
+            }
+            
+            void StateLabeling::setStates(std::string const& label, storage::BitVector&& labeling) {
+                STORM_LOG_THROW(this->containsLabel(label), storm::exceptions::InvalidArgumentException, "The label " << label << " is invalid for the labeling of the model.");
+                STORM_LOG_THROW(labeling.size() == stateCount, storm::exceptions::InvalidArgumentException, "Labeling vector has invalid size.");
+                this->labelings[nameToLabelingIndexMap.at(label)] = labeling;
+            }
             
             std::size_t StateLabeling::getSizeInBytes() const {
                 std::size_t result = sizeof(*this);

@@ -72,6 +72,10 @@ namespace storm {
             virtual std::unique_ptr<CheckResult> checkTimeOperatorFormula(CheckTask<storm::logic::TimeOperatorFormula, ValueType> const& checkTask);
             virtual std::unique_ptr<CheckResult> checkLongRunAverageOperatorFormula(CheckTask<storm::logic::LongRunAverageOperatorFormula, ValueType> const& checkTask);
             virtual std::unique_ptr<CheckResult> checkUnaryBooleanStateFormula(CheckTask<storm::logic::UnaryBooleanStateFormula, ValueType> const& checkTask);
+  
+            // The methods to check multi-objective formulas.
+            virtual std::unique_ptr<CheckResult> checkMultiObjectiveFormula(CheckTask<storm::logic::MultiObjectiveFormula, ValueType> const& checkTask);
+                  
         };
     }
 }

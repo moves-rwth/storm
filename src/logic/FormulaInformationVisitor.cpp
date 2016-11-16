@@ -61,6 +61,14 @@ namespace storm {
             return FormulaInformation();
         }
         
+        boost::any FormulaInformationVisitor::visit(MultiObjectiveFormula const& f, boost::any const& data) const {
+            FormulaInformation result;
+            for(auto const& subF : f.getSubformulas()){
+                result.join(boost::any_cast<FormulaInformation>(subF->accept(*this)));
+            }
+            return result;
+        }
+        
         boost::any FormulaInformationVisitor::visit(NextFormula const& f, boost::any const& data) const {
             return boost::any_cast<FormulaInformation>(f.getSubformula().accept(*this)).setContainsNextFormula();
         }
@@ -71,6 +79,10 @@ namespace storm {
         
         boost::any FormulaInformationVisitor::visit(RewardOperatorFormula const& f, boost::any const& data) const {
             return boost::any_cast<FormulaInformation>(f.getSubformula().accept(*this)).setContainsRewardOperator();
+        }
+        
+        boost::any FormulaInformationVisitor::visit(TotalRewardFormula const& f, boost::any const& data) const {
+            return FormulaInformation();
         }
         
         boost::any FormulaInformationVisitor::visit(UnaryBooleanStateFormula const& f, boost::any const& data) const {

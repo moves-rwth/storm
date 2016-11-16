@@ -14,21 +14,21 @@ namespace storm {
     namespace solver {
         
         template<typename ValueType>
-        LinearEquationSolver<ValueType>::LinearEquationSolver() : auxiliaryRepeatedMultiplyMemory(nullptr) {
+        LinearEquationSolver<ValueType>::LinearEquationSolver() {
             // Intentionally left empty.
         }
         
         template<typename ValueType>
         void LinearEquationSolver<ValueType>::repeatedMultiply(std::vector<ValueType>& x, std::vector<ValueType> const* b, uint_fast64_t n) const {
-            bool allocatedAuxMemory = !this->hasAuxMemory(LinearEquationSolverOperation::MultiplyRepeatedly);
-            if (allocatedAuxMemory) {
-                this->allocateAuxMemory(LinearEquationSolverOperation::MultiplyRepeatedly);
+            
+            if(!auxiliaryRowVector) {
+                auxiliaryRowVector = std::make_unique<std::vector<ValueType>>(getMatrixRowCount());
             }
             
             // Set up some temporary variables so that we can just swap pointers instead of copying the result after
             // each iteration.
             std::vector<ValueType>* currentX = &x;
-            std::vector<ValueType>* nextX = auxiliaryRepeatedMultiplyMemory.get();
+            std::vector<ValueType>* nextX = auxiliaryRowVector.get();
             
             // Now perform matrix-vector multiplication as long as we meet the bound.
             for (uint_fast64_t i = 0; i < n; ++i) {
@@ -38,56 +38,16 @@ namespace storm {
             
             // If we performed an odd number of repetitions, we need to swap the contents of currentVector and x,
             // because the output is supposed to be stored in the input vector x.
-            if (currentX == auxiliaryRepeatedMultiplyMemory.get()) {
+            if (currentX == auxiliaryRowVector.get()) {
                 std::swap(x, *currentX);
             }
-
-            // If we allocated auxiliary memory, we need to dispose of it now.
-            if (allocatedAuxMemory) {
-                this->deallocateAuxMemory(LinearEquationSolverOperation::MultiplyRepeatedly);
-            }
         }
         
         template<typename ValueType>
-        bool LinearEquationSolver<ValueType>::allocateAuxMemory(LinearEquationSolverOperation operation) const {
-            if (!auxiliaryRepeatedMultiplyMemory) {
-                auxiliaryRepeatedMultiplyMemory = std::make_unique<std::vector<ValueType>>(this->getMatrixColumnCount());
-                return true;
-            }
-            return false;
+        void LinearEquationSolver<ValueType>::resetAuxiliaryData() const {
+            auxiliaryRowVector.reset();
         }
-        
-        template<typename ValueType>
-        bool LinearEquationSolver<ValueType>::deallocateAuxMemory(LinearEquationSolverOperation operation) const {
-            if (operation == LinearEquationSolverOperation::MultiplyRepeatedly) {
-                if (auxiliaryRepeatedMultiplyMemory) {
-                    auxiliaryRepeatedMultiplyMemory.reset();
-                    return true;
-                }
-            }
-            return false;
-        }
-        
-        template<typename ValueType>
-        bool LinearEquationSolver<ValueType>::reallocateAuxMemory(LinearEquationSolverOperation operation) const {
-            bool result = false;
-            if (operation == LinearEquationSolverOperation::MultiplyRepeatedly) {
-                if (auxiliaryRepeatedMultiplyMemory) {
-                    result = auxiliaryRepeatedMultiplyMemory->size() != this->getMatrixColumnCount();
-                    auxiliaryRepeatedMultiplyMemory->resize(this->getMatrixColumnCount());
-                }
-            }
-            return result;
-        }
-        
-        template<typename ValueType>
-        bool LinearEquationSolver<ValueType>::hasAuxMemory(LinearEquationSolverOperation operation) const {
-            if (operation == LinearEquationSolverOperation::MultiplyRepeatedly) {
-                return static_cast<bool>(auxiliaryRepeatedMultiplyMemory);
-            }
-            return false;
-        }
-        
+      
         template<typename ValueType>
         std::unique_ptr<LinearEquationSolver<ValueType>> LinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType>&& matrix) const {
             return create(matrix);

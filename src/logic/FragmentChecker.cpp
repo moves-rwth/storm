@@ -159,6 +159,27 @@ namespace storm {
             return inherited.getSpecification().areLongRunAverageRewardFormulasAllowed();
         }
         
+        boost::any FragmentChecker::visit(MultiObjectiveFormula const& f, boost::any const& data) const {
+            InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
+            
+            FragmentSpecification subFormulaFragment(inherited.getSpecification());
+            if(!inherited.getSpecification().areNestedMultiObjectiveFormulasAllowed()){
+                subFormulaFragment.setMultiObjectiveFormulasAllowed(false);
+            }
+            if(!inherited.getSpecification().areNestedOperatorsInsideMultiObjectiveFormulasAllowed()){
+                subFormulaFragment.setNestedOperatorsAllowed(false);
+            }
+            
+            bool result = inherited.getSpecification().areMultiObjectiveFormulasAllowed();
+            for(auto const& subF : f.getSubformulas()){
+                if(inherited.getSpecification().areOperatorsAtTopLevelOfMultiObjectiveFormulasRequired()){
+                    result = result && subF->isOperatorFormula();
+                }
+                result = result && boost::any_cast<bool>(subF->accept(*this, InheritedInformation(subFormulaFragment)));
+            }
+            return result;
+        }
+        
         boost::any FragmentChecker::visit(NextFormula const& f, boost::any const& data) const {
             InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
             bool result = inherited.getSpecification().areNextFormulasAllowed();
@@ -196,6 +217,11 @@ namespace storm {
                 result = result && boost::any_cast<bool>(f.getSubformula().accept(*this, data));
             }
             return result;
+        }
+        
+        boost::any FragmentChecker::visit(TotalRewardFormula const& f, boost::any const& data) const {
+            InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
+            return inherited.getSpecification().areTotalRewardFormulasAllowed();
         }
         
         boost::any FragmentChecker::visit(UnaryBooleanStateFormula const& f, boost::any const& data) const {

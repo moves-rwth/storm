@@ -43,7 +43,8 @@ namespace storm {
                     ("max", 4)
                     ("F", 5)
                     ("G", 6)
-                    ("X", 7);
+                    ("X", 7)
+                    ("multi", 8);
                 }
             };
             
@@ -151,8 +152,11 @@ namespace storm {
             
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> rewardPathFormula;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> cumulativeRewardFormula;
+            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> totalRewardFormula;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> instantaneousRewardFormula;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> longRunAverageRewardFormula;
+            
+            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> multiObjectiveFormula;
             
             // Parser that is used to recognize doubles only (as opposed to Spirit's double_ parser).
             boost::spirit::qi::real_parser<double, boost::spirit::qi::strict_real_policies<double>> strict_double;
@@ -160,6 +164,7 @@ namespace storm {
             // Methods that actually create the expression objects.
             std::shared_ptr<storm::logic::Formula const> createInstantaneousRewardFormula(boost::variant<unsigned, double> const& timeBound) const;
             std::shared_ptr<storm::logic::Formula const> createCumulativeRewardFormula(boost::variant<unsigned, double> const& timeBound) const;
+            std::shared_ptr<storm::logic::Formula const> createTotalRewardFormula() const;
             std::shared_ptr<storm::logic::Formula const> createLongRunAverageRewardFormula() const;
             std::shared_ptr<storm::logic::Formula const> createAtomicExpressionFormula(storm::expressions::Expression const& expression) const;
             std::shared_ptr<storm::logic::Formula const> createBooleanLiteralFormula(bool literal) const;
@@ -176,6 +181,7 @@ namespace storm {
             std::shared_ptr<storm::logic::Formula const> createProbabilityOperatorFormula(storm::logic::OperatorInformation const& operatorInformation, std::shared_ptr<storm::logic::Formula const> const& subformula);
             std::shared_ptr<storm::logic::Formula const> createBinaryBooleanStateFormula(std::shared_ptr<storm::logic::Formula const> const& leftSubformula, std::shared_ptr<storm::logic::Formula const> const& rightSubformula, storm::logic::BinaryBooleanStateFormula::OperatorType operatorType);
             std::shared_ptr<storm::logic::Formula const> createUnaryBooleanStateFormula(std::shared_ptr<storm::logic::Formula const> const& subformula, boost::optional<storm::logic::UnaryBooleanStateFormula::OperatorType> const& operatorType);
+            std::shared_ptr<storm::logic::Formula const> createMultiObjectiveFormula(std::vector<std::shared_ptr<storm::logic::Formula const>> const& subformulas);
             
             // An error handler function.
             phoenix::function<SpiritErrorHandler> handler;

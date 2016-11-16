@@ -52,15 +52,14 @@ namespace storm {
             virtual bool solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const override;
             virtual void multiply(std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const override;
 
-            NativeLinearEquationSolverSettings<ValueType>& getSettings();
+            void setSettings(NativeLinearEquationSolverSettings<ValueType> const& newSettings);
             NativeLinearEquationSolverSettings<ValueType> const& getSettings() const;
 
-            virtual bool allocateAuxMemory(LinearEquationSolverOperation operation) const override;
-            virtual bool deallocateAuxMemory(LinearEquationSolverOperation operation) const override;
-            virtual bool reallocateAuxMemory(LinearEquationSolverOperation operation) const override;
-            virtual bool hasAuxMemory(LinearEquationSolverOperation operation) const override;
+            /*
+             * Clears auxiliary data that has possibly been stored during previous calls of the solver.
+             */
+            virtual void resetAuxiliaryData() const override;
 
-            storm::storage::SparseMatrix<ValueType> const& getMatrix() const { return *A; }
         private:
             virtual uint64_t getMatrixRowCount() const override;
             virtual uint64_t getMatrixColumnCount() const override;
@@ -76,8 +75,7 @@ namespace storm {
             // The settings used by the solver.
             NativeLinearEquationSolverSettings<ValueType> settings;
             
-            // Auxiliary memory for the equation solving methods.
-            mutable std::unique_ptr<std::vector<ValueType>> auxiliarySolvingMemory;
+            mutable std::unique_ptr<std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>>> jacobiDecomposition;
         };
         
         template<typename ValueType>

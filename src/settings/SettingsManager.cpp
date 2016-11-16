@@ -34,6 +34,7 @@
 #include "src/settings/modules/TopologicalValueIterationEquationSolverSettings.h"
 #include "src/settings/modules/ExplorationSettings.h"
 #include "src/settings/modules/JaniExportSettings.h"
+#include "src/settings/modules/MultiObjectiveSettings.h"
 #include "src/utility/macros.h"
 #include "src/settings/Option.h"
 
@@ -526,6 +527,7 @@ namespace storm {
             storm::settings::addModule<storm::settings::modules::Smt2SmtSolverSettings>();
             storm::settings::addModule<storm::settings::modules::ExplorationSettings>();
             storm::settings::addModule<storm::settings::modules::JaniExportSettings>();
+            storm::settings::addModule<storm::settings::modules::MultiObjectiveSettings>();
         }
 
     }

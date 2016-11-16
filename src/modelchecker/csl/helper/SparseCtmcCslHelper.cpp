@@ -629,7 +629,6 @@ namespace storm {
                 }
                 
                 std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(std::move(uniformizedMatrix));
-                solver->allocateAuxMemory(storm::solver::LinearEquationSolverOperation::MultiplyRepeatedly);
                 
                 if (!useMixedPoissonProbabilities && std::get<0>(foxGlynnResult) > 1) {
                     // Perform the matrix-vector multiplications (without adding).

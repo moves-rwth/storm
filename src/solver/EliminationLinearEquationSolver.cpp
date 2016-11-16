@@ -47,12 +47,14 @@ namespace storm {
         void EliminationLinearEquationSolver<ValueType>::setMatrix(storm::storage::SparseMatrix<ValueType> const& A) {
             this->A = &A;
             localA.reset();
+            this->resetAuxiliaryData();
         }
         
         template<typename ValueType>
         void EliminationLinearEquationSolver<ValueType>::setMatrix(storm::storage::SparseMatrix<ValueType>&& A) {
             localA = std::make_unique<storm::storage::SparseMatrix<ValueType>>(std::move(A));
             this->A = localA.get();
+            this->resetAuxiliaryData();
         }
         
         template<typename ValueType>

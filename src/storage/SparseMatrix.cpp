@@ -555,6 +555,17 @@ namespace storm {
         }
 
         template<typename ValueType>
+        storm::storage::BitVector SparseMatrix<ValueType>::getRowIndicesOfRowGroups(storm::storage::BitVector const& groups) const {
+            storm::storage::BitVector res(this->getRowCount(), false);
+            for(auto group : groups) {
+                for(uint_fast64_t row = this->getRowGroupIndices()[group]; row < this->getRowGroupIndices()[group+1]; ++row) {
+                    res.set(row, true);
+                }
+            }
+            return res;
+        }
+        
+        template<typename ValueType>
         void SparseMatrix<ValueType>::makeRowsAbsorbing(storm::storage::BitVector const& rows) {
             for (auto row : rows) {
                 makeRowDirac(row, row);

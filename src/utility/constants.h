@@ -75,6 +75,9 @@ namespace storm {
         TargetType convertNumber(SourceType const& number);
 
         template<typename ValueType>
+        ValueType sqrt(ValueType const& number);
+        
+        template<typename ValueType>
         ValueType abs(ValueType const& number);
         
         template<typename ValueType>

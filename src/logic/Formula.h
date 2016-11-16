@@ -46,6 +46,8 @@ namespace storm {
 
             virtual bool isBinaryBooleanStateFormula() const;
             virtual bool isUnaryBooleanStateFormula() const;
+            
+            virtual bool isMultiObjectiveFormula() const;
 
             // Operator formulas.
             virtual bool isOperatorFormula() const;
@@ -74,6 +76,7 @@ namespace storm {
             virtual bool isInstantaneousRewardFormula() const;
             virtual bool isReachabilityRewardFormula() const;
             virtual bool isLongRunAverageRewardFormula() const;
+            virtual bool isTotalRewardFormula() const;
             
             // Expected time formulas.
             virtual bool isReachabilityTimeFormula() const;
@@ -100,6 +103,9 @@ namespace storm {
         
             StateFormula& asStateFormula();
             StateFormula const& asStateFormula() const;
+            
+            MultiObjectiveFormula& asMultiObjectiveFormula();
+            MultiObjectiveFormula const& asMultiObjectiveFormula() const;
             
             BinaryStateFormula& asBinaryStateFormula();
             BinaryStateFormula const& asBinaryStateFormula() const;
@@ -163,6 +169,9 @@ namespace storm {
             
             CumulativeRewardFormula& asCumulativeRewardFormula();
             CumulativeRewardFormula const& asCumulativeRewardFormula() const;
+            
+            TotalRewardFormula& asTotalRewardFormula();
+            TotalRewardFormula const& asTotalRewardFormula() const;
             
             InstantaneousRewardFormula& asInstantaneousRewardFormula();
             InstantaneousRewardFormula const& asInstantaneousRewardFormula() const;

@@ -21,7 +21,10 @@ namespace storm {
             cumulativeRewardFormula = (qi::lit("C<=") >> strict_double)[qi::_val = phoenix::bind(&FormulaParserGrammar::createCumulativeRewardFormula, phoenix::ref(*this), qi::_1)] | (qi::lit("C<=") > qi::uint_)[qi::_val = phoenix::bind(&FormulaParserGrammar::createCumulativeRewardFormula, phoenix::ref(*this), qi::_1)];
             cumulativeRewardFormula.name("cumulative reward formula");
             
-            rewardPathFormula = longRunAverageRewardFormula | conditionalFormula(storm::logic::FormulaContext::Reward) | eventuallyFormula(storm::logic::FormulaContext::Reward) | cumulativeRewardFormula | instantaneousRewardFormula;
+            totalRewardFormula = (qi::lit("C"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createTotalRewardFormula, phoenix::ref(*this))];
+            totalRewardFormula.name("total reward formula");
+            
+            rewardPathFormula = longRunAverageRewardFormula | conditionalFormula(storm::logic::FormulaContext::Reward) | eventuallyFormula(storm::logic::FormulaContext::Reward) | cumulativeRewardFormula | instantaneousRewardFormula | totalRewardFormula;
             rewardPathFormula.name("reward path formula");
             
             expressionFormula = expressionParser[qi::_val = phoenix::bind(&FormulaParserGrammar::createAtomicExpressionFormula, phoenix::ref(*this), qi::_1)];
@@ -96,7 +99,10 @@ namespace storm {
             orStateFormula = andStateFormula[qi::_val = qi::_1] >> *(qi::lit("|") >> andStateFormula)[qi::_val = phoenix::bind(&FormulaParserGrammar::createBinaryBooleanStateFormula, phoenix::ref(*this), qi::_val, qi::_1, storm::logic::BinaryBooleanStateFormula::OperatorType::Or)];
             orStateFormula.name("or state formula");
             
-            stateFormula = (orStateFormula);
+            multiObjectiveFormula = (qi::lit("multi") > qi::lit("(") >> (stateFormula  % qi::lit(",")) >> qi::lit(")"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createMultiObjectiveFormula, phoenix::ref(*this), qi::_1)];
+            multiObjectiveFormula.name("Multi-objective formula");
+            
+            stateFormula = (orStateFormula | multiObjectiveFormula);
             stateFormula.name("state formula");
             
             start = qi::eps > (stateFormula % +(qi::char_("\n;"))) >> qi::skip(boost::spirit::ascii::space | qi::lit("//") >> *(qi::char_ - (qi::eol | qi::eoi)))[qi::eps] >> qi::eoi;
@@ -124,7 +130,9 @@ namespace storm {
              debug(expressionFormula);
              debug(rewardPathFormula);
              debug(cumulativeRewardFormula);
+             debug(totalRewardFormula);
              debug(instantaneousRewardFormula);
+             debug(multiObjectiveFormula);
              */
             
             // Enable error reporting.
@@ -150,7 +158,9 @@ namespace storm {
             qi::on_error<qi::fail>(expressionFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
             qi::on_error<qi::fail>(rewardPathFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
             qi::on_error<qi::fail>(cumulativeRewardFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+            qi::on_error<qi::fail>(totalRewardFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
             qi::on_error<qi::fail>(instantaneousRewardFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+            qi::on_error<qi::fail>(multiObjectiveFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
         }
         
         void FormulaParserGrammar::addIdentifierExpression(std::string const& identifier, storm::expressions::Expression const& expression) {
@@ -175,6 +185,10 @@ namespace storm {
                 STORM_LOG_THROW(timeBoundAsDouble >= 0, storm::exceptions::WrongFormatException, "Cumulative reward property must have non-negative bound.");
                 return std::shared_ptr<storm::logic::Formula const>(new storm::logic::CumulativeRewardFormula(static_cast<uint_fast64_t>(timeBoundAsDouble)));
             }
+        }
+        
+        std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createTotalRewardFormula() const {
+            return std::shared_ptr<storm::logic::Formula const>(new storm::logic::TotalRewardFormula());
         }
         
         std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createLongRunAverageRewardFormula() const {
@@ -276,6 +290,9 @@ namespace storm {
                 return subformula;
             }
         }
-
+        
+        std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createMultiObjectiveFormula(std::vector<std::shared_ptr<storm::logic::Formula const>> const& subformulas) {
+            return std::shared_ptr<storm::logic::Formula const>(new storm::logic::MultiObjectiveFormula(subformulas));
+        }
     }
 }

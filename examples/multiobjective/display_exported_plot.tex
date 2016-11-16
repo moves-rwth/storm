@@ -1,0 +1,23 @@
+% This file can be used to display the exported plots from multi-objective model checking
+
+\documentclass{article}
+\usepackage{pgfplots}
+\usepackage{filecontents}
+
+\newcommand{\resultPath}{../ma/stream/results/}
+
+\begin{document}
+	\centering
+\begin{tikzpicture}[scale=1.75]
+\begin{axis}[
+	enlargelimits=false,
+	axis background/.style={fill=red!50}
+	]
+\addplot[fill=white, very thin] table [col sep=comma] {\resultPath overapproximation.csv} -- cycle;
+\addplot[fill=green, very thin] table [col sep=comma] {\resultPath underapproximation.csv} -- cycle;
+\addplot[mark=o, mark options={blue, scale=1.3, thick}, only marks] table [col sep=comma] {\resultPath paretopoints.csv};
+\addplot[mark=false] table [col sep=comma] {\resultPath boundaries.csv};
+\end{axis}
+\end{tikzpicture}
+
+\end{document}

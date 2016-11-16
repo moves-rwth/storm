@@ -83,11 +83,31 @@ namespace storm {
             return csrl;
         }
         
+        FragmentSpecification multiObjective() {
+            FragmentSpecification multiObjective = propositional();
+            
+            multiObjective.setMultiObjectiveFormulasAllowed(true);
+            multiObjective.setOperatorsAtTopLevelOfMultiObjectiveFormulasRequired(true);
+            multiObjective.setProbabilityOperatorsAllowed(true);
+            multiObjective.setUntilFormulasAllowed(true);
+            multiObjective.setGloballyFormulasAllowed(true);
+            multiObjective.setReachabilityProbabilityFormulasAllowed(true);
+            multiObjective.setRewardOperatorsAllowed(true);
+            multiObjective.setReachabilityRewardFormulasAllowed(true);
+            multiObjective.setTotalRewardFormulasAllowed(true);
+            multiObjective.setBoundedUntilFormulasAllowed(true);
+            multiObjective.setStepBoundedUntilFormulasAllowed(true);
+
+            return multiObjective;
+        }
+        
         FragmentSpecification::FragmentSpecification() {
             probabilityOperator = false;
             rewardOperator = false;
             expectedTimeOperator = false;
             longRunAverageOperator = false;
+            
+            multiObjectiveFormula = false;
             
             globallyFormula = false;
             reachabilityProbabilityFormula = false;
@@ -105,6 +125,7 @@ namespace storm {
             instantaneousRewardFormula = false;
             reachabilityRewardFormula = false;
             longRunAverageRewardFormula = false;
+            totalRewardFormula = false;
             
             conditionalProbabilityFormula = false;
             conditionalRewardFormula = false;
@@ -113,6 +134,8 @@ namespace storm {
             
             nestedOperators = true;
             nestedPathFormulas = false;
+            nestedMultiObjectiveFormulas = false;
+            nestedOperatorsInsideMultiObjectiveFormulas = false;
             onlyEventuallyFormuluasInConditionalFormulas = true;
             stepBoundedUntilFormulas = false;
             timeBoundedUntilFormulas = false;
@@ -122,6 +145,7 @@ namespace storm {
             quantitativeOperatorResults = true;
             
             operatorAtTopLevelRequired = false;
+            operatorsAtTopLevelOfMultiObjectiveFormulasRequired = false;
         }
         
         FragmentSpecification FragmentSpecification::copy() const {
@@ -161,6 +185,15 @@ namespace storm {
         
         FragmentSpecification& FragmentSpecification::setLongRunAverageOperatorsAllowed(bool newValue) {
             this->longRunAverageOperator = newValue;
+            return *this;
+        }
+        
+        bool FragmentSpecification::areMultiObjectiveFormulasAllowed() const {
+            return multiObjectiveFormula;
+        }
+        
+        FragmentSpecification& FragmentSpecification::setMultiObjectiveFormulasAllowed( bool newValue) {
+            this->multiObjectiveFormula = newValue;
             return *this;
         }
         
@@ -290,6 +323,16 @@ namespace storm {
             return *this;
         }
         
+        
+        bool FragmentSpecification::areTotalRewardFormulasAllowed() const {
+            return totalRewardFormula;
+        }
+        
+        FragmentSpecification& FragmentSpecification::setTotalRewardFormulasAllowed(bool newValue) {
+            this->totalRewardFormula = newValue;
+            return *this;
+        }
+        
         bool FragmentSpecification::areConditionalProbabilityFormulasAllowed() const {
             return conditionalProbabilityFormula;
         }
@@ -334,7 +377,25 @@ namespace storm {
             this->nestedPathFormulas = newValue;
             return *this;
         }
-
+        
+        bool FragmentSpecification::areNestedMultiObjectiveFormulasAllowed() const {
+            return this->nestedMultiObjectiveFormulas;
+        }
+        
+        FragmentSpecification& FragmentSpecification::setNestedMultiObjectiveFormulasAllowed(bool newValue) {
+            this->nestedMultiObjectiveFormulas = newValue;
+            return *this;
+        }
+        
+        bool FragmentSpecification::areNestedOperatorsInsideMultiObjectiveFormulasAllowed() const {
+            return this->nestedOperatorsInsideMultiObjectiveFormulas;
+        }
+        
+        FragmentSpecification& FragmentSpecification::setNestedOperatorsInsideMultiObjectiveFormulasAllowed(bool newValue) {
+            this->nestedOperatorsInsideMultiObjectiveFormulas = newValue;
+            return *this;
+        }
+        
         bool FragmentSpecification::areOnlyEventuallyFormuluasInConditionalFormulasAllowed() const {
             return this->onlyEventuallyFormuluasInConditionalFormulas;
         }
@@ -414,6 +475,15 @@ namespace storm {
         
         FragmentSpecification& FragmentSpecification::setOperatorAtTopLevelRequired(bool newValue) {
             operatorAtTopLevelRequired = newValue;
+            return *this;
+        }
+
+        bool FragmentSpecification::areOperatorsAtTopLevelOfMultiObjectiveFormulasRequired() const {
+            return operatorsAtTopLevelOfMultiObjectiveFormulasRequired;
+        }
+        
+        FragmentSpecification& FragmentSpecification::setOperatorsAtTopLevelOfMultiObjectiveFormulasRequired(bool newValue) {
+            operatorsAtTopLevelOfMultiObjectiveFormulasRequired = newValue;
             return *this;
         }
         

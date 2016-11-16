@@ -30,6 +30,8 @@ option(STORM_USE_COTIRE "Sets whether Cotire should be used (for building precom
 option(LINK_LIBCXXABI "Sets whether libc++abi should be linked." OFF)
 option(USE_LIBCXX "Sets whether the standard library is libc++." OFF)
 option(USE_CARL "Sets whether carl should be included." ON)
+option(USE_SMTRAT "Sets whether SMT-RAT should be included." OFF)
+option(USE_HYPRO "Sets whether HyPro should be included." OFF)
 option(XML_SUPPORT "Sets whether xml based format parsing should be included." ON)
 option(FORCE_COLOR "Force color output" OFF)
 mark_as_advanced(FORCE_COLOR)

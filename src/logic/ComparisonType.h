@@ -14,7 +14,20 @@ namespace storm {
             inline bool isLowerBound(ComparisonType t) {
                 return (t == ComparisonType::Greater || t == ComparisonType::GreaterEqual);
             }
-            
+        
+            inline ComparisonType invert(ComparisonType t) {
+                switch(t) {
+                    case ComparisonType::Less:
+                        return ComparisonType::GreaterEqual;
+                    case ComparisonType::LessEqual:
+                        return ComparisonType::Greater;
+                    case ComparisonType::Greater:
+                        return ComparisonType::LessEqual;
+                    case ComparisonType::GreaterEqual:
+                        return ComparisonType::Less;
+                }
+            }
+        
             std::ostream& operator<<(std::ostream& out, ComparisonType const& comparisonType);
 	}
 }

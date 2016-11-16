@@ -1,5 +1,6 @@
 #include "src/storage/TotalScheduler.h"
 #include "src/exceptions/InvalidArgumentException.h"
+#include "src/utility/Hash.h"
 
 namespace storm {
     namespace storage {
@@ -13,6 +14,10 @@ namespace storm {
         
         TotalScheduler::TotalScheduler(std::vector<uint_fast64_t>&& choices) : choices(std::move(choices)) {
             // Intentionally left empty.
+        }
+        
+        bool TotalScheduler::operator==(storm::storage::TotalScheduler const& other) const {
+            return this->choices == other.choices;
         }
         
         void TotalScheduler::setChoice(uint_fast64_t state, uint_fast64_t choice) {
@@ -34,6 +39,10 @@ namespace storm {
             return choices[state];
         }
         
+        std::vector<uint_fast64_t> const& TotalScheduler::getChoices() const {
+            return choices;
+        }
+        
         std::ostream& operator<<(std::ostream& out, TotalScheduler const& scheduler) {
             out << "total scheduler (defined on " << scheduler.choices.size() << " states) [ ";
             for (uint_fast64_t state = 0; state < scheduler.choices.size() - 1; ++state) {
@@ -44,6 +53,11 @@ namespace storm {
             }
             return out;
         }
-
     }
+}
+
+namespace  std {
+        std::size_t hash<storm::storage::TotalScheduler>::operator()(storm::storage::TotalScheduler const& totalScheduler) const {
+            return storm::utility::Hash<uint_fast64_t>::getHash(totalScheduler.choices);
+        }
 }

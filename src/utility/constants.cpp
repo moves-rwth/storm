@@ -174,7 +174,22 @@ namespace storm {
         double convertNumber(double const& number){
             return number;
         }
-
+        
+        template<>
+        uint_fast64_t convertNumber(double const& number){
+            return std::llround(number);
+        }
+        
+        template<>
+        double convertNumber(uint_fast64_t const& number){
+            return number;
+        }
+        
+        template<typename ValueType>
+        ValueType sqrt(ValueType const& number) {
+            return std::sqrt(number);
+        }
+        
         template<typename ValueType>
         ValueType abs(ValueType const& number) {
             return std::fabs(number);
@@ -295,13 +310,18 @@ namespace storm {
         }
 
         template<>
+        RationalNumber convertNumber(RationalNumber const& number){
+            return number;
+        }
+        
+        template<>
         RationalNumber convertNumber(double const& number){
             return carl::rationalize<RationalNumber>(number);
         }
-
+        
         template<>
-        RationalNumber convertNumber(RationalNumber const& number){
-            return number;
+        RationalNumber convertNumber(uint_fast64_t const& number){
+            return RationalNumber(number);
         }
 
         template<>
@@ -322,6 +342,11 @@ namespace storm {
         template<>
         uint_fast64_t convertNumber(RationalFunction const& func) {
             return carl::toInt<unsigned long>(func.nominatorAsNumber());
+        }
+
+        template<>
+        RationalNumber sqrt(RationalNumber const& number) {
+            return carl::sqrt(number);
         }
 
         template<>
@@ -372,6 +397,7 @@ namespace storm {
         template storm::storage::MatrixEntry<storm::storage::sparse::state_type, double>& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, double>& matrixEntry);
         template storm::storage::MatrixEntry<storm::storage::sparse::state_type, double>&& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, double>&& matrixEntry);
 
+        template double sqrt(double const& number);
         template double abs(double const& number);
 
         template bool isInteger(double const& number);
@@ -473,6 +499,8 @@ namespace storm {
         template storm::RationalNumber convertNumber(storm::RationalNumber const& number);
         RationalNumber convertNumber(std::string const& number);
         
+        template storm::RationalNumber sqrt(storm::RationalNumber const& number);
+
         template storm::RationalNumber abs(storm::RationalNumber const& number);
 
         template storm::RationalNumber pow(storm::RationalNumber const& value, uint_fast64_t exponent);

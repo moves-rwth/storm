@@ -68,40 +68,15 @@ namespace storm {
              */
             void repeatedMultiply(std::vector<ValueType>& x, std::vector<ValueType> const* b, uint_fast64_t n) const;
 
-            // Methods related to allocating/freeing auxiliary storage.
-
-            /*!
-             * Allocates auxiliary memory that can be used to perform the provided operation. Repeated calls to the
-             * corresponding function can then be run without allocating/deallocating this memory repeatedly.
-             * Note: Since the allocated memory is fit to the currently selected options of the solver, they must not
-             * be changed any more after allocating the auxiliary memory until it is deallocated again.
-             *
-             * @return True iff auxiliary memory was allocated.
+            /*
+             * Clears auxiliary data that has possibly been stored during previous calls of the solver.
              */
-            virtual bool allocateAuxMemory(LinearEquationSolverOperation operation) const;
+            virtual void resetAuxiliaryData() const;
 
-            /*!
-             * Destroys previously allocated auxiliary memory for the provided operation.
-             *
-             * @return True iff auxiliary memory was deallocated.
-             */
-            virtual bool deallocateAuxMemory(LinearEquationSolverOperation operation) const;
-
-            /*!
-             * If the matrix dimensions changed and auxiliary memory was allocated, this function needs to be called to
-             * update the auxiliary memory.
-             *
-             * @return True iff the auxiliary memory was reallocated.
-             */
-            virtual bool reallocateAuxMemory(LinearEquationSolverOperation operation) const;
-
-            /*!
-             * Checks whether the solver has allocated auxiliary memory for the provided operation.
-             *
-             * @return True iff auxiliary memory was previously allocated (and not yet deallocated).
-             */
-            virtual bool hasAuxMemory(LinearEquationSolverOperation operation) const;
-
+        protected:
+            // auxiliary storage. If set, this vector has getMatrixRowCount() entries.
+            mutable std::unique_ptr<std::vector<ValueType>> auxiliaryRowVector;
+          
         private:
             /*!
              * Retrieves the row count of the matrix associated with this solver.
@@ -113,8 +88,6 @@ namespace storm {
              */
             virtual uint64_t getMatrixColumnCount() const = 0;
 
-            // Auxiliary memory for repeated matrix-vector multiplication.
-            mutable std::unique_ptr<std::vector<ValueType>> auxiliaryRepeatedMultiplyMemory;
         };
         
         template<typename ValueType>

@@ -20,12 +20,14 @@ namespace storm {
         class InstantaneousRewardFormula;
         class LongRunAverageOperatorFormula;
         class LongRunAverageRewardFormula;
+        class MultiObjectiveFormula;
         class NextFormula;
         class OperatorFormula;
         class PathFormula;
         class ProbabilityOperatorFormula;
         class RewardOperatorFormula;
         class StateFormula;
+        class TotalRewardFormula;
         class UnaryBooleanStateFormula;
         class UnaryPathFormula;
         class UnaryStateFormula;

@@ -42,11 +42,9 @@ namespace storm {
             virtual void repeatedMultiply(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType>* b, uint_fast64_t n) const override;
 
             StandardMinMaxLinearEquationSolverSettings<ValueType> const& getSettings() const;
-            StandardMinMaxLinearEquationSolverSettings<ValueType>& getSettings();
+            void setSettings(StandardMinMaxLinearEquationSolverSettings<ValueType> const& newSettings);
             
-            virtual bool allocateAuxMemory(MinMaxLinearEquationSolverOperation operation) const override;
-            virtual bool deallocateAuxMemory(MinMaxLinearEquationSolverOperation operation) const override;
-            virtual bool hasAuxMemory(MinMaxLinearEquationSolverOperation operation) const override;
+            virtual void resetAuxiliaryData() const override;
 
             virtual ValueType getPrecision() const override;
             virtual bool getRelative() const override;
@@ -59,6 +57,10 @@ namespace storm {
             enum class Status {
                 Converged, TerminatedEarly, MaximalIterationsExceeded, InProgress
             };
+            
+            mutable std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> linEqSolverA;
+            mutable std::unique_ptr<std::vector<ValueType>> auxiliaryRowVector; // A.rowCount() entries
+            mutable std::unique_ptr<std::vector<ValueType>> auxiliaryRowGroupVector; // A.rowGroupCount() entries
 
             Status updateStatusIfNotConverged(Status status, std::vector<ValueType> const& x, uint64_t iterations) const;
             void reportStatus(Status status, uint64_t iterations) const;
@@ -77,12 +79,6 @@ namespace storm {
             // the reference refers to localA.
             storm::storage::SparseMatrix<ValueType> const& A;
             
-            // Auxiliary memory for equation solving.
-            mutable std::unique_ptr<std::vector<ValueType>> auxiliarySolvingMultiplyMemory;
-            mutable std::unique_ptr<std::vector<ValueType>> auxiliarySolvingVectorMemory;
-            
-            // Auxiliary memory for repeated matrix-vector multiplication.
-            mutable std::unique_ptr<std::vector<ValueType>> auxiliaryRepeatedMultiplyMemory;
         };
      
         template<typename ValueType>

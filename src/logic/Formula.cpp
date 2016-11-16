@@ -17,6 +17,10 @@ namespace storm {
             return false;
         }
         
+        bool Formula::isMultiObjectiveFormula() const {
+            return false;
+        }
+        
         bool Formula::isBinaryStateFormula() const {
             return false;
         }
@@ -129,6 +133,10 @@ namespace storm {
             return false;
         }
         
+        bool Formula::isTotalRewardFormula() const {
+            return false;
+        }
+        
         bool Formula::isReachabilityTimeFormula() const {
             return false;
         }
@@ -181,6 +189,14 @@ namespace storm {
         
         StateFormula const& Formula::asStateFormula() const {
             return dynamic_cast<StateFormula const&>(*this);
+        }
+        
+        MultiObjectiveFormula& Formula::asMultiObjectiveFormula() {
+            return dynamic_cast<MultiObjectiveFormula&>(*this);
+        }
+        
+        MultiObjectiveFormula const& Formula::asMultiObjectiveFormula() const {
+            return dynamic_cast<MultiObjectiveFormula const&>(*this);
         }
         
         BinaryStateFormula& Formula::asBinaryStateFormula() {
@@ -349,6 +365,14 @@ namespace storm {
         
         CumulativeRewardFormula const& Formula::asCumulativeRewardFormula() const {
             return dynamic_cast<CumulativeRewardFormula const&>(*this);
+        }
+        
+        TotalRewardFormula& Formula::asTotalRewardFormula() {
+            return dynamic_cast<TotalRewardFormula&>(*this);
+        }
+        
+        TotalRewardFormula const& Formula::asTotalRewardFormula() const {
+            return dynamic_cast<TotalRewardFormula const&>(*this);
         }
         
         InstantaneousRewardFormula& Formula::asInstantaneousRewardFormula() {

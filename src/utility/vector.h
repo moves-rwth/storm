@@ -6,12 +6,13 @@
 #include "tbb/tbb.h"
 #endif
 
-#include "constants.h"
 #include <iostream>
 #include <algorithm>
 #include <functional>
+#include <numeric>
 
 #include "src/storage/BitVector.h"
+#include "src/utility/constants.h"
 #include "src/utility/macros.h"
 #include "src/solver/OptimizationDirection.h"
 
@@ -83,7 +84,7 @@ namespace storm {
             }
 
             /*!
-             * Constructs a vector [min, min+1, ...., max]
+             * Constructs a vector [min, min+1, ...., max-1]
              */
             inline std::vector<uint_fast64_t> buildVectorForRange(uint_fast64_t min, uint_fast64_t max) {
                 STORM_LOG_ASSERT(min < max, "Invalid range.");
@@ -93,9 +94,19 @@ namespace storm {
                 iota_n(std::back_inserter(v), diff, min);
                 return v;
             }
-
-
-                        
+            
+            /*!
+             * Returns a list of indices such that the first index refers to the highest entry of the given vector,
+             *  the second index refers to the entry with the second highest value, ...
+             * Example:  v={3,8,4,5} yields res={1,3,2,0}
+             */
+            template<typename T>
+            std::vector<uint_fast64_t> getSortedIndices(std::vector<T> const& v){
+                std::vector<uint_fast64_t> res = buildVectorForRange(0, v.size());
+                std::sort(res.begin(), res.end(), [&v](uint_fast64_t index1, uint_fast64_t index2) { return v[index1] > v[index2];});
+                return res;
+            }
+            
             /*!
              * Selects the elements from a vector at the specified positions and writes them consecutively into another vector.
              * @param vector The vector into which the selected elements are to be written.
@@ -109,7 +120,7 @@ namespace storm {
                     vector[oldPosition++] = values[position];
                 }
             }
-            
+
             /*!
              * Selects groups of elements from a vector at the specified positions and writes them consecutively into another vector.
              *
@@ -366,14 +377,38 @@ namespace storm {
             }
             
             /*!
-             * Subtracts the two given vectors and writes the result into the first operand.
+             * Multiplies each element of the given vector with the given factor and writes the result into the vector.
              *
-             * @param target The first summand and target vector.
-             * @param summand The second summand.
+             * @param target The operand and target vector.
+             * @param factor The scaling factor
              */
             template<class ValueType1, class ValueType2>
             void scaleVectorInPlace(std::vector<ValueType1>& target, ValueType2 const& factor) {
                 applyPointwise<ValueType1, ValueType2>(target, target, [&] (ValueType1 const& argument) -> ValueType1 { return argument * factor; });
+            }
+            
+            /*!
+             * Computes x:= x + a*y, i.e., adds each element of the first vector and (the corresponding element of the second vector times the given factor) and writes the result into the first vector.
+             *
+             * @param firstOperand The first operand.
+             * @param secondOperand The second operand
+             * @param factor The factor for the elements of the second operand
+             */
+            template<class InValueType1, class InValueType2, class InValueType3>
+            void addScaledVector(std::vector<InValueType1>& firstOperand, std::vector<InValueType2> const& secondOperand, InValueType3 const& factor) {
+                applyPointwise<InValueType1, InValueType2, InValueType1>(firstOperand, secondOperand, firstOperand, [&] (InValueType1 const& val1, InValueType2 const& val2) -> InValueType1 { return val1 + (factor * val2); });
+            }
+            
+            /*!
+             * Computes the dot product (aka scalar product) and returns the result
+             *
+             * @param firstOperand The first operand.
+             * @param secondOperand The second operand
+             * @return firstOperand*secondOperand
+             */
+            template<class T>
+            T dotProduct(std::vector<T> const& firstOperand, std::vector<T> const& secondOperand) {
+                return std::inner_product(firstOperand.begin(), firstOperand.end(), secondOperand.begin(), storm::utility::zero<T>());
             }
             
             /*!
@@ -408,6 +443,17 @@ namespace storm {
             storm::storage::BitVector filterGreaterZero(std::vector<T> const& values) {
                 std::function<bool (T const&)> fnc = [] (T const& value) -> bool { return value > storm::utility::zero<T>(); };
                 return filter(values,  fnc);
+            }
+            
+            /*!
+             * Retrieves a bit vector containing all the indices for which the value at this position is equal to zero
+             *
+             * @param values The vector of values.
+             * @return The resulting bit vector.
+             */
+            template<class T>
+            storm::storage::BitVector filterZero(std::vector<T> const& values) {
+                return filter<T>(values, storm::utility::isZero<T>);
             }
             
             /**
@@ -712,16 +758,29 @@ namespace storm {
             }
 
 			/*!
+			 * Converts the given vector to the given ValueType
+             * Assumes that both, TargetType and SourceType are numeric
+			 */
+			template<typename TargetType, typename SourceType>
+            std::vector<TargetType> convertNumericVector(std::vector<SourceType> const& oldVector) {
+				std::vector<TargetType> resultVector;
+				resultVector.reserve(oldVector.size());
+                for(auto const& oldValue : oldVector){
+                    resultVector.push_back(storm::utility::convertNumber<TargetType>(oldValue));
+                }
+				return resultVector;
+			}
+
+			/*!
 			* Converts the given vector to the given ValueType
 			*/
 			template<typename NewValueType, typename ValueType>
-			std::vector<NewValueType> toValueType(std::vector<ValueType> const& oldVector) {
+            std::vector<NewValueType> toValueType(std::vector<ValueType> const& oldVector) {
 				std::vector<NewValueType> resultVector;
-				resultVector.resize(oldVector.size());
-				for (size_t i = 0, size = oldVector.size(); i < size; ++i) {
-					resultVector.at(i) = static_cast<NewValueType>(oldVector.at(i));
-				}
-
+				resultVector.reserve(oldVector.size());
+                for(auto const& oldValue : oldVector){
+                    resultVector.push_back(static_cast<NewValueType>(oldValue));
+                }
 				return resultVector;
 			}
 
@@ -736,6 +795,21 @@ namespace storm {
                 return result;
             }
             
+            template<typename T>
+            bool hasNegativeEntry(std::vector<T> const& v){
+                return std::any_of(v.begin(), v.end(), [](T value){return value < storm::utility::zero<T>();});
+            }
+            
+            template<typename T>
+            bool hasPositiveEntry(std::vector<T> const& v){
+                return std::any_of(v.begin(), v.end(), [](T value){return value > storm::utility::zero<T>();});
+            }
+            
+            template<typename T>
+            bool hasNonZeroEntry(std::vector<T> const& v){
+                return std::any_of(v.begin(), v.end(), [](T value){return !storm::utility::isZero(value);});
+            }
+
             /*!
              * Output vector as string.
              *
