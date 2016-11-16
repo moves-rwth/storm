@@ -281,6 +281,11 @@ namespace storm {
         }
         
         template<typename ValueType>
+        uint64_t DFT<ValueType>::maxRank() const {
+            return mElements.back()->rank();
+        }
+        
+        template<typename ValueType>
         DFT<ValueType> DFT<ValueType>::optimize() const {
             std::vector<size_t> modIdea = findModularisationRewrite();
             STORM_LOG_DEBUG("Modularisation idea: " << storm::utility::vector::toString(modIdea));

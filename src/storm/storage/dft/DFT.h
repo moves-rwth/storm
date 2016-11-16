@@ -201,6 +201,8 @@ namespace storm {
 
             bool canHaveNondeterminism() const;
             
+            uint64_t maxRank() const;
+            
             std::vector<DFT<ValueType>> topModularisation() const;
             
             bool isRepresentative(size_t id) const {
