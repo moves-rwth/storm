@@ -20,7 +20,6 @@ namespace storm {
                     symbolTable.add_variable(variableTypePair.first.getName(), this->rationalValues[variableTypePair.first.getOffset()]);
                 }
             }
-            symbolTable.add_constants();
         }
         
         template<typename RationalType>

@@ -390,9 +390,6 @@ namespace storm {
             // Iterate over all automata.
             uint64_t automatonIndex = 0;
             
-            std::cout << "getting silent choices of state" << std::endl;
-            std::cout << unpackStateIntoValuation(state, this->variableInformation, *this->expressionManager).toString(true) << std::endl;
-            
             for (auto const& automaton : model.getAutomata()) {
                 uint64_t location = locations[automatonIndex];
                 
@@ -405,10 +402,8 @@ namespace storm {
                     
                     // Skip the command, if it is not enabled.
                     if (!this->evaluator->asBool(edge.getGuard())) {
-                        std::cout << "guard " << edge.getGuard() << " evaluates to false" << std::endl;
                         continue;
                     }
-                    std::cout << "guard " << edge.getGuard() << " evaluates to true" << std::endl;
                     
                     // Determine the exit rate if it's a Markovian edge.
                     boost::optional<ValueType> exitRate = boost::none;
@@ -427,7 +422,6 @@ namespace storm {
                         if (probability != storm::utility::zero<ValueType>()) {
                             // Obtain target state index and add it to the list of known states. If it has not yet been
                             // seen, we also add it to the set of states that have yet to be explored.
-                            std::cout << "got new state " << unpackStateIntoValuation(applyUpdate(state, destination, this->variableInformation.locationVariables[automatonIndex]), this->variableInformation, *this->expressionManager).toString(true) << std::endl;
                             StateType stateIndex = stateToIdCallback(applyUpdate(state, destination, this->variableInformation.locationVariables[automatonIndex]));
                             
                             // Update the choice by adding the probability/target state to it.
@@ -458,9 +452,6 @@ namespace storm {
         template<typename ValueType, typename StateType>
         std::vector<Choice<ValueType>> JaniNextStateGenerator<ValueType, StateType>::getNonsilentActionChoices(std::vector<uint64_t> const& locations, CompressedState const& state, StateToIdCallback stateToIdCallback) {
             std::vector<Choice<ValueType>> result;
-            
-            std::cout << "getting nonsilent choices of state" << std::endl;
-            std::cout << unpackStateIntoValuation(state, this->variableInformation, *this->expressionManager).toString(true) << std::endl;
             
             for (uint64_t actionIndex : model.getNonsilentActionIndices()) {
                 std::vector<std::vector<storm::jani::Edge const*>> enabledEdges = getEnabledEdges(locations, actionIndex);
@@ -539,8 +530,6 @@ namespace storm {
                         // Add the probabilities/rates to the newly created choice.
                         ValueType probabilitySum = storm::utility::zero<ValueType>();
                         for (auto const& stateProbabilityPair : *newTargetStates) {
-                            std::cout << "got new state (sync)" << std::endl;
-                            std::cout << unpackStateIntoValuation(stateProbabilityPair.first, this->variableInformation, *this->expressionManager).toString(true) << std::endl;
                             StateType actualIndex = stateToIdCallback(stateProbabilityPair.first);
                             choice.addProbability(actualIndex, stateProbabilityPair.second);
                             
