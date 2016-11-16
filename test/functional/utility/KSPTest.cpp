@@ -1,9 +1,10 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
-#include "src/parser/PrismParser.h"
+#include "src/builder/ExplicitModelBuilder.h"
 #include "src/models/sparse/Dtmc.h"
-#include "src/builder/ExplicitPrismModelBuilder.h"
+#include "src/parser/PrismParser.h"
+#include "src/storage/SymbolicModelDescription.h"
 #include "src/utility/graph.h"
 #include "src/utility/shortestPaths.cpp"
 
@@ -12,9 +13,17 @@
 //       more than that.
 //       An independent verification of the values would be really nice ...
 
+// FIXME: (almost) all of these fail; the question is: is there actually anything wrong or does the new parser yield a different order of states?
+
+std::shared_ptr<storm::models::sparse::Model<double>> buildExampleModel() {
+	std::string prismModelPath = STORM_CPP_TESTS_BASE_PATH "/functional/builder/brp-16-2.pm";
+    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(prismModelPath);
+    storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
+    return storm::builder::ExplicitModelBuilder<double>(program).build();
+}
+
 TEST(KSPTest, dijkstra) {
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/brp-16-2.pm");
-    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitPrismModelBuilder<double>().translateProgram(program);
+	auto model = buildExampleModel();
 
     storm::storage::sparse::state_type testState = 300;
     storm::utility::ksp::ShortestPathsGenerator<double> spg(model, testState);
@@ -24,8 +33,7 @@ TEST(KSPTest, dijkstra) {
 }
 
 TEST(KSPTest, singleTarget) {
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/brp-16-2.pm");
-    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitPrismModelBuilder<double>().translateProgram(program);
+	auto model = buildExampleModel();
 
     storm::storage::sparse::state_type testState = 300;
     storm::utility::ksp::ShortestPathsGenerator<double> spg(model, testState);
@@ -35,8 +43,7 @@ TEST(KSPTest, singleTarget) {
 }
 
 TEST(KSPTest, reentry) {
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/brp-16-2.pm");
-    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitPrismModelBuilder<double>().translateProgram(program);
+	auto model = buildExampleModel();
 
     storm::storage::sparse::state_type testState = 300;
     storm::utility::ksp::ShortestPathsGenerator<double> spg(model, testState);
@@ -50,8 +57,7 @@ TEST(KSPTest, reentry) {
 }
 
 TEST(KSPTest, groupTarget) {
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/brp-16-2.pm");
-    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitPrismModelBuilder<double>().translateProgram(program);
+	auto model = buildExampleModel();
 
     auto groupTarget = storm::utility::ksp::state_list_t{50, 90};
     auto spg = storm::utility::ksp::ShortestPathsGenerator<double>(model, groupTarget);
@@ -70,8 +76,7 @@ TEST(KSPTest, groupTarget) {
 }
 
 TEST(KSPTest, kTooLargeException) {
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/brp-16-2.pm");
-    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitPrismModelBuilder<double>().translateProgram(program);
+	auto model = buildExampleModel();
 
     storm::storage::sparse::state_type testState = 1;
     storm::utility::ksp::ShortestPathsGenerator<double> spg(model, testState);
@@ -80,8 +85,7 @@ TEST(KSPTest, kTooLargeException) {
 }
 
 TEST(KSPTest, kspStateSet) {
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/brp-16-2.pm");
-    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitPrismModelBuilder<double>().translateProgram(program);
+	auto model = buildExampleModel();
 
     storm::storage::sparse::state_type testState = 300;
     storm::utility::ksp::ShortestPathsGenerator<double> spg(model, testState);
@@ -97,8 +101,7 @@ TEST(KSPTest, kspStateSet) {
 }
 
 TEST(KSPTest, kspPathAsList) {
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/brp-16-2.pm");
-    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitPrismModelBuilder<double>().translateProgram(program);
+	auto model = buildExampleModel();
 
     storm::storage::sparse::state_type testState = 300;
     storm::utility::ksp::ShortestPathsGenerator<double> spg(model, testState);
