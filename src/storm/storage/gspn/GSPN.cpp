@@ -143,7 +143,7 @@ namespace storm {
             outStream << "\t" << "node [shape=box]" << std::endl;
             
             for (auto& trans : this->getImmediateTransitions()) {
-                outStream << "\t" << trans->getName() << " [fontcolor=white, style=filled, fillcolor=black, label=\"" << trans->getName() << "\"];" << std::endl;
+                outStream << "\t" << trans.getName() << " [fontcolor=white, style=filled, fillcolor=black, label=<" << trans.getName() << "<br/><FONT POINT-SIZE=\"10\"> π = " + std::to_string(trans.getPriority()) << "</FONT>>];" << std::endl;
             }
             
             for (auto& trans : this->getTimedTransitions()) {
