@@ -12,7 +12,7 @@ void define_core(py::module& m) {
 void define_parse(py::module& m) {
     // Parse formulas
     m.def("parse_formulas", &storm::parseFormulasForExplicit, "Parse explicit formulas", py::arg("formula_string"));
-    m.def("parse_formulas_for_prism_program", &storm::parseFormulasForProgram, "Parse formulas for prism program", py::arg("formula_string"), py::arg("prism_program"));
+    m.def("parse_formulas_for_prism_program", &storm::parseFormulasForPrismProgram, "Parse formulas for prism program", py::arg("formula_string"), py::arg("prism_program"));
 
     // Pair <Model,Formulas>
     py::class_<storm::storage::ModelFormulasPair>(m, "ModelFormulasPair", "Pair of model and formulas")

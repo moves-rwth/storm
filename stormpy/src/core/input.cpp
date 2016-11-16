@@ -1,7 +1,7 @@
-#include "prism.h"
+#include "input.h"
 
 // Define python bindings
-void define_prism(py::module& m) {
+void define_input(py::module& m) {
 
     // Parse prism program
     m.def("parse_prism_program", &storm::parseProgram, "Parse prism program", py::arg("path"));
@@ -23,4 +23,12 @@ void define_prism(py::module& m) {
         .def_property_readonly("has_undefined_constants", &storm::prism::Program::hasUndefinedConstants, "Flag if program has undefined constants")
     ;
     
+    // SymbolicModelDescription
+    py::class_<storm::storage::SymbolicModelDescription>(m, "SymbolicModelDescription", "Symbolic description of model")
+        .def(py::init<storm::prism::Program const&>(), "Construct from Prism program", py::arg("prism_program"))
+        .def_property_readonly("is_prism_program", &storm::storage::SymbolicModelDescription::isPrismProgram, "Flag if program is in Prism format")
+    ;
+
+    // PrismProgram can be converted into SymbolicModelDescription
+    py::implicitly_convertible<storm::prism::Program, storm::storage::SymbolicModelDescription>();
 }
