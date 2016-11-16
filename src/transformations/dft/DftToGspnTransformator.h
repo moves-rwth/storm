@@ -1,8 +1,8 @@
-#ifndef DFTTOGSPNTRANSFORMATOR_H
-#define DFTTOGSPNTRANSFORMATOR_H
+#pragma once
 
 #include <src/storage/dft/DFT.h>
 #include "src/storage/gspn/GSPN.h"
+#include "src/storage/gspn/GspnBuilder.h"
 
 namespace storm {
     namespace transformations {
@@ -28,17 +28,6 @@ namespace storm {
                 void transform();
 
             private:
-
-                storm::storage::DFT<ValueType> const& mDft;
-                storm::gspn::GSPN mGspn;
-				
-				static constexpr const char* STR_FAILING = "_failing";			// Name standard for transitions that point towards a place, which in turn indicates the failure of a gate.
-				static constexpr const char* STR_FAILED = "_failed";			// Name standard for place which indicates the failure of a gate.
-				static constexpr const char* STR_FAILSAVING = "_failsaving";	// Name standard for transition that point towards a place, which in turn indicates the failsave state of a gate.
-				static constexpr const char* STR_FAILSAVE = "_failsave";		// Name standard for place which indicates the failsave state of a gate.
-                static constexpr const char* STR_ACTIVATED = "_activated";		// Name standard for place which indicates the activity.
-				static constexpr const char* STR_ACTIVATING = "_activating";	// Name standard for transition that point towards a place, which in turn indicates its activity.
-				
                 /*!
                  * Write Gspn to file or console.
                  *
@@ -152,7 +141,7 @@ namespace storm {
 				  * 
 				  * @param dftElement The element whose priority shall be determined.
 				  */
-				 uint_fast64_t getPriority(uint_fast64_t priority, std::shared_ptr<storm::storage::DFTElement<ValueType> const> dFTElement);
+				 uint64_t getFailPriority(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dFTElement);
 				 
 				 /*
 				  * Return all ids of BEs, that are successors of the given element and that are not the spare childs of a SPARE.
@@ -160,9 +149,22 @@ namespace storm {
 				  * @param dftElement The element which 
 				  */
 				 std::vector<int> getAllBEIDsOfElement(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftElement);
+                
+                
+                storm::storage::DFT<ValueType> const& mDft;
+                storm::gspn::GspnBuilder builder;
+                std::vector<uint64_t> failedNodes;
+                
+                static constexpr const char* STR_FAILING = "_failing";			// Name standard for transitions that point towards a place, which in turn indicates the failure of a gate.
+                static constexpr const char* STR_FAILED = "_failed";			// Name standard for place which indicates the failure of a gate.
+                static constexpr const char* STR_FAILSAVING = "_failsaving";	// Name standard for transition that point towards a place, which in turn indicates the failsave state of a gate.
+                static constexpr const char* STR_FAILSAVE = "_failsave";		// Name standard for place which indicates the failsave state of a gate.
+                static constexpr const char* STR_ACTIVATED = "_activated";		// Name standard for place which indicates the activity.
+                static constexpr const char* STR_ACTIVATING = "_activating";	// Name standard for transition that point towards a place, which in turn indicates its activity.
+                
+
             };
         }
     }
 }
 
-#endif /* DFTTOGSPNTRANSFORMATOR_H*/
