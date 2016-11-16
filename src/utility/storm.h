@@ -226,7 +226,7 @@ namespace storm {
         if (model->getType() == storm::models::ModelType::MarkovAutomaton && model->isSparseModel()) {
             std::shared_ptr<storm::models::sparse::MarkovAutomaton<typename ModelType::ValueType>> ma = model->template as<storm::models::sparse::MarkovAutomaton<typename ModelType::ValueType>>();
             if (ma->hasOnlyTrivialNondeterminism()) {
-                // Markov automaton can be converted into CTMC
+                // Markov automaton can be converted into CTMC.
                 model = ma->convertToCTMC();
             }
         }

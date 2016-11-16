@@ -385,7 +385,7 @@ namespace storm {
                     if (!this->evaluator->asBool(command.getGuardExpression())) {
                         continue;
                     }
-                    
+                                        
                     result.push_back(Choice<ValueType>(command.getActionIndex(), command.isMarkovian()));
                     Choice<ValueType>& choice = result.back();
                     
@@ -407,7 +407,9 @@ namespace storm {
                             
                             // Update the choice by adding the probability/target state to it.
                             choice.addProbability(stateIndex, probability);
-                            probabilitySum += probability;
+                            if (this->options.isExplorationChecksSet()) {
+                                probabilitySum += probability;
+                            }
                         }
                     }
                     

@@ -133,8 +133,8 @@ namespace storm {
                             // If there is no previous Markovian choice, just move the Markovian choice to the front.
                             if (index != 0) {
                                 std::swap(choices.front(), choice);
-                                foundPreviousMarkovianChoice = true;
                             }
+                            foundPreviousMarkovianChoice = true;
                             ++index;
                         }
                     } else {
