@@ -10,7 +10,7 @@ file(GLOB_RECURSE STORM_SOURCES_CLI ${PROJECT_SOURCE_DIR}/src/cli/*.cpp)
 file(GLOB_RECURSE STORM_MAIN_FILE ${PROJECT_SOURCE_DIR}/src/storm.cpp)
 file(GLOB_RECURSE STORM_DFT_MAIN_FILE ${PROJECT_SOURCE_DIR}/src/storm-dyftee.cpp)
 file(GLOB_RECURSE STORM_PGCL_MAIN_FILE ${PROJECT_SOURCE_DIR}/src/storm-pgcl.cpp)
-
+file(GLOB_RECURSE STORM_GSPN_MAIN_FILE ${PROJECT_SOURCE_DIR}/src/storm-gspn.cpp)
 
 # Additional include files like the storm-config.h
 file(GLOB_RECURSE STORM_BUILD_HEADERS ${PROJECT_BINARY_DIR}/include/*.h)
@@ -22,6 +22,7 @@ list(REMOVE_ITEM STORM_LIB_HEADERS ${STORM_HEADERS_CLI})
 set(STORM_MAIN_SOURCES ${STORM_SOURCES_CLI} ${STORM_MAIN_FILE})
 set(STORM_DFT_MAIN_SOURCES ${STORM_SOURCES_CLI} ${STORM_DFT_MAIN_FILE})
 set(STORM_PGCL_MAIN_SOURCES ${STORM_SOURCES_CLI} ${STORM_PGCL_MAIN_FILE})
+set(STORM_GSPN_MAIN_SOURCES ${STORM_SOURCES_CLI} ${STORM_GSPN_MAIN_FILE})
 set(STORM_MAIN_HEADERS ${STORM_HEADERS_CLI})
 
 file(GLOB_RECURSE ALL_FILES ${PROJECT_SOURCE_DIR}/src/*.h ${PROJECT_SOURCE_DIR}/src/*.cpp)
@@ -65,6 +66,13 @@ set_target_properties(storm-dft-main PROPERTIES OUTPUT_NAME "storm-dft")
 add_executable(storm-pgcl-main ${STORM_PGCL_MAIN_SOURCES} ${STORM_MAIN_HEADERS})
 target_link_libraries(storm-pgcl-main storm)
 set_target_properties(storm-pgcl-main PROPERTIES OUTPUT_NAME "storm-pgcl")
+
+add_executable(storm-gspn-main ${STORM_GSPN_MAIN_SOURCES} ${STORM_MAIN_HEADERS})
+target_link_libraries(storm-gspn-main storm) # Adding headers for xcode
+set_target_properties(storm-gspn-main PROPERTIES OUTPUT_NAME "storm-gspn")
+
+target_link_libraries(storm ${STORM_LINK_LIBRARIES})
+
 
 INSTALL(TARGETS storm-main
 	RUNTIME DESTINATION bin

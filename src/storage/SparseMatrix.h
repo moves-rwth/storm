@@ -11,6 +11,7 @@
 #include <boost/optional.hpp>
 
 #include "src/utility/OsDetection.h"
+#include "src/utility/macros.h"
 #include "src/adapters/CarlAdapter.h"
 
 // Forward declaration for adapter classes.
@@ -228,9 +229,8 @@ namespace storm {
              *
              * @param replacements Mapping indicating the replacements from offset+i -> value of i.
              * @param offset Offset to add to each id in vector index.
-             * @return True if replacement took place, False if nothing changed.
              */
-            bool replaceColumns(std::vector<index_type> const& replacements, index_type offset);
+            void replaceColumns(std::vector<index_type> const& replacements, index_type offset);
                         
         private:
             // A flag indicating whether a row count was set upon construction.
@@ -293,11 +293,6 @@ namespace storm {
             // Stores the currently active row group. This is used for correctly constructing the row grouping of the
             // matrix.
             index_type currentRowGroup;
-            
-            /*!
-             * Fixes the matrix by sorting the columns to gain increasing order again.
-             */
-            void fixColumns();
         };
         
         /*!

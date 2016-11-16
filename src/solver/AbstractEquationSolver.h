@@ -1,7 +1,6 @@
 #ifndef STORM_SOLVER_ABSTRACTEQUATIONSOLVER_H_
 #define STORM_SOLVER_ABSTRACTEQUATIONSOLVER_H_
 
-#include <memory>
 #include "src/solver/TerminationCondition.h"
 #include <memory>
 

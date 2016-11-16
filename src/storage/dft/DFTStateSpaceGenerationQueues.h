@@ -55,7 +55,7 @@ namespace storm {
             }
             
             DFTRestrictionPointer nextRestrictionCheck() {
-                assert(!restrictionChecksDone());
+                STORM_LOG_ASSERT(!restrictionChecksDone(), "All restriction checks done already.");
                 DFTRestrictionPointer next = restrictionChecks.back();
                 restrictionChecks.pop_back();
                 return next;

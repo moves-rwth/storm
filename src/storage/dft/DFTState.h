@@ -1,12 +1,12 @@
 #ifndef DFTSTATE_H
 #define	DFTSTATE_H
 
-#include "../BitVector.h"
-#include "DFTElementState.h"
+#include "src/storage/dft/DFTElementState.h"
+#include "src/storage/BitVector.h"
+#include "src/builder/DftExplorationHeuristic.h"
 
 #include <sstream>
 #include <memory>
-#include <cassert>
 
 namespace storm {
     namespace storage {
@@ -26,21 +26,41 @@ namespace storm {
             // Status is bitvector where each element has two bits with the meaning according to DFTElementState
             storm::storage::BitVector mStatus;
             size_t mId;
-            std::vector<size_t> mIsCurrentlyFailableBE;
+            std::vector<size_t> mCurrentlyFailableBE;
             std::vector<size_t> mFailableDependencies;
             std::vector<size_t> mUsedRepresentants;
+            bool mPseudoState;
             bool mValid = true;
             const DFT<ValueType>& mDft;
             const DFTStateGenerationInfo& mStateGenerationInfo;
-            
+
         public:
-            DFTState(DFT<ValueType> const& dft, DFTStateGenerationInfo const& stateGenerationInfo, size_t id);
-            
             /**
-             * Construct state from underlying bitvector.
+             * Construct the initial state.
+             *
+             * @param dft                 DFT
+             * @param stateGenerationInfo General information for state generation
+             * @param id                  State id
+             */
+            DFTState(DFT<ValueType> const& dft, DFTStateGenerationInfo const& stateGenerationInfo, size_t id);
+
+            /**
+             * Construct temporary pseudo state. The actual state is constructed later.
+             *
+             * @param status              BitVector representing the status of the state.
+             * @param dft                 DFT
+             * @param stateGenerationInfo General information for state generation
+             * @param id                  Pseudo state id
              */
             DFTState(storm::storage::BitVector const& status, DFT<ValueType> const& dft, DFTStateGenerationInfo const& stateGenerationInfo, size_t id);
-            
+
+            /**
+             * Construct concerete state from pseudo state by using the underlying bitvector.
+             */
+            void construct();
+
+            std::shared_ptr<DFTState<ValueType>> copy() const;
+
             DFTElementState getElementState(size_t id) const;
             
             DFTDependencyState getDependencyState(size_t id) const;
@@ -96,7 +116,11 @@ namespace storm {
             bool isInvalid() const {
                 return !mValid;
             }
-            
+
+            bool isPseudoState() const {
+                return mPseudoState;
+            }
+
             storm::storage::BitVector const& status() const {
                 return mStatus;
             }
@@ -135,17 +159,49 @@ namespace storm {
              * @param spareId Id of the spare
              */
             void finalizeUses(size_t spareId);
-            
+
+            /**
+             * Claim a new spare child for the given spare gate.
+             *
+             * @param spareId       Id of the spare gate.
+             * @param currentlyUses Id of the currently used spare child.
+             * @param children      List of children of this spare.
+             *
+             * @return True, if claiming was successful.
+             */
             bool claimNew(size_t spareId, size_t currentlyUses, std::vector<std::shared_ptr<DFTElement<ValueType>>> const& children);
             
-            bool hasOutgoingEdges() const {
-                return !mIsCurrentlyFailableBE.empty();
-            }
-            
+            /**
+             * Get number of currently failable BEs.
+             *
+             * @return Number of failable BEs.
+             */
             size_t nrFailableBEs() const {
-                return mIsCurrentlyFailableBE.size();
+                return mCurrentlyFailableBE.size();
             }
 
+            /**
+             * Get the failure rate of the currently failable BE on the given index.
+             *
+             * @param index           Index of BE in list of currently failable BEs.
+             *
+             * @return Failure rate of the BE.
+             */
+            ValueType getFailableBERate(size_t index) const;
+
+            /**
+             * Get the current failure rate of the given BE.
+             *
+             * @param id        Id of BE.
+             *
+             * @return Failure rate of the BE.
+             */
+            ValueType getBERate(size_t id) const;
+
+            /** Get number of currently failable dependencies.
+             *
+             * @return Number of failable dependencies.
+             */
             size_t nrFailableDependencies() const {
                 return mFailableDependencies.size();
             }
@@ -156,7 +212,7 @@ namespace storm {
              * @return Id of the dependency
              */
             size_t getDependencyId(size_t index) const {
-                assert(index < nrFailableDependencies());
+                STORM_LOG_ASSERT(index < nrFailableDependencies(), "Index invalid.");
                 return mFailableDependencies[index];
             }
 
@@ -214,13 +270,13 @@ namespace storm {
                     }
                     stream << "} ";
                 } else {
-                    auto it = mIsCurrentlyFailableBE.begin();
+                    auto it = mCurrentlyFailableBE.begin();
                     stream << "{";
-                    if(it != mIsCurrentlyFailableBE.end()) {
+                    if(it != mCurrentlyFailableBE.end()) {
                         stream << *it;
                     }
                     ++it;
-                    while(it != mIsCurrentlyFailableBE.end()) {
+                    while(it != mCurrentlyFailableBE.end()) {
                         stream << ", " << *it;
                         ++it;
                     }
@@ -235,11 +291,6 @@ namespace storm {
             
         private:
             void propagateActivation(size_t representativeId);
-            
-            /*!
-             * Sort failable BEs in decreasing order of their active failure rate.
-             */
-            void sortFailableBEs();
 
         };
 

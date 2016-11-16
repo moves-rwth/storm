@@ -1597,10 +1597,6 @@ namespace storm {
             return Command(newCommandIndex, false, actionIndex, actionName, newGuard, newUpdates, this->getFilename(), 0);
         }
         
-        uint_fast64_t Program::getNumberOfActions() const {
-            return this->actions.size();
-        }
-        
         storm::jani::Model Program::toJani(bool allVariablesGlobal) const {
             ToJaniConverter converter;
             return converter.convert(*this, allVariablesGlobal);

@@ -32,7 +32,7 @@ namespace storm {
             }
 
             void disable(uint_fast64_t choiceIndex) {
-                assert(choiceIndex < enabledChoices.size());
+                STORM_LOG_ASSERT(choiceIndex < enabledChoices.size(), "Invalid choiceIndex.");
                 enabledChoices.set(choiceIndex, false);
             }
 

@@ -181,7 +181,7 @@ namespace storm {
                                                     });
                 
                 
-                // If the predecessor block was split, we need to insert it into the splitter queue if it is not already
+                // If the predecessor block was split, we need to insert it into the splitter vector if it is not already
                 // marked as a splitter.
                 if (split && !blockToRefineProbabilistically->data().splitter()) {
                     splitterQueue.emplace_back(blockToRefineProbabilistically);

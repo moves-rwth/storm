@@ -49,7 +49,7 @@ namespace storm {
                  *
                  * @param states The selected set of states.
                  */
-                StateLabeling getSubLabeling(storm::storage::BitVector const& states);
+                StateLabeling getSubLabeling(storm::storage::BitVector const& states) const;
                 
                 /*!
                  * Adds a new label to the labelings. Initially, no state is labeled with this label.

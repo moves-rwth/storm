@@ -12,14 +12,8 @@
 #include <functional>
 
 #include "src/storage/BitVector.h"
-#include "src/utility/constants.h"
 #include "src/utility/macros.h"
 #include "src/solver/OptimizationDirection.h"
-
-// Template was causing problems as Carl has the same function
-//template<typename ValueType>
-//std::ostream& operator<<(std::ostream& out, std::vector<ValueType> const& vector);
-std::ostream& operator<<(std::ostream& out, std::vector<double> const& vector);
 
 namespace storm {
     namespace utility {
@@ -623,16 +617,18 @@ namespace storm {
              * @return True iff the elements are considered equal.
              */
             template<class T>
-            bool equalModuloPrecision(T const& val1, T const& val2, T precision, bool relativeError = true) {
+            bool equalModuloPrecision(T const& val1, T const& val2, T const& precision, bool relativeError = true) {
                 if (relativeError) {
 					if (val2 == 0) {
                         return (storm::utility::abs(val1) <= precision);
 					}
-                    if (storm::utility::abs((val1 - val2)/val2) > precision) {
+                    T relDiff = (val1 - val2)/val2;
+                    if (storm::utility::abs(relDiff) > precision) {
                         return false;
                     }
                 } else {
-                    if (storm::utility::abs(val1 - val2) > precision) return false;
+                    T diff = val1 - val2;
+                    if (storm::utility::abs(diff) > precision) return false;
                 }
                 return true;
             }
@@ -647,7 +643,7 @@ namespace storm {
              * @param relativeError If set, the difference between the vectors is computed relative to the value or in absolute terms.
              */
             template<class T>
-            bool equalModuloPrecision(std::vector<T> const& vectorLeft, std::vector<T> const& vectorRight, T precision, bool relativeError) {
+            bool equalModuloPrecision(std::vector<T> const& vectorLeft, std::vector<T> const& vectorRight, T const& precision, bool relativeError) {
                 STORM_LOG_ASSERT(vectorLeft.size() == vectorRight.size(), "Lengths of vectors does not match.");
                 
                 for (uint_fast64_t i = 0; i < vectorLeft.size(); ++i) {
@@ -671,7 +667,7 @@ namespace storm {
              * @param relativeError If set, the difference between the vectors is computed relative to the value or in absolute terms.
              */
             template<class T>
-            bool equalModuloPrecision(std::vector<T> const& vectorLeft, std::vector<T> const& vectorRight, std::vector<uint_fast64_t> const& positions, T precision, bool relativeError) {
+            bool equalModuloPrecision(std::vector<T> const& vectorLeft, std::vector<T> const& vectorRight, std::vector<uint_fast64_t> const& positions, T const& precision, bool relativeError) {
                 STORM_LOG_ASSERT(vectorLeft.size() == vectorRight.size(), "Lengths of vectors does not match.");
                 
                 for (uint_fast64_t position : positions) {

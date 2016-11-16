@@ -1,0 +1,6 @@
+toplevel "A";
+"A" or "B" "Z";
+"B" pand "D" "S";
+"Z" lambda=1 dorm=0;
+"D" lambda=100 dorm=0;
+"S" lambda=50 dorm=0;

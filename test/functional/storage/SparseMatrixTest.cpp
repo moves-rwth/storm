@@ -516,7 +516,10 @@ TEST(SparseMatrix, MatrixVectorMultiply) {
     ASSERT_NO_THROW(matrix.multiplyWithVector(x, result));
     
     std::vector<double> correctResult = {1.0*0.3+1.2*1.4, 0.5*1+0.7*0.3, 0.5*1, 1.1*1.4, 0.1*1+0.2*0.3+0.3*7.1};
-    ASSERT_TRUE(result == correctResult);
+    
+    for (std::size_t index = 0; index < correctResult.size(); ++index) {
+        ASSERT_NEAR(result[index], correctResult[index], 1e-12);
+    }
 }
 
 TEST(SparseMatrix, Iteration) {

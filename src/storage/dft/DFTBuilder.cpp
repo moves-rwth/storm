@@ -32,7 +32,7 @@ namespace storm {
                         // Child not found -> find first dependent event to assure that child is dependency
                         // TODO: Not sure whether this is the intended behaviour?
                         auto itFind = mElements.find(child + "_1");
-                        STORM_LOG_ASSERT(itFind != mElements.end(), "Child not found.");
+                        STORM_LOG_ASSERT(itFind != mElements.end(), "Child '" << child << "' for gate '" << gate->name() << "' not found.");
                         STORM_LOG_ASSERT(itFind->second->isDependency(), "Child is no dependency.");
                         STORM_LOG_TRACE("Ignore functional dependency " << child << " in gate " << gate->name());
                     }

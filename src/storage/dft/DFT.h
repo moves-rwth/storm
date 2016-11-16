@@ -118,7 +118,7 @@ namespace storm {
                 if(representativeId == mTopLevelIndex) {
                     return mTopModule;
                 } else {
-                    assert(mSpareModules.count(representativeId)>0);
+                    STORM_LOG_ASSERT(mSpareModules.count(representativeId) > 0, "Representative not found.");
                     return mSpareModules.find(representativeId)->second;
                 }
             }
@@ -145,7 +145,7 @@ namespace storm {
              *  @param index The id of the element
              */
             DFTElementCPointer getElement(size_t index) const {
-                assert(index < nrElements());
+                STORM_LOG_ASSERT(index < nrElements(), "Index invalid.");
                 return mElements[index];
             }
 
@@ -166,7 +166,7 @@ namespace storm {
             }
 
             std::shared_ptr<DFTBE<ValueType> const> getBasicElement(size_t index) const {
-                assert(isBasicElement(index));
+                STORM_LOG_ASSERT(isBasicElement(index), "Element is no BE.");
                 return std::static_pointer_cast<DFTBE<ValueType> const>(mElements[index]);
             }
 
@@ -175,17 +175,17 @@ namespace storm {
             }
             
             std::shared_ptr<DFTGate<ValueType> const> getGate(size_t index) const {
-                assert(isGate(index));
+                STORM_LOG_ASSERT(isGate(index), "Element is no gate.");
                 return std::static_pointer_cast<DFTGate<ValueType> const>(mElements[index]);
             }
 
             std::shared_ptr<DFTDependency<ValueType> const> getDependency(size_t index) const {
-                assert(isDependency(index));
+                STORM_LOG_ASSERT(isDependency(index), "Element is no dependency.");
                 return std::static_pointer_cast<DFTDependency<ValueType> const>(mElements[index]);
             }
             
             std::shared_ptr<DFTRestriction<ValueType> const> getRestriction(size_t index) const {
-                assert(isRestriction(index));
+                STORM_LOG_ASSERT(isRestriction(index), "Element is no restriction.");
                 return std::static_pointer_cast<DFTRestriction<ValueType> const>(mElements[index]);
             }
 
@@ -198,6 +198,8 @@ namespace storm {
                 }
                 return elements;
             }
+
+            bool canHaveNondeterminism() const;
             
             std::vector<DFT<ValueType>> topModularisation() const;
             
@@ -214,9 +216,9 @@ namespace storm {
                 return mRepresentants.find(id) != mRepresentants.end();
             }
 
-            DFTElementCPointer getRepresentant(size_t id) const {
-                assert(hasRepresentant(id));
-                return getElement(mRepresentants.find(id)->second);
+            size_t getRepresentant(size_t id) const {
+                STORM_LOG_ASSERT(hasRepresentant(id), "Element has no representant.");
+                return mRepresentants.find(id)->second;
             }
 
             bool hasFailed(DFTStatePointer const& state) const {

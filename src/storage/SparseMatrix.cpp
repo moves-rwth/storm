@@ -22,6 +22,8 @@
 
 #include "src/utility/macros.h"
 
+#include <iterator>
+
 namespace storm {
     namespace storage {
         
@@ -267,66 +269,37 @@ namespace storm {
         }
         
         template<typename ValueType>
-        bool SparseMatrixBuilder<ValueType>::replaceColumns(std::vector<index_type> const& replacements, index_type offset) {
-            bool changed = false;
+        void SparseMatrixBuilder<ValueType>::replaceColumns(std::vector<index_type> const& replacements, index_type offset) {
             index_type maxColumn = 0;
-            for (auto& elem : columnsAndValues) {
-                if (elem.getColumn() >= offset) {
-                    elem.setColumn(replacements[elem.getColumn() - offset]);
-                    changed = true;
-                }
-                maxColumn = std::max(maxColumn, elem.getColumn());
-            }
-            assert(changed || highestColumn == maxColumn);
-            highestColumn = maxColumn;
-            assert(changed || lastColumn == columnsAndValues[columnsAndValues.size() - 1].getColumn());
-            lastColumn = columnsAndValues[columnsAndValues.size() - 1].getColumn();
-            
-            if (changed) {
-                fixColumns();
-            }
-            return changed;
-        }
 
-        template<typename ValueType>
-        void SparseMatrixBuilder<ValueType>::fixColumns() {
-            // Sort columns per row
-            typename SparseMatrix<ValueType>::index_type endGroups;
-            typename SparseMatrix<ValueType>::index_type endRows;
-            
-            if (hasCustomRowGrouping) {
-                for (index_type group = 0; group < rowGroupIndices.get().size(); ++group) {
-                    endGroups = group < rowGroupIndices.get().size()-1 ? rowGroupIndices.get()[group+1] : rowIndications.size();
-                    for (index_type i = rowGroupIndices.get()[group]; i < endGroups; ++i) {
-                        endRows = i < rowIndications.size()-1 ? rowIndications[i+1] : columnsAndValues.size();
-                        // Sort the row
-                        std::sort(columnsAndValues.begin() + rowIndications[i], columnsAndValues.begin() + endRows,
-                                  [](MatrixEntry<index_type, value_type> const& a, MatrixEntry<index_type, value_type> const& b) {
-                                      return a.getColumn() < b.getColumn();
-                                  });
-                        // Assert no equal elements
-                        assert(std::is_sorted(columnsAndValues.begin() + rowIndications[i], columnsAndValues.begin() + endRows,
-                                              [](MatrixEntry<index_type, value_type> const& a, MatrixEntry<index_type, value_type> const& b) {
-                                                  return a.getColumn() <= b.getColumn();
-                                              }));
+            for (index_type row = 0; row < rowIndications.size(); ++row) {
+                bool changed = false;
+                auto startRow = std::next(columnsAndValues.begin(), rowIndications[row]);
+                auto endRow = row < rowIndications.size()-1 ? std::next(columnsAndValues.begin(), rowIndications[row+1]) : columnsAndValues.end();
+                for (auto entry = startRow; entry != endRow; ++entry) {
+                    if (entry->getColumn() >= offset) {
+                        // Change column
+                        entry->setColumn(replacements[entry->getColumn() - offset]);
+                        changed = true;
                     }
+                    maxColumn = std::max(maxColumn, entry->getColumn());
                 }
-            } else {
-                for (index_type i = 0; i < rowIndications.size(); ++i) {
-                    endRows = i < rowIndications.size()-1 ? rowIndications[i+1] : columnsAndValues.size();
-                    // Sort the row
-                    std::sort(columnsAndValues.begin() + rowIndications[i], columnsAndValues.begin() + endRows,
+                if (changed) {
+                    // Sort columns in row
+                    std::sort(startRow, endRow,
                               [](MatrixEntry<index_type, value_type> const& a, MatrixEntry<index_type, value_type> const& b) {
                                   return a.getColumn() < b.getColumn();
                               });
                     // Assert no equal elements
-                    assert(std::is_sorted(columnsAndValues.begin() + rowIndications[i], columnsAndValues.begin() + endRows,
-                                          [](MatrixEntry<index_type, value_type> const& a, MatrixEntry<index_type, value_type> const& b) {
-                                              return a.getColumn() <= b.getColumn();
-                                          }));
+                    STORM_LOG_ASSERT(std::is_sorted(startRow, endRow,
+                                                    [](MatrixEntry<index_type, value_type> const& a, MatrixEntry<index_type, value_type> const& b) {
+                                                        return a.getColumn() < b.getColumn();
+                                                    }), "Columns not sorted.");
                 }
-
             }
+
+            highestColumn = maxColumn;
+            lastColumn = columnsAndValues[columnsAndValues.size() - 1].getColumn();
         }
 
         template<typename ValueType>
@@ -688,6 +661,9 @@ namespace storm {
                         *writeIt = std::move(intermediateRowEntry);
                         ++writeIt;
                     }
+                } else {
+                    // skip the intermediate rows
+                    writeIt = getRow(smallerRow).begin();
                 }
                 
                 // Write the larger row to its new position.
@@ -720,6 +696,9 @@ namespace storm {
                         *writeIt = std::move(*intermediateRowEntryIt);
                         --writeIt;
                     }
+                } else {
+                    // skip the intermediate rows
+                    writeIt = getRow(smallerRow).end() - 1;
                 }
                 
                 // Write the larger row to its new position.
@@ -1139,12 +1118,12 @@ namespace storm {
         
 #ifdef STORM_HAVE_CARL
         template<>
-        typename std::pair<storm::storage::SparseMatrix<RationalFunction>, std::vector<RationalFunction>> SparseMatrix<RationalFunction>::getJacobiDecomposition() const {
+        typename std::pair<storm::storage::SparseMatrix<Interval>, std::vector<Interval>> SparseMatrix<Interval>::getJacobiDecomposition() const {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This operation is not supported.");
         }
         
         template<>
-        typename std::pair<storm::storage::SparseMatrix<Interval>, std::vector<Interval>> SparseMatrix<Interval>::getJacobiDecomposition() const {
+        typename std::pair<storm::storage::SparseMatrix<RationalFunction>, std::vector<RationalFunction>> SparseMatrix<RationalFunction>::getJacobiDecomposition() const {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This operation is not supported.");
         }
 #endif
@@ -1538,7 +1517,7 @@ namespace storm {
         void SparseMatrix<ValueType>::printAsMatlabMatrix(std::ostream& out) const {
             // Iterate over all row groups.
             for (typename SparseMatrix<ValueType>::index_type group = 0; group < this->getRowGroupCount(); ++group) {
-                assert(this->getRowGroupSize(group) == 1);
+                STORM_LOG_ASSERT(this->getRowGroupSize(group) == 1, "Incorrect row group size.");
                 for (typename SparseMatrix<ValueType>::index_type i = this->getRowGroupIndices()[group]; i < this->getRowGroupIndices()[group + 1]; ++i) {
                     typename SparseMatrix<ValueType>::index_type nextIndex = this->rowIndications[i];
                     

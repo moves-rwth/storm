@@ -2,8 +2,10 @@
 #include <src/models/sparse/MarkovAutomaton.h>
 #include <src/models/sparse/Ctmc.h>
 #include <src/utility/constants.h>
-#include <src/utility/vector.h>
+#include "src/utility/vector.h"
 #include <src/exceptions/UnexpectedException.h>
+#include "src/settings/modules/DFTSettings.h"
+#include "src/settings/SettingsManager.h"
 #include <map>
 
 namespace storm {
@@ -56,6 +58,7 @@ namespace storm {
                     STORM_LOG_ASSERT(mStates.getValue(pseudoStatePair.second) >= OFFSET_PSEUDO_STATE, "State is no pseudo state.");
                     STORM_LOG_TRACE("Create pseudo state from bit vector " << pseudoStatePair.second);
                     DFTStatePointer pseudoState = std::make_shared<storm::storage::DFTState<ValueType>>(pseudoStatePair.second, mDft, *mStateGenerationInfo, newIndex);
+                    pseudoState->construct();
                     STORM_LOG_ASSERT(pseudoStatePair.second == pseudoState->status(), "Pseudo states do not coincide.");
                     STORM_LOG_TRACE("Explore pseudo state " << mDft.getStateString(pseudoState) << " with id " << pseudoState->getId());
                     auto exploreResult = exploreStates(pseudoState, rowOffset, transitionMatrixBuilder, tmpMarkovianStates, modelComponents.exitRates);
@@ -157,7 +160,7 @@ namespace storm {
             
             return model;
         }
-
+        
         template <typename ValueType>
         std::pair<uint_fast64_t, bool> ExplicitDFTModelBuilder<ValueType>::exploreStates(DFTStatePointer const& state, size_t& rowOffset, storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder, std::vector<uint_fast64_t>& markovianStates, std::vector<ValueType>& exitRates) {
             STORM_LOG_TRACE("Explore state: " << mDft.getStateString(state));
@@ -288,7 +291,7 @@ namespace storm {
                     if (mDft.hasRepresentant(nextBE->id())) {
                         // Active must be checked for the state we are coming from as this state is responsible for the
                         // rate and not the new state we are going to
-                        isActive = state->isActive(mDft.getRepresentant(nextBE->id())->id());
+                        isActive = state->isActive(mDft.getRepresentant(nextBE->id()));
                     }
                     ValueType rate = isActive ? nextBE->activeFailureRate() : nextBE->passiveFailureRate();
                     STORM_LOG_ASSERT(!storm::utility::isZero(rate), "Rate is 0.");

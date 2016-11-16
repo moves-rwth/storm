@@ -15,6 +15,7 @@ namespace storm {
             }
             
             template class StateStorage<uint32_t>;
+            template class StateStorage<uint_fast64_t>;
         }
     }
 }

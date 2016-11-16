@@ -1,6 +1,16 @@
 #ifndef STORM_UTILITY_LOGGING_H_
 #define STORM_UTILITY_LOGGING_H_
 
+// Include config to know whether CARL is available or not.
+#include "storm-config.h"
+#ifdef STORM_HAVE_CARL
+// Load streaming operator from CARL
+#include <carl/io/streamingOperators.h>
+namespace l3pp {
+    using carl::operator<<;
+}
+#endif
+
 #include <l3pp.h>
 
 #if !defined(STORM_LOG_DISABLE_DEBUG) && !defined(STORM_LOG_DISABLE_TRACE)
