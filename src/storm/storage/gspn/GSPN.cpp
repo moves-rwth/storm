@@ -153,55 +153,50 @@ namespace storm {
             
             // print arcs
             for (auto& trans : this->getImmediateTransitions()) {
-                auto it = trans->getInputPlacesCBegin();
-                while (it != trans->getInputPlacesCEnd()) {
-                    outStream << "\t" << (**it).getName() << " -> " << trans->getName() << "[label=\"" <<
-                    ((trans->getInputArcMultiplicity(**it) == 1) ? "" : std::to_string(trans->getInputArcMultiplicity(**it)))
-                    << "\"];" << std::endl;
-                    
-                    ++it;
+                for (auto const& inEntry : trans.getInputPlaces()) {
+                    if (trans.getOutputPlaces().count(inEntry.first) == 0) {
+                        outStream << "\t" << places.at(inEntry.first).getName() << " -> " << trans.getName() << "[label=\"" << (inEntry.second > 1 ? std::to_string(inEntry.second) : "") << "\"];" << std::endl;
+                    }
                 }
                 
-                it = trans->getInhibitionPlacesCBegin();
-                while (it != trans->getInhibitionPlacesCEnd()) {
-                    outStream << "\t" << (**it).getName() << " -> " << trans->getName() << "[arrowhead=\"dot\", label=\"" <<
-                    ((trans->getInhibitionArcMultiplicity(**it) == 1) ? "" : std::to_string(trans->getInhibitionArcMultiplicity(**it)))
-                    << "\"];" << std::endl;
-                    ++it;
+                for (auto const& inhEntry : trans.getInhibitionPlaces()) {
+                    if (trans.getOutputPlaces().count(inhEntry.first) == 0) {
+                        outStream << "\t" << places.at(inhEntry.first).getName() << " -> " << trans.getName() << "[arrowhead=\"dot\", label=\"" << (inhEntry.second > 1 ? std::to_string(inhEntry.second) : "") << "\"];" << std::endl;
+                    }
                 }
                 
-                it = trans->getOutputPlacesCBegin();
-                while (it != trans->getOutputPlacesCEnd()) {
-                    outStream << "\t" << trans->getName() << " -> " << (**it).getName() << "[label=\"" <<
-                    ((trans->getOutputArcMultiplicity(**it) == 1) ? "" : std::to_string(trans->getOutputArcMultiplicity(**it)))
-                    << "\"];" << std::endl;
-                    ++it;
+                for (auto const& outEntry : trans.getOutputPlaces()) {
+                    if (trans.getInhibitionPlaces().count(outEntry.first) == 1) {
+                        outStream << "\t" << trans.getName() << " -> " << places.at(outEntry.first).getName() << "[arrowtail=\"dot\", label=\"" << (outEntry.second > 1 ? std::to_string(outEntry.second) : "") << "\", dir=both];" << std::endl;
+                    } else if (trans.getInputPlaces().count(outEntry.first) == 1) {
+                        outStream << "\t" << trans.getName() << " -> " << places.at(outEntry.first).getName() << "[arrowtail=\"dot\", label=\"" << (outEntry.second > 1 ? std::to_string(outEntry.second) : "")<< "\", dir=both];" << std::endl;
+                    } else {
+                        outStream << "\t" << trans.getName() << " -> " << places.at(outEntry.first).getName() << "[label=\"" << (outEntry.second > 1 ? std::to_string(outEntry.second) : "") << "\"];" << std::endl;
+                    }
                 }
             }
             
             for (auto& trans : this->getTimedTransitions()) {
-                auto it = trans->getInputPlacesCBegin();
-                while (it != trans->getInputPlacesCEnd()) {
-                    outStream << "\t" << (**it).getName() << " -> " << trans->getName() << "[label=\"" <<
-                    ((trans->getInputArcMultiplicity(**it) == 1) ? "" : std::to_string(trans->getInputArcMultiplicity(**it)))
-                    << "\"];" << std::endl;
-                    ++it;
+                for (auto const& inEntry : trans.getInputPlaces()) {
+                    if (trans.getOutputPlaces().count(inEntry.first) == 0) {
+                        outStream << "\t" << places.at(inEntry.first).getName() << " -> " << trans.getName() << "[label=\"" << (inEntry.second > 1 ? std::to_string(inEntry.second) : "") << "\"];" << std::endl;
+                    }
                 }
                 
-                it = trans->getInhibitionPlacesCBegin();
-                while (it != trans->getInhibitionPlacesCEnd()) {
-                    outStream << "\t" << (**it).getName() << " -> " << trans->getName() << "[arrowhead=\"dot\", label=\"" <<
-                    ((trans->getInhibitionArcMultiplicity(**it) == 1) ? "" : std::to_string(trans->getInhibitionArcMultiplicity(**it)))
-                    << "\"];" << std::endl;
-                    ++it;
+                for (auto const& inhEntry : trans.getInhibitionPlaces()) {
+                    if (trans.getOutputPlaces().count(inhEntry.first) == 0) {
+                        outStream << "\t" << places.at(inhEntry.first).getName() << " -> " << trans.getName() << "[arrowhead=\"dot\", label=\"" << (inhEntry.second > 1 ? std::to_string(inhEntry.second) : "") << "\"];" << std::endl;
+                    }
                 }
                 
-                it = trans->getOutputPlacesCBegin();
-                while (it != trans->getOutputPlacesCEnd()) {
-                    outStream << "\t" << trans->getName() << " -> " << (**it).getName() << "[label=\"" <<
-                    ((trans->getOutputArcMultiplicity(**it) == 1) ? "" : std::to_string(trans->getOutputArcMultiplicity(**it)))
-                    << "\"];" << std::endl;
-                    ++it;
+                for (auto const& outEntry : trans.getOutputPlaces()) {
+                    if (trans.getInhibitionPlaces().count(outEntry.first) == 1) {
+                        outStream << "\t" << trans.getName() << " -> " << places.at(outEntry.first).getName() << "[arrowtail=\"dot\", label=\"" << (outEntry.second > 1 ? std::to_string(outEntry.second) : "") << "\", dir=both];" << std::endl;
+                    } else if (trans.getInputPlaces().count(outEntry.first) == 1) {
+                        outStream << "\t" << trans.getName() << " -> " << places.at(outEntry.first).getName() << "[arrowtail=\"dot\", label=\"" << (outEntry.second > 1 ? std::to_string(outEntry.second) : "")<< "\", dir=both];" << std::endl;
+                    } else {
+                        outStream << "\t" << trans.getName() << " -> " << places.at(outEntry.first).getName() << "[label=\"" << (outEntry.second > 1 ? std::to_string(outEntry.second) : "") << "\"];" << std::endl;
+                    }
                 }
             }
             

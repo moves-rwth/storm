@@ -17,6 +17,7 @@ namespace storm {
             auto place = storm::gspn::Place(newId);
             place.setCapacity(capacity);
             place.setNumberOfInitialTokens(initialTokens);
+            place.setName(name);
             places.push_back(place);
             return newId;
         }
@@ -24,7 +25,7 @@ namespace storm {
         uint_fast64_t GspnBuilder::addImmediateTransition(uint_fast64_t const& priority, double const& weight, std::string const& name) {
             auto trans = storm::gspn::ImmediateTransition<double>();
             auto newId = GSPN::immediateTransitionIdToTransitionId(immediateTransitions.size());
-            trans.setName(std::to_string(newId));
+            trans.setName(name);
             trans.setPriority(priority);
             trans.setWeight(weight);
             trans.setID(newId);
@@ -36,7 +37,7 @@ namespace storm {
         uint_fast64_t GspnBuilder::addTimedTransition(uint_fast64_t const &priority, double const &rate, std::string const& name) {
             auto trans = storm::gspn::TimedTransition<double>();
             auto newId = GSPN::timedTransitionIdToTransitionId(timedTransitions.size());
-            trans.setName(std::to_string(newId));
+            trans.setName(name);
             trans.setPriority(priority);
             trans.setRate(rate);
             trans.setID(newId);
@@ -85,7 +86,7 @@ namespace storm {
         
         Transition& GspnBuilder::getTransition(uint64_t id) {
             if (isTimedTransitionId(id)) {
-                return timedTransitions.at(id);
+                return timedTransitions.at(GSPN::transitionIdToTimedTransitionId(id));
             } else if(isImmediateTransitionId(id)) {
                 return immediateTransitions.at(id);
             } else {
