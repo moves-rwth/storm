@@ -519,18 +519,22 @@ namespace storm {
                 auto start = std::chrono::high_resolution_clock::now();
                 
                 std::shared_ptr<storm::models::sparse::Model<ValueType, storm::models::sparse::StandardRewardModel<ValueType>>> sparseModel(nullptr);
+                boost::optional<std::string> error;
                 try {
                     sparseModel = std::shared_ptr<storm::models::sparse::Model<ValueType, storm::models::sparse::StandardRewardModel<ValueType>>>(builder->build());
                     STORM_LOG_THROW(sparseModel, storm::exceptions::UnexpectedException, "An unexpected error occurred.");
                     STORM_LOG_TRACE("Successfully got model from jit-builder.");
                 } catch (std::exception const& e) {
-                    STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Model building failed. Reason: " << e.what());
+                    error = e.what();
                 }
+                
                 auto end = std::chrono::high_resolution_clock::now();
                 STORM_LOG_TRACE("Building model took " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
                 
                 // (7) Delete the shared library.
                 boost::filesystem::remove(dynamicLibraryPath);
+                
+                STORM_LOG_THROW(!error, storm::exceptions::WrongFormatException, "Model building failed. Reason: " << error.get());
                 
                 // Return the constructed model.
                 return sparseModel;
