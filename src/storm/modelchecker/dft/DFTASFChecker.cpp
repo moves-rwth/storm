@@ -362,22 +362,26 @@ namespace storm {
                                 
                                 constraints.push_back(std::make_shared<Iff>(std::make_shared<IsLEqual>(getClaimVariableIndex(spare->id(), children.back()->id()), childVarIndices.back()), std::make_shared<IsEqual>(timePointVariables.at(i), childVarIndices.back())));
                                 constraints.back()->setDescription("Last child & claimed -> spare fails");
-                                std::vector<std::shared_ptr<DFTConstraint>> ifcs;
-                                uint64_t xv = childVarIndices.at(childVarIndices.size()-2); // if v is the child, xv is the time x fails.
-                                uint64_t csn = getClaimVariableIndex(spare->id(), children.back()->id()); // csn is the moment the spare claims the next child
-                                uint64_t xn = childVarIndices.back(); // xn is the moment the next child fails
-                                ifcs.push_back(std::make_shared<IsLEqual>(xv, xn));
-                                for(auto const& otherSpare : children.back()->parents()) {
-                                    if(otherSpare->id() == i) { continue; }// not a OTHER spare.
-                                    ifcs.push_back(std::make_shared<IsConstantValue>(getClaimVariableIndex(otherSpare->id(), children.back()->id()), dft.nrBasicElements()+1));
-                                }
-                                std::shared_ptr<DFTConstraint> ite = std::make_shared<IfThenElse>(std::make_shared<And>(ifcs), std::make_shared<IsEqual>(csn, xv), std::make_shared<IsEqual>(timePointVariables.at(i),  xv));
-                                constraints.push_back(std::make_shared<Iff>(std::make_shared<IsLEqual>(getClaimVariableIndex(spare->id(), children.at(children.size()-2)->id()), xv), ite));
-                                constraints.back()->setDescription("1 but last child & claimed");
                                 
-                                for( uint64_t j = 0; j < children.size() - 2; ++j) {
-                                    uint64_t currChild = children.size() - 1 - j;
-                                    
+                                std::shared_ptr<DFTConstraint> elseCase = nullptr;
+                                for( uint64_t j = 0; j < children.size(); ++j) {
+                                    uint64_t currChild = children.size() - 2 - j;
+                                    std::vector<std::shared_ptr<DFTConstraint>> ifcs;
+                                    uint64_t xv = childVarIndices.at(currChild); // if v is the child, xv is the time x fails.
+                                    uint64_t csn = getClaimVariableIndex(spare->id(), childVarIndices.at(currChild+1)); // csn is the moment the spare claims the next child
+                                    uint64_t xn = childVarIndices.at(currChild+1); // xn is the moment the next child fails
+                                    if (j == 0) {
+                                        elseCase = std::make_shared<IsEqual>(timePointVariables.at(i),  xv);
+                                    }
+                                    ifcs.push_back(std::make_shared<IsLEqual>(xv, xn));
+                                    for(auto const& otherSpare : children.at(currChild+1)->parents()) {
+                                        if(otherSpare->id() == i) { continue; }// not a OTHER spare.
+                                        ifcs.push_back(std::make_shared<IsConstantValue>(getClaimVariableIndex(otherSpare->id(), children.at(currChild+1)->id()), dft.nrBasicElements()+1));
+                                    }
+                                    std::shared_ptr<DFTConstraint> ite = std::make_shared<IfThenElse>(std::make_shared<And>(ifcs), std::make_shared<IsEqual>(csn, xv), elseCase);
+                                    elseCase = ite;
+                                    constraints.push_back(std::make_shared<Iff>(std::make_shared<IsLEqual>(getClaimVariableIndex(spare->id(), children.at(currChild)->id()), xv), ite));
+                                    constraints.back()->setDescription(std::to_string(j+1) + " but last child & claimed");
                                 }
                                 break;
                             }
