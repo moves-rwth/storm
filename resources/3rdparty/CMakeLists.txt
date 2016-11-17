@@ -104,16 +104,6 @@ include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/sparsepp")
 
 #############################################################
 ##
-##	utf8cpp
-##
-#############################################################
-
-# Use the shipped version of utf8cpp
-message (STATUS "Storm - Including utf8cpp.")
-include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/utf8_v2_3_4/source")
-
-#############################################################
-##
 ##	ModernJSON
 ##
 #############################################################
@@ -232,6 +222,7 @@ if(USE_CARL)
                 LOG_CONFIGURE ON
                 LOG_BUILD ON
                 LOG_INSTALL ON
+                BUILD_BYPRODUCTS ${STORM_3RDPARTY_BINARY_DIR}/carl/lib/libcarl${DYNAMIC_EXT}
         )
 
         add_dependencies(resources carl)
@@ -371,6 +362,7 @@ ExternalProject_Add(
         INSTALL_DIR "${STORM_3RDPARTY_BINARY_DIR}/sylvan"
         LOG_CONFIGURE ON
         LOG_BUILD ON
+        BUILD_BYPRODUCTS ${PROJECT_BINARY_DIR}/sylvan/src/libsylvan${STATIC_EXT}
 )
 ExternalProject_Get_Property(sylvan source_dir)
 ExternalProject_Get_Property(sylvan binary_dir)
@@ -397,6 +389,7 @@ endif()
 ##	Google Test gtest
 ##
 #############################################################
+set(GOOGLETEST_LIB_DIR ${STORM_3RDPARTY_BINARY_DIR}/gtest-1.7.0)
 ExternalProject_Add(
         googletest
         #For downloads (may be useful later!)
@@ -406,14 +399,16 @@ ExternalProject_Add(
         SOURCE_DIR "${STORM_3RDPARTY_SOURCE_DIR}/gtest-1.7.0"
         # Force the same output paths for debug and release builds so that
         # we know in which place the binaries end up when using the Xcode generator
-        CMAKE_ARGS  -Dgtest_force_shared_crt=ON -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} -DCMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG:PATH=${STORM_3RDPARTY_BINARY_DIR}/gtest-1.7.0 -DCMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE:PATH=${STORM_3RDPARTY_BINARY_DIR}/gtest-1.7.0
+        CMAKE_ARGS  -Dgtest_force_shared_crt=ON -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} -DCMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG:PATH=${GOOGLETEST_LIB_DIR} -DCMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE:PATH=${GOOGLETEST_LIB_DIR}
         # Disable install step
         INSTALL_COMMAND ""
-        BINARY_DIR "${STORM_3RDPARTY_BINARY_DIR}/gtest-1.7.0"
-        INSTALL_DIR "${STORM_3RDPARTY_BINARY_DIR}/gtest-1.7.0"
+        BINARY_DIR ${GOOGLETEST_LIB_DIR}
+        INSTALL_DIR ${GOOGLETEST_LIB_DIR}
         # Wrap download, configure and build steps in a script to log output
         LOG_CONFIGURE ON
-        LOG_BUILD ON)
+        LOG_BUILD ON
+        BUILD_BYPRODUCTS ${GOOGLETEST_LIB_DIR}/libgtest${STATIC_EXT} ${GOOGLETEST_LIB_DIR}/libgtest_main${STATIC_EXT}
+)
 
 # Specify include dir
 ExternalProject_Get_Property(googletest source_dir)
