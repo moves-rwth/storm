@@ -16,24 +16,24 @@ MIT License
 
 Usage
 =======================
-	wstring text = L"{% if item %}{$item}{% endif %}\n"
-		L"{% if thing %}{$thing}{% endif %}" ;
+    std::string text = "{% if item %}{$item}{% endif %}\n"
+		"{% if thing %}{$thing}{% endif %}" ;
 	cpptempl::data_map data ;
-	data[L"item"] = cpptempl::make_data(L"aaa") ;
-	data[L"thing"] = cpptempl::make_data(L"bbb") ;
+	data["item"] = cpptempl::make_data("aaa") ;
+	data["thing"] = cpptempl::make_data("bbb") ;
 
-	wstring result = cpptempl::parse(text, data) ;
+    std::string result = cpptempl::parse(text, data) ;
 
 Handy Functions
 ========================
 make_data() : Feed it a string, data_map, or data_list to create a data entry.
 Example:
 	data_map person ;
-	person[L"name"] = make_data(L"Bob") ;
-	person[L"occupation"] = make_data(L"Plumber") ;
+	person["name"] = make_data("Bob") ;
+	person["occupation"] = make_data("Plumber") ;
 	data_map data ;
-	data[L"person"] = make_data(person) ;
-	wstring result = parse(templ_text, data) ;
+	data["person"] = make_data(person) ;
+    std::string result = parse(templ_text, data) ;
 
 */
 #pragma once
@@ -46,37 +46,15 @@ Example:
 #include <string>
 #include <vector>
 #include <map>							
-#include <boost/shared_ptr.hpp>
-#ifndef _MSC_VER
-#include <boost/locale.hpp>
-#include <utf8.h>
-#else
-#include <boost/scoped_array.hpp>
-#include "windows.h"
-#include "winnls.h" // unicode-multibyte conversion
-#endif
-#include <boost/unordered_map.hpp>
+#include <memory>
+#include <unordered_map>
 #include <boost/lexical_cast.hpp>
 
 #include <iostream>
 
 namespace cpptempl
 {
-	using std::wstring ;
 	// various typedefs
-
-	class data_ptr;
-	typedef std::vector<data_ptr> data_list ;
-
-	class data_map {
-	public:
-		data_ptr& operator [](const std::wstring& key);
-		data_ptr& operator [](const std::string& key);
-		bool empty();
-		bool has(const wstring& key);
-	private:
-		boost::unordered_map<wstring, data_ptr> data;
-	};
 
 	// data classes
 	class Data ;
@@ -90,9 +68,9 @@ namespace cpptempl
 		template<typename T> data_ptr(const T& data) {
 			this->operator =(data);
 		}
-		data_ptr(DataValue* data) : ptr(data) {}
-		data_ptr(DataList* data) : ptr(data) {}
-		data_ptr(DataMap* data) : ptr(data) {}
+        data_ptr(DataValue* data);
+        data_ptr(DataList* data);
+        data_ptr(DataMap* data);
 		data_ptr(const data_ptr& data) {
 			ptr = data.ptr;
 		}
@@ -103,66 +81,32 @@ namespace cpptempl
 			return ptr.get();
 		}
 	private:
-		boost::shared_ptr<Data> ptr;
+		std::shared_ptr<Data> ptr;
+	};
+	typedef std::vector<data_ptr> data_list ;
+
+	class data_map {
+	public:
+		data_ptr& operator [](const std::string& key);
+		bool empty();
+		bool has(const std::string& key);
+	private:
+		std::unordered_map<std::string, data_ptr> data;
 	};
 
 	template<> inline void data_ptr::operator = (const data_ptr& data);
 	template<> void data_ptr::operator = (const std::string& data);
-	template<> void data_ptr::operator = (const std::wstring& data);
+	template<> void data_ptr::operator = (const std::string& data);
 	template<> void data_ptr::operator = (const data_map& data);
 	template<typename T>
 	void data_ptr::operator = (const T& data) {
-#ifndef _MSC_VER
-		std::wstring data_str = boost::lexical_cast<std::wstring>(data);
-#else
-
-#endif
+		std::string data_str = boost::lexical_cast<std::string>(data);
 		this->operator =(data_str);
-	}
-
-	// convenience functions for recoding utf8 string to wstring and back
-	inline std::wstring utf8_to_wide(const std::string& text) {
-#ifndef _MSC_VER
-        std::wstring result;
-        if (sizeof(wchar_t) == 2) {
-            utf8::utf8to16(text.begin(), text.end(), std::back_inserter(result));
-        } else {
-            assert(sizeof(wchar_t) == 4);
-            utf8::utf8to32(text.begin(), text.end(), std::back_inserter(result));
-        }
-        return result;
-        //return boost::locale::conv::to_utf<wchar_t>(text, "UTF-8");
-#else
-		// Calculate the required length of the buffer
-		const size_t len_needed = ::MultiByteToWideChar(CP_UTF8, 0, text.c_str(), (UINT)(text.length()) , NULL, 0 );
-		boost::scoped_array<wchar_t> buff(new wchar_t[len_needed+1]) ;
-		const size_t num_copied = ::MultiByteToWideChar(CP_UTF8, 0, text.c_str(), text.size(), buff.get(), len_needed+1) ;
-		return std::wstring(buff.get(), num_copied) ;
-#endif
-	}
-
-	inline std::string wide_to_utf8(const std::wstring& text) {
-#ifndef _MSC_VER
-        std::string result;
-        if (sizeof(wchar_t) == 2) {
-            utf8::utf16to8(text.begin(), text.end(), std::back_inserter(result));
-        } else {
-            assert(sizeof(wchar_t) == 4);
-            utf8::utf32to8(text.begin(), text.end(), std::back_inserter(result));
-        }
-        return result;
-        //return boost::locale::conv::from_utf<>(text, "UTF-8");
-#else
-		const size_t len_needed = ::WideCharToMultiByte(CP_UTF8, 0, text.c_str(), (UINT)(text.length()) , NULL, 0, NULL, NULL) ;
-		boost::scoped_array<char> buff(new char[len_needed+1]) ;
-		const size_t num_copied = ::WideCharToMultiByte(CP_UTF8, 0, text.c_str(), (UINT)(text.length()) , buff.get(), len_needed+1, NULL, NULL) ;
-		return std::string(buff.get(), num_copied) ;
-#endif
 	}
 
 	// token classes
 	class Token ;
-	typedef boost::shared_ptr<Token> token_ptr ;
+	typedef std::shared_ptr<Token> token_ptr ;
 	typedef std::vector<token_ptr> token_vector ;
 
 	// Custom exception class for library errors
@@ -171,7 +115,7 @@ namespace cpptempl
 	public:
 		TemplateException(std::string reason) : m_reason(reason){}
 		~TemplateException() throw() {}
-		const char* what() const throw() {
+		const char* what() throw() {
 			return m_reason.c_str();
 		}
 	private:
@@ -182,21 +126,18 @@ namespace cpptempl
 	class Data
 	{
 	public:
-        virtual ~Data() {
-            // Intentionally left empty.
-        }
 		virtual bool empty() = 0 ;
-		virtual wstring getvalue();
+		virtual std::string getvalue();
 		virtual data_list& getlist();
 		virtual data_map& getmap() ;
 	};
 
 	class DataValue : public Data
 	{
-		wstring m_value ;
+        std::string m_value ;
 	public:
-		DataValue(wstring value) : m_value(value){}
-		wstring getvalue();
+		DataValue(std::string value) : m_value(value){}
+        std::string getvalue();
 		bool empty();
 	};
 
@@ -219,7 +160,7 @@ namespace cpptempl
 	};
 
 	// convenience functions for making data objects
-	inline data_ptr make_data(wstring val)
+	inline data_ptr make_data(std::string val)
 	{
 		return data_ptr(new DataValue(val)) ;
 	}
@@ -233,7 +174,7 @@ namespace cpptempl
 	}
 	// get a data value from a data map
 	// e.g. foo.bar => data["foo"]["bar"]
-	data_ptr parse_val(wstring key, data_map &data) ;
+	data_ptr parse_val(std::string key, data_map &data) ;
 
 	typedef enum 
 	{
@@ -252,7 +193,7 @@ namespace cpptempl
 	{
 	public:
 		virtual TokenType gettype() = 0 ;
-		virtual void gettext(std::wostream &stream, data_map &data) = 0 ;
+		virtual void gettext(std::ostream &stream, data_map &data) = 0 ;
 		virtual void set_children(token_vector &children);
 		virtual token_vector & get_children();
 	};
@@ -260,33 +201,33 @@ namespace cpptempl
 	// normal text
 	class TokenText : public Token
 	{
-		wstring m_text ;
+        std::string m_text ;
 	public:
-		TokenText(wstring text) : m_text(text){}
+		TokenText(std::string text) : m_text(text){}
 		TokenType gettype();
-		void gettext(std::wostream &stream, data_map &data);
+		void gettext(std::ostream &stream, data_map &data);
 	};
 
 	// variable
 	class TokenVar : public Token
 	{
-		wstring m_key ;
+        std::string m_key ;
 	public:
-		TokenVar(wstring key) : m_key(key){}
+		TokenVar(std::string key) : m_key(key){}
 		TokenType gettype();
-		void gettext(std::wostream &stream, data_map &data);
+		void gettext(std::ostream &stream, data_map &data);
 	};
 
 	// for block
 	class TokenFor : public Token 
 	{
 	public:
-		wstring m_key ;
-		wstring m_val ;
+        std::string m_key ;
+        std::string m_val ;
 		token_vector m_children ;
-		TokenFor(wstring expr);
+		TokenFor(std::string expr);
 		TokenType gettype();
-		void gettext(std::wostream &stream, data_map &data);
+		void gettext(std::ostream &stream, data_map &data);
 		void set_children(token_vector &children);
 		token_vector &get_children();
 	};
@@ -295,12 +236,12 @@ namespace cpptempl
 	class TokenIf : public Token
 	{
 	public:
-		wstring m_expr ;
+        std::string m_expr ;
 		token_vector m_children ;
-		TokenIf(wstring expr) : m_expr(expr){}
+		TokenIf(std::string expr) : m_expr(expr){}
 		TokenType gettype();
-		void gettext(std::wostream &stream, data_map &data);
-		bool is_true(wstring expr, data_map &data);
+		void gettext(std::ostream &stream, data_map &data);
+		bool is_true(std::string expr, data_map &data);
 		void set_children(token_vector &children);
 		token_vector &get_children();
 	};
@@ -308,21 +249,21 @@ namespace cpptempl
 	// end of block
 	class TokenEnd : public Token // end of control block
 	{
-		wstring m_type ;
+        std::string m_type ;
 	public:
-		TokenEnd(wstring text) : m_type(text){}
+		TokenEnd(std::string text) : m_type(text){}
 		TokenType gettype();
-		void gettext(std::wostream &stream, data_map &data);
+		void gettext(std::ostream &stream, data_map &data);
 	};
 
-	wstring gettext(token_ptr token, data_map &data) ;
+    std::string gettext(token_ptr token, data_map &data) ;
 
 	void parse_tree(token_vector &tokens, token_vector &tree, TokenType until=TOKEN_TYPE_NONE) ;
-	token_vector & tokenize(wstring text, token_vector &tokens) ;
+	token_vector & tokenize(std::string text, token_vector &tokens) ;
 
 	// The big daddy. Pass in the template and data, 
 	// and get out a completed doc.
-	void parse(std::wostream &stream, wstring templ_text, data_map &data) ;
-	wstring parse(wstring templ_text, data_map &data);
+	void parse(std::ostream &stream, std::string templ_text, data_map &data) ;
+    std::string parse(std::string templ_text, data_map &data);
 	std::string parse(std::string templ_text, data_map &data);
 }

@@ -15,20 +15,21 @@ namespace cpptempl
 	//////////////////////////////////////////////////////////////////////////
 
 	// data_map
-	data_ptr& data_map::operator [](const std::wstring& key) {
-		return data[key];
-	}
 	data_ptr& data_map::operator [](const std::string& key) {
-		return data[utf8_to_wide(key)];
+		return data[key];
 	}
 	bool data_map::empty() {
 		return data.empty();
 	}
-	bool data_map::has(const wstring& key) {
+	bool data_map::has(const std::string& key) {
 		return data.find(key) != data.end();
 	}
 
 	// data_ptr
+    data_ptr::data_ptr(DataValue* data) : ptr(data) {}
+    data_ptr::data_ptr(DataList* data) : ptr(data) {}
+    data_ptr::data_ptr(DataMap* data) : ptr(data) {}
+    
 	template<>
 	inline void data_ptr::operator = (const data_ptr& data) {
 		ptr = data.ptr;
@@ -36,11 +37,6 @@ namespace cpptempl
 
 	template<>
 	void data_ptr::operator = (const std::string& data) {
-		ptr.reset(new DataValue(utf8_to_wide(data)));
-	}
-
-	template<>
-	void data_ptr::operator = (const std::wstring& data) {
 		ptr.reset(new DataValue(data));
 	}
 
@@ -58,7 +54,7 @@ namespace cpptempl
 	}
 
 	// base data
-	wstring Data::getvalue()
+    std::string Data::getvalue()
 	{
 		throw TemplateException("Data item is not a value") ;
 	}
@@ -72,7 +68,7 @@ namespace cpptempl
 		throw TemplateException("Data item is not a dictionary") ;
 	}
 	// data value
-	wstring DataValue::getvalue()
+    std::string DataValue::getvalue()
 	{
 		return m_value ;
 	}
@@ -102,28 +98,28 @@ namespace cpptempl
 	//////////////////////////////////////////////////////////////////////////
 	// parse_val
 	//////////////////////////////////////////////////////////////////////////
-	data_ptr parse_val(wstring key, data_map &data)
+	data_ptr parse_val(std::string key, data_map &data)
 	{
 		// quoted string
-		if (key[0] == L'\"')
+		if (key[0] == '\"')
 		{
-			return make_data(boost::trim_copy_if(key, boost::is_any_of(L"\""))) ;
+			return make_data(boost::trim_copy_if(key, boost::is_any_of("\""))) ;
 		}
 		// check for dotted notation, i.e [foo.bar]
-		size_t index = key.find(L".") ;
-		if (index == wstring::npos)
+		size_t index = key.find(".") ;
+		if (index == std::string::npos)
 		{
 			if (!data.has(key))
 			{
-				return make_data(L"{$" + key + L"}") ;
+				return make_data("{$" + key + "}") ;
 			}
 			return data[key] ;
 		}
 
-		wstring sub_key = key.substr(0, index) ;
+        std::string sub_key = key.substr(0, index) ;
 		if (!data.has(sub_key))
 		{
-			return make_data(L"{$" + key + L"}") ;
+			return make_data("{$" + key + "}") ;
 		}
 		data_ptr item = data[sub_key] ;
 		return parse_val(key.substr(index+1), item->getmap()) ;
@@ -150,7 +146,7 @@ namespace cpptempl
 		return TOKEN_TYPE_TEXT ;
 	}
 
-	void TokenText::gettext( std::wostream &stream, data_map & )
+	void TokenText::gettext( std::ostream &stream, data_map & )
 	{
 		stream << m_text ;
 	}
@@ -161,15 +157,15 @@ namespace cpptempl
 		return TOKEN_TYPE_VAR ;
 	}
 
-	void TokenVar::gettext( std::wostream &stream, data_map &data )
+	void TokenVar::gettext( std::ostream &stream, data_map &data )
 	{
 		stream << parse_val(m_key, data)->getvalue() ;
 	}
 
 	// TokenFor
-	TokenFor::TokenFor(wstring expr)
+	TokenFor::TokenFor(std::string expr)
 	{
-		std::vector<wstring> elements ;
+		std::vector<std::string> elements ;
 		boost::split(elements, expr, boost::is_space()) ;
 		if (elements.size() != 4u)
 		{
@@ -184,16 +180,16 @@ namespace cpptempl
 		return TOKEN_TYPE_FOR ;
 	}
 
-	void TokenFor::gettext( std::wostream &stream, data_map &data )
+	void TokenFor::gettext( std::ostream &stream, data_map &data )
 	{
 		data_ptr value = parse_val(m_key, data) ;
 		data_list &items = value->getlist() ;
 		for (size_t i = 0 ; i < items.size() ; ++i)
 		{
 			data_map loop ;
-			loop[L"index"] = make_data(boost::lexical_cast<wstring>(i+1)) ;
-			loop[L"index0"] = make_data(boost::lexical_cast<wstring>(i)) ;
-			data[L"loop"] = make_data(loop);
+			loop["index"] = make_data(boost::lexical_cast<std::string>(i+1)) ;
+			loop["index0"] = make_data(boost::lexical_cast<std::string>(i)) ;
+			data["loop"] = make_data(loop);
 			data[m_val] = items[i] ;
 			for(size_t j = 0 ; j < m_children.size() ; ++j)
 			{
@@ -218,7 +214,7 @@ namespace cpptempl
 		return TOKEN_TYPE_IF ;
 	}
 
-	void TokenIf::gettext( std::wostream &stream, data_map &data )
+	void TokenIf::gettext( std::ostream &stream, data_map &data )
 	{
 		if (is_true(m_expr, data))
 		{
@@ -229,12 +225,12 @@ namespace cpptempl
 		}
 	}
 
-	bool TokenIf::is_true( wstring expr, data_map &data )
+	bool TokenIf::is_true( std::string expr, data_map &data )
 	{
-		std::vector<wstring> elements ;
+		std::vector<std::string> elements ;
 		boost::split(elements, expr, boost::is_space()) ;
 
-		if (elements[1] == L"not")
+		if (elements[1] == "not")
 		{
 			return parse_val(elements[2], data)->empty() ;
 		}
@@ -244,7 +240,7 @@ namespace cpptempl
 		}
 		data_ptr lhs = parse_val(elements[1], data) ;
 		data_ptr rhs = parse_val(elements[3], data) ;
-		if (elements[2] == L"==")
+		if (elements[2] == "==")
 		{
 			return lhs->getvalue() == rhs->getvalue() ;
 		}
@@ -264,10 +260,10 @@ namespace cpptempl
 	// TokenEnd
 	TokenType TokenEnd::gettype()
 	{
-		return m_type == L"endfor" ? TOKEN_TYPE_ENDFOR : TOKEN_TYPE_ENDIF ;
+		return m_type == "endfor" ? TOKEN_TYPE_ENDFOR : TOKEN_TYPE_ENDIF ;
 	}
 
-	void TokenEnd::gettext( std::wostream &, data_map &)
+	void TokenEnd::gettext( std::ostream &, data_map &)
 	{
 		throw TemplateException("End-of-control statements have no associated text") ;
 	}
@@ -275,9 +271,9 @@ namespace cpptempl
 	// gettext
 	// generic helper for getting text from tokens.
 
-	wstring gettext(token_ptr token, data_map &data)
+    std::string gettext(token_ptr token, data_map &data)
 	{
-		std::wostringstream stream ;
+		std::ostringstream stream ;
 		token->gettext(stream, data) ;
 		return stream.str() ;
 	}
@@ -316,12 +312,12 @@ namespace cpptempl
 	// tokenize
 	// parses a template into tokens (text, for, if, variable)
 	//////////////////////////////////////////////////////////////////////////
-	token_vector & tokenize(wstring text, token_vector &tokens)
+	token_vector & tokenize(std::string text, token_vector &tokens)
 	{
 		while(! text.empty())
 		{
-			size_t pos = text.find(L"{") ;
-			if (pos == wstring::npos)
+			size_t pos = text.find("{") ;
+			if (pos == std::string::npos)
 			{
 				if (! text.empty())
 				{
@@ -329,7 +325,7 @@ namespace cpptempl
 				}
 				return tokens ;
 			}
-			wstring pre_text = text.substr(0, pos) ;
+            std::string pre_text = text.substr(0, pos) ;
 			if (! pre_text.empty())
 			{
 				tokens.push_back(token_ptr(new TokenText(pre_text))) ;
@@ -337,33 +333,33 @@ namespace cpptempl
 			text = text.substr(pos+1) ;
 			if (text.empty())
 			{
-				tokens.push_back(token_ptr(new TokenText(L"{"))) ;
+				tokens.push_back(token_ptr(new TokenText("{"))) ;
 				return tokens ;
 			}
 
 			// variable
-			if (text[0] == L'$')
+			if (text[0] == '$')
 			{
-				pos = text.find(L"}") ;
-				if (pos != wstring::npos)
+				pos = text.find("}") ;
+				if (pos != std::string::npos)
 				{
 					tokens.push_back(token_ptr (new TokenVar(text.substr(1, pos-1)))) ;
 					text = text.substr(pos+1) ;
 				}
 			}
 			// control statement
-			else if (text[0] == L'%')
+			else if (text[0] == '%')
 			{
-				pos = text.find(L"}") ;
-				if (pos != wstring::npos)
+				pos = text.find("}") ;
+				if (pos != std::string::npos)
 				{
-					wstring expression = boost::trim_copy(text.substr(1, pos-2)) ;
+                    std::string expression = boost::trim_copy(text.substr(1, pos-2)) ;
 					text = text.substr(pos+1) ;
-					if (boost::starts_with(expression, L"for"))
+					if (boost::starts_with(expression, "for"))
 					{
 						tokens.push_back(token_ptr (new TokenFor(expression))) ;
 					}
-					else if (boost::starts_with(expression, L"if"))
+					else if (boost::starts_with(expression, "if"))
 					{
 						tokens.push_back(token_ptr (new TokenIf(expression))) ;
 					}
@@ -375,7 +371,7 @@ namespace cpptempl
 			}
 			else
 			{
-				tokens.push_back(token_ptr(new TokenText(L"{"))) ;
+				tokens.push_back(token_ptr(new TokenText("{"))) ;
 			}
 		}
 		return tokens ;
@@ -389,17 +385,13 @@ namespace cpptempl
 	*  3. resolves template
 	*  4. returns converted text
 	************************************************************************/
-	wstring parse(wstring templ_text, data_map &data)
+    std::string parse(std::string templ_text, data_map &data)
 	{
-		std::wostringstream stream ;
+		std::ostringstream stream ;
 		parse(stream, templ_text, data) ;
 		return stream.str() ;
 	}
-	std::string parse(std::string templ_text, data_map &data)
-	{
-		return wide_to_utf8(parse(utf8_to_wide(templ_text), data));
-	}
-	void parse(std::wostream &stream, wstring templ_text, data_map &data)
+	void parse(std::ostream &stream, std::string templ_text, data_map &data)
 	{
 		token_vector tokens ;
 		tokenize(templ_text, tokens) ;

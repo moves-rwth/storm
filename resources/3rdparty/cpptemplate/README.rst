@@ -46,12 +46,11 @@ Lists, nested maps
 
 Example::
 
-	cpptempl::data_map person ;
-	person["name"] = "Bob" ;
-	person["occupation"] = "Plumber" ;
+	cpptempl::data_map person_data ;
+	person_data["name"] = "Bob" ;
+	person_data["occupation"] = "Plumber" ;
 
 	cpptempl::data_map content ;
-	content["person"] = person ;
+	content["person"] = person_data ;
 	content["friends"].push_back("Alice") ;
 	content["friends"].push_back("Bob") ;
-	string result = parse(text, data) ;
