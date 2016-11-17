@@ -71,9 +71,6 @@ add_executable(storm-gspn-main ${STORM_GSPN_MAIN_SOURCES} ${STORM_MAIN_HEADERS})
 target_link_libraries(storm-gspn-main storm) # Adding headers for xcode
 set_target_properties(storm-gspn-main PROPERTIES OUTPUT_NAME "storm-gspn")
 
-target_link_libraries(storm ${STORM_LINK_LIBRARIES})
-
-
 INSTALL(TARGETS storm-main
 	RUNTIME DESTINATION bin
 	LIBRARY DESTINATION lib
