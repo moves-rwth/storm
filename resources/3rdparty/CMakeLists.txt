@@ -104,16 +104,6 @@ include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/sparsepp")
 
 #############################################################
 ##
-##	utf8cpp
-##
-#############################################################
-
-# Use the shipped version of utf8cpp
-message (STATUS "Storm - Including utf8cpp.")
-include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/utf8_v2_3_4/source")
-
-#############################################################
-##
 ##	ModernJSON
 ##
 #############################################################
