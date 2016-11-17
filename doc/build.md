@@ -2,7 +2,7 @@
 
 
 ## Requirements 
-CMake >= 2.8.11
+CMake >= 3.2
  CMake is required as it is used to generate the Makefiles or Projects/Solutions required to build StoRM.
 
 ### Compiler:
@@ -17,7 +17,7 @@ CMake >= 2.8.11
  - GCC versions 4.9.1 and older.
 
 Prerequisites:
- Boost >= 1.60
+ Boost >= 1.61
 	Build using the Boost Build system, for x64 use "bjam address-model=64" or "bjam.exe address-model=64 --build-type=complete"
 
 ## Instructions

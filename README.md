@@ -7,15 +7,16 @@ For more instructions, check out the documentation found in [Getting Started](do
 Benchmarks
 ----------------------------
 
-Some examples can be found in the example folder:
-Further example input files for storm can be found in the following repositories:
+Example input files for storm can be obtained from  
+https://github.com/moves-rwth/storm-examples.  
+Running make example-files automatically obtains these files.
+
+Further examples and benchmarks found in the following repositories:
 
 * **Prism files** (DTMC, MDP, CTMC):  
 http://www.prismmodelchecker.org/benchmarks/
 * **Jani files** (DTMC, MDP, CTMC, MA):  
 http://jani-spec.org/
-* MRMC style **tra** files:  
-(private, contact: dehnert@cs.rwth-aachen.d)
 * **GSPN**s:   
 (private, contact: sebastian.junges@cs.rwth-aachen.de)
 * **DFT**s:  
@@ -26,7 +27,7 @@ https://github.com/moves-rwth/dft-examples
 
 Authors
 -----------------------------
-Storm has been developed at RWTH Aachen University
+Storm has been developed at RWTH Aachen University.
 
 ###### Principal developers
 * Christian Dehnert
@@ -42,6 +43,7 @@ Storm has been developed at RWTH Aachen University
 ###### Contributors (lexicographical order) 
 * Dimitri Bohlender
 * Harold Bruintjes
+* Michael Deutschen
 * Thomas Heinemann
 * Thomas Henn
 * Tom Janson
