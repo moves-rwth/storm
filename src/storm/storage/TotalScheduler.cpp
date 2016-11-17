@@ -1,6 +1,6 @@
-#include "src/storage/TotalScheduler.h"
-#include "src/exceptions/InvalidArgumentException.h"
-#include "src/utility/Hash.h"
+#include "src/storm/storage/TotalScheduler.h"
+#include "src/storm/exceptions/InvalidArgumentException.h"
+#include "src/storm/utility/Hash.h"
 
 namespace storm {
     namespace storage {

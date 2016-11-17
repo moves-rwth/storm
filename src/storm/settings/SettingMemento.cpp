@@ -1,6 +1,6 @@
-#include "src/settings/SettingMemento.h"
+#include "src/storm/settings/SettingMemento.h"
 
-#include "src/settings/modules/ModuleSettings.h"
+#include "src/storm/settings/modules/ModuleSettings.h"
 
 namespace storm {
     namespace settings {

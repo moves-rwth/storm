@@ -1,13 +1,13 @@
-#include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "src/storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 
-#include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
-#include "src/storage/BitVector.h"
-#include "src/utility/macros.h"
-#include "src/utility/constants.h"
-#include "src/utility/vector.h"
-#include "src/exceptions/InvalidOperationException.h"
-#include "src/exceptions/InvalidAccessException.h"
-#include "src/adapters/CarlAdapter.h"
+#include "src/storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
+#include "src/storm/storage/BitVector.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/utility/constants.h"
+#include "src/storm/utility/vector.h"
+#include "src/storm/exceptions/InvalidOperationException.h"
+#include "src/storm/exceptions/InvalidAccessException.h"
+#include "src/storm/adapters/CarlAdapter.h"
 
 
 namespace storm {

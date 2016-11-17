@@ -3,7 +3,7 @@
 #include <map>
 #include "DFT.h"
 #include "DFTBuilder.h"
-#include "src/exceptions/NotSupportedException.h"
+#include "src/storm/exceptions/NotSupportedException.h"
 
 #include "DFTIsomorphism.h"
 #include "utility/iota_n.h"

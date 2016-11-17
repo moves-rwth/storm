@@ -1,8 +1,8 @@
 #ifndef STORM_LOGIC_BOUND_H_
 #define	STORM_LOGIC_BOUND_H_
 
-#include "src/logic/ComparisonType.h"
-#include "src/utility/constants.h"
+#include "src/storm/logic/ComparisonType.h"
+#include "src/storm/utility/constants.h"
 
 namespace storm {
     namespace logic {

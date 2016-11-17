@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 
-#include "src/transformer/EndComponentEliminator.h"
+#include "src/storm/transformer/EndComponentEliminator.h"
 
 
 TEST(NeutralECRemover, SimpleModelTest) {

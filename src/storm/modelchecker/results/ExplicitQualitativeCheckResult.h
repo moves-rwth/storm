@@ -5,10 +5,10 @@
 #include <functional>
 #include <boost/variant.hpp>
 
-#include "src/modelchecker/results/QualitativeCheckResult.h"
-#include "src/storage/sparse/StateType.h"
-#include "src/storage/BitVector.h"
-#include "src/utility/OsDetection.h"
+#include "src/storm/modelchecker/results/QualitativeCheckResult.h"
+#include "src/storm/storage/sparse/StateType.h"
+#include "src/storm/storage/BitVector.h"
+#include "src/storm/utility/OsDetection.h"
 
 namespace storm {
     namespace modelchecker {

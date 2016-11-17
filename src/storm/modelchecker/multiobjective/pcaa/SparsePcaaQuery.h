@@ -1,10 +1,10 @@
 #ifndef STORM_MODELCHECKER_MULTIOBJECTIVE_PCAA_SPARSEPCAAQUERY_H_
 #define STORM_MODELCHECKER_MULTIOBJECTIVE_PCAA_SPARSEPCAAQUERY_H_
 
-#include "src/modelchecker/results/CheckResult.h"
-#include "src/modelchecker/multiobjective/pcaa/SparsePcaaPreprocessorReturnType.h"
-#include "src/modelchecker/multiobjective/pcaa/SparsePcaaWeightVectorChecker.h"
-#include "src/storage/geometry/Polytope.h"
+#include "src/storm/modelchecker/results/CheckResult.h"
+#include "src/storm/modelchecker/multiobjective/pcaa/SparsePcaaPreprocessorReturnType.h"
+#include "src/storm/modelchecker/multiobjective/pcaa/SparsePcaaWeightVectorChecker.h"
+#include "src/storm/storage/geometry/Polytope.h"
 
 namespace storm {
     namespace modelchecker {

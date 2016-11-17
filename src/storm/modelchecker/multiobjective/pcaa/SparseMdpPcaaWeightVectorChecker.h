@@ -3,7 +3,7 @@
 
 #include <vector>
 
-#include "src/modelchecker/multiobjective/pcaa/SparsePcaaWeightVectorChecker.h"
+#include "src/storm/modelchecker/multiobjective/pcaa/SparsePcaaWeightVectorChecker.h"
 
 namespace storm {
     namespace modelchecker {

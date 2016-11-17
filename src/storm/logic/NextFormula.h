@@ -1,7 +1,7 @@
 #ifndef STORM_LOGIC_NEXTFORMULA_H_
 #define STORM_LOGIC_NEXTFORMULA_H_
 
-#include "src/logic/UnaryPathFormula.h"
+#include "src/storm/logic/UnaryPathFormula.h"
 
 namespace storm {
     namespace logic {

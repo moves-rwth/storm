@@ -1,12 +1,12 @@
-#include "src/storage/jani/ParallelComposition.h"
+#include "src/storm/storage/jani/ParallelComposition.h"
 
 #include <sstream>
 
 #include <boost/algorithm/string/join.hpp>
 
-#include "src/utility/macros.h"
-#include "src/exceptions/WrongFormatException.h"
-#include "src/storage/jani/Model.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/exceptions/WrongFormatException.h"
+#include "src/storm/storage/jani/Model.h"
 
 namespace storm {
     namespace jani {

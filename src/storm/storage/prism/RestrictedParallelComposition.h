@@ -4,7 +4,7 @@
 #include <set>
 #include <string>
 
-#include "src/storage/prism/ParallelComposition.h"
+#include "src/storm/storage/prism/ParallelComposition.h"
 
 namespace storm {
     namespace prism {

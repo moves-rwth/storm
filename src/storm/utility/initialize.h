@@ -1,7 +1,7 @@
 #ifndef STORM_UTILITY_INITIALIZE_H
 #define	STORM_UTILITY_INITIALIZE_H
 
-#include "src/utility/logging.h"
+#include "src/storm/utility/logging.h"
 
 namespace storm {
     namespace utility {

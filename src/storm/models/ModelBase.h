@@ -3,8 +3,8 @@
 
 #include <memory>
 
-#include "src/models/ModelType.h"
-#include "src/utility/macros.h"
+#include "src/storm/models/ModelType.h"
+#include "src/storm/utility/macros.h"
 
 namespace storm {
     namespace models {

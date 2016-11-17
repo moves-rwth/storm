@@ -1,8 +1,8 @@
 #ifndef STORM_MODELS_SYMBOLIC_CTMC_H_
 #define STORM_MODELS_SYMBOLIC_CTMC_H_
 
-#include "src/models/symbolic/DeterministicModel.h"
-#include "src/utility/OsDetection.h"
+#include "src/storm/models/symbolic/DeterministicModel.h"
+#include "src/storm/utility/OsDetection.h"
 
 namespace storm {
     namespace models {

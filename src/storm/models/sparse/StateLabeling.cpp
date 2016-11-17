@@ -1,7 +1,7 @@
-#include "src/models/sparse/StateLabeling.h"
+#include "src/storm/models/sparse/StateLabeling.h"
 
-#include "src/exceptions/OutOfRangeException.h"
-#include "src/exceptions/InvalidArgumentException.h"
+#include "src/storm/exceptions/OutOfRangeException.h"
+#include "src/storm/exceptions/InvalidArgumentException.h"
 
 
 namespace storm {

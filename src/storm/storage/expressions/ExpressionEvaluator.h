@@ -3,12 +3,12 @@
 
 #include <unordered_map>
 
-#include "src/adapters/CarlAdapter.h"
-#include "src/storage/expressions/Variable.h"
-#include "src/storage/expressions/Expression.h"
-#include "src/storage/expressions/ExprtkExpressionEvaluator.h"
-#include "src/storage/expressions/ToRationalFunctionVisitor.h"
-#include "src/storage/expressions/ToRationalNumberVisitor.h"
+#include "src/storm/adapters/CarlAdapter.h"
+#include "src/storm/storage/expressions/Variable.h"
+#include "src/storm/storage/expressions/Expression.h"
+#include "src/storm/storage/expressions/ExprtkExpressionEvaluator.h"
+#include "src/storm/storage/expressions/ToRationalFunctionVisitor.h"
+#include "src/storm/storage/expressions/ToRationalNumberVisitor.h"
 
 namespace storm {
     namespace expressions {

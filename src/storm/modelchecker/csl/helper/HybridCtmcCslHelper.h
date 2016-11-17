@@ -3,11 +3,11 @@
 
 #include <memory>
 
-#include "src/models/symbolic/Ctmc.h"
+#include "src/storm/models/symbolic/Ctmc.h"
 
-#include "src/modelchecker/results/CheckResult.h"
+#include "src/storm/modelchecker/results/CheckResult.h"
 
-#include "src/solver/LinearEquationSolver.h"
+#include "src/storm/solver/LinearEquationSolver.h"
 
 namespace storm {
     namespace modelchecker {

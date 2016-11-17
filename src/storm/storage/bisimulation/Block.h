@@ -4,7 +4,7 @@
 #include <list>
 #include <boost/optional.hpp>
 
-#include "src/storage/sparse/StateType.h"
+#include "src/storm/storage/sparse/StateType.h"
 
 namespace storm {
     namespace storage {

@@ -1,7 +1,7 @@
-#include "src/storage/dd/cudd/InternalCuddDdManager.h"
+#include "src/storm/storage/dd/cudd/InternalCuddDdManager.h"
 
-#include "src/settings/SettingsManager.h"
-#include "src/settings/modules/CuddSettings.h"
+#include "src/storm/settings/SettingsManager.h"
+#include "src/storm/settings/modules/CuddSettings.h"
 
 namespace storm {
     namespace dd {

@@ -1,9 +1,9 @@
-#include "src/solver/AbstractGameSolver.h"
+#include "src/storm/solver/AbstractGameSolver.h"
 
-#include "src/settings/SettingsManager.h"
-#include "src/settings/modules/NativeEquationSolverSettings.h"
+#include "src/storm/settings/SettingsManager.h"
+#include "src/storm/settings/modules/NativeEquationSolverSettings.h"
 
-#include "src/exceptions/InvalidSettingsException.h"
+#include "src/storm/exceptions/InvalidSettingsException.h"
 
 namespace storm {
     namespace solver {

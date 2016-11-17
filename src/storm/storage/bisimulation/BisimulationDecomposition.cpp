@@ -1,26 +1,26 @@
-#include "src/storage/bisimulation/BisimulationDecomposition.h"
+#include "src/storm/storage/bisimulation/BisimulationDecomposition.h"
 
 #include <chrono>
 
-#include "src/models/sparse/Dtmc.h"
-#include "src/models/sparse/Ctmc.h"
-#include "src/models/sparse/Mdp.h"
-#include "src/models/sparse/StandardRewardModel.h"
+#include "src/storm/models/sparse/Dtmc.h"
+#include "src/storm/models/sparse/Ctmc.h"
+#include "src/storm/models/sparse/Mdp.h"
+#include "src/storm/models/sparse/StandardRewardModel.h"
 
-#include "src/storage/bisimulation/DeterministicBlockData.h"
+#include "src/storm/storage/bisimulation/DeterministicBlockData.h"
 
-#include "src/modelchecker/propositional/SparsePropositionalModelChecker.h"
-#include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
+#include "src/storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
+#include "src/storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 
-#include "src/settings/SettingsManager.h"
-#include "src/settings/modules/CoreSettings.h"
+#include "src/storm/settings/SettingsManager.h"
+#include "src/storm/settings/modules/CoreSettings.h"
 
-#include "src/logic/FormulaInformation.h"
-#include "src/logic/FragmentSpecification.h"
+#include "src/storm/logic/FormulaInformation.h"
+#include "src/storm/logic/FragmentSpecification.h"
 
-#include "src/utility/macros.h"
-#include "src/exceptions/IllegalFunctionCallException.h"
-#include "src/exceptions/InvalidOptionException.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/exceptions/IllegalFunctionCallException.h"
+#include "src/storm/exceptions/InvalidOptionException.h"
 
 namespace storm {
     namespace storage {

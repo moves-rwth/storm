@@ -1,10 +1,10 @@
-#include "src/solver/SymbolicGameSolver.h"
+#include "src/storm/solver/SymbolicGameSolver.h"
 
-#include "src/storage/dd/Bdd.h"
-#include "src/storage/dd/Add.h"
+#include "src/storm/storage/dd/Bdd.h"
+#include "src/storm/storage/dd/Add.h"
 
-#include "src/settings/SettingsManager.h"
-#include "src/settings/modules/NativeEquationSolverSettings.h"
+#include "src/storm/settings/SettingsManager.h"
+#include "src/storm/settings/modules/NativeEquationSolverSettings.h"
 
 namespace storm {
     namespace solver {

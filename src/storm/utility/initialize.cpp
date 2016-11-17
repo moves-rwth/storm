@@ -1,7 +1,7 @@
 #include "initialize.h"
 
-#include "src/settings/SettingsManager.h"
-#include "src/settings/modules/DebugSettings.h"
+#include "src/storm/settings/SettingsManager.h"
+#include "src/storm/settings/modules/DebugSettings.h"
 
 #include <iostream>
 #include <fstream>

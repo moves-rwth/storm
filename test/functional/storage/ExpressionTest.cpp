@@ -2,11 +2,11 @@
 #include <string>
 
 #include "gtest/gtest.h"
-#include "src/storage/expressions/Expression.h"
-#include "src/storage/expressions/ExpressionManager.h"
-#include "src/storage/expressions/LinearityCheckVisitor.h"
-#include "src/storage/expressions/SimpleValuation.h"
-#include "src/exceptions/InvalidTypeException.h"
+#include "src/storm/storage/expressions/Expression.h"
+#include "src/storm/storage/expressions/ExpressionManager.h"
+#include "src/storm/storage/expressions/LinearityCheckVisitor.h"
+#include "src/storm/storage/expressions/SimpleValuation.h"
+#include "src/storm/exceptions/InvalidTypeException.h"
 
 TEST(Expression, FactoryMethodTest) {
     std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());

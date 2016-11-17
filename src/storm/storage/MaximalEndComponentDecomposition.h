@@ -1,9 +1,9 @@
 #ifndef STORM_STORAGE_MAXIMALENDCOMPONENTDECOMPOSITION_H_
 #define STORM_STORAGE_MAXIMALENDCOMPONENTDECOMPOSITION_H_
 
-#include "src/storage/Decomposition.h"
-#include "src/storage/MaximalEndComponent.h"
-#include "src/models/sparse/NondeterministicModel.h"
+#include "src/storm/storage/Decomposition.h"
+#include "src/storm/storage/MaximalEndComponent.h"
+#include "src/storm/models/sparse/NondeterministicModel.h"
 
 namespace storm  {
     namespace storage {

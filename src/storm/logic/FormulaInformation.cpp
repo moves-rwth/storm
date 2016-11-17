@@ -1,4 +1,4 @@
-#include "src/logic/FormulaInformation.h"
+#include "src/storm/logic/FormulaInformation.h"
 
 namespace storm {
     namespace logic {

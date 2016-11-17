@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include "src/solver/stateelimination/StatePriorityQueue.h"
+#include "src/storm/solver/stateelimination/StatePriorityQueue.h"
 
 namespace storm {
     namespace solver {

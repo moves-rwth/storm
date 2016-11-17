@@ -1,9 +1,9 @@
 #ifndef STORM_SOLVER_ELIMINATIONLINEAREQUATIONSOLVER_H_
 #define STORM_SOLVER_ELIMINATIONLINEAREQUATIONSOLVER_H_
 
-#include "src/solver/LinearEquationSolver.h"
+#include "src/storm/solver/LinearEquationSolver.h"
 
-#include "src/settings/modules/EliminationSettings.h"
+#include "src/storm/settings/modules/EliminationSettings.h"
 
 namespace storm {
     namespace solver {

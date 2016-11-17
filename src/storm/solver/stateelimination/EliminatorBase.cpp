@@ -1,10 +1,10 @@
-#include "src/solver/stateelimination/EliminatorBase.h"
+#include "src/storm/solver/stateelimination/EliminatorBase.h"
 
-#include "src/utility/stateelimination.h"
-#include "src/utility/macros.h"
-#include "src/utility/constants.h"
+#include "src/storm/utility/stateelimination.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/utility/constants.h"
 
-#include "src/exceptions/InvalidStateException.h"
+#include "src/storm/exceptions/InvalidStateException.h"
 
 namespace storm {
     namespace solver {

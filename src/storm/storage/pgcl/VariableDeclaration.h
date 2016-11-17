@@ -1,7 +1,7 @@
 #pragma once
 
-#include "src/storage/expressions/Expression.h"
-#include "src/storage/expressions/Variable.h"
+#include "src/storm/storage/expressions/Expression.h"
+#include "src/storm/storage/expressions/Variable.h"
 
 namespace storm {
     namespace pgcl {

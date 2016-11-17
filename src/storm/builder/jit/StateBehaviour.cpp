@@ -1,8 +1,8 @@
-#include "src/builder/jit/StateBehaviour.h"
+#include "src/storm/builder/jit/StateBehaviour.h"
 
-#include "src/adapters/CarlAdapter.h"
+#include "src/storm/adapters/CarlAdapter.h"
 
-#include "src/utility/constants.h"
+#include "src/storm/utility/constants.h"
 
 namespace storm {
     namespace builder {

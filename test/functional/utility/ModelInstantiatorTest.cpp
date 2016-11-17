@@ -3,19 +3,19 @@
 
 #ifdef STORM_HAVE_CARL
 
-#include "src/adapters/CarlAdapter.h"
+#include "src/storm/adapters/CarlAdapter.h"
 #include<carl/numbers/numbers.h>
 #include<carl/core/VariablePool.h>
 
 
-#include "src/settings/SettingsManager.h"
-#include "src/settings/modules/GeneralSettings.h"
+#include "src/storm/settings/SettingsManager.h"
+#include "src/storm/settings/modules/GeneralSettings.h"
 
 #include "utility/storm.h"
 #include "utility/ModelInstantiator.h"
-#include "src/models/sparse/Model.h"
-#include "src/models/sparse/Dtmc.h"
-#include "src/models/sparse/Mdp.h"
+#include "src/storm/models/sparse/Model.h"
+#include "src/storm/models/sparse/Dtmc.h"
+#include "src/storm/models/sparse/Mdp.h"
 
 TEST(ModelInstantiatorTest, BrpProb) {
     carl::VariablePool::getInstance().clear();

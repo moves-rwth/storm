@@ -3,14 +3,14 @@
 
 #include <random>
 
-#include "src/modelchecker/AbstractModelChecker.h"
+#include "src/storm/modelchecker/AbstractModelChecker.h"
 
-#include "src/storage/prism/Program.h"
+#include "src/storm/storage/prism/Program.h"
 
-#include "src/generator/CompressedState.h"
-#include "src/generator/VariableInformation.h"
+#include "src/storm/generator/CompressedState.h"
+#include "src/storm/generator/VariableInformation.h"
 
-#include "src/utility/ConstantsComparator.h"
+#include "src/storm/utility/ConstantsComparator.h"
 
 namespace storm {
     namespace storage {

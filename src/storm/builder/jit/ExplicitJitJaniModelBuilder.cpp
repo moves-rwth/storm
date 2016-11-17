@@ -1,31 +1,31 @@
-#include "src/builder/jit/ExplicitJitJaniModelBuilder.h"
+#include "src/storm/builder/jit/ExplicitJitJaniModelBuilder.h"
 
 #include <iostream>
 #include <cstdio>
 #include <chrono>
 
-#include "src/solver/SmtSolver.h"
-#include "src/storage/jani/AutomatonComposition.h"
-#include "src/storage/jani/ParallelComposition.h"
-#include "src/storage/jani/JSONExporter.h"
+#include "src/storm/solver/SmtSolver.h"
+#include "src/storm/storage/jani/AutomatonComposition.h"
+#include "src/storm/storage/jani/ParallelComposition.h"
+#include "src/storm/storage/jani/JSONExporter.h"
 
-#include "src/builder/RewardModelInformation.h"
+#include "src/storm/builder/RewardModelInformation.h"
 
-#include "src/models/sparse/Dtmc.h"
-#include "src/models/sparse/StandardRewardModel.h"
+#include "src/storm/models/sparse/Dtmc.h"
+#include "src/storm/models/sparse/StandardRewardModel.h"
 
-#include "src/utility/macros.h"
-#include "src/utility/solver.h"
-#include "src/exceptions/WrongFormatException.h"
-#include "src/exceptions/InvalidStateException.h"
-#include "src/exceptions/InvalidArgumentException.h"
-#include "src/exceptions/NotSupportedException.h"
-#include "src/exceptions/UnexpectedException.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/utility/solver.h"
+#include "src/storm/exceptions/WrongFormatException.h"
+#include "src/storm/exceptions/InvalidStateException.h"
+#include "src/storm/exceptions/InvalidArgumentException.h"
+#include "src/storm/exceptions/NotSupportedException.h"
+#include "src/storm/exceptions/UnexpectedException.h"
 
-#include "src/settings/SettingsManager.h"
-#include "src/settings/modules/JitBuilderSettings.h"
+#include "src/storm/settings/SettingsManager.h"
+#include "src/storm/settings/modules/JitBuilderSettings.h"
 
-#include "src/utility/OsDetection.h"
+#include "src/storm/utility/OsDetection.h"
 #include "storm-config.h"
 
 namespace storm {
@@ -329,7 +329,7 @@ namespace storm {
                 std::string problem = "Unable to compile program using Storm data structures. Is Storm's root directory '" + stormRoot + "' set correctly? Does the directory contain the source subtree under src/ ?";
                 try {
                     std::string program = R"(
-#include "src/builder/RewardModelInformation.h"
+#include "src/storm/builder/RewardModelInformation.h"
                     
                     int main() {
                         return 0;
@@ -395,7 +395,7 @@ namespace storm {
                 std::string problem = "Unable to compile program using Carl data structures. Is Carls's include directory '" + carlIncludeDirectory + "' set correctly?";
                 try {
                     std::string program = R"(
-#include "src/adapters/NumberAdapter.h"
+#include "src/storm/adapters/NumberAdapter.h"
                         
                     int main() {
                         return 0;
@@ -1639,23 +1639,23 @@ namespace storm {
 #include <boost/dll/alias.hpp>
                 
 {% if exact %}
-#include "src/adapters/NumberAdapter.h"
+#include "src/storm/adapters/NumberAdapter.h"
 {% endif %}
 {% if parametric %}
-#include "src/adapters/CarlAdapter.h"
+#include "src/storm/adapters/CarlAdapter.h"
 {% endif %}
                 
 #include "resources/3rdparty/sparsepp/sparsepp.h"
                 
-#include "src/builder/jit/StateSet.h"
-#include "src/builder/jit/JitModelBuilderInterface.h"
-#include "src/builder/jit/StateBehaviour.h"
-#include "src/builder/jit/ModelComponentsBuilder.h"
-#include "src/builder/RewardModelInformation.h"
+#include "src/storm/builder/jit/StateSet.h"
+#include "src/storm/builder/jit/JitModelBuilderInterface.h"
+#include "src/storm/builder/jit/StateBehaviour.h"
+#include "src/storm/builder/jit/ModelComponentsBuilder.h"
+#include "src/storm/builder/RewardModelInformation.h"
                 
-#include "src/utility/constants.h"
+#include "src/storm/utility/constants.h"
                 
-#include "src/exceptions/WrongFormatException.h"
+#include "src/storm/exceptions/WrongFormatException.h"
                 
                 namespace storm {
                     namespace builder {

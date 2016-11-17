@@ -1,9 +1,9 @@
 #ifndef STORM_STORAGE_EXPRESSIONS_VARIABLEEXPRESSION_H_
 #define STORM_STORAGE_EXPRESSIONS_VARIABLEEXPRESSION_H_
 
-#include "src/storage/expressions/BaseExpression.h"
-#include "src/storage/expressions/Variable.h"
-#include "src/utility/OsDetection.h"
+#include "src/storm/storage/expressions/BaseExpression.h"
+#include "src/storm/storage/expressions/Variable.h"
+#include "src/storm/utility/OsDetection.h"
 
 namespace storm {
     namespace expressions {

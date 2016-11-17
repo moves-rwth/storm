@@ -1,7 +1,7 @@
 #ifndef STORM_SETTINGS_MODULES_SMT2SMTSOLVERSETTINGS_H_
 #define STORM_SETTINGS_MODULES_SMT2SMTSOLVERSETTINGS_H_
 
-#include "src/settings/modules/ModuleSettings.h"
+#include "src/storm/settings/modules/ModuleSettings.h"
 
 namespace storm {
     namespace settings {

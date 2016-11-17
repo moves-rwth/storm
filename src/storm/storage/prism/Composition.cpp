@@ -1,4 +1,4 @@
-#include "src/storage/prism/Composition.h"
+#include "src/storm/storage/prism/Composition.h"
 
 namespace storm {
     namespace prism {

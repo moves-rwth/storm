@@ -1,10 +1,10 @@
-#include "src/settings/modules/MultiObjectiveSettings.h"
+#include "src/storm/settings/modules/MultiObjectiveSettings.h"
 
-#include "src/settings/Option.h"
-#include "src/settings/OptionBuilder.h"
-#include "src/settings/ArgumentBuilder.h"
-#include "src/settings/Argument.h"
-#include "src/settings/ArgumentValidators.h"
+#include "src/storm/settings/Option.h"
+#include "src/storm/settings/OptionBuilder.h"
+#include "src/storm/settings/ArgumentBuilder.h"
+#include "src/storm/settings/Argument.h"
+#include "src/storm/settings/ArgumentValidators.h"
 
 
 namespace storm {

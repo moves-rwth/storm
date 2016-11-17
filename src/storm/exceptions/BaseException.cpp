@@ -1,4 +1,4 @@
-#include "src/exceptions/BaseException.h"
+#include "src/storm/exceptions/BaseException.h"
 
 namespace storm {
     namespace exceptions {

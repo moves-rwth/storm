@@ -1,6 +1,6 @@
-#include "src/storage/BucketPriorityQueue.h"
-#include "src/utility/macros.h"
-#include "src/adapters/CarlAdapter.h"
+#include "src/storm/storage/BucketPriorityQueue.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/adapters/CarlAdapter.h"
 
 #include <cmath>
 

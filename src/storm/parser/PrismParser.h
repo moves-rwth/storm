@@ -6,10 +6,10 @@
 #include <memory>
 #include <iomanip>
 
-#include "src/parser/SpiritParserDefinitions.h"
-#include "src/parser/SpiritErrorHandler.h"
-#include "src/storage/prism/Program.h"
-#include "src/storage/expressions/Expression.h"
+#include "src/storm/parser/SpiritParserDefinitions.h"
+#include "src/storm/parser/SpiritErrorHandler.h"
+#include "src/storm/storage/prism/Program.h"
+#include "src/storm/storage/expressions/Expression.h"
 
 namespace storm {
     namespace expressions {

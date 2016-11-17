@@ -1,9 +1,9 @@
 #ifndef STORM_MODELCHECKER_SYMBOLICPROPOSITIONALMODELCHECKER_H_
 #define STORM_MODELCHECKER_SYMBOLICPROPOSITIONALMODELCHECKER_H_
 
-#include "src/modelchecker/AbstractModelChecker.h"
+#include "src/storm/modelchecker/AbstractModelChecker.h"
 
-#include "src/storage/dd/DdType.h"
+#include "src/storm/storage/dd/DdType.h"
 
 namespace storm {
     namespace models {

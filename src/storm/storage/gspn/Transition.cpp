@@ -1,6 +1,6 @@
-#include "src/storage/gspn/Transition.h"
+#include "src/storm/storage/gspn/Transition.h"
 
-#include "src/utility/macros.h"
+#include "src/storm/utility/macros.h"
 
 namespace storm {
     namespace gspn {

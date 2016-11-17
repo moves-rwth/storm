@@ -2,9 +2,9 @@
 
 #include  <memory>
 
-#include "src/utility/solver.h"
-#include "src/solver/LinearEquationSolver.h"
-#include "src/solver/MinMaxLinearEquationSolver.h"
+#include "src/storm/utility/solver.h"
+#include "src/storm/solver/LinearEquationSolver.h"
+#include "src/storm/solver/MinMaxLinearEquationSolver.h"
 
 namespace storm {
     namespace storage {

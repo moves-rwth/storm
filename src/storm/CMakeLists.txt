@@ -3,14 +3,14 @@
 ##	Source file aggregation and clustering
 ##
 #############################################################
-file(GLOB_RECURSE STORM_HEADERS ${PROJECT_SOURCE_DIR}/src/*.h)
-file(GLOB_RECURSE STORM_HEADERS_CLI ${PROJECT_SOURCE_DIR}/src/cli/*.h)
-file(GLOB_RECURSE STORM_SOURCES_WITHOUT_MAIN ${PROJECT_SOURCE_DIR}/src/*/*.cpp)
-file(GLOB_RECURSE STORM_SOURCES_CLI ${PROJECT_SOURCE_DIR}/src/cli/*.cpp)
-file(GLOB_RECURSE STORM_MAIN_FILE ${PROJECT_SOURCE_DIR}/src/storm.cpp)
-file(GLOB_RECURSE STORM_DFT_MAIN_FILE ${PROJECT_SOURCE_DIR}/src/storm-dyftee.cpp)
-file(GLOB_RECURSE STORM_PGCL_MAIN_FILE ${PROJECT_SOURCE_DIR}/src/storm-pgcl.cpp)
-file(GLOB_RECURSE STORM_GSPN_MAIN_FILE ${PROJECT_SOURCE_DIR}/src/storm-gspn.cpp)
+file(GLOB_RECURSE STORM_HEADERS ${PROJECT_SOURCE_DIR}/src/storm/*.h)
+file(GLOB_RECURSE STORM_HEADERS_CLI ${PROJECT_SOURCE_DIR}/src/storm/cli/*.h)
+file(GLOB_RECURSE STORM_SOURCES_WITHOUT_MAIN ${PROJECT_SOURCE_DIR}/src/storm/*/*.cpp)
+file(GLOB_RECURSE STORM_SOURCES_CLI ${PROJECT_SOURCE_DIR}/src/storm/cli/*.cpp)
+file(GLOB_RECURSE STORM_MAIN_FILE ${PROJECT_SOURCE_DIR}/src/storm/storm.cpp)
+file(GLOB_RECURSE STORM_DFT_MAIN_FILE ${PROJECT_SOURCE_DIR}/src/storm/storm-dyftee.cpp)
+file(GLOB_RECURSE STORM_PGCL_MAIN_FILE ${PROJECT_SOURCE_DIR}/src/storm/storm-pgcl.cpp)
+file(GLOB_RECURSE STORM_GSPN_MAIN_FILE ${PROJECT_SOURCE_DIR}/src/storm/storm-gspn.cpp)
 
 # Additional include files like the storm-config.h
 file(GLOB_RECURSE STORM_BUILD_HEADERS ${PROJECT_BINARY_DIR}/include/*.h)
@@ -25,7 +25,7 @@ set(STORM_PGCL_MAIN_SOURCES ${STORM_SOURCES_CLI} ${STORM_PGCL_MAIN_FILE})
 set(STORM_GSPN_MAIN_SOURCES ${STORM_SOURCES_CLI} ${STORM_GSPN_MAIN_FILE})
 set(STORM_MAIN_HEADERS ${STORM_HEADERS_CLI})
 
-file(GLOB_RECURSE ALL_FILES ${PROJECT_SOURCE_DIR}/src/*.h ${PROJECT_SOURCE_DIR}/src/*.cpp)
+file(GLOB_RECURSE ALL_FILES ${PROJECT_SOURCE_DIR}/src/storm/*.h ${PROJECT_SOURCE_DIR}/src/storm/*.cpp)
 
 register_source_groups_from_filestructure("${ALL_FILES}")
 

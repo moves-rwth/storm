@@ -1,39 +1,39 @@
-#include "src/builder/DdJaniModelBuilder.h"
+#include "src/storm/builder/DdJaniModelBuilder.h"
 
 #include <sstream>
 
 #include <boost/algorithm/string/join.hpp>
 
-#include "src/logic/Formulas.h"
+#include "src/storm/logic/Formulas.h"
 
-#include "src/storage/jani/Model.h"
-#include "src/storage/jani/AutomatonComposition.h"
-#include "src/storage/jani/ParallelComposition.h"
-#include "src/storage/jani/CompositionInformationVisitor.h"
+#include "src/storm/storage/jani/Model.h"
+#include "src/storm/storage/jani/AutomatonComposition.h"
+#include "src/storm/storage/jani/ParallelComposition.h"
+#include "src/storm/storage/jani/CompositionInformationVisitor.h"
 
-#include "src/storage/dd/Add.h"
-#include "src/storage/dd/Bdd.h"
-#include "src/adapters/AddExpressionAdapter.h"
+#include "src/storm/storage/dd/Add.h"
+#include "src/storm/storage/dd/Bdd.h"
+#include "src/storm/adapters/AddExpressionAdapter.h"
 
-#include "src/storage/expressions/ExpressionManager.h"
+#include "src/storm/storage/expressions/ExpressionManager.h"
 
-#include "src/models/symbolic/Dtmc.h"
-#include "src/models/symbolic/Ctmc.h"
-#include "src/models/symbolic/Mdp.h"
-#include "src/models/symbolic/StandardRewardModel.h"
+#include "src/storm/models/symbolic/Dtmc.h"
+#include "src/storm/models/symbolic/Ctmc.h"
+#include "src/storm/models/symbolic/Mdp.h"
+#include "src/storm/models/symbolic/StandardRewardModel.h"
 
-#include "src/settings/SettingsManager.h"
-#include "src/settings/modules/CoreSettings.h"
+#include "src/storm/settings/SettingsManager.h"
+#include "src/storm/settings/modules/CoreSettings.h"
 
-#include "src/utility/macros.h"
-#include "src/utility/jani.h"
-#include "src/utility/dd.h"
-#include "src/utility/math.h"
-#include "src/exceptions/WrongFormatException.h"
-#include "src/exceptions/InvalidSettingsException.h"
-#include "src/exceptions/InvalidArgumentException.h"
-#include "src/exceptions/InvalidStateException.h"
-#include "src/exceptions/NotSupportedException.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/utility/jani.h"
+#include "src/storm/utility/dd.h"
+#include "src/storm/utility/math.h"
+#include "src/storm/exceptions/WrongFormatException.h"
+#include "src/storm/exceptions/InvalidSettingsException.h"
+#include "src/storm/exceptions/InvalidArgumentException.h"
+#include "src/storm/exceptions/InvalidStateException.h"
+#include "src/storm/exceptions/NotSupportedException.h"
 
 namespace storm {
     namespace builder {

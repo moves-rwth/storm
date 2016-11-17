@@ -1,11 +1,11 @@
 #ifndef DFTGALILEOPARSER_H
 #define	DFTGALILEOPARSER_H
 
-#include "src/storage/dft/DFT.h"
-#include "src/storage/dft/DFTBuilder.h"
-#include "src/storage/expressions/ExpressionManager.h"
-#include "src/parser/ExpressionParser.h"
-#include "src/storage/expressions/ExpressionEvaluator.h"
+#include "src/storm/storage/dft/DFT.h"
+#include "src/storm/storage/dft/DFTBuilder.h"
+#include "src/storm/storage/expressions/ExpressionManager.h"
+#include "src/storm/parser/ExpressionParser.h"
+#include "src/storm/storage/expressions/ExpressionEvaluator.h"
 
 #include <map>
 

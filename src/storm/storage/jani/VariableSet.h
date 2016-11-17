@@ -3,12 +3,12 @@
 #include <vector>
 #include <set>
 
-#include "src/adapters/DereferenceIteratorAdapter.h"
+#include "src/storm/adapters/DereferenceIteratorAdapter.h"
 
-#include "src/storage/jani/BooleanVariable.h"
-#include "src/storage/jani/UnboundedIntegerVariable.h"
-#include "src/storage/jani/BoundedIntegerVariable.h"
-#include "src/storage/jani/RealVariable.h"
+#include "src/storm/storage/jani/BooleanVariable.h"
+#include "src/storm/storage/jani/UnboundedIntegerVariable.h"
+#include "src/storm/storage/jani/BoundedIntegerVariable.h"
+#include "src/storm/storage/jani/RealVariable.h"
 
 namespace storm {
     namespace jani {

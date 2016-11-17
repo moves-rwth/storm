@@ -1,8 +1,8 @@
 #pragma once
 
-#include "src/generator/NextStateGenerator.h"
+#include "src/storm/generator/NextStateGenerator.h"
 
-#include "src/storage/jani/Model.h"
+#include "src/storm/storage/jani/Model.h"
 
 namespace storm {
     namespace generator {

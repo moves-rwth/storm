@@ -1,10 +1,10 @@
-#include "src/solver/GameSolver.h"
+#include "src/storm/solver/GameSolver.h"
 
-#include "src/solver/LinearEquationSolver.h"
-#include "src/utility/solver.h"
-#include "src/storage/SparseMatrix.h"
-#include "src/utility/vector.h"
-#include "src/utility/graph.h"
+#include "src/storm/solver/LinearEquationSolver.h"
+#include "src/storm/utility/solver.h"
+#include "src/storm/storage/SparseMatrix.h"
+#include "src/storm/utility/vector.h"
+#include "src/storm/utility/graph.h"
 
 namespace storm {
     namespace solver {

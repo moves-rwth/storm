@@ -1,7 +1,7 @@
 #ifndef STORM_PARSER_DETERMINISTICSPARSETRANSITIONPARSER_H_
 #define STORM_PARSER_DETERMINISTICSPARSETRANSITIONPARSER_H_
 
-#include "src/storage/SparseMatrix.h"
+#include "src/storm/storage/SparseMatrix.h"
 
 namespace storm {
     namespace parser {

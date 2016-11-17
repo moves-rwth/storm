@@ -2,7 +2,7 @@
 #include <iostream>
 #include <memory>
 
-#include "src/models/sparse/Model.h"
+#include "src/storm/models/sparse/Model.h"
 
 namespace storm {
     namespace exporter {

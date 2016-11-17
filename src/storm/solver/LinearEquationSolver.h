@@ -4,9 +4,9 @@
 #include <vector>
 #include <memory>
 
-#include "src/solver/AbstractEquationSolver.h"
+#include "src/storm/solver/AbstractEquationSolver.h"
 
-#include "src/storage/SparseMatrix.h"
+#include "src/storm/storage/SparseMatrix.h"
 
 namespace storm {
     namespace solver {

@@ -1,6 +1,6 @@
-#include "src/storage/prism/BooleanVariable.h"
+#include "src/storm/storage/prism/BooleanVariable.h"
 
-#include "src/storage/expressions/ExpressionManager.h"
+#include "src/storm/storage/expressions/ExpressionManager.h"
 
 namespace storm {
     namespace prism {

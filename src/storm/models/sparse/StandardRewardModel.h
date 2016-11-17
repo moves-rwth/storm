@@ -4,8 +4,8 @@
 #include <vector>
 #include <boost/optional.hpp>
 
-#include "src/storage/SparseMatrix.h"
-#include "src/utility/OsDetection.h"
+#include "src/storm/storage/SparseMatrix.h"
+#include "src/storm/utility/OsDetection.h"
 
 namespace storm {
     namespace models {

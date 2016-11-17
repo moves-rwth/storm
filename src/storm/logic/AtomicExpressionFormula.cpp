@@ -1,6 +1,6 @@
-#include "src/logic/AtomicExpressionFormula.h"
+#include "src/storm/logic/AtomicExpressionFormula.h"
 
-#include "src/logic/FormulaVisitor.h"
+#include "src/storm/logic/FormulaVisitor.h"
 
 namespace storm {
     namespace logic {

@@ -1,9 +1,9 @@
-#include "src/solver/stateelimination/PrioritizedStateEliminator.h"
+#include "src/storm/solver/stateelimination/PrioritizedStateEliminator.h"
 
-#include "src/solver/stateelimination/StatePriorityQueue.h"
+#include "src/storm/solver/stateelimination/StatePriorityQueue.h"
 
-#include "src/utility/macros.h"
-#include "src/utility/constants.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/utility/constants.h"
 
 #include "StaticStatePriorityQueue.h"
 

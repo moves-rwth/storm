@@ -1,20 +1,20 @@
-#include "src/builder/jit/ModelComponentsBuilder.h"
+#include "src/storm/builder/jit/ModelComponentsBuilder.h"
 
-#include "src/models/sparse/StateLabeling.h"
-#include "src/models/sparse/Dtmc.h"
-#include "src/models/sparse/Ctmc.h"
-#include "src/models/sparse/Mdp.h"
-#include "src/models/sparse/MarkovAutomaton.h"
-#include "src/models/sparse/StandardRewardModel.h"
+#include "src/storm/models/sparse/StateLabeling.h"
+#include "src/storm/models/sparse/Dtmc.h"
+#include "src/storm/models/sparse/Ctmc.h"
+#include "src/storm/models/sparse/Mdp.h"
+#include "src/storm/models/sparse/MarkovAutomaton.h"
+#include "src/storm/models/sparse/StandardRewardModel.h"
 
-#include "src/builder/RewardModelBuilder.h"
+#include "src/storm/builder/RewardModelBuilder.h"
 
-#include "src/settings/SettingsManager.h"
-#include "src/settings/modules/CoreSettings.h"
+#include "src/storm/settings/SettingsManager.h"
+#include "src/storm/settings/modules/CoreSettings.h"
 
-#include "src/exceptions/WrongFormatException.h"
-#include "src/utility/macros.h"
-#include "src/utility/constants.h"
+#include "src/storm/exceptions/WrongFormatException.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/utility/constants.h"
 
 namespace storm {
     namespace builder {

@@ -1,8 +1,8 @@
 #ifndef STORM_LOGIC_CONDITIONALFORMULA_H_
 #define STORM_LOGIC_CONDITIONALFORMULA_H_
 
-#include "src/logic/BinaryPathFormula.h"
-#include "src/logic/FormulaContext.h"
+#include "src/storm/logic/BinaryPathFormula.h"
+#include "src/storm/logic/FormulaContext.h"
 
 namespace storm {
     namespace logic {

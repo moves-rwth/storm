@@ -1,11 +1,11 @@
 #ifndef STORM_MODELCHECKER_CSL_SPARSEMARKOVAUTOMATONCSLMODELCHECKER_H_
 #define STORM_MODELCHECKER_CSL_SPARSEMARKOVAUTOMATONCSLMODELCHECKER_H_
 
-#include "src/modelchecker/propositional/SparsePropositionalModelChecker.h"
+#include "src/storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 
-#include "src/models/sparse/MarkovAutomaton.h"
+#include "src/storm/models/sparse/MarkovAutomaton.h"
 
-#include "src/solver/MinMaxLinearEquationSolver.h"
+#include "src/storm/solver/MinMaxLinearEquationSolver.h"
 
 namespace storm {
     namespace modelchecker {

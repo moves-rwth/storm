@@ -1,19 +1,19 @@
-#include "src/modelchecker/propositional/SparsePropositionalModelChecker.h"
+#include "src/storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 
-#include "src/adapters/CarlAdapter.h"
+#include "src/storm/adapters/CarlAdapter.h"
 
-#include "src/models/sparse/Dtmc.h"
-#include "src/models/sparse/Ctmc.h"
-#include "src/models/sparse/Mdp.h"
-#include "src/models/sparse/MarkovAutomaton.h"
-#include "src/models/sparse/StandardRewardModel.h"
+#include "src/storm/models/sparse/Dtmc.h"
+#include "src/storm/models/sparse/Ctmc.h"
+#include "src/storm/models/sparse/Mdp.h"
+#include "src/storm/models/sparse/MarkovAutomaton.h"
+#include "src/storm/models/sparse/StandardRewardModel.h"
 
-#include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
+#include "src/storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 
-#include "src/logic/FragmentSpecification.h"
+#include "src/storm/logic/FragmentSpecification.h"
 
-#include "src/utility/macros.h"
-#include "src/exceptions/InvalidPropertyException.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/exceptions/InvalidPropertyException.h"
 
 namespace storm {
     namespace modelchecker {

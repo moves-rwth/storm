@@ -1,15 +1,15 @@
-#include "src/storage/jani/Model.h"
+#include "src/storm/storage/jani/Model.h"
 
-#include "src/storage/expressions/ExpressionManager.h"
+#include "src/storm/storage/expressions/ExpressionManager.h"
 
-#include "src/storage/jani/Compositions.h"
-#include "src/storage/jani/CompositionInformationVisitor.h"
+#include "src/storm/storage/jani/Compositions.h"
+#include "src/storm/storage/jani/CompositionInformationVisitor.h"
 
-#include "src/utility/macros.h"
-#include "src/exceptions/WrongFormatException.h"
-#include "src/exceptions/InvalidArgumentException.h"
-#include "src/exceptions/InvalidOperationException.h"
-#include "src/exceptions/InvalidTypeException.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/exceptions/WrongFormatException.h"
+#include "src/storm/exceptions/InvalidArgumentException.h"
+#include "src/storm/exceptions/InvalidOperationException.h"
+#include "src/storm/exceptions/InvalidTypeException.h"
 
 namespace storm {
     namespace jani {

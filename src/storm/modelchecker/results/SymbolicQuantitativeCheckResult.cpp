@@ -1,14 +1,14 @@
-#include "src/modelchecker/results/SymbolicQuantitativeCheckResult.h"
-#include "src/modelchecker/results/SymbolicQualitativeCheckResult.h"
+#include "src/storm/modelchecker/results/SymbolicQuantitativeCheckResult.h"
+#include "src/storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
 
-#include "src/storage/dd/DdManager.h"
-#include "src/storage/dd/cudd/CuddAddIterator.h"
+#include "src/storm/storage/dd/DdManager.h"
+#include "src/storm/storage/dd/cudd/CuddAddIterator.h"
 
-#include "src/exceptions/InvalidOperationException.h"
+#include "src/storm/exceptions/InvalidOperationException.h"
 
-#include "src/exceptions/NotImplementedException.h"
-#include "src/utility/macros.h"
-#include "src/utility/constants.h"
+#include "src/storm/exceptions/NotImplementedException.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/utility/constants.h"
 
 namespace storm {
     namespace modelchecker {

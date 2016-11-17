@@ -1,6 +1,6 @@
-#include "src/modelchecker/exploration/Statistics.h"
+#include "src/storm/modelchecker/exploration/Statistics.h"
 
-#include "src/modelchecker/exploration/ExplorationInformation.h"
+#include "src/storm/modelchecker/exploration/ExplorationInformation.h"
 
 namespace storm {
     namespace modelchecker {

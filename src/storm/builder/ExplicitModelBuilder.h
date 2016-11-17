@@ -10,27 +10,27 @@
 #include <boost/container/flat_set.hpp>
 #include <boost/container/flat_map.hpp>
 #include <boost/variant.hpp>
-#include "src/models/sparse/StandardRewardModel.h"
+#include "src/storm/models/sparse/StandardRewardModel.h"
 
-#include "src/storage/prism/Program.h"
-#include "src/storage/expressions/ExpressionEvaluator.h"
-#include "src/storage/BitVectorHashMap.h"
-#include "src/logic/Formulas.h"
-#include "src/models/sparse/StateAnnotation.h"
-#include "src/models/sparse/Model.h"
-#include "src/models/sparse/StateLabeling.h"
-#include "src/storage/SparseMatrix.h"
-#include "src/storage/sparse/StateValuations.h"
-#include "src/storage/sparse/StateStorage.h"
-#include "src/settings/SettingsManager.h"
+#include "src/storm/storage/prism/Program.h"
+#include "src/storm/storage/expressions/ExpressionEvaluator.h"
+#include "src/storm/storage/BitVectorHashMap.h"
+#include "src/storm/logic/Formulas.h"
+#include "src/storm/models/sparse/StateAnnotation.h"
+#include "src/storm/models/sparse/Model.h"
+#include "src/storm/models/sparse/StateLabeling.h"
+#include "src/storm/storage/SparseMatrix.h"
+#include "src/storm/storage/sparse/StateValuations.h"
+#include "src/storm/storage/sparse/StateStorage.h"
+#include "src/storm/settings/SettingsManager.h"
 
-#include "src/utility/prism.h"
+#include "src/storm/utility/prism.h"
 
-#include "src/builder/ExplorationOrder.h"
+#include "src/storm/builder/ExplorationOrder.h"
 
-#include "src/generator/NextStateGenerator.h"
-#include "src/generator/CompressedState.h"
-#include "src/generator/VariableInformation.h"
+#include "src/storm/generator/NextStateGenerator.h"
+#include "src/storm/generator/CompressedState.h"
+#include "src/storm/generator/VariableInformation.h"
 
 namespace storm {
     namespace utility {

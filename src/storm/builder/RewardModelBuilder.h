@@ -3,7 +3,7 @@
 #include <vector>
 #include <cstdint>
 
-#include "src/builder/RewardModelInformation.h"
+#include "src/storm/builder/RewardModelInformation.h"
 
 namespace storm {
     namespace models {

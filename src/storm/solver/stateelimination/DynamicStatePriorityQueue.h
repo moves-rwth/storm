@@ -5,7 +5,7 @@
 #include <set>
 #include <unordered_map>
 
-#include "src/solver/stateelimination/StatePriorityQueue.h"
+#include "src/storm/solver/stateelimination/StatePriorityQueue.h"
 
 namespace storm {
     namespace storage {

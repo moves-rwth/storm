@@ -1,7 +1,7 @@
 #ifndef STORM_UTILITY_CONSTANTSCOMPARATOR_H_
 #define STORM_UTILITY_CONSTANTSCOMPARATOR_H_
 
-#include "src/adapters/CarlAdapter.h"
+#include "src/storm/adapters/CarlAdapter.h"
 
 namespace storm {
     namespace utility {

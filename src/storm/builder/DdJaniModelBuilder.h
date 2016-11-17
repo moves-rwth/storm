@@ -2,11 +2,11 @@
 
 #include <boost/optional.hpp>
 
-#include "src/storage/dd/DdType.h"
+#include "src/storm/storage/dd/DdType.h"
 
-#include "src/logic/Formula.h"
+#include "src/storm/logic/Formula.h"
 
-#include "src/storage/jani/Model.h"
+#include "src/storm/storage/jani/Model.h"
 
 namespace storm {
     namespace models {

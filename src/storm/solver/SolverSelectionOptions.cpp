@@ -1,4 +1,4 @@
-#include "src/solver/SolverSelectionOptions.h"
+#include "src/storm/solver/SolverSelectionOptions.h"
 
 namespace storm {
     namespace solver {

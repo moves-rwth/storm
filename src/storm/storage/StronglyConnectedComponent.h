@@ -1,9 +1,9 @@
 #ifndef STORM_STORAGE_STRONGLYCONNECTEDCOMPONENT_H_
 #define STORM_STORAGE_STRONGLYCONNECTEDCOMPONENT_H_
 
-#include "src/storage/StateBlock.h"
-#include "src/storage/Decomposition.h"
-#include "src/utility/OsDetection.h"
+#include "src/storm/storage/StateBlock.h"
+#include "src/storm/storage/Decomposition.h"
+#include "src/storm/utility/OsDetection.h"
 
 namespace storm {
     namespace storage {

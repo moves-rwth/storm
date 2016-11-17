@@ -1,8 +1,8 @@
-#include "src/storage/expressions/UnaryBooleanFunctionExpression.h"
-#include "src/storage/expressions/BooleanLiteralExpression.h"
+#include "src/storm/storage/expressions/UnaryBooleanFunctionExpression.h"
+#include "src/storm/storage/expressions/BooleanLiteralExpression.h"
 #include "ExpressionVisitor.h"
-#include "src/utility/macros.h"
-#include "src/exceptions/InvalidTypeException.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/exceptions/InvalidTypeException.h"
 
 namespace storm {
     namespace expressions {

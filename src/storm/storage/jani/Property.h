@@ -1,7 +1,7 @@
 #pragma once
 
-#include "src/modelchecker/results/FilterType.h"
-#include "src/logic/Formulas.h"
+#include "src/storm/modelchecker/results/FilterType.h"
+#include "src/storm/logic/Formulas.h"
 
 namespace storm {
     namespace jani {

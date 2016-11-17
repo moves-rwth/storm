@@ -6,8 +6,8 @@
 #include <unordered_map>
 #include <vector>
 
-#include "src/storage/expressions/BaseExpression.h"
-#include "src/utility/OsDetection.h"
+#include "src/storm/storage/expressions/BaseExpression.h"
+#include "src/storm/utility/OsDetection.h"
 
 namespace storm {
     namespace expressions {

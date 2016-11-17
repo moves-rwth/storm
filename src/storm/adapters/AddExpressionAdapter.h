@@ -3,13 +3,13 @@
 
 #include <memory>
 
-#include "src/storage/expressions/Variable.h"
-#include "src/storage/expressions/Expressions.h"
-#include "src/storage/expressions/ExpressionVisitor.h"
+#include "src/storm/storage/expressions/Variable.h"
+#include "src/storm/storage/expressions/Expressions.h"
+#include "src/storm/storage/expressions/ExpressionVisitor.h"
 
-#include "src/storage/dd/Add.h"
-#include "src/storage/dd/Bdd.h"
-#include "src/storage/dd/DdManager.h"
+#include "src/storm/storage/dd/Add.h"
+#include "src/storm/storage/dd/Bdd.h"
+#include "src/storm/storage/dd/DdManager.h"
 
 namespace storm {
     namespace adapters {

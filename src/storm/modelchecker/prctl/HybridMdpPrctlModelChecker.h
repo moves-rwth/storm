@@ -1,11 +1,11 @@
     #ifndef STORM_MODELCHECKER_HYBRIDMDPPRCTLMODELCHECKER_H_
 #define STORM_MODELCHECKER_HYBRIDMDPPRCTLMODELCHECKER_H_
 
-#include "src/modelchecker/propositional/SymbolicPropositionalModelChecker.h"
+#include "src/storm/modelchecker/propositional/SymbolicPropositionalModelChecker.h"
 
-#include "src/solver/MinMaxLinearEquationSolver.h"
-#include "src/storage/dd/DdType.h"
-#include "src/solver/OptimizationDirection.h"
+#include "src/storm/solver/MinMaxLinearEquationSolver.h"
+#include "src/storm/storage/dd/DdType.h"
+#include "src/storm/solver/OptimizationDirection.h"
 
 namespace storm {
     namespace models {

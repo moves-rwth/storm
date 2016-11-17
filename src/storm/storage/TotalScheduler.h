@@ -4,7 +4,7 @@
 #include <vector>
 #include <ostream>
 
-#include "src/storage/Scheduler.h"
+#include "src/storm/storage/Scheduler.h"
 
 namespace storm {
     namespace storage {

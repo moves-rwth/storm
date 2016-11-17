@@ -1,10 +1,10 @@
 #include "ProgramGraphBuilder.h"
-#include "src/storage/pgcl/AssignmentStatement.h"
-#include "src/storage/pgcl/ObserveStatement.h"
-#include "src/storage/pgcl/LoopStatement.h"
-#include "src/storage/pgcl/IfStatement.h"
-#include "src/storage/pgcl/NondeterministicBranch.h"
-#include "src/storage/pgcl/ProbabilisticBranch.h"
+#include "src/storm/storage/pgcl/AssignmentStatement.h"
+#include "src/storm/storage/pgcl/ObserveStatement.h"
+#include "src/storm/storage/pgcl/LoopStatement.h"
+#include "src/storm/storage/pgcl/IfStatement.h"
+#include "src/storm/storage/pgcl/NondeterministicBranch.h"
+#include "src/storm/storage/pgcl/ProbabilisticBranch.h"
 
 
 namespace storm {

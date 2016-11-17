@@ -2,11 +2,11 @@
 
 #include <sstream>
 
-#include "src/parser/SpiritParserDefinitions.h"
-#include "src/parser/SpiritErrorHandler.h"
-#include "src/storage/expressions/OperatorType.h"
+#include "src/storm/parser/SpiritParserDefinitions.h"
+#include "src/storm/parser/SpiritErrorHandler.h"
+#include "src/storm/storage/expressions/OperatorType.h"
 
-#include "src/adapters/NumberAdapter.h"
+#include "src/storm/adapters/NumberAdapter.h"
 
 namespace storm {
     namespace expressions {

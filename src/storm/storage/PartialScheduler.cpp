@@ -1,5 +1,5 @@
-#include "src/storage/PartialScheduler.h"
-#include "src/exceptions/InvalidArgumentException.h"
+#include "src/storm/storage/PartialScheduler.h"
+#include "src/storm/exceptions/InvalidArgumentException.h"
 
 namespace storm {
     namespace storage {

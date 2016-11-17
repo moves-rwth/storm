@@ -6,11 +6,11 @@
 #include <unordered_map>
 #include <boost/optional.hpp>
 
-#include "src/storage/expressions/Expression.h"
-#include "src/storage/expressions/Variable.h"
-#include "src/storage/dd/DdType.h"
-#include "src/models/ModelBase.h"
-#include "src/utility/OsDetection.h"
+#include "src/storm/storage/expressions/Expression.h"
+#include "src/storm/storage/expressions/Variable.h"
+#include "src/storm/storage/dd/DdType.h"
+#include "src/storm/models/ModelBase.h"
+#include "src/storm/utility/OsDetection.h"
 
 namespace storm {
     namespace dd {

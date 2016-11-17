@@ -1,7 +1,7 @@
 #ifndef STORM_MODELCHECKER_QUALITATIVECHECKRESULT_H_
 #define STORM_MODELCHECKER_QUALITATIVECHECKRESULT_H_
 
-#include "src/modelchecker/results/CheckResult.h"
+#include "src/storm/modelchecker/results/CheckResult.h"
 
 namespace storm {
     namespace modelchecker {

@@ -1,12 +1,12 @@
-#include "src/solver/EigenLinearEquationSolver.h"
+#include "src/storm/solver/EigenLinearEquationSolver.h"
 
-#include "src/adapters/EigenAdapter.h"
+#include "src/storm/adapters/EigenAdapter.h"
 
-#include "src/settings/SettingsManager.h"
-#include "src/settings/modules/EigenEquationSolverSettings.h"
+#include "src/storm/settings/SettingsManager.h"
+#include "src/storm/settings/modules/EigenEquationSolverSettings.h"
 
-#include "src/utility/macros.h"
-#include "src/exceptions/InvalidSettingsException.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/exceptions/InvalidSettingsException.h"
 
 namespace storm {
     namespace solver {

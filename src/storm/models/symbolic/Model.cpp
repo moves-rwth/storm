@@ -1,17 +1,17 @@
-#include "src/models/symbolic/Model.h"
+#include "src/storm/models/symbolic/Model.h"
 
 #include <boost/algorithm/string/join.hpp>
 
-#include "src/exceptions/IllegalArgumentException.h"
-#include "src/exceptions/InvalidOperationException.h"
+#include "src/storm/exceptions/IllegalArgumentException.h"
+#include "src/storm/exceptions/InvalidOperationException.h"
 
-#include "src/adapters/AddExpressionAdapter.h"
+#include "src/storm/adapters/AddExpressionAdapter.h"
 
-#include "src/storage/dd/DdManager.h"
-#include "src/storage/dd/Add.h"
-#include "src/storage/dd/Bdd.h"
+#include "src/storm/storage/dd/DdManager.h"
+#include "src/storm/storage/dd/Add.h"
+#include "src/storm/storage/dd/Bdd.h"
 
-#include "src/models/symbolic/StandardRewardModel.h"
+#include "src/storm/models/symbolic/StandardRewardModel.h"
 
 namespace storm {
     namespace models {

@@ -1,5 +1,4 @@
 #include <boost/functional/hash.hpp>
-#include <src/storage/sparse/StateType.h>
 
 // To detect whether the usage of TBB is possible, this include is neccessary
 #include "storm-config.h"
@@ -8,19 +7,20 @@
 #include "tbb/tbb.h"
 #endif
 
-#include "src/storage/SparseMatrix.h"
-#include "src/adapters/CarlAdapter.h"
+#include "src/storm/storage/sparse/StateType.h"
+#include "src/storm/storage/SparseMatrix.h"
+#include "src/storm/adapters/CarlAdapter.h"
 
-#include "src/storage/BitVector.h"
-#include "src/utility/constants.h"
-#include "src/utility/ConstantsComparator.h"
+#include "src/storm/storage/BitVector.h"
+#include "src/storm/utility/constants.h"
+#include "src/storm/utility/ConstantsComparator.h"
 
-#include "src/exceptions/InvalidStateException.h"
-#include "src/exceptions/NotImplementedException.h"
-#include "src/exceptions/InvalidArgumentException.h"
-#include "src/exceptions/OutOfRangeException.h"
+#include "src/storm/exceptions/InvalidStateException.h"
+#include "src/storm/exceptions/NotImplementedException.h"
+#include "src/storm/exceptions/InvalidArgumentException.h"
+#include "src/storm/exceptions/OutOfRangeException.h"
 
-#include "src/utility/macros.h"
+#include "src/storm/utility/macros.h"
 
 #include <iterator>
 

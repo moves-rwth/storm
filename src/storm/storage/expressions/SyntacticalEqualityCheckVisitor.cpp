@@ -1,6 +1,6 @@
-#include "src/storage/expressions/SyntacticalEqualityCheckVisitor.h"
+#include "src/storm/storage/expressions/SyntacticalEqualityCheckVisitor.h"
 
-#include "src/storage/expressions/Expressions.h"
+#include "src/storm/storage/expressions/Expressions.h"
 
 namespace storm {
     namespace expressions {

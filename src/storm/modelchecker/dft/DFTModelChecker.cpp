@@ -1,11 +1,11 @@
-#include "src/modelchecker/dft/DFTModelChecker.h"
+#include "src/storm/modelchecker/dft/DFTModelChecker.h"
 
-#include "src/builder/ExplicitDFTModelBuilder.h"
-#include "src/builder/ExplicitDFTModelBuilderApprox.h"
-#include "src/builder/ParallelCompositionBuilder.h"
-#include "src/storage/dft/DFTIsomorphism.h"
-#include "src/settings/modules/DFTSettings.h"
-#include "src/utility/bitoperations.h"
+#include "src/storm/builder/ExplicitDFTModelBuilder.h"
+#include "src/storm/builder/ExplicitDFTModelBuilderApprox.h"
+#include "src/storm/builder/ParallelCompositionBuilder.h"
+#include "src/storm/storage/dft/DFTIsomorphism.h"
+#include "src/storm/settings/modules/DFTSettings.h"
+#include "src/storm/utility/bitoperations.h"
 
 namespace storm {
     namespace modelchecker {

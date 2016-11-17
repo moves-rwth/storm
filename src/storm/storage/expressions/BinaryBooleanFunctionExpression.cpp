@@ -1,9 +1,9 @@
-#include "src/storage/expressions/BinaryBooleanFunctionExpression.h"
-#include "src/storage/expressions/BooleanLiteralExpression.h"
-#include "src/storage/expressions/ExpressionManager.h"
-#include "src/storage/expressions/ExpressionVisitor.h"
-#include "src/utility/macros.h"
-#include "src/exceptions/InvalidTypeException.h"
+#include "src/storm/storage/expressions/BinaryBooleanFunctionExpression.h"
+#include "src/storm/storage/expressions/BooleanLiteralExpression.h"
+#include "src/storm/storage/expressions/ExpressionManager.h"
+#include "src/storm/storage/expressions/ExpressionVisitor.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/exceptions/InvalidTypeException.h"
 
 namespace storm {
     namespace expressions {

@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
-#include "src/storage/dft/DFT.h"
+#include "src/storm/storage/dft/DFT.h"
 
 
 namespace storm {

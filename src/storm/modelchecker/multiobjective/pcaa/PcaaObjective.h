@@ -4,7 +4,7 @@
 #include <iomanip>
 #include <boost/optional.hpp>
 
-#include "src/logic/Formulas.h"
+#include "src/storm/logic/Formulas.h"
 
 namespace storm {
     namespace modelchecker {

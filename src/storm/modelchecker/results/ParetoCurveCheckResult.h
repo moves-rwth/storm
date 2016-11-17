@@ -3,10 +3,10 @@
 
 #include <vector>
 
-#include "src/modelchecker/results/CheckResult.h"
-#include "src/utility/OsDetection.h"
-#include "src/storage/sparse/StateType.h"
-#include "src/storage/geometry/Polytope.h"
+#include "src/storm/modelchecker/results/CheckResult.h"
+#include "src/storm/utility/OsDetection.h"
+#include "src/storm/storage/sparse/StateType.h"
+#include "src/storm/storage/geometry/Polytope.h"
 
 namespace storm {
     namespace modelchecker {

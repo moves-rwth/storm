@@ -1,8 +1,8 @@
 #ifndef STORM_EXCEPTIONS_ILLEGALARGUMENTEXCEPTION_H_
 #define STORM_EXCEPTIONS_ILLEGALARGUMENTEXCEPTION_H_
 
-#include "src/exceptions/BaseException.h"
-#include "src/exceptions/ExceptionMacros.h"
+#include "src/storm/exceptions/BaseException.h"
+#include "src/storm/exceptions/ExceptionMacros.h"
 
 namespace storm {
     namespace exceptions {

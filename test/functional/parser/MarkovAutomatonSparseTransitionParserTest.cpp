@@ -7,17 +7,17 @@
 
 #include "gtest/gtest.h"
 #include "storm-config.h"
-#include "src/settings/SettingsManager.h"
-#include "src/settings/modules/CoreSettings.h"
+#include "src/storm/settings/SettingsManager.h"
+#include "src/storm/settings/modules/CoreSettings.h"
 
 #include <vector>
 
-#include "src/parser/MarkovAutomatonSparseTransitionParser.h"
-#include "src/utility/cstring.h"
-#include "src/parser/MarkovAutomatonParser.h"
-#include "src/settings/SettingMemento.h"
-#include "src/exceptions/WrongFormatException.h"
-#include "src/exceptions/FileIoException.h"
+#include "src/storm/parser/MarkovAutomatonSparseTransitionParser.h"
+#include "src/storm/utility/cstring.h"
+#include "src/storm/parser/MarkovAutomatonParser.h"
+#include "src/storm/settings/SettingMemento.h"
+#include "src/storm/exceptions/WrongFormatException.h"
+#include "src/storm/exceptions/FileIoException.h"
 
 #define STATE_COUNT 6ul
 #define CHOICE_COUNT 7ul

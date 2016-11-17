@@ -1,8 +1,8 @@
 #pragma once
 
-#include "src/adapters/DereferenceIteratorAdapter.h"
+#include "src/storm/adapters/DereferenceIteratorAdapter.h"
 
-#include "src/storage/jani/Assignment.h"
+#include "src/storm/storage/jani/Assignment.h"
 
 namespace storm {
     namespace jani {

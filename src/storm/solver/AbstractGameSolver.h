@@ -6,10 +6,10 @@
 
 #include <boost/optional.hpp>
 
-#include "src/storage/sparse/StateType.h"
-#include "src/utility/vector.h"
-#include "src/solver/AbstractEquationSolver.h"
-#include "src/storage/TotalScheduler.h"
+#include "src/storm/storage/sparse/StateType.h"
+#include "src/storm/utility/vector.h"
+#include "src/storm/solver/AbstractEquationSolver.h"
+#include "src/storm/storage/TotalScheduler.h"
 
 namespace storm {
     namespace solver {

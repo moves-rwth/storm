@@ -1,13 +1,13 @@
-#include "src/utility/prism.h"
+#include "src/storm/utility/prism.h"
 
-#include "src/adapters/CarlAdapter.h"
+#include "src/storm/adapters/CarlAdapter.h"
 
-#include "src/storage/expressions/ExpressionManager.h"
-#include "src/storage/prism/Program.h"
+#include "src/storm/storage/expressions/ExpressionManager.h"
+#include "src/storm/storage/prism/Program.h"
 
-#include "src/utility/macros.h"
+#include "src/storm/utility/macros.h"
 
-#include "src/exceptions/InvalidArgumentException.h"
+#include "src/storm/exceptions/InvalidArgumentException.h"
 
 #include <boost/algorithm/string.hpp>
 

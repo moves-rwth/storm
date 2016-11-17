@@ -1,9 +1,9 @@
-#include "src/logic/RewardOperatorFormula.h"
+#include "src/storm/logic/RewardOperatorFormula.h"
 
-#include "src/logic/FormulaVisitor.h"
+#include "src/storm/logic/FormulaVisitor.h"
 
-#include "src/utility/macros.h"
-#include "src/exceptions/InvalidPropertyException.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/exceptions/InvalidPropertyException.h"
 
 namespace storm {
     namespace logic {

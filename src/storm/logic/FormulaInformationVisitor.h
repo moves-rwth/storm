@@ -1,8 +1,8 @@
 #ifndef STORM_LOGIC_FORMULAINFORMATIONVISITOR_H_
 #define STORM_LOGIC_FORMULAINFORMATIONVISITOR_H_
 
-#include "src/logic/FormulaVisitor.h"
-#include "src/logic/FormulaInformation.h"
+#include "src/storm/logic/FormulaVisitor.h"
+#include "src/storm/logic/FormulaInformation.h"
 
 namespace storm {
     namespace logic {

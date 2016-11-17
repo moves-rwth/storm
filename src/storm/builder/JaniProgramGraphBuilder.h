@@ -1,14 +1,14 @@
 #include <string>
 #include <unordered_map>
 
-#include "src/storage/ppg/ProgramGraph.h"
-#include "src/storage/jani/Model.h"
-#include "src/storage/jani/Location.h"
-#include "src/storage/jani/EdgeDestination.h"
-#include "src/storage/IntegerInterval.h"
-#include "src/exceptions/NotSupportedException.h"
+#include "src/storm/storage/ppg/ProgramGraph.h"
+#include "src/storm/storage/jani/Model.h"
+#include "src/storm/storage/jani/Location.h"
+#include "src/storm/storage/jani/EdgeDestination.h"
+#include "src/storm/storage/IntegerInterval.h"
+#include "src/storm/exceptions/NotSupportedException.h"
 
-#include "src/utility/macros.h"
+#include "src/storm/utility/macros.h"
 
 namespace storm {
     namespace builder {

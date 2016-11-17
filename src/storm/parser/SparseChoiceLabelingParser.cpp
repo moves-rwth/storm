@@ -1,10 +1,10 @@
-#include "src/parser/SparseChoiceLabelingParser.h"
+#include "src/storm/parser/SparseChoiceLabelingParser.h"
 
-#include "src/exceptions/WrongFormatException.h"
-#include "src/exceptions/OutOfRangeException.h"
-#include "src/exceptions/FileIoException.h"
-#include "src/parser/MappedFile.h"
-#include "src/utility/cstring.h"
+#include "src/storm/exceptions/WrongFormatException.h"
+#include "src/storm/exceptions/OutOfRangeException.h"
+#include "src/storm/exceptions/FileIoException.h"
+#include "src/storm/parser/MappedFile.h"
+#include "src/storm/utility/cstring.h"
 
 namespace storm {
     namespace parser {

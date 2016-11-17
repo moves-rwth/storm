@@ -1,8 +1,8 @@
-#include "src/builder/DftExplorationHeuristic.h"
-#include "src/adapters/CarlAdapter.h"
-#include "src/utility/macros.h"
-#include "src/utility/constants.h"
-#include "src/exceptions/NotImplementedException.h"
+#include "src/storm/builder/DftExplorationHeuristic.h"
+#include "src/storm/adapters/CarlAdapter.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/utility/constants.h"
+#include "src/storm/exceptions/NotImplementedException.h"
 
 namespace storm {
     namespace builder {

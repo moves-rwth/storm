@@ -1,11 +1,11 @@
 #ifndef STORM_MODELCHECKER_HYBRIDDTMCPRCTLMODELCHECKER_H_
 #define STORM_MODELCHECKER_HYBRIDDTMCPRCTLMODELCHECKER_H_
 
-#include "src/modelchecker/propositional/SymbolicPropositionalModelChecker.h"
+#include "src/storm/modelchecker/propositional/SymbolicPropositionalModelChecker.h"
 
-#include "src/models/symbolic/Dtmc.h"
+#include "src/storm/models/symbolic/Dtmc.h"
 
-#include "src/solver/LinearEquationSolver.h"
+#include "src/storm/solver/LinearEquationSolver.h"
 
 namespace storm {
     namespace modelchecker {

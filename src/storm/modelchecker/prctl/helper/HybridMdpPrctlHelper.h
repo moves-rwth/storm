@@ -1,13 +1,13 @@
 #ifndef STORM_MODELCHECKER_HYBRID_MDP_PRCTL_MODELCHECKER_HELPER_H_
 #define STORM_MODELCHECKER_HYBRID_MDP_PRCTL_MODELCHECKER_HELPER_H_
 
-#include "src/models/symbolic/NondeterministicModel.h"
+#include "src/storm/models/symbolic/NondeterministicModel.h"
 
-#include "src/storage/dd/Add.h"
-#include "src/storage/dd/Bdd.h"
+#include "src/storm/storage/dd/Add.h"
+#include "src/storm/storage/dd/Bdd.h"
 
-#include "src/solver/MinMaxLinearEquationSolver.h"
-#include "src/solver/OptimizationDirection.h"
+#include "src/storm/solver/MinMaxLinearEquationSolver.h"
+#include "src/storm/solver/OptimizationDirection.h"
 
 namespace storm {
     namespace modelchecker {

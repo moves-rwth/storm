@@ -1,7 +1,7 @@
 #ifndef STORM_LOGIC_UNARYBOOLEANSTATEFORMULA_H_
 #define STORM_LOGIC_UNARYBOOLEANSTATEFORMULA_H_
 
-#include "src/logic/UnaryStateFormula.h"
+#include "src/storm/logic/UnaryStateFormula.h"
 
 namespace storm {
     namespace logic {

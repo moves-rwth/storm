@@ -1,6 +1,6 @@
-#include "src/storage/prism/Constant.h"
-#include "src/utility/macros.h"
-#include "src/exceptions/IllegalFunctionCallException.h"
+#include "src/storm/storage/prism/Constant.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/exceptions/IllegalFunctionCallException.h"
 
 namespace storm {
     namespace prism {

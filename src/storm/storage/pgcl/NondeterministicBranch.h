@@ -8,7 +8,7 @@
 #ifndef NONDETERMINISTICBRANCH_H
 #define	NONDETERMINISTICBRANCH_H
 
-#include "src/storage/pgcl/BranchStatement.h"
+#include "src/storm/storage/pgcl/BranchStatement.h"
 
 namespace storm {
     namespace pgcl {

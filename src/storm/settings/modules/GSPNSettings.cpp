@@ -1,13 +1,13 @@
 #include "GSPNSettings.h"
 
-#include "src/settings/SettingsManager.h"
-#include "src/settings/SettingMemento.h"
-#include "src/settings/Option.h"
-#include "src/settings/OptionBuilder.h"
-#include "src/settings/ArgumentBuilder.h"
-#include "src/settings/Argument.h"
+#include "src/storm/settings/SettingsManager.h"
+#include "src/storm/settings/SettingMemento.h"
+#include "src/storm/settings/Option.h"
+#include "src/storm/settings/OptionBuilder.h"
+#include "src/storm/settings/ArgumentBuilder.h"
+#include "src/storm/settings/Argument.h"
 
-#include "src/exceptions/InvalidSettingsException.h"
+#include "src/storm/exceptions/InvalidSettingsException.h"
 
 namespace storm {
     namespace settings {

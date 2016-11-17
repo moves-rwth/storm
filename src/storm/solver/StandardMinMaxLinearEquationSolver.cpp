@@ -1,17 +1,17 @@
-#include "src/solver/StandardMinMaxLinearEquationSolver.h"
+#include "src/storm/solver/StandardMinMaxLinearEquationSolver.h"
 
-#include "src/settings/SettingsManager.h"
-#include "src/settings/modules/MinMaxEquationSolverSettings.h"
+#include "src/storm/settings/SettingsManager.h"
+#include "src/storm/settings/modules/MinMaxEquationSolverSettings.h"
 
-#include "src/solver/GmmxxLinearEquationSolver.h"
-#include "src/solver/EigenLinearEquationSolver.h"
-#include "src/solver/NativeLinearEquationSolver.h"
-#include "src/solver/EliminationLinearEquationSolver.h"
+#include "src/storm/solver/GmmxxLinearEquationSolver.h"
+#include "src/storm/solver/EigenLinearEquationSolver.h"
+#include "src/storm/solver/NativeLinearEquationSolver.h"
+#include "src/storm/solver/EliminationLinearEquationSolver.h"
 
-#include "src/utility/vector.h"
-#include "src/utility/macros.h"
-#include "src/exceptions/InvalidSettingsException.h"
-#include "src/exceptions/InvalidStateException.h"
+#include "src/storm/utility/vector.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/exceptions/InvalidSettingsException.h"
+#include "src/storm/exceptions/InvalidStateException.h"
 namespace storm {
     namespace solver {
         

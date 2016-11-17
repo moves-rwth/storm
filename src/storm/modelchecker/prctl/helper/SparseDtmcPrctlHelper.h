@@ -5,12 +5,12 @@
 
 #include <boost/optional.hpp>
 
-#include "src/models/sparse/StandardRewardModel.h"
+#include "src/storm/models/sparse/StandardRewardModel.h"
 
-#include "src/storage/SparseMatrix.h"
-#include "src/storage/BitVector.h"
+#include "src/storm/storage/SparseMatrix.h"
+#include "src/storm/storage/BitVector.h"
 
-#include "src/solver/LinearEquationSolver.h"
+#include "src/storm/solver/LinearEquationSolver.h"
 
 namespace storm {
     namespace modelchecker {

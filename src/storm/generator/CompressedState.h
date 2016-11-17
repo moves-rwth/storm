@@ -1,7 +1,7 @@
 #ifndef STORM_GENERATOR_COMPRESSEDSTATE_H_
 #define STORM_GENERATOR_COMPRESSEDSTATE_H_
 
-#include "src/storage/BitVector.h"
+#include "src/storm/storage/BitVector.h"
 
 namespace storm {
     namespace expressions {

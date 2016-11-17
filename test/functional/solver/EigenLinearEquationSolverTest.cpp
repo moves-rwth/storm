@@ -1,11 +1,11 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
-#include "src/solver/EigenLinearEquationSolver.h"
-#include "src/settings/SettingsManager.h"
+#include "src/storm/solver/EigenLinearEquationSolver.h"
+#include "src/storm/settings/SettingsManager.h"
 
-#include "src/utility/constants.h"
-#include "src/settings/modules/EigenEquationSolverSettings.h"
+#include "src/storm/utility/constants.h"
+#include "src/storm/settings/modules/EigenEquationSolverSettings.h"
 
 TEST(EigenLinearEquationSolver, SolveWithStandardOptions) {
     ASSERT_NO_THROW(storm::storage::SparseMatrixBuilder<double> builder);

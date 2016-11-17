@@ -1,8 +1,8 @@
 #ifndef STORM_PARSER_DETERMINISTICMODELPARSER_H_
 #define STORM_PARSER_DETERMINISTICMODELPARSER_H_
 
-#include "src/models/sparse/Dtmc.h"
-#include "src/models/sparse/Ctmc.h"
+#include "src/storm/models/sparse/Dtmc.h"
+#include "src/storm/models/sparse/Ctmc.h"
 
 namespace storm {
     namespace parser {

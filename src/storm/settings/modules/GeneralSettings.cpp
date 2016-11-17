@@ -1,16 +1,16 @@
-#include "src/settings/modules/GeneralSettings.h"
+#include "src/storm/settings/modules/GeneralSettings.h"
 
-#include "src/settings/SettingsManager.h"
-#include "src/settings/SettingMemento.h"
-#include "src/settings/Option.h"
-#include "src/settings/OptionBuilder.h"
-#include "src/settings/ArgumentBuilder.h"
-#include "src/settings/Argument.h"
-#include "src/solver/SolverSelectionOptions.h"
+#include "src/storm/settings/SettingsManager.h"
+#include "src/storm/settings/SettingMemento.h"
+#include "src/storm/settings/Option.h"
+#include "src/storm/settings/OptionBuilder.h"
+#include "src/storm/settings/ArgumentBuilder.h"
+#include "src/storm/settings/Argument.h"
+#include "src/storm/solver/SolverSelectionOptions.h"
 
-#include "src/storage/dd/DdType.h"
+#include "src/storm/storage/dd/DdType.h"
 
-#include "src/exceptions/InvalidSettingsException.h"
+#include "src/storm/exceptions/InvalidSettingsException.h"
 
 namespace storm {
     namespace settings {

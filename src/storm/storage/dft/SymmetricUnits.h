@@ -1,6 +1,6 @@
 #pragma once
 
-#include "src/utility/macros.h"
+#include "src/storm/utility/macros.h"
 
 namespace storm {
     namespace storage {

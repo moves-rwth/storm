@@ -4,11 +4,11 @@
 #include <fstream>
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
-#include "src/storage/expressions/ExpressionManager.h"
-#include "src/exceptions/NotImplementedException.h"
-#include "src/exceptions/FileIoException.h"
-#include "src/exceptions/NotSupportedException.h"
-#include "src/utility/macros.h"
+#include "src/storm/storage/expressions/ExpressionManager.h"
+#include "src/storm/exceptions/NotImplementedException.h"
+#include "src/storm/exceptions/FileIoException.h"
+#include "src/storm/exceptions/NotSupportedException.h"
+#include "src/storm/utility/macros.h"
 
 namespace storm {
     namespace parser {

@@ -1,7 +1,7 @@
-#include "src/storage/expressions/BinaryExpression.h"
+#include "src/storm/storage/expressions/BinaryExpression.h"
 
-#include "src/utility/macros.h"
-#include "src/exceptions/InvalidAccessException.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/exceptions/InvalidAccessException.h"
 
 namespace storm {
     namespace expressions {

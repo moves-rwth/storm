@@ -1,6 +1,6 @@
-#include "src/logic/LongRunAverageRewardFormula.h"
+#include "src/storm/logic/LongRunAverageRewardFormula.h"
 
-#include "src/logic/FormulaVisitor.h"
+#include "src/storm/logic/FormulaVisitor.h"
 
 namespace storm {
     namespace logic {

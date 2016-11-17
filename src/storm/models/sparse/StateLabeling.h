@@ -5,11 +5,11 @@
 #include <set>
 #include <ostream>
 
-#include "src/storage/sparse/StateType.h"
+#include "src/storm/storage/sparse/StateType.h"
 
-#include "src/storage/BitVector.h"
-#include "src/utility/macros.h"
-#include "src/utility/OsDetection.h"
+#include "src/storm/storage/BitVector.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/utility/OsDetection.h"
 
             
 namespace storm {

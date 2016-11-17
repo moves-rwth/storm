@@ -1,4 +1,4 @@
-#include "src/logic/FragmentSpecification.h"
+#include "src/storm/logic/FragmentSpecification.h"
 
 #include <iostream>
 

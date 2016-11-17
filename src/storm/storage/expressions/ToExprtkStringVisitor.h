@@ -3,9 +3,9 @@
 
 #include <sstream>
 
-#include "src/storage/expressions/Expression.h"
-#include "src/storage/expressions/Expressions.h"
-#include "src/storage/expressions/ExpressionVisitor.h"
+#include "src/storm/storage/expressions/Expression.h"
+#include "src/storm/storage/expressions/Expressions.h"
+#include "src/storm/storage/expressions/ExpressionVisitor.h"
 
 namespace storm {
     namespace expressions {

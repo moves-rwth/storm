@@ -1,9 +1,9 @@
 #ifndef DFTSMTBUILDER_H
 #define	DFTSMTBUILDER_H
 
-#include "src/solver/SmtSolver.h"
-#include "src/utility/solver.h"
-#include "src/storage/dft/DFT.h"
+#include "src/storm/solver/SmtSolver.h"
+#include "src/storm/utility/solver.h"
+#include "src/storm/storage/dft/DFT.h"
 
 namespace storm {
     namespace builder {

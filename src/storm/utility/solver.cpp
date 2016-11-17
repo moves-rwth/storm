@@ -1,23 +1,23 @@
-#include "src/utility/solver.h"
+#include "src/storm/utility/solver.h"
 
 #include <vector>
 
-#include "src/solver/SymbolicLinearEquationSolver.h"
-#include "src/solver/SymbolicMinMaxLinearEquationSolver.h"
-#include "src/solver/SymbolicGameSolver.h"
-#include "src/solver/GameSolver.h"
+#include "src/storm/solver/SymbolicLinearEquationSolver.h"
+#include "src/storm/solver/SymbolicMinMaxLinearEquationSolver.h"
+#include "src/storm/solver/SymbolicGameSolver.h"
+#include "src/storm/solver/GameSolver.h"
 
-#include "src/solver/TopologicalMinMaxLinearEquationSolver.h"
+#include "src/storm/solver/TopologicalMinMaxLinearEquationSolver.h"
 
-#include "src/solver/GurobiLpSolver.h"
-#include "src/solver/GlpkLpSolver.h"
+#include "src/storm/solver/GurobiLpSolver.h"
+#include "src/storm/solver/GlpkLpSolver.h"
 
-#include "src/solver/Z3SmtSolver.h"
-#include "src/solver/MathsatSmtSolver.h"
-#include "src/settings/SettingsManager.h"
-#include "src/settings/modules/CoreSettings.h"
+#include "src/storm/solver/Z3SmtSolver.h"
+#include "src/storm/solver/MathsatSmtSolver.h"
+#include "src/storm/settings/SettingsManager.h"
+#include "src/storm/settings/modules/CoreSettings.h"
 
-#include "src/exceptions/InvalidSettingsException.h"
+#include "src/storm/exceptions/InvalidSettingsException.h"
 
 namespace storm {
     namespace utility {

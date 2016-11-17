@@ -4,8 +4,8 @@
 
 #include <boost/optional.hpp>
 
-#include "src/storage/expressions/Variable.h"
-#include "src/storage/expressions/Expression.h"
+#include "src/storm/storage/expressions/Variable.h"
+#include "src/storm/storage/expressions/Expression.h"
 
 namespace storm {
     namespace jani {

@@ -9,9 +9,9 @@
 #include "storm-config.h"
 
 #include <string>
-#include "src/parser/MappedFile.h"
-#include "src/utility/cstring.h"
-#include "src/exceptions/FileIoException.h"
+#include "src/storm/parser/MappedFile.h"
+#include "src/storm/utility/cstring.h"
+#include "src/storm/exceptions/FileIoException.h"
 
 TEST(MappedFileTest, NonExistingFile) {
 	// No matter what happens, please do NOT create a file with the name "nonExistingFile.not"!

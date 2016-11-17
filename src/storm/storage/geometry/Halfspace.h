@@ -3,8 +3,8 @@
 
 #include <iostream>
 #include <iomanip>
-#include "src/utility/constants.h"
-#include "src/utility/vector.h"
+#include "src/storm/utility/constants.h"
+#include "src/storm/utility/vector.h"
 
 namespace storm {
     namespace storage {

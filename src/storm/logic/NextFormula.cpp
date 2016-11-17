@@ -1,6 +1,6 @@
-#include "src/logic/NextFormula.h"
+#include "src/storm/logic/NextFormula.h"
 
-#include "src/logic/FormulaVisitor.h"
+#include "src/storm/logic/FormulaVisitor.h"
 
 namespace storm {
     namespace logic {

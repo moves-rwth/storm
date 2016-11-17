@@ -1,10 +1,10 @@
-#include "src/storage/geometry/HyproPolytope.h"
+#include "src/storm/storage/geometry/HyproPolytope.h"
 #
 #ifdef STORM_HAVE_HYPRO
 
-#include "src/utility/macros.h"
-#include "src/exceptions/InvalidArgumentException.h"
-#include "src/exceptions/UnexpectedException.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/exceptions/InvalidArgumentException.h"
+#include "src/storm/exceptions/UnexpectedException.h"
 
 namespace storm {
     namespace storage {

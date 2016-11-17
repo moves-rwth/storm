@@ -2,8 +2,8 @@
 #include <unordered_map>
 #include <string>
 
-#include "src/storage/expressions/SubstitutionVisitor.h"
-#include "src/storage/expressions/Expressions.h"
+#include "src/storm/storage/expressions/SubstitutionVisitor.h"
+#include "src/storm/storage/expressions/Expressions.h"
 
 namespace storm {
     namespace expressions  {

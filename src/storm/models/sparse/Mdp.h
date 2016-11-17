@@ -1,9 +1,9 @@
 #ifndef STORM_MODELS_SPARSE_MDP_H_
 #define STORM_MODELS_SPARSE_MDP_H_
 
-#include <src/storage/StateActionPair.h>
-#include "src/models/sparse/NondeterministicModel.h"
-#include "src/utility/OsDetection.h"
+#include "src/storm/storage/StateActionPair.h"
+#include "src/storm/models/sparse/NondeterministicModel.h"
+#include "src/storm/utility/OsDetection.h"
 
 namespace storm {
     namespace models {

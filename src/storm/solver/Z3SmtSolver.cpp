@@ -1,8 +1,8 @@
-#include "src/solver/Z3SmtSolver.h"
-#include "src/utility/macros.h"
-#include "src/exceptions/NotSupportedException.h"
-#include "src/exceptions/InvalidStateException.h"
-#include "src/exceptions/InvalidArgumentException.h"
+#include "src/storm/solver/Z3SmtSolver.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/exceptions/NotSupportedException.h"
+#include "src/storm/exceptions/InvalidStateException.h"
+#include "src/storm/exceptions/InvalidArgumentException.h"
 
 namespace storm {
 	namespace solver {

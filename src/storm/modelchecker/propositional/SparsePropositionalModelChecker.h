@@ -1,7 +1,7 @@
 #ifndef STORM_MODELCHECKER_SPARSEPROPOSITIONALMODELCHECKER_H_
 #define STORM_MODELCHECKER_SPARSEPROPOSITIONALMODELCHECKER_H_
 
-#include "src/modelchecker/AbstractModelChecker.h"
+#include "src/storm/modelchecker/AbstractModelChecker.h"
 
 
 namespace storm {

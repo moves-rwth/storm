@@ -3,25 +3,25 @@
 
 #include <chrono>
 
-#include "src/models/sparse/Mdp.h"
-#include "src/logic/Formulas.h"
-#include "src/storage/prism/Program.h"
-#include "src/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
-#include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
-#include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
-#include "src/exceptions/NotImplementedException.h"
-#include "src/exceptions/InvalidPropertyException.h"
-#include "src/exceptions/InvalidArgumentException.h"
-#include "src/exceptions/InvalidStateException.h"
+#include "src/storm/models/sparse/Mdp.h"
+#include "src/storm/logic/Formulas.h"
+#include "src/storm/storage/prism/Program.h"
+#include "src/storm/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
+#include "src/storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
+#include "src/storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "src/storm/exceptions/NotImplementedException.h"
+#include "src/storm/exceptions/InvalidPropertyException.h"
+#include "src/storm/exceptions/InvalidArgumentException.h"
+#include "src/storm/exceptions/InvalidStateException.h"
 
-#include "src/utility/graph.h"
-#include "src/utility/counterexamples.h"
-#include "src/utility/solver.h"
-#include "src/solver/LpSolver.h"
+#include "src/storm/utility/graph.h"
+#include "src/storm/utility/counterexamples.h"
+#include "src/storm/utility/solver.h"
+#include "src/storm/solver/LpSolver.h"
 
-#include "src/settings/SettingsManager.h"
-#include "src/settings/modules/GeneralSettings.h"
-#include "src/settings/modules/CounterexampleGeneratorSettings.h"
+#include "src/storm/settings/SettingsManager.h"
+#include "src/storm/settings/modules/GeneralSettings.h"
+#include "src/storm/settings/modules/CounterexampleGeneratorSettings.h"
 
 namespace storm {
     namespace counterexamples {

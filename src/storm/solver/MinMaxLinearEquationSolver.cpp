@@ -1,18 +1,18 @@
-#include "src/solver/MinMaxLinearEquationSolver.h"
+#include "src/storm/solver/MinMaxLinearEquationSolver.h"
 
 #include <cstdint>
 
-#include "src/solver/LinearEquationSolver.h"
-#include "src/solver/StandardMinMaxLinearEquationSolver.h"
-#include "src/solver/TopologicalMinMaxLinearEquationSolver.h"
+#include "src/storm/solver/LinearEquationSolver.h"
+#include "src/storm/solver/StandardMinMaxLinearEquationSolver.h"
+#include "src/storm/solver/TopologicalMinMaxLinearEquationSolver.h"
 
-#include "src/settings/SettingsManager.h"
-#include "src/settings/modules/MinMaxEquationSolverSettings.h"
+#include "src/storm/settings/SettingsManager.h"
+#include "src/storm/settings/modules/MinMaxEquationSolverSettings.h"
 
-#include "src/utility/macros.h"
-#include "src/exceptions/NotImplementedException.h"
-#include "src/exceptions/InvalidSettingsException.h"
-#include "src/exceptions/IllegalFunctionCallException.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/exceptions/NotImplementedException.h"
+#include "src/storm/exceptions/InvalidSettingsException.h"
+#include "src/storm/exceptions/IllegalFunctionCallException.h"
 
 namespace storm {
     namespace solver {

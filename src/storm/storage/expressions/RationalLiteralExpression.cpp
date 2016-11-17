@@ -1,8 +1,8 @@
-#include "src/storage/expressions/RationalLiteralExpression.h"
-#include "src/storage/expressions/ExpressionManager.h"
-#include "src/storage/expressions/ExpressionVisitor.h"
+#include "src/storm/storage/expressions/RationalLiteralExpression.h"
+#include "src/storm/storage/expressions/ExpressionManager.h"
+#include "src/storm/storage/expressions/ExpressionVisitor.h"
 
-#include "src/utility/constants.h"
+#include "src/storm/utility/constants.h"
 
 namespace storm {
     namespace expressions {

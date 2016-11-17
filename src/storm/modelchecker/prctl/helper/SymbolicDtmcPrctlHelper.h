@@ -1,12 +1,12 @@
 #ifndef STORM_MODELCHECKER_SPARSE_DTMC_PRCTL_MODELCHECKER_HELPER_H_
 #define STORM_MODELCHECKER_SPARSE_DTMC_PRCTL_MODELCHECKER_HELPER_H_
 
-#include "src/models/symbolic/Model.h"
+#include "src/storm/models/symbolic/Model.h"
 
-#include "src/storage/dd/Add.h"
-#include "src/storage/dd/Bdd.h"
+#include "src/storm/storage/dd/Add.h"
+#include "src/storm/storage/dd/Bdd.h"
 
-#include "src/utility/solver.h"
+#include "src/storm/utility/solver.h"
 
 namespace storm {
     namespace modelchecker {

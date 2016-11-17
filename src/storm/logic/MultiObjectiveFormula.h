@@ -1,7 +1,7 @@
 #ifndef STORM_LOGIC_MULTIOBJECTIVEFORMULA_H_
 #define STORM_LOGIC_MULTIOBJECTIVEFORMULA_H_
 
-#include "src/logic/Formula.h"
+#include "src/storm/logic/Formula.h"
 
 namespace storm {
     namespace logic {

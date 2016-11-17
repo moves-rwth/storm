@@ -2,7 +2,7 @@
 
 #include <ostream>
 
-#include "src/storage/jani/CompositionVisitor.h"
+#include "src/storm/storage/jani/CompositionVisitor.h"
 
 namespace storm {
     namespace jani {

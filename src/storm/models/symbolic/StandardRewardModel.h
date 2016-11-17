@@ -5,7 +5,7 @@
 
 #include <boost/optional.hpp>
 
-#include "src/storage/dd/DdType.h"
+#include "src/storm/storage/dd/DdType.h"
 
 namespace storm {
     namespace dd {

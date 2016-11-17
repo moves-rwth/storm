@@ -1,4 +1,4 @@
-#include "src/storage/bisimulation/DeterministicModelBisimulationDecomposition.h"
+#include "src/storm/storage/bisimulation/DeterministicModelBisimulationDecomposition.h"
 
 #include <algorithm>
 #include <unordered_map>
@@ -6,21 +6,21 @@
 #include <iomanip>
 #include <boost/iterator/zip_iterator.hpp>
 
-#include "src/adapters/CarlAdapter.h"
-#include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
+#include "src/storm/adapters/CarlAdapter.h"
+#include "src/storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 
-#include "src/models/sparse/Dtmc.h"
-#include "src/models/sparse/Ctmc.h"
-#include "src/models/sparse/StandardRewardModel.h"
+#include "src/storm/models/sparse/Dtmc.h"
+#include "src/storm/models/sparse/Ctmc.h"
+#include "src/storm/models/sparse/StandardRewardModel.h"
 
-#include "src/utility/graph.h"
-#include "src/utility/constants.h"
-#include "src/utility/ConstantsComparator.h"
-#include "src/exceptions/IllegalFunctionCallException.h"
-#include "src/exceptions/InvalidArgumentException.h"
+#include "src/storm/utility/graph.h"
+#include "src/storm/utility/constants.h"
+#include "src/storm/utility/ConstantsComparator.h"
+#include "src/storm/exceptions/IllegalFunctionCallException.h"
+#include "src/storm/exceptions/InvalidArgumentException.h"
 
-#include "src/settings/SettingsManager.h"
-#include "src/settings/modules/GeneralSettings.h"
+#include "src/storm/settings/SettingsManager.h"
+#include "src/storm/settings/modules/GeneralSettings.h"
 
 namespace storm {
     namespace storage {

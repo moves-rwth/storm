@@ -1,8 +1,8 @@
 #ifndef STORM_MODELS_SYMBOLIC_MDP_H_
 #define STORM_MODELS_SYMBOLIC_MDP_H_
 
-#include "src/models/symbolic/NondeterministicModel.h"
-#include "src/utility/OsDetection.h"
+#include "src/storm/models/symbolic/NondeterministicModel.h"
+#include "src/storm/utility/OsDetection.h"
 
 namespace storm {
     namespace models {

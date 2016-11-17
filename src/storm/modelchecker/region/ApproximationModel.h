@@ -12,15 +12,15 @@
 #include <memory>
 #include <boost/functional/hash.hpp>
 
-#include "src/utility/region.h"
-#include "src/modelchecker/region/ParameterRegion.h"
-#include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
-#include "src/logic/Formulas.h"
-#include "src/models/sparse/Model.h"
-#include "src/storage/SparseMatrix.h"
-#include "src/solver/SolveGoal.h"
-#include "src/modelchecker/region/RegionBoundary.h"
-#include "src/storage/TotalScheduler.h"
+#include "src/storm/utility/region.h"
+#include "src/storm/modelchecker/region/ParameterRegion.h"
+#include "src/storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "src/storm/logic/Formulas.h"
+#include "src/storm/models/sparse/Model.h"
+#include "src/storm/storage/SparseMatrix.h"
+#include "src/storm/solver/SolveGoal.h"
+#include "src/storm/modelchecker/region/RegionBoundary.h"
+#include "src/storm/storage/TotalScheduler.h"
 
 namespace storm {
     namespace modelchecker {

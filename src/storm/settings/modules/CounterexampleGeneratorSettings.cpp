@@ -1,12 +1,12 @@
-#include "src/settings/modules/CounterexampleGeneratorSettings.h"
+#include "src/storm/settings/modules/CounterexampleGeneratorSettings.h"
 
-#include "src/settings/SettingsManager.h"
-#include "src/exceptions/InvalidSettingsException.h"
-#include "src/settings/Option.h"
-#include "src/settings/OptionBuilder.h"
-#include "src/settings/ArgumentBuilder.h"
-#include "src/settings/Argument.h"
-#include "src/settings/modules/IOSettings.h"
+#include "src/storm/settings/SettingsManager.h"
+#include "src/storm/exceptions/InvalidSettingsException.h"
+#include "src/storm/settings/Option.h"
+#include "src/storm/settings/OptionBuilder.h"
+#include "src/storm/settings/ArgumentBuilder.h"
+#include "src/storm/settings/Argument.h"
+#include "src/storm/settings/modules/IOSettings.h"
 
 namespace storm {
     namespace settings {

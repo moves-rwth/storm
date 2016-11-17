@@ -1,10 +1,10 @@
 #ifndef STORM_MODELCHECKER_SYMBOLICQUALITATIVECHECKRESULT_H_
 #define STORM_MODELCHECKER_SYMBOLICQUALITATIVECHECKRESULT_H_
 
-#include "src/storage/dd/DdType.h"
-#include "src/storage/dd/Bdd.h"
-#include "src/modelchecker/results/QualitativeCheckResult.h"
-#include "src/utility/OsDetection.h"
+#include "src/storm/storage/dd/DdType.h"
+#include "src/storm/storage/dd/Bdd.h"
+#include "src/storm/modelchecker/results/QualitativeCheckResult.h"
+#include "src/storm/utility/OsDetection.h"
 
 namespace storm {
     namespace modelchecker {

@@ -1,11 +1,11 @@
-#include "src/storage/bisimulation/Partition.h"
+#include "src/storm/storage/bisimulation/Partition.h"
 
 #include <iostream>
 
-#include "src/storage/bisimulation/DeterministicBlockData.h"
+#include "src/storm/storage/bisimulation/DeterministicBlockData.h"
 
-#include "src/utility/macros.h"
-#include "src/exceptions/InvalidArgumentException.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/exceptions/InvalidArgumentException.h"
 
 namespace storm {
     namespace storage {

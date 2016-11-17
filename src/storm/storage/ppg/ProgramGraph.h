@@ -1,16 +1,16 @@
 #pragma once
 
 #include "defines.h"
-#include "src/storage/expressions/Expression.h"
-#include "src/storage/expressions/Variable.h"
-#include "src/storage/expressions/ExpressionManager.h"
+#include "src/storm/storage/expressions/Expression.h"
+#include "src/storm/storage/expressions/Variable.h"
+#include "src/storm/storage/expressions/ExpressionManager.h"
 
 #include "ProgramLocation.h"
 #include "ProgramEdge.h"
 #include "ProgramEdgeGroup.h"
 #include "ProgramAction.h"
 
-#include "src/storage/pgcl/VariableDeclaration.h"
+#include "src/storm/storage/pgcl/VariableDeclaration.h"
 
 namespace storm {
     namespace ppg {

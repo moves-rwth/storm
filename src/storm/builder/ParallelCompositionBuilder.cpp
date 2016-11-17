@@ -1,6 +1,6 @@
-#include "src/builder/ParallelCompositionBuilder.h"
-#include "src/models/sparse/StandardRewardModel.h"
-#include <src/utility/constants.h>
+#include "src/storm/builder/ParallelCompositionBuilder.h"
+#include "src/storm/models/sparse/StandardRewardModel.h"
+#include "src/storm/utility/constants.h"
 
 namespace storm {
     namespace builder {

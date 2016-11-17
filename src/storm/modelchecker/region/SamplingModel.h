@@ -12,12 +12,12 @@
 #include <memory>
 #include <type_traits>
 
-#include "src/utility/region.h"
-#include "src/logic/Formulas.h"
-#include "src/models/sparse/Model.h"
-#include "src/solver/SolveGoal.h"
-#include "src/storage/TotalScheduler.h"
-#include "src/utility/ModelInstantiator.h"
+#include "src/storm/utility/region.h"
+#include "src/storm/logic/Formulas.h"
+#include "src/storm/models/sparse/Model.h"
+#include "src/storm/solver/SolveGoal.h"
+#include "src/storm/storage/TotalScheduler.h"
+#include "src/storm/utility/ModelInstantiator.h"
 
 namespace storm {
     namespace modelchecker{

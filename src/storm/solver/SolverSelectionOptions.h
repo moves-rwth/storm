@@ -2,7 +2,7 @@
 #define	SOLVERSELECTIONOPTIONS_H
 
 
-#include "src/utility/ExtendSettingEnumWithSelectionField.h"
+#include "src/storm/utility/ExtendSettingEnumWithSelectionField.h"
 
 namespace storm {
     namespace solver {

@@ -1,24 +1,24 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
-#include "src/settings/SettingMemento.h"
-#include "src/parser/PrismParser.h"
-#include "src/parser/FormulaParser.h"
-#include "src/logic/Formulas.h"
-#include "src/builder/ExplicitModelBuilder.h"
+#include "src/storm/settings/SettingMemento.h"
+#include "src/storm/parser/PrismParser.h"
+#include "src/storm/parser/FormulaParser.h"
+#include "src/storm/logic/Formulas.h"
+#include "src/storm/builder/ExplicitModelBuilder.h"
 
-#include "src/solver/GmmxxLinearEquationSolver.h"
-#include "src/models/sparse/StandardRewardModel.h"
-#include "src/modelchecker/csl/SparseCtmcCslModelChecker.h"
-#include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "src/storm/solver/GmmxxLinearEquationSolver.h"
+#include "src/storm/models/sparse/StandardRewardModel.h"
+#include "src/storm/modelchecker/csl/SparseCtmcCslModelChecker.h"
+#include "src/storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 
-#include "src/settings/SettingsManager.h"
-#include "src/settings/modules/GeneralSettings.h"
-#include "src/settings/modules/IOSettings.h"
+#include "src/storm/settings/SettingsManager.h"
+#include "src/storm/settings/modules/GeneralSettings.h"
+#include "src/storm/settings/modules/IOSettings.h"
 
-#include "src/settings/modules/NativeEquationSolverSettings.h"
-#include "src/settings/modules/GmmxxEquationSolverSettings.h"
+#include "src/storm/settings/modules/NativeEquationSolverSettings.h"
+#include "src/storm/settings/modules/GmmxxEquationSolverSettings.h"
 
-#include "src/storage/expressions/ExpressionManager.h"
+#include "src/storm/storage/expressions/ExpressionManager.h"
 
 TEST(GmmxxCtmcCslModelCheckerTest, Cluster) {
     // Set the PRISM compatibility mode temporarily. It is set to its old value once the returned object is destructed.

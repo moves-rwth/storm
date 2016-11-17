@@ -1,4 +1,4 @@
-#include "src/settings/Option.h"
+#include "src/storm/settings/Option.h"
 
 #include <iomanip>
 #include <string>
@@ -6,9 +6,9 @@
 #include "ArgumentBase.h"
 #include "Argument.h"
 
-#include "src/utility/macros.h"
-#include "src/exceptions/IllegalArgumentException.h"
-#include "src/exceptions/OptionUnificationException.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/exceptions/IllegalArgumentException.h"
+#include "src/storm/exceptions/OptionUnificationException.h"
 
 
 namespace storm {

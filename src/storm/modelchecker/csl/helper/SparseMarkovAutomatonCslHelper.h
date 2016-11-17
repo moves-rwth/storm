@@ -1,10 +1,10 @@
 #ifndef STORM_MODELCHECKER_SPARSE_MARKOVAUTOMATON_CSL_MODELCHECKER_HELPER_H_
 #define STORM_MODELCHECKER_SPARSE_MARKOVAUTOMATON_CSL_MODELCHECKER_HELPER_H_
 
-#include "src/storage/BitVector.h"
-#include "src/storage/MaximalEndComponent.h"
-#include "src/solver/OptimizationDirection.h"
-#include "src/solver/MinMaxLinearEquationSolver.h"
+#include "src/storm/storage/BitVector.h"
+#include "src/storm/storage/MaximalEndComponent.h"
+#include "src/storm/solver/OptimizationDirection.h"
+#include "src/storm/solver/MinMaxLinearEquationSolver.h"
 
 namespace storm {
     

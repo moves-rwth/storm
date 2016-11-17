@@ -11,8 +11,8 @@
 #include <hypro/representations/GeometricObject.h>
 #include <hypro/representations/Polytopes/HPolytope/HPolytope.h>
 
-#include "src/adapters/CarlAdapter.h"
-#include "src/storage/geometry/HalfSpace.h"
+#include "src/storm/adapters/CarlAdapter.h"
+#include "src/storm/storage/geometry/HalfSpace.h"
 
 namespace storm {
     namespace adapters {

@@ -1,8 +1,8 @@
-#include "src/logic/MultiObjectiveFormula.h"
+#include "src/storm/logic/MultiObjectiveFormula.h"
 
-#include "src/logic/FormulaVisitor.h"
-#include "src/utility/macros.h"
-#include "src/exceptions/InvalidArgumentException.h"
+#include "src/storm/logic/FormulaVisitor.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/exceptions/InvalidArgumentException.h"
 
 namespace storm {
     namespace logic {

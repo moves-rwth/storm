@@ -4,8 +4,8 @@
 #include <iostream>
 #include <memory>
 
-#include "src/storage/dd/DdType.h"
-#include "src/logic/ComparisonType.h"
+#include "src/storm/storage/dd/DdType.h"
+#include "src/storm/logic/ComparisonType.h"
 
 namespace storm {
     namespace modelchecker {

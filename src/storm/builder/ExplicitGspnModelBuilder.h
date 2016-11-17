@@ -3,13 +3,13 @@
 //
 //#include <string>
 //
-//#include "src/models/sparse/MarkovAutomaton.h"
-//#include "src/models/sparse/StandardRewardModel.h"
-//#include "src/storage/BitVector.h"
-//#include "src/storage/BitVectorHashMap.h"
-//#include "src/storage/gspn/GSPN.h"
-//#include "src/storage/gspn/ImmediateTransition.h"
-//#include "src/storage/gspn/TimedTransition.h"
+//#include "src/storm/models/sparse/MarkovAutomaton.h"
+//#include "src/storm/models/sparse/StandardRewardModel.h"
+//#include "src/storm/storage/BitVector.h"
+//#include "src/storm/storage/BitVectorHashMap.h"
+//#include "src/storm/storage/gspn/GSPN.h"
+//#include "src/storm/storage/gspn/ImmediateTransition.h"
+//#include "src/storm/storage/gspn/TimedTransition.h"
 //
 //namespace storm {
 //    namespace builder {

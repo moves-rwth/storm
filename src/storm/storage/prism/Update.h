@@ -3,9 +3,9 @@
 
 #include <vector>
 
-#include "src/storage/prism/LocatedInformation.h"
-#include "src/storage/prism/Assignment.h"
-#include "src/utility/OsDetection.h"
+#include "src/storm/storage/prism/LocatedInformation.h"
+#include "src/storm/storage/prism/Assignment.h"
+#include "src/storm/utility/OsDetection.h"
 
 namespace storm {
     namespace prism {

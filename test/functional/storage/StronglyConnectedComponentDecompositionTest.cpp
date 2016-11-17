@@ -1,10 +1,10 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
-#include "src/parser/AutoParser.h"
-#include "src/storage/SparseMatrix.h"
-#include "src/storage/StronglyConnectedComponentDecomposition.h"
-#include "src/models/sparse/StandardRewardModel.h"
-#include "src/models/sparse/MarkovAutomaton.h"
+#include "src/storm/parser/AutoParser.h"
+#include "src/storm/storage/SparseMatrix.h"
+#include "src/storm/storage/StronglyConnectedComponentDecomposition.h"
+#include "src/storm/models/sparse/StandardRewardModel.h"
+#include "src/storm/models/sparse/MarkovAutomaton.h"
 
 TEST(StronglyConnectedComponentDecomposition, SmallSystemFromMatrix) {
 	storm::storage::SparseMatrixBuilder<double> matrixBuilder(6, 6);

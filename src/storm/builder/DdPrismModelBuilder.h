@@ -4,11 +4,11 @@
 #include <map>
 #include <boost/optional.hpp>
 
-#include "src/storage/prism/Program.h"
+#include "src/storm/storage/prism/Program.h"
 
-#include "src/logic/Formulas.h"
-#include "src/adapters/AddExpressionAdapter.h"
-#include "src/utility/macros.h"
+#include "src/storm/logic/Formulas.h"
+#include "src/storm/adapters/AddExpressionAdapter.h"
+#include "src/storm/utility/macros.h"
 
 namespace storm {
     namespace dd {

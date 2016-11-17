@@ -1,10 +1,10 @@
-#include "src/storage/Decomposition.h"
+#include "src/storm/storage/Decomposition.h"
 
 #include <vector>
 
-#include "src/storage/StronglyConnectedComponent.h"
-#include "src/storage/MaximalEndComponent.h"
-#include "src/utility/constants.h"
+#include "src/storm/storage/StronglyConnectedComponent.h"
+#include "src/storm/storage/MaximalEndComponent.h"
+#include "src/storm/utility/constants.h"
 
 namespace storm {
     namespace storage {

@@ -1,10 +1,10 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
-#include "src/parser/MarkovAutomatonParser.h"
-#include "src/models/sparse/StandardRewardModel.h"
-#include "src/exceptions/FileIoException.h"
-#include "src/exceptions/OutOfRangeException.h"
+#include "src/storm/parser/MarkovAutomatonParser.h"
+#include "src/storm/models/sparse/StandardRewardModel.h"
+#include "src/storm/exceptions/FileIoException.h"
+#include "src/storm/exceptions/OutOfRangeException.h"
 
 TEST(MarkovAutomatonParserTest, NonExistingFile) {
     // No matter what happens, please do NOT create a file with the name "nonExistingFile.not"!

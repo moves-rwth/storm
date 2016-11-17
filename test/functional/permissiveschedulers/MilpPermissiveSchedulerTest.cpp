@@ -1,14 +1,14 @@
-#include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
+#include "src/storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "gtest/gtest.h"
 #include "storm-config.h"
-#include "src/parser/PrismParser.h"
-#include "src/parser/FormulaParser.h"
-#include "src/logic/Formulas.h"
-#include "src/permissivesched/PermissiveSchedulers.h"
-#include "src/builder/ExplicitModelBuilder.h"
+#include "src/storm/parser/PrismParser.h"
+#include "src/storm/parser/FormulaParser.h"
+#include "src/storm/logic/Formulas.h"
+#include "src/storm/permissivesched/PermissiveSchedulers.h"
+#include "src/storm/builder/ExplicitModelBuilder.h"
 
-#include "src/models/sparse/StandardRewardModel.h"
-#include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
+#include "src/storm/models/sparse/StandardRewardModel.h"
+#include "src/storm/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 
 #ifdef STORM_HAVE_GUROBI
 

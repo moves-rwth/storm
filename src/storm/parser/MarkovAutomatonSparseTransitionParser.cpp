@@ -1,13 +1,13 @@
 #include "MarkovAutomatonSparseTransitionParser.h"
 
-#include "src/settings/SettingsManager.h"
-#include "src/settings/modules/CoreSettings.h"
-#include "src/exceptions/WrongFormatException.h"
-#include "src/exceptions/FileIoException.h"
-#include "src/parser/MappedFile.h"
-#include "src/utility/cstring.h"
-#include "src/utility/constants.h"
-#include "src/utility/macros.h"
+#include "src/storm/settings/SettingsManager.h"
+#include "src/storm/settings/modules/CoreSettings.h"
+#include "src/storm/exceptions/WrongFormatException.h"
+#include "src/storm/exceptions/FileIoException.h"
+#include "src/storm/parser/MappedFile.h"
+#include "src/storm/utility/cstring.h"
+#include "src/storm/utility/constants.h"
+#include "src/storm/utility/macros.h"
 
 namespace storm {
     namespace parser {

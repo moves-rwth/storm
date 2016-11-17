@@ -1,8 +1,8 @@
 #ifndef STORM_INVALIDJANIEXCEPTION_H
 #define STORM_INVALIDJANIEXCEPTION_H
 
-#include "src/exceptions/BaseException.h"
-#include "src/exceptions/ExceptionMacros.h"
+#include "src/storm/exceptions/BaseException.h"
+#include "src/storm/exceptions/ExceptionMacros.h"
 
 namespace storm {
     namespace exceptions {

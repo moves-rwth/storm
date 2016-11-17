@@ -1,9 +1,9 @@
-#include "src/modelchecker/exploration/ExplorationInformation.h"
+#include "src/storm/modelchecker/exploration/ExplorationInformation.h"
 
-#include "src/settings/SettingsManager.h"
-#include "src/settings/modules/ExplorationSettings.h"
+#include "src/storm/settings/SettingsManager.h"
+#include "src/storm/settings/modules/ExplorationSettings.h"
 
-#include "src/utility/macros.h"
+#include "src/storm/utility/macros.h"
 
 namespace storm {
     namespace modelchecker {

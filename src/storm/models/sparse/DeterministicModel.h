@@ -1,8 +1,8 @@
 #ifndef STORM_MODELS_SPARSE_DETERMINISTICMODEL_H_
 #define STORM_MODELS_SPARSE_DETERMINISTICMODEL_H_
 
-#include "src/models/sparse/Model.h"
-#include "src/utility/OsDetection.h"
+#include "src/storm/models/sparse/Model.h"
+#include "src/storm/utility/OsDetection.h"
 
 namespace storm {
     namespace models {

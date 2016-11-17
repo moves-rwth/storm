@@ -1,37 +1,37 @@
-#include "src/modelchecker/exploration/SparseExplorationModelChecker.h"
+#include "src/storm/modelchecker/exploration/SparseExplorationModelChecker.h"
 
-#include "src/modelchecker/exploration/ExplorationInformation.h"
-#include "src/modelchecker/exploration/StateGeneration.h"
-#include "src/modelchecker/exploration/Bounds.h"
-#include "src/modelchecker/exploration/Statistics.h"
+#include "src/storm/modelchecker/exploration/ExplorationInformation.h"
+#include "src/storm/modelchecker/exploration/StateGeneration.h"
+#include "src/storm/modelchecker/exploration/Bounds.h"
+#include "src/storm/modelchecker/exploration/Statistics.h"
 
-#include "src/generator/CompressedState.h"
+#include "src/storm/generator/CompressedState.h"
 
-#include "src/storage/SparseMatrix.h"
-#include "src/storage/MaximalEndComponentDecomposition.h"
+#include "src/storm/storage/SparseMatrix.h"
+#include "src/storm/storage/MaximalEndComponentDecomposition.h"
 
-#include "src/storage/prism/Program.h"
+#include "src/storm/storage/prism/Program.h"
 
-#include "src/logic/FragmentSpecification.h"
+#include "src/storm/logic/FragmentSpecification.h"
 
-#include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "src/storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 
-#include "src/models/sparse/StandardRewardModel.h"
-#include "src/models/sparse/Dtmc.h"
-#include "src/models/sparse/Mdp.h"
+#include "src/storm/models/sparse/StandardRewardModel.h"
+#include "src/storm/models/sparse/Dtmc.h"
+#include "src/storm/models/sparse/Mdp.h"
 
-#include "src/settings/SettingsManager.h"
-#include "src/settings/modules/CoreSettings.h"
-#include "src/settings/modules/ExplorationSettings.h"
+#include "src/storm/settings/SettingsManager.h"
+#include "src/storm/settings/modules/CoreSettings.h"
+#include "src/storm/settings/modules/ExplorationSettings.h"
 
-#include "src/utility/macros.h"
-#include "src/utility/constants.h"
-#include "src/utility/graph.h"
-#include "src/utility/prism.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/utility/constants.h"
+#include "src/storm/utility/graph.h"
+#include "src/storm/utility/prism.h"
 
-#include "src/exceptions/InvalidOperationException.h"
-#include "src/exceptions/InvalidPropertyException.h"
-#include "src/exceptions/NotSupportedException.h"
+#include "src/storm/exceptions/InvalidOperationException.h"
+#include "src/storm/exceptions/InvalidPropertyException.h"
+#include "src/storm/exceptions/NotSupportedException.h"
 
 namespace storm {
     namespace modelchecker {

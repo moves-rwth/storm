@@ -6,9 +6,9 @@
 #include <functional>
 #include <memory>
 
-#include "src/storage/dd/DdType.h"
-#include "src/storage/dd/InternalBdd.h"
-#include "src/storage/dd/InternalAdd.h"
+#include "src/storm/storage/dd/DdType.h"
+#include "src/storm/storage/dd/InternalBdd.h"
+#include "src/storm/storage/dd/InternalAdd.h"
 
 // Include the C++-interface of CUDD.
 #include "cuddObj.hh"

@@ -5,21 +5,21 @@
 #include <memory>
 #include <iomanip>
 // Includes files for building and parsing the PGCL program
-#include "src/parser/SpiritParserDefinitions.h"
-#include "src/parser/SpiritErrorHandler.h"
-#include "src/parser/ExpressionParser.h"
-#include "src/storage/expressions/ExpressionManager.h"
-#include "src/storage/expressions/Expression.h"
-#include "src/storage/pgcl/PgclProgram.h"
-#include "src/storage/pgcl/AssignmentStatement.h"
-#include "src/storage/pgcl/BooleanExpression.h"
-#include "src/storage/pgcl/UniformExpression.h"
-#include "src/storage/pgcl/IfStatement.h"
-#include "src/storage/pgcl/LoopStatement.h"
-#include "src/storage/pgcl/NondeterministicBranch.h"
-#include "src/storage/pgcl/ObserveStatement.h"
-#include "src/storage/pgcl/ProbabilisticBranch.h"
-#include "src/storage/pgcl/Statement.h"
+#include "src/storm/parser/SpiritParserDefinitions.h"
+#include "src/storm/parser/SpiritErrorHandler.h"
+#include "src/storm/parser/ExpressionParser.h"
+#include "src/storm/storage/expressions/ExpressionManager.h"
+#include "src/storm/storage/expressions/Expression.h"
+#include "src/storm/storage/pgcl/PgclProgram.h"
+#include "src/storm/storage/pgcl/AssignmentStatement.h"
+#include "src/storm/storage/pgcl/BooleanExpression.h"
+#include "src/storm/storage/pgcl/UniformExpression.h"
+#include "src/storm/storage/pgcl/IfStatement.h"
+#include "src/storm/storage/pgcl/LoopStatement.h"
+#include "src/storm/storage/pgcl/NondeterministicBranch.h"
+#include "src/storm/storage/pgcl/ObserveStatement.h"
+#include "src/storm/storage/pgcl/ProbabilisticBranch.h"
+#include "src/storm/storage/pgcl/Statement.h"
 
 namespace storm {
     namespace pgcl {

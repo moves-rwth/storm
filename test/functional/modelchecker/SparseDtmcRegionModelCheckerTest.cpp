@@ -3,14 +3,14 @@
 
 #ifdef STORM_HAVE_CARL
 
-#include "src/adapters/CarlAdapter.h"
+#include "src/storm/adapters/CarlAdapter.h"
 
-#include "src/settings/SettingsManager.h"
-#include "src/settings/modules/GeneralSettings.h"
-#include "src/settings/modules/RegionSettings.h"
+#include "src/storm/settings/SettingsManager.h"
+#include "src/storm/settings/modules/GeneralSettings.h"
+#include "src/storm/settings/modules/RegionSettings.h"
 
 #include "utility/storm.h"
-#include "src/models/sparse/Model.h"
+#include "src/storm/models/sparse/Model.h"
 #include "modelchecker/region/SparseRegionModelChecker.h"
 #include "modelchecker/region/SparseDtmcRegionModelChecker.h"
 #include "modelchecker/region/ParameterRegion.h"

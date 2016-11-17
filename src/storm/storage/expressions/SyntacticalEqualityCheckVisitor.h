@@ -1,6 +1,6 @@
 #pragma once
 
-#include "src/storage/expressions/ExpressionVisitor.h"
+#include "src/storm/storage/expressions/ExpressionVisitor.h"
 
 namespace storm {
     namespace expressions {

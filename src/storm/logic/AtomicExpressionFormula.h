@@ -1,7 +1,7 @@
 #ifndef STORM_LOGIC_ATOMICEXPRESSIONFORMULA_H_
 #define STORM_LOGIC_ATOMICEXPRESSIONFORMULA_H_
 
-#include "src/logic/StateFormula.h"
+#include "src/storm/logic/StateFormula.h"
 
 namespace storm {
     namespace logic {

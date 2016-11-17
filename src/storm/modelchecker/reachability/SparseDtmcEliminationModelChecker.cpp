@@ -1,39 +1,39 @@
-#include "src/modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
+#include "src/storm/modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
 
 #include <algorithm>
 #include <random>
 #include <chrono>
 
-#include "src/adapters/CarlAdapter.h"
+#include "src/storm/adapters/CarlAdapter.h"
 
-#include "src/settings/modules/EliminationSettings.h"
-#include "src/settings/modules/CoreSettings.h"
-#include "src/settings/SettingsManager.h"
+#include "src/storm/settings/modules/EliminationSettings.h"
+#include "src/storm/settings/modules/CoreSettings.h"
+#include "src/storm/settings/SettingsManager.h"
 
-#include "src/storage/StronglyConnectedComponentDecomposition.h"
+#include "src/storm/storage/StronglyConnectedComponentDecomposition.h"
 
-#include "src/models/sparse/StandardRewardModel.h"
-#include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
-#include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "src/storm/models/sparse/StandardRewardModel.h"
+#include "src/storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
+#include "src/storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 
-#include "src/logic/FragmentSpecification.h"
+#include "src/storm/logic/FragmentSpecification.h"
 
-#include "src/solver/stateelimination/MultiValueStateEliminator.h"
-#include "src/solver/stateelimination/ConditionalStateEliminator.h"
-#include "src/solver/stateelimination/PrioritizedStateEliminator.h"
-#include "src/solver/stateelimination/StaticStatePriorityQueue.h"
-#include "src/solver/stateelimination/DynamicStatePriorityQueue.h"
+#include "src/storm/solver/stateelimination/MultiValueStateEliminator.h"
+#include "src/storm/solver/stateelimination/ConditionalStateEliminator.h"
+#include "src/storm/solver/stateelimination/PrioritizedStateEliminator.h"
+#include "src/storm/solver/stateelimination/StaticStatePriorityQueue.h"
+#include "src/storm/solver/stateelimination/DynamicStatePriorityQueue.h"
 
-#include "src/utility/stateelimination.h"
-#include "src/utility/graph.h"
-#include "src/utility/vector.h"
-#include "src/utility/macros.h"
-#include "src/utility/constants.h"
+#include "src/storm/utility/stateelimination.h"
+#include "src/storm/utility/graph.h"
+#include "src/storm/utility/vector.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/utility/constants.h"
 
-#include "src/exceptions/InvalidPropertyException.h"
-#include "src/exceptions/InvalidStateException.h"
-#include "src/exceptions/InvalidSettingsException.h"
-#include "src/exceptions/IllegalArgumentException.h"
+#include "src/storm/exceptions/InvalidPropertyException.h"
+#include "src/storm/exceptions/InvalidStateException.h"
+#include "src/storm/exceptions/InvalidSettingsException.h"
+#include "src/storm/exceptions/IllegalArgumentException.h"
 
 namespace storm {
     namespace modelchecker {

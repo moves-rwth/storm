@@ -1,14 +1,14 @@
 #ifndef STORM_ENTRYPOINTS_H_H
 #define STORM_ENTRYPOINTS_H_H
 
-#include "src/utility/storm.h"
+#include "src/storm/utility/storm.h"
 
-#include "src/storage/SymbolicModelDescription.h"
-#include "src/utility/ExplicitExporter.h"
+#include "src/storm/storage/SymbolicModelDescription.h"
+#include "src/storm/utility/ExplicitExporter.h"
 
-#include "src/exceptions/NotImplementedException.h"
-#include "src/exceptions/InvalidSettingsException.h"
-#include "src/exceptions/UnexpectedException.h"
+#include "src/storm/exceptions/NotImplementedException.h"
+#include "src/storm/exceptions/InvalidSettingsException.h"
+#include "src/storm/exceptions/UnexpectedException.h"
 
 namespace storm {
     namespace cli {

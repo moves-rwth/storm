@@ -1,8 +1,8 @@
 #include "gtest/gtest.h"
-#include "src/storage/SparseMatrix.h"
-#include "src/storage/BitVector.h"
-#include "src/exceptions/InvalidStateException.h"
-#include "src/exceptions/OutOfRangeException.h"
+#include "src/storm/storage/SparseMatrix.h"
+#include "src/storm/storage/BitVector.h"
+#include "src/storm/exceptions/InvalidStateException.h"
+#include "src/storm/exceptions/OutOfRangeException.h"
 
 TEST(SparseMatrixBuilder, CreationWithDimensions) {
     storm::storage::SparseMatrixBuilder<double> matrixBuilder(3, 4, 5);

@@ -3,10 +3,10 @@
 
 #include <unordered_map>
 
-#include "src/storage/dd/AddIterator.h"
-#include "src/storage/expressions/SimpleValuation.h"
+#include "src/storm/storage/dd/AddIterator.h"
+#include "src/storm/storage/expressions/SimpleValuation.h"
 
-#include "src/utility/sylvan.h"
+#include "src/storm/utility/sylvan.h"
 
 namespace storm {
     namespace dd {

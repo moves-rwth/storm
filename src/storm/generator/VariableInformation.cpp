@@ -1,11 +1,11 @@
-#include "src/generator/VariableInformation.h"
+#include "src/storm/generator/VariableInformation.h"
 
-#include "src/storage/prism/Program.h"
-#include "src/storage/jani/Model.h"
-#include "src/storage/expressions/ExpressionManager.h"
+#include "src/storm/storage/prism/Program.h"
+#include "src/storm/storage/jani/Model.h"
+#include "src/storm/storage/expressions/ExpressionManager.h"
 
-#include "src/utility/macros.h"
-#include "src/exceptions/InvalidArgumentException.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/exceptions/InvalidArgumentException.h"
 
 #include <cmath>
 

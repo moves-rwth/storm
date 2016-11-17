@@ -1,14 +1,14 @@
-#include "src/storage/bisimulation/NondeterministicModelBisimulationDecomposition.h"
+#include "src/storm/storage/bisimulation/NondeterministicModelBisimulationDecomposition.h"
 
-#include "src/models/sparse/Mdp.h"
-#include "src/models/sparse/StandardRewardModel.h"
+#include "src/storm/models/sparse/Mdp.h"
+#include "src/storm/models/sparse/StandardRewardModel.h"
 
-#include "src/utility/graph.h"
+#include "src/storm/utility/graph.h"
 
-#include "src/utility/macros.h"
-#include "src/exceptions/IllegalFunctionCallException.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/exceptions/IllegalFunctionCallException.h"
 
-#include "src/adapters/CarlAdapter.h"
+#include "src/storm/adapters/CarlAdapter.h"
 
 namespace storm {
     namespace storage {

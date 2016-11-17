@@ -1,7 +1,7 @@
 #ifndef STORM_SOLVER_SMTRATSMTSOLVER
 #define STORM_SOLVER_SMTRATSMTSOLVER
 #include "storm-config.h"
-#include "src/solver/SmtSolver.h"
+#include "src/storm/solver/SmtSolver.h"
 
 #ifdef STORM_HAVE_SMTRAT
 #ifdef SMTRATDOESNTWORK // Does not compile with current version of smtrat.

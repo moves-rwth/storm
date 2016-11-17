@@ -3,8 +3,8 @@
 #include <algorithm>
 #include <boost/algorithm/string/join.hpp>
 
-#include "src/utility/macros.h"
-#include "src/exceptions/OutOfRangeException.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/exceptions/OutOfRangeException.h"
 
 namespace storm {
     namespace prism {

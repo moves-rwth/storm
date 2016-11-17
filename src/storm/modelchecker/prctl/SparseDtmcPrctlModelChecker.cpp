@@ -1,25 +1,25 @@
-#include "src/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
+#include "src/storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 
 #include <vector>
 #include <memory>
 
-#include "src/utility/macros.h"
+#include "src/storm/utility/macros.h"
 
-#include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
-#include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "src/storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
+#include "src/storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 
-#include "src/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
-#include "src/modelchecker/csl/helper/SparseCtmcCslHelper.h"
+#include "src/storm/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
+#include "src/storm/modelchecker/csl/helper/SparseCtmcCslHelper.h"
 
-#include "src/logic/FragmentSpecification.h"
+#include "src/storm/logic/FragmentSpecification.h"
 
-#include "src/models/sparse/StandardRewardModel.h"
+#include "src/storm/models/sparse/StandardRewardModel.h"
 
-#include "src/settings/modules/GeneralSettings.h"
+#include "src/storm/settings/modules/GeneralSettings.h"
 
-#include "src/exceptions/InvalidStateException.h"
+#include "src/storm/exceptions/InvalidStateException.h"
 
-#include "src/exceptions/InvalidPropertyException.h"
+#include "src/storm/exceptions/InvalidPropertyException.h"
 
 namespace storm {
     namespace modelchecker {

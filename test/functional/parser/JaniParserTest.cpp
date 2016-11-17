@@ -1,8 +1,8 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
-#include "src/parser/JaniParser.h"
-#include "src/storage/jani/Model.h"
-#include "src/storage/jani/Property.h"
+#include "src/storm/parser/JaniParser.h"
+#include "src/storm/storage/jani/Model.h"
+#include "src/storm/storage/jani/Property.h"
 
 
 TEST(JaniParser, DieTest) {

@@ -3,11 +3,11 @@
 
 #include <sstream>
 
-#include "src/parser/SpiritParserDefinitions.h"
-#include "src/parser/ExpressionParser.h"
-#include "src/logic/Formulas.h"
-#include "src/storage/expressions/Expression.h"
-#include "src/utility/macros.h"
+#include "src/storm/parser/SpiritParserDefinitions.h"
+#include "src/storm/parser/ExpressionParser.h"
+#include "src/storm/logic/Formulas.h"
+#include "src/storm/storage/expressions/Expression.h"
+#include "src/storm/utility/macros.h"
 
 namespace storm {
     namespace prism {

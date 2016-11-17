@@ -1,27 +1,27 @@
-#include "src/modelchecker/csl/helper/SparseCtmcCslHelper.h"
+#include "src/storm/modelchecker/csl/helper/SparseCtmcCslHelper.h"
 
-#include "src/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
-#include "src/modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
+#include "src/storm/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
+#include "src/storm/modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
 
-#include "src/models/sparse/StandardRewardModel.h"
+#include "src/storm/models/sparse/StandardRewardModel.h"
 
-#include "src/settings/SettingsManager.h"
-#include "src/settings/modules/GeneralSettings.h"
+#include "src/storm/settings/SettingsManager.h"
+#include "src/storm/settings/modules/GeneralSettings.h"
 
-#include "src/solver/LinearEquationSolver.h"
+#include "src/storm/solver/LinearEquationSolver.h"
 
-#include "src/storage/StronglyConnectedComponentDecomposition.h"
+#include "src/storm/storage/StronglyConnectedComponentDecomposition.h"
 
-#include "src/adapters/CarlAdapter.h"
+#include "src/storm/adapters/CarlAdapter.h"
 
-#include "src/utility/macros.h"
-#include "src/utility/vector.h"
-#include "src/utility/graph.h"
-#include "src/utility/numerical.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/utility/vector.h"
+#include "src/storm/utility/graph.h"
+#include "src/storm/utility/numerical.h"
 
-#include "src/exceptions/InvalidOperationException.h"
-#include "src/exceptions/InvalidStateException.h"
-#include "src/exceptions/InvalidPropertyException.h"
+#include "src/storm/exceptions/InvalidOperationException.h"
+#include "src/storm/exceptions/InvalidStateException.h"
+#include "src/storm/exceptions/InvalidPropertyException.h"
 
 namespace storm {
     namespace modelchecker {

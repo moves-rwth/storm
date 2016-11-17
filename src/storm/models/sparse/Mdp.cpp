@@ -1,11 +1,11 @@
-#include "src/models/sparse/Mdp.h"
+#include "src/storm/models/sparse/Mdp.h"
 
-#include "src/exceptions/InvalidArgumentException.h"
-#include "src/utility/constants.h"
-#include "src/utility/vector.h"
-#include "src/adapters/CarlAdapter.h"
+#include "src/storm/exceptions/InvalidArgumentException.h"
+#include "src/storm/utility/constants.h"
+#include "src/storm/utility/vector.h"
+#include "src/storm/adapters/CarlAdapter.h"
 
-#include "src/models/sparse/StandardRewardModel.h"
+#include "src/storm/models/sparse/StandardRewardModel.h"
 
 namespace storm {
     namespace models {

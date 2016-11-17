@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include "src/storage/prism/CompositionVisitor.h"
+#include "src/storm/storage/prism/CompositionVisitor.h"
 
 namespace storm {
     namespace jani {

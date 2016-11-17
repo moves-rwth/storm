@@ -3,19 +3,19 @@
 #include <ostream>
 #include <boost/optional.hpp>
 
-#include "src/utility/region.h"
-#include "src/modelchecker/region/AbstractSparseRegionModelChecker.h"
-#include "src/modelchecker/region/ParameterRegion.h"
-#include "src/modelchecker/region/ApproximationModel.h"
-#include "src/modelchecker/region/SamplingModel.h"
+#include "src/storm/utility/region.h"
+#include "src/storm/modelchecker/region/AbstractSparseRegionModelChecker.h"
+#include "src/storm/modelchecker/region/ParameterRegion.h"
+#include "src/storm/modelchecker/region/ApproximationModel.h"
+#include "src/storm/modelchecker/region/SamplingModel.h"
 
-#include "src/models/sparse/StandardRewardModel.h"
-#include "src/models/sparse/Model.h"
-#include "src/models/sparse/Dtmc.h"
-#include "src/models/sparse/Mdp.h"
-#include "src/logic/Formulas.h"
+#include "src/storm/models/sparse/StandardRewardModel.h"
+#include "src/storm/models/sparse/Model.h"
+#include "src/storm/models/sparse/Dtmc.h"
+#include "src/storm/models/sparse/Mdp.h"
+#include "src/storm/logic/Formulas.h"
 
-#include "src/settings/modules/RegionSettings.h"
+#include "src/storm/settings/modules/RegionSettings.h"
 
 namespace storm {
     namespace modelchecker{

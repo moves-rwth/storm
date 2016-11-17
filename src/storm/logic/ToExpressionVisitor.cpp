@@ -1,11 +1,11 @@
-#include "src/logic/ToExpressionVisitor.h"
+#include "src/storm/logic/ToExpressionVisitor.h"
 
-#include "src/logic/Formulas.h"
+#include "src/storm/logic/Formulas.h"
 
-#include "src/storage/expressions/ExpressionManager.h"
+#include "src/storm/storage/expressions/ExpressionManager.h"
 
-#include "src/utility/macros.h"
-#include "src/exceptions/InvalidOperationException.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/exceptions/InvalidOperationException.h"
 
 namespace storm {
     namespace logic {

@@ -3,9 +3,9 @@
 
 #include <map>
 
-#include "src/logic/CloneVisitor.h"
+#include "src/storm/logic/CloneVisitor.h"
 
-#include "src/storage/expressions/Expression.h"
+#include "src/storm/storage/expressions/Expression.h"
 
 namespace storm {
     namespace logic {

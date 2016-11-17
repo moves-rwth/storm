@@ -4,9 +4,9 @@
 #include <vector>
 #include <utility>
 
-#include "src/solver/OptimizationDirection.h"
+#include "src/storm/solver/OptimizationDirection.h"
 
-#include "src/utility/constants.h"
+#include "src/storm/utility/constants.h"
 
 namespace storm {
     namespace modelchecker {

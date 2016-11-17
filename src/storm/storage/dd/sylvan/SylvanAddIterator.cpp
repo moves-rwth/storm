@@ -1,12 +1,12 @@
-#include "src/storage/dd/sylvan/SylvanAddIterator.h"
+#include "src/storm/storage/dd/sylvan/SylvanAddIterator.h"
 
-#include "src/storage/dd/sylvan/InternalSylvanAdd.h"
+#include "src/storm/storage/dd/sylvan/InternalSylvanAdd.h"
 
-#include "src/storage/dd/DdManager.h"
-#include "src/storage/expressions/ExpressionManager.h"
+#include "src/storm/storage/dd/DdManager.h"
+#include "src/storm/storage/expressions/ExpressionManager.h"
 
-#include "src/utility/macros.h"
-#include "src/exceptions/NotImplementedException.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/exceptions/NotImplementedException.h"
 
 #include <cmath>
 

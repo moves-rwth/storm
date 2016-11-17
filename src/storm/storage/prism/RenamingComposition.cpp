@@ -1,4 +1,4 @@
-#include "src/storage/prism/RenamingComposition.h"
+#include "src/storm/storage/prism/RenamingComposition.h"
 
 #include <vector>
 #include <sstream>

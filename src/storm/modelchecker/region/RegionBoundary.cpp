@@ -5,9 +5,9 @@
  * Created on October 29, 2015, 2:57 PM
  */
 
-#include "src/modelchecker/region/RegionBoundary.h"
-#include "src/utility/macros.h"
-#include "src/exceptions/NotImplementedException.h"
+#include "src/storm/modelchecker/region/RegionBoundary.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/exceptions/NotImplementedException.h"
 
 namespace storm {
     namespace modelchecker {

@@ -7,12 +7,12 @@
 
 #include <string>
 
-#include "src/utility/parametric.h"
-#include "src/utility/constants.h"
-#include "src/utility/macros.h"
-#include "src/settings/SettingsManager.h"
-#include "src/exceptions/IllegalArgumentException.h"
-#include "src/exceptions/NotImplementedException.h"
+#include "src/storm/utility/parametric.h"
+#include "src/storm/utility/constants.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/settings/SettingsManager.h"
+#include "src/storm/exceptions/IllegalArgumentException.h"
+#include "src/storm/exceptions/NotImplementedException.h"
 
 #ifdef STORM_HAVE_CARL
 #include<carl/numbers/numbers.h>

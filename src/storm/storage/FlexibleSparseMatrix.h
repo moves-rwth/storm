@@ -4,8 +4,8 @@
 #include <cstdint>
 #include <vector>
 
-#include "src/storage/sparse/StateType.h"
-#include "src/storage/SparseMatrix.h"
+#include "src/storm/storage/sparse/StateType.h"
+#include "src/storm/storage/SparseMatrix.h"
 
 namespace storm {
     namespace storage {

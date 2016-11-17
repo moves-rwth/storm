@@ -1,7 +1,7 @@
 #ifndef PARALLELCOMPOSITIONBUILDER_H
 #define	PARALLELCOMPOSITIONBUILDER_H
 
-#include <src/models/sparse/Ctmc.h>
+#include "src/storm/models/sparse/Ctmc.h"
 
 namespace storm {
     namespace builder {

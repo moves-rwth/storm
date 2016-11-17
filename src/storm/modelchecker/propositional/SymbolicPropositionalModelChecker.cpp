@@ -1,19 +1,19 @@
-#include "src/modelchecker/propositional/SymbolicPropositionalModelChecker.h"
+#include "src/storm/modelchecker/propositional/SymbolicPropositionalModelChecker.h"
 
-#include "src/storage/dd/Add.h"
-#include "src/storage/dd/DdManager.h"
+#include "src/storm/storage/dd/Add.h"
+#include "src/storm/storage/dd/DdManager.h"
 
-#include "src/models/symbolic/Dtmc.h"
-#include "src/models/symbolic/Ctmc.h"
-#include "src/models/symbolic/Mdp.h"
-#include "src/models/symbolic/StandardRewardModel.h"
+#include "src/storm/models/symbolic/Dtmc.h"
+#include "src/storm/models/symbolic/Ctmc.h"
+#include "src/storm/models/symbolic/Mdp.h"
+#include "src/storm/models/symbolic/StandardRewardModel.h"
 
-#include "src/modelchecker/results/SymbolicQualitativeCheckResult.h"
+#include "src/storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
 
-#include "src/logic/FragmentSpecification.h"
+#include "src/storm/logic/FragmentSpecification.h"
 
-#include "src/utility/macros.h"
-#include "src/exceptions/InvalidPropertyException.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/exceptions/InvalidPropertyException.h"
 
 namespace storm {
     namespace modelchecker {

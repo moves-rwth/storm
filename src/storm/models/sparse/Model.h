@@ -6,11 +6,11 @@
 #include <boost/container/flat_set.hpp>
 #include <boost/optional.hpp>
 
-#include "src/models/ModelBase.h"
-#include "src/models/sparse/StateLabeling.h"
-#include "src/storage/sparse/StateType.h"
-#include "src/storage/SparseMatrix.h"
-#include "src/utility/OsDetection.h"
+#include "src/storm/models/ModelBase.h"
+#include "src/storm/models/sparse/StateLabeling.h"
+#include "src/storm/storage/sparse/StateType.h"
+#include "src/storm/storage/SparseMatrix.h"
+#include "src/storm/utility/OsDetection.h"
 
 namespace storm {
     namespace storage {

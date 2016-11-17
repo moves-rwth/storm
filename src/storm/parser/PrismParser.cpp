@@ -1,17 +1,17 @@
-#include "src/parser/PrismParser.h"
+#include "src/storm/parser/PrismParser.h"
 
-#include "src/storage/prism/Compositions.h"
+#include "src/storm/storage/prism/Compositions.h"
 
-#include "src/settings/SettingsManager.h"
+#include "src/storm/settings/SettingsManager.h"
 
-#include "src/exceptions/InvalidArgumentException.h"
-#include "src/exceptions/InvalidTypeException.h"
-#include "src/utility/macros.h"
-#include "src/exceptions/WrongFormatException.h"
+#include "src/storm/exceptions/InvalidArgumentException.h"
+#include "src/storm/exceptions/InvalidTypeException.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/exceptions/WrongFormatException.h"
 
-#include "src/storage/expressions/ExpressionManager.h"
+#include "src/storm/storage/expressions/ExpressionManager.h"
 
-#include "src/parser/ExpressionParser.h"
+#include "src/storm/parser/ExpressionParser.h"
 
 namespace storm {
     namespace parser {

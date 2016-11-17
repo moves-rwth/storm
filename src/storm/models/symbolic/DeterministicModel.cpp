@@ -1,10 +1,10 @@
-#include "src/models/symbolic/DeterministicModel.h"
+#include "src/storm/models/symbolic/DeterministicModel.h"
 
-#include "src/storage/dd/DdManager.h"
-#include "src/storage/dd/Add.h"
-#include "src/storage/dd/Bdd.h"
+#include "src/storm/storage/dd/DdManager.h"
+#include "src/storm/storage/dd/Add.h"
+#include "src/storm/storage/dd/Bdd.h"
 
-#include "src/models/symbolic/StandardRewardModel.h"
+#include "src/storm/models/symbolic/StandardRewardModel.h"
 
 namespace storm {
     namespace models {

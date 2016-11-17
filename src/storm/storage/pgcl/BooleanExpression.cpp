@@ -1,5 +1,5 @@
-#include "src/storage/pgcl/BooleanExpression.h"
-#include "src/storage/expressions/ExpressionManager.h"
+#include "src/storm/storage/pgcl/BooleanExpression.h"
+#include "src/storm/storage/expressions/ExpressionManager.h"
 
 namespace storm {
     namespace pgcl {

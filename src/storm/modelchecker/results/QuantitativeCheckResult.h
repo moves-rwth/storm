@@ -1,6 +1,6 @@
 #pragma once
 
-#include "src/modelchecker/results/CheckResult.h"
+#include "src/storm/modelchecker/results/CheckResult.h"
 
 namespace storm {
     namespace modelchecker {

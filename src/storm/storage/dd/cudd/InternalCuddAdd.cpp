@@ -1,14 +1,14 @@
-#include "src/storage/dd/cudd/InternalCuddAdd.h"
+#include "src/storm/storage/dd/cudd/InternalCuddAdd.h"
 
-#include "src/storage/dd/cudd/InternalCuddDdManager.h"
-#include "src/storage/dd/cudd/InternalCuddBdd.h"
-#include "src/storage/dd/cudd/CuddAddIterator.h"
-#include "src/storage/dd/Odd.h"
+#include "src/storm/storage/dd/cudd/InternalCuddDdManager.h"
+#include "src/storm/storage/dd/cudd/InternalCuddBdd.h"
+#include "src/storm/storage/dd/cudd/CuddAddIterator.h"
+#include "src/storm/storage/dd/Odd.h"
 
-#include "src/storage/SparseMatrix.h"
+#include "src/storm/storage/SparseMatrix.h"
 
-#include "src/utility/constants.h"
-#include "src/utility/macros.h"
+#include "src/storm/utility/constants.h"
+#include "src/storm/utility/macros.h"
 
 namespace storm {
     namespace dd {

@@ -1,9 +1,9 @@
-#include "src/utility/cstring.h"
+#include "src/storm/utility/cstring.h"
 
 #include <cstring>
 
-#include "src/exceptions/WrongFormatException.h"
-#include "src/utility/macros.h"
+#include "src/storm/exceptions/WrongFormatException.h"
+#include "src/storm/utility/macros.h"
 namespace storm {
 
 namespace utility {

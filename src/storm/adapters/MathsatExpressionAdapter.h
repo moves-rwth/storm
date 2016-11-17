@@ -12,11 +12,11 @@
 #include "storage/expressions/ExpressionManager.h"
 #include "storage/expressions/Expressions.h"
 #include "storage/expressions/ExpressionVisitor.h"
-#include "src/utility/macros.h"
-#include "src/exceptions/ExpressionEvaluationException.h"
-#include "src/exceptions/InvalidTypeException.h"
-#include "src/exceptions/InvalidArgumentException.h"
-#include "src/exceptions/NotImplementedException.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/exceptions/ExpressionEvaluationException.h"
+#include "src/storm/exceptions/InvalidTypeException.h"
+#include "src/storm/exceptions/InvalidArgumentException.h"
+#include "src/storm/exceptions/NotImplementedException.h"
 
 #ifdef STORM_HAVE_MSAT
 namespace std {

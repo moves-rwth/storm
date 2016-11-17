@@ -2,11 +2,11 @@
 
 #include <memory>
 
-#include "src/storage/jani/Action.h"
-#include "src/storage/jani/ModelType.h"
-#include "src/storage/jani/Automaton.h"
-#include "src/storage/jani/Constant.h"
-#include "src/storage/jani/Composition.h"
+#include "src/storm/storage/jani/Action.h"
+#include "src/storm/storage/jani/ModelType.h"
+#include "src/storm/storage/jani/Automaton.h"
+#include "src/storm/storage/jani/Constant.h"
+#include "src/storm/storage/jani/Composition.h"
 
 namespace storm {
     namespace expressions {

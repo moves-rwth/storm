@@ -1,13 +1,13 @@
-#include "src/storage/dd/sylvan/InternalSylvanDdManager.h"
+#include "src/storm/storage/dd/sylvan/InternalSylvanDdManager.h"
 
 #include <cmath>
 
-#include "src/settings/SettingsManager.h"
-#include "src/settings/modules/SylvanSettings.h"
+#include "src/storm/settings/SettingsManager.h"
+#include "src/storm/settings/modules/SylvanSettings.h"
 
-#include "src/utility/constants.h"
-#include "src/utility/macros.h"
-#include "src/exceptions/NotSupportedException.h"
+#include "src/storm/utility/constants.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/exceptions/NotSupportedException.h"
 
 namespace storm {
     namespace dd {

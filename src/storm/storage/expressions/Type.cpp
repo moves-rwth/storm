@@ -1,11 +1,11 @@
-#include "src/storage/expressions/Type.h"
+#include "src/storm/storage/expressions/Type.h"
 
 #include <sstream>
 #include <cmath>
 
-#include "src/storage/expressions/ExpressionManager.h"
-#include "src/utility/macros.h"
-#include "src/exceptions/InvalidTypeException.h"
+#include "src/storm/storage/expressions/ExpressionManager.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/exceptions/InvalidTypeException.h"
 
 namespace storm {
     namespace expressions {

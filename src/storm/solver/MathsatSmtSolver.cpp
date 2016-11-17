@@ -1,8 +1,8 @@
-#include "src/solver/MathsatSmtSolver.h"
+#include "src/storm/solver/MathsatSmtSolver.h"
 
-#include "src/exceptions/NotSupportedException.h"
-#include "src/exceptions/UnexpectedException.h"
-#include "src/exceptions/InvalidStateException.h"
+#include "src/storm/exceptions/NotSupportedException.h"
+#include "src/storm/exceptions/UnexpectedException.h"
+#include "src/storm/exceptions/InvalidStateException.h"
 
 namespace storm {
 	namespace solver {

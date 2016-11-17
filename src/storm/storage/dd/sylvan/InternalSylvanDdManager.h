@@ -1,11 +1,11 @@
 #ifndef STORM_STORAGE_DD_SYLVAN_INTERNALSYLVANDDMANAGER_H_
 #define STORM_STORAGE_DD_SYLVAN_INTERNALSYLVANDDMANAGER_H_
 
-#include "src/storage/dd/DdType.h"
-#include "src/storage/dd/InternalDdManager.h"
+#include "src/storm/storage/dd/DdType.h"
+#include "src/storm/storage/dd/InternalDdManager.h"
 
-#include "src/storage/dd/sylvan/InternalSylvanBdd.h"
-#include "src/storage/dd/sylvan/InternalSylvanAdd.h"
+#include "src/storm/storage/dd/sylvan/InternalSylvanBdd.h"
+#include "src/storm/storage/dd/sylvan/InternalSylvanAdd.h"
 
 namespace storm {
     namespace dd {

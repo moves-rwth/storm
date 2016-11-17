@@ -1,6 +1,6 @@
 #include <set>
-#include <src/exceptions/NotImplementedException.h>
-#include <src/utility/macros.h>
+#include "src/storm/exceptions/NotImplementedException.h"
+#include "src/storm/utility/macros.h"
 #include "DFTElement.h"
 #include "../DFTElements.h"
 

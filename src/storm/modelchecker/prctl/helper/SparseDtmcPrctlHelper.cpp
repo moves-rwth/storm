@@ -1,17 +1,17 @@
-#include "src/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
+#include "src/storm/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
 
-#include "src/modelchecker/csl/helper/SparseCtmcCslHelper.h"
+#include "src/storm/modelchecker/csl/helper/SparseCtmcCslHelper.h"
 
-#include "src/utility/macros.h"
-#include "src/utility/vector.h"
-#include "src/utility/graph.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/utility/vector.h"
+#include "src/storm/utility/graph.h"
 
-#include "src/solver/LinearEquationSolver.h"
+#include "src/storm/solver/LinearEquationSolver.h"
 
-#include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "src/storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 
-#include "src/exceptions/InvalidStateException.h"
-#include "src/exceptions/InvalidPropertyException.h"
+#include "src/storm/exceptions/InvalidStateException.h"
+#include "src/storm/exceptions/InvalidPropertyException.h"
 
 namespace storm {
     namespace modelchecker {

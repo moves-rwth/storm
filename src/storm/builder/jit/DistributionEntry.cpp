@@ -1,6 +1,6 @@
-#include "src/builder/jit/DistributionEntry.h"
+#include "src/storm/builder/jit/DistributionEntry.h"
 
-#include "src/adapters/CarlAdapter.h"
+#include "src/storm/adapters/CarlAdapter.h"
 
 namespace storm {
     namespace builder {

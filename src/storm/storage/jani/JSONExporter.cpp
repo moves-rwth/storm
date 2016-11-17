@@ -4,29 +4,29 @@
 #include <fstream>
 #include <vector>
 
-#include "src/utility/macros.h"
-#include "src/exceptions/FileIoException.h"
-#include "src/exceptions/NotSupportedException.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/exceptions/FileIoException.h"
+#include "src/storm/exceptions/NotSupportedException.h"
 
-#include "src/exceptions/InvalidJaniException.h"
-#include "src/exceptions/NotImplementedException.h"
+#include "src/storm/exceptions/InvalidJaniException.h"
+#include "src/storm/exceptions/NotImplementedException.h"
 
-#include "src/storage/expressions/RationalLiteralExpression.h"
-#include "src/storage/expressions/IntegerLiteralExpression.h"
-#include "src/storage/expressions/BooleanLiteralExpression.h"
-#include "src/storage/expressions/UnaryBooleanFunctionExpression.h"
-#include "src/storage/expressions/UnaryNumericalFunctionExpression.h"
-#include "src/storage/expressions/BinaryBooleanFunctionExpression.h"
-#include "src/storage/expressions/BinaryNumericalFunctionExpression.h"
-#include "src/storage/expressions/IfThenElseExpression.h"
-#include "src/storage/expressions/BinaryRelationExpression.h"
-#include "src/storage/expressions/VariableExpression.h"
+#include "src/storm/storage/expressions/RationalLiteralExpression.h"
+#include "src/storm/storage/expressions/IntegerLiteralExpression.h"
+#include "src/storm/storage/expressions/BooleanLiteralExpression.h"
+#include "src/storm/storage/expressions/UnaryBooleanFunctionExpression.h"
+#include "src/storm/storage/expressions/UnaryNumericalFunctionExpression.h"
+#include "src/storm/storage/expressions/BinaryBooleanFunctionExpression.h"
+#include "src/storm/storage/expressions/BinaryNumericalFunctionExpression.h"
+#include "src/storm/storage/expressions/IfThenElseExpression.h"
+#include "src/storm/storage/expressions/BinaryRelationExpression.h"
+#include "src/storm/storage/expressions/VariableExpression.h"
 
-#include "src/logic/Formulas.h"
+#include "src/storm/logic/Formulas.h"
 
-#include "src/storage/jani/AutomatonComposition.h"
-#include "src/storage/jani/ParallelComposition.h"
-#include "src/storage/jani/Property.h"
+#include "src/storm/storage/jani/AutomatonComposition.h"
+#include "src/storm/storage/jani/ParallelComposition.h"
+#include "src/storm/storage/jani/Property.h"
 
 namespace storm {
     namespace jani {

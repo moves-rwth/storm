@@ -1,6 +1,6 @@
 #pragma once
 
-#include "src/storage/jani/Variable.h"
+#include "src/storm/storage/jani/Variable.h"
 
 namespace storm {
     namespace jani {

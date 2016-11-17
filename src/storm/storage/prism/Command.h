@@ -5,9 +5,9 @@
 #include <string>
 #include <map>
 
-#include "src/storage/expressions/Expression.h"
-#include "src/storage/prism/Update.h"
-#include "src/utility/OsDetection.h"
+#include "src/storm/storage/expressions/Expression.h"
+#include "src/storm/storage/prism/Update.h"
+#include "src/storm/utility/OsDetection.h"
 
 namespace storm {
     namespace prism {

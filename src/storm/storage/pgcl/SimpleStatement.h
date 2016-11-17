@@ -8,8 +8,8 @@
 #ifndef SIMPLESTATEMENT_H
 #define	SIMPLESTATEMENT_H
 
-#include "src/storage/pgcl/Statement.h"
-#include "src/storage/pgcl/AbstractStatementVisitor.h"
+#include "src/storm/storage/pgcl/Statement.h"
+#include "src/storm/storage/pgcl/AbstractStatementVisitor.h"
 
 namespace storm {
     namespace pgcl {

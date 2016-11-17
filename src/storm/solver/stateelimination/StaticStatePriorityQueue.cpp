@@ -1,6 +1,6 @@
-#include "src/solver/stateelimination/StaticStatePriorityQueue.h"
+#include "src/storm/solver/stateelimination/StaticStatePriorityQueue.h"
 
-#include "src/adapters/CarlAdapter.h"
+#include "src/storm/adapters/CarlAdapter.h"
 
 namespace storm {
     namespace solver {

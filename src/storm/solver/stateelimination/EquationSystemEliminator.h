@@ -1,6 +1,6 @@
 #pragma once
 
-#include "src/solver/stateelimination/EliminatorBase.h"
+#include "src/storm/solver/stateelimination/EliminatorBase.h"
 
 namespace storm {
     namespace solver {

@@ -1,23 +1,23 @@
 #include "JaniParser.h"
-#include "src/storage/jani/Model.h"
-#include "src/storage/jani/Property.h"
-#include "src/storage/jani/AutomatonComposition.h"
-#include "src/storage/jani/ParallelComposition.h"
-#include "src/exceptions/FileIoException.h"
-#include "src/exceptions/InvalidJaniException.h"
+#include "src/storm/storage/jani/Model.h"
+#include "src/storm/storage/jani/Property.h"
+#include "src/storm/storage/jani/AutomatonComposition.h"
+#include "src/storm/storage/jani/ParallelComposition.h"
+#include "src/storm/exceptions/FileIoException.h"
+#include "src/storm/exceptions/InvalidJaniException.h"
 
-#include "src/exceptions/NotSupportedException.h"
-#include "src/exceptions/NotImplementedException.h"
-#include "src/storage/jani/ModelType.h"
+#include "src/storm/exceptions/NotSupportedException.h"
+#include "src/storm/exceptions/NotImplementedException.h"
+#include "src/storm/storage/jani/ModelType.h"
 
-#include "src/modelchecker/results/FilterType.h"
+#include "src/storm/modelchecker/results/FilterType.h"
 
 #include <iostream>
 #include <sstream>
 #include <fstream>
 #include <boost/lexical_cast.hpp>
 
-#include "src/utility/macros.h"
+#include "src/storm/utility/macros.h"
 
 namespace storm {
     namespace parser {

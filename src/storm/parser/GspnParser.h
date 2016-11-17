@@ -1,4 +1,4 @@
-#include "src/storage/gspn/GSPN.h"
+#include "src/storm/storage/gspn/GSPN.h"
 
 namespace storm {
     namespace parser {

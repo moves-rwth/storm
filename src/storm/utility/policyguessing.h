@@ -12,14 +12,14 @@
 #ifndef STORM_UTILITY_POLICYGUESSING_H
 #define	STORM_UTILITY_POLICYGUESSING_H
 
-#include "src/solver/GameSolver.h"
-#include "src/solver/MinMaxLinearEquationSolver.h"
-#include "src/solver/OptimizationDirection.h"
-#include "src/utility/vector.h"
-#include "src/storage/BitVector.h"
-#include "src/storage/sparse/StateType.h"
-#include "src/storage/SparseMatrix.h"
-#include "src/storage/TotalScheduler.h"
+#include "src/storm/solver/GameSolver.h"
+#include "src/storm/solver/MinMaxLinearEquationSolver.h"
+#include "src/storm/solver/OptimizationDirection.h"
+#include "src/storm/utility/vector.h"
+#include "src/storm/storage/BitVector.h"
+#include "src/storm/storage/sparse/StateType.h"
+#include "src/storm/storage/SparseMatrix.h"
+#include "src/storm/storage/TotalScheduler.h"
 
 namespace storm {
     namespace utility{

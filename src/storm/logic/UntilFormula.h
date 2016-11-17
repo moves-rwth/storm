@@ -1,7 +1,7 @@
 #ifndef STORM_LOGIC_UNTILFORMULA_H_
 #define STORM_LOGIC_UNTILFORMULA_H_
 
-#include "src/logic/BinaryPathFormula.h"
+#include "src/storm/logic/BinaryPathFormula.h"
 
 namespace storm {
     namespace logic {

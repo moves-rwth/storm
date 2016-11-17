@@ -8,10 +8,10 @@
 
 #include <boost/any.hpp>
 
-#include "src/storage/expressions/Variable.h"
-#include "src/storage/expressions/Expression.h"
+#include "src/storm/storage/expressions/Variable.h"
+#include "src/storm/storage/expressions/Expression.h"
 
-#include "src/logic/FormulasForwardDeclarations.h"
+#include "src/storm/logic/FormulasForwardDeclarations.h"
 
 namespace storm {
     namespace logic {

@@ -1,16 +1,16 @@
-#include "src/modelchecker/csl/HybridCtmcCslModelChecker.h"
+#include "src/storm/modelchecker/csl/HybridCtmcCslModelChecker.h"
 
-#include "src/models/symbolic/StandardRewardModel.h"
+#include "src/storm/models/symbolic/StandardRewardModel.h"
 
-#include "src/modelchecker/csl/helper/SparseCtmcCslHelper.h"
-#include "src/modelchecker/csl/helper/HybridCtmcCslHelper.h"
+#include "src/storm/modelchecker/csl/helper/SparseCtmcCslHelper.h"
+#include "src/storm/modelchecker/csl/helper/HybridCtmcCslHelper.h"
 
-#include "src/modelchecker/results/SymbolicQualitativeCheckResult.h"
+#include "src/storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
 
-#include "src/storage/dd/Add.h"
-#include "src/storage/dd/Bdd.h"
+#include "src/storm/storage/dd/Add.h"
+#include "src/storm/storage/dd/Bdd.h"
 
-#include "src/logic/FragmentSpecification.h"
+#include "src/storm/logic/FragmentSpecification.h"
 
 namespace storm {
     namespace modelchecker {

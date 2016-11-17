@@ -1,21 +1,21 @@
-#include "src/utility/stateelimination.h"
+#include "src/storm/utility/stateelimination.h"
 
 #include <random>
 
-#include "src/solver/stateelimination/StatePriorityQueue.h"
-#include "src/solver/stateelimination/StaticStatePriorityQueue.h"
-#include "src/solver/stateelimination/DynamicStatePriorityQueue.h"
+#include "src/storm/solver/stateelimination/StatePriorityQueue.h"
+#include "src/storm/solver/stateelimination/StaticStatePriorityQueue.h"
+#include "src/storm/solver/stateelimination/DynamicStatePriorityQueue.h"
 
-#include "src/storage/BitVector.h"
-#include "src/storage/FlexibleSparseMatrix.h"
+#include "src/storm/storage/BitVector.h"
+#include "src/storm/storage/FlexibleSparseMatrix.h"
 
-#include "src/settings/SettingsManager.h"
+#include "src/storm/settings/SettingsManager.h"
 
-#include "src/utility/graph.h"
-#include "src/utility/macros.h"
-#include "src/utility/constants.h"
-#include "src/exceptions/InvalidStateException.h"
-#include "src/exceptions/InvalidSettingsException.h"
+#include "src/storm/utility/graph.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/utility/constants.h"
+#include "src/storm/exceptions/InvalidStateException.h"
+#include "src/storm/exceptions/InvalidSettingsException.h"
 
 namespace storm {
     namespace utility {

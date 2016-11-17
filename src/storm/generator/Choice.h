@@ -7,7 +7,7 @@
 #include <boost/optional.hpp>
 #include <boost/container/flat_set.hpp>
 
-#include "src/storage/Distribution.h"
+#include "src/storm/storage/Distribution.h"
 
 namespace storm {
     namespace generator {

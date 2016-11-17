@@ -3,9 +3,9 @@
 
 #include <vector>
 
-#include "src/storage/dd/DdType.h"
-#include "src/storage/dd/Bdd.h"
-#include "src/storage/dd/AddIterator.h"
+#include "src/storm/storage/dd/DdType.h"
+#include "src/storm/storage/dd/Bdd.h"
+#include "src/storm/storage/dd/AddIterator.h"
 
 namespace storm {
     namespace dd {

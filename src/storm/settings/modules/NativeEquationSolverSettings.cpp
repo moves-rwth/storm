@@ -1,12 +1,12 @@
-#include "src/settings/modules/NativeEquationSolverSettings.h"
+#include "src/storm/settings/modules/NativeEquationSolverSettings.h"
 
-#include "src/settings/SettingsManager.h"
-#include "src/settings/modules/CoreSettings.h"
-#include "src/settings/Option.h"
-#include "src/settings/OptionBuilder.h"
-#include "src/settings/ArgumentBuilder.h"
-#include "src/settings/Argument.h"
-#include "src/solver/SolverSelectionOptions.h"
+#include "src/storm/settings/SettingsManager.h"
+#include "src/storm/settings/modules/CoreSettings.h"
+#include "src/storm/settings/Option.h"
+#include "src/storm/settings/OptionBuilder.h"
+#include "src/storm/settings/ArgumentBuilder.h"
+#include "src/storm/settings/Argument.h"
+#include "src/storm/solver/SolverSelectionOptions.h"
 
 namespace storm {
     namespace settings {

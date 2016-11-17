@@ -1,7 +1,7 @@
-#include "src/storage/jani/Composition.h"
+#include "src/storm/storage/jani/Composition.h"
 
-#include "src/storage/jani/AutomatonComposition.h"
-#include "src/storage/jani/ParallelComposition.h"
+#include "src/storm/storage/jani/AutomatonComposition.h"
+#include "src/storm/storage/jani/ParallelComposition.h"
 
 namespace storm {
     namespace jani {

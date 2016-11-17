@@ -1,7 +1,7 @@
-#include "src/solver/stateelimination/ConditionalStateEliminator.h"
+#include "src/storm/solver/stateelimination/ConditionalStateEliminator.h"
 
-#include "src/utility/macros.h"
-#include "src/utility/constants.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/utility/constants.h"
 
 namespace storm {
     namespace solver {

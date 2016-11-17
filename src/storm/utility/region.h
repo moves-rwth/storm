@@ -17,8 +17,8 @@
 #include <set>
 #include <memory>
 
-#include "src/logic/ComparisonType.h"
-#include <src/adapters/CarlAdapter.h>
+#include "src/storm/logic/ComparisonType.h"
+#include "src/storm/adapters/CarlAdapter.h"
 
 namespace storm {
     namespace utility{

@@ -2,9 +2,9 @@
 #define STORM_MODELS_SPARSE_DTMC_H_
 #include <unordered_set>
 
-#include "src/models/sparse/DeterministicModel.h"
-#include "src/utility/OsDetection.h"
-#include "src/adapters/CarlAdapter.h"
+#include "src/storm/models/sparse/DeterministicModel.h"
+#include "src/storm/utility/OsDetection.h"
+#include "src/storm/adapters/CarlAdapter.h"
 
 namespace storm {
     namespace models {

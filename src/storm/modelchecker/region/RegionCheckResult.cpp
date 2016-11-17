@@ -6,8 +6,8 @@
  */
 
 #include "RegionCheckResult.h"
-#include "src/utility/macros.h"
-#include "src/exceptions/NotImplementedException.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/exceptions/NotImplementedException.h"
 
 namespace storm {
     namespace modelchecker {

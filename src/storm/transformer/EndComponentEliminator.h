@@ -2,10 +2,10 @@
 #define STORM_TRANSFORMER_ENDCOMPONENTELIMINATOR_H
 
 
-#include "src/utility/constants.h"
-#include "src/utility/macros.h"
-#include "src/utility/graph.h"
-#include "src/storage/MaximalEndComponentDecomposition.h"
+#include "src/storm/utility/constants.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/utility/graph.h"
+#include "src/storm/storage/MaximalEndComponentDecomposition.h"
 
 namespace storm {
     namespace transformer {

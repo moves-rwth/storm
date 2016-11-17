@@ -1,4 +1,4 @@
-#include "src/storage/jani/RealVariable.h"
+#include "src/storm/storage/jani/RealVariable.h"
 
 namespace storm {
     namespace jani {

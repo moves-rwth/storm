@@ -1,22 +1,22 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
-#include "src/parser/FormulaParser.h"
-#include "src/logic/Formulas.h"
-#include "src/utility/solver.h"
-#include "src/storage/SymbolicModelDescription.h"
-#include "src/modelchecker/prctl/SymbolicDtmcPrctlModelChecker.h"
-#include "src/modelchecker/results/SymbolicQualitativeCheckResult.h"
-#include "src/modelchecker/results/SymbolicQuantitativeCheckResult.h"
-#include "src/parser/PrismParser.h"
-#include "src/builder/DdPrismModelBuilder.h"
-#include "src/models/symbolic/StandardRewardModel.h"
-#include "src/models/symbolic/Dtmc.h"
-#include "src/settings/SettingsManager.h"
+#include "src/storm/parser/FormulaParser.h"
+#include "src/storm/logic/Formulas.h"
+#include "src/storm/utility/solver.h"
+#include "src/storm/storage/SymbolicModelDescription.h"
+#include "src/storm/modelchecker/prctl/SymbolicDtmcPrctlModelChecker.h"
+#include "src/storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
+#include "src/storm/modelchecker/results/SymbolicQuantitativeCheckResult.h"
+#include "src/storm/parser/PrismParser.h"
+#include "src/storm/builder/DdPrismModelBuilder.h"
+#include "src/storm/models/symbolic/StandardRewardModel.h"
+#include "src/storm/models/symbolic/Dtmc.h"
+#include "src/storm/settings/SettingsManager.h"
 
-#include "src/settings/modules/NativeEquationSolverSettings.h"
+#include "src/storm/settings/modules/NativeEquationSolverSettings.h"
 
-#include "src/settings/modules/GeneralSettings.h"
+#include "src/storm/settings/modules/GeneralSettings.h"
 
 TEST(SymbolicDtmcPrctlModelCheckerTest, Die_Cudd) {
     storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/die.pm");

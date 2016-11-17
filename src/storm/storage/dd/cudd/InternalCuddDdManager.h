@@ -1,11 +1,11 @@
 #ifndef STORM_STORAGE_DD_INTERNALCUDDDDMANAGER_H_
 #define STORM_STORAGE_DD_INTERNALCUDDDDMANAGER_H_
 
-#include "src/storage/dd/DdType.h"
-#include "src/storage/dd/InternalDdManager.h"
+#include "src/storm/storage/dd/DdType.h"
+#include "src/storm/storage/dd/InternalDdManager.h"
 
-#include "src/storage/dd/cudd/InternalCuddBdd.h"
-#include "src/storage/dd/cudd/InternalCuddAdd.h"
+#include "src/storm/storage/dd/cudd/InternalCuddBdd.h"
+#include "src/storm/storage/dd/cudd/InternalCuddAdd.h"
 
 #include "cuddObj.hh"
 

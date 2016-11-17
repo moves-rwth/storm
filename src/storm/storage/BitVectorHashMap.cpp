@@ -1,10 +1,10 @@
-#include "src/storage/BitVectorHashMap.h"
+#include "src/storm/storage/BitVectorHashMap.h"
 
 #include <algorithm>
 #include <iostream>
 #include <algorithm>
 
-#include "src/utility/macros.h"
+#include "src/storm/utility/macros.h"
 
 namespace storm {
     namespace storage {

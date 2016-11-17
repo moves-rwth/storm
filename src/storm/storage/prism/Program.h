@@ -8,16 +8,16 @@
 #include <boost/container/flat_set.hpp>
 #include <boost/optional.hpp>
 
-#include "src/storage/prism/Constant.h"
-#include "src/storage/prism/Formula.h"
-#include "src/storage/prism/Label.h"
-#include "src/storage/prism/Module.h"
-#include "src/storage/prism/RewardModel.h"
-#include "src/storage/prism/SystemCompositionConstruct.h"
-#include "src/storage/prism/InitialConstruct.h"
-#include "src/storage/prism/Composition.h"
-#include "src/utility/solver.h"
-#include "src/utility/OsDetection.h"
+#include "src/storm/storage/prism/Constant.h"
+#include "src/storm/storage/prism/Formula.h"
+#include "src/storm/storage/prism/Label.h"
+#include "src/storm/storage/prism/Module.h"
+#include "src/storm/storage/prism/RewardModel.h"
+#include "src/storm/storage/prism/SystemCompositionConstruct.h"
+#include "src/storm/storage/prism/InitialConstruct.h"
+#include "src/storm/storage/prism/Composition.h"
+#include "src/storm/utility/solver.h"
+#include "src/storm/utility/OsDetection.h"
 
 namespace storm {
     namespace jani {

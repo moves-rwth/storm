@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
-#include "src/parser/PrismParser.h"
+#include "src/storm/parser/PrismParser.h"
 
 TEST(PrismParser, StandardModelTest) {
     storm::prism::Program result;

@@ -3,11 +3,11 @@
 
 #include <boost/optional.hpp>
 
-#include "src/logic/Formulas.h"
-#include "src/utility/constants.h"
+#include "src/storm/logic/Formulas.h"
+#include "src/storm/utility/constants.h"
 
-#include "src/solver/OptimizationDirection.h"
-#include "src/logic/ComparisonType.h"
+#include "src/storm/solver/OptimizationDirection.h"
+#include "src/storm/logic/ComparisonType.h"
 
 namespace storm {
     namespace logic {

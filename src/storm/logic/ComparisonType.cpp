@@ -1,4 +1,4 @@
-#include "src/logic/ComparisonType.h"
+#include "src/storm/logic/ComparisonType.h"
 
 namespace storm {
     namespace logic {

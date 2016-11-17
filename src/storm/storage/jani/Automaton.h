@@ -5,9 +5,9 @@
 #include <unordered_map>
 #include <boost/container/flat_set.hpp>
 
-#include "src/storage/jani/VariableSet.h"
-#include "src/storage/jani/Edge.h"
-#include "src/storage/jani/Location.h"
+#include "src/storm/storage/jani/VariableSet.h"
+#include "src/storm/storage/jani/Edge.h"
+#include "src/storm/storage/jani/Location.h"
 
 namespace storm {
     namespace jani {

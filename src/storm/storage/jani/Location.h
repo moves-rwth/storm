@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "src/storage/jani/OrderedAssignments.h"
+#include "src/storm/storage/jani/OrderedAssignments.h"
 
 namespace storm {
     namespace jani {

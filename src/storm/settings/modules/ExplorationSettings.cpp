@@ -1,10 +1,10 @@
-#include "src/settings/modules/ExplorationSettings.h"
-#include "src/settings/modules/CoreSettings.h"
-#include "src/settings/Option.h"
-#include "src/settings/OptionBuilder.h"
-#include "src/settings/ArgumentBuilder.h"
-#include "src/settings/Argument.h"
-#include "src/settings/SettingsManager.h"
+#include "src/storm/settings/modules/ExplorationSettings.h"
+#include "src/storm/settings/modules/CoreSettings.h"
+#include "src/storm/settings/Option.h"
+#include "src/storm/settings/OptionBuilder.h"
+#include "src/storm/settings/ArgumentBuilder.h"
+#include "src/storm/settings/Argument.h"
+#include "src/storm/settings/SettingsManager.h"
 
 namespace storm {
     namespace settings {

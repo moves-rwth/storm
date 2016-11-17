@@ -12,13 +12,13 @@
 #include <memory>
 #include <type_traits>
 
-#include "src/models/sparse/Dtmc.h"
-#include "src/models/sparse/Mdp.h"
-#include "src/models/sparse/Ctmc.h"
-#include "src/models/sparse/MarkovAutomaton.h"
-#include "src/models/sparse/StochasticTwoPlayerGame.h"
-#include "src/utility/parametric.h"
-#include "src/utility/constants.h"
+#include "src/storm/models/sparse/Dtmc.h"
+#include "src/storm/models/sparse/Mdp.h"
+#include "src/storm/models/sparse/Ctmc.h"
+#include "src/storm/models/sparse/MarkovAutomaton.h"
+#include "src/storm/models/sparse/StochasticTwoPlayerGame.h"
+#include "src/storm/utility/parametric.h"
+#include "src/storm/utility/constants.h"
 
 namespace storm {
     namespace utility{

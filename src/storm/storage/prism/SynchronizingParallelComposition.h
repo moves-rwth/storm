@@ -1,7 +1,7 @@
 #ifndef STORM_STORAGE_PRISM_SYNCHRONIZINGPARALLELCOMPOSITION_H_
 #define STORM_STORAGE_PRISM_SYNCHRONIZINGPARALLELCOMPOSITION_H_
 
-#include "src/storage/prism/ParallelComposition.h"
+#include "src/storm/storage/prism/ParallelComposition.h"
 
 namespace storm {
     namespace prism {

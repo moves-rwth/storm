@@ -2,11 +2,11 @@
 #include "AtomicPropositionLabelingParser.h"
 #include "SparseStateRewardParser.h"
 
-#include "src/models/sparse/StandardRewardModel.h"
+#include "src/storm/models/sparse/StandardRewardModel.h"
 
-#include "src/exceptions/WrongFormatException.h"
+#include "src/storm/exceptions/WrongFormatException.h"
 
-#include "src/adapters/CarlAdapter.h"
+#include "src/storm/adapters/CarlAdapter.h"
 
 namespace storm {
     namespace parser {

@@ -1,13 +1,13 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
-#include "src/parser/NondeterministicModelParser.h"
-#include "src/models/sparse/Mdp.h"
-#include "src/models/sparse/StandardRewardModel.h"
-#include "src/exceptions/FileIoException.h"
+#include "src/storm/parser/NondeterministicModelParser.h"
+#include "src/storm/models/sparse/Mdp.h"
+#include "src/storm/models/sparse/StandardRewardModel.h"
+#include "src/storm/exceptions/FileIoException.h"
 
-#include "src/exceptions/OutOfRangeException.h"
-#include "src/exceptions/InvalidArgumentException.h"
+#include "src/storm/exceptions/OutOfRangeException.h"
+#include "src/storm/exceptions/InvalidArgumentException.h"
 
 TEST(NondeterministicModelParserTest, NonExistingFile) {
     // No matter what happens, please do NOT create a file with the name "nonExistingFile.not"!

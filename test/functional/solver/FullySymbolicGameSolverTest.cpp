@@ -1,12 +1,12 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
-#include "src/storage/dd/DdManager.h"
-#include "src/utility/solver.h"
-#include "src/settings/SettingsManager.h"
+#include "src/storm/storage/dd/DdManager.h"
+#include "src/storm/utility/solver.h"
+#include "src/storm/settings/SettingsManager.h"
 
-#include "src/solver/SymbolicGameSolver.h"
-#include "src/settings/modules/NativeEquationSolverSettings.h"
+#include "src/storm/solver/SymbolicGameSolver.h"
+#include "src/storm/settings/modules/NativeEquationSolverSettings.h"
 
 TEST(FullySymbolicGameSolverTest, Solve_Cudd) {
     // Create some variables.

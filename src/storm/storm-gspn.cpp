@@ -1,33 +1,33 @@
-#include "src/builder/ExplicitGspnModelBuilder.h"
-#include "src/exceptions/BaseException.h"
-#include "src/exceptions/WrongFormatException.h"
-#include "src/parser/GspnParser.h"
-#include "src/storage/gspn/GSPN.h"
-#include "src/storage/gspn/GspnBuilder.h"
-#include "src/utility/macros.h"
-#include "src/utility/initialize.h"
+#include "src/storm/builder/ExplicitGspnModelBuilder.h"
+#include "src/storm/exceptions/BaseException.h"
+#include "src/storm/exceptions/WrongFormatException.h"
+#include "src/storm/parser/GspnParser.h"
+#include "src/storm/storage/gspn/GSPN.h"
+#include "src/storm/storage/gspn/GspnBuilder.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/utility/initialize.h"
 
 #include "utility/storm.h"
-#include "src/cli/cli.h"
+#include "src/storm/cli/cli.h"
 
-#include "src/storage/expressions/ExpressionManager.h"
-#include "src/storage/jani/Model.h"
-#include "src/storage/jani/JSONExporter.h"
-#include "src/builder/JaniGSPNBuilder.h"
+#include "src/storm/storage/expressions/ExpressionManager.h"
+#include "src/storm/storage/jani/Model.h"
+#include "src/storm/storage/jani/JSONExporter.h"
+#include "src/storm/builder/JaniGSPNBuilder.h"
 #include <fstream>
 #include <iostream>
 #include <string>
 
 #include <boost/algorithm/string.hpp>
 
-#include "src/exceptions/FileIoException.h"
+#include "src/storm/exceptions/FileIoException.h"
 
-#include "src/settings/modules/GeneralSettings.h"
-#include "src/settings/modules/GSPNSettings.h"
-#include "src/settings/modules/GSPNExportSettings.h"
-#include "src/settings/modules/CoreSettings.h"
-#include "src/settings/modules/DebugSettings.h"
-#include "src/settings/modules/JaniExportSettings.h"
+#include "src/storm/settings/modules/GeneralSettings.h"
+#include "src/storm/settings/modules/GSPNSettings.h"
+#include "src/storm/settings/modules/GSPNExportSettings.h"
+#include "src/storm/settings/modules/CoreSettings.h"
+#include "src/storm/settings/modules/DebugSettings.h"
+#include "src/storm/settings/modules/JaniExportSettings.h"
 
 /*!
  * Initialize the settings manager.

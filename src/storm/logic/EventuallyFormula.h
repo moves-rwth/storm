@@ -1,8 +1,8 @@
 #ifndef STORM_LOGIC_EVENTUALLYFORMULA_H_
 #define STORM_LOGIC_EVENTUALLYFORMULA_H_
 
-#include "src/logic/UnaryPathFormula.h"
-#include "src/logic/FormulaContext.h"
+#include "src/storm/logic/UnaryPathFormula.h"
+#include "src/storm/logic/FormulaContext.h"
 
 namespace storm {
     namespace logic {

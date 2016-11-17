@@ -1,14 +1,14 @@
-#include "src/solver/SymbolicMinMaxLinearEquationSolver.h"
+#include "src/storm/solver/SymbolicMinMaxLinearEquationSolver.h"
 
-#include "src/storage/dd/DdManager.h"
+#include "src/storm/storage/dd/DdManager.h"
 
-#include "src/storage/dd/Add.h"
-#include "src/storage/dd/Bdd.h"
+#include "src/storm/storage/dd/Add.h"
+#include "src/storm/storage/dd/Bdd.h"
 
-#include "src/utility/constants.h"
+#include "src/storm/utility/constants.h"
 
-#include "src/settings/SettingsManager.h"
-#include "src/settings/modules/NativeEquationSolverSettings.h"
+#include "src/storm/settings/SettingsManager.h"
+#include "src/storm/settings/modules/NativeEquationSolverSettings.h"
 
 namespace storm {
     namespace solver {

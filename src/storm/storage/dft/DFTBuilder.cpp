@@ -2,11 +2,12 @@
 
 #include "DFTBuilder.h"
 
-#include "DFT.h"
 #include <algorithm>
+
+#include "DFT.h"
 #include "OrderDFTElementsById.h"
-#include <src/utility/macros.h>
-#include <src/exceptions/NotSupportedException.h>
+#include "src/storm/utility/macros.h"
+#include "src/storm/exceptions/NotSupportedException.h"
 #include "../../exceptions/WrongFormatException.h"
 
 

@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
-#include "src/storage/SparseMatrix.h"
-#include "src/exceptions/InvalidStateException.h"
-#include "src/exceptions/OutOfRangeException.h"
+#include "src/storm/storage/SparseMatrix.h"
+#include "src/storm/exceptions/InvalidStateException.h"
+#include "src/storm/exceptions/OutOfRangeException.h"
 
 #include "storm-config.h"
 

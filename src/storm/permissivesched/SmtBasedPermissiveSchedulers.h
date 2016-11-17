@@ -1,7 +1,7 @@
 #ifndef SMTBASEDPERMISSIVESCHEDULERS_H
 #define	SMTBASEDPERMISSIVESCHEDULERS_H
 
-#include "src/solver/SmtSolver.h"
+#include "src/storm/solver/SmtSolver.h"
 
 namespace storm {
     namespace ps {

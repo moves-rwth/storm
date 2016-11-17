@@ -1,21 +1,21 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
-#include "src/parser/FormulaParser.h"
-#include "src/logic/Formulas.h"
-#include "src/solver/StandardMinMaxLinearEquationSolver.h"
-#include "src/models/sparse/StandardRewardModel.h"
-#include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
-#include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
-#include "src/settings/SettingsManager.h"
-#include "src/settings/modules/GeneralSettings.h"
+#include "src/storm/parser/FormulaParser.h"
+#include "src/storm/logic/Formulas.h"
+#include "src/storm/solver/StandardMinMaxLinearEquationSolver.h"
+#include "src/storm/models/sparse/StandardRewardModel.h"
+#include "src/storm/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
+#include "src/storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "src/storm/settings/SettingsManager.h"
+#include "src/storm/settings/modules/GeneralSettings.h"
 
-#include "src/settings/modules/GmmxxEquationSolverSettings.h"
+#include "src/storm/settings/modules/GmmxxEquationSolverSettings.h"
 
-#include "src/settings/modules/NativeEquationSolverSettings.h"
-#include "src/parser/AutoParser.h"
-#include "src/parser/PrismParser.h"
-#include "src/builder/ExplicitModelBuilder.h"
+#include "src/storm/settings/modules/NativeEquationSolverSettings.h"
+#include "src/storm/parser/AutoParser.h"
+#include "src/storm/parser/PrismParser.h"
+#include "src/storm/builder/ExplicitModelBuilder.h"
 
 TEST(GmmxxMdpPrctlModelCheckerTest, Dice) {
     std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser<>::parseModel(STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.tra", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.lab", "", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.flip.trans.rew");

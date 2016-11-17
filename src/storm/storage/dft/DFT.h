@@ -15,7 +15,7 @@
 #include "../BitVector.h"
 #include "SymmetricUnits.h"
 #include "../../utility/math.h"
-#include "src/utility/macros.h"
+#include "src/storm/utility/macros.h"
 #include "DFTStateGenerationInfo.h"
 
 namespace storm {

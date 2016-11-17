@@ -3,7 +3,7 @@
 
 #include <ostream>
 
-#include "src/utility/gmm.h"
+#include "src/storm/utility/gmm.h"
 
 #include "LinearEquationSolver.h"
 

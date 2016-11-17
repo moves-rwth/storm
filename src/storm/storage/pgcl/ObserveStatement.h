@@ -1,7 +1,7 @@
 #pragma once
 
-#include "src/storage/pgcl/SimpleStatement.h"
-#include "src/storage/pgcl/BooleanExpression.h"
+#include "src/storm/storage/pgcl/SimpleStatement.h"
+#include "src/storm/storage/pgcl/BooleanExpression.h"
 
 namespace storm {
     namespace pgcl {

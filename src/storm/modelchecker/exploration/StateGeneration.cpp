@@ -1,6 +1,6 @@
-#include "src/modelchecker/exploration/StateGeneration.h"
+#include "src/storm/modelchecker/exploration/StateGeneration.h"
 
-#include "src/modelchecker/exploration/ExplorationInformation.h"
+#include "src/storm/modelchecker/exploration/ExplorationInformation.h"
 
 namespace storm {
     namespace modelchecker {

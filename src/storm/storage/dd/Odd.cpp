@@ -1,11 +1,11 @@
-#include "src/storage/dd/Odd.h"
+#include "src/storm/storage/dd/Odd.h"
 
 #include <set>
 #include <fstream>
 #include <boost/algorithm/string/join.hpp>
 
-#include "src/utility/macros.h"
-#include "src/exceptions/InvalidArgumentException.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/exceptions/InvalidArgumentException.h"
 
 namespace storm {
     namespace dd {

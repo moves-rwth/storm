@@ -1,10 +1,10 @@
-#include "src/models/sparse/NondeterministicModel.h"
+#include "src/storm/models/sparse/NondeterministicModel.h"
 
-#include "src/models/sparse/StandardRewardModel.h"
+#include "src/storm/models/sparse/StandardRewardModel.h"
 
-#include "src/adapters/CarlAdapter.h"
+#include "src/storm/adapters/CarlAdapter.h"
 
-#include "src/exceptions/InvalidOperationException.h"
+#include "src/storm/exceptions/InvalidOperationException.h"
 
 namespace storm {
     namespace models {

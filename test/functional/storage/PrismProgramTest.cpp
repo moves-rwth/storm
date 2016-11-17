@@ -1,10 +1,10 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
-#include "src/parser/PrismParser.h"
+#include "src/storm/parser/PrismParser.h"
 
-#include "src/utility/solver.h"
+#include "src/storm/utility/solver.h"
 
-#include "src/storage/jani/Model.h"
+#include "src/storm/storage/jani/Model.h"
 
 #ifdef STORM_HAVE_MSAT
 TEST(PrismProgramTest, FlattenModules) {

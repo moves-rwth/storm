@@ -1,4 +1,4 @@
-#include "src/storage/jani/UnboundedIntegerVariable.h"
+#include "src/storm/storage/jani/UnboundedIntegerVariable.h"
 
 namespace storm {
     namespace jani {

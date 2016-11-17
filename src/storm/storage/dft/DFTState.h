@@ -1,9 +1,9 @@
 #ifndef DFTSTATE_H
 #define	DFTSTATE_H
 
-#include "src/storage/dft/DFTElementState.h"
-#include "src/storage/BitVector.h"
-#include "src/builder/DftExplorationHeuristic.h"
+#include "src/storm/storage/dft/DFTElementState.h"
+#include "src/storm/storage/BitVector.h"
+#include "src/storm/builder/DftExplorationHeuristic.h"
 
 #include <sstream>
 #include <memory>

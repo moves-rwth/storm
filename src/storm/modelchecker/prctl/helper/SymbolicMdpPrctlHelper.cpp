@@ -1,22 +1,22 @@
-#include "src/modelchecker/prctl/helper/SymbolicMdpPrctlHelper.h"
+#include "src/storm/modelchecker/prctl/helper/SymbolicMdpPrctlHelper.h"
 
-#include "src/solver/SymbolicMinMaxLinearEquationSolver.h"
+#include "src/storm/solver/SymbolicMinMaxLinearEquationSolver.h"
 
-#include "src/storage/dd/DdManager.h"
-#include "src/storage/dd/Add.h"
-#include "src/storage/dd/Bdd.h"
+#include "src/storm/storage/dd/DdManager.h"
+#include "src/storm/storage/dd/Add.h"
+#include "src/storm/storage/dd/Bdd.h"
 
-#include "src/utility/graph.h"
-#include "src/utility/constants.h"
+#include "src/storm/utility/graph.h"
+#include "src/storm/utility/constants.h"
 
 
-#include "src/models/symbolic/StandardRewardModel.h"
+#include "src/storm/models/symbolic/StandardRewardModel.h"
 
-#include "src/modelchecker/results/SymbolicQualitativeCheckResult.h"
-#include "src/modelchecker/results/SymbolicQuantitativeCheckResult.h"
+#include "src/storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
+#include "src/storm/modelchecker/results/SymbolicQuantitativeCheckResult.h"
 
-#include "src/exceptions/InvalidPropertyException.h"
-#include "src/exceptions/InvalidArgumentException.h"
+#include "src/storm/exceptions/InvalidPropertyException.h"
+#include "src/storm/exceptions/InvalidArgumentException.h"
 
 namespace storm {
     namespace modelchecker {

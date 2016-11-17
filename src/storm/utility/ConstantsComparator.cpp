@@ -1,12 +1,12 @@
-#include "src/utility/ConstantsComparator.h"
+#include "src/storm/utility/ConstantsComparator.h"
 
 #include <cstdlib>
 #include <cmath>
-#include <src/storage/sparse/StateType.h>
+#include "src/storm/storage/sparse/StateType.h"
 
-#include "src/utility/constants.h"
-#include "src/settings/SettingsManager.h"
-#include "src/settings/modules/GeneralSettings.h"
+#include "src/storm/utility/constants.h"
+#include "src/storm/settings/SettingsManager.h"
+#include "src/storm/settings/modules/GeneralSettings.h"
 
 namespace storm {
     namespace utility {

@@ -4,7 +4,7 @@
 #include <unordered_map>
 #include <boost/container/flat_set.hpp>
 
-#include "src/storage/sparse/StateType.h"
+#include "src/storm/storage/sparse/StateType.h"
 
 namespace storm {
     namespace storage {

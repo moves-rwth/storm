@@ -3,9 +3,9 @@
 
 #include <boost/optional.hpp>
 
-#include "src/modelchecker/CheckTask.h"
-#include "src/logic/Formulas.h"
-#include "src/solver/OptimizationDirection.h"
+#include "src/storm/modelchecker/CheckTask.h"
+#include "src/storm/logic/Formulas.h"
+#include "src/storm/solver/OptimizationDirection.h"
 
 namespace storm {
     namespace modelchecker {

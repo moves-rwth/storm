@@ -1,8 +1,8 @@
 #ifndef STORM_STORAGE_GEOMETRY_HYPROPOLYTOPE_H_
 #define STORM_STORAGE_GEOMETRY_HYPROPOLYTOPE_H_
 
-#include "src/storage/geometry/Polytope.h"
-#include "src/adapters/HyproAdapter.h"
+#include "src/storm/storage/geometry/Polytope.h"
+#include "src/storm/adapters/HyproAdapter.h"
 
 #ifdef STORM_HAVE_HYPRO
 

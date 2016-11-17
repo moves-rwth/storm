@@ -2,25 +2,25 @@
 #include "utility/OsDetection.h"
 #include "storm-config.h"
 
-#include "src/adapters/CarlAdapter.h"
+#include "src/storm/adapters/CarlAdapter.h"
 
-#include "src/storage/sparse/StateType.h"
-#include "src/storage/dd/Bdd.h"
-#include "src/storage/dd/Add.h"
-#include "src/storage/dd/DdManager.h"
+#include "src/storm/storage/sparse/StateType.h"
+#include "src/storm/storage/dd/Bdd.h"
+#include "src/storm/storage/dd/Add.h"
+#include "src/storm/storage/dd/DdManager.h"
 
-#include "src/storage/StronglyConnectedComponentDecomposition.h"
+#include "src/storm/storage/StronglyConnectedComponentDecomposition.h"
 
-#include "src/models/symbolic/DeterministicModel.h"
-#include "src/models/symbolic/NondeterministicModel.h"
-#include "src/models/symbolic/StandardRewardModel.h"
-#include "src/models/sparse/DeterministicModel.h"
-#include "src/models/sparse/NondeterministicModel.h"
-#include "src/models/sparse/StandardRewardModel.h"
+#include "src/storm/models/symbolic/DeterministicModel.h"
+#include "src/storm/models/symbolic/NondeterministicModel.h"
+#include "src/storm/models/symbolic/StandardRewardModel.h"
+#include "src/storm/models/sparse/DeterministicModel.h"
+#include "src/storm/models/sparse/NondeterministicModel.h"
+#include "src/storm/models/sparse/StandardRewardModel.h"
 
-#include "src/utility/constants.h"
-#include "src/utility/macros.h"
-#include "src/exceptions/InvalidArgumentException.h"
+#include "src/storm/utility/constants.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/exceptions/InvalidArgumentException.h"
 
 #include <queue>
 

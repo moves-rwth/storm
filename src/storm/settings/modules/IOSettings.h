@@ -2,9 +2,9 @@
 #define STORM_SETTINGS_MODULES_IOSETTINGS_H_
 
 #include "storm-config.h"
-#include "src/settings/modules/ModuleSettings.h"
+#include "src/storm/settings/modules/ModuleSettings.h"
 
-#include "src/builder/ExplorationOrder.h"
+#include "src/storm/builder/ExplorationOrder.h"
 
 namespace storm {
     namespace settings {

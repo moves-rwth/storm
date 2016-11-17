@@ -1,4 +1,4 @@
-#include "src/storage/expressions/OperatorType.h"
+#include "src/storm/storage/expressions/OperatorType.h"
 
 namespace storm {
     namespace expressions {

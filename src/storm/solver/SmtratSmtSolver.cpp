@@ -1,7 +1,7 @@
-#include "src/solver/SmtratSmtSolver.h"
-#include "src/utility/macros.h"
-#include "src/exceptions/NotSupportedException.h"
-#include "src/exceptions/InvalidStateException.h"
+#include "src/storm/solver/SmtratSmtSolver.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/exceptions/NotSupportedException.h"
+#include "src/storm/exceptions/InvalidStateException.h"
 
 #ifdef STORM_HAVE_SMTRAT
 

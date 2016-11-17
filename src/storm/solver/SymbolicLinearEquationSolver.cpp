@@ -1,10 +1,10 @@
-#include "src/solver/SymbolicLinearEquationSolver.h"
+#include "src/storm/solver/SymbolicLinearEquationSolver.h"
 
-#include "src/storage/dd/DdManager.h"
-#include "src/storage/dd/Add.h"
+#include "src/storm/storage/dd/DdManager.h"
+#include "src/storm/storage/dd/Add.h"
 
-#include "src/settings/SettingsManager.h"
-#include "src/settings/modules/NativeEquationSolverSettings.h"
+#include "src/storm/settings/SettingsManager.h"
+#include "src/storm/settings/modules/NativeEquationSolverSettings.h"
 
 namespace storm {
     namespace solver {

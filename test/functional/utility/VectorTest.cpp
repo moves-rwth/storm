@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
-#include "src/storage/BitVector.h"
-#include "src/utility/vector.h"
+#include "src/storm/storage/BitVector.h"
+#include "src/storm/utility/vector.h"
 
 TEST(VectorTest, sum_if) {
     std::vector<double> a = {1.0, 2.0, 4.0, 8.0, 16.0};

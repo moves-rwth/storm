@@ -3,7 +3,7 @@
 
 #include <cstdint>
 
-#include "src/generator/Choice.h"
+#include "src/storm/generator/Choice.h"
 
 namespace storm {
     namespace generator {

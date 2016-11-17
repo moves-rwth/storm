@@ -1,11 +1,11 @@
-#include "src/storage/dd/cudd/InternalCuddBdd.h"
+#include "src/storm/storage/dd/cudd/InternalCuddBdd.h"
 
 #include <boost/functional/hash.hpp>
 
-#include "src/storage/dd/cudd/InternalCuddDdManager.h"
-#include "src/storage/dd/Odd.h"
+#include "src/storm/storage/dd/cudd/InternalCuddDdManager.h"
+#include "src/storm/storage/dd/Odd.h"
 
-#include "src/storage/BitVector.h"
+#include "src/storm/storage/BitVector.h"
 
 #include <iostream>
 

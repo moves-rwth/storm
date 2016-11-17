@@ -1,12 +1,12 @@
-//#include "src/builder/ExplicitGspnModelBuilder.h"
+//#include "src/storm/builder/ExplicitGspnModelBuilder.h"
 //
-//#include "src/models/sparse/StandardRewardModel.h"
+//#include "src/storm/models/sparse/StandardRewardModel.h"
 //
-//#include "src/utility/macros.h"
-//#include "src/exceptions/NotImplementedException.h"
-//#include "src/storage/expressions/ExpressionManager.h"
-//#include "src/parser/FormulaParser.h"
-//#include "src/storage/expressions/ExpressionEvaluator.h"
+//#include "src/storm/utility/macros.h"
+//#include "src/storm/exceptions/NotImplementedException.h"
+//#include "src/storm/storage/expressions/ExpressionManager.h"
+//#include "src/storm/parser/FormulaParser.h"
+//#include "src/storm/storage/expressions/ExpressionEvaluator.h"
 //
 //namespace storm {
 //    namespace builder {

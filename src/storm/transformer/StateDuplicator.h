@@ -5,15 +5,15 @@
 #include <memory>
 #include <boost/optional.hpp>
 
-#include "src/models/sparse/StandardRewardModel.h"
-#include "src/utility/constants.h"
-#include "src/utility/graph.h"
-#include "src/utility/macros.h"
-#include "src/utility/vector.h"
-#include "src/models/sparse/Dtmc.h"
-#include "src/models/sparse/Mdp.h"
-#include "src/models/sparse/Ctmc.h"
-#include "src/models/sparse/MarkovAutomaton.h"
+#include "src/storm/models/sparse/StandardRewardModel.h"
+#include "src/storm/utility/constants.h"
+#include "src/storm/utility/graph.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/utility/vector.h"
+#include "src/storm/models/sparse/Dtmc.h"
+#include "src/storm/models/sparse/Mdp.h"
+#include "src/storm/models/sparse/Ctmc.h"
+#include "src/storm/models/sparse/MarkovAutomaton.h"
 
 
 namespace storm {

@@ -1,9 +1,9 @@
 #pragma once
 
 #include "storm-config.h"
-#include "src/settings/modules/ModuleSettings.h"
+#include "src/storm/settings/modules/ModuleSettings.h"
 
-#include "src/solver/SolverSelectionOptions.h"
+#include "src/storm/solver/SolverSelectionOptions.h"
 
 namespace storm {
     namespace settings {

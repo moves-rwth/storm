@@ -3,16 +3,16 @@
 #include <cmath>
 #include <utility>
 
-#include "src/adapters/GmmxxAdapter.h"
-#include "src/settings/SettingsManager.h"
-#include "src/utility/vector.h"
-#include "src/utility/constants.h"
-#include "src/exceptions/InvalidStateException.h"
-#include "src/settings/modules/GmmxxEquationSolverSettings.h"
+#include "src/storm/adapters/GmmxxAdapter.h"
+#include "src/storm/settings/SettingsManager.h"
+#include "src/storm/utility/vector.h"
+#include "src/storm/utility/constants.h"
+#include "src/storm/exceptions/InvalidStateException.h"
+#include "src/storm/settings/modules/GmmxxEquationSolverSettings.h"
 
-#include "src/solver/NativeLinearEquationSolver.h"
+#include "src/storm/solver/NativeLinearEquationSolver.h"
 
-#include "src/utility/gmm.h"
+#include "src/storm/utility/gmm.h"
 
 namespace storm {
     namespace solver {

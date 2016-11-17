@@ -6,8 +6,8 @@
 #include <vector>
 #include <boost/variant.hpp>
 
-#include "src/storage/expressions/Variable.h"
-#include "src/storage/dd/DdType.h"
+#include "src/storm/storage/expressions/Variable.h"
+#include "src/storm/storage/dd/DdType.h"
 
 
 namespace storm {

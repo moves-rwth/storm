@@ -7,91 +7,91 @@
 #include <cstdio>
 #include <sstream>
 #include <memory>
-#include <src/storage/ModelFormulasPair.h>
+#include "src/storm/storage/ModelFormulasPair.h"
 
 #include "initialize.h"
 
 #include "storm-config.h"
 
 // Headers that provide auxiliary functionality.
-#include "src/settings/SettingsManager.h"
+#include "src/storm/settings/SettingsManager.h"
 
-#include "src/settings/modules/CoreSettings.h"
-#include "src/settings/modules/IOSettings.h"
-#include "src/settings/modules/BisimulationSettings.h"
-#include "src/settings/modules/ParametricSettings.h"
-#include "src/settings/modules/RegionSettings.h"
-#include "src/settings/modules/EliminationSettings.h"
-#include "src/settings/modules/JitBuilderSettings.h"
+#include "src/storm/settings/modules/CoreSettings.h"
+#include "src/storm/settings/modules/IOSettings.h"
+#include "src/storm/settings/modules/BisimulationSettings.h"
+#include "src/storm/settings/modules/ParametricSettings.h"
+#include "src/storm/settings/modules/RegionSettings.h"
+#include "src/storm/settings/modules/EliminationSettings.h"
+#include "src/storm/settings/modules/JitBuilderSettings.h"
 
 // Formula headers.
-#include "src/logic/Formulas.h"
-#include "src/logic/FragmentSpecification.h"
+#include "src/storm/logic/Formulas.h"
+#include "src/storm/logic/FragmentSpecification.h"
 
 // Model headers.
-#include "src/models/ModelBase.h"
-#include "src/models/sparse/Model.h"
-#include "src/models/sparse/StandardRewardModel.h"
-#include "src/models/sparse/MarkovAutomaton.h"
-#include "src/models/symbolic/Model.h"
-#include "src/models/symbolic/StandardRewardModel.h"
+#include "src/storm/models/ModelBase.h"
+#include "src/storm/models/sparse/Model.h"
+#include "src/storm/models/sparse/StandardRewardModel.h"
+#include "src/storm/models/sparse/MarkovAutomaton.h"
+#include "src/storm/models/symbolic/Model.h"
+#include "src/storm/models/symbolic/StandardRewardModel.h"
 
-#include "src/storage/dd/Add.h"
-#include "src/storage/dd/Bdd.h"
+#include "src/storm/storage/dd/Add.h"
+#include "src/storm/storage/dd/Bdd.h"
 
-#include "src/parser/AutoParser.h"
+#include "src/storm/parser/AutoParser.h"
 
-#include "src/storage/jani/Model.h"
-#include "src/storage/jani/Property.h"
+#include "src/storm/storage/jani/Model.h"
+#include "src/storm/storage/jani/Property.h"
 
 // Headers of builders.
-#include "src/builder/ExplicitModelBuilder.h"
-#include "src/builder/jit/ExplicitJitJaniModelBuilder.h"
-#include "src/builder/DdPrismModelBuilder.h"
-#include "src/builder/DdJaniModelBuilder.h"
+#include "src/storm/builder/ExplicitModelBuilder.h"
+#include "src/storm/builder/jit/ExplicitJitJaniModelBuilder.h"
+#include "src/storm/builder/DdPrismModelBuilder.h"
+#include "src/storm/builder/DdJaniModelBuilder.h"
 
 // Headers for model processing.
-#include "src/storage/bisimulation/DeterministicModelBisimulationDecomposition.h"
-#include "src/storage/bisimulation/NondeterministicModelBisimulationDecomposition.h"
-#include "src/storage/ModelFormulasPair.h"
-#include "src/storage/SymbolicModelDescription.h"
+#include "src/storm/storage/bisimulation/DeterministicModelBisimulationDecomposition.h"
+#include "src/storm/storage/bisimulation/NondeterministicModelBisimulationDecomposition.h"
+#include "src/storm/storage/ModelFormulasPair.h"
+#include "src/storm/storage/SymbolicModelDescription.h"
 
 // Headers for model checking.
-#include "src/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
-#include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
-#include "src/modelchecker/prctl/HybridDtmcPrctlModelChecker.h"
-#include "src/modelchecker/prctl/HybridMdpPrctlModelChecker.h"
-#include "src/modelchecker/prctl/SymbolicDtmcPrctlModelChecker.h"
-#include "src/modelchecker/prctl/SymbolicMdpPrctlModelChecker.h"
-#include "src/modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
-#include "src/modelchecker/region/SparseDtmcRegionModelChecker.h"
-#include "src/modelchecker/region/SparseMdpRegionModelChecker.h"
-#include "src/modelchecker/region/ParameterRegion.h"
-#include "src/modelchecker/exploration/SparseExplorationModelChecker.h"
+#include "src/storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
+#include "src/storm/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
+#include "src/storm/modelchecker/prctl/HybridDtmcPrctlModelChecker.h"
+#include "src/storm/modelchecker/prctl/HybridMdpPrctlModelChecker.h"
+#include "src/storm/modelchecker/prctl/SymbolicDtmcPrctlModelChecker.h"
+#include "src/storm/modelchecker/prctl/SymbolicMdpPrctlModelChecker.h"
+#include "src/storm/modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
+#include "src/storm/modelchecker/region/SparseDtmcRegionModelChecker.h"
+#include "src/storm/modelchecker/region/SparseMdpRegionModelChecker.h"
+#include "src/storm/modelchecker/region/ParameterRegion.h"
+#include "src/storm/modelchecker/exploration/SparseExplorationModelChecker.h"
 
-#include "src/modelchecker/csl/SparseCtmcCslModelChecker.h"
-#include "src/modelchecker/csl/helper/SparseCtmcCslHelper.h"
-#include "src/modelchecker/csl/SparseMarkovAutomatonCslModelChecker.h"
-#include "src/modelchecker/csl/HybridCtmcCslModelChecker.h"
-#include "src/modelchecker/csl/SparseMarkovAutomatonCslModelChecker.h"
-#include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
-#include "src/modelchecker/results/SymbolicQualitativeCheckResult.h"
+#include "src/storm/modelchecker/csl/SparseCtmcCslModelChecker.h"
+#include "src/storm/modelchecker/csl/helper/SparseCtmcCslHelper.h"
+#include "src/storm/modelchecker/csl/SparseMarkovAutomatonCslModelChecker.h"
+#include "src/storm/modelchecker/csl/HybridCtmcCslModelChecker.h"
+#include "src/storm/modelchecker/csl/SparseMarkovAutomatonCslModelChecker.h"
+#include "src/storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
+#include "src/storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
 
 // Headers for counterexample generation.
-#include "src/counterexamples/MILPMinimalLabelSetGenerator.h"
-#include "src/counterexamples/SMTMinimalCommandSetGenerator.h"
+#include "src/storm/counterexamples/MILPMinimalLabelSetGenerator.h"
+#include "src/storm/counterexamples/SMTMinimalCommandSetGenerator.h"
 
 // Headers related to model building.
-#include "src/generator/PrismNextStateGenerator.h"
-#include "src/generator/JaniNextStateGenerator.h"
+#include "src/storm/generator/PrismNextStateGenerator.h"
+#include "src/storm/generator/JaniNextStateGenerator.h"
 
 // Headers related to exception handling.
-#include "src/exceptions/InvalidStateException.h"
-#include "src/exceptions/InvalidArgumentException.h"
-#include "src/exceptions/InvalidSettingsException.h"
-#include "src/exceptions/InvalidTypeException.h"
-#include "src/exceptions/NotImplementedException.h"
-#include "src/exceptions/NotSupportedException.h"
+#include "src/storm/exceptions/InvalidStateException.h"
+#include "src/storm/exceptions/InvalidArgumentException.h"
+#include "src/storm/exceptions/InvalidSettingsException.h"
+#include "src/storm/exceptions/InvalidTypeException.h"
+#include "src/storm/exceptions/NotImplementedException.h"
+#include "src/storm/exceptions/NotSupportedException.h"
 
 namespace storm {
 

@@ -1,8 +1,8 @@
 #ifndef STORM_STORAGE_EXPRESSIONS_BINARYRELATIONEXPRESSION_H_
 #define STORM_STORAGE_EXPRESSIONS_BINARYRELATIONEXPRESSION_H_
 
-#include "src/storage/expressions/BinaryExpression.h"
-#include "src/utility/OsDetection.h"
+#include "src/storm/storage/expressions/BinaryExpression.h"
+#include "src/storm/utility/OsDetection.h"
 
 namespace storm {
     namespace expressions {

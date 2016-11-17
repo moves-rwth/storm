@@ -1,9 +1,9 @@
 #pragma once
 #include "defines.h"
-#include "src/storage/IntegerInterval.h"
-#include "src/storage/expressions/Expression.h"
-#include "src/storage/expressions/Variable.h"
-#include "src/storage/expressions/ExpressionManager.h"
+#include "src/storm/storage/IntegerInterval.h"
+#include "src/storm/storage/expressions/Expression.h"
+#include "src/storm/storage/expressions/Variable.h"
+#include "src/storm/storage/expressions/ExpressionManager.h"
 
 namespace storm {
     namespace ppg {

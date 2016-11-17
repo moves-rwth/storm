@@ -4,9 +4,9 @@
 #include <string>
 #include <map>
 
-#include "src/storage/prism/LocatedInformation.h"
-#include "src/storage/expressions/Expression.h"
-#include "src/utility/OsDetection.h"
+#include "src/storm/storage/prism/LocatedInformation.h"
+#include "src/storm/storage/expressions/Expression.h"
+#include "src/storm/utility/OsDetection.h"
 
 
 namespace storm {

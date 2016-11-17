@@ -1,11 +1,11 @@
 #ifndef STORM_STORAGE_EXPRESSIONS_TORATIONALFUNCTIONVISITOR_H_
 #define STORM_STORAGE_EXPRESSIONS_TORATIONALFUNCTIONVISITOR_H_
 
-#include "src/adapters/CarlAdapter.h"
-#include "src/storage/expressions/Expression.h"
-#include "src/storage/expressions/Expressions.h"
-#include "src/storage/expressions/ExpressionVisitor.h"
-#include "src/storage/expressions/Variable.h"
+#include "src/storm/adapters/CarlAdapter.h"
+#include "src/storm/storage/expressions/Expression.h"
+#include "src/storm/storage/expressions/Expressions.h"
+#include "src/storm/storage/expressions/ExpressionVisitor.h"
+#include "src/storm/storage/expressions/Variable.h"
 
 namespace storm {
     namespace expressions {

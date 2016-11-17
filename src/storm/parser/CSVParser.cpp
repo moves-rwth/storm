@@ -1,9 +1,9 @@
-#include "src/parser/CSVParser.h"
+#include "src/storm/parser/CSVParser.h"
 #include <boost/any.hpp>
 
 #include <boost/algorithm/string.hpp>
-#include "src/utility/macros.h"
-#include "src/exceptions/InvalidArgumentException.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/exceptions/InvalidArgumentException.h"
 
 
 namespace storm {

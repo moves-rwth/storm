@@ -1,9 +1,9 @@
-#include "src/models/sparse/Dtmc.h"
-#include "src/models/sparse/StandardRewardModel.h"
-#include "src/adapters/CarlAdapter.h"
-#include "src/exceptions/NotImplementedException.h"
-#include "src/exceptions/InvalidArgumentException.h"
-#include "src/utility/constants.h"
+#include "src/storm/models/sparse/Dtmc.h"
+#include "src/storm/models/sparse/StandardRewardModel.h"
+#include "src/storm/adapters/CarlAdapter.h"
+#include "src/storm/exceptions/NotImplementedException.h"
+#include "src/storm/exceptions/InvalidArgumentException.h"
+#include "src/storm/utility/constants.h"
 
 namespace storm {
     namespace models {

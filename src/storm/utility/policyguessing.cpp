@@ -1,11 +1,11 @@
 #include <stdint.h>
 
-#include "src/utility/policyguessing.h"
+#include "src/storm/utility/policyguessing.h"
 
-#include "src/utility/macros.h"
-#include "src/utility/solver.h"
-#include "src/solver/LinearEquationSolver.h"
-#include "src/solver/GmmxxLinearEquationSolver.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/utility/solver.h"
+#include "src/storm/solver/LinearEquationSolver.h"
+#include "src/storm/solver/GmmxxLinearEquationSolver.h"
 #include "graph.h"
 #include "ConstantsComparator.h"
 

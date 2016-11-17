@@ -1,15 +1,15 @@
-#include "src/storage/dd/sylvan/InternalSylvanBdd.h"
+#include "src/storm/storage/dd/sylvan/InternalSylvanBdd.h"
 
 #include <boost/functional/hash.hpp>
 
-#include "src/storage/dd/sylvan/InternalSylvanDdManager.h"
-#include "src/storage/dd/sylvan/InternalSylvanAdd.h"
-#include "src/storage/dd/sylvan/SylvanAddIterator.h"
+#include "src/storm/storage/dd/sylvan/InternalSylvanDdManager.h"
+#include "src/storm/storage/dd/sylvan/InternalSylvanAdd.h"
+#include "src/storm/storage/dd/sylvan/SylvanAddIterator.h"
 
-#include "src/storage/BitVector.h"
+#include "src/storm/storage/BitVector.h"
 
-#include "src/utility/macros.h"
-#include "src/exceptions/InvalidOperationException.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/exceptions/InvalidOperationException.h"
 
 namespace storm {
     namespace dd {

@@ -1,14 +1,14 @@
-#include "src/models/sparse/Model.h"
+#include "src/storm/models/sparse/Model.h"
 
 #include <boost/algorithm/string/join.hpp>
 
-#include "src/models/sparse/StandardRewardModel.h"
+#include "src/storm/models/sparse/StandardRewardModel.h"
 
-#include "src/utility/vector.h"
-#include "src/adapters/CarlAdapter.h"
+#include "src/storm/utility/vector.h"
+#include "src/storm/adapters/CarlAdapter.h"
 
-#include "src/exceptions/IllegalArgumentException.h"
-#include "src/exceptions/IllegalFunctionCallException.h"
+#include "src/storm/exceptions/IllegalArgumentException.h"
+#include "src/storm/exceptions/IllegalFunctionCallException.h"
 
 namespace storm {
     namespace models {

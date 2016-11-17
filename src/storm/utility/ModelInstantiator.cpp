@@ -5,8 +5,8 @@
  * Created on February 23, 2016
  */
 
-#include "src/utility/ModelInstantiator.h"
-#include "src/models/sparse/StandardRewardModel.h"
+#include "src/storm/utility/ModelInstantiator.h"
+#include "src/storm/models/sparse/StandardRewardModel.h"
 
 namespace storm {
     namespace utility {

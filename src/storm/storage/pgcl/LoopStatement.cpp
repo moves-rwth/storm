@@ -1,6 +1,6 @@
 
-#include "src/storage/pgcl/LoopStatement.h"
-#include "src/storage/pgcl/AbstractStatementVisitor.h"
+#include "src/storm/storage/pgcl/LoopStatement.h"
+#include "src/storm/storage/pgcl/AbstractStatementVisitor.h"
 
 namespace storm {
     namespace pgcl {

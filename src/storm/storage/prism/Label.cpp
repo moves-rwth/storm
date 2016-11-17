@@ -1,5 +1,5 @@
-#include "src/storage/prism/Label.h"
-#include "src/storage/expressions/Variable.h"
+#include "src/storm/storage/prism/Label.h"
+#include "src/storm/storage/expressions/Variable.h"
 
 namespace storm {
     namespace prism {

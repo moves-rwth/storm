@@ -2,7 +2,7 @@
 
 #include <iostream>
 #include <boost/variant/get.hpp>
-#include "src/storage/pgcl/AbstractStatementVisitor.h"
+#include "src/storm/storage/pgcl/AbstractStatementVisitor.h"
 
 namespace storm {
     namespace pgcl {

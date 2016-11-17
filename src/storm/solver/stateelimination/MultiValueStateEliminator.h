@@ -1,5 +1,5 @@
 #pragma once
-#include "src/solver/stateelimination/PrioritizedStateEliminator.h"
+#include "src/storm/solver/stateelimination/PrioritizedStateEliminator.h"
 
 namespace storm {
     namespace solver {

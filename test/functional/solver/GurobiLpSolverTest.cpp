@@ -2,13 +2,13 @@
 #include "storm-config.h"
 
 #ifdef STORM_HAVE_GUROBI
-#include "src/solver/GurobiLpSolver.h"
-#include "src/exceptions/InvalidStateException.h"
-#include "src/exceptions/InvalidAccessException.h"
-#include "src/settings/SettingsManager.h"
-#include "src/settings/modules/GeneralSettings.h"
-#include "src/storage/expressions/Variable.h"
-#include "src/storage/expressions/Expressions.h"
+#include "src/storm/solver/GurobiLpSolver.h"
+#include "src/storm/exceptions/InvalidStateException.h"
+#include "src/storm/exceptions/InvalidAccessException.h"
+#include "src/storm/settings/SettingsManager.h"
+#include "src/storm/settings/modules/GeneralSettings.h"
+#include "src/storm/storage/expressions/Variable.h"
+#include "src/storm/storage/expressions/Expressions.h"
 
 TEST(GurobiLpSolver, LPOptimizeMax) {
     storm::solver::GurobiLpSolver solver(storm::OptimizationDirection::Maximize);

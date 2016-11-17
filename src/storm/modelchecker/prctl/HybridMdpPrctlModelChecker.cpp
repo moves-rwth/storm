@@ -1,21 +1,21 @@
-#include "src/modelchecker/prctl/HybridMdpPrctlModelChecker.h"
+#include "src/storm/modelchecker/prctl/HybridMdpPrctlModelChecker.h"
 
-#include "src/modelchecker/prctl/helper/HybridMdpPrctlHelper.h"
+#include "src/storm/modelchecker/prctl/helper/HybridMdpPrctlHelper.h"
 
-#include "src/models/symbolic/Mdp.h"
-#include "src/models/symbolic/StandardRewardModel.h"
+#include "src/storm/models/symbolic/Mdp.h"
+#include "src/storm/models/symbolic/StandardRewardModel.h"
 
-#include "src/modelchecker/results/SymbolicQualitativeCheckResult.h"
-#include "src/modelchecker/results/SymbolicQuantitativeCheckResult.h"
+#include "src/storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
+#include "src/storm/modelchecker/results/SymbolicQuantitativeCheckResult.h"
 
-#include "src/logic/FragmentSpecification.h"
+#include "src/storm/logic/FragmentSpecification.h"
 
-#include "src/solver/MinMaxLinearEquationSolver.h"
+#include "src/storm/solver/MinMaxLinearEquationSolver.h"
 
-#include "src/settings/modules/GeneralSettings.h"
+#include "src/storm/settings/modules/GeneralSettings.h"
 
-#include "src/exceptions/InvalidStateException.h"
-#include "src/exceptions/InvalidPropertyException.h"
+#include "src/storm/exceptions/InvalidStateException.h"
+#include "src/storm/exceptions/InvalidPropertyException.h"
 
 namespace storm {
     namespace modelchecker {

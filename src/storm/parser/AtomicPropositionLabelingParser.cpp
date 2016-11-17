@@ -5,16 +5,16 @@
  *      Author: Gereon Kremer
  */
 
-#include "src/parser/AtomicPropositionLabelingParser.h"
+#include "src/storm/parser/AtomicPropositionLabelingParser.h"
 
 #include <cstring>
 #include <string>
 #include <iostream>
 
-#include "src/utility/cstring.h"
-#include "src/parser/MappedFile.h"
-#include "src/exceptions/WrongFormatException.h"
-#include "src/exceptions/FileIoException.h"
+#include "src/storm/utility/cstring.h"
+#include "src/storm/parser/MappedFile.h"
+#include "src/storm/exceptions/WrongFormatException.h"
+#include "src/storm/exceptions/FileIoException.h"
 
 namespace storm {
 	namespace parser {

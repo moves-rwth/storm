@@ -1,17 +1,17 @@
-#include "src/modelchecker/results/CheckResult.h"
+#include "src/storm/modelchecker/results/CheckResult.h"
 
 #include "storm-config.h"
-#include "src/adapters/CarlAdapter.h"
+#include "src/storm/adapters/CarlAdapter.h"
 
-#include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
-#include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
-#include "src/modelchecker/results/SymbolicQualitativeCheckResult.h"
-#include "src/modelchecker/results/SymbolicQuantitativeCheckResult.h"
-#include "src/modelchecker/results/HybridQuantitativeCheckResult.h"
-#include "src/modelchecker/results/ParetoCurveCheckResult.h"
+#include "src/storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
+#include "src/storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "src/storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
+#include "src/storm/modelchecker/results/SymbolicQuantitativeCheckResult.h"
+#include "src/storm/modelchecker/results/HybridQuantitativeCheckResult.h"
+#include "src/storm/modelchecker/results/ParetoCurveCheckResult.h"
 
-#include "src/utility/macros.h"
-#include "src/exceptions/InvalidOperationException.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/exceptions/InvalidOperationException.h"
 
 namespace storm {
     namespace modelchecker {        

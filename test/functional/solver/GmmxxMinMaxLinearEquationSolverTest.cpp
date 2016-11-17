@@ -1,10 +1,10 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
-#include "src/solver/StandardMinMaxLinearEquationSolver.h"
-#include "src/settings/SettingsManager.h"
-#include "src/settings/modules/GmmxxEquationSolverSettings.h"
-#include "src/storage/SparseMatrix.h"
+#include "src/storm/solver/StandardMinMaxLinearEquationSolver.h"
+#include "src/storm/settings/SettingsManager.h"
+#include "src/storm/settings/modules/GmmxxEquationSolverSettings.h"
+#include "src/storm/storage/SparseMatrix.h"
 
 TEST(GmmxxMinMaxLinearEquationSolver, SolveWithStandardOptions) {
     storm::storage::SparseMatrixBuilder<double> builder(0, 0, 0, false, true);

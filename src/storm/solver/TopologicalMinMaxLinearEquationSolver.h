@@ -1,11 +1,11 @@
 #ifndef STORM_SOLVER_TOPOLOGICALVALUEITERATIONMINMAXLINEAREQUATIONSOLVER_H_
 #define STORM_SOLVER_TOPOLOGICALVALUEITERATIONMINMAXLINEAREQUATIONSOLVER_H_
 
-#include "src/solver/MinMaxLinearEquationSolver.h"
-#include "src/storage/StronglyConnectedComponentDecomposition.h"
-#include "src/storage/SparseMatrix.h"
-#include "src/exceptions/NotImplementedException.h"
-#include "src/exceptions/NotSupportedException.h"
+#include "src/storm/solver/MinMaxLinearEquationSolver.h"
+#include "src/storm/storage/StronglyConnectedComponentDecomposition.h"
+#include "src/storm/storage/SparseMatrix.h"
+#include "src/storm/exceptions/NotImplementedException.h"
+#include "src/storm/exceptions/NotSupportedException.h"
 
 #include <utility>
 #include <vector>

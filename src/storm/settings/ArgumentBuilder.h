@@ -11,14 +11,14 @@
 #include <memory>
 #include <string>
 
-#include "src/settings/ArgumentType.h"
-#include "src/settings/ArgumentBase.h"
-#include "src/settings/Argument.h"
-#include "src/settings/ArgumentValidators.h"
+#include "src/storm/settings/ArgumentType.h"
+#include "src/storm/settings/ArgumentBase.h"
+#include "src/storm/settings/Argument.h"
+#include "src/storm/settings/ArgumentValidators.h"
 
-#include "src/utility/macros.h"
-#include "src/exceptions/IllegalFunctionCallException.h"
-#include "src/exceptions/IllegalArgumentTypeException.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/exceptions/IllegalFunctionCallException.h"
+#include "src/storm/exceptions/IllegalArgumentTypeException.h"
 
 namespace storm {
 	namespace settings {

@@ -1,21 +1,21 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
-#include "src/models/symbolic/Dtmc.h"
-#include "src/models/symbolic/Ctmc.h"
-#include "src/models/symbolic/Mdp.h"
+#include "src/storm/models/symbolic/Dtmc.h"
+#include "src/storm/models/symbolic/Ctmc.h"
+#include "src/storm/models/symbolic/Mdp.h"
 
-#include "src/storage/dd/Add.h"
-#include "src/storage/dd/Bdd.h"
-#include "src/storage/SymbolicModelDescription.h"
-#include "src/storage/jani/Compositions.h"
+#include "src/storm/storage/dd/Add.h"
+#include "src/storm/storage/dd/Bdd.h"
+#include "src/storm/storage/SymbolicModelDescription.h"
+#include "src/storm/storage/jani/Compositions.h"
 
-#include "src/models/symbolic/StandardRewardModel.h"
-#include "src/parser/PrismParser.h"
-#include "src/builder/DdJaniModelBuilder.h"
+#include "src/storm/models/symbolic/StandardRewardModel.h"
+#include "src/storm/parser/PrismParser.h"
+#include "src/storm/builder/DdJaniModelBuilder.h"
 
-#include "src/settings/SettingMemento.h"
-#include "src/settings/SettingsManager.h"
-#include "src/settings/modules/IOSettings.h"
+#include "src/storm/settings/SettingMemento.h"
+#include "src/storm/settings/SettingsManager.h"
+#include "src/storm/settings/modules/IOSettings.h"
 
 TEST(DdJaniModelBuilderTest_Sylvan, Dtmc) {
     storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/die.pm");

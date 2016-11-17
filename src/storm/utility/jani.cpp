@@ -1,12 +1,12 @@
-#include "src/utility/jani.h"
+#include "src/storm/utility/jani.h"
 
 #include <boost/algorithm/string.hpp>
 
-#include "src/storage/expressions/ExpressionManager.h"
-#include "src/storage/jani/Model.h"
+#include "src/storm/storage/expressions/ExpressionManager.h"
+#include "src/storm/storage/jani/Model.h"
 
-#include "src/utility/macros.h"
-#include "src/exceptions/InvalidArgumentException.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/exceptions/InvalidArgumentException.h"
 
 namespace storm {
     namespace utility {

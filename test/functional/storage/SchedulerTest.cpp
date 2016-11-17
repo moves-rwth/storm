@@ -1,8 +1,8 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
-#include "src/exceptions/InvalidArgumentException.h"
-#include "src/storage/PartialScheduler.h"
-#include "src/storage/TotalScheduler.h"
+#include "src/storm/exceptions/InvalidArgumentException.h"
+#include "src/storm/storage/PartialScheduler.h"
+#include "src/storm/storage/TotalScheduler.h"
 
 TEST(SchedulerTest, PartialScheduler) {
     storm::storage::PartialScheduler scheduler;

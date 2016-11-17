@@ -1,6 +1,6 @@
-#include "src/logic/FormulaInformationVisitor.h"
+#include "src/storm/logic/FormulaInformationVisitor.h"
 
-#include "src/logic/Formulas.h"
+#include "src/storm/logic/Formulas.h"
 
 namespace storm {
     namespace logic {

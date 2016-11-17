@@ -1,11 +1,11 @@
-#include "src/storage/expressions/BinaryRelationExpression.h"
+#include "src/storm/storage/expressions/BinaryRelationExpression.h"
 
 #include <boost/variant.hpp>
 
-#include "src/storage/expressions/BooleanLiteralExpression.h"
-#include "src/utility/macros.h"
-#include "src/exceptions/InvalidTypeException.h"
-#include "src/storage/expressions/ExpressionVisitor.h"
+#include "src/storm/storage/expressions/BooleanLiteralExpression.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/exceptions/InvalidTypeException.h"
+#include "src/storm/storage/expressions/ExpressionVisitor.h"
 
 namespace storm {
     namespace expressions {

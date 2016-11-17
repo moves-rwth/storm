@@ -2,13 +2,13 @@
 
 #include <boost/variant.hpp>
 
-#include "src/storage/expressions/UnaryNumericalFunctionExpression.h"
-#include "src/storage/expressions/IntegerLiteralExpression.h"
-#include "src/storage/expressions/RationalLiteralExpression.h"
+#include "src/storm/storage/expressions/UnaryNumericalFunctionExpression.h"
+#include "src/storm/storage/expressions/IntegerLiteralExpression.h"
+#include "src/storm/storage/expressions/RationalLiteralExpression.h"
 #include "ExpressionVisitor.h"
-#include "src/utility/macros.h"
-#include "src/exceptions/InvalidTypeException.h"
-#include "src/exceptions/InvalidOperationException.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/exceptions/InvalidTypeException.h"
+#include "src/storm/exceptions/InvalidOperationException.h"
 
 namespace storm {
     namespace expressions {

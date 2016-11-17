@@ -1,24 +1,24 @@
-#include "src/modelchecker/prctl/SymbolicDtmcPrctlModelChecker.h"
+#include "src/storm/modelchecker/prctl/SymbolicDtmcPrctlModelChecker.h"
 
-#include "src/modelchecker/prctl/helper/SymbolicDtmcPrctlHelper.h"
+#include "src/storm/modelchecker/prctl/helper/SymbolicDtmcPrctlHelper.h"
 
-#include "src/storage/dd/Add.h"
+#include "src/storm/storage/dd/Add.h"
 
-#include "src/utility/macros.h"
+#include "src/storm/utility/macros.h"
 
-#include "src/models/symbolic/StandardRewardModel.h"
+#include "src/storm/models/symbolic/StandardRewardModel.h"
 
-#include "src/modelchecker/results/SymbolicQualitativeCheckResult.h"
-#include "src/modelchecker/results/SymbolicQuantitativeCheckResult.h"
+#include "src/storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
+#include "src/storm/modelchecker/results/SymbolicQuantitativeCheckResult.h"
 
-#include "src/logic/FragmentSpecification.h"
+#include "src/storm/logic/FragmentSpecification.h"
 
-#include "src/solver/SymbolicLinearEquationSolver.h"
+#include "src/storm/solver/SymbolicLinearEquationSolver.h"
 
-#include "src/settings/modules/GeneralSettings.h"
+#include "src/storm/settings/modules/GeneralSettings.h"
 
-#include "src/exceptions/InvalidStateException.h"
-#include "src/exceptions/InvalidPropertyException.h"
+#include "src/storm/exceptions/InvalidStateException.h"
+#include "src/storm/exceptions/InvalidPropertyException.h"
 
 namespace storm {
     namespace modelchecker {

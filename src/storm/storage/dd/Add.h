@@ -4,15 +4,15 @@
 #include <map>
 #include <functional>
 
-#include "src/storage/dd/Dd.h"
-#include "src/storage/dd/DdType.h"
-#include "src/storage/dd/Odd.h"
+#include "src/storm/storage/dd/Dd.h"
+#include "src/storm/storage/dd/DdType.h"
+#include "src/storm/storage/dd/Odd.h"
 
-#include "src/storage/dd/cudd/InternalCuddAdd.h"
-#include "src/storage/dd/sylvan/InternalSylvanAdd.h"
+#include "src/storm/storage/dd/cudd/InternalCuddAdd.h"
+#include "src/storm/storage/dd/sylvan/InternalSylvanAdd.h"
 
-#include "src/storage/dd/cudd/CuddAddIterator.h"
-#include "src/storage/dd/sylvan/SylvanAddIterator.h"
+#include "src/storm/storage/dd/cudd/CuddAddIterator.h"
+#include "src/storm/storage/dd/sylvan/SylvanAddIterator.h"
 
 namespace storm {
     namespace dd {

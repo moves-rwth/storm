@@ -1,13 +1,13 @@
-#include "src/storage/prism/ToJaniConverter.h"
+#include "src/storm/storage/prism/ToJaniConverter.h"
 
-#include "src/storage/expressions/ExpressionManager.h"
+#include "src/storm/storage/expressions/ExpressionManager.h"
 
-#include "src/storage/prism/Program.h"
-#include "src/storage/prism/CompositionToJaniVisitor.h"
-#include "src/storage/jani/Model.h"
+#include "src/storm/storage/prism/Program.h"
+#include "src/storm/storage/prism/CompositionToJaniVisitor.h"
+#include "src/storm/storage/jani/Model.h"
 
-#include "src/utility/macros.h"
-#include "src/exceptions/NotImplementedException.h"
+#include "src/storm/utility/macros.h"
+#include "src/storm/exceptions/NotImplementedException.h"
 
 namespace storm {
     namespace prism {

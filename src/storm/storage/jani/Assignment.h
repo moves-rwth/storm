@@ -2,8 +2,8 @@
 
 #include <functional>
 
-#include "src/storage/jani/Variable.h"
-#include "src/storage/expressions/Expression.h"
+#include "src/storm/storage/jani/Variable.h"
+#include "src/storm/storage/expressions/Expression.h"
 
 namespace storm {
     namespace jani {

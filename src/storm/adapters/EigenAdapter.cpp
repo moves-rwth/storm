@@ -1,4 +1,4 @@
-#include "src/adapters/EigenAdapter.h"
+#include "src/storm/adapters/EigenAdapter.h"
 
 namespace storm {
     namespace adapters {

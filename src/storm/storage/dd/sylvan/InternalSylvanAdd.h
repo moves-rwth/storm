@@ -4,14 +4,14 @@
 #include <set>
 #include <unordered_map>
 
-#include "src/storage/dd/DdType.h"
-#include "src/storage/dd/InternalAdd.h"
-#include "src/storage/dd/Odd.h"
+#include "src/storm/storage/dd/DdType.h"
+#include "src/storm/storage/dd/InternalAdd.h"
+#include "src/storm/storage/dd/Odd.h"
 
-#include "src/storage/dd/sylvan/InternalSylvanBdd.h"
-#include "src/storage/dd/sylvan/SylvanAddIterator.h"
+#include "src/storm/storage/dd/sylvan/InternalSylvanBdd.h"
+#include "src/storm/storage/dd/sylvan/SylvanAddIterator.h"
 
-#include "src/storage/expressions/Variable.h"
+#include "src/storm/storage/expressions/Variable.h"
 
 namespace storm {
     namespace storage {

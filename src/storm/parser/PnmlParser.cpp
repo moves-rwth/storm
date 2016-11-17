@@ -1,13 +1,13 @@
 
-#include "src/parser/PnmlParser.h"
+#include "src/storm/parser/PnmlParser.h"
 #ifdef USE_XERCES
 #include <iostream>
 
-#include "src/adapters/XercesAdapter.h"
+#include "src/storm/adapters/XercesAdapter.h"
 
-#include "src/exceptions/UnexpectedException.h"
-#include "src/exceptions/WrongFormatException.h"
-#include "src/utility/macros.h"
+#include "src/storm/exceptions/UnexpectedException.h"
+#include "src/storm/exceptions/WrongFormatException.h"
+#include "src/storm/utility/macros.h"
 
 namespace storm {
     namespace parser {

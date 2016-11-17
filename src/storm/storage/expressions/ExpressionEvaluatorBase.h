@@ -1,7 +1,7 @@
 #ifndef STORM_STORAGE_EXPRESSIONS_EXPRESSIONEVALUATORBASE_H_
 #define STORM_STORAGE_EXPRESSIONS_EXPRESSIONEVALUATORBASE_H_
 
-#include "src/storage/expressions/Expression.h"
+#include "src/storm/storage/expressions/Expression.h"
 
 namespace storm {
     namespace expressions {

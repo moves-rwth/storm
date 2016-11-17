@@ -7,15 +7,15 @@
     #include <errno.h>
 #endif
 
-#include "src/solver/SmtlibSmtSolver.h"
+#include "src/storm/solver/SmtlibSmtSolver.h"
 
-#include "src/settings/SettingsManager.h"
-#include "src/settings/modules/Smt2SmtSolverSettings.h"
-#include "src/exceptions/NotSupportedException.h"
-#include "src/exceptions/NotImplementedException.h"
-#include "src/exceptions/InvalidStateException.h"
-#include "src/exceptions/IllegalArgumentException.h"
-#include "src/exceptions/IllegalFunctionCallException.h"
+#include "src/storm/settings/SettingsManager.h"
+#include "src/storm/settings/modules/Smt2SmtSolverSettings.h"
+#include "src/storm/exceptions/NotSupportedException.h"
+#include "src/storm/exceptions/NotImplementedException.h"
+#include "src/storm/exceptions/InvalidStateException.h"
+#include "src/storm/exceptions/IllegalArgumentException.h"
+#include "src/storm/exceptions/IllegalFunctionCallException.h"
 #include "utility/macros.h"
 #include "adapters/CarlAdapter.h"
 #include "exceptions/UnexpectedException.h"
