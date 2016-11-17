@@ -629,6 +629,7 @@ namespace storm {
                 }
                 
                 std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(std::move(uniformizedMatrix));
+                solver->setCachingEnabled(true);
                 
                 if (!useMixedPoissonProbabilities && std::get<0>(foxGlynnResult) > 1) {
                     // Perform the matrix-vector multiplications (without adding).
@@ -734,12 +735,6 @@ namespace storm {
             template storm::storage::SparseMatrix<double> SparseCtmcCslHelper::computeProbabilityMatrix(storm::storage::SparseMatrix<double> const& rateMatrix, std::vector<double> const& exitRates);
             template storm::storage::SparseMatrix<storm::RationalNumber> SparseCtmcCslHelper::computeProbabilityMatrix(storm::storage::SparseMatrix<storm::RationalNumber> const& rateMatrix, std::vector<storm::RationalNumber> const& exitRates);
             template storm::storage::SparseMatrix<storm::RationalFunction> SparseCtmcCslHelper::computeProbabilityMatrix(storm::storage::SparseMatrix<storm::RationalFunction> const& rateMatrix, std::vector<storm::RationalFunction> const& exitRates);
-
-
-
-
-
-
 
 #endif
         }

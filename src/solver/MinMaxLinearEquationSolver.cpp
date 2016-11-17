@@ -18,7 +18,7 @@ namespace storm {
     namespace solver {
         
         template<typename ValueType>
-        MinMaxLinearEquationSolver<ValueType>::MinMaxLinearEquationSolver(OptimizationDirectionSetting direction) : direction(direction), trackScheduler(false) {
+        MinMaxLinearEquationSolver<ValueType>::MinMaxLinearEquationSolver(OptimizationDirectionSetting direction) : direction(direction), trackScheduler(false), cachingEnabled(false) {
             // Intentionally left empty.
         }
         
@@ -80,7 +80,21 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void MinMaxLinearEquationSolver<ValueType>::resetAuxiliaryData() const {
+        void MinMaxLinearEquationSolver<ValueType>::setCachingEnabled(bool value) {
+            if(cachingEnabled && !value) {
+                // caching will be turned off. Hence we clear the cache at this point
+                clearCache();
+            }
+            cachingEnabled = value;
+        }
+        
+        template<typename ValueType>
+        bool MinMaxLinearEquationSolver<ValueType>::isCachingEnabled() const {
+            return cachingEnabled;
+        }
+        
+        template<typename ValueType>
+        void MinMaxLinearEquationSolver<ValueType>::clearCache() const {
             // Intentionally left empty.
         }
         

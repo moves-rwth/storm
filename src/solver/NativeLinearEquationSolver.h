@@ -55,10 +55,7 @@ namespace storm {
             void setSettings(NativeLinearEquationSolverSettings<ValueType> const& newSettings);
             NativeLinearEquationSolverSettings<ValueType> const& getSettings() const;
 
-            /*
-             * Clears auxiliary data that has possibly been stored during previous calls of the solver.
-             */
-            virtual void resetAuxiliaryData() const override;
+            virtual void clearCache() const override;
 
         private:
             virtual uint64_t getMatrixRowCount() const override;
@@ -75,6 +72,7 @@ namespace storm {
             // The settings used by the solver.
             NativeLinearEquationSolverSettings<ValueType> settings;
             
+            // cached auxiliary data
             mutable std::unique_ptr<std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>>> jacobiDecomposition;
         };
         

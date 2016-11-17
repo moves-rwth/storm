@@ -86,6 +86,7 @@ namespace storm {
                 }
                 
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = minMaxLinearEquationSolverFactory.create(aProbabilistic);
+                solver->setCachingEnabled(true);
                 
                 // Perform the actual value iteration
                 // * loop until the step bound has been reached

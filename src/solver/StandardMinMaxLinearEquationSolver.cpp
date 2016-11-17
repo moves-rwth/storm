@@ -111,6 +111,7 @@ namespace storm {
 
             // Create a solver that we will use throughout the procedure. We will modify the matrix in each iteration.
             auto solver = linearEquationSolverFactory->create(std::move(submatrix));
+            solver->setCachingEnabled(true);
             
             Status status = Status::InProgress;
             uint64_t iterations = 0;
@@ -170,6 +171,10 @@ namespace storm {
                 this->scheduler = std::make_unique<storm::storage::TotalScheduler>(std::move(scheduler));
             }
             
+            if(!this->isCachingEnabled()) {
+                clearCache();
+            }
+            
             if(status == Status::Converged || status == Status::TerminatedEarly) {
                 return true;
             } else{
@@ -206,6 +211,7 @@ namespace storm {
         bool StandardMinMaxLinearEquationSolver<ValueType>::solveEquationsValueIteration(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             if(!linEqSolverA) {
                 linEqSolverA = linearEquationSolverFactory->create(A);
+                linEqSolverA->setCachingEnabled(true);
             }
             
             if (!auxiliaryRowVector.get()) {
@@ -263,6 +269,10 @@ namespace storm {
                 this->scheduler = std::make_unique<storm::storage::TotalScheduler>(std::move(choices));
             }
 
+            if(!this->isCachingEnabled()) {
+                clearCache();
+            }
+            
             if(status == Status::Converged || status == Status::TerminatedEarly) {
                 return true;
             } else{
@@ -274,6 +284,7 @@ namespace storm {
         void StandardMinMaxLinearEquationSolver<ValueType>::repeatedMultiply(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType>* b, uint_fast64_t n) const {
             if(!linEqSolverA) {
                 linEqSolverA = linearEquationSolverFactory->create(A);
+                linEqSolverA->setCachingEnabled(true);
             }
             
             if (!auxiliaryRowVector.get()) {
@@ -287,6 +298,10 @@ namespace storm {
                 // Reduce the vector x' by applying min/max for all non-deterministic choices as given by the topmost
                 // element of the min/max operator stack.
                 storm::utility::vector::reduceVectorMinOrMax(dir, multiplyResult, x, this->A.getRowGroupIndices());
+            }
+            
+            if(!this->isCachingEnabled()) {
+                clearCache();
             }
         }
         
@@ -324,11 +339,11 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void StandardMinMaxLinearEquationSolver<ValueType>::resetAuxiliaryData() const {
+        void StandardMinMaxLinearEquationSolver<ValueType>::clearCache() const {
             linEqSolverA.reset();
             auxiliaryRowVector.reset();
             auxiliaryRowGroupVector.reset();
-            MinMaxLinearEquationSolver<ValueType>::resetAuxiliaryData();
+            MinMaxLinearEquationSolver<ValueType>::clearCache();
         }
 
         template<typename ValueType>

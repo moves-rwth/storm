@@ -124,14 +124,14 @@ namespace storm {
         void GmmxxLinearEquationSolver<ValueType>::setMatrix(storm::storage::SparseMatrix<ValueType> const& A) {
             localA.reset();
             this->A = &A;
-            resetAuxiliaryData();
+            clearCache();
         }
         
         template<typename ValueType>
         void GmmxxLinearEquationSolver<ValueType>::setMatrix(storm::storage::SparseMatrix<ValueType>&& A) {
             localA = std::make_unique<storm::storage::SparseMatrix<ValueType>>(std::move(A));
             this->A = localA.get();
-            resetAuxiliaryData();
+            clearCache();
         }
         
         template<typename ValueType>
@@ -187,6 +187,10 @@ namespace storm {
                     }
                 }
                 
+                if(!this->isCachingEnabled()) {
+                    clearCache();
+                }
+                
                 // Check if the solver converged and issue a warning otherwise.
                 if (iter.converged()) {
                     STORM_LOG_INFO("Iterative solver converged after " << iter.get_iteration() << " iterations.");
@@ -221,6 +225,10 @@ namespace storm {
             } else {
                 gmm::mult(*gmmxxA, x, result);
             }
+            
+            if(!this->isCachingEnabled()) {
+                clearCache();
+            }
         }
         
         template<typename ValueType>
@@ -238,10 +246,10 @@ namespace storm {
         
             std::vector<ValueType>* currentX = &x;
             
-            if(!this->auxiliaryRowVector) {
-                this->auxiliaryRowVector = std::make_unique<std::vector<ValueType>>(getMatrixRowCount());
+            if(!this->cachedRowVector) {
+                this->cachedRowVector = std::make_unique<std::vector<ValueType>>(getMatrixRowCount());
             }
-            std::vector<ValueType>* nextX = this->auxiliaryRowVector.get();
+            std::vector<ValueType>* nextX = this->cachedRowVector.get();
             
             // Set up additional environment variables.
             uint_fast64_t iterationCount = 0;
@@ -264,8 +272,12 @@ namespace storm {
             
             // If the last iteration did not write to the original x we have to swap the contents, because the
             // output has to be written to the input parameter x.
-            if (currentX == this->auxiliaryRowVector.get()) {
+            if (currentX == this->cachedRowVector.get()) {
                 std::swap(x, *currentX);
+            }
+            
+            if(!this->isCachingEnabled()) {
+                clearCache();
             }
             
             return iterationCount;
@@ -282,12 +294,12 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void GmmxxLinearEquationSolver<ValueType>::resetAuxiliaryData() const {
+        void GmmxxLinearEquationSolver<ValueType>::clearCache() const {
             gmmxxA.reset();
             iluPreconditioner.reset();
             diagonalPreconditioner.reset();
             jacobiDecomposition.reset();
-            LinearEquationSolver<ValueType>::resetAuxiliaryData();
+            LinearEquationSolver<ValueType>::clearCache();
         }
         
         template<typename ValueType>

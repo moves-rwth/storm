@@ -307,6 +307,7 @@ namespace storm {
                 result->solver = minMaxSolverFactory.create(PS.toPS);
                 result->solver->setOptimizationDirection(storm::solver::OptimizationDirection::Maximize);
                 result->solver->setTrackScheduler(true);
+                result->solver->setCachingEnabled(true);
                 
                 result->b.resize(PS.getNumberOfChoices());
                 
@@ -365,6 +366,7 @@ namespace storm {
                     storm::storage::SparseMatrix<ValueType> linEqMatrix = PS.toPS.selectRowsFromRowGroups(optimalChoicesAtCurrentEpoch, true);
                     linEqMatrix.convertToEquationSystem();
                     linEq.solver = linEq.factory.create(std::move(linEqMatrix));
+                    linEq.solver->setCachingEnabled(true);
                 }
                 
                 // Get the results for the individual objectives.

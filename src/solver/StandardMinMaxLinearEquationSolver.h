@@ -44,7 +44,7 @@ namespace storm {
             StandardMinMaxLinearEquationSolverSettings<ValueType> const& getSettings() const;
             void setSettings(StandardMinMaxLinearEquationSolverSettings<ValueType> const& newSettings);
             
-            virtual void resetAuxiliaryData() const override;
+            virtual void clearCache() const override;
 
             virtual ValueType getPrecision() const override;
             virtual bool getRelative() const override;
@@ -58,6 +58,7 @@ namespace storm {
                 Converged, TerminatedEarly, MaximalIterationsExceeded, InProgress
             };
             
+            // possibly cached data
             mutable std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> linEqSolverA;
             mutable std::unique_ptr<std::vector<ValueType>> auxiliaryRowVector; // A.rowCount() entries
             mutable std::unique_ptr<std::vector<ValueType>> auxiliaryRowGroupVector; // A.rowGroupCount() entries

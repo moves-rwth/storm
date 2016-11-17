@@ -68,6 +68,7 @@ namespace storm {
                 solveLinearEquationSystem(inducedA, x, inducedB, probGreater0States, prob0Value, solver.getPrecision(), solver.getRelative());
                 
                 solver.setTrackScheduler();
+                solver.setCachingEnabled(true);
                 bool resultCorrect = false;
                 while(!resultCorrect){
                     solver.solveEquations(goal, x, b);
@@ -171,6 +172,7 @@ namespace storm {
                 storm::utility::vector::selectVectorValues(subB, probGreater0States, b);
 
                 std::unique_ptr<storm::solver::GmmxxLinearEquationSolver<ValueType>> linEqSysSolver(static_cast<storm::solver::GmmxxLinearEquationSolver<ValueType>*>(storm::solver::GmmxxLinearEquationSolverFactory<ValueType>().create(eqSysA).release()));
+                linEqSysSolver->setCachingEnabled(true);
                 auto eqSettings = linEqSysSolver->getSettings();
                 eqSettings.setRelativeTerminationCriterion(relative);
                 eqSettings.setMaximalNumberOfIterations(500);

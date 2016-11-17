@@ -98,11 +98,8 @@ namespace storm {
             void setSettings(GmmxxLinearEquationSolverSettings<ValueType> const& newSettings);
             GmmxxLinearEquationSolverSettings<ValueType> const& getSettings() const;
 
-            /*
-             * Clears auxiliary data that has possibly been stored during previous calls of the solver.
-             */
-            virtual void resetAuxiliaryData() const override;
 
+            virtual void clearCache() const override;
 
         private:
             /*!
@@ -130,7 +127,7 @@ namespace storm {
             // The settings used by the solver.
             GmmxxLinearEquationSolverSettings<ValueType> settings;
             
-            // Auxiliary data obtained during solving
+            // cached data obtained during solving
             mutable std::unique_ptr<gmm::csr_matrix<ValueType>> gmmxxA;
             mutable std::unique_ptr<gmm::ilu_precond<gmm::csr_matrix<ValueType>>> iluPreconditioner;
             mutable std::unique_ptr<gmm::diagonal_precond<gmm::csr_matrix<ValueType>>> diagonalPreconditioner;

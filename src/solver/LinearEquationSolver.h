@@ -67,15 +67,26 @@ namespace storm {
              * @param n The number of times to perform the multiplication.
              */
             void repeatedMultiply(std::vector<ValueType>& x, std::vector<ValueType> const* b, uint_fast64_t n) const;
-
-            /*
-             * Clears auxiliary data that has possibly been stored during previous calls of the solver.
+            
+            /*!
+             * Sets whether some of the generated data during solver calls should be cached.
+             * This possibly decreases the runtime of subsequent calls but also increases memory consumption.
              */
-            virtual void resetAuxiliaryData() const;
+            void setCachingEnabled(bool value) const;
+            
+            /*!
+             * Retrieves whether some of the generated data during solver calls should be cached.
+             */
+            bool isCachingEnabled() const;
+            
+            /*
+             * Clears the currently cached data that has been stored during previous calls of the solver.
+             */
+            virtual void clearCache() const;
 
         protected:
             // auxiliary storage. If set, this vector has getMatrixRowCount() entries.
-            mutable std::unique_ptr<std::vector<ValueType>> auxiliaryRowVector;
+            mutable std::unique_ptr<std::vector<ValueType>> cachedRowVector;
           
         private:
             /*!
@@ -87,6 +98,9 @@ namespace storm {
              * Retrieves the column count of the matrix associated with this solver.
              */
             virtual uint64_t getMatrixColumnCount() const = 0;
+            
+            /// Whether some of the generated data during solver calls should be cached.
+            mutable bool cachingEnabled;
 
         };
         

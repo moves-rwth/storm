@@ -14,21 +14,26 @@ namespace storm {
     namespace solver {
         
         template<typename ValueType>
-        LinearEquationSolver<ValueType>::LinearEquationSolver() {
+        LinearEquationSolver<ValueType>::LinearEquationSolver() : cachingEnabled(false) {
             // Intentionally left empty.
         }
         
         template<typename ValueType>
         void LinearEquationSolver<ValueType>::repeatedMultiply(std::vector<ValueType>& x, std::vector<ValueType> const* b, uint_fast64_t n) const {
             
-            if(!auxiliaryRowVector) {
-                auxiliaryRowVector = std::make_unique<std::vector<ValueType>>(getMatrixRowCount());
+            if(!cachedRowVector) {
+                cachedRowVector = std::make_unique<std::vector<ValueType>>(getMatrixRowCount());
             }
+            
+            // We enable caching for this. But remember how the old setting was
+            bool cachingWasEnabled = isCachingEnabled();
+            setCachingEnabled(true);
             
             // Set up some temporary variables so that we can just swap pointers instead of copying the result after
             // each iteration.
             std::vector<ValueType>* currentX = &x;
-            std::vector<ValueType>* nextX = auxiliaryRowVector.get();
+            std::vector<ValueType>* nextX = cachedRowVector.get();
+            
             
             // Now perform matrix-vector multiplication as long as we meet the bound.
             for (uint_fast64_t i = 0; i < n; ++i) {
@@ -38,16 +43,37 @@ namespace storm {
             
             // If we performed an odd number of repetitions, we need to swap the contents of currentVector and x,
             // because the output is supposed to be stored in the input vector x.
-            if (currentX == auxiliaryRowVector.get()) {
+            if (currentX == cachedRowVector.get()) {
                 std::swap(x, *currentX);
+            }
+            
+            // restore the old caching setting
+            setCachingEnabled(cachingWasEnabled);
+            
+            if(!isCachingEnabled()) {
+                clearCache();
             }
         }
         
         template<typename ValueType>
-        void LinearEquationSolver<ValueType>::resetAuxiliaryData() const {
-            auxiliaryRowVector.reset();
+        void LinearEquationSolver<ValueType>::setCachingEnabled(bool value) const {
+            if(cachingEnabled && !value) {
+                // caching will be turned off. Hence we clear the cache at this point
+                clearCache();
+            }
+            cachingEnabled = value;
         }
-      
+        
+        template<typename ValueType>
+        bool LinearEquationSolver<ValueType>::isCachingEnabled() const {
+            return cachingEnabled;
+        }
+        
+        template<typename ValueType>
+        void LinearEquationSolver<ValueType>::clearCache() const {
+            cachedRowVector.reset();
+        }
+        
         template<typename ValueType>
         std::unique_ptr<LinearEquationSolver<ValueType>> LinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType>&& matrix) const {
             return create(matrix);

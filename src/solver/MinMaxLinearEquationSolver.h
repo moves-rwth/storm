@@ -128,11 +128,22 @@ namespace storm {
              *  Gets whether the precision is taken to be absolute or relative
              */
             virtual bool getRelative() const = 0;
+            
+            /*!
+             * Sets whether some of the generated data during solver calls should be cached.
+             * This possibly decreases the runtime of subsequent calls but also increases memory consumption.
+             */
+            void setCachingEnabled(bool value);
+            
+            /*!
+             * Retrieves whether some of the generated data during solver calls should be cached.
+             */
+            bool isCachingEnabled() const;
 
             /*
-             * Clears auxiliary data that has possibly been stored during previous calls of the solver.
+             * Clears the currently cached data that has been stored during previous calls of the solver.
              */
-            virtual void resetAuxiliaryData() const;
+            virtual void clearCache() const;
 
 
         protected:
@@ -144,6 +155,11 @@ namespace storm {
 
             /// The scheduler (if it could be successfully generated).
             mutable boost::optional<std::unique_ptr<storm::storage::TotalScheduler>> scheduler;
+            
+        private:
+            /// Whether some of the generated data during solver calls should be cached.
+            bool cachingEnabled;
+            
         };
 
         template<typename ValueType>

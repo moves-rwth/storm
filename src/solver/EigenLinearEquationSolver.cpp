@@ -117,7 +117,7 @@ namespace storm {
         template<typename ValueType>
         void EigenLinearEquationSolver<ValueType>::setMatrix(storm::storage::SparseMatrix<ValueType> const& A) {
             eigenA = storm::adapters::EigenAdapter::toEigenSparseMatrix<ValueType>(A);
-            this->resetAuxiliaryData();
+            this->clearCache();
         }
         
         template<typename ValueType>
@@ -125,7 +125,7 @@ namespace storm {
             // Take ownership of the matrix so it is destroyed after we have translated it to Eigen's format.
             storm::storage::SparseMatrix<ValueType> localA(std::move(A));
             this->setMatrix(localA);
-            this->resetAuxiliaryData();
+            this->clearCache();
         }
         
         template<typename ValueType>

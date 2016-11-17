@@ -97,21 +97,21 @@ namespace storm {
         void NativeLinearEquationSolver<ValueType>::setMatrix(storm::storage::SparseMatrix<ValueType> const& A) {
             localA.reset();
             this->A = &A;
-            resetAuxiliaryData();
+            clearCache();
         }
 
         template<typename ValueType>
         void NativeLinearEquationSolver<ValueType>::setMatrix(storm::storage::SparseMatrix<ValueType>&& A) {
             localA = std::make_unique<storm::storage::SparseMatrix<ValueType>>(std::move(A));
             this->A = localA.get();
-            resetAuxiliaryData();
+            clearCache();
         }
 
         
         template<typename ValueType>
         bool NativeLinearEquationSolver<ValueType>::solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
-            if(!this->auxiliaryRowVector) {
-                this->auxiliaryRowVector = std::make_unique<std::vector<ValueType>>(getMatrixRowCount());
+            if(!this->cachedRowVector) {
+                this->cachedRowVector = std::make_unique<std::vector<ValueType>>(getMatrixRowCount());
             }
             
             if (this->getSettings().getSolutionMethod() == NativeLinearEquationSolverSettings<ValueType>::SolutionMethod::SOR || this->getSettings().getSolutionMethod() == NativeLinearEquationSolverSettings<ValueType>::SolutionMethod::GaussSeidel) {
@@ -126,15 +126,19 @@ namespace storm {
                     A->performSuccessiveOverRelaxationStep(omega, x, b);
                     
                     // Now check if the process already converged within our precision.
-                    converged = storm::utility::vector::equalModuloPrecision<ValueType>(*this->auxiliaryRowVector, x, static_cast<ValueType>(this->getSettings().getPrecision()), this->getSettings().getRelativeTerminationCriterion()) || (this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(x));
+                    converged = storm::utility::vector::equalModuloPrecision<ValueType>(*this->cachedRowVector, x, static_cast<ValueType>(this->getSettings().getPrecision()), this->getSettings().getRelativeTerminationCriterion()) || (this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(x));
                     
                     // If we did not yet converge, we need to backup the contents of x.
                     if (!converged) {
-                        *this->auxiliaryRowVector = x;
+                        *this->cachedRowVector = x;
                     }
                     
                     // Increase iteration count so we can abort if convergence is too slow.
                     ++iterationCount;
+                }
+                
+                if(!this->isCachingEnabled()) {
+                    clearCache();
                 }
 
                 return converged;
@@ -148,7 +152,7 @@ namespace storm {
                 std::vector<ValueType> const& jacobiD = jacobiDecomposition->second;
                 
                 std::vector<ValueType>* currentX = &x;
-                std::vector<ValueType>* nextX = this->auxiliaryRowVector.get();
+                std::vector<ValueType>* nextX = this->cachedRowVector.get();
                 
                 // Set up additional environment variables.
                 uint_fast64_t iterationCount = 0;
@@ -172,8 +176,12 @@ namespace storm {
                                 
                 // If the last iteration did not write to the original x we have to swap the contents, because the
                 // output has to be written to the input parameter x.
-                if (currentX == this->auxiliaryRowVector.get()) {
+                if (currentX == this->cachedRowVector.get()) {
                     std::swap(x, *currentX);
+                }
+                
+                if(!this->isCachingEnabled()) {
+                    clearCache();
                 }
                 
                 return iterationCount < this->getSettings().getMaximalNumberOfIterations();
@@ -189,14 +197,19 @@ namespace storm {
                 }
             } else {
                 // If the two vectors are aliases, we need to create a temporary.
-                if(!this->auxiliaryRowVector) {
-                    this->auxiliaryRowVector = std::make_unique<std::vector<ValueType>>(getMatrixRowCount());
+                if(!this->cachedRowVector) {
+                    this->cachedRowVector = std::make_unique<std::vector<ValueType>>(getMatrixRowCount());
                 }
-                A->multiplyWithVector(x, *this->auxiliaryRowVector);
+                
+                A->multiplyWithVector(x, *this->cachedRowVector);
                 if (b != nullptr) {
-                    storm::utility::vector::addVectors(*this->auxiliaryRowVector, *b, result);
+                    storm::utility::vector::addVectors(*this->cachedRowVector, *b, result);
                 } else {
-                    result.swap(*this->auxiliaryRowVector);
+                    result.swap(*this->cachedRowVector);
+                }
+                
+                if(!this->isCachingEnabled()) {
+                    clearCache();
                 }
             }
         }
@@ -212,9 +225,9 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void NativeLinearEquationSolver<ValueType>::resetAuxiliaryData() const {
+        void NativeLinearEquationSolver<ValueType>::clearCache() const {
             jacobiDecomposition.reset();
-            LinearEquationSolver<ValueType>::resetAuxiliaryData();
+            LinearEquationSolver<ValueType>::clearCache();
         }
         
         template<typename ValueType>
