@@ -7,7 +7,16 @@
 #include <boost/multiprecision/gmp.hpp>
 
 #ifdef STORM_HAVE_CLN
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wmismatched-tags"
+
+#pragma GCC diagnostic push
+
 #include <cln/cln.h>
+
+#pragma GCC diagnostic pop
+#pragma clang diagnostic pop
+
 #endif
 
 #ifdef STORM_HAVE_CARL
