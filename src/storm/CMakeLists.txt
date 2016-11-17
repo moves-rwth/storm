@@ -18,10 +18,6 @@ set(STORM_MAIN_SOURCES  ${STORM_MAIN_FILE})
 set(STORM_DFT_MAIN_SOURCES ${STORM_DFT_MAIN_FILE})
 set(STORM_GSPN_MAIN_SOURCES ${STORM_GSPN_MAIN_FILE})
 
-file(GLOB_RECURSE ALL_FILES ${PROJECT_SOURCE_DIR}/src/storm/*.h ${PROJECT_SOURCE_DIR}/src/storm/*.cpp)
-
-register_source_groups_from_filestructure("${ALL_FILES}")
-
 # Add custom additional include or link directories
 if (ADDITIONAL_INCLUDE_DIRS)
 	message(STATUS "StoRM - Using additional include directories ${ADDITIONAL_INCLUDE_DIRS}")

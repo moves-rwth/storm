@@ -79,7 +79,7 @@ if(STORM_COMPILE_WITH_CCACHE)
 endif()
 
 # Base path for test files
-set(STORM_CPP_TESTS_BASE_PATH "${PROJECT_SOURCE_DIR}/test")
+set(STORM_CPP_TESTS_BASE_PATH "${PROJECT_SOURCE_DIR}/src/test")
 
 set(STORMPY_OUTPUT_DIR "${PROJECT_BINARY_DIR}/stormpy")
 set(STORMPY_SOURCE_DIR "${PROJECT_SOURCE_DIR}/stormpy")
@@ -330,7 +330,9 @@ set(STORM_GENERATED_SOURCES "${PROJECT_BINARY_DIR}/src/storm/utility/storm-versi
 # Add the binary dir include directory for storm-config.h
 include_directories("${PROJECT_BINARY_DIR}/include")
 
+include(CTest)
+
+
 add_subdirectory(src)
-add_subdirectory(test)
 
 include(StormCPackConfig.cmake)
