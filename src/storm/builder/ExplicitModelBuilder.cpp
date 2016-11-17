@@ -1,31 +1,31 @@
-#include "src/storm/builder/ExplicitModelBuilder.h"
+#include "storm/builder/ExplicitModelBuilder.h"
 
 #include <map>
 
-#include "src/storm/models/sparse/Dtmc.h"
-#include "src/storm/models/sparse/Ctmc.h"
-#include "src/storm/models/sparse/Mdp.h"
-#include "src/storm/models/sparse/MarkovAutomaton.h"
-#include "src/storm/models/sparse/StandardRewardModel.h"
+#include "storm/models/sparse/Dtmc.h"
+#include "storm/models/sparse/Ctmc.h"
+#include "storm/models/sparse/Mdp.h"
+#include "storm/models/sparse/MarkovAutomaton.h"
+#include "storm/models/sparse/StandardRewardModel.h"
 
-#include "src/storm/storage/expressions/ExpressionManager.h"
+#include "storm/storage/expressions/ExpressionManager.h"
 
-#include "src/storm/settings/modules/CoreSettings.h"
-#include "src/storm/settings/modules/IOSettings.h"
+#include "storm/settings/modules/CoreSettings.h"
+#include "storm/settings/modules/IOSettings.h"
 
-#include "src/storm/builder/RewardModelBuilder.h"
+#include "storm/builder/RewardModelBuilder.h"
 
-#include "src/storm/generator/PrismNextStateGenerator.h"
-#include "src/storm/generator/JaniNextStateGenerator.h"
+#include "storm/generator/PrismNextStateGenerator.h"
+#include "storm/generator/JaniNextStateGenerator.h"
 
-#include "src/storm/utility/prism.h"
-#include "src/storm/utility/constants.h"
-#include "src/storm/utility/macros.h"
-#include "src/storm/utility/ConstantsComparator.h"
-#include "src/storm/exceptions/WrongFormatException.h"
+#include "storm/utility/prism.h"
+#include "storm/utility/constants.h"
+#include "storm/utility/macros.h"
+#include "storm/utility/ConstantsComparator.h"
+#include "storm/exceptions/WrongFormatException.h"
 
-#include "src/storm/exceptions/InvalidArgumentException.h"
-#include "src/storm/exceptions/InvalidOperationException.h"
+#include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/InvalidOperationException.h"
 
 namespace storm {
     namespace builder {

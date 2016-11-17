@@ -1,4 +1,4 @@
-#include "src/storm/storage/StateBlock.h"
+#include "storm/storage/StateBlock.h"
 
 namespace storm {
     namespace storage {

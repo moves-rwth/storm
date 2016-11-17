@@ -1,32 +1,32 @@
-#include "src/storm/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
+#include "storm/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 
-#include "src/storm/utility/constants.h"
-#include "src/storm/utility/macros.h"
-#include "src/storm/utility/vector.h"
-#include "src/storm/utility/graph.h"
+#include "storm/utility/constants.h"
+#include "storm/utility/macros.h"
+#include "storm/utility/vector.h"
+#include "storm/utility/graph.h"
 
-#include "src/storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
-#include "src/storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
+#include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 
-#include "src/storm/logic/FragmentSpecification.h"
+#include "storm/logic/FragmentSpecification.h"
 
-#include "src/storm/models/sparse/StandardRewardModel.h"
+#include "storm/models/sparse/StandardRewardModel.h"
 
-#include "src/storm/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
+#include "storm/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
 
-#include "src/storm/modelchecker/multiobjective/pcaa.h"
+#include "storm/modelchecker/multiobjective/pcaa.h"
 
-#include "src/storm/solver/LpSolver.h"
+#include "storm/solver/LpSolver.h"
 
-#include "src/storm/settings/modules/GeneralSettings.h"
+#include "storm/settings/modules/GeneralSettings.h"
 
-#include "src/storm/exceptions/InvalidStateException.h"
-#include "src/storm/exceptions/InvalidPropertyException.h"
-#include "src/storm/storage/expressions/Expressions.h"
+#include "storm/exceptions/InvalidStateException.h"
+#include "storm/exceptions/InvalidPropertyException.h"
+#include "storm/storage/expressions/Expressions.h"
 
-#include "src/storm/storage/MaximalEndComponentDecomposition.h"
+#include "storm/storage/MaximalEndComponentDecomposition.h"
 
-#include "src/storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 
 namespace storm {
     namespace modelchecker {

@@ -1,8 +1,8 @@
 
 #include "LpSolver.h"
 
-#include "src/storm/storage/expressions/Expression.h"
-#include "src/storm/storage/expressions/ExpressionManager.h"
+#include "storm/storage/expressions/Expression.h"
+#include "storm/storage/expressions/ExpressionManager.h"
 
 
 

@@ -1,19 +1,19 @@
-#include "src/storm/solver/TopologicalMinMaxLinearEquationSolver.h"
+#include "storm/solver/TopologicalMinMaxLinearEquationSolver.h"
 
 #include <utility>
-#include "src/storm/utility/vector.h"
-#include "src/storm/utility/graph.h"
-#include "src/storm/storage/StronglyConnectedComponentDecomposition.h"
-#include "src/storm/exceptions/IllegalArgumentException.h"
-#include "src/storm/exceptions/InvalidStateException.h"
+#include "storm/utility/vector.h"
+#include "storm/utility/graph.h"
+#include "storm/storage/StronglyConnectedComponentDecomposition.h"
+#include "storm/exceptions/IllegalArgumentException.h"
+#include "storm/exceptions/InvalidStateException.h"
 
 
-#include "src/storm/settings/SettingsManager.h"
-#include "src/storm/settings/modules/CoreSettings.h"
-#include "src/storm/settings/modules/NativeEquationSolverSettings.h"
-#include "src/storm/settings/modules/TopologicalValueIterationEquationSolverSettings.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/CoreSettings.h"
+#include "storm/settings/modules/NativeEquationSolverSettings.h"
+#include "storm/settings/modules/TopologicalValueIterationEquationSolverSettings.h"
 
-#include "src/storm/utility/macros.h"
+#include "storm/utility/macros.h"
 #include "storm-config.h"
 #ifdef STORM_HAVE_CUDA
 #	include "cudaForStorm.h"

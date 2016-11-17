@@ -1,10 +1,10 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
-#include "src/storm/models/sparse/StandardRewardModel.h"
-#include "src/storm/parser/AutoParser.h"
-#include "src/storm/exceptions/FileIoException.h"
-#include "src/storm/exceptions/WrongFormatException.h"
+#include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/parser/AutoParser.h"
+#include "storm/exceptions/FileIoException.h"
+#include "storm/exceptions/WrongFormatException.h"
 
 TEST(AutoParserTest, NonExistingFile) {
     // No matter what happens, please do NOT create a file with the name "nonExistingFile.not"!

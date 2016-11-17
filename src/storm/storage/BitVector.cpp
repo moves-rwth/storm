@@ -2,13 +2,13 @@
 #include <iostream>
 #include <algorithm>
 
-#include "src/storm/storage/BitVector.h"
-#include "src/storm/exceptions/InvalidArgumentException.h"
-#include "src/storm/exceptions/OutOfRangeException.h"
+#include "storm/storage/BitVector.h"
+#include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/OutOfRangeException.h"
 
-#include "src/storm/utility/OsDetection.h"
-#include "src/storm/utility/Hash.h"
-#include "src/storm/utility/macros.h"
+#include "storm/utility/OsDetection.h"
+#include "storm/utility/Hash.h"
+#include "storm/utility/macros.h"
 
 #include <bitset>
 

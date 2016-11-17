@@ -1,10 +1,10 @@
-#include "src/storm/storage/expressions/ExprtkExpressionEvaluator.h"
-#include "src/storm/storage/expressions/ExpressionManager.h"
+#include "storm/storage/expressions/ExprtkExpressionEvaluator.h"
+#include "storm/storage/expressions/ExpressionManager.h"
 
-#include "src/storm/adapters/CarlAdapter.h"
+#include "storm/adapters/CarlAdapter.h"
 
-#include "src/storm/utility/macros.h"
-#include "src/storm/exceptions/UnexpectedException.h"
+#include "storm/utility/macros.h"
+#include "storm/exceptions/UnexpectedException.h"
 
 namespace storm {
     namespace expressions {

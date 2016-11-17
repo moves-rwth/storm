@@ -2,7 +2,7 @@
 #define	ALLOWEARLYTERMINATIONCONDITION_H
 
 #include <vector>
-#include "src/storm/storage/BitVector.h"
+#include "storm/storage/BitVector.h"
 
 
 namespace storm {

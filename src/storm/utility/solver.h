@@ -5,11 +5,11 @@
 #include <vector>
 #include <memory>
 
-#include "src/storm/adapters/CarlAdapter.h"
+#include "storm/adapters/CarlAdapter.h"
 
-#include "src/storm/storage/sparse/StateType.h"
-#include "src/storm/storage/dd/DdType.h"
-#include "src/storm/solver/SolverSelectionOptions.h"
+#include "storm/storage/sparse/StateType.h"
+#include "storm/storage/dd/DdType.h"
+#include "storm/solver/SolverSelectionOptions.h"
 
 namespace storm {
     namespace solver {

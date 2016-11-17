@@ -3,8 +3,8 @@
 
 #include <stack>
 
-#include "src/storm/storage/expressions/Expression.h"
-#include "src/storm/storage/expressions/ExpressionVisitor.h"
+#include "storm/storage/expressions/Expression.h"
+#include "storm/storage/expressions/ExpressionVisitor.h"
 
 namespace storm {
     namespace expressions {

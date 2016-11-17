@@ -5,7 +5,7 @@
 #include <string>
 #include <cstdint>
 
-#include "src/storm/settings/ArgumentType.h"
+#include "storm/settings/ArgumentType.h"
 
 namespace storm {
 	namespace settings {

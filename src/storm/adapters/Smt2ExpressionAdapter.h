@@ -4,14 +4,14 @@
 #include <unordered_map>
 
 #include "storm-config.h"
-#include "src/storm/adapters/CarlAdapter.h"
-#include "src/storm/storage/expressions/Expressions.h"
-#include "src/storm/storage/expressions/ExpressionManager.h"
-#include "src/storm/utility/macros.h"
-#include "src/storm/exceptions/ExpressionEvaluationException.h"
-#include "src/storm/exceptions/InvalidTypeException.h"
-#include "src/storm/exceptions/InvalidArgumentException.h"
-#include "src/storm/exceptions/NotImplementedException.h"
+#include "storm/adapters/CarlAdapter.h"
+#include "storm/storage/expressions/Expressions.h"
+#include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/utility/macros.h"
+#include "storm/exceptions/ExpressionEvaluationException.h"
+#include "storm/exceptions/InvalidTypeException.h"
+#include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/NotImplementedException.h"
 
 namespace storm {
     namespace adapters {

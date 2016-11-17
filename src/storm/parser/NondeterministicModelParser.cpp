@@ -1,17 +1,17 @@
-#include "src/storm/parser/NondeterministicModelParser.h"
+#include "storm/parser/NondeterministicModelParser.h"
 
 #include <string>
 #include <vector>
 
-#include "src/storm/models/sparse/StandardRewardModel.h"
+#include "storm/models/sparse/StandardRewardModel.h"
 
-#include "src/storm/parser/NondeterministicSparseTransitionParser.h"
-#include "src/storm/parser/AtomicPropositionLabelingParser.h"
-#include "src/storm/parser/SparseStateRewardParser.h"
-#include "src/storm/parser/SparseChoiceLabelingParser.h"
+#include "storm/parser/NondeterministicSparseTransitionParser.h"
+#include "storm/parser/AtomicPropositionLabelingParser.h"
+#include "storm/parser/SparseStateRewardParser.h"
+#include "storm/parser/SparseChoiceLabelingParser.h"
 
-#include "src/storm/adapters/CarlAdapter.h"
-#include "src/storm/utility/macros.h"
+#include "storm/adapters/CarlAdapter.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
     namespace parser {

@@ -1,8 +1,8 @@
 #ifndef STORM_PARSER_MARKOVAUTOMATONSPARSETRANSITIONPARSER_H_
 #define STORM_PARSER_MARKOVAUTOMATONSPARSETRANSITIONPARSER_H_
 
-#include "src/storm/storage/SparseMatrix.h"
-#include "src/storm/storage/BitVector.h"
+#include "storm/storage/SparseMatrix.h"
+#include "storm/storage/BitVector.h"
 
 namespace storm {
     namespace parser {

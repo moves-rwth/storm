@@ -1,9 +1,9 @@
 #ifndef STORM_LOGIC_EXPECTEDTIMEOPERATORFORMULA_H_
 #define STORM_LOGIC_EXPECTEDTIMEOPERATORFORMULA_H_
 
-#include "src/storm/logic/OperatorFormula.h"
-#include "src/storm/logic/FormulaVisitor.h"
-#include "src/storm/logic/RewardMeasureType.h"
+#include "storm/logic/OperatorFormula.h"
+#include "storm/logic/FormulaVisitor.h"
+#include "storm/logic/RewardMeasureType.h"
 
 namespace storm {
     namespace logic {

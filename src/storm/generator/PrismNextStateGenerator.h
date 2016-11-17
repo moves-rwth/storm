@@ -1,9 +1,9 @@
 #ifndef STORM_GENERATOR_PRISMNEXTSTATEGENERATOR_H_
 #define STORM_GENERATOR_PRISMNEXTSTATEGENERATOR_H_
 
-#include "src/storm/generator/NextStateGenerator.h"
+#include "storm/generator/NextStateGenerator.h"
 
-#include "src/storm/storage/prism/Program.h"
+#include "storm/storage/prism/Program.h"
 
 namespace storm {
     namespace generator {

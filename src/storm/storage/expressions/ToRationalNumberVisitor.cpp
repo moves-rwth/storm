@@ -1,9 +1,9 @@
-#include "src/storm/storage/expressions/ToRationalNumberVisitor.h"
+#include "storm/storage/expressions/ToRationalNumberVisitor.h"
 
-#include "src/storm/utility/macros.h"
-#include "src/storm/utility/constants.h"
-#include "src/storm/exceptions/InvalidArgumentException.h"
-#include "src/storm/exceptions/NotSupportedException.h"
+#include "storm/utility/macros.h"
+#include "storm/utility/constants.h"
+#include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/NotSupportedException.h"
 
 namespace storm {
     namespace expressions {

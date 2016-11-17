@@ -1,7 +1,7 @@
 #ifndef STORM_UTILITY_MACROS_H_
 #define STORM_UTILITY_MACROS_H_
 
-#include "src/storm/utility/logging.h"
+#include "storm/utility/logging.h"
 
 #include <iostream>
 #include <cassert>

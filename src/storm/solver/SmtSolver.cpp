@@ -1,7 +1,7 @@
-#include "src/storm/solver/SmtSolver.h"
+#include "storm/solver/SmtSolver.h"
 
-#include "src/storm/utility/macros.h"
-#include "src/storm/exceptions/NotSupportedException.h"
+#include "storm/utility/macros.h"
+#include "storm/exceptions/NotSupportedException.h"
 
 namespace storm {
 	namespace solver {

@@ -2,9 +2,9 @@
 
 #include <memory>
 
-#include "src/storm/utility/eigen.h"
+#include "storm/utility/eigen.h"
 
-#include "src/storm/storage/SparseMatrix.h"
+#include "storm/storage/SparseMatrix.h"
 
 namespace storm {
     namespace adapters {

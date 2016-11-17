@@ -1,7 +1,7 @@
 #ifndef STORM_PARSER_SPARSECHOICELABELINGPARSER_H_
 #define	STORM_PARSER_SPARSECHOICELABELINGPARSER_H_
 
-#include "src/storm/models/sparse/Model.h"
+#include "storm/models/sparse/Model.h"
 
 namespace storm {
     namespace parser {

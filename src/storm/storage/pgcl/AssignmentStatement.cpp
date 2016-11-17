@@ -1,4 +1,4 @@
-#include "src/storm/storage/pgcl/AssignmentStatement.h"
+#include "storm/storage/pgcl/AssignmentStatement.h"
 
 namespace storm {
     namespace pgcl {

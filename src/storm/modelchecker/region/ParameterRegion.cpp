@@ -1,12 +1,12 @@
-#include "src/storm/modelchecker/region/ParameterRegion.h"
+#include "storm/modelchecker/region/ParameterRegion.h"
 
-#include "src/storm/utility/region.h"
-#include "src/storm/utility/macros.h"
-#include "src/storm/parser/MappedFile.h"
-#include "src/storm/settings/SettingsManager.h"
-#include "src/storm/settings/modules/RegionSettings.h"
-#include "src/storm/exceptions/InvalidSettingsException.h"
-#include "src/storm/exceptions/InvalidArgumentException.h"
+#include "storm/utility/region.h"
+#include "storm/utility/macros.h"
+#include "storm/parser/MappedFile.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/RegionSettings.h"
+#include "storm/exceptions/InvalidSettingsException.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 #include "utility/constants.h"
 
 namespace storm {

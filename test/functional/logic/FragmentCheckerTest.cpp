@@ -1,9 +1,9 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
-#include "src/storm/parser/FormulaParser.h"
-#include "src/storm/logic/FragmentChecker.h"
-#include "src/storm/exceptions/WrongFormatException.h"
-#include "src/storm/storage/expressions/ExpressionManager.h"
+#include "storm/parser/FormulaParser.h"
+#include "storm/logic/FragmentChecker.h"
+#include "storm/exceptions/WrongFormatException.h"
+#include "storm/storage/expressions/ExpressionManager.h"
 
 TEST(FragmentCheckerTest, Propositional) {
     auto expManager = std::make_shared<storm::expressions::ExpressionManager>();

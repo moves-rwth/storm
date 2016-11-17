@@ -1,4 +1,4 @@
-#include "src/storm/storage/jani/Constant.h"
+#include "storm/storage/jani/Constant.h"
 
 namespace storm {
     namespace jani {

@@ -1,16 +1,16 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
-#include "src/storm/parser/FormulaParser.h"
-#include "src/storm/logic/Formulas.h"
-#include "src/storm/models/sparse/StandardRewardModel.h"
-#include "src/storm/modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
-#include "src/storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
-#include "src/storm/settings/SettingsManager.h"
+#include "storm/parser/FormulaParser.h"
+#include "storm/logic/Formulas.h"
+#include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
+#include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "storm/settings/SettingsManager.h"
 
-#include "src/storm/settings/modules/GeneralSettings.h"
-#include "src/storm/settings/SettingMemento.h"
-#include "src/storm/parser/AutoParser.h"
+#include "storm/settings/modules/GeneralSettings.h"
+#include "storm/settings/SettingMemento.h"
+#include "storm/parser/AutoParser.h"
 
 TEST(SparseDtmcEliminationModelCheckerTest, Die) {
     std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser<>::parseModel(STORM_CPP_BASE_PATH "/examples/dtmc/die/die.tra", STORM_CPP_BASE_PATH "/examples/dtmc/die/die.lab", "", STORM_CPP_BASE_PATH "/examples/dtmc/die/die.coin_flips.trans.rew");

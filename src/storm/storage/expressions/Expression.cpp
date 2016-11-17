@@ -1,15 +1,15 @@
 #include <map>
 #include <unordered_map>
 
-#include "src/storm/storage/expressions/Expression.h"
-#include "src/storm/storage/expressions/ExpressionManager.h"
-#include "src/storm/storage/expressions/SubstitutionVisitor.h"
-#include "src/storm/storage/expressions/LinearityCheckVisitor.h"
-#include "src/storm/storage/expressions/SyntacticalEqualityCheckVisitor.h"
-#include "src/storm/storage/expressions/Expressions.h"
-#include "src/storm/exceptions/InvalidTypeException.h"
-#include "src/storm/exceptions/InvalidArgumentException.h"
-#include "src/storm/utility/macros.h"
+#include "storm/storage/expressions/Expression.h"
+#include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/storage/expressions/SubstitutionVisitor.h"
+#include "storm/storage/expressions/LinearityCheckVisitor.h"
+#include "storm/storage/expressions/SyntacticalEqualityCheckVisitor.h"
+#include "storm/storage/expressions/Expressions.h"
+#include "storm/exceptions/InvalidTypeException.h"
+#include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
     namespace expressions {

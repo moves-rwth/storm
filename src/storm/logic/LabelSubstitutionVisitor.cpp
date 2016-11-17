@@ -1,6 +1,6 @@
-#include "src/storm/logic/LabelSubstitutionVisitor.h"
+#include "storm/logic/LabelSubstitutionVisitor.h"
 
-#include "src/storm/logic/Formulas.h"
+#include "storm/logic/Formulas.h"
 
 namespace storm {
     namespace logic {

@@ -2,16 +2,16 @@
 #include "storm-config.h"
 
 #ifdef STORM_HAVE_GLPK
-#include "src/storm/storage/expressions/Variable.h"
-#include "src/storm/solver/GlpkLpSolver.h"
-#include "src/storm/exceptions/InvalidStateException.h"
-#include "src/storm/exceptions/InvalidAccessException.h"
-#include "src/storm/settings/SettingsManager.h"
+#include "storm/storage/expressions/Variable.h"
+#include "storm/solver/GlpkLpSolver.h"
+#include "storm/exceptions/InvalidStateException.h"
+#include "storm/exceptions/InvalidAccessException.h"
+#include "storm/settings/SettingsManager.h"
 
-#include "src/storm/settings/modules/GeneralSettings.h"
+#include "storm/settings/modules/GeneralSettings.h"
 
-#include "src/storm/storage/expressions/Expressions.h"
-#include "src/storm/solver/OptimizationDirection.h"
+#include "storm/storage/expressions/Expressions.h"
+#include "storm/solver/OptimizationDirection.h"
 
 #include <cmath>
 

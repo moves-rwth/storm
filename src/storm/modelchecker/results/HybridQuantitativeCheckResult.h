@@ -1,12 +1,12 @@
 #ifndef STORM_MODELCHECKER_HYBRIDQUANTITATIVECHECKRESULT_H_
 #define STORM_MODELCHECKER_HYBRIDQUANTITATIVECHECKRESULT_H_
 
-#include "src/storm/storage/dd/DdType.h"
-#include "src/storm/storage/dd/Add.h"
-#include "src/storm/storage/dd/Bdd.h"
-#include "src/storm/storage/dd/Odd.h"
-#include "src/storm/modelchecker/results/QuantitativeCheckResult.h"
-#include "src/storm/utility/OsDetection.h"
+#include "storm/storage/dd/DdType.h"
+#include "storm/storage/dd/Add.h"
+#include "storm/storage/dd/Bdd.h"
+#include "storm/storage/dd/Odd.h"
+#include "storm/modelchecker/results/QuantitativeCheckResult.h"
+#include "storm/utility/OsDetection.h"
 
 namespace storm {
     namespace modelchecker {

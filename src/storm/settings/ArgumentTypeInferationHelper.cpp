@@ -1,4 +1,4 @@
-#include "src/storm/settings/ArgumentTypeInferationHelper.h"
+#include "storm/settings/ArgumentTypeInferationHelper.h"
 
 namespace storm {
     namespace settings {

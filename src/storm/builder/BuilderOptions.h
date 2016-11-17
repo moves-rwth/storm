@@ -7,7 +7,7 @@
 #include <boost/variant.hpp>
 #include <boost/optional.hpp>
 
-#include "src/storm/storage/expressions/Expression.h"
+#include "storm/storage/expressions/Expression.h"
 
 namespace storm {
     namespace expressions {

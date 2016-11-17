@@ -6,10 +6,10 @@
 #include <memory>
 #include <unordered_map>
 
-#include "src/storm/storage/gspn/ImmediateTransition.h"
-#include "src/storm/storage/gspn/Marking.h"
-#include "src/storm/storage/gspn/Place.h"
-#include "src/storm/storage/gspn/TimedTransition.h"
+#include "storm/storage/gspn/ImmediateTransition.h"
+#include "storm/storage/gspn/Marking.h"
+#include "storm/storage/gspn/Place.h"
+#include "storm/storage/gspn/TimedTransition.h"
 
 namespace storm {
     namespace gspn {

@@ -3,11 +3,11 @@
 
 #include <vector>
 
-#include "src/storm/solver/AbstractGameSolver.h"
-#include "src/storm/solver/TerminationCondition.h"
-#include "src/storm/solver/OptimizationDirection.h"
+#include "storm/solver/AbstractGameSolver.h"
+#include "storm/solver/TerminationCondition.h"
+#include "storm/solver/OptimizationDirection.h"
 
-#include "src/storm/storage/sparse/StateType.h"
+#include "storm/storage/sparse/StateType.h"
 
 namespace storm {
     namespace storage {

@@ -1,6 +1,6 @@
-#include "src/storm/parser/PgclParser.h"
+#include "storm/parser/PgclParser.h"
 // If the parser fails due to ill-formed data, this exception is thrown.
-#include "src/storm/exceptions/WrongFormatException.h"
+#include "storm/exceptions/WrongFormatException.h"
 
 namespace storm {
     namespace parser {

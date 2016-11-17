@@ -1,7 +1,7 @@
-#include "src/storm/models/sparse/DeterministicModel.h"
-#include "src/storm/models/sparse/StandardRewardModel.h"
-#include "src/storm/utility/constants.h"
-#include "src/storm/adapters/CarlAdapter.h"
+#include "storm/models/sparse/DeterministicModel.h"
+#include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/utility/constants.h"
+#include "storm/adapters/CarlAdapter.h"
 
 namespace storm {
     namespace models {

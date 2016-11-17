@@ -6,18 +6,18 @@
 
 #include <boost/variant.hpp>
 
-#include "src/storm/storage/expressions/Expression.h"
-#include "src/storm/storage/BitVectorHashMap.h"
-#include "src/storm/storage/expressions/ExpressionEvaluator.h"
+#include "storm/storage/expressions/Expression.h"
+#include "storm/storage/BitVectorHashMap.h"
+#include "storm/storage/expressions/ExpressionEvaluator.h"
 
-#include "src/storm/builder/BuilderOptions.h"
-#include "src/storm/builder/RewardModelInformation.h"
+#include "storm/builder/BuilderOptions.h"
+#include "storm/builder/RewardModelInformation.h"
 
-#include "src/storm/generator/VariableInformation.h"
-#include "src/storm/generator/CompressedState.h"
-#include "src/storm/generator/StateBehavior.h"
+#include "storm/generator/VariableInformation.h"
+#include "storm/generator/CompressedState.h"
+#include "storm/generator/StateBehavior.h"
 
-#include "src/storm/utility/ConstantsComparator.h"
+#include "storm/utility/ConstantsComparator.h"
 
 namespace storm {
     namespace generator {

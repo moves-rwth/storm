@@ -8,7 +8,7 @@
 #ifndef ERRORHANDLING_H
 #define	ERRORHANDLING_H
 
-#include "src/storm/utility/OsDetection.h"
+#include "storm/utility/OsDetection.h"
 #include <signal.h>
 
 

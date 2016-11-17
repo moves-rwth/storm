@@ -1,4 +1,4 @@
-#include "src/storm/models/ModelType.h"
+#include "storm/models/ModelType.h"
 
 namespace storm {
     namespace models {

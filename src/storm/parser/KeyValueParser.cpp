@@ -2,8 +2,8 @@
 #include <boost/algorithm/string.hpp>
 #include <vector>
 
-#include "src/storm/utility/macros.h"
-#include "src/storm/exceptions/InvalidArgumentException.h"
+#include "storm/utility/macros.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 
 namespace storm {
     namespace parser {

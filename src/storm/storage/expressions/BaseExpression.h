@@ -7,8 +7,8 @@
 #include <map>
 #include <iostream>
 
-#include "src/storm/storage/expressions/Type.h"
-#include "src/storm/utility/OsDetection.h"
+#include "storm/storage/expressions/Type.h"
+#include "storm/utility/OsDetection.h"
 #include <boost/any.hpp>
 
 namespace storm {

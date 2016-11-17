@@ -1,9 +1,9 @@
-#include "src/storm/solver/stateelimination/DynamicStatePriorityQueue.h"
+#include "storm/solver/stateelimination/DynamicStatePriorityQueue.h"
 
-#include "src/storm/adapters/CarlAdapter.h"
+#include "storm/adapters/CarlAdapter.h"
 
-#include "src/storm/utility/macros.h"
-#include "src/storm/utility/constants.h"
+#include "storm/utility/macros.h"
+#include "storm/utility/constants.h"
 
 namespace storm {
     namespace solver {

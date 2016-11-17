@@ -1,9 +1,9 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
-#include "src/storm/parser/AutoParser.h"
-#include "src/storm/storage/MaximalEndComponentDecomposition.h"
-#include "src/storm/models/sparse/MarkovAutomaton.h"
-#include "src/storm/models/sparse/StandardRewardModel.h"
+#include "storm/parser/AutoParser.h"
+#include "storm/storage/MaximalEndComponentDecomposition.h"
+#include "storm/models/sparse/MarkovAutomaton.h"
+#include "storm/models/sparse/StandardRewardModel.h"
 
 TEST(MaximalEndComponentDecomposition, FullSystem1) {
     std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser<>::parseModel(STORM_CPP_BASE_PATH "/examples/ma/tiny/tiny1.tra", STORM_CPP_BASE_PATH "/examples/ma/tiny/tiny1.lab", "", "");

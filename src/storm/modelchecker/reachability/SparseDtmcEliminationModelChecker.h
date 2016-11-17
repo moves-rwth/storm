@@ -1,13 +1,13 @@
 #ifndef STORM_MODELCHECKER_REACHABILITY_SPARSEDTMCELIMINATIONMODELCHECKER_H_
 #define STORM_MODELCHECKER_REACHABILITY_SPARSEDTMCELIMINATIONMODELCHECKER_H_
 
-#include "src/storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
+#include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 
-#include "src/storm/models/sparse/Dtmc.h"
+#include "storm/models/sparse/Dtmc.h"
 
-#include "src/storm/storage/sparse/StateType.h"
-#include "src/storm/storage/FlexibleSparseMatrix.h"
-#include "src/storm/solver/stateelimination/StatePriorityQueue.h"
+#include "storm/storage/sparse/StateType.h"
+#include "storm/storage/FlexibleSparseMatrix.h"
+#include "storm/solver/stateelimination/StatePriorityQueue.h"
 
 namespace storm {
     namespace modelchecker {

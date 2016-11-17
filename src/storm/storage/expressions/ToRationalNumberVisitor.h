@@ -1,10 +1,10 @@
 #pragma once
 
-#include "src/storm/adapters/CarlAdapter.h"
-#include "src/storm/storage/expressions/Expression.h"
-#include "src/storm/storage/expressions/Expressions.h"
-#include "src/storm/storage/expressions/ExpressionVisitor.h"
-#include "src/storm/storage/expressions/Variable.h"
+#include "storm/adapters/CarlAdapter.h"
+#include "storm/storage/expressions/Expression.h"
+#include "storm/storage/expressions/Expressions.h"
+#include "storm/storage/expressions/ExpressionVisitor.h"
+#include "storm/storage/expressions/Variable.h"
 
 namespace storm {
     namespace expressions {

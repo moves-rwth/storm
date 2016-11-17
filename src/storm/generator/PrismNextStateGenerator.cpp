@@ -1,17 +1,17 @@
-#include "src/storm/generator/PrismNextStateGenerator.h"
+#include "storm/generator/PrismNextStateGenerator.h"
 
 #include <boost/container/flat_map.hpp>
 
-#include "src/storm/models/sparse/StateLabeling.h"
+#include "storm/models/sparse/StateLabeling.h"
 
-#include "src/storm/storage/expressions/SimpleValuation.h"
+#include "storm/storage/expressions/SimpleValuation.h"
 
-#include "src/storm/solver/SmtSolver.h"
+#include "storm/solver/SmtSolver.h"
 
-#include "src/storm/utility/constants.h"
-#include "src/storm/utility/macros.h"
-#include "src/storm/exceptions/InvalidArgumentException.h"
-#include "src/storm/exceptions/WrongFormatException.h"
+#include "storm/utility/constants.h"
+#include "storm/utility/macros.h"
+#include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/WrongFormatException.h"
 
 namespace storm {
     namespace generator {

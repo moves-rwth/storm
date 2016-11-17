@@ -5,7 +5,7 @@
  * Created on 11. April 2015, 17:41
  */
 
-#include "src/storm/storage/pgcl/CompoundStatement.h"
+#include "storm/storage/pgcl/CompoundStatement.h"
 
 namespace storm {
     namespace pgcl {

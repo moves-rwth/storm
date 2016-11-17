@@ -2,9 +2,9 @@
 
 #include <cstdint>
 
-#include "src/storm/storage/expressions/Expression.h"
+#include "storm/storage/expressions/Expression.h"
 
-#include "src/storm/storage/jani/OrderedAssignments.h"
+#include "storm/storage/jani/OrderedAssignments.h"
 
 namespace storm {
     namespace jani {

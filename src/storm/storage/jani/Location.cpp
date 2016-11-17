@@ -1,8 +1,8 @@
-#include "src/storm/storage/jani/Location.h"
+#include "storm/storage/jani/Location.h"
 
-#include "src/storm/utility/macros.h"
-#include "src/storm/exceptions/InvalidJaniException.h"
-#include "src/storm/exceptions/InvalidArgumentException.h"
+#include "storm/utility/macros.h"
+#include "storm/exceptions/InvalidJaniException.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 
 namespace storm {
     namespace jani {

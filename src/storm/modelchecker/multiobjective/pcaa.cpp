@@ -1,18 +1,18 @@
-#include "src/storm/modelchecker/multiobjective/pcaa.h"
+#include "storm/modelchecker/multiobjective/pcaa.h"
 
-#include "src/storm/utility/macros.h"
+#include "storm/utility/macros.h"
 
-#include "src/storm/models/sparse/Mdp.h"
-#include "src/storm/models/sparse/MarkovAutomaton.h"
-#include "src/storm/models/sparse/StandardRewardModel.h"
-#include "src/storm/modelchecker/multiobjective/pcaa/SparsePcaaPreprocessor.h"
-#include "src/storm/modelchecker/multiobjective/pcaa/SparsePcaaAchievabilityQuery.h"
-#include "src/storm/modelchecker/multiobjective/pcaa/SparsePcaaQuantitativeQuery.h"
-#include "src/storm/modelchecker/multiobjective/pcaa/SparsePcaaParetoQuery.h"
-#include "src/storm/settings//SettingsManager.h"
-#include "src/storm/settings/modules/MultiObjectiveSettings.h"
+#include "storm/models/sparse/Mdp.h"
+#include "storm/models/sparse/MarkovAutomaton.h"
+#include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/modelchecker/multiobjective/pcaa/SparsePcaaPreprocessor.h"
+#include "storm/modelchecker/multiobjective/pcaa/SparsePcaaAchievabilityQuery.h"
+#include "storm/modelchecker/multiobjective/pcaa/SparsePcaaQuantitativeQuery.h"
+#include "storm/modelchecker/multiobjective/pcaa/SparsePcaaParetoQuery.h"
+#include "storm/settings//SettingsManager.h"
+#include "storm/settings/modules/MultiObjectiveSettings.h"
 
-#include "src/storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 
 
 namespace storm {

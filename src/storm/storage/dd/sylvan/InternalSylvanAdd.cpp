@@ -1,14 +1,14 @@
-#include "src/storm/storage/dd/sylvan/InternalSylvanAdd.h"
+#include "storm/storage/dd/sylvan/InternalSylvanAdd.h"
 
-#include "src/storm/storage/dd/sylvan/SylvanAddIterator.h"
-#include "src/storm/storage/dd/sylvan/InternalSylvanDdManager.h"
-#include "src/storm/storage/dd/DdManager.h"
+#include "storm/storage/dd/sylvan/SylvanAddIterator.h"
+#include "storm/storage/dd/sylvan/InternalSylvanDdManager.h"
+#include "storm/storage/dd/DdManager.h"
 
-#include "src/storm/storage/SparseMatrix.h"
+#include "storm/storage/SparseMatrix.h"
 
-#include "src/storm/utility/macros.h"
-#include "src/storm/utility/constants.h"
-#include "src/storm/exceptions/NotImplementedException.h"
+#include "storm/utility/macros.h"
+#include "storm/utility/constants.h"
+#include "storm/exceptions/NotImplementedException.h"
 
 namespace storm {
     namespace dd {

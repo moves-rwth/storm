@@ -4,12 +4,12 @@
 #include <set>
 #include <vector>
 
-#include "src/storm/solver/AbstractGameSolver.h"
-#include "src/storm/solver/OptimizationDirection.h"
+#include "storm/solver/AbstractGameSolver.h"
+#include "storm/solver/OptimizationDirection.h"
 
-#include "src/storm/storage/expressions/Variable.h"
-#include "src/storm/storage/dd/Bdd.h"
-#include "src/storm/storage/dd/Add.h"
+#include "storm/storage/expressions/Variable.h"
+#include "storm/storage/dd/Bdd.h"
+#include "storm/storage/dd/Add.h"
 
 namespace storm {
     namespace solver {

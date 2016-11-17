@@ -2,8 +2,8 @@
 #define STORM_SOLVER_GLPKLPSOLVER_H_
 
 #include <map>
-#include "src/storm/solver/LpSolver.h"
-#include "src/storm/exceptions/NotImplementedException.h"
+#include "storm/solver/LpSolver.h"
+#include "storm/exceptions/NotImplementedException.h"
 
 // To detect whether the usage of glpk is possible, this include is neccessary.
 #include "storm-config.h"

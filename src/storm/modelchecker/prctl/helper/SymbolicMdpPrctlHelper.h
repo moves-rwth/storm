@@ -1,13 +1,13 @@
 #ifndef STORM_MODELCHECKER_SYMBOLIC_MDP_PRCTL_MODELCHECKER_HELPER_H_
 #define STORM_MODELCHECKER_SYMBOLIC_MDP_PRCTL_MODELCHECKER_HELPER_H_
 
-#include "src/storm/models/symbolic/NondeterministicModel.h"
+#include "storm/models/symbolic/NondeterministicModel.h"
 
-#include "src/storm/storage/dd/Add.h"
-#include "src/storm/storage/dd/Bdd.h"
+#include "storm/storage/dd/Add.h"
+#include "storm/storage/dd/Bdd.h"
 
-#include "src/storm/utility/solver.h"
-#include "src/storm/solver/SolveGoal.h"
+#include "storm/utility/solver.h"
+#include "storm/solver/SolveGoal.h"
 
 namespace storm {
     namespace modelchecker {

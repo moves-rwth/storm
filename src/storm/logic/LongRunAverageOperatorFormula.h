@@ -1,7 +1,7 @@
 #ifndef STORM_LOGIC_LONGRUNAVERAGEOPERATORFORMULA_H_
 #define STORM_LOGIC_LONGRUNAVERAGEOPERATORFORMULA_H_
 
-#include "src/storm/logic/OperatorFormula.h"
+#include "storm/logic/OperatorFormula.h"
 
 namespace storm {
     namespace logic {

@@ -5,9 +5,9 @@
 #include <fstream>
 
 #include "storm-config.h"
-#include "src/storm/solver/SmtSolver.h"
-#include "src/storm/adapters/Smt2ExpressionAdapter.h"
-#include "src/storm/adapters/CarlAdapter.h"
+#include "storm/solver/SmtSolver.h"
+#include "storm/adapters/Smt2ExpressionAdapter.h"
+#include "storm/adapters/CarlAdapter.h"
 
 namespace storm {
     namespace solver {

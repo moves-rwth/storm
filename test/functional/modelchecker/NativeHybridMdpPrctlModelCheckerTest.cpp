@@ -1,23 +1,23 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
-#include "src/storm/logic/Formulas.h"
-#include "src/storm/solver/StandardMinMaxLinearEquationSolver.h"
-#include "src/storm/modelchecker/prctl/HybridMdpPrctlModelChecker.h"
-#include "src/storm/modelchecker/results/HybridQuantitativeCheckResult.h"
-#include "src/storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
-#include "src/storm/modelchecker/results/SymbolicQuantitativeCheckResult.h"
-#include "src/storm/storage/SymbolicModelDescription.h"
-#include "src/storm/parser/FormulaParser.h"
-#include "src/storm/parser/PrismParser.h"
-#include "src/storm/builder/DdPrismModelBuilder.h"
-#include "src/storm/models/symbolic/Mdp.h"
-#include "src/storm/models/symbolic/StandardRewardModel.h"
-#include "src/storm/settings/SettingsManager.h"
+#include "storm/logic/Formulas.h"
+#include "storm/solver/StandardMinMaxLinearEquationSolver.h"
+#include "storm/modelchecker/prctl/HybridMdpPrctlModelChecker.h"
+#include "storm/modelchecker/results/HybridQuantitativeCheckResult.h"
+#include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
+#include "storm/modelchecker/results/SymbolicQuantitativeCheckResult.h"
+#include "storm/storage/SymbolicModelDescription.h"
+#include "storm/parser/FormulaParser.h"
+#include "storm/parser/PrismParser.h"
+#include "storm/builder/DdPrismModelBuilder.h"
+#include "storm/models/symbolic/Mdp.h"
+#include "storm/models/symbolic/StandardRewardModel.h"
+#include "storm/settings/SettingsManager.h"
 
-#include "src/storm/settings/modules/GeneralSettings.h"
+#include "storm/settings/modules/GeneralSettings.h"
 
-#include "src/storm/settings/modules/NativeEquationSolverSettings.h"
+#include "storm/settings/modules/NativeEquationSolverSettings.h"
 
 TEST(NativeHybridMdpPrctlModelCheckerTest, Dice_Cudd) {
     storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/two_dice.nm");

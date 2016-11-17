@@ -5,7 +5,7 @@
 #include <memory>
 #include <cstdint>
 
-#include "src/storm/storage/expressions/OperatorType.h"
+#include "storm/storage/expressions/OperatorType.h"
 
 namespace storm {
     namespace expressions {

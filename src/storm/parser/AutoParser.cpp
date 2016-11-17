@@ -1,19 +1,19 @@
-#include "src/storm/parser/AutoParser.h"
+#include "storm/parser/AutoParser.h"
 
-#include "src/storm/models/sparse/StandardRewardModel.h"
+#include "storm/models/sparse/StandardRewardModel.h"
 
-#include "src/storm/parser/MappedFile.h"
+#include "storm/parser/MappedFile.h"
 
-#include "src/storm/parser/DeterministicModelParser.h"
-#include "src/storm/parser/NondeterministicModelParser.h"
-#include "src/storm/parser/MarkovAutomatonParser.h"
-#include "src/storm/utility/macros.h"
-#include "src/storm/exceptions/WrongFormatException.h"
+#include "storm/parser/DeterministicModelParser.h"
+#include "storm/parser/NondeterministicModelParser.h"
+#include "storm/parser/MarkovAutomatonParser.h"
+#include "storm/utility/macros.h"
+#include "storm/exceptions/WrongFormatException.h"
 
-#include "src/storm/adapters/CarlAdapter.h"
+#include "storm/adapters/CarlAdapter.h"
 
-#include "src/storm/utility/cstring.h"
-#include "src/storm/utility/OsDetection.h"
+#include "storm/utility/cstring.h"
+#include "storm/utility/OsDetection.h"
 
 namespace storm {
     namespace parser {

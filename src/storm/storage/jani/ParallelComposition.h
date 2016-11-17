@@ -7,7 +7,7 @@
 
 #include <boost/optional.hpp>
 
-#include "src/storm/storage/jani/Composition.h"
+#include "storm/storage/jani/Composition.h"
 
 namespace storm {
     namespace jani {

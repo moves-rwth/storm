@@ -1,10 +1,10 @@
-#include "src/storm/storage/expressions/LinearityCheckVisitor.h"
+#include "storm/storage/expressions/LinearityCheckVisitor.h"
 
-#include "src/storm/storage/expressions/Expressions.h"
+#include "storm/storage/expressions/Expressions.h"
 
-#include "src/storm/utility/macros.h"
-#include "src/storm/exceptions/InvalidTypeException.h"
-#include "src/storm/exceptions/InvalidOperationException.h"
+#include "storm/utility/macros.h"
+#include "storm/exceptions/InvalidTypeException.h"
+#include "storm/exceptions/InvalidOperationException.h"
 
 namespace storm {
     namespace expressions {

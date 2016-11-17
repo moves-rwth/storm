@@ -5,7 +5,7 @@
 #include <memory>
 #include <boost/optional.hpp>
 
-#include "src/storm/storage/geometry/Halfspace.h"
+#include "storm/storage/geometry/Halfspace.h"
 
 namespace storm {
     namespace storage {

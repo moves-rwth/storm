@@ -1,33 +1,33 @@
-#include "src/storm/builder/ExplicitGspnModelBuilder.h"
-#include "src/storm/exceptions/BaseException.h"
-#include "src/storm/exceptions/WrongFormatException.h"
-#include "src/storm/parser/GspnParser.h"
-#include "src/storm/storage/gspn/GSPN.h"
-#include "src/storm/storage/gspn/GspnBuilder.h"
-#include "src/storm/utility/macros.h"
-#include "src/storm/utility/initialize.h"
+#include "storm/builder/ExplicitGspnModelBuilder.h"
+#include "storm/exceptions/BaseException.h"
+#include "storm/exceptions/WrongFormatException.h"
+#include "storm/parser/GspnParser.h"
+#include "storm/storage/gspn/GSPN.h"
+#include "storm/storage/gspn/GspnBuilder.h"
+#include "storm/utility/macros.h"
+#include "storm/utility/initialize.h"
 
 #include "utility/storm.h"
-#include "src/storm/cli/cli.h"
+#include "storm/cli/cli.h"
 
-#include "src/storm/storage/expressions/ExpressionManager.h"
-#include "src/storm/storage/jani/Model.h"
-#include "src/storm/storage/jani/JSONExporter.h"
-#include "src/storm/builder/JaniGSPNBuilder.h"
+#include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/storage/jani/Model.h"
+#include "storm/storage/jani/JSONExporter.h"
+#include "storm/builder/JaniGSPNBuilder.h"
 #include <fstream>
 #include <iostream>
 #include <string>
 
 #include <boost/algorithm/string.hpp>
 
-#include "src/storm/exceptions/FileIoException.h"
+#include "storm/exceptions/FileIoException.h"
 
-#include "src/storm/settings/modules/GeneralSettings.h"
-#include "src/storm/settings/modules/GSPNSettings.h"
-#include "src/storm/settings/modules/GSPNExportSettings.h"
-#include "src/storm/settings/modules/CoreSettings.h"
-#include "src/storm/settings/modules/DebugSettings.h"
-#include "src/storm/settings/modules/JaniExportSettings.h"
+#include "storm/settings/modules/GeneralSettings.h"
+#include "storm/settings/modules/GSPNSettings.h"
+#include "storm/settings/modules/GSPNExportSettings.h"
+#include "storm/settings/modules/CoreSettings.h"
+#include "storm/settings/modules/DebugSettings.h"
+#include "storm/settings/modules/JaniExportSettings.h"
 
 /*!
  * Initialize the settings manager.

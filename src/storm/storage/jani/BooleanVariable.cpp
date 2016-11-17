@@ -1,4 +1,4 @@
-#include "src/storm/storage/jani/BooleanVariable.h"
+#include "storm/storage/jani/BooleanVariable.h"
 
 namespace storm {
     namespace jani {

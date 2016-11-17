@@ -5,7 +5,7 @@
 #include <vector>
 #include <set>
 
-#include "src/storm/storage/expressions/Valuation.h"
+#include "storm/storage/expressions/Valuation.h"
 
 namespace storm {
     namespace expressions {

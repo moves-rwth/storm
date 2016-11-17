@@ -1,11 +1,11 @@
-#include "src/storm/storage/dd/Dd.h"
+#include "storm/storage/dd/Dd.h"
 
 #include <algorithm>
 
-#include "src/storm/storage/dd/DdManager.h"
+#include "storm/storage/dd/DdManager.h"
 
-#include "src/storm/utility/macros.h"
-#include "src/storm/exceptions/InvalidArgumentException.h"
+#include "storm/utility/macros.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 
 namespace storm {
     namespace dd {

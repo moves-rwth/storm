@@ -1,9 +1,9 @@
 #pragma once
-#include "src/storm/storage/jani/Constant.h"
-#include "src/storm/logic/Formula.h"
-#include "src/storm/logic/Bound.h"
-#include "src/storm/exceptions/FileIoException.h"
-#include "src/storm/storage/expressions/ExpressionManager.h"
+#include "storm/storage/jani/Constant.h"
+#include "storm/logic/Formula.h"
+#include "storm/logic/Bound.h"
+#include "storm/exceptions/FileIoException.h"
+#include "storm/storage/expressions/ExpressionManager.h"
 
 
 // JSON parser

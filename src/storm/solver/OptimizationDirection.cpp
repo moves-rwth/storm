@@ -1,6 +1,6 @@
 #include "OptimizationDirection.h"
 #include <iostream>
-#include "src/storm/utility/macros.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
     namespace solver {

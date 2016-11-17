@@ -1,10 +1,10 @@
 #pragma once
 
 
-#include "src/storm/storage/expressions/ExpressionVisitor.h"
-#include "src/storm/logic/FormulaVisitor.h"
+#include "storm/storage/expressions/ExpressionVisitor.h"
+#include "storm/logic/FormulaVisitor.h"
 #include "Model.h"
-#include "src/storm/adapters/NumberAdapter.h"
+#include "storm/adapters/NumberAdapter.h"
 // JSON parser
 #include "json.hpp"
 namespace modernjson {

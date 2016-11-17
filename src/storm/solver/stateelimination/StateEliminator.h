@@ -1,7 +1,7 @@
 #ifndef STORM_SOLVER_STATEELIMINATION_STATEELIMINATOR_H_
 #define STORM_SOLVER_STATEELIMINATION_STATEELIMINATOR_H_
 
-#include "src/storm/solver/stateelimination/EliminatorBase.h"
+#include "storm/solver/stateelimination/EliminatorBase.h"
 
 namespace storm {
     namespace solver {

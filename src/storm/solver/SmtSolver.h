@@ -3,9 +3,9 @@
 
 #include <cstdint>
 
-#include "src/storm/storage/expressions/Expressions.h"
-#include "src/storm/storage/expressions/SimpleValuation.h"
-#include "src/storm/storage/expressions/ExpressionManager.h"
+#include "storm/storage/expressions/Expressions.h"
+#include "storm/storage/expressions/SimpleValuation.h"
+#include "storm/storage/expressions/ExpressionManager.h"
 
 #include <set>
 #include <unordered_set>

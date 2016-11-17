@@ -11,11 +11,11 @@
 #include <vector>
 #include <memory>
 
-#include "src/storm/utility/macros.h"
-#include "src/storm/settings/ArgumentBase.h"
+#include "storm/utility/macros.h"
+#include "storm/settings/ArgumentBase.h"
 
-#include "src/storm/settings/ArgumentType.h"
-#include "src/storm/exceptions/ArgumentUnificationException.h"
+#include "storm/settings/ArgumentType.h"
+#include "storm/exceptions/ArgumentUnificationException.h"
 
 
 namespace storm {

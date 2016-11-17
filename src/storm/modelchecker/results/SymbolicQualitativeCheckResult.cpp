@@ -1,9 +1,9 @@
-#include "src/storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
+#include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
 
-#include "src/storm/utility/macros.h"
-#include "src/storm/exceptions/InvalidOperationException.h"
+#include "storm/utility/macros.h"
+#include "storm/exceptions/InvalidOperationException.h"
 
-#include "src/storm/exceptions/NotImplementedException.h"
+#include "storm/exceptions/NotImplementedException.h"
 
 namespace storm {
     namespace modelchecker {

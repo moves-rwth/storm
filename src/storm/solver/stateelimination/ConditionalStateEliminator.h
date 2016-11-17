@@ -1,9 +1,9 @@
 #ifndef STORM_SOLVER_STATEELIMINATION_CONDITIONALSTATEELIMINATOR_H_
 #define STORM_SOLVER_STATEELIMINATION_CONDITIONALSTATEELIMINATOR_H_
 
-#include "src/storm/solver/stateelimination/StateEliminator.h"
+#include "storm/solver/stateelimination/StateEliminator.h"
 
-#include "src/storm/storage/BitVector.h"
+#include "storm/storage/BitVector.h"
 
 namespace storm {
     namespace solver {

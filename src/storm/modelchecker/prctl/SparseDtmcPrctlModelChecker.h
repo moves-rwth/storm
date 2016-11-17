@@ -1,11 +1,11 @@
 #ifndef STORM_MODELCHECKER_SPARSEDTMCPRCTLMODELCHECKER_H_
 #define STORM_MODELCHECKER_SPARSEDTMCPRCTLMODELCHECKER_H_
 
-#include "src/storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
-#include "src/storm/models/sparse/Dtmc.h"
-#include "src/storm/utility/solver.h"
-#include "src/storm/solver/LinearEquationSolver.h"
-#include "src/storm/storage/StronglyConnectedComponent.h"
+#include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
+#include "storm/models/sparse/Dtmc.h"
+#include "storm/utility/solver.h"
+#include "storm/solver/LinearEquationSolver.h"
+#include "storm/storage/StronglyConnectedComponent.h"
 
 namespace storm {
     namespace modelchecker {

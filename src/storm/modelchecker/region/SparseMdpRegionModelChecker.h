@@ -1,11 +1,11 @@
 #ifndef STORM_MODELCHECKER_REACHABILITY_SPARSEMDPREGIONMODELCHECKER_H_
 #define STORM_MODELCHECKER_REACHABILITY_SPARSEMDPREGIONMODELCHECKER_H_
 
-#include "src/storm/modelchecker/region/SparseRegionModelChecker.h"
+#include "storm/modelchecker/region/SparseRegionModelChecker.h"
 
-#include "src/storm/models/sparse/StandardRewardModel.h"
-#include "src/storm/models/sparse/Mdp.h"
-#include "src/storm/utility/region.h"
+#include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/models/sparse/Mdp.h"
+#include "storm/utility/region.h"
 
 namespace storm {
     namespace modelchecker {

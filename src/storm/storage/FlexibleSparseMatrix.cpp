@@ -1,12 +1,12 @@
-#include "src/storm/storage/FlexibleSparseMatrix.h"
+#include "storm/storage/FlexibleSparseMatrix.h"
 
-#include "src/storm/storage/SparseMatrix.h"
-#include "src/storm/storage/BitVector.h"
-#include "src/storm/adapters/CarlAdapter.h"
+#include "storm/storage/SparseMatrix.h"
+#include "storm/storage/BitVector.h"
+#include "storm/adapters/CarlAdapter.h"
 
-#include "src/storm/utility/macros.h"
-#include "src/storm/utility/constants.h"
-#include "src/storm/exceptions/InvalidArgumentException.h"
+#include "storm/utility/macros.h"
+#include "storm/utility/constants.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 
 namespace storm {
     namespace storage {

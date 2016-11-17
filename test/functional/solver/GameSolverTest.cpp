@@ -1,13 +1,13 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
-#include "src/storm/storage/SparseMatrix.h"
+#include "storm/storage/SparseMatrix.h"
 
-#include "src/storm/utility/solver.h"
-#include "src/storm/settings/SettingsManager.h"
+#include "storm/utility/solver.h"
+#include "storm/settings/SettingsManager.h"
 
-#include "src/storm/solver/GameSolver.h"
-#include "src/storm/settings/modules/NativeEquationSolverSettings.h"
+#include "storm/solver/GameSolver.h"
+#include "storm/settings/modules/NativeEquationSolverSettings.h"
 
 TEST(GameSolverTest, Solve) {
     // Construct simple game. Start with player 2 matrix.

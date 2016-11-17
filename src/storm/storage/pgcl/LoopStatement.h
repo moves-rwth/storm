@@ -8,9 +8,9 @@
 #ifndef LOOPSTATEMENT_H
 #define	LOOPSTATEMENT_H
 
-#include "src/storm/storage/pgcl/PgclProgram.h"
-#include "src/storm/storage/pgcl/CompoundStatement.h"
-#include "src/storm/storage/pgcl/BooleanExpression.h"
+#include "storm/storage/pgcl/PgclProgram.h"
+#include "storm/storage/pgcl/CompoundStatement.h"
+#include "storm/storage/pgcl/BooleanExpression.h"
 
 namespace storm {
     namespace pgcl {

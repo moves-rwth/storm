@@ -1,12 +1,12 @@
 #ifndef STORM_MODELCHECKER_REACHABILITY_SPARSEDTMCREGIONMODELCHECKER_H_
 #define STORM_MODELCHECKER_REACHABILITY_SPARSEDTMCREGIONMODELCHECKER_H_
 
-#include "src/storm/modelchecker/region/SparseRegionModelChecker.h"
+#include "storm/modelchecker/region/SparseRegionModelChecker.h"
 
-#include "src/storm/models/sparse/StandardRewardModel.h"
-#include "src/storm/models/sparse/Dtmc.h"
-#include "src/storm/utility/region.h"
-#include "src/storm/solver/SmtlibSmtSolver.h"
+#include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/models/sparse/Dtmc.h"
+#include "storm/utility/region.h"
+#include "storm/solver/SmtlibSmtSolver.h"
 
 namespace storm {
     namespace modelchecker {

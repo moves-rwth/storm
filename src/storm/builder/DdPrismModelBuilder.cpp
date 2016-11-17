@@ -1,30 +1,30 @@
-#include "src/storm/builder/DdPrismModelBuilder.h"
+#include "storm/builder/DdPrismModelBuilder.h"
 
 #include <boost/algorithm/string/join.hpp>
 
-#include "src/storm/models/symbolic/Dtmc.h"
-#include "src/storm/models/symbolic/Ctmc.h"
-#include "src/storm/models/symbolic/Mdp.h"
-#include "src/storm/models/symbolic/StandardRewardModel.h"
+#include "storm/models/symbolic/Dtmc.h"
+#include "storm/models/symbolic/Ctmc.h"
+#include "storm/models/symbolic/Mdp.h"
+#include "storm/models/symbolic/StandardRewardModel.h"
 
-#include "src/storm/settings/SettingsManager.h"
+#include "storm/settings/SettingsManager.h"
 
-#include "src/storm/exceptions/InvalidStateException.h"
-#include "src/storm/exceptions/NotSupportedException.h"
-#include "src/storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/InvalidStateException.h"
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 
-#include "src/storm/utility/prism.h"
-#include "src/storm/utility/math.h"
-#include "src/storm/utility/dd.h"
+#include "storm/utility/prism.h"
+#include "storm/utility/math.h"
+#include "storm/utility/dd.h"
 
-#include "src/storm/storage/dd/DdManager.h"
-#include "src/storm/storage/prism/Program.h"
-#include "src/storm/storage/prism/Compositions.h"
-#include "src/storm/storage/dd/Add.h"
-#include "src/storm/storage/dd/cudd/CuddAddIterator.h"
-#include "src/storm/storage/dd/Bdd.h"
+#include "storm/storage/dd/DdManager.h"
+#include "storm/storage/prism/Program.h"
+#include "storm/storage/prism/Compositions.h"
+#include "storm/storage/dd/Add.h"
+#include "storm/storage/dd/cudd/CuddAddIterator.h"
+#include "storm/storage/dd/Bdd.h"
 
-#include "src/storm/settings/modules/CoreSettings.h"
+#include "storm/settings/modules/CoreSettings.h"
 
 namespace storm {
     namespace builder {

@@ -1,6 +1,6 @@
-#include "src/storm/builder/jit/JitModelBuilderInterface.h"
+#include "storm/builder/jit/JitModelBuilderInterface.h"
 
-#include "src/storm/adapters/CarlAdapter.h"
+#include "storm/adapters/CarlAdapter.h"
 
 namespace storm {
     namespace builder {

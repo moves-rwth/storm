@@ -1,10 +1,10 @@
 #pragma once
 #include <memory>
 // Very ugly, but currently we would like to have the symbol table here.
-#include "src/storm/parser/SpiritParserDefinitions.h"
+#include "storm/parser/SpiritParserDefinitions.h"
 
 #include <boost/optional.hpp>
-#include "src/storm/adapters/NumberAdapter.h"
+#include "storm/adapters/NumberAdapter.h"
 
 namespace storm {
     

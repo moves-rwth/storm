@@ -1,21 +1,21 @@
-#include "src/storm/modelchecker/multiobjective/pcaa/SparsePcaaWeightVectorChecker.h"
+#include "storm/modelchecker/multiobjective/pcaa/SparsePcaaWeightVectorChecker.h"
 
 #include <map>
 
-#include "src/storm/adapters/CarlAdapter.h"
-#include "src/storm/models/sparse/Mdp.h"
-#include "src/storm/models/sparse/MarkovAutomaton.h"
-#include "src/storm/models/sparse/StandardRewardModel.h"
-#include "src/storm/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
-#include "src/storm/solver/MinMaxLinearEquationSolver.h"
-#include "src/storm/transformer/EndComponentEliminator.h"
-#include "src/storm/utility/graph.h"
-#include "src/storm/utility/macros.h"
-#include "src/storm/utility/vector.h"
+#include "storm/adapters/CarlAdapter.h"
+#include "storm/models/sparse/Mdp.h"
+#include "storm/models/sparse/MarkovAutomaton.h"
+#include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
+#include "storm/solver/MinMaxLinearEquationSolver.h"
+#include "storm/transformer/EndComponentEliminator.h"
+#include "storm/utility/graph.h"
+#include "storm/utility/macros.h"
+#include "storm/utility/vector.h"
 
-#include "src/storm/exceptions/IllegalFunctionCallException.h"
-#include "src/storm/exceptions/UnexpectedException.h"
-#include "src/storm/exceptions/NotImplementedException.h"
+#include "storm/exceptions/IllegalFunctionCallException.h"
+#include "storm/exceptions/UnexpectedException.h"
+#include "storm/exceptions/NotImplementedException.h"
 
 namespace storm {
     namespace modelchecker {

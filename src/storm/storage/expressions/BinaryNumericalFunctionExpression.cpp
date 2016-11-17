@@ -1,13 +1,13 @@
 #include <algorithm>
 #include <cmath>
 
-#include "src/storm/storage/expressions/BinaryNumericalFunctionExpression.h"
-#include "src/storm/storage/expressions/IntegerLiteralExpression.h"
-#include "src/storm/storage/expressions/RationalLiteralExpression.h"
-#include "src/storm/storage/expressions/ExpressionVisitor.h"
-#include "src/storm/utility/macros.h"
-#include "src/storm/exceptions/InvalidTypeException.h"
-#include "src/storm/exceptions/InvalidStateException.h"
+#include "storm/storage/expressions/BinaryNumericalFunctionExpression.h"
+#include "storm/storage/expressions/IntegerLiteralExpression.h"
+#include "storm/storage/expressions/RationalLiteralExpression.h"
+#include "storm/storage/expressions/ExpressionVisitor.h"
+#include "storm/utility/macros.h"
+#include "storm/exceptions/InvalidTypeException.h"
+#include "storm/exceptions/InvalidStateException.h"
 
 
 namespace storm {

@@ -1,10 +1,10 @@
 #ifndef STORM_STORAGE_BISIMULATION_NONDETERMINISTICMODELBISIMULATIONDECOMPOSITION_H_
 #define STORM_STORAGE_BISIMULATION_NONDETERMINISTICMODELBISIMULATIONDECOMPOSITION_H_
 
-#include "src/storm/storage/bisimulation/BisimulationDecomposition.h"
-#include "src/storm/storage/bisimulation/DeterministicBlockData.h"
+#include "storm/storage/bisimulation/BisimulationDecomposition.h"
+#include "storm/storage/bisimulation/DeterministicBlockData.h"
 
-#include "src/storm/storage/Distribution.h"
+#include "storm/storage/Distribution.h"
 
 namespace storm {
     namespace utility {

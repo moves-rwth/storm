@@ -1,10 +1,10 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
-#include "src/storm/solver/NativeLinearEquationSolver.h"
-#include "src/storm/settings/SettingsManager.h"
+#include "storm/solver/NativeLinearEquationSolver.h"
+#include "storm/settings/SettingsManager.h"
 
-#include "src/storm/settings/modules/NativeEquationSolverSettings.h"
+#include "storm/settings/modules/NativeEquationSolverSettings.h"
 
 TEST(NativeLinearEquationSolver, SolveWithStandardOptions) {
     ASSERT_NO_THROW(storm::storage::SparseMatrixBuilder<double> builder);

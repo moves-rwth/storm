@@ -1,20 +1,20 @@
-#include "src/storm/parser/NondeterministicSparseTransitionParser.h"
+#include "storm/parser/NondeterministicSparseTransitionParser.h"
 
 #include <string>
 
-#include "src/storm/parser/MappedFile.h"
-#include "src/storm/settings/SettingsManager.h"
-#include "src/storm/settings/modules/CoreSettings.h"
-#include "src/storm/exceptions/FileIoException.h"
-#include "src/storm/exceptions/OutOfRangeException.h"
+#include "storm/parser/MappedFile.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/CoreSettings.h"
+#include "storm/exceptions/FileIoException.h"
+#include "storm/exceptions/OutOfRangeException.h"
 
-#include "src/storm/exceptions/InvalidArgumentException.h"
-#include "src/storm/exceptions/WrongFormatException.h"
+#include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/WrongFormatException.h"
 
-#include "src/storm/utility/cstring.h"
+#include "storm/utility/cstring.h"
 
-#include "src/storm/adapters/CarlAdapter.h"
-#include "src/storm/utility/macros.h"
+#include "storm/adapters/CarlAdapter.h"
+#include "storm/utility/macros.h"
 namespace storm {
     namespace parser {
 

@@ -5,11 +5,11 @@
 
 #include <boost/optional.hpp>
 
-#include "src/storm/storage/sparse/StateType.h"
+#include "storm/storage/sparse/StateType.h"
 
-#include "src/storm/adapters/CarlAdapter.h"
+#include "storm/adapters/CarlAdapter.h"
 
-#include "src/storm/settings/modules/EliminationSettings.h"
+#include "storm/settings/modules/EliminationSettings.h"
 
 namespace storm {
     namespace solver {

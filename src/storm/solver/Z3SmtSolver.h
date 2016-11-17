@@ -2,8 +2,8 @@
 #define STORM_SOLVER_Z3SMTSOLVER
 
 #include "storm-config.h"
-#include "src/storm/solver/SmtSolver.h"
-#include "src/storm/adapters/Z3ExpressionAdapter.h"
+#include "storm/solver/SmtSolver.h"
+#include "storm/adapters/Z3ExpressionAdapter.h"
 
 #ifdef STORM_HAVE_Z3
 #include "z3++.h"

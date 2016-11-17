@@ -8,7 +8,7 @@
 #ifndef STORM_UTILITY_PARAMETRIC_H
 #define STORM_UTILITY_PARAMETRIC_H
 
-#include "src/storm/adapters/CarlAdapter.h"
+#include "storm/adapters/CarlAdapter.h"
 
 #include <map>
 

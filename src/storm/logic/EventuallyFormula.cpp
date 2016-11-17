@@ -1,8 +1,8 @@
-#include "src/storm/logic/EventuallyFormula.h"
-#include "src/storm/logic/FormulaVisitor.h"
+#include "storm/logic/EventuallyFormula.h"
+#include "storm/logic/FormulaVisitor.h"
 
-#include "src/storm/utility/macros.h"
-#include "src/storm/exceptions/InvalidPropertyException.h"
+#include "storm/utility/macros.h"
+#include "storm/exceptions/InvalidPropertyException.h"
 
 namespace storm {
     namespace logic {

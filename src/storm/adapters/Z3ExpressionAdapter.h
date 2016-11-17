@@ -12,8 +12,8 @@
 #include "z3.h"
 #endif
 
-#include "src/storm/storage/expressions/Variable.h"
-#include "src/storm/storage/expressions/ExpressionVisitor.h"
+#include "storm/storage/expressions/Variable.h"
+#include "storm/storage/expressions/ExpressionVisitor.h"
 
 namespace storm {
     namespace adapters {

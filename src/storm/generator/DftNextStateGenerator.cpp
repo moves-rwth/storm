@@ -1,8 +1,8 @@
-#include "src/storm/generator/DftNextStateGenerator.h"
+#include "storm/generator/DftNextStateGenerator.h"
 
-#include "src/storm/utility/constants.h"
-#include "src/storm/utility/macros.h"
-#include "src/storm/exceptions/NotImplementedException.h"
+#include "storm/utility/constants.h"
+#include "storm/utility/macros.h"
+#include "storm/exceptions/NotImplementedException.h"
 
 namespace storm {
     namespace generator {

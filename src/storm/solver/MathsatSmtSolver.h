@@ -2,8 +2,8 @@
 #define STORM_SOLVER_MATHSATSMTSOLVER
 
 #include "storm-config.h"
-#include "src/storm/solver/SmtSolver.h"
-#include "src/storm/adapters/MathsatExpressionAdapter.h"
+#include "storm/solver/SmtSolver.h"
+#include "storm/adapters/MathsatExpressionAdapter.h"
 #include <boost/container/flat_map.hpp>
 
 #ifdef STORM_HAVE_MSAT

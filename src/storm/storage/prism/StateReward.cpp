@@ -1,5 +1,5 @@
-#include "src/storm/storage/prism/StateReward.h"
-#include "src/storm/storage/expressions/Variable.h"
+#include "storm/storage/prism/StateReward.h"
+#include "storm/storage/expressions/Variable.h"
 
 namespace storm {
     namespace prism {

@@ -1,4 +1,4 @@
-#include "src/storm/storage/jani/AutomatonComposition.h"
+#include "storm/storage/jani/AutomatonComposition.h"
 
 namespace storm {
     namespace jani {

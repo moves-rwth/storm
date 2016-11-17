@@ -14,8 +14,8 @@
 #include "../DFTElementType.h"
 #include "../DFTState.h"
 #include "../DFTStateSpaceGenerationQueues.h"
-#include "src/storm/utility/constants.h"
-#include "src/storm/adapters/CarlAdapter.h"
+#include "storm/utility/constants.h"
+#include "storm/adapters/CarlAdapter.h"
 
 
 

@@ -1,6 +1,6 @@
-#include "src/storm/storage/dd/DdMetaVariable.h"
+#include "storm/storage/dd/DdMetaVariable.h"
 
-#include "src/storm/utility/macros.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
     namespace dd {

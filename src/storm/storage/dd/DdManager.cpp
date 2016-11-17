@@ -1,10 +1,10 @@
-#include "src/storm/storage/dd/DdManager.h"
+#include "storm/storage/dd/DdManager.h"
 
-#include "src/storm/storage/expressions/ExpressionManager.h"
+#include "storm/storage/expressions/ExpressionManager.h"
 
-#include "src/storm/utility/macros.h"
-#include "src/storm/utility/constants.h"
-#include "src/storm/exceptions/InvalidArgumentException.h"
+#include "storm/utility/macros.h"
+#include "storm/utility/constants.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 
 #include <cmath>
 

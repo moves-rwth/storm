@@ -7,20 +7,20 @@
 #include "tbb/tbb.h"
 #endif
 
-#include "src/storm/storage/sparse/StateType.h"
-#include "src/storm/storage/SparseMatrix.h"
-#include "src/storm/adapters/CarlAdapter.h"
+#include "storm/storage/sparse/StateType.h"
+#include "storm/storage/SparseMatrix.h"
+#include "storm/adapters/CarlAdapter.h"
 
-#include "src/storm/storage/BitVector.h"
-#include "src/storm/utility/constants.h"
-#include "src/storm/utility/ConstantsComparator.h"
+#include "storm/storage/BitVector.h"
+#include "storm/utility/constants.h"
+#include "storm/utility/ConstantsComparator.h"
 
-#include "src/storm/exceptions/InvalidStateException.h"
-#include "src/storm/exceptions/NotImplementedException.h"
-#include "src/storm/exceptions/InvalidArgumentException.h"
-#include "src/storm/exceptions/OutOfRangeException.h"
+#include "storm/exceptions/InvalidStateException.h"
+#include "storm/exceptions/NotImplementedException.h"
+#include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/OutOfRangeException.h"
 
-#include "src/storm/utility/macros.h"
+#include "storm/utility/macros.h"
 
 #include <iterator>
 

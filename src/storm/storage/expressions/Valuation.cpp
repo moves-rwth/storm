@@ -1,5 +1,5 @@
-#include "src/storm/storage/expressions/Valuation.h"
-#include "src/storm/storage/expressions/ExpressionManager.h"
+#include "storm/storage/expressions/Valuation.h"
+#include "storm/storage/expressions/ExpressionManager.h"
 
 namespace storm {
     namespace expressions {

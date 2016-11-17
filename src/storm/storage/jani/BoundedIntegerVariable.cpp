@@ -1,6 +1,6 @@
-#include "src/storm/storage/jani/BoundedIntegerVariable.h"
-#include "src/storm/exceptions/NotImplementedException.h"
-#include "src/storm/utility/macros.h"
+#include "storm/storage/jani/BoundedIntegerVariable.h"
+#include "storm/exceptions/NotImplementedException.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
     namespace jani {

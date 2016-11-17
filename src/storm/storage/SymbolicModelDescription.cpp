@@ -1,10 +1,10 @@
-#include "src/storm/storage/SymbolicModelDescription.h"
+#include "storm/storage/SymbolicModelDescription.h"
 
-#include "src/storm/utility/prism.h"
-#include "src/storm/utility/jani.h"
+#include "storm/utility/prism.h"
+#include "storm/utility/jani.h"
 
-#include "src/storm/utility/macros.h"
-#include "src/storm/exceptions/InvalidOperationException.h"
+#include "storm/utility/macros.h"
+#include "storm/exceptions/InvalidOperationException.h"
 
 namespace storm {
     namespace storage {

@@ -1,14 +1,14 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
-#include "src/storm/exceptions/InvalidArgumentException.h"
-#include "src/storm/storage/dd/DdManager.h"
-#include "src/storm/storage/dd/Add.h"
-#include "src/storm/storage/dd/Odd.h"
-#include "src/storm/storage/dd/DdMetaVariable.h"
-#include "src/storm/settings/SettingsManager.h"
+#include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/storage/dd/DdManager.h"
+#include "storm/storage/dd/Add.h"
+#include "storm/storage/dd/Odd.h"
+#include "storm/storage/dd/DdMetaVariable.h"
+#include "storm/settings/SettingsManager.h"
 
-#include "src/storm/storage/SparseMatrix.h"
+#include "storm/storage/SparseMatrix.h"
 
 TEST(SylvanDd, Constants) {
     std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());

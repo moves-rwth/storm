@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include "src/storm/builder/jit/DistributionEntry.h"
+#include "storm/builder/jit/DistributionEntry.h"
 
 namespace storm {
     namespace builder {

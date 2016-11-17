@@ -3,7 +3,7 @@
 
 #include <ostream>
 
-#include "src/storm/storage/prism/CompositionVisitor.h"
+#include "storm/storage/prism/CompositionVisitor.h"
 
 namespace storm {
     namespace prism {

@@ -1,16 +1,16 @@
-#include "src/storm/generator/NextStateGenerator.h"
+#include "storm/generator/NextStateGenerator.h"
 
-#include "src/storm/adapters/CarlAdapter.h"
+#include "storm/adapters/CarlAdapter.h"
 
-#include "src/storm/logic/Formulas.h"
+#include "storm/logic/Formulas.h"
 
-#include "src/storm/storage/expressions/ExpressionManager.h"
-#include "src/storm/storage/expressions/SimpleValuation.h"
+#include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/storage/expressions/SimpleValuation.h"
 
-#include "src/storm/models/sparse/StateLabeling.h"
+#include "storm/models/sparse/StateLabeling.h"
 
-#include "src/storm/utility/macros.h"
-#include "src/storm/exceptions/InvalidSettingsException.h"
+#include "storm/utility/macros.h"
+#include "storm/exceptions/InvalidSettingsException.h"
 
 namespace storm {
     namespace generator {

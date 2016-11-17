@@ -1,7 +1,7 @@
 #ifndef STORM_MODELCHECKER_MULTIOBJECTIVE_PCAA_SPARSEPCAAQUANTITATIVEQUERY_H_
 #define STORM_MODELCHECKER_MULTIOBJECTIVE_PCAA_SPARSEPCAAQUANTITATIVEQUERY_H_
 
-#include "src/storm/modelchecker/multiobjective/pcaa/SparsePcaaQuery.h"
+#include "storm/modelchecker/multiobjective/pcaa/SparsePcaaQuery.h"
 
 namespace storm {
     namespace modelchecker {

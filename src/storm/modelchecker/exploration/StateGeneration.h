@@ -1,10 +1,10 @@
 #ifndef STORM_MODELCHECKER_EXPLORATION_EXPLORATION_DETAIL_STATEGENERATION_H_
 #define STORM_MODELCHECKER_EXPLORATION_EXPLORATION_DETAIL_STATEGENERATION_H_
 
-#include "src/storm/generator/CompressedState.h"
-#include "src/storm/generator/PrismNextStateGenerator.h"
+#include "storm/generator/CompressedState.h"
+#include "storm/generator/PrismNextStateGenerator.h"
 
-#include "src/storm/storage/sparse/StateStorage.h"
+#include "storm/storage/sparse/StateStorage.h"
 
 namespace storm {
     namespace generator {

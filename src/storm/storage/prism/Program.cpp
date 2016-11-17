@@ -1,26 +1,26 @@
-#include "src/storm/storage/prism/Program.h"
+#include "storm/storage/prism/Program.h"
 
 #include <algorithm>
 #include <sstream>
 #include <boost/algorithm/string/join.hpp>
 
-#include "src/storm/storage/expressions/ExpressionManager.h"
-#include "src/storm/settings/SettingsManager.h"
-#include "src/storm/settings/modules/IOSettings.h"
-#include "src/storm/utility/macros.h"
-#include "src/storm/utility/solver.h"
-#include "src/storm/exceptions/InvalidArgumentException.h"
-#include "src/storm/exceptions/OutOfRangeException.h"
-#include "src/storm/exceptions/WrongFormatException.h"
-#include "src/storm/exceptions/InvalidTypeException.h"
-#include "src/storm/exceptions/InvalidOperationException.h"
-#include "src/storm/solver/SmtSolver.h"
+#include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/IOSettings.h"
+#include "storm/utility/macros.h"
+#include "storm/utility/solver.h"
+#include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/OutOfRangeException.h"
+#include "storm/exceptions/WrongFormatException.h"
+#include "storm/exceptions/InvalidTypeException.h"
+#include "storm/exceptions/InvalidOperationException.h"
+#include "storm/solver/SmtSolver.h"
 
-#include "src/storm/storage/jani/Model.h"
+#include "storm/storage/jani/Model.h"
 
-#include "src/storm/storage/prism/CompositionVisitor.h"
-#include "src/storm/storage/prism/Compositions.h"
-#include "src/storm/storage/prism/ToJaniConverter.h"
+#include "storm/storage/prism/CompositionVisitor.h"
+#include "storm/storage/prism/Compositions.h"
+#include "storm/storage/prism/ToJaniConverter.h"
 
 namespace storm {
     namespace prism {

@@ -1,8 +1,8 @@
 #ifndef STORM_STORAGE_EXPRESSIONS_UNARYBOOLEANFUNCTIONEXPRESSION_H_
 #define STORM_STORAGE_EXPRESSIONS_UNARYBOOLEANFUNCTIONEXPRESSION_H_
 
-#include "src/storm/storage/expressions/UnaryExpression.h"
-#include "src/storm/utility/OsDetection.h"
+#include "storm/storage/expressions/UnaryExpression.h"
+#include "storm/utility/OsDetection.h"
 
 namespace storm {
     namespace expressions {

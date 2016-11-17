@@ -7,14 +7,14 @@
 
 #include <boost/optional.hpp>
 
-#include "src/storm/solver/AbstractEquationSolver.h"
-#include "src/storm/solver/SolverSelectionOptions.h"
-#include "src/storm/storage/sparse/StateType.h"
-#include "src/storm/storage/TotalScheduler.h"
-#include "src/storm/solver/OptimizationDirection.h"
+#include "storm/solver/AbstractEquationSolver.h"
+#include "storm/solver/SolverSelectionOptions.h"
+#include "storm/storage/sparse/StateType.h"
+#include "storm/storage/TotalScheduler.h"
+#include "storm/solver/OptimizationDirection.h"
 
-#include "src/storm/exceptions/InvalidSettingsException.h"
-#include "src/storm/utility/macros.h"
+#include "storm/exceptions/InvalidSettingsException.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
     namespace storage {

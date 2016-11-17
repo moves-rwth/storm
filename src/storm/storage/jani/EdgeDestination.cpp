@@ -1,7 +1,7 @@
-#include "src/storm/storage/jani/EdgeDestination.h"
+#include "storm/storage/jani/EdgeDestination.h"
 
-#include "src/storm/utility/macros.h"
-#include "src/storm/exceptions/WrongFormatException.h"
+#include "storm/utility/macros.h"
+#include "storm/exceptions/WrongFormatException.h"
 
 namespace storm {
     namespace jani {

@@ -3,8 +3,8 @@
 #include <map>
 #include <unordered_map>
 #include <vector>
-#include "src/storm/storage/gspn/Marking.h"
-#include "src/storm/storage/gspn/Place.h"
+#include "storm/storage/gspn/Marking.h"
+#include "storm/storage/gspn/Place.h"
 
 namespace storm {
     namespace gspn {

@@ -4,7 +4,7 @@
 #include <cmath>
 #include <map>
 #include <memory>
-#include "src/storm/storage/BitVector.h"
+#include "storm/storage/BitVector.h"
 
 namespace storm {
     namespace gspn {

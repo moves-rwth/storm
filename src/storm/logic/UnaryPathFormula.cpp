@@ -1,4 +1,4 @@
-#include "src/storm/logic/UnaryPathFormula.h"
+#include "storm/logic/UnaryPathFormula.h"
 
 namespace storm {
     namespace logic {

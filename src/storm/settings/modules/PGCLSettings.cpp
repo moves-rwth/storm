@@ -1,13 +1,13 @@
-#include "src/storm/settings/modules/PGCLSettings.h"
+#include "storm/settings/modules/PGCLSettings.h"
 
-#include "src/storm/settings/SettingsManager.h"
-#include "src/storm/settings/SettingMemento.h"
-#include "src/storm/settings/Option.h"
-#include "src/storm/settings/OptionBuilder.h"
-#include "src/storm/settings/ArgumentBuilder.h"
-#include "src/storm/settings/Argument.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/SettingMemento.h"
+#include "storm/settings/Option.h"
+#include "storm/settings/OptionBuilder.h"
+#include "storm/settings/ArgumentBuilder.h"
+#include "storm/settings/Argument.h"
 
-#include "src/storm/exceptions/InvalidSettingsException.h"
+#include "storm/exceptions/InvalidSettingsException.h"
 
 namespace storm {
     namespace settings {

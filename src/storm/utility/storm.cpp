@@ -1,12 +1,12 @@
 #include "storm.h"
 
 // Headers related to parsing.
-#include "src/storm/parser/JaniParser.h"
+#include "storm/parser/JaniParser.h"
 
-#include "src/storm/parser/PrismParser.h"
-#include "src/storm/parser/FormulaParser.h"
-#include "src/storm/utility/macros.h"
-#include "src/storm/storage/jani/Property.h"
+#include "storm/parser/PrismParser.h"
+#include "storm/parser/FormulaParser.h"
+#include "storm/utility/macros.h"
+#include "storm/storage/jani/Property.h"
 
 namespace storm{
     

@@ -1,7 +1,7 @@
 #ifndef _STORM_PARSER_READVALUES_H
 #define _STORM_PARSER_READVALUES_H
 
-#include "src/storm/utility/cstring.h"
+#include "storm/utility/cstring.h"
 
 namespace storm
 {

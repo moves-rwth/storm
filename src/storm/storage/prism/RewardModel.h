@@ -6,10 +6,10 @@
 #include <map>
 #include <boost/container/flat_set.hpp>
 
-#include "src/storm/storage/prism/StateReward.h"
-#include "src/storm/storage/prism/StateActionReward.h"
-#include "src/storm/storage/prism/TransitionReward.h"
-#include "src/storm/utility/OsDetection.h"
+#include "storm/storage/prism/StateReward.h"
+#include "storm/storage/prism/StateActionReward.h"
+#include "storm/storage/prism/TransitionReward.h"
+#include "storm/utility/OsDetection.h"
 
 namespace storm {
     namespace prism {

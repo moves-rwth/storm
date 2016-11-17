@@ -1,8 +1,8 @@
 #include "gtest/gtest.h"
-#include "src/storm/storage/expressions/Expression.h"
-#include "src/storm/storage/expressions/ExpressionManager.h"
-#include "src/storm/storage/expressions/SimpleValuation.h"
-#include "src/storm/storage/expressions/ExprtkExpressionEvaluator.h"
+#include "storm/storage/expressions/Expression.h"
+#include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/storage/expressions/SimpleValuation.h"
+#include "storm/storage/expressions/ExprtkExpressionEvaluator.h"
 
 TEST(ExpressionEvaluation, NaiveEvaluation) {
     std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());

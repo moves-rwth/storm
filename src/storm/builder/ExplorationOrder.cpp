@@ -1,4 +1,4 @@
-#include "src/storm/builder/ExplorationOrder.h"
+#include "storm/builder/ExplorationOrder.h"
 
 namespace storm {
     namespace builder {

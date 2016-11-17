@@ -1,9 +1,9 @@
 #pragma once
 
-#include "src/storm/storage/pgcl/SimpleStatement.h"
-#include "src/storm/storage/pgcl/UniformExpression.h"
-#include "src/storm/storage/expressions/Expression.h"
-#include "src/storm/storage/expressions/Variable.h"
+#include "storm/storage/pgcl/SimpleStatement.h"
+#include "storm/storage/pgcl/UniformExpression.h"
+#include "storm/storage/expressions/Expression.h"
+#include "storm/storage/expressions/Variable.h"
 #include <boost/variant/variant.hpp>
 #include <boost/variant/get.hpp>
 

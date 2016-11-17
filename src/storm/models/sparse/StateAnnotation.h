@@ -1,7 +1,7 @@
 #ifndef STORM_MODELS_SPARSE_STATEANNOTATION_H_
 #define STORM_MODELS_SPARSE_STATEANNOTATION_H_
 
-#include "src/storm/storage/sparse/StateType.h"
+#include "storm/storage/sparse/StateType.h"
 
 namespace storm {
     namespace models {

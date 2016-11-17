@@ -1,10 +1,10 @@
-#include "src/storm/models/symbolic/StochasticTwoPlayerGame.h"
+#include "storm/models/symbolic/StochasticTwoPlayerGame.h"
 
-#include "src/storm/storage/dd/DdManager.h"
-#include "src/storm/storage/dd/Add.h"
-#include "src/storm/storage/dd/Bdd.h"
+#include "storm/storage/dd/DdManager.h"
+#include "storm/storage/dd/Add.h"
+#include "storm/storage/dd/Bdd.h"
 
-#include "src/storm/models/symbolic/StandardRewardModel.h"
+#include "storm/models/symbolic/StandardRewardModel.h"
 
 namespace storm {
     namespace models {

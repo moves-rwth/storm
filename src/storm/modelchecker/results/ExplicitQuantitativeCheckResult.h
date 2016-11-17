@@ -6,10 +6,10 @@
 #include <boost/variant.hpp>
 #include <boost/optional.hpp>
 
-#include "src/storm/modelchecker/results/QuantitativeCheckResult.h"
-#include "src/storm/storage/sparse/StateType.h"
-#include "src/storm/storage/Scheduler.h"
-#include "src/storm/utility/OsDetection.h"
+#include "storm/modelchecker/results/QuantitativeCheckResult.h"
+#include "storm/storage/sparse/StateType.h"
+#include "storm/storage/Scheduler.h"
+#include "storm/utility/OsDetection.h"
 
 namespace storm {
     namespace modelchecker {

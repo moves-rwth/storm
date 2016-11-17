@@ -3,8 +3,8 @@
 
 #include <map>
 
-#include "src/storm/storage/prism/Variable.h"
-#include "src/storm/utility/OsDetection.h"
+#include "storm/storage/prism/Variable.h"
+#include "storm/utility/OsDetection.h"
 
 namespace storm {
     namespace prism {

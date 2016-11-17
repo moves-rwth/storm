@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 
-#include "src/storm/solver/MinMaxLinearEquationSolver.h"
+#include "storm/solver/MinMaxLinearEquationSolver.h"
 
 TEST( MinMaxMethod, Simple ) {
     storm::solver::MinMaxMethodSelection ts = storm::solver::MinMaxMethodSelection::PolicyIteration;

@@ -1,9 +1,9 @@
-#include "src/storm/storage/expressions/LinearCoefficientVisitor.h"
+#include "storm/storage/expressions/LinearCoefficientVisitor.h"
 
-#include "src/storm/storage/expressions/Expressions.h"
+#include "storm/storage/expressions/Expressions.h"
 
-#include "src/storm/utility/macros.h"
-#include "src/storm/exceptions/InvalidArgumentException.h"
+#include "storm/utility/macros.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 
 namespace storm {
     namespace expressions {

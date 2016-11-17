@@ -1,4 +1,4 @@
-#include "src/storm/logic/RewardMeasureType.h"
+#include "storm/logic/RewardMeasureType.h"
 
 namespace storm {
     namespace logic {

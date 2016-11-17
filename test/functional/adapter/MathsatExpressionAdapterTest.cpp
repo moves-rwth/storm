@@ -3,8 +3,8 @@
 
 #ifdef STORM_HAVE_MSAT
 #include "mathsat.h"
-#include "src/storm/adapters/MathsatExpressionAdapter.h"
-#include "src/storm/settings/SettingsManager.h"
+#include "storm/adapters/MathsatExpressionAdapter.h"
+#include "storm/settings/SettingsManager.h"
 
 TEST(MathsatExpressionAdapter, StormToMathsatBasic) {
     msat_config config = msat_create_config();

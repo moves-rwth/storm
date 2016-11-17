@@ -1,4 +1,4 @@
-#include "src/storm/storage/prism/RestrictedParallelComposition.h"
+#include "storm/storage/prism/RestrictedParallelComposition.h"
 
 #include <boost/algorithm/string/join.hpp>
 

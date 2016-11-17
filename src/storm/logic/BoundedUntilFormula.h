@@ -3,7 +3,7 @@
 
 #include <boost/variant.hpp>
 
-#include "src/storm/logic/BinaryPathFormula.h"
+#include "storm/logic/BinaryPathFormula.h"
 
 namespace storm {
     namespace logic {

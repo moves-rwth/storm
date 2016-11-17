@@ -1,7 +1,7 @@
 #pragma once
 
 #include "storm-config.h"
-#include "src/storm/settings/modules/ModuleSettings.h"
+#include "storm/settings/modules/ModuleSettings.h"
 
 
 namespace storm {

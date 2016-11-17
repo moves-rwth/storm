@@ -1,14 +1,14 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
-#include "src/storm/models/sparse/StandardRewardModel.h"
-#include "src/storm/models/sparse/MarkovAutomaton.h"
-#include "src/storm/settings/SettingMemento.h"
-#include "src/storm/parser/PrismParser.h"
-#include "src/storm/builder/jit/ExplicitJitJaniModelBuilder.h"
-#include "src/storm/storage/jani/Model.h"
+#include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/models/sparse/MarkovAutomaton.h"
+#include "storm/settings/SettingMemento.h"
+#include "storm/parser/PrismParser.h"
+#include "storm/builder/jit/ExplicitJitJaniModelBuilder.h"
+#include "storm/storage/jani/Model.h"
 
-#include "src/storm/settings/SettingsManager.h"
-#include "src/storm/settings/modules/IOSettings.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/IOSettings.h"
 
 TEST(ExplicitJitJaniModelBuilderTest, Dtmc) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/die.pm");

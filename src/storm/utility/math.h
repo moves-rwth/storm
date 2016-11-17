@@ -3,7 +3,7 @@
 
 #include <cmath>
 
-#include "src/storm/utility/OsDetection.h"
+#include "storm/utility/OsDetection.h"
 
 namespace storm {
     namespace utility {

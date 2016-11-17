@@ -1,5 +1,5 @@
 #include "IfStatement.h"
-#include "src/storm/storage/pgcl/AbstractStatementVisitor.h"
+#include "storm/storage/pgcl/AbstractStatementVisitor.h"
 
 namespace storm {
     namespace pgcl {

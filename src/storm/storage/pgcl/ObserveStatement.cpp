@@ -1,5 +1,5 @@
-#include "src/storm/storage/pgcl/ObserveStatement.h"
-#include "src/storm/storage/pgcl/AbstractStatementVisitor.h"
+#include "storm/storage/pgcl/ObserveStatement.h"
+#include "storm/storage/pgcl/AbstractStatementVisitor.h"
 
 namespace storm {
     namespace pgcl {

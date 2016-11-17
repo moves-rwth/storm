@@ -4,10 +4,10 @@
 #include <iostream>
 #include <iomanip>
 
-#include "src/storm/utility/macros.h"
-#include "src/storm/storage/geometry/Polytope.h"
-#include "src/storm/storage/geometry/Halfspace.h"
-#include "src/storm/exceptions/InvalidArgumentException.h"
+#include "storm/utility/macros.h"
+#include "storm/storage/geometry/Polytope.h"
+#include "storm/storage/geometry/Halfspace.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 
 namespace storm {
     namespace storage {

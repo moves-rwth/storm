@@ -9,13 +9,13 @@
 #include <unordered_set>
 #include <boost/algorithm/string.hpp>
 
-#include "src/storm/settings/ArgumentType.h"
-#include "src/storm/settings/ArgumentBase.h"
-#include "src/storm/settings/Option.h"
+#include "storm/settings/ArgumentType.h"
+#include "storm/settings/ArgumentBase.h"
+#include "storm/settings/Option.h"
 
-#include "src/storm/utility/macros.h"
-#include "src/storm/exceptions/IllegalArgumentException.h"
-#include "src/storm/exceptions/IllegalFunctionCallException.h"
+#include "storm/utility/macros.h"
+#include "storm/exceptions/IllegalArgumentException.h"
+#include "storm/exceptions/IllegalFunctionCallException.h"
 
 namespace storm {
 	namespace settings {

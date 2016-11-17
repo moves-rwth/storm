@@ -5,8 +5,8 @@
 #include <memory>
 #include <functional>
 
-#include "src/storm/utility/OsDetection.h"
-#include "src/storm/utility/macros.h"
+#include "storm/utility/OsDetection.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
     namespace expressions {

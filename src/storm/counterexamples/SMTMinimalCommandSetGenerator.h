@@ -4,17 +4,17 @@
 #include <queue>
 #include <chrono>
 
-#include "src/storm/solver/Z3SmtSolver.h"
+#include "storm/solver/Z3SmtSolver.h"
 
-#include "src/storm/storage/prism/Program.h"
-#include "src/storm/storage/expressions/Expression.h"
-#include "src/storm/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
-#include "src/storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
-#include "src/storm/settings/SettingsManager.h"
-#include "src/storm/settings/modules/CoreSettings.h"
+#include "storm/storage/prism/Program.h"
+#include "storm/storage/expressions/Expression.h"
+#include "storm/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
+#include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/CoreSettings.h"
 
-#include "src/storm/utility/counterexamples.h"
-#include "src/storm/utility/prism.h"
+#include "storm/utility/counterexamples.h"
+#include "storm/utility/prism.h"
 
 namespace storm {
     namespace counterexamples {

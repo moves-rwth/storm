@@ -1,6 +1,6 @@
-#include "src/storm/storage/gspn/GSPN.h"
-#include "src/storm/utility/macros.h"
-#include "src/storm/exceptions/InvalidArgumentException.h"
+#include "storm/storage/gspn/GSPN.h"
+#include "storm/utility/macros.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 
 #include <unordered_map>
 

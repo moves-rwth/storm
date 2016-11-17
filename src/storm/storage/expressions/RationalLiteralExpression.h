@@ -1,10 +1,10 @@
 #ifndef STORM_STORAGE_EXPRESSIONS_RationalLiteralExpression_H_
 #define STORM_STORAGE_EXPRESSIONS_RationalLiteralExpression_H_
 
-#include "src/storm/storage/expressions/BaseExpression.h"
-#include "src/storm/utility/OsDetection.h"
+#include "storm/storage/expressions/BaseExpression.h"
+#include "storm/utility/OsDetection.h"
 
-#include "src/storm/adapters/CarlAdapter.h"
+#include "storm/adapters/CarlAdapter.h"
 
 namespace storm {
     namespace expressions {

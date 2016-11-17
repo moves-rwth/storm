@@ -1,10 +1,10 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
-#include "src/storm/solver/GmmxxLinearEquationSolver.h"
-#include "src/storm/settings/SettingsManager.h"
+#include "storm/solver/GmmxxLinearEquationSolver.h"
+#include "storm/settings/SettingsManager.h"
 
-#include "src/storm/settings/modules/GmmxxEquationSolverSettings.h"
+#include "storm/settings/modules/GmmxxEquationSolverSettings.h"
 
 TEST(GmmxxLinearEquationSolver, SolveWithStandardOptions) {
     ASSERT_NO_THROW(storm::storage::SparseMatrixBuilder<double> builder);

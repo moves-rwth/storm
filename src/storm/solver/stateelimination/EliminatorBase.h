@@ -1,8 +1,8 @@
 #pragma once
 
-#include "src/storm/storage/sparse/StateType.h"
+#include "storm/storage/sparse/StateType.h"
 
-#include "src/storm/storage/FlexibleSparseMatrix.h"
+#include "storm/storage/FlexibleSparseMatrix.h"
 
 namespace storm {
     namespace solver {

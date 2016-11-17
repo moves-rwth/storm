@@ -1,8 +1,8 @@
-#include "src/storm/storage/dd/cudd/CuddAddIterator.h"
-#include "src/storm/storage/dd/DdManager.h"
-#include "src/storm/storage/dd/DdMetaVariable.h"
-#include "src/storm/utility/macros.h"
-#include "src/storm/storage/expressions/ExpressionManager.h"
+#include "storm/storage/dd/cudd/CuddAddIterator.h"
+#include "storm/storage/dd/DdManager.h"
+#include "storm/storage/dd/DdMetaVariable.h"
+#include "storm/utility/macros.h"
+#include "storm/storage/expressions/ExpressionManager.h"
 
 #include <cmath>
 

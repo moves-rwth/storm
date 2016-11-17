@@ -1,8 +1,8 @@
 #ifndef STORM_MODELS_SPARSE_NONDETERMINISTICMODEL_H_
 #define STORM_MODELS_SPARSE_NONDETERMINISTICMODEL_H_
 
-#include "src/storm/models/sparse/Model.h"
-#include "src/storm/utility/OsDetection.h"
+#include "storm/models/sparse/Model.h"
+#include "storm/utility/OsDetection.h"
 
 namespace storm {
     namespace models {

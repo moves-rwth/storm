@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include "src/storm/builder/jit/ModelComponentsBuilder.h"
+#include "storm/builder/jit/ModelComponentsBuilder.h"
 
 namespace storm {
     namespace models {

@@ -8,10 +8,10 @@
 #include <unordered_set>
 #include <iostream>
 
-#include "src/storm/storage/expressions/Variable.h"
-#include "src/storm/storage/expressions/Expression.h"
-#include "src/storm/adapters/CarlAdapter.h"
-#include "src/storm/utility/OsDetection.h"
+#include "storm/storage/expressions/Variable.h"
+#include "storm/storage/expressions/Expression.h"
+#include "storm/adapters/CarlAdapter.h"
+#include "storm/utility/OsDetection.h"
 
 namespace storm {
     namespace expressions {

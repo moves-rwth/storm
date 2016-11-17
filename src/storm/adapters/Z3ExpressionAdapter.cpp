@@ -1,11 +1,11 @@
-#include "src/storm/adapters/Z3ExpressionAdapter.h"
+#include "storm/adapters/Z3ExpressionAdapter.h"
 
-#include "src/storm/storage/expressions/Expressions.h"
-#include "src/storm/storage/expressions/ExpressionManager.h"
-#include "src/storm/utility/macros.h"
-#include "src/storm/exceptions/ExpressionEvaluationException.h"
-#include "src/storm/exceptions/InvalidTypeException.h"
-#include "src/storm/exceptions/NotImplementedException.h"
+#include "storm/storage/expressions/Expressions.h"
+#include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/utility/macros.h"
+#include "storm/exceptions/ExpressionEvaluationException.h"
+#include "storm/exceptions/InvalidTypeException.h"
+#include "storm/exceptions/NotImplementedException.h"
 
 namespace storm {
     namespace adapters {

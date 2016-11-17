@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 
-#include "src/storm/transformer/StateDuplicator.h"
+#include "storm/transformer/StateDuplicator.h"
 
 
 TEST(StateDuplicator, SimpleModelTest) {

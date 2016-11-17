@@ -4,10 +4,10 @@
 #include <string>
 #include <memory>
 
-#include "src/storm/storage/prism/LocatedInformation.h"
-#include "src/storm/utility/OsDetection.h"
+#include "storm/storage/prism/LocatedInformation.h"
+#include "storm/utility/OsDetection.h"
 
-#include "src/storm/storage/prism/Composition.h"
+#include "storm/storage/prism/Composition.h"
 
 namespace storm {
     namespace prism {

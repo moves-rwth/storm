@@ -6,8 +6,8 @@
 #include <boost/container/flat_set.hpp>
 #include <boost/container/container_fwd.hpp>
 
-#include "src/storm/utility/OsDetection.h"
-#include "src/storm/storage/sparse/StateType.h"
+#include "storm/utility/OsDetection.h"
+#include "storm/storage/sparse/StateType.h"
 
 namespace storm {
     namespace storage {

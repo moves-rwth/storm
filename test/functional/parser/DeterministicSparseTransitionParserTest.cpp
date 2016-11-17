@@ -8,15 +8,15 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
-#include "src/storm/parser/DeterministicSparseTransitionParser.h"
-#include "src/storm/storage/SparseMatrix.h"
-#include "src/storm/settings/SettingsManager.h"
-#include "src/storm/settings/modules/CoreSettings.h"
-#include "src/storm/settings/SettingMemento.h"
-#include "src/storm/exceptions/FileIoException.h"
-#include "src/storm/exceptions/WrongFormatException.h"
+#include "storm/parser/DeterministicSparseTransitionParser.h"
+#include "storm/storage/SparseMatrix.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/CoreSettings.h"
+#include "storm/settings/SettingMemento.h"
+#include "storm/exceptions/FileIoException.h"
+#include "storm/exceptions/WrongFormatException.h"
 
-#include "src/storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 
 TEST(DeterministicSparseTransitionParserTest, NonExistingFile) {
 

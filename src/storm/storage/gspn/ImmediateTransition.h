@@ -1,8 +1,8 @@
 #ifndef STORM_STORAGE_GSPN_IMMEDIATETRANSITION_H_
 #define STORM_STORAGE_GSPN_IMMEDIATETRANSITION_H_
 
-#include "src/storm/storage/gspn/Transition.h"
-#include "src/storm/utility/constants.h"
+#include "storm/storage/gspn/Transition.h"
+#include "storm/utility/constants.h"
 
 namespace storm {
     namespace gspn {

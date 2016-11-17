@@ -1,16 +1,16 @@
-#include "src/storm/modelchecker/multiobjective/pcaa/SparsePcaaQuantitativeQuery.h"
+#include "storm/modelchecker/multiobjective/pcaa/SparsePcaaQuantitativeQuery.h"
 
-#include "src/storm/adapters/CarlAdapter.h"
-#include "src/storm/models/sparse/Mdp.h"
-#include "src/storm/models/sparse/MarkovAutomaton.h"
-#include "src/storm/models/sparse/StandardRewardModel.h"
-#include "src/storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
-#include "src/storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
-#include "src/storm/utility/constants.h"
-#include "src/storm/utility/vector.h"
-#include "src/storm/settings//SettingsManager.h"
-#include "src/storm/settings/modules/MultiObjectiveSettings.h"
-#include "src/storm/settings/modules/GeneralSettings.h"
+#include "storm/adapters/CarlAdapter.h"
+#include "storm/models/sparse/Mdp.h"
+#include "storm/models/sparse/MarkovAutomaton.h"
+#include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
+#include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "storm/utility/constants.h"
+#include "storm/utility/vector.h"
+#include "storm/settings//SettingsManager.h"
+#include "storm/settings/modules/MultiObjectiveSettings.h"
+#include "storm/settings/modules/GeneralSettings.h"
 
 namespace storm {
     namespace modelchecker {

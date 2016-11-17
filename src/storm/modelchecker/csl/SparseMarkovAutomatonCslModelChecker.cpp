@@ -1,23 +1,23 @@
-#include "src/storm/modelchecker/csl/SparseMarkovAutomatonCslModelChecker.h"
+#include "storm/modelchecker/csl/SparseMarkovAutomatonCslModelChecker.h"
 
-#include "src/storm/modelchecker/csl/helper/SparseMarkovAutomatonCslHelper.h"
+#include "storm/modelchecker/csl/helper/SparseMarkovAutomatonCslHelper.h"
 
-#include "src/storm/modelchecker/multiobjective/pcaa.h"
+#include "storm/modelchecker/multiobjective/pcaa.h"
 
-#include "src/storm/models/sparse/StandardRewardModel.h"
+#include "storm/models/sparse/StandardRewardModel.h"
 
-#include "src/storm/utility/macros.h"
+#include "storm/utility/macros.h"
 
-#include "src/storm/settings/SettingsManager.h"
-#include "src/storm/settings/modules/GeneralSettings.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/GeneralSettings.h"
 
-#include "src/storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
-#include "src/storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
+#include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 
-#include "src/storm/logic/FragmentSpecification.h"
+#include "storm/logic/FragmentSpecification.h"
 
-#include "src/storm/exceptions/InvalidPropertyException.h"
-#include "src/storm/exceptions/NotImplementedException.h"
+#include "storm/exceptions/InvalidPropertyException.h"
+#include "storm/exceptions/NotImplementedException.h"
 
 namespace storm {
     namespace modelchecker {

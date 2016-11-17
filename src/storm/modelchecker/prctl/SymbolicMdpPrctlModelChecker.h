@@ -1,11 +1,11 @@
 #ifndef STORM_MODELCHECKER_SYMBOLICMDPPRCTLMODELCHECKER_H_
 #define STORM_MODELCHECKER_SYMBOLICMDPPRCTLMODELCHECKER_H_
 
-#include "src/storm/modelchecker/propositional/SymbolicPropositionalModelChecker.h"
+#include "storm/modelchecker/propositional/SymbolicPropositionalModelChecker.h"
 
-#include "src/storm/models/symbolic/Mdp.h"
+#include "storm/models/symbolic/Mdp.h"
 
-#include "src/storm/utility/solver.h"
+#include "storm/utility/solver.h"
 
 namespace storm {
     namespace modelchecker {

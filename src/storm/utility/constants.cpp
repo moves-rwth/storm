@@ -1,14 +1,14 @@
-#include "src/storm/utility/constants.h"
+#include "storm/utility/constants.h"
 
-#include "src/storm/storage/sparse/StateType.h"
-#include "src/storm/storage/SparseMatrix.h"
-#include "src/storm/settings/SettingsManager.h"
-#include "src/storm/settings/modules/GeneralSettings.h"
+#include "storm/storage/sparse/StateType.h"
+#include "storm/storage/SparseMatrix.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/GeneralSettings.h"
 
-#include "src/storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 
-#include "src/storm/adapters/CarlAdapter.h"
-#include "src/storm/utility/macros.h"
+#include "storm/adapters/CarlAdapter.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
     namespace utility {

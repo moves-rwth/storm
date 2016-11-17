@@ -3,16 +3,16 @@
 
 #ifdef STORM_HAVE_HYPRO
 
-#include "src/storm/modelchecker/multiobjective/pcaa.h"
-#include "src/storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
-#include "src/storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
-#include "src/storm/modelchecker/results/ParetoCurveCheckResult.h"
-#include "src/storm/models/sparse/MarkovAutomaton.h"
-#include "src/storm/storage/geometry/Polytope.h"
-#include "src/storm/storage/geometry/Hyperrectangle.h"
-#include "src/storm/settings/modules/GeneralSettings.h"
-#include "src/storm/settings/SettingsManager.h"
-#include "src/storm/utility/storm.h"
+#include "storm/modelchecker/multiobjective/pcaa.h"
+#include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
+#include "storm/modelchecker/results/ParetoCurveCheckResult.h"
+#include "storm/models/sparse/MarkovAutomaton.h"
+#include "storm/storage/geometry/Polytope.h"
+#include "storm/storage/geometry/Hyperrectangle.h"
+#include "storm/settings/modules/GeneralSettings.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/utility/storm.h"
 
 
 /* Rationals for MAs not supported at this point

@@ -1,12 +1,12 @@
-#include "src/storm/builder/BuilderOptions.h"
+#include "storm/builder/BuilderOptions.h"
 
-#include "src/storm/logic/Formulas.h"
+#include "storm/logic/Formulas.h"
 
-#include "src/storm/settings/SettingsManager.h"
-#include "src/storm/settings/modules/IOSettings.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/IOSettings.h"
 
-#include "src/storm/utility/macros.h"
-#include "src/storm/exceptions/InvalidSettingsException.h"
+#include "storm/utility/macros.h"
+#include "storm/exceptions/InvalidSettingsException.h"
 
 namespace storm {
     namespace builder {

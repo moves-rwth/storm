@@ -1,8 +1,8 @@
 #ifndef STORM_UNSUPPORTEDMODELEXCEPTION_H
 #define STORM_UNSUPPORTEDMODELEXCEPTION_H
 
-#include "src/storm/exceptions/BaseException.h"
-#include "src/storm/exceptions/ExceptionMacros.h"
+#include "storm/exceptions/BaseException.h"
+#include "storm/exceptions/ExceptionMacros.h"
 
 namespace storm {
     namespace exceptions {

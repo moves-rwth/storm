@@ -10,10 +10,10 @@
 
 #include <cmath>
 
-#include "src/storm/parser/SparseStateRewardParser.h"
-#include "src/storm/exceptions/FileIoException.h"
-#include "src/storm/exceptions/WrongFormatException.h"
-#include "src/storm/exceptions/OutOfRangeException.h"
+#include "storm/parser/SparseStateRewardParser.h"
+#include "storm/exceptions/FileIoException.h"
+#include "storm/exceptions/WrongFormatException.h"
+#include "storm/exceptions/OutOfRangeException.h"
 
 TEST(SparseStateRewardParserTest, NonExistingFile) {
     // No matter what happens, please do NOT create a file with the name "nonExistingFile.not"!

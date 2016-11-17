@@ -1,9 +1,9 @@
-#include "src/storm/generator/CompressedState.h"
+#include "storm/generator/CompressedState.h"
 
-#include "src/storm/generator/VariableInformation.h"
-#include "src/storm/storage/expressions/ExpressionManager.h"
-#include "src/storm/storage/expressions/SimpleValuation.h"
-#include "src/storm/storage/expressions/ExpressionEvaluator.h"
+#include "storm/generator/VariableInformation.h"
+#include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/storage/expressions/SimpleValuation.h"
+#include "storm/storage/expressions/ExpressionEvaluator.h"
 
 namespace storm {
     namespace generator {

@@ -1,9 +1,9 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
-#include "src/storm/parser/FormulaParser.h"
-#include "src/storm/logic/FragmentSpecification.h"
-#include "src/storm/exceptions/WrongFormatException.h"
-#include "src/storm/storage/expressions/ExpressionManager.h"
+#include "storm/parser/FormulaParser.h"
+#include "storm/logic/FragmentSpecification.h"
+#include "storm/exceptions/WrongFormatException.h"
+#include "storm/storage/expressions/ExpressionManager.h"
 
 TEST(FormulaParserTest, LabelTest) {
     storm::parser::FormulaParser formulaParser;

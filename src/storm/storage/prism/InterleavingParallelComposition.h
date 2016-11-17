@@ -1,7 +1,7 @@
 #ifndef STORM_STORAGE_PRISM_INTERLEAVINGPARALLELCOMPOSITION_H_
 #define STORM_STORAGE_PRISM_INTERLEAVINGPARALLELCOMPOSITION_H_
 
-#include "src/storm/storage/prism/ParallelComposition.h"
+#include "storm/storage/prism/ParallelComposition.h"
 
 namespace storm {
     namespace prism {

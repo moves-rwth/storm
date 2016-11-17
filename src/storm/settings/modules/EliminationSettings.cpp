@@ -1,9 +1,9 @@
-#include "src/storm/settings/modules/EliminationSettings.h"
+#include "storm/settings/modules/EliminationSettings.h"
 
-#include "src/storm/settings/Option.h"
-#include "src/storm/settings/OptionBuilder.h"
-#include "src/storm/settings/ArgumentBuilder.h"
-#include "src/storm/settings/Argument.h"
+#include "storm/settings/Option.h"
+#include "storm/settings/OptionBuilder.h"
+#include "storm/settings/ArgumentBuilder.h"
+#include "storm/settings/Argument.h"
 
 
 namespace storm {

@@ -1,7 +1,7 @@
 #ifndef STORM_STORAGE_DD_INTERNALBDD_H_
 #define STORM_STORAGE_DD_INTERNALBDD_H_
 
-#include "src/storm/storage/dd/DdType.h"
+#include "storm/storage/dd/DdType.h"
 
 namespace storm {
     namespace dd {

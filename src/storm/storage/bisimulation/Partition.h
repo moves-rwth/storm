@@ -5,9 +5,9 @@
 #include <list>
 #include <memory>
 
-#include "src/storm/storage/bisimulation/Block.h"
+#include "storm/storage/bisimulation/Block.h"
 
-#include "src/storm/storage/BitVector.h"
+#include "storm/storage/BitVector.h"
 
 namespace storm {
     namespace storage {

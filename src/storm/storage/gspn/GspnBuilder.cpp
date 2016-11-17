@@ -1,9 +1,9 @@
-#include "src/storm/exceptions/IllegalFunctionCallException.h"
+#include "storm/exceptions/IllegalFunctionCallException.h"
 #include "GspnBuilder.h"
 
-#include "src/storm/utility/macros.h"
-#include "src/storm/exceptions/IllegalFunctionCallException.h"
-#include "src/storm/exceptions/InvalidArgumentException.h"
+#include "storm/utility/macros.h"
+#include "storm/exceptions/IllegalFunctionCallException.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 #include "Place.h"
 
 namespace storm {

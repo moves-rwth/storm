@@ -1,19 +1,19 @@
 #include <algorithm>
 
-#include "src/storm/storage/dd/Bdd.h"
-#include "src/storm/storage/dd/Add.h"
-#include "src/storm/storage/dd/Odd.h"
+#include "storm/storage/dd/Bdd.h"
+#include "storm/storage/dd/Add.h"
+#include "storm/storage/dd/Odd.h"
 
-#include "src/storm/logic/ComparisonType.h"
+#include "storm/logic/ComparisonType.h"
 
-#include "src/storm/storage/dd/DdMetaVariable.h"
-#include "src/storm/storage/dd/DdManager.h"
-#include "src/storm/storage/dd/Odd.h"
+#include "storm/storage/dd/DdMetaVariable.h"
+#include "storm/storage/dd/DdManager.h"
+#include "storm/storage/dd/Odd.h"
 
-#include "src/storm/storage/BitVector.h"
+#include "storm/storage/BitVector.h"
 
-#include "src/storm/utility/macros.h"
-#include "src/storm/exceptions/InvalidArgumentException.h"
+#include "storm/utility/macros.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 
 namespace storm {
     namespace dd {

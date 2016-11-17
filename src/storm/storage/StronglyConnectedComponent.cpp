@@ -1,4 +1,4 @@
-#include "src/storm/storage/StronglyConnectedComponent.h"
+#include "storm/storage/StronglyConnectedComponent.h"
 
 namespace storm {
     namespace storage {

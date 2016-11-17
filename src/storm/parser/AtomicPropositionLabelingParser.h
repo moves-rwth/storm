@@ -1,7 +1,7 @@
 #ifndef STORM_PARSER_ATOMICPROPOSITIONLABELINGPARSER_H_
 #define STORM_PARSER_ATOMICPROPOSITIONLABELINGPARSER_H_
 
-#include "src/storm/models/sparse/StateLabeling.h"
+#include "storm/models/sparse/StateLabeling.h"
 #include <cstdint>
 
 namespace storm {

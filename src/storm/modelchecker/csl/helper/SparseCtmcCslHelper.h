@@ -1,11 +1,11 @@
 #ifndef STORM_MODELCHECKER_SPARSE_CTMC_CSL_MODELCHECKER_HELPER_H_
 #define STORM_MODELCHECKER_SPARSE_CTMC_CSL_MODELCHECKER_HELPER_H_
 
-#include "src/storm/storage/BitVector.h"
+#include "storm/storage/BitVector.h"
 
-#include "src/storm/solver/LinearEquationSolver.h"
+#include "storm/solver/LinearEquationSolver.h"
 
-#include "src/storm/utility/NumberTraits.h"
+#include "storm/utility/NumberTraits.h"
 
 namespace storm {
     namespace modelchecker {

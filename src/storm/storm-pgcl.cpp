@@ -1,23 +1,23 @@
-#include "src/storm/parser/PgclParser.h"
+#include "storm/parser/PgclParser.h"
 
 #include "logic/Formula.h"
 #include "utility/initialize.h"
 #include "utility/storm.h"
-#include "src/storm/cli/cli.h"
-#include "src/storm/exceptions/BaseException.h"
-#include "src/storm/utility/macros.h"
+#include "storm/cli/cli.h"
+#include "storm/exceptions/BaseException.h"
+#include "storm/utility/macros.h"
 #include <boost/lexical_cast.hpp>
-#include "src/storm/builder/ProgramGraphBuilder.h"
-#include "src/storm/builder/JaniProgramGraphBuilder.h"
-#include "src/storm/storage/jani/JSONExporter.h"
+#include "storm/builder/ProgramGraphBuilder.h"
+#include "storm/builder/JaniProgramGraphBuilder.h"
+#include "storm/storage/jani/JSONExporter.h"
 
-#include "src/storm/exceptions/FileIoException.h"
+#include "storm/exceptions/FileIoException.h"
 
-#include "src/storm/settings/modules/GeneralSettings.h"
-#include "src/storm/settings/modules/PGCLSettings.h"
-#include "src/storm/settings/modules/CoreSettings.h"
-#include "src/storm/settings/modules/DebugSettings.h"
-#include "src/storm/settings/modules/JaniExportSettings.h"
+#include "storm/settings/modules/GeneralSettings.h"
+#include "storm/settings/modules/PGCLSettings.h"
+#include "storm/settings/modules/CoreSettings.h"
+#include "storm/settings/modules/DebugSettings.h"
+#include "storm/settings/modules/JaniExportSettings.h"
 
 
 /*!

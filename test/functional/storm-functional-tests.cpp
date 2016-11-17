@@ -6,7 +6,7 @@
 
 #include "gtest/gtest.h"
 
-#include "src/storm/settings/SettingsManager.h"
+#include "storm/settings/SettingsManager.h"
 
 int main(int argc, char* argv[]) {
 	storm::settings::initializeAll("StoRM (Functional) Testing Suite", "storm-functional-tests");

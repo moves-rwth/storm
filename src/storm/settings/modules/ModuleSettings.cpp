@@ -1,10 +1,10 @@
-#include "src/storm/settings/modules/ModuleSettings.h"
+#include "storm/settings/modules/ModuleSettings.h"
 
-#include "src/storm/utility/macros.h"
-#include "src/storm/settings/SettingMemento.h"
-#include "src/storm/settings/Option.h"
-#include "src/storm/exceptions/InvalidStateException.h"
-#include "src/storm/exceptions/IllegalFunctionCallException.h"
+#include "storm/utility/macros.h"
+#include "storm/settings/SettingMemento.h"
+#include "storm/settings/Option.h"
+#include "storm/exceptions/InvalidStateException.h"
+#include "storm/exceptions/IllegalFunctionCallException.h"
 
 namespace storm {
     namespace settings {

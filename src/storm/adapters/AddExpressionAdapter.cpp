@@ -1,12 +1,12 @@
-#include "src/storm/adapters/AddExpressionAdapter.h"
+#include "storm/adapters/AddExpressionAdapter.h"
 
-#include "src/storm/utility/macros.h"
-#include "src/storm/exceptions/ExpressionEvaluationException.h"
-#include "src/storm/exceptions/InvalidArgumentException.h"
+#include "storm/utility/macros.h"
+#include "storm/exceptions/ExpressionEvaluationException.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 
-#include "src/storm/storage/dd/DdManager.h"
-#include "src/storm/storage/dd/Add.h"
-#include "src/storm/storage/dd/Bdd.h"
+#include "storm/storage/dd/DdManager.h"
+#include "storm/storage/dd/Add.h"
+#include "storm/storage/dd/Bdd.h"
 
 namespace storm {
     namespace adapters {

@@ -1,18 +1,18 @@
-#include "src/storm/parser/FormulaParser.h"
+#include "storm/parser/FormulaParser.h"
 
 #include <fstream>
 
-#include "src/storm/parser/SpiritErrorHandler.h"
+#include "storm/parser/SpiritErrorHandler.h"
 
-#include "src/storm/storage/prism/Program.h"
-#include "src/storm/storage/jani/Model.h"
+#include "storm/storage/prism/Program.h"
+#include "storm/storage/jani/Model.h"
 
 // If the parser fails due to ill-formed data, this exception is thrown.
-#include "src/storm/exceptions/WrongFormatException.h"
+#include "storm/exceptions/WrongFormatException.h"
 
-#include "src/storm/storage/expressions/ExpressionEvaluator.h"
+#include "storm/storage/expressions/ExpressionEvaluator.h"
 #include "FormulaParserGrammar.h"
-#include "src/storm/storage/expressions/ExpressionManager.h"
+#include "storm/storage/expressions/ExpressionManager.h"
 
 namespace storm {
     namespace parser {

@@ -3,7 +3,7 @@
 
 #include <cstdint>
 
-#include "src/storm/storage/BitVectorHashMap.h"
+#include "storm/storage/BitVectorHashMap.h"
 
 namespace storm {
     namespace storage {

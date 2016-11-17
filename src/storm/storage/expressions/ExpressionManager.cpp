@@ -1,10 +1,10 @@
-#include "src/storm/storage/expressions/ExpressionManager.h"
+#include "storm/storage/expressions/ExpressionManager.h"
 
-#include "src/storm/storage/expressions/Expressions.h"
-#include "src/storm/storage/expressions/Variable.h"
-#include "src/storm/utility/macros.h"
-#include "src/storm/exceptions/InvalidStateException.h"
-#include "src/storm/exceptions/InvalidArgumentException.h"
+#include "storm/storage/expressions/Expressions.h"
+#include "storm/storage/expressions/Variable.h"
+#include "storm/utility/macros.h"
+#include "storm/exceptions/InvalidStateException.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 
 namespace storm {
     namespace expressions {

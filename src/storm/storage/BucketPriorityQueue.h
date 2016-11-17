@@ -1,7 +1,7 @@
 #ifndef STORM_STORAGE_BUCKETPRIORITYQUEUE_H_
 #define STORM_STORAGE_BUCKETPRIORITYQUEUE_H_
 
-#include "src/storm/builder/DftExplorationHeuristic.h"
+#include "storm/builder/DftExplorationHeuristic.h"
 #include <algorithm>
 #include <functional>
 #include <unordered_map>

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "src/storm/storage/jani/ModelType.h"
-#include "src/storm/builder/jit/Choice.h"
+#include "storm/storage/jani/ModelType.h"
+#include "storm/builder/jit/Choice.h"
 
 namespace storm {
     namespace builder {

@@ -1,8 +1,8 @@
 #ifndef STORM_PARSER_MARKOVAUTOMATONPARSER_H_
 #define STORM_PARSER_MARKOVAUTOMATONPARSER_H_
 
-#include "src/storm/models/sparse/MarkovAutomaton.h"
-#include "src/storm/parser/MarkovAutomatonSparseTransitionParser.h"
+#include "storm/models/sparse/MarkovAutomaton.h"
+#include "storm/parser/MarkovAutomatonSparseTransitionParser.h"
 
 namespace storm {
     namespace parser {

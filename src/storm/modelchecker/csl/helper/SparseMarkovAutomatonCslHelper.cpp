@@ -1,30 +1,30 @@
-#include "src/storm/modelchecker/csl/helper/SparseMarkovAutomatonCslHelper.h"
+#include "storm/modelchecker/csl/helper/SparseMarkovAutomatonCslHelper.h"
 
-#include "src/storm/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
+#include "storm/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
 
-#include "src/storm/models/sparse/StandardRewardModel.h"
+#include "storm/models/sparse/StandardRewardModel.h"
 
-#include "src/storm/storage/StronglyConnectedComponentDecomposition.h"
-#include "src/storm/storage/MaximalEndComponentDecomposition.h"
+#include "storm/storage/StronglyConnectedComponentDecomposition.h"
+#include "storm/storage/MaximalEndComponentDecomposition.h"
 
-#include "src/storm/settings/SettingsManager.h"
-#include "src/storm/settings/modules/GeneralSettings.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/GeneralSettings.h"
 
-#include "src/storm/utility/macros.h"
-#include "src/storm/utility/vector.h"
-#include "src/storm/utility/graph.h"
+#include "storm/utility/macros.h"
+#include "storm/utility/vector.h"
+#include "storm/utility/graph.h"
 
-#include "src/storm/storage/expressions/Variable.h"
-#include "src/storm/storage/expressions/Expression.h"
+#include "storm/storage/expressions/Variable.h"
+#include "storm/storage/expressions/Expression.h"
 
-#include "src/storm/utility/numerical.h"
+#include "storm/utility/numerical.h"
 
-#include "src/storm/solver/MinMaxLinearEquationSolver.h"
-#include "src/storm/solver/LpSolver.h"
+#include "storm/solver/MinMaxLinearEquationSolver.h"
+#include "storm/solver/LpSolver.h"
 
 
-#include "src/storm/exceptions/InvalidStateException.h"
-#include "src/storm/exceptions/InvalidPropertyException.h"
+#include "storm/exceptions/InvalidStateException.h"
+#include "storm/exceptions/InvalidPropertyException.h"
 
 namespace storm {
     namespace modelchecker {

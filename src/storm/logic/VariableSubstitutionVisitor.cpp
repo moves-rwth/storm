@@ -1,6 +1,6 @@
-#include "src/storm/logic/VariableSubstitutionVisitor.h"
+#include "storm/logic/VariableSubstitutionVisitor.h"
 
-#include "src/storm/logic/Formulas.h"
+#include "storm/logic/Formulas.h"
 
 namespace storm {
     namespace logic {

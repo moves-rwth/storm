@@ -5,7 +5,7 @@
  *      Author: Manuel Sascha Weiand
  */
 
-#include "src/storm/parser/MappedFile.h"
+#include "storm/parser/MappedFile.h"
 
 #include <fstream>
 #include <cstring>
@@ -13,8 +13,8 @@
 
 #include <boost/integer/integer_mask.hpp>
 
-#include "src/storm/exceptions/FileIoException.h"
-#include "src/storm/utility/macros.h"
+#include "storm/exceptions/FileIoException.h"
+#include "storm/utility/macros.h"
 namespace storm {
 	namespace parser {
 

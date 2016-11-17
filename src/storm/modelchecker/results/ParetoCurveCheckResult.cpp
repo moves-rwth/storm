@@ -1,11 +1,11 @@
-#include "src/storm/modelchecker/results/ParetoCurveCheckResult.h"
+#include "storm/modelchecker/results/ParetoCurveCheckResult.h"
 
-#include "src/storm/adapters/CarlAdapter.h"
-#include "src/storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
-#include "src/storm/utility/macros.h"
-#include "src/storm/utility/vector.h"
+#include "storm/adapters/CarlAdapter.h"
+#include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
+#include "storm/utility/macros.h"
+#include "storm/utility/vector.h"
 
-#include "src/storm/exceptions/InvalidOperationException.h"
+#include "storm/exceptions/InvalidOperationException.h"
 
 namespace storm {
     namespace modelchecker {

@@ -3,10 +3,10 @@
 
 #include <stack>
 
-#include "src/storm/storage/expressions/Expression.h"
-#include "src/storm/storage/expressions/Variable.h"
-#include "src/storm/storage/expressions/ExpressionVisitor.h"
-#include "src/storm/storage/expressions/SimpleValuation.h"
+#include "storm/storage/expressions/Expression.h"
+#include "storm/storage/expressions/Variable.h"
+#include "storm/storage/expressions/ExpressionVisitor.h"
+#include "storm/storage/expressions/SimpleValuation.h"
 
 namespace storm {
     namespace expressions {

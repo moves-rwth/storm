@@ -1,11 +1,11 @@
-#include "src/storm/builder/ExplicitDFTModelBuilder.h"
-#include "src/storm/models/sparse/MarkovAutomaton.h"
-#include "src/storm/models/sparse/Ctmc.h"
-#include "src/storm/utility/constants.h"
-#include "src/storm/utility/vector.h"
-#include "src/storm/exceptions/UnexpectedException.h"
-#include "src/storm/settings/modules/DFTSettings.h"
-#include "src/storm/settings/SettingsManager.h"
+#include "storm/builder/ExplicitDFTModelBuilder.h"
+#include "storm/models/sparse/MarkovAutomaton.h"
+#include "storm/models/sparse/Ctmc.h"
+#include "storm/utility/constants.h"
+#include "storm/utility/vector.h"
+#include "storm/exceptions/UnexpectedException.h"
+#include "storm/settings/modules/DFTSettings.h"
+#include "storm/settings/SettingsManager.h"
 #include <map>
 
 namespace storm {

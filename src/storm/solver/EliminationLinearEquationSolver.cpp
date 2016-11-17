@@ -1,16 +1,16 @@
-#include "src/storm/solver/EliminationLinearEquationSolver.h"
+#include "storm/solver/EliminationLinearEquationSolver.h"
 
 #include <numeric>
 
-#include "src/storm/settings/SettingsManager.h"
+#include "storm/settings/SettingsManager.h"
 
-#include "src/storm/solver/stateelimination/StatePriorityQueue.h"
-#include "src/storm/solver/stateelimination/PrioritizedStateEliminator.h"
+#include "storm/solver/stateelimination/StatePriorityQueue.h"
+#include "storm/solver/stateelimination/PrioritizedStateEliminator.h"
 
-#include "src/storm/utility/graph.h"
-#include "src/storm/utility/macros.h"
-#include "src/storm/utility/vector.h"
-#include "src/storm/utility/stateelimination.h"
+#include "storm/utility/graph.h"
+#include "storm/utility/macros.h"
+#include "storm/utility/vector.h"
+#include "storm/utility/stateelimination.h"
 
 namespace storm {
     namespace solver {

@@ -1,7 +1,7 @@
-#include "src/storm/storage/jani/Assignment.h"
+#include "storm/storage/jani/Assignment.h"
 
-#include "src/storm/utility/macros.h"
-#include "src/storm/exceptions/NotImplementedException.h"
+#include "storm/utility/macros.h"
+#include "storm/exceptions/NotImplementedException.h"
 
 namespace storm  {
     namespace jani {

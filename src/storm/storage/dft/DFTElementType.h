@@ -1,7 +1,7 @@
 #ifndef DFTELEMENTTYPE_H
 #define DFTELEMENTTYPE_H
 
-#include "src/storm/utility/macros.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
     namespace storage {

@@ -1,14 +1,14 @@
 #include <iostream>
-#include "src/storm/parser/SparseStateRewardParser.h"
+#include "storm/parser/SparseStateRewardParser.h"
 
-#include "src/storm/exceptions/WrongFormatException.h"
-#include "src/storm/exceptions/OutOfRangeException.h"
-#include "src/storm/exceptions/FileIoException.h"
-#include "src/storm/utility/cstring.h"
-#include "src/storm/parser/MappedFile.h"
+#include "storm/exceptions/WrongFormatException.h"
+#include "storm/exceptions/OutOfRangeException.h"
+#include "storm/exceptions/FileIoException.h"
+#include "storm/utility/cstring.h"
+#include "storm/parser/MappedFile.h"
 
-#include "src/storm/adapters/CarlAdapter.h"
-#include "src/storm/utility/macros.h"
+#include "storm/adapters/CarlAdapter.h"
+#include "storm/utility/macros.h"
 namespace storm {
     namespace parser {
 

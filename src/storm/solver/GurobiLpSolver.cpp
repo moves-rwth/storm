@@ -1,21 +1,21 @@
-#include "src/storm/solver/GurobiLpSolver.h"
+#include "storm/solver/GurobiLpSolver.h"
 
 #include <numeric>
 
-#include "src/storm/storage/expressions/LinearCoefficientVisitor.h"
+#include "storm/storage/expressions/LinearCoefficientVisitor.h"
 
-#include "src/storm/settings/SettingsManager.h"
-#include "src/storm/settings/modules/DebugSettings.h"
-#include "src/storm/settings/modules/GurobiSettings.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/DebugSettings.h"
+#include "storm/settings/modules/GurobiSettings.h"
 
-#include "src/storm/utility/macros.h"
-#include "src/storm/storage/expressions/Expression.h"
-#include "src/storm/storage/expressions/ExpressionManager.h"
+#include "storm/utility/macros.h"
+#include "storm/storage/expressions/Expression.h"
+#include "storm/storage/expressions/ExpressionManager.h"
 
-#include "src/storm/exceptions/InvalidStateException.h"
-#include "src/storm/exceptions/InvalidAccessException.h"
-#include "src/storm/exceptions/InvalidArgumentException.h"
-#include "src/storm/exceptions/NotImplementedException.h"
+#include "storm/exceptions/InvalidStateException.h"
+#include "storm/exceptions/InvalidAccessException.h"
+#include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/NotImplementedException.h"
 
 
 namespace storm {

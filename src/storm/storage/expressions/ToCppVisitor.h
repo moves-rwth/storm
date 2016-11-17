@@ -3,8 +3,8 @@
 #include <sstream>
 #include <unordered_map>
 
-#include "src/storm/storage/expressions/Variable.h"
-#include "src/storm/storage/expressions/ExpressionVisitor.h"
+#include "storm/storage/expressions/Variable.h"
+#include "storm/storage/expressions/ExpressionVisitor.h"
 
 namespace storm {
     namespace expressions {

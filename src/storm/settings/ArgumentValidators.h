@@ -12,12 +12,12 @@
 #include <string>
 #include <stdio.h>
 
-#include "src/storm/settings/Argument.h"
-#include "src/storm/utility/macros.h"
-#include "src/storm/exceptions/InvalidArgumentException.h"
-#include "src/storm/exceptions/IllegalArgumentException.h"
-#include "src/storm/exceptions/IllegalArgumentValueException.h"
-#include "src/storm/exceptions/IllegalFunctionCallException.h"
+#include "storm/settings/Argument.h"
+#include "storm/utility/macros.h"
+#include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/IllegalArgumentException.h"
+#include "storm/exceptions/IllegalArgumentValueException.h"
+#include "storm/exceptions/IllegalFunctionCallException.h"
 
 #include <sys/stat.h>
 

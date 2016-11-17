@@ -1,6 +1,6 @@
-#include "src/storm/storage/expressions/ToCppVisitor.h"
+#include "storm/storage/expressions/ToCppVisitor.h"
 
-#include "src/storm/storage/expressions/Expressions.h"
+#include "storm/storage/expressions/Expressions.h"
 
 namespace storm {
     namespace expressions {

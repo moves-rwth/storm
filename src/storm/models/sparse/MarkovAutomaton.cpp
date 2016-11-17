@@ -1,14 +1,14 @@
-#include "src/storm/models/sparse/MarkovAutomaton.h"
+#include "storm/models/sparse/MarkovAutomaton.h"
 
-#include "src/storm/adapters/CarlAdapter.h"
-#include "src/storm/models/sparse/StandardRewardModel.h"
-#include "src/storm/solver/stateelimination/StateEliminator.h"
-#include "src/storm/storage/FlexibleSparseMatrix.h"
-#include "src/storm/utility/constants.h"
-#include "src/storm/utility/vector.h"
-#include "src/storm/utility/macros.h"
+#include "storm/adapters/CarlAdapter.h"
+#include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/solver/stateelimination/StateEliminator.h"
+#include "storm/storage/FlexibleSparseMatrix.h"
+#include "storm/utility/constants.h"
+#include "storm/utility/vector.h"
+#include "storm/utility/macros.h"
 
-#include "src/storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 
 namespace storm {
     namespace models {

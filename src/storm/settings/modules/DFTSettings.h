@@ -2,8 +2,8 @@
 #define STORM_SETTINGS_MODULES_DFTSETTINGS_H_
 
 #include "storm-config.h"
-#include "src/storm/settings/modules/ModuleSettings.h"
-#include "src/storm/builder/DftExplorationHeuristic.h"
+#include "storm/settings/modules/ModuleSettings.h"
+#include "storm/builder/DftExplorationHeuristic.h"
 
 namespace storm {
     namespace settings {

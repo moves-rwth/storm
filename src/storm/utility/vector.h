@@ -11,10 +11,10 @@
 #include <functional>
 #include <numeric>
 
-#include "src/storm/storage/BitVector.h"
-#include "src/storm/utility/constants.h"
-#include "src/storm/utility/macros.h"
-#include "src/storm/solver/OptimizationDirection.h"
+#include "storm/storage/BitVector.h"
+#include "storm/utility/constants.h"
+#include "storm/utility/macros.h"
+#include "storm/solver/OptimizationDirection.h"
 
 namespace storm {
     namespace utility {

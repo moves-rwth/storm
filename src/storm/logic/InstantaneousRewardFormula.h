@@ -3,7 +3,7 @@
 
 #include <boost/variant.hpp>
 
-#include "src/storm/logic/PathFormula.h"
+#include "storm/logic/PathFormula.h"
 
 namespace storm {
     namespace logic {

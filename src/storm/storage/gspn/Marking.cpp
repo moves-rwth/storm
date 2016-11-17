@@ -1,5 +1,5 @@
 #include <stdint.h>
-#include "src/storm/storage/gspn/Marking.h"
+#include "storm/storage/gspn/Marking.h"
 
 namespace storm {
     namespace gspn {

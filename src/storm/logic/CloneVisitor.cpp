@@ -1,6 +1,6 @@
-#include "src/storm/logic/CloneVisitor.h"
+#include "storm/logic/CloneVisitor.h"
 
-#include "src/storm/logic/Formulas.h"
+#include "storm/logic/Formulas.h"
 
 namespace storm {
     namespace logic {

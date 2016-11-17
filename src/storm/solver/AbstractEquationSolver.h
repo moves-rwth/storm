@@ -1,7 +1,7 @@
 #ifndef STORM_SOLVER_ABSTRACTEQUATIONSOLVER_H_
 #define STORM_SOLVER_ABSTRACTEQUATIONSOLVER_H_
 
-#include "src/storm/solver/TerminationCondition.h"
+#include "storm/solver/TerminationCondition.h"
 #include <memory>
 
 namespace storm {

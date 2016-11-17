@@ -1,15 +1,15 @@
-#include "src/storm/modelchecker/multiobjective/pcaa/SparseMaPcaaWeightVectorChecker.h"
+#include "storm/modelchecker/multiobjective/pcaa/SparseMaPcaaWeightVectorChecker.h"
 
 #include <cmath>
 
-#include "src/storm/adapters/CarlAdapter.h"
-#include "src/storm/models/sparse/MarkovAutomaton.h"
-#include "src/storm/models/sparse/StandardRewardModel.h"
-#include "src/storm/transformer/EndComponentEliminator.h"
-#include "src/storm/utility/macros.h"
-#include "src/storm/utility/vector.h"
+#include "storm/adapters/CarlAdapter.h"
+#include "storm/models/sparse/MarkovAutomaton.h"
+#include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/transformer/EndComponentEliminator.h"
+#include "storm/utility/macros.h"
+#include "storm/utility/vector.h"
 
-#include "src/storm/exceptions/InvalidOperationException.h"
+#include "storm/exceptions/InvalidOperationException.h"
 
 namespace storm {
     namespace modelchecker {

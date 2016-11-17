@@ -1,10 +1,10 @@
 #include <list>
 #include <queue>
 
-#include "src/storm/models/sparse/StandardRewardModel.h"
+#include "storm/models/sparse/StandardRewardModel.h"
 
-#include "src/storm/storage/MaximalEndComponentDecomposition.h"
-#include "src/storm/storage/StronglyConnectedComponentDecomposition.h"
+#include "storm/storage/MaximalEndComponentDecomposition.h"
+#include "storm/storage/StronglyConnectedComponentDecomposition.h"
 
 namespace storm {
     namespace storage {

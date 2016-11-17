@@ -11,12 +11,12 @@
 #include <iostream>
 #include <boost/optional.hpp>
 
-#include "src/storm/utility/macros.h"
-#include "src/storm/exceptions/FileIoException.h"
+#include "storm/utility/macros.h"
+#include "storm/exceptions/FileIoException.h"
 
-//#include "src/storm/storage/parameters.h"
-//#include "src/storm/settings/modules/ParametricSettings.h"
-//#include "src/storm/modelchecker/reachability/CollectConstraints.h"
+//#include "storm/storage/parameters.h"
+//#include "storm/settings/modules/ParametricSettings.h"
+//#include "storm/modelchecker/reachability/CollectConstraints.h"
 
 namespace storm {
     namespace utility {

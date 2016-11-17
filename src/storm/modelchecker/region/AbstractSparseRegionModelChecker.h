@@ -11,9 +11,9 @@
 #include <ostream>
 #include <boost/optional.hpp>
 
-#include "src/storm/utility/region.h"
-#include "src/storm/modelchecker/region/ParameterRegion.h"
-#include "src/storm/logic/Formulas.h"
+#include "storm/utility/region.h"
+#include "storm/modelchecker/region/ParameterRegion.h"
+#include "storm/logic/Formulas.h"
 
 namespace storm {
     namespace modelchecker{

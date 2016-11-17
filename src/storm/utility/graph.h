@@ -4,13 +4,13 @@
 #include <set>
 #include <limits>
 
-#include "src/storm/utility/OsDetection.h"
+#include "storm/utility/OsDetection.h"
 
-#include "src/storm/storage/sparse/StateType.h"
-#include "src/storm/storage/PartialScheduler.h"
-#include "src/storm/models/sparse/NondeterministicModel.h"
-#include "src/storm/models/sparse/DeterministicModel.h"
-#include "src/storm/storage/dd/DdType.h"
+#include "storm/storage/sparse/StateType.h"
+#include "storm/storage/PartialScheduler.h"
+#include "storm/models/sparse/NondeterministicModel.h"
+#include "storm/models/sparse/DeterministicModel.h"
+#include "storm/storage/dd/DdType.h"
 
 namespace storm {
     namespace storage {

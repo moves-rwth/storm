@@ -5,8 +5,8 @@
 #include <string>
 #include <set>
 
-#include "src/storm/storage/dd/DdType.h"
-#include "src/storm/storage/expressions/Variable.h"
+#include "storm/storage/dd/DdType.h"
+#include "storm/storage/expressions/Variable.h"
 
 namespace storm {
     namespace dd {

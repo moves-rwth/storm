@@ -1,14 +1,14 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
-#include "src/storm/parser/PrismParser.h"
-#include "src/storm/parser/FormulaParser.h"
+#include "storm/parser/PrismParser.h"
+#include "storm/parser/FormulaParser.h"
 
-#include "src/storm/builder/ExplicitModelBuilder.h"
+#include "storm/builder/ExplicitModelBuilder.h"
 
-#include "src/storm/storage/bisimulation/NondeterministicModelBisimulationDecomposition.h"
-#include "src/storm/models/sparse/Mdp.h"
-#include "src/storm/models/sparse/StandardRewardModel.h"
+#include "storm/storage/bisimulation/NondeterministicModelBisimulationDecomposition.h"
+#include "storm/models/sparse/Mdp.h"
+#include "storm/models/sparse/StandardRewardModel.h"
 
 TEST(NondeterministicModelBisimulationDecomposition, TwoDice) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/two_dice.nm");

@@ -1,14 +1,14 @@
-#include "src/storm/solver/stateelimination/StateEliminator.h"
+#include "storm/solver/stateelimination/StateEliminator.h"
 
-#include "src/storm/adapters/CarlAdapter.h"
+#include "storm/adapters/CarlAdapter.h"
 
-#include "src/storm/storage/BitVector.h"
+#include "storm/storage/BitVector.h"
 
-#include "src/storm/utility/stateelimination.h"
-#include "src/storm/utility/macros.h"
-#include "src/storm/utility/constants.h"
-#include "src/storm/utility/macros.h"
-#include "src/storm/exceptions/InvalidStateException.h"
+#include "storm/utility/stateelimination.h"
+#include "storm/utility/macros.h"
+#include "storm/utility/constants.h"
+#include "storm/utility/macros.h"
+#include "storm/exceptions/InvalidStateException.h"
 
 namespace storm {
     namespace solver {

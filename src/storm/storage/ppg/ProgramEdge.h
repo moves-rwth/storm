@@ -1,7 +1,7 @@
 #pragma once
 #include "defines.h"
 
-#include "src/storm/storage/expressions/Expression.h"
+#include "storm/storage/expressions/Expression.h"
 
 namespace storm {
     namespace ppg {

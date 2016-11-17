@@ -1,9 +1,9 @@
-#include "src/storm/storage/bisimulation/DeterministicBlockData.h"
+#include "storm/storage/bisimulation/DeterministicBlockData.h"
 
 #include <iostream>
 
-#include "src/storm/exceptions/InvalidOperationException.h"
-#include "src/storm/utility/macros.h"
+#include "storm/exceptions/InvalidOperationException.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
     namespace storage {

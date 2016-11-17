@@ -1,8 +1,8 @@
-#include "src/storm/storage/expressions/VariableExpression.h"
+#include "storm/storage/expressions/VariableExpression.h"
 #include "Valuation.h"
 #include "ExpressionVisitor.h"
-#include "src/storm/utility/macros.h"
-#include "src/storm/exceptions/InvalidTypeException.h"
+#include "storm/utility/macros.h"
+#include "storm/exceptions/InvalidTypeException.h"
 
 namespace storm {
     namespace expressions {

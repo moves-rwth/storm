@@ -3,9 +3,9 @@
 
 #include <memory>
 
-#include "src/storm/logic/Formulas.h"
-#include "src/storm/storage/BitVector.h"
-#include "src/storm/modelchecker/multiobjective/pcaa/SparsePcaaPreprocessorReturnType.h"
+#include "storm/logic/Formulas.h"
+#include "storm/storage/BitVector.h"
+#include "storm/modelchecker/multiobjective/pcaa/SparsePcaaPreprocessorReturnType.h"
 
 namespace storm {
     namespace modelchecker {

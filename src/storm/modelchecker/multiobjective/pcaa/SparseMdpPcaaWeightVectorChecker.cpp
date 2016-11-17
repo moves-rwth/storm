@@ -1,10 +1,10 @@
-#include "src/storm/modelchecker/multiobjective/pcaa/SparseMdpPcaaWeightVectorChecker.h"
+#include "storm/modelchecker/multiobjective/pcaa/SparseMdpPcaaWeightVectorChecker.h"
 
-#include "src/storm/adapters/CarlAdapter.h"
-#include "src/storm/models/sparse/Mdp.h"
-#include "src/storm/models/sparse/StandardRewardModel.h"
-#include "src/storm/utility/macros.h"
-#include "src/storm/utility/vector.h"
+#include "storm/adapters/CarlAdapter.h"
+#include "storm/models/sparse/Mdp.h"
+#include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/utility/macros.h"
+#include "storm/utility/vector.h"
 
 
 namespace storm {

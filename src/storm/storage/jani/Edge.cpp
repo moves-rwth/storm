@@ -1,9 +1,9 @@
-#include "src/storm/storage/jani/Edge.h"
+#include "storm/storage/jani/Edge.h"
 
-#include "src/storm/storage/jani/Model.h"
+#include "storm/storage/jani/Model.h"
 
-#include "src/storm/utility/macros.h"
-#include "src/storm/exceptions/InvalidArgumentException.h"
+#include "storm/utility/macros.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 
 namespace storm {
     namespace jani {

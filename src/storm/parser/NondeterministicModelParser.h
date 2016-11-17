@@ -1,7 +1,7 @@
 #ifndef STORM_PARSER_NONDETERMINISTICMODELPARSER_H_
 #define STORM_PARSER_NONDETERMINISTICMODELPARSER_H_
 
-#include "src/storm/models/sparse/Mdp.h"
+#include "storm/models/sparse/Mdp.h"
 
 namespace storm {
     namespace parser {

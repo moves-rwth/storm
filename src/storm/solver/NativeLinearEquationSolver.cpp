@@ -1,13 +1,13 @@
-#include "src/storm/solver/NativeLinearEquationSolver.h"
+#include "storm/solver/NativeLinearEquationSolver.h"
 
 #include <utility>
 
-#include "src/storm/settings/SettingsManager.h"
-#include "src/storm/settings/modules/NativeEquationSolverSettings.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/NativeEquationSolverSettings.h"
 
-#include "src/storm/utility/vector.h"
-#include "src/storm/exceptions/InvalidStateException.h"
-#include "src/storm/exceptions/InvalidSettingsException.h"
+#include "storm/utility/vector.h"
+#include "storm/exceptions/InvalidStateException.h"
+#include "storm/exceptions/InvalidSettingsException.h"
 
 namespace storm {
     namespace solver {

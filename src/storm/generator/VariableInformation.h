@@ -4,7 +4,7 @@
 #include <vector>
 #include <boost/container/flat_map.hpp>
 
-#include "src/storm/storage/expressions/Variable.h"
+#include "storm/storage/expressions/Variable.h"
 
 namespace storm {
     namespace prism {

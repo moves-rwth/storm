@@ -3,8 +3,8 @@
 #include <boost/optional.hpp>
 #include <boost/container/flat_set.hpp>
 
-#include "src/storm/storage/jani/EdgeDestination.h"
-#include "src/storm/storage/jani/OrderedAssignments.h"
+#include "storm/storage/jani/EdgeDestination.h"
+#include "storm/storage/jani/OrderedAssignments.h"
 
 namespace storm {
     namespace jani {

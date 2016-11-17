@@ -1,19 +1,19 @@
- #include "src/storm/modelchecker/multiobjective/pcaa/SparsePcaaPreprocessor.h"
+ #include "storm/modelchecker/multiobjective/pcaa/SparsePcaaPreprocessor.h"
 
-#include "src/storm/models/sparse/Mdp.h"
-#include "src/storm/models/sparse/MarkovAutomaton.h"
-#include "src/storm/models/sparse/StandardRewardModel.h"
-#include "src/storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
-#include "src/storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
-#include "src/storm/storage/MaximalEndComponentDecomposition.h"
-#include "src/storm/transformer/StateDuplicator.h"
-#include "src/storm/transformer/SubsystemBuilder.h"
-#include "src/storm/utility/macros.h"
-#include "src/storm/utility/vector.h"
-#include "src/storm/utility/graph.h"
+#include "storm/models/sparse/Mdp.h"
+#include "storm/models/sparse/MarkovAutomaton.h"
+#include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
+#include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
+#include "storm/storage/MaximalEndComponentDecomposition.h"
+#include "storm/transformer/StateDuplicator.h"
+#include "storm/transformer/SubsystemBuilder.h"
+#include "storm/utility/macros.h"
+#include "storm/utility/vector.h"
+#include "storm/utility/graph.h"
 
-#include "src/storm/exceptions/InvalidPropertyException.h"
-#include "src/storm/exceptions/UnexpectedException.h"
+#include "storm/exceptions/InvalidPropertyException.h"
+#include "storm/exceptions/UnexpectedException.h"
 
 namespace storm {
     namespace modelchecker {

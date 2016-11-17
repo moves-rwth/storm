@@ -4,16 +4,16 @@
 #include <set>
 #include <unordered_map>
 
-#include "src/storm/storage/dd/DdType.h"
-#include "src/storm/storage/dd/DdMetaVariable.h"
-#include "src/storm/storage/dd/Bdd.h"
-#include "src/storm/storage/dd/Add.h"
-#include "src/storm/storage/dd/AddIterator.h"
+#include "storm/storage/dd/DdType.h"
+#include "storm/storage/dd/DdMetaVariable.h"
+#include "storm/storage/dd/Bdd.h"
+#include "storm/storage/dd/Add.h"
+#include "storm/storage/dd/AddIterator.h"
 
-#include "src/storm/storage/expressions/Variable.h"
+#include "storm/storage/expressions/Variable.h"
 
-#include "src/storm/storage/dd/cudd/InternalCuddDdManager.h"
-#include "src/storm/storage/dd/sylvan/InternalSylvanDdManager.h"
+#include "storm/storage/dd/cudd/InternalCuddDdManager.h"
+#include "storm/storage/dd/sylvan/InternalSylvanDdManager.h"
 
 namespace storm {
     namespace dd {

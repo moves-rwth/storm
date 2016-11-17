@@ -3,13 +3,13 @@
 
 #include <memory>
 
-#include "src/storm/solver/OptimizationDirection.h"
-#include "src/storm/logic/ComparisonType.h"
-#include "src/storm/logic/Bound.h"
-#include "src/storm/storage/BitVector.h"
+#include "storm/solver/OptimizationDirection.h"
+#include "storm/logic/ComparisonType.h"
+#include "storm/logic/Bound.h"
+#include "storm/storage/BitVector.h"
 
-#include "src/storm/solver/LinearEquationSolver.h"
-#include "src/storm/solver/MinMaxLinearEquationSolver.h"
+#include "storm/solver/LinearEquationSolver.h"
+#include "storm/solver/MinMaxLinearEquationSolver.h"
 
 namespace storm {
     namespace storage {

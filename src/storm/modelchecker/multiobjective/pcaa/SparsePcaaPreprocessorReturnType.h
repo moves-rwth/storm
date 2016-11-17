@@ -7,14 +7,14 @@
 #include <type_traits>
 #include <boost/optional.hpp>
 
-#include "src/storm/logic/Formulas.h"
-#include "src/storm/modelchecker/multiobjective/pcaa/PcaaObjective.h"
-#include "src/storm/models/sparse/MarkovAutomaton.h"
-#include "src/storm/storage/BitVector.h"
-#include "src/storm/utility/macros.h"
-#include "src/storm/utility/constants.h"
+#include "storm/logic/Formulas.h"
+#include "storm/modelchecker/multiobjective/pcaa/PcaaObjective.h"
+#include "storm/models/sparse/MarkovAutomaton.h"
+#include "storm/storage/BitVector.h"
+#include "storm/utility/macros.h"
+#include "storm/utility/constants.h"
 
-#include "src/storm/exceptions/UnexpectedException.h"
+#include "storm/exceptions/UnexpectedException.h"
 
 namespace storm {
     namespace modelchecker {

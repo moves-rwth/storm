@@ -2,7 +2,7 @@
 #include "storm-config.h"
 
 #ifdef STORM_HAVE_Z3
-#include "src/storm/solver/Z3SmtSolver.h"
+#include "storm/solver/Z3SmtSolver.h"
 
 TEST(Z3SmtSolver, CheckSat) {
     std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());

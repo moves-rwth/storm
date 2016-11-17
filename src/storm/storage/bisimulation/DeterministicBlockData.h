@@ -3,7 +3,7 @@
 
 #include <cstdint>
 
-#include "src/storm/storage/bisimulation/Block.h"
+#include "storm/storage/bisimulation/Block.h"
 
 namespace storm {
     namespace storage {

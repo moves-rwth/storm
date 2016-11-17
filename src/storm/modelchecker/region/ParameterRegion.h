@@ -10,8 +10,8 @@
 
 #include <map>
 
-#include "src/storm/modelchecker/region/RegionCheckResult.h"
-#include "src/storm/utility/region.h"
+#include "storm/modelchecker/region/RegionCheckResult.h"
+#include "storm/utility/region.h"
 #include "RegionBoundary.h"
 
 

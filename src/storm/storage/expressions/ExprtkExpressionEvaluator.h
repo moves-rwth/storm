@@ -4,7 +4,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "src/storm/storage/expressions/ExpressionEvaluatorBase.h"
+#include "storm/storage/expressions/ExpressionEvaluatorBase.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunused-variable"
@@ -16,7 +16,7 @@
 #pragma GCC diagnostic pop
 #pragma clang diagnostic pop
 
-#include "src/storm/storage/expressions/ToExprtkStringVisitor.h"
+#include "storm/storage/expressions/ToExprtkStringVisitor.h"
 
 namespace storm {
     namespace expressions {

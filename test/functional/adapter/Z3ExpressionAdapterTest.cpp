@@ -2,12 +2,12 @@
 #include "storm-config.h"
 
 #include <memory>
-#include "src/storm/storage/expressions/ExpressionManager.h"
+#include "storm/storage/expressions/ExpressionManager.h"
 
 #ifdef STORM_HAVE_Z3
 #include "z3++.h"
-#include "src/storm/adapters/Z3ExpressionAdapter.h"
-#include "src/storm/settings/SettingsManager.h"
+#include "storm/adapters/Z3ExpressionAdapter.h"
+#include "storm/settings/SettingsManager.h"
 
 TEST(Z3ExpressionAdapter, StormToZ3Basic) {
 	z3::context ctx;

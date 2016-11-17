@@ -8,10 +8,10 @@
 #include <memory>
 #include <boost/container/flat_set.hpp>
 
-#include "src/storm/storage/prism/BooleanVariable.h"
-#include "src/storm/storage/prism/IntegerVariable.h"
-#include "src/storm/storage/prism/Command.h"
-#include "src/storm/utility/OsDetection.h"
+#include "storm/storage/prism/BooleanVariable.h"
+#include "storm/storage/prism/IntegerVariable.h"
+#include "storm/storage/prism/Command.h"
+#include "storm/utility/OsDetection.h"
 
 namespace storm {
     namespace prism {

@@ -1,20 +1,20 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
-#include "src/storm/parser/FormulaParser.h"
-#include "src/storm/settings/SettingMemento.h"
-#include "src/storm/logic/Formulas.h"
-#include "src/storm/solver/NativeLinearEquationSolver.h"
-#include "src/storm/models/sparse/StandardRewardModel.h"
-#include "src/storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
-#include "src/storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
-#include "src/storm/settings/SettingsManager.h"
-#include "src/storm/solver/NativeLinearEquationSolver.h"
-#include "src/storm/settings/modules/GeneralSettings.h"
+#include "storm/parser/FormulaParser.h"
+#include "storm/settings/SettingMemento.h"
+#include "storm/logic/Formulas.h"
+#include "storm/solver/NativeLinearEquationSolver.h"
+#include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
+#include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/solver/NativeLinearEquationSolver.h"
+#include "storm/settings/modules/GeneralSettings.h"
 
-#include "src/storm/settings/modules/NativeEquationSolverSettings.h"
-#include "src/storm/settings/SettingMemento.h"
-#include "src/storm/parser/AutoParser.h"
+#include "storm/settings/modules/NativeEquationSolverSettings.h"
+#include "storm/settings/SettingMemento.h"
+#include "storm/parser/AutoParser.h"
 
 TEST(NativeDtmcPrctlModelCheckerTest, Die) {
     std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser<>::parseModel(STORM_CPP_BASE_PATH "/examples/dtmc/die/die.tra", STORM_CPP_BASE_PATH "/examples/dtmc/die/die.lab", "", STORM_CPP_BASE_PATH "/examples/dtmc/die/die.coin_flips.trans.rew");

@@ -3,7 +3,7 @@
 
 #include <vector>
 #include <memory>
-#include "src/storm/storage/Scheduler.h"
+#include "storm/storage/Scheduler.h"
 
 namespace storm {
     namespace storage {

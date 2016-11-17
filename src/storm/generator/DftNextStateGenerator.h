@@ -1,10 +1,10 @@
 #ifndef STORM_GENERATOR_DFTNEXTSTATEGENERATOR_H_
 #define STORM_GENERATOR_DFTNEXTSTATEGENERATOR_H_
 
-#include "src/storm/generator/NextStateGenerator.h"
-#include "src/storm/storage/dft/DFT.h"
+#include "storm/generator/NextStateGenerator.h"
+#include "storm/storage/dft/DFT.h"
 
-#include "src/storm/utility/ConstantsComparator.h"
+#include "storm/utility/ConstantsComparator.h"
 
 namespace storm {
     namespace generator {

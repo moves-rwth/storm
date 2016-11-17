@@ -1,6 +1,6 @@
-#include "src/storm/generator/StateBehavior.h"
+#include "storm/generator/StateBehavior.h"
 
-#include "src/storm/adapters/CarlAdapter.h"
+#include "storm/adapters/CarlAdapter.h"
 
 namespace storm {
     namespace generator {

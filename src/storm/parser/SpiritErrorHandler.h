@@ -1,9 +1,9 @@
 #pragma once
 
-#include "src/storm/parser/SpiritParserDefinitions.h"
+#include "storm/parser/SpiritParserDefinitions.h"
 
-#include "src/storm/utility/macros.h"
-#include "src/storm/exceptions/WrongFormatException.h"
+#include "storm/utility/macros.h"
+#include "storm/exceptions/WrongFormatException.h"
 
 namespace storm {
     namespace parser {

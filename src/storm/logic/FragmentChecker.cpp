@@ -1,6 +1,6 @@
-#include "src/storm/logic/FragmentChecker.h"
+#include "storm/logic/FragmentChecker.h"
 
-#include "src/storm/logic/Formulas.h"
+#include "storm/logic/Formulas.h"
 
 namespace storm {
     namespace logic {

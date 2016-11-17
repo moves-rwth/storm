@@ -1,10 +1,10 @@
-#include "src/storm/storage/expressions/ToRationalFunctionVisitor.h"
+#include "storm/storage/expressions/ToRationalFunctionVisitor.h"
 
 #include <sstream>
 
-#include "src/storm/utility/constants.h"
-#include "src/storm/utility/macros.h"
-#include "src/storm/exceptions/InvalidArgumentException.h"
+#include "storm/utility/constants.h"
+#include "storm/utility/macros.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 
 namespace storm {
     namespace expressions {

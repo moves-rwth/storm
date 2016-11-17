@@ -1,9 +1,9 @@
 #ifndef STORM_MODELCHECKER_DFT_DFTMODELCHECKER_H_
 
-#include "src/storm/logic/Formula.h"
-#include "src/storm/modelchecker/results/CheckResult.h"
-#include "src/storm/storage/dft/DFT.h"
-#include "src/storm/utility/storm.h"
+#include "storm/logic/Formula.h"
+#include "storm/modelchecker/results/CheckResult.h"
+#include "storm/storage/dft/DFT.h"
+#include "storm/utility/storm.h"
 
 #include <chrono>
 

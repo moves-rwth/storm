@@ -1,6 +1,6 @@
 //AUTO GENERATED -- DO NOT CHANGE 
 // TODO resolve issues when placing this in the build order directly.
-#include "src/storm/utility/storm-version.h"
+#include "storm/utility/storm-version.h"
 
 namespace storm {
     namespace utility {

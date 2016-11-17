@@ -1,14 +1,14 @@
-#include "src/storm/storage/geometry/Polytope.h"
+#include "storm/storage/geometry/Polytope.h"
 
 #include <iostream>
 
-#include "src/storm/adapters/CarlAdapter.h"
-#include "src/storm/adapters/HyproAdapter.h"
-#include "src/storm/storage/geometry/HyproPolytope.h"
-#include "src/storm/utility/macros.h"
+#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/HyproAdapter.h"
+#include "storm/storage/geometry/HyproPolytope.h"
+#include "storm/utility/macros.h"
 
-#include "src/storm/exceptions/NotImplementedException.h"
-#include "src/storm/exceptions/IllegalFunctionCallException.h"
+#include "storm/exceptions/NotImplementedException.h"
+#include "storm/exceptions/IllegalFunctionCallException.h"
 
 namespace storm {
     namespace storage {

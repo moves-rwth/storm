@@ -1,4 +1,4 @@
-#include "src/storm/storage/expressions/ToExprtkStringVisitor.h"
+#include "storm/storage/expressions/ToExprtkStringVisitor.h"
 
 namespace storm {
     namespace expressions {

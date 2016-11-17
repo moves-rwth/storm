@@ -1,18 +1,18 @@
 #ifndef STORM_STORAGE_BISIMULATIONDECOMPOSITION_H_
 #define STORM_STORAGE_BISIMULATIONDECOMPOSITION_H_
 
-#include "src/storm/settings/SettingsManager.h"
-#include "src/storm/settings/modules/BisimulationSettings.h"
-#include "src/storm/storage/sparse/StateType.h"
-#include "src/storm/storage/Decomposition.h"
-#include "src/storm/storage/StateBlock.h"
-#include "src/storm/storage/bisimulation/Partition.h"
-#include "src/storm/solver/OptimizationDirection.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/BisimulationSettings.h"
+#include "storm/storage/sparse/StateType.h"
+#include "storm/storage/Decomposition.h"
+#include "storm/storage/StateBlock.h"
+#include "storm/storage/bisimulation/Partition.h"
+#include "storm/solver/OptimizationDirection.h"
 
-#include "src/storm/logic/Formulas.h"
+#include "storm/logic/Formulas.h"
 
-#include "src/storm/utility/constants.h"
-#include "src/storm/utility/ConstantsComparator.h"
+#include "storm/utility/constants.h"
+#include "storm/utility/ConstantsComparator.h"
 
 namespace storm {
     namespace utility {

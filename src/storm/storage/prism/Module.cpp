@@ -1,8 +1,8 @@
-#include "src/storm/storage/prism/Module.h"
-#include "src/storm/utility/macros.h"
-#include "src/storm/exceptions/OutOfRangeException.h"
-#include "src/storm/exceptions/InvalidArgumentException.h"
-#include "src/storm/exceptions/InvalidAccessException.h"
+#include "storm/storage/prism/Module.h"
+#include "storm/utility/macros.h"
+#include "storm/exceptions/OutOfRangeException.h"
+#include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/InvalidAccessException.h"
 
 namespace storm {
     namespace prism {

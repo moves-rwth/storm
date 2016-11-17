@@ -7,8 +7,8 @@
 #include <tuple>
 #include <utility>
 
-#include "src/storm/storage/dd/AddIterator.h"
-#include "src/storm/storage/expressions/SimpleValuation.h"
+#include "storm/storage/dd/AddIterator.h"
+#include "storm/storage/expressions/SimpleValuation.h"
 
 // Include the C++-interface of CUDD.
 #include "cuddObj.hh"

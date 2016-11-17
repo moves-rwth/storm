@@ -2,9 +2,9 @@
 #define STORM_SETTINGS_MODULES_CoreSettings_H_
 
 #include "storm-config.h"
-#include "src/storm/settings/modules/ModuleSettings.h"
+#include "storm/settings/modules/ModuleSettings.h"
 
-#include "src/storm/builder/ExplorationOrder.h"
+#include "storm/builder/ExplorationOrder.h"
 
 namespace storm {
     namespace solver {

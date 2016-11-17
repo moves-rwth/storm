@@ -1,4 +1,4 @@
-#include "src/storm/settings/ArgumentBase.h"
+#include "storm/settings/ArgumentBase.h"
 
 #include <boost/algorithm/string.hpp>
 #include <iomanip>

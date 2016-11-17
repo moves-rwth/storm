@@ -1,31 +1,31 @@
-#include "src/storm/builder/jit/ExplicitJitJaniModelBuilder.h"
+#include "storm/builder/jit/ExplicitJitJaniModelBuilder.h"
 
 #include <iostream>
 #include <cstdio>
 #include <chrono>
 
-#include "src/storm/solver/SmtSolver.h"
-#include "src/storm/storage/jani/AutomatonComposition.h"
-#include "src/storm/storage/jani/ParallelComposition.h"
-#include "src/storm/storage/jani/JSONExporter.h"
+#include "storm/solver/SmtSolver.h"
+#include "storm/storage/jani/AutomatonComposition.h"
+#include "storm/storage/jani/ParallelComposition.h"
+#include "storm/storage/jani/JSONExporter.h"
 
-#include "src/storm/builder/RewardModelInformation.h"
+#include "storm/builder/RewardModelInformation.h"
 
-#include "src/storm/models/sparse/Dtmc.h"
-#include "src/storm/models/sparse/StandardRewardModel.h"
+#include "storm/models/sparse/Dtmc.h"
+#include "storm/models/sparse/StandardRewardModel.h"
 
-#include "src/storm/utility/macros.h"
-#include "src/storm/utility/solver.h"
-#include "src/storm/exceptions/WrongFormatException.h"
-#include "src/storm/exceptions/InvalidStateException.h"
-#include "src/storm/exceptions/InvalidArgumentException.h"
-#include "src/storm/exceptions/NotSupportedException.h"
-#include "src/storm/exceptions/UnexpectedException.h"
+#include "storm/utility/macros.h"
+#include "storm/utility/solver.h"
+#include "storm/exceptions/WrongFormatException.h"
+#include "storm/exceptions/InvalidStateException.h"
+#include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/UnexpectedException.h"
 
-#include "src/storm/settings/SettingsManager.h"
-#include "src/storm/settings/modules/JitBuilderSettings.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/JitBuilderSettings.h"
 
-#include "src/storm/utility/OsDetection.h"
+#include "storm/utility/OsDetection.h"
 #include "storm-config.h"
 
 namespace storm {
@@ -329,7 +329,7 @@ namespace storm {
                 std::string problem = "Unable to compile program using Storm data structures. Is Storm's root directory '" + stormRoot + "' set correctly? Does the directory contain the source subtree under src/ ?";
                 try {
                     std::string program = R"(
-#include "src/storm/builder/RewardModelInformation.h"
+#include "storm/builder/RewardModelInformation.h"
                     
                     int main() {
                         return 0;
@@ -395,7 +395,7 @@ namespace storm {
                 std::string problem = "Unable to compile program using Carl data structures. Is Carls's include directory '" + carlIncludeDirectory + "' set correctly?";
                 try {
                     std::string program = R"(
-#include "src/storm/adapters/NumberAdapter.h"
+#include "storm/adapters/NumberAdapter.h"
                         
                     int main() {
                         return 0;
@@ -1639,23 +1639,23 @@ namespace storm {
 #include <boost/dll/alias.hpp>
                 
 {% if exact %}
-#include "src/storm/adapters/NumberAdapter.h"
+#include "storm/adapters/NumberAdapter.h"
 {% endif %}
 {% if parametric %}
-#include "src/storm/adapters/CarlAdapter.h"
+#include "storm/adapters/CarlAdapter.h"
 {% endif %}
                 
 #include "resources/3rdparty/sparsepp/sparsepp.h"
                 
-#include "src/storm/builder/jit/StateSet.h"
-#include "src/storm/builder/jit/JitModelBuilderInterface.h"
-#include "src/storm/builder/jit/StateBehaviour.h"
-#include "src/storm/builder/jit/ModelComponentsBuilder.h"
-#include "src/storm/builder/RewardModelInformation.h"
+#include "storm/builder/jit/StateSet.h"
+#include "storm/builder/jit/JitModelBuilderInterface.h"
+#include "storm/builder/jit/StateBehaviour.h"
+#include "storm/builder/jit/ModelComponentsBuilder.h"
+#include "storm/builder/RewardModelInformation.h"
                 
-#include "src/storm/utility/constants.h"
+#include "storm/utility/constants.h"
                 
-#include "src/storm/exceptions/WrongFormatException.h"
+#include "storm/exceptions/WrongFormatException.h"
                 
                 namespace storm {
                     namespace builder {

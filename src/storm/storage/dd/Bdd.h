@@ -3,11 +3,11 @@
 
 #include <functional>
 
-#include "src/storm/storage/dd/Dd.h"
-#include "src/storm/storage/dd/DdType.h"
+#include "storm/storage/dd/Dd.h"
+#include "storm/storage/dd/DdType.h"
 
-#include "src/storm/storage/dd/cudd/InternalCuddBdd.h"
-#include "src/storm/storage/dd/sylvan/InternalSylvanBdd.h"
+#include "storm/storage/dd/cudd/InternalCuddBdd.h"
+#include "storm/storage/dd/sylvan/InternalSylvanBdd.h"
 
 namespace storm {
     namespace logic {

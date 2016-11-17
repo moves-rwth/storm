@@ -1,7 +1,7 @@
 #ifndef STORM_SETTINGS_MODULES_BISIMULATIONSETTINGS_H_
 #define STORM_SETTINGS_MODULES_BISIMULATIONSETTINGS_H_
 
-#include "src/storm/settings/modules/ModuleSettings.h"
+#include "storm/settings/modules/ModuleSettings.h"
 
 namespace storm {
     namespace settings {

@@ -1,16 +1,16 @@
 #ifndef EXPLICITDFTMODELBUILDERAPPROX_H
 #define	EXPLICITDFTMODELBUILDERAPPROX_H
 
-#include "src/storm/builder/DftExplorationHeuristic.h"
-#include "src/storm/models/sparse/StateLabeling.h"
-#include "src/storm/models/sparse/StandardRewardModel.h"
-#include "src/storm/models/sparse/Model.h"
-#include "src/storm/generator/DftNextStateGenerator.h"
-#include "src/storm/storage/SparseMatrix.h"
-#include "src/storm/storage/sparse/StateStorage.h"
-#include "src/storm/storage/dft/DFT.h"
-#include "src/storm/storage/dft/SymmetricUnits.h"
-#include "src/storm/storage/BucketPriorityQueue.h"
+#include "storm/builder/DftExplorationHeuristic.h"
+#include "storm/models/sparse/StateLabeling.h"
+#include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/models/sparse/Model.h"
+#include "storm/generator/DftNextStateGenerator.h"
+#include "storm/storage/SparseMatrix.h"
+#include "storm/storage/sparse/StateStorage.h"
+#include "storm/storage/dft/DFT.h"
+#include "storm/storage/dft/SymmetricUnits.h"
+#include "storm/storage/BucketPriorityQueue.h"
 #include <boost/container/flat_set.hpp>
 #include <boost/optional/optional.hpp>
 #include <stack>

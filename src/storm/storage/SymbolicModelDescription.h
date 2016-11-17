@@ -2,8 +2,8 @@
 
 #include <boost/variant.hpp>
 
-#include "src/storm/storage/jani/Model.h"
-#include "src/storm/storage/prism/Program.h"
+#include "storm/storage/jani/Model.h"
+#include "storm/storage/prism/Program.h"
 
 namespace storm {
     namespace storage {

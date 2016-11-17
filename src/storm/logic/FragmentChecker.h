@@ -1,9 +1,9 @@
 #ifndef STORM_LOGIC_FRAGMENTCHECKER_H_
 #define STORM_LOGIC_FRAGMENTCHECKER_H_
 
-#include "src/storm/logic/FormulaVisitor.h"
+#include "storm/logic/FormulaVisitor.h"
 
-#include "src/storm/logic/FragmentSpecification.h"
+#include "storm/logic/FragmentSpecification.h"
 
 namespace storm {
     namespace logic {

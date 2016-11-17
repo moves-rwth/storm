@@ -1,4 +1,4 @@
-#include "src/storm/storage/prism/IntegerVariable.h"
+#include "storm/storage/prism/IntegerVariable.h"
 
 namespace storm {
     namespace prism {

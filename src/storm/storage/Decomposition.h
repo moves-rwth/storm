@@ -5,8 +5,8 @@
 #include <cstdint>
 #include <ostream>
 
-#include "src/storm/storage/SparseMatrix.h"
-#include "src/storm/models/sparse/Model.h"
+#include "storm/storage/SparseMatrix.h"
+#include "storm/models/sparse/Model.h"
 
 namespace storm {
     namespace storage {

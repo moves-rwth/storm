@@ -1,8 +1,8 @@
-#include "src/storm/builder/jit/Choice.h"
+#include "storm/builder/jit/Choice.h"
 
-#include "src/storm/adapters/CarlAdapter.h"
+#include "storm/adapters/CarlAdapter.h"
 
-#include "src/storm/utility/constants.h"
+#include "storm/utility/constants.h"
 
 namespace storm {
     namespace builder {

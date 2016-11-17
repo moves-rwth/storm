@@ -1,11 +1,11 @@
-#include "src/storm/generator/Choice.h"
+#include "storm/generator/Choice.h"
 
-#include "src/storm/adapters/CarlAdapter.h"
+#include "storm/adapters/CarlAdapter.h"
 
-#include "src/storm/utility/constants.h"
+#include "storm/utility/constants.h"
 
-#include "src/storm/utility/macros.h"
-#include "src/storm/exceptions/InvalidOperationException.h"
+#include "storm/utility/macros.h"
+#include "storm/exceptions/InvalidOperationException.h"
 
 namespace storm {
     namespace generator {

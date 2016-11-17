@@ -1,7 +1,7 @@
 #ifndef STORM_LOGIC_GLOBALLYFORMULA_H_
 #define STORM_LOGIC_GLOBALLYFORMULA_H_
 
-#include "src/storm/logic/UnaryPathFormula.h"
+#include "storm/logic/UnaryPathFormula.h"
 
 namespace storm {
     namespace logic {

@@ -3,12 +3,12 @@
 #include <memory>
 #include <fstream>
 
-#include "src/storm/parser/SpiritErrorHandler.h"
-#include "src/storm/exceptions/WrongFormatException.h"
-#include "src/storm/logic/Formulas.h"
-#include "src/storm/parser/ExpressionParser.h"
+#include "storm/parser/SpiritErrorHandler.h"
+#include "storm/exceptions/WrongFormatException.h"
+#include "storm/logic/Formulas.h"
+#include "storm/parser/ExpressionParser.h"
 
-#include "src/storm/storage/expressions/ExpressionEvaluator.h"
+#include "storm/storage/expressions/ExpressionEvaluator.h"
 
 namespace storm {
     namespace logic {

@@ -3,16 +3,16 @@
 
 #include "../utility/storm.h"
 
-#include "src/storm/storage/SymbolicModelDescription.h"
+#include "storm/storage/SymbolicModelDescription.h"
 
-#include "src/storm/settings/modules/DebugSettings.h"
-#include "src/storm/settings/modules/IOSettings.h"
-#include "src/storm/settings/modules/CoreSettings.h"
-#include "src/storm/exceptions/OptionParserException.h"
-#include "src/storm/settings/modules/JaniExportSettings.h"
+#include "storm/settings/modules/DebugSettings.h"
+#include "storm/settings/modules/IOSettings.h"
+#include "storm/settings/modules/CoreSettings.h"
+#include "storm/exceptions/OptionParserException.h"
+#include "storm/settings/modules/JaniExportSettings.h"
 
-#include "src/storm/utility/storm-version.h"
-#include "src/storm/storage/jani/JSONExporter.h"
+#include "storm/utility/storm-version.h"
+#include "storm/storage/jani/JSONExporter.h"
 
 
 // Includes for the linked libraries and versions header.

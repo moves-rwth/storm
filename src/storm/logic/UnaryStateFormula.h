@@ -1,7 +1,7 @@
 #ifndef STORM_LOGIC_UNARYSTATEFORMULA_H_
 #define STORM_LOGIC_UNARYSTATEFORMULA_H_
 
-#include "src/storm/logic/StateFormula.h"
+#include "storm/logic/StateFormula.h"
 
 namespace storm {
     namespace logic {

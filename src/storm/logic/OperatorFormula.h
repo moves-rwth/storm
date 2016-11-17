@@ -3,12 +3,12 @@
 
 #include <boost/optional.hpp>
 
-#include "src/storm/logic/UnaryStateFormula.h"
-#include "src/storm/logic/Bound.h"
-#include "src/storm/solver/OptimizationDirection.h"
+#include "storm/logic/UnaryStateFormula.h"
+#include "storm/logic/Bound.h"
+#include "storm/solver/OptimizationDirection.h"
 
-#include "src/storm/adapters/CarlAdapter.h"
-#include "src/storm/utility/constants.h"
+#include "storm/adapters/CarlAdapter.h"
+#include "storm/utility/constants.h"
 
 namespace storm {
     namespace logic {

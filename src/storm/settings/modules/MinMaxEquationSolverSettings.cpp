@@ -1,11 +1,11 @@
-#include "src/storm/settings/modules/MinMaxEquationSolverSettings.h"
+#include "storm/settings/modules/MinMaxEquationSolverSettings.h"
 
-#include "src/storm/settings/Option.h"
-#include "src/storm/settings/ArgumentBuilder.h"
-#include "src/storm/settings/OptionBuilder.h"
+#include "storm/settings/Option.h"
+#include "storm/settings/ArgumentBuilder.h"
+#include "storm/settings/OptionBuilder.h"
 
-#include "src/storm/utility/macros.h"
-#include "src/storm/exceptions/IllegalArgumentValueException.h"
+#include "storm/utility/macros.h"
+#include "storm/exceptions/IllegalArgumentValueException.h"
 
 namespace storm {
     namespace settings {

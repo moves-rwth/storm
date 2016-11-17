@@ -2,9 +2,9 @@
 
 #include <memory>
 
-#include "src/storm/builder/jit/StateBehaviour.h"
+#include "storm/builder/jit/StateBehaviour.h"
 
-#include "src/storm/storage/jani/ModelType.h"
+#include "storm/storage/jani/ModelType.h"
 
 namespace storm {
     namespace storage {

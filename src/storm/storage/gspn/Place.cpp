@@ -1,7 +1,7 @@
 #include "Place.h"
 
-#include "src/storm/exceptions/IllegalArgumentValueException.h"
-#include "src/storm/utility/macros.h"
+#include "storm/exceptions/IllegalArgumentValueException.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
     namespace gspn {

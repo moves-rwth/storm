@@ -2,7 +2,7 @@
 #include "storm-config.h"
 
 #ifdef STORM_HAVE_MSAT
-#include "src/storm/solver/MathsatSmtSolver.h"
+#include "storm/solver/MathsatSmtSolver.h"
 
 TEST(MathsatSmtSolver, CheckSat) {
     std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());

@@ -1,7 +1,7 @@
 #include "formulae.h"
 
-#include "src/common.h"
-#include "src/logic/Formulas.h"
+#include "src/storm/common.h"
+#include "src/storm/logic/Formulas.h"
 
 void define_formulae(py::module& m) {
  

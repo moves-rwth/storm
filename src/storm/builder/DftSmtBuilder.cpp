@@ -1,5 +1,5 @@
-#include "src/storm/builder/DftSmtBuilder.h"
-#include "src/storm/exceptions/NotImplementedException.h"
+#include "storm/builder/DftSmtBuilder.h"
+#include "storm/exceptions/NotImplementedException.h"
 
 namespace storm {
     namespace builder {

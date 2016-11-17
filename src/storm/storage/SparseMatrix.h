@@ -10,9 +10,9 @@
 #include <boost/functional/hash.hpp>
 #include <boost/optional.hpp>
 
-#include "src/storm/utility/OsDetection.h"
-#include "src/storm/utility/macros.h"
-#include "src/storm/adapters/CarlAdapter.h"
+#include "storm/utility/OsDetection.h"
+#include "storm/utility/macros.h"
+#include "storm/adapters/CarlAdapter.h"
 
 // Forward declaration for adapter classes.
 namespace storm {

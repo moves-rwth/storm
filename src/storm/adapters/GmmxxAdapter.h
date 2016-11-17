@@ -4,11 +4,11 @@
 #include <algorithm>
 #include <memory>
 
-#include "src/storm/utility/gmm.h"
+#include "storm/utility/gmm.h"
 
-#include "src/storm/storage/SparseMatrix.h"
+#include "storm/storage/SparseMatrix.h"
 
-#include "src/storm/utility/macros.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
     

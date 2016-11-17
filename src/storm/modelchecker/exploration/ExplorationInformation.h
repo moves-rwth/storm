@@ -8,13 +8,13 @@
 #include <boost/optional.hpp>
 #include <boost/container/flat_set.hpp>
 
-#include "src/storm/solver/OptimizationDirection.h"
+#include "storm/solver/OptimizationDirection.h"
 
-#include "src/storm/generator/CompressedState.h"
+#include "storm/generator/CompressedState.h"
 
-#include "src/storm/storage/SparseMatrix.h"
+#include "storm/storage/SparseMatrix.h"
 
-#include "src/storm/settings/modules/ExplorationSettings.h"
+#include "storm/settings/modules/ExplorationSettings.h"
 
 namespace storm {    
     namespace modelchecker {

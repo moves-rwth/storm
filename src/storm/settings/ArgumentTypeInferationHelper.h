@@ -4,9 +4,9 @@
 #include <cstdint>
 #include <string>
 
-#include "src/storm/settings/ArgumentType.h"
-#include "src/storm/utility/macros.h"
-#include "src/storm/exceptions/InternalTypeErrorException.h"
+#include "storm/settings/ArgumentType.h"
+#include "storm/utility/macros.h"
+#include "storm/exceptions/InternalTypeErrorException.h"
 
 namespace storm {
     namespace settings {

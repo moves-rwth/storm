@@ -1,9 +1,9 @@
 #ifndef STORM_LOGIC_TOEXPRESSIONVISITOR_H_
 #define STORM_LOGIC_TOEXPRESSIONVISITOR_H_
 
-#include "src/storm/logic/FormulaVisitor.h"
+#include "storm/logic/FormulaVisitor.h"
 
-#include "src/storm/storage/expressions/Expression.h"
+#include "storm/storage/expressions/Expression.h"
 
 namespace storm {
     namespace logic {

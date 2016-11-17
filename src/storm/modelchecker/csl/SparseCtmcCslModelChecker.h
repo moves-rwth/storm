@@ -1,13 +1,13 @@
 #ifndef STORM_MODELCHECKER_SPARSECTMCCSLMODELCHECKER_H_
 #define STORM_MODELCHECKER_SPARSECTMCCSLMODELCHECKER_H_
 
-#include "src/storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
+#include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 
-#include "src/storm/models/sparse/Ctmc.h"
+#include "storm/models/sparse/Ctmc.h"
 
-#include "src/storm/solver/LinearEquationSolver.h"
+#include "storm/solver/LinearEquationSolver.h"
 
-#include "src/storm/utility/NumberTraits.h"
+#include "storm/utility/NumberTraits.h"
 
 namespace storm {
     namespace modelchecker {

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "src/storm/storage/expressions/Expression.h"
+#include "storm/storage/expressions/Expression.h"
 
 namespace storm {
     namespace pgcl {

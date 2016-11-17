@@ -3,7 +3,7 @@
 
 #include <map>
 
-#include "src/storm/logic/BinaryStateFormula.h"
+#include "storm/logic/BinaryStateFormula.h"
 
 namespace storm {
     namespace logic {

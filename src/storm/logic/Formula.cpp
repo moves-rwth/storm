@@ -1,11 +1,11 @@
-#include "src/storm/logic/Formulas.h"
+#include "storm/logic/Formulas.h"
 #include <sstream>
 
-#include "src/storm/logic/FragmentChecker.h"
-#include "src/storm/logic/FormulaInformationVisitor.h"
-#include "src/storm/logic/VariableSubstitutionVisitor.h"
-#include "src/storm/logic/LabelSubstitutionVisitor.h"
-#include "src/storm/logic/ToExpressionVisitor.h"
+#include "storm/logic/FragmentChecker.h"
+#include "storm/logic/FormulaInformationVisitor.h"
+#include "storm/logic/VariableSubstitutionVisitor.h"
+#include "storm/logic/LabelSubstitutionVisitor.h"
+#include "storm/logic/ToExpressionVisitor.h"
 
 namespace storm {
     namespace logic {

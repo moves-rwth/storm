@@ -1,4 +1,4 @@
-#include "src/storm/storage/prism/InterleavingParallelComposition.h"
+#include "storm/storage/prism/InterleavingParallelComposition.h"
 
 namespace storm {
     namespace prism {

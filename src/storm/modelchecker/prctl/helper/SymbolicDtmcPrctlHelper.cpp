@@ -1,18 +1,18 @@
-#include "src/storm/modelchecker/prctl/helper/SymbolicDtmcPrctlHelper.h"
+#include "storm/modelchecker/prctl/helper/SymbolicDtmcPrctlHelper.h"
 
-#include "src/storm/storage/dd/DdType.h"
-#include "src/storm/storage/dd/DdManager.h"
-#include "src/storm/storage/dd/Add.h"
-#include "src/storm/storage/dd/Bdd.h"
+#include "storm/storage/dd/DdType.h"
+#include "storm/storage/dd/DdManager.h"
+#include "storm/storage/dd/Add.h"
+#include "storm/storage/dd/Bdd.h"
 
-#include "src/storm/solver/SymbolicLinearEquationSolver.h"
+#include "storm/solver/SymbolicLinearEquationSolver.h"
 
-#include "src/storm/models/symbolic/StandardRewardModel.h"
+#include "storm/models/symbolic/StandardRewardModel.h"
 
-#include "src/storm/utility/graph.h"
-#include "src/storm/utility/constants.h"
+#include "storm/utility/graph.h"
+#include "storm/utility/constants.h"
 
-#include "src/storm/exceptions/InvalidPropertyException.h"
+#include "storm/exceptions/InvalidPropertyException.h"
 
 namespace storm {
     namespace modelchecker {

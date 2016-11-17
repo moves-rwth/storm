@@ -1,4 +1,4 @@
-#include "src/storm/storage/sparse/StateValuations.h"
+#include "storm/storage/sparse/StateValuations.h"
 
 namespace storm {
     namespace storage {

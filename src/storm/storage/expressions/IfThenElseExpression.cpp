@@ -1,8 +1,8 @@
-#include "src/storm/storage/expressions/IfThenElseExpression.h"
+#include "storm/storage/expressions/IfThenElseExpression.h"
 
-#include "src/storm/utility/macros.h"
+#include "storm/utility/macros.h"
 #include "ExpressionVisitor.h"
-#include "src/storm/exceptions/InvalidAccessException.h"
+#include "storm/exceptions/InvalidAccessException.h"
 
 namespace storm {
     namespace expressions {

@@ -4,7 +4,7 @@
 #include <string>
 #include <cstdint>
 
-#include "src/storm/utility/OsDetection.h"
+#include "storm/utility/OsDetection.h"
 
 namespace storm {
     namespace prism {

@@ -1,12 +1,12 @@
 #include <string>
 
-#include "src/storm/utility/region.h"
-#include "src/storm/utility/constants.h"
-#include "src/storm/utility/macros.h"
-#include "src/storm/settings/SettingsManager.h"
-#include "src/storm/solver/SmtlibSmtSolver.h"
-#include "src/storm/exceptions/IllegalArgumentException.h"
-#include "src/storm/exceptions/NotImplementedException.h"
+#include "storm/utility/region.h"
+#include "storm/utility/constants.h"
+#include "storm/utility/macros.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/solver/SmtlibSmtSolver.h"
+#include "storm/exceptions/IllegalArgumentException.h"
+#include "storm/exceptions/NotImplementedException.h"
 
 #ifdef STORM_HAVE_CARL
 #include<carl/numbers/numbers.h>

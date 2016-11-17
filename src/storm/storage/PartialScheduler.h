@@ -4,7 +4,7 @@
 #include <unordered_map>
 #include <ostream>
 
-#include "src/storm/storage/Scheduler.h"
+#include "storm/storage/Scheduler.h"
 
 namespace storm {
     namespace storage {

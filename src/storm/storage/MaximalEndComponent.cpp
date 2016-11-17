@@ -1,5 +1,5 @@
-#include "src/storm/storage/MaximalEndComponent.h"
-#include "src/storm/exceptions/InvalidStateException.h"
+#include "storm/storage/MaximalEndComponent.h"
+#include "storm/exceptions/InvalidStateException.h"
 
 namespace storm {
     namespace storage {

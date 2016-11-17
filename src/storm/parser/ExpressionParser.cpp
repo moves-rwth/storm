@@ -1,11 +1,11 @@
-#include "src/storm/parser/ExpressionParser.h"
-#include "src/storm/exceptions/InvalidArgumentException.h"
-#include "src/storm/exceptions/InvalidTypeException.h"
-#include "src/storm/exceptions/WrongFormatException.h"
+#include "storm/parser/ExpressionParser.h"
+#include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/InvalidTypeException.h"
+#include "storm/exceptions/WrongFormatException.h"
 
-#include "src/storm/utility/constants.h"
-#include "src/storm/parser/ExpressionCreator.h"
-#include "src/storm/storage/expressions/Expression.h"
+#include "storm/utility/constants.h"
+#include "storm/parser/ExpressionCreator.h"
+#include "storm/storage/expressions/Expression.h"
 
 
 namespace boost {

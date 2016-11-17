@@ -1,12 +1,12 @@
 // Include other headers.
 #include <chrono>
-#include "src/storm/exceptions/BaseException.h"
-#include "src/storm/utility/macros.h"
-#include "src/storm/cli/cli.h"
-#include "src/storm/utility/initialize.h"
+#include "storm/exceptions/BaseException.h"
+#include "storm/utility/macros.h"
+#include "storm/cli/cli.h"
+#include "storm/utility/initialize.h"
 
-#include "src/storm/settings/SettingsManager.h"
-#include "src/storm/settings/modules/GeneralSettings.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/GeneralSettings.h"
 
 /*!
  * Main entry point of the executable storm.

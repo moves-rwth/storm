@@ -5,7 +5,7 @@ cmake_policy(VERSION 3.2)
 project (storm CXX C)
 
 # Add base folder for better inclusion paths
-include_directories("${PROJECT_SOURCE_DIR}")
+include_directories("${PROJECT_SOURCE_DIR}/src")
 include_directories("${PROJECT_SOURCE_DIR}/src/storm")
 
 # Add the resources/cmake folder to Module Search Path for FindTBB.cmake

@@ -1,6 +1,6 @@
-#include "src/storm/storage/expressions/BooleanLiteralExpression.h"
-#include "src/storm/storage/expressions/ExpressionManager.h"
-#include "src/storm/storage/expressions/ExpressionVisitor.h"
+#include "storm/storage/expressions/BooleanLiteralExpression.h"
+#include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/storage/expressions/ExpressionVisitor.h"
 
 namespace storm {
     namespace expressions {

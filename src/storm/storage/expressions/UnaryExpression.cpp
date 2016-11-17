@@ -1,7 +1,7 @@
-#include "src/storm/storage/expressions/UnaryExpression.h"
+#include "storm/storage/expressions/UnaryExpression.h"
 
-#include "src/storm/utility/macros.h"
-#include "src/storm/exceptions/InvalidAccessException.h"
+#include "storm/utility/macros.h"
+#include "storm/exceptions/InvalidAccessException.h"
 
 namespace storm {
     namespace expressions {

@@ -6,7 +6,7 @@
 #include <map>
 #include <boost/optional.hpp>
 
-#include "src/storm/storage/prism/Composition.h"
+#include "storm/storage/prism/Composition.h"
 
 namespace storm {
     namespace prism {

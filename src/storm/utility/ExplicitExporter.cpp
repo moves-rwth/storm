@@ -1,15 +1,15 @@
 #include "ExplicitExporter.h"
 
-#include "src/storm/adapters/CarlAdapter.h"
-#include "src/storm/utility/constants.h"
-#include "src/storm/utility/macros.h"
-#include "src/storm/exceptions/NotImplementedException.h"
-#include "src/storm/models/sparse/Dtmc.h"
-#include "src/storm/models/sparse/Mdp.h"
-#include "src/storm/models/sparse/Ctmc.h"
-#include "src/storm/models/sparse/MarkovAutomaton.h"
+#include "storm/adapters/CarlAdapter.h"
+#include "storm/utility/constants.h"
+#include "storm/utility/macros.h"
+#include "storm/exceptions/NotImplementedException.h"
+#include "storm/models/sparse/Dtmc.h"
+#include "storm/models/sparse/Mdp.h"
+#include "storm/models/sparse/Ctmc.h"
+#include "storm/models/sparse/MarkovAutomaton.h"
 
-#include "src/storm/models/sparse/StandardRewardModel.h"
+#include "storm/models/sparse/StandardRewardModel.h"
 
 
 namespace storm {

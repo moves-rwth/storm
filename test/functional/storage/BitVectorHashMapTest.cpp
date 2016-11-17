@@ -2,8 +2,8 @@
 
 #include <cstdint>
 
-#include "src/storm/storage/BitVector.h"
-#include "src/storm/storage/BitVectorHashMap.h"
+#include "storm/storage/BitVector.h"
+#include "storm/storage/BitVectorHashMap.h"
 
 TEST(BitVectorHashMapTest, FindOrAdd) {
     storm::storage::BitVectorHashMap<uint64_t> map(64, 3);

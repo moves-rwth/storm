@@ -2,11 +2,11 @@
 #define STORM_MODELCHECKER_MULTIOBJECTIVE_PCAA_SPARSEPCAAWEIGHTVECTORCHECKER_H_
 
 
-#include "src/storm/storage/BitVector.h"
-#include "src/storm/storage/SparseMatrix.h"
-#include "src/storm/storage/TotalScheduler.h"
-#include "src/storm/modelchecker/multiobjective/pcaa/PcaaObjective.h"
-#include "src/storm/utility/vector.h"
+#include "storm/storage/BitVector.h"
+#include "storm/storage/SparseMatrix.h"
+#include "storm/storage/TotalScheduler.h"
+#include "storm/modelchecker/multiobjective/pcaa/PcaaObjective.h"
+#include "storm/utility/vector.h"
 
 namespace storm {
     namespace modelchecker {

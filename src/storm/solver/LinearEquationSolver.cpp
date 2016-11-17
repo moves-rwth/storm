@@ -1,14 +1,14 @@
-#include "src/storm/solver/LinearEquationSolver.h"
+#include "storm/solver/LinearEquationSolver.h"
 
-#include "src/storm/solver/SolverSelectionOptions.h"
+#include "storm/solver/SolverSelectionOptions.h"
 
-#include "src/storm/solver/GmmxxLinearEquationSolver.h"
-#include "src/storm/solver/NativeLinearEquationSolver.h"
-#include "src/storm/solver/EigenLinearEquationSolver.h"
-#include "src/storm/solver/EliminationLinearEquationSolver.h"
+#include "storm/solver/GmmxxLinearEquationSolver.h"
+#include "storm/solver/NativeLinearEquationSolver.h"
+#include "storm/solver/EigenLinearEquationSolver.h"
+#include "storm/solver/EliminationLinearEquationSolver.h"
 
-#include "src/storm/settings/SettingsManager.h"
-#include "src/storm/settings/modules/CoreSettings.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/CoreSettings.h"
 
 namespace storm {
     namespace solver {

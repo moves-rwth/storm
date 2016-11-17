@@ -1,6 +1,6 @@
 #include "JaniProgramGraphBuilder.h"
 
-#include "src/storm/storage/jani/EdgeDestination.h"
+#include "storm/storage/jani/EdgeDestination.h"
 
 namespace storm {
     namespace builder {

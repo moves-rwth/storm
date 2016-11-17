@@ -3,7 +3,7 @@
 
 #include <boost/any.hpp>
 
-#include "src/storm/logic/FormulasForwardDeclarations.h"
+#include "storm/logic/FormulasForwardDeclarations.h"
 
 namespace storm {
     namespace logic {

@@ -1,13 +1,13 @@
 #ifndef EXPLICITDFTMODELBUILDER_H
 #define	EXPLICITDFTMODELBUILDER_H
 
-#include "src/storm/models/sparse/StateLabeling.h"
-#include "src/storm/models/sparse/StandardRewardModel.h"
-#include "src/storm/models/sparse/Model.h"
-#include "src/storm/storage/SparseMatrix.h"
-#include "src/storm/storage/BitVectorHashMap.h"
-#include "src/storm/storage/dft/DFT.h"
-#include "src/storm/storage/dft/SymmetricUnits.h"
+#include "storm/models/sparse/StateLabeling.h"
+#include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/models/sparse/Model.h"
+#include "storm/storage/SparseMatrix.h"
+#include "storm/storage/BitVectorHashMap.h"
+#include "storm/storage/dft/DFT.h"
+#include "storm/storage/dft/SymmetricUnits.h"
 #include <boost/container/flat_set.hpp>
 #include <boost/optional/optional.hpp>
 #include <stack>

@@ -1,4 +1,4 @@
-#include "src/storm/storage/prism/RewardModel.h"
+#include "storm/storage/prism/RewardModel.h"
 
 namespace storm {
     namespace prism {

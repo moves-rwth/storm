@@ -1,12 +1,12 @@
-#include "src/storm/settings/modules/GlpkSettings.h"
-#include "src/storm/settings/Option.h"
-#include "src/storm/settings/OptionBuilder.h"
-#include "src/storm/settings/ArgumentBuilder.h"
-#include "src/storm/settings/Argument.h"
+#include "storm/settings/modules/GlpkSettings.h"
+#include "storm/settings/Option.h"
+#include "storm/settings/OptionBuilder.h"
+#include "storm/settings/ArgumentBuilder.h"
+#include "storm/settings/Argument.h"
 
-#include "src/storm/settings/SettingsManager.h"
-#include "src/storm/settings/modules/CoreSettings.h"
-#include "src/storm/solver/SolverSelectionOptions.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/CoreSettings.h"
+#include "storm/solver/SolverSelectionOptions.h"
 
 namespace storm {
     namespace settings {

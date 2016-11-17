@@ -1,9 +1,9 @@
 #pragma once
 
-#include "src/storm/storage/pgcl/PgclProgram.h"
-#include "src/storm/storage/ppg/ProgramGraph.h"
-#include "src/storm/storage/pgcl/AbstractStatementVisitor.h"
-#include "src/storm/storage/pgcl/UniformExpression.h"
+#include "storm/storage/pgcl/PgclProgram.h"
+#include "storm/storage/ppg/ProgramGraph.h"
+#include "storm/storage/pgcl/AbstractStatementVisitor.h"
+#include "storm/storage/pgcl/UniformExpression.h"
 
 namespace storm {
     namespace builder {

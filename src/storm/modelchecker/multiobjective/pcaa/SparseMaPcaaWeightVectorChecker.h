@@ -4,11 +4,11 @@
 #include <vector>
 #include <type_traits>
 
-#include "src/storm/modelchecker/multiobjective/pcaa/SparsePcaaWeightVectorChecker.h"
-#include "src/storm/solver/LinearEquationSolver.h"
-#include "src/storm/solver/GmmxxLinearEquationSolver.h"
-#include "src/storm/solver/MinMaxLinearEquationSolver.h"
-#include "src/storm/utility/NumberTraits.h"
+#include "storm/modelchecker/multiobjective/pcaa/SparsePcaaWeightVectorChecker.h"
+#include "storm/solver/LinearEquationSolver.h"
+#include "storm/solver/GmmxxLinearEquationSolver.h"
+#include "storm/solver/MinMaxLinearEquationSolver.h"
+#include "storm/utility/NumberTraits.h"
 
 namespace storm {
     namespace modelchecker {

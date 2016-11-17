@@ -1,17 +1,17 @@
-#include "src/storm/generator/JaniNextStateGenerator.h"
+#include "storm/generator/JaniNextStateGenerator.h"
 
-#include "src/storm/models/sparse/StateLabeling.h"
+#include "storm/models/sparse/StateLabeling.h"
 
-#include "src/storm/storage/expressions/SimpleValuation.h"
+#include "storm/storage/expressions/SimpleValuation.h"
 
-#include "src/storm/solver/SmtSolver.h"
+#include "storm/solver/SmtSolver.h"
 
-#include "src/storm/utility/constants.h"
-#include "src/storm/utility/macros.h"
-#include "src/storm/utility/solver.h"
-#include "src/storm/exceptions/InvalidSettingsException.h"
-#include "src/storm/exceptions/WrongFormatException.h"
-#include "src/storm/exceptions/InvalidArgumentException.h"
+#include "storm/utility/constants.h"
+#include "storm/utility/macros.h"
+#include "storm/utility/solver.h"
+#include "storm/exceptions/InvalidSettingsException.h"
+#include "storm/exceptions/WrongFormatException.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 
 namespace storm {
     namespace generator {

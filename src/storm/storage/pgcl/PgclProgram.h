@@ -3,9 +3,9 @@
 #include <vector>
 #include "Block.h"
 #include "VariableDeclaration.h"
-#include "src/storm/storage/pgcl/Statement.h"
-#include "src/storm/storage/pgcl/StatementPrinterVisitor.h"
-#include "src/storm/storage/expressions/ExpressionManager.h"
+#include "storm/storage/pgcl/Statement.h"
+#include "storm/storage/pgcl/StatementPrinterVisitor.h"
+#include "storm/storage/expressions/ExpressionManager.h"
 
 namespace storm {
     namespace pgcl {

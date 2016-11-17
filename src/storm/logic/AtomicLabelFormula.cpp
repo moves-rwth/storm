@@ -1,7 +1,7 @@
-#include "src/storm/logic/AtomicLabelFormula.h"
+#include "storm/logic/AtomicLabelFormula.h"
 
-#include "src/storm/logic/AtomicExpressionFormula.h"
-#include "src/storm/logic/FormulaVisitor.h"
+#include "storm/logic/AtomicExpressionFormula.h"
+#include "storm/logic/FormulaVisitor.h"
 
 namespace storm {
     namespace logic {

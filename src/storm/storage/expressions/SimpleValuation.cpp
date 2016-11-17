@@ -1,13 +1,13 @@
-#include "src/storm/storage/expressions/SimpleValuation.h"
+#include "storm/storage/expressions/SimpleValuation.h"
 
 #include <boost/functional/hash.hpp>
 #include <boost/algorithm/string/join.hpp>
 
-#include "src/storm/storage/expressions/ExpressionManager.h"
-#include "src/storm/storage/expressions/Variable.h"
+#include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/storage/expressions/Variable.h"
 
-#include "src/storm/utility/macros.h"
-#include "src/storm/exceptions/InvalidTypeException.h"
+#include "storm/utility/macros.h"
+#include "storm/exceptions/InvalidTypeException.h"
 
 namespace storm {
     namespace expressions {

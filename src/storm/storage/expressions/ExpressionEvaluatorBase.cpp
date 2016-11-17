@@ -1,7 +1,7 @@
-#include "src/storm/storage/expressions/ExpressionEvaluatorBase.h"
+#include "storm/storage/expressions/ExpressionEvaluatorBase.h"
 
-#include "src/storm/storage/expressions/ExpressionManager.h"
-#include "src/storm/adapters/CarlAdapter.h"
+#include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/adapters/CarlAdapter.h"
 
 namespace storm {
     namespace expressions {

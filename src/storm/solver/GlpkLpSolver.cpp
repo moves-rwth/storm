@@ -1,22 +1,22 @@
-#include "src/storm/solver/GlpkLpSolver.h"
+#include "storm/solver/GlpkLpSolver.h"
 
 #ifdef STORM_HAVE_GLPK
 
 #include <iostream>
 
-#include "src/storm/storage/expressions/LinearCoefficientVisitor.h"
+#include "storm/storage/expressions/LinearCoefficientVisitor.h"
 
-#include "src/storm/settings/SettingsManager.h"
-#include "src/storm/utility/macros.h"
-#include "src/storm/storage/expressions/Expression.h"
-#include "src/storm/storage/expressions/ExpressionManager.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/utility/macros.h"
+#include "storm/storage/expressions/Expression.h"
+#include "storm/storage/expressions/ExpressionManager.h"
 
-#include "src/storm/exceptions/InvalidAccessException.h"
-#include "src/storm/exceptions/InvalidStateException.h"
-#include "src/storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/InvalidAccessException.h"
+#include "storm/exceptions/InvalidStateException.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 
-#include "src/storm/settings/modules/DebugSettings.h"
-#include "src/storm/settings/modules/GlpkSettings.h"
+#include "storm/settings/modules/DebugSettings.h"
+#include "storm/settings/modules/GlpkSettings.h"
 
 #include <cmath>
 

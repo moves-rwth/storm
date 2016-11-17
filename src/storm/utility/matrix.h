@@ -1,9 +1,9 @@
 #ifndef STORM_UTILITY_MATRIX_H_
 #define STORM_UTILITY_MATRIX_H_
 
-#include "src/storm/storage/SparseMatrix.h"
-#include "src/storm/storage/Scheduler.h"
-#include "src/storm/exceptions/InvalidStateException.h"
+#include "storm/storage/SparseMatrix.h"
+#include "storm/storage/Scheduler.h"
+#include "storm/exceptions/InvalidStateException.h"
 
 namespace storm {
     namespace utility {

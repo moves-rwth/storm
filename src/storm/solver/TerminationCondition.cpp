@@ -1,9 +1,9 @@
-#include "src/storm/solver/TerminationCondition.h"
-#include "src/storm/utility/vector.h"
+#include "storm/solver/TerminationCondition.h"
+#include "storm/utility/vector.h"
 
-#include "src/storm/adapters/CarlAdapter.h"
+#include "storm/adapters/CarlAdapter.h"
 
-#include "src/storm/utility/macros.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
     namespace solver {

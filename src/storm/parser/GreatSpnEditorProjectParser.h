@@ -7,9 +7,9 @@
 #include <xercesc/parsers/XercesDOMParser.hpp>
 #include <xercesc/util/XMLString.hpp>
 
-#include "src/storm/storage/gspn/GSPN.h"
+#include "storm/storage/gspn/GSPN.h"
 
-#include "src/storm/storage/gspn/GspnBuilder.h"
+#include "storm/storage/gspn/GspnBuilder.h"
 
 namespace storm {
     namespace parser {

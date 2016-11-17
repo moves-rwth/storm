@@ -3,8 +3,8 @@
 
 #include <memory>
 
-#include "src/storm/modelchecker/results/CheckResult.h"
-#include "src/storm/logic/Formulas.h"
+#include "storm/modelchecker/results/CheckResult.h"
+#include "storm/logic/Formulas.h"
 
 namespace storm {
     namespace modelchecker {

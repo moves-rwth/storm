@@ -1,25 +1,25 @@
-#include "src/storm/modelchecker/csl/helper/HybridCtmcCslHelper.h"
+#include "storm/modelchecker/csl/helper/HybridCtmcCslHelper.h"
 
-#include "src/storm/modelchecker/csl/helper/SparseCtmcCslHelper.h"
-#include "src/storm/modelchecker/prctl/helper/HybridDtmcPrctlHelper.h"
+#include "storm/modelchecker/csl/helper/SparseCtmcCslHelper.h"
+#include "storm/modelchecker/prctl/helper/HybridDtmcPrctlHelper.h"
 
-#include "src/storm/storage/dd/DdManager.h"
-#include "src/storm/storage/dd/Add.h"
-#include "src/storm/storage/dd/Bdd.h"
+#include "storm/storage/dd/DdManager.h"
+#include "storm/storage/dd/Add.h"
+#include "storm/storage/dd/Bdd.h"
 
-#include "src/storm/utility/macros.h"
-#include "src/storm/utility/graph.h"
-#include "src/storm/utility/constants.h"
+#include "storm/utility/macros.h"
+#include "storm/utility/graph.h"
+#include "storm/utility/constants.h"
 
-#include "src/storm/models/symbolic/StandardRewardModel.h"
+#include "storm/models/symbolic/StandardRewardModel.h"
 
-#include "src/storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
-#include "src/storm/modelchecker/results/SymbolicQuantitativeCheckResult.h"
-#include "src/storm/modelchecker/results/HybridQuantitativeCheckResult.h"
-#include "src/storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
+#include "storm/modelchecker/results/SymbolicQuantitativeCheckResult.h"
+#include "storm/modelchecker/results/HybridQuantitativeCheckResult.h"
+#include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 
-#include "src/storm/exceptions/InvalidStateException.h"
-#include "src/storm/exceptions/InvalidPropertyException.h"
+#include "storm/exceptions/InvalidStateException.h"
+#include "storm/exceptions/InvalidPropertyException.h"
 
 namespace storm {
     namespace modelchecker {

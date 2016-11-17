@@ -1,9 +1,9 @@
 #ifndef STORM_MODELCHECKER_SPARSEMDPPRCTLMODELCHECKER_H_
 #define STORM_MODELCHECKER_SPARSEMDPPRCTLMODELCHECKER_H_
 
-#include "src/storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
-#include "src/storm/models/sparse/Mdp.h"
-#include "src/storm/solver/MinMaxLinearEquationSolver.h"
+#include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
+#include "storm/models/sparse/Mdp.h"
+#include "storm/solver/MinMaxLinearEquationSolver.h"
 
 namespace storm {
     namespace modelchecker {

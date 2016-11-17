@@ -3,14 +3,14 @@
 
 #include <vector>
 
-#include "src/storm/storage/SparseMatrix.h"
-#include "src/storm/storage/MaximalEndComponent.h"
+#include "storm/storage/SparseMatrix.h"
+#include "storm/storage/MaximalEndComponent.h"
 #include "MDPModelCheckingHelperReturnType.h"
 
-#include "src/storm/utility/solver.h"
-#include "src/storm/solver/SolveGoal.h"
+#include "storm/utility/solver.h"
+#include "storm/solver/SolveGoal.h"
 
-#include "src/storm/adapters/CarlAdapter.h"
+#include "storm/adapters/CarlAdapter.h"
 
 namespace storm {
     namespace storage {

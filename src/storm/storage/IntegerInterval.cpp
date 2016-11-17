@@ -3,8 +3,8 @@
 #include <iostream>
 #include <string>
 
-#include "src/storm/utility/macros.h"
-#include "src/storm/exceptions/InvalidArgumentException.h"
+#include "storm/utility/macros.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 
 bool starts_with(const std::string& s1, const std::string& s2) {
     return s2.size() <= s1.size() && s1.compare(0, s2.size(), s2) == 0;

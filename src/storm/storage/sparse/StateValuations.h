@@ -4,10 +4,10 @@
 #include <cstdint>
 #include <string>
 
-#include "src/storm/storage/sparse/StateType.h"
-#include "src/storm/storage/expressions/SimpleValuation.h"
+#include "storm/storage/sparse/StateType.h"
+#include "storm/storage/expressions/SimpleValuation.h"
 
-#include "src/storm/models/sparse/StateAnnotation.h"
+#include "storm/models/sparse/StateAnnotation.h"
 
 namespace storm {
     namespace storage {

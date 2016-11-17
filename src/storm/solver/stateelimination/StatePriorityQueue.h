@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-#include "src/storm/storage/sparse/StateType.h"
+#include "storm/storage/sparse/StateType.h"
 
 namespace storm {
     namespace solver {

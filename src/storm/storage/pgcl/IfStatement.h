@@ -1,8 +1,8 @@
 #pragma once
 
-#include "src/storm/storage/pgcl/CompoundStatement.h"
-#include "src/storm/storage/pgcl/BooleanExpression.h"
-#include "src/storm/storage/pgcl/PgclProgram.h"
+#include "storm/storage/pgcl/CompoundStatement.h"
+#include "storm/storage/pgcl/BooleanExpression.h"
+#include "storm/storage/pgcl/PgclProgram.h"
 
 namespace storm {
     namespace pgcl {

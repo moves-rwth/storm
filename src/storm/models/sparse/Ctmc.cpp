@@ -1,7 +1,7 @@
-#include "src/storm/models/sparse/Ctmc.h"
-#include "src/storm/models/sparse/StandardRewardModel.h"
-#include "src/storm/adapters/CarlAdapter.h"
-#include "src/storm/utility/macros.h"
+#include "storm/models/sparse/Ctmc.h"
+#include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/adapters/CarlAdapter.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
     namespace models {

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "src/storm/storage/pgcl/Statement.h"
+#include "storm/storage/pgcl/Statement.h"
 
 namespace storm {
     namespace pgcl {

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "src/storm/solver/LinearEquationSolver.h"
-#include "src/storm/solver/MinMaxLinearEquationSolver.h"
+#include "storm/solver/LinearEquationSolver.h"
+#include "storm/solver/MinMaxLinearEquationSolver.h"
 
 namespace storm {
     namespace solver {

@@ -6,8 +6,8 @@
 
 #include "DFT.h"
 #include "OrderDFTElementsById.h"
-#include "src/storm/utility/macros.h"
-#include "src/storm/exceptions/NotSupportedException.h"
+#include "storm/utility/macros.h"
+#include "storm/exceptions/NotSupportedException.h"
 #include "../../exceptions/WrongFormatException.h"
 
 

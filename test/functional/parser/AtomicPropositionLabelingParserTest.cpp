@@ -7,11 +7,11 @@
 
 #include "gtest/gtest.h"
 #include "storm-config.h"
-#include "src/storm/models/sparse/StateLabeling.h"
-#include "src/storm/parser/AtomicPropositionLabelingParser.h"
-#include "src/storm/exceptions/FileIoException.h"
-#include "src/storm/exceptions/WrongFormatException.h"
-#include "src/storm/exceptions/OutOfRangeException.h"
+#include "storm/models/sparse/StateLabeling.h"
+#include "storm/parser/AtomicPropositionLabelingParser.h"
+#include "storm/exceptions/FileIoException.h"
+#include "storm/exceptions/WrongFormatException.h"
+#include "storm/exceptions/OutOfRangeException.h"
 
 #include <memory>
 

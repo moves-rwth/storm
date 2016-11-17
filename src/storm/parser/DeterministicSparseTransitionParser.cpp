@@ -1,4 +1,4 @@
-#include "src/storm/parser/DeterministicSparseTransitionParser.h"
+#include "storm/parser/DeterministicSparseTransitionParser.h"
 
 #include <cstdio>
 #include <cstring>
@@ -7,17 +7,17 @@
 #include <iostream>
 #include <string>
 
-#include "src/storm/utility/constants.h"
-#include "src/storm/utility/cstring.h"
-#include "src/storm/parser/MappedFile.h"
-#include "src/storm/exceptions/FileIoException.h"
-#include "src/storm/exceptions/WrongFormatException.h"
-#include "src/storm/exceptions/InvalidArgumentException.h"
-#include "src/storm/settings/SettingsManager.h"
-#include "src/storm/settings/modules/CoreSettings.h"
+#include "storm/utility/constants.h"
+#include "storm/utility/cstring.h"
+#include "storm/parser/MappedFile.h"
+#include "storm/exceptions/FileIoException.h"
+#include "storm/exceptions/WrongFormatException.h"
+#include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/CoreSettings.h"
 
-#include "src/storm/adapters/CarlAdapter.h"
-#include "src/storm/utility/macros.h"
+#include "storm/adapters/CarlAdapter.h"
+#include "storm/utility/macros.h"
 namespace storm {
     namespace parser {
 

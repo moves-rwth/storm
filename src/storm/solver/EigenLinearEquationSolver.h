@@ -1,8 +1,8 @@
 #pragma once
 
-#include "src/storm/solver/LinearEquationSolver.h"
+#include "storm/solver/LinearEquationSolver.h"
 
-#include "src/storm/utility/eigen.h"
+#include "storm/utility/eigen.h"
 
 namespace storm {
     namespace solver {

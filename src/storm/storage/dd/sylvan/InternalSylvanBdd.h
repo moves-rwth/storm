@@ -6,11 +6,11 @@
 #include <functional>
 #include <memory>
 
-#include "src/storm/storage/dd/DdType.h"
-#include "src/storm/storage/dd/InternalBdd.h"
-#include "src/storm/storage/dd/InternalAdd.h"
+#include "storm/storage/dd/DdType.h"
+#include "storm/storage/dd/InternalBdd.h"
+#include "storm/storage/dd/InternalAdd.h"
 
-#include "src/storm/utility/sylvan.h"
+#include "storm/utility/sylvan.h"
 
 namespace storm {
     namespace storage {

@@ -3,7 +3,7 @@
 
 #include <string>
 
-#include "src/storm/logic/StateFormula.h"
+#include "storm/logic/StateFormula.h"
 
 namespace storm {
     namespace logic {

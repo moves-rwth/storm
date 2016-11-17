@@ -8,15 +8,15 @@
 
 #include "cpptempl.h"
 
-#include "src/storm/adapters/CarlAdapter.h"
+#include "storm/adapters/CarlAdapter.h"
 
-#include "src/storm/storage/jani/Model.h"
-#include "src/storm/storage/jani/ParallelComposition.h"
-#include "src/storm/storage/expressions/ToCppVisitor.h"
+#include "storm/storage/jani/Model.h"
+#include "storm/storage/jani/ParallelComposition.h"
+#include "storm/storage/expressions/ToCppVisitor.h"
 
-#include "src/storm/builder/BuilderOptions.h"
-#include "src/storm/builder/jit/JitModelBuilderInterface.h"
-#include "src/storm/builder/jit/ModelComponentsBuilder.h"
+#include "storm/builder/BuilderOptions.h"
+#include "storm/builder/jit/JitModelBuilderInterface.h"
+#include "storm/builder/jit/ModelComponentsBuilder.h"
 
 namespace storm {
     namespace models {

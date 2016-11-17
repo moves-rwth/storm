@@ -1,15 +1,15 @@
-#include "src/storm/storage/Distribution.h"
+#include "storm/storage/Distribution.h"
 
 #include <algorithm>
 #include <iostream>
 
-#include "src/storm/utility/macros.h"
-#include "src/storm/utility/constants.h"
-#include "src/storm/utility/ConstantsComparator.h"
+#include "storm/utility/macros.h"
+#include "storm/utility/constants.h"
+#include "storm/utility/ConstantsComparator.h"
 
-#include "src/storm/settings/SettingsManager.h"
+#include "storm/settings/SettingsManager.h"
 
-#include "src/storm/adapters/CarlAdapter.h"
+#include "storm/adapters/CarlAdapter.h"
 
 namespace storm {
     namespace storage {

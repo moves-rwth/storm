@@ -1,4 +1,4 @@
-#include "src/storm/storage/pgcl/Statement.h"
+#include "storm/storage/pgcl/Statement.h"
 #include "Block.h"
 
 namespace storm {
