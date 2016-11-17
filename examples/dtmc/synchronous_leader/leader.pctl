@@ -1,4 +1,0 @@
-P=? [ F elected ]
-// P=? [ F<=(4*(N+1)) elected ]
-P=? [ F<=28 elected ]
-R=? [ F elected ]

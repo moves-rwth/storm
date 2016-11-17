@@ -1,0 +1,11 @@
+#DECLARATION
+init a b c d
+#END
+0 init c
+1 c
+2 c d
+3 c
+4 c
+5 a
+6 b
+7 b

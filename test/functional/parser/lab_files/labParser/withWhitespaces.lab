@@ -1,0 +1,11 @@
+#DECLARATION
+one 	9 &  two  "	three
+#END
+1 one 			three	
+2 two  "   
+3 three two
+4 one one
+5 two three  one	two three three two one
+7 one 9 two
+11 two &
+12 one
