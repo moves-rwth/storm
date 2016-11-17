@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_EXPRESSIONS_EXPRTKEXPRESSIONEVALUATOR_H_
-#define STORM_STORAGE_EXPRESSIONS_EXPRTKEXPRESSIONEVALUATOR_H_
+#pragma once
 
 #include <memory>
 #include <unordered_map>
@@ -7,7 +6,16 @@
 
 #include "src/storage/expressions/ExpressionEvaluatorBase.h"
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-variable"
+
+#pragma GCC diagnostic push
+
 #include "exprtk.hpp"
+
+#pragma GCC diagnostic pop
+#pragma clang diagnostic pop
+
 #include "src/storage/expressions/ToExprtkStringVisitor.h"
 
 namespace storm {
@@ -64,5 +72,3 @@ namespace storm {
         };
     }
 }
-
-#endif /* STORM_STORAGE_EXPRESSIONS_EXPRTKEXPRESSIONEVALUATOR_H_ */
