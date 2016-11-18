@@ -1,7 +1,15 @@
 #include <queue>
 #include <set>
+#include <string>
+
+#include "macros.h"
 #include "shortestPaths.h"
 #include "graph.h"
+
+// FIXME: I've accidentally used k=0 *twice* now without realizing that k>=1 is required!
+// Accessing zero should trigger a warning!
+// (Also, did I document this? I think so, somewhere. I went with k>=1 because
+// that's what the KSP paper used, but in retrospect k>=0 seems more intuitive ...)
 
 namespace storm {
     namespace utility {
@@ -249,9 +257,13 @@ namespace storm {
 
             template <typename T>
             void ShortestPathsGenerator<T>::computeNextPath(state_t node, unsigned long k) {
+                assert(k >= 2); // Dijkstra is used for k=1
                 assert(kShortestPaths[node].size() == k - 1); // if not, the previous SP must not exist
 
+                // TODO: I could extract the candidate generation to make this function more succinct
                 if (k == 2) {
+                    // Step B.1 in J&M paper
+
                     Path<T> shortestPathToNode = kShortestPaths[node][1 - 1]; // never forget index shift :-|
 
                     for (state_t predecessor : graphPredecessors[node]) {
@@ -271,7 +283,9 @@ namespace storm {
                     }
                 }
 
-                if (k > 2 || !isInitialState(node)) {
+                if (not (k == 2 && isInitialState(node))) {
+                    // Steps B.2-5 in J&M paper
+
                     // the (k-1)th shortest path (i.e., one better than the one we want to compute)
                     Path<T> previousShortestPath = kShortestPaths[node][k - 1 - 1]; // oh god, I forgot index shift AGAIN
 
@@ -297,9 +311,10 @@ namespace storm {
                         };
                         candidatePaths[node].insert(pathToPredecessorPlusEdge);
                     }
-                    // else there was no path; TODO: does this need handling?
+                    // else there was no path; TODO: does this need handling? -- yes, but not here (because the step B.1 may have added candidates)
                 }
 
+                // Step B.6 in J&M paper
                 if (!candidatePaths[node].empty()) {
                     Path<T> minDistanceCandidate = *(candidatePaths[node].begin());
                     for (auto path : candidatePaths[node]) {
@@ -310,6 +325,9 @@ namespace storm {
 
                     candidatePaths[node].erase(std::find(candidatePaths[node].begin(), candidatePaths[node].end(), minDistanceCandidate));
                     kShortestPaths[node].push_back(minDistanceCandidate);
+                } else {
+                    // TODO: kSP does not exist. this is handled later, but it would be nice to catch it as early as possble, wouldn't it?
+                    STORM_LOG_TRACE("KSP: no candidates, this will trigger nonexisting ksp after exiting these recursions. TODO: handle here");
                 }
             }
 
@@ -320,9 +338,10 @@ namespace storm {
                 for (unsigned long nextK = alreadyComputedK + 1; nextK <= k; nextK++) {
                     computeNextPath(metaTarget, nextK);
                     if (kShortestPaths[metaTarget].size() < nextK) {
-                        //std::cout << std::endl << "--> DEBUG: Last path: k=" << (nextK - 1) << ":" << std::endl;
-                        //printKShortestPath(metaTarget, nextK - 1);
-                        //std::cout << "---------" << "No other path exists!" << std::endl;
+                        unsigned long lastExistingK = nextK - 1;
+                        STORM_LOG_DEBUG("KSP throws (as expected) due to nonexistence -- maybe this is unhandled and causes the Python interface to segfault?");
+                        STORM_LOG_DEBUG("last existing k-SP has k=" + std::to_string(lastExistingK));
+                        STORM_LOG_DEBUG("maybe this is unhandled and causes the Python interface to segfault?");
                         throw std::invalid_argument("k-SP does not exist for k=" + std::to_string(k));
                     }
                 }

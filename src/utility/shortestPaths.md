@@ -75,7 +75,7 @@ This is a common feature if the target state is a sink; but we are not
 interested in such paths.
 
 (In fact, ideally we'd like to see paths whose node-intersection with all
-shorter paths is non-empty (which is an even stronger statement than
+shorter paths is non-empty [^2] (which is an even stronger statement than
 loop-free-ness of paths), because we want to take a union of those node
 sets. But that's a different matter.)
 
@@ -97,7 +97,7 @@ path to some node `u` plus an edge to `t`:
 Further, the shortest paths to some node are always computed in order and
 without gaps, e.g., the 1, 2, 3-shortest paths to `t` will be computed
 before the 4-SP. Thus, we store the SPs in a linked list for each node,
-with the k-th entry[^2] being the k-th SP to that node.
+with the k-th entry[^3] being the k-th SP to that node.
 
 Thus for an SP as shown above we simply store the predecessor node (`u`)
 and the `k`, which allows us to look up the tail of the SP.
@@ -107,4 +107,8 @@ the entire path back-to-front.
 [^1]: I suppose the correct term would now be "meta-target predecessors".
       In fact, I will rename all occurences of `target` in the source to
       `metaTargetPredecessors` – clumsy but accurate.
-[^2]: Which due to 0-based indexing has index `k-1`, of course! Damn it.
+[^2]: (2016-08-20:) Is this correct? Didn't I mean that the path should
+      contain new nodes, i.e., non-emptiness of
+      ((nodes in path) set-minus (union(nodes in shorter paths)))?
+      Yeah, I'm pretty sure that's what I meant.
+[^3]: Which due to 0-based indexing has index `k-1`, of course! Damn it.
