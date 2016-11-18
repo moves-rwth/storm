@@ -15,7 +15,7 @@
 #include "storm/storage/dd/sylvan/SylvanAddIterator.h"
 
 #include "storm-config.h"
-#include "src/adapters/CarlAdapter.h"
+#include "storm/adapters/CarlAdapter.h"
 
 namespace storm {
     namespace dd {

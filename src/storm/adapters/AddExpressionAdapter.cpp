@@ -9,7 +9,7 @@
 #include "storm/storage/dd/Bdd.h"
 
 #include "storm-config.h"
-#include "src/adapters/CarlAdapter.h"
+#include "storm/adapters/CarlAdapter.h"
 
 namespace storm {
     namespace adapters {

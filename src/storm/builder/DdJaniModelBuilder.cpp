@@ -128,20 +128,6 @@ namespace storm {
         }
         
         template <storm::dd::DdType Type, typename ValueType>
-        DdJaniModelBuilder<Type, ValueType>::DdJaniModelBuilder(storm::jani::Model const& model, Options const& options) : model(model), options(options) {
-            if (this->model->hasUndefinedConstants()) {
-                std::vector<std::reference_wrapper<storm::jani::Constant const>> undefinedConstants = this->model->getUndefinedConstants();
-                std::vector<std::string> strings;
-                for (auto const& constant : undefinedConstants) {
-                    std::stringstream stream;
-                    stream << constant.get().getName() << " (" << constant.get().getType() << ")";
-                    strings.push_back(stream.str());
-                }
-                STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Model still contains these undefined constants: " << boost::join(strings, ", ") << ".");
-            }
-            
-            this->model = this->model->substituteConstants();
-
         std::set<std::string> const& DdJaniModelBuilder<Type, ValueType>::Options::getRewardModelNames() const {
             return rewardModelsToBuild;
         }

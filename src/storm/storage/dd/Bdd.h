@@ -369,7 +369,6 @@ namespace storm {
     }
 }
 
-<<<<<<< HEAD:src/storage/dd/Bdd.h
 namespace std {
     template<storm::dd::DdType LibraryType>
     struct hash<storm::dd::Bdd<LibraryType>> {
@@ -380,6 +379,3 @@ namespace std {
 }
 
 #endif /* STORM_STORAGE_DD_BDD_H_ */
-=======
-#endif /* STORM_STORAGE_DD_BDD_H_ */
->>>>>>> master:src/storm/storage/dd/Bdd.h

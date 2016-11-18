@@ -5,7 +5,7 @@
 #include <sstream>
 #include <set>
 #include <map>
-#include "src/adapters/CarlAdapter.h"
+#include "storm/adapters/CarlAdapter.h"
 #include "sylvan_storm_rational_function.h"
 
 #include <sylvan_config.h>
