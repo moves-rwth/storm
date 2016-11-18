@@ -47,8 +47,8 @@ set(CUDA_ROOT "" CACHE STRING "The hint to the root directory of CUDA (optional)
 set(MSAT_ROOT "" CACHE STRING "The hint to the root directory of MathSAT (optional).")
 set(ADDITIONAL_INCLUDE_DIRS "" CACHE STRING "Additional directories added to the include directories.")
 set(ADDITIONAL_LINK_DIRS "" CACHE STRING "Additional directories added to the link directories.")
-set(USE_XERCES ${XML_SUPPORT})
-mark_as_advanced(USE_XERCES)
+set(USE_XERCESC ${XML_SUPPORT})
+mark_as_advanced(USE_XERCESC)
 
 # Set some CMAKE Variables as advanced
 mark_as_advanced(CMAKE_OSX_ARCHITECTURES)
@@ -146,7 +146,7 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 	set(CLANG ON)
 	set(STORM_COMPILER_ID "clang")
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
-	# using GCC
+	# using AppleClang
 	if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 7.3)
 		message(FATAL_ERROR "AppleClang version must be at least 7.3.")
 	endif()
@@ -333,7 +333,7 @@ configure_file (
 	"${PROJECT_BINARY_DIR}/include/storm-config.h"
 )
 
-# Configure a header file to pass the storm version to the source code
+# Configure a source file to pass the storm version to the source code
 configure_file (
 	"${PROJECT_SOURCE_DIR}/storm-version.cpp.in"
 	"${PROJECT_SOURCE_DIR}/src/storm/utility/storm-version.cpp"

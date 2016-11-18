@@ -13,8 +13,11 @@ namespace storm {
         const unsigned StormVersion::dirty = @STORM_CPP_VERSION_DIRTY@;
         const std::string StormVersion::systemName = "@CMAKE_SYSTEM_NAME@";
         const std::string StormVersion::systemVersion = "@CMAKE_SYSTEM_VERSION@";
-        const std::string StormVersion::buildType = "@CMAKE_BUILD_TYPE@";
-        const std::string StormVersion::cxxCompiler = "@STORM_COMPILED_BY@ @CMAKE_CXX_COMPILER_VERSION@";
-
+        const std::string StormVersion::cxxCompiler = "@STORM_COMPILER_ID@ @CMAKE_CXX_COMPILER_VERSION@";
+#ifdef NDEBUG
+        const std::string StormVersion::cxxFlags = "@CMAKE_CXX_FLAGS@" " " "@CMAKE_CXX_FLAGS_RELEASE@";
+#else
+        const std::string StormVersion::cxxFlags = "@CMAKE_CXX_FLAGS@" " " "@CMAKE_CXX_FLAGS_DEBUG@";
+#endif
     }
 }

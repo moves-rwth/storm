@@ -9,7 +9,6 @@ macro(register_source_groups_from_filestructure list_of_files remove_prefix)
                #string(REGEX REPLACE "/storm?/" "" GROUP ${GROUP})
         #STRING(SUBSTRING "${GROUP}" 1 -1 GROUP)
          string(REPLACE "/" "\\" GROUP "${GROUP}")
-		 message(${GROUP}: ${FILE})
 		
         # group into "Source Files" and "Header Files"
         # if ("${FILE}" MATCHES ".*\\.cpp")

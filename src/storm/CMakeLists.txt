@@ -59,8 +59,19 @@ add_executable(storm-gspn-main ${STORM_GSPN_MAIN_SOURCES} ${STORM_MAIN_HEADERS})
 target_link_libraries(storm-gspn-main storm) # Adding headers for xcode
 set_target_properties(storm-gspn-main PROPERTIES OUTPUT_NAME "storm-gspn")
 
-INSTALL(TARGETS storm-main
-	RUNTIME DESTINATION bin
-	LIBRARY DESTINATION lib
-	ARCHIVE DESTINATION lib
-)
+# Install headers to include directory.
+foreach(HEADER ${STORM_LIB_HEADERS})
+	string(REGEX REPLACE "${PROJECT_SOURCE_DIR}/src/?" "" RELATIVE_HEADER_PATH ${HEADER})
+	string(REGEX MATCH "(.*)[/\\]" RELATIVE_DIRECTORY ${RELATIVE_HEADER_PATH})
+	string(REGEX REPLACE "${RELATIVE_DIRECTORY}/?" "" HEADER_FILENAME ${RELATIVE_HEADER_PATH})
+	add_custom_command(
+		OUTPUT ${CMAKE_BINARY_DIR}/include/${RELATIVE_DIRECTORY}${HEADER_FILENAME}
+		COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/include/${RELATIVE_DIRECTORY}
+		COMMAND ${CMAKE_COMMAND} -E copy ${HEADER} ${CMAKE_BINARY_DIR}/include/${RELATIVE_DIRECTORY}${HEADER_FILENAME}
+		DEPENDS ${HEADER}
+	)
+	list(APPEND STORM_OUTPUT_HEADERS "${CMAKE_BINARY_DIR}/include/${RELATIVE_DIRECTORY}${HEADER_FILENAME}")
+endforeach()
+add_custom_target(copy_headers DEPENDS ${STORM_OUTPUT_HEADERS} ${STORM_LIB_HEADERS})
+add_dependencies(storm copy_headers)
+

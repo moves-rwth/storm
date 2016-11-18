@@ -32,12 +32,12 @@ namespace storm
             /// The system version which has compiled Storm.
             const static std::string systemVersion;
             
-            /// The build type that was used to build Storm.
-            const static std::string buildType;
-            
             /// The compiler version that was used to build Storm.
             const static std::string cxxCompiler;
-            
+
+            /// The flags that were used to build Storm.
+            const static std::string cxxFlags;
+
             static std::string shortVersionString() {
                 std::stringstream sstream;
                 sstream << "Storm " << versionMajor << "." << versionMinor << "." << versionPatch;
@@ -46,7 +46,7 @@ namespace storm
             
             static std::string longVersionString() {
                 std::stringstream sstream;
-                sstream << "Version: " << versionMajor << "." <<  versionMinor << "." << versionPatch;
+                sstream << "version: " << versionMajor << "." <<  versionMinor << "." << versionPatch;
                 if (commitsAhead != 0) {
                     sstream << " (+" << commitsAhead << " commits)";
                 }
@@ -60,8 +60,7 @@ namespace storm
             
             static std::string buildInfo() {
                 std::stringstream sstream;
-                sstream << "Compiled on " << systemName << " " << systemVersion << ",";
-                sstream << "using " << cxxCompiler << " with " << buildType << " flags.";
+                sstream << "Compiled on " << systemName << " " << systemVersion << " using " << cxxCompiler << " with flags '" << cxxFlags << "'";
                 return sstream.str();	
             }
         };
