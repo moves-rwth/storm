@@ -17,7 +17,7 @@
 #include "storm/storage/dd/DdManager.h"
 
 TEST(GraphTest, SymbolicProb01_Cudd) {
-    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/crowds-5-5.pm");
+    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/crowds-5-5.pm");
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
     std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().build(program);
     
@@ -39,7 +39,7 @@ TEST(GraphTest, SymbolicProb01_Cudd) {
 }
 
 TEST(GraphTest, SymbolicProb01_Sylvan) {
-    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/crowds-5-5.pm");
+    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/crowds-5-5.pm");
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
     std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().build(program);
     
@@ -61,7 +61,7 @@ TEST(GraphTest, SymbolicProb01_Sylvan) {
 }
 
 TEST(GraphTest, SymbolicProb01MinMax_Cudd) {
-    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/leader3.nm");
+    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/leader3.nm");
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
     std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().build(program);
     
@@ -79,7 +79,7 @@ TEST(GraphTest, SymbolicProb01MinMax_Cudd) {
         EXPECT_EQ(364ul, statesWithProbability01.second.getNonZeroCount());
     }
     
-    modelDescription = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/coin2-2.nm");
+    modelDescription = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/coin2-2.nm");
     program = modelDescription.preprocess().asPrismProgram();
     model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().build(program);
     
@@ -105,7 +105,7 @@ TEST(GraphTest, SymbolicProb01MinMax_Cudd) {
         EXPECT_EQ(35ul, statesWithProbability01.second.getNonZeroCount());
     }
         
-    modelDescription = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/csma2-2.nm");
+    modelDescription = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/csma2-2.nm");
     program = modelDescription.preprocess().asPrismProgram();
     model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().build(program);
     
@@ -125,7 +125,7 @@ TEST(GraphTest, SymbolicProb01MinMax_Cudd) {
 }
 
 TEST(GraphTest, SymbolicProb01MinMax_Sylvan) {
-    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/leader3.nm");
+    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/leader3.nm");
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
     std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().build(program);
     
@@ -143,7 +143,7 @@ TEST(GraphTest, SymbolicProb01MinMax_Sylvan) {
         EXPECT_EQ(364ul, statesWithProbability01.second.getNonZeroCount());
     }
     
-    modelDescription = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/coin2-2.nm");
+    modelDescription = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/coin2-2.nm");
     program = modelDescription.preprocess().asPrismProgram();
     model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().build(program);
     
@@ -169,7 +169,7 @@ TEST(GraphTest, SymbolicProb01MinMax_Sylvan) {
         EXPECT_EQ(35ul, statesWithProbability01.second.getNonZeroCount());
     }
     
-    modelDescription = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/csma2-2.nm");
+    modelDescription = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/csma2-2.nm");
     program = modelDescription.preprocess().asPrismProgram();
     model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().build(program);
     
@@ -189,7 +189,7 @@ TEST(GraphTest, SymbolicProb01MinMax_Sylvan) {
 }
 
 TEST(GraphTest, ExplicitProb01) {
-    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/crowds-5-5.pm");
+    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/crowds-5-5.pm");
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
     std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program, storm::generator::NextStateGeneratorOptions(false, true)).build();
     
@@ -211,7 +211,7 @@ TEST(GraphTest, ExplicitProb01) {
 }
 
 TEST(GraphTest, ExplicitProb01MinMax) {
-    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/leader3.nm");
+    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/leader3.nm");
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
     std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program, storm::generator::NextStateGeneratorOptions(false, true)).build();
     
@@ -227,7 +227,7 @@ TEST(GraphTest, ExplicitProb01MinMax) {
     EXPECT_EQ(0ul, statesWithProbability01.first.getNumberOfSetBits());
     EXPECT_EQ(364ul, statesWithProbability01.second.getNumberOfSetBits());
     
-    modelDescription = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/coin2-2.nm");
+    modelDescription = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/coin2-2.nm");
     program = modelDescription.preprocess().asPrismProgram();
     model = storm::builder::ExplicitModelBuilder<double>(program, storm::generator::NextStateGeneratorOptions(false, true)).build();
     
@@ -249,7 +249,7 @@ TEST(GraphTest, ExplicitProb01MinMax) {
     EXPECT_EQ(83ul, statesWithProbability01.first.getNumberOfSetBits());
     EXPECT_EQ(35ul, statesWithProbability01.second.getNumberOfSetBits());
     
-    modelDescription = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/csma2-2.nm");
+    modelDescription = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/csma2-2.nm");
     program = modelDescription.preprocess().asPrismProgram();
     model = storm::builder::ExplicitModelBuilder<double>(program, storm::generator::NextStateGeneratorOptions(false, true)).build();
     

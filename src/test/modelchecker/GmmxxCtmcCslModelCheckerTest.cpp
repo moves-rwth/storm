@@ -25,7 +25,7 @@ TEST(GmmxxCtmcCslModelCheckerTest, Cluster) {
     std::unique_ptr<storm::settings::SettingMemento> enablePrismCompatibility = storm::settings::mutableIOSettings().overridePrismCompatibilityMode(true);
     
     // Parse the model description.
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/cluster2.sm");
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/cluster2.sm");
     storm::parser::FormulaParser formulaParser(program.getManager().getSharedPointer());
     std::shared_ptr<storm::logic::Formula const> formula(nullptr);
     
@@ -102,7 +102,7 @@ TEST(GmmxxCtmcCslModelCheckerTest, Embedded) {
     std::unique_ptr<storm::settings::SettingMemento> enablePrismCompatibility = storm::settings::mutableIOSettings().overridePrismCompatibilityMode(true);
     
     // Parse the model description.
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/embedded2.sm");
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/embedded2.sm");
     storm::parser::FormulaParser formulaParser(program.getManager().getSharedPointer());
     std::shared_ptr<storm::logic::Formula const> formula(nullptr);
     
@@ -164,7 +164,7 @@ TEST(GmmxxCtmcCslModelCheckerTest, Polling) {
     std::unique_ptr<storm::settings::SettingMemento> enablePrismCompatibility = storm::settings::mutableIOSettings().overridePrismCompatibilityMode(true);
     
     // Parse the model description.
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/polling2.sm");
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/polling2.sm");
     storm::parser::FormulaParser formulaParser(program.getManager().getSharedPointer());
     std::shared_ptr<storm::logic::Formula const> formula(nullptr);
     
@@ -205,7 +205,7 @@ TEST(GmmxxCtmcCslModelCheckerTest, Tandem) {
     std::unique_ptr<storm::settings::SettingMemento> enablePrismCompatibility = storm::settings::mutableIOSettings().overridePrismCompatibilityMode(true);
     
     // Parse the model description.
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/tandem5.sm");
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/tandem5.sm");
     storm::parser::FormulaParser formulaParser(program.getManager().getSharedPointer());
     std::shared_ptr<storm::logic::Formula const> formula(nullptr);
     

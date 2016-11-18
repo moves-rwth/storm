@@ -20,7 +20,7 @@
 TEST(ModelInstantiatorTest, BrpProb) {
     carl::VariablePool::getInstance().clear();
     
-    std::string programFile = STORM_CPP_TESTS_BASE_PATH "/functional/utility/brp16_2.pm";
+    std::string programFile = STORM_CPP_TESTS_BASE_PATH "/utility/brp16_2.pm";
     std::string formulaAsString = "P=? [F s=5 ]";
     
     // Program and formula
@@ -138,7 +138,7 @@ TEST(ModelInstantiatorTest, BrpProb) {
 TEST(ModelInstantiatorTest, Brp_Rew) {
     carl::VariablePool::getInstance().clear();
     
-    std::string programFile = STORM_CPP_TESTS_BASE_PATH "/functional/utility/brp16_2.pm";
+    std::string programFile = STORM_CPP_TESTS_BASE_PATH "/utility/brp16_2.pm";
     std::string formulaAsString = "R=? [F ((s=5) | (s=0&srep=3)) ]";
     
     // Program and formula
@@ -208,7 +208,7 @@ TEST(ModelInstantiatorTest, Brp_Rew) {
 TEST(ModelInstantiatorTest, Consensus) {
     carl::VariablePool::getInstance().clear();
     
-    std::string programFile = STORM_CPP_TESTS_BASE_PATH "/functional/utility/coin2_2.pm";
+    std::string programFile = STORM_CPP_TESTS_BASE_PATH "/utility/coin2_2.pm";
     std::string formulaAsString = "Pmin=? [F \"finished\"&\"all_coins_equal_1\" ]";
     
     // Program and formula

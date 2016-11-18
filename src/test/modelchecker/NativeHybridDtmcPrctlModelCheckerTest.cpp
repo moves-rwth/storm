@@ -19,7 +19,7 @@
 #include "storm/settings/modules/NativeEquationSolverSettings.h"
 
 TEST(NativeHybridDtmcPrctlModelCheckerTest, Die_CUDD) {
-    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/die.pm");
+    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/die.pm");
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
     
     // A parser that we use for conveniently constructing the formulas.
@@ -81,7 +81,7 @@ TEST(NativeHybridDtmcPrctlModelCheckerTest, Die_CUDD) {
 }
 
 TEST(NativeHybridDtmcPrctlModelCheckerTest, Die_Sylvan) {
-    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/die.pm");
+    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/die.pm");
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
     
     // A parser that we use for conveniently constructing the formulas.
@@ -143,7 +143,7 @@ TEST(NativeHybridDtmcPrctlModelCheckerTest, Die_Sylvan) {
 }
 
 TEST(NativeHybridDtmcPrctlModelCheckerTest, Crowds_CUDD) {
-    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/crowds-5-5.pm");
+    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/crowds-5-5.pm");
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
     
     // A parser that we use for conveniently constructing the formulas.
@@ -188,7 +188,7 @@ TEST(NativeHybridDtmcPrctlModelCheckerTest, Crowds_CUDD) {
 }
 
 TEST(NativeHybridDtmcPrctlModelCheckerTest, Crowds_Sylvan) {
-    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/crowds-5-5.pm");
+    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/crowds-5-5.pm");
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
     
     // A parser that we use for conveniently constructing the formulas.
@@ -233,7 +233,7 @@ TEST(NativeHybridDtmcPrctlModelCheckerTest, Crowds_Sylvan) {
 }
 
 TEST(NativeHybridDtmcPrctlModelCheckerTest, SynchronousLeader_CUDD) {
-    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/leader-3-5.pm");
+    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/leader-3-5.pm");
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
     
     // A parser that we use for conveniently constructing the formulas.
@@ -286,7 +286,7 @@ TEST(NativeHybridDtmcPrctlModelCheckerTest, SynchronousLeader_CUDD) {
 }
 
 TEST(NativeHybridDtmcPrctlModelCheckerTest, SynchronousLeader_Sylvan) {
-    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/leader-3-5.pm");
+    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/leader-3-5.pm");
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
     
     // A parser that we use for conveniently constructing the formulas.

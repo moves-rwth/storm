@@ -11,7 +11,7 @@
 #include "storm/models/sparse/StandardRewardModel.h"
 
 TEST(NondeterministicModelBisimulationDecomposition, TwoDice) {
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/two_dice.nm");
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/two_dice.nm");
 
     // Build the die model without its reward model.
     std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program, storm::generator::NextStateGeneratorOptions(false, true)).build();

@@ -31,7 +31,7 @@ TEST(NondeterministicSparseTransitionParserTest, NonExistingFile) {
 TEST(NondeterministicSparseTransitionParserTest, BasicTransitionsParsing) {
 
 	// Parse a nondeterministic transitions file and test the result.
-	storm::storage::SparseMatrix<double> result(storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/mdp_general.tra"));
+	storm::storage::SparseMatrix<double> result(storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/parser/tra_files/mdp_general.tra"));
 
 	// Test the row mapping, i.e. at which row which state starts.
 	ASSERT_EQ(6ul, result.getRowGroupCount());
@@ -121,8 +121,8 @@ TEST(NondeterministicSparseTransitionParserTest, BasicTransitionsParsing) {
 
 TEST(NondeterministicSparseTransitionParserTest, BasicTransitionsRewardsParsing) {
 	// Parse a nondeterministic transitions file and test the result.
-	storm::storage::SparseMatrix<double> modelInformation(storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/mdp_general.tra"));
-	storm::storage::SparseMatrix<double> result(storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitionRewards(STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/mdp_general.trans.rew", modelInformation));
+	storm::storage::SparseMatrix<double> modelInformation(storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/parser/tra_files/mdp_general.tra"));
+	storm::storage::SparseMatrix<double> result(storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitionRewards(STORM_CPP_TESTS_BASE_PATH "/parser/rew_files/mdp_general.trans.rew", modelInformation));
 
 	// Test the transition matrix.
 	ASSERT_EQ(6ul, result.getColumnCount());
@@ -187,8 +187,8 @@ TEST(NondeterministicSparseTransitionParserTest, BasicTransitionsRewardsParsing)
 TEST(NondeterministicSparseTransitionParserTest, Whitespaces) {
 	// Test the resilience of the parser against whitespaces.
 	// Do so by comparing the hashes of the transition matices and the rowMapping vectors element by element.
-	storm::storage::SparseMatrix<double> correctResult(storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/mdp_general.tra"));
-	storm::storage::SparseMatrix<double> whitespaceResult = storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/mdp_whitespaces.tra");
+	storm::storage::SparseMatrix<double> correctResult(storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/parser/tra_files/mdp_general.tra"));
+	storm::storage::SparseMatrix<double> whitespaceResult = storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/parser/tra_files/mdp_whitespaces.tra");
 	ASSERT_EQ(correctResult.hash(), whitespaceResult.hash());
 	ASSERT_EQ(correctResult.getRowGroupIndices().size(), whitespaceResult.getRowGroupIndices().size());
 	for(uint_fast64_t i = 0; i < correctResult.getRowGroupIndices().size(); i++) {
@@ -196,16 +196,16 @@ TEST(NondeterministicSparseTransitionParserTest, Whitespaces) {
 	}
 
 	// Do the same (minus the unused rowMapping) for the corresponding transition rewards file (with and without whitespaces)
-	uint_fast64_t correctHash = storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitionRewards(STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/mdp_general.trans.rew", correctResult).hash();
-	ASSERT_EQ(correctHash, storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitionRewards(STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/mdp_whitespaces.trans.rew", whitespaceResult).hash());
+	uint_fast64_t correctHash = storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitionRewards(STORM_CPP_TESTS_BASE_PATH "/parser/rew_files/mdp_general.trans.rew", correctResult).hash();
+	ASSERT_EQ(correctHash, storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitionRewards(STORM_CPP_TESTS_BASE_PATH "/parser/rew_files/mdp_whitespaces.trans.rew", whitespaceResult).hash());
 }
 
 TEST(NondeterministicSparseTransitionParserTest, MixedTransitionOrder) {
 	// Since the MatrixBuilder needs sequential input of new elements reordering of transitions or states should throw an exception.
-	ASSERT_THROW(storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/mdp_mixedStateOrder.tra"), storm::exceptions::InvalidArgumentException);
+	ASSERT_THROW(storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/parser/tra_files/mdp_mixedStateOrder.tra"), storm::exceptions::InvalidArgumentException);
 
-	storm::storage::SparseMatrix<double> modelInformation = storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/mdp_general.tra");
-	ASSERT_THROW(storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitionRewards(STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/mdp_mixedStateOrder.trans.rew", modelInformation), storm::exceptions::InvalidArgumentException);
+	storm::storage::SparseMatrix<double> modelInformation = storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/parser/tra_files/mdp_general.tra");
+	ASSERT_THROW(storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitionRewards(STORM_CPP_TESTS_BASE_PATH "/parser/rew_files/mdp_mixedStateOrder.trans.rew", modelInformation), storm::exceptions::InvalidArgumentException);
 }
 
 TEST(NondeterministicSparseTransitionParserTest, FixDeadlocks) {
@@ -213,7 +213,7 @@ TEST(NondeterministicSparseTransitionParserTest, FixDeadlocks) {
     std::unique_ptr<storm::settings::SettingMemento> fixDeadlocks = storm::settings::mutableCoreSettings().overrideDontFixDeadlocksSet(false);
 
 	// Parse a transitions file with the fixDeadlocks Flag set and test if it works.
-	storm::storage::SparseMatrix<double> result(storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/mdp_deadlock.tra"));
+	storm::storage::SparseMatrix<double> result(storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/parser/tra_files/mdp_deadlock.tra"));
 
 	ASSERT_EQ(8ul, result.getRowGroupIndices().size());
 	ASSERT_EQ(9ul, result.getRowGroupIndices()[5]);
@@ -253,19 +253,19 @@ TEST(NondeterministicSparseTransitionParserTest, DontFixDeadlocks) {
 	// Try to parse a transitions file containing a deadlock state with the fixDeadlocksFlag unset. This should throw an exception.
     std::unique_ptr<storm::settings::SettingMemento> dontFixDeadlocks = storm::settings::mutableCoreSettings().overrideDontFixDeadlocksSet(true);
 
-	ASSERT_THROW(storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/mdp_deadlock.tra"), storm::exceptions::WrongFormatException);
+	ASSERT_THROW(storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/parser/tra_files/mdp_deadlock.tra"), storm::exceptions::WrongFormatException);
 }
 
 TEST(NondeterministicSparseTransitionParserTest, DoubledLines) {
 	// There is a redundant line in the transition file. As the transition already exists this should throw an exception.
-	ASSERT_THROW(storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/mdp_doubledLines.tra"), storm::exceptions::InvalidArgumentException);
+	ASSERT_THROW(storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/parser/tra_files/mdp_doubledLines.tra"), storm::exceptions::InvalidArgumentException);
 }
 
 TEST(NondeterministicSparseTransitionParserTest, RewardForNonExistentTransition) {
 
 	// First parse a transition file. Then parse a transition reward file for the resulting transition matrix.
-	storm::storage::SparseMatrix<double> transitionResult = storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/mdp_general.tra");
+	storm::storage::SparseMatrix<double> transitionResult = storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/parser/tra_files/mdp_general.tra");
 
 	// There is a reward for a transition that does not exist in the transition matrix.
-	ASSERT_THROW(storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitionRewards(STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/mdp_rewardForNonExTrans.trans.rew", transitionResult), storm::exceptions::WrongFormatException);
+	ASSERT_THROW(storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitionRewards(STORM_CPP_TESTS_BASE_PATH "/parser/rew_files/mdp_rewardForNonExTrans.trans.rew", transitionResult), storm::exceptions::WrongFormatException);
 }

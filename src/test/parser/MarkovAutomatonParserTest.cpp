@@ -13,7 +13,7 @@ TEST(MarkovAutomatonParserTest, NonExistingFile) {
 
 TEST(MarkovAutomatonParserTest, BasicParsing) {
     // Get the parsing result.
-    storm::models::sparse::MarkovAutomaton<double> result = storm::parser::MarkovAutomatonParser<>::parseMarkovAutomaton(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/ma_general.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/ma_general.lab", STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/ma_general.state.rew");
+    storm::models::sparse::MarkovAutomaton<double> result = storm::parser::MarkovAutomatonParser<>::parseMarkovAutomaton(STORM_CPP_TESTS_BASE_PATH "/parser/tra_files/ma_general.tra", STORM_CPP_TESTS_BASE_PATH "/parser/lab_files/ma_general.lab", STORM_CPP_TESTS_BASE_PATH "/parser/rew_files/ma_general.state.rew");
 
     // Test sizes and counts.
     ASSERT_EQ(6ul, result.getNumberOfStates());
@@ -57,8 +57,8 @@ TEST(MarkovAutomatonParserTest, MismatchedFiles) {
     // Test file combinations that do not match, i.e. differing number of states, transitions, etc.
 
     // The labeling file contains a label for a non existent state.
-    ASSERT_THROW(storm::parser::MarkovAutomatonParser<>::parseMarkovAutomaton(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/ma_general.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/ma_mismatched.lab"), storm::exceptions::OutOfRangeException);
+    ASSERT_THROW(storm::parser::MarkovAutomatonParser<>::parseMarkovAutomaton(STORM_CPP_TESTS_BASE_PATH "/parser/tra_files/ma_general.tra", STORM_CPP_TESTS_BASE_PATH "/parser/lab_files/ma_mismatched.lab"), storm::exceptions::OutOfRangeException);
 
     // The state reward file contains a reward for a non existent state.
-    ASSERT_THROW(storm::parser::MarkovAutomatonParser<>::parseMarkovAutomaton(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/ma_general.tra", STORM_CPP_TESTS_BASE_PATH "/functional/parser/lab_files/ma_general.lab", STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/ma_mismatched.state.rew"), storm::exceptions::OutOfRangeException);
+    ASSERT_THROW(storm::parser::MarkovAutomatonParser<>::parseMarkovAutomaton(STORM_CPP_TESTS_BASE_PATH "/parser/tra_files/ma_general.tra", STORM_CPP_TESTS_BASE_PATH "/parser/lab_files/ma_general.lab", STORM_CPP_TESTS_BASE_PATH "/parser/rew_files/ma_mismatched.state.rew"), storm::exceptions::OutOfRangeException);
 }

@@ -292,7 +292,7 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, LRA) {
 }
 
 TEST(GmmxxDtmcPrctlModelCheckerTest, Conditional) {
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/modelchecker/test_conditional.pm");
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/modelchecker/test_conditional.pm");
     
     std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program, storm::generator::NextStateGeneratorOptions(true, true)).build();
     ASSERT_TRUE(model->getType() == storm::models::ModelType::Dtmc);

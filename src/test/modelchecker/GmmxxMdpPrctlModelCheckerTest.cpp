@@ -192,7 +192,7 @@ TEST(GmmxxMdpPrctlModelCheckerTest, AsynchronousLeader) {
 }
 
 TEST(GmmxxMdpPrctlModelCheckerTest, SchedulerGeneration) {
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/modelchecker/scheduler_generation.nm");
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/modelchecker/scheduler_generation.nm");
 
     // A parser that we use for conveniently constructing the formulas.
     storm::parser::FormulaParser formulaParser;
@@ -244,7 +244,7 @@ TEST(GmmxxMdpPrctlModelCheckerTest, SchedulerGeneration) {
 }
 
 TEST(GmmxxMdpPrctlModelCheckerTest, TinyRewards) {
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/modelchecker/tiny_rewards.nm");
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/modelchecker/tiny_rewards.nm");
 
     // A parser that we use for conveniently constructing the formulas.
     storm::parser::FormulaParser formulaParser;

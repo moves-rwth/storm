@@ -65,7 +65,7 @@ TEST(EigenDtmcPrctlModelCheckerTest, Die) {
 
 #ifdef STORM_HAVE_CARL
 TEST(EigenDtmcPrctlModelCheckerTest, Die_RationalNumber) {
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/die.pm");
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/die.pm");
     
     storm::generator::NextStateGeneratorOptions options;
     options.setBuildAllLabels().setBuildAllRewardModels();
@@ -115,7 +115,7 @@ TEST(EigenDtmcPrctlModelCheckerTest, Die_RationalNumber) {
 }
 
 TEST(EigenDtmcPrctlModelCheckerTest, Die_RationalFunction) {
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/parametric_die.pm");
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/parametric_die.pm");
     storm::generator::NextStateGeneratorOptions options;
     options.setBuildAllLabels().setBuildAllRewardModels();
     std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model = storm::builder::ExplicitModelBuilder<storm::RationalFunction>(program, options).build();
@@ -399,7 +399,7 @@ TEST(EigenDtmcPrctlModelCheckerTest, LRA) {
 }
 
 TEST(EigenDtmcPrctlModelCheckerTest, Conditional) {
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/modelchecker/test_conditional.pm");
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/modelchecker/test_conditional.pm");
 
     storm::generator::NextStateGeneratorOptions options;
     options.setBuildAllLabels().setBuildAllRewardModels();
