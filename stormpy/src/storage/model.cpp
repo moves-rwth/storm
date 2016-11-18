@@ -1,10 +1,9 @@
 #include "model.h"
-
-#include "src/models/ModelBase.h"
-#include "src/models/sparse/Model.h"
-#include "src/models/sparse/Dtmc.h"
-#include "src/models/sparse/Mdp.h"
-#include "src/models/sparse/StandardRewardModel.h"
+#include "storm/models/ModelBase.h"
+#include "storm/models/sparse/Model.h"
+#include "storm/models/sparse/Dtmc.h"
+#include "storm/models/sparse/Mdp.h"
+#include "storm/models/sparse/StandardRewardModel.h"
 
 // Thin wrapper for getting initial states
 template<typename ValueType>

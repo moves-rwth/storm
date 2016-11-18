@@ -17,8 +17,8 @@ foreach(arg ${STORMPY_INCLUDE_DIRS_PROP})
     set(sep ":")
 endforeach()
 set(STORMPY_COMPILE_ARGS ${CMAKE_CXX_FLAGS})
-set(STORMPY_LIBRARY_DIRS "${PROJECT_BINARY_DIR}/src")
-set(STORMPY_RPATH "${PROJECT_BINARY_DIR}/src")
+set(STORMPY_LIBRARY_DIRS "${PROJECT_BINARY_DIR}/src/storm")
+set(STORMPY_RPATH "${PROJECT_BINARY_DIR}/src/storm")
 configure_file (
     "${PROJECT_SOURCE_DIR}/stormpy/setup.cfg.in"
     "${PROJECT_SOURCE_DIR}/stormpy/setup.cfg"

@@ -1,6 +1,5 @@
 #include "matrix.h"
-
-#include "src/storage/SparseMatrix.h"
+#include "storm/storage/SparseMatrix.h"
 
 typedef storm::storage::SparseMatrix<double>::index_type entry_index;
 typedef unsigned int row_index;
