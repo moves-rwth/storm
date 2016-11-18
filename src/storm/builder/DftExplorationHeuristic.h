@@ -80,7 +80,7 @@ namespace storm {
                 // Intentionally left empty
             }
 
-            bool updateHeuristicValues(DFTExplorationHeuristic<ValueType> const& predecessor, ValueType rate, ValueType exitRate) override {
+            bool updateHeuristicValues(DFTExplorationHeuristic<ValueType> const&, ValueType, ValueType) override {
                 return false;
             }
 
@@ -88,7 +88,7 @@ namespace storm {
                 return 0;
             }
 
-            bool isSkip(double approximationThreshold) const override {
+            bool isSkip(double) const override {
                 return false;
             }
 
@@ -108,7 +108,7 @@ namespace storm {
                 // Intentionally left empty
             }
 
-            bool updateHeuristicValues(DFTExplorationHeuristic<ValueType> const& predecessor, ValueType rate, ValueType exitRate) override {
+            bool updateHeuristicValues(DFTExplorationHeuristic<ValueType> const& predecessor, ValueType, ValueType) override {
                 if (predecessor.getDepth() < this->depth) {
                     this->depth = predecessor.getDepth();
                     return true;
