@@ -9,7 +9,6 @@
 #include "storm/exceptions/BaseException.h"
 #include "storm/utility/macros.h"
 #include "storm/builder/DftSmtBuilder.h"
-#include "storm/transformations/dft/DftToGspnTransformator.h"
 
 
 #include "storm/settings/modules/GeneralSettings.h"
