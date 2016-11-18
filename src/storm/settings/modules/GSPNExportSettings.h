@@ -24,6 +24,20 @@ namespace storm {
                  */
                 std::string getWriteToDotFilename() const;
                 
+                bool isWriteToPnmlSet() const;
+                
+                /**
+                 *
+                 */
+                std::string getWriteToPnmlFilename() const;
+                
+                bool isWriteToPnproSet() const;
+                
+                /**
+                 *
+                 */
+                std::string getWriteToPnproFilename() const;
+                
                 
                 bool check() const override;
                 void finalize() override;
@@ -32,6 +46,8 @@ namespace storm {
                 
             private:
                 static const std::string writeToDotOptionName;
+                static const std::string writeToPnmlOptionName;
+                static const std::string writeToPnproOptionName;
                 //static const std::string writeToDotOptionShortName;
                 
             };
