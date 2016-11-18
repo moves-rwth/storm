@@ -16,8 +16,7 @@ namespace storm {
             
             const std::string JitBuilderSettings::doctorOptionName = "doctor";
             const std::string JitBuilderSettings::compilerOptionName = "compiler";
-            const std::string JitBuilderSettings::stormRootOptionName = "storm";
-            const std::string JitBuilderSettings::stormConfigDirectoryOptionName = "stormconf";
+            const std::string JitBuilderSettings::stormIncludeDirectoryOptionName = "storm";
             const std::string JitBuilderSettings::boostIncludeDirectoryOptionName = "boost";
             const std::string JitBuilderSettings::carlIncludeDirectoryOptionName = "carl";
             const std::string JitBuilderSettings::compilerFlagsOptionName = "cxxflags";
@@ -26,10 +25,8 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, doctorOptionName, false, "Show debugging information on why the jit-based model builder is not working on your system.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, compilerOptionName, false, "The compiler in the jit-based model builder.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the executable. Defaults to c++.").setDefaultValueString("c++").build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, stormRootOptionName, false, "The root directory of Storm.")
-                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("dir", "The directory that contains the src/ subtree of Storm.").build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, stormConfigDirectoryOptionName, false, "The directory containing Storm's configuration (storm-config.h).")
-                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("dir", "The directory that contains storm-config.h.").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, stormIncludeDirectoryOptionName, false, "The include directory of Storm.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("dir", "The directory that contains the headers of Storm.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, boostIncludeDirectoryOptionName, false, "The include directory of boost.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("dir", "The directory containing the boost headers version >= 1.61.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, carlIncludeDirectoryOptionName, false, "The include directory of carl.")
@@ -46,20 +43,12 @@ namespace storm {
                 return this->getOption(compilerOptionName).getArgumentByName("name").getValueAsString();
             }
             
-            bool JitBuilderSettings::isStormRootSet() const {
-                return this->getOption(stormRootOptionName).getHasOptionBeenSet();
+            bool JitBuilderSettings::isStormIncludeDirectorySet() const {
+                return this->getOption(stormIncludeDirectoryOptionName).getHasOptionBeenSet();
             }
             
-            std::string JitBuilderSettings::getStormRoot() const {
-                return this->getOption(stormRootOptionName).getArgumentByName("dir").getValueAsString();
-            }
-            
-            bool JitBuilderSettings::isStormConfigDirectorySet() const {
-                return this->getOption(stormConfigDirectoryOptionName).getHasOptionBeenSet();
-            }
-            
-            std::string JitBuilderSettings::getStormConfigDirectory() const {
-                return this->getOption(stormConfigDirectoryOptionName).getArgumentByName("dir").getValueAsString();
+            std::string JitBuilderSettings::getStormIncludeDirectory() const {
+                return this->getOption(stormIncludeDirectoryOptionName).getArgumentByName("dir").getValueAsString();
             }
             
             bool JitBuilderSettings::isBoostIncludeDirectorySet() const {

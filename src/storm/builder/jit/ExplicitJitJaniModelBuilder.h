@@ -64,8 +64,7 @@ namespace storm {
                 bool checkCompilerFlagsWork() const;
                 bool checkBoostAvailable() const;
                 bool checkBoostDllAvailable() const;
-                bool checkStormAvailable() const;
-                bool checkStormConfigurationAvailable() const;
+                bool checkStormHeadersAvailable() const;
                 bool checkCarlAvailable() const;
                 
                 /*!
@@ -180,11 +179,8 @@ namespace storm {
                 /// The include directory of boost.
                 std::string boostIncludeDirectory;
                 
-                /// The root directory of storm.
-                std::string stormRoot;
-                
-                /// The configuration directory of storm.
-                std::string stormConfigurationDirectory;
+                /// The include directory of storm.
+                std::string stormIncludeDirectory;
                 
                 /// The include directory of carl.
                 std::string carlIncludeDirectory;

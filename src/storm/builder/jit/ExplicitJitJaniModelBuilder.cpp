@@ -67,20 +67,15 @@ namespace storm {
                 } else {
                     boostIncludeDirectory = STORM_BOOST_INCLUDE_DIR;
                 }
-                if (settings.isStormRootSet()) {
-                    stormRoot = settings.getStormRoot();
+                if (settings.isStormIncludeDirectorySet()) {
+                    stormIncludeDirectory = settings.getStormIncludeDirectory();
                 } else {
-                    stormRoot = STORM_CPP_BASE_PATH;
+                    stormIncludeDirectory = STORM_BUILD_DIR "/include";
                 }
                 if (settings.isCarlIncludeDirectorySet()) {
                     carlIncludeDirectory = settings.getCarlIncludeDirectory();
                 } else {
                     carlIncludeDirectory = STORM_CARL_INCLUDE_DIR;
-                }
-                if (settings.isStormConfigDirectorySet()) {
-                    stormConfigurationDirectory = settings.getStormConfigDirectory();
-                } else {
-                    stormConfigurationDirectory = STORM_BUILD_DIR "/include";
                 }
                 
                 // Register all transient variables as transient.
@@ -324,46 +319,14 @@ namespace storm {
             }
                 
             template <typename ValueType, typename RewardModelType>
-            bool ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::checkStormAvailable() const {
+            bool ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::checkStormHeadersAvailable() const {
                 bool result = true;
-                std::string problem = "Unable to compile program using Storm data structures. Is Storm's root directory '" + stormRoot + "' set correctly? Does the directory contain the source subtree under src/ ?";
+                std::string problem = "Unable to compile program using Storm headers. Is Storm's include directory '" + stormIncludeDirectory + "' set correctly? Does the directory contain all the headers (in particular 'storm-config.h'?";
                 try {
                     std::string program = R"(
 #include "storm/builder/RewardModelInformation.h"
-                    
-                    int main() {
-                        return 0;
-                    }
-                    )";
-                    boost::filesystem::path temporaryFile = writeToTemporaryFile(program);
-                    std::string temporaryFilename = boost::filesystem::absolute(temporaryFile).string();
-                    boost::filesystem::path outputFile = temporaryFile;
-                    outputFile += ".out";
-                    std::string outputFilename = boost::filesystem::absolute(outputFile).string();
-                    boost::optional<std::string> error = execute(compiler + " " + compilerFlags + " " + temporaryFilename + " -I" + stormRoot + " -o " + outputFilename);
-                    
-                    if (error) {
-                        result = false;
-                        STORM_LOG_ERROR(problem);
-                        STORM_LOG_TRACE(error.get());
-                    } else {
-                        boost::filesystem::remove(outputFile);
-                    }
-                } catch(std::exception const& e) {
-                    result = false;
-                    STORM_LOG_ERROR(problem);
-                }
-                return result;
-            }
-
-            template <typename ValueType, typename RewardModelType>
-            bool ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::checkStormConfigurationAvailable() const {
-                bool result = true;
-                std::string problem = "Unable to compile program using Storm configuration. Is Storm's configuration directory '" + stormConfigurationDirectory + "' set correctly? Does the directory contain the file storm-config.h?";
-                try {
-                    std::string program = R"(
 #include "storm-config.h"
-                        
+                    
                     int main() {
                         return 0;
                     }
@@ -373,7 +336,7 @@ namespace storm {
                     boost::filesystem::path outputFile = temporaryFile;
                     outputFile += ".out";
                     std::string outputFilename = boost::filesystem::absolute(outputFile).string();
-                    boost::optional<std::string> error = execute(compiler + " " + compilerFlags + " " + temporaryFilename + " -I" + stormRoot + " -o " + outputFilename);
+                    boost::optional<std::string> error = execute(compiler + " " + compilerFlags + " " + temporaryFilename + " -I" + stormIncludeDirectory + " -o " + outputFilename);
                     
                     if (error) {
                         result = false;
@@ -395,7 +358,7 @@ namespace storm {
                 std::string problem = "Unable to compile program using Carl data structures. Is Carls's include directory '" + carlIncludeDirectory + "' set correctly?";
                 try {
                     std::string program = R"(
-#include "storm/adapters/NumberAdapter.h"
+#include "storm/adapters/CarlAdapter.h"
                         
                     int main() {
                         return 0;
@@ -406,7 +369,7 @@ namespace storm {
                     boost::filesystem::path outputFile = temporaryFile;
                     outputFile += ".out";
                     std::string outputFilename = boost::filesystem::absolute(outputFile).string();
-                    boost::optional<std::string> error = execute(compiler + " " + compilerFlags + " " + temporaryFilename + " -I" + stormRoot + " -I" + stormConfigurationDirectory + " -I" + carlIncludeDirectory + " -o " + outputFilename);
+                    boost::optional<std::string> error = execute(compiler + " " + compilerFlags + " " + temporaryFilename + " -I" + stormIncludeDirectory + " -I" + carlIncludeDirectory + " -o " + outputFilename);
                     
                     if (error) {
                         result = false;
@@ -462,20 +425,12 @@ namespace storm {
                 STORM_LOG_DEBUG("Success.");
                 
                 STORM_LOG_DEBUG("Checking whether Storm's headers are available.");
-                result = checkStormAvailable();
+                result = checkStormHeadersAvailable();
                 if (!result) {
                     return result;
                 }
                 STORM_LOG_DEBUG("Success.");
                 
-                STORM_LOG_DEBUG("Checking whether Storm's configuration is available.");
-                result = checkStormConfigurationAvailable();
-                if (!result) {
-                    return result;
-                }
-                STORM_LOG_DEBUG("Success.");
-                
-
                 if (std::is_same<storm::RationalNumber, ValueType>::value) {
                     STORM_LOG_DEBUG("Checking whether Carl's headers are available.");
                     result = checkCarlAvailable();
@@ -2401,7 +2356,7 @@ namespace storm {
                 dynamicLibraryPath += DYLIB_EXTENSION;
                 std::string dynamicLibraryFilename = boost::filesystem::absolute(dynamicLibraryPath).string();
                 
-                std::string command = compiler + " " + sourceFilename + " " + compilerFlags + " -I" + stormRoot + " -I" + stormConfigurationDirectory + " -I" + boostIncludeDirectory + " -I" + carlIncludeDirectory + " -o " + dynamicLibraryFilename;
+                std::string command = compiler + " " + sourceFilename + " " + compilerFlags + " -I" + stormIncludeDirectory + " -I" + boostIncludeDirectory + " -I" + carlIncludeDirectory + " -o " + dynamicLibraryFilename;
                 boost::optional<std::string> error = execute(command);
                 
                 if (error) {

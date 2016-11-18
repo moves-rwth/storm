@@ -18,11 +18,8 @@ namespace storm {
                 bool isCompilerSet() const;
                 std::string getCompiler() const;
                 
-                bool isStormRootSet() const;
-                std::string getStormRoot() const;
-
-                bool isStormConfigDirectorySet() const;
-                std::string getStormConfigDirectory() const;
+                bool isStormIncludeDirectorySet() const;
+                std::string getStormIncludeDirectory() const;
                 
                 bool isBoostIncludeDirectorySet() const;
                 std::string getBoostIncludeDirectory() const;
@@ -40,8 +37,7 @@ namespace storm {
                 
             private:
                 static const std::string compilerOptionName;
-                static const std::string stormRootOptionName;
-                static const std::string stormConfigDirectoryOptionName;
+                static const std::string stormIncludeDirectoryOptionName;
                 static const std::string boostIncludeDirectoryOptionName;
                 static const std::string carlIncludeDirectoryOptionName;
                 static const std::string compilerFlagsOptionName;
