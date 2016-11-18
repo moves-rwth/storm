@@ -1,0 +1,24 @@
+#ifndef PARALLELCOMPOSITIONBUILDER_H
+#define	PARALLELCOMPOSITIONBUILDER_H
+
+#include "storm/models/sparse/Ctmc.h"
+
+namespace storm {
+    namespace builder {
+
+        /*!
+         * Build a parallel composition of Markov chains.
+         */
+        template<typename ValueType>
+        class ParallelCompositionBuilder {
+
+        public:
+
+            static std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> compose(std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> const& ctmcA, std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> const& ctmcB, bool labelAnd);
+
+        };
+
+    }
+}
+
+#endif	/* EXPLICITDFTMODELBUPARALLELCOMPOSITIONBUILDER_HILDERAPPROX_H */

@@ -117,7 +117,7 @@ example can be compiled using the following command
 
 .. code-block:: bash
 
-    $ c++ -O3 -shared -std=c++11 -I <path-to-pybind11>/include `python-config --cflags --ldflags --libs` example.cpp -o example.so
+    $ c++ -O3 -shared -std=c++11 -I <path-to-pybind11>/include `python-config --cflags --ldflags` example.cpp -o example.so
 
 In general, it is advisable to include several additional build parameters
 that can considerably reduce the size of the created binary. Refer to section
@@ -128,7 +128,7 @@ Assuming that the created file :file:`example.so` (:file:`example.pyd` on Window
 is located in the current directory, the following interactive Python session
 shows how to load and execute the example.
 
-.. code-block:: python
+.. code-block:: pycon
 
     $ python
     Python 2.7.10 (default, Aug 22 2015, 20:33:39)
@@ -157,7 +157,7 @@ metadata into :func:`module::def`. With this modified binding code, we can now
 call the function using keyword arguments, which is a more readable alternative
 particularly for functions taking many parameters:
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> import example
     >>> example.add(i=1, j=2)
@@ -165,7 +165,7 @@ particularly for functions taking many parameters:
 
 The keyword names also appear in the function signatures within the documentation.
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> help(example)
 
@@ -176,6 +176,21 @@ The keyword names also appear in the function signatures within the documentatio
             Signature : (i: int, j: int) -> int
 
             A function which adds two numbers
+
+A shorter notation for named arguments is also available:
+
+.. code-block:: cpp
+    
+    // regular notation
+    m.def("add1", &add, py::arg("i"), py::arg("j"));
+    // shorthand
+    using namespace pybind11::literals;
+    m.def("add2", &add, "i"_a, "j"_a);
+
+The :var:`_a` suffix forms a C++11 literal which is equivalent to :class:`arg`. 
+Note that the literal operator must first be made visible with the directive 
+``using namespace pybind11::literals``. This does not bring in anything else 
+from the ``pybind11`` namespace except for literals.
 
 .. _default_args:
 
@@ -201,7 +216,7 @@ using an extension of :class:`arg`:
 
 The default values also appear within the documentation.
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> help(example)
 
@@ -213,6 +228,15 @@ The default values also appear within the documentation.
 
             A function which adds two numbers
 
+The shorthand notation is also available for default arguments:
+
+.. code-block:: cpp
+    
+    // regular notation
+    m.def("add1", &add, py::arg("i") = 1, py::arg("j") = 2);
+    // shorthand
+    m.def("add2", &add, "i"_a=1, "j"_a=2);
+
 .. _supported_types:
 
 Supported data types
@@ -222,59 +246,64 @@ The following basic data types are supported out of the box (some may require
 an additional extension header to be included). To pass other data structures
 as arguments and return values, refer to the section on binding :ref:`classes`.
 
-+----------------------------+--------------------------+-----------------------+
-|  Data type                 |  Description             | Header file           |
-+============================+==========================+=======================+
-| int8_t, uint8_t            | 8-bit integers           | pybind11/pybind11.h   |
-+----------------------------+--------------------------+-----------------------+
-| int16_t, uint16_t          | 16-bit integers          | pybind11/pybind11.h   |
-+----------------------------+--------------------------+-----------------------+
-| int32_t, uint32_t          | 32-bit integers          | pybind11/pybind11.h   |
-+----------------------------+--------------------------+-----------------------+
-| int64_t, uint64_t          | 64-bit integers          | pybind11/pybind11.h   |
-+----------------------------+--------------------------+-----------------------+
-| ssize_t, size_t            | Platform-dependent size  | pybind11/pybind11.h   |
-+----------------------------+--------------------------+-----------------------+
-| float, double              | Floating point types     | pybind11/pybind11.h   |
-+----------------------------+--------------------------+-----------------------+
-| bool                       | Two-state Boolean type   | pybind11/pybind11.h   |
-+----------------------------+--------------------------+-----------------------+
-| char                       | Character literal        | pybind11/pybind11.h   |
-+----------------------------+--------------------------+-----------------------+
-| wchar_t                    | Wide character literal   | pybind11/pybind11.h   |
-+----------------------------+--------------------------+-----------------------+
-| const char *               | UTF-8 string literal     | pybind11/pybind11.h   |
-+----------------------------+--------------------------+-----------------------+
-| const wchar_t *            | Wide string literal      | pybind11/pybind11.h   |
-+----------------------------+--------------------------+-----------------------+
-| std::string                | STL dynamic UTF-8 string | pybind11/pybind11.h   |
-+----------------------------+--------------------------+-----------------------+
-| std::wstring               | STL dynamic wide string  | pybind11/pybind11.h   |
-+----------------------------+--------------------------+-----------------------+
-| std::pair<T1, T2>          | Pair of two custom types | pybind11/pybind11.h   |
-+----------------------------+--------------------------+-----------------------+
-| std::tuple<....>           | Arbitrary tuple of types | pybind11/pybind11.h   |
-+----------------------------+--------------------------+-----------------------+
-| std::complex<T>            | Complex numbers          | pybind11/complex.h    |
-+----------------------------+--------------------------+-----------------------+
-| std::array<T, Size>        | STL static array         | pybind11/stl.h        |
-+----------------------------+--------------------------+-----------------------+
-| std::vector<T>             | STL dynamic array        | pybind11/stl.h        |
-+----------------------------+--------------------------+-----------------------+
-| std::list<T>               | STL linked list          | pybind11/stl.h        |
-+----------------------------+--------------------------+-----------------------+
-| std::map<T1, T2>           | STL ordered map          | pybind11/stl.h        |
-+----------------------------+--------------------------+-----------------------+
-| std::unordered_map<T1, T2> | STL unordered map        | pybind11/stl.h        |
-+----------------------------+--------------------------+-----------------------+
-| std::set<T>                | STL ordered set          | pybind11/stl.h        |
-+----------------------------+--------------------------+-----------------------+
-| std::unordered_set<T>      | STL unordered set        | pybind11/stl.h        |
-+----------------------------+--------------------------+-----------------------+
-| std::function<...>         | STL polymorphic function | pybind11/functional.h |
-+----------------------------+--------------------------+-----------------------+
++---------------------------------+--------------------------+-------------------------------+
+|  Data type                      |  Description             | Header file                   |
++=================================+==========================+===============================+
+| ``int8_t``, ``uint8_t``         | 8-bit integers           | :file:`pybind11/pybind11.h`   |
++---------------------------------+--------------------------+-------------------------------+
+| ``int16_t``, ``uint16_t``       | 16-bit integers          | :file:`pybind11/pybind11.h`   |
++---------------------------------+--------------------------+-------------------------------+
+| ``int32_t``, ``uint32_t``       | 32-bit integers          | :file:`pybind11/pybind11.h`   |
++---------------------------------+--------------------------+-------------------------------+
+| ``int64_t``, ``uint64_t``       | 64-bit integers          | :file:`pybind11/pybind11.h`   |
++---------------------------------+--------------------------+-------------------------------+
+| ``ssize_t``, ``size_t``         | Platform-dependent size  | :file:`pybind11/pybind11.h`   |
++---------------------------------+--------------------------+-------------------------------+
+| ``float``, ``double``           | Floating point types     | :file:`pybind11/pybind11.h`   |
++---------------------------------+--------------------------+-------------------------------+
+| ``bool``                        | Two-state Boolean type   | :file:`pybind11/pybind11.h`   |
++---------------------------------+--------------------------+-------------------------------+
+| ``char``                        | Character literal        | :file:`pybind11/pybind11.h`   |
++---------------------------------+--------------------------+-------------------------------+
+| ``wchar_t``                     | Wide character literal   | :file:`pybind11/pybind11.h`   |
++---------------------------------+--------------------------+-------------------------------+
+| ``const char *``                | UTF-8 string literal     | :file:`pybind11/pybind11.h`   |
++---------------------------------+--------------------------+-------------------------------+
+| ``const wchar_t *``             | Wide string literal      | :file:`pybind11/pybind11.h`   |
++---------------------------------+--------------------------+-------------------------------+
+| ``std::string``                 | STL dynamic UTF-8 string | :file:`pybind11/pybind11.h`   |
++---------------------------------+--------------------------+-------------------------------+
+| ``std::wstring``                | STL dynamic wide string  | :file:`pybind11/pybind11.h`   |
++---------------------------------+--------------------------+-------------------------------+
+| ``std::pair<T1, T2>``           | Pair of two custom types | :file:`pybind11/pybind11.h`   |
++---------------------------------+--------------------------+-------------------------------+
+| ``std::tuple<...>``             | Arbitrary tuple of types | :file:`pybind11/pybind11.h`   |
++---------------------------------+--------------------------+-------------------------------+
+| ``std::reference_wrapper<...>`` | Reference type wrapper   | :file:`pybind11/pybind11.h`   |
++---------------------------------+--------------------------+-------------------------------+
+| ``std::complex<T>``             | Complex numbers          | :file:`pybind11/complex.h`    |
++---------------------------------+--------------------------+-------------------------------+
+| ``std::array<T, Size>``         | STL static array         | :file:`pybind11/stl.h`        |
++---------------------------------+--------------------------+-------------------------------+
+| ``std::vector<T>``              | STL dynamic array        | :file:`pybind11/stl.h`        |
++---------------------------------+--------------------------+-------------------------------+
+| ``std::list<T>``                | STL linked list          | :file:`pybind11/stl.h`        |
++---------------------------------+--------------------------+-------------------------------+
+| ``std::map<T1, T2>``            | STL ordered map          | :file:`pybind11/stl.h`        |
++---------------------------------+--------------------------+-------------------------------+
+| ``std::unordered_map<T1, T2>``  | STL unordered map        | :file:`pybind11/stl.h`        |
++---------------------------------+--------------------------+-------------------------------+
+| ``std::set<T>``                 | STL ordered set          | :file:`pybind11/stl.h`        |
++---------------------------------+--------------------------+-------------------------------+
+| ``std::unordered_set<T>``       | STL unordered set        | :file:`pybind11/stl.h`        |
++---------------------------------+--------------------------+-------------------------------+
+| ``std::function<...>``          | STL polymorphic function | :file:`pybind11/functional.h` |
++---------------------------------+--------------------------+-------------------------------+
+| ``Eigen::Matrix<...>``          | Dense Eigen matrices     | :file:`pybind11/eigen.h`      |
++---------------------------------+--------------------------+-------------------------------+
+| ``Eigen::SparseMatrix<...>``    | Sparse Eigen matrices    | :file:`pybind11/eigen.h`      |
++---------------------------------+--------------------------+-------------------------------+
 
 
 .. [#f1] In practice, implementation and binding code will generally be located
          in separate files.
-

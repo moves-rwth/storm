@@ -8,11 +8,20 @@
 #ifndef STORM_GENERATED_STORMCONFIG_H_
 #define STORM_GENERATED_STORMCONFIG_H_
 
-// The path of the sources from which StoRM will be/was build
+// The directory of the sources from which Storm was built.
 #define STORM_CPP_BASE_PATH "@PROJECT_SOURCE_DIR@"
 
-// The path used in the functional and performance tests to load the supplied example files
+// The directory of the sources from which the functional tests were built.
 #define STORM_CPP_TESTS_BASE_PATH "@STORM_CPP_TESTS_BASE_PATH@"
+
+// The directory in which Storm was built.
+#define STORM_BUILD_DIR "@CMAKE_BINARY_DIR@"
+
+// Boost include directory used during compilation.
+#define STORM_BOOST_INCLUDE_DIR "@STORM_BOOST_INCLUDE_DIR@"
+
+// Carl include directory used during compilation.
+#define STORM_CARL_INCLUDE_DIR "@STORM_CARL_INCLUDE_DIR@"
 
 // Whether Gurobi is available and to be used (define/undef)
 #cmakedefine STORM_HAVE_GUROBI
@@ -44,8 +53,15 @@
 // Whether carl is available and to be used.
 #cmakedefine STORM_HAVE_CARL
 
+#cmakedefine STORM_USE_CLN_NUMBERS
+
+#cmakedefine USE_XERCES
+
 // Whether smtrat is available and to be used. 
 #cmakedefine STORM_HAVE_SMTRAT
+
+// Whether HyPro is available and to be used.
+#cmakedefine STORM_HAVE_HYPRO
 
 #cmakedefine STORM_LOGGING_FRAMEWORK
 

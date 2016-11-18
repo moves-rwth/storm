@@ -1,0 +1,7 @@
+#DECLARATION
+init goal err
+#END
+0 init
+3 err
+5 goal
+9 err

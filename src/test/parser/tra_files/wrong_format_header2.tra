@@ -1,0 +1,4 @@
+dtmc
+STATES 0.2
+TRANSITOINS 1
+1 2 0.5

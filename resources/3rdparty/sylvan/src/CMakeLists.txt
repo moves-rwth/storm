@@ -44,7 +44,7 @@ set_target_properties(sylvan PROPERTIES
                       ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${CMAKE_CURRENT_BINARY_DIR}
                       ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${CMAKE_CURRENT_BINARY_DIR})
 
-target_link_libraries(sylvan m pthread)
+target_link_libraries(sylvan m pthread gmp)
 
 if(USE_CARL)
    message(STATUS "Sylvan - linking CARL.")

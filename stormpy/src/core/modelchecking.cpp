@@ -7,6 +7,18 @@ class PmcResult {
         std::unordered_set<storm::ArithConstraint<storm::RationalFunction>> constraintsWellFormed;
         std::unordered_set<storm::ArithConstraint<storm::RationalFunction>> constraintsGraphPreserving;
 
+        storm::RationalFunction getResultFunction() const {
+            return resultFunction;
+        }
+
+        std::unordered_set<storm::ArithConstraint<storm::RationalFunction>> getConstraintsWellFormed() const {
+            return constraintsWellFormed;
+        }
+
+        std::unordered_set<storm::ArithConstraint<storm::RationalFunction>> getConstraintsGraphPreserving() const {
+            return constraintsGraphPreserving;
+        }
+
         std::string toString() {
             std::stringstream stream;
             stream << resultFunction << std::endl;
@@ -28,6 +40,12 @@ double modelChecking(std::shared_ptr<storm::models::sparse::Model<double>> model
     return checkResult->asExplicitQuantitativeCheckResult<double>()[*model->getInitialStates().begin()];
 }
 
+// Thin wrapper for model checking for all states
+std::vector<double> modelCheckingAll(std::shared_ptr<storm::models::sparse::Model<double>> model, std::shared_ptr<storm::logic::Formula const> const& formula) {
+    std::unique_ptr<storm::modelchecker::CheckResult> checkResult = storm::verifySparseModel<double>(model, formula);
+    return checkResult->asExplicitQuantitativeCheckResult<double>().getValueVector();
+}
+
 // Thin wrapper for parametric model checking
 std::shared_ptr<PmcResult> parametricModelChecking(std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model, std::shared_ptr<storm::logic::Formula const> const& formula) {
     std::unique_ptr<storm::modelchecker::CheckResult> checkResult = storm::verifySparseModel<storm::RationalFunction>(model, formula);
@@ -44,14 +62,15 @@ void define_modelchecking(py::module& m) {
 
     // Model checking
     m.def("_model_checking", &modelChecking, "Perform model checking", py::arg("model"), py::arg("formula"));
+    m.def("model_checking_all", &modelCheckingAll, "Perform model checking for all states", py::arg("model"), py::arg("formula"));
     m.def("_parametric_model_checking", &parametricModelChecking, "Perform parametric model checking", py::arg("model"), py::arg("formula"));
 
     // PmcResult
     py::class_<PmcResult, std::shared_ptr<PmcResult>>(m, "PmcResult", "Holds the results after parametric model checking")
         .def("__str__", &PmcResult::toString)
-        .def_readonly("result_function", &PmcResult::resultFunction, "Result as rational function")
-        .def_readonly("constraints_well_formed", &PmcResult::constraintsWellFormed, "Constraints ensuring well-formed probabilities")
-        .def_readonly("constraints_graph_preserving", &PmcResult::constraintsGraphPreserving, "Constraints ensuring graph preservation")
+        .def_property_readonly("result_function", &PmcResult::getResultFunction, "Result as rational function")
+        .def_property_readonly("constraints_well_formed", &PmcResult::getConstraintsWellFormed, "Constraints ensuring well-formed probabilities")
+        .def_property_readonly("constraints_graph_preserving", &PmcResult::getConstraintsGraphPreserving, "Constraints ensuring graph preservation")
     ;
 
 }

@@ -1,0 +1,15 @@
+#DECLARATION
+init one two three four
+#END
+0 init one two three four
+1 one
+2 two
+3 three
+4 four
+5 one
+6 one
+7 two
+8 two
+9 three four
+10 three
+11 four

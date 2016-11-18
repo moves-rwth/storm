@@ -2,7 +2,7 @@
     example/example10.cpp -- auto-vectorize functions over NumPy array
     arguments
 
-    Copyright (c) 2015 Wenzel Jakob <wenzel@inf.ethz.ch>
+    Copyright (c) 2016 Wenzel Jakob <wenzel.jakob@epfl.ch>
 
     All rights reserved. Use of this source code is governed by a
     BSD-style license that can be found in the LICENSE file.
@@ -13,7 +13,7 @@
 
 double my_func(int x, float y, double z) {
     std::cout << "my_func(x:int=" << x << ", y:float=" << y << ", z:float=" << z << ")" << std::endl;
-    return x*y*z;
+    return (float) x*y*z;
 }
 
 std::complex<double> my_func3(std::complex<double> c) {
@@ -33,4 +33,9 @@ void init_ex10(py::module &m) {
 
     // Vectorize a complex-valued function
     m.def("vectorized_func3", py::vectorize(my_func3));
+
+    /// Numpy function which only accepts specific data types
+    m.def("selective_func", [](py::array_t<int, py::array::c_style>) { std::cout << "Int branch taken. "<< std::endl; });
+    m.def("selective_func", [](py::array_t<float, py::array::c_style>) { std::cout << "Float branch taken. "<< std::endl; });
+    m.def("selective_func", [](py::array_t<std::complex<float>, py::array::c_style>) { std::cout << "Complex float branch taken. "<< std::endl; });
 }

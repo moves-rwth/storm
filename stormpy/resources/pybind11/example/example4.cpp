@@ -1,7 +1,7 @@
 /*
     example/example4.cpp -- global constants and functions, enumerations, raw byte strings
 
-    Copyright (c) 2015 Wenzel Jakob <wenzel@inf.ethz.ch>
+    Copyright (c) 2016 Wenzel Jakob <wenzel.jakob@epfl.ch>
 
     All rights reserved. Use of this source code is governed by a
     BSD-style license that can be found in the LICENSE file.
@@ -38,7 +38,7 @@ void test_function2(EMyEnumeration k) {
 
 float test_function3(int i) {
     std::cout << "test_function(" << i << ")" << std::endl;
-    return i / 2.f;
+    return (float) i / 2.f;
 }
 
 py::bytes return_bytes() {

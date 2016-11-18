@@ -15,13 +15,13 @@ mark_as_advanced(AUTORECONF)
 ##
 #############################################################
 
-
 # Do not take a branch, needs internet connection.
 ExternalProject_Add(
         l3pp
         GIT_REPOSITORY https://github.com/hbruintjes/l3pp.git
         GIT_TAG e4f8d7fe6c328849aff34d2dfd6fd592c14070d5
         SOURCE_DIR ${STORM_3RDPARTY_SOURCE_DIR}/l3pp
+        UPDATE_COMMAND ""
         CONFIGURE_COMMAND ""
         BUILD_COMMAND ""
         INSTALL_COMMAND ""
@@ -64,8 +64,14 @@ set(Boost_USE_STATIC_LIBS        ${USE_BOOST_STATIC_LIBRARIES})
 set(Boost_USE_MULTITHREADED      ON)
 set(Boost_USE_STATIC_RUNTIME    OFF)
 
-find_package(Boost 1.57.0 QUIET REQUIRED)
-
+find_package(Boost 1.61.0 QUIET REQUIRED COMPONENTS filesystem system)
+if (NOT Boost_FOUND)
+    if (Boost_VERSION)
+	message(FATAL_ERROR "The required Boost version is 1.61.0 or newer, however, only ${Boost_VERSION} was found.")
+    else ()
+   	message(FATAL_ERROR "Boost was not found.")
+    endif ()
+endif ()
 if ((NOT Boost_LIBRARY_DIRS) OR ("${Boost_LIBRARY_DIRS}" STREQUAL ""))
     set(Boost_LIBRARY_DIRS "${Boost_INCLUDE_DIRS}/stage/lib")
 endif ()
@@ -73,9 +79,9 @@ link_directories(${Boost_LIBRARY_DIRS})
 
 include_directories(${Boost_INCLUDE_DIRS})
 list(APPEND STORM_LINK_LIBRARIES ${Boost_LIBRARIES})
-message(STATUS "StoRM - Using Boost ${Boost_VERSION} (lib ${Boost_LIB_VERSION})")
-#message(STATUS "StoRM - BOOST_INCLUDE_DIRS is ${Boost_INCLUDE_DIRS}")
-#message(STATUS "StoRM - BOOST_LIBRARY_DIRS is ${Boost_LIBRARY_DIRS}")
+message(STATUS "Storm - Using boost ${Boost_VERSION} (library version ${Boost_LIB_VERSION}).")
+# set the information for the config header
+set(STORM_BOOST_INCLUDE_DIR "${Boost_INCLUDE_DIRS}")
 
 #############################################################
 ##
@@ -84,8 +90,27 @@ message(STATUS "StoRM - Using Boost ${Boost_VERSION} (lib ${Boost_LIB_VERSION})"
 #############################################################
 
 # Use the shipped version of ExprTK
-message (STATUS "StoRM - Including ExprTk")
+message (STATUS "Storm - Including ExprTk.")
 include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/exprtk")
+
+#############################################################
+##
+##	Sparsepp
+##
+#############################################################
+
+# Use the shipped version of Sparsepp
+message (STATUS "Storm - Including Sparsepp.")
+include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/sparsepp")
+
+# Add sparsepp.h to the headers that are copied to the include directory in thebuild directory.
+add_custom_command(
+	OUTPUT ${CMAKE_BINARY_DIR}/include/resources/3rdparty/sparsepp/sparsepp.h
+	COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/include/resources/3rdparty/sparsepp
+	COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/resources/3rdparty/sparsepp/sparsepp.h ${CMAKE_BINARY_DIR}/include/resources/3rdparty/sparsepp/sparsepp.h
+	DEPENDS ${PROJECT_SOURCE_DIR}/resources/3rdparty/sparsepp/sparsepp.h
+)
+list(APPEND STORM_RESOURCES_HEADERS "${CMAKE_BINARY_DIR}/include/resources/3rdparty/sparsepp/sparsepp.h")
 
 #############################################################
 ##
@@ -94,7 +119,7 @@ include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/exprtk")
 #############################################################
 
 #use the shipped version of modernjson
-message (STATUS "StoRM - Including ModernJSON")
+message (STATUS "Storm - Including ModernJSON.")
 include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/modernjson/src/")
 
 #############################################################
@@ -109,7 +134,7 @@ find_package(Z3 QUIET)
 set(STORM_HAVE_Z3 ${Z3_FOUND})
 
 if(Z3_FOUND)
-    message (STATUS "StoRM - Linking with Z3")
+    message (STATUS "Storm - Linking with Z3.")
     include_directories(${Z3_INCLUDE_DIRS})
     list(APPEND STORM_LINK_LIBRARIES ${Z3_LIBRARIES})
 endif(Z3_FOUND)
@@ -132,12 +157,10 @@ if (STORM_USE_GUROBI)
     find_package(Gurobi QUIET REQUIRED)
     set(STORM_HAVE_GUROBI ${GUROBI_FOUND})
     if (GUROBI_FOUND)
-        message (STATUS "StoRM - Linking with Gurobi")
+        message (STATUS "Storm - Linking with Gurobi.")
         include_directories(${GUROBI_INCLUDE_DIRS})
         list(APPEND STORM_LINK_LIBRARIES ${GUROBI_LIBRARY})
         #link_directories("${GUROBI_ROOT}/lib")
-    else()
-        #message(FATAL_ERROR "StoRM - Gurobi was requested, but not found!")
     endif()
 else()
     set(STORM_HAVE_GUROBI OFF)
@@ -152,6 +175,13 @@ include(${STORM_3RDPARTY_SOURCE_DIR}/include_cudd.cmake)
 
 #############################################################
 ##
+##	cpptemplate
+##
+#############################################################
+include(${STORM_3RDPARTY_SOURCE_DIR}/include_cpptemplate.cmake)
+
+#############################################################
+##
 ##      CLN
 ##
 #############################################################
@@ -160,13 +190,13 @@ find_package(CLN QUIET)
 
 if(CLN_FOUND)
     set(STORM_HAVE_CLN ON)
-    message(STATUS "StoRM - Linking with CLN ${CLN_VERSION_STRING}")
+    message(STATUS "Storm - Linking with CLN ${CLN_VERSION_STRING}.")
     include_directories("${CLN_INCLUDE_DIR}")
     list(APPEND STORM_LINK_LIBRARIES ${CLN_LIBRARIES})
 else()
     set(STORM_HAVE_CLN OFF)
     if(NOT GMP_FOUND)
-        message(FATAL_ERROR "StoRM - Neither CLN nor GMP found")
+        message(FATAL_ERROR "Storm - Neither CLN nor GMP found.")
     endif()
 endif()
 
@@ -181,35 +211,41 @@ if(USE_CARL)
     find_package(carl QUIET)
     if(carl_FOUND)
         set(STORM_HAVE_CARL ON)
-        message(STATUS "StoRM - Use system version of carl")
-        message(STATUS "StoRM - Linking with carl ${carl_VERSION_STRING}")
+        message(STATUS "Storm - Use system version of carl.")
+        message(STATUS "Storm - Linking with carl ${carl_VERSION_STRING}.")
         include_directories("${carl_INCLUDE_DIR}")
         list(APPEND STORM_LINK_LIBRARIES ${carl_LIBRARIES})
     else()
-        message(STATUS "StoRM - Using shipped version of carl")
-        #
+        message(STATUS "Storm - Using shipped version of carl.")
+        set(CARL_BUILD_COMMAND make lib_carl)
+        if(STORM_PYTHON)
+            set(CARL_BUILD_COMMAND ${CARL_BUILD_COMMAND} PythonBindingsDevelop)
+        endif()
         ExternalProject_Add(
                 carl
                 GIT_REPOSITORY https://github.com/smtrat/carl
                 GIT_TAG master
                 INSTALL_DIR ${STORM_3RDPARTY_BINARY_DIR}/carl
                 SOURCE_DIR ${STORM_3RDPARTY_SOURCE_DIR}/carl
-                CMAKE_ARGS -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} -DEXPORT_TO_CMAKE=0 -DUSE_CLN_NUMBERS=1 -DCMAKE_SKIP_INSTALL_ALL_DEPENDENCY=1 -DCMAKE_INSTALL_PREFIX:PATH=${STORM_3RDPARTY_BINARY_DIR}/carl
+		        CMAKE_ARGS -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} -DBOOST_INCLUDEDIR=${Boost_INCLUDE_DIRS} -DBOOST_LIBRARYDIR=${Boost_LIBRARY_DIRS} -DBoost_NO_SYSTEM_PATHS=1 -DEXPORT_TO_CMAKE=0 -DUSE_CLN_NUMBERS=1 -DCMAKE_SKIP_INSTALL_ALL_DEPENDENCY=1 -DCMAKE_INSTALL_PREFIX:PATH=${STORM_3RDPARTY_BINARY_DIR}/carl -DBINDINGS_PYTHON=${STORM_PYTHON} -DPYTHON_LIBRARY=${PYTHON_LIBRARY} -DPYTHON_INCLUDE_DIR=${PYTHON_INCLUDE_DIR} -DPYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}
                 BUILD_IN_SOURCE 0
-                BUILD_COMMAND make lib_carl
-                INSTALL_COMMAND make install
+                BUILD_COMMAND ${CARL_BUILD_COMMAND}
+                INSTALL_COMMAND ""
                 LOG_UPDATE ON
                 LOG_CONFIGURE ON
                 LOG_BUILD ON
-                LOG_INSTALL ON
+                BUILD_BYPRODUCTS ${STORM_3RDPARTY_BINARY_DIR}/carl/lib/libcarl${DYNAMIC_EXT}
         )
 
         add_dependencies(resources carl)
-        include_directories(${STORM_3RDPARTY_BINARY_DIR}/carl/include)
+        set(carl_INCLUDE_DIR "${STORM_3RDPARTY_BINARY_DIR}/carl/include")
+        include_directories("${carl_INCLUDE_DIR}")
         list(APPEND STORM_LINK_LIBRARIES ${STORM_3RDPARTY_BINARY_DIR}/carl/lib/libcarl${DYNAMIC_EXT})
         set(STORM_HAVE_CARL ON)
     endif()
 endif()
+set(STORM_CARL_INCLUDE_DIR "${carl_INCLUDE_DIR}")
+
 
 #############################################################
 ##
@@ -217,17 +253,41 @@ endif()
 ##
 #############################################################
 
-# No find routine yet
-#find_package(smtrat QUIET)
-# Not yet supported
-set(smtrat_FOUND OFF)
 set(STORM_HAVE_SMTRAT OFF)
-if(smtrat_FOUND)
-    set(STORM_HAVE_SMTRAT ON)
-    message(STATUS "StoRM - Linking with smtrat.")
-    include_directories("${smtrat_INCLUDE_DIR}")
-    list(APPEND STORM_LINK_LIBRARIES ${smtrat_LIBRARIES})
+if(USE_SMTRAT)
+	find_package(smtrat QUIET REQUIRED)
+	if(smtrat_FOUND)
+		set(STORM_HAVE_SMTRAT ON)
+		message(STATUS "Storm - Linking with smtrat.")
+    	include_directories("${smtrat_INCLUDE_DIR}")
+    	list(APPEND STORM_LINK_LIBRARIES ${smtrat_LIBRARIES})
+	else()
+		message(FATAL_ERROR "StoRM - SMT-RAT was requested but not found")
+	endif()
 endif()
+
+
+#############################################################
+##
+##      HyPro
+##
+#############################################################
+
+set(STORM_HAVE_HYPRO OFF)
+if(USE_HYPRO)
+	find_package(hypro QUIET REQUIRED)
+	if(hypro_FOUND)
+		set(STORM_HAVE_HYPRO ON)
+		message(STATUS "Storm - Linking with hypro ${hypro_VERSION_STRING}.")
+		include_directories("${hypro_INCLUDE_DIR}")
+		link_directories( /Users/tim/hypro/build )
+		list(APPEND STORM_LINK_LIBRARIES ${hypro_LIBRARIES})
+	else()
+		message(FATAL_ERROR "StoRM - HyPro was requested but not found")
+	endif()
+endif()
+
+
 
 #############################################################
 ##
@@ -239,7 +299,7 @@ find_package(GiNaC QUIET)
 
 if(GINAC_FOUND)
     set(STORM_HAVE_GINAC ON)
-    message(STATUS "StoRM - Linking with GiNaC ${GINAC_VERSION_STRING}")
+    message(STATUS "Storm - Linking with GiNaC ${GINAC_VERSION_STRING}.")
     # Right now only link with GiNaC for carl
     #include_directories("${GINAC_INCLUDE_DIR}")
     list(APPEND STORM_LINK_LIBRARIES ${GINAC_LIBRARIES})
@@ -273,7 +333,7 @@ endif()
 # MathSAT Defines
 set(STORM_HAVE_MSAT ${ENABLE_MSAT})
 if (ENABLE_MSAT)
-    message (STATUS "StoRM - Linking with MathSAT")
+    message (STATUS "Storm - Linking with MathSAT.")
     link_directories("${MSAT_ROOT}/lib")
     include_directories("${MSAT_ROOT}/include")
     list(APPEND STORM_LINK_LIBRARIES "mathsat")
@@ -307,32 +367,30 @@ ExternalProject_Add(
         DOWNLOAD_COMMAND ""
         PREFIX "sylvan"
         SOURCE_DIR ${STORM_3RDPARTY_SOURCE_DIR}/sylvan
-        CMAKE_ARGS -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DSYLVAN_BUILD_TEST=Off -DSYLVAN_BUILD_EXAMPLES=Off -DCMAKE_BUILD_TYPE=Release
-        BINARY_DIR "${PROJECT_BINARY_DIR}/sylvan"
+        CMAKE_ARGS -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DSYLVAN_BUILD_TEST=Off -DSYLVAN_BUILD_EXAMPLES=Off -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+        BINARY_DIR ${PROJECT_BINARY_DIR}/sylvan
         BUILD_IN_SOURCE 0
         INSTALL_COMMAND ""
-        INSTALL_DIR "${STORM_3RDPARTY_BINARY_DIR}/sylvan"
+        INSTALL_DIR ${STORM_3RDPARTY_BINARY_DIR}/sylvan
         LOG_CONFIGURE ON
         LOG_BUILD ON
+        BUILD_BYPRODUCTS ${PROJECT_BINARY_DIR}/sylvan/src/libsylvan${STATIC_EXT}
 )
 ExternalProject_Get_Property(sylvan source_dir)
 ExternalProject_Get_Property(sylvan binary_dir)
 set(Sylvan_INCLUDE_DIR "${source_dir}/src")
-set(Sylvan_LIBRARY "${binary_dir}/src/libsylvan.a")
-
-
-
-message(STATUS "StoRM - Using shipped version of sylvan")
-message(STATUS "StoRM - Linking with sylvan")
+set(Sylvan_LIBRARY "${binary_dir}/src/libsylvan${STATIC_EXT}")
+message(STATUS "Storm - Using shipped version of sylvan.")
+message(STATUS "Storm - Linking with sylvan.")
 include_directories("${Sylvan_INCLUDE_DIR}")
 list(APPEND STORM_LINK_LIBRARIES ${Sylvan_LIBRARY})
 add_dependencies(resources sylvan)
 
 if(${OPERATING_SYSTEM} MATCHES "Linux")
     find_package(Hwloc QUIET REQUIRED)
-    if(Hwloc_FOUND)
-        message(STATUS "StoRM - Linking with hwloc ${Hwloc_VERSION}")
-        list(APPEND STORM_LINK_LIBRARIES ${Hwloc_LIBRARIES})
+    if(HWLOC_FOUND)
+        message(STATUS "Storm - Linking with hwloc ${HWLOC_VERSION}.")
+        list(APPEND STORM_LINK_LIBRARIES ${HWLOC_LIBRARIES})
     else()
         message(FATAL_ERROR "HWLOC is required but was not found.")
     endif()
@@ -343,6 +401,7 @@ endif()
 ##	Google Test gtest
 ##
 #############################################################
+set(GOOGLETEST_LIB_DIR ${STORM_3RDPARTY_BINARY_DIR}/gtest-1.7.0)
 ExternalProject_Add(
         googletest
         #For downloads (may be useful later!)
@@ -352,21 +411,23 @@ ExternalProject_Add(
         SOURCE_DIR "${STORM_3RDPARTY_SOURCE_DIR}/gtest-1.7.0"
         # Force the same output paths for debug and release builds so that
         # we know in which place the binaries end up when using the Xcode generator
-        CMAKE_ARGS  -Dgtest_force_shared_crt=ON -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} -DCMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG:PATH=${STORM_3RDPARTY_BINARY_DIR}/gtest-1.7.0 -DCMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE:PATH=${STORM_3RDPARTY_BINARY_DIR}/gtest-1.7.0
+        CMAKE_ARGS  -Dgtest_force_shared_crt=ON -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} -DCMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG:PATH=${GOOGLETEST_LIB_DIR} -DCMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE:PATH=${GOOGLETEST_LIB_DIR}
         # Disable install step
         INSTALL_COMMAND ""
-        BINARY_DIR "${STORM_3RDPARTY_BINARY_DIR}/gtest-1.7.0"
-        INSTALL_DIR "${STORM_3RDPARTY_BINARY_DIR}/gtest-1.7.0"
+        BINARY_DIR ${GOOGLETEST_LIB_DIR}
+        INSTALL_DIR ${GOOGLETEST_LIB_DIR}
         # Wrap download, configure and build steps in a script to log output
         LOG_CONFIGURE ON
-        LOG_BUILD ON)
+        LOG_BUILD ON
+        BUILD_BYPRODUCTS ${GOOGLETEST_LIB_DIR}/libgtest${STATIC_EXT} ${GOOGLETEST_LIB_DIR}/libgtest_main${STATIC_EXT}
+)
 
 # Specify include dir
 ExternalProject_Get_Property(googletest source_dir)
 set(GTEST_INCLUDE_DIR ${source_dir}/include)
 # Specify MainTest's link libraries
 ExternalProject_Get_Property(googletest binary_dir)
-set(GTEST_LIBRARIES ${binary_dir}/libgtest.a ${binary_dir}/libgtest_main.a)
+set(GTEST_LIBRARIES ${binary_dir}/libgtest${STATIC_EXT} ${binary_dir}/libgtest_main${STATIC_EXT})
 
 add_dependencies(test-resources googletest)
 list(APPEND STORM_TEST_LINK_LIBRARIES ${GTEST_LIBRARIES})
@@ -379,19 +440,17 @@ list(APPEND STORM_TEST_LINK_LIBRARIES ${GTEST_LIBRARIES})
 
 set(STORM_HAVE_INTELTBB OFF)
 if (STORM_USE_INTELTBB)
-    # Point to shipped TBB directory
-    set(TBB_INSTALL_DIR "${PROJECT_SOURCE_DIR}/resources/3rdparty/tbb42_20140122_merged-win-lin-mac")
     find_package(TBB QUIET REQUIRED)
 
     if (TBB_FOUND)
-        message(STATUS "StoRM - Found Intel TBB with interface version ${TBB_INTERFACE_VERSION}.")
-        message(STATUS "StoRM - Linking with Intel TBB in ${TBB_LIBRARY_DIRS}.")
+        message(STATUS "Storm - Found Intel TBB with interface version ${TBB_INTERFACE_VERSION}.")
+        message(STATUS "Storm - Linking with Intel TBB in ${TBB_LIBRARY_DIRS}.")
         set(STORM_HAVE_INTELTBB ON)
         link_directories(${TBB_LIBRARY_DIRS})
         include_directories(${TBB_INCLUDE_DIRS})
         list(APPEND STORM_LINK_LIBRARIES tbb tbbmalloc)
     else(TBB_FOUND)
-        message(FATAL_ERROR "StoRM - TBB was requested, but not found!")
+        message(FATAL_ERROR "Storm - TBB was requested, but not found.")
     endif(TBB_FOUND)
 endif(STORM_USE_INTELTBB)
 
@@ -403,19 +462,13 @@ endif(STORM_USE_INTELTBB)
 
 find_package(Threads QUIET REQUIRED)
 if (NOT Threads_FOUND)
-    message(FATAL_ERROR "StoRM - Threads was requested, but not found!")
+    message(FATAL_ERROR "Storm - Threads was requested, but not found.")
 endif()
 include_directories(${THREADS_INCLUDE_DIRS})
 list(APPEND STORM_LINK_LIBRARIES ${CMAKE_THREAD_LIBS_INIT})
 if (STORM_USE_COTIRE)
     target_link_libraries(storm_unity ${CMAKE_THREAD_LIBS_INIT})
 endif(STORM_USE_COTIRE)
-
-if (MSVC)
-    # Add the DebugHelper DLL
-    set(CMAKE_CXX_STANDARD_LIBRARIES "${CMAKE_CXX_STANDARD_LIBRARIES} Dbghelp.lib")
-    target_link_libraries(storm "Dbghelp.lib")
-endif(MSVC)
 
 #############################################################
 ##
@@ -443,18 +496,17 @@ set(STORM_CPP_CUDAFORSTORM_DEF "undef")
 
 
 if(ENABLE_CUDA)
-
     # Test for type alignment
     try_run(STORM_CUDA_RUN_RESULT_TYPEALIGNMENT STORM_CUDA_COMPILE_RESULT_TYPEALIGNMENT
             ${PROJECT_BINARY_DIR} "${PROJECT_SOURCE_DIR}/cuda/CMakeAlignmentCheck.cpp"
             COMPILE_OUTPUT_VARIABLE OUTPUT_TEST_VAR
             )
     if(NOT STORM_CUDA_COMPILE_RESULT_TYPEALIGNMENT)
-        message(FATAL_ERROR "StoRM (CudaPlugin) - Could not test type alignment, there was an Error while compiling the file ${PROJECT_SOURCE_DIR}/cuda/CMakeAlignmentCheck.cpp: ${OUTPUT_TEST_VAR}")
+        message(FATAL_ERROR "Storm (CudaPlugin) - Could not test type alignment, there was an Error while compiling the file ${PROJECT_SOURCE_DIR}/cuda/CMakeAlignmentCheck.cpp: ${OUTPUT_TEST_VAR}")
     elseif(STORM_CUDA_RUN_RESULT_TYPEALIGNMENT EQUAL 0)
         message(STATUS "StoRM (CudaPlugin) - Result of Type Alignment Check: OK.")
     else()
-        message(FATAL_ERROR "StoRM (CudaPlugin) - Result of Type Alignment Check: FAILED (Code ${STORM_CUDA_RUN_RESULT_TYPEALIGNMENT})")
+        message(FATAL_ERROR "Storm (CudaPlugin) - Result of Type Alignment Check: FAILED (Code ${STORM_CUDA_RUN_RESULT_TYPEALIGNMENT})")
     endif()
 
     # Test for Float 64bit Alignment
@@ -463,15 +515,15 @@ if(ENABLE_CUDA)
             COMPILE_OUTPUT_VARIABLE OUTPUT_TEST_VAR
             )
     if(NOT STORM_CUDA_COMPILE_RESULT_FLOATALIGNMENT)
-        message(FATAL_ERROR "StoRM (CudaPlugin) - Could not test float type alignment, there was an Error while compiling the file ${PROJECT_SOURCE_DIR}/cuda/CMakeFloatAlignmentCheck.cpp: ${OUTPUT_TEST_VAR}")
+        message(FATAL_ERROR "Storm (CudaPlugin) - Could not test float type alignment, there was an Error while compiling the file ${PROJECT_SOURCE_DIR}/cuda/CMakeFloatAlignmentCheck.cpp: ${OUTPUT_TEST_VAR}")
     elseif(STORM_CUDA_RUN_RESULT_FLOATALIGNMENT EQUAL 2)
-        message(STATUS "StoRM (CudaPlugin) - Result of Float Type Alignment Check: 64bit alignment active.")
+        message(STATUS "Storm (CudaPlugin) - Result of Float Type Alignment Check: 64bit alignment active.")
         set(STORM_CUDAPLUGIN_FLOAT_64BIT_ALIGN_DEF "define")
     elseif(STORM_CUDA_RUN_RESULT_FLOATALIGNMENT EQUAL 3)
-        message(STATUS "StoRM (CudaPlugin) - Result of Float Type Alignment Check: 64bit alignment disabled.")
+        message(STATUS "Storm (CudaPlugin) - Result of Float Type Alignment Check: 64bit alignment disabled.")
         set(STORM_CUDAPLUGIN_FLOAT_64BIT_ALIGN_DEF "undef")
     else()
-        message(FATAL_ERROR "StoRM (CudaPlugin) - Result of Float Type Alignment Check: FAILED (Code ${STORM_CUDA_RUN_RESULT_FLOATALIGNMENT})")
+        message(FATAL_ERROR "Storm (CudaPlugin) - Result of Float Type Alignment Check: FAILED (Code ${STORM_CUDA_RUN_RESULT_FLOATALIGNMENT})")
     endif()
     #
     # Make a version file containing the current version from git.
@@ -490,7 +542,7 @@ if(ENABLE_CUDA)
     else()
         set(STORM_CUDAPLUGIN_VERSION_DIRTY 0)
     endif()
-    message(STATUS "StoRM (CudaPlugin) - Version information: ${STORM_CUDAPLUGIN_VERSION_MAJOR}.${STORM_CUDAPLUGIN_VERSION_MINOR}.${STORM_CUDAPLUGIN_VERSION_PATCH} (${STORM_CUDAPLUGIN_VERSION_COMMITS_AHEAD} commits ahead of Tag) build from ${STORM_CUDAPLUGIN_VERSION_HASH} (Dirty: ${STORM_CUDAPLUGIN_VERSION_DIRTY})")
+    message(STATUS "Storm (CudaPlugin) - Version information: ${STORM_CUDAPLUGIN_VERSION_MAJOR}.${STORM_CUDAPLUGIN_VERSION_MINOR}.${STORM_CUDAPLUGIN_VERSION_PATCH} (${STORM_CUDAPLUGIN_VERSION_COMMITS_AHEAD} commits ahead of Tag) build from ${STORM_CUDAPLUGIN_VERSION_HASH} (Dirty: ${STORM_CUDAPLUGIN_VERSION_DIRTY})")
 
 
     # Configure a header file to pass some of the CMake settings to the source code
@@ -524,9 +576,9 @@ if(ENABLE_CUDA)
     if(CUSP_FOUND)
         include_directories(${CUSP_INCLUDE_DIR})
         cuda_include_directories(${CUSP_INCLUDE_DIR})
-        message(STATUS "StoRM (CudaPlugin) - Found CUSP Version ${CUSP_VERSION} in location ${CUSP_INCLUDE_DIR}")
+        message(STATUS "Storm (CudaPlugin) - Found CUSP Version ${CUSP_VERSION} in location ${CUSP_INCLUDE_DIR}.")
     else()
-        message(FATAL_ERROR "StoRM (CudaPlugin) - Could not find CUSP!")
+        message(FATAL_ERROR "Storm (CudaPlugin) - Could not find CUSP.")
     endif()
 
     #############################################################
@@ -537,9 +589,9 @@ if(ENABLE_CUDA)
     if(THRUST_FOUND)
         include_directories(${THRUST_INCLUDE_DIR})
         cuda_include_directories(${THRUST_INCLUDE_DIR})
-        message(STATUS "StoRM (CudaPlugin) - Found Thrust Version ${THRUST_VERSION} in location ${THRUST_INCLUDE_DIR}")
+        message(STATUS "Storm (CudaPlugin) - Found Thrust Version ${THRUST_VERSION} in location ${THRUST_INCLUDE_DIR}.")
     else()
-        message(FATAL_ERROR "StoRM (CudaPlugin) - Could not find Thrust! Check your CUDA installation.")
+        message(FATAL_ERROR "Storm (CudaPlugin) - Could not find Thrust. Check your CUDA installation.")
     endif()
 
     include_directories(${CUDA_INCLUDE_DIRS})
@@ -549,7 +601,9 @@ if(ENABLE_CUDA)
             ${STORM_CUDA_KERNEL_FILES} ${STORM_CUDA_HEADER_FILES}
             )
 
-    message (STATUS "StoRM - Linking with CUDA")
+    message (STATUS "Storm - Linking with CUDA.")
     list(APPEND STORM_LINK_LIBRARIES ${STORM_CUDA_LIB_NAME})
     include_directories("${PROJECT_SOURCE_DIR}/cuda/kernels/")
 endif()
+
+add_custom_target(copy_resources_headers DEPENDS ${CMAKE_BINARY_DIR}/include/resources/3rdparty/sparsepp/sparsepp.h ${CMAKE_BINARY_DIR}/include/resources/3rdparty/sparsepp/sparsepp.h)

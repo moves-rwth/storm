@@ -1,7 +1,7 @@
 /*
     example/example12.cpp -- overriding virtual functions from Python
 
-    Copyright (c) 2015 Wenzel Jakob <wenzel@inf.ethz.ch>
+    Copyright (c) 2016 Wenzel Jakob <wenzel.jakob@epfl.ch>
 
     All rights reserved. Use of this source code is governed by a
     BSD-style license that can be found in the LICENSE file.
@@ -50,19 +50,21 @@ public:
 
     virtual bool run_bool() {
         PYBIND11_OVERLOAD_PURE(
-            bool,
-            Example12,
-            run_bool
+            bool,         /* Return type */
+            Example12,    /* Parent class */
+            run_bool,     /* Name of function */
+                          /* This function has no arguments. The trailing comma
+                             in the previous line is needed for some compilers */
         );
-        throw std::runtime_error("this will never be reached");
     }
 
     virtual void pure_virtual() {
         PYBIND11_OVERLOAD_PURE(
             void,         /* Return type */
             Example12,    /* Parent class */
-            pure_virtual  /* Name of function */
-                          /* This function has no arguments */
+            pure_virtual, /* Name of function */
+                          /* This function has no arguments. The trailing comma
+                             in the previous line is needed for some compilers */
         );
     }
 };
@@ -80,12 +82,10 @@ void runExample12Virtual(Example12 *ex) {
 }
 
 void init_ex12(py::module &m) {
-    /* Important: use the wrapper type as a template
-       argument to class_<>, but use the original name
-       to denote the type */
-    py::class_<PyExample12>(m, "Example12")
-        /* Declare that 'PyExample12' is really an alias for the original type 'Example12' */
-        .alias<Example12>()
+    /* Important: indicate the trampoline class PyExample12 using the third
+       argument to py::class_. The second argument with the unique pointer
+       is simply the default holder type used by pybind11. */
+    py::class_<Example12, std::unique_ptr<Example12>, PyExample12>(m, "Example12")
         .def(py::init<int>())
         /* Reference original class in function definitions */
         .def("run", &Example12::run)

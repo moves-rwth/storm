@@ -1,0 +1,40 @@
+#DECLARATION
+init deadlock done two three four five six seven eight nine ten eleven twelve
+#END
+0 init
+98 done two
+99 done three
+100 done four
+101 done five
+102 done six
+103 done seven
+111 done three
+112 done four
+113 done five
+114 done six
+115 done seven
+116 done eight
+124 done four
+125 done five
+126 done six
+127 done seven
+128 done eight
+129 done nine
+137 done five
+138 done six
+139 done seven
+140 done eight
+141 done nine
+142 done ten
+150 done six
+151 done seven
+152 done eight
+153 done nine
+154 done ten
+155 done eleven
+163 done seven
+164 done eight
+165 done nine
+166 done ten
+167 done eleven
+168 done twelve

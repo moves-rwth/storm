@@ -22,8 +22,8 @@ namespace py = pybind11;
 #define PY_RDIV "__rdiv__"
 #endif
 
-PYBIND11_DECLARE_HOLDER_TYPE(T, std::shared_ptr<T>);
-PYBIND11_DECLARE_HOLDER_TYPE(T, std::shared_ptr<T const>);
+PYBIND11_DECLARE_HOLDER_TYPE(T, std::shared_ptr<T>)
+PYBIND11_DECLARE_HOLDER_TYPE(T, std::shared_ptr<T const>)
 
 namespace pybind11 {
 namespace detail {

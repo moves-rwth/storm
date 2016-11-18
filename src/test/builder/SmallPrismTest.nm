@@ -1,0 +1,26 @@
+mdp
+
+module one
+	s1 : [0 .. 3];
+
+	[a] s1=0 -> (s1'=1);
+
+	[c] s1=1 -> (s1'=2);
+
+	[d] s1=1 -> (s1'=3);
+endmodule
+
+module two
+	s2 : [0 .. 2];
+
+	[b] s2=0 -> (s2'=1);
+
+	[c] s2=1 -> (s2'=2);
+endmodule
+
+module three
+	s3 : [0 .. 2];
+
+	[c] s3=0 -> (s3'=1);
+endmodule
+
