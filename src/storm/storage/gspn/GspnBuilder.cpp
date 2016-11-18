@@ -56,7 +56,7 @@ namespace storm {
         void GspnBuilder::addInputArc(std::string const& from, std::string const& to, uint64_t multiplicity) {
             STORM_LOG_THROW(placeNames.count(from) != 0, storm::exceptions::InvalidArgumentException, "Could not find a place with name '" << from << "'");
             STORM_LOG_THROW(transitionNames.count(to) != 0, storm::exceptions::InvalidArgumentException, "Could not find a transition with name << '" << to << "'");
-            addInputArc(placeNames.at(from), transitionNames.at(to));
+            addInputArc(placeNames.at(from), transitionNames.at(to), multiplicity);
         }
 
         void GspnBuilder::addInhibitionArc(uint_fast64_t const& from, uint_fast64_t const& to, uint_fast64_t const& multiplicity) {
@@ -69,7 +69,7 @@ namespace storm {
         void GspnBuilder::addInhibitionArc(std::string const& from, std::string const& to, uint64_t multiplicity) {
             STORM_LOG_THROW(placeNames.count(from) != 0, storm::exceptions::InvalidArgumentException, "Could not find a place with name '" << from << "'");
             STORM_LOG_THROW(transitionNames.count(to) != 0, storm::exceptions::InvalidArgumentException, "Could not find a transition with name << '" << to << "'");
-            addInhibitionArc(placeNames.at(from), transitionNames.at(to));
+            addInhibitionArc(placeNames.at(from), transitionNames.at(to), multiplicity);
         }
 
         void GspnBuilder::addOutputArc(uint_fast64_t const& from, uint_fast64_t const& to, uint_fast64_t const& multiplicity) {
@@ -81,7 +81,7 @@ namespace storm {
         void GspnBuilder::addOutputArc(std::string const& from, std::string const& to, uint64_t multiplicity) {
             STORM_LOG_THROW(placeNames.count(to) != 0, storm::exceptions::InvalidArgumentException, "Could not find a place with name '" << to << "'");
             STORM_LOG_THROW(transitionNames.count(from) != 0, storm::exceptions::InvalidArgumentException, "Could not find a transition with name << '" << from << "'");
-            addOutputArc(transitionNames.at(from), placeNames.at(to));
+            addOutputArc(transitionNames.at(from), placeNames.at(to), multiplicity);
         }
         
         Transition& GspnBuilder::getTransition(uint64_t id) {
