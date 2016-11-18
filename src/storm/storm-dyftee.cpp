@@ -83,8 +83,9 @@ void transformDFT(std::string filename) {
     std::cout << "Transforming DFT from file " << filename << std::endl;
     storm::parser::DFTGalileoParser<ValueType> parser;
     storm::storage::DFT<ValueType> dft = parser.parseDFT(filename);
-    storm::transformations::dft::DftToGspnTransformator<ValueType> gspnTransformator(dft);
-    gspnTransformator.transform();
+    // TODO: activate again
+    //storm::transformations::dft::DftToGspnTransformator<ValueType> gspnTransformator(dft);
+    //gspnTransformator.transform();
 }
 
 /*!

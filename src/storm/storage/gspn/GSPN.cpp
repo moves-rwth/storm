@@ -147,8 +147,8 @@ namespace storm {
             }
             
             for (auto& trans : this->getTimedTransitions()) {
-                outStream << "\t" << trans->getName() << " [label=\"" << trans->getName();
-                outStream << "(" << trans->getRate() << ")\"];" << std::endl;
+                outStream << "\t" << trans.getName() << " [label=\"" << trans.getName();
+                outStream << "(" << trans.getRate() << ")\"];" << std::endl;
             }
             
             // print arcs
