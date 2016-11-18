@@ -216,7 +216,7 @@ namespace storm {
                  * probability of state `i`, returns an equivalent map of only the non-zero entries.
                  */
                 inline std::unordered_map<state_t, T> vectorToMap(std::vector<T> probVector) const {
-                    assert(probVector.size() == numStates);
+                    //assert(probVector.size() == numStates); // numStates may not yet be initialized! // still true?
 
                     std::unordered_map<state_t, T> stateProbMap;
 
