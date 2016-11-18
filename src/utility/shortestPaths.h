@@ -67,8 +67,8 @@ namespace storm {
                 // a further alternative: use transition matrix of maybe-states
                 // combined with target vector (e.g., the instantiated matrix/vector from SamplingModel);
                 // in this case separately specifying a target makes no sense
-                ShortestPathsGenerator(storage::SparseMatrix<T> transitionMatrix, std::vector<T> targetProbVector, BitVector initialStates);
-                ShortestPathsGenerator(storage::SparseMatrix<T> maybeTransitionMatrix, std::unordered_map<state_t, T> targetProbMap, BitVector initialStates);
+                ShortestPathsGenerator(storage::SparseMatrix<T> const& transitionMatrix, std::vector<T> const& targetProbVector, BitVector const& initialStates);
+                ShortestPathsGenerator(storage::SparseMatrix<T> const& maybeTransitionMatrix, std::unordered_map<state_t, T> const& targetProbMap, BitVector const& initialStates);
 
 
                 inline ~ShortestPathsGenerator(){}
@@ -97,7 +97,7 @@ namespace storm {
 
 
             private:
-                storage::SparseMatrix<T> transitionMatrix;
+                storage::SparseMatrix<T> const& transitionMatrix; // FIXME: store reference instead (?)
                 state_t numStates; // includes meta-target, i.e. states in model + 1
                 state_t metaTarget;
                 BitVector initialStates;

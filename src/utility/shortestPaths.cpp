@@ -7,7 +7,7 @@ namespace storm {
     namespace utility {
         namespace ksp {
             template <typename T>
-            ShortestPathsGenerator<T>::ShortestPathsGenerator(storage::SparseMatrix<T> transitionMatrix, std::unordered_map<state_t, T> targetProbMap, BitVector initialStates) :
+            ShortestPathsGenerator<T>::ShortestPathsGenerator(storage::SparseMatrix<T> const& transitionMatrix, std::unordered_map<state_t, T> const& targetProbMap, BitVector const& initialStates) :
                     transitionMatrix(transitionMatrix),
                     numStates(transitionMatrix.getColumnCount() + 1), // one more for meta-target
                     metaTarget(transitionMatrix.getColumnCount()), // first unused state index
@@ -28,7 +28,7 @@ namespace storm {
             }
 
             template <typename T>
-            ShortestPathsGenerator<T>::ShortestPathsGenerator(storage::SparseMatrix<T> transitionMatrix, std::vector<T> targetProbVector, BitVector initialStates)
+            ShortestPathsGenerator<T>::ShortestPathsGenerator(storage::SparseMatrix<T> const& transitionMatrix, std::vector<T> const& targetProbVector, BitVector const& initialStates)
                     : ShortestPathsGenerator<T>(transitionMatrix, vectorToMap(targetProbVector), initialStates) {}
 
             // extracts the relevant info from the model and delegates to ctor above
