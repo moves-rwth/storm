@@ -1,3 +1,8 @@
+file(GLOB_RECURSE ALL_FILES ${PROJECT_SOURCE_DIR}/src/test/*.h ${PROJECT_SOURCE_DIR}/src/test/*.cpp)
+
+register_source_groups_from_filestructure("${ALL_FILES}" test)
+
+
 # Test Sources
 # Note that the tests also need the source files, except for the main file
 include_directories(${GTEST_INCLUDE_DIR})

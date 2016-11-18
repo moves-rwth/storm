@@ -1,3 +1,8 @@
+file(GLOB_RECURSE ALL_FILES ${PROJECT_SOURCE_DIR}/src/storm-pgcl/*.h ${PROJECT_SOURCE_DIR}/src/storm-pgcl/*.cpp)
+
+register_source_groups_from_filestructure("${ALL_FILES}" storm-pgcl)
+
+
 
 file(GLOB_RECURSE STORM_PGCL_SOURCES ${PROJECT_SOURCE_DIR}/src/storm-pgcl/*/*.cpp)
 file(GLOB_RECURSE STORM_PGCL_HEADERS ${PROJECT_SOURCE_DIR}/src/storm-pgcl/*/*.h)

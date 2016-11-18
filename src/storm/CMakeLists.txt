@@ -1,3 +1,7 @@
+file(GLOB_RECURSE ALL_FILES ${PROJECT_SOURCE_DIR}/src/storm/*.h ${PROJECT_SOURCE_DIR}/src/storm/*.cpp)
+
+register_source_groups_from_filestructure("${ALL_FILES}" storm)
+
 #############################################################
 ##
 ##	Source file aggregation and clustering
