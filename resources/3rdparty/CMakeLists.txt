@@ -103,6 +103,15 @@ include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/exprtk")
 message (STATUS "Storm - Including Sparsepp.")
 include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/sparsepp")
 
+# Add sparsepp.h to the headers that are copied to the include directory in thebuild directory.
+add_custom_command(
+	OUTPUT ${CMAKE_BINARY_DIR}/include/resources/3rdparty/sparsepp/sparsepp.h
+	COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/include/resources/3rdparty/sparsepp
+	COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/resources/3rdparty/sparsepp/sparsepp.h ${CMAKE_BINARY_DIR}/include/resources/3rdparty/sparsepp/sparsepp.h
+	DEPENDS ${PROJECT_SOURCE_DIR}/resources/3rdparty/sparsepp/sparsepp.h
+)
+list(APPEND STORM_RESOURCES_HEADERS "${CMAKE_BINARY_DIR}/include/resources/3rdparty/sparsepp/sparsepp.h")
+
 #############################################################
 ##
 ##	ModernJSON
@@ -596,3 +605,5 @@ if(ENABLE_CUDA)
     list(APPEND STORM_LINK_LIBRARIES ${STORM_CUDA_LIB_NAME})
     include_directories("${PROJECT_SOURCE_DIR}/cuda/kernels/")
 endif()
+
+add_custom_target(copy_resources_headers DEPENDS ${CMAKE_BINARY_DIR}/include/resources/3rdparty/sparsepp/sparsepp.h ${CMAKE_BINARY_DIR}/include/resources/3rdparty/sparsepp/sparsepp.h)
