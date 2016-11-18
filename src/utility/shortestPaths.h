@@ -23,9 +23,11 @@
 namespace storm {
     namespace utility {
         namespace ksp {
-            typedef storage::sparse::state_type state_t;
+            using state_t = storage::sparse::state_type;
+            using OrderedStateList = std::vector<state_t>;
             using BitVector = storage::BitVector;
-            typedef std::vector<state_t> ordered_state_list_t;
+
+            // -- helper structs/classes -----------------------------------------------------------------------------
 
             template <typename T>
             struct Path {
@@ -46,29 +48,38 @@ namespace storm {
                 }
             };
 
+            // when using the raw matrix/vector invocation, this enum parameter
+            // forces the caller to declare whether the matrix has the evil I-P
+            // format, which requires back-conversion of the entries
+            enum class MatrixFormat { straight, iMinusP };
+
             // -------------------------------------------------------------------------------------------------------
 
             template <typename T>
             class ShortestPathsGenerator {
             public:
+                using Matrix = storage::SparseMatrix<T>;
+                using StateProbMap = std::unordered_map<state_t, T>;
+                using Model = models::sparse::Model<T>;
+
                 /*!
                  * Performs precomputations (including meta-target insertion and Dijkstra).
                  * Modifications are done locally, `model` remains unchanged.
                  * Target (group) cannot be changed.
                  */
-                ShortestPathsGenerator(std::shared_ptr<models::sparse::Model<T>> model, BitVector const& targetBV);
+                ShortestPathsGenerator(Model const& model, BitVector const& targetBV);
 
                 // allow alternative ways of specifying the target,
                 // all of which will be converted to BitVector and delegated to constructor above
-                ShortestPathsGenerator(std::shared_ptr<models::sparse::Model<T>> model, state_t singleTarget);
-                ShortestPathsGenerator(std::shared_ptr<models::sparse::Model<T>> model, std::vector<state_t> const& targetList);
-                ShortestPathsGenerator(std::shared_ptr<models::sparse::Model<T>> model, std::string const& targetLabel = "target");
+                ShortestPathsGenerator(Model const& model, state_t singleTarget);
+                ShortestPathsGenerator(Model const& model, std::vector<state_t> const& targetList);
+                ShortestPathsGenerator(Model const& model, std::string const& targetLabel = "target");
 
                 // a further alternative: use transition matrix of maybe-states
                 // combined with target vector (e.g., the instantiated matrix/vector from SamplingModel);
                 // in this case separately specifying a target makes no sense
-                ShortestPathsGenerator(storage::SparseMatrix<T> const& transitionMatrix, std::vector<T> const& targetProbVector, BitVector const& initialStates);
-                ShortestPathsGenerator(storage::SparseMatrix<T> const& maybeTransitionMatrix, std::unordered_map<state_t, T> const& targetProbMap, BitVector const& initialStates);
+                ShortestPathsGenerator(Matrix const& transitionMatrix, std::vector<T> const& targetProbVector, BitVector const& initialStates, MatrixFormat matrixFormat);
+                ShortestPathsGenerator(Matrix const& maybeTransitionMatrix, StateProbMap const& targetProbMap, BitVector const& initialStates, MatrixFormat matrixFormat);
 
 
                 inline ~ShortestPathsGenerator(){}
@@ -93,19 +104,21 @@ namespace storm {
                  * Computes KSP if not yet computed.
                  * @throws std::invalid_argument if no such k-shortest path exists
                  */
-                ordered_state_list_t getPathAsList(unsigned long k);
+                OrderedStateList getPathAsList(unsigned long k);
 
 
             private:
-                storage::SparseMatrix<T> const& transitionMatrix; // FIXME: store reference instead (?)
+                Matrix const& transitionMatrix; // FIXME: store reference instead (?)
                 state_t numStates; // includes meta-target, i.e. states in model + 1
                 state_t metaTarget;
                 BitVector initialStates;
-                std::unordered_map<state_t, T> targetProbMap;
+                StateProbMap targetProbMap;
 
-                std::vector<ordered_state_list_t>     graphPredecessors;
+                MatrixFormat matrixFormat;
+
+                std::vector<OrderedStateList>         graphPredecessors;
                 std::vector<boost::optional<state_t>> shortestPathPredecessors;
-                std::vector<ordered_state_list_t>     shortestPathSuccessors;
+                std::vector<OrderedStateList>         shortestPathSuccessors;
                 std::vector<T>                        shortestPathDistances;
 
                 std::vector<std::vector<Path<T>>> kShortestPaths;
@@ -163,6 +176,7 @@ namespace storm {
 
 
                 // --- tiny helper fcts ---
+
                 inline bool isInitialState(state_t node) const {
                     return find(initialStates.begin(), initialStates.end(), node) != initialStates.end();
                 }
@@ -171,25 +185,45 @@ namespace storm {
                     return targetProbMap.count(node) == 1;
                 }
 
-                /**
+                // I dislike this. But it is necessary if we want to handle those ugly I-P matrices
+                inline T convertDistance(state_t tailNode, state_t headNode, T distance) const {
+                    if (matrixFormat == MatrixFormat::straight) {
+                        return distance;
+                    } else {
+                        if (tailNode == headNode) {
+                            // diagonal: 1-p = dist
+                            return one<T>() - distance;
+                        } else {
+                            // non-diag: -p = dist
+                            return zero<T>() - distance;
+                        }
+                    }
+                }
+
+                /*!
                  * Returns a map where each state of the input BitVector is mapped to 1 (`one<T>`).
                  */
-                inline std::unordered_map<state_t, T> allProbOneMap(BitVector bitVector) const {
-                    std::unordered_map<state_t, T> stateProbMap;
+                inline StateProbMap allProbOneMap(BitVector bitVector) const {
+                    StateProbMap stateProbMap;
                     for (state_t node : bitVector) {
                         stateProbMap.emplace(node, one<T>()); // FIXME check rvalue warning (here and below)
                     }
                     return stateProbMap;
                 }
 
+                /*!
+                 * Given a vector of probabilities so that the `i`th entry corresponds to the
+                 * probability of state `i`, returns an equivalent map of only the non-zero entries.
+                 */
                 inline std::unordered_map<state_t, T> vectorToMap(std::vector<T> probVector) const {
                     assert(probVector.size() == numStates);
 
                     std::unordered_map<state_t, T> stateProbMap;
 
-                    // non-zero entries (i.e. true transitions) are added to the map
                     for (state_t i = 0; i < probVector.size(); i++) {
                         T probEntry = probVector[i];
+
+                        // only non-zero entries (i.e. true transitions) are added to the map
                         if (probEntry != 0) {
                             assert(0 < probEntry <= 1);
                             stateProbMap.emplace(i, probEntry);
@@ -198,6 +232,7 @@ namespace storm {
 
                     return stateProbMap;
                 }
+
                 // -----------------------
             };
         }

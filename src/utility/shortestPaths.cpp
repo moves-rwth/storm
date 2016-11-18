@@ -7,12 +7,16 @@ namespace storm {
     namespace utility {
         namespace ksp {
             template <typename T>
-            ShortestPathsGenerator<T>::ShortestPathsGenerator(storage::SparseMatrix<T> const& transitionMatrix, std::unordered_map<state_t, T> const& targetProbMap, BitVector const& initialStates) :
+            ShortestPathsGenerator<T>::ShortestPathsGenerator(storage::SparseMatrix<T> const& transitionMatrix,
+                                                              std::unordered_map<state_t, T> const& targetProbMap,
+                                                              BitVector const& initialStates,
+                                                              MatrixFormat matrixFormat) :
                     transitionMatrix(transitionMatrix),
                     numStates(transitionMatrix.getColumnCount() + 1), // one more for meta-target
                     metaTarget(transitionMatrix.getColumnCount()), // first unused state index
                     initialStates(initialStates),
-                    targetProbMap(targetProbMap) {
+                    targetProbMap(targetProbMap),
+                    matrixFormat(matrixFormat) {
 
                 computePredecessors();
 
@@ -28,28 +32,29 @@ namespace storm {
             }
 
             template <typename T>
-            ShortestPathsGenerator<T>::ShortestPathsGenerator(storage::SparseMatrix<T> const& transitionMatrix, std::vector<T> const& targetProbVector, BitVector const& initialStates)
-                    : ShortestPathsGenerator<T>(transitionMatrix, vectorToMap(targetProbVector), initialStates) {}
+            ShortestPathsGenerator<T>::ShortestPathsGenerator(storage::SparseMatrix<T> const& transitionMatrix,
+                    std::vector<T> const& targetProbVector, BitVector const& initialStates, MatrixFormat matrixFormat)
+                    : ShortestPathsGenerator<T>(transitionMatrix, vectorToMap(targetProbVector), initialStates, matrixFormat) {}
 
             // extracts the relevant info from the model and delegates to ctor above
             template <typename T>
-            ShortestPathsGenerator<T>::ShortestPathsGenerator(std::shared_ptr<models::sparse::Model<T>> model, BitVector const& targetBV)
-                    : ShortestPathsGenerator<T>(model->getTransitionMatrix(), allProbOneMap(targetBV), model->getInitialStates()) {}
+            ShortestPathsGenerator<T>::ShortestPathsGenerator(Model const& model, BitVector const& targetBV)
+                    : ShortestPathsGenerator<T>(model.getTransitionMatrix(), allProbOneMap(targetBV), model.getInitialStates(), MatrixFormat::straight) {}
 
             // several alternative ways to specify the targets are provided,
             // each converts the targets and delegates to the ctor above
             // I admit it's kind of ugly, but actually pretty convenient (and I've wanted to try C++11 delegation)
             template <typename T>
-            ShortestPathsGenerator<T>::ShortestPathsGenerator(std::shared_ptr<models::sparse::Model<T>> model, state_t singleTarget)
+            ShortestPathsGenerator<T>::ShortestPathsGenerator(Model const& model, state_t singleTarget)
                     : ShortestPathsGenerator<T>(model, std::vector<state_t>{singleTarget}) {}
 
             template <typename T>
-            ShortestPathsGenerator<T>::ShortestPathsGenerator(std::shared_ptr<models::sparse::Model<T>> model, std::vector<state_t> const& targetList)
-                    : ShortestPathsGenerator<T>(model, BitVector(model->getNumberOfStates(), targetList)) {}
+            ShortestPathsGenerator<T>::ShortestPathsGenerator(Model const& model, std::vector<state_t> const& targetList)
+                    : ShortestPathsGenerator<T>(model, BitVector(model.getNumberOfStates(), targetList)) {}
 
             template <typename T>
-            ShortestPathsGenerator<T>::ShortestPathsGenerator(std::shared_ptr<models::sparse::Model<T>> model, std::string const& targetLabel)
-                    : ShortestPathsGenerator<T>(model, model->getStates(targetLabel)) {}
+            ShortestPathsGenerator<T>::ShortestPathsGenerator(Model const& model, std::string const& targetLabel)
+                    : ShortestPathsGenerator<T>(model, model.getStates(targetLabel)) {}
 
             template <typename T>
             T ShortestPathsGenerator<T>::getDistance(unsigned long k) {
@@ -152,7 +157,8 @@ namespace storm {
                             state_t otherNode = transition.getColumn();
 
                             // note that distances are probabilities, thus they are multiplied and larger is better
-                            T alternateDistance = shortestPathDistances[currentNode] * transition.getValue();
+                            T alternateDistance = shortestPathDistances[currentNode] * convertDistance(currentNode, otherNode, transition.getValue());
+                            assert(zero<T>() <= alternateDistance <= one<T>()); // FIXME: there is a negative transition! SM gives us a placeholder!
                             if (alternateDistance > shortestPathDistances[otherNode]) {
                                 shortestPathDistances[otherNode] = alternateDistance;
                                 shortestPathPredecessors[otherNode] = boost::optional<state_t>(currentNode);
@@ -225,7 +231,7 @@ namespace storm {
 
                     for (auto const& transition : transitionMatrix.getRowGroup(tailNode)) {
                         if (transition.getColumn() == headNode) {
-                            return transition.getValue();
+                            return convertDistance(tailNode, headNode, transition.getValue());
                         }
                     }
 

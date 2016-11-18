@@ -26,7 +26,7 @@ TEST(KSPTest, dijkstra) {
 	auto model = buildExampleModel();
 
     storm::utility::ksp::state_t testState = 300;
-    storm::utility::ksp::ShortestPathsGenerator<double> spg(model, testState);
+    storm::utility::ksp::ShortestPathsGenerator<double> spg(*model, testState);
 
     double dist = spg.getDistance(1);
     EXPECT_DOUBLE_EQ(0.015859334652581887, dist);
@@ -36,7 +36,7 @@ TEST(KSPTest, singleTarget) {
 	auto model = buildExampleModel();
 
     storm::utility::ksp::state_t testState = 300;
-    storm::utility::ksp::ShortestPathsGenerator<double> spg(model, testState);
+    storm::utility::ksp::ShortestPathsGenerator<double> spg(*model, testState);
 
     double dist = spg.getDistance(100);
     EXPECT_DOUBLE_EQ(1.5231305000339649e-06, dist);
@@ -46,7 +46,7 @@ TEST(KSPTest, reentry) {
 	auto model = buildExampleModel();
 
     storm::utility::ksp::state_t testState = 300;
-    storm::utility::ksp::ShortestPathsGenerator<double> spg(model, testState);
+    storm::utility::ksp::ShortestPathsGenerator<double> spg(*model, testState);
 
     double dist = spg.getDistance(100);
     EXPECT_DOUBLE_EQ(1.5231305000339649e-06, dist);
@@ -60,7 +60,7 @@ TEST(KSPTest, groupTarget) {
 	auto model = buildExampleModel();
 
     auto groupTarget = std::vector<storm::utility::ksp::state_t>{50, 90};
-    auto spg = storm::utility::ksp::ShortestPathsGenerator<double>(model, groupTarget);
+    auto spg = storm::utility::ksp::ShortestPathsGenerator<double>(*model, groupTarget);
 
     // this path should lead to 90
     double dist1 = spg.getDistance(8);
@@ -79,7 +79,7 @@ TEST(KSPTest, kTooLargeException) {
 	auto model = buildExampleModel();
 
     storm::utility::ksp::state_t testState = 1;
-    storm::utility::ksp::ShortestPathsGenerator<double> spg(model, testState);
+    storm::utility::ksp::ShortestPathsGenerator<double> spg(*model, testState);
 
     ASSERT_THROW(spg.getDistance(2), std::invalid_argument);
 }
@@ -88,7 +88,7 @@ TEST(KSPTest, kspStateSet) {
 	auto model = buildExampleModel();
 
     storm::utility::ksp::state_t testState = 300;
-    storm::utility::ksp::ShortestPathsGenerator<double> spg(model, testState);
+    storm::utility::ksp::ShortestPathsGenerator<double> spg(*model, testState);
 
     storm::storage::BitVector referenceBV(model->getNumberOfStates(), false);
     for (auto s : std::vector<storm::utility::ksp::state_t>{300, 293, 285, 279, 271, 265, 259, 252, 244, 237, 229, 223, 217, 210, 202, 195, 187, 181, 175, 168, 160, 153, 145, 139, 133, 126, 118, 111, 103, 97, 91, 84, 76, 69, 61, 55, 49, 43, 35, 41, 32, 25, 19, 14, 10, 7, 4, 2, 1, 0}) {
@@ -104,10 +104,10 @@ TEST(KSPTest, kspPathAsList) {
 	auto model = buildExampleModel();
 
     storm::utility::ksp::state_t testState = 300;
-    storm::utility::ksp::ShortestPathsGenerator<double> spg(model, testState);
+    storm::utility::ksp::ShortestPathsGenerator<double> spg(*model, testState);
 
     // TODO: use path that actually has a loop or something to make this more interesting
-    auto reference = storm::utility::ksp::ordered_state_list_t{300, 293, 285, 279, 271, 265, 259, 252, 244, 237, 229, 223, 217, 210, 202, 195, 187, 181, 175, 168, 160, 153, 145, 139, 133, 126, 118, 111, 103, 97, 91, 84, 76, 69, 61, 55, 49, 43, 35, 41, 32, 25, 19, 14, 10, 7, 4, 2, 1, 0};
+    auto reference = storm::utility::ksp::OrderedStateList{300, 293, 285, 279, 271, 265, 259, 252, 244, 237, 229, 223, 217, 210, 202, 195, 187, 181, 175, 168, 160, 153, 145, 139, 133, 126, 118, 111, 103, 97, 91, 84, 76, 69, 61, 55, 49, 43, 35, 41, 32, 25, 19, 14, 10, 7, 4, 2, 1, 0};
     auto list = spg.getPathAsList(7);
 
     EXPECT_EQ(list, reference);
