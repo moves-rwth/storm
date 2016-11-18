@@ -4,7 +4,7 @@ from helpers.helper import get_example_path
 
 class TestModel:
     def test_build_dtmc_from_prism_program(self):
-        program = stormpy.parse_prism_program(get_example_path("dtmc", "die", "die.pm"))
+        program = stormpy.parse_prism_program(get_example_path("dtmc", "die.pm"))
         prop = "P=? [F \"one\"]"
         formulas = stormpy.parse_formulas_for_prism_program(prop, program)
         model = stormpy.build_model_from_prism_program(program, formulas)
@@ -15,7 +15,7 @@ class TestModel:
         assert type(model) is stormpy.SparseDtmc
  
     def test_build_parametric_dtmc_from_prism_program(self):
-        program = stormpy.parse_prism_program(get_example_path("pdtmc", "brp", "brp16_2.pm"))
+        program = stormpy.parse_prism_program(get_example_path("pdtmc", "brp16_2.pm"))
         assert program.nr_modules == 5
         assert program.model_type == stormpy.PrismModelType.DTMC
         assert program.has_undefined_constants
@@ -30,7 +30,7 @@ class TestModel:
         assert type(model) is stormpy.SparseParametricDtmc
     
     def test_build_dtmc(self):
-        program = stormpy.parse_prism_program(get_example_path("dtmc", "die", "die.pm"))
+        program = stormpy.parse_prism_program(get_example_path("dtmc", "die.pm"))
         formulas = stormpy.parse_formulas_for_prism_program("P=? [ F \"one\" ]", program)
         model = stormpy.build_model(program, formulas[0])
         assert model.nr_states == 13
@@ -40,7 +40,7 @@ class TestModel:
         assert type(model) is stormpy.SparseDtmc
     
     def test_build_parametric_dtmc(self):
-        program = stormpy.parse_prism_program(get_example_path("pdtmc", "brp", "brp16_2.pm"))
+        program = stormpy.parse_prism_program(get_example_path("pdtmc", "brp16_2.pm"))
         formulas = stormpy.parse_formulas_for_prism_program("P=? [ F s=5 ]", program)
         model = stormpy.build_parametric_model(program, formulas[0])
         assert model.nr_states == 613
@@ -51,7 +51,7 @@ class TestModel:
         assert type(model) is stormpy.SparseParametricDtmc
     
     def test_build_dtmc_supporting_parameters(self):
-        program = stormpy.parse_prism_program(get_example_path("dtmc", "die", "die.pm"))
+        program = stormpy.parse_prism_program(get_example_path("dtmc", "die.pm"))
         formulas = stormpy.parse_formulas_for_prism_program("P=? [ F \"one\" ]", program)
         model = stormpy.build_parametric_model(program, formulas[0])
         assert model.nr_states == 13
@@ -62,7 +62,7 @@ class TestModel:
         assert type(model) is stormpy.SparseParametricDtmc
 
     def test_label(self):
-        program = stormpy.parse_prism_program(get_example_path("dtmc", "die", "die.pm"))
+        program = stormpy.parse_prism_program(get_example_path("dtmc", "die.pm"))
         formulas = stormpy.parse_formulas_for_prism_program("P=? [ F \"one\" ]", program)
         model = stormpy.build_model(program, formulas[0])
         labels = model.labels
@@ -73,7 +73,7 @@ class TestModel:
         assert "one" in model.labels_state(7)
     
     def test_initial_states(self):
-        program = stormpy.parse_prism_program(get_example_path("dtmc", "die", "die.pm"))
+        program = stormpy.parse_prism_program(get_example_path("dtmc", "die.pm"))
         formulas = stormpy.parse_formulas_for_prism_program("P=? [ F \"one\" ]", program)
         model = stormpy.build_model(program, formulas[0])
         initial_states =  model.initial_states
@@ -81,7 +81,7 @@ class TestModel:
         assert 0 in initial_states
     
     def test_label_parametric(self):
-        program = stormpy.parse_prism_program(get_example_path("pdtmc", "brp", "brp16_2.pm"))
+        program = stormpy.parse_prism_program(get_example_path("pdtmc", "brp16_2.pm"))
         formulas = stormpy.parse_formulas_for_prism_program("P=? [ F s=5 ]", program)
         model = stormpy.build_parametric_model(program, formulas[0])
         labels = model.labels

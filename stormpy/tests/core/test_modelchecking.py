@@ -4,7 +4,7 @@ from helpers.helper import get_example_path
 
 class TestModelChecking:
     def test_model_checking_dtmc(self):
-        program = stormpy.parse_prism_program(get_example_path("dtmc", "die", "die.pm"))
+        program = stormpy.parse_prism_program(get_example_path("dtmc", "die.pm"))
         formulas = stormpy.parse_formulas_for_prism_program("P=? [ F \"one\" ]", program)
         model = stormpy.build_model(program, formulas[0])
         assert model.nr_states == 13
@@ -13,7 +13,7 @@ class TestModelChecking:
         assert result == 0.16666666666666663
     
     def test_model_checking_all_dtmc(self):
-        program = stormpy.parse_prism_program(get_example_path("dtmc", "die", "die.pm"))
+        program = stormpy.parse_prism_program(get_example_path("dtmc", "die.pm"))
         formulas = stormpy.parse_formulas_for_prism_program("P=? [ F \"one\" ]", program)
         model = stormpy.build_model(program, formulas[0])
         assert model.nr_states == 13
@@ -25,7 +25,7 @@ class TestModelChecking:
     def test_parametric_state_elimination(self):
         import pycarl
         import pycarl.formula
-        program = stormpy.parse_prism_program(get_example_path("pdtmc", "brp", "brp16_2.pm"))
+        program = stormpy.parse_prism_program(get_example_path("pdtmc", "brp16_2.pm"))
         prop = "P=? [F s=5]"
         formulas = stormpy.parse_formulas_for_prism_program(prop, program)
         model = stormpy.build_parametric_model_from_prism_program(program, formulas)
