@@ -609,7 +609,8 @@ namespace storm {
                         }
                         return std::make_shared<storm::jani::UnboundedIntegerVariable>(name, expressionManager->declareIntegerVariable(exprManagerName), initVal.get(), transientVar);
                     }
-                    return std::make_shared<storm::jani::UnboundedIntegerVariable>(name, expressionManager->declareIntegerVariable(exprManagerName), transientVar);
+                    assert(!transientVar); // Checked earlier.
+                    return std::make_shared<storm::jani::UnboundedIntegerVariable>(name, expressionManager->declareIntegerVariable(exprManagerName));
                 } else if(variableStructure.at("type") == "clock") {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Unsupported type 'clock' for variable '" << name << "' (scope: " << scopeDescription << ")");
                 } else if(variableStructure.at("type") == "continuous") {

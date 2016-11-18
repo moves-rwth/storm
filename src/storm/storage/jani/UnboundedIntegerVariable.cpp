@@ -7,7 +7,7 @@ namespace storm {
             // Intentionally left empty.
         }
         
-        UnboundedIntegerVariable::UnboundedIntegerVariable(std::string const& name, storm::expressions::Variable const& variable, bool transient) : Variable(name, variable) {
+        UnboundedIntegerVariable::UnboundedIntegerVariable(std::string const& name, storm::expressions::Variable const& variable) : Variable(name, variable) {
             // Intentionally left empty.
         }
         

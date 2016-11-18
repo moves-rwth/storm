@@ -15,7 +15,7 @@ namespace storm {
         
         typedef storm::storage::BitVector CompressedState;
 
-        class VariableInformation;
+        struct VariableInformation;
         
         /*!
          * Unpacks the compressed state into the evaluator.

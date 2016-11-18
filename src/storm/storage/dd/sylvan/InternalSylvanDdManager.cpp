@@ -135,7 +135,7 @@ namespace storm {
             return false;
         }
         
-        void InternalDdManager<DdType::Sylvan>::allowDynamicReordering(bool value) {
+        void InternalDdManager<DdType::Sylvan>::allowDynamicReordering(bool) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation is not supported by sylvan.");
         }
         
