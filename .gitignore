@@ -46,7 +46,7 @@ build//CMakeLists.txt
 *.orig
 *.*~
 # CMake generated/configured files
-src/utility/storm-version.cpp
+src/storm/utility/storm-version.cpp
 nbproject/
 .DS_Store
 .idea
