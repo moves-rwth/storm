@@ -352,6 +352,5 @@ if(STORM_PYTHON)
 endif()
 
 add_subdirectory(src)
-add_subdirectory(test)
 
 include(StormCPackConfig.cmake)
