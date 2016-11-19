@@ -1,4 +1,4 @@
-#include "src/abstraction/prism/GameBddResult.h"
+#include "storm/abstraction/prism/GameBddResult.h"
 
 namespace storm {
     namespace abstraction {

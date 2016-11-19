@@ -1,4 +1,4 @@
-#include "src/abstraction/BottomStateResult.h"
+#include "storm/abstraction/BottomStateResult.h"
 
 namespace storm {
     namespace abstraction {

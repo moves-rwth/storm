@@ -1,7 +1,7 @@
 #pragma once
 
-#include "src/exceptions/BaseException.h"
-#include "src/exceptions/ExceptionMacros.h"
+#include "storm/exceptions/BaseException.h"
+#include "storm/exceptions/ExceptionMacros.h"
 
 namespace storm {
     namespace exceptions {

@@ -2,9 +2,9 @@
 
 #include <map>
 
-#include "src/models/symbolic/StochasticTwoPlayerGame.h"
+#include "storm/models/symbolic/StochasticTwoPlayerGame.h"
 
-#include "src/utility/OsDetection.h"
+#include "storm/utility/OsDetection.h"
 
 namespace storm {
     namespace abstraction {

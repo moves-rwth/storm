@@ -129,12 +129,11 @@ namespace storm {
                 std::shared_ptr<Polytope<TargetType>> convertNumberRepresentation() const;
                 
                 /*
-                 * Returns a string repre/Users/tim/storm/src/storage/geometry/Polytope.h:129:17: 'virtual' cannot be specified on member function templatessentation of this polytope.
-                 * If the given flag is true, the occurring numbers are converted to double before printing to increase readability
+                 * Returns a string representation of this polytope.
+                 * @param numbersAsDouble If true, the occurring numbers are converted to double before printing to increase readability.
                  */
                 virtual std::string toString(bool numbersAsDouble = false) const;
                
-                
                 virtual bool isHyproPolytope() const;
                 
             protected:

@@ -1,7 +1,7 @@
-#include "src/settings/modules/AbstractionSettings.h"
+#include "storm/settings/modules/AbstractionSettings.h"
 
-#include "src/settings/Option.h"
-#include "src/settings/OptionBuilder.h"
+#include "storm/settings/Option.h"
+#include "storm/settings/OptionBuilder.h"
 
 namespace storm {
     namespace settings {

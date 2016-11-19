@@ -48,9 +48,9 @@ namespace storm {
         typename ExprtkExpressionEvaluatorBase<RationalType>::CompiledExpressionType& ExprtkExpressionEvaluatorBase<RationalType>::getCompiledExpression(storm::expressions::Expression const& expression) const {
             std::pair<CacheType::iterator, bool> result = this->compiledExpressions.emplace(expression.getBaseExpressionPointer(), CompiledExpressionType());
             CompiledExpressionType& compiledExpression = result.first->second;
-            compiledExpression.register_symbol_table(symbolTable);
-            bool parsingOk = parser.compile(ToExprtkStringVisitor().toString(expression), compiledExpression);
-            STORM_LOG_THROW(parsingOk, storm::exceptions::UnexpectedException, "Expression was not properly parsed by ExprTk: " << expression << ". (Returned error: " << parser.error() << ")");
+            compiledExpression.register_symbol_table(*symbolTable);
+            bool parsingOk = parser->compile(ToExprtkStringVisitor().toString(expression), compiledExpression);
+            STORM_LOG_THROW(parsingOk, storm::exceptions::UnexpectedException, "Expression was not properly parsed by ExprTk: " << expression << ". (Returned error: " << parser->error() << ")");
             return compiledExpression;
         }
         

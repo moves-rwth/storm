@@ -1,8 +1,8 @@
-#include "src/abstraction/LocalExpressionInformation.h"
+#include "storm/abstraction/LocalExpressionInformation.h"
 
 #include <boost/algorithm/string/join.hpp>
 
-#include "src/utility/macros.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
     namespace abstraction {

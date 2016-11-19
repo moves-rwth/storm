@@ -1,14 +1,14 @@
 #pragma once
 
-#include "src/storage/dd/DdType.h"
+#include "storm/storage/dd/DdType.h"
 
-#include "src/abstraction/AbstractionInformation.h"
-#include "src/abstraction/MenuGame.h"
-#include "src/abstraction/prism/AbstractModule.h"
+#include "storm/abstraction/AbstractionInformation.h"
+#include "storm/abstraction/MenuGame.h"
+#include "storm/abstraction/prism/AbstractModule.h"
 
-#include "src/storage/dd/Add.h"
+#include "storm/storage/dd/Add.h"
 
-#include "src/storage/expressions/Expression.h"
+#include "storm/storage/expressions/Expression.h"
 
 namespace storm {
     namespace utility {

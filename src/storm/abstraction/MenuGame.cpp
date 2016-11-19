@@ -1,16 +1,16 @@
-#include "src/abstraction/MenuGame.h"
+#include "storm/abstraction/MenuGame.h"
 
-#include "src/exceptions/InvalidOperationException.h"
-#include "src/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/InvalidOperationException.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 
-#include "src/storage/dd/Bdd.h"
-#include "src/storage/dd/Add.h"
-#include "src/storage/dd/DdManager.h"
+#include "storm/storage/dd/Bdd.h"
+#include "storm/storage/dd/Add.h"
+#include "storm/storage/dd/DdManager.h"
 
-#include "src/models/symbolic/StandardRewardModel.h"
+#include "storm/models/symbolic/StandardRewardModel.h"
 
 #include "storm-config.h"
-#include "src/adapters/CarlAdapter.h"
+#include "storm/adapters/CarlAdapter.h"
 
 namespace storm {
     namespace abstraction {

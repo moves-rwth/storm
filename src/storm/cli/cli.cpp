@@ -12,6 +12,7 @@
 #include "storm/settings/modules/ResourceSettings.h"
 #include "storm/settings/modules/JaniExportSettings.h"
 
+#include "storm/utility/resources.h"
 #include "storm/utility/storm-version.h"
 #include "storm/storage/jani/JSONExporter.h"
 

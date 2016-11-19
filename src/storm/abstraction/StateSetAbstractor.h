@@ -4,14 +4,14 @@
 #include <set>
 #include <boost/optional.hpp>
 
-#include "src/utility/OsDetection.h"
+#include "storm/utility/OsDetection.h"
 
-#include "src/storage/dd/DdType.h"
+#include "storm/storage/dd/DdType.h"
 
-#include "src/utility/solver.h"
-#include "src/solver/SmtSolver.h"
+#include "storm/utility/solver.h"
+#include "storm/solver/SmtSolver.h"
 
-#include "src/abstraction/LocalExpressionInformation.h"
+#include "storm/abstraction/LocalExpressionInformation.h"
 
 namespace storm {
     namespace utility {

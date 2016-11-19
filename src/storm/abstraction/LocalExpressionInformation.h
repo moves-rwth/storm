@@ -5,8 +5,8 @@
 #include <vector>
 #include <ostream>
 
-#include "src/storage/expressions/Variable.h"
-#include "src/storage/expressions/Expression.h"
+#include "storm/storage/expressions/Variable.h"
+#include "storm/storage/expressions/Expression.h"
 
 namespace storm {
     namespace abstraction {

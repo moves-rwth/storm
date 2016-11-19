@@ -5,16 +5,16 @@
 #include <set>
 #include <map>
 
-#include "src/abstraction/LocalExpressionInformation.h"
-#include "src/abstraction/StateSetAbstractor.h"
-#include "src/abstraction/prism/GameBddResult.h"
+#include "storm/abstraction/LocalExpressionInformation.h"
+#include "storm/abstraction/StateSetAbstractor.h"
+#include "storm/abstraction/prism/GameBddResult.h"
 
-#include "src/storage/expressions/ExpressionEvaluator.h"
+#include "storm/storage/expressions/ExpressionEvaluator.h"
 
-#include "src/storage/dd/DdType.h"
-#include "src/storage/expressions/Expression.h"
+#include "storm/storage/dd/DdType.h"
+#include "storm/storage/expressions/Expression.h"
 
-#include "src/solver/SmtSolver.h"
+#include "storm/solver/SmtSolver.h"
 
 namespace storm {
     namespace utility {
@@ -60,7 +60,7 @@ namespace storm {
                  * @param guardIsPredicate A flag indicating whether the guard of the command was added as a predicate.
                  */
                 AbstractCommand(storm::prism::Command const& command, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool guardIsPredicate = false);
-                
+                               
                 /*!
                  * Refines the abstract command with the given predicates.
                  *

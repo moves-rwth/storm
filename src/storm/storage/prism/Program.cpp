@@ -23,6 +23,8 @@
 #include "storm/storage/prism/Compositions.h"
 #include "storm/storage/prism/ToJaniConverter.h"
 
+#include "storm/utility/macros.h"
+
 namespace storm {
     namespace prism {
         class CompositionValidityChecker : public CompositionVisitor {
@@ -1616,15 +1618,6 @@ namespace storm {
             }
             
             return Command(newCommandIndex, false, actionIndex, actionName, newGuard, newUpdates, this->getFilename(), 0);
-        }
-        
-        uint_fast64_t Program::numberOfActions() const {
-            return this->actions.size();
-        }
-        
-        uint_fast64_t Program::largestActionIndex() const {
-            STORM_LOG_ASSERT(numberOfActions() != 0);
-            return this->indexToActionMap.rbegin()->first;
         }
         
         storm::jani::Model Program::toJani(bool allVariablesGlobal) const {

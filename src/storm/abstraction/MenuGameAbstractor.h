@@ -1,8 +1,8 @@
 #pragma once
 
-#include "src/storage/dd/DdType.h"
+#include "storm/storage/dd/DdType.h"
 
-#include "src/abstraction/MenuGame.h"
+#include "storm/abstraction/MenuGame.h"
 
 namespace storm {
     namespace abstraction {

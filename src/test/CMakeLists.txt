@@ -8,9 +8,9 @@ register_source_groups_from_filestructure("${ALL_FILES}" test)
 include_directories(${GTEST_INCLUDE_DIR})
 
 
-foreach (testsuite adapter builder logic modelchecker parser permissiveschedulers solver storage transformer utility)
+foreach (testsuite abstraction adapter builder logic modelchecker parser permissiveschedulers solver storage transformer utility)
 
-	  file(GLOB_RECURSE TEST_${testsuite}_FILES ${STORM_CPP_TESTS_BASE_PATH}/${testsuite}/*.h ${STORM_CPP_TESTS_BASE_PATH}/${testsuite}/*.cpp)
+file(GLOB_RECURSE TEST_${testsuite}_FILES ${STORM_CPP_TESTS_BASE_PATH}/${testsuite}/*.h ${STORM_CPP_TESTS_BASE_PATH}/${testsuite}/*.cpp)
       add_executable (test-${testsuite} ${TEST_${testsuite}_FILES} ${PROJECT_SOURCE_DIR}/src/test/storm-test.cpp)
 	  target_link_libraries(test-${testsuite} storm)
 	  target_link_libraries(test-${testsuite} ${STORM_TEST_LINK_LIBRARIES})
@@ -19,11 +19,3 @@ foreach (testsuite adapter builder logic modelchecker parser permissivescheduler
 	  add_test(run-test-${testsuite} test-${testsuite})
 	
 endforeach ()
-
-
-
-#INSTALL(TARGETS storm-functional-tests
-#	RUNTIME DESTINATION bin
-#	LIBRARY DESTINATION lib
-#	ARCHIVE DESTINATION lib
-#)

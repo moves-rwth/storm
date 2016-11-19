@@ -12,7 +12,7 @@
 #include "storm/models/sparse/DeterministicModel.h"
 #include "storm/storage/dd/DdType.h"
 
-#include "src/solver/OptimizationDirection.h"
+#include "storm/solver/OptimizationDirection.h"
 
 namespace storm {
     namespace storage {

@@ -1,24 +1,24 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
-#include "src/parser/FormulaParser.h"
-#include "src/logic/Formulas.h"
-#include "src/utility/solver.h"
-#include "src/modelchecker/abstraction/GameBasedMdpModelChecker.h"
-#include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
-#include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
-#include "src/parser/PrismParser.h"
-#include "src/builder/DdPrismModelBuilder.h"
-#include "src/models/symbolic/StandardRewardModel.h"
-#include "src/models/symbolic/Dtmc.h"
-#include "src/settings/SettingsManager.h"
+#include "storm/parser/FormulaParser.h"
+#include "storm/logic/Formulas.h"
+#include "storm/utility/solver.h"
+#include "storm/modelchecker/abstraction/GameBasedMdpModelChecker.h"
+#include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
+#include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "storm/parser/PrismParser.h"
+#include "storm/builder/DdPrismModelBuilder.h"
+#include "storm/models/symbolic/StandardRewardModel.h"
+#include "storm/models/symbolic/Dtmc.h"
+#include "storm/settings/SettingsManager.h"
 
-#include "src/settings/modules/NativeEquationSolverSettings.h"
+#include "storm/settings/modules/NativeEquationSolverSettings.h"
 
-#include "src/settings/modules/GeneralSettings.h"
+#include "storm/settings/modules/GeneralSettings.h"
 
 TEST(GameBasedDtmcModelCheckerTest, Die_Cudd) {
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/die.pm");
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/die.pm");
     
     // A parser that we use for conveniently constructing the formulas.
     storm::parser::FormulaParser formulaParser;
@@ -67,7 +67,7 @@ TEST(GameBasedDtmcModelCheckerTest, Die_Cudd) {
 }
 
 TEST(GameBasedDtmcModelCheckerTest, Die_Sylvan) {
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/die.pm");
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/die.pm");
     
     // A parser that we use for conveniently constructing the formulas.
     storm::parser::FormulaParser formulaParser;
@@ -116,7 +116,7 @@ TEST(GameBasedDtmcModelCheckerTest, Die_Sylvan) {
 }
 
 TEST(GameBasedDtmcModelCheckerTest, Crowds_Cudd) {
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/crowds-5-5.pm");
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/crowds-5-5.pm");
     
     // A parser that we use for conveniently constructing the formulas.
     storm::parser::FormulaParser formulaParser;
@@ -159,7 +159,7 @@ TEST(GameBasedDtmcModelCheckerTest, Crowds_Cudd) {
 }
 
 TEST(GameBasedDtmcModelCheckerTest, Crowds_Sylvan) {
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/crowds-5-5.pm");
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/crowds-5-5.pm");
     
     // A parser that we use for conveniently constructing the formulas.
     storm::parser::FormulaParser formulaParser;
@@ -205,7 +205,7 @@ TEST(GameBasedDtmcModelCheckerTest, Crowds_Sylvan) {
 }
 
 TEST(GameBasedDtmcModelCheckerTest, SynchronousLeader_Cudd) {
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/leader-3-5.pm");
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/leader-3-5.pm");
     
     // A parser that we use for conveniently constructing the formulas.
     storm::parser::FormulaParser formulaParser;
@@ -245,7 +245,7 @@ TEST(GameBasedDtmcModelCheckerTest, SynchronousLeader_Cudd) {
 }
 
 TEST(GameBasedDtmcModelCheckerTest, SynchronousLeader_Sylvan) {
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/leader-3-5.pm");
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/leader-3-5.pm");
     
     // A parser that we use for conveniently constructing the formulas.
     storm::parser::FormulaParser formulaParser;

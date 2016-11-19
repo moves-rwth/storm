@@ -112,11 +112,14 @@ namespace storm {
 #endif
 
         template<storm::dd::DdType DdType>
-        void verifySymbolicModelWithAbstractionRefinementEngine(storm::prism::Program const& program, std::vector<std::shared_ptr<const storm::logic::Formula>> const& formulas, bool onlyInitialStatesRelevant = false) {
+        void verifySymbolicModelWithAbstractionRefinementEngine(storm::storage::SymbolicModelDescription const& model, std::vector<storm::jani::Property> const& properties, bool onlyInitialStatesRelevant = false) {
+            STORM_LOG_THROW(model.isPrismProgram(), storm::exceptions::NotImplementedException, "Abstraction-refinement is currently only available for PRISM programs.");
+            storm::prism::Program const& program = model.asPrismProgram();
+            
             typedef double ValueType;
-            for (auto const& formula : formulas) {
-                std::cout << std::endl << "Model checking property: " << *formula << " ...";
-                std::unique_ptr<storm::modelchecker::CheckResult> result(storm::verifyProgramWithAbstractionRefinementEngine<DdType, ValueType>(program, formula, onlyInitialStatesRelevant));
+            for (auto const& property : properties) {
+                std::cout << std::endl << "Model checking property: " << property << " ...";
+                std::unique_ptr<storm::modelchecker::CheckResult> result(storm::verifyProgramWithAbstractionRefinementEngine<DdType, ValueType>(program, property.getFilter().getFormula(), onlyInitialStatesRelevant));
                 if (result) {
                     std::cout << " done." << std::endl;
                     std::cout << "Result (initial states): ";

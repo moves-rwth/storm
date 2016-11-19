@@ -1,7 +1,7 @@
 #pragma once
 
-#include "src/storage/dd/DdType.h"
-#include "src/storage/dd/Bdd.h"
+#include "storm/storage/dd/DdType.h"
+#include "storm/storage/dd/Bdd.h"
 
 namespace storm {
     namespace abstraction {

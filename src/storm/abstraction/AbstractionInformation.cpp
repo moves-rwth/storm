@@ -1,12 +1,12 @@
-#include "src/abstraction/AbstractionInformation.h"
+#include "storm/abstraction/AbstractionInformation.h"
 
-#include "src/storage/dd/DdManager.h"
+#include "storm/storage/dd/DdManager.h"
 
-#include "src/utility/macros.h"
-#include "src/exceptions/InvalidOperationException.h"
+#include "storm/utility/macros.h"
+#include "storm/exceptions/InvalidOperationException.h"
 
-#include "src/storage/expressions/Expression.h"
-#include "src/storage/expressions/ExpressionManager.h"
+#include "storm/storage/expressions/Expression.h"
+#include "storm/storage/expressions/ExpressionManager.h"
 
 namespace storm {
     namespace abstraction {

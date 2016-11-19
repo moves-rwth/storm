@@ -126,12 +126,7 @@ namespace storm {
         bool DdJaniModelBuilder<Type, ValueType>::Options::isBuildAllLabelsSet() const {
             return buildAllLabels;
         }
-        
-        template <storm::dd::DdType Type, typename ValueType>
-        std::set<std::string> const& DdJaniModelBuilder<Type, ValueType>::Options::getRewardModelNames() const {
-            return rewardModelsToBuild;
-        }
-        
+                
         template <storm::dd::DdType Type, typename ValueType>
         void DdJaniModelBuilder<Type, ValueType>::Options::addLabel(std::string const& labelName) {
             STORM_LOG_THROW(!buildAllLabels, storm::exceptions::InvalidSettingsException, "Cannot add label, because all labels are built anyway.");

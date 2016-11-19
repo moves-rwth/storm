@@ -7,9 +7,9 @@
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/NativeEquationSolverSettings.h"
 
-#include "src/utility/constants.h"
-#include "src/utility/macros.h"
-#include "src/exceptions/IllegalFunctionCallException.h"
+#include "storm/utility/constants.h"
+#include "storm/utility/macros.h"
+#include "storm/exceptions/IllegalFunctionCallException.h"
 
 namespace storm {
     namespace solver {

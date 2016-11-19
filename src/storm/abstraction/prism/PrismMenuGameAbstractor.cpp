@@ -1,9 +1,9 @@
-#include "src/abstraction/prism/PrismMenuGameAbstractor.h"
+#include "storm/abstraction/prism/PrismMenuGameAbstractor.h"
 
-#include "src/models/symbolic/StandardRewardModel.h"
+#include "storm/models/symbolic/StandardRewardModel.h"
 
-#include "src/settings/SettingsManager.h"
-#include "src/settings/modules/AbstractionSettings.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/AbstractionSettings.h"
 
 namespace storm {
     namespace abstraction {

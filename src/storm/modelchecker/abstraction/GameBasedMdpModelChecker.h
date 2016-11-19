@@ -1,14 +1,14 @@
 #ifndef STORM_MODELCHECKER_GAMEBASEDMDPMODELCHECKER_H_
 #define STORM_MODELCHECKER_GAMEBASEDMDPMODELCHECKER_H_
 
-#include "src/modelchecker/AbstractModelChecker.h"
+#include "storm/modelchecker/AbstractModelChecker.h"
 
-#include "src/storage/prism/Program.h"
+#include "storm/storage/prism/Program.h"
 
-#include "src/storage/dd/DdType.h"
+#include "storm/storage/dd/DdType.h"
 
-#include "src/utility/solver.h"
-#include "src/utility/graph.h"
+#include "storm/utility/solver.h"
+#include "storm/utility/graph.h"
 
 namespace storm {
     namespace abstraction {

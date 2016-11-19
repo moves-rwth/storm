@@ -9,9 +9,9 @@
 
 #include "storm-config.h"
 
-#include "src/utility/OsDetection.h"
+#include "storm/utility/OsDetection.h"
 
-#include "src/utility/macros.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
     namespace utility {

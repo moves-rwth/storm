@@ -1,32 +1,32 @@
-#include "src/modelchecker/abstraction/GameBasedMdpModelChecker.h"
+#include "storm/modelchecker/abstraction/GameBasedMdpModelChecker.h"
 
-#include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
-#include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
+#include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 
-#include "src/models/symbolic/StandardRewardModel.h"
-#include "src/models/symbolic/Dtmc.h"
-#include "src/models/symbolic/Mdp.h"
+#include "storm/models/symbolic/StandardRewardModel.h"
+#include "storm/models/symbolic/Dtmc.h"
+#include "storm/models/symbolic/Mdp.h"
 
-#include "src/storage/expressions/ExpressionManager.h"
+#include "storm/storage/expressions/ExpressionManager.h"
 
-#include "src/storage/dd/DdManager.h"
+#include "storm/storage/dd/DdManager.h"
 
-#include "src/abstraction/prism/PrismMenuGameAbstractor.h"
+#include "storm/abstraction/prism/PrismMenuGameAbstractor.h"
 
-#include "src/logic/FragmentSpecification.h"
+#include "storm/logic/FragmentSpecification.h"
 
-#include "src/solver/SymbolicGameSolver.h"
+#include "storm/solver/SymbolicGameSolver.h"
 
-#include "src/utility/solver.h"
-#include "src/utility/dd.h"
-#include "src/utility/prism.h"
-#include "src/utility/macros.h"
+#include "storm/utility/solver.h"
+#include "storm/utility/dd.h"
+#include "storm/utility/prism.h"
+#include "storm/utility/macros.h"
 
-#include "src/exceptions/NotSupportedException.h"
-#include "src/exceptions/InvalidPropertyException.h"
-#include "src/exceptions/InvalidModelException.h"
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/InvalidPropertyException.h"
+#include "storm/exceptions/InvalidModelException.h"
 
-#include "src/modelchecker/results/CheckResult.h"
+#include "storm/modelchecker/results/CheckResult.h"
 
 //#define LOCAL_DEBUG
 

@@ -8,7 +8,7 @@
 #include "storm/storage/BitVector.h"
 #include "storm/storage/PairHash.h"
 
-#include "src/utility/macros.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
     namespace dd {

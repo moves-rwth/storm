@@ -1,24 +1,24 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
-#include "src/parser/FormulaParser.h"
-#include "src/logic/Formulas.h"
-#include "src/models/sparse/StandardRewardModel.h"
-#include "src/models/sparse/Model.h"
-#include "src/modelchecker/abstraction/GameBasedMdpModelChecker.h"
-#include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
-#include "src/settings/SettingsManager.h"
-#include "src/settings/modules/GeneralSettings.h"
-#include "src/settings/modules/NativeEquationSolverSettings.h"
+#include "storm/parser/FormulaParser.h"
+#include "storm/logic/Formulas.h"
+#include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/models/sparse/Model.h"
+#include "storm/modelchecker/abstraction/GameBasedMdpModelChecker.h"
+#include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/GeneralSettings.h"
+#include "storm/settings/modules/NativeEquationSolverSettings.h"
 
-#include "src/parser/AutoParser.h"
-#include "src/parser/PrismParser.h"
+#include "storm/parser/AutoParser.h"
+#include "storm/parser/PrismParser.h"
 
 #include "utility/storm.h"
 
 TEST(GameBasedMdpModelCheckerTest, Dice_Cudd) {
-    std::string programFile = STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.nm";
-    std::string formulaFile = STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.prctl";
+    std::string programFile = STORM_CPP_BASE_PATH "/builder/two_dice.nm";
+    std::string formulaFile = STORM_CPP_BASE_PATH "/builder/two_dice.prctl";
 
     storm::prism::Program program = storm::parseProgram(programFile);
 	
@@ -89,8 +89,8 @@ TEST(GameBasedMdpModelCheckerTest, Dice_Cudd) {
 }
 
 TEST(GameBasedMdpModelCheckerTest, AsynchronousLeader_Cudd) {
-    std::string programFile = STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader4.nm";
-    std::string formulaFile = STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader.prctl";
+    std::string programFile = STORM_CPP_BASE_PATH "/builder/leader4.nm";
+    std::string formulaFile = STORM_CPP_BASE_PATH "/builder/leader.prctl";
 
     storm::prism::Program program = storm::parseProgram(programFile);
 	// Build the die model

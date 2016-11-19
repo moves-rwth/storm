@@ -1,12 +1,12 @@
 #pragma once
 
-#include "src/storage/dd/DdType.h"
+#include "storm/storage/dd/DdType.h"
 
-#include "src/abstraction/prism/AbstractCommand.h"
+#include "storm/abstraction/prism/AbstractCommand.h"
 
-#include "src/storage/expressions/Expression.h"
+#include "storm/storage/expressions/Expression.h"
 
-#include "src/utility/solver.h"
+#include "storm/utility/solver.h"
 
 namespace storm {
     namespace prism {

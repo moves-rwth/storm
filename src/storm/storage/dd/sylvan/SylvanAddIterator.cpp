@@ -10,7 +10,7 @@
 
 #include <cmath>
 
-#include "src/adapters/CarlAdapter.h"
+#include "storm/adapters/CarlAdapter.h"
 #include "storm-config.h"
 
 namespace storm {

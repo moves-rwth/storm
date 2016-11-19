@@ -1,24 +1,24 @@
-#include "src/abstraction/prism/AbstractProgram.h"
+#include "storm/abstraction/prism/AbstractProgram.h"
 
-#include "src/abstraction/BottomStateResult.h"
+#include "storm/abstraction/BottomStateResult.h"
 
-#include "src/storage/BitVector.h"
+#include "storm/storage/BitVector.h"
 
-#include "src/storage/prism/Program.h"
+#include "storm/storage/prism/Program.h"
 
-#include "src/storage/dd/DdManager.h"
-#include "src/storage/dd/Add.h"
+#include "storm/storage/dd/DdManager.h"
+#include "storm/storage/dd/Add.h"
 
-#include "src/models/symbolic/StandardRewardModel.h"
+#include "storm/models/symbolic/StandardRewardModel.h"
 
-#include "src/utility/dd.h"
-#include "src/utility/macros.h"
-#include "src/utility/solver.h"
-#include "src/exceptions/WrongFormatException.h"
-#include "src/exceptions/InvalidArgumentException.h"
+#include "storm/utility/dd.h"
+#include "storm/utility/macros.h"
+#include "storm/utility/solver.h"
+#include "storm/exceptions/WrongFormatException.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 
 #include "storm-config.h"
-#include "src/adapters/CarlAdapter.h"
+#include "storm/adapters/CarlAdapter.h"
 
 //#define LOCAL_DEBUG
 

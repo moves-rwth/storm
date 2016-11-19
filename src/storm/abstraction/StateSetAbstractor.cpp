@@ -1,14 +1,14 @@
-#include "src/abstraction/StateSetAbstractor.h"
+#include "storm/abstraction/StateSetAbstractor.h"
 
-#include "src/abstraction/AbstractionInformation.h"
+#include "storm/abstraction/AbstractionInformation.h"
 
-#include "src/storage/dd/DdManager.h"
+#include "storm/storage/dd/DdManager.h"
 
-#include "src/utility/macros.h"
-#include "src/utility/solver.h"
+#include "storm/utility/macros.h"
+#include "storm/utility/solver.h"
 
 #include "storm-config.h"
-#include "src/adapters/CarlAdapter.h"
+#include "storm/adapters/CarlAdapter.h"
 
 namespace storm {
     namespace abstraction {

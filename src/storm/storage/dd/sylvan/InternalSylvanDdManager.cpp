@@ -10,7 +10,7 @@
 #include "storm/utility/macros.h"
 #include "storm/exceptions/NotSupportedException.h"
 
-#include "src/utility/sylvan.h"
+#include "storm/utility/sylvan.h"
 
 #include "storm-config.h"
 

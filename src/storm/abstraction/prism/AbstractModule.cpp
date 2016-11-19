@@ -1,18 +1,18 @@
-#include "src/abstraction/prism/AbstractModule.h"
+#include "storm/abstraction/prism/AbstractModule.h"
 
-#include "src/abstraction/AbstractionInformation.h"
-#include "src/abstraction/BottomStateResult.h"
-#include "src/abstraction/prism/GameBddResult.h"
+#include "storm/abstraction/AbstractionInformation.h"
+#include "storm/abstraction/BottomStateResult.h"
+#include "storm/abstraction/prism/GameBddResult.h"
 
-#include "src/storage/dd/DdManager.h"
-#include "src/storage/dd/Add.h"
+#include "storm/storage/dd/DdManager.h"
+#include "storm/storage/dd/Add.h"
 
-#include "src/storage/prism/Module.h"
+#include "storm/storage/prism/Module.h"
 
 #include "storm-config.h"
-#include "src/adapters/CarlAdapter.h"
+#include "storm/adapters/CarlAdapter.h"
 
-#include "src/utility/macros.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
     namespace abstraction {
