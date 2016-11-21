@@ -4,6 +4,7 @@
 #include "storm/cli/cli.h"
 #include "storm/exceptions/BaseException.h"
 #include "storm/utility/macros.h"
+#include "storm/transformations/dft/DftToGspnTransformator.h"
 
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/CoreSettings.h"
@@ -78,6 +79,11 @@ template <typename ValueType>
 storm::gspn::GSPN transformDFT(std::string filename) {
     storm::parser::DFTGalileoParser<ValueType> parser;
     storm::storage::DFT<ValueType> dft = parser.parseDFT(filename);
+<<<<<<< f8986fe6139bddaf5068477b0f70ac1f806f8576:src/storm-dft-cli/storm-dyftee.cpp
+=======
+    storm::transformations::dft::DftToGspnTransformator<ValueType> gspnTransformator(dft);
+    gspnTransformator.transform();
+>>>>>>> updated dft->gspn translation to now have basis support for spares:src/storm/storm-dyftee.cpp
 }
 
 /*!
