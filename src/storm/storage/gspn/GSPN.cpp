@@ -169,7 +169,7 @@ namespace storm {
                     if (trans.getInhibitionPlaces().count(outEntry.first) == 1) {
                         outStream << "\t" << trans.getName() << " -> " << places.at(outEntry.first).getName() << "[arrowtail=\"dot\", label=\"" << (outEntry.second > 1 ? std::to_string(outEntry.second) : "") << "\", dir=both];" << std::endl;
                     } else if (trans.getInputPlaces().count(outEntry.first) == 1) {
-                        outStream << "\t" << trans.getName() << " -> " << places.at(outEntry.first).getName() << "[arrowtail=\"dot\", label=\"" << (outEntry.second > 1 ? std::to_string(outEntry.second) : "")<< "\", dir=both];" << std::endl;
+                        outStream << "\t" << trans.getName() << " -> " << places.at(outEntry.first).getName() << "[label=\"" << (outEntry.second > 1 ? std::to_string(outEntry.second) : "")<< "\", dir=both];" << std::endl;
                     } else {
                         outStream << "\t" << trans.getName() << " -> " << places.at(outEntry.first).getName() << "[label=\"" << (outEntry.second > 1 ? std::to_string(outEntry.second) : "") << "\"];" << std::endl;
                     }
@@ -193,7 +193,7 @@ namespace storm {
                     if (trans.getInhibitionPlaces().count(outEntry.first) == 1) {
                         outStream << "\t" << trans.getName() << " -> " << places.at(outEntry.first).getName() << "[arrowtail=\"dot\", label=\"" << (outEntry.second > 1 ? std::to_string(outEntry.second) : "") << "\", dir=both];" << std::endl;
                     } else if (trans.getInputPlaces().count(outEntry.first) == 1) {
-                        outStream << "\t" << trans.getName() << " -> " << places.at(outEntry.first).getName() << "[arrowtail=\"dot\", label=\"" << (outEntry.second > 1 ? std::to_string(outEntry.second) : "")<< "\", dir=both];" << std::endl;
+                        outStream << "\t" << trans.getName() << " -> " << places.at(outEntry.first).getName() << "[label=\"" << (outEntry.second > 1 ? std::to_string(outEntry.second) : "")<< "\", dir=both];" << std::endl;
                     } else {
                         outStream << "\t" << trans.getName() << " -> " << places.at(outEntry.first).getName() << "[label=\"" << (outEntry.second > 1 ? std::to_string(outEntry.second) : "") << "\"];" << std::endl;
                     }
