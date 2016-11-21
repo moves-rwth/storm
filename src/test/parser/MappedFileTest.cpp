@@ -15,13 +15,13 @@
 
 TEST(MappedFileTest, NonExistingFile) {
 	// No matter what happens, please do NOT create a file with the name "nonExistingFile.not"!
-	ASSERT_THROW(storm::parser::MappedFile(STORM_CPP_TESTS_BASE_PATH "/nonExistingFile.not"), storm::exceptions::FileIoException);
+	ASSERT_THROW(storm::parser::MappedFile(STORM_TEST_RESOURCES_DIR "/nonExistingFile.not"), storm::exceptions::FileIoException);
 }
 
 TEST(MappedFileTest, BasicFunctionality) {
 
 	// Open a file and test if the content is loaded as expected.
-	storm::parser::MappedFile file(STORM_CPP_TESTS_BASE_PATH "/parser/testStringFile.txt");
+	storm::parser::MappedFile file(STORM_TEST_RESOURCES_DIR "/txt/testStringFile.txt");
 	std::string testString = "This is a test string.";
 	char const* dataPtr = file.getData();
 	for(char const* testStringPtr = testString.c_str(); testStringPtr - testString.c_str() < 22; testStringPtr++) {
@@ -41,12 +41,12 @@ TEST(MappedFileTest, ExistsAndReadble) {
 	// Test the fileExistsAndIsReadable() method under various circumstances.
 
 	// File exists and is readable.
-	ASSERT_TRUE(storm::parser::MappedFile::fileExistsAndIsReadable(STORM_CPP_TESTS_BASE_PATH "/parser/testStringFile.txt"));
+	ASSERT_TRUE(storm::parser::MappedFile::fileExistsAndIsReadable(STORM_TEST_RESOURCES_DIR "/txt/testStringFile.txt"));
 
 	// File does not exist.
-	ASSERT_FALSE(storm::parser::MappedFile::fileExistsAndIsReadable(STORM_CPP_TESTS_BASE_PATH "/nonExistingFile.not"));
+	ASSERT_FALSE(storm::parser::MappedFile::fileExistsAndIsReadable(STORM_TEST_RESOURCES_DIR "/nonExistingFile.not"));
 
 	// File exists but is not readable.
 	// TODO: Find portable solution to providing a situation in which a file exists but is not readable.
-	//ASSERT_FALSE(storm::parser::MappedFile::fileExistsAndIsReadable(STORM_CPP_TESTS_BASE_PATH "/parser/unreadableFile.txt"));
+	//ASSERT_FALSE(storm::parser::MappedFile::fileExistsAndIsReadable(STORM_TEST_RESOURCES_DIR "/parser/unreadableFile.txt"));
 }

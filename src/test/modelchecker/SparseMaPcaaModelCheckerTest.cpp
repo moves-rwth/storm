@@ -18,7 +18,7 @@
 /* Rationals for MAs not supported at this point
 TEST(SparseMaPcaaModelCheckerTest, serverRationalNumbers) {
     
-    std::string programFile = STORM_CPP_BASE_PATH "/examples/multiobjective/ma/server/server.ma";
+    std::string programFile = STORM_TEST_RESOURCES_DIR "/ma/server.ma";
     std::string formulasAsString = "multi(Tmax=? [ F \"error\" ], Pmax=? [ F \"processB\" ]) "; // pareto
   //  formulasAsString += "; \n multi(..)";
     
@@ -49,7 +49,7 @@ TEST(SparseMaPcaaModelCheckerTest, serverRationalNumbers) {
 
 TEST(SparseMaPcaaModelCheckerTest, server) {
     
-    std::string programFile = STORM_CPP_BASE_PATH "/examples/multiobjective/ma/server/server.ma";
+    std::string programFile = STORM_TEST_RESOURCES_DIR "/ma/server.ma";
     std::string formulasAsString = "multi(Tmax=? [ F \"error\" ], Pmax=? [ F \"processB\" ]) "; // pareto
     //  formulasAsString += "; \n multi(..)";
     

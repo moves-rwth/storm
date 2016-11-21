@@ -13,7 +13,7 @@
 #ifdef STORM_HAVE_GUROBI
 
 TEST(MilpPermissiveSchedulerTest, DieSelection) {
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/die_c1.nm");
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/builder/die_c1.nm");
     storm::parser::FormulaParser formulaParser(program.getManager().getSharedPointer());
     
     auto formula02 = formulaParser.parseSingleFormulaFromString("P>=0.10 [ F \"one\"]")->asProbabilityOperatorFormula();

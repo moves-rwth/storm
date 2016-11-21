@@ -144,3 +144,5 @@ rewards
 endrewards
 
 
+
+label "target" = s=5;

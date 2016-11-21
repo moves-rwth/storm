@@ -36,7 +36,7 @@ TEST(StronglyConnectedComponentDecomposition, SmallSystemFromMatrix) {
 }
 
 TEST(StronglyConnectedComponentDecomposition, FullSystem1) {
-	std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser<>::parseModel(STORM_CPP_BASE_PATH "/examples/ma/tiny/tiny1.tra", STORM_CPP_BASE_PATH "/examples/ma/tiny/tiny1.lab", "", "");
+	std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser<>::parseModel(STORM_TEST_RESOURCES_DIR "/tra/tiny1.tra", STORM_TEST_RESOURCES_DIR "/lab/tiny1.lab", "", "");
 
 	std::shared_ptr<storm::models::sparse::MarkovAutomaton<double>> markovAutomaton = abstractModel->as<storm::models::sparse::MarkovAutomaton<double>>();
     
@@ -55,7 +55,7 @@ TEST(StronglyConnectedComponentDecomposition, FullSystem1) {
 }
 
 TEST(StronglyConnectedComponentDecomposition, FullSystem2) {
-	std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser<>::parseModel(STORM_CPP_BASE_PATH "/examples/ma/tiny/tiny2.tra", STORM_CPP_BASE_PATH "/examples/ma/tiny/tiny2.lab", "", "");
+	std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser<>::parseModel(STORM_TEST_RESOURCES_DIR "/tra/tiny2.tra", STORM_TEST_RESOURCES_DIR "/lab/tiny2.lab", "", "");
 
 	std::shared_ptr<storm::models::sparse::MarkovAutomaton<double>> markovAutomaton = abstractModel->as<storm::models::sparse::MarkovAutomaton<double>>();
     

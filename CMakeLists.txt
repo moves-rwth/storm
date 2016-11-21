@@ -79,8 +79,8 @@ if(STORM_COMPILE_WITH_CCACHE)
 	endif()
 endif()
 
-# Base path for test files
-set(STORM_CPP_TESTS_BASE_PATH "${PROJECT_SOURCE_DIR}/src/test")
+# Directory for test resources.
+set(STORM_TEST_RESOURCES_DIR "${PROJECT_SOURCE_DIR}/resources/examples/testfiles")
 
 # Auto-detect operating system.
 set(MACOSX 0)

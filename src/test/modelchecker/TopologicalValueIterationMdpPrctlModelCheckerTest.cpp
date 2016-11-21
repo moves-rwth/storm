@@ -18,7 +18,7 @@
 
 TEST(TopologicalValueIterationMdpPrctlModelCheckerTest, Dice) {
     //storm::settings::Settings* s = storm::settings::Settings::getInstance();    
-    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::parser::AutoParser<>::parseModel(STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.tra", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.lab", "", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.flip.trans.rew")->as<storm::models::sparse::Mdp<double>>();
+    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::parser::AutoParser<>::parseModel(STORM_TEST_RESOURCES_DIR "/tra/two_dice.tra", STORM_TEST_RESOURCES_DIR "/lab/two_dice.lab", "", STORM_TEST_RESOURCES_DIR "/rew/two_dice.flip.trans.rew")->as<storm::models::sparse::Mdp<double>>();
 
     // A parser that we use for conveniently constructing the formulas.
     storm::parser::FormulaParser formulaParser;
@@ -85,7 +85,7 @@ TEST(TopologicalValueIterationMdpPrctlModelCheckerTest, Dice) {
 #endif
 
     // ------------- state rewards --------------
-    std::shared_ptr<storm::models::sparse::Mdp<double>> stateRewardMdp = storm::parser::AutoParser<>::parseModel(STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.tra", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.lab", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.flip.state.rew", "")->as<storm::models::sparse::Mdp<double>>();
+    std::shared_ptr<storm::models::sparse::Mdp<double>> stateRewardMdp = storm::parser::AutoParser<>::parseModel(STORM_TEST_RESOURCES_DIR "/tra/two_dice.tra", STORM_TEST_RESOURCES_DIR "/lab/two_dice.lab", STORM_TEST_RESOURCES_DIR "/rew/two_dice.flip.state.rew", "")->as<storm::models::sparse::Mdp<double>>();
 
     storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> stateRewardModelChecker(*stateRewardMdp, std::make_unique<storm::solver::TopologicalMinMaxLinearEquationSolverFactory<double>>());
 
@@ -110,7 +110,7 @@ TEST(TopologicalValueIterationMdpPrctlModelCheckerTest, Dice) {
 #endif
 
     // -------------------------------- state and transition reward ------------------------
-    std::shared_ptr<storm::models::sparse::Mdp<double>> stateAndTransitionRewardMdp = storm::parser::AutoParser<>::parseModel(STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.tra", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.lab", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.flip.state.rew", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.flip.trans.rew")->as<storm::models::sparse::Mdp<double>>();
+    std::shared_ptr<storm::models::sparse::Mdp<double>> stateAndTransitionRewardMdp = storm::parser::AutoParser<>::parseModel(STORM_TEST_RESOURCES_DIR "/tra/two_dice.tra", STORM_TEST_RESOURCES_DIR "/lab/two_dice.lab", STORM_TEST_RESOURCES_DIR "/rew/two_dice.flip.state.rew", STORM_TEST_RESOURCES_DIR "/rew/two_dice.flip.trans.rew")->as<storm::models::sparse::Mdp<double>>();
 
     storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> stateAndTransitionRewardModelChecker(*stateAndTransitionRewardMdp, std::make_unique<storm::solver::TopologicalMinMaxLinearEquationSolverFactory<double>>());
 
@@ -135,7 +135,7 @@ TEST(TopologicalValueIterationMdpPrctlModelCheckerTest, Dice) {
 }
 
 TEST(TopologicalValueIterationMdpPrctlModelCheckerTest, AsynchronousLeader) {
-    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::parser::AutoParser<>::parseModel(STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader4.tra", STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader4.lab", "", STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader4.trans.rew")->as<storm::models::sparse::Mdp<double>>();
+    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::parser::AutoParser<>::parseModel(STORM_TEST_RESOURCES_DIR "/tra/leader4.tra", STORM_TEST_RESOURCES_DIR "/lab/leader4.lab", "", STORM_TEST_RESOURCES_DIR "/rew/leader4.trans.rew")->as<storm::models::sparse::Mdp<double>>();
 
     // A parser that we use for conveniently constructing the formulas.
     storm::parser::FormulaParser formulaParser;

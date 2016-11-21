@@ -9,10 +9,10 @@
 #define STORM_GENERATED_STORMCONFIG_H_
 
 // The directory of the sources from which Storm was built.
-#define STORM_CPP_BASE_PATH "@PROJECT_SOURCE_DIR@"
+#define STORM_SOURCE_DIR "@PROJECT_SOURCE_DIR@"
 
-// The directory of the sources from which the functional tests were built.
-#define STORM_CPP_TESTS_BASE_PATH "@STORM_CPP_TESTS_BASE_PATH@"
+// The directory of the test resources used in the tests (model files, ...).
+#define STORM_TEST_RESOURCES_DIR "@STORM_TEST_RESOURCES_DIR@"
 
 // The directory in which Storm was built.
 #define STORM_BUILD_DIR "@CMAKE_BINARY_DIR@"

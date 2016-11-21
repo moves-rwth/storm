@@ -17,7 +17,7 @@
 
 TEST(SparseStateRewardParserTest, NonExistingFile) {
     // No matter what happens, please do NOT create a file with the name "nonExistingFile.not"!
-    ASSERT_THROW(storm::parser::SparseStateRewardParser<>::parseSparseStateReward(42, STORM_CPP_TESTS_BASE_PATH "/nonExistingFile.not"), storm::exceptions::FileIoException);
+    ASSERT_THROW(storm::parser::SparseStateRewardParser<>::parseSparseStateReward(42, STORM_TEST_RESOURCES_DIR "/nonExistingFile.not"), storm::exceptions::FileIoException);
 }
 
 double round(double val, int precision) {
@@ -30,7 +30,7 @@ double round(double val, int precision) {
 TEST(SparseStateRewardParserTest, BasicParsing) {
 
     // Get the parsing result.
-    std::vector<double> result = storm::parser::SparseStateRewardParser<>::parseSparseStateReward(100, STORM_CPP_TESTS_BASE_PATH "/parser/rew_files/state_reward_parser_basic.state.rew");
+    std::vector<double> result = storm::parser::SparseStateRewardParser<>::parseSparseStateReward(100, STORM_TEST_RESOURCES_DIR "/rew/state_reward_parser_basic.state.rew");
 
     // Now test if the correct value were parsed.
     for (int i = 0; i < 100; i++) {
@@ -41,7 +41,7 @@ TEST(SparseStateRewardParserTest, BasicParsing) {
 TEST(SparseStateRewardParserTest, Whitespaces) {
 
     // Get the parsing result.
-    std::vector<double> result = storm::parser::SparseStateRewardParser<>::parseSparseStateReward(100, STORM_CPP_TESTS_BASE_PATH "/parser/rew_files/state_reward_parser_whitespaces.state.rew");
+    std::vector<double> result = storm::parser::SparseStateRewardParser<>::parseSparseStateReward(100, STORM_TEST_RESOURCES_DIR "/rew/state_reward_parser_whitespaces.state.rew");
 
     // Now test if the correct value were parsed.
     for (int i = 0; i < 100; i++) {
@@ -51,13 +51,13 @@ TEST(SparseStateRewardParserTest, Whitespaces) {
 
 TEST(SparseStateRewardParserTest, DoubledLines) {
     // There are multiple lines attributing a reward to the same state.
-    ASSERT_THROW(storm::parser::SparseStateRewardParser<>::parseSparseStateReward(11, STORM_CPP_TESTS_BASE_PATH "/parser/rew_files/state_reward_parser_doubledLines.state.rew"), storm::exceptions::WrongFormatException);
+    ASSERT_THROW(storm::parser::SparseStateRewardParser<>::parseSparseStateReward(11, STORM_TEST_RESOURCES_DIR "/rew/state_reward_parser_doubledLines.state.rew"), storm::exceptions::WrongFormatException);
 
     // There is a line for a state that has been skipped.
-    ASSERT_THROW(storm::parser::SparseStateRewardParser<>::parseSparseStateReward(11, STORM_CPP_TESTS_BASE_PATH "/parser/rew_files/state_reward_parser_doubledLinesSkipped.state.rew"), storm::exceptions::WrongFormatException);
+    ASSERT_THROW(storm::parser::SparseStateRewardParser<>::parseSparseStateReward(11, STORM_TEST_RESOURCES_DIR "/rew/state_reward_parser_doubledLinesSkipped.state.rew"), storm::exceptions::WrongFormatException);
 }
 
 TEST(SparseStateRewardParserTest, RewardForNonExistentState) {
     // The index of one of the state that are to be given rewards is higher than the number of states in the model.
-    ASSERT_THROW(storm::parser::SparseStateRewardParser<>::parseSparseStateReward(99, STORM_CPP_TESTS_BASE_PATH "/parser/rew_files/state_reward_parser_basic.state.rew"), storm::exceptions::OutOfRangeException);
+    ASSERT_THROW(storm::parser::SparseStateRewardParser<>::parseSparseStateReward(99, STORM_TEST_RESOURCES_DIR "/rew/state_reward_parser_basic.state.rew"), storm::exceptions::OutOfRangeException);
 }

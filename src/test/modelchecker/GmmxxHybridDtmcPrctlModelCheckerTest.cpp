@@ -21,7 +21,7 @@
 
 
 TEST(GmmxxHybridDtmcPrctlModelCheckerTest, Die_Cudd) {
-    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/die.pm");
+    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm");
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
     
     // A parser that we use for conveniently constructing the formulas.
@@ -85,7 +85,7 @@ TEST(GmmxxHybridDtmcPrctlModelCheckerTest, Die_Cudd) {
 }
 
 TEST(GmmxxHybridDtmcPrctlModelCheckerTest, Die_Sylvan) {
-    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/die.pm");
+    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm");
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
 
     // A parser that we use for conveniently constructing the formulas.
@@ -149,7 +149,7 @@ TEST(GmmxxHybridDtmcPrctlModelCheckerTest, Die_Sylvan) {
 }
 
 TEST(GmmxxHybridDtmcPrctlModelCheckerTest, Crowds_Cudd) {
-    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/crowds-5-5.pm");
+    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/crowds-5-5.pm");
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
 
     // A parser that we use for conveniently constructing the formulas.
@@ -196,7 +196,7 @@ TEST(GmmxxHybridDtmcPrctlModelCheckerTest, Crowds_Cudd) {
 }
 
 TEST(GmmxxHybridDtmcPrctlModelCheckerTest, Crowds_Sylvan) {
-    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/crowds-5-5.pm");
+    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/crowds-5-5.pm");
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
 
     // A parser that we use for conveniently constructing the formulas.
@@ -243,7 +243,7 @@ TEST(GmmxxHybridDtmcPrctlModelCheckerTest, Crowds_Sylvan) {
 }
 
 TEST(GmmxxHybridDtmcPrctlModelCheckerTest, SynchronousLeader_Cudd) {
-    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/leader-3-5.pm");
+    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/leader-3-5.pm");
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
 
     // A parser that we use for conveniently constructing the formulas.
@@ -298,7 +298,7 @@ TEST(GmmxxHybridDtmcPrctlModelCheckerTest, SynchronousLeader_Cudd) {
 }
 
 TEST(GmmxxHybridDtmcPrctlModelCheckerTest, SynchronousLeader_Sylvan) {
-    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/leader-3-5.pm");
+    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/leader-3-5.pm");
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
 
     // A parser that we use for conveniently constructing the formulas.

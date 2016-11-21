@@ -14,7 +14,7 @@
 #if defined(STORM_HAVE_MSAT) || defined(STORM_HAVE_Z3)
 
 TEST(SmtPermissiveSchedulerTest, DieSelection) {
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/die_c1.nm");
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/die_c1.nm");
     storm::parser::FormulaParser formulaParser(program);
     
 //    auto formula02 = formulaParser.parseSingleFormulaFromString("P>=0.10 [ F \"one\"]")->asProbabilityOperatorFormula();

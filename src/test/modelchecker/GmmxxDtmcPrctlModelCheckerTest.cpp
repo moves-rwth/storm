@@ -18,7 +18,7 @@
 #include "storm/storage/expressions/ExpressionManager.h"
 
 TEST(GmmxxDtmcPrctlModelCheckerTest, Die) {
-    std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser<>::parseModel(STORM_CPP_BASE_PATH "/examples/dtmc/die/die.tra", STORM_CPP_BASE_PATH "/examples/dtmc/die/die.lab", "", STORM_CPP_BASE_PATH "/examples/dtmc/die/die.coin_flips.trans.rew");
+    std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser<>::parseModel(STORM_TEST_RESOURCES_DIR "/tra/die.tra", STORM_TEST_RESOURCES_DIR "/lab/die.lab", "", STORM_TEST_RESOURCES_DIR "/rew/die.coin_flips.trans.rew");
 
     // A parser that we use for conveniently constructing the formulas.
     auto expManager = std::make_shared<storm::expressions::ExpressionManager>();
@@ -63,7 +63,7 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, Die) {
 }
 
 TEST(GmmxxDtmcPrctlModelCheckerTest, Crowds) {
-    std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser<>::parseModel(STORM_CPP_BASE_PATH "/examples/dtmc/crowds/crowds5_5.tra", STORM_CPP_BASE_PATH "/examples/dtmc/crowds/crowds5_5.lab", "", "");
+    std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser<>::parseModel(STORM_TEST_RESOURCES_DIR "/tra/crowds5_5.tra", STORM_TEST_RESOURCES_DIR "/lab/crowds5_5.lab", "", "");
 
     ASSERT_EQ(abstractModel->getType(), storm::models::ModelType::Dtmc);
 
@@ -102,7 +102,7 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, Crowds) {
 }
 
 TEST(GmmxxDtmcPrctlModelCheckerTest, SynchronousLeader) {
-    std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser<>::parseModel(STORM_CPP_BASE_PATH "/examples/dtmc/synchronous_leader/leader4_8.tra", STORM_CPP_BASE_PATH "/examples/dtmc/synchronous_leader/leader4_8.lab", "", STORM_CPP_BASE_PATH "/examples/dtmc/synchronous_leader/leader4_8.pick.trans.rew");
+    std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser<>::parseModel(STORM_TEST_RESOURCES_DIR "/tra/leader4_8.tra", STORM_TEST_RESOURCES_DIR "/lab/leader4_8.lab", "", STORM_TEST_RESOURCES_DIR "/rew/leader4_8.pick.trans.rew");
 
     ASSERT_EQ(abstractModel->getType(), storm::models::ModelType::Dtmc);
 
@@ -292,7 +292,7 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, LRA) {
 }
 
 TEST(GmmxxDtmcPrctlModelCheckerTest, Conditional) {
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/modelchecker/test_conditional.pm");
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/test_conditional.pm");
     
     std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program, storm::generator::NextStateGeneratorOptions(true, true)).build();
     ASSERT_TRUE(model->getType() == storm::models::ModelType::Dtmc);
