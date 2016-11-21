@@ -13,7 +13,7 @@
 #include "storm/models/sparse/StandardRewardModel.h"
 
 TEST(SparseExplorationModelCheckerTest, Dice) {
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/two_dice.nm");
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/two_dice.nm");
     
     // A parser that we use for conveniently constructing the formulas.
     storm::parser::FormulaParser formulaParser;
@@ -65,7 +65,7 @@ TEST(SparseExplorationModelCheckerTest, Dice) {
 
 
 TEST(SparseExplorationModelCheckerTest, AsynchronousLeader) {
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/leader4.nm");
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/leader4.nm");
     
     // A parser that we use for conveniently constructing the formulas.
     storm::parser::FormulaParser formulaParser;

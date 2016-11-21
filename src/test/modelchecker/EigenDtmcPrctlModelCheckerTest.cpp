@@ -18,7 +18,7 @@
 #include "storm/storage/expressions/ExpressionManager.h"
 
 TEST(EigenDtmcPrctlModelCheckerTest, Die) {
-    std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser<>::parseModel(STORM_CPP_BASE_PATH "/examples/dtmc/die/die.tra", STORM_CPP_BASE_PATH "/examples/dtmc/die/die.lab", "", STORM_CPP_BASE_PATH "/examples/dtmc/die/die.coin_flips.trans.rew");
+    std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser<>::parseModel(STORM_TEST_RESOURCES_DIR "/tra/die.tra", STORM_TEST_RESOURCES_DIR "/lab/die.lab", "", STORM_TEST_RESOURCES_DIR "/rew/die.coin_flips.trans.rew");
     
     // A parser that we use for conveniently constructing the formulas.
     
@@ -65,7 +65,7 @@ TEST(EigenDtmcPrctlModelCheckerTest, Die) {
 
 #ifdef STORM_HAVE_CARL
 TEST(EigenDtmcPrctlModelCheckerTest, Die_RationalNumber) {
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/die.pm");
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm");
     
     storm::generator::NextStateGeneratorOptions options;
     options.setBuildAllLabels().setBuildAllRewardModels();
@@ -115,7 +115,7 @@ TEST(EigenDtmcPrctlModelCheckerTest, Die_RationalNumber) {
 }
 
 TEST(EigenDtmcPrctlModelCheckerTest, Die_RationalFunction) {
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/parametric_die.pm");
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/pdtmc/parametric_die.pm");
     storm::generator::NextStateGeneratorOptions options;
     options.setBuildAllLabels().setBuildAllRewardModels();
     std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model = storm::builder::ExplicitModelBuilder<storm::RationalFunction>(program, options).build();
@@ -170,7 +170,7 @@ TEST(EigenDtmcPrctlModelCheckerTest, Die_RationalFunction) {
 #endif
 
 TEST(EigenDtmcPrctlModelCheckerTest, Crowds) {
-    std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser<>::parseModel(STORM_CPP_BASE_PATH "/examples/dtmc/crowds/crowds5_5.tra", STORM_CPP_BASE_PATH "/examples/dtmc/crowds/crowds5_5.lab", "", "");
+    std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser<>::parseModel(STORM_TEST_RESOURCES_DIR "/tra/crowds5_5.tra", STORM_TEST_RESOURCES_DIR "/lab/crowds5_5.lab", "", "");
     
     ASSERT_EQ(abstractModel->getType(), storm::models::ModelType::Dtmc);
     
@@ -209,7 +209,7 @@ TEST(EigenDtmcPrctlModelCheckerTest, Crowds) {
 }
 
 TEST(EigenDtmcPrctlModelCheckerTest, SynchronousLeader) {
-    std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser<>::parseModel(STORM_CPP_BASE_PATH "/examples/dtmc/synchronous_leader/leader4_8.tra", STORM_CPP_BASE_PATH "/examples/dtmc/synchronous_leader/leader4_8.lab", "", STORM_CPP_BASE_PATH "/examples/dtmc/synchronous_leader/leader4_8.pick.trans.rew");
+    std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser<>::parseModel(STORM_TEST_RESOURCES_DIR "/tra/leader4_8.tra", STORM_TEST_RESOURCES_DIR "/lab/leader4_8.lab", "", STORM_TEST_RESOURCES_DIR "/rew/leader4_8.pick.trans.rew");
     
     ASSERT_EQ(abstractModel->getType(), storm::models::ModelType::Dtmc);
     
@@ -399,7 +399,7 @@ TEST(EigenDtmcPrctlModelCheckerTest, LRA) {
 }
 
 TEST(EigenDtmcPrctlModelCheckerTest, Conditional) {
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/modelchecker/test_conditional.pm");
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/test_conditional.pm");
 
     storm::generator::NextStateGeneratorOptions options;
     options.setBuildAllLabels().setBuildAllRewardModels();

@@ -29,4 +29,4 @@ label "three" = s=7&d=3;
 label "four" = s=7&d=4;
 label "five" = s=7&d=5;
 label "six" = s=7&d=6;
-label "end" = s=7;
+label "done" = s=7;

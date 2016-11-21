@@ -1013,7 +1013,7 @@ namespace storm {
                 STORM_LOG_THROW(locIds.count(sourceLoc) == 1, storm::exceptions::InvalidJaniException, "Source of edge has unknown location '" << sourceLoc << "' in automaton '" << name << "'.");
                 // action
                 STORM_LOG_THROW(edgeEntry.count("action") < 2, storm::exceptions::InvalidJaniException, "Edge from " << sourceLoc << " in automaton " << name << " has multiple actions");
-                std::string action = ""; // def is tau
+                std::string action = storm::jani::Model::SILENT_ACTION_NAME; // def is tau
                 if(edgeEntry.count("action") > 0) {
                     action = getString(edgeEntry.at("action"), "action name in edge from '" + sourceLoc + "' in automaton '" + name + "'");
                     // TODO check if action is known
@@ -1076,8 +1076,6 @@ namespace storm {
                 }
                 automaton.addEdge(storm::jani::Edge(locIds.at(sourceLoc), parentModel.getActionIndex(action), rateExpr.isInitialized() ? boost::optional<storm::expressions::Expression>(rateExpr) : boost::none, guardExpr, edgeDestinations));
             }
-
-
 
             return automaton;
         }

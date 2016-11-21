@@ -11,32 +11,32 @@
 #include "storm/settings/modules/IOSettings.h"
 
 TEST(ExplicitJitJaniModelBuilderTest, Dtmc) {
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/die.pm");
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm");
     storm::jani::Model janiModel = program.toJani();
     
     std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::jit::ExplicitJitJaniModelBuilder<double>(janiModel).build();
     EXPECT_EQ(13ul, model->getNumberOfStates());
     EXPECT_EQ(20ul, model->getNumberOfTransitions());
     
-    program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/brp-16-2.pm");
+    program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/brp-16-2.pm");
     janiModel = program.toJani();
     model = storm::builder::jit::ExplicitJitJaniModelBuilder<double>(janiModel).build();
     EXPECT_EQ(677ul, model->getNumberOfStates());
     EXPECT_EQ(867ul, model->getNumberOfTransitions());
     
-    program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/crowds-5-5.pm");
+    program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/crowds-5-5.pm");
     janiModel = program.toJani();
     model = storm::builder::jit::ExplicitJitJaniModelBuilder<double>(janiModel).build();
     EXPECT_EQ(8607ul, model->getNumberOfStates());
     EXPECT_EQ(15113ul, model->getNumberOfTransitions());
     
-    program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/leader-3-5.pm");
+    program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/leader-3-5.pm");
     janiModel = program.toJani();
     model = storm::builder::jit::ExplicitJitJaniModelBuilder<double>(janiModel).build();
     EXPECT_EQ(273ul, model->getNumberOfStates());
     EXPECT_EQ(397ul, model->getNumberOfTransitions());
     
-    program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/nand-5-2.pm");
+    program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/nand-5-2.pm");
     janiModel = program.toJani();
     model = storm::builder::jit::ExplicitJitJaniModelBuilder<double>(janiModel).build();
     EXPECT_EQ(1728ul, model->getNumberOfStates());
@@ -47,32 +47,32 @@ TEST(ExplicitJitJaniModelBuilderTest, Ctmc) {
     // Set the PRISM compatibility mode temporarily. It is set to its old value once the returned object is destructed.
     std::unique_ptr<storm::settings::SettingMemento> enablePrismCompatibility = storm::settings::mutableIOSettings().overridePrismCompatibilityMode(true);
     
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/cluster2.sm");
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/cluster2.sm");
     storm::jani::Model janiModel = program.toJani();
     
     std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::jit::ExplicitJitJaniModelBuilder<double>(janiModel).build();
     EXPECT_EQ(276ul, model->getNumberOfStates());
     EXPECT_EQ(1120ul, model->getNumberOfTransitions());
     
-    program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/embedded2.sm");
+    program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/embedded2.sm");
     janiModel = program.toJani();
     model = storm::builder::jit::ExplicitJitJaniModelBuilder<double>(janiModel).build();
     EXPECT_EQ(3478ul, model->getNumberOfStates());
     EXPECT_EQ(14639ul, model->getNumberOfTransitions());
     
-    program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/polling2.sm");
+    program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/polling2.sm");
     janiModel = program.toJani();
     model = storm::builder::jit::ExplicitJitJaniModelBuilder<double>(janiModel).build();
     EXPECT_EQ(12ul, model->getNumberOfStates());
     EXPECT_EQ(22ul, model->getNumberOfTransitions());
     
-    program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/fms2.sm");
+    program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/fms2.sm");
     janiModel = program.toJani();
     model = storm::builder::jit::ExplicitJitJaniModelBuilder<double>(janiModel).build();
     EXPECT_EQ(810ul, model->getNumberOfStates());
     EXPECT_EQ(3699ul, model->getNumberOfTransitions());
     
-    program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/tandem5.sm");
+    program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/tandem5.sm");
     janiModel = program.toJani();
     model = storm::builder::jit::ExplicitJitJaniModelBuilder<double>(janiModel).build();
     EXPECT_EQ(66ul, model->getNumberOfStates());
@@ -80,38 +80,38 @@ TEST(ExplicitJitJaniModelBuilderTest, Ctmc) {
 }
 
 TEST(ExplicitJitJaniModelBuilderTest, Mdp) {
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/two_dice.nm");
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/two_dice.nm");
     storm::jani::Model janiModel = program.toJani();
     
     std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::jit::ExplicitJitJaniModelBuilder<double>(janiModel).build();
     EXPECT_EQ(169ul, model->getNumberOfStates());
     EXPECT_EQ(436ul, model->getNumberOfTransitions());
     
-    program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/leader3.nm");
+    program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/leader3.nm");
     janiModel = program.toJani();
     model = storm::builder::jit::ExplicitJitJaniModelBuilder<double>(janiModel).build();
     EXPECT_EQ(364ul, model->getNumberOfStates());
     EXPECT_EQ(654ul, model->getNumberOfTransitions());
     
-    program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/coin2-2.nm");
+    program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/coin2-2.nm");
     janiModel = program.toJani();
     model = storm::builder::jit::ExplicitJitJaniModelBuilder<double>(janiModel).build();
     EXPECT_EQ(272ul, model->getNumberOfStates());
     EXPECT_EQ(492ul, model->getNumberOfTransitions());
     
-    program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/csma2-2.nm");
+    program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/csma2-2.nm");
     janiModel = program.toJani();
     model = storm::builder::jit::ExplicitJitJaniModelBuilder<double>(janiModel).build();
     EXPECT_EQ(1038ul, model->getNumberOfStates());
     EXPECT_EQ(1282ul, model->getNumberOfTransitions());
     
-    program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/firewire3-0.5.nm");
+    program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/firewire3-0.5.nm");
     janiModel = program.toJani();
     model = storm::builder::jit::ExplicitJitJaniModelBuilder<double>(janiModel).build();
     EXPECT_EQ(4093ul, model->getNumberOfStates());
     EXPECT_EQ(5585ul, model->getNumberOfTransitions());
     
-    program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/wlan0-2-2.nm");
+    program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/wlan0-2-2.nm");
     janiModel = program.toJani();
     model = storm::builder::jit::ExplicitJitJaniModelBuilder<double>(janiModel).build();
     EXPECT_EQ(37ul, model->getNumberOfStates());
@@ -119,7 +119,7 @@ TEST(ExplicitJitJaniModelBuilderTest, Mdp) {
 }
 
 TEST(ExplicitJitJaniModelBuilderTest, Ma) {
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/simple.ma");
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ma/simple.ma");
     storm::jani::Model janiModel = program.toJani();
     
     std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::jit::ExplicitJitJaniModelBuilder<double>(janiModel).build();
@@ -128,7 +128,7 @@ TEST(ExplicitJitJaniModelBuilderTest, Ma) {
     ASSERT_TRUE(model->isOfType(storm::models::ModelType::MarkovAutomaton));
     EXPECT_EQ(4ul, model->as<storm::models::sparse::MarkovAutomaton<double>>()->getMarkovianStates().getNumberOfSetBits());
     
-    program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/hybrid_states.ma");
+    program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ma/hybrid_states.ma");
     janiModel = program.toJani();
     model = storm::builder::jit::ExplicitJitJaniModelBuilder<double>(janiModel).build();
     EXPECT_EQ(5ul, model->getNumberOfStates());
@@ -136,7 +136,7 @@ TEST(ExplicitJitJaniModelBuilderTest, Ma) {
     ASSERT_TRUE(model->isOfType(storm::models::ModelType::MarkovAutomaton));
     EXPECT_EQ(5ul, model->as<storm::models::sparse::MarkovAutomaton<double>>()->getMarkovianStates().getNumberOfSetBits());
     
-    program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/stream2.ma");
+    program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ma/stream2.ma");
     janiModel = program.toJani();
     model = storm::builder::jit::ExplicitJitJaniModelBuilder<double>(janiModel).build();
     EXPECT_EQ(12ul, model->getNumberOfStates());
@@ -146,14 +146,14 @@ TEST(ExplicitJitJaniModelBuilderTest, Ma) {
 }
 
 TEST(ExplicitJitJaniModelBuilderTest, FailComposition) {
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/system_composition.nm");
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/system_composition.nm");
     storm::jani::Model janiModel = program.toJani();
     
     ASSERT_THROW(storm::builder::jit::ExplicitJitJaniModelBuilder<double>(janiModel).build(), storm::exceptions::WrongFormatException);
 }
 
 TEST(ExplicitJitJaniModelBuilderTest, IllegalSynchronizingWrites) {
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/builder/coin2-2-illegalSynchronizingWrite.nm");
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/coin2-2-illegalSynchronizingWrite.nm");
     storm::jani::Model janiModel = program.toJani();
     storm::builder::BuilderOptions options;
     options.setExplorationChecks(true);

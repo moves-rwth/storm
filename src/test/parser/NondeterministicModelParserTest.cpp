@@ -11,12 +11,12 @@
 
 TEST(NondeterministicModelParserTest, NonExistingFile) {
     // No matter what happens, please do NOT create a file with the name "nonExistingFile.not"!
-    ASSERT_THROW(storm::parser::NondeterministicModelParser<>::parseMdp(STORM_CPP_TESTS_BASE_PATH "/nonExistingFile.not", STORM_CPP_TESTS_BASE_PATH "/nonExistingFile.not"), storm::exceptions::FileIoException);
+    ASSERT_THROW(storm::parser::NondeterministicModelParser<>::parseMdp(STORM_TEST_RESOURCES_DIR "/nonExistingFile.not", STORM_TEST_RESOURCES_DIR "/nonExistingFile.not"), storm::exceptions::FileIoException);
 }
 
 TEST(NondeterministicModelParserTest, BasicMdpParsing) {
     // Parse a Mdp and check the result.
-    storm::models::sparse::Mdp<double> mdp(storm::parser::NondeterministicModelParser<>::parseMdp(STORM_CPP_TESTS_BASE_PATH "/parser/tra_files/mdp_general.tra", STORM_CPP_TESTS_BASE_PATH "/parser/lab_files/mdp_general.lab", STORM_CPP_TESTS_BASE_PATH "/parser/rew_files/mdp_general.state.rew", STORM_CPP_TESTS_BASE_PATH "/parser/rew_files/mdp_general.trans.rew"));
+    storm::models::sparse::Mdp<double> mdp(storm::parser::NondeterministicModelParser<>::parseMdp(STORM_TEST_RESOURCES_DIR "/tra/mdp_general.tra", STORM_TEST_RESOURCES_DIR "/lab/mdp_general.lab", STORM_TEST_RESOURCES_DIR "/rew/mdp_general.state.rew", STORM_TEST_RESOURCES_DIR "/rew/mdp_general.trans.rew"));
 
     ASSERT_EQ(6ul, mdp.getNumberOfStates());
     ASSERT_EQ(22ul, mdp.getNumberOfTransitions());
@@ -50,14 +50,14 @@ TEST(NondeterministicModelParserTest, MismatchedFiles) {
     // Test file combinations that do not match, i.e. differing number of states, transitions, etc.
 
     // The labeling file contains a label for a non existent state.
-    ASSERT_THROW(storm::parser::NondeterministicModelParser<>::parseMdp(STORM_CPP_TESTS_BASE_PATH "/parser/tra_files/mdp_mismatched.tra", STORM_CPP_TESTS_BASE_PATH "/parser/lab_files/mdp_general.lab"), storm::exceptions::OutOfRangeException);
+    ASSERT_THROW(storm::parser::NondeterministicModelParser<>::parseMdp(STORM_TEST_RESOURCES_DIR "/tra/mdp_mismatched.tra", STORM_TEST_RESOURCES_DIR "/lab/mdp_general.lab"), storm::exceptions::OutOfRangeException);
 
     // The state reward file contains a reward for a non existent state.
-    ASSERT_THROW(storm::parser::NondeterministicModelParser<>::parseMdp(STORM_CPP_TESTS_BASE_PATH "/parser/tra_files/mdp_mismatched.tra", STORM_CPP_TESTS_BASE_PATH "/parser/lab_files/mdp_mismatched.lab", STORM_CPP_TESTS_BASE_PATH "/parser/rew_files/mdp_general.state.rew"), storm::exceptions::OutOfRangeException);
+    ASSERT_THROW(storm::parser::NondeterministicModelParser<>::parseMdp(STORM_TEST_RESOURCES_DIR "/tra/mdp_mismatched.tra", STORM_TEST_RESOURCES_DIR "/lab/mdp_mismatched.lab", STORM_TEST_RESOURCES_DIR "/rew/mdp_general.state.rew"), storm::exceptions::OutOfRangeException);
 
     // The transition reward file contains rewards for a non existent state.
-    ASSERT_THROW(storm::parser::NondeterministicModelParser<>::parseMdp(STORM_CPP_TESTS_BASE_PATH "/parser/tra_files/mdp_mismatched.tra", STORM_CPP_TESTS_BASE_PATH "/parser/lab_files/mdp_mismatched.lab", "", STORM_CPP_TESTS_BASE_PATH "/parser/rew_files/mdp_general.trans.rew"), storm::exceptions::OutOfRangeException);
+    ASSERT_THROW(storm::parser::NondeterministicModelParser<>::parseMdp(STORM_TEST_RESOURCES_DIR "/tra/mdp_mismatched.tra", STORM_TEST_RESOURCES_DIR "/lab/mdp_mismatched.lab", "", STORM_TEST_RESOURCES_DIR "/rew/mdp_general.trans.rew"), storm::exceptions::OutOfRangeException);
 
     // The transition reward file contains rewards for a non existent transition
-    ASSERT_THROW(storm::parser::NondeterministicModelParser<>::parseMdp(STORM_CPP_TESTS_BASE_PATH "/parser/tra_files/mdp_mismatched.tra", STORM_CPP_TESTS_BASE_PATH "/parser/lab_files/mdp_mismatched.lab", "", STORM_CPP_TESTS_BASE_PATH "/parser/rew_files/mdp_mismatched.trans.rew"), storm::exceptions::OutOfRangeException);
+    ASSERT_THROW(storm::parser::NondeterministicModelParser<>::parseMdp(STORM_TEST_RESOURCES_DIR "/tra/mdp_mismatched.tra", STORM_TEST_RESOURCES_DIR "/lab/mdp_mismatched.lab", "", STORM_TEST_RESOURCES_DIR "/rew/mdp_mismatched.trans.rew"), storm::exceptions::OutOfRangeException);
 }

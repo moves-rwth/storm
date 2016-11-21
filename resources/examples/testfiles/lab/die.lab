@@ -1,0 +1,10 @@
+#DECLARATION
+init deadlock one two three four five six done
+#END
+0 init
+7 one done
+8 two done
+9 three done
+10 four done
+11 five done
+12 six done
