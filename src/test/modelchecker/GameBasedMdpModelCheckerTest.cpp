@@ -14,11 +14,10 @@
 #include "storm/parser/AutoParser.h"
 #include "storm/parser/PrismParser.h"
 
-#include "utility/storm.h"
+#include "storm/utility/storm.h"
 
 TEST(GameBasedMdpModelCheckerTest, Dice_Cudd) {
-    std::string programFile = STORM_CPP_BASE_PATH "/builder/two_dice.nm";
-    std::string formulaFile = STORM_CPP_BASE_PATH "/builder/two_dice.prctl";
+    std::string programFile = STORM_TEST_RESOURCES_DIR "/mdp/two_dice.nm";
 
     storm::prism::Program program = storm::parseProgram(programFile);
 	
@@ -89,8 +88,7 @@ TEST(GameBasedMdpModelCheckerTest, Dice_Cudd) {
 }
 
 TEST(GameBasedMdpModelCheckerTest, AsynchronousLeader_Cudd) {
-    std::string programFile = STORM_CPP_BASE_PATH "/builder/leader4.nm";
-    std::string formulaFile = STORM_CPP_BASE_PATH "/builder/leader.prctl";
+    std::string programFile = STORM_TEST_RESOURCES_DIR "/mdp/leader4.nm";
 
     storm::prism::Program program = storm::parseProgram(programFile);
 	// Build the die model
