@@ -8,8 +8,8 @@
 
 #ifdef STORM_HAVE_MSAT
 TEST(PrismProgramTest, FlattenModules) {
-    storm::prism::Program result;
-    ASSERT_NO_THROW(result = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/leader3.nm"));
+    storm::prism::Program program;
+    ASSERT_NO_THROW(program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/leader3.nm"));
 
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
     
@@ -77,7 +77,7 @@ TEST(PrismProgramTest, FlattenModules_Dice_Mathsat) {
 #ifdef STORM_HAVE_Z3
 TEST(PrismProgramTest, FlattenModules_Leader_Z3) {
     storm::prism::Program program;
-    ASSERT_NO_THROW(result = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/leader3.nm"));
+    ASSERT_NO_THROW(program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/leader3.nm"));
     
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::Z3SmtSolverFactory>();
     

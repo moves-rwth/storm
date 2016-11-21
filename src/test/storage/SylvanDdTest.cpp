@@ -1,22 +1,13 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
-<<<<<<< HEAD:test/functional/storage/SylvanDdTest.cpp
-#include "src/adapters/CarlAdapter.h"
-#include "src/exceptions/InvalidArgumentException.h"
-#include "src/storage/dd/DdManager.h"
-#include "src/storage/dd/Add.h"
-#include "src/storage/dd/Odd.h"
-#include "src/storage/dd/DdMetaVariable.h"
-#include "src/settings/SettingsManager.h"
-=======
+#include "storm/adapters/CarlAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/storage/dd/DdManager.h"
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Odd.h"
 #include "storm/storage/dd/DdMetaVariable.h"
 #include "storm/settings/SettingsManager.h"
->>>>>>> master:src/test/storage/SylvanDdTest.cpp
 
 #include "storm/storage/SparseMatrix.h"
 
@@ -1052,7 +1043,6 @@ TEST(SylvanDd, BddOddTest) {
     EXPECT_EQ(9ul, matrix.getColumnCount());
     EXPECT_EQ(106ul, matrix.getNonzeroEntryCount());
 }
-<<<<<<< HEAD:test/functional/storage/SylvanDdTest.cpp
 
 TEST(SylvanDd, BddToExpressionTest) {
     std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> ddManager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
@@ -1069,5 +1059,3 @@ TEST(SylvanDd, BddToExpressionTest) {
     
     auto result = bdd.toExpression(*manager);
 }
-=======
->>>>>>> master:src/test/storage/SylvanDdTest.cpp
