@@ -14,7 +14,7 @@
 namespace storm {
     namespace jani {
         
-        const std::string Model::SILENT_ACTION_NAME = "";
+        const std::string Model::SILENT_ACTION_NAME = "__SILENT_ACTION__";
         const uint64_t Model::SILENT_ACTION_INDEX = 0;
         
         Model::Model() {

@@ -1322,7 +1322,11 @@ namespace storm {
                     ++destinationIndex;
                 }
                 
-                edgeData["guard"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(edge.getGuard()) && getLocationVariable(automaton) == model.getManager().integer(edge.getSourceLocationIndex()), storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName));
+                if (automaton.getNumberOfLocations() > 1) {
+                    edgeData["guard"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(edge.getGuard()) && getLocationVariable(automaton) == model.getManager().integer(edge.getSourceLocationIndex()), storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName));
+                } else {
+                    edgeData["guard"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(edge.getGuard()), storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName));
+                }
                 edgeData["destinations"] = cpptempl::make_data(destinations);
                 edgeData["name"] = automaton.getName() + "_" + std::to_string(edgeIndex);
                 edgeData["transient_assignments"] = cpptempl::make_data(edgeAssignments);
@@ -1399,12 +1403,14 @@ namespace storm {
                     
                     // Close the last (open) level.
                     cpptempl::data_map level;
-                    nonTransientAssignmentData.push_back(generateLocationAssignment(automaton, destinationLocationIndex));
+                    if (automaton.getNumberOfLocations() > 1) {
+                        nonTransientAssignmentData.push_back(generateLocationAssignment(automaton, destinationLocationIndex));
+                    }
                     level["non_transient_assignments"] = cpptempl::make_data(nonTransientAssignmentData);
                     level["transient_assignments"] = cpptempl::make_data(transientAssignmentData);
                     level["index"] = asString(currentLevel);
                     levels.push_back(level);
-                } else {
+                } else if (automaton.getNumberOfLocations() > 1) {
                     // Create (an otherwise) empty level to perform the location assignment.
                     cpptempl::data_map level;
                     cpptempl::data_list nonTransientAssignmentData;
