@@ -216,7 +216,12 @@ namespace storm {
                     }
                     
                     // Create the edge object so we can add transient assignments.
-                    storm::jani::Edge newEdge(onlyLocationIndex, janiModel.getActionIndex(command.getActionName()), rateExpression, command.getGuardExpression(), destinations);
+                    storm::jani::Edge newEdge;
+                    if (command.getActionName().empty()) {
+                        newEdge = storm::jani::Edge(onlyLocationIndex, storm::jani::Model::SILENT_ACTION_INDEX, rateExpression, command.getGuardExpression(), destinations);
+                    } else {
+                        newEdge = storm::jani::Edge(onlyLocationIndex, janiModel.getActionIndex(command.getActionName()), rateExpression, command.getGuardExpression(), destinations);
+                    }
                     
                     // Then add the transient assignments for the rewards. Note that we may do this only for the first
                     // module that has this action, so we remove the assignments from the global list of assignments

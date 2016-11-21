@@ -13,6 +13,8 @@ namespace storm {
         
         class Edge {
         public:
+            Edge() = default;
+            
             Edge(uint64_t sourceLocationIndex, uint64_t actionIndex, boost::optional<storm::expressions::Expression> const& rate, storm::expressions::Expression const& guard, std::vector<EdgeDestination> destinations = {});
             
             /*!
