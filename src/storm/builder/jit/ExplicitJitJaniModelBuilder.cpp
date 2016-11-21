@@ -560,16 +560,20 @@ namespace storm {
                 
                 lowerBounds[variable.getExpressionVariable()] = lowerBound;
                 if (lowerBound != 0) {
-                    lowerBoundShiftSubstitution[variable.getExpressionVariable()] = variable.getExpressionVariable() + model.getManager().integer(lowerBound);
+                    lowerBoundShiftSubstitution[variable.getExpressionVariable()] = variable.getExpressionVariable() - model.getManager().integer(-lowerBound);
                 }
                 uint64_t range = static_cast<uint64_t>(upperBound - lowerBound + 1);
                 uint64_t numberOfBits = static_cast<uint64_t>(std::ceil(std::log2(range)));
                 
                 result["name"] = registerVariable(variable.getExpressionVariable(), variable.isTransient());
+                result["original_name"] = variable.getExpressionVariable().getName();
                 result["numberOfBits"] = std::to_string(numberOfBits);
                 if (variable.hasInitExpression()) {
                     result["init"] = asString(variable.getInitExpression().evaluateAsInt() - lowerBound);
                 }
+
+                result["lower"] = asString(lowerBound);
+                result["upper"] = asString(upperBound);
                 
                 return result;
             }
@@ -740,6 +744,10 @@ namespace storm {
                     storm::expressions::Expression blockingExpression;
                     std::shared_ptr<storm::solver::SmtSolver::ModelReference> model = solver->getModel();
                     for (auto const& variable : this->model.getGlobalVariables().getBooleanVariables()) {
+                        if (variable.isTransient()) {
+                            continue;
+                        }
+                         
                         storm::expressions::Variable const& expressionVariable = variable.getExpressionVariable();
                         bool variableValue = model->getBooleanValue(expressionVariable);
                         initialStateAssignment.push_back(generateAssignment(variable, variableValue));
@@ -748,6 +756,10 @@ namespace storm {
                         blockingExpression = blockingExpression.isInitialized() ? blockingExpression || localBlockingExpression : localBlockingExpression;
                     }
                     for (auto const& variable : this->model.getGlobalVariables().getBoundedIntegerVariables()) {
+                        if (variable.isTransient()) {
+                            continue;
+                        }
+
                         storm::expressions::Variable const& expressionVariable = variable.getExpressionVariable();
                         int_fast64_t variableValue = model->getIntegerValue(expressionVariable);
                         initialStateAssignment.push_back(generateAssignment(variable, variableValue));
@@ -758,6 +770,10 @@ namespace storm {
                     for (auto const& automatonRef : parallelAutomata) {
                         storm::jani::Automaton const& automaton = automatonRef.get();
                         for (auto const& variable : automaton.getVariables().getBooleanVariables()) {
+                            if (variable.isTransient()) {
+                                continue;
+                            }
+
                             storm::expressions::Variable const& expressionVariable = variable.getExpressionVariable();
                             bool variableValue = model->getBooleanValue(expressionVariable);
                             initialStateAssignment.push_back(generateAssignment(variable, variableValue));
@@ -766,6 +782,10 @@ namespace storm {
                             blockingExpression = blockingExpression.isInitialized() ? blockingExpression || localBlockingExpression : localBlockingExpression;
                         }
                         for (auto const& variable : automaton.getVariables().getBoundedIntegerVariables()) {
+                            if (variable.isTransient()) {
+                                continue;
+                            }
+
                             storm::expressions::Variable const& expressionVariable = variable.getExpressionVariable();
                             int_fast64_t variableValue = model->getIntegerValue(expressionVariable);
                             initialStateAssignment.push_back(generateAssignment(variable, variableValue));
@@ -1285,7 +1305,7 @@ namespace storm {
                 uint64_t destinationIndex = 0;
                 std::set<storm::expressions::Variable> transientVariablesInDestinations;
                 for (auto const& destination : edge.getDestinations()) {
-                    destinations.push_back(generateDestination(destinationIndex, destination, edge.getOptionalRate()));
+                    destinations.push_back(generateDestination(automaton, destinationIndex, destination, edge.getOptionalRate()));
                     
                     for (auto const& assignment : destination.getOrderedAssignments().getAllAssignments()) {
                         if (assignment.isTransient()) {
@@ -1302,7 +1322,7 @@ namespace storm {
                     ++destinationIndex;
                 }
                 
-                edgeData["guard"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(edge.getGuard()), storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName));
+                edgeData["guard"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(edge.getGuard()) && getLocationVariable(automaton) == model.getManager().integer(edge.getSourceLocationIndex()), storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName));
                 edgeData["destinations"] = cpptempl::make_data(destinations);
                 edgeData["name"] = automaton.getName() + "_" + std::to_string(edgeIndex);
                 edgeData["transient_assignments"] = cpptempl::make_data(edgeAssignments);
@@ -1322,10 +1342,10 @@ namespace storm {
             }
             
             template <typename ValueType, typename RewardModelType>
-                cpptempl::data_map ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateDestination(uint64_t destinationIndex, storm::jani::EdgeDestination const& destination, boost::optional<storm::expressions::Expression> const& rate) {
+                cpptempl::data_map ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateDestination(storm::jani::Automaton const& automaton, uint64_t destinationIndex, storm::jani::EdgeDestination const& destination, boost::optional<storm::expressions::Expression> const& rate) {
                 cpptempl::data_map destinationData;
                 
-                cpptempl::data_list levels = generateLevels(destination.getOrderedAssignments());
+                cpptempl::data_list levels = generateLevels(automaton, destination.getLocationIndex(), destination.getOrderedAssignments());
                 destinationData["name"] = asString(destinationIndex);
                 destinationData["levels"] = cpptempl::make_data(levels);
                 storm::expressions::Expression expressionToTranslate = rate ? shiftVariablesWrtLowerBound(rate.get() * destination.getProbability()) : shiftVariablesWrtLowerBound(destination.getProbability());
@@ -1348,12 +1368,12 @@ namespace storm {
             }
             
             template <typename ValueType, typename RewardModelType>
-            cpptempl::data_list ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateLevels(storm::jani::OrderedAssignments const& orderedAssignments) {
+            cpptempl::data_list ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateLevels(storm::jani::Automaton const& automaton, uint64_t destinationLocationIndex, storm::jani::OrderedAssignments const& orderedAssignments) {
                 cpptempl::data_list levels;
                 
                 auto const& assignments = orderedAssignments.getAllAssignments();
                 if (!assignments.empty()) {
-                    int_fast64_t currentLevel = assignments.begin()->getLevel();
+                    int64_t currentLevel = assignments.front().getLevel();
                     
                     cpptempl::data_list nonTransientAssignmentData;
                     cpptempl::data_list transientAssignmentData;
@@ -1379,9 +1399,20 @@ namespace storm {
                     
                     // Close the last (open) level.
                     cpptempl::data_map level;
+                    nonTransientAssignmentData.push_back(generateLocationAssignment(automaton, destinationLocationIndex));
                     level["non_transient_assignments"] = cpptempl::make_data(nonTransientAssignmentData);
                     level["transient_assignments"] = cpptempl::make_data(transientAssignmentData);
                     level["index"] = asString(currentLevel);
+                    levels.push_back(level);
+                } else {
+                    // Create (an otherwise) empty level to perform the location assignment.
+                    cpptempl::data_map level;
+                    cpptempl::data_list nonTransientAssignmentData;
+                    cpptempl::data_list transientAssignmentData;
+                    nonTransientAssignmentData.push_back(generateLocationAssignment(automaton, destinationLocationIndex));
+                    level["non_transient_assignments"] = cpptempl::make_data(nonTransientAssignmentData);
+                    level["transient_assignments"] = cpptempl::make_data(transientAssignmentData);
+                    level["index"] = asString(0);
                     levels.push_back(level);
                 }
                 
@@ -1397,7 +1428,7 @@ namespace storm {
                 // Check if the variable has a non-zero lower bound and, if so, shift it appropriately.
                 auto it = lowerBounds.find(variable.getExpressionVariable());
                 if (it != lowerBounds.end()) {
-                    result["value"] = asString(value) + " - " + asString(it->second);
+                    result["value"] = asString(value) + " + " + asString(-it->second);
                 } else {
                     result["value"] = asString(value);
                 }
@@ -1430,13 +1461,7 @@ namespace storm {
                 }
                 
                 if (lowerBoundIt != lowerBounds.end()) {
-                    if (lowerBoundIt->second < 0) {
-                        result["value"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(assignment.getAssignedExpression()) + model.getManager().integer(lowerBoundIt->second), options);
-                    } else if (lowerBoundIt->second == 0) {
-                        result["value"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(assignment.getAssignedExpression()), options);
-                    } else {
-                        result["value"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(assignment.getAssignedExpression()) - model.getManager().integer(lowerBoundIt->second), options);
-                    }
+                    result["value"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(assignment.getAssignedExpression()) + model.getManager().integer(-lowerBoundIt->second), options);
                 } else {
                     result["value"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(assignment.getAssignedExpression()), options);
                 }
@@ -1633,7 +1658,8 @@ namespace storm {
                                 {% for variable in nontransient_variables.boolean %}bool {$variable.name} : 1;
                                 {% endfor %}
                                 // Bounded integer variables.
-                                {% for variable in nontransient_variables.boundedInteger %}uint64_t {$variable.name} : {$variable.numberOfBits};
+                                {% for variable in nontransient_variables.boundedInteger %}// {$variable.original_name}: [{$variable.lower} ... {$variable.upper}]
+                                uint64_t {$variable.name} : {$variable.numberOfBits};
                                 {% endfor %}
                                 // Unbounded integer variables.
                                 {% for variable in nontransient_variables.unboundedInteger %}int64_t {$variable.name};
