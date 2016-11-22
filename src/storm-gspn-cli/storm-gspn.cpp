@@ -1,9 +1,12 @@
-#include "storm/builder/ExplicitGspnModelBuilder.h"
+#include "storm-gspn/builder/ExplicitGspnModelBuilder.h"
+#include "storm-gspn/parser/GspnParser.h"
+#include "storm-gspn/storage/gspn/GSPN.h"
+#include "storm-gspn/storage/gspn/GspnBuilder.h"
+#include "storm-gspn/builder/JaniGSPNBuilder.h"
+
 #include "storm/exceptions/BaseException.h"
 #include "storm/exceptions/WrongFormatException.h"
-#include "storm/parser/GspnParser.h"
-#include "storm/storage/gspn/GSPN.h"
-#include "storm/storage/gspn/GspnBuilder.h"
+
 #include "storm/utility/macros.h"
 #include "storm/utility/initialize.h"
 
@@ -13,7 +16,6 @@
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/JSONExporter.h"
-#include "storm/builder/JaniGSPNBuilder.h"
 #include <fstream>
 #include <iostream>
 #include <string>

@@ -1,4 +1,4 @@
-#include "storm/storage/gspn/Transition.h"
+#include "Transition.h"
 
 #include "storm/utility/macros.h"
 

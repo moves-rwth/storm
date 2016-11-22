@@ -1,7 +1,6 @@
-#ifndef STORM_STORAGE_GSPN_TIMEDTRANSITION_H_
-#define STORM_STORAGE_GSPN_TIMEDTRANSITION_H_
+#pragma once
 
-#include "storm/storage/gspn/Transition.h"
+#include "storm-gspn/storage/gspn/Transition.h"
 
 namespace storm {
     namespace gspn {
@@ -32,5 +31,3 @@ namespace storm {
         };
     }
 }
-
-#endif //STORM_STORAGE_GSPN_TIMEDTRANSITION_H_

@@ -1,10 +1,13 @@
-#include "storm/storage/gspn/GSPN.h"
-#include "storm/utility/macros.h"
-#include "storm/exceptions/InvalidArgumentException.h"
+#include "GSPN.h"
 
 #include <unordered_map>
 
 #include <boost/lexical_cast.hpp>
+
+#include "storm/utility/macros.h"
+#include "storm/exceptions/InvalidArgumentException.h"
+
+
 
 namespace storm {
     namespace gspn {

@@ -1,6 +1,6 @@
 #include "GspnParser.h"
 #include "storm-config.h"
-#include "storm/adapters/XercesAdapter.h"
+#include "storm-gspn/adapters/XercesAdapter.h"
 
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/exceptions/WrongFormatException.h"

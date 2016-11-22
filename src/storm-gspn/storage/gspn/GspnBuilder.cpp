@@ -1,5 +1,7 @@
-#include "storm/exceptions/IllegalFunctionCallException.h"
 #include "GspnBuilder.h"
+
+
+#include "storm/exceptions/IllegalFunctionCallException.h"
 
 #include "storm/utility/macros.h"
 #include "storm/exceptions/IllegalFunctionCallException.h"

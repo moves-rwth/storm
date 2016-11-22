@@ -1,6 +1,6 @@
 #pragma once
 
-#include "storm/storage/gspn/GSPN.h"
+#include "storm-gspn/storage/gspn/GSPN.h"
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 

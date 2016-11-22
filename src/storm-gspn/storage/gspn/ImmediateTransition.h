@@ -1,7 +1,6 @@
-#ifndef STORM_STORAGE_GSPN_IMMEDIATETRANSITION_H_
-#define STORM_STORAGE_GSPN_IMMEDIATETRANSITION_H_
+#pragma once
 
-#include "storm/storage/gspn/Transition.h"
+#include "storm-gspn/storage/gspn/Transition.h"
 #include "storm/utility/constants.h"
 
 namespace storm {
@@ -39,5 +38,3 @@ namespace storm {
         };
     }
 }
-
-#endif //STORM_STORAGE_GSPN_IMMEDIATETRANSITION_H_
