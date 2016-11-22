@@ -40,17 +40,6 @@ namespace storm {
 				 * Draw all elements of the GSPN.
 				 */
 				void drawGSPNElements();
-				
-				/*
-				 * Draw the connections between the elements of the GSPN.
-				 */
-				void drawGSPNConnections();
-				
-				/*
-				 * Draw functional/probability dependencies into the GSPN.
-				 */
-				void drawGSPNDependencies();
-				
 				/*
 				 * Draw restrictions between the elements of the GSPN (i.e. SEQ or MUTEX).
 				 */
@@ -142,16 +131,9 @@ namespace storm {
 				  * @param dftElement The element whose priority shall be determined.
 				  */
 				 uint64_t getFailPriority(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dFTElement);
-				 
-				 /*
-				  * Return all ids of BEs, that are successors of the given element and that are not the spare childs of a SPARE.
-				  * 
-				  * @param dftElement The element which 
-				  */
-				 std::vector<int> getAllBEIDsOfElement(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftElement);
+
                 
-                
-                uint64_t addUnavailableNode(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftElement);
+                uint64_t addUnavailableNode(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftElement, bool initialAvailable = true);
                 
                 storm::storage::DFT<ValueType> const& mDft;
                 storm::gspn::GspnBuilder builder;
