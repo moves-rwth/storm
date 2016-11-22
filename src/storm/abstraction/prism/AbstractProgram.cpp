@@ -24,6 +24,8 @@ namespace storm {
     namespace abstraction {
         namespace prism {
             
+#undef LOCAL_DEBUG
+            
             template <storm::dd::DdType DdType, typename ValueType>
             AbstractProgram<DdType, ValueType>::AbstractProgram(storm::prism::Program const& program,
                                                                 std::vector<storm::expressions::Expression> const& initialPredicates,
@@ -180,14 +182,30 @@ namespace storm {
 #ifdef LOCAL_DEBUG
                 std::cout << "command index " << commandIndex << std::endl;
                 std::cout << program.get() << std::endl;
+                
+                for (auto stateValue : pivotState.template toAdd<ValueType>()) {
+                    std::stringstream stateName;
+                    stateName << "\tpl1_";
+                    for (auto const& var : currentGame->getRowVariables()) {
+                        std::cout << "var " << var.getName() << std::endl;
+                        if (stateValue.first.getBooleanValue(var)) {
+                            stateName << "1";
+                        } else {
+                            stateName << "0";
+                        }
+                    }
+                    std::cout << "pivot is " << stateName.str() << std::endl;
+                }
 #endif
                 storm::abstraction::prism::AbstractCommand<DdType, ValueType>& abstractCommand = modules.front().getCommands()[commandIndex];
                 storm::prism::Command const& concreteCommand = abstractCommand.getConcreteCommand();
 #ifdef LOCAL_DEBUG
                 player1Choice.template toAdd<ValueType>().exportToDot("pl1choice_ref.dot");
                 std::cout << concreteCommand << std::endl;
+                
+                (currentGame->getTransitionMatrix() * player1Choice.template toAdd<ValueType>()).exportToDot("cuttrans.dot");
 #endif
-
+                
                 // Check whether there are bottom states in the game and whether one of the choices actually picks the
                 // bottom state as the successor.
                 bool buttomStateSuccessor = false;
@@ -249,7 +267,6 @@ namespace storm {
                             for (uint_fast64_t predicateIndex = 0; predicateIndex < lowerIt->second.size(); ++predicateIndex) {
                                 if (lowerIt->second.get(predicateIndex) != upperIt->second.get(predicateIndex)) {
                                     // Now we know the point of the deviation (command, update, predicate).
-                                    std::cout << "pred: " << abstractionInformation.getPredicateByIndex(predicateIndex) << " and update " << concreteCommand.getUpdate(updateIndex) << std::endl;
                                     newPredicate = abstractionInformation.getPredicateByIndex(predicateIndex).substitute(concreteCommand.getUpdate(updateIndex).getAsVariableToExpressionMap()).simplify();
                                     break;
                                 }

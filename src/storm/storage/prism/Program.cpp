@@ -1504,11 +1504,11 @@ namespace storm {
                             if (seenIt == seenCommandCombinations.end()) {
                                 newCommands.push_back(synchronizeCommands(nextCommandIndex, actionIndex, nextUpdateIndex, indexToActionMap.find(actionIndex)->second, commandCombination));
                                 seenCommandCombinations.insert(commandCombinationIndices);
+
+                                // Move the counters appropriately.
+                                ++nextCommandIndex;
+                                nextUpdateIndex += newCommands.back().getNumberOfUpdates();
                             }
-                            
-                            // Move the counters appropriately.
-                            ++nextCommandIndex;
-                            nextUpdateIndex += newCommands.back().getNumberOfUpdates();
                             
                             movedAtLeastOneIterator = false;
                             for (uint_fast64_t index = 0; index < iterators.size(); ++index) {
