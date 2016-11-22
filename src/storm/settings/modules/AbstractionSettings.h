@@ -22,11 +22,19 @@ namespace storm {
                  * @return True iff the option was set.
                  */
                 bool isAddAllGuardsSet() const;
+
+                /*!
+                 * Retrieves whether the option to split predicates to atoms was set.
+                 *
+                 * @return True iff the option was set.
+                 */
+                bool isSplitPredicatesSet() const;
                 
                 const static std::string moduleName;
                 
             private:
                 const static std::string addAllGuardsOptionName;
+                const static std::string splitPredicatesOptionName;
             };
             
         }

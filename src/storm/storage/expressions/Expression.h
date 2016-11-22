@@ -66,6 +66,13 @@ namespace storm {
              */
             Expression(Variable const& variable);
             
+            /*!
+             * Creates an expression with the given underlying base expression.
+             *
+             * @param expressionPtr A pointer to the underlying base expression.
+             */
+            Expression(std::shared_ptr<BaseExpression const> const& expressionPtr);
+            
             // Instantiate constructors and assignments with their default implementations.
             Expression(Expression const& other) = default;
             Expression& operator=(Expression const& other) = default;
@@ -332,13 +339,6 @@ namespace storm {
             friend std::ostream& operator<<(std::ostream& stream, Expression const& expression);
 
         private:
-            /*!
-             * Creates an expression with the given underlying base expression.
-             *
-             * @param expressionPtr A pointer to the underlying base expression.
-             */
-            Expression(std::shared_ptr<BaseExpression const> const& expressionPtr);
-                        
             // A pointer to the underlying base expression.
             std::shared_ptr<BaseExpression const> expressionPtr;
         };

@@ -1,5 +1,7 @@
 #include "storm/abstraction/prism/AbstractCommand.h"
 
+#include <chrono>
+
 #include <boost/iterator/transform_iterator.hpp>
 
 #include "storm/abstraction/AbstractionInformation.h"
@@ -40,11 +42,11 @@ namespace storm {
                 for (uint_fast64_t index = 0; index < abstractionInformation.getNumberOfPredicates(); ++index) {
                     allPredicateIndices[index] = index;
                 }
-                this->refine(allPredicateIndices);
+                this->refine(allPredicateIndices, true);
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            void AbstractCommand<DdType, ValueType>::refine(std::vector<uint_fast64_t> const& predicates) {
+            void AbstractCommand<DdType, ValueType>::refine(std::vector<uint_fast64_t> const& predicates, bool forceRecomputation) {
                 // Add all predicates to the variable partition.
                 for (auto predicateIndex : predicates) {
                     localExpressionInformation.addExpression(this->getAbstractionInformation().getPredicateByIndex(predicateIndex), predicateIndex);
@@ -57,7 +59,7 @@ namespace storm {
                 std::pair<std::set<uint_fast64_t>, std::vector<std::set<uint_fast64_t>>> newRelevantPredicates = this->computeRelevantPredicates();
                 
                 // If the DD does not need recomputation, we can return the cached result.
-                bool recomputeDd = this->relevantPredicatesChanged(newRelevantPredicates);
+                bool recomputeDd = forceRecomputation || this->relevantPredicatesChanged(newRelevantPredicates);
                 if (!recomputeDd) {
                     // If the new predicates are unrelated to the BDD of this command, we need to multiply their identities.
                     cachedDd.bdd &= computeMissingGlobalIdentities();
@@ -76,11 +78,14 @@ namespace storm {
             template <storm::dd::DdType DdType, typename ValueType>
             void AbstractCommand<DdType, ValueType>::recomputeCachedBdd() {
                 STORM_LOG_TRACE("Recomputing BDD for command " << command.get());
+                auto start = std::chrono::high_resolution_clock::now();
                 
                 // Create a mapping from source state DDs to their distributions.
                 std::unordered_map<storm::dd::Bdd<DdType>, std::vector<storm::dd::Bdd<DdType>>> sourceToDistributionsMap;
-                smtSolver->allSat(decisionVariables, [&sourceToDistributionsMap,this] (storm::solver::SmtSolver::ModelReference const& model) {
+                uint64_t numberOfSolutions = 0;
+                smtSolver->allSat(decisionVariables, [&sourceToDistributionsMap,this,&numberOfSolutions] (storm::solver::SmtSolver::ModelReference const& model) {
                     sourceToDistributionsMap[getSourceStateBdd(model)].push_back(getDistributionBdd(model));
+                    ++numberOfSolutions;
                     return true;
                 });
                 
@@ -127,6 +132,9 @@ namespace storm {
                 
                 // Cache the result.
                 cachedDd = GameBddResult<DdType>(resultBdd, numberOfVariablesNeeded);
+                auto end = std::chrono::high_resolution_clock::now();
+                
+                STORM_LOG_TRACE("Enumerated " << numberOfSolutions << " solutions in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
@@ -309,6 +317,7 @@ namespace storm {
             
             template <storm::dd::DdType DdType, typename ValueType>
             BottomStateResult<DdType> AbstractCommand<DdType, ValueType>::getBottomStateTransitions(storm::dd::Bdd<DdType> const& reachableStates, uint_fast64_t numberOfPlayer2Variables) {
+                STORM_LOG_TRACE("Computing bottom state transitions of command " << command.get());
                 BottomStateResult<DdType> result(this->getAbstractionInformation().getDdManager().getBddZero(), this->getAbstractionInformation().getDdManager().getBddZero());
 
                 // If the guard of this command is a predicate, there are not bottom states/transitions.

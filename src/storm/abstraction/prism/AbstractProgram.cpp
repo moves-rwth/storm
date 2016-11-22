@@ -20,8 +20,6 @@
 #include "storm-config.h"
 #include "storm/adapters/CarlAdapter.h"
 
-//#define LOCAL_DEBUG
-
 namespace storm {
     namespace abstraction {
         namespace prism {
@@ -30,8 +28,8 @@ namespace storm {
             AbstractProgram<DdType, ValueType>::AbstractProgram(storm::prism::Program const& program,
                                                                 std::vector<storm::expressions::Expression> const& initialPredicates,
                                                                 std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory,
-                                                                bool addAllGuards)
-            : program(program), smtSolverFactory(smtSolverFactory), abstractionInformation(program.getManager()), modules(), initialStateAbstractor(abstractionInformation, program.getAllExpressionVariables(), {program.getInitialConstruct().getInitialStatesExpression()}, this->smtSolverFactory), addedAllGuards(addAllGuards), currentGame(nullptr) {
+                                                                bool addAllGuards, bool splitPredicates)
+            : program(program), smtSolverFactory(smtSolverFactory), abstractionInformation(program.getManager()), modules(), initialStateAbstractor(abstractionInformation, program.getAllExpressionVariables(), {program.getInitialStatesExpression()}, this->smtSolverFactory), splitPredicates(splitPredicates), splitter(), equivalenceChecker(smtSolverFactory->create(abstractionInformation.getExpressionManager()), abstractionInformation.getExpressionManager().boolean(true)), addedAllGuards(addAllGuards), currentGame(nullptr) {
                 
                 // For now, we assume that there is a single module. If the program has more than one module, it needs
                 // to be flattened before the procedure.
@@ -66,42 +64,62 @@ namespace storm {
                 // odds are that it's impossible to treat such models in any event.
                 abstractionInformation.createEncodingVariables(static_cast<uint_fast64_t>(std::ceil(std::log2(totalNumberOfCommands))), 100, static_cast<uint_fast64_t>(std::ceil(std::log2(maximalUpdateCount))));
                 
-                // Now that we have created all other DD variables, we create the DD variables for the predicates.
-                std::vector<uint_fast64_t> allPredicateIndices;
-                if (addAllGuards) {
-                    for (auto const& guard : allGuards) {
-                        allPredicateIndices.push_back(abstractionInformation.addPredicate(guard));
-                    }
-                }
-                for (auto const& predicate : initialPredicates) {
-                    allPredicateIndices.push_back(abstractionInformation.addPredicate(predicate));
-                }
-                
                 // For each module of the concrete program, we create an abstract counterpart.
                 for (auto const& module : program.getModules()) {
                     this->modules.emplace_back(module, abstractionInformation, this->smtSolverFactory, addAllGuards);
                 }
                 
-                // Refine the initial state abstractors using the initial predicates.
-                initialStateAbstractor.refine(allPredicateIndices);
-                
                 // Retrieve the command-update probability ADD, so we can multiply it with the abstraction BDD later.
                 commandUpdateProbabilitiesAdd = modules.front().getCommandUpdateProbabilitiesAdd();
                 
-                // Finally, we build the game the first time.
-                currentGame = buildGame();
+                // Now that we have created all other DD variables, we create the DD variables for the predicates.
+                std::vector<std::pair<storm::expressions::Expression, bool>> allPredicates;
+                for (auto const& predicate : initialPredicates) {
+                    allPredicates.push_back(std::make_pair(predicate, false));
+                }
+                if (addAllGuards) {
+                    for (auto const& guard : allGuards) {
+                        allPredicates.push_back(std::make_pair(guard, true));
+                    }
+                }
+                // Finally, refine using the all predicates and build game as a by-product.
+                this->refine(allPredicates);
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            void AbstractProgram<DdType, ValueType>::refine(std::vector<storm::expressions::Expression> const& predicates) {
+            void AbstractProgram<DdType, ValueType>::refine(std::vector<std::pair<storm::expressions::Expression, bool>> const& predicates) {
                 STORM_LOG_THROW(!predicates.empty(), storm::exceptions::InvalidArgumentException, "Cannot refine without predicates.");
                 
                 // Add the predicates to the global list of predicates.
                 std::vector<uint_fast64_t> newPredicateIndices;
-                for (auto const& predicate : predicates) {
+                for (auto const& predicateAllowSplitPair : predicates) {
+                    storm::expressions::Expression const& predicate = predicateAllowSplitPair.first;
+                    bool allowSplit = predicateAllowSplitPair.second;
                     STORM_LOG_THROW(predicate.hasBooleanType(), storm::exceptions::InvalidArgumentException, "Expecting a predicate of type bool.");
-                    uint_fast64_t newPredicateIndex = abstractionInformation.addPredicate(predicate);
-                    newPredicateIndices.push_back(newPredicateIndex);
+                    
+                    if (allowSplit && splitPredicates) {
+                        // Split the predicates.
+                        std::vector<storm::expressions::Expression> atoms = splitter.split(predicate);
+                        
+                        // Check which of the atoms are redundant in the sense that they are equivalent to a predicate we already have.
+                        for (auto const& atom : atoms) {
+                            bool addAtom = true;
+                            for (auto const& oldPredicate : abstractionInformation.getPredicates()) {
+                                if (equivalenceChecker.areEquivalent(atom, oldPredicate)) {
+                                    addAtom = false;
+                                    break;
+                                }
+                            }
+                            
+                            if (addAtom) {
+                                uint_fast64_t newPredicateIndex = abstractionInformation.addPredicate(atom);
+                                newPredicateIndices.push_back(newPredicateIndex);
+                            }
+                        }
+                    } else {
+                        uint_fast64_t newPredicateIndex = abstractionInformation.addPredicate(predicate);
+                        newPredicateIndices.push_back(newPredicateIndex);
+                    }
                 }
                 
                 // Refine all abstract modules.
@@ -183,8 +201,8 @@ namespace storm {
                     STORM_LOG_TRACE("One of the successors is a bottom state, taking a guard as a new predicate.");
                     abstractCommand.notifyGuardIsPredicate();
                     storm::expressions::Expression newPredicate = concreteCommand.getGuardExpression();
-                    STORM_LOG_TRACE("Derived new predicate: " << newPredicate);
-                    this->refine({newPredicate});
+                    STORM_LOG_DEBUG("Derived new predicate: " << newPredicate);
+                    this->refine({std::make_pair(newPredicate, true)});
                 } else {
                     STORM_LOG_TRACE("No bottom state successor. Deriving a new predicate using weakest precondition.");
                     
@@ -231,6 +249,7 @@ namespace storm {
                             for (uint_fast64_t predicateIndex = 0; predicateIndex < lowerIt->second.size(); ++predicateIndex) {
                                 if (lowerIt->second.get(predicateIndex) != upperIt->second.get(predicateIndex)) {
                                     // Now we know the point of the deviation (command, update, predicate).
+                                    std::cout << "pred: " << abstractionInformation.getPredicateByIndex(predicateIndex) << " and update " << concreteCommand.getUpdate(updateIndex) << std::endl;
                                     newPredicate = abstractionInformation.getPredicateByIndex(predicateIndex).substitute(concreteCommand.getUpdate(updateIndex).getAsVariableToExpressionMap()).simplify();
                                     break;
                                 }
@@ -239,9 +258,9 @@ namespace storm {
                     }
                     STORM_LOG_ASSERT(newPredicate.isInitialized(), "Could not derive new predicate as there is no deviation.");
                     
-                    STORM_LOG_TRACE("Derived new predicate: " << newPredicate);
+                    STORM_LOG_DEBUG("Derived new predicate: " << newPredicate);
                     
-                    this->refine({newPredicate});
+                    this->refine({std::make_pair(newPredicate, true)});
                 }
                 
                 STORM_LOG_TRACE("Current set of predicates:");
@@ -299,7 +318,9 @@ namespace storm {
                 }
                 
                 // Construct the transition matrix by cutting away the transitions of unreachable states.
-                storm::dd::Add<DdType, ValueType> transitionMatrix = (game.bdd && reachableStates).template toAdd<ValueType>() * commandUpdateProbabilitiesAdd + deadlockTransitions;
+                storm::dd::Add<DdType, ValueType> transitionMatrix = (game.bdd && reachableStates).template toAdd<ValueType>();
+                transitionMatrix *= commandUpdateProbabilitiesAdd;
+                transitionMatrix += deadlockTransitions;
                 
                 // Extend the current game information with the 'non-bottom' tag before potentially adding bottom state transitions.
                 transitionMatrix *= (abstractionInformation.getBottomStateBdd(true, true) && abstractionInformation.getBottomStateBdd(false, true)).template toAdd<ValueType>();

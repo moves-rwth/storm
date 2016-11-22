@@ -65,8 +65,9 @@ namespace storm {
                  * Refines the abstract command with the given predicates.
                  *
                  * @param predicates The new predicates.
+                 * @param forceRecomputation If set, the BDD is recomputed even if the relevant predicates have not changed.
                  */
-                void refine(std::vector<uint_fast64_t> const& predicates);
+                void refine(std::vector<uint_fast64_t> const& predicates, bool forceRecomputation = false);
                 
                 /*!
                  * Computes the abstraction of the command wrt. to the current set of predicates.

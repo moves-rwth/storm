@@ -929,7 +929,7 @@ namespace storm {
                 // The solution sets.
                 storm::dd::Bdd<Type> player1States = psiStates;
                 storm::dd::Bdd<Type> player2States = model.getManager().getBddZero();
-                                
+                
                 bool done = false;
                 uint_fast64_t iterations = 0;
                 while (!done) {
@@ -960,18 +960,14 @@ namespace storm {
                 }
                 
                 // Since we have determined the complements of the desired sets, we need to complement it now.
-                player1States.template toAdd<ValueType>().exportToDot("not_pl1_prob0.dot");
-                (!player1States).template toAdd<ValueType>().exportToDot("pl1_negated_prob0.dot");
                 player1States = !player1States && model.getReachableStates();
                 player2States = !player2States && model.getReachableStates();
 
                 // Determine all transitions between prob0 states.
                 storm::dd::Bdd<Type> transitionsBetweenProb0States = player2States && (transitionMatrix && player1States.swapVariables(model.getRowColumnMetaVariablePairs()));
-                player1States.template toAdd<ValueType>().exportToDot("pl1_prob0.dot");
                 
                 // Determine the distributions that have only successors that are prob0 states.
                 storm::dd::Bdd<Type> onlyProb0Successors = (transitionsBetweenProb0States || model.getIllegalSuccessorMask()).universalAbstract(model.getColumnVariables());
-                onlyProb0Successors.template toAdd<ValueType>().exportToDot("only_prob0.dot");
                 
                 boost::optional<storm::dd::Bdd<Type>> player2StrategyBdd;
                 if (producePlayer2Strategy) {

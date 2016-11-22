@@ -10,7 +10,7 @@ namespace storm {
         namespace prism {
             
             template <storm::dd::DdType DdType, typename ValueType>
-            PrismMenuGameAbstractor<DdType, ValueType>::PrismMenuGameAbstractor(storm::prism::Program const& program, std::vector<storm::expressions::Expression> const& initialPredicates, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory) : abstractProgram(program, initialPredicates, smtSolverFactory, storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isAddAllGuardsSet()) {
+            PrismMenuGameAbstractor<DdType, ValueType>::PrismMenuGameAbstractor(storm::prism::Program const& program, std::vector<storm::expressions::Expression> const& initialPredicates, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory) : abstractProgram(program, initialPredicates, smtSolverFactory, storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isAddAllGuardsSet(), storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isSplitPredicatesSet()) {
                 // Intentionally left empty.
             }
             
@@ -21,7 +21,11 @@ namespace storm {
             
             template <storm::dd::DdType DdType, typename ValueType>
             void PrismMenuGameAbstractor<DdType, ValueType>::refine(std::vector<storm::expressions::Expression> const& predicates) {
-                abstractProgram.refine(predicates);
+                std::vector<std::pair<storm::expressions::Expression, bool>> predicatesWithFlags;
+                for (auto const& predicate : predicates) {
+                    predicatesWithFlags.emplace_back(predicate, true);
+                }
+                abstractProgram.refine(predicatesWithFlags);
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
