@@ -164,7 +164,7 @@ namespace storm {
         
 #ifdef STORM_HAVE_CARL
         template<>
-        void verifySymbolicModelWithExplorationEngine<storm::RationalFunction>(storm::storage::SymbolicModelDescription const& model, std::vector<storm::jani::Property> const& formulas, bool onlyInitialStatesRelevant) {
+        void verifySymbolicModelWithExplorationEngine<storm::RationalFunction>(storm::storage::SymbolicModelDescription const& , std::vector<storm::jani::Property> const& , bool ) {
             STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Exploration-based verification does currently not support parametric models.");
         }
 #endif

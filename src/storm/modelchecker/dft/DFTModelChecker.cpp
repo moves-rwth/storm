@@ -395,7 +395,7 @@ namespace storm {
         }
 
         template<typename ValueType>
-        bool DFTModelChecker<ValueType>::isApproximationSufficient(ValueType lowerBound, ValueType upperBound, double approximationError, bool relative) {
+        bool DFTModelChecker<ValueType>::isApproximationSufficient(ValueType , ValueType , double , bool ) {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Approximation works only for double.");
         }
 

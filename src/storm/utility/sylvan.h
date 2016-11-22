@@ -11,6 +11,8 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
 
+#pragma GCC system_header // Only way to suppress some warnings atm.
+
 #include "sylvan_obj.hpp"
 
 #pragma GCC diagnostic pop
