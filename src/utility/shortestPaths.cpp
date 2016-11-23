@@ -1,20 +1,30 @@
 #include <queue>
 #include <set>
+#include <string>
+
+#include "macros.h"
 #include "shortestPaths.h"
 #include "graph.h"
+
+// FIXME: I've accidentally used k=0 *twice* now without realizing that k>=1 is required!
+// Accessing zero should trigger a warning!
+// (Also, did I document this? I think so, somewhere. I went with k>=1 because
+// that's what the KSP paper used, but in retrospect k>=0 seems more intuitive ...)
 
 namespace storm {
     namespace utility {
         namespace ksp {
             template <typename T>
-            ShortestPathsGenerator<T>::ShortestPathsGenerator(std::shared_ptr<models::sparse::Model<T>> model,
-                                                              state_list_t const& targets) : model(model), targets(targets) {
-                // FIXME: does this create a copy? I don't need one, so I should avoid that
-                transitionMatrix = model->getTransitionMatrix();
-                numStates = model->getNumberOfStates() + 1; // one more for meta-target
-
-                metaTarget = numStates - 1; // first unused state number
-                targetSet = std::unordered_set<state_t>(targets.begin(), targets.end());
+            ShortestPathsGenerator<T>::ShortestPathsGenerator(storage::SparseMatrix<T> const& transitionMatrix,
+                                                              std::unordered_map<state_t, T> const& targetProbMap,
+                                                              BitVector const& initialStates,
+                                                              MatrixFormat matrixFormat) :
+                    transitionMatrix(transitionMatrix),
+                    numStates(transitionMatrix.getColumnCount() + 1), // one more for meta-target
+                    metaTarget(transitionMatrix.getColumnCount()), // first unused state index
+                    initialStates(initialStates),
+                    targetProbMap(targetProbMap),
+                    matrixFormat(matrixFormat) {
 
                 computePredecessors();
 
@@ -29,20 +39,30 @@ namespace storm {
                 candidatePaths.resize(numStates);
             }
 
+            template <typename T>
+            ShortestPathsGenerator<T>::ShortestPathsGenerator(storage::SparseMatrix<T> const& transitionMatrix,
+                    std::vector<T> const& targetProbVector, BitVector const& initialStates, MatrixFormat matrixFormat)
+                    : ShortestPathsGenerator<T>(transitionMatrix, vectorToMap(targetProbVector), initialStates, matrixFormat) {}
+
+            // extracts the relevant info from the model and delegates to ctor above
+            template <typename T>
+            ShortestPathsGenerator<T>::ShortestPathsGenerator(Model const& model, BitVector const& targetBV)
+                    : ShortestPathsGenerator<T>(model.getTransitionMatrix(), allProbOneMap(targetBV), model.getInitialStates(), MatrixFormat::straight) {}
+
             // several alternative ways to specify the targets are provided,
             // each converts the targets and delegates to the ctor above
             // I admit it's kind of ugly, but actually pretty convenient (and I've wanted to try C++11 delegation)
             template <typename T>
-            ShortestPathsGenerator<T>::ShortestPathsGenerator(std::shared_ptr<models::sparse::Model<T>> model,
-                    state_t singleTarget) : ShortestPathsGenerator<T>(model, std::vector<state_t>{singleTarget}) {}
+            ShortestPathsGenerator<T>::ShortestPathsGenerator(Model const& model, state_t singleTarget)
+                    : ShortestPathsGenerator<T>(model, std::vector<state_t>{singleTarget}) {}
 
             template <typename T>
-            ShortestPathsGenerator<T>::ShortestPathsGenerator(std::shared_ptr<models::sparse::Model<T>> model,
-                    storage::BitVector const& targetBV) : ShortestPathsGenerator<T>(model, bitvectorToList(targetBV)) {}
+            ShortestPathsGenerator<T>::ShortestPathsGenerator(Model const& model, std::vector<state_t> const& targetList)
+                    : ShortestPathsGenerator<T>(model, BitVector(model.getNumberOfStates(), targetList)) {}
 
             template <typename T>
-            ShortestPathsGenerator<T>::ShortestPathsGenerator(std::shared_ptr<models::sparse::Model<T>> model,
-                    std::string const& targetLabel) : ShortestPathsGenerator<T>(model, bitvectorToList(model->getStates(targetLabel))) {}
+            ShortestPathsGenerator<T>::ShortestPathsGenerator(Model const& model, std::string const& targetLabel)
+                    : ShortestPathsGenerator<T>(model, model.getStates(targetLabel)) {}
 
             template <typename T>
             T ShortestPathsGenerator<T>::getDistance(unsigned long k) {
@@ -51,9 +71,9 @@ namespace storm {
             }
 
             template <typename T>
-            storage::BitVector ShortestPathsGenerator<T>::getStates(unsigned long k) {
+            BitVector ShortestPathsGenerator<T>::getStates(unsigned long k) {
                 computeKSP(k);
-                storage::BitVector stateSet(numStates - 1, false); // no meta-target
+                BitVector stateSet(numStates - 1, false); // no meta-target
 
                 Path<T> currentPath = kShortestPaths[metaTarget][k - 1];
                 boost::optional<state_t> maybePredecessor = currentPath.predecessorNode;
@@ -71,10 +91,10 @@ namespace storm {
             }
 
             template <typename T>
-            state_list_t ShortestPathsGenerator<T>::getPathAsList(unsigned long k) {
+            std::vector<state_t> ShortestPathsGenerator<T>::getPathAsList(unsigned long k) {
                 computeKSP(k);
 
-                state_list_t backToFrontList;
+                std::vector<state_t> backToFrontList;
 
                 Path<T> currentPath = kShortestPaths[metaTarget][k - 1];
                 boost::optional<state_t> maybePredecessor = currentPath.predecessorNode;
@@ -100,16 +120,20 @@ namespace storm {
 
                 for (state_t i = 0; i < numStates - 1; i++) {
                     for (auto const& transition : transitionMatrix.getRowGroup(i)) {
-                        // to avoid non-minimal paths, the target states are
+                        // to avoid non-minimal paths, the meta-target-predecessors are
                         // *not* predecessors of any state but the meta-target
-                        if (std::find(targets.begin(), targets.end(), i) == targets.end()) {
+                        if (!isMetaTargetPredecessor(i)) {
                             graphPredecessors[transition.getColumn()].push_back(i);
                         }
                     }
                 }
 
-                // meta-target has exactly the target states as predecessors
-                graphPredecessors[metaTarget] = targets;
+                // meta-target has exactly the meta-target-predecessors as predecessors
+                // (duh. note that the meta-target-predecessors used to be called target,
+                // but that's not necessarily true in the matrix/value invocation case)
+                for (auto targetProbPair : targetProbMap) {
+                    graphPredecessors[metaTarget].push_back(targetProbPair.first);
+                }
             }
 
             template <typename T>
@@ -117,8 +141,8 @@ namespace storm {
                 // the existing Dijkstra isn't working anyway AND
                 // doesn't fully meet our requirements, so let's roll our own
 
-                T inftyDistance = utility::zero<T>();
-                T zeroDistance = utility::one<T>();
+                T inftyDistance = zero<T>();
+                T zeroDistance = one<T>();
                 shortestPathDistances.resize(numStates, inftyDistance);
                 shortestPathPredecessors.resize(numStates, boost::optional<state_t>());
 
@@ -126,7 +150,7 @@ namespace storm {
                 // default comparison on pair actually works fine if distance is the first entry
                 std::set<std::pair<T, state_t>, std::greater<std::pair<T, state_t>>> dijkstraQueue;
 
-                for (state_t initialState : model->getInitialStates()) {
+                for (state_t initialState : initialStates) {
                     shortestPathDistances[initialState] = zeroDistance;
                     dijkstraQueue.emplace(zeroDistance, initialState);
                 }
@@ -135,13 +159,14 @@ namespace storm {
                     state_t currentNode = (*dijkstraQueue.begin()).second;
                     dijkstraQueue.erase(dijkstraQueue.begin());
 
-                    if (targetSet.count(currentNode) == 0) {
+                    if (!isMetaTargetPredecessor(currentNode)) {
                         // non-target node, treated normally
                         for (auto const& transition : transitionMatrix.getRowGroup(currentNode)) {
                             state_t otherNode = transition.getColumn();
 
                             // note that distances are probabilities, thus they are multiplied and larger is better
-                            T alternateDistance = shortestPathDistances[currentNode] * transition.getValue();
+                            T alternateDistance = shortestPathDistances[currentNode] * convertDistance(currentNode, otherNode, transition.getValue());
+                            assert(zero<T>() <= alternateDistance <= one<T>()); // FIXME: there is a negative transition! SM gives us a placeholder!
                             if (alternateDistance > shortestPathDistances[otherNode]) {
                                 shortestPathDistances[otherNode] = alternateDistance;
                                 shortestPathPredecessors[otherNode] = boost::optional<state_t>(currentNode);
@@ -149,9 +174,9 @@ namespace storm {
                             }
                         }
                     } else {
-                        // target node has only "virtual edge" (with prob 1) to meta-target
-                        // no multiplication necessary
-                        T alternateDistance = shortestPathDistances[currentNode];
+                        // node only has one "virtual edge" (with prob as per targetProbMap) to meta-target
+                        // FIXME: double check
+                        T alternateDistance = shortestPathDistances[currentNode] * targetProbMap[currentNode];
                         if (alternateDistance > shortestPathDistances[metaTarget]) {
                             shortestPathDistances[metaTarget] = alternateDistance;
                             shortestPathPredecessors[metaTarget] = boost::optional<state_t>(currentNode);
@@ -179,7 +204,7 @@ namespace storm {
 
                 // BFS in Dijkstra-SP order
                 std::queue<state_t> bfsQueue;
-                for (state_t initialState : model->getInitialStates()) {
+                for (state_t initialState : initialStates) {
                     bfsQueue.push(initialState);
                 }
 
@@ -214,27 +239,31 @@ namespace storm {
 
                     for (auto const& transition : transitionMatrix.getRowGroup(tailNode)) {
                         if (transition.getColumn() == headNode) {
-                            return transition.getValue();
+                            return convertDistance(tailNode, headNode, transition.getValue());
                         }
                     }
 
                     // there is no such edge
                     // let's disallow that for now, because I'm not expecting it to happen
                     assert(false);
-                    return utility::zero<T>();
+                    return zero<T>();
                 } else {
-                    // edge must be "virtual edge" from target state to meta-target
-                    assert(targetSet.count(tailNode) == 1);
-                    return utility::one<T>();
+                    // edge must be "virtual edge" to meta-target
+                    assert(isMetaTargetPredecessor(tailNode));
+                    return targetProbMap.at(tailNode); // FIXME double check
                 }
             }
 
 
             template <typename T>
             void ShortestPathsGenerator<T>::computeNextPath(state_t node, unsigned long k) {
+                assert(k >= 2); // Dijkstra is used for k=1
                 assert(kShortestPaths[node].size() == k - 1); // if not, the previous SP must not exist
 
+                // TODO: I could extract the candidate generation to make this function more succinct
                 if (k == 2) {
+                    // Step B.1 in J&M paper
+
                     Path<T> shortestPathToNode = kShortestPaths[node][1 - 1]; // never forget index shift :-|
 
                     for (state_t predecessor : graphPredecessors[node]) {
@@ -254,7 +283,9 @@ namespace storm {
                     }
                 }
 
-                if (k > 2 || !isInitialState(node)) {
+                if (not (k == 2 && isInitialState(node))) {
+                    // Steps B.2-5 in J&M paper
+
                     // the (k-1)th shortest path (i.e., one better than the one we want to compute)
                     Path<T> previousShortestPath = kShortestPaths[node][k - 1 - 1]; // oh god, I forgot index shift AGAIN
 
@@ -280,9 +311,10 @@ namespace storm {
                         };
                         candidatePaths[node].insert(pathToPredecessorPlusEdge);
                     }
-                    // else there was no path; TODO: does this need handling?
+                    // else there was no path; TODO: does this need handling? -- yes, but not here (because the step B.1 may have added candidates)
                 }
 
+                // Step B.6 in J&M paper
                 if (!candidatePaths[node].empty()) {
                     Path<T> minDistanceCandidate = *(candidatePaths[node].begin());
                     for (auto path : candidatePaths[node]) {
@@ -293,6 +325,9 @@ namespace storm {
 
                     candidatePaths[node].erase(std::find(candidatePaths[node].begin(), candidatePaths[node].end(), minDistanceCandidate));
                     kShortestPaths[node].push_back(minDistanceCandidate);
+                } else {
+                    // TODO: kSP does not exist. this is handled later, but it would be nice to catch it as early as possble, wouldn't it?
+                    STORM_LOG_TRACE("KSP: no candidates, this will trigger nonexisting ksp after exiting these recursions. TODO: handle here");
                 }
             }
 
@@ -303,9 +338,10 @@ namespace storm {
                 for (unsigned long nextK = alreadyComputedK + 1; nextK <= k; nextK++) {
                     computeNextPath(metaTarget, nextK);
                     if (kShortestPaths[metaTarget].size() < nextK) {
-                        //std::cout << std::endl << "--> DEBUG: Last path: k=" << (nextK - 1) << ":" << std::endl;
-                        //printKShortestPath(metaTarget, nextK - 1);
-                        //std::cout << "---------" << "No other path exists!" << std::endl;
+                        unsigned long lastExistingK = nextK - 1;
+                        STORM_LOG_DEBUG("KSP throws (as expected) due to nonexistence -- maybe this is unhandled and causes the Python interface to segfault?");
+                        STORM_LOG_DEBUG("last existing k-SP has k=" + std::to_string(lastExistingK));
+                        STORM_LOG_DEBUG("maybe this is unhandled and causes the Python interface to segfault?");
                         throw std::invalid_argument("k-SP does not exist for k=" + std::to_string(k));
                     }
                 }

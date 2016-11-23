@@ -12,20 +12,22 @@
 //       for more information about the purpose, design decisions,
 //       etc., you may consult `shortestPath.md`. - Tom
 
-/*
- * TODO:
- *  - take care of self-loops of target states
- *  - implement target group
- *  - think about how to get paths with new nodes, rather than different
- *    paths over the same set of states (which happens often)
- */
+// TODO: test whether using BitVector instead of vector<state_t> is
+//       faster for storing predecessors etc.
 
+// Now using BitVectors instead of vector<state_t> in the API because
+// BitVectors are used throughout Storm to represent a (unordered) list
+// of states.
+// (Even though both initialStates and targets are probably very sparse.)
 
 namespace storm {
     namespace utility {
         namespace ksp {
-            typedef storage::sparse::state_type state_t;
-            typedef std::vector<state_t> state_list_t;
+            using state_t = storage::sparse::state_type;
+            using OrderedStateList = std::vector<state_t>;
+            using BitVector = storage::BitVector;
+
+            // -- helper structs/classes -----------------------------------------------------------------------------
 
             template <typename T>
             struct Path {
@@ -46,24 +48,39 @@ namespace storm {
                 }
             };
 
+            // when using the raw matrix/vector invocation, this enum parameter
+            // forces the caller to declare whether the matrix has the evil I-P
+            // format, which requires back-conversion of the entries
+            enum class MatrixFormat { straight, iMinusP };
+
             // -------------------------------------------------------------------------------------------------------
 
             template <typename T>
             class ShortestPathsGenerator {
             public:
+                using Matrix = storage::SparseMatrix<T>;
+                using StateProbMap = std::unordered_map<state_t, T>;
+                using Model = models::sparse::Model<T>;
+
                 /*!
                  * Performs precomputations (including meta-target insertion and Dijkstra).
                  * Modifications are done locally, `model` remains unchanged.
                  * Target (group) cannot be changed.
                  */
-                // FIXME: this shared_ptr-passing business might be a bad idea
-                ShortestPathsGenerator(std::shared_ptr<models::sparse::Model<T>> model, state_list_t const& targets);
+                ShortestPathsGenerator(Model const& model, BitVector const& targetBV);
 
                 // allow alternative ways of specifying the target,
-                // all of which will be converted to list and delegated to constructor above
-                ShortestPathsGenerator(std::shared_ptr<models::sparse::Model<T>> model, state_t singleTarget);
-                ShortestPathsGenerator(std::shared_ptr<models::sparse::Model<T>> model, storage::BitVector const& targetBV);
-                ShortestPathsGenerator(std::shared_ptr<models::sparse::Model<T>> model, std::string const& targetLabel);
+                // all of which will be converted to BitVector and delegated to constructor above
+                ShortestPathsGenerator(Model const& model, state_t singleTarget);
+                ShortestPathsGenerator(Model const& model, std::vector<state_t> const& targetList);
+                ShortestPathsGenerator(Model const& model, std::string const& targetLabel = "target");
+
+                // a further alternative: use transition matrix of maybe-states
+                // combined with target vector (e.g., the instantiated matrix/vector from SamplingModel);
+                // in this case separately specifying a target makes no sense
+                ShortestPathsGenerator(Matrix const& transitionMatrix, std::vector<T> const& targetProbVector, BitVector const& initialStates, MatrixFormat matrixFormat);
+                ShortestPathsGenerator(Matrix const& maybeTransitionMatrix, StateProbMap const& targetProbMap, BitVector const& initialStates, MatrixFormat matrixFormat);
+
 
                 inline ~ShortestPathsGenerator(){}
 
@@ -87,21 +104,21 @@ namespace storm {
                  * Computes KSP if not yet computed.
                  * @throws std::invalid_argument if no such k-shortest path exists
                  */
-                state_list_t getPathAsList(unsigned long k);
+                OrderedStateList getPathAsList(unsigned long k);
 
 
             private:
-                std::shared_ptr<models::sparse::Model<T>> model;
-                storage::SparseMatrix<T> transitionMatrix;
+                Matrix const& transitionMatrix; // FIXME: store reference instead (?)
                 state_t numStates; // includes meta-target, i.e. states in model + 1
-
-                state_list_t targets;
-                std::unordered_set<state_t> targetSet;
                 state_t metaTarget;
+                BitVector initialStates;
+                StateProbMap targetProbMap;
 
-                std::vector<state_list_t>             graphPredecessors;
+                MatrixFormat matrixFormat;
+
+                std::vector<OrderedStateList>         graphPredecessors;
                 std::vector<boost::optional<state_t>> shortestPathPredecessors;
-                std::vector<state_list_t>             shortestPathSuccessors;
+                std::vector<OrderedStateList>         shortestPathSuccessors;
                 std::vector<T>                        shortestPathDistances;
 
                 std::vector<std::vector<Path<T>>> kShortestPaths;
@@ -159,18 +176,63 @@ namespace storm {
 
 
                 // --- tiny helper fcts ---
+
                 inline bool isInitialState(state_t node) const {
-                    auto initialStates = model->getInitialStates();
                     return find(initialStates.begin(), initialStates.end(), node) != initialStates.end();
                 }
 
-                inline state_list_t bitvectorToList(storage::BitVector const& bv) const {
-                    state_list_t list;
-                    for (state_t state : bv) {
-                        list.push_back(state);
-                    }
-                    return list;
+                inline bool isMetaTargetPredecessor(state_t node) const {
+                    return targetProbMap.count(node) == 1;
                 }
+
+                // I dislike this. But it is necessary if we want to handle those ugly I-P matrices
+                inline T convertDistance(state_t tailNode, state_t headNode, T distance) const {
+                    if (matrixFormat == MatrixFormat::straight) {
+                        return distance;
+                    } else {
+                        if (tailNode == headNode) {
+                            // diagonal: 1-p = dist
+                            return one<T>() - distance;
+                        } else {
+                            // non-diag: -p = dist
+                            return zero<T>() - distance;
+                        }
+                    }
+                }
+
+                /*!
+                 * Returns a map where each state of the input BitVector is mapped to 1 (`one<T>`).
+                 */
+                inline StateProbMap allProbOneMap(BitVector bitVector) const {
+                    StateProbMap stateProbMap;
+                    for (state_t node : bitVector) {
+                        stateProbMap.emplace(node, one<T>()); // FIXME check rvalue warning (here and below)
+                    }
+                    return stateProbMap;
+                }
+
+                /*!
+                 * Given a vector of probabilities so that the `i`th entry corresponds to the
+                 * probability of state `i`, returns an equivalent map of only the non-zero entries.
+                 */
+                inline std::unordered_map<state_t, T> vectorToMap(std::vector<T> probVector) const {
+                    //assert(probVector.size() == numStates); // numStates may not yet be initialized! // still true?
+
+                    std::unordered_map<state_t, T> stateProbMap;
+
+                    for (state_t i = 0; i < probVector.size(); i++) {
+                        T probEntry = probVector[i];
+
+                        // only non-zero entries (i.e. true transitions) are added to the map
+                        if (probEntry != 0) {
+                            assert(0 < probEntry <= 1);
+                            stateProbMap.emplace(i, probEntry);
+                        }
+                    }
+
+                    return stateProbMap;
+                }
+
                 // -----------------------
             };
         }

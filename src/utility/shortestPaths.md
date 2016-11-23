@@ -39,6 +39,27 @@ target group is required in the constructor. (It would have been possible to
 allow for interchangeable target groups, but I don't anticipate that use
 case.)
 
+#### Special case: Using Matrix/Vector from SamplingModel
+
+The class has been updated to support the matrix/vector that `SamplingModel`
+generates (as an instance of a PDTMC) as input. This is in fact closely
+related to the target groups, since it works as follows:
+
+The input is a (sub-stochastic) transition matrix of the maybe-states (only!)
+and a vector (again over the maybe-states) with the probabilities to an
+implied target state.
+
+This naturally corresponds to having a meta-target, except the probability
+of its incoming edges range over $(0,1]$ rather than being $1$.
+Thus, applying the term "target group" to the set of states with non-zero
+transitions to the meta-target is now misleading[^1], but nevertheless it
+should work exactly the same. [Right?]
+
+In terms of implementation, in `getEdgeDistance` as well as in the loop of
+the Dijkstra, the "virtual" edges to the meta-target were checked for and
+set to probability $1$; this must now be changed to use the probability as
+indicated in the `targetProbVector` if this input format is used.
+
 ### Minimality of paths
 Secondly, we define shortest paths as "minimal" shortest paths in the
 following sense: The path may not visit any target state except at the
@@ -54,7 +75,7 @@ This is a common feature if the target state is a sink; but we are not
 interested in such paths.
 
 (In fact, ideally we'd like to see paths whose node-intersection with all
-shorter paths is non-empty (which is an even stronger statement than
+shorter paths is non-empty [^2] (which is an even stronger statement than
 loop-free-ness of paths), because we want to take a union of those node
 sets. But that's a different matter.)
 
@@ -76,11 +97,18 @@ path to some node `u` plus an edge to `t`:
 Further, the shortest paths to some node are always computed in order and
 without gaps, e.g., the 1, 2, 3-shortest paths to `t` will be computed
 before the 4-SP. Thus, we store the SPs in a linked list for each node,
-with the k-th entry[^1] being the k-th SP to that node.
+with the k-th entry[^3] being the k-th SP to that node.
 
 Thus for an SP as shown above we simply store the predecessor node (`u`)
 and the `k`, which allows us to look up the tail of the SP.
 By recursively looking up the tail (until it's empty), we reconstruct
 the entire path back-to-front.
 
-[^1]: Which due to 0-based indexing has index `k-1`, of course! Damn it.
+[^1]: I suppose the correct term would now be "meta-target predecessors".
+      In fact, I will rename all occurences of `target` in the source to
+      `metaTargetPredecessors` – clumsy but accurate.
+[^2]: (2016-08-20:) Is this correct? Didn't I mean that the path should
+      contain new nodes, i.e., non-emptiness of
+      ((nodes in path) set-minus (union(nodes in shorter paths)))?
+      Yeah, I'm pretty sure that's what I meant.
+[^3]: Which due to 0-based indexing has index `k-1`, of course! Damn it.
