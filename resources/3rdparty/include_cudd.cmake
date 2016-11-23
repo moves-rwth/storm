@@ -1,5 +1,17 @@
+
+####
+#### Find autoreconf for cudd update step
+find_program(AUTORECONF autoreconf)
+find_program(ACLOCAL aclocal)
+mark_as_advanced(AUTORECONF)
+mark_as_advanced(ACLOCAL)
+
 if (NOT AUTORECONF)
     message(FATAL_ERROR "Cannot find autoreconf, cannot compile cudd3.")
+endif()
+
+if (NOT ACLOCAL)
+    message(FATAL_ERROR "Cannot find aclocal, cannot compile cudd3.")
 endif()
 
 set(CUDD_LIB_DIR ${STORM_3RDPARTY_BINARY_DIR}/cudd-3.0.0/lib)

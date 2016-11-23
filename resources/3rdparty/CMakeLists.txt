@@ -4,10 +4,6 @@ add_custom_target(test-resources)
 set(STORM_3RDPARTY_SOURCE_DIR ${PROJECT_SOURCE_DIR}/resources/3rdparty)
 set(STORM_3RDPARTY_BINARY_DIR ${PROJECT_BINARY_DIR}/resources/3rdparty)
 
-####
-#### Find autoreconf for cudd update step
-find_program(AUTORECONF autoreconf)
-mark_as_advanced(AUTORECONF)
 
 #############################################################
 ##
