@@ -16,7 +16,7 @@
 // FIXME: (almost) all of these fail; the question is: is there actually anything wrong or does the new parser yield a different order of states?
 
 std::shared_ptr<storm::models::sparse::Model<double>> buildExampleModel() {
-	std::string prismModelPath = STORM_CPP_TESTS_BASE_PATH "/functional/builder/brp-16-2.pm";
+	std::string prismModelPath = STORM_TEST_RESOURCES_DIR "/dtmc/brp-16-2.pm";
     storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(prismModelPath);
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
     return storm::builder::ExplicitModelBuilder<double>(program).build();
