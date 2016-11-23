@@ -112,10 +112,3 @@ TEST(KSPTest, kspPathAsList) {
 
     EXPECT_EQ(list, reference);
 }
-
-
-//----------------------------
-// v---- PLAYGROUND ----v
-//----------------------------
-
-// (empty)

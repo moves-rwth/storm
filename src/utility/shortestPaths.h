@@ -93,7 +93,7 @@ namespace storm {
 
                 /*!
                  * Returns the states that occur in the KSP.
-                 * For a path-traversal (in order and with duplicates), see `getKSP`.
+                 * For a path-traversal (in order and with duplicates), see `getPathAsList`.
                  * Computes KSP if not yet computed.
                  * @throws std::invalid_argument if no such k-shortest path exists
                  */
@@ -108,7 +108,7 @@ namespace storm {
 
 
             private:
-                Matrix const& transitionMatrix; // FIXME: store reference instead (?)
+                Matrix const& transitionMatrix;
                 state_t numStates; // includes meta-target, i.e. states in model + 1
                 state_t metaTarget;
                 BitVector initialStates;

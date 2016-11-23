@@ -113,7 +113,7 @@ namespace storm {
 
             template <typename T>
             void ShortestPathsGenerator<T>::computePredecessors() {
-                assert(numStates - 1 == transitionMatrix.getRowCount());
+                assert(transitionMatrix.hasTrivialRowGrouping());
 
                 // one more for meta-target
                 graphPredecessors.resize(numStates);
