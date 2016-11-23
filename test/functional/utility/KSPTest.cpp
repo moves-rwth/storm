@@ -22,10 +22,11 @@ std::shared_ptr<storm::models::sparse::Model<double>> buildExampleModel() {
     return storm::builder::ExplicitModelBuilder<double>(program).build();
 }
 
-TEST(KSPTest, dijkstra) {
-	auto model = buildExampleModel();
+const storm::utility::ksp::state_t testState = 300;
+const storm::utility::ksp::state_t stateWithOnlyOnePath = 1;
 
-    storm::utility::ksp::state_t testState = 300;
+TEST(KSPTest, dijkstra) {
+    auto model = buildExampleModel();
     storm::utility::ksp::ShortestPathsGenerator<double> spg(*model, testState);
 
     double dist = spg.getDistance(1);
@@ -33,9 +34,7 @@ TEST(KSPTest, dijkstra) {
 }
 
 TEST(KSPTest, singleTarget) {
-	auto model = buildExampleModel();
-
-    storm::utility::ksp::state_t testState = 300;
+    auto model = buildExampleModel();
     storm::utility::ksp::ShortestPathsGenerator<double> spg(*model, testState);
 
     double dist = spg.getDistance(100);
@@ -43,9 +42,7 @@ TEST(KSPTest, singleTarget) {
 }
 
 TEST(KSPTest, reentry) {
-	auto model = buildExampleModel();
-
-    storm::utility::ksp::state_t testState = 300;
+    auto model = buildExampleModel();
     storm::utility::ksp::ShortestPathsGenerator<double> spg(*model, testState);
 
     double dist = spg.getDistance(100);
@@ -57,8 +54,7 @@ TEST(KSPTest, reentry) {
 }
 
 TEST(KSPTest, groupTarget) {
-	auto model = buildExampleModel();
-
+    auto model = buildExampleModel();
     auto groupTarget = std::vector<storm::utility::ksp::state_t>{50, 90};
     auto spg = storm::utility::ksp::ShortestPathsGenerator<double>(*model, groupTarget);
 
@@ -76,18 +72,14 @@ TEST(KSPTest, groupTarget) {
 }
 
 TEST(KSPTest, kTooLargeException) {
-	auto model = buildExampleModel();
-
-    storm::utility::ksp::state_t testState = 1;
-    storm::utility::ksp::ShortestPathsGenerator<double> spg(*model, testState);
+    auto model = buildExampleModel();
+    storm::utility::ksp::ShortestPathsGenerator<double> spg(*model, stateWithOnlyOnePath);
 
     ASSERT_THROW(spg.getDistance(2), std::invalid_argument);
 }
 
 TEST(KSPTest, kspStateSet) {
-	auto model = buildExampleModel();
-
-    storm::utility::ksp::state_t testState = 300;
+    auto model = buildExampleModel();
     storm::utility::ksp::ShortestPathsGenerator<double> spg(*model, testState);
 
     storm::storage::BitVector referenceBV(model->getNumberOfStates(), false);
@@ -101,9 +93,7 @@ TEST(KSPTest, kspStateSet) {
 }
 
 TEST(KSPTest, kspPathAsList) {
-	auto model = buildExampleModel();
-
-    storm::utility::ksp::state_t testState = 300;
+    auto model = buildExampleModel();
     storm::utility::ksp::ShortestPathsGenerator<double> spg(*model, testState);
 
     // TODO: use path that actually has a loop or something to make this more interesting
