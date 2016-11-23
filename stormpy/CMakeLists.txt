@@ -1,10 +1,3 @@
-find_package(PythonInterp REQUIRED QUIET)
-find_package(PythonLibs REQUIRED QUIET)
-
-message(STATUS "Python executable: ${PYTHON_EXECUTABLE}")
-message(STATUS "Python include: ${PYTHON_INCLUDE_DIRS}")
-message(STATUS "Python include: ${PYTHON_LIBRARIES}")
-
 set(STORMPY_OUTPUT_DIR "${PROJECT_BINARY_DIR}/stormpy")
 set(STORMPY_SOURCE_DIR "${PROJECT_SOURCE_DIR}/stormpy")
 
