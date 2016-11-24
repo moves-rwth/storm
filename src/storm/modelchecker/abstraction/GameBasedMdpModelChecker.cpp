@@ -429,6 +429,7 @@ namespace storm {
                 
                 // (2) Prepare transition matrix BDD and target state BDD for later use.
                 storm::dd::Bdd<Type> transitionMatrixBdd = game.getTransitionMatrix().toBdd();
+                storm::dd::Bdd<Type> initialStates = game.getInitialStates();
                 storm::dd::Bdd<Type> constraintStates = game.getStates(constraintExpression);
                 storm::dd::Bdd<Type> targetStates = game.getStates(targetStateExpression);
                 if (player1Direction == storm::OptimizationDirection::Minimize) {
@@ -442,7 +443,7 @@ namespace storm {
                 // (3) compute all states with probability 0/1 wrt. to the two different player 2 goals (min/max).
                 auto qualitativeStart = std::chrono::high_resolution_clock::now();
                 detail::GameProb01ResultMinMax<Type> qualitativeResult;
-                std::unique_ptr<CheckResult> result = computeProb01States(checkTask, qualitativeResult, game, player1Direction, transitionMatrixBdd, game.getInitialStates(), constraintStates, targetStates);
+                std::unique_ptr<CheckResult> result = computeProb01States(checkTask, qualitativeResult, game, player1Direction, transitionMatrixBdd, initialStates, constraintStates, targetStates);
                 if (result) {
                     return result;
                 }
@@ -454,13 +455,13 @@ namespace storm {
                 storm::dd::Bdd<Type> maybeMax = !(qualitativeResult.prob0Max.getPlayer1States() || qualitativeResult.prob1Max.getPlayer1States()) && game.getReachableStates();
                 
                 // (5) if the initial states are not maybe states, then we can refine at this point.
-                storm::dd::Bdd<Type> initialMaybeStates = (game.getInitialStates() && maybeMin) || (game.getInitialStates() && maybeMax);
+                storm::dd::Bdd<Type> initialMaybeStates = (initialStates && maybeMin) || (initialStates && maybeMax);
                 bool qualitativeRefinement = false;
                 if (initialMaybeStates.isZero()) {
                     // In this case, we know the result for the initial states for both player 2 minimizing and maximizing.
                     STORM_LOG_TRACE("No initial state is a 'maybe' state. Refining abstraction based on qualitative check.");
                     
-                    result = checkForResultAfterQualitativeCheck<Type, ValueType>(checkTask, game.getInitialStates(), qualitativeResult);
+                    result = checkForResultAfterQualitativeCheck<Type, ValueType>(checkTask, initialStates, qualitativeResult);
                     if (result) {
                         return result;
                     } else {
@@ -480,7 +481,7 @@ namespace storm {
                     // Prepare some storage that we use on-demand during the quantitative solving step.
                     storm::dd::Add<Type, ValueType> minResult = qualitativeResult.prob1Min.getPlayer1States().template toAdd<ValueType>();
                     storm::dd::Add<Type, ValueType> maxResult = qualitativeResult.prob1Max.getPlayer1States().template toAdd<ValueType>();
-                    storm::dd::Add<Type, ValueType> initialStatesAdd = game.getInitialStates().template toAdd<ValueType>();
+                    storm::dd::Add<Type, ValueType> initialStatesAdd = initialStates.template toAdd<ValueType>();
 
 					storm::dd::Bdd<Type> combinedMinPlayer1QualitativeStrategies = (qualitativeResult.prob0Min.getPlayer1Strategy() || qualitativeResult.prob1Min.getPlayer1Strategy());
 					storm::dd::Bdd<Type> combinedMinPlayer2QualitativeStrategies = (qualitativeResult.prob0Min.getPlayer2Strategy() || qualitativeResult.prob1Min.getPlayer2Strategy());
@@ -562,7 +563,7 @@ namespace storm {
 
 					// Check whether the strategies coincide over the reachable parts.
 					storm::dd::Bdd<Type> tmp = game.getTransitionMatrix().toBdd() && (minMaybeStateResult.player1Strategy || maxMaybeStateResult.player1Strategy) && (minMaybeStateResult.player2Strategy || maxMaybeStateResult.player2Strategy);
-					storm::dd::Bdd<Type> commonReach = storm::utility::dd::computeReachableStates(game.getInitialStates(), tmp.existsAbstract(game.getNondeterminismVariables()), game.getRowVariables(), game.getColumnVariables());
+					storm::dd::Bdd<Type> commonReach = storm::utility::dd::computeReachableStates(initialStates, tmp.existsAbstract(game.getNondeterminismVariables()), game.getRowVariables(), game.getColumnVariables());
 					STORM_LOG_ASSERT((commonReach && minMaybeStateResult.player1Strategy) != (commonReach && maxMaybeStateResult.player1Strategy) || (commonReach && minMaybeStateResult.player2Strategy) != (commonReach && maxMaybeStateResult.player2Strategy), "The strategies fully coincide.");
 
                     refineAfterQuantitativeCheck(abstractor, game, minResult, maxResult, qualitativeResult, std::make_pair(minMaybeStateResult.player1Strategy, minMaybeStateResult.player2Strategy), std::make_pair(maxMaybeStateResult.player1Strategy, maxMaybeStateResult.player2Strategy), transitionMatrixBdd);
