@@ -5,8 +5,8 @@ set(STORM_3RDPARTY_SOURCE_DIR ${PROJECT_SOURCE_DIR}/resources/3rdparty)
 set(STORM_3RDPARTY_BINARY_DIR ${PROJECT_BINARY_DIR}/resources/3rdparty)
 
 if (STORM_PYTHON)
-    find_package(PythonInterp REQUIRED QUIET)
-    find_package(PythonLibs REQUIRED QUIET)
+    find_package(PythonInterp 3 REQUIRED QUIET)
+    find_package(PythonLibs 3 REQUIRED QUIET)
 
     message(STATUS "Python executable: ${PYTHON_EXECUTABLE}")
     message(STATUS "Python include: ${PYTHON_INCLUDE_DIRS}")
