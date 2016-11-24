@@ -7,7 +7,7 @@
 
 #include "storm/abstraction/LocalExpressionInformation.h"
 #include "storm/abstraction/StateSetAbstractor.h"
-#include "storm/abstraction/prism/GameBddResult.h"
+#include "storm/abstraction/GameBddResult.h"
 
 #include "storm/storage/expressions/ExpressionEvaluator.h"
 
@@ -44,10 +44,10 @@ namespace storm {
         template <storm::dd::DdType DdType>
         class BottomStateResult;
 
+        template<storm::dd::DdType DdType>
+        struct GameBddResult;
+
         namespace prism {
-            template<storm::dd::DdType DdType>
-            struct GameBddResult;
-            
             template <storm::dd::DdType DdType, typename ValueType>
             class AbstractCommand {
             public:

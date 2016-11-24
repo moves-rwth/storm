@@ -2,7 +2,7 @@
 
 #include "storm/abstraction/AbstractionInformation.h"
 #include "storm/abstraction/BottomStateResult.h"
-#include "storm/abstraction/prism/GameBddResult.h"
+#include "storm/abstraction/GameBddResult.h"
 
 #include "storm/storage/dd/DdManager.h"
 #include "storm/storage/dd/Add.h"

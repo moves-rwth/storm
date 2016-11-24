@@ -1,6 +1,7 @@
 #include "storm/abstraction/prism/AbstractProgram.h"
 
 #include "storm/abstraction/BottomStateResult.h"
+#include "storm/abstraction/GameBddResult.h"
 
 #include "storm/storage/BitVector.h"
 

@@ -1,6 +1,8 @@
 #ifndef STORM_ENTRYPOINTS_H_H
 #define STORM_ENTRYPOINTS_H_H
 
+#include <type_traits>
+
 #include "storm/utility/storm.h"
 
 #include "storm/storage/SymbolicModelDescription.h"
@@ -9,6 +11,7 @@
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/InvalidSettingsException.h"
 #include "storm/exceptions/UnexpectedException.h"
+#include "storm/exceptions/InvalidTypeException.h"
 
 namespace storm {
     namespace cli {
@@ -113,13 +116,10 @@ namespace storm {
 
         template<storm::dd::DdType DdType>
         void verifySymbolicModelWithAbstractionRefinementEngine(storm::storage::SymbolicModelDescription const& model, std::vector<storm::jani::Property> const& properties, bool onlyInitialStatesRelevant = false) {
-            STORM_LOG_THROW(model.isPrismProgram(), storm::exceptions::NotImplementedException, "Abstraction-refinement is currently only available for PRISM programs.");
-            storm::prism::Program const& program = model.asPrismProgram();
-            
             typedef double ValueType;
             for (auto const& property : properties) {
                 std::cout << std::endl << "Model checking property: " << property << " ...";
-                std::unique_ptr<storm::modelchecker::CheckResult> result(storm::verifyProgramWithAbstractionRefinementEngine<DdType, ValueType>(program, property.getFilter().getFormula(), onlyInitialStatesRelevant));
+                std::unique_ptr<storm::modelchecker::CheckResult> result(storm::verifySymbolicModelWithAbstractionRefinementEngine<DdType, ValueType>(model, property.getFilter().getFormula(), onlyInitialStatesRelevant));
                 if (result) {
                     std::cout << " done." << std::endl;
                     std::cout << "Result (initial states): ";
@@ -309,6 +309,7 @@ namespace storm {
         template<typename ValueType>
         void buildAndCheckSymbolicModel(storm::storage::SymbolicModelDescription const& model, std::vector<storm::jani::Property> const& formulas, bool onlyInitialStatesRelevant = false) {
             if (storm::settings::getModule<storm::settings::modules::CoreSettings>().getEngine() == storm::settings::modules::CoreSettings::Engine::AbstractionRefinement) {
+                STORM_LOG_THROW((std::is_same<double, ValueType>::value), storm::exceptions::InvalidTypeException, "The value type is not supported by abstraction refinement.");
                 auto ddlib = storm::settings::getModule<storm::settings::modules::CoreSettings>().getDdLibraryType();
                 if (ddlib == storm::dd::DdType::CUDD) {
                     verifySymbolicModelWithAbstractionRefinementEngine<storm::dd::DdType::CUDD>(model, formulas, onlyInitialStatesRelevant);

@@ -577,15 +577,16 @@ namespace storm {
     }
     
     template<storm::dd::DdType DdType, typename ValueType>
-    std::unique_ptr<storm::modelchecker::CheckResult> verifyProgramWithAbstractionRefinementEngine(storm::prism::Program const& program, std::shared_ptr<const storm::logic::Formula> const& formula, bool onlyInitialStatesRelevant = false) {
-        STORM_LOG_THROW(program.getModelType() == storm::prism::Program::ModelType::DTMC || program.getModelType() == storm::prism::Program::ModelType::MDP, storm::exceptions::InvalidSettingsException, "Can only treat DTMCs/MDPs using the abstraction refinement engine.");
+    std::unique_ptr<storm::modelchecker::CheckResult> verifySymbolicModelWithAbstractionRefinementEngine(storm::storage::SymbolicModelDescription const& model, std::shared_ptr<const storm::logic::Formula> const& formula, bool onlyInitialStatesRelevant = false) {
         
-        if (program.isDeterministicModel()) {
-            storm::modelchecker::GameBasedMdpModelChecker<DdType, storm::models::symbolic::Dtmc<DdType, ValueType>> modelchecker(program);
+        STORM_LOG_THROW(model.getModelType() == storm::storage::SymbolicModelDescription::ModelType::DTMC || model.getModelType() == storm::storage::SymbolicModelDescription::ModelType::MDP, storm::exceptions::InvalidSettingsException, "Can only treat DTMCs/MDPs using the abstraction refinement engine.");
+        
+        if (model.getModelType() == storm::storage::SymbolicModelDescription::ModelType::DTMC) {
+            storm::modelchecker::GameBasedMdpModelChecker<DdType, storm::models::symbolic::Dtmc<DdType, ValueType>> modelchecker(model);
             storm::modelchecker::CheckTask<storm::logic::Formula> task(*formula, onlyInitialStatesRelevant);
             return modelchecker.check(task);
         } else {
-            storm::modelchecker::GameBasedMdpModelChecker<DdType, storm::models::symbolic::Mdp<DdType, ValueType>> modelchecker(program);
+            storm::modelchecker::GameBasedMdpModelChecker<DdType, storm::models::symbolic::Mdp<DdType, ValueType>> modelchecker(model);
             storm::modelchecker::CheckTask<storm::logic::Formula> task(*formula, onlyInitialStatesRelevant);
             return modelchecker.check(task);
         }

@@ -20,11 +20,11 @@ namespace storm {
 
         template<storm::dd::DdType DdType>
         struct BottomStateResult;
-        
+
+        template<storm::dd::DdType DdType>
+        struct GameBddResult;
+
         namespace prism {
-            template<storm::dd::DdType DdType>
-            struct GameBddResult;
-            
             template <storm::dd::DdType DdType, typename ValueType>
             class AbstractModule {
             public:
