@@ -81,7 +81,7 @@ TEST(PrismMenuGame, DieAbstractionAndRefinementTest_Cudd) {
     
     storm::abstraction::prism::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program, initialPredicates, std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>(), false);
     
-    ASSERT_NO_THROW(abstractProgram.refine({manager.getVariableExpression("s") == manager.integer(7)}));
+    ASSERT_NO_THROW(abstractProgram.refine({std::make_pair(manager.getVariableExpression("s") == manager.integer(7), true)}));
 
     storm::abstraction::MenuGame<storm::dd::DdType::CUDD, double> game = abstractProgram.getAbstractGame();
     
@@ -100,7 +100,7 @@ TEST(PrismMenuGame, DieAbstractionAndRefinementTest_Sylvan) {
     
     storm::abstraction::prism::AbstractProgram<storm::dd::DdType::Sylvan, double> abstractProgram(program, initialPredicates, std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>(), false);
     
-    ASSERT_NO_THROW(abstractProgram.refine({manager.getVariableExpression("s") == manager.integer(7)}));
+    ASSERT_NO_THROW(abstractProgram.refine({std::make_pair(manager.getVariableExpression("s") == manager.integer(7), true)}));
     
     storm::abstraction::MenuGame<storm::dd::DdType::Sylvan, double> game = abstractProgram.getAbstractGame();
     
@@ -220,7 +220,7 @@ TEST(PrismMenuGame, CrowdsAbstractionAndRefinementTest_Cudd) {
     
     storm::abstraction::prism::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program, initialPredicates, std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>(), false);
     
-    ASSERT_NO_THROW(abstractProgram.refine({manager.getVariableExpression("observe0") + manager.getVariableExpression("observe1") + manager.getVariableExpression("observe2") + manager.getVariableExpression("observe3") + manager.getVariableExpression("observe4") <= manager.getVariableExpression("runCount")}));
+    ASSERT_NO_THROW(abstractProgram.refine({std::make_pair(manager.getVariableExpression("observe0") + manager.getVariableExpression("observe1") + manager.getVariableExpression("observe2") + manager.getVariableExpression("observe3") + manager.getVariableExpression("observe4") <= manager.getVariableExpression("runCount"), true)}));
     
     storm::abstraction::MenuGame<storm::dd::DdType::CUDD, double> game = abstractProgram.getAbstractGame();
     
@@ -240,7 +240,7 @@ TEST(PrismMenuGame, CrowdsAbstractionAndRefinementTest_Sylvan) {
     
     storm::abstraction::prism::AbstractProgram<storm::dd::DdType::Sylvan, double> abstractProgram(program, initialPredicates, std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>(), false);
     
-    ASSERT_NO_THROW(abstractProgram.refine({manager.getVariableExpression("observe0") + manager.getVariableExpression("observe1") + manager.getVariableExpression("observe2") + manager.getVariableExpression("observe3") + manager.getVariableExpression("observe4") <= manager.getVariableExpression("runCount")}));
+    ASSERT_NO_THROW(abstractProgram.refine({std::make_pair(manager.getVariableExpression("observe0") + manager.getVariableExpression("observe1") + manager.getVariableExpression("observe2") + manager.getVariableExpression("observe3") + manager.getVariableExpression("observe4") <= manager.getVariableExpression("runCount"), true)}));
     
     storm::abstraction::MenuGame<storm::dd::DdType::Sylvan, double> game = abstractProgram.getAbstractGame();
     
@@ -446,7 +446,7 @@ TEST(PrismMenuGame, TwoDiceAbstractionAndRefinementTest_Cudd) {
     
     storm::abstraction::prism::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program, initialPredicates, std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>(), false);
     
-    ASSERT_NO_THROW(abstractProgram.refine({manager.getVariableExpression("d1") + manager.getVariableExpression("d2") == manager.integer(7)}));
+    ASSERT_NO_THROW(abstractProgram.refine({std::make_pair(manager.getVariableExpression("d1") + manager.getVariableExpression("d2") == manager.integer(7), true)}));
 
     storm::abstraction::MenuGame<storm::dd::DdType::CUDD, double> game = abstractProgram.getAbstractGame();
 
@@ -468,7 +468,7 @@ TEST(PrismMenuGame, TwoDiceAbstractionAndRefinementTest_Sylvan) {
     
     storm::abstraction::prism::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program, initialPredicates, std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>(), false);
     
-    ASSERT_NO_THROW(abstractProgram.refine({manager.getVariableExpression("d1") + manager.getVariableExpression("d2") == manager.integer(7)}));
+    ASSERT_NO_THROW(abstractProgram.refine({std::make_pair(manager.getVariableExpression("d1") + manager.getVariableExpression("d2") == manager.integer(7), true)}));
     
     storm::abstraction::MenuGame<storm::dd::DdType::CUDD, double> game = abstractProgram.getAbstractGame();
     
@@ -635,7 +635,7 @@ TEST(PrismMenuGame, WlanAbstractionAndRefinementTest_Cudd) {
     
     storm::abstraction::prism::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program, initialPredicates, std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>(), false);
     
-    ASSERT_NO_THROW(abstractProgram.refine({manager.getVariableExpression("backoff1") < manager.integer(7)}));
+    ASSERT_NO_THROW(abstractProgram.refine({std::make_pair(manager.getVariableExpression("backoff1") < manager.integer(7), true)}));
 
     storm::abstraction::MenuGame<storm::dd::DdType::CUDD, double> game = abstractProgram.getAbstractGame();
 
@@ -658,7 +658,7 @@ TEST(PrismMenuGame, WlanAbstractionAndRefinementTest_Sylvan) {
     
     storm::abstraction::prism::AbstractProgram<storm::dd::DdType::Sylvan, double> abstractProgram(program, initialPredicates, std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>(), false);
     
-    ASSERT_NO_THROW(abstractProgram.refine({manager.getVariableExpression("backoff1") < manager.integer(7)}));
+    ASSERT_NO_THROW(abstractProgram.refine({std::make_pair(manager.getVariableExpression("backoff1") < manager.integer(7), true)}));
     
     storm::abstraction::MenuGame<storm::dd::DdType::Sylvan, double> game = abstractProgram.getAbstractGame();
     
