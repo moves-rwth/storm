@@ -1,12 +1,19 @@
 #include "DFTModelChecker.h"
 
 #include "storm/builder/ParallelCompositionBuilder.h"
+<<<<<<< 297f3ff48076dbf9b67056c82bc97409ef9fd445:src/storm-dft/modelchecker/dft/DFTModelChecker.cpp
+=======
+#include "storm/settings/modules/DFTSettings.h"
+>>>>>>> moving dfts to their own lib and cli:src/storm-dft/modelchecker/dft/DFTModelChecker.cpp
 #include "storm/utility/bitoperations.h"
 
 #include "storm-dft/builder/ExplicitDFTModelBuilder.h"
 #include "storm-dft/builder/ExplicitDFTModelBuilderApprox.h"
 #include "storm-dft/storage/dft/DFTIsomorphism.h"
+<<<<<<< 297f3ff48076dbf9b67056c82bc97409ef9fd445:src/storm-dft/modelchecker/dft/DFTModelChecker.cpp
 #include "storm-dft/settings/modules/DFTSettings.h"
+=======
+>>>>>>> moving dfts to their own lib and cli:src/storm-dft/modelchecker/dft/DFTModelChecker.cpp
 
 namespace storm {
     namespace modelchecker {
