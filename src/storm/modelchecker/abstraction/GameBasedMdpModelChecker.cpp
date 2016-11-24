@@ -483,7 +483,7 @@ namespace storm {
                     storm::dd::Add<Type, ValueType> initialStatesAdd = game.getInitialStates().template toAdd<ValueType>();
 
 					storm::dd::Bdd<Type> combinedMinPlayer1QualitativeStrategies = (qualitativeResult.prob0Min.getPlayer1Strategy() || qualitativeResult.prob1Min.getPlayer1Strategy());
-					storm::dd::Bdd<Type> combinedMinPlayer2QualitativeStrategies = (qualitativeResult.prob0Max.getPlayer2Strategy() || qualitativeResult.prob1Max.getPlayer2Strategy());
+					storm::dd::Bdd<Type> combinedMinPlayer2QualitativeStrategies = (qualitativeResult.prob0Min.getPlayer2Strategy() || qualitativeResult.prob1Min.getPlayer2Strategy());
 
                     // The minimal value after qualitative checking can only be zero. It it was 1, we could have given
                     // the result right away.
