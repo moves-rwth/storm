@@ -204,7 +204,7 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type, typename ValueType>
-        void refineAfterQualitativeCheck(storm::abstraction::prism::PrismMenuGameAbstractor<Type, ValueType>& abstractor, storm::abstraction::MenuGame<Type, ValueType> const& game, detail::GameProb01ResultMinMax<Type> const& qualitativeResult, storm::dd::Bdd<Type> const& transitionMatrixBdd) {
+        bool refineAfterQualitativeCheck(storm::abstraction::prism::PrismMenuGameAbstractor<Type, ValueType>& abstractor, storm::abstraction::MenuGame<Type, ValueType> const& game, detail::GameProb01ResultMinMax<Type> const& qualitativeResult, storm::dd::Bdd<Type> const& transitionMatrixBdd) {
             STORM_LOG_TRACE("Trying refinement after qualitative check.");
             // Get all relevant strategies.
             storm::dd::Bdd<Type> minPlayer1Strategy = qualitativeResult.prob0Min.getPlayer1Strategy();
@@ -242,7 +242,7 @@ namespace storm {
             // strategies and they differ. Hence, it is possible that we arrive at a point where no suitable pivot state
             // is found. In this case, we abort the qualitative refinement here.
             if (pivotStates.isZero()) {
-                return;
+                return false;
             }
             
             STORM_LOG_ASSERT(!pivotStates.isZero(), "Unable to proceed without pivot state candidates.");
@@ -264,7 +264,7 @@ namespace storm {
                 abstractor.refine(pivotState, (pivotState && minPlayer1Strategy).existsAbstract(game.getRowVariables()), lowerChoice1, lowerChoice2);
                 auto refinementEnd = std::chrono::high_resolution_clock::now();
                 STORM_LOG_TRACE("Refinement completed in " << std::chrono::duration_cast<std::chrono::milliseconds>(refinementEnd - refinementStart).count() << "ms.");
-                return;
+                return true;
             } else {
                 storm::dd::Bdd<Type> upperChoice = pivotState && game.getExtendedTransitionMatrix().toBdd() && maxPlayer1Strategy;
                 storm::dd::Bdd<Type> upperChoice1 = (upperChoice && minPlayer2Strategy).existsAbstract(variablesToAbstract);
@@ -277,11 +277,12 @@ namespace storm {
                     abstractor.refine(pivotState, (pivotState && maxPlayer1Strategy).existsAbstract(game.getRowVariables()), upperChoice1, upperChoice2);
                     auto refinementEnd = std::chrono::high_resolution_clock::now();
                     STORM_LOG_TRACE("Refinement completed in " << std::chrono::duration_cast<std::chrono::milliseconds>(refinementEnd - refinementStart).count() << "ms.");
-                    return;
+                    return true;
                 } else {
                     STORM_LOG_ASSERT(false, "Did not find choices from which to derive predicates.");
                 }
             }
+            return false;
         }
 
         template<storm::dd::DdType Type, typename ValueType>
@@ -454,6 +455,7 @@ namespace storm {
                 
                 // (5) if the initial states are not maybe states, then we can refine at this point.
                 storm::dd::Bdd<Type> initialMaybeStates = (game.getInitialStates() && maybeMin) || (game.getInitialStates() && maybeMax);
+                bool qualitativeRefinement = false;
                 if (initialMaybeStates.isZero()) {
                     // In this case, we know the result for the initial states for both player 2 minimizing and maximizing.
                     STORM_LOG_TRACE("No initial state is a 'maybe' state. Refining abstraction based on qualitative check.");
@@ -466,9 +468,11 @@ namespace storm {
                         
                         // If we get here, the initial states were all identified as prob0/1 states, but the value (0 or 1)
                         // depends on whether player 2 is minimizing or maximizing. Therefore, we need to find a place to refine.
-                        refineAfterQualitativeCheck(abstractor, game, qualitativeResult, transitionMatrixBdd);
+                        qualitativeRefinement = refineAfterQualitativeCheck(abstractor, game, qualitativeResult, transitionMatrixBdd);
                     }
-                } else {
+                }
+                
+                if (!qualitativeRefinement) {
                     // At this point, we know that we cannot answer the query without further numeric computation.
                     STORM_LOG_TRACE("Starting numerical solution step.");
                     auto quantitativeStart = std::chrono::high_resolution_clock::now();
