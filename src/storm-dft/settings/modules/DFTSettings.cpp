@@ -1,4 +1,4 @@
-#include "storm/settings/modules/DFTSettings.h"
+#include "DFTSettings.h"
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/SettingMemento.h"

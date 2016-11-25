@@ -8,11 +8,10 @@
 #include "storm/cli/cli.h"
 #include "storm/exceptions/BaseException.h"
 #include "storm/utility/macros.h"
-#include "storm-dft/builder/DftSmtBuilder.h"
 
 
 #include "storm/settings/modules/GeneralSettings.h"
-#include "storm/settings/modules/DFTSettings.h"
+#include "storm-dft/settings/modules/DFTSettings.h"
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/settings/modules/DebugSettings.h"
 //#include "storm/settings/modules/CounterexampleGeneratorSettings.h"

@@ -1,9 +1,9 @@
-#ifndef STORM_SETTINGS_MODULES_DFTSETTINGS_H_
-#define STORM_SETTINGS_MODULES_DFTSETTINGS_H_
+#pragma once
 
 #include "storm-config.h"
 #include "storm/settings/modules/ModuleSettings.h"
-#include "storm/builder/DftExplorationHeuristic.h"
+
+#include "storm-dft/builder/DftExplorationHeuristic.h"
 
 namespace storm {
     namespace settings {
@@ -167,5 +167,3 @@ namespace storm {
         } // namespace modules
     } // namespace settings
 } // namespace storm
-
-#endif /* STORM_SETTINGS_MODULES_DFTSETTINGS_H_ */
