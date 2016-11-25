@@ -14,7 +14,7 @@ namespace storm {
     namespace abstraction {
         
         template <storm::dd::DdType DdType, typename ValueType>
-        StateSetAbstractor<DdType, ValueType>::StateSetAbstractor(AbstractionInformation<DdType>& abstractionInformation, std::set<storm::expressions::Variable> const& allVariables, std::vector<storm::expressions::Expression> const& statePredicates, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory) : smtSolver(smtSolverFactory->create(abstractionInformation.getExpressionManager())), abstractionInformation(abstractionInformation), localExpressionInformation(allVariables), relevantPredicatesAndVariables(), concretePredicateVariables(), needsRecomputation(false), cachedBdd(abstractionInformation.getDdManager().getBddZero()), constraint(abstractionInformation.getDdManager().getBddOne()) {
+        StateSetAbstractor<DdType, ValueType>::StateSetAbstractor(AbstractionInformation<DdType>& abstractionInformation, std::set<storm::expressions::Variable> const& allVariables, std::vector<storm::expressions::Expression> const& statePredicates, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory) : smtSolver(smtSolverFactory->create(abstractionInformation.getExpressionManager())), abstractionInformation(abstractionInformation), localExpressionInformation(allVariables), relevantPredicatesAndVariables(), concretePredicateVariables(), needsRecomputation(false), cachedBdd(abstractionInformation.getDdManager().getBddOne()), constraint(abstractionInformation.getDdManager().getBddOne()) {
             
             // Assert all state predicates.
             for (auto const& predicate : statePredicates) {
@@ -101,8 +101,7 @@ namespace storm {
             STORM_LOG_TRACE("Recomputing BDD for state set abstraction.");
             
             storm::dd::Bdd<DdType> result = this->getAbstractionInformation().getDdManager().getBddZero();
-            uint_fast64_t modelCounter = 0;
-            smtSolver->allSat(decisionVariables, [&result,this,&modelCounter] (storm::solver::SmtSolver::ModelReference const& model) { result |= getStateBdd(model); ++modelCounter; return true; } );
+            smtSolver->allSat(decisionVariables, [&result,this] (storm::solver::SmtSolver::ModelReference const& model) { result |= getStateBdd(model); return true; } );
             
             cachedBdd = result;
         }

@@ -65,9 +65,8 @@ namespace storm {
                  * Refines the abstract command with the given predicates.
                  *
                  * @param predicates The new predicates.
-                 * @param forceRecomputation If set, the BDD is recomputed even if the relevant predicates have not changed.
                  */
-                void refine(std::vector<uint_fast64_t> const& predicates, bool forceRecomputation = false);
+                void refine(std::vector<uint_fast64_t> const& predicates);
                 
                 /*!
                  * Computes the abstraction of the command wrt. to the current set of predicates.
@@ -226,6 +225,9 @@ namespace storm {
                 // A flag indicating whether the guard of the command was added as a predicate. If this is true, there
                 // is no need to compute bottom states.
                 bool guardIsPredicate;
+                
+                // A flag remembering whether we need to force recomputation of the BDD.
+                bool forceRecomputation;
                 
                 // The abstract guard of the command. This is only used if the guard is not a predicate, because it can
                 // then be used to constrain the bottom state abstractor.

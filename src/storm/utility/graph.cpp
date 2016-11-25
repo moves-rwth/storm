@@ -961,7 +961,10 @@ namespace storm {
                 
                 // Since we have determined the complements of the desired sets, we need to complement it now.
                 player1States = !player1States && model.getReachableStates();
-                player2States = !player2States && model.getReachableStates();
+                
+                std::set<storm::expressions::Variable> variablesToAbstract(model.getColumnVariables());
+                variablesToAbstract.insert(model.getPlayer2Variables().begin(), model.getPlayer2Variables().end());
+                player2States = !player2States && transitionMatrix.existsAbstract(variablesToAbstract);
 
                 // Determine all transitions between prob0 states.
                 storm::dd::Bdd<Type> transitionsBetweenProb0States = player2States && (transitionMatrix && player1States.swapVariables(model.getRowColumnMetaVariablePairs()));

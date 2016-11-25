@@ -29,7 +29,6 @@ namespace storm {
             
             template <storm::dd::DdType DdType, typename ValueType>
             AbstractProgram<DdType, ValueType>::AbstractProgram(storm::prism::Program const& program,
-                                                                std::vector<storm::expressions::Expression> const& initialPredicates,
                                                                 std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory,
                                                                 bool addAllGuards, bool splitPredicates)
             : program(program), smtSolverFactory(smtSolverFactory), abstractionInformation(program.getManager()), modules(), initialStateAbstractor(abstractionInformation, program.getAllExpressionVariables(), {program.getInitialStatesExpression()}, this->smtSolverFactory), splitPredicates(splitPredicates), splitter(), equivalenceChecker(smtSolverFactory->create(abstractionInformation.getExpressionManager()), abstractionInformation.getExpressionManager().boolean(true)), addedAllGuards(addAllGuards), currentGame(nullptr) {
@@ -58,7 +57,7 @@ namespace storm {
                         }
                         maximalUpdateCount = std::max(maximalUpdateCount, static_cast<uint_fast64_t>(command.getNumberOfUpdates()));
                     }
-                
+                    
                     totalNumberOfCommands += module.getNumberOfCommands();
                 }
                 
@@ -76,23 +75,19 @@ namespace storm {
                 commandUpdateProbabilitiesAdd = modules.front().getCommandUpdateProbabilitiesAdd();
                 
                 // Now that we have created all other DD variables, we create the DD variables for the predicates.
-                std::vector<std::pair<storm::expressions::Expression, bool>> allPredicates;
-                for (auto const& predicate : initialPredicates) {
-                    allPredicates.push_back(std::make_pair(predicate, false));
-                }
+                std::vector<std::pair<storm::expressions::Expression, bool>> initialPredicates;
                 if (addAllGuards) {
                     for (auto const& guard : allGuards) {
-                        allPredicates.push_back(std::make_pair(guard, true));
+                        initialPredicates.push_back(std::make_pair(guard, true));
                     }
                 }
+                
                 // Finally, refine using the all predicates and build game as a by-product.
-                this->refine(allPredicates);
+                this->refine(initialPredicates);
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
             void AbstractProgram<DdType, ValueType>::refine(std::vector<std::pair<storm::expressions::Expression, bool>> const& predicates) {
-                STORM_LOG_THROW(!predicates.empty(), storm::exceptions::InvalidArgumentException, "Cannot refine without predicates.");
-                
                 // Add the predicates to the global list of predicates.
                 std::vector<uint_fast64_t> newPredicateIndices;
                 for (auto const& predicateAllowSplitPair : predicates) {
@@ -132,7 +127,7 @@ namespace storm {
                 
                 // Refine initial state abstractor.
                 initialStateAbstractor.refine(newPredicateIndices);
-                                
+                
                 // Finally, we rebuild the game.
                 currentGame = buildGame();
             }
@@ -240,7 +235,7 @@ namespace storm {
 #endif
                     std::map<uint_fast64_t, storm::storage::BitVector> upperChoiceUpdateToSuccessorMapping = decodeChoiceToUpdateSuccessorMapping(upperChoice);
                     STORM_LOG_ASSERT(lowerChoiceUpdateToSuccessorMapping.size() == upperChoiceUpdateToSuccessorMapping.size(), "Mismatching sizes after decode (" << lowerChoiceUpdateToSuccessorMapping.size() << " vs. " << upperChoiceUpdateToSuccessorMapping.size() << ").");
-
+                    
 #ifdef LOCAL_DEBUG
                     std::cout << "lower" << std::endl;
                     for (auto const& entry : lowerChoiceUpdateToSuccessorMapping) {
@@ -268,6 +263,9 @@ namespace storm {
                             for (uint_fast64_t predicateIndex = 0; predicateIndex < lowerIt->second.size(); ++predicateIndex) {
                                 if (lowerIt->second.get(predicateIndex) != upperIt->second.get(predicateIndex)) {
                                     // Now we know the point of the deviation (command, update, predicate).
+                                    std::cout << "ref" << std::endl;
+                                    std::cout << abstractionInformation.getPredicateByIndex(predicateIndex) << std::endl;
+                                    std::cout << concreteCommand.getUpdate(updateIndex) << std::endl;
                                     newPredicate = abstractionInformation.getPredicateByIndex(predicateIndex).substitute(concreteCommand.getUpdate(updateIndex).getAsVariableToExpressionMap()).simplify();
                                     break;
                                 }
@@ -298,12 +296,12 @@ namespace storm {
                 STORM_LOG_ASSERT(currentGame != nullptr, "Game was not properly created.");
                 return abstractionInformation.getPredicateSourceVariable(predicate);
             }
-                        
+            
             template <storm::dd::DdType DdType, typename ValueType>
             std::unique_ptr<MenuGame<DdType, ValueType>> AbstractProgram<DdType, ValueType>::buildGame() {
                 // As long as there is only one module, we only build its game representation.
                 GameBddResult<DdType> game = modules.front().getAbstractBdd();
-
+                
                 // Construct a set of all unnecessary variables, so we can abstract from it.
                 std::set<storm::expressions::Variable> variablesToAbstract(abstractionInformation.getPlayer1VariableSet(abstractionInformation.getPlayer1VariableCount()));
                 auto player2Variables = abstractionInformation.getPlayer2VariableSet(game.numberOfPlayer2Variables);
@@ -326,7 +324,7 @@ namespace storm {
                 if (!deadlockStates.isZero()) {
                     deadlockTransitions = (deadlockStates && abstractionInformation.getAllPredicateIdentities() && abstractionInformation.encodePlayer1Choice(0, abstractionInformation.getPlayer1VariableCount()) && abstractionInformation.encodePlayer2Choice(0, game.numberOfPlayer2Variables) && abstractionInformation.encodeAux(0, 0, abstractionInformation.getAuxVariableCount())).template toAdd<ValueType>();
                 }
-
+                
                 // Compute bottom states and the appropriate transitions if necessary.
                 BottomStateResult<DdType> bottomStateResult(abstractionInformation.getDdManager().getBddZero(), abstractionInformation.getDdManager().getBddZero());
                 bool hasBottomStates = false;
@@ -345,17 +343,17 @@ namespace storm {
                 reachableStates &= abstractionInformation.getBottomStateBdd(true, true);
                 initialStates &= abstractionInformation.getBottomStateBdd(true, true);
                 
-                // If there are bottom transitions, exnted the transition matrix and reachable states now. 
+                // If there are bottom transitions, exnted the transition matrix and reachable states now.
                 if (hasBottomStates) {
                     transitionMatrix += bottomStateResult.transitions.template toAdd<ValueType>();
                     reachableStates |= bottomStateResult.states;
                 }
-            
+                
                 std::set<storm::expressions::Variable> usedPlayer2Variables(abstractionInformation.getPlayer2Variables().begin(), abstractionInformation.getPlayer2Variables().begin() + game.numberOfPlayer2Variables);
                 
                 std::set<storm::expressions::Variable> allNondeterminismVariables = usedPlayer2Variables;
                 allNondeterminismVariables.insert(abstractionInformation.getPlayer1Variables().begin(), abstractionInformation.getPlayer1Variables().end());
-
+                
                 std::set<storm::expressions::Variable> allSourceVariables(abstractionInformation.getSourceVariables());
                 allSourceVariables.insert(abstractionInformation.getBottomStateVariable(true));
                 std::set<storm::expressions::Variable> allSuccessorVariables(abstractionInformation.getSuccessorVariables());
@@ -363,7 +361,7 @@ namespace storm {
                 
                 return std::make_unique<MenuGame<DdType, ValueType>>(abstractionInformation.getDdManagerAsSharedPointer(), reachableStates, initialStates, abstractionInformation.getDdManager().getBddZero(), transitionMatrix, bottomStateResult.states, allSourceVariables, allSuccessorVariables, abstractionInformation.getExtendedSourceSuccessorVariablePairs(), std::set<storm::expressions::Variable>(abstractionInformation.getPlayer1Variables().begin(), abstractionInformation.getPlayer1Variables().end()), usedPlayer2Variables, allNondeterminismVariables, auxVariables, abstractionInformation.getPredicateToBddMap());
             }
-                        
+            
             template <storm::dd::DdType DdType, typename ValueType>
             void AbstractProgram<DdType, ValueType>::exportToDot(std::string const& filename, storm::dd::Bdd<DdType> const& highlightStatesBdd, storm::dd::Bdd<DdType> const& filter) const {
                 std::ofstream out(filename);
@@ -402,7 +400,7 @@ namespace storm {
                     }
                     highlightStates.insert(stateName.str());
                 }
-
+                
                 out << "digraph game {" << std::endl;
                 
                 // Create the player 1 nodes.
@@ -504,7 +502,7 @@ namespace storm {
             template class AbstractProgram<storm::dd::DdType::CUDD, double>;
             template class AbstractProgram<storm::dd::DdType::Sylvan, double>;
 #ifdef STORM_HAVE_CARL
-			template class AbstractProgram<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+            template class AbstractProgram<storm::dd::DdType::Sylvan, storm::RationalFunction>;
 #endif
         }
     }

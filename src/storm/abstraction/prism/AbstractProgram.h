@@ -42,12 +42,11 @@ namespace storm {
                  *
                  * @param expressionManager The manager responsible for the expressions of the program.
                  * @param program The concrete program for which to build the abstraction.
-                 * @param initialPredicates The initial set of predicates.
                  * @param smtSolverFactory A factory that is to be used for creating new SMT solvers.
                  * @param addAllGuards A flag that indicates whether all guards of the program should be added to the initial set of predicates.
                  * @param splitPredicates A flag that indicates whether the predicates are to be split into atoms before being added.
                  */
-                AbstractProgram(storm::prism::Program const& program, std::vector<storm::expressions::Expression> const& initialPredicates, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>(), bool addAllGuards = false, bool splitPredicates = false);
+                AbstractProgram(storm::prism::Program const& program, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>(), bool addAllGuards = false, bool splitPredicates = false);
                 
                 AbstractProgram(AbstractProgram const&) = default;
                 AbstractProgram& operator=(AbstractProgram const&) = default;

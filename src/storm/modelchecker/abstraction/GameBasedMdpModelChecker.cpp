@@ -12,6 +12,7 @@
 #include "storm/storage/dd/DdManager.h"
 
 #include "storm/abstraction/prism/PrismMenuGameAbstractor.h"
+#include "storm/abstraction/MenuGameRefiner.h"
 
 #include "storm/logic/FragmentSpecification.h"
 
@@ -261,6 +262,7 @@ namespace storm {
             if (lowerChoicesDifferent) {
                 STORM_LOG_TRACE("Refining based on lower choice.");
                 auto refinementStart = std::chrono::high_resolution_clock::now();
+                
                 abstractor.refine(pivotState, (pivotState && minPlayer1Strategy).existsAbstract(game.getRowVariables()), lowerChoice1, lowerChoice2);
                 auto refinementEnd = std::chrono::high_resolution_clock::now();
                 STORM_LOG_TRACE("Refinement completed in " << std::chrono::duration_cast<std::chrono::milliseconds>(refinementEnd - refinementStart).count() << "ms.");
@@ -466,9 +468,11 @@ namespace storm {
             storm::OptimizationDirection player1Direction = getPlayer1Direction(checkTask);
             
             // Create the abstractor.
-            storm::abstraction::prism::PrismMenuGameAbstractor<Type, ValueType> abstractor(preprocessedModel.asPrismProgram(), initialPredicates, smtSolverFactory);
+            storm::abstraction::prism::PrismMenuGameAbstractor<Type, ValueType> abstractor(preprocessedModel.asPrismProgram(), smtSolverFactory);
             
-            // TODO: create refiner and move initial predicates there.
+            // Create a refiner that can be used to refine the abstraction when needed.
+            storm::abstraction::MenuGameRefiner<Type, ValueType> refiner(abstractor);
+            refiner.refine(initialPredicates);
             
             // Enter the main-loop of abstraction refinement.
             for (uint_fast64_t iterations = 0; iterations < 10000; ++iterations) {
@@ -526,6 +530,7 @@ namespace storm {
                     }
                 }
                 
+                // (6) if we arrived at this point and no refinement was made, we need to compute the quantitative solution.
                 if (!qualitativeRefinement) {
                     // At this point, we know that we cannot answer the query without further numeric computation.
 
@@ -534,14 +539,14 @@ namespace storm {
                     STORM_LOG_TRACE("Starting numerical solution step.");
                     auto quantitativeStart = std::chrono::high_resolution_clock::now();
 
-                    // Solve the min values and check whether we can give the answer already.
+                    // (7) Solve the min values and check whether we can give the answer already.
                     QuantitativeResult<Type, ValueType> minResult = computeQuantitativeResult(player1Direction, storm::OptimizationDirection::Minimize, game, qualitativeResult, initialStatesAdd, maybeMin);
                     result = checkForResultAfterQuantitativeCheck<ValueType>(checkTask, storm::OptimizationDirection::Minimize, minResult.initialStateValue);
                     if (result) {
                         return result;
                     }
                     
-                    // Solve the max values and check whether we can give the answer already.
+                    // (8) Solve the max values and check whether we can give the answer already.
                     QuantitativeResult<Type, ValueType> maxResult = computeQuantitativeResult(player1Direction, storm::OptimizationDirection::Maximize, game, qualitativeResult, initialStatesAdd, maybeMax, boost::make_optional(minResult));
                     result = checkForResultAfterQuantitativeCheck<ValueType>(checkTask, storm::OptimizationDirection::Maximize, maxResult.initialStateValue);
                     if (result) {
@@ -551,27 +556,20 @@ namespace storm {
                     auto quantitativeEnd = std::chrono::high_resolution_clock::now();
                     STORM_LOG_DEBUG("Obtained quantitative bounds [" << minResult.initialStateValue << ", " << maxResult.initialStateValue << "] on the actual value for the initial states in " << std::chrono::duration_cast<std::chrono::milliseconds>(quantitativeEnd - quantitativeStart).count() << "ms.");
 
+                    // (9) Check whether the lower and upper bounds are close enough to terminate with an answer.
                     result = checkForResultAfterQuantitativeCheck<ValueType>(checkTask, minResult.initialStateValue, maxResult.initialStateValue);
                     if (result) {
                         return result;
                     }
 
-                    // If we arrived at this point, it means that we have all qualitative and quantitative information
-                    // about the game, but we could not yet answer the query. In this case, we need to refine.
-                    
                     // Make sure that all strategies are still valid strategies.
                     STORM_LOG_ASSERT(minResult.player1Strategy.template toAdd<ValueType>().sumAbstract(game.getPlayer1Variables()).getMax() <= 1, "Player 1 strategy for min is illegal.");
                     STORM_LOG_ASSERT(maxResult.player1Strategy.template toAdd<ValueType>().sumAbstract(game.getPlayer1Variables()).getMax() <= 1, "Player 1 strategy for max is illegal.");
                     STORM_LOG_ASSERT(minResult.player2Strategy.template toAdd<ValueType>().sumAbstract(game.getPlayer2Variables()).getMax() <= 1, "Player 2 strategy for min is illegal.");
                     STORM_LOG_ASSERT(maxResult.player2Strategy.template toAdd<ValueType>().sumAbstract(game.getPlayer2Variables()).getMax() <= 1, "Player 2 strategy for max is illegal.");
 
-#ifdef LOCAL_DEBUG
-					// Check whether the strategies coincide over the reachable parts.
-//					storm::dd::Bdd<Type> tmp = game.getTransitionMatrix().toBdd() && (minMaybeStateResult.player1Strategy || maxMaybeStateResult.player1Strategy) && (minMaybeStateResult.player2Strategy || maxMaybeStateResult.player2Strategy);
-//					storm::dd::Bdd<Type> commonReach = storm::utility::dd::computeReachableStates(initialStates, tmp.existsAbstract(game.getNondeterminismVariables()), game.getRowVariables(), game.getColumnVariables());
-//					STORM_LOG_ASSERT((commonReach && minMaybeStateResult.player1Strategy) != (commonReach && maxMaybeStateResult.player1Strategy) || (commonReach && minMaybeStateResult.player2Strategy) != (commonReach && maxMaybeStateResult.player2Strategy), "The strategies fully coincide.");
-#endif
-
+                    // (10) If we arrived at this point, it means that we have all qualitative and quantitative
+                    // information about the game, but we could not yet answer the query. In this case, we need to refine.
                     refineAfterQuantitativeCheck(abstractor, game, transitionMatrixBdd, minResult, maxResult);
                 }
                 auto iterationEnd = std::chrono::high_resolution_clock::now();
@@ -632,7 +630,11 @@ namespace storm {
                 result = storm::utility::graph::performProb1(game, transitionMatrixBdd, constraintStates, targetStates, player1Direction, player2Direction, true, true);
             }
             
-            STORM_LOG_ASSERT(result.hasPlayer1Strategy() && (result.getPlayer1States().isZero() || !result.getPlayer1Strategy().isZero()), "Unable to proceed without strategy.");
+            if (prob0) {
+                STORM_LOG_ASSERT(result.hasPlayer1Strategy() && (result.getPlayer1States().isZero() || !result.getPlayer1Strategy().isZero()), "Unable to proceed without strategy.");
+            } else {
+                STORM_LOG_ASSERT(result.hasPlayer1Strategy() && ((result.getPlayer1States() && !targetStates).isZero() || !result.getPlayer1Strategy().isZero()), "Unable to proceed without strategy.");
+            }
             STORM_LOG_ASSERT(result.hasPlayer2Strategy() && (result.getPlayer2States().isZero() || !result.getPlayer2Strategy().isZero()), "Unable to proceed without strategy.");
 
             STORM_LOG_TRACE("Computed states with probability " << (prob0 ? "0" : "1") << " (player 1: " << player1Direction << ", player 2: " << player2Direction << "): " << result.getPlayer1States().getNonZeroCount() << " '" << (prob0 ? "no" : "yes") << "' states.");

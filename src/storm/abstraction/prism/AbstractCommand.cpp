@@ -23,7 +23,7 @@ namespace storm {
     namespace abstraction {
         namespace prism {
             template <storm::dd::DdType DdType, typename ValueType>
-            AbstractCommand<DdType, ValueType>::AbstractCommand(storm::prism::Command const& command, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool guardIsPredicate) : smtSolver(smtSolverFactory->create(abstractionInformation.getExpressionManager())), abstractionInformation(abstractionInformation), command(command), localExpressionInformation(abstractionInformation.getVariables()), evaluator(abstractionInformation.getExpressionManager()), relevantPredicatesAndVariables(), cachedDd(abstractionInformation.getDdManager().getBddZero(), 0), decisionVariables(), guardIsPredicate(guardIsPredicate), abstractGuard(abstractionInformation.getDdManager().getBddZero()), bottomStateAbstractor(abstractionInformation, abstractionInformation.getExpressionVariables(), {!command.getGuardExpression()}, smtSolverFactory) {
+            AbstractCommand<DdType, ValueType>::AbstractCommand(storm::prism::Command const& command, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool guardIsPredicate) : smtSolver(smtSolverFactory->create(abstractionInformation.getExpressionManager())), abstractionInformation(abstractionInformation), command(command), localExpressionInformation(abstractionInformation.getVariables()), evaluator(abstractionInformation.getExpressionManager()), relevantPredicatesAndVariables(), cachedDd(abstractionInformation.getDdManager().getBddZero(), 0), decisionVariables(), guardIsPredicate(guardIsPredicate), forceRecomputation(true), abstractGuard(abstractionInformation.getDdManager().getBddZero()), bottomStateAbstractor(abstractionInformation, abstractionInformation.getExpressionVariables(), {!command.getGuardExpression()}, smtSolverFactory) {
 
                 // Make the second component of relevant predicates have the right size.
                 relevantPredicatesAndVariables.second.resize(command.getNumberOfUpdates());
@@ -36,17 +36,10 @@ namespace storm {
                 
                 // Assert the guard of the command.
                 smtSolver->add(command.getGuardExpression());
-
-                // Refine the command based on all initial predicates.
-                std::vector<uint_fast64_t> allPredicateIndices(abstractionInformation.getNumberOfPredicates());
-                for (uint_fast64_t index = 0; index < abstractionInformation.getNumberOfPredicates(); ++index) {
-                    allPredicateIndices[index] = index;
-                }
-                this->refine(allPredicateIndices, true);
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            void AbstractCommand<DdType, ValueType>::refine(std::vector<uint_fast64_t> const& predicates, bool forceRecomputation) {
+            void AbstractCommand<DdType, ValueType>::refine(std::vector<uint_fast64_t> const& predicates) {
                 // Add all predicates to the variable partition.
                 for (auto predicateIndex : predicates) {
                     localExpressionInformation.addExpression(this->getAbstractionInformation().getPredicateByIndex(predicateIndex), predicateIndex);
@@ -69,6 +62,9 @@ namespace storm {
                     
                     // Finally recompute the cached BDD.
                     this->recomputeCachedBdd();
+                    
+                    // Disable forcing recomputation until it is set again.
+                    forceRecomputation = false;
                 }
                 
                 // Refine bottom state abstractor. Note that this does not trigger a recomputation yet.
@@ -322,6 +318,7 @@ namespace storm {
 
                 // If the guard of this command is a predicate, there are not bottom states/transitions.
                 if (guardIsPredicate) {
+                    STORM_LOG_TRACE("Guard is predicate, no bottom state transitions for this command.");
                     return result;
                 }
                 
@@ -329,7 +326,7 @@ namespace storm {
                 // still has a transition to a bottom state.
                 bottomStateAbstractor.constrain(reachableStates && abstractGuard);
                 result.states = bottomStateAbstractor.getAbstractStates();
-                
+
                 // Now equip all these states with an actual transition to a bottom state.
                 result.transitions = result.states && this->getAbstractionInformation().getAllPredicateIdentities() && this->getAbstractionInformation().getBottomStateBdd(false, false);
                 
