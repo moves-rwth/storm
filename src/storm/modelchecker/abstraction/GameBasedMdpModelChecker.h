@@ -9,6 +9,9 @@
 
 #include "storm/storage/SymbolicModelDescription.h"
 
+#include "storm/abstraction/QualitativeResult.h"
+#include "storm/abstraction/QualitativeResultMinMax.h"
+
 #include "storm/logic/Bound.h"
 
 #include "storm/utility/solver.h"
@@ -21,19 +24,10 @@ namespace storm {
     }
     
     namespace modelchecker {
-        namespace detail {
-            template<storm::dd::DdType Type>
-            struct GameProb01ResultMinMax {
-            public:
-                GameProb01ResultMinMax() = default;
-
-                storm::utility::graph::GameProb01Result<Type> prob0Min;
-                storm::utility::graph::GameProb01Result<Type> prob1Min;
-                storm::utility::graph::GameProb01Result<Type> prob0Max;
-                storm::utility::graph::GameProb01Result<Type> prob1Max;
-            };
-        }
-
+        
+        using storm::abstraction::QualitativeResult;
+        using storm::abstraction::QualitativeResultMinMax;
+        
         template<storm::dd::DdType Type, typename ModelType>
         class GameBasedMdpModelChecker : public AbstractModelChecker<ModelType> {
         public:
@@ -73,8 +67,8 @@ namespace storm {
              * Performs a qualitative check on the the given game to compute the (player 1) states that have probability
              * 0 or 1, respectively, to reach a target state and only visiting constraint states before.
              */
-            std::unique_ptr<CheckResult> computeProb01States(CheckTask<storm::logic::Formula> const& checkTask, detail::GameProb01ResultMinMax<Type>& qualitativeResult, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::OptimizationDirection player1Direction, storm::dd::Bdd<Type> const& transitionMatrixBdd, storm::dd::Bdd<Type> const& initialStates, storm::dd::Bdd<Type> const& constraintStates, storm::dd::Bdd<Type> const& targetStates);
-            storm::utility::graph::GameProb01Result<Type> computeProb01States(bool prob0, storm::OptimizationDirection player1Direction, storm::OptimizationDirection player2Direction, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& transitionMatrixBdd, storm::dd::Bdd<Type> const& constraintStates, storm::dd::Bdd<Type> const& targetStates);
+            std::unique_ptr<CheckResult> computeProb01States(CheckTask<storm::logic::Formula> const& checkTask, QualitativeResultMinMax<Type>& qualitativeResult, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::OptimizationDirection player1Direction, storm::dd::Bdd<Type> const& transitionMatrixBdd, storm::dd::Bdd<Type> const& initialStates, storm::dd::Bdd<Type> const& constraintStates, storm::dd::Bdd<Type> const& targetStates);
+            QualitativeResult<Type> computeProb01States(bool prob0, storm::OptimizationDirection player1Direction, storm::OptimizationDirection player2Direction, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& transitionMatrixBdd, storm::dd::Bdd<Type> const& constraintStates, storm::dd::Bdd<Type> const& targetStates);
             
             /*
              * Retrieves the expression characterized by the formula. The formula needs to be propositional.

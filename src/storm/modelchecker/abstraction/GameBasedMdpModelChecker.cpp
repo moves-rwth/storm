@@ -34,6 +34,8 @@
 namespace storm {
     namespace modelchecker {
         
+        using storm::abstraction::QuantitativeResult;
+        
         template<storm::dd::DdType Type, typename ModelType>
         GameBasedMdpModelChecker<Type, ModelType>::GameBasedMdpModelChecker(storm::storage::SymbolicModelDescription const& model, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory) : smtSolverFactory(smtSolverFactory) {
             STORM_LOG_THROW(model.isPrismProgram(), storm::exceptions::NotSupportedException, "Currently only PRISM models are supported by the game-based model checker.");
@@ -104,7 +106,7 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type, typename ValueType>
-        std::unique_ptr<CheckResult> checkForResultAfterQualitativeCheck(CheckTask<storm::logic::Formula> const& checkTask, storm::dd::Bdd<Type> const& initialStates, detail::GameProb01ResultMinMax<Type> const& qualitativeResult) {
+        std::unique_ptr<CheckResult> checkForResultAfterQualitativeCheck(CheckTask<storm::logic::Formula> const& checkTask, storm::dd::Bdd<Type> const& initialStates, QualitativeResultMinMax<Type> const& qualitativeResult) {
             // Check whether we can already give the answer based on the current information.
             std::unique_ptr<CheckResult> result = checkForResultAfterQualitativeCheck<Type, ValueType>(checkTask, initialStates, qualitativeResult.prob0Min.getPlayer1States(), qualitativeResult.prob0Max.getPlayer1States(), true);
             if (result) {
@@ -205,7 +207,7 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type, typename ValueType>
-        bool refineAfterQualitativeCheck(storm::abstraction::prism::PrismMenuGameAbstractor<Type, ValueType>& abstractor, storm::abstraction::MenuGame<Type, ValueType> const& game, detail::GameProb01ResultMinMax<Type> const& qualitativeResult, storm::dd::Bdd<Type> const& transitionMatrixBdd) {
+        bool refineAfterQualitativeCheck(storm::abstraction::prism::PrismMenuGameAbstractor<Type, ValueType>& abstractor, storm::abstraction::MenuGame<Type, ValueType> const& game, QualitativeResultMinMax<Type> const& qualitativeResult, storm::dd::Bdd<Type> const& transitionMatrixBdd) {
             STORM_LOG_TRACE("Trying refinement after qualitative check.");
             // Get all relevant strategies.
             storm::dd::Bdd<Type> minPlayer1Strategy = qualitativeResult.prob0Min.getPlayer1Strategy();
@@ -287,19 +289,6 @@ namespace storm {
             return false;
         }
         
-        template<storm::dd::DdType Type, typename ValueType>
-        struct QuantitativeResult {
-            QuantitativeResult() = default;
-            
-            QuantitativeResult(ValueType initialStateValue, storm::dd::Add<Type, ValueType> const& values, storm::dd::Bdd<Type> const& player1Strategy, storm::dd::Bdd<Type> const& player2Strategy) : initialStateValue(initialStateValue), values(values), player1Strategy(player1Strategy), player2Strategy(player2Strategy) {
-                // Intentionally left empty.
-            }
-            
-            ValueType initialStateValue;
-            storm::dd::Add<Type, ValueType> values;
-            storm::dd::Bdd<Type> player1Strategy;
-            storm::dd::Bdd<Type> player2Strategy;
-        };
 
         template<storm::dd::DdType Type, typename ValueType>
         void refineAfterQuantitativeCheck(storm::abstraction::prism::PrismMenuGameAbstractor<Type, ValueType>& abstractor, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& transitionMatrixBdd, QuantitativeResult<Type, ValueType> const& minResult, QuantitativeResult<Type, ValueType> const& maxResult) {
@@ -404,7 +393,7 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type, typename ValueType>
-        QuantitativeResult<Type, ValueType> computeQuantitativeResult(storm::OptimizationDirection player1Direction, storm::OptimizationDirection player2Direction, storm::abstraction::MenuGame<Type, ValueType> const& game, detail::GameProb01ResultMinMax<Type> const& qualitativeResult, storm::dd::Add<Type, ValueType> const& initialStatesAdd, storm::dd::Bdd<Type> const& maybeStates, boost::optional<QuantitativeResult<Type, ValueType>> const& startInfo = boost::none) {
+        QuantitativeResult<Type, ValueType> computeQuantitativeResult(storm::OptimizationDirection player1Direction, storm::OptimizationDirection player2Direction, storm::abstraction::MenuGame<Type, ValueType> const& game, QualitativeResultMinMax<Type> const& qualitativeResult, storm::dd::Add<Type, ValueType> const& initialStatesAdd, storm::dd::Bdd<Type> const& maybeStates, boost::optional<QuantitativeResult<Type, ValueType>> const& startInfo = boost::none) {
             
             bool min = player2Direction == storm::OptimizationDirection::Minimize;
             
@@ -499,7 +488,7 @@ namespace storm {
                 
                 // (3) compute all states with probability 0/1 wrt. to the two different player 2 goals (min/max).
                 auto qualitativeStart = std::chrono::high_resolution_clock::now();
-                detail::GameProb01ResultMinMax<Type> qualitativeResult;
+                QualitativeResultMinMax<Type> qualitativeResult;
                 std::unique_ptr<CheckResult> result = computeProb01States(checkTask, qualitativeResult, game, player1Direction, transitionMatrixBdd, initialStates, constraintStates, targetStates);
                 if (result) {
                     return result;
@@ -604,7 +593,7 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type, typename ModelType>
-        std::unique_ptr<CheckResult> GameBasedMdpModelChecker<Type, ModelType>::computeProb01States(CheckTask<storm::logic::Formula> const& checkTask, detail::GameProb01ResultMinMax<Type>& qualitativeResult, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::OptimizationDirection player1Direction, storm::dd::Bdd<Type> const& transitionMatrixBdd, storm::dd::Bdd<Type> const& initialStates, storm::dd::Bdd<Type> const& constraintStates, storm::dd::Bdd<Type> const& targetStates) {
+        std::unique_ptr<CheckResult> GameBasedMdpModelChecker<Type, ModelType>::computeProb01States(CheckTask<storm::logic::Formula> const& checkTask, QualitativeResultMinMax<Type>& qualitativeResult, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::OptimizationDirection player1Direction, storm::dd::Bdd<Type> const& transitionMatrixBdd, storm::dd::Bdd<Type> const& initialStates, storm::dd::Bdd<Type> const& constraintStates, storm::dd::Bdd<Type> const& targetStates) {
             qualitativeResult.prob0Min = computeProb01States(true, player1Direction, storm::OptimizationDirection::Minimize, game, transitionMatrixBdd, constraintStates, targetStates);
             qualitativeResult.prob1Min = computeProb01States(false, player1Direction, storm::OptimizationDirection::Minimize, game, transitionMatrixBdd, constraintStates, targetStates);
             std::unique_ptr<CheckResult> result = checkForResultAfterQualitativeCheck<Type, ValueType>(checkTask, storm::OptimizationDirection::Minimize, initialStates, qualitativeResult.prob0Min.getPlayer1States(), qualitativeResult.prob1Min.getPlayer1States());
