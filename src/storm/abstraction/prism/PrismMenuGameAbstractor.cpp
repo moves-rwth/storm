@@ -19,6 +19,10 @@ namespace storm {
                 return abstractProgram.getAbstractGame();
             }
             
+            AbstractionInformation<DdType> const& PrismMenuGameAbstractor<DdType, ValueType>::getAbstractionInformation() const {
+                return abstractProgram.getAbstractionInformation();
+            }
+            
             template <storm::dd::DdType DdType, typename ValueType>
             void PrismMenuGameAbstractor<DdType, ValueType>::refine(std::vector<storm::expressions::Expression> const& predicates) {
                 std::vector<std::pair<storm::expressions::Expression, bool>> predicatesWithFlags;

@@ -275,7 +275,7 @@ namespace storm {
             storm::abstraction::prism::PrismMenuGameAbstractor<Type, ValueType> abstractor(preprocessedModel.asPrismProgram(), smtSolverFactory);
             
             // Create a refiner that can be used to refine the abstraction when needed.
-            storm::abstraction::MenuGameRefiner<Type, ValueType> refiner(abstractor);
+            storm::abstraction::MenuGameRefiner<Type, ValueType> refiner(abstractor, smtSolverFactory->create(preprocessedModel.getManager()));
             refiner.refine(initialPredicates);
             
             // Enter the main-loop of abstraction refinement.

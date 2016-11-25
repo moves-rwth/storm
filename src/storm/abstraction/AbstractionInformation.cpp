@@ -1,5 +1,7 @@
 #include "storm/abstraction/AbstractionInformation.h"
 
+#include "storm/storage/BitVector.h"
+
 #include "storm/storage/dd/DdManager.h"
 
 #include "storm/utility/macros.h"
@@ -390,6 +392,43 @@ namespace storm {
                 if (valuation.getBooleanValue(variables[variableIndex])) {
                     result |= 1;
                 }
+            }
+            return result;
+        }
+        
+        template <storm::dd::DdType DdType>
+        std::map<uint_fast64_t, storm::storage::BitVector> AbstractionInformation<DdType>::decodeChoiceToUpdateSuccessorMapping(storm::dd::Bdd<DdType> const& choice) const {
+            std::map<uint_fast64_t, storm::storage::BitVector> result;
+            
+            storm::dd::Add<DdType, double> lowerChoiceAsAdd = choice.template toAdd<double>();
+            for (auto const& successorValuePair : lowerChoiceAsAdd) {
+                uint_fast64_t updateIndex = this->decodeAux(successorValuePair.first, 0, this->getAuxVariableCount());
+                
+#ifdef LOCAL_DEBUG
+                std::cout << "update idx: " << updateIndex << std::endl;
+#endif
+                storm::storage::BitVector successor(this->getNumberOfPredicates());
+                for (uint_fast64_t index = 0; index < this->getOrderedSuccessorVariables().size(); ++index) {
+                    auto const& successorVariable = this->getOrderedSuccessorVariables()[index];
+#ifdef LOCAL_DEBUG
+                    std::cout << successorVariable.getName() << " has value";
+#endif
+                    if (successorValuePair.first.getBooleanValue(successorVariable)) {
+                        successor.set(index);
+#ifdef LOCAL_DEBUG
+                        std::cout << " true";
+#endif
+                    } else {
+#ifdef LOCAL_DEBUG
+                        std::cout << " false";
+#endif
+                    }
+#ifdef LOCAL_DEBUG
+                    std::cout << std::endl;
+#endif
+                }
+                
+                result[updateIndex] = successor;
             }
             return result;
         }

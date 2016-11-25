@@ -9,8 +9,6 @@
 #include "storm/storage/dd/Add.h"
 
 #include "storm/storage/expressions/Expression.h"
-#include "storm/storage/expressions/PredicateSplitter.h"
-#include "storm/storage/expressions/EquivalenceChecker.h"
 
 namespace storm {
     namespace utility {
@@ -44,9 +42,8 @@ namespace storm {
                  * @param program The concrete program for which to build the abstraction.
                  * @param smtSolverFactory A factory that is to be used for creating new SMT solvers.
                  * @param addAllGuards A flag that indicates whether all guards of the program should be added to the initial set of predicates.
-                 * @param splitPredicates A flag that indicates whether the predicates are to be split into atoms before being added.
                  */
-                AbstractProgram(storm::prism::Program const& program, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>(), bool addAllGuards = false, bool splitPredicates = false);
+                AbstractProgram(storm::prism::Program const& program, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>(), bool addAllGuards = false);
                 
                 AbstractProgram(AbstractProgram const&) = default;
                 AbstractProgram& operator=(AbstractProgram const&) = default;
@@ -59,6 +56,13 @@ namespace storm {
                  * @return The abstract stochastic two player game.
                  */
                 MenuGame<DdType, ValueType> getAbstractGame();
+                
+                /*!
+                 * Retrieves information about the abstraction.
+                 *
+                 * @return The abstraction information object.
+                 */
+                AbstractionInformation<DdType> const& getAbstractionInformation() const;
                 
                 /*!
                  * Retrieves the set of states (represented by a BDD) satisfying the given predicate, assuming that it
@@ -74,18 +78,7 @@ namespace storm {
                  *
                  * @param predicates The new predicates.
                  */
-                void refine(std::vector<std::pair<storm::expressions::Expression, bool>> const& predicates);
-                
-                /*!
-                 * Refines the abstract program using the pivot state, and player 1 choice. The refinement guarantees that
-                 * the two provided choices are not possible from the same pivot state using the given player 1 choice.
-                 *
-                 * @param pivotState The pivot state on which to base the refinement.
-                 * @param player1Choice The player 1 choice that needs to be refined.
-                 * @param lowerChoice The first of the two choices on which to base the refinement.
-                 * @param upperChoice The first of the two choices on which to base the refinement.
-                 */
-                void refine(storm::dd::Bdd<DdType> const& pivotState, storm::dd::Bdd<DdType> const& player1Choice, storm::dd::Bdd<DdType> const& lowerChoice, storm::dd::Bdd<DdType> const& upperChoice);
+                void refine(std::vector<storm::expressions::Expression> const& predicates);
                 
                 /*!
                  * Exports the current state of the abstraction in the dot format to the given file.
@@ -126,16 +119,7 @@ namespace storm {
                 
                 // A state-set abstractor used to determine the initial states of the abstraction.
                 StateSetAbstractor<DdType, ValueType> initialStateAbstractor;
-                
-                // A flag indicating whether predicates are to be split into atoms or not.
-                bool splitPredicates;
-                
-                // An object that can be used for splitting predicates.
-                storm::expressions::PredicateSplitter splitter;
-                
-                // An object that can be used to determine whether predicates are equivalent.
-                storm::expressions::EquivalenceChecker equivalenceChecker;
-                
+                                
                 // A flag that stores whether all guards were added (which is relevant for determining the bottom states).
                 bool addedAllGuards;
                 

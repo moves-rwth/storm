@@ -426,6 +426,11 @@ namespace storm {
              */
             std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>> declareNewVariables(std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>> const& oldPredicates, std::set<uint_fast64_t> const& newPredicates) const;
             
+            /*!
+             * Decodes the choice in the form of a BDD over the source and
+             */
+            std::map<uint_fast64_t, storm::storage::BitVector> decodeChoiceToUpdateSuccessorMapping(storm::dd::Bdd<DdType> const& choice) const;
+            
         private:
             /*!
              * Encodes the given index with the given number of variables from the given variables.

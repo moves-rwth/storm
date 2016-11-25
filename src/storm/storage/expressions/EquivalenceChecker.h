@@ -2,6 +2,8 @@
 
 #include <memory>
 
+#include <boost/optional.hpp>
+
 #include "storm/solver/SmtSolver.h"
 
 namespace storm {
@@ -16,7 +18,7 @@ namespace storm {
              * @param smtSolver The solver to use.
              * @param constraint An additional constraint. Must be satisfiable.
              */
-            EquivalenceChecker(std::unique_ptr<storm::solver::SmtSolver>&& smtSolver, storm::expressions::Expression const& constraint);
+            EquivalenceChecker(std::unique_ptr<storm::solver::SmtSolver>&& smtSolver, boost::optional<storm::expressions::Expression> const& constraint = boost::none);
             
             bool areEquivalent(storm::expressions::Expression const& first, storm::expressions::Expression const& second);
             

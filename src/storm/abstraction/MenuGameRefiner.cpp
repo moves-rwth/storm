@@ -8,7 +8,7 @@ namespace storm {
     namespace abstraction {
         
         template<storm::dd::DdType Type, typename ValueType>
-        MenuGameRefiner<Type, ValueType>::MenuGameRefiner(MenuGameAbstractor<Type, ValueType>& abstractor) : abstractor(abstractor) {
+        MenuGameRefiner<Type, ValueType>::MenuGameRefiner(MenuGameAbstractor<Type, ValueType>& abstractor, std::unique_ptr<storm::solver::SmtSolver>&& smtSolver) : abstractor(abstractor), splitter(), equivalenceChecker(std::move(smtSolver)) {
             // Intentionally left empty.
         }
         
@@ -45,6 +45,124 @@ namespace storm {
             }
             
             return pivotState;
+        }
+        
+        template <storm::dd::DdType DdType, typename ValueType>
+        void refine(storm::dd::Bdd<DdType> const& pivotState, storm::dd::Bdd<DdType> const& player1Choice, storm::dd::Bdd<DdType> const& lowerChoice, storm::dd::Bdd<DdType> const& upperChoice) {
+            AbstractionInformation<DdType> const& abstractionInformation = abstractor.get().getAbstractionInformation();
+            
+            // Decode the index of the command chosen by player 1.
+            storm::dd::Add<DdType, ValueType> player1ChoiceAsAdd = player1Choice.template toAdd<ValueType>();
+            auto pl1It = player1ChoiceAsAdd.begin();
+            uint_fast64_t commandIndex = abstractionInformation.decodePlayer1Choice((*pl1It).first, abstractionInformation.getPlayer1VariableCount());
+#ifdef LOCAL_DEBUG
+            std::cout << "command index " << commandIndex << std::endl;
+            std::cout << program.get() << std::endl;
+            
+            for (auto stateValue : pivotState.template toAdd<ValueType>()) {
+                std::stringstream stateName;
+                stateName << "\tpl1_";
+                for (auto const& var : currentGame->getRowVariables()) {
+                    std::cout << "var " << var.getName() << std::endl;
+                    if (stateValue.first.getBooleanValue(var)) {
+                        stateName << "1";
+                    } else {
+                        stateName << "0";
+                    }
+                }
+                std::cout << "pivot is " << stateName.str() << std::endl;
+            }
+#endif
+            storm::abstraction::prism::AbstractCommand<DdType, ValueType>& abstractCommand = modules.front().getCommands()[commandIndex];
+            storm::prism::Command const& concreteCommand = abstractCommand.getConcreteCommand();
+#ifdef LOCAL_DEBUG
+            player1Choice.template toAdd<ValueType>().exportToDot("pl1choice_ref.dot");
+            std::cout << concreteCommand << std::endl;
+            
+            (currentGame->getTransitionMatrix() * player1Choice.template toAdd<ValueType>()).exportToDot("cuttrans.dot");
+#endif
+            
+            // Check whether there are bottom states in the game and whether one of the choices actually picks the
+            // bottom state as the successor.
+            bool buttomStateSuccessor = false;
+            if (!currentGame->getBottomStates().isZero()) {
+                buttomStateSuccessor = !((abstractionInformation.getBottomStateBdd(false, false) && lowerChoice) || (abstractionInformation.getBottomStateBdd(false, false) && upperChoice)).isZero();
+            }
+            
+            // If one of the choices picks the bottom state, the new predicate is based on the guard of the appropriate
+            // command (that is the player 1 choice).
+            if (buttomStateSuccessor) {
+                STORM_LOG_TRACE("One of the successors is a bottom state, taking a guard as a new predicate.");
+                abstractCommand.notifyGuardIsPredicate();
+                storm::expressions::Expression newPredicate = concreteCommand.getGuardExpression();
+                STORM_LOG_DEBUG("Derived new predicate: " << newPredicate);
+                this->refine({std::make_pair(newPredicate, true)});
+            } else {
+                STORM_LOG_TRACE("No bottom state successor. Deriving a new predicate using weakest precondition.");
+                
+#ifdef LOCAL_DEBUG
+                lowerChoice.template toAdd<ValueType>().exportToDot("lowerchoice_ref.dot");
+                upperChoice.template toAdd<ValueType>().exportToDot("upperchoice_ref.dot");
+#endif
+                
+                // Decode both choices to explicit mappings.
+#ifdef LOCAL_DEBUG
+                std::cout << "lower" << std::endl;
+#endif
+                std::map<uint_fast64_t, storm::storage::BitVector> lowerChoiceUpdateToSuccessorMapping = decodeChoiceToUpdateSuccessorMapping(lowerChoice);
+#ifdef LOCAL_DEBUG
+                std::cout << "upper" << std::endl;
+#endif
+                std::map<uint_fast64_t, storm::storage::BitVector> upperChoiceUpdateToSuccessorMapping = decodeChoiceToUpdateSuccessorMapping(upperChoice);
+                STORM_LOG_ASSERT(lowerChoiceUpdateToSuccessorMapping.size() == upperChoiceUpdateToSuccessorMapping.size(), "Mismatching sizes after decode (" << lowerChoiceUpdateToSuccessorMapping.size() << " vs. " << upperChoiceUpdateToSuccessorMapping.size() << ").");
+                
+#ifdef LOCAL_DEBUG
+                std::cout << "lower" << std::endl;
+                for (auto const& entry : lowerChoiceUpdateToSuccessorMapping) {
+                    std::cout << entry.first << " -> " << entry.second << std::endl;
+                }
+                std::cout << "upper" << std::endl;
+                for (auto const& entry : upperChoiceUpdateToSuccessorMapping) {
+                    std::cout << entry.first << " -> " << entry.second << std::endl;
+                }
+#endif
+                
+                // Now go through the mappings and find points of deviation. Currently, we take the first deviation.
+                storm::expressions::Expression newPredicate;
+                auto lowerIt = lowerChoiceUpdateToSuccessorMapping.begin();
+                auto lowerIte = lowerChoiceUpdateToSuccessorMapping.end();
+                auto upperIt = upperChoiceUpdateToSuccessorMapping.begin();
+                for (; lowerIt != lowerIte; ++lowerIt, ++upperIt) {
+                    STORM_LOG_ASSERT(lowerIt->first == upperIt->first, "Update indices mismatch.");
+                    uint_fast64_t updateIndex = lowerIt->first;
+#ifdef LOCAL_DEBUG
+                    std::cout << "update idx " << updateIndex << std::endl;
+#endif
+                    bool deviates = lowerIt->second != upperIt->second;
+                    if (deviates) {
+                        for (uint_fast64_t predicateIndex = 0; predicateIndex < lowerIt->second.size(); ++predicateIndex) {
+                            if (lowerIt->second.get(predicateIndex) != upperIt->second.get(predicateIndex)) {
+                                // Now we know the point of the deviation (command, update, predicate).
+                                std::cout << "ref" << std::endl;
+                                std::cout << abstractionInformation.getPredicateByIndex(predicateIndex) << std::endl;
+                                std::cout << concreteCommand.getUpdate(updateIndex) << std::endl;
+                                newPredicate = abstractionInformation.getPredicateByIndex(predicateIndex).substitute(concreteCommand.getUpdate(updateIndex).getAsVariableToExpressionMap()).simplify();
+                                break;
+                            }
+                        }
+                    }
+                }
+                STORM_LOG_ASSERT(newPredicate.isInitialized(), "Could not derive new predicate as there is no deviation.");
+                
+                STORM_LOG_DEBUG("Derived new predicate: " << newPredicate);
+                
+                this->refine({std::make_pair(newPredicate, true)});
+            }
+            
+            STORM_LOG_TRACE("Current set of predicates:");
+            for (auto const& predicate : abstractionInformation.getPredicates()) {
+                STORM_LOG_TRACE(predicate);
+            }
         }
         
         template<storm::dd::DdType Type, typename ValueType>
@@ -201,6 +319,39 @@ namespace storm {
             }
         }
 
+        
+        template<storm::dd::DdType Type, typename ValueType>
+        bool MenuGameRefiner<Type, ValueType>::performRefinement(std::vector<storm::expressions::Expression> const& predicates) const {
+            for (auto const& predicate : predicates) {
+                storm::expressions::Expression const& predicate = predicateAllowSplitPair.first;
+                bool allowSplit = predicateAllowSplitPair.second;
+                STORM_LOG_THROW(predicate.hasBooleanType(), storm::exceptions::InvalidArgumentException, "Expecting a predicate of type bool.");
+                
+                if (allowSplit && splitPredicates) {
+                    // Split the predicates.
+                    std::vector<storm::expressions::Expression> atoms = splitter.split(predicate);
+                    
+                    // Check which of the atoms are redundant in the sense that they are equivalent to a predicate we already have.
+                    for (auto const& atom : atoms) {
+                        bool addAtom = true;
+                        for (auto const& oldPredicate : abstractionInformation.getPredicates()) {
+                            if (equivalenceChecker.areEquivalent(atom, oldPredicate)) {
+                                addAtom = false;
+                                break;
+                            }
+                        }
+                        
+                        if (addAtom) {
+                            uint_fast64_t newPredicateIndex = abstractionInformation.addPredicate(atom);
+                            newPredicateIndices.push_back(newPredicateIndex);
+                        }
+                    }
+                } else {
+                    uint_fast64_t newPredicateIndex = abstractionInformation.addPredicate(predicate);
+                    newPredicateIndices.push_back(newPredicateIndex);
+                }
+            }
+        }
         
         template class MenuGameRefiner<storm::dd::DdType::CUDD, double>;
         template class MenuGameRefiner<storm::dd::DdType::Sylvan, double>;

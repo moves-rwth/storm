@@ -7,8 +7,10 @@
 namespace storm {
     namespace expressions {
  
-        EquivalenceChecker::EquivalenceChecker(std::unique_ptr<storm::solver::SmtSolver>&& smtSolver, storm::expressions::Expression const& constraint) : smtSolver(std::move(smtSolver)) {
-            this->smtSolver->add(constraint);
+        EquivalenceChecker::EquivalenceChecker(std::unique_ptr<storm::solver::SmtSolver>&& smtSolver, boost::optional<storm::expressions::Expression> const& constraint) : smtSolver(std::move(smtSolver)) {
+            if (constraint) {
+                this->smtSolver->add(constraint.get());
+            }
         }
         
         bool EquivalenceChecker::areEquivalent(storm::expressions::Expression const& first, storm::expressions::Expression const& second) {

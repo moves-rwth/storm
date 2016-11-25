@@ -30,8 +30,8 @@ namespace storm {
             template <storm::dd::DdType DdType, typename ValueType>
             AbstractProgram<DdType, ValueType>::AbstractProgram(storm::prism::Program const& program,
                                                                 std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory,
-                                                                bool addAllGuards, bool splitPredicates)
-            : program(program), smtSolverFactory(smtSolverFactory), abstractionInformation(program.getManager()), modules(), initialStateAbstractor(abstractionInformation, program.getAllExpressionVariables(), {program.getInitialStatesExpression()}, this->smtSolverFactory), splitPredicates(splitPredicates), splitter(), equivalenceChecker(smtSolverFactory->create(abstractionInformation.getExpressionManager()), abstractionInformation.getExpressionManager().boolean(true)), addedAllGuards(addAllGuards), currentGame(nullptr) {
+                                                                bool addAllGuards)
+            : program(program), smtSolverFactory(smtSolverFactory), abstractionInformation(program.getManager()), modules(), initialStateAbstractor(abstractionInformation, program.getAllExpressionVariables(), {program.getInitialStatesExpression()}, this->smtSolverFactory), addedAllGuards(addAllGuards), currentGame(nullptr) {
                 
                 // For now, we assume that there is a single module. If the program has more than one module, it needs
                 // to be flattened before the procedure.
@@ -75,10 +75,10 @@ namespace storm {
                 commandUpdateProbabilitiesAdd = modules.front().getCommandUpdateProbabilitiesAdd();
                 
                 // Now that we have created all other DD variables, we create the DD variables for the predicates.
-                std::vector<std::pair<storm::expressions::Expression, bool>> initialPredicates;
+                std::vector<storm::expressions::Expression> initialPredicates;
                 if (addAllGuards) {
                     for (auto const& guard : allGuards) {
-                        initialPredicates.push_back(std::make_pair(guard, true));
+                        initialPredicates.push_back(guard);
                     }
                 }
                 
@@ -87,37 +87,12 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            void AbstractProgram<DdType, ValueType>::refine(std::vector<std::pair<storm::expressions::Expression, bool>> const& predicates) {
-                // Add the predicates to the global list of predicates.
+            void AbstractProgram<DdType, ValueType>::refine(std::vector<storm::expressions::Expression> const& predicates) {
+                // Add the predicates to the global list of predicates and gather their indices.
                 std::vector<uint_fast64_t> newPredicateIndices;
-                for (auto const& predicateAllowSplitPair : predicates) {
-                    storm::expressions::Expression const& predicate = predicateAllowSplitPair.first;
-                    bool allowSplit = predicateAllowSplitPair.second;
+                for (auto const& predicate : predicates) {
                     STORM_LOG_THROW(predicate.hasBooleanType(), storm::exceptions::InvalidArgumentException, "Expecting a predicate of type bool.");
-                    
-                    if (allowSplit && splitPredicates) {
-                        // Split the predicates.
-                        std::vector<storm::expressions::Expression> atoms = splitter.split(predicate);
-                        
-                        // Check which of the atoms are redundant in the sense that they are equivalent to a predicate we already have.
-                        for (auto const& atom : atoms) {
-                            bool addAtom = true;
-                            for (auto const& oldPredicate : abstractionInformation.getPredicates()) {
-                                if (equivalenceChecker.areEquivalent(atom, oldPredicate)) {
-                                    addAtom = false;
-                                    break;
-                                }
-                            }
-                            
-                            if (addAtom) {
-                                uint_fast64_t newPredicateIndex = abstractionInformation.addPredicate(atom);
-                                newPredicateIndices.push_back(newPredicateIndex);
-                            }
-                        }
-                    } else {
-                        uint_fast64_t newPredicateIndex = abstractionInformation.addPredicate(predicate);
-                        newPredicateIndices.push_back(newPredicateIndex);
-                    }
+                    newPredicateIndices.push_back(abstractionInformation.addPredicate(predicate));
                 }
                 
                 // Refine all abstract modules.
@@ -131,164 +106,16 @@ namespace storm {
                 // Finally, we rebuild the game.
                 currentGame = buildGame();
             }
-            
-            template <storm::dd::DdType DdType, typename ValueType>
-            std::map<uint_fast64_t, storm::storage::BitVector> AbstractProgram<DdType, ValueType>::decodeChoiceToUpdateSuccessorMapping(storm::dd::Bdd<DdType> const& choice) const {
-                std::map<uint_fast64_t, storm::storage::BitVector> result;
-                
-                storm::dd::Add<DdType, ValueType> lowerChoiceAsAdd = choice.template toAdd<ValueType>();
-                for (auto const& successorValuePair : lowerChoiceAsAdd) {
-                    uint_fast64_t updateIndex = abstractionInformation.decodeAux(successorValuePair.first, 0, currentGame->getProbabilisticBranchingVariables().size());
-                    
-#ifdef LOCAL_DEBUG
-                    std::cout << "update idx: " << updateIndex << std::endl;
-#endif
-                    storm::storage::BitVector successor(abstractionInformation.getNumberOfPredicates());
-                    for (uint_fast64_t index = 0; index < abstractionInformation.getOrderedSuccessorVariables().size(); ++index) {
-                        auto const& successorVariable = abstractionInformation.getOrderedSuccessorVariables()[index];
-#ifdef LOCAL_DEBUG
-                        std::cout << successorVariable.getName() << " has value";
-#endif
-                        if (successorValuePair.first.getBooleanValue(successorVariable)) {
-                            successor.set(index);
-#ifdef LOCAL_DEBUG
-                            std::cout << " true";
-#endif
-                        } else {
-#ifdef LOCAL_DEBUG
-                            std::cout << " false";
-#endif
-                        }
-#ifdef LOCAL_DEBUG
-                        std::cout << std::endl;
-#endif
-                    }
-                    
-                    result[updateIndex] = successor;
-                }
-                return result;
-            }
-            
-            template <storm::dd::DdType DdType, typename ValueType>
-            void AbstractProgram<DdType, ValueType>::refine(storm::dd::Bdd<DdType> const& pivotState, storm::dd::Bdd<DdType> const& player1Choice, storm::dd::Bdd<DdType> const& lowerChoice, storm::dd::Bdd<DdType> const& upperChoice) {
-                // Decode the index of the command chosen by player 1.
-                storm::dd::Add<DdType, ValueType> player1ChoiceAsAdd = player1Choice.template toAdd<ValueType>();
-                auto pl1It = player1ChoiceAsAdd.begin();
-                uint_fast64_t commandIndex = abstractionInformation.decodePlayer1Choice((*pl1It).first, abstractionInformation.getPlayer1VariableCount());
-#ifdef LOCAL_DEBUG
-                std::cout << "command index " << commandIndex << std::endl;
-                std::cout << program.get() << std::endl;
-                
-                for (auto stateValue : pivotState.template toAdd<ValueType>()) {
-                    std::stringstream stateName;
-                    stateName << "\tpl1_";
-                    for (auto const& var : currentGame->getRowVariables()) {
-                        std::cout << "var " << var.getName() << std::endl;
-                        if (stateValue.first.getBooleanValue(var)) {
-                            stateName << "1";
-                        } else {
-                            stateName << "0";
-                        }
-                    }
-                    std::cout << "pivot is " << stateName.str() << std::endl;
-                }
-#endif
-                storm::abstraction::prism::AbstractCommand<DdType, ValueType>& abstractCommand = modules.front().getCommands()[commandIndex];
-                storm::prism::Command const& concreteCommand = abstractCommand.getConcreteCommand();
-#ifdef LOCAL_DEBUG
-                player1Choice.template toAdd<ValueType>().exportToDot("pl1choice_ref.dot");
-                std::cout << concreteCommand << std::endl;
-                
-                (currentGame->getTransitionMatrix() * player1Choice.template toAdd<ValueType>()).exportToDot("cuttrans.dot");
-#endif
-                
-                // Check whether there are bottom states in the game and whether one of the choices actually picks the
-                // bottom state as the successor.
-                bool buttomStateSuccessor = false;
-                if (!currentGame->getBottomStates().isZero()) {
-                    buttomStateSuccessor = !((abstractionInformation.getBottomStateBdd(false, false) && lowerChoice) || (abstractionInformation.getBottomStateBdd(false, false) && upperChoice)).isZero();
-                }
-                
-                // If one of the choices picks the bottom state, the new predicate is based on the guard of the appropriate
-                // command (that is the player 1 choice).
-                if (buttomStateSuccessor) {
-                    STORM_LOG_TRACE("One of the successors is a bottom state, taking a guard as a new predicate.");
-                    abstractCommand.notifyGuardIsPredicate();
-                    storm::expressions::Expression newPredicate = concreteCommand.getGuardExpression();
-                    STORM_LOG_DEBUG("Derived new predicate: " << newPredicate);
-                    this->refine({std::make_pair(newPredicate, true)});
-                } else {
-                    STORM_LOG_TRACE("No bottom state successor. Deriving a new predicate using weakest precondition.");
-                    
-#ifdef LOCAL_DEBUG
-                    lowerChoice.template toAdd<ValueType>().exportToDot("lowerchoice_ref.dot");
-                    upperChoice.template toAdd<ValueType>().exportToDot("upperchoice_ref.dot");
-#endif
-                    
-                    // Decode both choices to explicit mappings.
-#ifdef LOCAL_DEBUG
-                    std::cout << "lower" << std::endl;
-#endif
-                    std::map<uint_fast64_t, storm::storage::BitVector> lowerChoiceUpdateToSuccessorMapping = decodeChoiceToUpdateSuccessorMapping(lowerChoice);
-#ifdef LOCAL_DEBUG
-                    std::cout << "upper" << std::endl;
-#endif
-                    std::map<uint_fast64_t, storm::storage::BitVector> upperChoiceUpdateToSuccessorMapping = decodeChoiceToUpdateSuccessorMapping(upperChoice);
-                    STORM_LOG_ASSERT(lowerChoiceUpdateToSuccessorMapping.size() == upperChoiceUpdateToSuccessorMapping.size(), "Mismatching sizes after decode (" << lowerChoiceUpdateToSuccessorMapping.size() << " vs. " << upperChoiceUpdateToSuccessorMapping.size() << ").");
-                    
-#ifdef LOCAL_DEBUG
-                    std::cout << "lower" << std::endl;
-                    for (auto const& entry : lowerChoiceUpdateToSuccessorMapping) {
-                        std::cout << entry.first << " -> " << entry.second << std::endl;
-                    }
-                    std::cout << "upper" << std::endl;
-                    for (auto const& entry : upperChoiceUpdateToSuccessorMapping) {
-                        std::cout << entry.first << " -> " << entry.second << std::endl;
-                    }
-#endif
-                    
-                    // Now go through the mappings and find points of deviation. Currently, we take the first deviation.
-                    storm::expressions::Expression newPredicate;
-                    auto lowerIt = lowerChoiceUpdateToSuccessorMapping.begin();
-                    auto lowerIte = lowerChoiceUpdateToSuccessorMapping.end();
-                    auto upperIt = upperChoiceUpdateToSuccessorMapping.begin();
-                    for (; lowerIt != lowerIte; ++lowerIt, ++upperIt) {
-                        STORM_LOG_ASSERT(lowerIt->first == upperIt->first, "Update indices mismatch.");
-                        uint_fast64_t updateIndex = lowerIt->first;
-#ifdef LOCAL_DEBUG
-                        std::cout << "update idx " << updateIndex << std::endl;
-#endif
-                        bool deviates = lowerIt->second != upperIt->second;
-                        if (deviates) {
-                            for (uint_fast64_t predicateIndex = 0; predicateIndex < lowerIt->second.size(); ++predicateIndex) {
-                                if (lowerIt->second.get(predicateIndex) != upperIt->second.get(predicateIndex)) {
-                                    // Now we know the point of the deviation (command, update, predicate).
-                                    std::cout << "ref" << std::endl;
-                                    std::cout << abstractionInformation.getPredicateByIndex(predicateIndex) << std::endl;
-                                    std::cout << concreteCommand.getUpdate(updateIndex) << std::endl;
-                                    newPredicate = abstractionInformation.getPredicateByIndex(predicateIndex).substitute(concreteCommand.getUpdate(updateIndex).getAsVariableToExpressionMap()).simplify();
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    STORM_LOG_ASSERT(newPredicate.isInitialized(), "Could not derive new predicate as there is no deviation.");
-                    
-                    STORM_LOG_DEBUG("Derived new predicate: " << newPredicate);
-                    
-                    this->refine({std::make_pair(newPredicate, true)});
-                }
-                
-                STORM_LOG_TRACE("Current set of predicates:");
-                for (auto const& predicate : abstractionInformation.getPredicates()) {
-                    STORM_LOG_TRACE(predicate);
-                }
-            }
-            
+                                    
             template <storm::dd::DdType DdType, typename ValueType>
             MenuGame<DdType, ValueType> AbstractProgram<DdType, ValueType>::getAbstractGame() {
                 STORM_LOG_ASSERT(currentGame != nullptr, "Game was not properly created.");
                 return *currentGame;
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
+            AbstractionInformation<DdType> const& AbstractProgram<DdType, ValueType>::getAbstractionInformation() const {
+                return abstractionInformation;
             }
             
             template <storm::dd::DdType DdType, typename ValueType>

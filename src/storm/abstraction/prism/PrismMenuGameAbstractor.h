@@ -14,6 +14,8 @@ namespace storm {
                 PrismMenuGameAbstractor(storm::prism::Program const& program, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
                 
                 virtual storm::abstraction::MenuGame<DdType, ValueType> abstract() override;
+                virtual AbstractionInformation<DdType> const& getAbstractionInformation() const override;
+                
                 virtual void refine(std::vector<storm::expressions::Expression> const& predicates) override;
                 virtual void refine(storm::dd::Bdd<DdType> const& pivotState, storm::dd::Bdd<DdType> const& player1Choice, storm::dd::Bdd<DdType> const& lowerChoice, storm::dd::Bdd<DdType> const& upperChoice) override;
 
