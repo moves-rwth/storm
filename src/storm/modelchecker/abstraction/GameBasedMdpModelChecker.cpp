@@ -284,16 +284,30 @@ namespace storm {
             }
             return false;
         }
+        
+        template<storm::dd::DdType Type, typename ValueType>
+        struct QuantitativeResult {
+            QuantitativeResult() = default;
+            
+            QuantitativeResult(ValueType initialStateValue, storm::dd::Add<Type, ValueType> const& values, storm::dd::Bdd<Type> const& player1Strategy, storm::dd::Bdd<Type> const& player2Strategy) : initialStateValue(initialStateValue), values(values), player1Strategy(player1Strategy), player2Strategy(player2Strategy) {
+                // Intentionally left empty.
+            }
+            
+            ValueType initialStateValue;
+            storm::dd::Add<Type, ValueType> values;
+            storm::dd::Bdd<Type> player1Strategy;
+            storm::dd::Bdd<Type> player2Strategy;
+        };
 
         template<storm::dd::DdType Type, typename ValueType>
-        void refineAfterQuantitativeCheck(storm::abstraction::prism::PrismMenuGameAbstractor<Type, ValueType>& abstractor, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Add<Type, ValueType> const& minResult, storm::dd::Add<Type, ValueType> const& maxResult, detail::GameProb01ResultMinMax<Type> const& qualitativeResult, std::pair<storm::dd::Bdd<Type>, storm::dd::Bdd<Type>> const& minStrategyPair, std::pair<storm::dd::Bdd<Type>, storm::dd::Bdd<Type>> const& maxStrategyPair, storm::dd::Bdd<Type> const& transitionMatrixBdd) {
+        void refineAfterQuantitativeCheck(storm::abstraction::prism::PrismMenuGameAbstractor<Type, ValueType>& abstractor, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& transitionMatrixBdd, QuantitativeResult<Type, ValueType> const& minResult, QuantitativeResult<Type, ValueType> const& maxResult) {
             STORM_LOG_TRACE("Refining after quantitative check.");
             // Get all relevant strategies.
-            storm::dd::Bdd<Type> minPlayer1Strategy = minStrategyPair.first;
-            storm::dd::Bdd<Type> minPlayer2Strategy = minStrategyPair.second;
-            storm::dd::Bdd<Type> maxPlayer1Strategy = maxStrategyPair.first;
-            storm::dd::Bdd<Type> maxPlayer2Strategy = maxStrategyPair.second;
-
+            storm::dd::Bdd<Type> minPlayer1Strategy = minResult.player1Strategy;
+            storm::dd::Bdd<Type> minPlayer2Strategy = minResult.player2Strategy;
+            storm::dd::Bdd<Type> maxPlayer1Strategy = maxResult.player1Strategy;
+            storm::dd::Bdd<Type> maxPlayer2Strategy = maxResult.player2Strategy;
+            
             // TODO: fix min strategies to take the max strategies if possible.
             
             // Build the fragment of transitions that is reachable by both the min and the max strategies.
@@ -302,20 +316,20 @@ namespace storm {
             storm::dd::Bdd<Type> pivotStates = storm::utility::dd::computeReachableStates(game.getInitialStates(), reachableTransitions, game.getRowVariables(), game.getColumnVariables());
             
             // Require the pivot state to be a state with a lower bound strictly smaller than the upper bound.
-            pivotStates &= minResult.less(maxResult);
+            pivotStates &= minResult.values.less(maxResult.values);
             
             STORM_LOG_ASSERT(!pivotStates.isZero(), "Unable to refine without pivot state candidates.");
-
+            
             // Then constrain these states by the requirement that for either the lower or upper player 1 choice the player 2 choices must be different and
             // that the difference is not because of a missing strategy in either case.
             
             // Start with constructing the player 2 states that have a (min) and a (max) strategy.
             // TODO: necessary?
-            storm::dd::Bdd<Type> constraint = minStrategyPair.second.existsAbstract(game.getPlayer2Variables()) && maxStrategyPair.second.existsAbstract(game.getPlayer2Variables());
+            storm::dd::Bdd<Type> constraint = minPlayer2Strategy.existsAbstract(game.getPlayer2Variables()) && maxPlayer2Strategy.existsAbstract(game.getPlayer2Variables());
             
             // Now construct all player 2 choices that actually exist and differ in the min and max case.
             constraint &= minPlayer2Strategy.exclusiveOr(maxPlayer2Strategy);
-
+            
             // Then restrict the pivot states by requiring existing and different player 2 choices.
             pivotStates &= ((minPlayer1Strategy || maxPlayer1Strategy) && constraint).existsAbstract(game.getNondeterminismVariables());
             
@@ -330,7 +344,7 @@ namespace storm {
             storm::dd::Bdd<Type> lowerChoice = pivotState && game.getExtendedTransitionMatrix().toBdd() && minPlayer1Strategy;
             storm::dd::Bdd<Type> lowerChoice1 = (lowerChoice && minPlayer2Strategy).existsAbstract(variablesToAbstract);
             storm::dd::Bdd<Type> lowerChoice2 = (lowerChoice && maxPlayer2Strategy).existsAbstract(variablesToAbstract);
-
+            
             bool lowerChoicesDifferent = !lowerChoice1.exclusiveOr(lowerChoice2).isZero();
             if (lowerChoicesDifferent) {
                 STORM_LOG_TRACE("Refining based on lower choice.");
@@ -355,22 +369,9 @@ namespace storm {
                 }
             }
         }
-        
+
         template<storm::dd::DdType Type, typename ValueType>
-        struct MaybeStateResult {
-            MaybeStateResult() = default;
-            
-            MaybeStateResult(storm::dd::Add<Type, ValueType> const& values, storm::dd::Bdd<Type> const& player1Strategy, storm::dd::Bdd<Type> const& player2Strategy) : values(values), player1Strategy(player1Strategy), player2Strategy(player2Strategy) {
-                // Intentionally left empty.
-            }
-            
-            storm::dd::Add<Type, ValueType> values;
-            storm::dd::Bdd<Type> player1Strategy;
-            storm::dd::Bdd<Type> player2Strategy;
-        };
-        
-        template<storm::dd::DdType Type, typename ValueType>
-        MaybeStateResult<Type, ValueType> solveMaybeStates(storm::OptimizationDirection const& player1Direction, storm::OptimizationDirection const& player2Direction, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& maybeStates, storm::dd::Bdd<Type> const& prob1States, boost::optional<MaybeStateResult<Type, ValueType>> startInfo = boost::none) {
+        QuantitativeResult<Type, ValueType> solveMaybeStates(storm::OptimizationDirection const& player1Direction, storm::OptimizationDirection const& player2Direction, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& maybeStates, storm::dd::Bdd<Type> const& prob1States, boost::optional<QuantitativeResult<Type, ValueType>> const& startInfo = boost::none) {
             
             STORM_LOG_TRACE("Performing quantative solution step. Player 1: " << player1Direction << ", player 2: " << player2Direction << ".");
             
@@ -397,7 +398,59 @@ namespace storm {
             std::unique_ptr<storm::solver::SymbolicGameSolver<Type, ValueType>> solver = solverFactory.create(submatrix, maybeStates, game.getIllegalPlayer1Mask(), game.getIllegalPlayer2Mask(), game.getRowVariables(), game.getColumnVariables(), game.getRowColumnMetaVariablePairs(), game.getPlayer1Variables(), game.getPlayer2Variables());
             solver->setGeneratePlayersStrategies(true);
             auto values = solver->solveGame(player1Direction, player2Direction, startVector, subvector, startInfo ? boost::make_optional(startInfo.get().player1Strategy) : boost::none, startInfo ? boost::make_optional(startInfo.get().player2Strategy) : boost::none);
-            return MaybeStateResult<Type, ValueType>(values, solver->getPlayer1Strategy(), solver->getPlayer2Strategy());
+            return QuantitativeResult<Type, ValueType>(storm::utility::zero<ValueType>(), values, solver->getPlayer1Strategy(), solver->getPlayer2Strategy());
+        }
+        
+        template<storm::dd::DdType Type, typename ValueType>
+        QuantitativeResult<Type, ValueType> computeQuantitativeResult(storm::OptimizationDirection player1Direction, storm::OptimizationDirection player2Direction, storm::abstraction::MenuGame<Type, ValueType> const& game, detail::GameProb01ResultMinMax<Type> const& qualitativeResult, storm::dd::Add<Type, ValueType> const& initialStatesAdd, storm::dd::Bdd<Type> const& maybeStates, boost::optional<QuantitativeResult<Type, ValueType>> const& startInfo = boost::none) {
+            
+            bool min = player2Direction == storm::OptimizationDirection::Minimize;
+            
+            // The minimal value after qualitative checking can only be zero. If it was 1, we could have given
+            // the result right away. Similarly, the maximal value can only be one at this point.
+            ValueType initialStateValue = min ? storm::utility::zero<ValueType>() : storm::utility::one<ValueType>();
+
+            QuantitativeResult<Type, ValueType> result;
+            auto start = std::chrono::high_resolution_clock::now();
+            if (!maybeStates.isZero()) {
+                // Solve the quantitative values of maybe states.
+                result = solveMaybeStates(player1Direction, player2Direction, game, maybeStates, min ? qualitativeResult.prob1Min.getPlayer1States() : qualitativeResult.prob1Max.getPlayer1States(), startInfo);
+                
+                // Cut the obtained strategies to the reachable states of the game.
+                result.player1Strategy &= game.getReachableStates();
+                result.player2Strategy &= game.getReachableStates();
+                
+                // Extend the values of the maybe states by the qualitative values.
+                result.values += min ? qualitativeResult.prob1Min.getPlayer1States().template toAdd<ValueType>() : qualitativeResult.prob1Max.getPlayer1States().template toAdd<ValueType>();
+                
+                // Construct an ADD holding the initial values of initial states and check it for validity.
+                storm::dd::Add<Type, ValueType> initialStateValueAdd = initialStatesAdd * result.values;
+                // For min, we can only require a non-zero count of *at most* one, because the result may actually be 0.
+                STORM_LOG_ASSERT((!min || initialStateValueAdd.getNonZeroCount() == 1) && (min || initialStateValueAdd.getNonZeroCount() <= 1), "Wrong number of results for initial states. Expected " << (min ? "<= 1" : "1") << ", but got " << initialStateValueAdd.getNonZeroCount() << ".");
+                result.initialStateValue = initialStateValue = initialStateValueAdd.getMax();
+                
+                // Finally, we fix the strategies. That is, we take the decisions of the strategies obtained in the
+                // qualitiative preprocessing if possible.
+                storm::dd::Bdd<Type> combinedPlayer1QualitativeStrategies;
+                storm::dd::Bdd<Type> combinedPlayer2QualitativeStrategies;
+                if (min) {
+                    combinedPlayer1QualitativeStrategies = (qualitativeResult.prob0Min.getPlayer1Strategy() || qualitativeResult.prob1Min.getPlayer1Strategy());
+                    combinedPlayer2QualitativeStrategies = (qualitativeResult.prob0Min.getPlayer2Strategy() || qualitativeResult.prob1Min.getPlayer2Strategy());
+                } else {
+                    combinedPlayer1QualitativeStrategies = (qualitativeResult.prob0Max.getPlayer1Strategy() || qualitativeResult.prob1Max.getPlayer1Strategy());
+                    combinedPlayer2QualitativeStrategies = (qualitativeResult.prob0Max.getPlayer2Strategy() || qualitativeResult.prob1Max.getPlayer2Strategy());
+                }
+                
+                result.player1Strategy = combinedPlayer1QualitativeStrategies.existsAbstract(game.getPlayer1Variables()).ite(combinedPlayer1QualitativeStrategies, result.player1Strategy);
+                result.player2Strategy = combinedPlayer2QualitativeStrategies.existsAbstract(game.getPlayer2Variables()).ite(combinedPlayer2QualitativeStrategies, result.player2Strategy);
+            } else {
+                result = QuantitativeResult<Type, ValueType>(initialStateValue, game.getManager().template getAddZero<ValueType>(), game.getManager().getBddZero(), game.getManager().getBddZero());
+            }
+            
+            auto end = std::chrono::high_resolution_clock::now();
+            STORM_LOG_TRACE("Obtained quantitative " << (player2Direction == storm::OptimizationDirection::Minimize ? "lower" : "upper") << " bound " << result.initialStateValue << " in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
+            
+            return result;
         }
         
         template<storm::dd::DdType Type, typename ModelType>
@@ -475,79 +528,30 @@ namespace storm {
                 
                 if (!qualitativeRefinement) {
                     // At this point, we know that we cannot answer the query without further numeric computation.
+
+                    storm::dd::Add<Type, ValueType> initialStatesAdd = initialStates.template toAdd<ValueType>();
+                    
                     STORM_LOG_TRACE("Starting numerical solution step.");
                     auto quantitativeStart = std::chrono::high_resolution_clock::now();
-                    
-                    // Prepare some storage that we use on-demand during the quantitative solving step.
-                    storm::dd::Add<Type, ValueType> minResult = qualitativeResult.prob1Min.getPlayer1States().template toAdd<ValueType>();
-                    storm::dd::Add<Type, ValueType> maxResult = qualitativeResult.prob1Max.getPlayer1States().template toAdd<ValueType>();
-                    storm::dd::Add<Type, ValueType> initialStatesAdd = initialStates.template toAdd<ValueType>();
 
-					storm::dd::Bdd<Type> combinedMinPlayer1QualitativeStrategies = (qualitativeResult.prob0Min.getPlayer1Strategy() || qualitativeResult.prob1Min.getPlayer1Strategy());
-					storm::dd::Bdd<Type> combinedMinPlayer2QualitativeStrategies = (qualitativeResult.prob0Min.getPlayer2Strategy() || qualitativeResult.prob1Min.getPlayer2Strategy());
-
-                    // The minimal value after qualitative checking can only be zero. It it was 1, we could have given
-                    // the result right away.
-                    ValueType minValue = storm::utility::zero<ValueType>();
-                    MaybeStateResult<Type, ValueType> minMaybeStateResult(game.getManager().template getAddZero<ValueType>(), game.getManager().getBddZero(), game.getManager().getBddZero());
-                    auto minStart = std::chrono::high_resolution_clock::now();
-                    if (!maybeMin.isZero()) {
-                        minMaybeStateResult = solveMaybeStates(player1Direction, storm::OptimizationDirection::Minimize, game, maybeMin, qualitativeResult.prob1Min.getPlayer1States());
-						minMaybeStateResult.player1Strategy &= game.getReachableStates();
-						minMaybeStateResult.player2Strategy &= game.getReachableStates();
-                        minResult += minMaybeStateResult.values;
-                        storm::dd::Add<Type, ValueType> initialStateMin = initialStatesAdd * minResult;
-                        // Here we can only require a non-zero count of *at most* one, because the result may actually be 0.
-                        STORM_LOG_ASSERT(initialStateMin.getNonZeroCount() <= 1, "Wrong number of results for initial states. Expected <= 1, but got " << initialStateMin.getNonZeroCount() << ".");
-                        minValue = initialStateMin.getMax();
-                    }
-                    auto minEnd = std::chrono::high_resolution_clock::now();
-                    STORM_LOG_TRACE("Obtained quantitative lower bound " << minValue << " in " << std::chrono::duration_cast<std::chrono::milliseconds>(minEnd - minStart).count() << "ms.");
-                    
-					minMaybeStateResult.player1Strategy = combinedMinPlayer1QualitativeStrategies.existsAbstract(game.getPlayer1Variables()).ite(combinedMinPlayer1QualitativeStrategies, minMaybeStateResult.player1Strategy);
-					minMaybeStateResult.player2Strategy = combinedMinPlayer2QualitativeStrategies.existsAbstract(game.getPlayer2Variables()).ite(combinedMinPlayer2QualitativeStrategies, minMaybeStateResult.player2Strategy);
-					
-                    // Check whether we can abort the computation because of the lower value.
-                    result = checkForResultAfterQuantitativeCheck<ValueType>(checkTask, storm::OptimizationDirection::Minimize, minValue);
-                    if (result) {
-                        return result;
-                    }
-
-					storm::dd::Bdd<Type> combinedMaxPlayer1QualitativeStrategies = (qualitativeResult.prob0Max.getPlayer1Strategy() || qualitativeResult.prob1Max.getPlayer1Strategy());
-					storm::dd::Bdd<Type> combinedMaxPlayer2QualitativeStrategies = (qualitativeResult.prob0Max.getPlayer2Strategy() || qualitativeResult.prob1Max.getPlayer2Strategy());
-
-                    // Likewise, the maximal value after qualitative checking can only be 1. If it was 0, we could have
-                    // given the result right awy.
-                    ValueType maxValue = storm::utility::one<ValueType>();
-                    auto maxStart = std::chrono::high_resolution_clock::now();
-                    MaybeStateResult<Type, ValueType> maxMaybeStateResult(game.getManager().template getAddZero<ValueType>(), game.getManager().getBddZero(), game.getManager().getBddZero());
-                    if (!maybeMax.isZero()) {
-                        maxMaybeStateResult = solveMaybeStates(player1Direction, storm::OptimizationDirection::Maximize, game, maybeMax, qualitativeResult.prob1Max.getPlayer1States(), boost::make_optional(minMaybeStateResult));
-						maxMaybeStateResult.player1Strategy &= game.getReachableStates();
-						maxMaybeStateResult.player2Strategy &= game.getReachableStates();
-                        maxResult += maxMaybeStateResult.values;
-                        storm::dd::Add<Type, ValueType> initialStateMax = (initialStatesAdd * maxResult);
-                        // Unlike in the min-case, we can require a non-zero count of 1 here, because if the max was in
-                        // fact 0, the result would be 0, which would have been detected earlier by the graph algorithms.
-                        STORM_LOG_ASSERT(initialStateMax.getNonZeroCount() == 1, "Wrong number of results for initial states. Expected 1, but got " << initialStateMax.getNonZeroCount() << ".");
-                        maxValue = initialStateMax.getMax();
-                    }
-                    auto maxEnd = std::chrono::high_resolution_clock::now();
-                    STORM_LOG_TRACE("Obtained quantitative upper bound " << maxValue << " in " << std::chrono::duration_cast<std::chrono::milliseconds>(maxEnd - maxStart).count() << "ms.");
-
-					maxMaybeStateResult.player1Strategy = combinedMaxPlayer1QualitativeStrategies.existsAbstract(game.getPlayer1Variables()).ite(combinedMaxPlayer1QualitativeStrategies, maxMaybeStateResult.player1Strategy);
-					maxMaybeStateResult.player2Strategy = combinedMaxPlayer2QualitativeStrategies.existsAbstract(game.getPlayer2Variables()).ite(combinedMaxPlayer2QualitativeStrategies, maxMaybeStateResult.player2Strategy);
-
-                    // Check whether we can abort the computation because of the upper value.
-                    result = checkForResultAfterQuantitativeCheck<ValueType>(checkTask, storm::OptimizationDirection::Maximize, maxValue);
+                    // Solve the min values and check whether we can give the answer already.
+                    QuantitativeResult<Type, ValueType> minResult = computeQuantitativeResult(player1Direction, storm::OptimizationDirection::Minimize, game, qualitativeResult, initialStatesAdd, maybeMin);
+                    result = checkForResultAfterQuantitativeCheck<ValueType>(checkTask, storm::OptimizationDirection::Minimize, minResult.initialStateValue);
                     if (result) {
                         return result;
                     }
                     
+                    // Solve the max values and check whether we can give the answer already.
+                    QuantitativeResult<Type, ValueType> maxResult = computeQuantitativeResult(player1Direction, storm::OptimizationDirection::Maximize, game, qualitativeResult, initialStatesAdd, maybeMax, boost::make_optional(minResult));
+                    result = checkForResultAfterQuantitativeCheck<ValueType>(checkTask, storm::OptimizationDirection::Maximize, maxResult.initialStateValue);
+                    if (result) {
+                        return result;
+                    }
+
                     auto quantitativeEnd = std::chrono::high_resolution_clock::now();
-                    STORM_LOG_DEBUG("Obtained quantitative bounds [" << minValue << ", " << maxValue << "] on the actual value for the initial states in " << std::chrono::duration_cast<std::chrono::milliseconds>(quantitativeEnd - quantitativeStart).count() << "ms.");
+                    STORM_LOG_DEBUG("Obtained quantitative bounds [" << minResult.initialStateValue << ", " << maxResult.initialStateValue << "] on the actual value for the initial states in " << std::chrono::duration_cast<std::chrono::milliseconds>(quantitativeEnd - quantitativeStart).count() << "ms.");
 
-                    result = checkForResultAfterQuantitativeCheck<ValueType>(checkTask, minValue, maxValue);
+                    result = checkForResultAfterQuantitativeCheck<ValueType>(checkTask, minResult.initialStateValue, maxResult.initialStateValue);
                     if (result) {
                         return result;
                     }
@@ -556,17 +560,19 @@ namespace storm {
                     // about the game, but we could not yet answer the query. In this case, we need to refine.
                     
                     // Make sure that all strategies are still valid strategies.
-                    STORM_LOG_ASSERT(minMaybeStateResult.player1Strategy.template toAdd<ValueType>().sumAbstract(game.getPlayer1Variables()).getMax() <= 1, "Player 1 strategy for min is illegal.");
-                    STORM_LOG_ASSERT(maxMaybeStateResult.player1Strategy.template toAdd<ValueType>().sumAbstract(game.getPlayer1Variables()).getMax() <= 1, "Player 1 strategy for max is illegal.");
-                    STORM_LOG_ASSERT(minMaybeStateResult.player2Strategy.template toAdd<ValueType>().sumAbstract(game.getPlayer2Variables()).getMax() <= 1, "Player 2 strategy for min is illegal.");
-                    STORM_LOG_ASSERT(maxMaybeStateResult.player2Strategy.template toAdd<ValueType>().sumAbstract(game.getPlayer2Variables()).getMax() <= 1, "Player 2 strategy for max is illegal.");
+                    STORM_LOG_ASSERT(minResult.player1Strategy.template toAdd<ValueType>().sumAbstract(game.getPlayer1Variables()).getMax() <= 1, "Player 1 strategy for min is illegal.");
+                    STORM_LOG_ASSERT(maxResult.player1Strategy.template toAdd<ValueType>().sumAbstract(game.getPlayer1Variables()).getMax() <= 1, "Player 1 strategy for max is illegal.");
+                    STORM_LOG_ASSERT(minResult.player2Strategy.template toAdd<ValueType>().sumAbstract(game.getPlayer2Variables()).getMax() <= 1, "Player 2 strategy for min is illegal.");
+                    STORM_LOG_ASSERT(maxResult.player2Strategy.template toAdd<ValueType>().sumAbstract(game.getPlayer2Variables()).getMax() <= 1, "Player 2 strategy for max is illegal.");
 
+#ifdef LOCAL_DEBUG
 					// Check whether the strategies coincide over the reachable parts.
-					storm::dd::Bdd<Type> tmp = game.getTransitionMatrix().toBdd() && (minMaybeStateResult.player1Strategy || maxMaybeStateResult.player1Strategy) && (minMaybeStateResult.player2Strategy || maxMaybeStateResult.player2Strategy);
-					storm::dd::Bdd<Type> commonReach = storm::utility::dd::computeReachableStates(initialStates, tmp.existsAbstract(game.getNondeterminismVariables()), game.getRowVariables(), game.getColumnVariables());
-					STORM_LOG_ASSERT((commonReach && minMaybeStateResult.player1Strategy) != (commonReach && maxMaybeStateResult.player1Strategy) || (commonReach && minMaybeStateResult.player2Strategy) != (commonReach && maxMaybeStateResult.player2Strategy), "The strategies fully coincide.");
+//					storm::dd::Bdd<Type> tmp = game.getTransitionMatrix().toBdd() && (minMaybeStateResult.player1Strategy || maxMaybeStateResult.player1Strategy) && (minMaybeStateResult.player2Strategy || maxMaybeStateResult.player2Strategy);
+//					storm::dd::Bdd<Type> commonReach = storm::utility::dd::computeReachableStates(initialStates, tmp.existsAbstract(game.getNondeterminismVariables()), game.getRowVariables(), game.getColumnVariables());
+//					STORM_LOG_ASSERT((commonReach && minMaybeStateResult.player1Strategy) != (commonReach && maxMaybeStateResult.player1Strategy) || (commonReach && minMaybeStateResult.player2Strategy) != (commonReach && maxMaybeStateResult.player2Strategy), "The strategies fully coincide.");
+#endif
 
-                    refineAfterQuantitativeCheck(abstractor, game, minResult, maxResult, qualitativeResult, std::make_pair(minMaybeStateResult.player1Strategy, minMaybeStateResult.player2Strategy), std::make_pair(maxMaybeStateResult.player1Strategy, maxMaybeStateResult.player2Strategy), transitionMatrixBdd);
+                    refineAfterQuantitativeCheck(abstractor, game, transitionMatrixBdd, minResult, maxResult);
                 }
                 auto iterationEnd = std::chrono::high_resolution_clock::now();
                 STORM_LOG_DEBUG("Iteration " << iterations << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(iterationEnd - iterationStart).count() << "ms.");
