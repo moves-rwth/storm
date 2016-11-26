@@ -51,6 +51,20 @@ namespace storm {
                 void refine(std::vector<uint_fast64_t> const& predicates);
                 
                 /*!
+                 * Retrieves the guard of the given player 1 choice.
+                 *
+                 * @param player1Choice The choice of player 1.
+                 * @return The guard of the player 1 choice.
+                 */
+                storm::expressions::Expression const& getGuard(uint64_t player1Choice) const;
+                
+                /*!
+                 * Retrieves a mapping from variables to expressions that define their updates wrt. to the given player
+                 * 1 choice and auxiliary choice.
+                 */
+                std::map<storm::expressions::Variable, storm::expressions::Expression> getVariableUpdates(uint64_t player1Choice, uint64_t auxiliaryChoice) const;
+                
+                /*!
                  * Computes the abstraction of the module wrt. to the current set of predicates.
                  *
                  * @return The abstraction of the module in the form of a BDD together with how many option variables were used.

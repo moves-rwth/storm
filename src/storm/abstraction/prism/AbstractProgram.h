@@ -65,6 +65,20 @@ namespace storm {
                 AbstractionInformation<DdType> const& getAbstractionInformation() const;
                 
                 /*!
+                 * Retrieves the guard predicate of the given player 1 choice.
+                 *
+                 * @param player1Choice The choice for which to retrieve the guard.
+                 * @return The guard of the player 1 choice.
+                 */
+                storm::expressions::Expression const& getGuard(uint64_t player1Choice) const;
+                
+                /*!
+                 * Retrieves a mapping from variables to expressions that define their updates wrt. to the given player
+                 * 1 choice and auxiliary choice.
+                 */
+                std::map<storm::expressions::Variable, storm::expressions::Expression> getVariableUpdates(uint64_t player1Choice, uint64_t auxiliaryChoice) const;
+                
+                /*!
                  * Retrieves the set of states (represented by a BDD) satisfying the given predicate, assuming that it
                  * was either given as an initial predicate or used as a refining predicate later.
                  *

@@ -18,10 +18,10 @@
 namespace storm {
     namespace abstraction {
 
-        template <storm::dd::DdType DdType, typename ValueType>
+        template <storm::dd::DdType Type, typename ValueType>
         class MenuGameAbstractor;
         
-        template <storm::dd::DdType DdType, typename ValueType>
+        template <storm::dd::DdType Type, typename ValueType>
         class MenuGame;
         
         template<storm::dd::DdType Type, typename ValueType>
@@ -52,6 +52,8 @@ namespace storm {
             bool refine(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& transitionMatrixBdd, QuantitativeResultMinMax<Type, ValueType> const& quantitativeResult) const;
             
         private:
+            void refine(storm::dd::Bdd<Type> const& pivotState, storm::dd::Bdd<Type> const& player1Choice, storm::dd::Bdd<Type> const& lowerChoice, storm::dd::Bdd<Type> const& upperChoice) const;
+            
             /*!
              * Takes the given predicates, preprocesses them and then refines the abstractor.
              */
@@ -60,11 +62,14 @@ namespace storm {
             /// The underlying abstractor to refine.
             std::reference_wrapper<MenuGameAbstractor<Type, ValueType>> abstractor;
             
+            /// A flag indicating whether predicates shall be split before using them for refinement.
+            bool splitPredicates;
+            
             /// An object that can be used for splitting predicates.
-            storm::expressions::PredicateSplitter splitter;
+            mutable storm::expressions::PredicateSplitter splitter;
             
             /// An object that can be used to determine whether predicates are equivalent.
-            storm::expressions::EquivalenceChecker equivalenceChecker;
+            mutable storm::expressions::EquivalenceChecker equivalenceChecker;
         };
         
     }

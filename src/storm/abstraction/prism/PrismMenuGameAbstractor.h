@@ -14,10 +14,12 @@ namespace storm {
                 PrismMenuGameAbstractor(storm::prism::Program const& program, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
                 
                 virtual storm::abstraction::MenuGame<DdType, ValueType> abstract() override;
+
                 virtual AbstractionInformation<DdType> const& getAbstractionInformation() const override;
-                
+                virtual storm::expressions::Expression const& getGuard(uint64_t player1Choice) const override;
+                virtual std::map<storm::expressions::Variable, storm::expressions::Expression> getVariableUpdates(uint64_t player1Choice, uint64_t auxiliaryChoice) const override;
+
                 virtual void refine(std::vector<storm::expressions::Expression> const& predicates) override;
-                virtual void refine(storm::dd::Bdd<DdType> const& pivotState, storm::dd::Bdd<DdType> const& player1Choice, storm::dd::Bdd<DdType> const& lowerChoice, storm::dd::Bdd<DdType> const& upperChoice) override;
 
                 void exportToDot(std::string const& filename, storm::dd::Bdd<DdType> const& highlightStates, storm::dd::Bdd<DdType> const& filter) const override;
                 

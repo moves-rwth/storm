@@ -72,6 +72,16 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
+            storm::expressions::Expression const& AbstractCommand<DdType, ValueType>::getGuard() const {
+                return command.get().getGuardExpression();
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
+            std::map<storm::expressions::Variable, storm::expressions::Expression> AbstractCommand<DdType, ValueType>::getVariableUpdates(uint64_t auxiliaryChoice) const {
+                return command.get().getUpdate(auxiliaryChoice).getAsVariableToExpressionMap();
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
             void AbstractCommand<DdType, ValueType>::recomputeCachedBdd() {
                 STORM_LOG_TRACE("Recomputing BDD for command " << command.get());
                 auto start = std::chrono::high_resolution_clock::now();

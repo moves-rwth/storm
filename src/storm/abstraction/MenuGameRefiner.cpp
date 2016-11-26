@@ -1,14 +1,18 @@
 #include "storm/abstraction/MenuGameRefiner.h"
 
+#include "storm/abstraction/AbstractionInformation.h"
 #include "storm/abstraction/MenuGameAbstractor.h"
 
 #include "storm/utility/dd.h"
+
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/AbstractionSettings.h"
 
 namespace storm {
     namespace abstraction {
         
         template<storm::dd::DdType Type, typename ValueType>
-        MenuGameRefiner<Type, ValueType>::MenuGameRefiner(MenuGameAbstractor<Type, ValueType>& abstractor, std::unique_ptr<storm::solver::SmtSolver>&& smtSolver) : abstractor(abstractor), splitter(), equivalenceChecker(std::move(smtSolver)) {
+        MenuGameRefiner<Type, ValueType>::MenuGameRefiner(MenuGameAbstractor<Type, ValueType>& abstractor, std::unique_ptr<storm::solver::SmtSolver>&& smtSolver) : abstractor(abstractor), splitPredicates(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isSplitPredicatesSet()), splitter(), equivalenceChecker(std::move(smtSolver)) {
             // Intentionally left empty.
         }
         
@@ -47,14 +51,14 @@ namespace storm {
             return pivotState;
         }
         
-        template <storm::dd::DdType DdType, typename ValueType>
-        void refine(storm::dd::Bdd<DdType> const& pivotState, storm::dd::Bdd<DdType> const& player1Choice, storm::dd::Bdd<DdType> const& lowerChoice, storm::dd::Bdd<DdType> const& upperChoice) {
-            AbstractionInformation<DdType> const& abstractionInformation = abstractor.get().getAbstractionInformation();
+        template <storm::dd::DdType Type, typename ValueType>
+        void MenuGameRefiner<Type, ValueType>::refine(storm::dd::Bdd<Type> const& pivotState, storm::dd::Bdd<Type> const& player1Choice, storm::dd::Bdd<Type> const& lowerChoice, storm::dd::Bdd<Type> const& upperChoice) const {
+            AbstractionInformation<Type> const& abstractionInformation = abstractor.get().getAbstractionInformation();
             
             // Decode the index of the command chosen by player 1.
-            storm::dd::Add<DdType, ValueType> player1ChoiceAsAdd = player1Choice.template toAdd<ValueType>();
+            storm::dd::Add<Type, ValueType> player1ChoiceAsAdd = player1Choice.template toAdd<ValueType>();
             auto pl1It = player1ChoiceAsAdd.begin();
-            uint_fast64_t commandIndex = abstractionInformation.decodePlayer1Choice((*pl1It).first, abstractionInformation.getPlayer1VariableCount());
+            uint_fast64_t player1Index = abstractionInformation.decodePlayer1Choice((*pl1It).first, abstractionInformation.getPlayer1VariableCount());
 #ifdef LOCAL_DEBUG
             std::cout << "command index " << commandIndex << std::endl;
             std::cout << program.get() << std::endl;
@@ -73,8 +77,8 @@ namespace storm {
                 std::cout << "pivot is " << stateName.str() << std::endl;
             }
 #endif
-            storm::abstraction::prism::AbstractCommand<DdType, ValueType>& abstractCommand = modules.front().getCommands()[commandIndex];
-            storm::prism::Command const& concreteCommand = abstractCommand.getConcreteCommand();
+            // storm::abstraction::prism::AbstractCommand<Type, ValueType>& abstractCommand = modules.front().getCommands()[commandIndex];
+            // storm::prism::Command const& concreteCommand = abstractCommand.getConcreteCommand();
 #ifdef LOCAL_DEBUG
             player1Choice.template toAdd<ValueType>().exportToDot("pl1choice_ref.dot");
             std::cout << concreteCommand << std::endl;
@@ -84,19 +88,15 @@ namespace storm {
             
             // Check whether there are bottom states in the game and whether one of the choices actually picks the
             // bottom state as the successor.
-            bool buttomStateSuccessor = false;
-            if (!currentGame->getBottomStates().isZero()) {
-                buttomStateSuccessor = !((abstractionInformation.getBottomStateBdd(false, false) && lowerChoice) || (abstractionInformation.getBottomStateBdd(false, false) && upperChoice)).isZero();
-            }
+            bool buttomStateSuccessor = !((abstractionInformation.getBottomStateBdd(false, false) && lowerChoice) || (abstractionInformation.getBottomStateBdd(false, false) && upperChoice)).isZero();
             
             // If one of the choices picks the bottom state, the new predicate is based on the guard of the appropriate
             // command (that is the player 1 choice).
             if (buttomStateSuccessor) {
                 STORM_LOG_TRACE("One of the successors is a bottom state, taking a guard as a new predicate.");
-                abstractCommand.notifyGuardIsPredicate();
-                storm::expressions::Expression newPredicate = concreteCommand.getGuardExpression();
+                storm::expressions::Expression newPredicate = abstractor.get().getGuard(player1Index);
                 STORM_LOG_DEBUG("Derived new predicate: " << newPredicate);
-                this->refine({std::make_pair(newPredicate, true)});
+                this->performRefinement({newPredicate});
             } else {
                 STORM_LOG_TRACE("No bottom state successor. Deriving a new predicate using weakest precondition.");
                 
@@ -109,11 +109,11 @@ namespace storm {
 #ifdef LOCAL_DEBUG
                 std::cout << "lower" << std::endl;
 #endif
-                std::map<uint_fast64_t, storm::storage::BitVector> lowerChoiceUpdateToSuccessorMapping = decodeChoiceToUpdateSuccessorMapping(lowerChoice);
+                std::map<uint_fast64_t, storm::storage::BitVector> lowerChoiceUpdateToSuccessorMapping = abstractionInformation.decodeChoiceToUpdateSuccessorMapping(lowerChoice);
 #ifdef LOCAL_DEBUG
                 std::cout << "upper" << std::endl;
 #endif
-                std::map<uint_fast64_t, storm::storage::BitVector> upperChoiceUpdateToSuccessorMapping = decodeChoiceToUpdateSuccessorMapping(upperChoice);
+                std::map<uint_fast64_t, storm::storage::BitVector> upperChoiceUpdateToSuccessorMapping = abstractionInformation.decodeChoiceToUpdateSuccessorMapping(upperChoice);
                 STORM_LOG_ASSERT(lowerChoiceUpdateToSuccessorMapping.size() == upperChoiceUpdateToSuccessorMapping.size(), "Mismatching sizes after decode (" << lowerChoiceUpdateToSuccessorMapping.size() << " vs. " << upperChoiceUpdateToSuccessorMapping.size() << ").");
                 
 #ifdef LOCAL_DEBUG
@@ -145,8 +145,7 @@ namespace storm {
                                 // Now we know the point of the deviation (command, update, predicate).
                                 std::cout << "ref" << std::endl;
                                 std::cout << abstractionInformation.getPredicateByIndex(predicateIndex) << std::endl;
-                                std::cout << concreteCommand.getUpdate(updateIndex) << std::endl;
-                                newPredicate = abstractionInformation.getPredicateByIndex(predicateIndex).substitute(concreteCommand.getUpdate(updateIndex).getAsVariableToExpressionMap()).simplify();
+                                newPredicate = abstractionInformation.getPredicateByIndex(predicateIndex).substitute(abstractor.get().getVariableUpdates(player1Index, updateIndex)).simplify();
                                 break;
                             }
                         }
@@ -155,8 +154,7 @@ namespace storm {
                 STORM_LOG_ASSERT(newPredicate.isInitialized(), "Could not derive new predicate as there is no deviation.");
                 
                 STORM_LOG_DEBUG("Derived new predicate: " << newPredicate);
-                
-                this->refine({std::make_pair(newPredicate, true)});
+                this->performRefinement({newPredicate});
             }
             
             STORM_LOG_TRACE("Current set of predicates:");
@@ -166,7 +164,7 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type, typename ValueType>
-        bool MenuGameRefiner<Type, ValueType>::refine(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& transitionMatrixBdd, QualitativeResultMinMax<Type> const& qualitativeResult) {
+        bool MenuGameRefiner<Type, ValueType>::refine(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& transitionMatrixBdd, QualitativeResultMinMax<Type> const& qualitativeResult) const {
             STORM_LOG_TRACE("Trying refinement after qualitative check.");
             // Get all relevant strategies.
             storm::dd::Bdd<Type> minPlayer1Strategy = qualitativeResult.prob0Min.getPlayer1Strategy();
@@ -224,7 +222,7 @@ namespace storm {
                 STORM_LOG_TRACE("Refining based on lower choice.");
                 auto refinementStart = std::chrono::high_resolution_clock::now();
                 
-                abstractor.get().refine(pivotState, (pivotState && minPlayer1Strategy).existsAbstract(game.getRowVariables()), lowerChoice1, lowerChoice2);
+                this->refine(pivotState, (pivotState && minPlayer1Strategy).existsAbstract(game.getRowVariables()), lowerChoice1, lowerChoice2);
                 auto refinementEnd = std::chrono::high_resolution_clock::now();
                 STORM_LOG_TRACE("Refinement completed in " << std::chrono::duration_cast<std::chrono::milliseconds>(refinementEnd - refinementStart).count() << "ms.");
                 return true;
@@ -237,7 +235,7 @@ namespace storm {
                 if (upperChoicesDifferent) {
                     STORM_LOG_TRACE("Refining based on upper choice.");
                     auto refinementStart = std::chrono::high_resolution_clock::now();
-                    abstractor.get().refine(pivotState, (pivotState && maxPlayer1Strategy).existsAbstract(game.getRowVariables()), upperChoice1, upperChoice2);
+                    this->refine(pivotState, (pivotState && maxPlayer1Strategy).existsAbstract(game.getRowVariables()), upperChoice1, upperChoice2);
                     auto refinementEnd = std::chrono::high_resolution_clock::now();
                     STORM_LOG_TRACE("Refinement completed in " << std::chrono::duration_cast<std::chrono::milliseconds>(refinementEnd - refinementStart).count() << "ms.");
                     return true;
@@ -249,7 +247,7 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type, typename ValueType>
-        bool MenuGameRefiner<Type, ValueType>::refine(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& transitionMatrixBdd, QuantitativeResultMinMax<Type, ValueType> const& quantitativeResult) {
+        bool MenuGameRefiner<Type, ValueType>::refine(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& transitionMatrixBdd, QuantitativeResultMinMax<Type, ValueType> const& quantitativeResult) const {
             STORM_LOG_TRACE("Refining after quantitative check.");
             // Get all relevant strategies.
             storm::dd::Bdd<Type> minPlayer1Strategy = quantitativeResult.min.player1Strategy;
@@ -298,7 +296,7 @@ namespace storm {
             if (lowerChoicesDifferent) {
                 STORM_LOG_TRACE("Refining based on lower choice.");
                 auto refinementStart = std::chrono::high_resolution_clock::now();
-                abstractor.get().refine(pivotState, (pivotState && minPlayer1Strategy).existsAbstract(game.getRowVariables()), lowerChoice1, lowerChoice2);
+                this->refine(pivotState, (pivotState && minPlayer1Strategy).existsAbstract(game.getRowVariables()), lowerChoice1, lowerChoice2);
                 auto refinementEnd = std::chrono::high_resolution_clock::now();
                 STORM_LOG_TRACE("Refinement completed in " << std::chrono::duration_cast<std::chrono::milliseconds>(refinementEnd - refinementStart).count() << "ms.");
             } else {
@@ -310,7 +308,7 @@ namespace storm {
                 if (upperChoicesDifferent) {
                     STORM_LOG_TRACE("Refining based on upper choice.");
                     auto refinementStart = std::chrono::high_resolution_clock::now();
-                    abstractor.get().refine(pivotState, (pivotState && maxPlayer1Strategy).existsAbstract(game.getRowVariables()), upperChoice1, upperChoice2);
+                    this->refine(pivotState, (pivotState && maxPlayer1Strategy).existsAbstract(game.getRowVariables()), upperChoice1, upperChoice2);
                     auto refinementEnd = std::chrono::high_resolution_clock::now();
                     STORM_LOG_TRACE("Refinement completed in " << std::chrono::duration_cast<std::chrono::milliseconds>(refinementEnd - refinementStart).count() << "ms.");
                 } else {
@@ -322,12 +320,12 @@ namespace storm {
         
         template<storm::dd::DdType Type, typename ValueType>
         bool MenuGameRefiner<Type, ValueType>::performRefinement(std::vector<storm::expressions::Expression> const& predicates) const {
-            for (auto const& predicate : predicates) {
-                storm::expressions::Expression const& predicate = predicateAllowSplitPair.first;
-                bool allowSplit = predicateAllowSplitPair.second;
-                STORM_LOG_THROW(predicate.hasBooleanType(), storm::exceptions::InvalidArgumentException, "Expecting a predicate of type bool.");
-                
-                if (allowSplit && splitPredicates) {
+            if (splitPredicates) {
+                std::vector<storm::expressions::Expression> cleanedAtoms;
+
+                for (auto const& predicate : predicates) {
+                    AbstractionInformation<Type> const& abstractionInformation = abstractor.get().getAbstractionInformation();
+
                     // Split the predicates.
                     std::vector<storm::expressions::Expression> atoms = splitter.split(predicate);
                     
@@ -342,14 +340,14 @@ namespace storm {
                         }
                         
                         if (addAtom) {
-                            uint_fast64_t newPredicateIndex = abstractionInformation.addPredicate(atom);
-                            newPredicateIndices.push_back(newPredicateIndex);
+                            cleanedAtoms.push_back(atom);
                         }
                     }
-                } else {
-                    uint_fast64_t newPredicateIndex = abstractionInformation.addPredicate(predicate);
-                    newPredicateIndices.push_back(newPredicateIndex);
                 }
+                
+                abstractor.get().refine(cleanedAtoms);
+            } else {
+                abstractor.get().refine(predicates);
             }
         }
         

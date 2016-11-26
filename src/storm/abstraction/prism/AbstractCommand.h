@@ -69,6 +69,17 @@ namespace storm {
                 void refine(std::vector<uint_fast64_t> const& predicates);
                 
                 /*!
+                 * Retrieves the guard of this command.
+                 */
+                storm::expressions::Expression const& getGuard() const;
+                
+                /*!
+                 * Retrieves a mapping from variables to expressions that define their updates wrt. to the given
+                 * auxiliary choice.
+                 */
+                std::map<storm::expressions::Variable, storm::expressions::Expression> getVariableUpdates(uint64_t auxiliaryChoice) const;
+                
+                /*!
                  * Computes the abstraction of the command wrt. to the current set of predicates.
                  *
                  * @return The abstraction of the command in the form of a BDD together with the number of DD variables

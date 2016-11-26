@@ -119,6 +119,16 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
+            storm::expressions::Expression const& AbstractProgram<DdType, ValueType>::getGuard(uint64_t player1Choice) const {
+                return modules.front().getGuard(player1Choice);
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
+            std::map<storm::expressions::Variable, storm::expressions::Expression> AbstractProgram<DdType, ValueType>::getVariableUpdates(uint64_t player1Choice, uint64_t auxiliaryChoice) const {
+                return modules.front().getVariableUpdates(player1Choice, auxiliaryChoice);
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
             storm::dd::Bdd<DdType> AbstractProgram<DdType, ValueType>::getStates(storm::expressions::Expression const& predicate) {
                 STORM_LOG_ASSERT(currentGame != nullptr, "Game was not properly created.");
                 return abstractionInformation.getPredicateSourceVariable(predicate);

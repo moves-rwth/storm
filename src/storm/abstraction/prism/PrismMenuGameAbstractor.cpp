@@ -10,7 +10,7 @@ namespace storm {
         namespace prism {
             
             template <storm::dd::DdType DdType, typename ValueType>
-            PrismMenuGameAbstractor<DdType, ValueType>::PrismMenuGameAbstractor(storm::prism::Program const& program, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory) : abstractProgram(program, smtSolverFactory, storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isAddAllGuardsSet(), storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isSplitPredicatesSet()) {
+            PrismMenuGameAbstractor<DdType, ValueType>::PrismMenuGameAbstractor(storm::prism::Program const& program, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory) : abstractProgram(program, smtSolverFactory, storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isAddAllGuardsSet()) {
                 // Intentionally left empty.
             }
             
@@ -19,22 +19,24 @@ namespace storm {
                 return abstractProgram.getAbstractGame();
             }
             
+            template <storm::dd::DdType DdType, typename ValueType>
             AbstractionInformation<DdType> const& PrismMenuGameAbstractor<DdType, ValueType>::getAbstractionInformation() const {
                 return abstractProgram.getAbstractionInformation();
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            void PrismMenuGameAbstractor<DdType, ValueType>::refine(std::vector<storm::expressions::Expression> const& predicates) {
-                std::vector<std::pair<storm::expressions::Expression, bool>> predicatesWithFlags;
-                for (auto const& predicate : predicates) {
-                    predicatesWithFlags.emplace_back(predicate, true);
-                }
-                abstractProgram.refine(predicatesWithFlags);
+            storm::expressions::Expression const& PrismMenuGameAbstractor<DdType, ValueType>::getGuard(uint64_t player1Choice) const {
+                return abstractProgram.getGuard(player1Choice);
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            void PrismMenuGameAbstractor<DdType, ValueType>::refine(storm::dd::Bdd<DdType> const& pivotState, storm::dd::Bdd<DdType> const& player1Choice, storm::dd::Bdd<DdType> const& lowerChoice, storm::dd::Bdd<DdType> const& upperChoice) {
-                abstractProgram.refine(pivotState, player1Choice, lowerChoice, upperChoice);
+            std::map<storm::expressions::Variable, storm::expressions::Expression> PrismMenuGameAbstractor<DdType, ValueType>::getVariableUpdates(uint64_t player1Choice, uint64_t auxiliaryChoice) const {
+                return abstractProgram.getVariableUpdates(player1Choice, auxiliaryChoice);
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
+            void PrismMenuGameAbstractor<DdType, ValueType>::refine(std::vector<storm::expressions::Expression> const& predicates) {
+                abstractProgram.refine(predicates);
             }
             
             template <storm::dd::DdType DdType, typename ValueType>

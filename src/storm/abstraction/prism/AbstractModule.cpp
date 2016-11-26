@@ -37,6 +37,16 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
+            storm::expressions::Expression const& AbstractModule<DdType, ValueType>::getGuard(uint64_t player1Choice) const {
+                return commands[player1Choice].getGuard();
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
+            std::map<storm::expressions::Variable, storm::expressions::Expression> AbstractModule<DdType, ValueType>::getVariableUpdates(uint64_t player1Choice, uint64_t auxiliaryChoice) const {
+                return commands[player1Choice].getVariableUpdates(auxiliaryChoice);
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
             GameBddResult<DdType> AbstractModule<DdType, ValueType>::getAbstractBdd() {
                 // First, we retrieve the abstractions of all commands.
                 std::vector<GameBddResult<DdType>> commandDdsAndUsedOptionVariableCounts;
