@@ -23,7 +23,7 @@ namespace storm {
     namespace abstraction {
         namespace prism {
             template <storm::dd::DdType DdType, typename ValueType>
-            AbstractCommand<DdType, ValueType>::AbstractCommand(storm::prism::Command const& command, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool guardIsPredicate) : smtSolver(smtSolverFactory->create(abstractionInformation.getExpressionManager())), abstractionInformation(abstractionInformation), command(command), localExpressionInformation(abstractionInformation.getVariables()), evaluator(abstractionInformation.getExpressionManager()), relevantPredicatesAndVariables(), cachedDd(abstractionInformation.getDdManager().getBddZero(), 0), decisionVariables(), guardIsPredicate(guardIsPredicate), forceRecomputation(true), abstractGuard(abstractionInformation.getDdManager().getBddZero()), bottomStateAbstractor(abstractionInformation, abstractionInformation.getExpressionVariables(), {!command.getGuardExpression()}, smtSolverFactory) {
+            AbstractCommand<DdType, ValueType>::AbstractCommand(storm::prism::Command const& command, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool guardIsPredicate) : smtSolver(smtSolverFactory->create(abstractionInformation.getExpressionManager())), abstractionInformation(abstractionInformation), command(command), localExpressionInformation(abstractionInformation.getVariables()), evaluator(abstractionInformation.getExpressionManager()), relevantPredicatesAndVariables(), cachedDd(abstractionInformation.getDdManager().getBddZero(), 0), decisionVariables(), skipBottomStates(false), forceRecomputation(true), abstractGuard(abstractionInformation.getDdManager().getBddZero()), bottomStateAbstractor(abstractionInformation, abstractionInformation.getExpressionVariables(), {!command.getGuardExpression()}, smtSolverFactory) {
 
                 // Make the second component of relevant predicates have the right size.
                 relevantPredicatesAndVariables.second.resize(command.getNumberOfUpdates());
@@ -108,12 +108,12 @@ namespace storm {
                 
                 // Finally, build overall result.
                 storm::dd::Bdd<DdType> resultBdd = this->getAbstractionInformation().getDdManager().getBddZero();
-                if (!guardIsPredicate) {
+                if (!skipBottomStates) {
                     abstractGuard = this->getAbstractionInformation().getDdManager().getBddZero();
                 }
                 uint_fast64_t sourceStateIndex = 0;
                 for (auto const& sourceDistributionsPair : sourceToDistributionsMap) {
-                    if (!guardIsPredicate) {
+                    if (!skipBottomStates) {
                         abstractGuard |= sourceDistributionsPair.first;
                     }
                     
@@ -327,8 +327,8 @@ namespace storm {
                 BottomStateResult<DdType> result(this->getAbstractionInformation().getDdManager().getBddZero(), this->getAbstractionInformation().getDdManager().getBddZero());
 
                 // If the guard of this command is a predicate, there are not bottom states/transitions.
-                if (guardIsPredicate) {
-                    STORM_LOG_TRACE("Guard is predicate, no bottom state transitions for this command.");
+                if (skipBottomStates) {
+                    STORM_LOG_TRACE("Skipping bottom state computation for this command.");
                     return result;
                 }
                 
@@ -336,6 +336,11 @@ namespace storm {
                 // still has a transition to a bottom state.
                 bottomStateAbstractor.constrain(reachableStates && abstractGuard);
                 result.states = bottomStateAbstractor.getAbstractStates();
+                
+                // If the result is empty one time, we can skip the bottom state computation from now on.
+                if (result.states.isZero()) {
+                    skipBottomStates = true;
+                }
 
                 // Now equip all these states with an actual transition to a bottom state.
                 result.transitions = result.states && this->getAbstractionInformation().getAllPredicateIdentities() && this->getAbstractionInformation().getBottomStateBdd(false, false);
@@ -362,11 +367,6 @@ namespace storm {
             template <storm::dd::DdType DdType, typename ValueType>
             storm::prism::Command const& AbstractCommand<DdType, ValueType>::getConcreteCommand() const {
                 return command.get();
-            }
-            
-            template <storm::dd::DdType DdType, typename ValueType>
-            void AbstractCommand<DdType, ValueType>::notifyGuardIsPredicate() {
-                guardIsPredicate = true;
             }
             
             template <storm::dd::DdType DdType, typename ValueType>

@@ -110,12 +110,6 @@ namespace storm {
                  */
                 storm::prism::Command const& getConcreteCommand() const;
                 
-                /*!
-                 * Notifies this abstract command that its guard is now a predicate. This affects the computation of the
-                 * bottom states.
-                 */
-                void notifyGuardIsPredicate();
-                
             private:
                 /*!
                  * Determines the relevant predicates for source as well as successor states wrt. to the given assignments
@@ -235,7 +229,7 @@ namespace storm {
                 
                 // A flag indicating whether the guard of the command was added as a predicate. If this is true, there
                 // is no need to compute bottom states.
-                bool guardIsPredicate;
+                bool skipBottomStates;
                 
                 // A flag remembering whether we need to force recomputation of the BDD.
                 bool forceRecomputation;
