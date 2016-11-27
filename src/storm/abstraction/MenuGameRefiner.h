@@ -53,13 +53,13 @@ namespace storm {
             bool refine(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& transitionMatrixBdd, QuantitativeResultMinMax<Type, ValueType> const& quantitativeResult) const;
             
         private:
-            storm::expressions::Expression derivePredicateFromDifferingChoices(storm::dd::Bdd<Type> const& pivotState, storm::dd::Bdd<Type> const& player1Choice, storm::dd::Bdd<Type> const& lowerChoice, storm::dd::Bdd<Type> const& upperChoice) const;
-            storm::expressions::Expression derivePredicateFromPivotState(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& pivotState, storm::dd::Bdd<Type> const& minPlayer1Strategy, storm::dd::Bdd<Type> const& minPlayer2Strategy, storm::dd::Bdd<Type> const& maxPlayer1Strategy, storm::dd::Bdd<Type> const& maxPlayer2Strategy) const;
+            std::pair<storm::expressions::Expression, bool> derivePredicateFromDifferingChoices(storm::dd::Bdd<Type> const& pivotState, storm::dd::Bdd<Type> const& player1Choice, storm::dd::Bdd<Type> const& lowerChoice, storm::dd::Bdd<Type> const& upperChoice) const;
+            std::pair<storm::expressions::Expression, bool> derivePredicateFromPivotState(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& pivotState, storm::dd::Bdd<Type> const& minPlayer1Strategy, storm::dd::Bdd<Type> const& minPlayer2Strategy, storm::dd::Bdd<Type> const& maxPlayer1Strategy, storm::dd::Bdd<Type> const& maxPlayer2Strategy) const;
             
             /*!
              * Preprocesses the predicates.
              */
-            std::vector<storm::expressions::Expression> preprocessPredicates(std::vector<storm::expressions::Expression> const& predicates) const;
+            std::vector<storm::expressions::Expression> preprocessPredicates(std::vector<storm::expressions::Expression> const& predicates, bool allowSplits) const;
             
             /*!
              * Creates a set of refinement commands that amounts to splitting all player 1 choices with the given set of predicates.
@@ -73,7 +73,10 @@ namespace storm {
             
             /// A flag indicating whether predicates shall be split before using them for refinement.
             bool splitPredicates;
-            
+
+            /// A flag indicating whether predicates shall be split before using them for refinement.
+            bool splitGuards;
+
             /// An object that can be used for splitting predicates.
             mutable storm::expressions::PredicateSplitter splitter;
             

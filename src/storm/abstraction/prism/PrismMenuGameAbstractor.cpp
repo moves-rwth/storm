@@ -73,15 +73,6 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            void PrismMenuGameAbstractor<DdType, ValueType>::refine(std::vector<RefinementCommand> const& commands) {
-                for (auto const& command : commands) {
-                    STORM_LOG_THROW(!command.refersToPlayer1Choice(), storm::exceptions::NotSupportedException, "Currently only global refinement is supported.");
-                    refine(command);
-                    refinementPerformed |= !command.getPredicates().empty();
-                }
-            }
-            
-            template <storm::dd::DdType DdType, typename ValueType>
             void PrismMenuGameAbstractor<DdType, ValueType>::refine(RefinementCommand const& command) {
                 // Add the predicates to the global list of predicates and gather their indices.
                 std::vector<uint_fast64_t> predicateIndices;
@@ -97,6 +88,8 @@ namespace storm {
                 
                 // Refine initial state abstractor.
                 initialStateAbstractor.refine(predicateIndices);
+
+                refinementPerformed |= !command.getPredicates().empty();
             }
             
             template <storm::dd::DdType DdType, typename ValueType>

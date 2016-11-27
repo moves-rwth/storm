@@ -29,12 +29,28 @@ namespace storm {
                  * @return True iff the option was set.
                  */
                 bool isSplitPredicatesSet() const;
-                
+
+                /*!
+                 * Retrieves whether the option to split the initially added guards to atoms was set.
+                 *
+                 * @return True iff the option was set.
+                 */
+                bool isSplitInitialGuardsSet() const;
+
+                /*!
+                 * Retrieves whether the option to split guards derived later to atoms was set.
+                 *
+                 * @return True iff the option was set.
+                 */
+                bool isSplitGuardsSet() const;
+
                 const static std::string moduleName;
                 
             private:
                 const static std::string addAllGuardsOptionName;
                 const static std::string splitPredicatesOptionName;
+                const static std::string splitInitialGuardsOptionName;
+                const static std::string splitGuardsOptionName;
             };
             
         }

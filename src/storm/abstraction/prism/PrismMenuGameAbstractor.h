@@ -94,18 +94,11 @@ namespace storm {
                 storm::dd::Bdd<DdType> getStates(storm::expressions::Expression const& predicate);
                 
                 /*!
-                 * Performs the given refinement commands.
-                 *
-                 * @param commands The commands to perform.
-                 */
-                virtual void refine(std::vector<RefinementCommand> const& commands) override;
-
-                /*!
                  * Performs the given refinement command.
                  *
                  * @param command The command to perform.
                  */
-                void refine(RefinementCommand const& command);
+                virtual void refine(RefinementCommand const& command) override;
 
                 /*!
                  * Exports the current state of the abstraction in the dot format to the given file.
