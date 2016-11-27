@@ -2,7 +2,7 @@
 
 #include "storm/storage/dd/DdType.h"
 
-#include "storm/abstraction/prism/AbstractCommand.h"
+#include "storm/abstraction/prism/CommandAbstractor.h"
 
 #include "storm/storage/expressions/Expression.h"
 
@@ -26,7 +26,7 @@ namespace storm {
 
         namespace prism {
             template <storm::dd::DdType DdType, typename ValueType>
-            class AbstractModule {
+            class ModuleAbstractor {
             public:
                 /*!
                  * Constructs an abstract module from the given module and the initial predicates.
@@ -36,12 +36,12 @@ namespace storm {
                  * @param smtSolverFactory A factory that is to be used for creating new SMT solvers.
                  * @param allGuardsAdded A flag indicating whether all guards of the program were added.
                  */
-                AbstractModule(storm::prism::Module const& module, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>(), bool allGuardsAdded = false);
+                ModuleAbstractor(storm::prism::Module const& module, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>(), bool allGuardsAdded = false);
                 
-                AbstractModule(AbstractModule const&) = default;
-                AbstractModule& operator=(AbstractModule const&) = default;
-                AbstractModule(AbstractModule&&) = default;
-                AbstractModule& operator=(AbstractModule&&) = default;
+                ModuleAbstractor(ModuleAbstractor const&) = default;
+                ModuleAbstractor& operator=(ModuleAbstractor const&) = default;
+                ModuleAbstractor(ModuleAbstractor&&) = default;
+                ModuleAbstractor& operator=(ModuleAbstractor&&) = default;
                 
                 /*!
                  * Refines the abstract module with the given predicates.
@@ -69,7 +69,7 @@ namespace storm {
                  *
                  * @return The abstraction of the module in the form of a BDD together with how many option variables were used.
                  */
-                GameBddResult<DdType> getAbstractBdd();
+                GameBddResult<DdType> abstract();
                 
                 /*!
                  * Retrieves the transitions to bottom states of this module.
@@ -92,14 +92,14 @@ namespace storm {
                  *
                  * @return The abstract commands.
                  */
-                std::vector<AbstractCommand<DdType, ValueType>> const& getCommands() const;
+                std::vector<CommandAbstractor<DdType, ValueType>> const& getCommands() const;
 
                 /*!
                  * Retrieves the abstract commands of this abstract module.
                  *
                  * @return The abstract commands.
                  */
-                std::vector<AbstractCommand<DdType, ValueType>>& getCommands();
+                std::vector<CommandAbstractor<DdType, ValueType>>& getCommands();
 
             private:
                 /*!
@@ -116,7 +116,7 @@ namespace storm {
                 std::reference_wrapper<AbstractionInformation<DdType> const> abstractionInformation;
                 
                 // The abstract commands of the abstract module.
-                std::vector<AbstractCommand<DdType, ValueType>> commands;
+                std::vector<CommandAbstractor<DdType, ValueType>> commands;
                 
                 // The concrete module this abstract module refers to.
                 std::reference_wrapper<storm::prism::Module const> module;

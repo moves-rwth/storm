@@ -1,4 +1,4 @@
-#include "storm/abstraction/prism/AbstractCommand.h"
+#include "storm/abstraction/prism/CommandAbstractor.h"
 
 #include <chrono>
 
@@ -23,7 +23,7 @@ namespace storm {
     namespace abstraction {
         namespace prism {
             template <storm::dd::DdType DdType, typename ValueType>
-            AbstractCommand<DdType, ValueType>::AbstractCommand(storm::prism::Command const& command, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool guardIsPredicate) : smtSolver(smtSolverFactory->create(abstractionInformation.getExpressionManager())), abstractionInformation(abstractionInformation), command(command), localExpressionInformation(abstractionInformation.getVariables()), evaluator(abstractionInformation.getExpressionManager()), relevantPredicatesAndVariables(), cachedDd(abstractionInformation.getDdManager().getBddZero(), 0), decisionVariables(), skipBottomStates(false), forceRecomputation(true), abstractGuard(abstractionInformation.getDdManager().getBddZero()), bottomStateAbstractor(abstractionInformation, abstractionInformation.getExpressionVariables(), {!command.getGuardExpression()}, smtSolverFactory) {
+            CommandAbstractor<DdType, ValueType>::CommandAbstractor(storm::prism::Command const& command, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool guardIsPredicate) : smtSolver(smtSolverFactory->create(abstractionInformation.getExpressionManager())), abstractionInformation(abstractionInformation), command(command), localExpressionInformation(abstractionInformation.getVariables()), evaluator(abstractionInformation.getExpressionManager()), relevantPredicatesAndVariables(), cachedDd(abstractionInformation.getDdManager().getBddZero(), 0), decisionVariables(), skipBottomStates(false), forceRecomputation(true), abstractGuard(abstractionInformation.getDdManager().getBddZero()), bottomStateAbstractor(abstractionInformation, abstractionInformation.getExpressionVariables(), {!command.getGuardExpression()}, smtSolverFactory) {
 
                 // Make the second component of relevant predicates have the right size.
                 relevantPredicatesAndVariables.second.resize(command.getNumberOfUpdates());
@@ -39,7 +39,7 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            void AbstractCommand<DdType, ValueType>::refine(std::vector<uint_fast64_t> const& predicates) {
+            void CommandAbstractor<DdType, ValueType>::refine(std::vector<uint_fast64_t> const& predicates) {
                 // Add all predicates to the variable partition.
                 for (auto predicateIndex : predicates) {
                     localExpressionInformation.addExpression(this->getAbstractionInformation().getPredicateByIndex(predicateIndex), predicateIndex);
@@ -63,17 +63,17 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            storm::expressions::Expression const& AbstractCommand<DdType, ValueType>::getGuard() const {
+            storm::expressions::Expression const& CommandAbstractor<DdType, ValueType>::getGuard() const {
                 return command.get().getGuardExpression();
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            std::map<storm::expressions::Variable, storm::expressions::Expression> AbstractCommand<DdType, ValueType>::getVariableUpdates(uint64_t auxiliaryChoice) const {
+            std::map<storm::expressions::Variable, storm::expressions::Expression> CommandAbstractor<DdType, ValueType>::getVariableUpdates(uint64_t auxiliaryChoice) const {
                 return command.get().getUpdate(auxiliaryChoice).getAsVariableToExpressionMap();
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            void AbstractCommand<DdType, ValueType>::recomputeCachedBdd() {
+            void CommandAbstractor<DdType, ValueType>::recomputeCachedBdd() {
                 STORM_LOG_TRACE("Recomputing BDD for command " << command.get());
                 auto start = std::chrono::high_resolution_clock::now();
                 
@@ -136,7 +136,7 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            std::pair<std::set<uint_fast64_t>, std::set<uint_fast64_t>> AbstractCommand<DdType, ValueType>::computeRelevantPredicates(std::vector<storm::prism::Assignment> const& assignments) const {
+            std::pair<std::set<uint_fast64_t>, std::set<uint_fast64_t>> CommandAbstractor<DdType, ValueType>::computeRelevantPredicates(std::vector<storm::prism::Assignment> const& assignments) const {
                 std::pair<std::set<uint_fast64_t>, std::set<uint_fast64_t>> result;
                 
                 std::set<storm::expressions::Variable> assignedVariables;
@@ -162,7 +162,7 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            std::pair<std::set<uint_fast64_t>, std::vector<std::set<uint_fast64_t>>> AbstractCommand<DdType, ValueType>::computeRelevantPredicates() const {
+            std::pair<std::set<uint_fast64_t>, std::vector<std::set<uint_fast64_t>>> CommandAbstractor<DdType, ValueType>::computeRelevantPredicates() const {
                 std::pair<std::set<uint_fast64_t>, std::vector<std::set<uint_fast64_t>>> result;
 
                 // To start with, all predicates related to the guard are relevant source predicates.
@@ -179,7 +179,7 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            bool AbstractCommand<DdType, ValueType>::relevantPredicatesChanged(std::pair<std::set<uint_fast64_t>, std::vector<std::set<uint_fast64_t>>> const& newRelevantPredicates) const {
+            bool CommandAbstractor<DdType, ValueType>::relevantPredicatesChanged(std::pair<std::set<uint_fast64_t>, std::vector<std::set<uint_fast64_t>>> const& newRelevantPredicates) const {
                 if (newRelevantPredicates.first.size() > relevantPredicatesAndVariables.first.size()) {
                     return true;
                 }
@@ -194,7 +194,7 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            void AbstractCommand<DdType, ValueType>::addMissingPredicates(std::pair<std::set<uint_fast64_t>, std::vector<std::set<uint_fast64_t>>> const& newRelevantPredicates) {
+            void CommandAbstractor<DdType, ValueType>::addMissingPredicates(std::pair<std::set<uint_fast64_t>, std::vector<std::set<uint_fast64_t>>> const& newRelevantPredicates) {
                 // Determine and add new relevant source predicates.
                 std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>> newSourceVariables = this->getAbstractionInformation().declareNewVariables(relevantPredicatesAndVariables.first, newRelevantPredicates.first);
                 for (auto const& element : newSourceVariables) {
@@ -220,7 +220,7 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            storm::dd::Bdd<DdType> AbstractCommand<DdType, ValueType>::getSourceStateBdd(storm::solver::SmtSolver::ModelReference const& model) const {
+            storm::dd::Bdd<DdType> CommandAbstractor<DdType, ValueType>::getSourceStateBdd(storm::solver::SmtSolver::ModelReference const& model) const {
                 storm::dd::Bdd<DdType> result = this->getAbstractionInformation().getDdManager().getBddOne();
                 for (auto const& variableIndexPair : relevantPredicatesAndVariables.first) {
                     if (model.getBooleanValue(variableIndexPair.first)) {
@@ -235,7 +235,7 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            storm::dd::Bdd<DdType> AbstractCommand<DdType, ValueType>::getDistributionBdd(storm::solver::SmtSolver::ModelReference const& model) const {
+            storm::dd::Bdd<DdType> CommandAbstractor<DdType, ValueType>::getDistributionBdd(storm::solver::SmtSolver::ModelReference const& model) const {
                 storm::dd::Bdd<DdType> result = this->getAbstractionInformation().getDdManager().getBddZero();
                 
                 for (uint_fast64_t updateIndex = 0; updateIndex < command.get().getNumberOfUpdates(); ++updateIndex) {
@@ -259,14 +259,14 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            storm::dd::Bdd<DdType> AbstractCommand<DdType, ValueType>::computeMissingIdentities() const {
+            storm::dd::Bdd<DdType> CommandAbstractor<DdType, ValueType>::computeMissingIdentities() const {
                 storm::dd::Bdd<DdType> identities = computeMissingGlobalIdentities();
                 identities &= computeMissingUpdateIdentities();
                 return identities;
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            storm::dd::Bdd<DdType> AbstractCommand<DdType, ValueType>::computeMissingUpdateIdentities() const {
+            storm::dd::Bdd<DdType> CommandAbstractor<DdType, ValueType>::computeMissingUpdateIdentities() const {
                 storm::dd::Bdd<DdType> result = this->getAbstractionInformation().getDdManager().getBddZero();
                 for (uint_fast64_t updateIndex = 0; updateIndex < command.get().getNumberOfUpdates(); ++updateIndex) {
                     // Compute the identities that are missing for this update.
@@ -293,7 +293,7 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            storm::dd::Bdd<DdType> AbstractCommand<DdType, ValueType>::computeMissingGlobalIdentities() const {
+            storm::dd::Bdd<DdType> CommandAbstractor<DdType, ValueType>::computeMissingGlobalIdentities() const {
                 auto relevantIt = relevantPredicatesAndVariables.first.begin();
                 auto relevantIte = relevantPredicatesAndVariables.first.end();
                 
@@ -309,7 +309,7 @@ namespace storm {
             }
 
             template <storm::dd::DdType DdType, typename ValueType>
-            GameBddResult<DdType> AbstractCommand<DdType, ValueType>::getAbstractBdd() {
+            GameBddResult<DdType> CommandAbstractor<DdType, ValueType>::abstract() {
                 if (forceRecomputation) {
                     this->recomputeCachedBdd();
                 } else {
@@ -320,7 +320,7 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            BottomStateResult<DdType> AbstractCommand<DdType, ValueType>::getBottomStateTransitions(storm::dd::Bdd<DdType> const& reachableStates, uint_fast64_t numberOfPlayer2Variables) {
+            BottomStateResult<DdType> CommandAbstractor<DdType, ValueType>::getBottomStateTransitions(storm::dd::Bdd<DdType> const& reachableStates, uint_fast64_t numberOfPlayer2Variables) {
                 STORM_LOG_TRACE("Computing bottom state transitions of command " << command.get());
                 BottomStateResult<DdType> result(this->getAbstractionInformation().getDdManager().getBddZero(), this->getAbstractionInformation().getDdManager().getBddZero());
 
@@ -353,7 +353,7 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            storm::dd::Add<DdType, ValueType> AbstractCommand<DdType, ValueType>::getCommandUpdateProbabilitiesAdd() const {
+            storm::dd::Add<DdType, ValueType> CommandAbstractor<DdType, ValueType>::getCommandUpdateProbabilitiesAdd() const {
                 storm::dd::Add<DdType, ValueType> result = this->getAbstractionInformation().getDdManager().template getAddZero<ValueType>();
                 for (uint_fast64_t updateIndex = 0; updateIndex < command.get().getNumberOfUpdates(); ++updateIndex) {
                     result += this->getAbstractionInformation().encodeAux(updateIndex, 0, this->getAbstractionInformation().getAuxVariableCount()).template toAdd<ValueType>() * this->getAbstractionInformation().getDdManager().getConstant(evaluator.asRational(command.get().getUpdate(updateIndex).getLikelihoodExpression()));
@@ -363,24 +363,24 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            storm::prism::Command const& AbstractCommand<DdType, ValueType>::getConcreteCommand() const {
+            storm::prism::Command const& CommandAbstractor<DdType, ValueType>::getConcreteCommand() const {
                 return command.get();
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            AbstractionInformation<DdType> const& AbstractCommand<DdType, ValueType>::getAbstractionInformation() const {
+            AbstractionInformation<DdType> const& CommandAbstractor<DdType, ValueType>::getAbstractionInformation() const {
                 return abstractionInformation.get();
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            AbstractionInformation<DdType>& AbstractCommand<DdType, ValueType>::getAbstractionInformation() {
+            AbstractionInformation<DdType>& CommandAbstractor<DdType, ValueType>::getAbstractionInformation() {
                 return abstractionInformation.get();
             }
             
-            template class AbstractCommand<storm::dd::DdType::CUDD, double>;
-            template class AbstractCommand<storm::dd::DdType::Sylvan, double>;
+            template class CommandAbstractor<storm::dd::DdType::CUDD, double>;
+            template class CommandAbstractor<storm::dd::DdType::Sylvan, double>;
 #ifdef STORM_HAVE_CARL
-			template class AbstractCommand<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+			template class CommandAbstractor<storm::dd::DdType::Sylvan, storm::RationalFunction>;
 #endif
         }
     }

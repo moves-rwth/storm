@@ -49,7 +49,7 @@ namespace storm {
 
         namespace prism {
             template <storm::dd::DdType DdType, typename ValueType>
-            class AbstractCommand {
+            class CommandAbstractor {
             public:
                 /*!
                  * Constructs an abstract command from the given command and the initial predicates.
@@ -59,7 +59,7 @@ namespace storm {
                  * @param smtSolverFactory A factory that is to be used for creating new SMT solvers.
                  * @param guardIsPredicate A flag indicating whether the guard of the command was added as a predicate.
                  */
-                AbstractCommand(storm::prism::Command const& command, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool guardIsPredicate = false);
+                CommandAbstractor(storm::prism::Command const& command, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool guardIsPredicate = false);
                                
                 /*!
                  * Refines the abstract command with the given predicates.
@@ -85,7 +85,7 @@ namespace storm {
                  * @return The abstraction of the command in the form of a BDD together with the number of DD variables
                  * used to encode the choices of player 2.
                  */
-                GameBddResult<DdType> getAbstractBdd();
+                GameBddResult<DdType> abstract();
                 
                 /*!
                  * Retrieves the transitions to bottom states of this command.

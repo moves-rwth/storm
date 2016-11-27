@@ -1,4 +1,4 @@
-#include "storm/abstraction/prism/AbstractModule.h"
+#include "storm/abstraction/prism/ModuleAbstractor.h"
 
 #include "storm/abstraction/AbstractionInformation.h"
 #include "storm/abstraction/BottomStateResult.h"
@@ -19,7 +19,7 @@ namespace storm {
         namespace prism {
             
             template <storm::dd::DdType DdType, typename ValueType>
-            AbstractModule<DdType, ValueType>::AbstractModule(storm::prism::Module const& module, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool allGuardsAdded) : smtSolverFactory(smtSolverFactory), abstractionInformation(abstractionInformation), commands(), module(module) {
+            ModuleAbstractor<DdType, ValueType>::ModuleAbstractor(storm::prism::Module const& module, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool allGuardsAdded) : smtSolverFactory(smtSolverFactory), abstractionInformation(abstractionInformation), commands(), module(module) {
                 
                 // For each concrete command, we create an abstract counterpart.
                 for (auto const& command : module.getCommands()) {
@@ -28,31 +28,31 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            void AbstractModule<DdType, ValueType>::refine(std::vector<uint_fast64_t> const& predicates) {
+            void ModuleAbstractor<DdType, ValueType>::refine(std::vector<uint_fast64_t> const& predicates) {
                 for (uint_fast64_t index = 0; index < commands.size(); ++index) {
                     STORM_LOG_TRACE("Refining command with index " << index << ".");
-                    AbstractCommand<DdType, ValueType>& command = commands[index];
+                    CommandAbstractor<DdType, ValueType>& command = commands[index];
                     command.refine(predicates);
                 }
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            storm::expressions::Expression const& AbstractModule<DdType, ValueType>::getGuard(uint64_t player1Choice) const {
+            storm::expressions::Expression const& ModuleAbstractor<DdType, ValueType>::getGuard(uint64_t player1Choice) const {
                 return commands[player1Choice].getGuard();
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            std::map<storm::expressions::Variable, storm::expressions::Expression> AbstractModule<DdType, ValueType>::getVariableUpdates(uint64_t player1Choice, uint64_t auxiliaryChoice) const {
+            std::map<storm::expressions::Variable, storm::expressions::Expression> ModuleAbstractor<DdType, ValueType>::getVariableUpdates(uint64_t player1Choice, uint64_t auxiliaryChoice) const {
                 return commands[player1Choice].getVariableUpdates(auxiliaryChoice);
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            GameBddResult<DdType> AbstractModule<DdType, ValueType>::getAbstractBdd() {
+            GameBddResult<DdType> ModuleAbstractor<DdType, ValueType>::abstract() {
                 // First, we retrieve the abstractions of all commands.
                 std::vector<GameBddResult<DdType>> commandDdsAndUsedOptionVariableCounts;
                 uint_fast64_t maximalNumberOfUsedOptionVariables = 0;
                 for (auto& command : commands) {
-                    commandDdsAndUsedOptionVariableCounts.push_back(command.getAbstractBdd());
+                    commandDdsAndUsedOptionVariableCounts.push_back(command.abstract());
                     maximalNumberOfUsedOptionVariables = std::max(maximalNumberOfUsedOptionVariables, commandDdsAndUsedOptionVariableCounts.back().numberOfPlayer2Variables);
                 }
                 
@@ -66,7 +66,7 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            BottomStateResult<DdType> AbstractModule<DdType, ValueType>::getBottomStateTransitions(storm::dd::Bdd<DdType> const& reachableStates, uint_fast64_t numberOfPlayer2Variables) {
+            BottomStateResult<DdType> ModuleAbstractor<DdType, ValueType>::getBottomStateTransitions(storm::dd::Bdd<DdType> const& reachableStates, uint_fast64_t numberOfPlayer2Variables) {
                 BottomStateResult<DdType> result(this->getAbstractionInformation().getDdManager().getBddZero(), this->getAbstractionInformation().getDdManager().getBddZero());
                 
                 for (auto& command : commands) {
@@ -79,7 +79,7 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            storm::dd::Add<DdType, ValueType> AbstractModule<DdType, ValueType>::getCommandUpdateProbabilitiesAdd() const {
+            storm::dd::Add<DdType, ValueType> ModuleAbstractor<DdType, ValueType>::getCommandUpdateProbabilitiesAdd() const {
                 storm::dd::Add<DdType, ValueType> result = this->getAbstractionInformation().getDdManager().template getAddZero<ValueType>();
                 for (auto const& command : commands) {
                     result += command.getCommandUpdateProbabilitiesAdd();
@@ -88,24 +88,24 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            std::vector<AbstractCommand<DdType, ValueType>> const& AbstractModule<DdType, ValueType>::getCommands() const {
+            std::vector<CommandAbstractor<DdType, ValueType>> const& ModuleAbstractor<DdType, ValueType>::getCommands() const {
                 return commands;
             }
 
             template <storm::dd::DdType DdType, typename ValueType>
-            std::vector<AbstractCommand<DdType, ValueType>>& AbstractModule<DdType, ValueType>::getCommands() {
+            std::vector<CommandAbstractor<DdType, ValueType>>& ModuleAbstractor<DdType, ValueType>::getCommands() {
                 return commands;
             }
 
             template <storm::dd::DdType DdType, typename ValueType>
-            AbstractionInformation<DdType> const& AbstractModule<DdType, ValueType>::getAbstractionInformation() const {
+            AbstractionInformation<DdType> const& ModuleAbstractor<DdType, ValueType>::getAbstractionInformation() const {
                 return abstractionInformation.get();
             }
             
-            template class AbstractModule<storm::dd::DdType::CUDD, double>;
-            template class AbstractModule<storm::dd::DdType::Sylvan, double>;
+            template class ModuleAbstractor<storm::dd::DdType::CUDD, double>;
+            template class ModuleAbstractor<storm::dd::DdType::Sylvan, double>;
 #ifdef STORM_HAVE_CARL
-			template class AbstractModule<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+			template class ModuleAbstractor<storm::dd::DdType::Sylvan, storm::RationalFunction>;
 #endif
         }
     }
