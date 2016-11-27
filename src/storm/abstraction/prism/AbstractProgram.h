@@ -55,7 +55,7 @@ namespace storm {
                  *
                  * @return The abstract stochastic two player game.
                  */
-                MenuGame<DdType, ValueType> getAbstractGame();
+                MenuGame<DdType, ValueType> abstract();
                 
                 /*!
                  * Retrieves information about the abstraction.
@@ -142,6 +142,9 @@ namespace storm {
                 
                 // The current game-based abstraction.
                 std::unique_ptr<MenuGame<DdType, ValueType>> currentGame;
+                
+                // A flag storing whether a refinement was performed.
+                bool refinementPerformed;
             };
         }
     }

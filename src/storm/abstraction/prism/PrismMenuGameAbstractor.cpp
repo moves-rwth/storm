@@ -16,7 +16,7 @@ namespace storm {
             
             template <storm::dd::DdType DdType, typename ValueType>
             storm::abstraction::MenuGame<DdType, ValueType> PrismMenuGameAbstractor<DdType, ValueType>::abstract() {
-                return abstractProgram.getAbstractGame();
+                return abstractProgram.abstract();
             }
             
             template <storm::dd::DdType DdType, typename ValueType>

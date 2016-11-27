@@ -31,7 +31,7 @@ namespace storm {
             AbstractProgram<DdType, ValueType>::AbstractProgram(storm::prism::Program const& program,
                                                                 std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory,
                                                                 bool addAllGuards)
-            : program(program), smtSolverFactory(smtSolverFactory), abstractionInformation(program.getManager()), modules(), initialStateAbstractor(abstractionInformation, program.getAllExpressionVariables(), {program.getInitialStatesExpression()}, this->smtSolverFactory), addedAllGuards(addAllGuards), currentGame(nullptr) {
+            : program(program), smtSolverFactory(smtSolverFactory), abstractionInformation(program.getManager()), modules(), initialStateAbstractor(abstractionInformation, program.getAllExpressionVariables(), {program.getInitialStatesExpression()}, this->smtSolverFactory), addedAllGuards(addAllGuards), currentGame(nullptr), refinementPerformed(false) {
                 
                 // For now, we assume that there is a single module. If the program has more than one module, it needs
                 // to be flattened before the procedure.
@@ -103,13 +103,16 @@ namespace storm {
                 // Refine initial state abstractor.
                 initialStateAbstractor.refine(newPredicateIndices);
                 
-                // Finally, we rebuild the game.
-                currentGame = buildGame();
+                // Update the flag that stores whether a refinement was performed.
+                refinementPerformed = refinementPerformed || !newPredicateIndices.empty();
             }
                                     
             template <storm::dd::DdType DdType, typename ValueType>
-            MenuGame<DdType, ValueType> AbstractProgram<DdType, ValueType>::getAbstractGame() {
-                STORM_LOG_ASSERT(currentGame != nullptr, "Game was not properly created.");
+            MenuGame<DdType, ValueType> AbstractProgram<DdType, ValueType>::abstract() {
+                if (refinementPerformed) {
+                    currentGame = buildGame();
+                    refinementPerformed = true;
+                }
                 return *currentGame;
             }
             

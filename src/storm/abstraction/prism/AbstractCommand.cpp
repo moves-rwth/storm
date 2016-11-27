@@ -51,21 +51,12 @@ namespace storm {
                 // whether they changed.
                 std::pair<std::set<uint_fast64_t>, std::vector<std::set<uint_fast64_t>>> newRelevantPredicates = this->computeRelevantPredicates();
                 
-                // If the DD does not need recomputation, we can return the cached result.
-                bool recomputeDd = forceRecomputation || this->relevantPredicatesChanged(newRelevantPredicates);
-                if (!recomputeDd) {
-                    // If the new predicates are unrelated to the BDD of this command, we need to multiply their identities.
-                    cachedDd.bdd &= computeMissingGlobalIdentities();
-                } else {
-                    // If the DD needs recomputation, it is because of new relevant predicates, so we need to assert the appropriate clauses in the solver.
+                // Check whether we need to recompute the abstraction.
+                bool relevantPredicatesChanged = this->relevantPredicatesChanged(newRelevantPredicates);
+                if (relevantPredicatesChanged) {
                     addMissingPredicates(newRelevantPredicates);
-                    
-                    // Finally recompute the cached BDD.
-                    this->recomputeCachedBdd();
-                    
-                    // Disable forcing recomputation until it is set again.
-                    forceRecomputation = false;
                 }
+                forceRecomputation |= relevantPredicatesChanged;
                 
                 // Refine bottom state abstractor. Note that this does not trigger a recomputation yet.
                 bottomStateAbstractor.refine(predicates);
@@ -141,6 +132,7 @@ namespace storm {
                 auto end = std::chrono::high_resolution_clock::now();
                 
                 STORM_LOG_TRACE("Enumerated " << numberOfSolutions << " solutions in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
+                forceRecomputation = false;
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
@@ -318,6 +310,12 @@ namespace storm {
 
             template <storm::dd::DdType DdType, typename ValueType>
             GameBddResult<DdType> AbstractCommand<DdType, ValueType>::getAbstractBdd() {
+                if (forceRecomputation) {
+                    this->recomputeCachedBdd();
+                } else {
+                    cachedDd.bdd &= computeMissingGlobalIdentities();
+                }
+                
                 return cachedDd;
             }
             
