@@ -216,7 +216,7 @@ if(USE_CARL)
     if(carl_FOUND)
         set(STORM_HAVE_CARL ON)
         message(STATUS "Storm - Use system version of carl.")
-        message(STATUS "Storm - Linking with carl ${carl_VERSION_STRING}.")
+        message(STATUS "Storm - Linking with carl ${carl_VERSION} (CARL_USE_CLN_NUMBERS: ${CARL_USE_CLN_NUMBERS}).")
         include_directories("${carl_INCLUDE_DIR}")
         list(APPEND STORM_LINK_LIBRARIES ${carl_LIBRARIES})
     else()
@@ -240,6 +240,8 @@ if(USE_CARL)
                 LOG_BUILD ON
                 BUILD_BYPRODUCTS ${STORM_3RDPARTY_BINARY_DIR}/carl/lib/libcarl${DYNAMIC_EXT}
         )
+        include(${STORM_3RDPARTY_BINARY_DIR}/carl/carlConfig.cmake)
+        message("CARL_USE_CLN_NUMBERS: ${CARL_USE_CLN_NUMBERS}")
 
         add_dependencies(resources carl)
         set(carl_INCLUDE_DIR "${STORM_3RDPARTY_BINARY_DIR}/carl/include")

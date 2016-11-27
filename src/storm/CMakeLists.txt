@@ -40,6 +40,7 @@ add_library(storm SHARED ${STORM_LIB_SOURCES} ${STORM_LIB_HEADERS})
 set_target_properties(storm PROPERTIES DEFINE_SYMBOL "")
 add_dependencies(storm resources)
 target_link_libraries(storm ${STORM_LINK_LIBRARIES})
+append(STORM_TARGETS storm CACHE STRING INTERNAL FORCE)
 
 # Create storm.
 add_executable(storm-main ${STORM_MAIN_SOURCES} ${STORM_MAIN_HEADERS})

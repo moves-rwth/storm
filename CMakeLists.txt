@@ -55,10 +55,22 @@ mark_as_advanced(CMAKE_OSX_ARCHITECTURES)
 mark_as_advanced(CMAKE_OSX_SYSROOT)
 mark_as_advanced(CMAKE_OSX_DEPLOYMENT_TARGET)
 
+# Offer the user the choice of overriding the installation directories
+set(INCLUDE_INSTALL_DIR include/ CACHE PATH "Installation directory for header files" )
+set(LIB_INSTALL_DIR lib/ CACHE PATH "Installation directory for libraries")
+#set(SYSCONFIG_INSTALL_DIR etc/carl/  CACHE PATH "Installation for system configuration files)
+set(BIN_INSTALL_DIR lib/ CACHE PATH "Installation directory for executables")
+
+
 # By default, we build a release version.
 if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "RELEASE")
 endif()
+# Install dir for cmake files (info for other libraries that include storm)
+set(DEF_INSTALL_CMAKE_DIR "lib/CMake/storm")
+set(CMAKE_INSTALL_DIR ${DEF_INSTALL_CMAKE_DIR} CACHE PATH  "Installation directory for CMake files")
+
+message("CMAKE_INSTALL_DIR: ${CMAKE_INSTALL_DIR}")
 
 # If the STORM_DEVELOPER option was turned on, we target a debug version.
 if (STORM_DEVELOPER)
@@ -353,5 +365,7 @@ if(STORM_PYTHON)
 endif()
 
 add_subdirectory(src)
+
+include(export)
 
 include(StormCPackConfig.cmake)

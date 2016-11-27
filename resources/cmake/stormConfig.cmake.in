@@ -1,0 +1,18 @@
+set(storm_VERSION @storm_VERSION@)
+
+
+@DEP_TARGETS@
+
+@EXP_OPTIONS@
+
+# Our library dependencies (contains definitions for IMPORTED targets)
+if(NOT TARGET storm)
+  include("${PROJECT_BINARY_DIR}/stormTargets.cmake")
+endif()
+
+@PACKAGE_INIT@
+
+set(storm_INCLUDE_DIR "@CONF_INCLUDE_DIRS@")
+
+set(storm_LIBRARIES storm)
+check_required_components(storm)
