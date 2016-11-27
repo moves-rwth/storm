@@ -13,12 +13,21 @@ namespace storm {
         
         template<storm::dd::DdType Type, typename ValueType>
         MenuGameRefiner<Type, ValueType>::MenuGameRefiner(MenuGameAbstractor<Type, ValueType>& abstractor, std::unique_ptr<storm::solver::SmtSolver>&& smtSolver) : abstractor(abstractor), splitPredicates(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isSplitPredicatesSet()), splitter(), equivalenceChecker(std::move(smtSolver)) {
-            // Intentionally left empty.
+            
+            if (storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isAddAllGuardsSet()) {
+                std::vector<storm::expressions::Expression> guards;
+                
+                std::pair<uint64_t, uint64_t> player1Choices = this->abstractor.get().getPlayer1ChoiceRange();
+                for (uint64_t index = player1Choices.first; index < player1Choices.second; ++index) {
+                    guards.push_back(this->abstractor.get().getGuard(index));
+                }
+                performRefinement(createGlobalRefinement(guards));
+            }
         }
         
         template<storm::dd::DdType Type, typename ValueType>
         void MenuGameRefiner<Type, ValueType>::refine(std::vector<storm::expressions::Expression> const& predicates) const {
-            abstractor.get().refine(predicates);
+            performRefinement(createGlobalRefinement(predicates));
         }
         
         template<storm::dd::DdType Type, typename ValueType>
@@ -226,7 +235,8 @@ namespace storm {
             
             // Derive predicate based on the selected pivot state.
             storm::expressions::Expression newPredicate = derivePredicateFromPivotState(game, pivotState, minPlayer1Strategy, minPlayer2Strategy, maxPlayer1Strategy, maxPlayer2Strategy);
-            performRefinement({newPredicate});
+            std::vector<storm::expressions::Expression> preparedPredicates = preprocessPredicates({newPredicate});
+            performRefinement(createGlobalRefinement(preparedPredicates));
             return true;
         }
         
@@ -253,12 +263,13 @@ namespace storm {
 
             // Derive predicate based on the selected pivot state.
             storm::expressions::Expression newPredicate = derivePredicateFromPivotState(game, pivotState, minPlayer1Strategy, minPlayer2Strategy, maxPlayer1Strategy, maxPlayer2Strategy);
-            performRefinement({newPredicate});
+            std::vector<storm::expressions::Expression> preparedPredicates = preprocessPredicates({newPredicate});
+            performRefinement(createGlobalRefinement(preparedPredicates));
             return true;
         }
         
         template<storm::dd::DdType Type, typename ValueType>
-        bool MenuGameRefiner<Type, ValueType>::performRefinement(std::vector<storm::expressions::Expression> const& predicates) const {
+        std::vector<storm::expressions::Expression> MenuGameRefiner<Type, ValueType>::preprocessPredicates(std::vector<storm::expressions::Expression> const& predicates) const {
             if (splitPredicates) {
                 std::vector<storm::expressions::Expression> cleanedAtoms;
 
@@ -292,13 +303,30 @@ namespace storm {
                     }
                 }
                 
-                abstractor.get().refine(cleanedAtoms);
+                return cleanedAtoms;
             } else {
                 // If no splitting of the predicates is required, just forward the refinement request to the abstractor.
-                abstractor.get().refine(predicates);
             }
             
-            return true;
+            return predicates;
+        }
+        
+        template<storm::dd::DdType Type, typename ValueType>
+        std::vector<RefinementCommand> MenuGameRefiner<Type, ValueType>::createGlobalRefinement(std::vector<storm::expressions::Expression> const& predicates) const {
+            std::vector<RefinementCommand> commands;
+            
+            // std::pair<uint64_t, uint64_t> player1Choices = abstractor.get().getPlayer1ChoiceRange();
+            // for (uint64_t index = player1Choices.first; index < player1Choices.second; ++index) {
+            //    commands.emplace_back(index, predicates);
+            // }
+            commands.emplace_back(predicates);
+            
+            return commands;
+        }
+        
+        template<storm::dd::DdType Type, typename ValueType>
+        void MenuGameRefiner<Type, ValueType>::performRefinement(std::vector<RefinementCommand> const& refinementCommands) const {
+            abstractor.get().refine(refinementCommands);
         }
         
         template class MenuGameRefiner<storm::dd::DdType::CUDD, double>;

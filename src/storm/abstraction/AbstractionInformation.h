@@ -3,10 +3,15 @@
 #include <vector>
 #include <set>
 #include <cstdint>
+#include <memory>
 
 #include "storm/storage/dd/DdType.h"
 
 #include "storm/storage/dd/Bdd.h"
+
+#include "storm/solver/SmtSolver.h"
+
+#include "storm/storage/expressions/EquivalenceChecker.h"
 
 namespace storm {
     namespace expressions {
@@ -29,8 +34,10 @@ namespace storm {
              * Creates a new abstraction information object.
              *
              * @param expressionManager The manager responsible for all variables and expressions during the abstraction process.
+             * @param smtSolver An SMT solver that is used to detect equivalent predicates.
+             * @param ddManager The manager responsible for the DDs.
              */
-            AbstractionInformation(storm::expressions::ExpressionManager& expressionManager, std::shared_ptr<storm::dd::DdManager<DdType>> ddManager = std::make_shared<storm::dd::DdManager<DdType>>());
+            AbstractionInformation(storm::expressions::ExpressionManager& expressionManager, std::unique_ptr<storm::solver::SmtSolver>&& smtSolver, std::shared_ptr<storm::dd::DdManager<DdType>> ddManager = std::make_shared<storm::dd::DdManager<DdType>>());
 
             /*!
              * Adds the given variable.
@@ -69,12 +76,13 @@ namespace storm {
             std::vector<storm::expressions::Expression> const& getConstraints() const;
             
             /*!
-             * Adds the given predicate.
+             * Gets the index of a predicate that is equivalent to the provided one. If none exists, the predicate is
+             * added.
              *
              * @param predicate The predicate to add.
              * @return The index of the newly added predicate in the global list of predicates.
              */
-            uint_fast64_t addPredicate(storm::expressions::Expression const& predicate);
+            uint_fast64_t getOrAddPredicate(storm::expressions::Expression const& predicate);
             
             /*!
              * Adds the given predicates.
@@ -461,6 +469,9 @@ namespace storm {
             
             /// A mapping from predicates to their indices in the predicate list.
             std::unordered_map<storm::expressions::Expression, uint64_t> predicateToIndexMap;
+            
+            /// An object that can detect equivalence of predicates.
+            storm::expressions::EquivalenceChecker equivalenceChecker;
             
             /// The current set of predicates used in the abstraction.
             std::vector<storm::expressions::Expression> predicates;

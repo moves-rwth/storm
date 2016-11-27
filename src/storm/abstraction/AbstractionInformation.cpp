@@ -14,7 +14,7 @@ namespace storm {
     namespace abstraction {
 
         template<storm::dd::DdType DdType>
-        AbstractionInformation<DdType>::AbstractionInformation(storm::expressions::ExpressionManager& expressionManager, std::shared_ptr<storm::dd::DdManager<DdType>> ddManager) : expressionManager(expressionManager), ddManager(ddManager), allPredicateIdentities(ddManager->getBddOne()) {
+        AbstractionInformation<DdType>::AbstractionInformation(storm::expressions::ExpressionManager& expressionManager, std::unique_ptr<storm::solver::SmtSolver>&& smtSolver, std::shared_ptr<storm::dd::DdManager<DdType>> ddManager) : expressionManager(expressionManager), equivalenceChecker(std::move(smtSolver)), ddManager(ddManager), allPredicateIdentities(ddManager->getBddOne()) {
             // Intentionally left empty.
         }
         
@@ -40,7 +40,15 @@ namespace storm {
         }
         
         template<storm::dd::DdType DdType>
-        uint_fast64_t AbstractionInformation<DdType>::addPredicate(storm::expressions::Expression const& predicate) {
+        uint_fast64_t AbstractionInformation<DdType>::getOrAddPredicate(storm::expressions::Expression const& predicate) {
+            // Check if we already have an equivalent predicate.
+            for (uint64_t index = 0; index < predicates.size(); ++index) {
+                auto const& oldPredicate = predicates[index];
+                if (equivalenceChecker.areEquivalent(oldPredicate, predicate)) {
+                    return index;
+                }
+            }
+            
             std::size_t predicateIndex = predicates.size();
             predicateToIndexMap[predicate] = predicateIndex;
             
@@ -68,7 +76,7 @@ namespace storm {
         std::vector<uint_fast64_t> AbstractionInformation<DdType>::addPredicates(std::vector<storm::expressions::Expression> const& predicates) {
             std::vector<uint_fast64_t> predicateIndices;
             for (auto const& predicate : predicates) {
-                predicateIndices.push_back(this->addPredicate(predicate));
+                predicateIndices.push_back(this->getOrAddPredicate(predicate));
             }
             return predicateIndices;
         }

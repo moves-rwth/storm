@@ -5,6 +5,7 @@
 #include "storm/abstraction/MenuGameAbstractor.h"
 #include "storm/abstraction/AbstractionInformation.h"
 #include "storm/abstraction/MenuGame.h"
+#include "storm/abstraction/RefinementCommand.h"
 #include "storm/abstraction/prism/ModuleAbstractor.h"
 
 #include "storm/storage/dd/Add.h"
@@ -42,9 +43,8 @@ namespace storm {
                  * @param expressionManager The manager responsible for the expressions of the program.
                  * @param program The concrete program for which to build the abstraction.
                  * @param smtSolverFactory A factory that is to be used for creating new SMT solvers.
-                 * @param addAllGuards A flag that indicates whether all guards of the program should be added to the initial set of predicates.
                  */
-                PrismMenuGameAbstractor(storm::prism::Program const& program, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>(), bool addAllGuards = false);
+                PrismMenuGameAbstractor(storm::prism::Program const& program, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
                 
                 PrismMenuGameAbstractor(PrismMenuGameAbstractor const&) = default;
                 PrismMenuGameAbstractor& operator=(PrismMenuGameAbstractor const&) = default;
@@ -56,14 +56,14 @@ namespace storm {
                  *
                  * @return The abstract stochastic two player game.
                  */
-                MenuGame<DdType, ValueType> abstract();
+                MenuGame<DdType, ValueType> abstract() override;
                 
                 /*!
                  * Retrieves information about the abstraction.
                  *
                  * @return The abstraction information object.
                  */
-                AbstractionInformation<DdType> const& getAbstractionInformation() const;
+                AbstractionInformation<DdType> const& getAbstractionInformation() const override;
                 
                 /*!
                  * Retrieves the guard predicate of the given player 1 choice.
@@ -71,13 +71,18 @@ namespace storm {
                  * @param player1Choice The choice for which to retrieve the guard.
                  * @return The guard of the player 1 choice.
                  */
-                storm::expressions::Expression const& getGuard(uint64_t player1Choice) const;
+                storm::expressions::Expression const& getGuard(uint64_t player1Choice) const override;
                 
                 /*!
                  * Retrieves a mapping from variables to expressions that define their updates wrt. to the given player
                  * 1 choice and auxiliary choice.
                  */
-                std::map<storm::expressions::Variable, storm::expressions::Expression> getVariableUpdates(uint64_t player1Choice, uint64_t auxiliaryChoice) const;
+                std::map<storm::expressions::Variable, storm::expressions::Expression> getVariableUpdates(uint64_t player1Choice, uint64_t auxiliaryChoice) const override;
+                
+                /*!
+                 * Retrieves the range of player 1 choices.
+                 */
+                std::pair<uint64_t, uint64_t> getPlayer1ChoiceRange() const override;
                 
                 /*!
                  * Retrieves the set of states (represented by a BDD) satisfying the given predicate, assuming that it
@@ -89,12 +94,19 @@ namespace storm {
                 storm::dd::Bdd<DdType> getStates(storm::expressions::Expression const& predicate);
                 
                 /*!
-                 * Refines the abstract program with the given predicates.
+                 * Performs the given refinement commands.
                  *
-                 * @param predicates The new predicates.
+                 * @param commands The commands to perform.
                  */
-                void refine(std::vector<storm::expressions::Expression> const& predicates);
-                
+                virtual void refine(std::vector<RefinementCommand> const& commands) override;
+
+                /*!
+                 * Performs the given refinement command.
+                 *
+                 * @param command The command to perform.
+                 */
+                void refine(RefinementCommand const& command);
+
                 /*!
                  * Exports the current state of the abstraction in the dot format to the given file.
                  *
@@ -102,7 +114,7 @@ namespace storm {
                  * @param highlightStates A BDD characterizing states that will be highlighted.
                  * @param filter A filter that is applied to select which part of the game to export.
                  */
-                void exportToDot(std::string const& filename, storm::dd::Bdd<DdType> const& highlightStates, storm::dd::Bdd<DdType> const& filter) const;
+                void exportToDot(std::string const& filename, storm::dd::Bdd<DdType> const& highlightStates, storm::dd::Bdd<DdType> const& filter) const override;
                 
             private:                
                 /*!

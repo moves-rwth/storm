@@ -4,6 +4,7 @@
 #include <vector>
 #include <memory>
 
+#include "storm/abstraction/RefinementCommand.h"
 #include "storm/abstraction/QualitativeResultMinMax.h"
 #include "storm/abstraction/QuantitativeResultMinMax.h"
 
@@ -54,10 +55,18 @@ namespace storm {
         private:
             storm::expressions::Expression derivePredicateFromDifferingChoices(storm::dd::Bdd<Type> const& pivotState, storm::dd::Bdd<Type> const& player1Choice, storm::dd::Bdd<Type> const& lowerChoice, storm::dd::Bdd<Type> const& upperChoice) const;
             storm::expressions::Expression derivePredicateFromPivotState(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& pivotState, storm::dd::Bdd<Type> const& minPlayer1Strategy, storm::dd::Bdd<Type> const& minPlayer2Strategy, storm::dd::Bdd<Type> const& maxPlayer1Strategy, storm::dd::Bdd<Type> const& maxPlayer2Strategy) const;
+            
             /*!
-             * Takes the given predicates, preprocesses them and then refines the abstractor.
+             * Preprocesses the predicates.
              */
-            bool performRefinement(std::vector<storm::expressions::Expression> const& predicates) const;
+            std::vector<storm::expressions::Expression> preprocessPredicates(std::vector<storm::expressions::Expression> const& predicates) const;
+            
+            /*!
+             * Creates a set of refinement commands that amounts to splitting all player 1 choices with the given set of predicates.
+             */
+            std::vector<RefinementCommand> createGlobalRefinement(std::vector<storm::expressions::Expression> const& predicates) const;
+            
+            void performRefinement(std::vector<RefinementCommand> const& refinementCommands) const;
             
             /// The underlying abstractor to refine.
             std::reference_wrapper<MenuGameAbstractor<Type, ValueType>> abstractor;

@@ -17,6 +17,7 @@
 #include "storm/utility/solver.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/NotSupportedException.h"
 
 #include "storm-config.h"
 #include "storm/adapters/CarlAdapter.h"
@@ -29,9 +30,8 @@ namespace storm {
             
             template <storm::dd::DdType DdType, typename ValueType>
             PrismMenuGameAbstractor<DdType, ValueType>::PrismMenuGameAbstractor(storm::prism::Program const& program,
-                                                                std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory,
-                                                                bool addAllGuards)
-            : program(program), smtSolverFactory(smtSolverFactory), abstractionInformation(program.getManager()), modules(), initialStateAbstractor(abstractionInformation, program.getAllExpressionVariables(), {program.getInitialStatesExpression()}, this->smtSolverFactory), addedAllGuards(addAllGuards), currentGame(nullptr), refinementPerformed(false) {
+                                                                std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory)
+            : program(program), smtSolverFactory(smtSolverFactory), abstractionInformation(program.getManager(), smtSolverFactory->create(program.getManager())), modules(), initialStateAbstractor(abstractionInformation, program.getAllExpressionVariables(), {program.getInitialStatesExpression()}, this->smtSolverFactory), currentGame(nullptr), refinementPerformed(false) {
                 
                 // For now, we assume that there is a single module. If the program has more than one module, it needs
                 // to be flattened before the procedure.
@@ -52,9 +52,6 @@ namespace storm {
                 for (auto const& module : program.getModules()) {
                     // If we were requested to add all guards to the set of predicates, we do so now.
                     for (auto const& command : module.getCommands()) {
-                        if (addAllGuards) {
-                            allGuards.push_back(command.getGuardExpression());
-                        }
                         maximalUpdateCount = std::max(maximalUpdateCount, static_cast<uint_fast64_t>(command.getNumberOfUpdates()));
                     }
                     
@@ -68,45 +65,40 @@ namespace storm {
                 
                 // For each module of the concrete program, we create an abstract counterpart.
                 for (auto const& module : program.getModules()) {
-                    this->modules.emplace_back(module, abstractionInformation, this->smtSolverFactory, addAllGuards);
+                    this->modules.emplace_back(module, abstractionInformation, this->smtSolverFactory);
                 }
                 
                 // Retrieve the command-update probability ADD, so we can multiply it with the abstraction BDD later.
                 commandUpdateProbabilitiesAdd = modules.front().getCommandUpdateProbabilitiesAdd();
-                
-                // Now that we have created all other DD variables, we create the DD variables for the predicates.
-                std::vector<storm::expressions::Expression> initialPredicates;
-                if (addAllGuards) {
-                    for (auto const& guard : allGuards) {
-                        initialPredicates.push_back(guard);
-                    }
-                }
-                
-                // Finally, refine using the all predicates and build game as a by-product.
-                this->refine(initialPredicates);
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            void PrismMenuGameAbstractor<DdType, ValueType>::refine(std::vector<storm::expressions::Expression> const& predicates) {
+            void PrismMenuGameAbstractor<DdType, ValueType>::refine(std::vector<RefinementCommand> const& commands) {
+                for (auto const& command : commands) {
+                    STORM_LOG_THROW(!command.refersToPlayer1Choice(), storm::exceptions::NotSupportedException, "Currently only global refinement is supported.");
+                    refine(command);
+                    refinementPerformed |= !command.getPredicates().empty();
+                }
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
+            void PrismMenuGameAbstractor<DdType, ValueType>::refine(RefinementCommand const& command) {
                 // Add the predicates to the global list of predicates and gather their indices.
-                std::vector<uint_fast64_t> newPredicateIndices;
-                for (auto const& predicate : predicates) {
+                std::vector<uint_fast64_t> predicateIndices;
+                for (auto const& predicate : command.getPredicates()) {
                     STORM_LOG_THROW(predicate.hasBooleanType(), storm::exceptions::InvalidArgumentException, "Expecting a predicate of type bool.");
-                    newPredicateIndices.push_back(abstractionInformation.addPredicate(predicate));
+                    predicateIndices.push_back(abstractionInformation.getOrAddPredicate(predicate));
                 }
                 
                 // Refine all abstract modules.
                 for (auto& module : modules) {
-                    module.refine(newPredicateIndices);
+                    module.refine(predicateIndices);
                 }
                 
                 // Refine initial state abstractor.
-                initialStateAbstractor.refine(newPredicateIndices);
-                
-                // Update the flag that stores whether a refinement was performed.
-                refinementPerformed = refinementPerformed || !newPredicateIndices.empty();
+                initialStateAbstractor.refine(predicateIndices);
             }
-                                    
+            
             template <storm::dd::DdType DdType, typename ValueType>
             MenuGame<DdType, ValueType> PrismMenuGameAbstractor<DdType, ValueType>::abstract() {
                 if (refinementPerformed) {
@@ -129,6 +121,11 @@ namespace storm {
             template <storm::dd::DdType DdType, typename ValueType>
             std::map<storm::expressions::Variable, storm::expressions::Expression> PrismMenuGameAbstractor<DdType, ValueType>::getVariableUpdates(uint64_t player1Choice, uint64_t auxiliaryChoice) const {
                 return modules.front().getVariableUpdates(player1Choice, auxiliaryChoice);
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
+            std::pair<uint64_t, uint64_t> PrismMenuGameAbstractor<DdType, ValueType>::getPlayer1ChoiceRange() const {
+                return std::make_pair(0, modules.front().getCommands().size());
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
