@@ -11,6 +11,18 @@
 namespace storm {
     namespace abstraction {
         
+        RefinementPredicates::RefinementPredicates(Source const& source, std::vector<storm::expressions::Expression> const& predicates) : source(source), predicates(predicates) {
+            // Intentionally left empty.
+        }
+        
+        RefinementPredicates::Source RefinementPredicates::getSource() const {
+            return source;
+        }
+        
+        std::vector<storm::expressions::Expression> const& RefinementPredicates::getPredicates() const {
+            return predicates;
+        }
+        
         template<storm::dd::DdType Type, typename ValueType>
         MenuGameRefiner<Type, ValueType>::MenuGameRefiner(MenuGameAbstractor<Type, ValueType>& abstractor, std::unique_ptr<storm::solver::SmtSolver>&& smtSolver) : abstractor(abstractor), splitPredicates(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isSplitPredicatesSet()), splitGuards(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isSplitGuardsSet()), splitter(), equivalenceChecker(std::move(smtSolver)) {
             
@@ -31,7 +43,7 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type, typename ValueType>
-        storm::dd::Bdd<Type> pickPivotStateWithMinimalDistance(storm::dd::Bdd<Type> const& initialStates, storm::dd::Bdd<Type> const& transitionsMin, storm::dd::Bdd<Type> const& transitionsMax, std::set<storm::expressions::Variable> const& rowVariables, std::set<storm::expressions::Variable> const& columnVariables, storm::dd::Bdd<Type> const& pivotStates, boost::optional<QuantitativeResultMinMax<Type, ValueType>> const& quantitativeResult = boost::none) {
+        std::pair<storm::dd::Bdd<Type>, storm::OptimizationDirection> pickPivotState(storm::dd::Bdd<Type> const& initialStates, storm::dd::Bdd<Type> const& transitionsMin, storm::dd::Bdd<Type> const& transitionsMax, std::set<storm::expressions::Variable> const& rowVariables, std::set<storm::expressions::Variable> const& columnVariables, storm::dd::Bdd<Type> const& pivotStates, boost::optional<QuantitativeResultMinMax<Type, ValueType>> const& quantitativeResult = boost::none) {
             
             // Set up used variables.
             storm::dd::Bdd<Type> frontierMin = initialStates;
@@ -43,7 +55,7 @@ namespace storm {
             bool foundPivotState = !frontierPivotStates.isZero();
             if (foundPivotState) {
                 STORM_LOG_TRACE("Picked pivot state from " << frontierPivotStates.getNonZeroCount() << " candidates on level " << level << ", " << pivotStates.getNonZeroCount() << " candidates in total.");
-                return frontierPivotStates.existsAbstractRepresentative(rowVariables);
+                return std::make_pair(frontierPivotStates.existsAbstractRepresentative(rowVariables), storm::OptimizationDirection::Minimize);
             } else {
                 
                 // Otherwise, we perform a simulatenous BFS in the sense that we make one step in both the min and max
@@ -52,17 +64,40 @@ namespace storm {
                     frontierMin = frontierMin.relationalProduct(transitionsMin, rowVariables, columnVariables);
                     frontierMax = frontierMax.relationalProduct(transitionsMax, rowVariables, columnVariables);
                     
-                    frontierPivotStates = (frontierMin && pivotStates) || (frontierMax && pivotStates);
+                    storm::dd::Bdd<Type> frontierMinPivotStates = frontierMin && pivotStates;
+                    storm::dd::Bdd<Type> frontierMaxPivotStates = frontierMax && pivotStates;
+                    uint64_t numberOfPivotStateCandidatesOnLevel = frontierMinPivotStates.getNonZeroCount() + frontierMaxPivotStates.getNonZeroCount();
                     
-                    if (!frontierPivotStates.isZero()) {
+                    if (!frontierMinPivotStates.isZero() || !frontierMaxPivotStates.isZero()) {
                         if (quantitativeResult) {
-                            storm::dd::Add<Type, ValueType> frontierPivotStatesAdd = frontierPivotStates.template toAdd<ValueType>();
-                            storm::dd::Add<Type, ValueType> diff = frontierPivotStatesAdd * quantitativeResult.get().max.values - frontierPivotStatesAdd * quantitativeResult.get().min.values;
-                            STORM_LOG_TRACE("Picked pivot state with difference " << diff.getMax() << " from " << frontierPivotStates.getNonZeroCount() << " candidates on level " << level << ", " << pivotStates.getNonZeroCount() << " candidates in total.");
-                            return diff.maxAbstractRepresentative(rowVariables);
+                            storm::dd::Add<Type, ValueType> frontierMinPivotStatesAdd = frontierMinPivotStates.template toAdd<ValueType>();
+                            storm::dd::Add<Type, ValueType> frontierMaxPivotStatesAdd = frontierMaxPivotStates.template toAdd<ValueType>();
+                            storm::dd::Add<Type, ValueType> diffMin = frontierMinPivotStatesAdd * quantitativeResult.get().max.values - frontierMinPivotStatesAdd * quantitativeResult.get().min.values;
+                            storm::dd::Add<Type, ValueType> diffMax = frontierMaxPivotStatesAdd * quantitativeResult.get().max.values - frontierMaxPivotStatesAdd * quantitativeResult.get().min.values;
+                            
+                            ValueType diffValue;
+                            storm::OptimizationDirection direction;
+                            if (diffMin.getMax() >= diffMax.getMax()) {
+                                direction = storm::OptimizationDirection::Minimize;
+                                diffValue = diffMin.getMax();
+                            } else {
+                                direction = storm::OptimizationDirection::Maximize;
+                                diffValue = diffMax.getMax();
+                            }
+                            
+                            STORM_LOG_TRACE("Picked pivot state with difference " << diffValue << " from " << numberOfPivotStateCandidatesOnLevel << " candidates on level " << level << ", " << pivotStates.getNonZeroCount() << " candidates in total.");
+                            return std::make_pair(direction == storm::OptimizationDirection::Minimize ? diffMin.maxAbstractRepresentative(rowVariables) : diffMax.maxAbstractRepresentative(rowVariables), direction);
                         } else {
-                            STORM_LOG_TRACE("Picked pivot state from " << frontierPivotStates.getNonZeroCount() << " candidates on level " << level << ", " << pivotStates.getNonZeroCount() << " candidates in total.");
-                            return frontierPivotStates.existsAbstractRepresentative(rowVariables);
+                            STORM_LOG_TRACE("Picked pivot state from " << numberOfPivotStateCandidatesOnLevel << " candidates on level " << level << ", " << pivotStates.getNonZeroCount() << " candidates in total.");
+                            
+                            storm::OptimizationDirection direction;
+                            if (!frontierMinPivotStates.isZero()) {
+                                direction = storm::OptimizationDirection::Minimize;
+                            } else {
+                                direction = storm::OptimizationDirection::Maximize;
+                            }
+                            
+                            return std::make_pair(direction == storm::OptimizationDirection::Minimize ? frontierMinPivotStates.existsAbstractRepresentative(rowVariables) : frontierMaxPivotStates.existsAbstractRepresentative(rowVariables), direction);
                         }
                     }
                     ++level;
@@ -70,11 +105,11 @@ namespace storm {
             }
             
             STORM_LOG_ASSERT(false, "This point must not be reached, because then no pivot state could be found.");
-            return storm::dd::Bdd<Type>();
+            return std::make_pair(storm::dd::Bdd<Type>(), storm::OptimizationDirection::Minimize);
         }
-
+        
         template <storm::dd::DdType Type, typename ValueType>
-        std::pair<storm::expressions::Expression, bool> MenuGameRefiner<Type, ValueType>::derivePredicateFromDifferingChoices(storm::dd::Bdd<Type> const& pivotState, storm::dd::Bdd<Type> const& player1Choice, storm::dd::Bdd<Type> const& lowerChoice, storm::dd::Bdd<Type> const& upperChoice) const {
+        RefinementPredicates MenuGameRefiner<Type, ValueType>::derivePredicatesFromDifferingChoices(storm::dd::Bdd<Type> const& pivotState, storm::dd::Bdd<Type> const& player1Choice, storm::dd::Bdd<Type> const& lowerChoice, storm::dd::Bdd<Type> const& upperChoice) const {
             // Prepare result.
             storm::expressions::Expression newPredicate;
             bool fromGuard = false;
@@ -132,7 +167,7 @@ namespace storm {
             for (auto const& predicate : abstractionInformation.getPredicates()) {
                 STORM_LOG_TRACE(predicate);
             }
-            return std::make_pair(newPredicate, fromGuard);
+            return RefinementPredicates(fromGuard ? RefinementPredicates::Source::Guard : RefinementPredicates::Source::WeakestPrecondition, {newPredicate});
         }
         
         template<storm::dd::DdType Type>
@@ -153,7 +188,7 @@ namespace storm {
             
             // Start with all reachable states as potential pivot states.
             result.pivotStates = storm::utility::dd::computeReachableStates(game.getInitialStates(), result.reachableTransitionsMin, game.getRowVariables(), game.getColumnVariables()) ||
-                                 storm::utility::dd::computeReachableStates(game.getInitialStates(), result.reachableTransitionsMax, game.getRowVariables(), game.getColumnVariables());
+            storm::utility::dd::computeReachableStates(game.getInitialStates(), result.reachableTransitionsMax, game.getRowVariables(), game.getColumnVariables());
             
             // Then constrain these states by the requirement that for either the lower or upper player 1 choice the player 2 choices must be different and
             // that the difference is not because of a missing strategy in either case.
@@ -171,7 +206,7 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type, typename ValueType>
-        std::pair<storm::expressions::Expression, bool> MenuGameRefiner<Type, ValueType>::derivePredicateFromPivotState(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& pivotState, storm::dd::Bdd<Type> const& minPlayer1Strategy, storm::dd::Bdd<Type> const& minPlayer2Strategy, storm::dd::Bdd<Type> const& maxPlayer1Strategy, storm::dd::Bdd<Type> const& maxPlayer2Strategy) const {
+        RefinementPredicates MenuGameRefiner<Type, ValueType>::derivePredicatesFromPivotState(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& pivotState, storm::dd::Bdd<Type> const& minPlayer1Strategy, storm::dd::Bdd<Type> const& minPlayer2Strategy, storm::dd::Bdd<Type> const& maxPlayer1Strategy, storm::dd::Bdd<Type> const& maxPlayer2Strategy) const {
             // Compute the lower and the upper choice for the pivot state.
             std::set<storm::expressions::Variable> variablesToAbstract = game.getNondeterminismVariables();
             variablesToAbstract.insert(game.getRowVariables().begin(), game.getRowVariables().end());
@@ -184,10 +219,10 @@ namespace storm {
                 STORM_LOG_TRACE("Refining based on lower choice.");
                 auto refinementStart = std::chrono::high_resolution_clock::now();
                 
-                std::pair<storm::expressions::Expression, bool> newPredicate = derivePredicateFromDifferingChoices(pivotState, (pivotState && minPlayer1Strategy).existsAbstract(game.getRowVariables()), lowerChoice1, lowerChoice2);
+                RefinementPredicates predicates = derivePredicatesFromDifferingChoices(pivotState, (pivotState && minPlayer1Strategy).existsAbstract(game.getRowVariables()), lowerChoice1, lowerChoice2);
                 auto refinementEnd = std::chrono::high_resolution_clock::now();
                 STORM_LOG_TRACE("Refinement completed in " << std::chrono::duration_cast<std::chrono::milliseconds>(refinementEnd - refinementStart).count() << "ms.");
-                return newPredicate;
+                return predicates;
             } else {
                 storm::dd::Bdd<Type> upperChoice = pivotState && game.getExtendedTransitionMatrix().toBdd() && maxPlayer1Strategy;
                 storm::dd::Bdd<Type> upperChoice1 = (upperChoice && minPlayer2Strategy).existsAbstract(variablesToAbstract);
@@ -197,10 +232,10 @@ namespace storm {
                 if (upperChoicesDifferent) {
                     STORM_LOG_TRACE("Refining based on upper choice.");
                     auto refinementStart = std::chrono::high_resolution_clock::now();
-                    std::pair<storm::expressions::Expression, bool> newPredicate = derivePredicateFromDifferingChoices(pivotState, (pivotState && maxPlayer1Strategy).existsAbstract(game.getRowVariables()), upperChoice1, upperChoice2);
+                    RefinementPredicates predicates = derivePredicatesFromDifferingChoices(pivotState, (pivotState && maxPlayer1Strategy).existsAbstract(game.getRowVariables()), upperChoice1, upperChoice2);
                     auto refinementEnd = std::chrono::high_resolution_clock::now();
                     STORM_LOG_TRACE("Refinement completed in " << std::chrono::duration_cast<std::chrono::milliseconds>(refinementEnd - refinementStart).count() << "ms.");
-                    return newPredicate;
+                    return predicates;
                 } else {
                     STORM_LOG_ASSERT(false, "Did not find choices from which to derive predicates.");
                 }
@@ -233,11 +268,11 @@ namespace storm {
             STORM_LOG_ASSERT(!pivotStateResult.pivotStates.isZero(), "Unable to proceed without pivot state candidates.");
             
             // Now that we have the pivot state candidates, we need to pick one.
-            storm::dd::Bdd<Type> pivotState = pickPivotStateWithMinimalDistance<Type, ValueType>(game.getInitialStates(), pivotStateResult.reachableTransitionsMin, pivotStateResult.reachableTransitionsMax, game.getRowVariables(), game.getColumnVariables(), pivotStateResult.pivotStates);
+            std::pair<storm::dd::Bdd<Type>, storm::OptimizationDirection> pivotState = pickPivotState<Type, ValueType>(game.getInitialStates(), pivotStateResult.reachableTransitionsMin, pivotStateResult.reachableTransitionsMax, game.getRowVariables(), game.getColumnVariables(), pivotStateResult.pivotStates);
             
             // Derive predicate based on the selected pivot state.
-            std::pair<storm::expressions::Expression, bool> newPredicate = derivePredicateFromPivotState(game, pivotState, minPlayer1Strategy, minPlayer2Strategy, maxPlayer1Strategy, maxPlayer2Strategy);
-            std::vector<storm::expressions::Expression> preparedPredicates = preprocessPredicates({newPredicate.first}, (newPredicate.second && splitGuards) || (!newPredicate.second && splitPredicates));
+            RefinementPredicates predicates = derivePredicatesFromPivotState(game, pivotState.first, minPlayer1Strategy, minPlayer2Strategy, maxPlayer1Strategy, maxPlayer2Strategy);
+            std::vector<storm::expressions::Expression> preparedPredicates = preprocessPredicates(predicates.getPredicates(), (predicates.getSource() == RefinementPredicates::Source::Guard && splitGuards) || (predicates.getSource() == RefinementPredicates::Source::WeakestPrecondition && splitPredicates));
             performRefinement(createGlobalRefinement(preparedPredicates));
             return true;
         }
@@ -253,19 +288,15 @@ namespace storm {
             
             // Compute all reached pivot states.
             PivotStateResult<Type> pivotStateResult = computePivotStates(game, transitionMatrixBdd, minPlayer1Strategy, minPlayer2Strategy, maxPlayer1Strategy, maxPlayer2Strategy);
-
-            // TODO: required?
-            // Require the pivot state to be a state with a lower bound strictly smaller than the upper bound.
-            pivotStateResult.pivotStates &= quantitativeResult.min.values.less(quantitativeResult.max.values);
             
             STORM_LOG_ASSERT(!pivotStateResult.pivotStates.isZero(), "Unable to refine without pivot state candidates.");
-
+            
             // Now that we have the pivot state candidates, we need to pick one.
-            storm::dd::Bdd<Type> pivotState = pickPivotStateWithMinimalDistance<Type, ValueType>(game.getInitialStates(), pivotStateResult.reachableTransitionsMin, pivotStateResult.reachableTransitionsMax, game.getRowVariables(), game.getColumnVariables(), pivotStateResult.pivotStates);
-
+            std::pair<storm::dd::Bdd<Type>, storm::OptimizationDirection> pivotState = pickPivotState<Type, ValueType>(game.getInitialStates(), pivotStateResult.reachableTransitionsMin, pivotStateResult.reachableTransitionsMax, game.getRowVariables(), game.getColumnVariables(), pivotStateResult.pivotStates);
+            
             // Derive predicate based on the selected pivot state.
-            std::pair<storm::expressions::Expression, bool> newPredicate = derivePredicateFromPivotState(game, pivotState, minPlayer1Strategy, minPlayer2Strategy, maxPlayer1Strategy, maxPlayer2Strategy);
-            std::vector<storm::expressions::Expression> preparedPredicates = preprocessPredicates({newPredicate.first}, (newPredicate.second && splitGuards) || (!newPredicate.second && splitPredicates));
+            RefinementPredicates predicates = derivePredicatesFromPivotState(game, pivotState.first, minPlayer1Strategy, minPlayer2Strategy, maxPlayer1Strategy, maxPlayer2Strategy);
+            std::vector<storm::expressions::Expression> preparedPredicates = preprocessPredicates(predicates.getPredicates(), (predicates.getSource() == RefinementPredicates::Source::Guard && splitGuards) || (predicates.getSource() == RefinementPredicates::Source::WeakestPrecondition && splitPredicates));
             performRefinement(createGlobalRefinement(preparedPredicates));
             return true;
         }
@@ -274,10 +305,10 @@ namespace storm {
         std::vector<storm::expressions::Expression> MenuGameRefiner<Type, ValueType>::preprocessPredicates(std::vector<storm::expressions::Expression> const& predicates, bool split) const {
             if (split) {
                 std::vector<storm::expressions::Expression> cleanedAtoms;
-
+                
                 for (auto const& predicate : predicates) {
                     AbstractionInformation<Type> const& abstractionInformation = abstractor.get().getAbstractionInformation();
-
+                    
                     // Split the predicates.
                     std::vector<storm::expressions::Expression> atoms = splitter.split(predicate);
                     

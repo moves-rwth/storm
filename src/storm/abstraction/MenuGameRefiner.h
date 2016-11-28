@@ -25,6 +25,22 @@ namespace storm {
         template <storm::dd::DdType Type, typename ValueType>
         class MenuGame;
         
+        class RefinementPredicates {
+        public:
+            enum class Source {
+                WeakestPrecondition, Guard, Interpolation
+            };
+            
+            RefinementPredicates(Source const& source, std::vector<storm::expressions::Expression> const& predicates);
+            
+            Source getSource() const;
+            std::vector<storm::expressions::Expression> const& getPredicates() const;
+            
+        private:
+            Source source;
+            std::vector<storm::expressions::Expression> predicates;
+        };
+        
         template<storm::dd::DdType Type, typename ValueType>
         class MenuGameRefiner {
         public:
@@ -53,13 +69,13 @@ namespace storm {
             bool refine(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& transitionMatrixBdd, QuantitativeResultMinMax<Type, ValueType> const& quantitativeResult) const;
             
         private:
-            std::pair<storm::expressions::Expression, bool> derivePredicateFromDifferingChoices(storm::dd::Bdd<Type> const& pivotState, storm::dd::Bdd<Type> const& player1Choice, storm::dd::Bdd<Type> const& lowerChoice, storm::dd::Bdd<Type> const& upperChoice) const;
-            std::pair<storm::expressions::Expression, bool> derivePredicateFromPivotState(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& pivotState, storm::dd::Bdd<Type> const& minPlayer1Strategy, storm::dd::Bdd<Type> const& minPlayer2Strategy, storm::dd::Bdd<Type> const& maxPlayer1Strategy, storm::dd::Bdd<Type> const& maxPlayer2Strategy) const;
+            RefinementPredicates derivePredicatesFromDifferingChoices(storm::dd::Bdd<Type> const& pivotState, storm::dd::Bdd<Type> const& player1Choice, storm::dd::Bdd<Type> const& lowerChoice, storm::dd::Bdd<Type> const& upperChoice) const;
+            RefinementPredicates derivePredicatesFromPivotState(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& pivotState, storm::dd::Bdd<Type> const& minPlayer1Strategy, storm::dd::Bdd<Type> const& minPlayer2Strategy, storm::dd::Bdd<Type> const& maxPlayer1Strategy, storm::dd::Bdd<Type> const& maxPlayer2Strategy) const;
             
             /*!
              * Preprocesses the predicates.
              */
-            std::vector<storm::expressions::Expression> preprocessPredicates(std::vector<storm::expressions::Expression> const& predicates, bool allowSplits) const;
+            std::vector<storm::expressions::Expression> preprocessPredicates(std::vector<storm::expressions::Expression> const& predicates, bool split) const;
             
             /*!
              * Creates a set of refinement commands that amounts to splitting all player 1 choices with the given set of predicates.
