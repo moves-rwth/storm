@@ -441,6 +441,43 @@ namespace storm {
             return result;
         }
         
+        template <storm::dd::DdType DdType>
+        std::pair<storm::storage::BitVector, uint64_t> AbstractionInformation<DdType>::decodeStateAndUpdate(storm::dd::Bdd<DdType> const& state) const {
+            storm::storage::BitVector successor(this->getNumberOfPredicates());
+            
+            storm::dd::Add<DdType, double> stateAsAdd = state.template toAdd<double>();
+            uint_fast64_t updateIndex = 0;
+            for (auto const& stateValuePair : stateAsAdd) {
+                uint_fast64_t updateIndex = this->decodeAux(stateValuePair.first, 0, this->getAuxVariableCount());
+                
+#ifdef LOCAL_DEBUG
+                std::cout << "update idx: " << updateIndex << std::endl;
+#endif
+                storm::storage::BitVector successor(this->getNumberOfPredicates());
+                for (uint_fast64_t index = 0; index < this->getOrderedSuccessorVariables().size(); ++index) {
+                    auto const& successorVariable = this->getOrderedSuccessorVariables()[index];
+#ifdef LOCAL_DEBUG
+                    std::cout << successorVariable.getName() << " has value";
+#endif
+                    if (stateValuePair.first.getBooleanValue(successorVariable)) {
+                        successor.set(index);
+#ifdef LOCAL_DEBUG
+                        std::cout << " true";
+#endif
+                    } else {
+#ifdef LOCAL_DEBUG
+                        std::cout << " false";
+#endif
+                    }
+#ifdef LOCAL_DEBUG
+                    std::cout << std::endl;
+#endif
+                }
+            }
+            
+            return std::make_pair(successors, updateIndex);
+        }
+        
         template class AbstractionInformation<storm::dd::DdType::CUDD>;
         template class AbstractionInformation<storm::dd::DdType::Sylvan>;
     }

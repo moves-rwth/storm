@@ -82,6 +82,8 @@ namespace storm {
              */
             std::vector<RefinementCommand> createGlobalRefinement(std::vector<storm::expressions::Expression> const& predicates) const;
             
+            storm::expressions::Expression buildTraceFormula(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& spanningTree, storm::dd::Bdd<Type> const& pivotState) const;
+            
             void performRefinement(std::vector<RefinementCommand> const& refinementCommands) const;
             
             /// The underlying abstractor to refine.

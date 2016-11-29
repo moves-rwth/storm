@@ -435,9 +435,15 @@ namespace storm {
             std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>> declareNewVariables(std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>> const& oldPredicates, std::set<uint_fast64_t> const& newPredicates) const;
             
             /*!
-             * Decodes the choice in the form of a BDD over the source and
+             * Decodes the choice in the form of a BDD over the destination variables.
              */
             std::map<uint_fast64_t, storm::storage::BitVector> decodeChoiceToUpdateSuccessorMapping(storm::dd::Bdd<DdType> const& choice) const;
+            
+            /*!
+             * Decodes the given state-and-update BDD (state as source variables) into a bit vector indicating the truth values of
+             * the predicates in the state and the update index.
+             */
+            std::pair<storm::storage::BitVector, uint64_t> decodeStateAndUpdate(storm::dd::Bdd<DdType> const& stateAndUpdate) const;
             
         private:
             /*!

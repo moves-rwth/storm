@@ -3,6 +3,7 @@
 #include "storm/abstraction/AbstractionInformation.h"
 #include "storm/abstraction/MenuGameAbstractor.h"
 
+#include "storm/storage/dd/DdManager.h"
 #include "storm/utility/dd.h"
 
 #include "storm/settings/SettingsManager.h"
@@ -40,6 +41,41 @@ namespace storm {
         template<storm::dd::DdType Type, typename ValueType>
         void MenuGameRefiner<Type, ValueType>::refine(std::vector<storm::expressions::Expression> const& predicates) const {
             performRefinement(createGlobalRefinement(predicates));
+        }
+        
+        template<storm::dd::DdType Type, typename ValueType>
+        storm::dd::Bdd<Type> getMostProbablePathSpanningTree(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& targetState, storm::dd::Bdd<Type> const& transitionFilter) {
+            storm::dd::Add<Type, ValueType> maxProbabilities = game.getInitialStates().template toAdd<ValueType>();
+            
+            storm::dd::Add<Type, ValueType> border = game.getInitialStates().template toAdd<ValueType>();
+            storm::dd::Bdd<Type> spanningTree = game.getManager().getBddZero();
+
+            storm::dd::Add<Type, ValueType> transitionMatrix = ((transitionFilter && game.getExtendedTransitionMatrix().maxAbstractRepresentative(game.getProbabilisticBranchingVariables())).template toAdd<ValueType>() * game.getExtendedTransitionMatrix());
+            transitionMatrix = transitionMatrix.sumAbstract(game.getNondeterminismVariables());
+            
+            std::set<storm::expressions::Variable> variablesToAbstract(game.getRowVariables());
+            variablesToAbstract.insert(game.getProbabilisticBranchingVariables().begin(), game.getProbabilisticBranchingVariables().end());
+            while (!border.isZero() && (border && targetState).isZero()) {
+                // Determine the new maximal probabilities to all states.
+                storm::dd::Add<Type, ValueType> tmp = border * transitionMatrix * maxProbabilities;
+                storm::dd::Bdd<Type> newMaxProbabilityChoices = tmp.maxAbstractRepresentative(variablesToAbstract);
+                storm::dd::Add<Type, ValueType> newMaxProbabilities = tmp.maxAbstract(variablesToAbstract).swapVariables(game.getRowColumnMetaVariablePairs());
+
+                // Determine the probability values for which states strictly increased.
+                storm::dd::Bdd<Type> updateStates = newMaxProbabilities.greater(maxProbabilities);
+                maxProbabilities = updateStates.ite(newMaxProbabilities, maxProbabilities);
+                
+                // Delete all edges in the spanning tree that lead to states that need to be updated.
+                spanningTree &= ((!updateStates).swapVariables(game.getRowColumnMetaVariablePairs()));
+                
+                // Add all edges that achieve the new maximal value to the spanning tree.
+                spanningTree |= updateStates.swapVariables(game.getRowColumnMetaVariablePairs()) && newMaxProbabilityChoices;
+                
+                // Continue exploration from states that have been updated.
+                border = updateStates.template toAdd<ValueType>();
+            }
+            
+            return spanningTree;
         }
         
         template<storm::dd::DdType Type, typename ValueType>
@@ -243,6 +279,21 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type, typename ValueType>
+        storm::expressions::Expression MenuGameRefiner<Type, ValueType>::buildTraceFormula(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& spanningTree, storm::dd::Bdd<Type> const& pivotState) const {
+            AbstractionInformation<Type> const& abstractionInformation = abstractor.get().getAbstractionInformation();
+
+            storm::dd::Bdd<Type> currentState = pivotState;
+            
+            while ((currentState && game.getInitialStates()).isZero()) {
+                storm::dd::Bdd<Type> predecessorTransition = currentState.swapVariables(game.getRowColumnMetaVariablePairs()) && spanningTree;
+                
+                
+            }
+            
+            return storm::expressions::Expression();
+        }
+        
+        template<storm::dd::DdType Type, typename ValueType>
         bool MenuGameRefiner<Type, ValueType>::refine(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& transitionMatrixBdd, QualitativeResultMinMax<Type> const& qualitativeResult) const {
             STORM_LOG_TRACE("Trying refinement after qualitative check.");
             // Get all relevant strategies.
@@ -270,6 +321,12 @@ namespace storm {
             // Now that we have the pivot state candidates, we need to pick one.
             std::pair<storm::dd::Bdd<Type>, storm::OptimizationDirection> pivotState = pickPivotState<Type, ValueType>(game.getInitialStates(), pivotStateResult.reachableTransitionsMin, pivotStateResult.reachableTransitionsMax, game.getRowVariables(), game.getColumnVariables(), pivotStateResult.pivotStates);
             
+            // FIXME.
+            storm::dd::Bdd<Type> spanningTree = getMostProbablePathSpanningTree(game, pivotState.first, pivotState.second == storm::OptimizationDirection::Minimize ? minPlayer1Strategy && minPlayer2Strategy : maxPlayer1Strategy && maxPlayer2Strategy);
+            storm::expressions::Expression traceFormula = buildTraceFormula(game, spanningTree, pivotState.first);
+            
+            exit(-1);
+            
             // Derive predicate based on the selected pivot state.
             RefinementPredicates predicates = derivePredicatesFromPivotState(game, pivotState.first, minPlayer1Strategy, minPlayer2Strategy, maxPlayer1Strategy, maxPlayer2Strategy);
             std::vector<storm::expressions::Expression> preparedPredicates = preprocessPredicates(predicates.getPredicates(), (predicates.getSource() == RefinementPredicates::Source::Guard && splitGuards) || (predicates.getSource() == RefinementPredicates::Source::WeakestPrecondition && splitPredicates));
@@ -294,6 +351,10 @@ namespace storm {
             // Now that we have the pivot state candidates, we need to pick one.
             std::pair<storm::dd::Bdd<Type>, storm::OptimizationDirection> pivotState = pickPivotState<Type, ValueType>(game.getInitialStates(), pivotStateResult.reachableTransitionsMin, pivotStateResult.reachableTransitionsMax, game.getRowVariables(), game.getColumnVariables(), pivotStateResult.pivotStates);
             
+            // FIXME.
+            getMostProbablePathSpanningTree(game, pivotState.first, pivotState.second == storm::OptimizationDirection::Minimize ? minPlayer1Strategy && minPlayer2Strategy : maxPlayer1Strategy && maxPlayer2Strategy);
+            exit(-1);
+            
             // Derive predicate based on the selected pivot state.
             RefinementPredicates predicates = derivePredicatesFromPivotState(game, pivotState.first, minPlayer1Strategy, minPlayer2Strategy, maxPlayer1Strategy, maxPlayer2Strategy);
             std::vector<storm::expressions::Expression> preparedPredicates = preprocessPredicates(predicates.getPredicates(), (predicates.getSource() == RefinementPredicates::Source::Guard && splitGuards) || (predicates.getSource() == RefinementPredicates::Source::WeakestPrecondition && splitPredicates));
@@ -304,10 +365,10 @@ namespace storm {
         template<storm::dd::DdType Type, typename ValueType>
         std::vector<storm::expressions::Expression> MenuGameRefiner<Type, ValueType>::preprocessPredicates(std::vector<storm::expressions::Expression> const& predicates, bool split) const {
             if (split) {
+                AbstractionInformation<Type> const& abstractionInformation = abstractor.get().getAbstractionInformation();
                 std::vector<storm::expressions::Expression> cleanedAtoms;
                 
                 for (auto const& predicate : predicates) {
-                    AbstractionInformation<Type> const& abstractionInformation = abstractor.get().getAbstractionInformation();
                     
                     // Split the predicates.
                     std::vector<storm::expressions::Expression> atoms = splitter.split(predicate);
