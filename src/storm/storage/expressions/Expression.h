@@ -82,6 +82,11 @@ namespace storm {
 #endif
             
             /*!
+             * Converts the expression to an expression over the variables of the provided expression manager.
+             */
+            Expression changeManager(ExpressionManager const& newExpressionManager) const;
+            
+            /*!
              * Substitutes all occurrences of the variables according to the given map. Note that this substitution is
              * done simultaneously, i.e., variables appearing in the expressions that were "plugged in" are not
              * substituted.

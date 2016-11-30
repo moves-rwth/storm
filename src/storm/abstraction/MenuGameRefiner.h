@@ -4,6 +4,8 @@
 #include <vector>
 #include <memory>
 
+#include <boost/optional.hpp>
+
 #include "storm/abstraction/RefinementCommand.h"
 #include "storm/abstraction/QualitativeResultMinMax.h"
 #include "storm/abstraction/QuantitativeResultMinMax.h"
@@ -39,6 +41,14 @@ namespace storm {
         private:
             Source source;
             std::vector<storm::expressions::Expression> predicates;
+        };
+        
+        template<storm::dd::DdType Type>
+        struct PivotStateResult {
+            PivotStateResult(storm::dd::Bdd<Type> const& pivotState, storm::OptimizationDirection fromDirection);
+            
+            storm::dd::Bdd<Type> pivotState;
+            storm::OptimizationDirection fromDirection;
         };
         
         template<storm::dd::DdType Type, typename ValueType>
@@ -82,7 +92,8 @@ namespace storm {
              */
             std::vector<RefinementCommand> createGlobalRefinement(std::vector<storm::expressions::Expression> const& predicates) const;
             
-            storm::expressions::Expression buildTraceFormula(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& spanningTree, storm::dd::Bdd<Type> const& pivotState) const;
+            boost::optional<std::vector<storm::expressions::Expression>> derivePredicatesFromInterpolation(storm::abstraction::MenuGame<Type, ValueType> const& game, PivotStateResult<Type> const& pivotStateResult, storm::dd::Bdd<Type> const& minPlayer1Strategy, storm::dd::Bdd<Type> const& minPlayer2Strategy, storm::dd::Bdd<Type> const& maxPlayer1Strategy, storm::dd::Bdd<Type> const& maxPlayer2Strategy) const;
+            std::vector<std::vector<storm::expressions::Expression>> buildTrace(storm::expressions::ExpressionManager& expressionManager, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& spanningTree, storm::dd::Bdd<Type> const& pivotState) const;
             
             void performRefinement(std::vector<RefinementCommand> const& refinementCommands) const;
             

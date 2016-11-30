@@ -85,6 +85,11 @@ namespace storm {
                 std::pair<uint64_t, uint64_t> getPlayer1ChoiceRange() const override;
                 
                 /*!
+                 * Retrieves the expression that characterizes the initial states.
+                 */
+                storm::expressions::Expression getInitialExpression() const override;
+                
+                /*!
                  * Retrieves the set of states (represented by a BDD) satisfying the given predicate, assuming that it
                  * was either given as an initial predicate or used as a refining predicate later.
                  *

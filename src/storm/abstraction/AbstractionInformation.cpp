@@ -67,6 +67,7 @@ namespace storm {
             allPredicateIdentities &= predicateIdentities.back();
             sourceVariables.insert(newMetaVariable.first);
             successorVariables.insert(newMetaVariable.second);
+            orderedSourceVariables.push_back(newMetaVariable.first);
             orderedSuccessorVariables.push_back(newMetaVariable.second);
             ddVariableIndexToPredicateIndexMap[predicateIdentities.back().getIndex()] = predicateIndex;
             return predicateIndex;
@@ -119,6 +120,22 @@ namespace storm {
         template<storm::dd::DdType DdType>
         std::vector<storm::expressions::Expression> const& AbstractionInformation<DdType>::getPredicates() const {
             return predicates;
+        }
+        
+        template<storm::dd::DdType DdType>
+        std::vector<storm::expressions::Expression> AbstractionInformation<DdType>::getPredicates(storm::storage::BitVector const& predicateValuation) const {
+            STORM_LOG_ASSERT(predicateValuation.size() == this->getNumberOfPredicates(), "Size of predicate valuation does not match number of predicates.");
+            
+            std::vector<storm::expressions::Expression> result;
+            for (uint64_t index = 0; index < this->getNumberOfPredicates(); ++index) {
+                if (predicateValuation[index]) {
+                    result.push_back(this->getPredicateByIndex(index));
+                } else {
+                    result.push_back(!this->getPredicateByIndex(index));
+                }
+            }
+            
+            return result;
         }
         
         template<storm::dd::DdType DdType>
@@ -269,6 +286,11 @@ namespace storm {
         }
         
         template<storm::dd::DdType DdType>
+        std::vector<storm::expressions::Variable> const& AbstractionInformation<DdType>::getOrderedSourceVariables() const {
+            return orderedSourceVariables;
+        }
+        
+        template<storm::dd::DdType DdType>
         storm::dd::Bdd<DdType> const& AbstractionInformation<DdType>::getAllPredicateIdentities() const {
             return allPredicateIdentities;
         }
@@ -405,6 +427,25 @@ namespace storm {
         }
         
         template <storm::dd::DdType DdType>
+        storm::storage::BitVector AbstractionInformation<DdType>::decodeState(storm::dd::Bdd<DdType> const& state) const {
+            STORM_LOG_ASSERT(state.getNonZeroCount() == 1, "Wrong number of non-zero entries.");
+            
+            storm::storage::BitVector statePredicates(this->getNumberOfPredicates());
+            
+            storm::dd::Add<DdType, double> add = state.template toAdd<double>();
+            auto it = add.begin();
+            auto stateValuePair = *it;
+            for (uint_fast64_t index = 0; index < this->getOrderedSourceVariables().size(); ++index) {
+                auto const& successorVariable = this->getOrderedSourceVariables()[index];
+                if (stateValuePair.first.getBooleanValue(successorVariable)) {
+                    statePredicates.set(index);
+                }
+            }
+            
+            return statePredicates;
+        }
+        
+        template <storm::dd::DdType DdType>
         std::map<uint_fast64_t, storm::storage::BitVector> AbstractionInformation<DdType>::decodeChoiceToUpdateSuccessorMapping(storm::dd::Bdd<DdType> const& choice) const {
             std::map<uint_fast64_t, storm::storage::BitVector> result;
             
@@ -412,28 +453,12 @@ namespace storm {
             for (auto const& successorValuePair : lowerChoiceAsAdd) {
                 uint_fast64_t updateIndex = this->decodeAux(successorValuePair.first, 0, this->getAuxVariableCount());
                 
-#ifdef LOCAL_DEBUG
-                std::cout << "update idx: " << updateIndex << std::endl;
-#endif
                 storm::storage::BitVector successor(this->getNumberOfPredicates());
                 for (uint_fast64_t index = 0; index < this->getOrderedSuccessorVariables().size(); ++index) {
                     auto const& successorVariable = this->getOrderedSuccessorVariables()[index];
-#ifdef LOCAL_DEBUG
-                    std::cout << successorVariable.getName() << " has value";
-#endif
                     if (successorValuePair.first.getBooleanValue(successorVariable)) {
                         successor.set(index);
-#ifdef LOCAL_DEBUG
-                        std::cout << " true";
-#endif
-                    } else {
-#ifdef LOCAL_DEBUG
-                        std::cout << " false";
-#endif
                     }
-#ifdef LOCAL_DEBUG
-                    std::cout << std::endl;
-#endif
                 }
                 
                 result[updateIndex] = successor;
@@ -442,40 +467,26 @@ namespace storm {
         }
         
         template <storm::dd::DdType DdType>
-        std::pair<storm::storage::BitVector, uint64_t> AbstractionInformation<DdType>::decodeStateAndUpdate(storm::dd::Bdd<DdType> const& state) const {
-            storm::storage::BitVector successor(this->getNumberOfPredicates());
+        std::tuple<storm::storage::BitVector, uint64_t, uint64_t> AbstractionInformation<DdType>::decodeStatePlayer1ChoiceAndUpdate(storm::dd::Bdd<DdType> const& stateChoiceAndUpdate) const {
+            stateChoiceAndUpdate.template toAdd<double>().exportToDot("out.dot");
+            STORM_LOG_ASSERT(stateChoiceAndUpdate.getNonZeroCount() == 1, "Wrong number of non-zero entries.");
             
-            storm::dd::Add<DdType, double> stateAsAdd = state.template toAdd<double>();
-            uint_fast64_t updateIndex = 0;
-            for (auto const& stateValuePair : stateAsAdd) {
-                uint_fast64_t updateIndex = this->decodeAux(stateValuePair.first, 0, this->getAuxVariableCount());
-                
-#ifdef LOCAL_DEBUG
-                std::cout << "update idx: " << updateIndex << std::endl;
-#endif
-                storm::storage::BitVector successor(this->getNumberOfPredicates());
-                for (uint_fast64_t index = 0; index < this->getOrderedSuccessorVariables().size(); ++index) {
-                    auto const& successorVariable = this->getOrderedSuccessorVariables()[index];
-#ifdef LOCAL_DEBUG
-                    std::cout << successorVariable.getName() << " has value";
-#endif
-                    if (stateValuePair.first.getBooleanValue(successorVariable)) {
-                        successor.set(index);
-#ifdef LOCAL_DEBUG
-                        std::cout << " true";
-#endif
-                    } else {
-#ifdef LOCAL_DEBUG
-                        std::cout << " false";
-#endif
-                    }
-#ifdef LOCAL_DEBUG
-                    std::cout << std::endl;
-#endif
+            storm::storage::BitVector statePredicates(this->getNumberOfPredicates());
+            
+            storm::dd::Add<DdType, double> add = stateChoiceAndUpdate.template toAdd<double>();
+            auto it = add.begin();
+            auto stateValuePair = *it;
+            uint64_t choiceIndex = this->decodePlayer1Choice(stateValuePair.first, this->getPlayer1VariableCount());
+            uint64_t updateIndex = this->decodeAux(stateValuePair.first, 0, this->getAuxVariableCount());
+            for (uint_fast64_t index = 0; index < this->getOrderedSourceVariables().size(); ++index) {
+                auto const& successorVariable = this->getOrderedSourceVariables()[index];
+
+                if (stateValuePair.first.getBooleanValue(successorVariable)) {
+                    statePredicates.set(index);
                 }
             }
             
-            return std::make_pair(successors, updateIndex);
+            return std::make_tuple(statePredicates, choiceIndex, updateIndex);
         }
         
         template class AbstractionInformation<storm::dd::DdType::CUDD>;

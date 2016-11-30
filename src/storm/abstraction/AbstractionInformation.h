@@ -142,6 +142,11 @@ namespace storm {
             std::vector<storm::expressions::Expression> const& getPredicates() const;
 
             /*!
+             * Retrieves a list of expression that corresponds to the given predicate valuation.
+             */
+            std::vector<storm::expressions::Expression> getPredicates(storm::storage::BitVector const& predicateValuation) const;
+            
+            /*!
              * Retrieves the predicate with the given index.
              *
              * @param index The index of the predicate.
@@ -342,6 +347,13 @@ namespace storm {
             std::set<storm::expressions::Variable> const& getSuccessorVariables() const;
 
             /*!
+             * Retrieves the ordered collection of source meta variables.
+             *
+             * @return All source meta variables.
+             */
+            std::vector<storm::expressions::Variable> const& getOrderedSourceVariables() const;
+            
+            /*!
              * Retrieves the ordered collection of successor meta variables.
              *
              * @return All successor meta variables.
@@ -435,15 +447,21 @@ namespace storm {
             std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>> declareNewVariables(std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>> const& oldPredicates, std::set<uint_fast64_t> const& newPredicates) const;
             
             /*!
+             * Decodes the given state (given as a BDD over the source variables) into a a bit vector indicating the
+             * truth values of the predicates in the state.
+             */
+            storm::storage::BitVector decodeState(storm::dd::Bdd<DdType> const& state) const;
+            
+            /*!
              * Decodes the choice in the form of a BDD over the destination variables.
              */
             std::map<uint_fast64_t, storm::storage::BitVector> decodeChoiceToUpdateSuccessorMapping(storm::dd::Bdd<DdType> const& choice) const;
             
             /*!
-             * Decodes the given state-and-update BDD (state as source variables) into a bit vector indicating the truth values of
-             * the predicates in the state and the update index.
+             * Decodes the given BDD (over source, player 1 and aux variables) into a bit vector indicating the truth
+             * values of the predicates in the state and the choice/update indices.
              */
-            std::pair<storm::storage::BitVector, uint64_t> decodeStateAndUpdate(storm::dd::Bdd<DdType> const& stateAndUpdate) const;
+            std::tuple<storm::storage::BitVector, uint64_t, uint64_t> decodeStatePlayer1ChoiceAndUpdate(storm::dd::Bdd<DdType> const& stateChoiceAndUpdate) const;
             
         private:
             /*!
@@ -504,7 +522,10 @@ namespace storm {
             
             /// The set of all successor variables.
             std::set<storm::expressions::Variable> successorVariables;
-            
+
+            /// An ordered collection of the source variables.
+            std::vector<storm::expressions::Variable> orderedSourceVariables;
+
             /// An ordered collection of the successor variables.
             std::vector<storm::expressions::Variable> orderedSuccessorVariables;
             

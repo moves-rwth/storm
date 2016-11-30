@@ -56,6 +56,10 @@ namespace storm {
             // Intentionally left empty.
         }
         
+        std::shared_ptr<ExpressionManager> ExpressionManager::clone() const {
+            return std::shared_ptr<ExpressionManager>(new ExpressionManager(*this));
+        }
+        
         Expression ExpressionManager::boolean(bool value) const {
             return Expression(std::shared_ptr<BaseExpression>(new BooleanLiteralExpression(*this, value)));
         }
@@ -125,6 +129,10 @@ namespace storm {
             return nameIndexPair != nameToIndexMapping.end();
         }
         
+        Variable ExpressionManager::declareVariableCopy(Variable const& variable) {
+            return declareFreshVariable(variable.getType(), true, "_" + variable.getName() + "_");
+        }
+        
         Variable ExpressionManager::declareVariable(std::string const& name, storm::expressions::Type const& variableType, bool auxiliary) {
             STORM_LOG_THROW(!variableExists(name), storm::exceptions::InvalidArgumentException, "Variable with name '" << name << "' already exists.");
             return declareOrGetVariable(name, variableType, auxiliary);
@@ -187,7 +195,9 @@ namespace storm {
                 nameToIndexMapping[name] = newIndex;
                 indexToNameMapping[newIndex] = name;
                 indexToTypeMapping[newIndex] = variableType;
-                return Variable(this->getSharedPointer(), newIndex);
+                Variable result(this->getSharedPointer(), newIndex);
+                variableSet.insert(result);
+                return result;
             }
         }
         
@@ -195,6 +205,10 @@ namespace storm {
             auto nameIndexPair = nameToIndexMapping.find(name);
             STORM_LOG_THROW(nameIndexPair != nameToIndexMapping.end(),  storm::exceptions::InvalidArgumentException, "Unknown variable '" << name << "'.");
             return Variable(this->getSharedPointer(), nameIndexPair->second);
+        }
+        
+        std::set<Variable> const& ExpressionManager::getVariables() const {
+            return variableSet;
         }
         
         Expression ExpressionManager::getVariableExpression(std::string const& name) const {

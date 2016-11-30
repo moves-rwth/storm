@@ -6,6 +6,7 @@
 #include "storm/storage/expressions/SubstitutionVisitor.h"
 #include "storm/storage/expressions/LinearityCheckVisitor.h"
 #include "storm/storage/expressions/SyntacticalEqualityCheckVisitor.h"
+#include "storm/storage/expressions/ChangeManagerVisitor.h"
 #include "storm/storage/expressions/Expressions.h"
 #include "storm/exceptions/InvalidTypeException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
@@ -30,6 +31,11 @@ namespace storm {
         
         Expression::Expression(Variable const& variable) : expressionPtr(std::shared_ptr<BaseExpression>(new VariableExpression(variable))) {
             // Intentionally left empty.
+        }
+        
+        Expression Expression::changeManager(ExpressionManager const& newExpressionManager) const {
+            ChangeManagerVisitor visitor(newExpressionManager);
+            return visitor.changeManager(*this);
         }
         
 		Expression Expression::substitute(std::map<Variable, Expression> const& identifierToExpressionMap) const {

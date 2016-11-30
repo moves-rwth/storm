@@ -27,6 +27,7 @@ namespace storm {
             virtual storm::expressions::Expression const& getGuard(uint64_t player1Choice) const = 0;
             virtual std::pair<uint64_t, uint64_t> getPlayer1ChoiceRange() const = 0;
             virtual std::map<storm::expressions::Variable, storm::expressions::Expression> getVariableUpdates(uint64_t player1Choice, uint64_t auxiliaryChoice) const = 0;
+            virtual storm::expressions::Expression getInitialExpression() const = 0;
             
             /// Methods to refine the abstraction.
             virtual void refine(RefinementCommand const& command) = 0;
