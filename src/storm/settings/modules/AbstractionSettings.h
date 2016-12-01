@@ -44,6 +44,20 @@ namespace storm {
                  */
                 bool isSplitGuardsSet() const;
 
+                /*!
+                 * Retrieves whether the option to split all predicates to atoms was set.
+                 *
+                 * @return True iff the option was set.
+                 */
+                bool isSplitAllSet() const;
+                
+                /*!
+                 * Retrieves whether the option to use interpolation was set.
+                 *
+                 * @return True iff the option was set.
+                 */
+                bool isUseInterpolationSet() const;
+
                 const static std::string moduleName;
                 
             private:
@@ -51,6 +65,9 @@ namespace storm {
                 const static std::string splitPredicatesOptionName;
                 const static std::string splitInitialGuardsOptionName;
                 const static std::string splitGuardsOptionName;
+                const static std::string useInterpolationOptionName;
+                const static std::string splitInterpolantsOptionName;
+                const static std::string splitAllOptionName;
             };
             
         }

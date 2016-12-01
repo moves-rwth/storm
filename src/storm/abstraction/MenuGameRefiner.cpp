@@ -9,6 +9,8 @@
 
 #include "storm/solver/MathsatSmtSolver.h"
 
+#include "storm/exceptions/InvalidStateException.h"
+
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/AbstractionSettings.h"
 
@@ -27,6 +29,10 @@ namespace storm {
             return predicates;
         }
         
+        void RefinementPredicates::addPredicates(std::vector<storm::expressions::Expression> const& newPredicates) {
+            this->predicates.insert(this->predicates.end(), newPredicates.begin(), newPredicates.end());
+        }
+        
         template<storm::dd::DdType Type>
         struct PivotStateCandidatesResult {
             storm::dd::Bdd<Type> reachableTransitionsMin;
@@ -40,7 +46,7 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type, typename ValueType>
-        MenuGameRefiner<Type, ValueType>::MenuGameRefiner(MenuGameAbstractor<Type, ValueType>& abstractor, std::unique_ptr<storm::solver::SmtSolver>&& smtSolver) : abstractor(abstractor), splitPredicates(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isSplitPredicatesSet()), splitGuards(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isSplitGuardsSet()), splitter(), equivalenceChecker(std::move(smtSolver)) {
+        MenuGameRefiner<Type, ValueType>::MenuGameRefiner(MenuGameAbstractor<Type, ValueType>& abstractor, std::unique_ptr<storm::solver::SmtSolver>&& smtSolver) : abstractor(abstractor), useInterpolation(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isUseInterpolationSet()), splitAll(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isSplitAllSet()), splitPredicates(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isSplitPredicatesSet()), splitGuards(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isSplitGuardsSet()), splitInitialGuards(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isSplitInitialGuardsSet()), splitter(), equivalenceChecker(std::move(smtSolver)) {
             
             if (storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isAddAllGuardsSet()) {
                 std::vector<storm::expressions::Expression> guards;
@@ -49,7 +55,7 @@ namespace storm {
                 for (uint64_t index = player1Choices.first; index < player1Choices.second; ++index) {
                     guards.push_back(this->abstractor.get().getGuard(index));
                 }
-                performRefinement(createGlobalRefinement(preprocessPredicates(guards, storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isSplitInitialGuardsSet())));
+                performRefinement(createGlobalRefinement(preprocessPredicates(guards, RefinementPredicates::Source::InitialGuard)));
             }
         }
         
@@ -57,6 +63,8 @@ namespace storm {
         void MenuGameRefiner<Type, ValueType>::refine(std::vector<storm::expressions::Expression> const& predicates) const {
             performRefinement(createGlobalRefinement(predicates));
         }
+        
+//        static int cnt = 0;
         
         template<storm::dd::DdType Type, typename ValueType>
         storm::dd::Bdd<Type> getMostProbablePathSpanningTree(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& targetState, storm::dd::Bdd<Type> const& transitionFilter) {
@@ -70,7 +78,7 @@ namespace storm {
             std::set<storm::expressions::Variable> variablesToAbstract(game.getRowVariables());
             variablesToAbstract.insert(game.getPlayer1Variables().begin(), game.getPlayer1Variables().end());
             variablesToAbstract.insert(game.getProbabilisticBranchingVariables().begin(), game.getProbabilisticBranchingVariables().end());
-            while (!border.isZero() && (border && targetState).isZero()) {
+            while (!border.isZero()) {
                 // Determine the new maximal probabilities to all states.
                 storm::dd::Add<Type, ValueType> tmp = border.template toAdd<ValueType>() * transitionMatrix * maxProbabilities;
                 storm::dd::Bdd<Type> newMaxProbabilityChoices = tmp.maxAbstractRepresentative(variablesToAbstract);
@@ -213,10 +221,6 @@ namespace storm {
                 STORM_LOG_DEBUG("Derived new predicate (based on weakest-precondition): " << newPredicate);
             }
             
-            STORM_LOG_TRACE("Current set of predicates:");
-            for (auto const& predicate : abstractionInformation.getPredicates()) {
-                STORM_LOG_TRACE(predicate);
-            }
             return RefinementPredicates(fromGuard ? RefinementPredicates::Source::Guard : RefinementPredicates::Source::WeakestPrecondition, {newPredicate});
         }
         
@@ -253,36 +257,49 @@ namespace storm {
             // Compute the lower and the upper choice for the pivot state.
             std::set<storm::expressions::Variable> variablesToAbstract = game.getNondeterminismVariables();
             variablesToAbstract.insert(game.getRowVariables().begin(), game.getRowVariables().end());
+            
+            bool player1ChoicesDifferent = !(pivotState && minPlayer1Strategy).exclusiveOr(pivotState && maxPlayer1Strategy).isZero();
+            
+            boost::optional<RefinementPredicates> predicates;
+            
+            // Derive predicates from lower choice.
             storm::dd::Bdd<Type> lowerChoice = pivotState && game.getExtendedTransitionMatrix().toBdd() && minPlayer1Strategy;
             storm::dd::Bdd<Type> lowerChoice1 = (lowerChoice && minPlayer2Strategy).existsAbstract(variablesToAbstract);
             storm::dd::Bdd<Type> lowerChoice2 = (lowerChoice && maxPlayer2Strategy).existsAbstract(variablesToAbstract);
             
             bool lowerChoicesDifferent = !lowerChoice1.exclusiveOr(lowerChoice2).isZero();
             if (lowerChoicesDifferent) {
-                STORM_LOG_TRACE("Refining based on lower choice.");
-                auto refinementStart = std::chrono::high_resolution_clock::now();
-                
-                RefinementPredicates predicates = derivePredicatesFromDifferingChoices(pivotState, (pivotState && minPlayer1Strategy).existsAbstract(game.getRowVariables()), lowerChoice1, lowerChoice2);
-                auto refinementEnd = std::chrono::high_resolution_clock::now();
-                STORM_LOG_TRACE("Refinement completed in " << std::chrono::duration_cast<std::chrono::milliseconds>(refinementEnd - refinementStart).count() << "ms.");
-                return predicates;
+                STORM_LOG_TRACE("Deriving predicate based on lower choice.");
+                predicates = derivePredicatesFromDifferingChoices(pivotState, (pivotState && minPlayer1Strategy).existsAbstract(game.getRowVariables()), lowerChoice1, lowerChoice2);
+            }
+            
+            if (predicates && (!player1ChoicesDifferent || predicates.get().getSource() == RefinementPredicates::Source::Guard)) {
+                return predicates.get();
             } else {
+                boost::optional<RefinementPredicates> additionalPredicates;
+                
                 storm::dd::Bdd<Type> upperChoice = pivotState && game.getExtendedTransitionMatrix().toBdd() && maxPlayer1Strategy;
                 storm::dd::Bdd<Type> upperChoice1 = (upperChoice && minPlayer2Strategy).existsAbstract(variablesToAbstract);
                 storm::dd::Bdd<Type> upperChoice2 = (upperChoice && maxPlayer2Strategy).existsAbstract(variablesToAbstract);
                 
                 bool upperChoicesDifferent = !upperChoice1.exclusiveOr(upperChoice2).isZero();
                 if (upperChoicesDifferent) {
-                    STORM_LOG_TRACE("Refining based on upper choice.");
-                    auto refinementStart = std::chrono::high_resolution_clock::now();
-                    RefinementPredicates predicates = derivePredicatesFromDifferingChoices(pivotState, (pivotState && maxPlayer1Strategy).existsAbstract(game.getRowVariables()), upperChoice1, upperChoice2);
-                    auto refinementEnd = std::chrono::high_resolution_clock::now();
-                    STORM_LOG_TRACE("Refinement completed in " << std::chrono::duration_cast<std::chrono::milliseconds>(refinementEnd - refinementStart).count() << "ms.");
-                    return predicates;
-                } else {
-                    STORM_LOG_ASSERT(false, "Did not find choices from which to derive predicates.");
+                    STORM_LOG_TRACE("Deriving predicate based on upper choice.");
+                    additionalPredicates = derivePredicatesFromDifferingChoices(pivotState, (pivotState && maxPlayer1Strategy).existsAbstract(game.getRowVariables()), upperChoice1, upperChoice2);
+                }
+                
+                if (additionalPredicates) {
+                    if (additionalPredicates.get().getSource() == RefinementPredicates::Source::Guard) {
+                        return additionalPredicates.get();
+                    } else {
+                        predicates.get().addPredicates(additionalPredicates.get().getPredicates());
+                    }
                 }
             }
+            
+            STORM_LOG_THROW(static_cast<bool>(predicates), storm::exceptions::InvalidStateException, "Could not derive predicates for refinement.");
+            
+            return predicates.get();
         }
         
         template<storm::dd::DdType Type, typename ValueType>
@@ -295,8 +312,16 @@ namespace storm {
             variablesToAbstract.insert(game.getPlayer1Variables().begin(), game.getPlayer1Variables().end());
             variablesToAbstract.insert(game.getProbabilisticBranchingVariables().begin(), game.getProbabilisticBranchingVariables().end());
 
+            storm::expressions::Expression initialExpression = abstractor.get().getInitialExpression();
+            
+            std::set<storm::expressions::Variable> oldVariables = initialExpression.getVariables();
+            for (auto const& predicate : abstractionInformation.getPredicates()) {
+                std::set<storm::expressions::Variable> usedVariables = predicate.getVariables();
+                oldVariables.insert(usedVariables.begin(), usedVariables.end());
+            }
+            
             std::map<storm::expressions::Variable, storm::expressions::Variable> oldToNewVariables;
-            for (auto const& variable : abstractionInformation.getExpressionManager().getVariables()) {
+            for (auto const& variable : oldVariables) {
                 oldToNewVariables[variable] = expressionManager.getVariable(variable.getName());
             }
             std::map<storm::expressions::Variable, storm::expressions::Expression> lastSubstitution;
@@ -312,7 +337,7 @@ namespace storm {
                 predicate = predicate.changeManager(expressionManager);
             }
             
-            pivotState.template toAdd<ValueType>().exportToDot("pivot.dot");
+//            pivotState.template toAdd<ValueType>().exportToDot("pivot.dot");
             
             // Perform a backward search for an initial state.
             storm::dd::Bdd<Type> currentState = pivotState;
@@ -320,7 +345,6 @@ namespace storm {
             while ((currentState && game.getInitialStates()).isZero()) {
                 storm::dd::Bdd<Type> predecessorTransition = currentState.swapVariables(game.getRowColumnMetaVariablePairs()) && spanningTree;
                 std::tuple<storm::storage::BitVector, uint64_t, uint64_t> decodedPredecessor = abstractionInformation.decodeStatePlayer1ChoiceAndUpdate(predecessorTransition);
-                std::cout << "got predecessor " << std::get<0>(decodedPredecessor) << ", choice " << std::get<1>(decodedPredecessor) << " and update " << std::get<2>(decodedPredecessor) << std::endl;
                 
                 // predecessorTransition.template toAdd<ValueType>().exportToDot("pred_" + std::to_string(cnt) + ".dot");
                 
@@ -358,12 +382,12 @@ namespace storm {
                 ++cnt;
             }
             
-            result.back().push_back(abstractor.get().getInitialExpression().changeManager(expressionManager).substitute(lastSubstitution));
+            result.back().push_back(initialExpression.changeManager(expressionManager).substitute(lastSubstitution));
             return result;
         }
         
         template<storm::dd::DdType Type, typename ValueType>
-        boost::optional<std::vector<storm::expressions::Expression>> MenuGameRefiner<Type, ValueType>::derivePredicatesFromInterpolation(storm::abstraction::MenuGame<Type, ValueType> const& game, PivotStateResult<Type> const& pivotStateResult, storm::dd::Bdd<Type> const& minPlayer1Strategy, storm::dd::Bdd<Type> const& minPlayer2Strategy, storm::dd::Bdd<Type> const& maxPlayer1Strategy, storm::dd::Bdd<Type> const& maxPlayer2Strategy) const {
+        boost::optional<RefinementPredicates> MenuGameRefiner<Type, ValueType>::derivePredicatesFromInterpolation(storm::abstraction::MenuGame<Type, ValueType> const& game, PivotStateResult<Type> const& pivotStateResult, storm::dd::Bdd<Type> const& minPlayer1Strategy, storm::dd::Bdd<Type> const& minPlayer2Strategy, storm::dd::Bdd<Type> const& maxPlayer1Strategy, storm::dd::Bdd<Type> const& maxPlayer2Strategy) const {
             
             // Compute the most probable path from any initial state to the pivot state.
             storm::dd::Bdd<Type> spanningTree = getMostProbablePathSpanningTree(game, pivotStateResult.pivotState, pivotStateResult.fromDirection == storm::OptimizationDirection::Minimize ? minPlayer1Strategy && minPlayer2Strategy : maxPlayer1Strategy && maxPlayer2Strategy);
@@ -374,20 +398,18 @@ namespace storm {
             // Build the trace of the most probable path in terms of which predicates hold in each step.
             std::vector<std::vector<storm::expressions::Expression>> trace = buildTrace(*interpolationManager, game, spanningTree, pivotStateResult.pivotState);
 
-            // Now encode the trace as an SMT problem.
+            // Create solver and interpolation groups.
             storm::solver::MathsatSmtSolver interpolatingSolver(*interpolationManager, storm::solver::MathsatSmtSolver::Options(true, false, true));
-            
             uint64_t stepCounter = 0;
             for (auto const& step : trace) {
-                std::cout << "group " << stepCounter << std::endl;
                 interpolatingSolver.setInterpolationGroup(stepCounter);
                 for (auto const& predicate : step) {
-                    std::cout << predicate << std::endl;
                     interpolatingSolver.add(predicate);
                 }
                 ++stepCounter;
             }
             
+            // Now encode the trace as an SMT problem.
             storm::solver::SmtSolver::CheckResult result = interpolatingSolver.check();
             if (result == storm::solver::SmtSolver::CheckResult::Unsat) {
                 STORM_LOG_TRACE("Trace formula is unsatisfiable. Starting interpolation.");
@@ -400,10 +422,9 @@ namespace storm {
                     STORM_LOG_ASSERT(!interpolant.isTrue() && !interpolant.isFalse(), "Expected other interpolant.");
                     interpolants.push_back(interpolant);
                 }
-                return boost::make_optional(interpolants);
+                return boost::make_optional(RefinementPredicates(RefinementPredicates::Source::Interpolation, interpolants));
             } else {
-                STORM_LOG_TRACE("Trace formula is satisfiable.");
-                std::cout << interpolatingSolver.getModelAsValuation().toString(true) << std::endl;
+                STORM_LOG_TRACE("Trace formula is satisfiable, not using interpolation.");
             }
             
             return boost::none;
@@ -437,17 +458,28 @@ namespace storm {
             // Now that we have the pivot state candidates, we need to pick one.
             PivotStateResult<Type> pivotStateResult = pickPivotState<Type, ValueType>(game.getInitialStates(), pivotStateCandidatesResult.reachableTransitionsMin, pivotStateCandidatesResult.reachableTransitionsMax, game.getRowVariables(), game.getColumnVariables(), pivotStateCandidatesResult.pivotStates);
             
-            boost::optional<std::vector<storm::expressions::Expression>> interpolationPredicates = derivePredicatesFromInterpolation(game, pivotStateResult, minPlayer1Strategy, minPlayer2Strategy, maxPlayer1Strategy, maxPlayer2Strategy);
-            if (interpolationPredicates) {
-                std::cout << "Got interpolation predicates!" << std::endl;
-                for (auto const& pred : interpolationPredicates.get()) {
-                    std::cout << "pred: " << pred << std::endl;
-                }
+//            pivotStateResult.pivotState.template toAdd<ValueType>().exportToDot("pivot__" + std::to_string(cnt) + ".dot");
+//            (pivotStateResult.pivotState && minPlayer1Strategy).template toAdd<ValueType>().exportToDot("pivotmin_pl1__" + std::to_string(cnt) + ".dot");
+//            (pivotStateResult.pivotState && minPlayer1Strategy && minPlayer2Strategy).template toAdd<ValueType>().exportToDot("pivotmin_pl1pl2__" + std::to_string(cnt) + ".dot");
+//            ((pivotStateResult.pivotState && minPlayer1Strategy && minPlayer2Strategy).template toAdd<ValueType>() * game.getExtendedTransitionMatrix()).exportToDot("pivotmin_succ__" + std::to_string(cnt) + ".dot");
+//            (pivotStateResult.pivotState && maxPlayer1Strategy).template toAdd<ValueType>().exportToDot("pivotmax_pl1__" + std::to_string(cnt) + ".dot");
+//            (pivotStateResult.pivotState && maxPlayer1Strategy && maxPlayer2Strategy).template toAdd<ValueType>().exportToDot("pivotmax_pl1pl2__" + std::to_string(cnt) + ".dot");
+//            ((pivotStateResult.pivotState && maxPlayer1Strategy && maxPlayer2Strategy).template toAdd<ValueType>() * game.getExtendedTransitionMatrix()).exportToDot("pivotmax_succ__" + std::to_string(cnt) + ".dot");
+//            ++cnt;
+            
+            boost::optional<RefinementPredicates> predicates;
+            if (useInterpolation) {
+                predicates = derivePredicatesFromInterpolation(game, pivotStateResult, minPlayer1Strategy, minPlayer2Strategy, maxPlayer1Strategy, maxPlayer2Strategy);
             }
+            if (predicates) {
+                STORM_LOG_TRACE("Obtained predicates by interpolation.");
+            } else {
+                predicates = derivePredicatesFromPivotState(game, pivotStateResult.pivotState, minPlayer1Strategy, minPlayer2Strategy, maxPlayer1Strategy, maxPlayer2Strategy);
+            }
+            STORM_LOG_THROW(static_cast<bool>(predicates), storm::exceptions::InvalidStateException, "Predicates needed to continue.");
             
             // Derive predicate based on the selected pivot state.
-            RefinementPredicates predicates = derivePredicatesFromPivotState(game, pivotStateResult.pivotState, minPlayer1Strategy, minPlayer2Strategy, maxPlayer1Strategy, maxPlayer2Strategy);
-            std::vector<storm::expressions::Expression> preparedPredicates = preprocessPredicates(predicates.getPredicates(), (predicates.getSource() == RefinementPredicates::Source::Guard && splitGuards) || (predicates.getSource() == RefinementPredicates::Source::WeakestPrecondition && splitPredicates));
+            std::vector<storm::expressions::Expression> preparedPredicates = preprocessPredicates(predicates.get().getPredicates(), predicates.get().getSource());
             performRefinement(createGlobalRefinement(preparedPredicates));
             return true;
         }
@@ -469,23 +501,29 @@ namespace storm {
             // Now that we have the pivot state candidates, we need to pick one.
             PivotStateResult<Type> pivotStateResult = pickPivotState<Type, ValueType>(game.getInitialStates(), pivotStateCandidatesResult.reachableTransitionsMin, pivotStateCandidatesResult.reachableTransitionsMax, game.getRowVariables(), game.getColumnVariables(), pivotStateCandidatesResult.pivotStates);
             
-            boost::optional<std::vector<storm::expressions::Expression>> interpolationPredicates = derivePredicatesFromInterpolation(game, pivotStateResult, minPlayer1Strategy, minPlayer2Strategy, maxPlayer1Strategy, maxPlayer2Strategy);
-            if (interpolationPredicates) {
-                std::cout << "Got interpolation predicates!" << std::endl;
-                for (auto const& pred : interpolationPredicates.get()) {
-                    std::cout << "pred: " << pred << std::endl;
-                }
+            boost::optional<RefinementPredicates> predicates;
+            if (useInterpolation) {
+                predicates = derivePredicatesFromInterpolation(game, pivotStateResult, minPlayer1Strategy, minPlayer2Strategy, maxPlayer1Strategy, maxPlayer2Strategy);
             }
+            if (predicates) {
+                STORM_LOG_TRACE("Obtained predicates by interpolation.");
+            } else {
+                predicates = derivePredicatesFromPivotState(game, pivotStateResult.pivotState, minPlayer1Strategy, minPlayer2Strategy, maxPlayer1Strategy, maxPlayer2Strategy);
+            }
+            STORM_LOG_THROW(static_cast<bool>(predicates), storm::exceptions::InvalidStateException, "Predicates needed to continue.");
             
-            // Derive predicate based on the selected pivot state.
-            RefinementPredicates predicates = derivePredicatesFromPivotState(game, pivotStateResult.pivotState, minPlayer1Strategy, minPlayer2Strategy, maxPlayer1Strategy, maxPlayer2Strategy);
-            std::vector<storm::expressions::Expression> preparedPredicates = preprocessPredicates(predicates.getPredicates(), (predicates.getSource() == RefinementPredicates::Source::Guard && splitGuards) || (predicates.getSource() == RefinementPredicates::Source::WeakestPrecondition && splitPredicates));
+            std::vector<storm::expressions::Expression> preparedPredicates = preprocessPredicates(predicates.get().getPredicates(), predicates.get().getSource());
             performRefinement(createGlobalRefinement(preparedPredicates));
             return true;
         }
         
         template<storm::dd::DdType Type, typename ValueType>
-        std::vector<storm::expressions::Expression> MenuGameRefiner<Type, ValueType>::preprocessPredicates(std::vector<storm::expressions::Expression> const& predicates, bool split) const {
+        std::vector<storm::expressions::Expression> MenuGameRefiner<Type, ValueType>::preprocessPredicates(std::vector<storm::expressions::Expression> const& predicates, RefinementPredicates::Source const& source) const {
+            bool split = source == RefinementPredicates::Source::Guard && splitGuards;
+            split |= source == RefinementPredicates::Source::WeakestPrecondition && splitPredicates;
+            split |= source == RefinementPredicates::Source::Interpolation && splitPredicates;
+            split |= splitAll;
+            
             if (split) {
                 AbstractionInformation<Type> const& abstractionInformation = abstractor.get().getAbstractionInformation();
                 std::vector<storm::expressions::Expression> cleanedAtoms;
@@ -538,6 +576,11 @@ namespace storm {
         void MenuGameRefiner<Type, ValueType>::performRefinement(std::vector<RefinementCommand> const& refinementCommands) const {
             for (auto const& command : refinementCommands) {
                 abstractor.get().refine(command);
+            }
+            
+            STORM_LOG_TRACE("Current set of predicates:");
+            for (auto const& predicate : abstractor.get().getAbstractionInformation().getPredicates()) {
+                STORM_LOG_TRACE(predicate);
             }
         }
         

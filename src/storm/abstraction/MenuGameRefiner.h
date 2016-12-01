@@ -30,13 +30,15 @@ namespace storm {
         class RefinementPredicates {
         public:
             enum class Source {
-                WeakestPrecondition, Guard, Interpolation
+                WeakestPrecondition, InitialGuard, Guard, Interpolation
             };
             
+            RefinementPredicates() = default;
             RefinementPredicates(Source const& source, std::vector<storm::expressions::Expression> const& predicates);
             
             Source getSource() const;
             std::vector<storm::expressions::Expression> const& getPredicates() const;
+            void addPredicates(std::vector<storm::expressions::Expression> const& newPredicates);
             
         private:
             Source source;
@@ -85,14 +87,14 @@ namespace storm {
             /*!
              * Preprocesses the predicates.
              */
-            std::vector<storm::expressions::Expression> preprocessPredicates(std::vector<storm::expressions::Expression> const& predicates, bool split) const;
+            std::vector<storm::expressions::Expression> preprocessPredicates(std::vector<storm::expressions::Expression> const& predicates, RefinementPredicates::Source const& source) const;
             
             /*!
              * Creates a set of refinement commands that amounts to splitting all player 1 choices with the given set of predicates.
              */
             std::vector<RefinementCommand> createGlobalRefinement(std::vector<storm::expressions::Expression> const& predicates) const;
             
-            boost::optional<std::vector<storm::expressions::Expression>> derivePredicatesFromInterpolation(storm::abstraction::MenuGame<Type, ValueType> const& game, PivotStateResult<Type> const& pivotStateResult, storm::dd::Bdd<Type> const& minPlayer1Strategy, storm::dd::Bdd<Type> const& minPlayer2Strategy, storm::dd::Bdd<Type> const& maxPlayer1Strategy, storm::dd::Bdd<Type> const& maxPlayer2Strategy) const;
+            boost::optional<RefinementPredicates> derivePredicatesFromInterpolation(storm::abstraction::MenuGame<Type, ValueType> const& game, PivotStateResult<Type> const& pivotStateResult, storm::dd::Bdd<Type> const& minPlayer1Strategy, storm::dd::Bdd<Type> const& minPlayer2Strategy, storm::dd::Bdd<Type> const& maxPlayer1Strategy, storm::dd::Bdd<Type> const& maxPlayer2Strategy) const;
             std::vector<std::vector<storm::expressions::Expression>> buildTrace(storm::expressions::ExpressionManager& expressionManager, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& spanningTree, storm::dd::Bdd<Type> const& pivotState) const;
             
             void performRefinement(std::vector<RefinementCommand> const& refinementCommands) const;
@@ -100,11 +102,20 @@ namespace storm {
             /// The underlying abstractor to refine.
             std::reference_wrapper<MenuGameAbstractor<Type, ValueType>> abstractor;
             
-            /// A flag indicating whether predicates shall be split before using them for refinement.
+            /// A flag indicating whether interpolation shall be used to rule out spurious pivot blocks.
+            bool useInterpolation;
+
+            /// A flag indicating whether all predicates shall be split before using them for refinement.
+            bool splitAll;
+            
+            /// A flag indicating whether predicates derived from weakest preconditions shall be split before using them for refinement.
             bool splitPredicates;
 
-            /// A flag indicating whether predicates shall be split before using them for refinement.
+            /// A flag indicating whether guards shall be split before using them for refinement.
             bool splitGuards;
+            
+            /// A flag indicating whether the initially added guards shall be split before using them for refinement.
+            bool splitInitialGuards;
 
             /// An object that can be used for splitting predicates.
             mutable storm::expressions::PredicateSplitter splitter;
