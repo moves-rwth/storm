@@ -3,8 +3,6 @@
 #include "storm/utility/storm.h"
 #include "storm/cli/cli.h"
 #include "storm/exceptions/BaseException.h"
-#include "storm/utility/macros.h"
-#include "storm/transformations/dft/DftToGspnTransformator.h"
 
 
 #include "storm/settings/modules/GeneralSettings.h"
@@ -18,7 +16,8 @@
 #include "storm-dft/parser/DFTGalileoParser.h"
 #include "storm-dft/modelchecker/dft/DFTModelChecker.h"
 #include "storm-dft/modelchecker/dft/DFTASFChecker.h"
-#include "storm-dft/transformations/dft/DftToGspnTransformator.h"
+#include "storm-dft/transformations/DftToGspnTransformator.h"
+
 
 #include "storm-dft/settings/modules/DFTSettings.h"
 

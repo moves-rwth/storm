@@ -1,8 +1,8 @@
 #pragma once
 
-#include "storm/storage/dft/DFT.h"
-#include "storm/storage/gspn/GSPN.h"
-#include "storm/storage/gspn/GspnBuilder.h"
+#include "storm-dft/storage/dft/DFT.h"
+#include "storm-gspn/storage/gspn/GSPN.h"
+#include "storm-gspn/storage/gspn/GspnBuilder.h"
 
 namespace storm {
     namespace transformations {
