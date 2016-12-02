@@ -1,5 +1,6 @@
 set(storm_VERSION @storm_VERSION@)
 
+get_filename_component(storm_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
 
 @DEP_TARGETS@
 
@@ -7,7 +8,7 @@ set(storm_VERSION @storm_VERSION@)
 
 # Our library dependencies (contains definitions for IMPORTED targets)
 if(NOT TARGET storm)
-  include("${PROJECT_BINARY_DIR}/stormTargets.cmake")
+  include("${storm_CMAKE_DIR}/stormTargets.cmake")
 endif()
 
 @PACKAGE_INIT@
