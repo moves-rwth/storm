@@ -14,37 +14,11 @@
 
 NAMESPACE_BEGIN(pybind11)
 
-template <typename T> struct arg_t;
-
-/// Annotation for keyword arguments
-struct arg {
-    constexpr explicit arg(const char *name) : name(name) { }
-
-    template <typename T>
-    constexpr arg_t<T> operator=(const T &value) const { return {name, value}; }
-    template <typename T, size_t N>
-    constexpr arg_t<const T *> operator=(T const (&value)[N]) const {
-        return operator=((const T *) value);
-    }
-
-    const char *name;
-};
-
-/// Annotation for keyword arguments with default values
-template <typename T> struct arg_t : public arg {
-    constexpr arg_t(const char *name, const T &value, const char *descr = nullptr)
-        : arg(name), value(value), descr(descr) { }
-    T value;
-    const char *descr;
-};
-
-inline namespace literals {
-/// String literal version of arg
-constexpr arg operator"" _a(const char *name, size_t) { return arg(name); }
-}
-
 /// Annotation for methods
 struct is_method { handle class_; is_method(const handle &c) : class_(c) { } };
+
+/// Annotation for operators
+struct is_operator { };
 
 /// Annotation for parent scope
 struct scope { handle value; scope(const handle &s) : value(s) { } };
@@ -59,10 +33,22 @@ struct name { const char *value; name(const char *value) : value(value) { } };
 struct sibling { handle value; sibling(const handle &value) : value(value.ptr()) { } };
 
 /// Annotation indicating that a class derives from another given type
-template <typename T> struct base { };
+template <typename T> struct base {
+    PYBIND11_DEPRECATED("base<T>() was deprecated in favor of specifying 'T' as a template argument to class_")
+    base() { }
+};
 
 /// Keep patient alive while nurse lives
 template <int Nurse, int Patient> struct keep_alive { };
+
+/// Annotation indicating that a class is involved in a multiple inheritance relationship
+struct multiple_inheritance { };
+
+/// Annotation which enables dynamic attributes, i.e. adds `__dict__` to a class
+struct dynamic_attr { };
+
+/// Annotation to mark enums as an arithmetic type
+struct arithmetic { };
 
 NAMESPACE_BEGIN(detail)
 /* Forward declarations */
@@ -86,6 +72,10 @@ struct argument_record {
 
 /// Internal data structure which holds metadata about a bound function (signature, overloads, etc.)
 struct function_record {
+    function_record()
+        : is_constructor(false), is_stateless(false), is_operator(false),
+          has_args(false), has_kwargs(false), is_method(false) { }
+
     /// Function name
     char *name = nullptr; /* why no C++ strings? They generate heavier code.. */
 
@@ -113,20 +103,26 @@ struct function_record {
     /// True if name == '__init__'
     bool is_constructor : 1;
 
+    /// True if this is a stateless function pointer
+    bool is_stateless : 1;
+
+    /// True if this is an operator (__add__), etc.
+    bool is_operator : 1;
+
     /// True if the function has a '*args' argument
     bool has_args : 1;
 
     /// True if the function has a '**kwargs' argument
     bool has_kwargs : 1;
 
+    /// True if this is a method
+    bool is_method : 1;
+
     /// Number of arguments
     uint16_t nargs;
 
     /// Python method object
     PyMethodDef *def = nullptr;
-
-    /// Python handle to the associated class (if this is method)
-    handle class_;
 
     /// Python handle to the parent scope (a class or a module)
     handle scope;
@@ -140,6 +136,8 @@ struct function_record {
 
 /// Special data structure which (temporarily) holds metadata about a bound class
 struct type_record {
+    PYBIND11_NOINLINE type_record() { }
+
     /// Handle to the parent scope
     handle scope;
 
@@ -161,21 +159,42 @@ struct type_record {
     /// Function pointer to class_<..>::dealloc
     void (*dealloc)(PyObject *) = nullptr;
 
-    // Pointer to RTTI type_info data structure of base class
-    const std::type_info *base_type = nullptr;
-
-    /// OR: Python handle to base class
-    handle base_handle;
+    /// List of base classes of the newly created type
+    list bases;
 
     /// Optional docstring
     const char *doc = nullptr;
+
+    /// Multiple inheritance marker
+    bool multiple_inheritance = false;
+
+    /// Does the class manage a __dict__?
+    bool dynamic_attr = false;
+
+    PYBIND11_NOINLINE void add_base(const std::type_info *base, void *(*caster)(void *)) {
+        auto base_info = detail::get_type_info(*base, false);
+        if (!base_info) {
+            std::string tname(base->name());
+            detail::clean_type_id(tname);
+            pybind11_fail("generic_type: type \"" + std::string(name) +
+                          "\" referenced unknown base type \"" + tname + "\"");
+        }
+
+        bases.append((PyObject *) base_info->type);
+
+        if (base_info->type->tp_dictoffset != 0)
+            dynamic_attr = true;
+
+        if (caster)
+            base_info->implicit_casts.push_back(std::make_pair(type, caster));
+    }
 };
 
 /**
  * Partial template specializations to process custom attributes provided to
  * cpp_function_ and class_. These are either used to initialize the respective
- * fields in the type_record and function_record data structures or executed
- * at runtime to deal with custom call policies (e.g. keep_alive).
+ * fields in the type_record and function_record data structures or executed at
+ * runtime to deal with custom call policies (e.g. keep_alive).
  */
 template <typename T, typename SFINAE = void> struct process_attribute;
 
@@ -216,7 +235,7 @@ template <> struct process_attribute<sibling> : process_attribute_default<siblin
 
 /// Process an attribute which indicates that this function is a method
 template <> struct process_attribute<is_method> : process_attribute_default<is_method> {
-    static void init(const is_method &s, function_record *r) { r->class_ = s.class_; r->scope = s.class_; }
+    static void init(const is_method &s, function_record *r) { r->is_method = true; r->scope = s.class_; }
 };
 
 /// Process an attribute which indicates the parent scope of a method
@@ -224,37 +243,34 @@ template <> struct process_attribute<scope> : process_attribute_default<scope> {
     static void init(const scope &s, function_record *r) { r->scope = s.value; }
 };
 
+/// Process an attribute which indicates that this function is an operator
+template <> struct process_attribute<is_operator> : process_attribute_default<is_operator> {
+    static void init(const is_operator &, function_record *r) { r->is_operator = true; }
+};
 
 /// Process a keyword argument attribute (*without* a default value)
 template <> struct process_attribute<arg> : process_attribute_default<arg> {
     static void init(const arg &a, function_record *r) {
-        if (r->class_ && r->args.empty())
+        if (r->is_method && r->args.empty())
             r->args.emplace_back("self", nullptr, handle());
         r->args.emplace_back(a.name, nullptr, handle());
     }
 };
 
 /// Process a keyword argument attribute (*with* a default value)
-template <typename T>
-struct process_attribute<arg_t<T>> : process_attribute_default<arg_t<T>> {
-    static void init(const arg_t<T> &a, function_record *r) {
-        if (r->class_ && r->args.empty())
+template <> struct process_attribute<arg_v> : process_attribute_default<arg_v> {
+    static void init(const arg_v &a, function_record *r) {
+        if (r->is_method && r->args.empty())
             r->args.emplace_back("self", nullptr, handle());
 
-        /* Convert keyword value into a Python object */
-        object o = object(detail::type_caster<typename detail::intrinsic_type<T>::type>::cast(
-                a.value, return_value_policy::automatic, handle()), false);
-
-        if (!o) {
+        if (!a.value) {
 #if !defined(NDEBUG)
-            std::string descr(typeid(T).name());
-            detail::clean_type_id(descr);
-            descr = "'" + std::string(a.name) + ": " + descr + "'";
-            if (r->class_) {
+            auto descr = "'" + std::string(a.name) + ": " + a.type + "'";
+            if (r->is_method) {
                 if (r->name)
-                    descr += " in method '" + (std::string) r->class_.str() + "." + (std::string) r->name + "'";
+                    descr += " in method '" + (std::string) str(r->scope) + "." + (std::string) r->name + "'";
                 else
-                    descr += " in method of '" + (std::string) r->class_.str() + "'";
+                    descr += " in method of '" + (std::string) str(r->scope) + "'";
             } else if (r->name) {
                 descr += " in function named '" + (std::string) r->name + "'";
             }
@@ -266,21 +282,37 @@ struct process_attribute<arg_t<T>> : process_attribute_default<arg_t<T>> {
                           "Compile in debug mode for more information.");
 #endif
         }
-        r->args.emplace_back(a.name, a.descr, o.release());
+        r->args.emplace_back(a.name, a.descr, a.value.inc_ref());
     }
 };
 
 /// Process a parent class attribute
 template <typename T>
-struct process_attribute<T, typename std::enable_if<std::is_base_of<handle, T>::value>::type> : process_attribute_default<handle> {
-    static void init(const handle &h, type_record *r) { r->base_handle = h; }
+struct process_attribute<T, enable_if_t<is_pyobject<T>::value>> : process_attribute_default<handle> {
+    static void init(const handle &h, type_record *r) { r->bases.append(h); }
 };
 
-/// Process a parent class attribute
+/// Process a parent class attribute (deprecated, does not support multiple inheritance)
 template <typename T>
 struct process_attribute<base<T>> : process_attribute_default<base<T>> {
-    static void init(const base<T> &, type_record *r) { r->base_type = &typeid(T); }
+    static void init(const base<T> &, type_record *r) { r->add_base(&typeid(T), nullptr); }
 };
+
+/// Process a multiple inheritance attribute
+template <>
+struct process_attribute<multiple_inheritance> : process_attribute_default<multiple_inheritance> {
+    static void init(const multiple_inheritance &, type_record *r) { r->multiple_inheritance = true; }
+};
+
+template <>
+struct process_attribute<dynamic_attr> : process_attribute_default<dynamic_attr> {
+    static void init(const dynamic_attr &, type_record *r) { r->dynamic_attr = true; }
+};
+
+
+/// Process an 'arithmetic' attribute for enums (does nothing here)
+template <>
+struct process_attribute<arithmetic> : process_attribute_default<arithmetic> {};
 
 /***
  * Process a keep_alive call policy -- invokes keep_alive_impl during the
@@ -288,18 +320,15 @@ struct process_attribute<base<T>> : process_attribute_default<base<T>> {
  * otherwise
  */
 template <int Nurse, int Patient> struct process_attribute<keep_alive<Nurse, Patient>> : public process_attribute_default<keep_alive<Nurse, Patient>> {
-    template <int N = Nurse, int P = Patient, typename std::enable_if<N != 0 && P != 0, int>::type = 0>
+    template <int N = Nurse, int P = Patient, enable_if_t<N != 0 && P != 0, int> = 0>
     static void precall(handle args) { keep_alive_impl(Nurse, Patient, args, handle()); }
-    template <int N = Nurse, int P = Patient, typename std::enable_if<N != 0 && P != 0, int>::type = 0>
+    template <int N = Nurse, int P = Patient, enable_if_t<N != 0 && P != 0, int> = 0>
     static void postcall(handle, handle) { }
-    template <int N = Nurse, int P = Patient, typename std::enable_if<N == 0 || P == 0, int>::type = 0>
+    template <int N = Nurse, int P = Patient, enable_if_t<N == 0 || P == 0, int> = 0>
     static void precall(handle) { }
-    template <int N = Nurse, int P = Patient, typename std::enable_if<N == 0 || P == 0, int>::type = 0>
+    template <int N = Nurse, int P = Patient, enable_if_t<N == 0 || P == 0, int> = 0>
     static void postcall(handle args, handle ret) { keep_alive_impl(Nurse, Patient, args, ret); }
 };
-
-/// Ignore that a variable is unused in compiler warnings
-inline void ignore_unused(const int *) { }
 
 /// Recursively iterate over variadic template arguments
 template <typename... Args> struct process_attributes {
@@ -320,11 +349,6 @@ template <typename... Args> struct process_attributes {
         ignore_unused(unused);
     }
 };
-
-/// Compile-time integer sum
-constexpr size_t constexpr_sum() { return 0; }
-template <typename T, typename... Ts>
-constexpr size_t constexpr_sum(T n, Ts... ns) { return n + constexpr_sum(ns...); }
 
 /// Check the number of named arguments at compile time
 template <typename... Extra,

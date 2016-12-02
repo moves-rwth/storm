@@ -215,9 +215,9 @@ Passing extra arguments to the def function
 
 .. function:: arg::arg(const char *name)
 
-.. function:: template <typename T> arg_t<T> arg::operator=(const T &value)
+.. function:: template <typename T> arg_v arg::operator=(T &&value)
 
-.. class:: template <typename T> arg_t<T> : public arg
+.. class:: arg_v : public arg
 
     Represents a named argument with a default value
 
@@ -244,3 +244,4 @@ Passing extra arguments to the def function
 .. function:: name::name(const char *value)
 
     Used to specify the function name
+

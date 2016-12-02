@@ -1,4 +1,4 @@
-# CMakeLists.txt -- Build system for the pybind11 examples
+# CMakeLists.txt -- Build system for the pybind11 modules
 #
 # Copyright (c) 2015 Wenzel Jakob <wenzel@inf.ethz.ch>
 #
@@ -17,9 +17,10 @@ endif()
 
 option(PYBIND11_INSTALL "Install pybind11 header files?" ${PYBIND11_MASTER_PROJECT})
 option(PYBIND11_TEST    "Build pybind11 test suite?"     ${PYBIND11_MASTER_PROJECT})
+option(PYBIND11_WERROR  "Report all warnings as errors"  OFF)
 
 # Add a CMake parameter for choosing a desired Python version
-set(PYBIND11_PYTHON_VERSION "" CACHE STRING "Python version to use for compiling the example application")
+set(PYBIND11_PYTHON_VERSION "" CACHE STRING "Python version to use for compiling modules")
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/tools")
 set(Python_ADDITIONAL_VERSIONS 3.4 3.5 3.6 3.7)
@@ -40,7 +41,7 @@ if(NOT MSVC AND NOT PYBIND11_CPP_STANDARD)
   endif()
 
   set(PYBIND11_CPP_STANDARD ${PYBIND11_CPP_STANDARD} CACHE STRING
-      "C++ standard flag, e.g. -std=c++11 or -std=c++14. Defaults to latest available.")
+      "C++ standard flag, e.g. -std=c++11 or -std=c++14. Defaults to latest available." FORCE)
 endif()
 
 # Cache variables so pybind11_add_module can be used in parent projects
@@ -55,7 +56,9 @@ set(PYTHON_MODULE_EXTENSION ${PYTHON_MODULE_EXTENSION} CACHE INTERNAL "")
 #
 function(pybind11_add_module target_name)
   add_library(${target_name} MODULE ${ARGN})
-  target_include_directories(${target_name} PUBLIC ${PYBIND11_INCLUDE_DIR} ${PYTHON_INCLUDE_DIRS})
+  target_include_directories(${target_name}
+    PRIVATE ${PYBIND11_INCLUDE_DIR}
+    PRIVATE ${PYTHON_INCLUDE_DIRS})
 
   # The prefix and extension are provided by FindPythonLibsNew.cmake
   set_target_properties(${target_name} PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}")
@@ -140,31 +143,42 @@ function(pybind11_enable_warnings target_name)
   else()
     target_compile_options(${target_name} PRIVATE -Wall -Wextra -Wconversion)
   endif()
+
+  if(PYBIND11_WERROR)
+    if(MSVC)
+      target_compile_options(${target_name} PRIVATE /WX)
+    else()
+      target_compile_options(${target_name} PRIVATE -Werror)
+    endif()
+  endif()
 endfunction()
 
+set(PYBIND11_HEADERS
+  include/pybind11/attr.h
+  include/pybind11/cast.h
+  include/pybind11/chrono.h
+  include/pybind11/common.h
+  include/pybind11/complex.h
+  include/pybind11/descr.h
+  include/pybind11/options.h
+  include/pybind11/eigen.h
+  include/pybind11/eval.h
+  include/pybind11/functional.h
+  include/pybind11/numpy.h
+  include/pybind11/operators.h
+  include/pybind11/pybind11.h
+  include/pybind11/pytypes.h
+  include/pybind11/stl.h
+  include/pybind11/stl_bind.h
+  include/pybind11/typeid.h
+)
+string(REPLACE "include/" "${CMAKE_CURRENT_SOURCE_DIR}/include/"
+       PYBIND11_HEADERS "${PYBIND11_HEADERS}")
+
 if (PYBIND11_TEST)
-  enable_testing()
-  add_subdirectory(example)
-  add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} -C $<CONFIGURATION> DEPENDS example)
+  add_subdirectory(tests)
 endif()
 
 if (PYBIND11_INSTALL)
-  set(PYBIND11_HEADERS
-    include/pybind11/attr.h
-    include/pybind11/cast.h
-    include/pybind11/common.h
-    include/pybind11/complex.h
-    include/pybind11/descr.h
-    include/pybind11/eigen.h
-    include/pybind11/functional.h
-    include/pybind11/numpy.h
-    include/pybind11/operators.h
-    include/pybind11/pybind11.h
-    include/pybind11/pytypes.h
-    include/pybind11/stl.h
-    include/pybind11/stl_bind.h
-    include/pybind11/typeid.h
-  )
-
   install(FILES ${PYBIND11_HEADERS} DESTINATION include/pybind11)
 endif()

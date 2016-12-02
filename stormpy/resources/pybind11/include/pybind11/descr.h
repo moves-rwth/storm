@@ -15,17 +15,6 @@
 NAMESPACE_BEGIN(pybind11)
 NAMESPACE_BEGIN(detail)
 
-
-#if defined(__clang__)
-#  if __has_feature(cxx_return_type_deduction) && __has_feature(cxx_relaxed_constexpr)
-#    define PYBIND11_CPP14
-#  endif
-#elif defined(__GNUG__)
-#  if __cpp_constexpr >= 201304 && __cpp_decltype_auto >= 201304
-#    define PYBIND11_CPP14
-#  endif
-#endif
-
 #if defined(PYBIND11_CPP14) /* Concatenate type signatures at compile time using C++14 */
 
 template <size_t Size1, size_t Size2> class descr {
@@ -83,7 +72,17 @@ template <size_t...Digits> struct int_to_str<0, Digits...> {
     static constexpr auto digits = descr<sizeof...(Digits), 0>({ ('0' + Digits)..., '\0' }, { nullptr });
 };
 
-template <size_t Size> auto constexpr _() {
+// Ternary description (like std::conditional)
+template <bool B, size_t Size1, size_t Size2>
+constexpr enable_if_t<B, descr<Size1 - 1, 0>> _(char const(&text1)[Size1], char const(&)[Size2]) {
+    return _(text1);
+}
+template <bool B, size_t Size1, size_t Size2>
+constexpr enable_if_t<!B, descr<Size2 - 1, 0>> _(char const(&)[Size1], char const(&text2)[Size2]) {
+    return _(text2);
+}
+
+template <size_t Size> auto constexpr _() -> decltype(int_to_str<Size / 10, Size % 10>::digits) {
     return int_to_str<Size / 10, Size % 10>::digits;
 }
 
@@ -153,6 +152,9 @@ PYBIND11_NOINLINE inline descr _(const char *text) {
     return descr(text, types);
 }
 
+template <bool B> PYBIND11_NOINLINE enable_if_t<B, descr> _(const char *text1, const char *) { return _(text1); }
+template <bool B> PYBIND11_NOINLINE enable_if_t<!B, descr> _(char const *, const char *text2) { return _(text2); }
+
 template <typename Type> PYBIND11_NOINLINE descr _() {
     const std::type_info *types[2] = { &typeid(Type), nullptr };
     return descr("%", types);
@@ -168,7 +170,7 @@ PYBIND11_NOINLINE inline descr concat(descr &&d) { return d; }
 template <typename... Args> PYBIND11_NOINLINE descr concat(descr &&d, Args&&... args) { return std::move(d) + _(", ") + concat(std::forward<Args>(args)...); }
 PYBIND11_NOINLINE inline descr type_descr(descr&& d) { return _("{") + std::move(d) + _("}"); }
 
-#define PYBIND11_DESCR descr
+#define PYBIND11_DESCR ::pybind11::detail::descr
 #endif
 
 NAMESPACE_END(detail)

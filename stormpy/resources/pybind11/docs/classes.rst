@@ -165,6 +165,66 @@ the setter and getter functions:
     static variables and properties. Please also see the section on
     :ref:`static_properties` in the advanced part of the documentation.
 
+Dynamic attributes
+==================
+
+Native Python classes can pick up new attributes dynamically:
+
+.. code-block:: pycon
+
+    >>> class Pet:
+    ...     name = 'Molly'
+    ...
+    >>> p = Pet()
+    >>> p.name = 'Charly'  # overwrite existing
+    >>> p.age = 2  # dynamically add a new attribute
+
+By default, classes exported from C++ do not support this and the only writable
+attributes are the ones explicitly defined using :func:`class_::def_readwrite`
+or :func:`class_::def_property`.
+
+.. code-block:: cpp
+
+    py::class_<Pet>(m, "Pet")
+        .def(py::init<>())
+        .def_readwrite("name", &Pet::name);
+
+Trying to set any other attribute results in an error:
+
+.. code-block:: pycon
+
+    >>> p = example.Pet()
+    >>> p.name = 'Charly'  # OK, attribute defined in C++
+    >>> p.age = 2  # fail
+    AttributeError: 'Pet' object has no attribute 'age'
+
+To enable dynamic attributes for C++ classes, the :class:`py::dynamic_attr` tag
+must be added to the :class:`py::class_` constructor:
+
+.. code-block:: cpp
+
+    py::class_<Pet>(m, "Pet", py::dynamic_attr())
+        .def(py::init<>())
+        .def_readwrite("name", &Pet::name);
+
+Now everything works as expected:
+
+.. code-block:: pycon
+
+    >>> p = example.Pet()
+    >>> p.name = 'Charly'  # OK, overwrite value in C++
+    >>> p.age = 2  # OK, dynamically add a new attribute
+    >>> p.__dict__  # just like a native Python class
+    {'age': 2}
+
+Note that there is a small runtime cost for a class with dynamic attributes.
+Not only because of the addition of a ``__dict__``, but also because of more
+expensive garbage collection tracking which must be activated to resolve
+possible circular references. Native Python classes incur this same cost by
+default, so this is not anything to worry about. By default, pybind11 classes
+are more efficient than native Python classes. Enabling dynamic attributes
+just brings them on par.
+
 .. _inheritance:
 
 Inheritance
@@ -186,8 +246,8 @@ inheritance relationship:
     };
 
 There are two different ways of indicating a hierarchical relationship to
-pybind11: the first is by specifying the C++ base class explicitly during
-construction using the ``base`` attribute:
+pybind11: the first specifies the C++ base class as an extra template
+parameter of the :class:`class_`:
 
 .. code-block:: cpp
 
@@ -195,7 +255,8 @@ construction using the ``base`` attribute:
        .def(py::init<const std::string &>())
        .def_readwrite("name", &Pet::name);
 
-    py::class_<Dog>(m, "Dog", py::base<Pet>() /* <- specify C++ parent type */)
+    // Method 1: template parameter:
+    py::class_<Dog, Pet /* <- specify C++ parent type */>(m, "Dog")
         .def(py::init<const std::string &>())
         .def("bark", &Dog::bark);
 
@@ -208,12 +269,13 @@ Alternatively, we can also assign a name to the previously bound ``Pet``
     pet.def(py::init<const std::string &>())
        .def_readwrite("name", &Pet::name);
 
+    // Method 2: pass parent class_ object:
     py::class_<Dog>(m, "Dog", pet /* <- specify Python parent type */)
         .def(py::init<const std::string &>())
         .def("bark", &Dog::bark);
 
-Functionality-wise, both approaches are completely equivalent. Afterwards,
-instances will expose fields and methods of both types:
+Functionality-wise, both approaches are equivalent. Afterwards, instances will
+expose fields and methods of both types:
 
 .. code-block:: pycon
 
@@ -330,5 +392,19 @@ typed enums.
     >>> int(p.type)
     1L
 
+
+.. note::
+
+    When the special tag ``py::arithmetic()`` is specified to the ``enum_``
+    constructor, pybind11 creates an enumeration that also supports rudimentary
+    arithmetic and bit-level operations like comparisons, and, or, xor, negation,
+    etc.
+
+    .. code-block:: cpp
+
+        py::enum_<Pet::Kind>(pet, "Kind", py::arithmetic())
+           ...
+
+    By default, these are omitted to conserve space.
 
 .. [#f1] Stateless closures are those with an empty pair of brackets ``[]`` as the capture object.

@@ -20,10 +20,34 @@ template <typename Return, typename... Args> struct type_caster<std::function<Re
     typedef typename std::conditional<std::is_same<Return, void>::value, void_type, Return>::type retval_type;
 public:
     bool load(handle src_, bool) {
+        if (src_.is_none())
+            return true;
+
         src_ = detail::get_function(src_);
         if (!src_ || !PyCallable_Check(src_.ptr()))
             return false;
-        object src(src_, true);
+
+        /*
+           When passing a C++ function as an argument to another C++
+           function via Python, every function call would normally involve
+           a full C++ -> Python -> C++ roundtrip, which can be prohibitive.
+           Here, we try to at least detect the case where the function is
+           stateless (i.e. function pointer or lambda function without
+           captured variables), in which case the roundtrip can be avoided.
+         */
+        if (PyCFunction_Check(src_.ptr())) {
+            auto c = reinterpret_borrow<capsule>(PyCFunction_GetSelf(src_.ptr()));
+            auto rec = (function_record *) c;
+            using FunctionType = Return (*) (Args...);
+
+            if (rec && rec->is_stateless && rec->data[1] == &typeid(FunctionType)) {
+                struct capture { FunctionType f; };
+                value = ((capture *) &rec->data)->f;
+                return true;
+            }
+        }
+
+        auto src = reinterpret_borrow<object>(src_);
         value = [src](Args... args) -> Return {
             gil_scoped_acquire acq;
             object retval(src(std::move(args)...));
@@ -35,13 +59,20 @@ public:
 
     template <typename Func>
     static handle cast(Func &&f_, return_value_policy policy, handle /* parent */) {
-        return cpp_function(std::forward<Func>(f_), policy).release();
+        if (!f_)
+            return none().inc_ref();
+
+        auto result = f_.template target<Return (*)(Args...)>();
+        if (result)
+            return cpp_function(*result, policy).release();
+        else
+            return cpp_function(std::forward<Func>(f_), policy).release();
     }
 
-    PYBIND11_TYPE_CASTER(type, _("function<") +
-            type_caster<std::tuple<Args...>>::name() + _(" -> ") +
+    PYBIND11_TYPE_CASTER(type, _("Callable[[") +
+            type_caster<std::tuple<Args...>>::element_names() + _("], ") +
             type_caster<retval_type>::name() +
-            _(">"));
+            _("]"));
 };
 
 NAMESPACE_END(detail)

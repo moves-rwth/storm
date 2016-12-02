@@ -15,7 +15,57 @@ Breaking changes queued for v2.0.0 (Not yet released)
 
 1.9.0 (Not yet released)
 ------------------------
-* Queued changes: ``py::eval*``, map indexing suite, documentation for indexing suites.
+* Queued changes: map indexing suite, documentation for indexing suites.
+* Mapping a stateless C++ function to Python and back is now "for free" (i.e. no call overheads)
+* Support for translation of arbitrary C++ exceptions to Python counterparts
+* Added ``eval`` and ``eval_file`` functions for evaluating expressions and
+  statements from a string or file
+* eigen.h type converter fixed for non-contiguous arrays (e.g. slices)
+* Print more informative error messages when ``make_tuple()`` or ``cast()`` fail
+* ``std::enable_shared_from_this<>`` now also works for ``const`` values
+* A return value policy can now be passed to ``handle::operator()``
+* ``make_iterator()`` improvements for better compatibility with various types
+  (now uses prefix increment operator); it now also accepts iterators with
+  different begin/end types as long as they are equality comparable.
+* ``arg()`` now accepts a wider range of argument types for default values
+* Added ``py::repr()`` function which is equivalent to Python's builtin ``repr()``.
+* Added support for registering structured dtypes via ``PYBIND11_NUMPY_DTYPE()`` macro.
+* Added ``PYBIND11_STR_TYPE`` macro which maps to the ``builtins.str`` type.
+* Added a simplified ``buffer_info`` constructor for 1-dimensional buffers.
+* Format descriptor strings should now be accessed via ``format_descriptor::format()``
+  (for compatibility purposes, the old syntax ``format_descriptor::value`` will still
+  work for non-structured data types).
+* Added a class wrapping NumPy array descriptors: ``dtype``.
+* Added buffer/NumPy support for ``char[N]`` and ``std::array<char, N>`` types.
+* ``array`` gained new constructors accepting dtype objects.
+* Added constructors for ``array`` and ``array_t`` explicitly accepting shape and
+  strides; if strides are not provided, they are deduced assuming C-contiguity.
+  Also added simplified constructors for 1-dimensional case.
+* Added constructors for ``str`` from ``bytes`` and for ``bytes`` from ``str``.
+  This will do the UTF-8 decoding/encoding as required.
+* Added constructors for ``str`` and ``bytes`` from zero-terminated char pointers,
+  and from char pointers and length.
+* Added ``memoryview`` wrapper type which is constructible from ``buffer_info``.
+* New syntax to call a Python function from C++ using keyword arguments and unpacking,
+  e.g. ``foo(1, 2, "z"_a=3)`` or ``bar(1, *args, "z"_a=3, **kwargs)``.
+* Added ``py::print()`` function which replicates Python's API and writes to Python's
+  ``sys.stdout`` by default (as opposed to C's ``stdout`` like ``std::cout``).
+* Added ``py::dict`` keyword constructor:``auto d = dict("number"_a=42, "name"_a="World");``
+* Added ``py::str::format()`` method and ``_s`` literal:
+  ``py::str s = "1 + 2 = {}"_s.format(3);``
+* Attribute and item accessors now have a more complete interface which makes it possible
+  to chain attributes ``obj.attr("a")[key].attr("b").attr("method")(1, 2, 3)```.
+* Added built-in support for ``std::shared_ptr`` holder type. There is no more need
+  to do it manually via ``PYBIND11_DECLARE_HOLDER_TYPE(T, std::shared_ptr<T>)``.
+* Default return values policy changes: non-static properties now use ``reference_internal``
+  and static properties use ``reference`` (previous default was ``automatic``, i.e. ``copy``).
+* Support for ``std::experimental::optional<T>`` and ``std::optional<T>`` (C++17).
+* Various minor improvements of library internals (no user-visible changes)
+
+1.8.1 (July 12, 2016)
+----------------------
+* Fixed a rare but potentially very severe issue when the garbage collector ran
+  during pybind11 type creation.
 
 1.8.0 (June 14, 2016)
 ----------------------
