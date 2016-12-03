@@ -62,7 +62,9 @@ namespace storm {
             MenuGameRefiner(MenuGameAbstractor<Type, ValueType>& abstractor, std::unique_ptr<storm::solver::SmtSolver>&& smtSolver);
             
             /*!
-             * Refines the abstractor with the given set of predicates.
+             * Refines the abstractor with the given predicates.
+             *
+             * @param predicates The predicates to use for refinement.
              */
             void refine(std::vector<storm::expressions::Expression> const& predicates) const;
             

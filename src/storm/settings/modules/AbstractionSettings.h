@@ -57,6 +57,13 @@ namespace storm {
                  * @return True iff the option was set.
                  */
                 bool isUseInterpolationSet() const;
+                
+                /*!
+                 * Retrieves the precision that is used for detecting convergence.
+                 *
+                 * @return The precision to use for detecting convergence.
+                 */
+                double getPrecision() const;
 
                 const static std::string moduleName;
                 
@@ -68,6 +75,7 @@ namespace storm {
                 const static std::string useInterpolationOptionName;
                 const static std::string splitInterpolantsOptionName;
                 const static std::string splitAllOptionName;
+                const static std::string precisionOptionName;
             };
             
         }

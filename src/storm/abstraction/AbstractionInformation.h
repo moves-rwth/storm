@@ -34,10 +34,11 @@ namespace storm {
              * Creates a new abstraction information object.
              *
              * @param expressionManager The manager responsible for all variables and expressions during the abstraction process.
+             * @param allVariables All expression variables that can appear in predicates known to this object.
              * @param smtSolver An SMT solver that is used to detect equivalent predicates.
              * @param ddManager The manager responsible for the DDs.
              */
-            AbstractionInformation(storm::expressions::ExpressionManager& expressionManager, std::unique_ptr<storm::solver::SmtSolver>&& smtSolver, std::shared_ptr<storm::dd::DdManager<DdType>> ddManager = std::make_shared<storm::dd::DdManager<DdType>>());
+            AbstractionInformation(storm::expressions::ExpressionManager& expressionManager, std::set<storm::expressions::Variable> const& allVariables, std::unique_ptr<storm::solver::SmtSolver>&& smtSolver, std::shared_ptr<storm::dd::DdManager<DdType>> ddManager = std::make_shared<storm::dd::DdManager<DdType>>());
 
             /*!
              * Adds the given variable.
@@ -372,7 +373,7 @@ namespace storm {
              *
              * @return A mapping from predicates to their representing BDDs.
              */
-            std::map<storm::expressions::Expression, storm::dd::Bdd<DdType>> getPredicateToBddMap() const;
+            std::map<storm::expressions::Expression, storm::dd::Bdd<DdType>> const& getPredicateToBddMap() const;
             
             /*!
              * Retrieves the meta variables pairs for all predicates.
@@ -455,7 +456,7 @@ namespace storm {
             /*!
              * Decodes the choice in the form of a BDD over the destination variables.
              */
-            std::map<uint_fast64_t, storm::storage::BitVector> decodeChoiceToUpdateSuccessorMapping(storm::dd::Bdd<DdType> const& choice) const;
+            std::map<uint_fast64_t, std::pair<storm::storage::BitVector, double>> decodeChoiceToUpdateSuccessorMapping(storm::dd::Bdd<DdType> const& choice) const;
             
             /*!
              * Decodes the given BDD (over source, player 1 and aux variables) into a bit vector indicating the truth
@@ -564,6 +565,9 @@ namespace storm {
             
             /// The BDDs associated with the meta variables encoding auxiliary information.
             std::vector<storm::dd::Bdd<DdType>> auxVariableBdds;
+            
+            /// A mapping from expressions to the corresponding BDDs.
+            std::map<storm::expressions::Expression, storm::dd::Bdd<DdType>> expressionToBddMap;
         };
         
     }

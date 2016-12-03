@@ -1,5 +1,7 @@
 #include "storm/abstraction/LocalExpressionInformation.h"
 
+#include "storm/abstraction/AbstractionInformation.h"
+
 #include <boost/algorithm/string/join.hpp>
 
 #include "storm/utility/macros.h"
@@ -7,7 +9,8 @@
 namespace storm {
     namespace abstraction {
         
-        LocalExpressionInformation::LocalExpressionInformation(std::set<storm::expressions::Variable> const& relevantVariables, std::vector<std::pair<storm::expressions::Expression, uint_fast64_t>> const& expressionIndexPairs) : relevantVariables(relevantVariables), expressionBlocks(relevantVariables.size()) {
+        template <storm::dd::DdType DdType>
+        LocalExpressionInformation<DdType>::LocalExpressionInformation(AbstractionInformation<DdType> const& abstractionInformation) : relevantVariables(abstractionInformation.getVariables()), expressionBlocks(relevantVariables.size()), abstractionInformation(abstractionInformation) {
             // Assign each variable to a new block.
             uint_fast64_t currentBlock = 0;
             variableBlocks.resize(relevantVariables.size());
@@ -17,40 +20,39 @@ namespace storm {
                 variableBlocks[currentBlock].insert(variable);
                 ++currentBlock;
             }
-            
-            // Add all expressions, which might relate some variables.
-            for (auto const& expressionIndexPair : expressionIndexPairs) {
-                this->addExpression(expressionIndexPair.first, expressionIndexPair.second);
-            }
         }
         
-        bool LocalExpressionInformation::addExpression(storm::expressions::Expression const& expression, uint_fast64_t globalExpressionIndex) {
+        template <storm::dd::DdType DdType>
+        bool LocalExpressionInformation<DdType>::addExpression(uint_fast64_t globalExpressionIndex) {
+            storm::expressions::Expression const& expression = abstractionInformation.get().getPredicateByIndex(globalExpressionIndex);
+            
             // Register the expression for all variables that appear in it.
             std::set<storm::expressions::Variable> expressionVariables = expression.getVariables();
             for (auto const& variable : expressionVariables) {
-                variableToExpressionsMapping[variable].insert(this->expressions.size());
+                variableToExpressionsMapping[variable].insert(globalExpressionIndex);
             }
             
             // Add the expression to the block of the first variable. When relating the variables, the blocks will
             // get merged (if necessary).
             STORM_LOG_ASSERT(!expressionVariables.empty(), "Found no variables in expression.");
-            expressionBlocks[getBlockIndexOfVariable(*expressionVariables.begin())].insert(this->expressions.size());
+            expressionBlocks[getBlockIndexOfVariable(*expressionVariables.begin())].insert(globalExpressionIndex);
             
             // Add expression and relate all the appearing variables.
-            this->globalToLocalIndexMapping[globalExpressionIndex] = this->expressions.size();
-            this->expressions.push_back(expression);
             return this->relate(expressionVariables);
         }
         
-        bool LocalExpressionInformation::areRelated(storm::expressions::Variable const& firstVariable, storm::expressions::Variable const& secondVariable) {
+        template <storm::dd::DdType DdType>
+        bool LocalExpressionInformation<DdType>::areRelated(storm::expressions::Variable const& firstVariable, storm::expressions::Variable const& secondVariable) {
             return getBlockIndexOfVariable(firstVariable) == getBlockIndexOfVariable(secondVariable);
         }
         
-        bool LocalExpressionInformation::relate(storm::expressions::Variable const& firstVariable, storm::expressions::Variable const& secondVariable) {
+        template <storm::dd::DdType DdType>
+        bool LocalExpressionInformation<DdType>::relate(storm::expressions::Variable const& firstVariable, storm::expressions::Variable const& secondVariable) {
             return this->relate({firstVariable, secondVariable});
         }
         
-        bool LocalExpressionInformation::relate(std::set<storm::expressions::Variable> const& variables) {
+        template <storm::dd::DdType DdType>
+        bool LocalExpressionInformation<DdType>::relate(std::set<storm::expressions::Variable> const& variables) {
             // Determine all blocks that need to be merged.
             std::set<uint_fast64_t> blocksToMerge;
             for (auto const& variable : variables) {
@@ -68,7 +70,8 @@ namespace storm {
             return true;
         }
         
-        void LocalExpressionInformation::mergeBlocks(std::set<uint_fast64_t> const& blocksToMerge) {
+        template <storm::dd::DdType DdType>
+        void LocalExpressionInformation<DdType>::mergeBlocks(std::set<uint_fast64_t> const& blocksToMerge) {
             // Merge all blocks into the block to keep.
             std::vector<std::set<storm::expressions::Variable>> newVariableBlocks;
             std::vector<std::set<uint_fast64_t>> newExpressionBlocks;
@@ -108,28 +111,34 @@ namespace storm {
             expressionBlocks = std::move(newExpressionBlocks);
         }
         
-        std::set<storm::expressions::Variable> const& LocalExpressionInformation::getBlockOfVariable(storm::expressions::Variable const& variable) const {
+        template <storm::dd::DdType DdType>
+        std::set<storm::expressions::Variable> const& LocalExpressionInformation<DdType>::getBlockOfVariable(storm::expressions::Variable const& variable) const {
             return variableBlocks[getBlockIndexOfVariable(variable)];
         }
         
-        uint_fast64_t LocalExpressionInformation::getNumberOfBlocks() const {
+        template <storm::dd::DdType DdType>
+        uint_fast64_t LocalExpressionInformation<DdType>::getNumberOfBlocks() const {
             return this->variableBlocks.size();
         }
         
-        std::set<storm::expressions::Variable> const& LocalExpressionInformation::getVariableBlockWithIndex(uint_fast64_t blockIndex) const {
+        template <storm::dd::DdType DdType>
+        std::set<storm::expressions::Variable> const& LocalExpressionInformation<DdType>::getVariableBlockWithIndex(uint_fast64_t blockIndex) const {
             return this->variableBlocks[blockIndex];
         }
         
-        uint_fast64_t LocalExpressionInformation::getBlockIndexOfVariable(storm::expressions::Variable const& variable) const {
+        template <storm::dd::DdType DdType>
+        uint_fast64_t LocalExpressionInformation<DdType>::getBlockIndexOfVariable(storm::expressions::Variable const& variable) const {
             STORM_LOG_ASSERT(this->relevantVariables.find(variable) != this->relevantVariables.end(), "Illegal variable '" << variable.getName() << "' for partition.");
             return this->variableToBlockMapping.find(variable)->second;
         }
         
-        std::set<uint_fast64_t> const& LocalExpressionInformation::getRelatedExpressions(storm::expressions::Variable const& variable) const {
+        template <storm::dd::DdType DdType>
+        std::set<uint_fast64_t> const& LocalExpressionInformation<DdType>::getRelatedExpressions(storm::expressions::Variable const& variable) const {
             return this->expressionBlocks[getBlockIndexOfVariable(variable)];
         }
         
-        std::set<uint_fast64_t> LocalExpressionInformation::getRelatedExpressions(std::set<storm::expressions::Variable> const& variables) const {
+        template <storm::dd::DdType DdType>
+        std::set<uint_fast64_t> LocalExpressionInformation<DdType>::getRelatedExpressions(std::set<storm::expressions::Variable> const& variables) const {
             // Start by determining the indices of all expression blocks that are related to any of the variables.
             std::set<uint_fast64_t> relatedExpressionBlockIndices;
             for (auto const& variable : variables) {
@@ -144,12 +153,14 @@ namespace storm {
             return result;
         }
         
-        std::set<uint_fast64_t> const& LocalExpressionInformation::getExpressionsUsingVariable(storm::expressions::Variable const& variable) const {
+        template <storm::dd::DdType DdType>
+        std::set<uint_fast64_t> const& LocalExpressionInformation<DdType>::getExpressionsUsingVariable(storm::expressions::Variable const& variable) const {
             STORM_LOG_ASSERT(this->relevantVariables.find(variable) != this->relevantVariables.end(), "Illegal variable '" << variable.getName() << "' for partition.");
             return this->variableToExpressionsMapping.find(variable)->second;
         }
         
-        std::set<uint_fast64_t> LocalExpressionInformation::getExpressionsUsingVariables(std::set<storm::expressions::Variable> const& variables) const {
+        template <storm::dd::DdType DdType>
+        std::set<uint_fast64_t> LocalExpressionInformation<DdType>::getExpressionsUsingVariables(std::set<storm::expressions::Variable> const& variables) const {
             std::set<uint_fast64_t> result;
             
             for (auto const& variable : variables) {
@@ -161,11 +172,8 @@ namespace storm {
             return result;
         }
         
-        storm::expressions::Expression const& LocalExpressionInformation::getExpression(uint_fast64_t expressionIndex) const {
-            return this->expressions[expressionIndex];
-        }
-        
-        std::ostream& operator<<(std::ostream& out, LocalExpressionInformation const& partition) {
+        template <storm::dd::DdType DdType>
+        std::ostream& operator<<(std::ostream& out, LocalExpressionInformation<DdType> const& partition) {
             std::vector<std::string> blocks;
             for (uint_fast64_t index = 0; index < partition.variableBlocks.size(); ++index) {
                 auto const& variableBlock = partition.variableBlocks[index];
@@ -177,9 +185,9 @@ namespace storm {
                 }
                 
                 std::vector<std::string> expressionsInBlock;
-                for (auto const& expression : expressionBlock) {
+                for (auto const& expressionIndex : expressionBlock) {
                     std::stringstream stream;
-                    stream << partition.expressions[expression];
+                    stream << partition.abstractionInformation.get().getPredicateByIndex(expressionIndex);
                     expressionsInBlock.push_back(stream.str());
                 }
                 
@@ -191,6 +199,11 @@ namespace storm {
             out << "}";
             return out;
         }
-        
+     
+        template class LocalExpressionInformation<storm::dd::DdType::CUDD>;
+        template class LocalExpressionInformation<storm::dd::DdType::Sylvan>;
+
+        template std::ostream& operator<<(std::ostream& out, LocalExpressionInformation<storm::dd::DdType::CUDD> const& partition);
+        template std::ostream& operator<<(std::ostream& out, LocalExpressionInformation<storm::dd::DdType::Sylvan> const& partition);
     }
 }

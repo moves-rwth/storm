@@ -145,9 +145,6 @@ namespace storm {
                 // A state-set abstractor used to determine the initial states of the abstraction.
                 StateSetAbstractor<DdType, ValueType> initialStateAbstractor;
                                 
-                // A flag that stores whether all guards were added (which is relevant for determining the bottom states).
-                bool addedAllGuards;
-                
                 // An ADD characterizing the probabilities of commands and their updates.
                 storm::dd::Add<DdType, ValueType> commandUpdateProbabilitiesAdd;
                 

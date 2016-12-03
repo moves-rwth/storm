@@ -195,30 +195,85 @@ namespace storm {
                 STORM_LOG_TRACE("No bottom state successor. Deriving a new predicate using weakest precondition.");
                 
                 // Decode both choices to explicit mappings.
-                std::map<uint_fast64_t, storm::storage::BitVector> lowerChoiceUpdateToSuccessorMapping = abstractionInformation.decodeChoiceToUpdateSuccessorMapping(lowerChoice);
-                std::map<uint_fast64_t, storm::storage::BitVector> upperChoiceUpdateToSuccessorMapping = abstractionInformation.decodeChoiceToUpdateSuccessorMapping(upperChoice);
+                std::map<uint64_t, std::pair<storm::storage::BitVector, ValueType>> lowerChoiceUpdateToSuccessorMapping = abstractionInformation.decodeChoiceToUpdateSuccessorMapping(lowerChoice);
+                std::map<uint64_t, std::pair<storm::storage::BitVector, ValueType>> upperChoiceUpdateToSuccessorMapping = abstractionInformation.decodeChoiceToUpdateSuccessorMapping(upperChoice);
                 STORM_LOG_ASSERT(lowerChoiceUpdateToSuccessorMapping.size() == upperChoiceUpdateToSuccessorMapping.size(), "Mismatching sizes after decode (" << lowerChoiceUpdateToSuccessorMapping.size() << " vs. " << upperChoiceUpdateToSuccessorMapping.size() << ").");
                 
-                // Now go through the mappings and find points of deviation. Currently, we take the first deviation.
-                auto lowerIt = lowerChoiceUpdateToSuccessorMapping.begin();
-                auto lowerIte = lowerChoiceUpdateToSuccessorMapping.end();
-                auto upperIt = upperChoiceUpdateToSuccessorMapping.begin();
-                for (; lowerIt != lowerIte; ++lowerIt, ++upperIt) {
-                    STORM_LOG_ASSERT(lowerIt->first == upperIt->first, "Update indices mismatch.");
-                    uint_fast64_t updateIndex = lowerIt->first;
-                    bool deviates = lowerIt->second != upperIt->second;
+                // First, sort updates according to probability mass.
+                std::vector<std::pair<uint64_t, ValueType>> updateIndicesAndMasses;
+                for (auto const& entry : lowerChoiceUpdateToSuccessorMapping) {
+                    updateIndicesAndMasses.emplace_back(entry.first, entry.second.second);
+                }
+                std::sort(updateIndicesAndMasses.begin(), updateIndicesAndMasses.end(), [] (std::pair<uint64_t, ValueType> const& a, std::pair<uint64_t, ValueType> const& b) { return a.second > b.second; });
+                
+                // Now find the update with the highest probability mass among all deviating updates. More specifically,
+                // we determine the set of predicate indices for which there is a deviation.
+                std::set<uint64_t> deviationPredicates;
+                uint64_t orderedUpdateIndex = 0;
+                std::vector<storm::expressions::Expression> possibleRefinementPredicates;
+                for (; orderedUpdateIndex < updateIndicesAndMasses.size(); ++orderedUpdateIndex) {
+                    storm::storage::BitVector const& lower = lowerChoiceUpdateToSuccessorMapping.at(updateIndicesAndMasses[orderedUpdateIndex].first).first;
+                    storm::storage::BitVector const& upper = upperChoiceUpdateToSuccessorMapping.at(updateIndicesAndMasses[orderedUpdateIndex].first).first;
+                    
+                    bool deviates = lower != upper;
                     if (deviates) {
-                        for (uint_fast64_t predicateIndex = 0; predicateIndex < lowerIt->second.size(); ++predicateIndex) {
-                            if (lowerIt->second.get(predicateIndex) != upperIt->second.get(predicateIndex)) {
-                                // Now we know the point of the deviation (command, update, predicate).
-                                newPredicate = abstractionInformation.getPredicateByIndex(predicateIndex).substitute(abstractor.get().getVariableUpdates(player1Index, updateIndex)).simplify();
-                                break;
+                        std::map<storm::expressions::Variable, storm::expressions::Expression> variableUpdates = abstractor.get().getVariableUpdates(player1Index, updateIndicesAndMasses[orderedUpdateIndex].first);
+
+                        for (uint64_t predicateIndex = 0; predicateIndex < lower.size(); ++predicateIndex) {
+                            if (lower[predicateIndex] != upper[predicateIndex]) {
+                                possibleRefinementPredicates.push_back(abstractionInformation.getPredicateByIndex(predicateIndex).substitute(variableUpdates).simplify());
+                            }
+                        }
+                        ++orderedUpdateIndex;
+                        break;
+                    }
+                }
+                
+                STORM_LOG_ASSERT(!possibleRefinementPredicates.empty(), "Expected refinement predicates.");
+                
+                // Since we can choose any of the deviation predicates to perform the split, we go through the remaining
+                // updates and build all deviation predicates. We can then check whether any of the possible refinement
+                // predicates also eliminates another deviation.
+                std::vector<storm::expressions::Expression> otherRefinementPredicates;
+                for (; orderedUpdateIndex < updateIndicesAndMasses.size(); ++orderedUpdateIndex) {
+                    storm::storage::BitVector const& lower = lowerChoiceUpdateToSuccessorMapping.at(updateIndicesAndMasses[orderedUpdateIndex].first).first;
+                    storm::storage::BitVector const& upper = upperChoiceUpdateToSuccessorMapping.at(updateIndicesAndMasses[orderedUpdateIndex].first).first;
+                    
+                    bool deviates = lower != upper;
+                    if (deviates) {
+                        std::map<storm::expressions::Variable, storm::expressions::Expression> newVariableUpdates = abstractor.get().getVariableUpdates(player1Index, updateIndicesAndMasses[orderedUpdateIndex].first);
+                        for (uint64_t predicateIndex = 0; predicateIndex < lower.size(); ++predicateIndex) {
+                            if (lower[predicateIndex] != upper[predicateIndex]) {
+                                otherRefinementPredicates.push_back(abstractionInformation.getPredicateByIndex(predicateIndex).substitute(newVariableUpdates).simplify());
                             }
                         }
                     }
                 }
+                
+                // Finally, go through the refinement predicates and see how many deviations they cover.
+                std::vector<uint64_t> refinementPredicateIndexToCount(possibleRefinementPredicates.size(), 0);
+                for (uint64_t index = 0; index < possibleRefinementPredicates.size(); ++index) {
+                    refinementPredicateIndexToCount[index] = 1;
+                }
+                for (auto const& otherPredicate : otherRefinementPredicates) {
+                    for (uint64_t index = 0; index < possibleRefinementPredicates.size(); ++index) {
+                        if (equivalenceChecker.areEquivalent(otherPredicate, possibleRefinementPredicates[index])) {
+                            ++refinementPredicateIndexToCount[index];
+                        }
+                    }
+                }
+
+                // Find predicate that covers the most deviations.
+                uint64_t chosenPredicateIndex = 0;
+                for (uint64_t index = 0; index < possibleRefinementPredicates.size(); ++index) {
+                    if (refinementPredicateIndexToCount[index] > refinementPredicateIndexToCount[chosenPredicateIndex]) {
+                        chosenPredicateIndex = index;
+                    }
+                }
+                newPredicate = possibleRefinementPredicates[chosenPredicateIndex];
+
                 STORM_LOG_ASSERT(newPredicate.isInitialized(), "Could not derive new predicate as there is no deviation.");
-                STORM_LOG_DEBUG("Derived new predicate (based on weakest-precondition): " << newPredicate);
+                STORM_LOG_DEBUG("Derived new predicate (based on weakest-precondition): " << newPredicate << ", (equivalent to " << (refinementPredicateIndexToCount[chosenPredicateIndex] - 1) << " other refinement predicates)");
             }
             
             return RefinementPredicates(fromGuard ? RefinementPredicates::Source::Guard : RefinementPredicates::Source::WeakestPrecondition, {newPredicate});
@@ -240,14 +295,16 @@ namespace storm {
             // Then constrain these states by the requirement that for either the lower or upper player 1 choice the player 2 choices must be different and
             // that the difference is not because of a missing strategy in either case.
             
-            // Start with constructing the player 2 states that have a prob 0 (min) and prob 1 (max) strategy.
+            // Start with constructing the player 2 states that have a min and a max strategy.
             storm::dd::Bdd<Type> constraint = minPlayer2Strategy.existsAbstract(game.getPlayer2Variables()) && maxPlayer2Strategy.existsAbstract(game.getPlayer2Variables());
             
             // Now construct all player 2 choices that actually exist and differ in the min and max case.
             constraint &= minPlayer2Strategy.exclusiveOr(maxPlayer2Strategy);
+            minPlayer2Strategy.exclusiveOr(maxPlayer2Strategy).template toAdd<ValueType>().exportToDot("pl2diff.dot");
+            constraint.template toAdd<ValueType>().exportToDot("constraint.dot");
             
             // Then restrict the pivot states by requiring existing and different player 2 choices.
-            result.pivotStates &= ((minPlayer1Strategy && maxPlayer1Strategy) && constraint).existsAbstract(game.getNondeterminismVariables());
+            result.pivotStates &= ((minPlayer1Strategy || maxPlayer1Strategy) && constraint).existsAbstract(game.getNondeterminismVariables());
             
             return result;
         }

@@ -18,6 +18,10 @@
 
 #include "storm/solver/SymbolicGameSolver.h"
 
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/CoreSettings.h"
+#include "storm/settings/modules/AbstractionSettings.h"
+
 #include "storm/utility/solver.h"
 #include "storm/utility/prism.h"
 #include "storm/utility/macros.h"
@@ -37,7 +41,7 @@ namespace storm {
         using storm::abstraction::QuantitativeResultMinMax;
         
         template<storm::dd::DdType Type, typename ModelType>
-        GameBasedMdpModelChecker<Type, ModelType>::GameBasedMdpModelChecker(storm::storage::SymbolicModelDescription const& model, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory) : smtSolverFactory(smtSolverFactory) {
+        GameBasedMdpModelChecker<Type, ModelType>::GameBasedMdpModelChecker(storm::storage::SymbolicModelDescription const& model, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory) : smtSolverFactory(smtSolverFactory), comparator(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getPrecision()) {
             STORM_LOG_THROW(model.isPrismProgram(), storm::exceptions::NotSupportedException, "Currently only PRISM models are supported by the game-based model checker.");
             storm::prism::Program const& originalProgram = model.asPrismProgram();
             STORM_LOG_THROW(originalProgram.getModelType() == storm::prism::Program::ModelType::DTMC || originalProgram.getModelType() == storm::prism::Program::ModelType::MDP, storm::exceptions::NotSupportedException, "Currently only DTMCs/MDPs are supported by the game-based model checker.");
@@ -165,11 +169,11 @@ namespace storm {
         }
         
         template<typename ValueType>
-        std::unique_ptr<CheckResult> checkForResultAfterQuantitativeCheck(CheckTask<storm::logic::Formula> const& checkTask, ValueType const& minValue, ValueType const& maxValue) {
+        std::unique_ptr<CheckResult> checkForResultAfterQuantitativeCheck(CheckTask<storm::logic::Formula> const& checkTask, ValueType const& minValue, ValueType const& maxValue, storm::utility::ConstantsComparator<ValueType> const& comparator) {
             std::unique_ptr<CheckResult> result;
 
             // If the lower and upper bounds are close enough, we can return the result.
-            if (maxValue - minValue < storm::utility::convertNumber<ValueType>(1e-3)) {
+            if (comparator.isEqual(minValue, maxValue)) {
                 result = std::make_unique<storm::modelchecker::ExplicitQuantitativeCheckResult<ValueType>>(storm::storage::sparse::state_type(0), (minValue + maxValue) / ValueType(2));
             }
 
@@ -304,7 +308,7 @@ namespace storm {
                 }
                 
                 // #ifdef LOCAL_DEBUG
-                abstractor.exportToDot("game" + std::to_string(iterations) + ".dot", targetStates, game.getManager().getBddOne());
+                // abstractor.exportToDot("game" + std::to_string(iterations) + ".dot", targetStates, game.getManager().getBddOne());
                 // #endif
                 
                 // (3) compute all states with probability 0/1 wrt. to the two different player 2 goals (min/max).
@@ -312,6 +316,7 @@ namespace storm {
                 QualitativeResultMinMax<Type> qualitativeResult;
                 std::unique_ptr<CheckResult> result = computeProb01States(checkTask, qualitativeResult, game, player1Direction, transitionMatrixBdd, initialStates, constraintStates, targetStates);
                 if (result) {
+                    printStatistics(abstractor, game);
                     return result;
                 }
                 auto qualitativeEnd = std::chrono::high_resolution_clock::now();
@@ -330,6 +335,7 @@ namespace storm {
                     
                     result = checkForResultAfterQualitativeCheck<Type, ValueType>(checkTask, initialStates, qualitativeResult);
                     if (result) {
+                        printStatistics(abstractor, game);
                         return result;
                     } else {
                         STORM_LOG_DEBUG("Obtained qualitative bounds [0, 1] on the actual value for the initial states.");
@@ -355,6 +361,7 @@ namespace storm {
                     quantitativeResult.min = computeQuantitativeResult(player1Direction, storm::OptimizationDirection::Minimize, game, qualitativeResult, initialStatesAdd, maybeMin);
                     result = checkForResultAfterQuantitativeCheck<ValueType>(checkTask, storm::OptimizationDirection::Minimize, quantitativeResult.min.initialStateValue);
                     if (result) {
+                        printStatistics(abstractor, game);
                         return result;
                     }
                     
@@ -362,6 +369,7 @@ namespace storm {
                     quantitativeResult.max = computeQuantitativeResult(player1Direction, storm::OptimizationDirection::Maximize, game, qualitativeResult, initialStatesAdd, maybeMax, boost::make_optional(quantitativeResult.min));
                     result = checkForResultAfterQuantitativeCheck<ValueType>(checkTask, storm::OptimizationDirection::Maximize, quantitativeResult.max.initialStateValue);
                     if (result) {
+                        printStatistics(abstractor, game);
                         return result;
                     }
 
@@ -369,8 +377,9 @@ namespace storm {
                     STORM_LOG_DEBUG("Obtained quantitative bounds [" << quantitativeResult.min.initialStateValue << ", " << quantitativeResult.max.initialStateValue << "] on the actual value for the initial states in " << std::chrono::duration_cast<std::chrono::milliseconds>(quantitativeEnd - quantitativeStart).count() << "ms.");
 
                     // (9) Check whether the lower and upper bounds are close enough to terminate with an answer.
-                    result = checkForResultAfterQuantitativeCheck<ValueType>(checkTask, quantitativeResult.min.initialStateValue, quantitativeResult.max.initialStateValue);
+                    result = checkForResultAfterQuantitativeCheck<ValueType>(checkTask, quantitativeResult.min.initialStateValue, quantitativeResult.max.initialStateValue, comparator);
                     if (result) {
+                        printStatistics(abstractor, game);
                         return result;
                     }
 
@@ -420,15 +429,10 @@ namespace storm {
             qualitativeResult.prob0Min = computeProb01States(true, player1Direction, storm::OptimizationDirection::Minimize, game, transitionMatrixBdd, constraintStates, targetStates);
             qualitativeResult.prob1Min = computeProb01States(false, player1Direction, storm::OptimizationDirection::Minimize, game, transitionMatrixBdd, constraintStates, targetStates);
             std::unique_ptr<CheckResult> result = checkForResultAfterQualitativeCheck<Type, ValueType>(checkTask, storm::OptimizationDirection::Minimize, initialStates, qualitativeResult.prob0Min.getPlayer1States(), qualitativeResult.prob1Min.getPlayer1States());
-            if (result) {
-                return result;
-            }
-            
-            qualitativeResult.prob0Max = computeProb01States(true, player1Direction, storm::OptimizationDirection::Maximize, game, transitionMatrixBdd, constraintStates, targetStates);
-            qualitativeResult.prob1Max = computeProb01States(false, player1Direction, storm::OptimizationDirection::Maximize, game, transitionMatrixBdd, constraintStates, targetStates);
-            result = checkForResultAfterQualitativeCheck<Type, ValueType>(checkTask, storm::OptimizationDirection::Maximize, initialStates, qualitativeResult.prob0Max.getPlayer1States(), qualitativeResult.prob1Max.getPlayer1States());
-            if (result) {
-                return result;
+            if (!result) {
+                qualitativeResult.prob0Max = computeProb01States(true, player1Direction, storm::OptimizationDirection::Maximize, game, transitionMatrixBdd, constraintStates, targetStates);
+                qualitativeResult.prob1Max = computeProb01States(false, player1Direction, storm::OptimizationDirection::Maximize, game, transitionMatrixBdd, constraintStates, targetStates);
+                result = checkForResultAfterQualitativeCheck<Type, ValueType>(checkTask, storm::OptimizationDirection::Maximize, initialStates, qualitativeResult.prob0Max.getPlayer1States(), qualitativeResult.prob1Max.getPlayer1States());
             }
             return result;
         }
@@ -452,6 +456,19 @@ namespace storm {
             STORM_LOG_TRACE("Computed states with probability " << (prob0 ? "0" : "1") << " (player 1: " << player1Direction << ", player 2: " << player2Direction << "): " << result.getPlayer1States().getNonZeroCount() << " '" << (prob0 ? "no" : "yes") << "' states.");
             
             return result;
+        }
+        
+        template<storm::dd::DdType Type, typename ModelType>
+        void GameBasedMdpModelChecker<Type, ModelType>::printStatistics(storm::abstraction::MenuGameAbstractor<Type, ValueType> const& abstractor, storm::abstraction::MenuGame<Type, ValueType> const& game) const {
+            if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
+                storm::abstraction::AbstractionInformation<Type> const& abstractionInformation = abstractor.getAbstractionInformation();
+
+                std::cout << std::endl;
+                std::cout << "Statistics:" << std::endl;
+                std::cout << "    * player 1 states (final game): " << game.getReachableStates().getNonZeroCount() << std::endl;
+                std::cout << "    * transitions (final game): " << game.getTransitionMatrix().getNonZeroCount() << std::endl;
+                std::cout << "    * predicates used in abstraction: " << abstractionInformation.getNumberOfPredicates() << std::endl;
+            }
         }
         
         template<storm::dd::DdType Type, typename ModelType>

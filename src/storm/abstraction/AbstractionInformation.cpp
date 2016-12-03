@@ -14,7 +14,7 @@ namespace storm {
     namespace abstraction {
 
         template<storm::dd::DdType DdType>
-        AbstractionInformation<DdType>::AbstractionInformation(storm::expressions::ExpressionManager& expressionManager, std::unique_ptr<storm::solver::SmtSolver>&& smtSolver, std::shared_ptr<storm::dd::DdManager<DdType>> ddManager) : expressionManager(expressionManager), equivalenceChecker(std::move(smtSolver)), ddManager(ddManager), allPredicateIdentities(ddManager->getBddOne()) {
+        AbstractionInformation<DdType>::AbstractionInformation(storm::expressions::ExpressionManager& expressionManager, std::set<storm::expressions::Variable> const& allVariables, std::unique_ptr<storm::solver::SmtSolver>&& smtSolver, std::shared_ptr<storm::dd::DdManager<DdType>> ddManager) : expressionManager(expressionManager), equivalenceChecker(std::move(smtSolver)), variables(allVariables), ddManager(ddManager), allPredicateIdentities(ddManager->getBddOne()), expressionToBddMap() {
             // Intentionally left empty.
         }
         
@@ -45,6 +45,7 @@ namespace storm {
             for (uint64_t index = 0; index < predicates.size(); ++index) {
                 auto const& oldPredicate = predicates[index];
                 if (equivalenceChecker.areEquivalent(oldPredicate, predicate)) {
+                    expressionToBddMap[predicate] = expressionToBddMap.at(oldPredicate);
                     return index;
                 }
             }
@@ -70,6 +71,8 @@ namespace storm {
             orderedSourceVariables.push_back(newMetaVariable.first);
             orderedSuccessorVariables.push_back(newMetaVariable.second);
             ddVariableIndexToPredicateIndexMap[predicateIdentities.back().getIndex()] = predicateIndex;
+            expressionToBddMap[predicate] = predicateBdds[predicateIndex].first && !bottomStateBdds.first;
+
             return predicateIndex;
         }
 
@@ -311,14 +314,8 @@ namespace storm {
         }
         
         template<storm::dd::DdType DdType>
-        std::map<storm::expressions::Expression, storm::dd::Bdd<DdType>> AbstractionInformation<DdType>::getPredicateToBddMap() const {
-            std::map<storm::expressions::Expression, storm::dd::Bdd<DdType>> result;
-            
-            for (uint_fast64_t index = 0; index < predicates.size(); ++index) {
-                result[predicates[index]] = predicateBdds[index].first && !bottomStateBdds.first;
-            }
-            
-            return result;
+        std::map<storm::expressions::Expression, storm::dd::Bdd<DdType>> const& AbstractionInformation<DdType>::getPredicateToBddMap() const {
+            return expressionToBddMap;
         }
         
         template<storm::dd::DdType DdType>
@@ -446,8 +443,8 @@ namespace storm {
         }
         
         template <storm::dd::DdType DdType>
-        std::map<uint_fast64_t, storm::storage::BitVector> AbstractionInformation<DdType>::decodeChoiceToUpdateSuccessorMapping(storm::dd::Bdd<DdType> const& choice) const {
-            std::map<uint_fast64_t, storm::storage::BitVector> result;
+        std::map<uint_fast64_t, std::pair<storm::storage::BitVector, double>> AbstractionInformation<DdType>::decodeChoiceToUpdateSuccessorMapping(storm::dd::Bdd<DdType> const& choice) const {
+            std::map<uint_fast64_t, std::pair<storm::storage::BitVector, double>> result;
             
             storm::dd::Add<DdType, double> lowerChoiceAsAdd = choice.template toAdd<double>();
             for (auto const& successorValuePair : lowerChoiceAsAdd) {
@@ -461,7 +458,7 @@ namespace storm {
                     }
                 }
                 
-                result[updateIndex] = successor;
+                result[updateIndex] = std::make_pair(successor, successorValuePair.second);
             }
             return result;
         }

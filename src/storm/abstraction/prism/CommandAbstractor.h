@@ -212,7 +212,7 @@ namespace storm {
                 std::reference_wrapper<storm::prism::Command const> command;
                 
                 // The local expression-related information.
-                LocalExpressionInformation localExpressionInformation;
+                LocalExpressionInformation<DdType> localExpressionInformation;
                 
                 // The evaluator used to translate the probability expressions.
                 storm::expressions::ExpressionEvaluator<ValueType> evaluator;

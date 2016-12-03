@@ -14,6 +14,7 @@
 
 #include "storm/logic/Bound.h"
 
+#include "storm/utility/ConstantsComparator.h"
 #include "storm/utility/solver.h"
 #include "storm/utility/graph.h"
 
@@ -21,6 +22,9 @@ namespace storm {
     namespace abstraction {
         template<storm::dd::DdType Type, typename ValueType>
         class MenuGame;
+
+        template<storm::dd::DdType Type, typename ValueType>
+        class MenuGameAbstractor;
     }
     
     namespace modelchecker {
@@ -70,6 +74,8 @@ namespace storm {
             std::unique_ptr<CheckResult> computeProb01States(CheckTask<storm::logic::Formula> const& checkTask, QualitativeResultMinMax<Type>& qualitativeResult, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::OptimizationDirection player1Direction, storm::dd::Bdd<Type> const& transitionMatrixBdd, storm::dd::Bdd<Type> const& initialStates, storm::dd::Bdd<Type> const& constraintStates, storm::dd::Bdd<Type> const& targetStates);
             QualitativeResult<Type> computeProb01States(bool prob0, storm::OptimizationDirection player1Direction, storm::OptimizationDirection player2Direction, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& transitionMatrixBdd, storm::dd::Bdd<Type> const& constraintStates, storm::dd::Bdd<Type> const& targetStates);
             
+            void printStatistics(storm::abstraction::MenuGameAbstractor<Type, ValueType> const& abstractor, storm::abstraction::MenuGame<Type, ValueType> const& game) const;
+            
             /*
              * Retrieves the expression characterized by the formula. The formula needs to be propositional.
              */
@@ -81,6 +87,9 @@ namespace storm {
             
             /// A factory that is used for creating SMT solvers when needed.
             std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory;
+            
+            /// A comparator that can be used for detecting convergence.
+            storm::utility::ConstantsComparator<ValueType> comparator;
         };
     }
 }

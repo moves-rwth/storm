@@ -31,16 +31,13 @@ namespace storm {
             template <storm::dd::DdType DdType, typename ValueType>
             PrismMenuGameAbstractor<DdType, ValueType>::PrismMenuGameAbstractor(storm::prism::Program const& program,
                                                                 std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory)
-            : program(program), smtSolverFactory(smtSolverFactory), abstractionInformation(program.getManager(), smtSolverFactory->create(program.getManager())), modules(), initialStateAbstractor(abstractionInformation, program.getAllExpressionVariables(), {program.getInitialStatesExpression()}, this->smtSolverFactory), currentGame(nullptr), refinementPerformed(false) {
+            : program(program), smtSolverFactory(smtSolverFactory), abstractionInformation(program.getManager(), program.getAllExpressionVariables(), smtSolverFactory->create(program.getManager())), modules(), initialStateAbstractor(abstractionInformation, {program.getInitialStatesExpression()}, this->smtSolverFactory), currentGame(nullptr), refinementPerformed(false) {
                 
                 // For now, we assume that there is a single module. If the program has more than one module, it needs
                 // to be flattened before the procedure.
                 STORM_LOG_THROW(program.getNumberOfModules() == 1, storm::exceptions::WrongFormatException, "Cannot create abstract program from program containing too many modules.");
                 
-                // Add all variables and range expressions to the information object.
-                for (auto const& variable : this->program.get().getAllExpressionVariables()) {
-                    abstractionInformation.addExpressionVariable(variable);
-                }
+                // Add all variables range expressions to the information object.
                 for (auto const& range : this->program.get().getAllRangeExpressions()) {
                     abstractionInformation.addConstraint(range);
                     initialStateAbstractor.constrain(range);
@@ -162,11 +159,8 @@ namespace storm {
                 
                 // Compute bottom states and the appropriate transitions if necessary.
                 BottomStateResult<DdType> bottomStateResult(abstractionInformation.getDdManager().getBddZero(), abstractionInformation.getDdManager().getBddZero());
-                bool hasBottomStates = false;
-                if (!addedAllGuards) {
-                    bottomStateResult = modules.front().getBottomStateTransitions(reachableStates, game.numberOfPlayer2Variables);
-                    hasBottomStates = !bottomStateResult.states.isZero();
-                }
+                bottomStateResult = modules.front().getBottomStateTransitions(reachableStates, game.numberOfPlayer2Variables);
+                bool hasBottomStates = !bottomStateResult.states.isZero();
                 
                 // Construct the transition matrix by cutting away the transitions of unreachable states.
                 storm::dd::Add<DdType, ValueType> transitionMatrix = (game.bdd && reachableStates).template toAdd<ValueType>();

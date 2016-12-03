@@ -47,12 +47,11 @@ namespace storm {
              * Creates a state set abstractor.
              *
              * @param abstractionInformation An object storing information about the abstraction such as predicates and BDDs.
-             * @param allVariables All variables that appear in the predicates.
              * @param statePredicates A set of predicates that have to hold in the concrete states this abstractor is
              * supposed to abstract.
              * @param smtSolverFactory A factory that can create new SMT solvers.
              */
-            StateSetAbstractor(AbstractionInformation<DdType>& abstractionInformation, std::set<storm::expressions::Variable> const& allVariables, std::vector<storm::expressions::Expression> const& statePredicates, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
+            StateSetAbstractor(AbstractionInformation<DdType>& abstractionInformation, std::vector<storm::expressions::Expression> const& statePredicates, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
             
             /*!
              * Refines the abstractor by making the given predicates new abstract predicates.
@@ -135,7 +134,7 @@ namespace storm {
             std::reference_wrapper<AbstractionInformation<DdType>> abstractionInformation;
             
             // The local expression-related information.
-            LocalExpressionInformation localExpressionInformation;
+            LocalExpressionInformation<DdType> localExpressionInformation;
             
             // The set of relevant predicates and the corresponding decision variables.
             std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>> relevantPredicatesAndVariables;
