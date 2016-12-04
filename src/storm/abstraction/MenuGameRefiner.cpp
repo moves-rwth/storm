@@ -9,6 +9,8 @@
 
 #include "storm/solver/MathsatSmtSolver.h"
 
+#include "storm/models/symbolic/StandardRewardModel.h"
+
 #include "storm/exceptions/InvalidStateException.h"
 
 #include "storm/settings/SettingsManager.h"
