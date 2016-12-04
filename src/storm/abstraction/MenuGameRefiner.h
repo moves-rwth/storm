@@ -16,6 +16,8 @@
 
 #include "storm/storage/dd/DdType.h"
 
+#include "storm/settings/modules/AbstractionSettings.h"
+
 #include "storm/utility/solver.h"
 
 namespace storm {
@@ -44,13 +46,22 @@ namespace storm {
             Source source;
             std::vector<storm::expressions::Expression> predicates;
         };
+
+        template<storm::dd::DdType Type, typename ValueType>
+        struct MostProbablePathsResult {
+            MostProbablePathsResult(storm::dd::Add<Type, ValueType> const& maxProbabilities, storm::dd::Bdd<Type> const& spanningTree);
+            
+            storm::dd::Add<Type, ValueType> maxProbabilities;
+            storm::dd::Bdd<Type> spanningTree;
+        };
         
-        template<storm::dd::DdType Type>
+        template<storm::dd::DdType Type, typename ValueType>
         struct PivotStateResult {
-            PivotStateResult(storm::dd::Bdd<Type> const& pivotState, storm::OptimizationDirection fromDirection);
+            PivotStateResult(storm::dd::Bdd<Type> const& pivotState, storm::OptimizationDirection fromDirection, boost::optional<MostProbablePathsResult<Type, ValueType>> const& mostProbablePathsResult = boost::none);
             
             storm::dd::Bdd<Type> pivotState;
             storm::OptimizationDirection fromDirection;
+            boost::optional<MostProbablePathsResult<Type, ValueType>> mostProbablePathsResult;
         };
         
         template<storm::dd::DdType Type, typename ValueType>
@@ -96,7 +107,7 @@ namespace storm {
              */
             std::vector<RefinementCommand> createGlobalRefinement(std::vector<storm::expressions::Expression> const& predicates) const;
             
-            boost::optional<RefinementPredicates> derivePredicatesFromInterpolation(storm::abstraction::MenuGame<Type, ValueType> const& game, PivotStateResult<Type> const& pivotStateResult, storm::dd::Bdd<Type> const& minPlayer1Strategy, storm::dd::Bdd<Type> const& minPlayer2Strategy, storm::dd::Bdd<Type> const& maxPlayer1Strategy, storm::dd::Bdd<Type> const& maxPlayer2Strategy) const;
+            boost::optional<RefinementPredicates> derivePredicatesFromInterpolation(storm::abstraction::MenuGame<Type, ValueType> const& game, PivotStateResult<Type, ValueType> const& pivotStateResult, storm::dd::Bdd<Type> const& minPlayer1Strategy, storm::dd::Bdd<Type> const& minPlayer2Strategy, storm::dd::Bdd<Type> const& maxPlayer1Strategy, storm::dd::Bdd<Type> const& maxPlayer2Strategy) const;
             std::pair<std::vector<std::vector<storm::expressions::Expression>>, std::map<storm::expressions::Variable, storm::expressions::Expression>> buildTrace(storm::expressions::ExpressionManager& expressionManager, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& spanningTree, storm::dd::Bdd<Type> const& pivotState) const;
             
             void performRefinement(std::vector<RefinementCommand> const& refinementCommands) const;
@@ -119,6 +130,9 @@ namespace storm {
             /// A flag indicating whether the initially added guards shall be split before using them for refinement.
             bool splitInitialGuards;
 
+            /// The heuristic to use for pivot block selection.
+            storm::settings::modules::AbstractionSettings::PivotSelectionHeuristic pivotSelectionHeuristic;
+            
             /// An object that can be used for splitting predicates.
             mutable storm::expressions::PredicateSplitter splitter;
             

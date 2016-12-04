@@ -18,6 +18,7 @@ namespace storm {
             const std::string AbstractionSettings::splitInterpolantsOptionName = "split-interpolants";
             const std::string AbstractionSettings::splitAllOptionName = "split-all";
             const std::string AbstractionSettings::precisionOptionName = "precision";
+            const std::string AbstractionSettings::pivotHeuristicOptionName = "pivot-heuristic";
 
             AbstractionSettings::AbstractionSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, addAllGuardsOptionName, true, "Sets whether all guards are added as initial predicates.").build());
@@ -27,6 +28,9 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, splitAllOptionName, true, "Sets whether all predicates are split into atoms before they are added.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, useInterpolationOptionName, true, "Sets whether interpolation is to be used to eliminate spurious pivot blocks.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, precisionOptionName, true, "The precision used for detecting convergence.").addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to achieve.").setDefaultValueDouble(1e-03).addValidationFunctionDouble(storm::settings::ArgumentValidators::doubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
+                std::vector<std::string> pivotHeuristic = {"nearest-max-dev", "most-prob-path", "max-weighted-dev"};
+                this->addOption(storm::settings::OptionBuilder(moduleName, pivotHeuristicOptionName, true, "Sets the pivot selection heuristic.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of an available heuristic. Available are: 'nearest-max-dev', 'most-prob-path' and 'max-weighted-dev'.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(pivotHeuristic)).setDefaultValueString("max-weighted-dev").build()).build());
             }
             
             bool AbstractionSettings::isAddAllGuardsSet() const {
@@ -55,6 +59,18 @@ namespace storm {
             
             double AbstractionSettings::getPrecision() const {
                 return this->getOption(precisionOptionName).getArgumentByName("value").getValueAsDouble();
+            }
+            
+            AbstractionSettings::PivotSelectionHeuristic AbstractionSettings::getPivotSelectionHeuristic() const {
+                std::string heuristicName = this->getOption(pivotHeuristicOptionName).getArgumentByName("name").getValueAsString();
+                if (heuristicName == "nearest-max-dev") {
+                    return AbstractionSettings::PivotSelectionHeuristic::NearestMaximalDeviation;
+                } else if (heuristicName == "most-prob-path") {
+                    return AbstractionSettings::PivotSelectionHeuristic::MostProbablePath;
+                } else if (heuristicName == "max-weighted-dev") {
+                    return AbstractionSettings::PivotSelectionHeuristic::MaxWeightedDeviation;
+                }
+                STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown pivot selection heuristic '" << heuristicName << "'.");
             }
         }
     }

@@ -11,6 +11,10 @@ namespace storm {
              */
             class AbstractionSettings : public ModuleSettings {
             public:
+                enum class PivotSelectionHeuristic {
+                    NearestMaximalDeviation, MostProbablePath, MaxWeightedDeviation
+                };
+                
                 /*!
                  * Creates a new set of abstraction settings.
                  */
@@ -64,6 +68,13 @@ namespace storm {
                  * @return The precision to use for detecting convergence.
                  */
                 double getPrecision() const;
+                
+                /*!
+                 * Retrieves the selected heuristic to select pivot blocks.
+                 *
+                 * @return The selected heuristic.
+                 */
+                PivotSelectionHeuristic getPivotSelectionHeuristic() const;
 
                 const static std::string moduleName;
                 
@@ -76,6 +87,7 @@ namespace storm {
                 const static std::string splitInterpolantsOptionName;
                 const static std::string splitAllOptionName;
                 const static std::string precisionOptionName;
+                const static std::string pivotHeuristicOptionName;
             };
             
         }
