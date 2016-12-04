@@ -270,12 +270,12 @@ namespace storm {
 
 #ifdef STORM_HAVE_CARL
     template<>
-    inline void generateCounterexample(storm::storage::SymbolicModelDescription const& model, std::shared_ptr<storm::models::sparse::Model<storm::RationalNumber>> markovModel, std::shared_ptr<storm::logic::Formula const> const& formula) {
+    inline void generateCounterexample(storm::storage::SymbolicModelDescription const&, std::shared_ptr<storm::models::sparse::Model<storm::RationalNumber>> , std::shared_ptr<storm::logic::Formula const> const& ) {
         STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unable to generate counterexample for exact arithmetic model.");
     }
 
     template<>
-    inline void generateCounterexample(storm::storage::SymbolicModelDescription const& model, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> markovModel, std::shared_ptr<storm::logic::Formula const> const& formula) {
+    inline void generateCounterexample(storm::storage::SymbolicModelDescription const&, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> , std::shared_ptr<storm::logic::Formula const> const& ) {
         STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unable to generate counterexample for parametric model.");
     }
 #endif

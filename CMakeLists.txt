@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 2.8.6)
+cmake_minimum_required (VERSION 3.2)
 cmake_policy(VERSION 3.2)
 
 # Set project name
@@ -168,6 +168,7 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
 	message(FATAL_ERROR "Visual Studio compiler is currently not supported.")
 endif()
+set(STORM_COMPILER_VERSION ${CMAKE_CXX_COMPILER_VERSION})
 
 if(CCACHE_FOUND)
 	set(STORM_COMPILER_ID "${STORM_COMPILER_ID} (ccache)")
@@ -260,7 +261,7 @@ if ("${CMAKE_GENERATOR}" STREQUAL "Xcode")
 endif()
 
 # Display information about build configuration.
-message(STATUS "Storm - Using compiler configuration ${STORM_COMPILER_ID}.")
+message(STATUS "Storm - Using compiler configuration ${STORM_COMPILER_ID} ${STORM_COMPILER_VERSION}.")
 if (STORM_DEVELOPER)
 	message(STATUS "Storm - CXX Flags: ${CMAKE_CXX_FLAGS}")
 	message(STATUS "Storm - CXX Debug Flags: ${CMAKE_CXX_FLAGS_DEBUG}")

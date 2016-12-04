@@ -35,7 +35,7 @@ namespace storm {
              * @param expression The expression to translate.
              * @return An equivalent expression for Smt2.
              */
-            std::string translateExpression(storm::expressions::Expression const& expression) {
+            std::string translateExpression(storm::expressions::Expression const& ) {
                 STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "functionality not (yet) implemented");
             }
             
@@ -98,7 +98,7 @@ namespace storm {
              * @param variable The variable to translate.
              * @return An equivalent expression for smt2.
              */
-            std::string translateExpression(storm::expressions::Variable const& variable) {
+            std::string translateExpression(storm::expressions::Variable const& ) {
                 STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "functionality not (yet) implemented");
             }
             
@@ -108,7 +108,7 @@ namespace storm {
              * @param smt2Declaration The declaration for which to find the equivalent.
              * @return The equivalent counterpart.
              */
-            storm::expressions::Variable const& getVariable(std::string smt2Declaration) {
+            storm::expressions::Variable const& getVariable(std::string const&) {
                 STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "functionality not (yet) implemented");
             }
             

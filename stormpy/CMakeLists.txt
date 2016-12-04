@@ -1,6 +1,3 @@
-find_package(PythonInterp REQUIRED)
-find_package(PythonLibs REQUIRED)
-
 set(STORMPY_OUTPUT_DIR "${PROJECT_BINARY_DIR}/stormpy")
 set(STORMPY_SOURCE_DIR "${PROJECT_SOURCE_DIR}/stormpy")
 

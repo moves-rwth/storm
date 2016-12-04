@@ -10,8 +10,6 @@ register_source_groups_from_filestructure("${ALL_FILES}" storm)
 file(GLOB_RECURSE STORM_HEADERS ${PROJECT_SOURCE_DIR}/src/storm/*.h)
 file(GLOB_RECURSE STORM_SOURCES_WITHOUT_MAIN ${PROJECT_SOURCE_DIR}/src/storm/*/*.cpp)
 file(GLOB_RECURSE STORM_MAIN_FILE ${PROJECT_SOURCE_DIR}/src/storm/storm.cpp)
-file(GLOB_RECURSE STORM_DFT_MAIN_FILE ${PROJECT_SOURCE_DIR}/src/storm/storm-dyftee.cpp)
-file(GLOB_RECURSE STORM_GSPN_MAIN_FILE ${PROJECT_SOURCE_DIR}/src/storm/storm-gspn.cpp)
 
 # Additional include files like the storm-config.h
 file(GLOB_RECURSE STORM_BUILD_HEADERS ${PROJECT_BINARY_DIR}/include/*.h)
@@ -19,8 +17,6 @@ file(GLOB_RECURSE STORM_BUILD_HEADERS ${PROJECT_BINARY_DIR}/include/*.h)
 set(STORM_LIB_SOURCES ${STORM_SOURCES_WITHOUT_MAIN})
 set(STORM_LIB_HEADERS ${STORM_HEADERS})
 set(STORM_MAIN_SOURCES  ${STORM_MAIN_FILE})
-set(STORM_DFT_MAIN_SOURCES ${STORM_DFT_MAIN_FILE})
-set(STORM_GSPN_MAIN_SOURCES ${STORM_GSPN_MAIN_FILE})
 
 # Add custom additional include or link directories
 if (ADDITIONAL_INCLUDE_DIRS)
@@ -50,14 +46,6 @@ add_executable(storm-main ${STORM_MAIN_SOURCES} ${STORM_MAIN_HEADERS})
 target_link_libraries(storm-main storm)
 set_target_properties(storm-main PROPERTIES OUTPUT_NAME "storm")
 
-# Create storm-dft.
-add_executable(storm-dft-main ${STORM_DFT_MAIN_SOURCES} ${STORM_MAIN_HEADERS})
-target_link_libraries(storm-dft-main storm) # Adding headers for xcode
-set_target_properties(storm-dft-main PROPERTIES OUTPUT_NAME "storm-dft")
-
-add_executable(storm-gspn-main ${STORM_GSPN_MAIN_SOURCES} ${STORM_MAIN_HEADERS})
-target_link_libraries(storm-gspn-main storm) # Adding headers for xcode
-set_target_properties(storm-gspn-main PROPERTIES OUTPUT_NAME "storm-gspn")
 
 # Install storm headers to include directory.
 foreach(HEADER ${STORM_LIB_HEADERS})
