@@ -49,6 +49,7 @@ namespace storm {
 
         template<storm::dd::DdType Type, typename ValueType>
         struct MostProbablePathsResult {
+            MostProbablePathsResult() = default;
             MostProbablePathsResult(storm::dd::Add<Type, ValueType> const& maxProbabilities, storm::dd::Bdd<Type> const& spanningTree);
             
             storm::dd::Add<Type, ValueType> maxProbabilities;

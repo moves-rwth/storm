@@ -294,8 +294,10 @@ namespace storm {
                 STORM_LOG_TRACE("Starting iteration " << iterations << ".");
 
                 // (1) build initial abstraction based on the the constraint expression (if not 'true') and the target state expression.
+                auto abstractionStart = std::chrono::high_resolution_clock::now();
                 storm::abstraction::MenuGame<Type, ValueType> game = abstractor.abstract();
-                STORM_LOG_DEBUG("Abstraction in iteration " << iterations << " has " << game.getNumberOfStates() << " (player 1) states and " << game.getNumberOfTransitions() << " transitions.");
+                auto abstractionEnd = std::chrono::high_resolution_clock::now();
+                STORM_LOG_DEBUG("Abstraction in iteration " << iterations << " has " << game.getNumberOfStates() << " (player 1) states and " << game.getNumberOfTransitions() << " transitions (computed in " << std::chrono::duration_cast<std::chrono::milliseconds>(abstractionEnd - abstractionStart).count() << "ms).");
                 STORM_LOG_THROW(game.getInitialStates().getNonZeroCount(), storm::exceptions::InvalidModelException, "Cannot treat models with more than one (abstract) initial state.");
                 
                 // (2) Prepare transition matrix BDD and target state BDD for later use.
@@ -340,9 +342,12 @@ namespace storm {
                     } else {
                         STORM_LOG_DEBUG("Obtained qualitative bounds [0, 1] on the actual value for the initial states.");
                         
+                        auto qualitativeRefinementStart = std::chrono::high_resolution_clock::now();
                         // If we get here, the initial states were all identified as prob0/1 states, but the value (0 or 1)
                         // depends on whether player 2 is minimizing or maximizing. Therefore, we need to find a place to refine.
                         qualitativeRefinement = refiner.refine(game, transitionMatrixBdd, qualitativeResult);
+                        auto qualitativeRefinementEnd = std::chrono::high_resolution_clock::now();
+                        STORM_LOG_DEBUG("Qualitative refinement completed in " << std::chrono::duration_cast<std::chrono::milliseconds>(qualitativeRefinementEnd - qualitativeRefinementStart).count() << "ms.");
                     }
                 }
                 
@@ -389,9 +394,13 @@ namespace storm {
                     STORM_LOG_ASSERT(quantitativeResult.min.player2Strategy.isZero() || quantitativeResult.min.player2Strategy.template toAdd<ValueType>().sumAbstract(game.getPlayer2Variables()).getMax() <= 1, "Player 2 strategy for min is illegal.");
                     STORM_LOG_ASSERT(quantitativeResult.max.player2Strategy.isZero() || quantitativeResult.max.player2Strategy.template toAdd<ValueType>().sumAbstract(game.getPlayer2Variables()).getMax() <= 1, "Player 2 strategy for max is illegal.");
 
+                    auto quantitativeRefinementStart = std::chrono::high_resolution_clock::now();
                     // (10) If we arrived at this point, it means that we have all qualitative and quantitative
                     // information about the game, but we could not yet answer the query. In this case, we need to refine.
                     refiner.refine(game, transitionMatrixBdd, quantitativeResult);
+                    auto quantitativeRefinementEnd = std::chrono::high_resolution_clock::now();
+                    STORM_LOG_DEBUG("Quantitative refinement completed in " << std::chrono::duration_cast<std::chrono::milliseconds>(quantitativeRefinementEnd - quantitativeRefinementStart).count() << "ms.");
+
                 }
                 auto iterationEnd = std::chrono::high_resolution_clock::now();
                 STORM_LOG_DEBUG("Iteration " << iterations << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(iterationEnd - iterationStart).count() << "ms.");

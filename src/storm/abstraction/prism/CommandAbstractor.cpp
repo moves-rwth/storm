@@ -222,10 +222,13 @@ namespace storm {
             template <storm::dd::DdType DdType, typename ValueType>
             storm::dd::Bdd<DdType> CommandAbstractor<DdType, ValueType>::getSourceStateBdd(storm::solver::SmtSolver::ModelReference const& model) const {
                 storm::dd::Bdd<DdType> result = this->getAbstractionInformation().getDdManager().getBddOne();
+//                std::cout << "new model ----------------" << std::endl;
                 for (auto const& variableIndexPair : relevantPredicatesAndVariables.first) {
                     if (model.getBooleanValue(variableIndexPair.first)) {
+//                        std::cout << this->getAbstractionInformation().getPredicateByIndex(variableIndexPair.second) << " is true" << std::endl;
                         result &= this->getAbstractionInformation().encodePredicateAsSource(variableIndexPair.second);
                     } else {
+//                        std::cout << this->getAbstractionInformation().getPredicateByIndex(variableIndexPair.second) << " is false" << std::endl;
                         result &= !this->getAbstractionInformation().encodePredicateAsSource(variableIndexPair.second);
                     }
                 }

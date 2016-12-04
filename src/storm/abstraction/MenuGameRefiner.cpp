@@ -357,8 +357,6 @@ namespace storm {
             
             // Now construct all player 2 choices that actually exist and differ in the min and max case.
             constraint &= minPlayer2Strategy.exclusiveOr(maxPlayer2Strategy);
-            minPlayer2Strategy.exclusiveOr(maxPlayer2Strategy).template toAdd<ValueType>().exportToDot("pl2diff.dot");
-            constraint.template toAdd<ValueType>().exportToDot("constraint.dot");
             
             // Then restrict the pivot states by requiring existing and different player 2 choices.
             result.pivotStates &= ((minPlayer1Strategy || maxPlayer1Strategy) && constraint).existsAbstract(game.getNondeterminismVariables());
@@ -502,7 +500,12 @@ namespace storm {
             AbstractionInformation<Type> const& abstractionInformation = abstractor.get().getAbstractionInformation();
             
             // Compute the most probable path from any initial state to the pivot state.
-            MostProbablePathsResult<Type, ValueType> mostProbablePathsResult = getMostProbablePathSpanningTree(game, pivotStateResult.fromDirection == storm::OptimizationDirection::Minimize ? minPlayer1Strategy && minPlayer2Strategy : maxPlayer1Strategy && maxPlayer2Strategy);
+            MostProbablePathsResult<Type, ValueType> mostProbablePathsResult;
+            if (!pivotStateResult.mostProbablePathsResult) {
+                mostProbablePathsResult = getMostProbablePathSpanningTree(game, pivotStateResult.fromDirection == storm::OptimizationDirection::Minimize ? minPlayer1Strategy && minPlayer2Strategy : maxPlayer1Strategy && maxPlayer2Strategy);
+            } else {
+                mostProbablePathsResult = pivotStateResult.mostProbablePathsResult.get();
+            }
             
             // Create a new expression manager that we can use for the interpolation.
             std::shared_ptr<storm::expressions::ExpressionManager> interpolationManager = abstractionInformation.getExpressionManager().clone();
@@ -703,6 +706,7 @@ namespace storm {
         template<storm::dd::DdType Type, typename ValueType>
         void MenuGameRefiner<Type, ValueType>::performRefinement(std::vector<RefinementCommand> const& refinementCommands) const {
             for (auto const& command : refinementCommands) {
+                STORM_LOG_TRACE("Refining with " << command.getPredicates().size() << " predicates.");
                 abstractor.get().refine(command);
             }
             

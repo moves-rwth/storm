@@ -465,7 +465,6 @@ namespace storm {
         
         template <storm::dd::DdType DdType>
         std::tuple<storm::storage::BitVector, uint64_t, uint64_t> AbstractionInformation<DdType>::decodeStatePlayer1ChoiceAndUpdate(storm::dd::Bdd<DdType> const& stateChoiceAndUpdate) const {
-            stateChoiceAndUpdate.template toAdd<double>().exportToDot("out.dot");
             STORM_LOG_ASSERT(stateChoiceAndUpdate.getNonZeroCount() == 1, "Wrong number of non-zero entries.");
             
             storm::storage::BitVector statePredicates(this->getNumberOfPredicates());
