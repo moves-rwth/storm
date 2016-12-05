@@ -13,6 +13,8 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/resources/cmak
 
 include(ExternalProject)
 include(RegisterSourceGroup)
+include(imported)
+
 
 #############################################################
 ##

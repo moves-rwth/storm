@@ -95,7 +95,8 @@ set(STORM_BOOST_INCLUDE_DIR "${Boost_INCLUDE_DIRS}")
 
 # Use the shipped version of ExprTK
 message (STATUS "Storm - Including ExprTk.")
-include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/exprtk")
+add_imported_library_interface(ExprTk "${PROJECT_SOURCE_DIR}/resources/3rdparty/exprtk")
+list(APPEND STORM_LINK_LIBRARIES ExprTk)
 
 #############################################################
 ##
@@ -124,7 +125,8 @@ list(APPEND STORM_RESOURCES_HEADERS "${CMAKE_BINARY_DIR}/include/resources/3rdpa
 
 #use the shipped version of modernjson
 message (STATUS "Storm - Including ModernJSON.")
-include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/modernjson/src/")
+add_imported_library_interface(ModernJSON "${PROJECT_SOURCE_DIR}/resources/3rdparty/modernjson/src/")
+list(APPEND STORM_LINK_LIBRARIES ModernJSON)
 
 #############################################################
 ##
@@ -218,7 +220,7 @@ if(USE_CARL)
         message(STATUS "Storm - Use system version of carl.")
         message(STATUS "Storm - Linking with carl ${carl_VERSION} (CARL_USE_CLN_NUMBERS: ${CARL_USE_CLN_NUMBERS}).")
         include_directories("${carl_INCLUDE_DIR}")
-        list(APPEND STORM_LINK_LIBRARIES ${carl_LIBRARIES})
+        list(APPEND STORM_LINK_LIBRARIES lib_carl)
     else()
         message(STATUS "Storm - Using shipped version of carl.")
         set(CARL_BUILD_COMMAND make lib_carl)
@@ -293,26 +295,6 @@ if(USE_HYPRO)
 	endif()
 endif()
 
-
-
-#############################################################
-##
-##      GiNaC
-##
-#############################################################
-
-find_package(GiNaC QUIET)
-
-if(GINAC_FOUND)
-    set(STORM_HAVE_GINAC ON)
-    message(STATUS "Storm - Linking with GiNaC ${GINAC_VERSION_STRING}.")
-    # Right now only link with GiNaC for carl
-    #include_directories("${GINAC_INCLUDE_DIR}")
-    list(APPEND STORM_LINK_LIBRARIES ${GINAC_LIBRARIES})
-else()
-    set(STORM_HAVE_GINAC OFF)
-    #TODO: Check if CARL actually requires the use of GiNaC
-endif()
 
 
 #############################################################

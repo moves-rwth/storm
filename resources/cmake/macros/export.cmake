@@ -16,7 +16,7 @@ endforeach()
 
 include(CMakePackageConfigHelpers)
 
-set(CONF_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/src")
+set(CONF_INCLUDE_DIRS "${CMAKE_BINARY_DIR}/include/")
 message("CMAKE_INSTALL_DIR: ${CMAKE_INSTALL_DIR}")
 configure_package_config_file(
         resources/cmake/stormConfig.cmake.in
