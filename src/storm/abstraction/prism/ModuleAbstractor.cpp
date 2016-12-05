@@ -9,6 +9,8 @@
 
 #include "storm/storage/prism/Module.h"
 
+#include "storm/settings/SettingsManager.h"
+
 #include "storm-config.h"
 #include "storm/adapters/CarlAdapter.h"
 
@@ -18,12 +20,19 @@ namespace storm {
     namespace abstraction {
         namespace prism {
             
+            using storm::settings::modules::AbstractionSettings;
+            
             template <storm::dd::DdType DdType, typename ValueType>
-            ModuleAbstractor<DdType, ValueType>::ModuleAbstractor(storm::prism::Module const& module, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool allGuardsAdded) : smtSolverFactory(smtSolverFactory), abstractionInformation(abstractionInformation), commands(), module(module) {
+            ModuleAbstractor<DdType, ValueType>::ModuleAbstractor(storm::prism::Module const& module, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, storm::settings::modules::AbstractionSettings::InvalidBlockDetectionStrategy invalidBlockDetectionStrategy) : smtSolverFactory(smtSolverFactory), abstractionInformation(abstractionInformation), commands(), module(module) {
+                
+                bool allowInvalidSuccessorsInCommands = false;
+                if (invalidBlockDetectionStrategy == AbstractionSettings::InvalidBlockDetectionStrategy::None || invalidBlockDetectionStrategy == AbstractionSettings::InvalidBlockDetectionStrategy::Global) {
+                    allowInvalidSuccessorsInCommands = true;
+                }
                 
                 // For each concrete command, we create an abstract counterpart.
                 for (auto const& command : module.getCommands()) {
-                    commands.emplace_back(command, abstractionInformation, smtSolverFactory, allGuardsAdded);
+                    commands.emplace_back(command, abstractionInformation, smtSolverFactory, allowInvalidSuccessorsInCommands);
                 }
             }
             

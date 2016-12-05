@@ -30,9 +30,9 @@ namespace storm {
              * Adds the expression and therefore indirectly may cause blocks of variables to be merged.
              *
              * @param globalExpressionIndex The global index of the expression.
-             * @return True iff the partition changed.
+             * @return A mapping from old block indices to the new ones (after possible merges).
              */
-            bool addExpression(uint_fast64_t globalExpressionIndex);
+            std::map<uint64_t, uint64_t> addExpression(uint_fast64_t globalExpressionIndex);
             
             /*!
              * Retrieves whether the two given variables are in the same block of the partition.
@@ -48,17 +48,17 @@ namespace storm {
              *
              * @param firstVariable The first variable.
              * @param secondVariable The second variable.
-             * @return True iff the partition changed.
+             * @return A mapping from old block indices to the new ones (after possible merges).
              */
-            bool relate(storm::expressions::Variable const& firstVariable, storm::expressions::Variable const& secondVariable);
+            std::map<uint64_t, uint64_t> relate(storm::expressions::Variable const& firstVariable, storm::expressions::Variable const& secondVariable);
             
             /*!
              * Places the given variables in the same block of the partition and performs the implied merges.
              *
              * @param variables The variables to relate.
-             * @return True iff the partition changed.
+             * @return A mapping from old block indices to the new ones (after possible merges).
              */
-            bool relate(std::set<storm::expressions::Variable> const& variables);
+            std::map<uint64_t, uint64_t> relate(std::set<storm::expressions::Variable> const& variables);
             
             /*!
              * Retrieves the block of related variables of the given variable.
@@ -123,6 +123,13 @@ namespace storm {
              */
             std::set<uint_fast64_t> getExpressionsUsingVariables(std::set<storm::expressions::Variable> const& variables) const;
             
+            /*!
+             * Retrieves the expression block with the given index.
+             *
+             * @return The requested expression block.
+             */
+            std::set<uint_fast64_t> const& getExpressionBlock(uint64_t index) const;
+            
             template<storm::dd::DdType DdTypePrime>
             friend std::ostream& operator<<(std::ostream& out, LocalExpressionInformation<DdTypePrime> const& partition);
             
@@ -131,8 +138,9 @@ namespace storm {
              * Merges the blocks with the given indices.
              *
              * @param blocksToMerge The indices of the blocks to merge.
+             * @return A mapping from old block indices to the new ones (after possible merges).
              */
-            void mergeBlocks(std::set<uint_fast64_t> const& blocksToMerge);
+            std::map<uint64_t, uint64_t> mergeBlocks(std::set<uint_fast64_t> const& blocksToMerge);
             
             // The set of variables relevant for this partition.
             std::set<storm::expressions::Variable> relevantVariables;

@@ -23,7 +23,7 @@ namespace storm {
     namespace abstraction {
         namespace prism {
             template <storm::dd::DdType DdType, typename ValueType>
-            CommandAbstractor<DdType, ValueType>::CommandAbstractor(storm::prism::Command const& command, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool guardIsPredicate) : smtSolver(smtSolverFactory->create(abstractionInformation.getExpressionManager())), abstractionInformation(abstractionInformation), command(command), localExpressionInformation(abstractionInformation), evaluator(abstractionInformation.getExpressionManager()), relevantPredicatesAndVariables(), cachedDd(abstractionInformation.getDdManager().getBddZero(), 0), decisionVariables(), skipBottomStates(false), forceRecomputation(true), abstractGuard(abstractionInformation.getDdManager().getBddZero()), bottomStateAbstractor(abstractionInformation, {!command.getGuardExpression()}, smtSolverFactory) {
+            CommandAbstractor<DdType, ValueType>::CommandAbstractor(storm::prism::Command const& command, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool allowInvalidSuccessors) : smtSolver(smtSolverFactory->create(abstractionInformation.getExpressionManager())), abstractionInformation(abstractionInformation), command(command), localExpressionInformation(abstractionInformation), evaluator(abstractionInformation.getExpressionManager()), relevantPredicatesAndVariables(), cachedDd(abstractionInformation.getDdManager().getBddZero(), 0), decisionVariables(), allowInvalidSuccessors(allowInvalidSuccessors), skipBottomStates(false), forceRecomputation(true), abstractGuard(abstractionInformation.getDdManager().getBddZero()), bottomStateAbstractor(abstractionInformation, {!command.getGuardExpression()}, smtSolverFactory) {
 
                 // Make the second component of relevant predicates have the right size.
                 relevantPredicatesAndVariables.second.resize(command.getNumberOfUpdates());
@@ -154,9 +154,10 @@ namespace storm {
                     assignedVariables.insert(assignedVariable);
                 }
                 
-                auto const& predicatesRelatedToAssignedVariable = localExpressionInformation.getRelatedExpressions(assignedVariables);
-                
-                result.first.insert(predicatesRelatedToAssignedVariable.begin(), predicatesRelatedToAssignedVariable.end());
+                if (!allowInvalidSuccessors) {
+                    auto const& predicatesRelatedToAssignedVariable = localExpressionInformation.getRelatedExpressions(assignedVariables);
+                    result.first.insert(predicatesRelatedToAssignedVariable.begin(), predicatesRelatedToAssignedVariable.end());
+                }
                 
                 return result;
             }
@@ -198,6 +199,7 @@ namespace storm {
                 // Determine and add new relevant source predicates.
                 std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>> newSourceVariables = this->getAbstractionInformation().declareNewVariables(relevantPredicatesAndVariables.first, newRelevantPredicates.first);
                 for (auto const& element : newSourceVariables) {
+                    allRelevantPredicates.insert(element.second);
                     smtSolver->add(storm::expressions::iff(element.first, this->getAbstractionInformation().getPredicateByIndex(element.second)));
                     decisionVariables.push_back(element.first);
                 }
@@ -210,6 +212,7 @@ namespace storm {
                 for (uint_fast64_t index = 0; index < command.get().getNumberOfUpdates(); ++index) {
                     std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>> newSuccessorVariables = this->getAbstractionInformation().declareNewVariables(relevantPredicatesAndVariables.second[index], newRelevantPredicates.second[index]);
                     for (auto const& element : newSuccessorVariables) {
+                        allRelevantPredicates.insert(element.second);
                         smtSolver->add(storm::expressions::iff(element.first, this->getAbstractionInformation().getPredicateByIndex(element.second).substitute(command.get().getUpdate(index).getAsVariableToExpressionMap())));
                         decisionVariables.push_back(element.first);
                     }
@@ -271,22 +274,34 @@ namespace storm {
             template <storm::dd::DdType DdType, typename ValueType>
             storm::dd::Bdd<DdType> CommandAbstractor<DdType, ValueType>::computeMissingUpdateIdentities() const {
                 storm::dd::Bdd<DdType> result = this->getAbstractionInformation().getDdManager().getBddZero();
+                
                 for (uint_fast64_t updateIndex = 0; updateIndex < command.get().getNumberOfUpdates(); ++updateIndex) {
                     // Compute the identities that are missing for this update.
-                    auto firstIt = relevantPredicatesAndVariables.first.begin();
-                    auto firstIte = relevantPredicatesAndVariables.first.end();
-                    auto secondIt = relevantPredicatesAndVariables.second[updateIndex].begin();
-                    auto secondIte = relevantPredicatesAndVariables.second[updateIndex].end();
+                    auto updateRelevantIt = relevantPredicatesAndVariables.second[updateIndex].begin();
+                    auto updateRelevantIte = relevantPredicatesAndVariables.second[updateIndex].end();
                     
-                    // Go through all relevant source predicates. This is guaranteed to be a superset of the set of
-                    // relevant successor predicates for any update.
                     storm::dd::Bdd<DdType> updateIdentity = this->getAbstractionInformation().getDdManager().getBddOne();
-                    for (; firstIt != firstIte; ++firstIt) {
-                        // If the predicates do not match, there is a predicate missing, so we need to add its identity.
-                        if (secondIt == secondIte || firstIt->second != secondIt->second) {
-                            updateIdentity &= this->getAbstractionInformation().getPredicateIdentity(firstIt->second);
-                        } else if (secondIt != secondIte) {
-                            ++secondIt;
+                    if (allowInvalidSuccessors) {
+                        for (uint_fast64_t predicateIndex = 0; predicateIndex < this->getAbstractionInformation().getNumberOfPredicates(); ++predicateIndex) {
+                            if (updateRelevantIt == updateRelevantIte || updateRelevantIt->second != predicateIndex) {
+                                updateIdentity &= this->getAbstractionInformation().getPredicateIdentity(predicateIndex);
+                            } else {
+                                ++updateRelevantIt;
+                            }
+                        }
+                    } else {
+                        auto sourceRelevantIt = relevantPredicatesAndVariables.first.begin();
+                        auto sourceRelevantIte = relevantPredicatesAndVariables.first.end();
+                        
+                        // Go through all relevant source predicates. This is guaranteed to be a superset of the set of
+                        // relevant successor predicates for any update.
+                        for (; sourceRelevantIt != sourceRelevantIte; ++sourceRelevantIt) {
+                            // If the predicates do not match, there is a predicate missing, so we need to add its identity.
+                            if (updateRelevantIt == updateRelevantIte || sourceRelevantIt->second != updateRelevantIt->second) {
+                                updateIdentity &= this->getAbstractionInformation().getPredicateIdentity(sourceRelevantIt->second);
+                            } else {
+                                ++updateRelevantIt;
+                            }
                         }
                     }
                     
@@ -297,17 +312,32 @@ namespace storm {
             
             template <storm::dd::DdType DdType, typename ValueType>
             storm::dd::Bdd<DdType> CommandAbstractor<DdType, ValueType>::computeMissingGlobalIdentities() const {
-                auto relevantIt = relevantPredicatesAndVariables.first.begin();
-                auto relevantIte = relevantPredicatesAndVariables.first.end();
-                
                 storm::dd::Bdd<DdType> result = this->getAbstractionInformation().getDdManager().getBddOne();
-                for (uint_fast64_t predicateIndex = 0; predicateIndex < this->getAbstractionInformation().getNumberOfPredicates(); ++predicateIndex) {
-                    if (relevantIt == relevantIte || relevantIt->second != predicateIndex) {
-                        result &= this->getAbstractionInformation().getPredicateIdentity(predicateIndex);
-                    } else {
-                        ++relevantIt;
+
+                if (allowInvalidSuccessors) {
+                    auto allRelevantIt = allRelevantPredicates.cbegin();
+                    auto allRelevantIte = allRelevantPredicates.cend();
+                    
+                    for (uint_fast64_t predicateIndex = 0; predicateIndex < this->getAbstractionInformation().getNumberOfPredicates(); ++predicateIndex) {
+                        if (allRelevantIt == allRelevantIte || *allRelevantIt != predicateIndex) {
+                            result &= this->getAbstractionInformation().getPredicateIdentity(predicateIndex);
+                        } else {
+                            ++allRelevantIt;
+                        }
+                    }
+                } else {
+                    auto relevantIt = relevantPredicatesAndVariables.first.begin();
+                    auto relevantIte = relevantPredicatesAndVariables.first.end();
+                    
+                    for (uint_fast64_t predicateIndex = 0; predicateIndex < this->getAbstractionInformation().getNumberOfPredicates(); ++predicateIndex) {
+                        if (relevantIt == relevantIte || relevantIt->second != predicateIndex) {
+                            result &= this->getAbstractionInformation().getPredicateIdentity(predicateIndex);
+                        } else {
+                            ++relevantIt;
+                        }
                     }
                 }
+                
                 return result;
             }
 

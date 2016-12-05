@@ -23,7 +23,7 @@ namespace storm {
         }
         
         template <storm::dd::DdType DdType>
-        bool LocalExpressionInformation<DdType>::addExpression(uint_fast64_t globalExpressionIndex) {
+        std::map<uint64_t, uint64_t> LocalExpressionInformation<DdType>::addExpression(uint_fast64_t globalExpressionIndex) {
             storm::expressions::Expression const& expression = abstractionInformation.get().getPredicateByIndex(globalExpressionIndex);
             
             // Register the expression for all variables that appear in it.
@@ -47,12 +47,12 @@ namespace storm {
         }
         
         template <storm::dd::DdType DdType>
-        bool LocalExpressionInformation<DdType>::relate(storm::expressions::Variable const& firstVariable, storm::expressions::Variable const& secondVariable) {
+        std::map<uint64_t, uint64_t> LocalExpressionInformation<DdType>::relate(storm::expressions::Variable const& firstVariable, storm::expressions::Variable const& secondVariable) {
             return this->relate({firstVariable, secondVariable});
         }
         
         template <storm::dd::DdType DdType>
-        bool LocalExpressionInformation<DdType>::relate(std::set<storm::expressions::Variable> const& variables) {
+        std::map<uint64_t, uint64_t> LocalExpressionInformation<DdType>::relate(std::set<storm::expressions::Variable> const& variables) {
             // Determine all blocks that need to be merged.
             std::set<uint_fast64_t> blocksToMerge;
             for (auto const& variable : variables) {
@@ -63,15 +63,20 @@ namespace storm {
             
             // If we found a single block only, there is nothing to do.
             if (blocksToMerge.size() == 1) {
-                return false;
+                std::map<uint64_t, uint64_t> identity;
+                for (uint64_t i = 0; i < getNumberOfBlocks(); ++i) {
+                    identity.emplace_hint(identity.end(), i, i);
+                }
+                return identity;
             }
             
-            this->mergeBlocks(blocksToMerge);
-            return true;
+            return this->mergeBlocks(blocksToMerge);
         }
         
         template <storm::dd::DdType DdType>
-        void LocalExpressionInformation<DdType>::mergeBlocks(std::set<uint_fast64_t> const& blocksToMerge) {
+        std::map<uint64_t, uint64_t> LocalExpressionInformation<DdType>::mergeBlocks(std::set<uint_fast64_t> const& blocksToMerge) {
+            std::map<uint64_t, uint64_t> oldToNewIndices;
+            
             // Merge all blocks into the block to keep.
             std::vector<std::set<storm::expressions::Variable>> newVariableBlocks;
             std::vector<std::set<uint_fast64_t>> newExpressionBlocks;
@@ -90,12 +95,14 @@ namespace storm {
                     for (auto const& variable : variableBlocks[blockIndex]) {
                         variableToBlockMapping[variable] = blockToKeep;
                     }
+                    oldToNewIndices[blockIndex] = blockToKeep;
                     
                     newVariableBlocks[blockToKeep].insert(variableBlocks[blockIndex].begin(), variableBlocks[blockIndex].end());
                     newExpressionBlocks[blockToKeep].insert(expressionBlocks[blockIndex].begin(), expressionBlocks[blockIndex].end());
                     ++blocksToMergeIt;
                 } else {
                     // Otherwise just move the current block to the new partition.
+                    oldToNewIndices[blockIndex] = newVariableBlocks.size();
                     
                     // Adjust the mapping for all variables of the old block.
                     for (auto const& variable : variableBlocks[blockIndex]) {
@@ -109,6 +116,8 @@ namespace storm {
             
             variableBlocks = std::move(newVariableBlocks);
             expressionBlocks = std::move(newExpressionBlocks);
+            
+            return oldToNewIndices;
         }
         
         template <storm::dd::DdType DdType>
@@ -170,6 +179,11 @@ namespace storm {
             }
             
             return result;
+        }
+        
+        template <storm::dd::DdType DdType>
+        std::set<uint_fast64_t> const& LocalExpressionInformation<DdType>::getExpressionBlock(uint64_t index) const {
+            return expressionBlocks[index];
         }
         
         template <storm::dd::DdType DdType>

@@ -6,11 +6,14 @@
 #include "storm/abstraction/AbstractionInformation.h"
 #include "storm/abstraction/MenuGame.h"
 #include "storm/abstraction/RefinementCommand.h"
+#include "storm/abstraction/ValidBlockAbstractor.h"
 #include "storm/abstraction/prism/ModuleAbstractor.h"
 
 #include "storm/storage/dd/Add.h"
 
 #include "storm/storage/expressions/Expression.h"
+
+#include "storm/settings/modules/AbstractionSettings.h"
 
 namespace storm {
     namespace utility {
@@ -144,6 +147,9 @@ namespace storm {
                 
                 // A state-set abstractor used to determine the initial states of the abstraction.
                 StateSetAbstractor<DdType, ValueType> initialStateAbstractor;
+                
+                // An object that is used to compute the valid blocks.
+                ValidBlockAbstractor<DdType> validBlockAbstractor;
                                 
                 // An ADD characterizing the probabilities of commands and their updates.
                 storm::dd::Add<DdType, ValueType> commandUpdateProbabilitiesAdd;
@@ -153,6 +159,9 @@ namespace storm {
                 
                 // A flag storing whether a refinement was performed.
                 bool refinementPerformed;
+                
+                // The strategy to use for detecting invalid blocks.
+                storm::settings::modules::AbstractionSettings::InvalidBlockDetectionStrategy invalidBlockDetectionStrategy;
             };
         }
     }

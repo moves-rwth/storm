@@ -57,9 +57,9 @@ namespace storm {
                  * @param command The concrete command for which to build the abstraction.
                  * @param abstractionInformation An object holding information about the abstraction such as predicates and BDDs.
                  * @param smtSolverFactory A factory that is to be used for creating new SMT solvers.
-                 * @param guardIsPredicate A flag indicating whether the guard of the command was added as a predicate.
+                 * @param allowInvalidSuccessors A flag indicating whether it is allowed to enumerate invalid successors.
                  */
-                CommandAbstractor(storm::prism::Command const& command, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool guardIsPredicate = false);
+                CommandAbstractor(storm::prism::Command const& command, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool allowInvalidSuccessors);
                                
                 /*!
                  * Refines the abstract command with the given predicates.
@@ -220,12 +220,20 @@ namespace storm {
                 // The currently relevant source/successor predicates and the corresponding variables.
                 std::pair<std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>>, std::vector<std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>>>> relevantPredicatesAndVariables;
                 
+                // The set of all relevant predicates.
+                std::set<uint64_t> allRelevantPredicates;
+                
                 // The most recent result of a call to computeDd. If nothing has changed regarding the relevant
                 // predicates, this result may be reused.
                 GameBddResult<DdType> cachedDd;
                 
                 // All relevant decision variables over which to perform AllSat.
                 std::vector<storm::expressions::Variable> decisionVariables;
+                
+                // A flag indicating whether it is allowed to enumerate invalid successors. Invalid successors may be
+                // enumerated if the predicates that are (indirectly) related to an assignment variable are not
+                // considered as source predicates.
+                bool allowInvalidSuccessors;
                 
                 // A flag indicating whether the guard of the command was added as a predicate. If this is true, there
                 // is no need to compute bottom states.

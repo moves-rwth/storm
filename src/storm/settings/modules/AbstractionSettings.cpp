@@ -19,6 +19,7 @@ namespace storm {
             const std::string AbstractionSettings::splitAllOptionName = "split-all";
             const std::string AbstractionSettings::precisionOptionName = "precision";
             const std::string AbstractionSettings::pivotHeuristicOptionName = "pivot-heuristic";
+            const std::string AbstractionSettings::invalidBlockStrategyOptionName = "invalid-blocks";
 
             AbstractionSettings::AbstractionSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, addAllGuardsOptionName, true, "Sets whether all guards are added as initial predicates.").build());
@@ -31,6 +32,10 @@ namespace storm {
                 std::vector<std::string> pivotHeuristic = {"nearest-max-dev", "most-prob-path", "max-weighted-dev"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, pivotHeuristicOptionName, true, "Sets the pivot selection heuristic.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of an available heuristic. Available are: 'nearest-max-dev', 'most-prob-path' and 'max-weighted-dev'.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(pivotHeuristic)).setDefaultValueString("max-weighted-dev").build()).build());
+
+                std::vector<std::string> invalidBlockStrategies = {"none", "command", "global"};
+                this->addOption(storm::settings::OptionBuilder(moduleName, invalidBlockStrategyOptionName, true, "Sets the strategy to detect invalid blocks.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of an available strategy. Available are: 'none', 'command' and 'global'.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(invalidBlockStrategies)).setDefaultValueString("command").build()).build());
             }
             
             bool AbstractionSettings::isAddAllGuardsSet() const {
@@ -71,6 +76,18 @@ namespace storm {
                     return AbstractionSettings::PivotSelectionHeuristic::MaxWeightedDeviation;
                 }
                 STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown pivot selection heuristic '" << heuristicName << "'.");
+            }
+            
+            AbstractionSettings::InvalidBlockDetectionStrategy AbstractionSettings::getInvalidBlockDetectionStrategy() const {
+                std::string strategyName = this->getOption(invalidBlockStrategyOptionName).getArgumentByName("name").getValueAsString();
+                if (strategyName == "none") {
+                    return AbstractionSettings::InvalidBlockDetectionStrategy::None;
+                } else if (strategyName == "command") {
+                    return AbstractionSettings::InvalidBlockDetectionStrategy::Command;
+                } else if (strategyName == "global") {
+                    return AbstractionSettings::InvalidBlockDetectionStrategy::Global;
+                }
+                STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown invalid block detection strategy '" << strategyName << "'.");
             }
         }
     }

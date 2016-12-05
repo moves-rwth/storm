@@ -15,6 +15,10 @@ namespace storm {
                     NearestMaximalDeviation, MostProbablePath, MaxWeightedDeviation
                 };
                 
+                enum class InvalidBlockDetectionStrategy {
+                    None, Command, Global
+                };
+                
                 /*!
                  * Creates a new set of abstraction settings.
                  */
@@ -75,6 +79,13 @@ namespace storm {
                  * @return The selected heuristic.
                  */
                 PivotSelectionHeuristic getPivotSelectionHeuristic() const;
+                
+                /*!
+                 * Retrieves the strategy to use for invalid block detection.
+                 *
+                 * @return The strategy to use
+                 */
+                InvalidBlockDetectionStrategy getInvalidBlockDetectionStrategy() const;
 
                 const static std::string moduleName;
                 
@@ -88,6 +99,7 @@ namespace storm {
                 const static std::string splitAllOptionName;
                 const static std::string precisionOptionName;
                 const static std::string pivotHeuristicOptionName;
+                const static std::string invalidBlockStrategyOptionName;
             };
             
         }

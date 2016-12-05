@@ -12,6 +12,8 @@
 
 #include "storm/models/symbolic/StandardRewardModel.h"
 
+#include "storm/settings/SettingsManager.h"
+
 #include "storm/utility/dd.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/solver.h"
@@ -28,10 +30,12 @@ namespace storm {
             
 #undef LOCAL_DEBUG
             
+            using storm::settings::modules::AbstractionSettings;
+            
             template <storm::dd::DdType DdType, typename ValueType>
             PrismMenuGameAbstractor<DdType, ValueType>::PrismMenuGameAbstractor(storm::prism::Program const& program,
                                                                 std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory)
-            : program(program), smtSolverFactory(smtSolverFactory), abstractionInformation(program.getManager(), program.getAllExpressionVariables(), smtSolverFactory->create(program.getManager())), modules(), initialStateAbstractor(abstractionInformation, {program.getInitialStatesExpression()}, this->smtSolverFactory), currentGame(nullptr), refinementPerformed(false) {
+            : program(program), smtSolverFactory(smtSolverFactory), abstractionInformation(program.getManager(), program.getAllExpressionVariables(), smtSolverFactory->create(program.getManager())), modules(), initialStateAbstractor(abstractionInformation, {program.getInitialStatesExpression()}, this->smtSolverFactory), validBlockAbstractor(abstractionInformation, smtSolverFactory), currentGame(nullptr), refinementPerformed(false), invalidBlockDetectionStrategy(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getInvalidBlockDetectionStrategy()) {
                 
                 // For now, we assume that there is a single module. If the program has more than one module, it needs
                 // to be flattened before the procedure.
@@ -62,7 +66,7 @@ namespace storm {
                 
                 // For each module of the concrete program, we create an abstract counterpart.
                 for (auto const& module : program.getModules()) {
-                    this->modules.emplace_back(module, abstractionInformation, this->smtSolverFactory);
+                    this->modules.emplace_back(module, abstractionInformation, this->smtSolverFactory, invalidBlockDetectionStrategy);
                 }
                 
                 // Retrieve the command-update probability ADD, so we can multiply it with the abstraction BDD later.
@@ -85,6 +89,9 @@ namespace storm {
                 
                 // Refine initial state abstractor.
                 initialStateAbstractor.refine(predicateIndices);
+                
+                // Refine the valid blocks.
+                validBlockAbstractor.refine(predicateIndices);
 
                 refinementPerformed |= !command.getPredicates().empty();
             }
@@ -133,6 +140,20 @@ namespace storm {
             std::unique_ptr<MenuGame<DdType, ValueType>> PrismMenuGameAbstractor<DdType, ValueType>::buildGame() {
                 // As long as there is only one module, we only build its game representation.
                 GameBddResult<DdType> game = modules.front().abstract();
+                
+                if (invalidBlockDetectionStrategy == AbstractionSettings::InvalidBlockDetectionStrategy::Global) {
+                    storm::dd::Bdd<DdType> validBlocks = validBlockAbstractor.getValidBlocks();
+                    
+                    // Cut away all invalid blocks for both source and targets.
+                    storm::dd::Bdd<DdType> newGameBdd = game.bdd;
+                    newGameBdd &= validBlocks;
+                    newGameBdd &= validBlocks.swapVariables(abstractionInformation.getExtendedSourceSuccessorVariablePairs());
+                    
+                    if (newGameBdd != game.bdd) {
+                        STORM_LOG_TRACE("Global invalid block detection reduced the number of transitions from " << game.bdd.getNonZeroCount() << " to " << newGameBdd.getNonZeroCount() << ".");
+                        game.bdd = newGameBdd;
+                    }
+                }
                 
                 // Construct a set of all unnecessary variables, so we can abstract from it.
                 std::set<storm::expressions::Variable> variablesToAbstract(abstractionInformation.getPlayer1VariableSet(abstractionInformation.getPlayer1VariableCount()));
