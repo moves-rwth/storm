@@ -366,8 +366,10 @@ if(STORM_PYTHON)
 	add_subdirectory(stormpy)
 endif()
 
+set(STORM_TARGETS "")
 add_subdirectory(src)
 
+message("STORM_TARGETS: ${STORM_TARGETS}")
 include(export)
 
 include(StormCPackConfig.cmake)

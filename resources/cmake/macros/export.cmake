@@ -8,6 +8,9 @@ message(STATUS "Registered with cmake")
 export(PACKAGE storm)
 
 set(DEP_TARGETS "")
+foreach(dt ${STORM_DEP_TARGETS}) 
+	export_target(DEP_TARGETS ${dt})
+endforeach()
 
 set(EXP_OPTIONS "")
 foreach(option ${EXPORTED_OPTIONS})
