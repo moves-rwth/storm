@@ -142,17 +142,12 @@ namespace storm {
                 GameBddResult<DdType> game = modules.front().abstract();
                 
                 if (invalidBlockDetectionStrategy == AbstractionSettings::InvalidBlockDetectionStrategy::Global) {
+                    auto validBlockStart = std::chrono::high_resolution_clock::now();
                     storm::dd::Bdd<DdType> validBlocks = validBlockAbstractor.getValidBlocks();
-                    
-                    // Cut away all invalid blocks for both source and targets.
-                    storm::dd::Bdd<DdType> newGameBdd = game.bdd;
-                    newGameBdd &= validBlocks;
-                    newGameBdd &= validBlocks.swapVariables(abstractionInformation.getExtendedSourceSuccessorVariablePairs());
-                    
-                    if (newGameBdd != game.bdd) {
-                        STORM_LOG_TRACE("Global invalid block detection reduced the number of transitions from " << game.bdd.getNonZeroCount() << " to " << newGameBdd.getNonZeroCount() << ".");
-                        game.bdd = newGameBdd;
-                    }
+                    // Cut away all invalid successor blocks.
+                    game.bdd &= validBlocks.swapVariables(abstractionInformation.getExtendedSourceSuccessorVariablePairs());
+                    auto validBlockEnd = std::chrono::high_resolution_clock::now();
+                    STORM_LOG_DEBUG("Global invalid block detection completed in " << std::chrono::duration_cast<std::chrono::milliseconds>(validBlockEnd - validBlockStart).count() << "ms.");
                 }
                 
                 // Construct a set of all unnecessary variables, so we can abstract from it.
