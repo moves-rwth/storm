@@ -6,26 +6,37 @@ find_package(storm REQUIRED)
 add_subdirectory(resources/pybind11)
 
 
-file(GLOB_RECURSE PYCARL_CORE_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/core/*.cpp)
+file(GLOB_RECURSE STORM_CORE_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/core/*.cpp)
 
-pybind11_add_module(pycarl.core ${CMAKE_CURRENT_SOURCE_DIR}/src/mod_core.cpp ${PYCARL_CORE_SOURCES})
-target_include_directories(pycarl.core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(pycarl.core PRIVATE lib_carl)
+pybind11_add_module(stormpy.core ${CMAKE_CURRENT_SOURCE_DIR}/src/mod_core.cpp ${STORM_CORE_SOURCES})
+target_include_directories(stormpy.core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${storm_INCLUDE_DIR})
+target_link_libraries(stormpy.core PRIVATE storm)
+
+file(GLOB_RECURSE STORM_INFO_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/info/*.cpp)
+
+pybind11_add_module(stormpy.info ${CMAKE_CURRENT_SOURCE_DIR}/src/mod_info.cpp ${STORM_INFO_SOURCES})
+target_include_directories(stormpy.info PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${storm_INCLUDE_DIR})
+target_link_libraries(stormpy.info PRIVATE storm)
 
 
-file(GLOB_RECURSE PYCARL_CORE_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/formula/*.cpp)
+file(GLOB_RECURSE STORM_EXPRESSIONS_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/expressions/*.cpp)
 
-pybind11_add_module(pycarl.formula ${CMAKE_CURRENT_SOURCE_DIR}/src/mod_formula.cpp ${PYCARL_FORMULA_SOURCES})
-target_include_directories(pycarl.formula PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(pycarl.formula PRIVATE lib_carl)
+pybind11_add_module(stormpy.expressions ${CMAKE_CURRENT_SOURCE_DIR}/src/mod_expressions.cpp ${STORM_EXPRESSIONS_SOURCES})
+target_include_directories(stormpy.expressions PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${storm_INCLUDE_DIR})
+target_link_libraries(stormpy.expressions PRIVATE storm)
 
 
-file(GLOB_RECURSE PYCARL_CORE_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/parse/*.cpp)
+file(GLOB_RECURSE STORM_LOGIC_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/*.cpp)
 
-pybind11_add_module(pycarl.parse ${CMAKE_CURRENT_SOURCE_DIR}/src/mod_parse.cpp ${PYCARL_PARSE_SOURCES})
-target_include_directories(pycarl.parse PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(pycarl.parse PRIVATE lib_carl)
+pybind11_add_module(stormpy.logic ${CMAKE_CURRENT_SOURCE_DIR}/src/mod_logic.cpp ${STORM_LOGIC_SOURCES})
+target_include_directories(stormpy.logic PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${storm_INCLUDE_DIR})
+target_link_libraries(stormpy.logic PRIVATE storm)
 
+file(GLOB_RECURSE STORM_STORAGE_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/storage/*.cpp)
+
+pybind11_add_module(stormpy.storage ${CMAKE_CURRENT_SOURCE_DIR}/src/mod_storage.cpp ${STORM_STORAGE_SOURCES})
+target_include_directories(stormpy.storage PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${storm_INCLUDE_DIR})
+target_link_libraries(stormpy.storage PRIVATE storm)
 
 #set(STORMPY_OUTPUT_DIR "${PROJECT_BINARY_DIR}/stormpy")
 #set(STORMPY_SOURCE_DIR "${PROJECT_SOURCE_DIR}/stormpy")
