@@ -469,7 +469,7 @@ namespace storm {
             STORM_LOG_ASSERT(result.hasPlayer2Strategy() && (result.getPlayer2States().isZero() || !result.getPlayer2Strategy().isZero()), "Unable to proceed without strategy.");
 
             auto end = std::chrono::high_resolution_clock::now();
-            STORM_LOG_TRACE("Computed states with probability " << (prob0 ? "0" : "1") << " (player 1: " << player1Direction << ", player 2: " << player2Direction << "): " << result.getPlayer1States().getNonZeroCount() << " '" << (prob0 ? "no" : "yes") << "' states (completed in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
+            STORM_LOG_TRACE("Computed states with probability " << (prob0 ? "0" : "1") << " (player 1: " << player1Direction << ", player 2: " << player2Direction << "): " << result.getPlayer1States().getNonZeroCount() << " '" << (prob0 ? "no" : "yes") << "' states (completed in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms).");
             
             return result;
         }
