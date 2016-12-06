@@ -1,129 +1,61 @@
 #!/usr/bin/env python
-from setuptools import setup
-from distutils.core import Extension
-from distutils.command.build_ext import build_ext as orig_build_ext
-import os.path
+import os
+import re
+import sys
 import platform
-from glob import glob
+import subprocess
 
-PROJECT_DIR = os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
+from setuptools import setup, Extension
+from setuptools.command.build_ext import build_ext
+from distutils.version import LooseVersion
 
-# Glob source files for modules
-core_sources = glob(os.path.join('src', 'core', '*.cpp'))
-expressions_sources = glob(os.path.join('src', 'expressions', '*.cpp'))
-logic_sources = glob(os.path.join('src', 'logic', '*.cpp'))
-storage_sources = glob(os.path.join('src', 'storage', '*.cpp'))
 
-# Configuration shared between external modules follows
-include_dirs = [PROJECT_DIR, os.path.join(PROJECT_DIR, 'src'),
-                os.path.join(PROJECT_DIR, 'resources', 'pybind11', 'include')]
-libraries = ['storm']
-library_dirs = []
-extra_compile_args = []
-define_macros = []
-extra_link_args = []
+class CMakeExtension(Extension):
+    def __init__(self, name, sourcedir=''):
+        Extension.__init__(self, name, sources=[])
+        self.sourcedir = os.path.abspath(sourcedir)
 
-ext_core = Extension(
-    name='core',
-    sources=['src/mod_core.cpp'] + core_sources,
-    include_dirs=include_dirs,
-    libraries=libraries,
-    library_dirs=library_dirs,
-    extra_compile_args=extra_compile_args,
-    define_macros=define_macros,
-    extra_link_args=extra_link_args
-)
 
-ext_info = Extension(
-    name='info.info',
-    sources=['src/mod_info.cpp'],
-    include_dirs=include_dirs,
-    libraries=libraries,
-    library_dirs=library_dirs,
-    extra_compile_args=extra_compile_args,
-    define_macros=define_macros,
-    extra_link_args=extra_link_args
-)
+class CMakeBuild(build_ext):
+    def run(self):
+        try:
+            out = subprocess.check_output(['cmake', '--version'])
+        except OSError:
+            raise RuntimeError("CMake must be installed to build the following extensions: " +
+                               ", ".join(e.name for e in self.extensions))
+        
+        for ext in self.extensions:
+            self.build_extension(ext)
 
-ext_expressions = Extension(
-    name='expressions.expressions',
-    sources=['src/mod_expressions.cpp'] + expressions_sources,
-    include_dirs=include_dirs,
-    libraries=libraries,
-    library_dirs=library_dirs,
-    extra_compile_args=extra_compile_args,
-    define_macros=define_macros,
-    extra_link_args=extra_link_args
-)
 
-ext_logic = Extension(
-    name='logic.logic',
-    sources=['src/mod_logic.cpp'] + logic_sources,
-    include_dirs=include_dirs,
-    libraries=libraries,
-    library_dirs=library_dirs,
-    extra_compile_args=extra_compile_args,
-    define_macros=define_macros,
-    extra_link_args=extra_link_args
-)
+    def build_extension(self, ext):
+        extdir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name)))
+        cmake_args = ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + extdir,
+                      '-DPYTHON_EXECUTABLE=' + sys.executable]
+            
+        cfg = 'Debug' if self.debug else 'Release'
+        build_args = ['--config', cfg]
+                      
+                      
+        cmake_args += ['-DCMAKE_BUILD_TYPE=' + cfg]
+        build_args += ['--', '-j2']
+                      
+        env = os.environ.copy()
+        env['CXXFLAGS'] = '{} -DVERSION_INFO=\\"{}\\"'.format(env.get('CXXFLAGS', ''),
+                                                                            self.distribution.get_version())
+        if not os.path.exists(self.build_temp):
+             os.makedirs(self.build_temp)
+             subprocess.check_call(['cmake', ext.sourcedir] + cmake_args, cwd=self.build_temp, env=env)
+        try:
+            subprocess.check_call(['cmake', '--build', '.', '--target', ext.name] + build_args, cwd=self.build_temp)
+        except subprocess.CalledProcessError as e:
+            if e.output:
+                raise RuntimeError("CMake build returned with an error: " + e.output)
+            
+            print(e.stdout)
 
-ext_storage = Extension(
-    name='storage.storage',
-    sources=['src/mod_storage.cpp'] + storage_sources,
-    include_dirs=include_dirs,
-    libraries=libraries,
-    library_dirs=library_dirs,
-    extra_compile_args=extra_compile_args,
-    define_macros=define_macros,
-    extra_link_args=extra_link_args
-)
-
-class build_ext(orig_build_ext):
-    """Extend build_ext to provide CLN toggle option
-    """
-    user_options = orig_build_ext.user_options + [
-        ('use-cln', None,
-         "use cln numbers instead of gmpxx"),
-        ('compile-flags', None,
-         "compile flags for C++"),
-        ]
-
-    boolean_options = orig_build_ext.boolean_options + ['use-cln']
-
-    def initialize_options (self):
-        super(build_ext, self).initialize_options()
-        self.use_cln = None
-        self.compile_flags = None
-
-    def finalize_options(self):
-        super(build_ext, self).finalize_options()
-
-        if self.use_cln:
-            self.libraries += ['cln']
-            if not self.define:
-                self.define = []
-            else:
-                self.define = list(self.define)
-            self.define += [('STORMPY_USE_CLN', 1)]
-        else:
-            self.libraries += ['gmp', 'gmpxx']
-            if not self.undef:
-                self.undef = []
-            self.undef += ['STORMPY_USE_CLN']
-
-        if self.library_dirs:
-            # Makes local storm library lookup that much easier
-            self.rpath += self.library_dirs
-
-        if platform.system() == 'Darwin' and len(self.rpath) > 0:
-            for e in self.extensions:
-                # If rpath is used on OS X, set this option
-                e.extra_link_args.append('-Wl,-rpath,'+self.rpath[0])
-
-        for e in self.extensions:
-            e.extra_compile_args += self.compile_flags.split()
-
-setup(name="stormpy",
+setup(
+      name="stormpy",
       version="0.9",
       author="M. Volk",
       author_email="matthias.volk@cs.rwth-aachen.de",
@@ -134,9 +66,7 @@ setup(name="stormpy",
       packages=['stormpy', 'stormpy.info', 'stormpy.expressions', 'stormpy.logic', 'stormpy.storage'],
       package_dir={'':'lib'},
       ext_package='stormpy',
-      ext_modules=[ext_core, ext_info, ext_expressions, ext_logic, ext_storage
-                   ],
-      cmdclass={
-        'build_ext': build_ext,
-      }
+      ext_modules=[CMakeExtension('stormpy.core'), CMakeExtension('stormpy.info'),CMakeExtension('stormpy.expressions'), CMakeExtension('stormpy.logic'), CMakeExtension('stormpy.storage')],
+      cmdclass=dict(build_ext=CMakeBuild),
+      zip_safe=False
 )
