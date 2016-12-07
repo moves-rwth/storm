@@ -33,7 +33,7 @@ namespace storm {
                 } while (changed);
 
                 auto end = std::chrono::high_resolution_clock::now();
-                STORM_LOG_TRACE("Reachability computation completed in " << iteration << " iterations (" << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
+                STORM_LOG_TRACE("Reachability computation completed in " << iteration << " iterations (" << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms).");
                 
                 return reachableStates;
             }

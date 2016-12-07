@@ -589,9 +589,10 @@ namespace storm {
              * @param psiStates The BDD containing all psi states of the model.
              * @param producePlayer1Strategy A flag indicating whether the strategy of player 1 shall be produced.
              * @param producePlayer2Strategy A flag indicating whether the strategy of player 2 shall be produced.
+             * @param player1Candidates If given, this set constrains the candidates of player 1 states that are considered.
              */
             template <storm::dd::DdType Type, typename ValueType>
-            GameProb01Result<Type> performProb1(storm::models::symbolic::StochasticTwoPlayerGame<Type, ValueType> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool producePlayer1Strategy = false, bool producePlayer2Strategy = false);
+            GameProb01Result<Type> performProb1(storm::models::symbolic::StochasticTwoPlayerGame<Type, ValueType> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool producePlayer1Strategy = false, bool producePlayer2Strategy = false, boost::optional<storm::dd::Bdd<Type>> const& player1Candidates = boost::none);
             
             /*!
              * Performs a topological sort of the states of the system according to the given transitions.

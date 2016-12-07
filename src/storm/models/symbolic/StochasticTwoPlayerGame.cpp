@@ -35,7 +35,7 @@ namespace storm {
                 illegalPlayer1Mask = transitionMatrix.notZero().existsAbstract(this->getColumnVariables()).existsAbstract(this->getPlayer2Variables());
                 
                 // Correct the mask for player 2. This is necessary, because it is not yet restricted to the legal choices of player 1.
-                this->illegalMask &= illegalPlayer1Mask;
+                illegalPlayer2Mask = this->getIllegalMask() && illegalPlayer1Mask;
                 
                 // Then set the illegal mask for player 1 correctly.
                 illegalPlayer1Mask = !illegalPlayer1Mask && reachableStates;
@@ -48,8 +48,7 @@ namespace storm {
             
             template<storm::dd::DdType Type, typename ValueType>
             storm::dd::Bdd<Type> StochasticTwoPlayerGame<Type, ValueType>::getIllegalPlayer2Mask() const {
-                // For player 2, we can simply return the mask of the superclass.
-                return this->getIllegalMask();
+                return illegalPlayer2Mask;
             }
             
             template<storm::dd::DdType Type, typename ValueType>
