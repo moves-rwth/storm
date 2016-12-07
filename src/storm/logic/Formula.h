@@ -25,7 +25,7 @@ namespace storm {
         // Forward-declare formula information class for info() method.
         class FormulaInformation;
         
-        class Formula : public std::enable_shared_from_this<Formula const> {
+        class Formula : public std::enable_shared_from_this<Formula> {
         public:
             // Make the destructor virtual to allow deletion of objects of subclasses via a pointer to this class.
             virtual ~Formula() {
