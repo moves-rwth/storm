@@ -360,6 +360,10 @@ set(STORM_GENERATED_SOURCES "${PROJECT_BINARY_DIR}/src/storm/utility/storm-versi
 include_directories("${PROJECT_BINARY_DIR}/include")
 
 include(CTest)
+add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND})
+set(CMAKE_CTEST_COMMAND_VERBOSE ${CMAKE_CTEST_COMMAND} -V)
+add_custom_target(check-verbose COMMAND ${CMAKE_CTEST_COMMAND_VERBOSE})
+
 
 # Python bindings for storm
 set(STORM_TARGETS "")

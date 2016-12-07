@@ -18,6 +18,8 @@ foreach (testsuite adapter builder logic modelchecker parser permissivescheduler
 
 	  add_dependencies(test-${testsuite} test-resources)
 	  add_test(run-test-${testsuite} test-${testsuite})
+	  add_dependencies(check test-${testsuite})
+	  add_dependencies(check-verbose test-${testsuite})
 	
 endforeach ()
 
