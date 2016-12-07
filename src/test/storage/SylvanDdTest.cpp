@@ -136,7 +136,6 @@ TEST(SylvanDd, BddExistAbstractRepresentative) {
 	storm::dd::Bdd<storm::dd::DdType::Sylvan> bddX1Y1Z1 = (bddX1 && bddY1) && bddZ1;
 
 	storm::dd::Bdd<storm::dd::DdType::Sylvan> bddAllTrueOrAllFalse = bddX0Y0Z0 || bddX1Y1Z1;
-	//bddAllTrueOrAllFalse.template toAdd<double>().exportToDot("test_Sylvan_addAllTrueOrAllFalse.dot");
 
 	representative_x = bddAllTrueOrAllFalse.existsAbstractRepresentative({x.first});
 	EXPECT_EQ(2ul, representative_x.getNonZeroCount());
@@ -464,6 +463,11 @@ TEST(SylvanDd, RationalFunctionLeaveReplacementSimpleVariable) {
     EXPECT_EQ(2ul, replacedAddSimpleX.getLeafCount());
     EXPECT_EQ(3ul, replacedAddSimpleX.getNodeCount());
 	EXPECT_TRUE(replacedAddSimpleX == complexAdd);
+	
+	storm::dd::Add<storm::dd::DdType::Sylvan, double> abstractedAddMax = replacedAddSimpleX.toDouble().maxAbstract({xExpr.first});
+	storm::dd::Add<storm::dd::DdType::Sylvan, double> abstractedAddMin = replacedAddSimpleX.toDouble().minAbstract({xExpr.first});
+	EXPECT_TRUE(abstractedAddMax == manager->template getConstant<double>(0.66666666666666666666));
+	EXPECT_TRUE(abstractedAddMin == manager->template getConstant<double>(0.33333333333333333333));
 }
 
 TEST(SylvanDd, RationalFunctionLeaveReplacementTwoVariables) {
@@ -537,7 +541,6 @@ TEST(SylvanDd, RationalFunctionLeaveReplacementComplexFunction) {
 	parser.setVariables({"x", "y", "z"});
 	storm::RationalFunction zDivTwoY = storm::RationalFunction(storm::Polynomial(parser.template parseMultivariatePolynomial<storm::RationalNumber>("z"), cache), storm::Polynomial(parser.template parseMultivariatePolynomial<storm::RationalNumber>("2*y"), cache));
 
-	//storm::RationalFunction rationalFunction(two * x + x*y + constantOneDivTwo * z / y);
 	storm::RationalFunction rationalFunction = storm::RationalFunction(storm::Polynomial(parser.parseMultivariatePolynomial<storm::RationalNumber>("2*x+x*y"), cache), storm::Polynomial(parser.parseMultivariatePolynomial<storm::RationalNumber>("1"), cache)) + zDivTwoY;	
 	ASSERT_NO_THROW(function = manager->template getConstant<storm::RationalFunction>(rationalFunction));
 	
@@ -617,9 +620,6 @@ TEST(SylvanDd, RationalFunctionLeaveReplacementComplexFunction) {
     EXPECT_EQ(8ul, replacedAdd.getLeafCount());
     EXPECT_EQ(15ul, replacedAdd.getNodeCount());
 	EXPECT_TRUE(replacedAdd == complexAdd);
-	
-	replacedAdd.exportToDot("sylvan_replacedAddC.dot");
-	complexAdd.exportToDot("sylvan_complexAddC.dot");
 }
 
 TEST(SylvanDd, RationalFunctionConstants) {
@@ -662,6 +662,55 @@ TEST(SylvanDd, RationalFunctionConstants) {
     EXPECT_EQ(0ul, function.getNonZeroCount());
     EXPECT_EQ(1ul, function.getLeafCount());
     EXPECT_EQ(1ul, function.getNodeCount());
+}
+
+TEST(SylvanDd, RationalFunctionToDouble) {
+    std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
+    
+	std::pair<storm::expressions::Variable, storm::expressions::Variable> xExpr;
+	std::pair<storm::expressions::Variable, storm::expressions::Variable> yExpr;
+	std::pair<storm::expressions::Variable, storm::expressions::Variable> zExpr;
+	ASSERT_NO_THROW(xExpr = manager->addMetaVariable("x", 0, 1));
+	ASSERT_NO_THROW(yExpr = manager->addMetaVariable("y", 0, 1));
+	ASSERT_NO_THROW(zExpr = manager->addMetaVariable("z", 0, 1));
+	
+	storm::dd::Bdd<storm::dd::DdType::Sylvan> bddX0 = manager->getEncoding(xExpr.first, 0);
+	storm::dd::Bdd<storm::dd::DdType::Sylvan> bddX1 = manager->getEncoding(xExpr.first, 1);
+	storm::dd::Bdd<storm::dd::DdType::Sylvan> bddY0 = manager->getEncoding(yExpr.first, 0);
+	storm::dd::Bdd<storm::dd::DdType::Sylvan> bddY1 = manager->getEncoding(yExpr.first, 1);
+	storm::dd::Bdd<storm::dd::DdType::Sylvan> bddZ0 = manager->getEncoding(zExpr.first, 0);
+	storm::dd::Bdd<storm::dd::DdType::Sylvan> bddZ1 = manager->getEncoding(zExpr.first, 1);
+	
+	storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> complexAdd = 
+          ((bddX0 && (bddY0 && bddZ0)).template toAdd<storm::RationalFunction>() * manager->template getConstant<storm::RationalFunction>(storm::RationalFunction(storm::RationalNumber(-1))))
+		+ ((bddX0 && (bddY0 && bddZ1)).template toAdd<storm::RationalFunction>() * manager->template getConstant<storm::RationalFunction>(storm::RationalFunction(storm::RationalNumber(0))))
+		+ ((bddX0 && (bddY1 && bddZ0)).template toAdd<storm::RationalFunction>() * manager->template getConstant<storm::RationalFunction>(storm::RationalFunction(storm::RationalNumber(1) / storm::RationalNumber(2))))
+		+ ((bddX0 && (bddY1 && bddZ1)).template toAdd<storm::RationalFunction>() * manager->template getConstant<storm::RationalFunction>(storm::RationalFunction(storm::RationalNumber(1) / storm::RationalNumber(3))))
+		+ ((bddX1 && (bddY0 && bddZ0)).template toAdd<storm::RationalFunction>() * manager->template getConstant<storm::RationalFunction>(storm::RationalFunction(storm::RationalNumber(100000))))
+		+ ((bddX1 && (bddY0 && bddZ1)).template toAdd<storm::RationalFunction>() * manager->template getConstant<storm::RationalFunction>(storm::RationalFunction(storm::RationalNumber(3))))
+		+ ((bddX1 && (bddY1 && bddZ0)).template toAdd<storm::RationalFunction>() * manager->template getConstant<storm::RationalFunction>(storm::RationalFunction(storm::RationalNumber(4))))
+		+ ((bddX1 && (bddY1 && bddZ1)).template toAdd<storm::RationalFunction>() * manager->template getConstant<storm::RationalFunction>(storm::RationalFunction(storm::RationalNumber(0))));
+	EXPECT_EQ(6ul, complexAdd.getNonZeroCount());
+    EXPECT_EQ(7ul, complexAdd.getLeafCount());
+    EXPECT_EQ(14ul, complexAdd.getNodeCount());
+	
+	storm::dd::Add<storm::dd::DdType::Sylvan, double> doubleAdd = complexAdd.toDouble();
+    
+    EXPECT_EQ(6ul, doubleAdd.getNonZeroCount());
+    EXPECT_EQ(7ul, doubleAdd.getLeafCount());
+    EXPECT_EQ(14ul, doubleAdd.getNodeCount());
+    
+    storm::dd::Add<storm::dd::DdType::Sylvan, double> comparisonAdd = 
+		  ((bddX0 && (bddY0 && bddZ0)).template toAdd<double>() * manager->template getConstant<double>(-1.0))
+		+ ((bddX0 && (bddY0 && bddZ1)).template toAdd<double>() * manager->template getConstant<double>(0.0))
+		+ ((bddX0 && (bddY1 && bddZ0)).template toAdd<double>() * manager->template getConstant<double>(0.5))
+		+ ((bddX0 && (bddY1 && bddZ1)).template toAdd<double>() * manager->template getConstant<double>(0.33333333333333333333))
+		+ ((bddX1 && (bddY0 && bddZ0)).template toAdd<double>() * manager->template getConstant<double>(100000.0))
+		+ ((bddX1 && (bddY0 && bddZ1)).template toAdd<double>() * manager->template getConstant<double>(3.0))
+		+ ((bddX1 && (bddY1 && bddZ0)).template toAdd<double>() * manager->template getConstant<double>(4.0))
+		+ ((bddX1 && (bddY1 && bddZ1)).template toAdd<double>() * manager->template getConstant<double>(0.0));
+
+    EXPECT_TRUE(comparisonAdd == doubleAdd);
 }
 
 TEST(SylvanDd, RationalFunctionEncodingTest) {

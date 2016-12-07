@@ -32,6 +32,8 @@
 	Mtbdd AbstractPlusRF(const BddSet &variables) const;
 	
 	Mtbdd ReplaceLeavesRF(void* context) const;
+	
+	Mtbdd ToDoubleRF() const;
 #endif
 	
 	/**

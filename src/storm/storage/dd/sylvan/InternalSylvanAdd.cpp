@@ -290,17 +290,28 @@ namespace storm {
 #endif
 
         template<typename ValueType>
-        InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::replaceLeaves(std::map<storm::RationalFunctionVariable, std::pair<uint32_t, std::pair<storm::RationalNumber, storm::RationalNumber>>> const& replacementMap) const {
+        InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::replaceLeaves(std::map<uint32_t, std::pair<storm::RationalFunctionVariable, std::pair<storm::RationalNumber, storm::RationalNumber>>> const& replacementMap) const {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented: replaceLeaves");
         }
 
 #ifdef STORM_HAVE_CARL
 		template<>
-        InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalAdd<DdType::Sylvan, storm::RationalFunction>::replaceLeaves(std::map<storm::RationalFunctionVariable, std::pair<uint32_t, std::pair<storm::RationalNumber, storm::RationalNumber>>> const& replacementMap) const {
+        InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalAdd<DdType::Sylvan, storm::RationalFunction>::replaceLeaves(std::map<uint32_t, std::pair<storm::RationalFunctionVariable, std::pair<storm::RationalNumber, storm::RationalNumber>>> const& replacementMap) const {
             return InternalAdd<DdType::Sylvan, storm::RationalFunction>(ddManager, this->sylvanMtbdd.ReplaceLeavesRF((void*)&replacementMap));
         }
 #endif
 
+        template<typename ValueType>
+        InternalAdd<DdType::Sylvan, double> InternalAdd<DdType::Sylvan, ValueType>::toDouble() const {
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented: toDouble");
+        }
+
+#ifdef STORM_HAVE_CARL
+		template<>
+        InternalAdd<DdType::Sylvan, double> InternalAdd<DdType::Sylvan, storm::RationalFunction>::toDouble() const {
+            return InternalAdd<DdType::Sylvan, double>(ddManager, this->sylvanMtbdd.ToDoubleRF());
+        }
+#endif
 
         template<typename ValueType>
         InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::sumAbstract(InternalBdd<DdType::Sylvan> const& cube) const {

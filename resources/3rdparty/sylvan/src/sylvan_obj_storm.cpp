@@ -23,6 +23,12 @@ Bdd::toStormRationalFunctionMtbdd() const {
     return mtbdd_bool_to_storm_rational_function(bdd);
 }
 
+Mtbdd 
+Mtbdd::ToDoubleRF() const {
+    LACE_ME;
+    return sylvan_storm_rational_function_to_double(mtbdd);
+}
+
 Mtbdd
 Mtbdd::PlusRF(const Mtbdd &other) const
 {
