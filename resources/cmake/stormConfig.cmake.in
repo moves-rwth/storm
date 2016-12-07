@@ -2,6 +2,8 @@ set(storm_VERSION @storm_VERSION@)
 
 get_filename_component(storm_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
 
+include("@carl_CMAKE_DIR@/carlConfig.cmake")
+
 @DEP_TARGETS@
 
 @EXP_OPTIONS@
