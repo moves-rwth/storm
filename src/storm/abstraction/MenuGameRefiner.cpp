@@ -54,7 +54,7 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type, typename ValueType>
-        MenuGameRefiner<Type, ValueType>::MenuGameRefiner(MenuGameAbstractor<Type, ValueType>& abstractor, std::unique_ptr<storm::solver::SmtSolver>&& smtSolver) : abstractor(abstractor), useInterpolation(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isUseInterpolationSet()), splitAll(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isSplitAllSet()), splitPredicates(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isSplitPredicatesSet()), splitGuards(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isSplitGuardsSet()), splitInitialGuards(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isSplitInitialGuardsSet()), pivotSelectionHeuristic(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getPivotSelectionHeuristic()), splitter(), equivalenceChecker(std::move(smtSolver)) {
+        MenuGameRefiner<Type, ValueType>::MenuGameRefiner(MenuGameAbstractor<Type, ValueType>& abstractor, std::unique_ptr<storm::solver::SmtSolver>&& smtSolver) : abstractor(abstractor), useInterpolation(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isUseInterpolationSet()), splitAll(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isSplitAllSet()), splitPredicates(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isSplitPredicatesSet()), splitGuards(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isSplitGuardsSet()), splitInitialGuards(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isSplitInitialGuardsSet()), addedAllGuardsFlag(false), pivotSelectionHeuristic(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getPivotSelectionHeuristic()), splitter(), equivalenceChecker(std::move(smtSolver)) {
             
             if (storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isAddAllGuardsSet()) {
                 std::vector<storm::expressions::Expression> guards;
@@ -64,6 +64,8 @@ namespace storm {
                     guards.push_back(this->abstractor.get().getGuard(index));
                 }
                 performRefinement(createGlobalRefinement(preprocessPredicates(guards, RefinementPredicates::Source::InitialGuard)));
+                
+                addedAllGuardsFlag = true;
             }
         }
         
@@ -71,8 +73,6 @@ namespace storm {
         void MenuGameRefiner<Type, ValueType>::refine(std::vector<storm::expressions::Expression> const& predicates) const {
             performRefinement(createGlobalRefinement(predicates));
         }
-        
-//        static int cnt = 0;
         
         template<storm::dd::DdType Type, typename ValueType>
         MostProbablePathsResult<Type, ValueType> getMostProbablePathSpanningTree(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& transitionFilter) {
@@ -589,15 +589,6 @@ namespace storm {
             // Now that we have the pivot state candidates, we need to pick one.
             PivotStateResult<Type, ValueType> pivotStateResult = pickPivotState<Type, ValueType>(pivotSelectionHeuristic, game, pivotStateCandidatesResult, qualitativeResult, boost::none);
             
-//            pivotStateResult.pivotState.template toAdd<ValueType>().exportToDot("pivot__" + std::to_string(cnt) + ".dot");
-//            (pivotStateResult.pivotState && minPlayer1Strategy).template toAdd<ValueType>().exportToDot("pivotmin_pl1__" + std::to_string(cnt) + ".dot");
-//            (pivotStateResult.pivotState && minPlayer1Strategy && minPlayer2Strategy).template toAdd<ValueType>().exportToDot("pivotmin_pl1pl2__" + std::to_string(cnt) + ".dot");
-//            ((pivotStateResult.pivotState && minPlayer1Strategy && minPlayer2Strategy).template toAdd<ValueType>() * game.getExtendedTransitionMatrix()).exportToDot("pivotmin_succ__" + std::to_string(cnt) + ".dot");
-//            (pivotStateResult.pivotState && maxPlayer1Strategy).template toAdd<ValueType>().exportToDot("pivotmax_pl1__" + std::to_string(cnt) + ".dot");
-//            (pivotStateResult.pivotState && maxPlayer1Strategy && maxPlayer2Strategy).template toAdd<ValueType>().exportToDot("pivotmax_pl1pl2__" + std::to_string(cnt) + ".dot");
-//            ((pivotStateResult.pivotState && maxPlayer1Strategy && maxPlayer2Strategy).template toAdd<ValueType>() * game.getExtendedTransitionMatrix()).exportToDot("pivotmax_succ__" + std::to_string(cnt) + ".dot");
-//            ++cnt;
-            
             boost::optional<RefinementPredicates> predicates;
             if (useInterpolation) {
                 predicates = derivePredicatesFromInterpolation(game, pivotStateResult, minPlayer1Strategy, minPlayer2Strategy, maxPlayer1Strategy, maxPlayer2Strategy);
@@ -714,6 +705,11 @@ namespace storm {
             for (auto const& predicate : abstractor.get().getAbstractionInformation().getPredicates()) {
                 STORM_LOG_TRACE(predicate);
             }
+        }
+        
+        template<storm::dd::DdType Type, typename ValueType>
+        bool MenuGameRefiner<Type, ValueType>::addedAllGuards() const {
+            return addedAllGuardsFlag;
         }
         
         template class MenuGameRefiner<storm::dd::DdType::CUDD, double>;

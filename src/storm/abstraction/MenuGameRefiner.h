@@ -94,6 +94,11 @@ namespace storm {
              */
             bool refine(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& transitionMatrixBdd, QuantitativeResultMinMax<Type, ValueType> const& quantitativeResult) const;
             
+            /*!
+             * Retrieves whether all guards were added.
+             */
+            bool addedAllGuards() const;
+            
         private:
             RefinementPredicates derivePredicatesFromDifferingChoices(storm::dd::Bdd<Type> const& pivotState, storm::dd::Bdd<Type> const& player1Choice, storm::dd::Bdd<Type> const& lowerChoice, storm::dd::Bdd<Type> const& upperChoice) const;
             RefinementPredicates derivePredicatesFromPivotState(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& pivotState, storm::dd::Bdd<Type> const& minPlayer1Strategy, storm::dd::Bdd<Type> const& minPlayer2Strategy, storm::dd::Bdd<Type> const& maxPlayer1Strategy, storm::dd::Bdd<Type> const& maxPlayer2Strategy) const;
@@ -130,6 +135,9 @@ namespace storm {
             
             /// A flag indicating whether the initially added guards shall be split before using them for refinement.
             bool splitInitialGuards;
+            
+            /// A flag indicating whether all guards have been used to refine the abstraction.
+            bool addedAllGuardsFlag;
 
             /// The heuristic to use for pivot block selection.
             storm::settings::modules::AbstractionSettings::PivotSelectionHeuristic pivotSelectionHeuristic;

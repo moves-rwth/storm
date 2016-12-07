@@ -20,6 +20,7 @@ namespace storm {
             const std::string AbstractionSettings::precisionOptionName = "precision";
             const std::string AbstractionSettings::pivotHeuristicOptionName = "pivot-heuristic";
             const std::string AbstractionSettings::invalidBlockStrategyOptionName = "invalid-blocks";
+            const std::string AbstractionSettings::reuseQualitativeResultsOptionName = "reuse-qualitative";
 
             AbstractionSettings::AbstractionSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, addAllGuardsOptionName, true, "Sets whether all guards are added as initial predicates.").build());
@@ -29,6 +30,7 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, splitAllOptionName, true, "Sets whether all predicates are split into atoms before they are added.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, useInterpolationOptionName, true, "Sets whether interpolation is to be used to eliminate spurious pivot blocks.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, precisionOptionName, true, "The precision used for detecting convergence.").addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to achieve.").setDefaultValueDouble(1e-03).addValidationFunctionDouble(storm::settings::ArgumentValidators::doubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
+
                 std::vector<std::string> pivotHeuristic = {"nearest-max-dev", "most-prob-path", "max-weighted-dev"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, pivotHeuristicOptionName, true, "Sets the pivot selection heuristic.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of an available heuristic. Available are: 'nearest-max-dev', 'most-prob-path' and 'max-weighted-dev'.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(pivotHeuristic)).setDefaultValueString("nearest-max-dev").build()).build());
@@ -36,6 +38,8 @@ namespace storm {
                 std::vector<std::string> invalidBlockStrategies = {"none", "command", "global"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, invalidBlockStrategyOptionName, true, "Sets the strategy to detect invalid blocks.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of an available strategy. Available are: 'none', 'command' and 'global'.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(invalidBlockStrategies)).setDefaultValueString("global").build()).build());
+                
+                this->addOption(storm::settings::OptionBuilder(moduleName, reuseQualitativeResultsOptionName, true, "Sets whether to reuse qualitative results.").build());
             }
             
             bool AbstractionSettings::isAddAllGuardsSet() const {
@@ -88,6 +92,10 @@ namespace storm {
                     return AbstractionSettings::InvalidBlockDetectionStrategy::Global;
                 }
                 STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown invalid block detection strategy '" << strategyName << "'.");
+            }
+            
+            bool AbstractionSettings::isReuseQualitativeResultsSet() const {
+                return this->getOption(reuseQualitativeResultsOptionName).getHasOptionBeenSet();
             }
         }
     }

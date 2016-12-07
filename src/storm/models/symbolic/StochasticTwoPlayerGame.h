@@ -90,9 +90,11 @@ namespace storm {
                 storm::dd::Bdd<Type> getIllegalPlayer2Mask() const;
                 
             private:
-                // A mask that characterizes all illegal player 1 choices. The mask for player 2 is given by the mask
-                // of the superclass (nondeterminstic model).
+                // A mask that characterizes all illegal player 1 choices.
                 storm::dd::Bdd<Type> illegalPlayer1Mask;
+
+                // A mask that characterizes all illegal player 2 choices.
+                storm::dd::Bdd<Type> illegalPlayer2Mask;
 
                 // The meta variables used to encode the nondeterministic choices of player 1.
                 std::set<storm::expressions::Variable> player1Variables;
