@@ -4,14 +4,6 @@ add_custom_target(test-resources)
 set(STORM_3RDPARTY_SOURCE_DIR ${PROJECT_SOURCE_DIR}/resources/3rdparty)
 set(STORM_3RDPARTY_BINARY_DIR ${PROJECT_BINARY_DIR}/resources/3rdparty)
 
-if (STORM_PYTHON)
-    find_package(PythonInterp 3 REQUIRED QUIET)
-    find_package(PythonLibs 3 REQUIRED QUIET)
-
-    message(STATUS "Python executable: ${PYTHON_EXECUTABLE}")
-    message(STATUS "Python include: ${PYTHON_INCLUDE_DIRS}")
-    message(STATUS "Python include: ${PYTHON_LIBRARIES}")
-endif()
 
 #############################################################
 ##
@@ -200,35 +192,56 @@ if(USE_CARL)
         message(STATUS "Storm - Linking with carl ${carl_VERSION} (CARL_USE_CLN_NUMBERS: ${CARL_USE_CLN_NUMBERS}).")
         set(STORM_HAVE_CLN ${CARL_USE_CLN_NUMBERS})
     else()
+		# The first external project will be built at *configure stage*
+		message("START CARL CONFIG PROCESS")
+		file(MAKE_DIRECTORY ${STORM_3RDPARTY_BINARY_DIR}/carl_download) 
+			execute_process(
+			COMMAND ${CMAKE_COMMAND} ${STORM_3RDPARTY_SOURCE_DIR}/carl "-DSTORM_3RDPARTY_BINARY_DIR=${STORM_3RDPARTY_BINARY_DIR}"
+			WORKING_DIRECTORY ${STORM_3RDPARTY_BINARY_DIR}/carl_download
+			OUTPUT_VARIABLE carlconfig_out
+			RESULT_VARIABLE carlconfig_result
+					)
+		
+								
+		if(NOT carlconfig_result)
+			message("${carlconfig_out}")
+		endif()
+		execute_process(
+			COMMAND ${CMAKE_COMMAND} --build . --target carl-config
+			WORKING_DIRECTORY ${STORM_3RDPARTY_BINARY_DIR}/carl_download
+			OUTPUT_VARIABLE carlconfig_out
+			RESULT_VARIABLE carlconfig_result
+			)
+			if(NOT carlconfig_result)
+			message("${carlconfig_out}")
+		endif()
+    	message("END CARL CONFIG PROCESS")
+    	
         message(STATUS "Storm - Using shipped version of carl.")
         set(CARL_BUILD_COMMAND make lib_carl)
-        if(STORM_PYTHON)
-            set(CARL_BUILD_COMMAND ${CARL_BUILD_COMMAND} PythonBindingsDevelop)
-        endif()
         ExternalProject_Add(
                 carl
-                GIT_REPOSITORY https://github.com/smtrat/carl
-                GIT_TAG master
-                INSTALL_DIR ${STORM_3RDPARTY_BINARY_DIR}/carl
-                SOURCE_DIR ${STORM_3RDPARTY_SOURCE_DIR}/carl
-		        CMAKE_ARGS -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} -DBOOST_INCLUDEDIR=${Boost_INCLUDE_DIRS} -DBOOST_LIBRARYDIR=${Boost_LIBRARY_DIRS} -DBoost_NO_SYSTEM_PATHS=1 -DEXPORT_TO_CMAKE=0 -DUSE_CLN_NUMBERS=1 -DCMAKE_SKIP_INSTALL_ALL_DEPENDENCY=1 -DCMAKE_INSTALL_PREFIX:PATH=${STORM_3RDPARTY_BINARY_DIR}/carl 
-                BUILD_IN_SOURCE 0
-                BUILD_COMMAND ${CARL_BUILD_COMMAND}
+                SOURCE_DIR ${STORM_3RDPARTY_BINARY_DIR}/carl
+                CONFIGURE_COMMAND ""
+                BUILD_IN_SOURCE 1
+                BUILD_COMMAND make lib_carl
                 INSTALL_COMMAND ""
-                LOG_UPDATE ON
-                LOG_CONFIGURE ON
                 LOG_BUILD ON
                 BUILD_BYPRODUCTS ${STORM_3RDPARTY_BINARY_DIR}/carl/lib/libcarl${DYNAMIC_EXT}
         )
         include(${STORM_3RDPARTY_BINARY_DIR}/carl/carlConfig.cmake)
         message("CARL_USE_CLN_NUMBERS: ${CARL_USE_CLN_NUMBERS}")
 		set(STORM_HAVE_CLN ${CARL_USE_CLN_NUMBERS})
-        add_dependencies(resources carl)
-        set(carl_INCLUDE_DIR "${STORM_3RDPARTY_BINARY_DIR}/carl/include")
+		add_dependencies(resources carl)
+        set(carl_INCLUDE_DIR "${STORM_3RDPARTY_BINARY_DIR}/carl/build/include")
         set(STORM_HAVE_CARL ON)
     endif()
+    if(STORM_USE_CLN_NUMBERS AND NOT STORM_HAVE_CLN)
+		message(FATAL_ERROR "Cannot use CLN numbers if carl is build without")
+	endif()
+	
+	list(APPEND STORM_DEP_IMP_TARGETS lib_carl) 
     
-	list(APPEND STORM_DEP_TARGETS lib_carl)
 endif()
 
 
@@ -355,6 +368,7 @@ if(${OPERATING_SYSTEM} MATCHES "Linux")
     if(HWLOC_FOUND)
         message(STATUS "Storm - Linking with hwloc ${HWLOC_VERSION}.")
         add_imported_library(hwloc "" ${Hwloc_LIBRARIES})
+        list(APPEND STORM_DEP_TARGETS hwloc)
     else()
         message(FATAL_ERROR "HWLOC is required but was not found.")
     endif()

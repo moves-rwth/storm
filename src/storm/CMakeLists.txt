@@ -39,8 +39,7 @@ add_library(storm SHARED ${STORM_LIB_SOURCES} ${STORM_LIB_HEADERS})
 # Remove define symbol for shared libstorm.
 set_target_properties(storm PROPERTIES DEFINE_SYMBOL "")
 add_dependencies(storm resources)
-message("STORM_DEP_TARGETS: ${STORM_DEP_TARGETS}")
-target_link_libraries(storm PUBLIC  ${STORM_DEP_TARGETS} ${STORM_LINK_LIBRARIES})
+target_link_libraries(storm PUBLIC ${STORM_DEP_TARGETS}  ${STORM_DEP_IMP_TARGETS} ${STORM_LINK_LIBRARIES})
 list(APPEND STORM_TARGETS storm)
 set(STORM_TARGETS ${STORM_TARGETS} PARENT_SCOPE)
 

@@ -46,7 +46,7 @@ add_dependencies(resources cudd3)
 if(BUILD_SHARED_LIBS)
 	list(APPEND STORM_DEP_TARGETS cudd_SHARED)
 else()
-    list(APPEND STORM_LINK_LIBRARIES cudd_STATIC)
+    list(APPEND STORM_DEP_TARGETS cudd_STATIC)
 endif()
 
 message(STATUS "Storm - Linking with CUDD ${CUDD_VERSION_STRING}.")
