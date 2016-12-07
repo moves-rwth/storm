@@ -7,7 +7,6 @@ macro(add_imported_library_interface name include)
 endmacro(add_imported_library_interface)
 
 macro(add_imported_library name type lib include)
-message("${name} include ${include}")
 # Workaround from https://cmake.org/Bug/view.php?id=15052
 	file(MAKE_DIRECTORY "${include}")
 	if("${lib}" STREQUAL "")
