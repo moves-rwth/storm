@@ -650,6 +650,7 @@ namespace storm {
         }
         
         modernjson::json buildDestinations(std::vector<EdgeDestination> const& destinations, std::map<uint64_t, std::string> const& locationNames) {
+            assert(destinations.size() > 0);
             std::vector<modernjson::json> destDeclarations;
             for(auto const& destination : destinations) {
                 modernjson::json destEntry;
@@ -664,6 +665,10 @@ namespace storm {
         modernjson::json buildEdges(std::vector<Edge> const& edges , std::map<uint64_t, std::string> const& actionNames, std::map<uint64_t, std::string> const& locationNames) {
             std::vector<modernjson::json> edgeDeclarations;
             for(auto const& edge : edges) {
+                if (edge.getGuard().isFalse()) {
+                    continue;
+                }
+                STORM_LOG_THROW(edge.getDestinations().size() > 0, storm::exceptions::InvalidJaniException, "An edge without destinations is not allowed.");
                 modernjson::json edgeEntry;
                 edgeEntry["location"] = locationNames.at(edge.getSourceLocationIndex());
                 if(!edge.hasSilentAction()) {
