@@ -4,7 +4,6 @@ resources/3rdparty/gtest-1.7.0/
 resources/3rdparty/eigen/
 resources/3rdparty/gmm-4.2/
 resources/3rdparty/cudd-3.0.0/
-resources/3rdparty/carl/
 resources/3rdparty/xercesc-3.1.2/
 #Visual Studio files
 *.[Oo]bj
