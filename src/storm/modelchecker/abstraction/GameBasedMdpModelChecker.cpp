@@ -469,7 +469,7 @@ namespace storm {
                     qualitativeResult.prob0Min = storm::utility::graph::performProb0(game, transitionMatrixBdd, constraintStates, targetStates, player1Direction, storm::OptimizationDirection::Minimize, true, true);
                     
                     // (2) min/min: compute prob1 using the MDP functions
-                    storm::dd::Bdd<Type> candidates = storm::utility::graph::performProbGreater0A(game, transitionMatrixBdd, constraintStates, targetStates);
+                    storm::dd::Bdd<Type> candidates = game.getReachableStates() && !qualitativeResult.prob0Min.player1States;
                     storm::dd::Bdd<Type> prob1MinMinMdp = storm::utility::graph::performProb1A(game, transitionMatrixBdd, constraintStates, previousQualitativeResult ? previousQualitativeResult.get().prob1Min.player1States : targetStates, candidates);
 
                     // (3) min/min: compute prob1 using the game functions
@@ -479,9 +479,10 @@ namespace storm {
                     qualitativeResult.prob0Max = storm::utility::graph::performProb0(game, transitionMatrixBdd, constraintStates, targetStates, player1Direction, storm::OptimizationDirection::Maximize, true, true);
                     
                     // (5) min/max: compute prob 1 using the game functions
-                    // If the guards were previously added, we know that only previous prob1 states can now be prob 1 states again.
+                    // We know that only previous prob1 states can now be prob 1 states again, because the upper bound
+                    // values can only decrease over iterations.
                     boost::optional<storm::dd::Bdd<Type>> prob1Candidates;
-                    if (addedAllGuards && previousQualitativeResult) {
+                    if (previousQualitativeResult) {
                         prob1Candidates = previousQualitativeResult.get().prob1Max.player1States;
                     }
                     qualitativeResult.prob1Max = storm::utility::graph::performProb1(game, transitionMatrixBdd, constraintStates, targetStates, player1Direction, storm::OptimizationDirection::Maximize, true, true, prob1Candidates);
@@ -490,7 +491,7 @@ namespace storm {
                     qualitativeResult.prob0Max = storm::utility::graph::performProb0(game, transitionMatrixBdd, constraintStates, targetStates, player1Direction, storm::OptimizationDirection::Maximize, true, true);
                     
                     // (2) max/max: compute prob1 using the MDP functions, reuse prob1 states of last iteration to constrain the candidate states.
-                    storm::dd::Bdd<Type> candidates = storm::utility::graph::performProbGreater0E(game, transitionMatrixBdd, constraintStates, targetStates);
+                    storm::dd::Bdd<Type> candidates = game.getReachableStates() && !qualitativeResult.prob0Max.player1States;
                     if (previousQualitativeResult) {
                         candidates &= previousQualitativeResult.get().prob1Max.player1States;
                     }
