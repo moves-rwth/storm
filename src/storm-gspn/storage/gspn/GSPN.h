@@ -10,6 +10,7 @@
 #include "storm-gspn/storage/gspn/Marking.h"
 #include "storm-gspn/storage/gspn/Place.h"
 #include "storm-gspn/storage/gspn/TimedTransition.h"
+#include "storm-gspn/storage/gspn/TransitionPartition.h"
 
 namespace storm {
     namespace gspn {
@@ -27,7 +28,8 @@ namespace storm {
             typedef double WeightType;
             
             
-            GSPN(std::string const& name, std::vector<Place> const& places, std::vector<ImmediateTransition<WeightType>> const& itransitions, std::vector<TimedTransition<RateType>> const& ttransitions);
+            GSPN(std::string const& name, std::vector<Place> const& places, std::vector<ImmediateTransition<WeightType>> const& itransitions,
+                 std::vector<TimedTransition<RateType>> const& ttransitions, std::vector<TransitionPartition> const& partitions);
             
             /*!
              * Returns the number of places in this gspn.
@@ -176,7 +178,8 @@ namespace storm {
             // set containing all timed transitions
             std::vector<storm::gspn::TimedTransition<RateType>> timedTransitions;
 
-
+            std::vector<storm::gspn::TransitionPartition> partitions;
+            
         };
     }
 }

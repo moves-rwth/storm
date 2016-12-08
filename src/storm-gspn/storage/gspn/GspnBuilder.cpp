@@ -29,8 +29,27 @@ namespace storm {
             auto newId = GSPN::immediateTransitionIdToTransitionId(immediateTransitions.size());
             trans.setName(name);
             trans.setPriority(priority);
-            trans.setWeight(weight);
             trans.setID(newId);
+            
+            // ensure that the first partition is for the 'general/weighted' transitions
+            if(partitions.count(priority) == 0) {
+                TransitionPartition newPart;
+                newPart.priority = priority;
+                partitions.at(priority).push_back(newPart);
+            }
+            
+            if(storm::utility::isZero(weight)) {
+                trans.setWeight(storm::utility::one<double>());
+                TransitionPartition newPart;
+                newPart.priority = priority;
+                newPart.transitions = {newId};
+                partitions.at(priority).push_back(newPart);
+            } else {
+                trans.setWeight(weight);
+                partitions.at(priority).front().transitions.push_back(newId);
+                
+                
+            }
             immediateTransitions.push_back(trans);
             return newId;
             
@@ -131,7 +150,20 @@ namespace storm {
         
 
         storm::gspn::GSPN* GspnBuilder::buildGspn() const {
-            return new GSPN(gspnName, places, immediateTransitions, timedTransitions);
+            std::vector<TransitionPartition> orderedPartitions;
+            for(auto const& priorityPartitions : partitions) {
+                for (auto const& partition : priorityPartitions.second) {
+                    // sanity check
+                    assert(partition.priority == priorityPartitions.first);
+                    
+                    if(partition.nrTransitions() > 0) {
+                        orderedPartitions.push_back(partition);
+                    }
+                }
+                
+            }
+            
+            return new GSPN(gspnName, places, immediateTransitions, timedTransitions, orderedPartitions);
         }
     }
 }

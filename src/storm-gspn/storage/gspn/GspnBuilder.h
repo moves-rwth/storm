@@ -102,6 +102,8 @@ namespace storm {
             
             std::string gspnName = "_gspn_";
             
+            std::map<uint64_t, std::vector<storm::gspn::TransitionPartition>> partitions;
+            
             // set containing all immediate transitions
             std::vector<storm::gspn::ImmediateTransition<WeightType>> immediateTransitions;
             
