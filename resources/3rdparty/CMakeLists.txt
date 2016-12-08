@@ -346,7 +346,7 @@ ExternalProject_Add(
         PREFIX "sylvan"
         SOURCE_DIR ${STORM_3RDPARTY_SOURCE_DIR}/sylvan
         CMAKE_ARGS -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DSYLVAN_BUILD_TEST=Off -DSYLVAN_BUILD_EXAMPLES=Off -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=ON
-        BINARY_DIR ${PROJECT_BINARY_DIR}/sylvan
+        BINARY_DIR ${STORM_3RDPARTY_BINARY_DIR}/sylvan
         BUILD_IN_SOURCE 0
         INSTALL_COMMAND ""
         INSTALL_DIR ${STORM_3RDPARTY_BINARY_DIR}/sylvan
@@ -361,6 +361,7 @@ set(Sylvan_LIBRARY "${binary_dir}/src/libsylvan${STATIC_EXT}")
 message(STATUS "Storm - Using shipped version of sylvan.")
 message(STATUS "Storm - Linking with sylvan.")
 add_imported_library(sylvan STATIC ${Sylvan_LIBRARY} ${Sylvan_INCLUDE_DIR})
+add_dependencies(sylvan_STATIC sylvan)
 list(APPEND STORM_DEP_TARGETS sylvan_STATIC)
 
 if(${OPERATING_SYSTEM} MATCHES "Linux")
