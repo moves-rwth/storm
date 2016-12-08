@@ -88,12 +88,26 @@ namespace storm {
                 InvalidBlockDetectionStrategy getInvalidBlockDetectionStrategy() const;
                 
                 /*!
-                 * Retrieves whether the option to reuse the qualitative results.
+                 * Retrieves whether the option to reuse the qualitative results was set.
                  *
                  * @param True iff the option was set.
                  */
                 bool isReuseQualitativeResultsSet() const;
+                
+                /*!
+                 * Retrieves whether the option to reuse the quantitative results was set.
+                 *
+                 * @param True iff the option was set.
+                 */
+                bool isReuseQuantitativeResultsSet() const;
 
+                /*!
+                 * Retrieves whether the option to reuse all results was set.
+                 *
+                 * @param True iff the option was set.
+                 */
+                bool isReuseAllResultsSet() const;
+                
                 const static std::string moduleName;
                 
             private:
@@ -108,6 +122,8 @@ namespace storm {
                 const static std::string pivotHeuristicOptionName;
                 const static std::string invalidBlockStrategyOptionName;
                 const static std::string reuseQualitativeResultsOptionName;
+                const static std::string reuseQuantitativeResultsOptionName;
+                const static std::string reuseAllResultsOptionName;
             };
             
         }

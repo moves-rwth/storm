@@ -92,6 +92,9 @@ namespace storm {
             
             /// A flag indicating whether to reuse the qualitative results.
             bool reuseQualitativeResults;
+            
+            /// A flag indicating whether to reuse the quantitative results.
+            bool reuseQuantitativeResults;
         };
     }
 }

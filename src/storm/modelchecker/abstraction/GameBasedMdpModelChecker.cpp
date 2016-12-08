@@ -41,7 +41,7 @@ namespace storm {
         using storm::abstraction::QuantitativeResultMinMax;
         
         template<storm::dd::DdType Type, typename ModelType>
-        GameBasedMdpModelChecker<Type, ModelType>::GameBasedMdpModelChecker(storm::storage::SymbolicModelDescription const& model, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory) : smtSolverFactory(smtSolverFactory), comparator(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getPrecision()), reuseQualitativeResults(false) {
+        GameBasedMdpModelChecker<Type, ModelType>::GameBasedMdpModelChecker(storm::storage::SymbolicModelDescription const& model, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory) : smtSolverFactory(smtSolverFactory), comparator(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getPrecision()), reuseQualitativeResults(false), reuseQuantitativeResults(false) {
             STORM_LOG_THROW(model.isPrismProgram(), storm::exceptions::NotSupportedException, "Currently only PRISM models are supported by the game-based model checker.");
             storm::prism::Program const& originalProgram = model.asPrismProgram();
             STORM_LOG_THROW(originalProgram.getModelType() == storm::prism::Program::ModelType::DTMC || originalProgram.getModelType() == storm::prism::Program::ModelType::MDP, storm::exceptions::NotSupportedException, "Currently only DTMCs/MDPs are supported by the game-based model checker.");
@@ -54,7 +54,9 @@ namespace storm {
                 preprocessedModel = originalProgram;
             }
             
-            reuseQualitativeResults = storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isReuseQualitativeResultsSet();
+            bool reuseAll = storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isReuseAllResultsSet();
+            reuseQualitativeResults = reuseAll || storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isReuseQualitativeResultsSet();
+            reuseQuantitativeResults = reuseAll || storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isReuseQuantitativeResultsSet();
         }
 
         template<storm::dd::DdType Type, typename ModelType>
@@ -292,6 +294,7 @@ namespace storm {
             
             // Enter the main-loop of abstraction refinement.
             boost::optional<QualitativeResultMinMax<Type>> previousQualitativeResult = boost::none;
+            boost::optional<QuantitativeResult<Type, ValueType>> previousMinQuantitativeResult = boost::none;
             for (uint_fast64_t iterations = 0; iterations < 10000; ++iterations) {
                 auto iterationStart = std::chrono::high_resolution_clock::now();
                 STORM_LOG_TRACE("Starting iteration " << iterations << ".");
@@ -367,7 +370,8 @@ namespace storm {
                     QuantitativeResultMinMax<Type, ValueType> quantitativeResult;
                     
                     // (7) Solve the min values and check whether we can give the answer already.
-                    quantitativeResult.min = computeQuantitativeResult(player1Direction, storm::OptimizationDirection::Minimize, game, qualitativeResult, initialStatesAdd, maybeMin);
+                    quantitativeResult.min = computeQuantitativeResult(player1Direction, storm::OptimizationDirection::Minimize, game, qualitativeResult, initialStatesAdd, maybeMin, reuseQuantitativeResults ? previousMinQuantitativeResult : boost::none);
+                    previousMinQuantitativeResult = quantitativeResult.min;
                     result = checkForResultAfterQuantitativeCheck<ValueType>(checkTask, storm::OptimizationDirection::Minimize, quantitativeResult.min.initialStateValue);
                     if (result) {
                         printStatistics(abstractor, game);

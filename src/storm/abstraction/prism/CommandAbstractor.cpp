@@ -44,9 +44,7 @@ namespace storm {
                 for (auto predicateIndex : predicates) {
                     localExpressionInformation.addExpression(predicateIndex);
                 }
-                
-                STORM_LOG_TRACE("Current variable partition is: " << localExpressionInformation);
-                
+                                
                 // Next, we check whether there is work to be done by recomputing the relevant predicates and checking
                 // whether they changed.
                 std::pair<std::set<uint_fast64_t>, std::vector<std::set<uint_fast64_t>>> newRelevantPredicates = this->computeRelevantPredicates();

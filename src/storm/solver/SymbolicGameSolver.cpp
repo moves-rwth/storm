@@ -41,7 +41,7 @@ namespace storm {
             }
             boost::optional<storm::dd::Add<Type, ValueType>> previousPlayer2Values;
             if (generatePlayer2Strategy) {
-                if (basePlayer2Strategy) {
+                if (basePlayer2Strategy && player2Goal == storm::OptimizationDirection::Maximize) {
                     player2Strategy = basePlayer2Strategy.get();
 
                     // If we are required to generate a player 2 strategy based on another one that is not the zero strategy,

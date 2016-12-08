@@ -21,6 +21,8 @@ namespace storm {
             const std::string AbstractionSettings::pivotHeuristicOptionName = "pivot-heuristic";
             const std::string AbstractionSettings::invalidBlockStrategyOptionName = "invalid-blocks";
             const std::string AbstractionSettings::reuseQualitativeResultsOptionName = "reuse-qualitative";
+            const std::string AbstractionSettings::reuseQuantitativeResultsOptionName = "reuse-quantitative";
+            const std::string AbstractionSettings::reuseAllResultsOptionName = "reuse-all";
 
             AbstractionSettings::AbstractionSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, addAllGuardsOptionName, true, "Sets whether all guards are added as initial predicates.").build());
@@ -40,6 +42,8 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of an available strategy. Available are: 'none', 'command' and 'global'.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(invalidBlockStrategies)).setDefaultValueString("global").build()).build());
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, reuseQualitativeResultsOptionName, true, "Sets whether to reuse qualitative results.").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, reuseQuantitativeResultsOptionName, true, "Sets whether to reuse quantitative results.").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, reuseAllResultsOptionName, true, "Sets whether to reuse all results.").build());
             }
             
             bool AbstractionSettings::isAddAllGuardsSet() const {
@@ -97,6 +101,15 @@ namespace storm {
             bool AbstractionSettings::isReuseQualitativeResultsSet() const {
                 return this->getOption(reuseQualitativeResultsOptionName).getHasOptionBeenSet();
             }
+            
+            bool AbstractionSettings::isReuseQuantitativeResultsSet() const {
+                return this->getOption(reuseQuantitativeResultsOptionName).getHasOptionBeenSet();
+            }
+            
+            bool AbstractionSettings::isReuseAllResultsSet() const {
+                return this->getOption(reuseAllResultsOptionName).getHasOptionBeenSet();
+            }
+
         }
     }
 }
