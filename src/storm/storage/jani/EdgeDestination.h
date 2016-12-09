@@ -4,7 +4,7 @@
 
 #include "storm/storage/expressions/Expression.h"
 
-#include "storm/storage/jani/OrderedAssignments.h"
+#include "storm/storage/jani/TemplateEdgeDestination.h"
 
 namespace storm {
     namespace jani {
@@ -14,16 +14,8 @@ namespace storm {
             /*!
              * Creates a new edge destination.
              */
-            EdgeDestination(uint64_t locationIndex, storm::expressions::Expression const& probability, OrderedAssignments const& assignments);
-            
-            EdgeDestination(uint64_t locationIndex, storm::expressions::Expression const& probability, Assignment const& assignment);
-            EdgeDestination(uint64_t locationIndex, storm::expressions::Expression const& probability, std::vector<Assignment> const& assignments = {});
-            
-            /*!
-             * Additionally performs the given assignment when choosing this destination.
-             */
-            void addAssignment(Assignment const& assignment);
-            
+            EdgeDestination(uint64_t locationIndex, storm::expressions::Expression const& probability, std::shared_ptr<TemplateEdgeDestination const> const& templateEdgeDestination);
+                        
             /*!
              * Retrieves the id of the destination location.
              */
@@ -40,6 +32,11 @@ namespace storm {
             void setProbability(storm::expressions::Expression const& probability);
 
             /*!
+             * Substitutes all variables in all expressions according to the given substitution.
+             */
+            void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution);
+
+            /*!
              * Retrieves the mapping from variables to their assigned expressions that corresponds to the assignments
              * of this destination.
              */
@@ -51,13 +48,9 @@ namespace storm {
             OrderedAssignments const& getOrderedAssignments() const;
             
             /*!
-             * Substitutes all variables in all expressions according to the given substitution.
+             * Checks whether this destination has the given assignment.
              */
-            void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution);
-            
-            // Convenience methods to access the assignments.
             bool hasAssignment(Assignment const& assignment) const;
-            bool removeAssignment(Assignment const& assignment);
             
             /*!
              * Retrieves whether this destination has transient assignments.
@@ -69,6 +62,11 @@ namespace storm {
              */
             bool usesAssignmentLevels() const;
             
+            /*!
+             * Retrieves the template destination for this destination.
+             */
+            std::shared_ptr<TemplateEdgeDestination const> getTemplateEdgeDestination() const;
+            
         private:
             // The index of the destination location.
             uint64_t locationIndex;
@@ -76,8 +74,8 @@ namespace storm {
             // The probability to go to the destination.
             storm::expressions::Expression probability;
             
-            // The (ordered) assignments to make when choosing this destination.
-            OrderedAssignments assignments;
+            // The template edge destination
+            std::shared_ptr<TemplateEdgeDestination const> templateEdgeDestination;
         };
         
     }

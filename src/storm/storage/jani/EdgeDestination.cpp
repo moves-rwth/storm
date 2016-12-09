@@ -6,20 +6,8 @@
 namespace storm {
     namespace jani {
         
-        EdgeDestination::EdgeDestination(uint64_t locationIndex, storm::expressions::Expression const& probability, OrderedAssignments const& assignments) : locationIndex(locationIndex), probability(probability), assignments(assignments) {
+        EdgeDestination::EdgeDestination(uint64_t locationIndex, storm::expressions::Expression const& probability, std::shared_ptr<TemplateEdgeDestination const> const& templateEdgeDestination) : locationIndex(locationIndex), probability(probability), templateEdgeDestination(templateEdgeDestination) {
             // Intentionally left empty.
-        }
-
-        EdgeDestination::EdgeDestination(uint64_t locationIndex, storm::expressions::Expression const& probability, Assignment const& assignments) : locationIndex(locationIndex), probability(probability), assignments(assignments) {
-            // Intentionally left empty.
-        }
-
-        EdgeDestination::EdgeDestination(uint64_t locationIndex, storm::expressions::Expression const& probability, std::vector<Assignment> const& assignments) : locationIndex(locationIndex), probability(probability), assignments(assignments) {
-            // Intentionally left empty.
-        }
-        
-        void EdgeDestination::addAssignment(Assignment const& assignment) {
-            assignments.add(assignment);
         }
         
         uint64_t EdgeDestination::getLocationIndex() const {
@@ -45,24 +33,19 @@ namespace storm {
         }
         
         OrderedAssignments const& EdgeDestination::getOrderedAssignments() const {
-            return assignments;
+            return templateEdgeDestination->getOrderedAssignments();
         }
         
         void EdgeDestination::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
             this->setProbability(this->getProbability().substitute(substitution));
-            assignments.substitute(substitution);
         }
         
         bool EdgeDestination::hasAssignment(Assignment const& assignment) const {
-            return assignments.contains(assignment);
-        }
-        
-        bool EdgeDestination::removeAssignment(Assignment const& assignment) {
-            return assignments.remove(assignment);
+            return this->getOrderedAssignments().contains(assignment);
         }
         
         bool EdgeDestination::hasTransientAssignment() const {
-            return !assignments.getTransientAssignments().empty();
+            return !this->getOrderedAssignments().getTransientAssignments().empty();
         }
         
         bool EdgeDestination::usesAssignmentLevels() const {
@@ -72,5 +55,8 @@ namespace storm {
             return this->getOrderedAssignments().getLowestLevel() != 0 || this->getOrderedAssignments().getHighestLevel() != 0;
         }
         
+        std::shared_ptr<TemplateEdgeDestination const> EdgeDestination::getTemplateEdgeDestination() const {
+            return templateEdgeDestination;
+        }
     }
 }
