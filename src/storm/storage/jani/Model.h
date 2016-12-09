@@ -156,6 +156,13 @@ namespace storm {
              * Retrieves the variables of this automaton.
              */
             VariableSet const& getGlobalVariables() const;
+            
+            /*!
+             * Retrieves all expression variables used by this model.
+             *
+             * @return The set of expression variables used by this model.
+             */
+            std::set<storm::expressions::Variable> getAllExpressionVariables() const;
 
             /*!
              * Retrieves whether this model has a global variable with the given name.

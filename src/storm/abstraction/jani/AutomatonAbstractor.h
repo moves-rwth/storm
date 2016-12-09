@@ -2,7 +2,7 @@
 
 #include "storm/storage/dd/DdType.h"
 
-#include "storm/abstraction/prism/CommandAbstractor.h"
+#include "storm/abstraction/jani/EdgeAbstractor.h"
 
 #include "storm/settings/modules/AbstractionSettings.h"
 
@@ -11,9 +11,9 @@
 #include "storm/utility/solver.h"
 
 namespace storm {
-    namespace prism {
-        // Forward-declare concrete module class.
-        class Module;
+    namespace jani {
+        // Forward-declare concrete automaton class.
+        class Automaton;
     }
     
     namespace abstraction {
@@ -23,29 +23,26 @@ namespace storm {
         template<storm::dd::DdType DdType>
         struct BottomStateResult;
 
-        template<storm::dd::DdType DdType>
-        struct GameBddResult;
-
-        namespace prism {
+        namespace jani {
             template <storm::dd::DdType DdType, typename ValueType>
-            class ModuleAbstractor {
+            class AutomatonAbstractor {
             public:
                 /*!
-                 * Constructs an abstract module from the given module.
+                 * Constructs an abstract module from the given automaton.
                  *
-                 * @param module The concrete module for which to build the abstraction.
+                 * @param automaton The concrete automaton for which to build the abstraction.
                  * @param abstractionInformation An object holding information about the abstraction such as predicates and BDDs.
                  * @param smtSolverFactory A factory that is to be used for creating new SMT solvers.
                  */
-                ModuleAbstractor(storm::prism::Module const& module, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, storm::settings::modules::AbstractionSettings::InvalidBlockDetectionStrategy invalidBlockDetectionStrategy);
+                AutomatonAbstractor(storm::jani::Automaton const& automaton, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, storm::settings::modules::AbstractionSettings::InvalidBlockDetectionStrategy invalidBlockDetectionStrategy);
                 
-                ModuleAbstractor(ModuleAbstractor const&) = default;
-                ModuleAbstractor& operator=(ModuleAbstractor const&) = default;
-                ModuleAbstractor(ModuleAbstractor&&) = default;
-                ModuleAbstractor& operator=(ModuleAbstractor&&) = default;
+                AutomatonAbstractor(AutomatonAbstractor const&) = default;
+                AutomatonAbstractor& operator=(AutomatonAbstractor const&) = default;
+                AutomatonAbstractor(AutomatonAbstractor&&) = default;
+                AutomatonAbstractor& operator=(AutomatonAbstractor&&) = default;
                 
                 /*!
-                 * Refines the abstract module with the given predicates.
+                 * Refines the abstract automaton with the given predicates.
                  *
                  * @param predicates The new predicate indices.
                  */
@@ -73,7 +70,7 @@ namespace storm {
                 GameBddResult<DdType> abstract();
                 
                 /*!
-                 * Retrieves the transitions to bottom states of this module.
+                 * Retrieves the transitions to bottom states of this automaton.
                  *
                  * @param reachableStates A BDD representing the reachable states.
                  * @param numberOfPlayer2Variables The number of variables used to encode the choices of player 2.
@@ -82,26 +79,33 @@ namespace storm {
                 BottomStateResult<DdType> getBottomStateTransitions(storm::dd::Bdd<DdType> const& reachableStates, uint_fast64_t numberOfPlayer2Variables);
                 
                 /*!
-                 * Retrieves an ADD that maps the encodings of commands and their updates to their probabilities.
+                 * Retrieves an ADD that maps the encodings of edges and their updates to their probabilities.
                  *
-                 * @return The command-update probability ADD.
+                 * @return The edge-update probability ADD.
                  */
-                storm::dd::Add<DdType, ValueType> getCommandUpdateProbabilitiesAdd() const;
+                storm::dd::Add<DdType, ValueType> getEdgeUpdateProbabilitiesAdd() const;
                 
                 /*!
-                 * Retrieves the abstract commands of this abstract module.
+                 * Retrieves the abstract edges of this abstract automton.
                  *
-                 * @return The abstract commands.
+                 * @return The abstract edges.
                  */
-                std::vector<CommandAbstractor<DdType, ValueType>> const& getCommands() const;
+                std::vector<EdgeAbstractor<DdType, ValueType>> const& getEdges() const;
 
                 /*!
-                 * Retrieves the abstract commands of this abstract module.
+                 * Retrieves the abstract edges of this abstract automaton.
                  *
-                 * @return The abstract commands.
+                 * @return The abstract edges.
                  */
-                std::vector<CommandAbstractor<DdType, ValueType>>& getCommands();
+                std::vector<EdgeAbstractor<DdType, ValueType>>& getEdges();
 
+                /*!
+                 * Retrieves the number of abstract edges of this abstract automaton.
+                 *
+                 * @param The number of edges.
+                 */
+                std::size_t getNumberOfEdges() const;
+                
             private:
                 /*!
                  * Retrieves the abstraction information.
@@ -116,11 +120,11 @@ namespace storm {
                 // The DD-related information.
                 std::reference_wrapper<AbstractionInformation<DdType> const> abstractionInformation;
                 
-                // The abstract commands of the abstract module.
-                std::vector<CommandAbstractor<DdType, ValueType>> commands;
+                // The abstract edge of the abstract automaton.
+                std::vector<EdgeAbstractor<DdType, ValueType>> edges;
                 
-                // The concrete module this abstract module refers to.
-                std::reference_wrapper<storm::prism::Module const> module;
+                // The concrete module this abstract automaton refers to.
+                std::reference_wrapper<storm::jani::Automaton const> automaton;
             };
         }
     }

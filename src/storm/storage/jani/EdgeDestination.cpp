@@ -34,6 +34,16 @@ namespace storm {
             this->probability = probability;
         }
         
+        std::map<storm::expressions::Variable, storm::expressions::Expression> EdgeDestination::getAsVariableToExpressionMap() const {
+            std::map<storm::expressions::Variable, storm::expressions::Expression> result;
+            
+            for (auto const& assignment : this->getOrderedAssignments()) {
+                result[assignment.getExpressionVariable()] = assignment.getAssignedExpression();
+            }
+            
+            return result;
+        }
+        
         OrderedAssignments const& EdgeDestination::getOrderedAssignments() const {
             return assignments;
         }

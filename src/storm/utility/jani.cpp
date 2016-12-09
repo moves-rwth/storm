@@ -66,7 +66,24 @@ namespace storm {
                 
                 return constantDefinitions;
             }
-            
+         
+            void requireNoUndefinedConstants(storm::jani::Model const& model) {
+                if (model.hasUndefinedConstants()) {
+                    std::vector<std::reference_wrapper<storm::jani::Constant const>> undefinedConstants = model.getUndefinedConstants();
+                    std::stringstream stream;
+                    bool printComma = false;
+                    for (auto const& constant : undefinedConstants) {
+                        if (printComma) {
+                            stream << ", ";
+                        } else {
+                            printComma = true;
+                        }
+                        stream << constant.get().getName() << " (" << constant.get().getType() << ")";
+                    }
+                    stream << ".";
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Model still contains these undefined constants: " + stream.str());
+                }
+            }
         }
     }
 }

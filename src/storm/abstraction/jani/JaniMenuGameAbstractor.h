@@ -7,7 +7,7 @@
 #include "storm/abstraction/MenuGame.h"
 #include "storm/abstraction/RefinementCommand.h"
 #include "storm/abstraction/ValidBlockAbstractor.h"
-#include "storm/abstraction/prism/ModuleAbstractor.h"
+#include "storm/abstraction/jani/AutomatonAbstractor.h"
 
 #include "storm/storage/dd/Add.h"
 
@@ -29,29 +29,29 @@ namespace storm {
         }
     }
     
-    namespace prism {
-        // Forward-declare concrete Program class.
-        class Program;
+    namespace jani {
+        // Forward-declare concrete Model class.
+        class Model;
     }
     
     namespace abstraction {
-        namespace prism {
+        namespace jani {
             
             template <storm::dd::DdType DdType, typename ValueType>
-            class PrismMenuGameAbstractor : public MenuGameAbstractor<DdType, ValueType> {
+            class JaniMenuGameAbstractor : public MenuGameAbstractor<DdType, ValueType> {
             public:
                 /*!
-                 * Constructs an abstractor for the given program.
+                 * Constructs an abstractor for the given model.
                  *
-                 * @param program The concrete program for which to build the abstraction.
+                 * @param model The concrete model for which to build the abstraction.
                  * @param smtSolverFactory A factory that is to be used for creating new SMT solvers.
                  */
-                PrismMenuGameAbstractor(storm::prism::Program const& program, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory);
+                JaniMenuGameAbstractor(storm::jani::Model const& model, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory);
                 
-                PrismMenuGameAbstractor(PrismMenuGameAbstractor const&) = default;
-                PrismMenuGameAbstractor& operator=(PrismMenuGameAbstractor const&) = default;
-                PrismMenuGameAbstractor(PrismMenuGameAbstractor&&) = default;
-                PrismMenuGameAbstractor& operator=(PrismMenuGameAbstractor&&) = default;
+                JaniMenuGameAbstractor(JaniMenuGameAbstractor const&) = default;
+                JaniMenuGameAbstractor& operator=(JaniMenuGameAbstractor const&) = default;
+                JaniMenuGameAbstractor(JaniMenuGameAbstractor&&) = default;
+                JaniMenuGameAbstractor& operator=(JaniMenuGameAbstractor&&) = default;
                 
                 /*!
                  * Uses the current set of predicates to derive the abstract menu game in the form of an ADD.
@@ -132,8 +132,8 @@ namespace storm {
                  */
                 std::map<uint_fast64_t, storm::storage::BitVector> decodeChoiceToUpdateSuccessorMapping(storm::dd::Bdd<DdType> const& choice) const;
                 
-                // The concrete program this abstract program refers to.
-                std::reference_wrapper<storm::prism::Program const> program;
+                // The concrete model this abstractor refers to.
+                std::reference_wrapper<storm::jani::Model const> model;
 
                 // A factory that can be used to create new SMT solvers.
                 std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory;
@@ -142,7 +142,7 @@ namespace storm {
                 AbstractionInformation<DdType> abstractionInformation;
                 
                 // The abstract modules of the abstract program.
-                std::vector<ModuleAbstractor<DdType, ValueType>> modules;
+                std::vector<AutomatonAbstractor<DdType, ValueType>> automata;
                 
                 // A state-set abstractor used to determine the initial states of the abstraction.
                 StateSetAbstractor<DdType, ValueType> initialStateAbstractor;
@@ -150,8 +150,8 @@ namespace storm {
                 // An object that is used to compute the valid blocks.
                 ValidBlockAbstractor<DdType> validBlockAbstractor;
                                 
-                // An ADD characterizing the probabilities of commands and their updates.
-                storm::dd::Add<DdType, ValueType> commandUpdateProbabilitiesAdd;
+                // An ADD characterizing the probabilities of edges and their updates.
+                storm::dd::Add<DdType, ValueType> edgeUpdateProbabilitiesAdd;
                 
                 // The current game-based abstraction.
                 std::unique_ptr<MenuGame<DdType, ValueType>> currentGame;

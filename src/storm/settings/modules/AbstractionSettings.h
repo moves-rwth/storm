@@ -16,7 +16,7 @@ namespace storm {
                 };
                 
                 enum class InvalidBlockDetectionStrategy {
-                    None, Command, Global
+                    None, Local, Global
                 };
                 
                 /*!

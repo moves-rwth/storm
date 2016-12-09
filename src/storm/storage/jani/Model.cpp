@@ -154,6 +154,23 @@ namespace storm {
             return globalVariables;
         }
         
+        std::set<storm::expressions::Variable> Model::getAllExpressionVariables() const {
+            std::set<storm::expressions::Variable> result;
+            
+            for (auto const& constant : constants) {
+                result.insert(constant.getExpressionVariable());
+            }
+            for (auto const& variable : this->getGlobalVariables()) {
+                result.insert(variable.getExpressionVariable());
+            }
+            for (auto const& automaton : automata) {
+                auto const& automatonVariables = automaton.getAllExpressionVariables();
+                result.insert(automatonVariables.begin(), automatonVariables.end());
+            }
+            
+            return result;
+        }
+        
         bool Model::hasGlobalVariable(std::string const& name) const {
             return globalVariables.hasVariable(name);
         }

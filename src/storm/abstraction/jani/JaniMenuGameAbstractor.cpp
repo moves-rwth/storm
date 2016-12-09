@@ -1,11 +1,11 @@
-#include "storm/abstraction/prism/PrismMenuGameAbstractor.h"
+#include "storm/abstraction/jani/JaniMenuGameAbstractor.h"
 
 #include "storm/abstraction/BottomStateResult.h"
 #include "storm/abstraction/GameBddResult.h"
 
 #include "storm/storage/BitVector.h"
 
-#include "storm/storage/prism/Program.h"
+#include "storm/storage/jani/Model.h"
 
 #include "storm/storage/dd/DdManager.h"
 #include "storm/storage/dd/Add.h"
@@ -26,21 +26,19 @@
 
 namespace storm {
     namespace abstraction {
-        namespace prism {
-                        
+        namespace jani {
+            
             using storm::settings::modules::AbstractionSettings;
             
             template <storm::dd::DdType DdType, typename ValueType>
-            PrismMenuGameAbstractor<DdType, ValueType>::PrismMenuGameAbstractor(storm::prism::Program const& program,
-                                                                std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory)
-            : program(program), smtSolverFactory(smtSolverFactory), abstractionInformation(program.getManager(), program.getAllExpressionVariables(), smtSolverFactory->create(program.getManager())), modules(), initialStateAbstractor(abstractionInformation, {program.getInitialStatesExpression()}, this->smtSolverFactory), validBlockAbstractor(abstractionInformation, smtSolverFactory), currentGame(nullptr), refinementPerformed(false), invalidBlockDetectionStrategy(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getInvalidBlockDetectionStrategy()) {
+            JaniMenuGameAbstractor<DdType, ValueType>::JaniMenuGameAbstractor(storm::jani::Model const& model, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory) : model(model), smtSolverFactory(smtSolverFactory), abstractionInformation(model.getManager(), model.getAllExpressionVariables(), smtSolverFactory->create(model.getManager())), automata(), initialStateAbstractor(abstractionInformation, {model.getInitialStatesExpression()}, this->smtSolverFactory), validBlockAbstractor(abstractionInformation, smtSolverFactory), currentGame(nullptr), refinementPerformed(false), invalidBlockDetectionStrategy(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getInvalidBlockDetectionStrategy()) {
                 
                 // For now, we assume that there is a single module. If the program has more than one module, it needs
                 // to be flattened before the procedure.
-                STORM_LOG_THROW(program.getNumberOfModules() == 1, storm::exceptions::WrongFormatException, "Cannot create abstract program from program containing too many modules.");
+                STORM_LOG_THROW(model.getNumberOfAutomata() == 1, storm::exceptions::WrongFormatException, "Cannot create abstract model from program containing more than one automaton.");
                 
                 // Add all variables range expressions to the information object.
-                for (auto const& range : this->program.get().getAllRangeExpressions()) {
+                for (auto const& range : this->model.get().getAllRangeExpressions()) {
                     abstractionInformation.addConstraint(range);
                     initialStateAbstractor.constrain(range);
                 }
@@ -48,12 +46,12 @@ namespace storm {
                 uint_fast64_t totalNumberOfCommands = 0;
                 uint_fast64_t maximalUpdateCount = 0;
                 std::vector<storm::expressions::Expression> allGuards;
-                for (auto const& module : program.getModules()) {
-                    for (auto const& command : module.getCommands()) {
-                        maximalUpdateCount = std::max(maximalUpdateCount, static_cast<uint_fast64_t>(command.getNumberOfUpdates()));
+                for (auto const& automaton : model.getAutomata()) {
+                    for (auto const& edge : automaton.getEdges()) {
+                        maximalUpdateCount = std::max(maximalUpdateCount, static_cast<uint_fast64_t>(edge.getNumberOfDestinations()));
                     }
                     
-                    totalNumberOfCommands += module.getNumberOfCommands();
+                    totalNumberOfCommands += automaton.getNumberOfEdges();
                 }
                 
                 // NOTE: currently we assume that 100 player 2 variables suffice, which corresponds to 2^100 possible
@@ -62,16 +60,16 @@ namespace storm {
                 abstractionInformation.createEncodingVariables(static_cast<uint_fast64_t>(std::ceil(std::log2(totalNumberOfCommands))), 100, static_cast<uint_fast64_t>(std::ceil(std::log2(maximalUpdateCount))));
                 
                 // For each module of the concrete program, we create an abstract counterpart.
-                for (auto const& module : program.getModules()) {
-                    this->modules.emplace_back(module, abstractionInformation, this->smtSolverFactory, invalidBlockDetectionStrategy);
+                for (auto const& automaton : model.getAutomata()) {
+                    automata.emplace_back(automaton, abstractionInformation, this->smtSolverFactory, invalidBlockDetectionStrategy);
                 }
                 
-                // Retrieve the command-update probability ADD, so we can multiply it with the abstraction BDD later.
-                commandUpdateProbabilitiesAdd = modules.front().getCommandUpdateProbabilitiesAdd();
+                // Retrieve the edge-update probability ADD, so we can multiply it with the abstraction BDD later.
+                edgeUpdateProbabilitiesAdd = automata.front().getEdgeUpdateProbabilitiesAdd();
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            void PrismMenuGameAbstractor<DdType, ValueType>::refine(RefinementCommand const& command) {
+            void JaniMenuGameAbstractor<DdType, ValueType>::refine(RefinementCommand const& command) {
                 // Add the predicates to the global list of predicates and gather their indices.
                 std::vector<uint_fast64_t> predicateIndices;
                 for (auto const& predicate : command.getPredicates()) {
@@ -79,9 +77,9 @@ namespace storm {
                     predicateIndices.push_back(abstractionInformation.getOrAddPredicate(predicate));
                 }
                 
-                // Refine all abstract modules.
-                for (auto& module : modules) {
-                    module.refine(predicateIndices);
+                // Refine all abstract automata.
+                for (auto& automaton : automata) {
+                    automaton.refine(predicateIndices);
                 }
                 
                 // Refine initial state abstractor.
@@ -94,7 +92,7 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            MenuGame<DdType, ValueType> PrismMenuGameAbstractor<DdType, ValueType>::abstract() {
+            MenuGame<DdType, ValueType> JaniMenuGameAbstractor<DdType, ValueType>::abstract() {
                 if (refinementPerformed) {
                     currentGame = buildGame();
                     refinementPerformed = true;
@@ -103,40 +101,40 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            AbstractionInformation<DdType> const& PrismMenuGameAbstractor<DdType, ValueType>::getAbstractionInformation() const {
+            AbstractionInformation<DdType> const& JaniMenuGameAbstractor<DdType, ValueType>::getAbstractionInformation() const {
                 return abstractionInformation;
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            storm::expressions::Expression const& PrismMenuGameAbstractor<DdType, ValueType>::getGuard(uint64_t player1Choice) const {
-                return modules.front().getGuard(player1Choice);
+            storm::expressions::Expression const& JaniMenuGameAbstractor<DdType, ValueType>::getGuard(uint64_t player1Choice) const {
+                return automata.front().getGuard(player1Choice);
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            std::map<storm::expressions::Variable, storm::expressions::Expression> PrismMenuGameAbstractor<DdType, ValueType>::getVariableUpdates(uint64_t player1Choice, uint64_t auxiliaryChoice) const {
-                return modules.front().getVariableUpdates(player1Choice, auxiliaryChoice);
+            std::map<storm::expressions::Variable, storm::expressions::Expression> JaniMenuGameAbstractor<DdType, ValueType>::getVariableUpdates(uint64_t player1Choice, uint64_t auxiliaryChoice) const {
+                return automata.front().getVariableUpdates(player1Choice, auxiliaryChoice);
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            std::pair<uint64_t, uint64_t> PrismMenuGameAbstractor<DdType, ValueType>::getPlayer1ChoiceRange() const {
-                return std::make_pair(0, modules.front().getCommands().size());
+            std::pair<uint64_t, uint64_t> JaniMenuGameAbstractor<DdType, ValueType>::getPlayer1ChoiceRange() const {
+                return std::make_pair(0, automata.front().getNumberOfEdges());
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            storm::expressions::Expression PrismMenuGameAbstractor<DdType, ValueType>::getInitialExpression() const {
-                return program.get().getInitialStatesExpression();
+            storm::expressions::Expression JaniMenuGameAbstractor<DdType, ValueType>::getInitialExpression() const {
+                return model.get().getInitialStatesExpression();
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            storm::dd::Bdd<DdType> PrismMenuGameAbstractor<DdType, ValueType>::getStates(storm::expressions::Expression const& predicate) {
+            storm::dd::Bdd<DdType> JaniMenuGameAbstractor<DdType, ValueType>::getStates(storm::expressions::Expression const& predicate) {
                 STORM_LOG_ASSERT(currentGame != nullptr, "Game was not properly created.");
                 return abstractionInformation.getPredicateSourceVariable(predicate);
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            std::unique_ptr<MenuGame<DdType, ValueType>> PrismMenuGameAbstractor<DdType, ValueType>::buildGame() {
+            std::unique_ptr<MenuGame<DdType, ValueType>> JaniMenuGameAbstractor<DdType, ValueType>::buildGame() {
                 // As long as there is only one module, we only build its game representation.
-                GameBddResult<DdType> game = modules.front().abstract();
+                GameBddResult<DdType> game = automata.front().abstract();
                 
                 if (invalidBlockDetectionStrategy == AbstractionSettings::InvalidBlockDetectionStrategy::Global) {
                     auto validBlockStart = std::chrono::high_resolution_clock::now();
@@ -172,12 +170,12 @@ namespace storm {
                 
                 // Compute bottom states and the appropriate transitions if necessary.
                 BottomStateResult<DdType> bottomStateResult(abstractionInformation.getDdManager().getBddZero(), abstractionInformation.getDdManager().getBddZero());
-                bottomStateResult = modules.front().getBottomStateTransitions(reachableStates, game.numberOfPlayer2Variables);
+                bottomStateResult = automata.front().getBottomStateTransitions(reachableStates, game.numberOfPlayer2Variables);
                 bool hasBottomStates = !bottomStateResult.states.isZero();
                 
                 // Construct the transition matrix by cutting away the transitions of unreachable states.
                 storm::dd::Add<DdType, ValueType> transitionMatrix = (game.bdd && reachableStates).template toAdd<ValueType>();
-                transitionMatrix *= commandUpdateProbabilitiesAdd;
+                transitionMatrix *= edgeUpdateProbabilitiesAdd;
                 transitionMatrix += deadlockTransitions;
                 
                 // Extend the current game information with the 'non-bottom' tag before potentially adding bottom state transitions.
@@ -205,7 +203,7 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            void PrismMenuGameAbstractor<DdType, ValueType>::exportToDot(std::string const& filename, storm::dd::Bdd<DdType> const& highlightStatesBdd, storm::dd::Bdd<DdType> const& filter) const {
+            void JaniMenuGameAbstractor<DdType, ValueType>::exportToDot(std::string const& filename, storm::dd::Bdd<DdType> const& highlightStatesBdd, storm::dd::Bdd<DdType> const& filter) const {
                 std::ofstream out(filename);
                 
                 storm::dd::Add<DdType, ValueType> filteredTransitions = filter.template toAdd<ValueType>() * currentGame->getTransitionMatrix();
@@ -341,10 +339,10 @@ namespace storm {
             }
             
             // Explicitly instantiate the class.
-            template class PrismMenuGameAbstractor<storm::dd::DdType::CUDD, double>;
-            template class PrismMenuGameAbstractor<storm::dd::DdType::Sylvan, double>;
+            template class JaniMenuGameAbstractor<storm::dd::DdType::CUDD, double>;
+            template class JaniMenuGameAbstractor<storm::dd::DdType::Sylvan, double>;
 #ifdef STORM_HAVE_CARL
-            template class PrismMenuGameAbstractor<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+            template class JaniMenuGameAbstractor<storm::dd::DdType::Sylvan, storm::RationalFunction>;
 #endif
         }
     }

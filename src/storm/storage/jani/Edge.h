@@ -61,6 +61,11 @@ namespace storm {
              * Sets a new guard for this edge.
              */
             void setGuard(storm::expressions::Expression const& guard);
+
+            /*!
+             * Retrieves the destination with the given index.
+             */
+            EdgeDestination const& getDestination(uint64_t index) const;
             
             /*!
              * Retrieves the destinations of this edge.
@@ -71,6 +76,11 @@ namespace storm {
              * Retrieves the destinations of this edge.
              */
             std::vector<EdgeDestination>& getDestinations();
+            
+            /*!
+             * Retrieves the number of destinations of this edge.
+             */
+            std::size_t getNumberOfDestinations() const;
             
             /*!
              * Adds the given destination to the destinations of this edge.

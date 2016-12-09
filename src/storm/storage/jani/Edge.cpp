@@ -44,12 +44,20 @@ namespace storm {
             this->guard = guard;
         }
         
+        EdgeDestination const& Edge::getDestination(uint64_t index) const {
+            return destinations[index];
+        }
+        
         std::vector<EdgeDestination> const& Edge::getDestinations() const {
             return destinations;
         }
         
         std::vector<EdgeDestination>& Edge::getDestinations() {
             return destinations;
+        }
+        
+        std::size_t Edge::getNumberOfDestinations() const {
+            return destinations.size();
         }
         
         void Edge::addDestination(EdgeDestination const& destination) {

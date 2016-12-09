@@ -136,6 +136,13 @@ namespace storm {
             VariableSet const& getVariables() const;
             
             /*!
+             * Retrieves all expression variables used by this automaton.
+             *
+             * @return The set of expression variables used by this automaton.
+             */
+            std::set<storm::expressions::Variable> getAllExpressionVariables() const;
+            
+            /*!
              * Retrieves whether this automaton has a transient variable.
              */
             bool hasTransientVariable() const;

@@ -97,6 +97,14 @@ namespace storm {
             return variables;
         }
         
+        std::set<storm::expressions::Variable> Automaton::getAllExpressionVariables() const {
+            std::set<storm::expressions::Variable> result;
+            for (auto const& variable : this->getVariables()) {
+                result.insert(variable.getExpressionVariable());
+            }
+            return result;
+        }
+        
         bool Automaton::hasTransientVariable() const {
             return variables.hasTransientVariable();
         }

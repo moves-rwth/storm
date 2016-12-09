@@ -127,5 +127,12 @@ namespace storm {
             return *this;
         }
         
+        void SymbolicModelDescription::requireNoUndefinedConstants() const {
+            if (this->isJaniModel()) {
+                storm::utility::jani::requireNoUndefinedConstants(this->asJaniModel());
+            } else {
+                storm::utility::prism::requireNoUndefinedConstants(this->asPrismProgram());
+            }
+        }
     }
 }

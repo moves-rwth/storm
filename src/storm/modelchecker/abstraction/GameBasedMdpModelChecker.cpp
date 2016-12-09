@@ -12,6 +12,7 @@
 #include "storm/storage/dd/DdManager.h"
 
 #include "storm/abstraction/prism/PrismMenuGameAbstractor.h"
+#include "storm/abstraction/jani/JaniMenuGameAbstractor.h"
 #include "storm/abstraction/MenuGameRefiner.h"
 
 #include "storm/logic/FragmentSpecification.h"
@@ -32,8 +33,6 @@
 
 #include "storm/modelchecker/results/CheckResult.h"
 
-//#define LOCAL_DEBUG
-
 namespace storm {
     namespace modelchecker {
         
@@ -42,16 +41,22 @@ namespace storm {
         
         template<storm::dd::DdType Type, typename ModelType>
         GameBasedMdpModelChecker<Type, ModelType>::GameBasedMdpModelChecker(storm::storage::SymbolicModelDescription const& model, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory) : smtSolverFactory(smtSolverFactory), comparator(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getPrecision()), reuseQualitativeResults(false), reuseQuantitativeResults(false) {
-            STORM_LOG_THROW(model.isPrismProgram(), storm::exceptions::NotSupportedException, "Currently only PRISM models are supported by the game-based model checker.");
-            storm::prism::Program const& originalProgram = model.asPrismProgram();
-            STORM_LOG_THROW(originalProgram.getModelType() == storm::prism::Program::ModelType::DTMC || originalProgram.getModelType() == storm::prism::Program::ModelType::MDP, storm::exceptions::NotSupportedException, "Currently only DTMCs/MDPs are supported by the game-based model checker.");
-            storm::utility::prism::requireNoUndefinedConstants(originalProgram);
-            
-            // Start by preparing the program. That is, we flatten the modules if there is more than one.
-            if (originalProgram.getNumberOfModules() > 1) {
-                preprocessedModel = originalProgram.flattenModules(this->smtSolverFactory);
+            model.requireNoUndefinedConstants();
+            if (model.isPrismProgram()) {
+                storm::prism::Program const& originalProgram = model.asPrismProgram();
+                STORM_LOG_THROW(originalProgram.getModelType() == storm::prism::Program::ModelType::DTMC || originalProgram.getModelType() == storm::prism::Program::ModelType::MDP, storm::exceptions::NotSupportedException, "Currently only DTMCs/MDPs are supported by the game-based model checker.");
+                
+                // Flatten the modules if there is more than one.
+                if (originalProgram.getNumberOfModules() > 1) {
+                    preprocessedModel = originalProgram.flattenModules(this->smtSolverFactory);
+                } else {
+                    preprocessedModel = originalProgram;
+                }
             } else {
-                preprocessedModel = originalProgram;
+                storm::jani::Model const& originalModel = model.asJaniModel();
+                STORM_LOG_THROW(originalModel.getModelType() == storm::jani::ModelType::DTMC || originalModel.getModelType() == storm::jani::ModelType::MDP, storm::exceptions::NotSupportedException, "Currently only DTMCs/MDPs are supported by the game-based model checker.");
+                
+                preprocessedModel = model;
             }
             
             bool reuseAll = storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isReuseAllResultsSet();
@@ -76,7 +81,10 @@ namespace storm {
         template<storm::dd::DdType Type, typename ModelType>
         std::unique_ptr<CheckResult> GameBasedMdpModelChecker<Type, ModelType>::computeReachabilityProbabilities(CheckTask<storm::logic::EventuallyFormula> const& checkTask) {
             storm::logic::EventuallyFormula const& pathFormula = checkTask.getFormula();
-            std::map<std::string, storm::expressions::Expression> labelToExpressionMapping = preprocessedModel.asPrismProgram().getLabelToExpressionMapping();
+            std::map<std::string, storm::expressions::Expression> labelToExpressionMapping;
+            if (preprocessedModel.isPrismProgram()) {
+                labelToExpressionMapping = preprocessedModel.asPrismProgram().getLabelToExpressionMapping();
+            }
             return performGameBasedAbstractionRefinement(checkTask.substituteFormula<storm::logic::Formula>(pathFormula), preprocessedModel.getManager().boolean(true), pathFormula.getSubformula().toExpression(preprocessedModel.getManager(), labelToExpressionMapping));
         }
         
@@ -286,10 +294,15 @@ namespace storm {
             storm::OptimizationDirection player1Direction = getPlayer1Direction(checkTask);
             
             // Create the abstractor.
-            storm::abstraction::prism::PrismMenuGameAbstractor<Type, ValueType> abstractor(preprocessedModel.asPrismProgram(), smtSolverFactory);
+            std::shared_ptr<storm::abstraction::MenuGameAbstractor<Type, ValueType>> abstractor;
+            if (preprocessedModel.isPrismProgram()) {
+                abstractor = std::make_shared<storm::abstraction::prism::PrismMenuGameAbstractor<Type, ValueType>>(preprocessedModel.asPrismProgram(), smtSolverFactory);
+            } else {
+                abstractor = std::make_shared<storm::abstraction::jani::JaniMenuGameAbstractor<Type, ValueType>>(preprocessedModel.asJaniModel(), smtSolverFactory);
+            }
             
             // Create a refiner that can be used to refine the abstraction when needed.
-            storm::abstraction::MenuGameRefiner<Type, ValueType> refiner(abstractor, smtSolverFactory->create(preprocessedModel.getManager()));
+            storm::abstraction::MenuGameRefiner<Type, ValueType> refiner(*abstractor, smtSolverFactory->create(preprocessedModel.getManager()));
             refiner.refine(initialPredicates);
             
             // Enter the main-loop of abstraction refinement.
@@ -301,7 +314,7 @@ namespace storm {
 
                 // (1) build initial abstraction based on the the constraint expression (if not 'true') and the target state expression.
                 auto abstractionStart = std::chrono::high_resolution_clock::now();
-                storm::abstraction::MenuGame<Type, ValueType> game = abstractor.abstract();
+                storm::abstraction::MenuGame<Type, ValueType> game = abstractor->abstract();
                 auto abstractionEnd = std::chrono::high_resolution_clock::now();
                 STORM_LOG_DEBUG("Abstraction in iteration " << iterations << " has " << game.getNumberOfStates() << " (player 1) states and " << game.getNumberOfTransitions() << " transitions (computed in " << std::chrono::duration_cast<std::chrono::milliseconds>(abstractionEnd - abstractionStart).count() << "ms).");
                 STORM_LOG_THROW(game.getInitialStates().getNonZeroCount(), storm::exceptions::InvalidModelException, "Cannot treat models with more than one (abstract) initial state.");
@@ -324,7 +337,7 @@ namespace storm {
                 QualitativeResultMinMax<Type> qualitativeResult;
                 std::unique_ptr<CheckResult> result = computeProb01States(checkTask, qualitativeResult, previousQualitativeResult, game, player1Direction, transitionMatrixBdd, initialStates, constraintStates, targetStates, refiner.addedAllGuards());
                 if (result) {
-                    printStatistics(abstractor, game);
+                    printStatistics(*abstractor, game);
                     return result;
                 }
                 previousQualitativeResult = qualitativeResult;
@@ -344,7 +357,7 @@ namespace storm {
                     
                     result = checkForResultAfterQualitativeCheck<Type, ValueType>(checkTask, initialStates, qualitativeResult);
                     if (result) {
-                        printStatistics(abstractor, game);
+                        printStatistics(*abstractor, game);
                         return result;
                     } else {
                         STORM_LOG_DEBUG("Obtained qualitative bounds [0, 1] on the actual value for the initial states.");
@@ -374,7 +387,7 @@ namespace storm {
                     previousMinQuantitativeResult = quantitativeResult.min;
                     result = checkForResultAfterQuantitativeCheck<ValueType>(checkTask, storm::OptimizationDirection::Minimize, quantitativeResult.min.initialStateValue);
                     if (result) {
-                        printStatistics(abstractor, game);
+                        printStatistics(*abstractor, game);
                         return result;
                     }
                     
@@ -382,7 +395,7 @@ namespace storm {
                     quantitativeResult.max = computeQuantitativeResult(player1Direction, storm::OptimizationDirection::Maximize, game, qualitativeResult, initialStatesAdd, maybeMax, boost::make_optional(quantitativeResult.min));
                     result = checkForResultAfterQuantitativeCheck<ValueType>(checkTask, storm::OptimizationDirection::Maximize, quantitativeResult.max.initialStateValue);
                     if (result) {
-                        printStatistics(abstractor, game);
+                        printStatistics(*abstractor, game);
                         return result;
                     }
 
@@ -392,7 +405,7 @@ namespace storm {
                     // (9) Check whether the lower and upper bounds are close enough to terminate with an answer.
                     result = checkForResultAfterQuantitativeCheck<ValueType>(checkTask, quantitativeResult.min.initialStateValue, quantitativeResult.max.initialStateValue, comparator);
                     if (result) {
-                        printStatistics(abstractor, game);
+                        printStatistics(*abstractor, game);
                         return result;
                     }
 

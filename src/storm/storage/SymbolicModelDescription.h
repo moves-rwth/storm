@@ -40,6 +40,8 @@ namespace storm {
             
             SymbolicModelDescription preprocess(std::string const& constantDefinitionString = "") const;
             
+            void requireNoUndefinedConstants() const;
+            
         private:
             boost::optional<boost::variant<storm::jani::Model, storm::prism::Program>> modelDescription;
         };

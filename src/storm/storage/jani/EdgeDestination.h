@@ -40,6 +40,12 @@ namespace storm {
             void setProbability(storm::expressions::Expression const& probability);
 
             /*!
+             * Retrieves the mapping from variables to their assigned expressions that corresponds to the assignments
+             * of this destination.
+             */
+            std::map<storm::expressions::Variable, storm::expressions::Expression> getAsVariableToExpressionMap() const;
+            
+            /*!
              * Retrieves the assignments to make when choosing this destination.
              */
             OrderedAssignments const& getOrderedAssignments() const;
