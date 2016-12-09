@@ -103,7 +103,7 @@ namespace storm {
             /*!
              * Adds the given variable to this automaton
              */
-            Variable const& addVariable(Variable const& variable);
+            Variable& addVariable(Variable const& variable);
 
             /*!
              * Adds the given Boolean variable to this automaton.

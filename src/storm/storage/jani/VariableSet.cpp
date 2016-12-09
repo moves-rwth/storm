@@ -3,6 +3,7 @@
 #include "storm/utility/macros.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/InvalidTypeException.h"
 
 namespace storm {
     namespace jani {
@@ -41,6 +42,19 @@ namespace storm {
         
         detail::ConstVariables<RealVariable> VariableSet::getRealVariables() const {
             return detail::ConstVariables<RealVariable>(realVariables.begin(), realVariables.end());
+        }
+        
+        Variable const& VariableSet::addVariable(Variable const& variable) {
+            if (variable.isBooleanVariable()) {
+                return addVariable(variable.asBooleanVariable());
+            } else if (variable.isBoundedIntegerVariable()) {
+                return addVariable(variable.asBoundedIntegerVariable());
+            } else if (variable.isUnboundedIntegerVariable()) {
+                return addVariable(variable.asUnboundedIntegerVariable());
+            } else if (variable.isRealVariable()) {
+                return addVariable(variable.asRealVariable());
+            }
+            STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Cannot add variable of unknown type.");
         }
         
         BooleanVariable const& VariableSet::addVariable(BooleanVariable const& variable) {

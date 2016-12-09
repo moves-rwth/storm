@@ -8,6 +8,8 @@
 #include "storm/storage/jani/Constant.h"
 #include "storm/storage/jani/Composition.h"
 
+#include "storm/utility/solver.h"
+
 namespace storm {
     namespace expressions {
         class ExpressionManager;
@@ -16,6 +18,7 @@ namespace storm {
     namespace jani {
         
         class Exporter;
+        class SynchronizationVector;
         
         class Model {
         public:
@@ -50,6 +53,14 @@ namespace storm {
              * Retrievest the name of the model.
              */
             std::string const& getName() const;
+            
+            /*!
+             * Flatten the composition to obtain an equivalent model that contains exactly one automaton that has the
+             * standard composition.
+             *
+             * @param smtSolverFactory A factory that can be used to create new SMT solvers.
+             */
+            Model flattenComposition(std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory = std::make_shared<storm::utility::solver::SmtSolverFactory>()) const;
             
             /**
              * Checks whether the model has an action with the given name.
@@ -377,6 +388,16 @@ namespace storm {
             static const uint64_t SILENT_ACTION_INDEX;
             
         private:
+            /*!
+             * Creates a new model from the given automaton (which must be contained in the current model).
+             */
+            Model createModelFromAutomaton(Automaton const& automaton) const;
+            
+            /*!
+             * Flattens the actions of the automata into new edges in the provided automaton.
+             */
+            void flattenSynchronizationVector(Automaton& newAutomaton, std::unordered_map<std::vector<uint64_t>, uint64_t>& newLocations, std::unordered_map<std::string, uint64_t>& newActionToIndex, std::vector<std::set<uint64_t>>& synchronizingActionIndices, SynchronizationVector const& vector, std::vector<std::reference_wrapper<Automaton const>> const& composedAutomata, storm::solver::SmtSolver& solver);
+            
             /// The model name.
             std::string name;
             

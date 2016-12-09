@@ -21,6 +21,8 @@ namespace storm {
              */
             BoundedIntegerVariable(std::string const& name, storm::expressions::Variable const& variable, storm::expressions::Expression const& lowerBound, storm::expressions::Expression const& upperBound);
 
+            virtual std::unique_ptr<Variable> clone() const override;
+            
             /*!
              * Retrieves the expression defining the lower bound of the variable.
              */

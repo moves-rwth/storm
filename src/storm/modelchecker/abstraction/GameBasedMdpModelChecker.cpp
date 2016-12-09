@@ -56,7 +56,8 @@ namespace storm {
                 storm::jani::Model const& originalModel = model.asJaniModel();
                 STORM_LOG_THROW(originalModel.getModelType() == storm::jani::ModelType::DTMC || originalModel.getModelType() == storm::jani::ModelType::MDP, storm::exceptions::NotSupportedException, "Currently only DTMCs/MDPs are supported by the game-based model checker.");
                 
-                preprocessedModel = model;
+                // Flatten the parallel composition.
+                preprocessedModel = model.flattenComposition();
             }
             
             bool reuseAll = storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isReuseAllResultsSet();

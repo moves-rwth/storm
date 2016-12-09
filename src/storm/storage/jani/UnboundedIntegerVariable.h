@@ -16,6 +16,8 @@ namespace storm {
              */
             UnboundedIntegerVariable(std::string const& name, storm::expressions::Variable const& variable, storm::expressions::Expression const&, bool transient=false);
             
+            virtual std::unique_ptr<Variable> clone() const override;
+            
             virtual bool isUnboundedIntegerVariable() const override;
         };
         

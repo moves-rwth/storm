@@ -18,6 +18,8 @@ namespace storm {
              */
             BooleanVariable(std::string const& name, storm::expressions::Variable const& variable, storm::expressions::Expression const& initialValue, bool transient=false);
             
+            virtual std::unique_ptr<Variable> clone() const override;
+            
             virtual bool isBooleanVariable() const override;
         };
         

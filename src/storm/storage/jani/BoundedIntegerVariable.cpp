@@ -13,10 +13,14 @@ namespace storm {
             // Intentionally left empty.
         }
  
-       BoundedIntegerVariable::BoundedIntegerVariable(std::string const& name, storm::expressions::Variable const& variable, storm::expressions::Expression const& lowerBound, storm::expressions::Expression const& upperBound) : Variable(name, variable), lowerBound(lowerBound), upperBound(upperBound) {
+        BoundedIntegerVariable::BoundedIntegerVariable(std::string const& name, storm::expressions::Variable const& variable, storm::expressions::Expression const& lowerBound, storm::expressions::Expression const& upperBound) : Variable(name, variable), lowerBound(lowerBound), upperBound(upperBound) {
             // Intentionally left empty.
         }
 
+        std::unique_ptr<Variable> BoundedIntegerVariable::clone() const {
+            return std::make_unique<Variable>(*this);
+        }
+        
         storm::expressions::Expression const& BoundedIntegerVariable::getLowerBound() const {
             return lowerBound;
         }

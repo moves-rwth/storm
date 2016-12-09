@@ -59,7 +59,7 @@ namespace storm {
             return name;
         }
 
-        Variable const& Automaton::addVariable(Variable const &variable) {
+        Variable& Automaton::addVariable(Variable const &variable) {
             if (variable.isBooleanVariable()) {
                 return addVariable(variable.asBooleanVariable());
             } else if (variable.isBoundedIntegerVariable()) {

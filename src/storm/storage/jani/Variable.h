@@ -30,6 +30,11 @@ namespace storm {
             virtual ~Variable();
             
             /*!
+             * Clones the variable.
+             */
+            virtual std::unique_ptr<Variable> clone() const = 0;
+            
+            /*!
              * Retrieves the associated expression variable
              */
             storm::expressions::Variable const& getExpressionVariable() const;
@@ -39,6 +44,11 @@ namespace storm {
              */
             std::string const& getName() const;
 
+            /*!
+             * Sets the name of the variable.
+             */
+            void setName(std::string const& newName);
+            
             /*!
              * Retrieves whether an initial expression is set.
              */

@@ -67,7 +67,12 @@ namespace storm {
              * Retrieves the real variables in this set.
              */
             detail::ConstVariables<RealVariable> getRealVariables() const;
-            
+
+            /*!
+             * Adds the given variable to this set.
+             */
+            Variable const& addVariable(Variable const& variable);
+
             /*!
              * Adds the given boolean variable to this set.
              */

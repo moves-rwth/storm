@@ -28,6 +28,10 @@ namespace storm {
             return name;
         }
         
+        void Variable::setName(std::string const& newName) {
+            name = newName;
+        }
+        
         bool Variable::isBooleanVariable() const {
             return false;
         }
