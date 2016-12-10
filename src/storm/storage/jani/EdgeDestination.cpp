@@ -6,7 +6,7 @@
 namespace storm {
     namespace jani {
         
-        EdgeDestination::EdgeDestination(uint64_t locationIndex, storm::expressions::Expression const& probability, std::shared_ptr<TemplateEdgeDestination const> const& templateEdgeDestination) : locationIndex(locationIndex), probability(probability), templateEdgeDestination(templateEdgeDestination) {
+        EdgeDestination::EdgeDestination(uint64_t locationIndex, storm::expressions::Expression const& probability, TemplateEdgeDestination const& templateEdgeDestination) : locationIndex(locationIndex), probability(probability), templateEdgeDestination(templateEdgeDestination) {
             // Intentionally left empty.
         }
         
@@ -33,7 +33,7 @@ namespace storm {
         }
         
         OrderedAssignments const& EdgeDestination::getOrderedAssignments() const {
-            return templateEdgeDestination->getOrderedAssignments();
+            return templateEdgeDestination.get().getOrderedAssignments();
         }
         
         void EdgeDestination::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
@@ -55,8 +55,8 @@ namespace storm {
             return this->getOrderedAssignments().getLowestLevel() != 0 || this->getOrderedAssignments().getHighestLevel() != 0;
         }
         
-        std::shared_ptr<TemplateEdgeDestination const> EdgeDestination::getTemplateEdgeDestination() const {
-            return templateEdgeDestination;
+        TemplateEdgeDestination const& EdgeDestination::getTemplateEdgeDestination() const {
+            return templateEdgeDestination.get();
         }
     }
 }

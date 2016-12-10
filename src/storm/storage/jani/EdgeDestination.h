@@ -14,7 +14,7 @@ namespace storm {
             /*!
              * Creates a new edge destination.
              */
-            EdgeDestination(uint64_t locationIndex, storm::expressions::Expression const& probability, std::shared_ptr<TemplateEdgeDestination const> const& templateEdgeDestination);
+            EdgeDestination(uint64_t locationIndex, storm::expressions::Expression const& probability, TemplateEdgeDestination const& templateEdgeDestination);
                         
             /*!
              * Retrieves the id of the destination location.
@@ -65,7 +65,7 @@ namespace storm {
             /*!
              * Retrieves the template destination for this destination.
              */
-            std::shared_ptr<TemplateEdgeDestination const> getTemplateEdgeDestination() const;
+            TemplateEdgeDestination const& getTemplateEdgeDestination() const;
             
         private:
             // The index of the destination location.
@@ -75,7 +75,7 @@ namespace storm {
             storm::expressions::Expression probability;
             
             // The template edge destination
-            std::shared_ptr<TemplateEdgeDestination const> templateEdgeDestination;
+            std::reference_wrapper<TemplateEdgeDestination const> templateEdgeDestination;
         };
         
     }

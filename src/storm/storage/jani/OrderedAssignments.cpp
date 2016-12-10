@@ -73,7 +73,7 @@ namespace storm {
             if (allAssignments.empty()) {
                 return false;
             }
-            return getLowestLevel() == getHighestLevel();
+            return getLowestLevel() != getHighestLevel();
         }
         
         bool OrderedAssignments::empty() const {
@@ -113,6 +113,10 @@ namespace storm {
         
         detail::ConstAssignments OrderedAssignments::getNonTransientAssignments() const {
             return detail::ConstAssignments(nonTransientAssignments.begin(), nonTransientAssignments.end());
+        }
+        
+        bool OrderedAssignments::hasTransientAssignment() const {
+            return !transientAssignments.empty();
         }
         
         detail::Assignments::iterator OrderedAssignments::begin() {

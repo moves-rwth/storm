@@ -85,6 +85,11 @@ namespace storm {
             detail::ConstAssignments getNonTransientAssignments() const;
 
             /*!
+             * Retrieves whether the set of assignments has at least one transient assignment.
+             */
+            bool hasTransientAssignment() const;
+            
+            /*!
              * Returns an iterator to the assignments.
              */
             detail::Assignments::iterator begin();

@@ -59,7 +59,7 @@ namespace storm {
             return name;
         }
 
-        Variable& Automaton::addVariable(Variable const &variable) {
+        Variable const& Automaton::addVariable(Variable const &variable) {
             if (variable.isBooleanVariable()) {
                 return addVariable(variable.asBooleanVariable());
             } else if (variable.isBoundedIntegerVariable()) {
@@ -293,6 +293,11 @@ namespace storm {
             return ConstEdges(it1, it2);
         }
         
+        std::shared_ptr<TemplateEdge> Automaton::createTemplateEdge(storm::expressions::Expression const& guard) {
+            templateEdges.emplace_back(std::make_shared<TemplateEdge>(guard));
+            return templateEdges.back();
+        }
+        
         void Automaton::addEdge(Edge const& edge) {
             STORM_LOG_THROW(edge.getSourceLocationIndex() < locations.size(), storm::exceptions::InvalidArgumentException, "Cannot add edge with unknown source location index '" << edge.getSourceLocationIndex() << "'.");
             
@@ -316,7 +321,6 @@ namespace storm {
             // Update the set of action indices of this automaton.
             actionIndices.insert(edge.getActionIndex());
         }
-        
         
         std::vector<Edge>& Automaton::getEdges() {
             return edges;
@@ -415,14 +419,17 @@ namespace storm {
             
             this->setInitialStatesRestriction(this->getInitialStatesRestriction().substitute(substitution));
             
+            for (auto& templateEdge : templateEdges) {
+                templateEdge->substitute(substitution);
+            }
             for (auto& edge : this->getEdges()) {
                 edge.substitute(substitution);
             }
         }
         
         void Automaton::finalize(Model const& containingModel) {
-            for (auto& edge : edges) {
-                edge.finalize(containingModel);
+            for (auto& templateEdge : templateEdges) {
+                templateEdge->finalize(containingModel);
             }
         }
         
@@ -450,8 +457,8 @@ namespace storm {
         }
         
         void Automaton::pushEdgeAssignmentsToDestinations() {
-            for (auto& edge : edges) {
-                edge.pushAssignmentsToDestinations();
+            for (auto& templateEdge : templateEdges) {
+                templateEdge->pushAssignmentsToDestinations();
             }
         }
         
@@ -465,8 +472,8 @@ namespace storm {
         }
         
         void Automaton::liftTransientEdgeDestinationAssignments() {
-            for (auto& edge : this->getEdges()) {
-                edge.liftTransientDestinationAssignments();
+            for (auto& templateEdge : templateEdges) {
+                templateEdge->liftTransientDestinationAssignments();
             }
         }
         

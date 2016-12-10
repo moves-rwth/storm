@@ -18,7 +18,7 @@ namespace storm {
         }
 
         std::unique_ptr<Variable> BoundedIntegerVariable::clone() const {
-            return std::make_unique<Variable>(*this);
+            return std::make_unique<BoundedIntegerVariable>(*this);
         }
         
         storm::expressions::Expression const& BoundedIntegerVariable::getLowerBound() const {

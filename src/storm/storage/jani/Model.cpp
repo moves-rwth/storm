@@ -55,7 +55,7 @@ namespace storm {
             return name;
         }
         
-        void Model::flattenSynchronizationVector(Automaton& newAutomaton, std::unordered_map<std::vector<uint64_t>, uint64_t>& newLocations, std::unordered_map<std::string, uint64_t>& newActionToIndex, std::vector<std::set<uint64_t>>& synchronizingActionIndices, SynchronizationVector const& vector, std::vector<std::reference_wrapper<Automaton const>> const& composedAutomata, storm::solver::SmtSolver& solver) {
+        void Model::flattenSynchronizationVector(Automaton& newAutomaton, std::unordered_map<std::vector<uint64_t>, uint64_t, storm::utility::vector::VectorHash<uint64_t>>& newLocations, std::unordered_map<std::string, uint64_t>& newActionToIndex, std::vector<std::set<uint64_t>>& synchronizingActionIndices, SynchronizationVector const& vector, std::vector<std::reference_wrapper<Automaton const>> const& composedAutomata, storm::solver::SmtSolver& solver) const {
 
             // Gather all participating automata and the corresponding input symbols.
             std::vector<std::pair<std::reference_wrapper<Automaton const>, uint64_t>> participatingAutomataAndActions;
@@ -67,7 +67,6 @@ namespace storm {
                     synchronizingActionIndices[i].insert(actionIndex);
                 }
             }
-
         }
         
         Model Model::flattenComposition(std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory) const {
@@ -134,7 +133,7 @@ namespace storm {
             }
 
             // Since we need to reduce a tuple of locations to a single location, we keep a hashmap for this.
-            std::unordered_map<std::vector<uint64_t>, uint64_t> newLocations;
+            std::unordered_map<std::vector<uint64_t>, uint64_t, storm::utility::vector::VectorHash<uint64_t>> newLocations;
             std::unordered_map<std::string, uint64_t> newActionToIndex;
             
             // Perform all necessary synchronizations and keep track which action indices participate in synchronization.

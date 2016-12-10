@@ -15,6 +15,9 @@
 
 #include "storm/settings/SettingsManager.h"
 
+#include "storm-config.h"
+#include "storm/adapters/CarlAdapter.h"
+
 namespace storm {
     namespace abstraction {
         
@@ -252,8 +255,8 @@ namespace storm {
                 STORM_LOG_TRACE("No bottom state successor. Deriving a new predicate using weakest precondition.");
                 
                 // Decode both choices to explicit mappings.
-                std::map<uint64_t, std::pair<storm::storage::BitVector, ValueType>> lowerChoiceUpdateToSuccessorMapping = abstractionInformation.decodeChoiceToUpdateSuccessorMapping(lowerChoice);
-                std::map<uint64_t, std::pair<storm::storage::BitVector, ValueType>> upperChoiceUpdateToSuccessorMapping = abstractionInformation.decodeChoiceToUpdateSuccessorMapping(upperChoice);
+                std::map<uint64_t, std::pair<storm::storage::BitVector, ValueType>> lowerChoiceUpdateToSuccessorMapping = abstractionInformation.template decodeChoiceToUpdateSuccessorMapping<ValueType>(lowerChoice);
+                std::map<uint64_t, std::pair<storm::storage::BitVector, ValueType>> upperChoiceUpdateToSuccessorMapping = abstractionInformation.template decodeChoiceToUpdateSuccessorMapping<ValueType>(upperChoice);
                 STORM_LOG_ASSERT(lowerChoiceUpdateToSuccessorMapping.size() == upperChoiceUpdateToSuccessorMapping.size(), "Mismatching sizes after decode (" << lowerChoiceUpdateToSuccessorMapping.size() << " vs. " << upperChoiceUpdateToSuccessorMapping.size() << ").");
                 
                 // First, sort updates according to probability mass.
@@ -714,6 +717,11 @@ namespace storm {
         
         template class MenuGameRefiner<storm::dd::DdType::CUDD, double>;
         template class MenuGameRefiner<storm::dd::DdType::Sylvan, double>;
+
+#ifdef STORM_HAVE_CARL
+        // Currently, this instantiation does not work.
+        // template class MenuGameRefiner<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+#endif
         
     }
 }

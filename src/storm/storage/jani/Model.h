@@ -9,6 +9,7 @@
 #include "storm/storage/jani/Composition.h"
 
 #include "storm/utility/solver.h"
+#include "storm/utility/vector.h"
 
 namespace storm {
     namespace expressions {
@@ -396,7 +397,7 @@ namespace storm {
             /*!
              * Flattens the actions of the automata into new edges in the provided automaton.
              */
-            void flattenSynchronizationVector(Automaton& newAutomaton, std::unordered_map<std::vector<uint64_t>, uint64_t>& newLocations, std::unordered_map<std::string, uint64_t>& newActionToIndex, std::vector<std::set<uint64_t>>& synchronizingActionIndices, SynchronizationVector const& vector, std::vector<std::reference_wrapper<Automaton const>> const& composedAutomata, storm::solver::SmtSolver& solver);
+            void flattenSynchronizationVector(Automaton& newAutomaton, std::unordered_map<std::vector<uint64_t>, uint64_t, storm::utility::vector::VectorHash<uint64_t>>& newLocations, std::unordered_map<std::string, uint64_t>& newActionToIndex, std::vector<std::set<uint64_t>>& synchronizingActionIndices, SynchronizationVector const& vector, std::vector<std::reference_wrapper<Automaton const>> const& composedAutomata, storm::solver::SmtSolver& solver) const;
             
             /// The model name.
             std::string name;

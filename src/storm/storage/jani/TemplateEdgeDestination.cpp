@@ -27,5 +27,20 @@ namespace storm {
             return assignments.remove(assignment);
         }
         
+        void TemplateEdgeDestination::addAssignment(Assignment const& assignment) {
+            assignments.add(assignment);
+        }
+        
+        bool TemplateEdgeDestination::hasAssignment(Assignment const& assignment) const {
+            return assignments.contains(assignment);
+        }
+        
+        bool TemplateEdgeDestination::hasTransientAssignment() const {
+            return assignments.hasTransientAssignment();
+        }
+        
+        bool TemplateEdgeDestination::usesAssignmentLevels() const {
+            return assignments.hasMultipleLevels();
+        }
     }
 }

@@ -2,11 +2,13 @@
 
 #include <string>
 #include <cstdint>
+#include <vector>
 #include <unordered_map>
 #include <boost/container/flat_set.hpp>
 
 #include "storm/storage/jani/VariableSet.h"
 #include "storm/storage/jani/Edge.h"
+#include "storm/storage/jani/TemplateEdge.h"
 #include "storm/storage/jani/Location.h"
 
 namespace storm {
@@ -103,7 +105,7 @@ namespace storm {
             /*!
              * Adds the given variable to this automaton
              */
-            Variable& addVariable(Variable const& variable);
+            Variable const& addVariable(Variable const& variable);
 
             /*!
              * Adds the given Boolean variable to this automaton.
@@ -236,6 +238,11 @@ namespace storm {
             ConstEdges getEdgesFromLocation(uint64_t locationIndex, uint64_t actionIndex) const;
             
             /*!
+             * Creates a new template edge that can be used to create new edges.
+             */
+            std::shared_ptr<TemplateEdge> createTemplateEdge(storm::expressions::Expression const& guard);
+            
+            /*!
              * Adds an edge to the automaton.
              */
             void addEdge(Edge const& edge);
@@ -357,6 +364,9 @@ namespace storm {
             
             /// All edges of the automaton
             std::vector<Edge> edges;
+            
+            /// The templates for the contained edges.
+            std::vector<std::shared_ptr<TemplateEdge>> templateEdges;
             
             /// A mapping from location indices to the starting indices. If l is mapped to i, it means that the edges
             /// leaving location l start at index i of the edges vector.

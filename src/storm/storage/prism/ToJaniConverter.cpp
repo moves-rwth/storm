@@ -188,10 +188,10 @@ namespace storm {
                 }
                 
                 for (auto const& command : module.getCommands()) {
+                    std::shared_ptr<storm::jani::TemplateEdge> templateEdge = automaton.createTemplateEdge(command.getGuardExpression());
                     actionIndicesOfModule.insert(command.getActionIndex());
                     
                     boost::optional<storm::expressions::Expression> rateExpression;
-                    std::vector<storm::jani::EdgeDestination> destinations;
                     if (program.getModelType() == Program::ModelType::CTMC || program.getModelType() == Program::ModelType::CTMDP || (program.getModelType() == Program::ModelType::MA && command.isMarkovian())) {
                         for (auto const& update : command.getUpdates()) {
                             if (rateExpression) {
@@ -202,6 +202,7 @@ namespace storm {
                         }
                     }
                                         
+                    std::vector<std::pair<uint64_t, storm::expressions::Expression>> destinationLocationsAndProbabilities;
                     for (auto const& update : command.getUpdates()) {
                         std::vector<storm::jani::Assignment> assignments;
                         for (auto const& assignment : update.getAssignments()) {
@@ -209,18 +210,12 @@ namespace storm {
                         }
                         
                         if (rateExpression) {
-                            destinations.push_back(storm::jani::EdgeDestination(onlyLocationIndex, update.getLikelihoodExpression() / rateExpression.get(), assignments));
+                            destinationLocationsAndProbabilities.emplace_back(onlyLocationIndex, update.getLikelihoodExpression() / rateExpression.get());
                         } else {
-                            destinations.push_back(storm::jani::EdgeDestination(onlyLocationIndex, update.getLikelihoodExpression(), assignments));
+                            destinationLocationsAndProbabilities.emplace_back(onlyLocationIndex, update.getLikelihoodExpression());
                         }
-                    }
-                    
-                    // Create the edge object so we can add transient assignments.
-                    storm::jani::Edge newEdge;
-                    if (command.getActionName().empty()) {
-                        newEdge = storm::jani::Edge(onlyLocationIndex, storm::jani::Model::SILENT_ACTION_INDEX, rateExpression, command.getGuardExpression(), destinations);
-                    } else {
-                        newEdge = storm::jani::Edge(onlyLocationIndex, janiModel.getActionIndex(command.getActionName()), rateExpression, command.getGuardExpression(), destinations);
+                        
+                        templateEdge->addDestination(storm::jani::TemplateEdgeDestination(assignments));
                     }
                     
                     // Then add the transient assignments for the rewards. Note that we may do this only for the first
@@ -229,9 +224,17 @@ namespace storm {
                     auto transientEdgeAssignmentsToAdd = transientEdgeAssignments.find(janiModel.getActionIndex(command.getActionName()));
                     if (transientEdgeAssignmentsToAdd != transientEdgeAssignments.end()) {
                         for (auto const& assignment : transientEdgeAssignmentsToAdd->second) {
-                            newEdge.addTransientAssignment(assignment);
+                            templateEdge->addTransientAssignment(assignment);
                         }
                         transientEdgeAssignments.erase(transientEdgeAssignmentsToAdd);
+                    }
+
+                    // Create the edge object.
+                    storm::jani::Edge newEdge;
+                    if (command.getActionName().empty()) {
+                        newEdge = storm::jani::Edge(onlyLocationIndex, storm::jani::Model::SILENT_ACTION_INDEX, rateExpression, templateEdge, destinationLocationsAndProbabilities);
+                    } else {
+                        newEdge = storm::jani::Edge(onlyLocationIndex, janiModel.getActionIndex(command.getActionName()), rateExpression, templateEdge, destinationLocationsAndProbabilities);
                     }
                     
                     // Finally add the constructed edge.

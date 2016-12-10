@@ -443,7 +443,8 @@ namespace storm {
         }
         
         template <storm::dd::DdType DdType>
-        std::map<uint_fast64_t, std::pair<storm::storage::BitVector, double>> AbstractionInformation<DdType>::decodeChoiceToUpdateSuccessorMapping(storm::dd::Bdd<DdType> const& choice) const {
+        template <typename ValueType>
+        std::map<uint_fast64_t, std::pair<storm::storage::BitVector, ValueType>> AbstractionInformation<DdType>::decodeChoiceToUpdateSuccessorMapping(storm::dd::Bdd<DdType> const& choice) const {
             std::map<uint_fast64_t, std::pair<storm::storage::BitVector, double>> result;
             
             storm::dd::Add<DdType, double> lowerChoiceAsAdd = choice.template toAdd<double>();
@@ -487,5 +488,8 @@ namespace storm {
         
         template class AbstractionInformation<storm::dd::DdType::CUDD>;
         template class AbstractionInformation<storm::dd::DdType::Sylvan>;
+        
+        template std::map<uint_fast64_t, std::pair<storm::storage::BitVector, double>> AbstractionInformation<storm::dd::DdType::CUDD>::decodeChoiceToUpdateSuccessorMapping(storm::dd::Bdd<storm::dd::DdType::CUDD> const& choice) const;
+        template std::map<uint_fast64_t, std::pair<storm::storage::BitVector, double>> AbstractionInformation<storm::dd::DdType::Sylvan>::decodeChoiceToUpdateSuccessorMapping(storm::dd::Bdd<storm::dd::DdType::Sylvan> const& choice) const;
     }
 }

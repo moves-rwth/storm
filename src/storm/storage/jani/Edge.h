@@ -1,21 +1,21 @@
 #pragma once
 
-#include <boost/optional.hpp>
-#include <boost/container/flat_set.hpp>
+#include <memory>
 
+#include <boost/optional.hpp>
+
+#include "storm/storage/jani/TemplateEdge.h"
 #include "storm/storage/jani/EdgeDestination.h"
 #include "storm/storage/jani/OrderedAssignments.h"
 
 namespace storm {
     namespace jani {
         
-        class Model;
-        
         class Edge {
         public:
             Edge() = default;
             
-            Edge(uint64_t sourceLocationIndex, uint64_t actionIndex, boost::optional<storm::expressions::Expression> const& rate, storm::expressions::Expression const& guard, std::vector<EdgeDestination> destinations = {});
+            Edge(uint64_t sourceLocationIndex, uint64_t actionIndex, boost::optional<storm::expressions::Expression> const& rate, std::shared_ptr<TemplateEdge const> const& templateEdge, std::vector<std::pair<uint64_t, storm::expressions::Expression>> const& destinationTargetLocationsAndProbabilities);
             
             /*!
              * Retrieves the index of the source location.
@@ -58,11 +58,6 @@ namespace storm {
             storm::expressions::Expression const& getGuard() const;
             
             /*!
-             * Sets a new guard for this edge.
-             */
-            void setGuard(storm::expressions::Expression const& guard);
-
-            /*!
              * Retrieves the destination with the given index.
              */
             EdgeDestination const& getDestination(uint64_t index) const;
@@ -71,11 +66,6 @@ namespace storm {
              * Retrieves the destinations of this edge.
              */
             std::vector<EdgeDestination> const& getDestinations() const;
-
-            /*!
-             * Retrieves the destinations of this edge.
-             */
-            std::vector<EdgeDestination>& getDestinations();
             
             /*!
              * Retrieves the number of destinations of this edge.
@@ -83,51 +73,19 @@ namespace storm {
             std::size_t getNumberOfDestinations() const;
             
             /*!
-             * Adds the given destination to the destinations of this edge.
-             */
-            void addDestination(EdgeDestination const& destination);
-            
-            /*!
              * Substitutes all variables in all expressions according to the given substitution.
              */
             void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution);
-            
+                        
             /*!
-             * Finalizes the building of this edge. Subsequent changes to the edge require another call to this
-             * method. Note that this method is invoked by a call to <code>finalize</code> to the containing model.
-             */
-            void finalize(Model const& containingModel);
-            
-            /*!
-             * Retrieves a set of (global) variables that are written by at least one of the edge's destinations. Note
-             * that prior to calling this, the edge has to be finalized.
+             * Retrieves a set of (global) variables that are written by at least one of the edge's destinations.
              */
             boost::container::flat_set<storm::expressions::Variable> const& getWrittenGlobalVariables() const;
-
-            /*!
-             * Adds a transient assignment to this edge.
-             *
-             * @param assignment The transient assignment to add.
-             * @return True if the assignment was added.
-             */
-            bool addTransientAssignment(Assignment const& assignment);
             
             /*!
              * Retrieves the assignments of this edge.
              */
             OrderedAssignments const& getAssignments() const;
-
-            /*!
-             * Finds the transient assignments common to all destinations and lifts them to the edge. Afterwards, these
-             * assignments are no longer contained in the destination. Note that this may modify the semantics of the
-             * model if assignment levels are being used somewhere in the model.
-             */
-            void liftTransientDestinationAssignments();
-            
-            /**
-             * Shifts the assingments from the edges to the destinations.
-             */
-            void pushAssignmentsToDestinations();
             
             /*!
              * Checks whether the provided variables appear on the right-hand side of non-transient assignments.
@@ -155,18 +113,11 @@ namespace storm {
             /// models, this must be set to none.
             boost::optional<storm::expressions::Expression> rate;
             
-            /// The guard that defines when this edge is enabled.
-            storm::expressions::Expression guard;
+            /// The template of this edge: guards and destinations.
+            std::shared_ptr<TemplateEdge const> templateEdge;
             
-            /// The destinations of this edge.
+            /// The concrete destination objects.
             std::vector<EdgeDestination> destinations;
-            
-            /// The assignments made when taking this edge.
-            OrderedAssignments assignments;
-            
-            /// A set of global variables that is written by at least one of the edge's destinations. This set is
-            /// initialized by the call to <code>finalize</code>.
-            boost::container::flat_set<storm::expressions::Variable> writtenGlobalVariables;
         };
         
     }
