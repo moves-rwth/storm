@@ -16,6 +16,7 @@ namespace storm {
             Edge() = default;
             
             Edge(uint64_t sourceLocationIndex, uint64_t actionIndex, boost::optional<storm::expressions::Expression> const& rate, std::shared_ptr<TemplateEdge const> const& templateEdge, std::vector<std::pair<uint64_t, storm::expressions::Expression>> const& destinationTargetLocationsAndProbabilities);
+            Edge(uint64_t sourceLocationIndex, uint64_t actionIndex, boost::optional<storm::expressions::Expression> const& rate, std::shared_ptr<TemplateEdge const> const& templateEdge, std::vector<uint64_t> const& destinationLocations, std::vector<storm::expressions::Expression> const& destinationProbabilities);
             
             /*!
              * Retrieves the index of the source location.

@@ -5,6 +5,8 @@
 #include "storm/storage/jani/Compositions.h"
 #include "storm/storage/jani/CompositionInformationVisitor.h"
 
+#include "storm/utility/combinatorics.h"
+
 #include "storm/utility/macros.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
@@ -61,15 +63,15 @@ namespace storm {
             }
             
             uint64_t actionIndex;
-            std::vector<std::pair<uint64_t, uint64_t>> condition;
+            std::vector<uint64_t> components;
+            std::vector<uint64_t> condition;
             boost::optional<storm::expressions::Expression> rate;
             std::vector<storm::expressions::Expression> probabilities;
-            std::vector<std::vector<std::pair<uint64_t, uint64_t>>> effects;
+            std::vector<std::vector<uint64_t>> effects;
             std::shared_ptr<TemplateEdge> templateEdge;
         };
         
-        std::vector<ConditionalMetaEdge> createSynchronizingMetaEdges(Model const& model, Automaton& newAutomaton, std::vector<std::set<uint64_t>>& synchronizingActionIndices, SynchronizationVector const& vector, std::vector<std::reference_wrapper<Automaton const>> const& composedAutomata, storm::solver::SmtSolver& solver) {
-
+        std::vector<ConditionalMetaEdge> createSynchronizingMetaEdges(Model const& oldModel, Model& newModel, std::vector<std::set<uint64_t>>& synchronizingActionIndices, SynchronizationVector const& vector, std::vector<std::reference_wrapper<Automaton const>> const& composedAutomata, storm::solver::SmtSolver& solver) {
             std::vector<ConditionalMetaEdge> result;
             
             // Gather all participating automata and the corresponding input symbols.
@@ -77,22 +79,113 @@ namespace storm {
             for (uint64_t i = 0; i < composedAutomata.size(); ++i) {
                 std::string const& actionName = vector.getInput(i);
                 if (!SynchronizationVector::isNoActionInput(actionName)) {
-                    uint64_t actionIndex = model.getActionIndex(actionName);
+                    uint64_t actionIndex = oldModel.getActionIndex(actionName);
                     participatingAutomataAndActions.push_back(std::make_pair(composedAutomata[i], actionIndex));
                     synchronizingActionIndices[i].insert(actionIndex);
                 }
             }
             
+            uint64_t resultingActionIndex = Model::SILENT_ACTION_INDEX;
+            if (vector.getOutput() != Model::SILENT_ACTION_NAME) {
+                if (newModel.hasAction(vector.getOutput())) {
+                    resultingActionIndex = newModel.getActionIndex(vector.getOutput());
+                } else {
+                    resultingActionIndex = newModel.addAction(vector.getOutput());
+                }
+            }
+            
+            bool noCombinations = false;
+            
+            // Prepare the list that stores for each automaton the list of edges with the participating action.
+            std::vector<std::vector<std::reference_wrapper<storm::jani::Edge const>>> possibleEdges;
+            
+            for (auto const& automatonActionPair : participatingAutomataAndActions) {
+                possibleEdges.emplace_back();
+                for (auto const& edge : automatonActionPair.first.get().getEdges()) {
+                    if (edge.getActionIndex() == automatonActionPair.second) {
+                        possibleEdges.back().push_back(edge);
+                    }
+                }
+
+                // If there were no edges with the participating action index, then there is no synchronization possible.
+                if (possibleEdges.back().empty()) {
+                    noCombinations = true;
+                    break;
+                }
+            }
+
+            
             return result;
         }
         
-        void addEdgesToReachableLocations(Model const& model, std::vector<std::reference_wrapper<Automaton const&>> const& composedAutomata, Automaton& newAutomaton, std::vector<ConditionalMetaEdge> const& conditionalMetaEdges) {
+        std::unordered_map<std::vector<uint64_t>, uint64_t, storm::utility::vector::VectorHash<uint64_t>> addEdgesToReachableLocations(Model const& model, std::vector<std::reference_wrapper<Automaton const>> const& composedAutomata, Automaton& newAutomaton, std::vector<ConditionalMetaEdge> const& conditionalMetaEdges) {
             
-            std::vector<uint64_t> locations;
+            // Maintain a stack of locations that still need to be to explored.
+            std::vector<std::vector<uint64_t>> locationsToExplore;
+            
+            // Enumerate all initial location combinations.
+            std::vector<std::set<uint64_t>::const_iterator> initialLocationsIts;
+            std::vector<std::set<uint64_t>::const_iterator> initialLocationsItes;
             for (auto const& automaton : composedAutomata) {
-                // TODO: iterate over initial locations of all automata
+                initialLocationsIts.push_back(automaton.get().getInitialLocationIndices().cbegin());
+                initialLocationsItes.push_back(automaton.get().getInitialLocationIndices().cend());
+            }
+            std::vector<uint64_t> initialLocation(composedAutomata.size());
+            storm::utility::combinatorics::forEach(initialLocationsIts, initialLocationsItes, [&initialLocation] (uint64_t index, uint64_t value) { initialLocation[index] = value; }, [&locationsToExplore, &initialLocation] () {
+                locationsToExplore.push_back(initialLocation);
+                return true;
+            });
+
+            // We also maintain a mapping from location combinations to new locations.
+            std::unordered_map<std::vector<uint64_t>, uint64_t, storm::utility::vector::VectorHash<uint64_t>> newLocationMapping;
+
+            // Register all initial locations as new locations.
+            for (auto const& location : locationsToExplore) {
+                uint64_t id = newLocationMapping.size();
+                newLocationMapping[location] = id;
             }
             
+            // As long as there are locations to explore, do so.
+            while (!locationsToExplore.empty()) {
+                std::vector<uint64_t> currentLocations = std::move(locationsToExplore.back());
+                locationsToExplore.pop_back();
+                
+                for (auto const& metaEdge : conditionalMetaEdges) {
+                    bool isApplicable = true;
+                    for (uint64_t i = 0; i < metaEdge.components.size(); ++i) {
+                        if (currentLocations[metaEdge.components[i]] != metaEdge.condition[i]) {
+                            isApplicable = false;
+                            break;
+                        }
+                    }
+                    
+                    if (isApplicable) {
+                        std::vector<uint64_t> newLocations;
+                        
+                        for (auto const& effect : metaEdge.effects) {
+                            std::vector<uint64_t> targetLocationCombination = currentLocations;
+                            for (uint64_t i = 0; i < metaEdge.components.size(); ++i) {
+                                targetLocationCombination[metaEdge.components[i]] = effect[i];
+                            }
+                            
+                            // Check whether the target combination is new.
+                            auto it = newLocationMapping.find(targetLocationCombination);
+                            if (it != newLocationMapping.end()) {
+                                newLocations.emplace_back(it->second);
+                            } else {
+                                uint64_t id = newLocationMapping.size();
+                                newLocationMapping[targetLocationCombination] = id;
+                                locationsToExplore.emplace_back(std::move(targetLocationCombination));
+                                newLocations.emplace_back(id);
+                            }
+                        }
+                        
+                        newAutomaton.addEdge(Edge(newLocationMapping.at(currentLocations), metaEdge.actionIndex, metaEdge.rate, metaEdge.templateEdge, newLocations, metaEdge.probabilities));
+                    }
+                }
+            }
+            
+            return newLocationMapping;
         }
         
         Model Model::flattenComposition(std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory) const {
@@ -107,7 +200,8 @@ namespace storm {
             STORM_LOG_THROW(this->getModelType() == ModelType::DTMC || this->getModelType() == ModelType::MDP, storm::exceptions::InvalidTypeException, "Unable to flatten modules for model of type '" << this->getModelType() << "'.");
             
             // Otherwise, we need to actually flatten composition.
-            
+            Model flattenedModel(this->getName() + "_flattened", this->getModelType(), this->getJaniVersion(), this->getManager().shared_from_this());
+
             // Get an SMT solver for computing possible guard combinations.
             std::unique_ptr<storm::solver::SmtSolver> solver = smtSolverFactory->create(*expressionManager);
             
@@ -168,7 +262,7 @@ namespace storm {
                 }
                 
                 // Create all conditional template edges corresponding to this synchronization vector.
-                std::vector<ConditionalMetaEdge> newConditionalMetaEdges = createSynchronizingMetaEdges(*this, newAutomaton, synchronizingActionIndices, vector, composedAutomata, *solver);
+                std::vector<ConditionalMetaEdge> newConditionalMetaEdges = createSynchronizingMetaEdges(*this, flattenedModel, synchronizingActionIndices, vector, composedAutomata, *solver);
                 conditionalMetaEdges.insert(conditionalMetaEdges.end(), newConditionalMetaEdges.begin(), newConditionalMetaEdges.end());
             }
             
@@ -177,15 +271,28 @@ namespace storm {
                 Automaton const& automaton = composedAutomata[i].get();
                 for (auto const& edge : automaton.getEdges()) {
                     if (synchronizingActionIndices[i].find(edge.getActionIndex()) == synchronizingActionIndices[i].end()) {
+                        uint64_t actionIndex = edge.getActionIndex();
+                        if (actionIndex != SILENT_ACTION_INDEX) {
+                            std::string actionName = this->getActionIndexToNameMap().at(edge.getActionIndex());
+                            if (flattenedModel.hasAction(actionName)) {
+                                actionIndex = flattenedModel.getActionIndex(actionName);
+                            } else {
+                                actionIndex = flattenedModel.addAction(actionName);
+                            }
+                        }
+                        
                         std::shared_ptr<TemplateEdge> templateEdge = newAutomaton.createTemplateEdge(edge.getGuard());
                         conditionalMetaEdges.emplace_back();
                         ConditionalMetaEdge& conditionalMetaEdge = conditionalMetaEdges.back();
                         
                         conditionalMetaEdge.actionIndex = edge.getActionIndex();
-                        conditionalMetaEdge.condition.emplace_back(static_cast<uint64_t>(i), edge.getSourceLocationIndex());
+                        conditionalMetaEdge.components.emplace_back(static_cast<uint64_t>(i));
+                        conditionalMetaEdge.condition.emplace_back(edge.getSourceLocationIndex());
                         conditionalMetaEdge.rate = edge.getOptionalRate();
                         for (auto const& destination : edge.getDestinations()) {
-                            conditionalMetaEdge.effects.emplace_back(i, destination.getLocationIndex());
+                            conditionalMetaEdge.effects.emplace_back();
+                            
+                            conditionalMetaEdge.effects.back().emplace_back(destination.getLocationIndex());
                             conditionalMetaEdge.probabilities.emplace_back(destination.getProbability());
                         }
                         conditionalMetaEdge.templateEdge = templateEdge;
@@ -193,9 +300,26 @@ namespace storm {
                 }
             }
             
-            addEdgesToReachableLocations(*this, composedAutomata, newAutomaton, conditionalMetaEdges);
+            std::unordered_map<std::vector<uint64_t>, uint64_t, storm::utility::vector::VectorHash<uint64_t>> newLocationMapping = addEdgesToReachableLocations(*this, composedAutomata, newAutomaton, conditionalMetaEdges);
             
+            for (auto const& newLocation : newLocationMapping) {
+                std::stringstream locationNameBuilder;
+                for (uint64_t i = 0; i < newLocation.first.size(); ++i) {
+                    locationNameBuilder << composedAutomata[i].get().getLocation(newLocation.first[i]).getName() << "_";
+                }
+                
+                uint64_t locationIndex = newAutomaton.addLocation(Location(locationNameBuilder.str()));
+                Location& location = newAutomaton.getLocation(locationIndex);
+                for (uint64_t i = 0; i < newLocation.first.size(); ++i) {
+                    for (auto const& assignment : composedAutomata[i].get().getLocation(newLocation.first[i]).getAssignments()) {
+                        location.addTransientAssignment(assignment);
+                    }
+                }
+            }
             
+            flattenedModel.addAutomaton(newAutomaton);
+            
+            return flattenedModel;
         }
         
         uint64_t Model::addAction(Action const& action) {

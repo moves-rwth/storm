@@ -9,6 +9,7 @@
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/solver.h"
+#include "storm/utility/combinatorics.h"
 #include "storm/exceptions/InvalidSettingsException.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
@@ -200,41 +201,18 @@ namespace storm {
                 }
                 
                 // Gather iterators to the initial locations of all the automata.
-                std::vector<std::set<uint64_t>::const_iterator> initialLocationsIterators;
-                uint64_t currentLocationVariable = 0;
-                for (auto const& automaton : this->model.getAutomata()) {
-                    initialLocationsIterators.push_back(automaton.getInitialLocationIndices().cbegin());
-                    
-                    // Initialize the locations to the first possible combination.
-                    setLocation(initialState, this->variableInformation.locationVariables[currentLocationVariable], *initialLocationsIterators.back());
-                    ++currentLocationVariable;
+                std::vector<std::set<uint64_t>::const_iterator> initialLocationsIts;
+                std::vector<std::set<uint64_t>::const_iterator> initialLocationsItes;
+                for (auto const& automaton : allAutomata) {
+                    initialLocationsIts.push_back(automaton.get().getInitialLocationIndices().cbegin());
+                    initialLocationsItes.push_back(automaton.get().getInitialLocationIndices().cend());
                 }
-                
-                // Now iterate through all combinations of initial locations.
-                while (true) {
+                storm::utility::combinatorics::forEach(initialLocationsIts, initialLocationsItes, [this,&initialState] (uint64_t index, uint64_t value) { setLocation(initialState, this->variableInformation.locationVariables[index], value); }, [&stateToIdCallback,&initialStateIndices,&initialState] () {
                     // Register initial state.
                     StateType id = stateToIdCallback(initialState);
                     initialStateIndices.push_back(id);
-                    
-                    uint64_t index = 0;
-                    for (; index < initialLocationsIterators.size(); ++index) {
-                        ++initialLocationsIterators[index];
-                        if (initialLocationsIterators[index] == this->model.getAutomata()[index].getInitialLocationIndices().cend()) {
-                            initialLocationsIterators[index] = this->model.getAutomata()[index].getInitialLocationIndices().cbegin();
-                        } else {
-                            break;
-                        }
-                    }
-                    
-                    // If we are at the end, leave the loop. Otherwise, create the next initial state.
-                    if (index == initialLocationsIterators.size()) {
-                        break;
-                    } else {
-                        for (uint64_t j = 0; j <= index; ++j) {
-                            setLocation(initialState, this->variableInformation.locationVariables[j], *initialLocationsIterators[j]);
-                        }
-                    }
-                }
+                    return true;
+                });
                 
                 // Block the current initial state to search for the next one.
                 if (!blockingExpression.isInitialized()) {
