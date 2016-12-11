@@ -55,18 +55,44 @@ namespace storm {
             return name;
         }
         
-        void Model::flattenSynchronizationVector(Automaton& newAutomaton, std::unordered_map<std::vector<uint64_t>, uint64_t, storm::utility::vector::VectorHash<uint64_t>>& newLocations, std::unordered_map<std::string, uint64_t>& newActionToIndex, std::vector<std::set<uint64_t>>& synchronizingActionIndices, SynchronizationVector const& vector, std::vector<std::reference_wrapper<Automaton const>> const& composedAutomata, storm::solver::SmtSolver& solver) const {
+        struct ConditionalMetaEdge {
+            ConditionalMetaEdge() : actionIndex(0) {
+                // Intentionally left empty.
+            }
+            
+            uint64_t actionIndex;
+            std::vector<std::pair<uint64_t, uint64_t>> condition;
+            boost::optional<storm::expressions::Expression> rate;
+            std::vector<storm::expressions::Expression> probabilities;
+            std::vector<std::vector<std::pair<uint64_t, uint64_t>>> effects;
+            std::shared_ptr<TemplateEdge> templateEdge;
+        };
+        
+        std::vector<ConditionalMetaEdge> createSynchronizingMetaEdges(Model const& model, Automaton& newAutomaton, std::vector<std::set<uint64_t>>& synchronizingActionIndices, SynchronizationVector const& vector, std::vector<std::reference_wrapper<Automaton const>> const& composedAutomata, storm::solver::SmtSolver& solver) {
 
+            std::vector<ConditionalMetaEdge> result;
+            
             // Gather all participating automata and the corresponding input symbols.
             std::vector<std::pair<std::reference_wrapper<Automaton const>, uint64_t>> participatingAutomataAndActions;
             for (uint64_t i = 0; i < composedAutomata.size(); ++i) {
                 std::string const& actionName = vector.getInput(i);
                 if (!SynchronizationVector::isNoActionInput(actionName)) {
-                    uint64_t actionIndex = getActionIndex(actionName);
+                    uint64_t actionIndex = model.getActionIndex(actionName);
                     participatingAutomataAndActions.push_back(std::make_pair(composedAutomata[i], actionIndex));
                     synchronizingActionIndices[i].insert(actionIndex);
                 }
             }
+            
+            return result;
+        }
+        
+        void addEdgesToReachableLocations(Model const& model, std::vector<std::reference_wrapper<Automaton const&>> const& composedAutomata, Automaton& newAutomaton, std::vector<ConditionalMetaEdge> const& conditionalMetaEdges) {
+            
+            std::vector<uint64_t> locations;
+            for (auto const& automaton : composedAutomata) {
+                // TODO: iterate over initial locations of all automata
+            }
+            
         }
         
         Model Model::flattenComposition(std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory) const {
@@ -132,19 +158,18 @@ namespace storm {
                 solver->add(variable.getExpressionVariable() <= variable.getUpperBound());
             }
 
-            // Since we need to reduce a tuple of locations to a single location, we keep a hashmap for this.
-            std::unordered_map<std::vector<uint64_t>, uint64_t, storm::utility::vector::VectorHash<uint64_t>> newLocations;
-            std::unordered_map<std::string, uint64_t> newActionToIndex;
-            
             // Perform all necessary synchronizations and keep track which action indices participate in synchronization.
             std::vector<std::set<uint64_t>> synchronizingActionIndices;
+            std::vector<ConditionalMetaEdge> conditionalMetaEdges;
             for (auto const& vector : parallelComposition.getSynchronizationVectors()) {
                 // If less then 2 automata participate, there is no need to perform a synchronization.
                 if (vector.getNumberOfActionInputs() <= 1) {
                     continue;
                 }
                 
-                flattenSynchronizationVector(newAutomaton, newLocations, newActionToIndex, synchronizingActionIndices, vector, composedAutomata, *solver);
+                // Create all conditional template edges corresponding to this synchronization vector.
+                std::vector<ConditionalMetaEdge> newConditionalMetaEdges = createSynchronizingMetaEdges(*this, newAutomaton, synchronizingActionIndices, vector, composedAutomata, *solver);
+                conditionalMetaEdges.insert(conditionalMetaEdges.end(), newConditionalMetaEdges.begin(), newConditionalMetaEdges.end());
             }
             
             // Now add all edges with action indices that were not mentioned in synchronization vectors.
@@ -152,166 +177,25 @@ namespace storm {
                 Automaton const& automaton = composedAutomata[i].get();
                 for (auto const& edge : automaton.getEdges()) {
                     if (synchronizingActionIndices[i].find(edge.getActionIndex()) == synchronizingActionIndices[i].end()) {
-                        // TODO: create template edge and create all concrete edges.
+                        std::shared_ptr<TemplateEdge> templateEdge = newAutomaton.createTemplateEdge(edge.getGuard());
+                        conditionalMetaEdges.emplace_back();
+                        ConditionalMetaEdge& conditionalMetaEdge = conditionalMetaEdges.back();
+                        
+                        conditionalMetaEdge.actionIndex = edge.getActionIndex();
+                        conditionalMetaEdge.condition.emplace_back(static_cast<uint64_t>(i), edge.getSourceLocationIndex());
+                        conditionalMetaEdge.rate = edge.getOptionalRate();
+                        for (auto const& destination : edge.getDestinations()) {
+                            conditionalMetaEdge.effects.emplace_back(i, destination.getLocationIndex());
+                            conditionalMetaEdge.probabilities.emplace_back(destination.getProbability());
+                        }
+                        conditionalMetaEdge.templateEdge = templateEdge;
                     }
                 }
             }
             
-
+            addEdgesToReachableLocations(*this, composedAutomata, newAutomaton, conditionalMetaEdges);
             
-//            
-//            
-//            
-//            // Now go through the modules, gather the variables, construct the name of the new module and assert the
-//            // bounds of the discovered variables.
-//            for (auto const& module : this->getModules()) {
-//                newModuleName << module.getName() << "_";
-//                allBooleanVariables.insert(allBooleanVariables.end(), module.getBooleanVariables().begin(), module.getBooleanVariables().end());
-//                allIntegerVariables.insert(allIntegerVariables.end(), module.getIntegerVariables().begin(), module.getIntegerVariables().end());
-//                
-//                // The commands without a synchronizing action name, can simply be copied (plus adjusting the global
-//                // indices of the command and its updates).
-//                for (auto const& command : module.getCommands()) {
-//                    if (!command.isLabeled()) {
-//                        std::vector<storm::prism::Update> updates;
-//                        updates.reserve(command.getUpdates().size());
-//                        
-//                        for (auto const& update : command.getUpdates()) {
-//                            updates.push_back(storm::prism::Update(nextUpdateIndex, update.getLikelihoodExpression(), update.getAssignments(), update.getFilename(), 0));
-//                            ++nextUpdateIndex;
-//                        }
-//                        
-//                        newCommands.push_back(storm::prism::Command(nextCommandIndex, command.isMarkovian(), actionToIndexMap.find("")->second, "", command.getGuardExpression(), updates, command.getFilename(), 0));
-//                        ++nextCommandIndex;
-//                    }
-//                }
-//            }
-//            
-//            // Save state of solver so that we can always restore the point where we have exactly the constant values
-//            // and variables bounds on the assertion stack.
-//            solver->push();
-//            
-//            // Now we need to enumerate all possible combinations of synchronizing commands. For this, we iterate over
-//            // all actions and let the solver enumerate the possible combinations of commands that can be enabled together.
-//            for (auto const& actionIndex : this->getSynchronizingActionIndices()) {
-//                bool noCombinationsForAction = false;
-//                
-//                // Prepare the list that stores for each module the list of commands with the given action.
-//                std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>> possibleCommands;
-//                
-//                for (auto const& module : this->getModules()) {
-//                    // If the module has no command with this action, we can skip it.
-//                    if (!module.hasActionIndex(actionIndex)) {
-//                        continue;
-//                    }
-//                    
-//                    std::set<uint_fast64_t> const& commandIndices = module.getCommandIndicesByActionIndex(actionIndex);
-//                    
-//                    // If there is no command even though the module has this action, there is no valid command
-//                    // combination with this action.
-//                    if (commandIndices.empty()) {
-//                        noCombinationsForAction = true;
-//                        break;
-//                    }
-//                    
-//                    // Prepare empty list of commands for this module.
-//                    possibleCommands.push_back(std::vector<std::reference_wrapper<storm::prism::Command const>>());
-//                    
-//                    // Add references to the commands labeled with the current action.
-//                    for (auto const& commandIndex : commandIndices) {
-//                        possibleCommands.back().push_back(module.getCommand(commandIndex));
-//                    }
-//                }
-//                
-//                // If there are no valid combinations for the action, we need to skip the generation of synchronizing
-//                // commands.
-//                if (!noCombinationsForAction) {
-//                    // Save the solver state to be able to restore it when this action index is done.
-//                    solver->push();
-//                    
-//                    // Start by creating a fresh auxiliary variable for each command and link it with the guard.
-//                    std::vector<std::vector<storm::expressions::Variable>> commandVariables(possibleCommands.size());
-//                    std::vector<storm::expressions::Variable> allCommandVariables;
-//                    for (uint_fast64_t outerIndex = 0; outerIndex < possibleCommands.size(); ++outerIndex) {
-//                        // Create auxiliary variables and link them with the guards.
-//                        for (uint_fast64_t innerIndex = 0; innerIndex < possibleCommands[outerIndex].size(); ++innerIndex) {
-//                            commandVariables[outerIndex].push_back(manager->declareFreshBooleanVariable());
-//                            allCommandVariables.push_back(commandVariables[outerIndex].back());
-//                            solver->add(implies(commandVariables[outerIndex].back(), possibleCommands[outerIndex][innerIndex].get().getGuardExpression()));
-//                        }
-//                        
-//                        storm::expressions::Expression atLeastOneCommandFromModule = manager->boolean(false);
-//                        for (auto const& commandVariable : commandVariables[outerIndex]) {
-//                            atLeastOneCommandFromModule = atLeastOneCommandFromModule || commandVariable;
-//                        }
-//                        solver->add(atLeastOneCommandFromModule);
-//                    }
-//                    
-//                    // Now we are in a position to start the enumeration over all command variables. While doing so, we
-//                    // keep track of previously seen command combinations, because the AllSat procedures are not
-//                    // always guaranteed to only provide distinct models.
-//                    std::unordered_set<std::vector<uint_fast64_t>, storm::utility::vector::VectorHash<uint_fast64_t>> seenCommandCombinations;
-//                    solver->allSat(allCommandVariables, [&] (storm::solver::SmtSolver::ModelReference& modelReference) -> bool {
-//                        // Now we need to reconstruct the chosen commands from the valuation of the command variables.
-//                        std::vector<std::vector<std::reference_wrapper<Command const>>> chosenCommands(possibleCommands.size());
-//                        
-//                        for (uint_fast64_t outerIndex = 0; outerIndex < commandVariables.size(); ++outerIndex) {
-//                            for (uint_fast64_t innerIndex = 0; innerIndex < commandVariables[outerIndex].size(); ++innerIndex) {
-//                                if (modelReference.getBooleanValue(commandVariables[outerIndex][innerIndex])) {
-//                                    chosenCommands[outerIndex].push_back(possibleCommands[outerIndex][innerIndex]);
-//                                }
-//                            }
-//                        }
-//                        
-//                        // Now that we have retrieved the commands, we need to build their synchronizations and add them
-//                        // to the flattened module.
-//                        std::vector<std::vector<std::reference_wrapper<Command const>>::const_iterator> iterators;
-//                        for (auto const& element : chosenCommands) {
-//                            iterators.push_back(element.begin());
-//                        }
-//                        
-//                        bool movedAtLeastOneIterator = false;
-//                        std::vector<std::reference_wrapper<Command const>> commandCombination(chosenCommands.size(), chosenCommands.front().front());
-//                        std::vector<uint_fast64_t> commandCombinationIndices(iterators.size());
-//                        do {
-//                            for (uint_fast64_t index = 0; index < iterators.size(); ++index) {
-//                                commandCombination[index] = *iterators[index];
-//                                commandCombinationIndices[index] = commandCombination[index].get().getGlobalIndex();
-//                            }
-//                            
-//                            // Only add the command combination if it was not previously seen.
-//                            auto seenIt = seenCommandCombinations.find(commandCombinationIndices);
-//                            if (seenIt == seenCommandCombinations.end()) {
-//                                newCommands.push_back(synchronizeCommands(nextCommandIndex, actionIndex, nextUpdateIndex, indexToActionMap.find(actionIndex)->second, commandCombination));
-//                                seenCommandCombinations.insert(commandCombinationIndices);
-//                                
-//                                // Move the counters appropriately.
-//                                ++nextCommandIndex;
-//                                nextUpdateIndex += newCommands.back().getNumberOfUpdates();
-//                            }
-//                            
-//                            movedAtLeastOneIterator = false;
-//                            for (uint_fast64_t index = 0; index < iterators.size(); ++index) {
-//                                ++iterators[index];
-//                                if (iterators[index] != chosenCommands[index].cend()) {
-//                                    movedAtLeastOneIterator = true;
-//                                    break;
-//                                } else {
-//                                    iterators[index] = chosenCommands[index].cbegin();
-//                                }
-//                            }
-//                        } while (movedAtLeastOneIterator);
-//                        
-//                        return true;
-//                    });
-//                    
-//                    solver->pop();
-//                }
-//            }
-//            
-//            // Finally, we can create the module and the program and return it.
-//            storm::prism::Module singleModule(newModuleName.str(), allBooleanVariables, allIntegerVariables, newCommands, this->getFilename(), 0);
-//            return Program(manager, this->getModelType(), this->getConstants(), std::vector<storm::prism::BooleanVariable>(), std::vector<storm::prism::IntegerVariable>(), this->getFormulas(), {singleModule}, actionToIndexMap, this->getRewardModels(), this->getLabels(), this->getOptionalInitialConstruct(), this->getOptionalSystemCompositionConstruct(), this->getFilename(), 0, true);
+            
         }
         
         uint64_t Model::addAction(Action const& action) {
