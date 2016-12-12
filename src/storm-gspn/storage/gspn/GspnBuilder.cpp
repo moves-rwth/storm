@@ -162,6 +162,7 @@ namespace storm {
                 }
                 
             }
+            std::reverse(orderedPartitions.begin(), orderedPartitions.end());
             
             return new GSPN(gspnName, places, immediateTransitions, timedTransitions, orderedPartitions);
         }

@@ -57,6 +57,10 @@ namespace storm {
             return m;
         }
 
+        std::vector<TransitionPartition> const&  GSPN::getPartitions() const {
+            return partitions;
+        }
+        
         
         storm::gspn::Place const* GSPN::getPlace(uint64_t id) const {
             if(id < places.size()) {
