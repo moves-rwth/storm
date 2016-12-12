@@ -25,9 +25,6 @@ namespace storm {
 
 				// Draw restrictions into the GSPN (i.e. SEQ or MUTEX).
 				//drawGSPNRestrictions();
-
-				// Write GSPN to file.
-				writeGspn(true);
             }
             
 			template <typename ValueType>
@@ -457,21 +454,8 @@ namespace storm {
 			}
 
 			template <typename ValueType>
-            void DftToGspnTransformator<ValueType>::writeGspn(bool toFile) {
-                if (toFile) {
-                    // Writing to file
-                    std::ofstream file;
-                    file.open("gspn.dot");
-                    storm::gspn::GSPN* gspn = builder.buildGspn();
-                    gspn->writeDotToStream(file);
-                    delete gspn;
-                    file.close();
-                } else {
-                    // Writing to console
-                    storm::gspn::GSPN* gspn = builder.buildGspn();
-                    gspn->writeDotToStream(std::cout);
-                    delete gspn;
-                }
+            gspn::GSPN* DftToGspnTransformator<ValueType>::obtainGSPN() {
+                return builder.buildGspn();
             }
 			
             // Explicitly instantiate the class.

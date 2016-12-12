@@ -77,11 +77,12 @@ void analyzeWithSMT(std::string filename) {
  *
  */
 template <typename ValueType>
-storm::gspn::GSPN transformDFT(std::string filename) {
+storm::gspn::GSPN* transformDFT(std::string filename) {
     storm::parser::DFTGalileoParser<ValueType> parser;
     storm::storage::DFT<ValueType> dft = parser.parseDFT(filename);
     storm::transformations::dft::DftToGspnTransformator<ValueType> gspnTransformator(dft);
     gspnTransformator.transform();
+    return gspnTransformator.obtainGSPN();
 }
 
 /*!
@@ -138,9 +139,9 @@ int main(const int argc, const char** argv) {
         }
 
         if (dftSettings.isTransformToGspn()) {
-            // For now we only transform the DFT to a GSPN and then exit
-            transformDFT<double>(dftSettings.getDftFilename());
+            storm::gspn::GSPN* gspn = transformDFT<double>(dftSettings.getDftFilename());
             
+            delete gspn;
             storm::utility::cleanUp();
             return 0;
         }

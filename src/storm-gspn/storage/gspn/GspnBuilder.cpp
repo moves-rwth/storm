@@ -35,7 +35,7 @@ namespace storm {
             if(partitions.count(priority) == 0) {
                 TransitionPartition newPart;
                 newPart.priority = priority;
-                partitions.at(priority).push_back(newPart);
+                partitions[priority].push_back(newPart);
             }
             
             if(storm::utility::isZero(weight)) {

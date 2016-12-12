@@ -27,16 +27,14 @@ namespace storm {
                  */
                 void transform();
 
-            private:
                 /*!
-                 * Write Gspn to file or console.
+                 * Extract Gspn by building
                  *
-                 * @param toFile If true, the GSPN will be written to a file, otherwise it will
-                                 be written to the console.
                  */
-                void writeGspn(bool toFile);
-				
-				/*
+                gspn::GSPN* obtainGSPN();
+                
+            private:
+                /*
 				 * Draw all elements of the GSPN.
 				 */
 				void drawGSPNElements();
