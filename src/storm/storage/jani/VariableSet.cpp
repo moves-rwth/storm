@@ -250,5 +250,14 @@ namespace storm {
             return false;
         }
         
+        std::map<std::string, std::reference_wrapper<Variable const>> VariableSet::getNameToVariableMap() const {
+            std::map<std::string, std::reference_wrapper<Variable const>> result;
+            
+            for (auto const& variable : variables) {
+                result.emplace(variable->getName(), *variable);
+            }
+            
+            return result;
+        }
     }
 }

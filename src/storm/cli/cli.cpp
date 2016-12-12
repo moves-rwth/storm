@@ -279,7 +279,7 @@ namespace storm {
                 // Get the string that assigns values to the unknown currently undefined constants in the model.
                 std::string constantDefinitionString = ioSettings.getConstantDefinitionString();
                 model = model.preprocess(constantDefinitionString);
-                
+
                 STORM_LOG_TRACE("Building and checking symbolic model.");
                 if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isParametricSet()) {
 #ifdef STORM_HAVE_CARL

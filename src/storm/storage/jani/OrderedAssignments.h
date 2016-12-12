@@ -113,6 +113,11 @@ namespace storm {
              * Substitutes all variables in all expressions according to the given substitution.
              */
             void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution);
+            
+            /*!
+             * Changes all variables in assignments based on the given mapping.
+             */
+            void changeAssignmentVariables(std::map<Variable const*, std::reference_wrapper<Variable const>> const& remapping);
 
         private:
             static std::vector<std::shared_ptr<Assignment>>::const_iterator lowerBound(Assignment const& assignment, std::vector<std::shared_ptr<Assignment>> const& assignments);

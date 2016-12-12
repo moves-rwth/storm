@@ -19,6 +19,10 @@ namespace storm {
             assignments.substitute(substitution);
         }
         
+        void TemplateEdgeDestination::changeAssignmentVariables(std::map<Variable const*, std::reference_wrapper<Variable const>> const& remapping) {
+            assignments.changeAssignmentVariables(remapping);
+        }
+        
         OrderedAssignments const& TemplateEdgeDestination::getOrderedAssignments() const {
             return assignments;
         }

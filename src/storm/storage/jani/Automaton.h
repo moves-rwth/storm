@@ -313,6 +313,11 @@ namespace storm {
             void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution);
             
             /*!
+             * Changes all variables in assignments based on the given mapping.
+             */
+            void changeAssignmentVariables(std::map<Variable const*, std::reference_wrapper<Variable const>> const& remapping);
+            
+            /*!
              * Finalizes the building of this automaton. Subsequent changes to the automaton require another call to this
              * method. Note that this method is invoked by a call to <code>finalize</code> to the containing model.
              */

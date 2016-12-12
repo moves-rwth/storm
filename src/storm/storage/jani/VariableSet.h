@@ -199,6 +199,11 @@ namespace storm {
              */
             bool containsVariablesInBoundExpressionsOrInitialValues(std::set<storm::expressions::Variable> const& variables) const;
             
+            /*!
+             * Retrieves a mapping from variable names to (references of) the variable objects.
+             */
+            std::map<std::string, std::reference_wrapper<Variable const>> getNameToVariableMap() const;
+            
         private:
             /// The vector of all variables.
             std::vector<std::shared_ptr<Variable>> variables;

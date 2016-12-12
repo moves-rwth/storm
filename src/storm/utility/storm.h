@@ -94,6 +94,8 @@
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/NotSupportedException.h"
 
+#include "storm/storage/jani/JSONExporter.h"
+
 namespace storm {
 
     template<typename ValueType>

@@ -38,7 +38,12 @@ namespace storm {
              * Substitutes all variables in all expressions according to the given substitution.
              */
             void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution);
-            
+  
+            /*!
+             * Changes all variables in assignments based on the given mapping.
+             */
+            void changeAssignmentVariables(std::map<Variable const*, std::reference_wrapper<Variable const>> const& remapping);
+
             /*!
              * Checks whether the location is valid, that is, whether the assignments are indeed all transient assignments.
              */

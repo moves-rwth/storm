@@ -10,13 +10,18 @@ namespace storm {
             TemplateEdgeDestination() = default;
             TemplateEdgeDestination(OrderedAssignments const& assignments);
             TemplateEdgeDestination(Assignment const& assignment);
-            TemplateEdgeDestination(std::vector<Assignment> const& assignments = {});
+            TemplateEdgeDestination(std::vector<Assignment> const& assignments);
 
             /*!
              * Substitutes all variables in all expressions according to the given substitution.
              */
             void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution);
             
+            /*!
+             * Changes all variables in assignments based on the given mapping.
+             */
+            void changeAssignmentVariables(std::map<Variable const*, std::reference_wrapper<Variable const>> const& remapping);
+
             OrderedAssignments const& getOrderedAssignments() const;
             
             // Convenience methods to access the assignments.

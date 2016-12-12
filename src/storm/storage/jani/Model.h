@@ -36,6 +36,19 @@ namespace storm {
             Model(std::string const& name, ModelType const& modelType, uint64_t version = 1, boost::optional<std::shared_ptr<storm::expressions::ExpressionManager>> const& expressionManager = boost::none);
 
             /*!
+             * Copies the given model.
+             */
+            Model(Model const& other);
+            
+            /*!
+             * Copy-assigns the given model
+             */
+            Model& operator=(Model const& other);
+            
+            Model(Model&& other) = default;
+            Model& operator=(Model&& other) = default;
+            
+            /*!
              * Retrieves the expression manager responsible for the expressions in the model.
              */
             storm::expressions::ExpressionManager& getManager() const;

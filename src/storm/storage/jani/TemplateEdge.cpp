@@ -62,6 +62,13 @@ namespace storm {
                 destination.substitute(substitution);
             }
         }
+        
+        void TemplateEdge::changeAssignmentVariables(std::map<Variable const*, std::reference_wrapper<Variable const>> const& remapping) {
+            for (auto& destination : destinations) {
+                destination.changeAssignmentVariables(remapping);
+            }
+            assignments.changeAssignmentVariables(remapping);
+        }
 
         void TemplateEdge::liftTransientDestinationAssignments() {
             if (!destinations.empty()) {

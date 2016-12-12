@@ -141,6 +141,14 @@ namespace storm {
             }
         }
         
+        void OrderedAssignments::changeAssignmentVariables(std::map<Variable const*, std::reference_wrapper<Variable const>> const& remapping) {
+            std::vector<Assignment> newAssignments;
+            for (auto& assignment : allAssignments) {
+                newAssignments.emplace_back(remapping.at(&assignment->getVariable()), assignment->getAssignedExpression(), assignment->getLevel());
+            }
+            *this = OrderedAssignments(newAssignments);
+        }
+        
         std::vector<std::shared_ptr<Assignment>>::const_iterator OrderedAssignments::lowerBound(Assignment const& assignment, std::vector<std::shared_ptr<Assignment>> const& assignments) {
             return std::lower_bound(assignments.begin(), assignments.end(), assignment, storm::jani::AssignmentPartialOrderByLevelAndVariable());
         }

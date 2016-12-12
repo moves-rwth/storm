@@ -53,6 +53,11 @@ namespace storm {
             void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution);
 
             /*!
+             * Changes all variables in assignments based on the given mapping.
+             */
+            void changeAssignmentVariables(std::map<Variable const*, std::reference_wrapper<Variable const>> const& remapping);
+            
+            /*!
              * Finds the transient assignments common to all destinations and lifts them to the edge. Afterwards, these
              * assignments are no longer contained in the destination. Note that this may modify the semantics of the
              * model if assignment levels are being used somewhere in the model.

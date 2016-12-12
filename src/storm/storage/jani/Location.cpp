@@ -30,6 +30,10 @@ namespace storm {
             }
         }
         
+        void Location::changeAssignmentVariables(std::map<Variable const*, std::reference_wrapper<Variable const>> const& remapping) {
+            assignments.changeAssignmentVariables(remapping);
+        }
+        
         void Location::checkValid() const {
             // Intentionally left empty.
         }

@@ -427,6 +427,15 @@ namespace storm {
             }
         }
         
+        void Automaton::changeAssignmentVariables(std::map<Variable const*, std::reference_wrapper<Variable const>> const& remapping) {
+            for (auto& location : locations) {
+                location.changeAssignmentVariables(remapping);
+            }
+            for (auto& templateEdge : templateEdges) {
+                templateEdge->changeAssignmentVariables(remapping);
+            }
+        }
+        
         void Automaton::finalize(Model const& containingModel) {
             for (auto& templateEdge : templateEdges) {
                 templateEdge->finalize(containingModel);
