@@ -1,31 +1,28 @@
 #include "storm/logic/Formula.h"
 #include "storm/utility/initialize.h"
 #include "storm/utility/storm.h"
-#include "storm-dft/parser/DFTGalileoParser.h"
-#include "storm-dft/modelchecker/dft/DFTModelChecker.h"
-
-#include "storm-dft/modelchecker/dft/DFTASFChecker.h"
 #include "storm/cli/cli.h"
 #include "storm/exceptions/BaseException.h"
 #include "storm/utility/macros.h"
 
-
 #include "storm/settings/modules/GeneralSettings.h"
-#include "storm-dft/settings/modules/DFTSettings.h"
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/settings/modules/DebugSettings.h"
-//#include "storm/settings/modules/CounterexampleGeneratorSettings.h"
-//#include "storm/settings/modules/CuddSettings.h"
-//#include "storm/settings/modules/SylvanSettings.h"
 #include "storm/settings/modules/GmmxxEquationSolverSettings.h"
 #include "storm/settings/modules/MinMaxEquationSolverSettings.h"
 #include "storm/settings/modules/NativeEquationSolverSettings.h"
-//#include "storm/settings/modules/BisimulationSettings.h"
-//#include "storm/settings/modules/GlpkSettings.h"
-//#include "storm/settings/modules/GurobiSettings.h"
-//#include "storm/settings/modules/TopologicalValueIterationEquationSolverSettings.h"
-//#include "storm/settings/modules/ParametricSettings.h"
 #include "storm/settings/modules/EliminationSettings.h"
+
+#include "storm-dft/parser/DFTGalileoParser.h"
+#include "storm-dft/modelchecker/dft/DFTModelChecker.h"
+#include "storm-dft/modelchecker/dft/DFTASFChecker.h"
+
+#include "storm-dft/settings/modules/DFTSettings.h"
+
+#include "storm-gspn/storage/gspn/GSPN.h"
+#include "storm/settings/modules/GSPNSettings.h"
+#include "storm/settings/modules/GSPNExportSettings.h"
+
 
 #include <boost/lexical_cast.hpp>
 
@@ -78,13 +75,9 @@ void analyzeWithSMT(std::string filename) {
  *
  */
 template <typename ValueType>
-void transformDFT(std::string filename) {
-    std::cout << "Transforming DFT from file " << filename << std::endl;
+storm::gspn::GSPN transformDFT(std::string filename) {
     storm::parser::DFTGalileoParser<ValueType> parser;
     storm::storage::DFT<ValueType> dft = parser.parseDFT(filename);
-    // TODO: activate again
-    //storm::transformations::dft::DftToGspnTransformator<ValueType> gspnTransformator(dft);
-    //gspnTransformator.transform();
 }
 
 /*!
@@ -110,6 +103,10 @@ void initializeSettings() {
     //storm::settings::addModule<storm::settings::modules::TopologicalValueIterationEquationSolverSettings>();
     //storm::settings::addModule<storm::settings::modules::ParametricSettings>();
     storm::settings::addModule<storm::settings::modules::EliminationSettings>();
+    
+    // For translation into JANI via GSPN.
+    storm::settings::addModule<storm::settings::modules::GSPNSettings>();
+    storm::settings::addModule<storm::settings::modules::GSPNExportSettings>();
 }
 
 /*!
@@ -139,6 +136,7 @@ int main(const int argc, const char** argv) {
         if (dftSettings.isTransformToGspn()) {
             // For now we only transform the DFT to a GSPN and then exit
             transformDFT<double>(dftSettings.getDftFilename());
+            
             storm::utility::cleanUp();
             return 0;
         }
