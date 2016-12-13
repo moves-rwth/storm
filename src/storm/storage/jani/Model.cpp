@@ -511,7 +511,17 @@ namespace storm {
             newAutomaton.changeAssignmentVariables(variableRemapping);
             
             // Finalize the flattened model.
+            storm::expressions::Expression initialStatesRestriction = getManager().boolean(true);
+            for (auto const& automaton : composedAutomata) {
+                if (automaton.get().hasInitialStatesRestriction()) {
+                    initialStatesRestriction = initialStatesRestriction && automaton.get().getInitialStatesRestriction();
+                }
+            }
+            
             newAutomaton.setInitialStatesRestriction(this->getInitialStatesExpression(composedAutomata));
+            if (this->hasInitialStatesRestriction()) {
+                flattenedModel.setInitialStatesRestriction(this->getInitialStatesRestriction());
+            }
             flattenedModel.addAutomaton(newAutomaton);
             flattenedModel.setStandardSystemComposition();
             flattenedModel.finalize();
@@ -877,6 +887,10 @@ namespace storm {
         
         void Model::setInitialStatesRestriction(storm::expressions::Expression const& initialStatesRestriction) {
             this->initialStatesRestriction = initialStatesRestriction;
+        }
+        
+        bool Model::hasInitialStatesRestriction() const {
+            return this->initialStatesRestriction.isInitialized();
         }
         
         storm::expressions::Expression const& Model::getInitialStatesRestriction() const {

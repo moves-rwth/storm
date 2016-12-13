@@ -69,6 +69,68 @@ namespace storm {
             std::map<storm::expressions::Variable, storm::expressions::Expression> CommandAbstractor<DdType, ValueType>::getVariableUpdates(uint64_t auxiliaryChoice) const {
                 return command.get().getUpdate(auxiliaryChoice).getAsVariableToExpressionMap();
             }
+
+            template <storm::dd::DdType DdType, typename ValueType>
+            void CommandAbstractor<DdType, ValueType>::recomputeCachedBddUsingDecomposition() {
+                STORM_LOG_TRACE("Recomputing BDD for command " << command.get() << " using the decomposition.");
+                auto start = std::chrono::high_resolution_clock::now();
+
+                // compute a decomposition of the command
+                //  * start with all relevant blocks: blocks of assignment variables and variables in the rhs of assignments
+                //  * go through all assignments of all updates and merge relevant blocks that are related via an assignment
+                //  * repeat this until nothing changes anymore
+                //  * the resulting blocks are the decomposition
+                
+                // Start by constructing the relevant blocks.
+                std::set<uint64_t> allRelevantBlocks;
+                std::map<storm::expressions::Variable, uint64_t> variableToBlockIndex;
+                for (auto const& update : command.get().getUpdates()) {
+                    for (auto const& assignment : update.getAssignments()) {
+                        allRelevantBlocks.insert(localExpressionInformation.getBlockIndexOfVariable(assignment.getVariable()));
+
+                        auto rhsVariableBlocks = localExpressionInformation.getBlockIndicesOfVariables(assignment.getExpression().getVariables());
+                        allRelevantBlocks.insert(rhsVariableBlocks.begin(), rhsVariableBlocks.end());
+                    }
+                }
+                STORM_LOG_TRACE("Found " << allRelevantBlocks.size() << " relevant block.");
+
+                // Create a block partition.
+                std::vector<std::set<uint64_t>> relevantBlockPartition;
+                std::map<storm::expressions::Variable, uint64_t> variableToLocalBlockIndex;
+                uint64_t index = 0;
+                for (auto const& blockIndex : allRelevantBlocks) {
+                    relevantBlockPartition.emplace_back(std::set<uint64_t>({blockIndex}));
+                    for (auto const& variable : localExpressionInformation.getVariableBlockWithIndex(blockIndex)) {
+                        variableToLocalBlockIndex[variable] = index;
+                    }
+                    ++index;
+                }
+                
+                // Proceed by relating the blocks via assignments until nothing changes anymore.
+                bool changed = false;
+                do {
+                    for (auto const& update : command.get().getUpdates()) {
+                        for (auto const& assignment : update.getAssignments()) {
+                            std::set<storm::expressions::Variable> rhsVariables = assignment.getExpression().getVariables();
+                            
+                        }
+                    }
+                } while (changed);
+                
+                // if the decomposition has size 1, use the plain technique from before
+                
+                // otherwise, enumerate the abstract guard so we do this only once
+                
+                // then enumerate the solutions for each of the blocks of the decomposition
+                
+                // multiply the results
+                
+                // multiply with the abstract guard
+                
+                // multiply with missing identities
+                
+                // cache and return result
+            }
             
             template <storm::dd::DdType DdType, typename ValueType>
             void CommandAbstractor<DdType, ValueType>::recomputeCachedBdd() {
@@ -140,12 +202,12 @@ namespace storm {
                 std::set<storm::expressions::Variable> assignedVariables;
                 for (auto const& assignment : assignments) {
                     // Also, variables appearing on the right-hand side of an assignment are relevant for source state.
-                    auto const& rightHandSidePredicates = localExpressionInformation.getExpressionsUsingVariables(assignment.getExpression().getVariables());
+                    auto const& rightHandSidePredicates = localExpressionInformation.getRelatedExpressions(assignment.getExpression().getVariables());
                     result.first.insert(rightHandSidePredicates.begin(), rightHandSidePredicates.end());
                     
                     // Variables that are being assigned are relevant for the successor state.
                     storm::expressions::Variable const& assignedVariable = assignment.getVariable();
-                    auto const& leftHandSidePredicates = localExpressionInformation.getExpressionsUsingVariable(assignedVariable);
+                    auto const& leftHandSidePredicates = localExpressionInformation.getRelatedExpressions(assignedVariable);
                     result.second.insert(leftHandSidePredicates.begin(), leftHandSidePredicates.end());
                     
                     // Keep track of all assigned variables, so we can find the related predicates later.
@@ -165,7 +227,7 @@ namespace storm {
                 std::pair<std::set<uint_fast64_t>, std::vector<std::set<uint_fast64_t>>> result;
 
                 // To start with, all predicates related to the guard are relevant source predicates.
-                result.first = localExpressionInformation.getExpressionsUsingVariables(command.get().getGuardExpression().getVariables());
+                result.first = localExpressionInformation.getRelatedExpressions(command.get().getGuardExpression().getVariables());
                 
                 // Then, we add the predicates that become relevant, because of some update.
                 for (auto const& update : command.get().getUpdates()) {
@@ -223,13 +285,10 @@ namespace storm {
             template <storm::dd::DdType DdType, typename ValueType>
             storm::dd::Bdd<DdType> CommandAbstractor<DdType, ValueType>::getSourceStateBdd(storm::solver::SmtSolver::ModelReference const& model) const {
                 storm::dd::Bdd<DdType> result = this->getAbstractionInformation().getDdManager().getBddOne();
-//                std::cout << "new model ----------------" << std::endl;
                 for (auto const& variableIndexPair : relevantPredicatesAndVariables.first) {
                     if (model.getBooleanValue(variableIndexPair.first)) {
-//                        std::cout << this->getAbstractionInformation().getPredicateByIndex(variableIndexPair.second) << " is true" << std::endl;
                         result &= this->getAbstractionInformation().encodePredicateAsSource(variableIndexPair.second);
                     } else {
-//                        std::cout << this->getAbstractionInformation().getPredicateByIndex(variableIndexPair.second) << " is false" << std::endl;
                         result &= !this->getAbstractionInformation().encodePredicateAsSource(variableIndexPair.second);
                     }
                 }

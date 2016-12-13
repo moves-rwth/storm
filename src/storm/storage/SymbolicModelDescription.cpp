@@ -119,7 +119,6 @@ namespace storm {
             if (this->isJaniModel()) {
                 std::map<storm::expressions::Variable, storm::expressions::Expression> substitution = storm::utility::jani::parseConstantDefinitionString(this->asJaniModel(), constantDefinitionString);
                 storm::jani::Model preparedModel = this->asJaniModel().defineUndefinedConstants(substitution).substituteConstants();
-                preparedModel = preparedModel.flattenComposition();
                 return SymbolicModelDescription(preparedModel);
             } else if (this->isPrismProgram()) {
                 std::map<storm::expressions::Variable, storm::expressions::Expression> substitution = storm::utility::prism::parseConstantDefinitionString(this->asPrismProgram(), constantDefinitionString);

@@ -39,7 +39,7 @@ namespace storm {
 
                 std::vector<std::string> invalidBlockStrategies = {"none", "local", "global"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, invalidBlockStrategyOptionName, true, "Sets the strategy to detect invalid blocks.")
-                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of an available strategy. Available are: 'none', 'local' and 'global'.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(invalidBlockStrategies)).setDefaultValueString("global").build()).build());
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of an available strategy. Available are: 'none', 'local' and 'global'.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(invalidBlockStrategies)).setDefaultValueString("local").build()).build());
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, reuseQualitativeResultsOptionName, true, "Sets whether to reuse qualitative results.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, reuseQuantitativeResultsOptionName, true, "Sets whether to reuse quantitative results.").build());

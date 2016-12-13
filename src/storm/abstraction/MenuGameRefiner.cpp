@@ -253,6 +253,10 @@ namespace storm {
                 STORM_LOG_DEBUG("Derived new predicate (based on guard): " << newPredicate);
             } else {
                 STORM_LOG_TRACE("No bottom state successor. Deriving a new predicate using weakest precondition.");
+            
+//                player1Choice.template toAdd<ValueType>().exportToDot("choice.dot");
+//                lowerChoice.template toAdd<ValueType>().exportToDot("lower.dot");
+//                upperChoice.template toAdd<ValueType>().exportToDot("upper.dot");
                 
                 // Decode both choices to explicit mappings.
                 std::map<uint64_t, std::pair<storm::storage::BitVector, ValueType>> lowerChoiceUpdateToSuccessorMapping = abstractionInformation.template decodeChoiceToUpdateSuccessorMapping<ValueType>(lowerChoice);

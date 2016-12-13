@@ -161,6 +161,11 @@ namespace storm {
                  * Recomputes the cached BDD. This needs to be triggered if any relevant predicates change.
                  */
                 void recomputeCachedBdd();
+                
+                /*!
+                 * Recomputes the cached BDD using a decomposition. This needs to be triggered if any relevant predicates change.
+                 */
+                void recomputeCachedBddUsingDecomposition();
 
                 /*!
                  * Computes the missing state identities.
@@ -219,7 +224,7 @@ namespace storm {
                 
                 // The set of all relevant predicates.
                 std::set<uint64_t> allRelevantPredicates;
-                
+                                
                 // The most recent result of a call to computeDd. If nothing has changed regarding the relevant
                 // predicates, this result may be reused.
                 GameBddResult<DdType> cachedDd;

@@ -75,7 +75,15 @@ namespace storm {
              * @return The block index of the given variable.
              */
             uint_fast64_t getBlockIndexOfVariable(storm::expressions::Variable const& variable) const;
-            
+
+            /*!
+             * Retrieves the block indices of the given variables.
+             *
+             * @param variables The variables for which to retrieve the blocks.
+             * @return The block indices of the given variables.
+             */
+            std::set<uint_fast64_t> getBlockIndicesOfVariables(std::set<storm::expressions::Variable> const& variables) const;
+
             /*!
              * Retrieves the number of blocks of the variable partition.
              *

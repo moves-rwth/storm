@@ -142,6 +142,15 @@ namespace storm {
         }
         
         template <storm::dd::DdType DdType>
+        std::set<uint_fast64_t> LocalExpressionInformation<DdType>::getBlockIndicesOfVariables(std::set<storm::expressions::Variable> const& variables) const {
+            std::set<uint_fast64_t> result;
+            for (auto const& variable : variables) {
+                result.insert(getBlockIndexOfVariable(variable));
+            }
+            return result;
+        }
+        
+        template <storm::dd::DdType DdType>
         std::set<uint_fast64_t> const& LocalExpressionInformation<DdType>::getRelatedExpressions(storm::expressions::Variable const& variable) const {
             return this->expressionBlocks[getBlockIndexOfVariable(variable)];
         }
