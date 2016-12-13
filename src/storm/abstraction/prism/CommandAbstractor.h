@@ -147,7 +147,7 @@ namespace storm {
                  * @param model The model to translate.
                  * @return The source state encoded as a DD.
                  */
-                storm::dd::Bdd<DdType> getSourceStateBdd(storm::solver::SmtSolver::ModelReference const& model) const;
+                storm::dd::Bdd<DdType> getSourceStateBdd(storm::solver::SmtSolver::ModelReference const& model, std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>> const& variablePredicates) const;
 
                 /*!
                  * Translates the given model to a distribution over successor states.
@@ -155,7 +155,7 @@ namespace storm {
                  * @param model The model to translate.
                  * @return The source state encoded as a DD.
                  */
-                storm::dd::Bdd<DdType> getDistributionBdd(storm::solver::SmtSolver::ModelReference const& model) const;
+                storm::dd::Bdd<DdType> getDistributionBdd(storm::solver::SmtSolver::ModelReference const& model, std::vector<std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>>> const& variablePredicates) const;
                 
                 /*!
                  * Recomputes the cached BDD. This needs to be triggered if any relevant predicates change.
