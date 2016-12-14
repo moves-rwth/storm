@@ -376,18 +376,21 @@ namespace storm {
             template <typename ValueType>
             void DftToGspnTransformator<ValueType>::drawSeq(std::shared_ptr<storm::storage::DFTSeq<ValueType> const> dftSeq) {
                 STORM_LOG_THROW(dftSeq->allChildrenBEs(), storm::exceptions::NotImplementedException, "Sequence enforcers with gates as children are currently not supported");
-                bool first = true;
+                uint64_t j = 0;
                 uint64_t tEnable = 0;
                 uint64_t nextPlace = 0;
                 for(auto const& child : dftSeq->children()) {
-                    nextPlace = builder.addPlace(defaultCapacity, first ? 1 : 0, dftSeq->name() + "_next_" + child->name());
-                    if(!first) {
+                    nextPlace = builder.addPlace(defaultCapacity, j==0 ? 1 : 0, dftSeq->name() + "_next_" + child->name());
+                    if (j>0) {
                         builder.addOutputArc(tEnable, nextPlace);
                     }
                     tEnable = builder.addImmediateTransition(defaultPriority, 0.0, dftSeq->name() + "_unblock_" +child->name() );
                     builder.addInputArc(nextPlace, tEnable);
                     builder.addInputArc(disabledNodes.at(child->id()), tEnable);
-                    first = false;
+                    if (j>0) {
+                        builder.addInputArc(failedNodes.at(dftSeq->children().at(j-1)->id()), tEnable);
+                    }
+                    ++j;
                 }
                 
             }
