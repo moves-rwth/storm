@@ -50,7 +50,7 @@ namespace storm {
             }
             
             std::string typestring() const override {
-                return inclusive ? "PAND" : "PAND-ex";
+                return inclusive ? "PAND-inc" : "PAND-ex";
             }
         protected:
             bool inclusive;

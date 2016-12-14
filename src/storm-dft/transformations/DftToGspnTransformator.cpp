@@ -7,7 +7,7 @@ namespace storm {
         namespace dft {
             
             // Prevent some magic constants
-            static constexpr const uint64_t defaultPriority = 0;
+            static constexpr const uint64_t defaultPriority = 1;
             static constexpr const uint64_t defaultCapacity = 1;
 
             template <typename ValueType>
@@ -229,30 +229,59 @@ namespace storm {
                 assert(failedNodes.size() == dftPand->id());
                 failedNodes.push_back(nodeFailed);
                 uint64_t unavailableNode = 0;
-                if (isRepresentative) {
+                if (!smart || isRepresentative) {
                     unavailableNode = addUnavailableNode(dftPand);
                 }
-
-                uint64_t nodeFS = builder.addPlace(defaultCapacity, 0, dftPand->name() + STR_FAILSAVE);
+                
                 uint64_t tNodeFailed = builder.addImmediateTransition(getFailPriority(dftPand), 0.0,  dftPand->name() + STR_FAILING);
                 builder.addInhibitionArc(nodeFailed, tNodeFailed);
-                builder.addInhibitionArc(nodeFS, tNodeFailed);
                 builder.addOutputArc(tNodeFailed, nodeFailed);
-                if (isRepresentative) {
+                if (!smart || isRepresentative) {
                     builder.addOutputArc(tNodeFailed, nodeFailed);
                 }
-                for(auto const& child : dftPand->children()) {
-                    builder.addInputArc(failedNodes[child->id()], tNodeFailed);
-                    builder.addOutputArc(tNodeFailed, failedNodes[child->id()]);
-                }
-                for (uint64_t j = 1; j < dftPand->nrChildren(); ++j) {
-                    uint64_t tfs = builder.addImmediateTransition(getFailPriority(dftPand), 0.0, dftPand->name() + STR_FAILSAVING + std::to_string(j));
-                    builder.addInputArc(failedNodes[dftPand->children().at(j)->id()], tfs);
-                    builder.addOutputArc(tfs, failedNodes[dftPand->children().at(j)->id()]);
-                    builder.addInhibitionArc(failedNodes[dftPand->children().at(j-1)->id()], tfs);
-                    builder.addOutputArc(tfs, nodeFS);
-                    builder.addInhibitionArc(nodeFS, tfs);
-
+                
+                
+                if(dftPand->isInclusive()) {
+                    
+                    uint64_t nodeFS = builder.addPlace(defaultCapacity, 0, dftPand->name() + STR_FAILSAVE);
+                    builder.addInhibitionArc(nodeFS, tNodeFailed);
+                    for(auto const& child : dftPand->children()) {
+                        builder.addInputArc(failedNodes[child->id()], tNodeFailed);
+                        builder.addOutputArc(tNodeFailed, failedNodes[child->id()]);
+                    }
+                    for (uint64_t j = 1; j < dftPand->nrChildren(); ++j) {
+                        uint64_t tfs = builder.addImmediateTransition(getFailPriority(dftPand), 0.0, dftPand->name() + STR_FAILSAVING + std::to_string(j));
+                        builder.addInputArc(failedNodes[dftPand->children().at(j)->id()], tfs);
+                        builder.addOutputArc(tfs, failedNodes[dftPand->children().at(j)->id()]);
+                        builder.addInhibitionArc(failedNodes[dftPand->children().at(j-1)->id()], tfs);
+                        builder.addOutputArc(tfs, nodeFS);
+                        builder.addInhibitionArc(nodeFS, tfs);
+                        
+                    }
+                } else {
+                    uint64_t fi = 0;
+                    uint64_t tn = 0;
+                    for(uint64_t j = 0; j < dftPand->nrChildren(); ++j) {
+                        auto const& child = dftPand->children()[j];
+                        if (j > 0) {
+                            builder.addInhibitionArc(failedNodes.at(child->id()), tn);
+                        }
+                        if (j != dftPand->nrChildren() - 1) {
+                            tn = builder.addImmediateTransition(getFailPriority(dftPand), 0.0, dftPand->name() + STR_FAILING + "_" +std::to_string(j));
+                        } else {
+                            tn = tNodeFailed;
+                        }
+                        builder.addInputArc(failedNodes.at(child->id()), tn);
+                        builder.addOutputArc(tn, failedNodes.at(child->id()));
+                        if (j > 0) {
+                            builder.addInputArc(fi, tn);
+                        }
+                        if (j != dftPand->nrChildren() - 1) {
+                            fi = builder.addPlace(defaultCapacity, 0, dftPand->name() + "_F_" + std::to_string(j));
+                            builder.addOutputArc(tn, fi);
+                        }
+                        
+                    }
                 }
             }
 //			
@@ -318,24 +347,51 @@ namespace storm {
 			template <typename ValueType>
             void DftToGspnTransformator<ValueType>::drawPOR(std::shared_ptr<storm::storage::DFTPor<ValueType> const> dftPor, bool isRepresentative) {
                 uint64_t nodeFailed = builder.addPlace(defaultCapacity, 0, dftPor->name() + STR_FAILED);
-                uint64_t nodeFS = builder.addPlace(defaultCapacity, 0, dftPor->name() + STR_FAILSAVE);
+                failedNodes.push_back(nodeFailed);
                 
+                uint64_t unavailableNode = 0;
+                if (!smart || isRepresentative) {
+                    unavailableNode = addUnavailableNode(dftPor);
+                }
                 
                 uint64_t tfail = builder.addImmediateTransition(getFailPriority(dftPor), 0.0, dftPor->name() + STR_FAILING);
-                builder.addInhibitionArc(nodeFS, tfail);
-                builder.addInputArc(failedNodes.at(dftPor->children().front()->id()), tfail);
-                builder.addOutputArc(tfail, failedNodes.at(dftPor->children().front()->id()));
                 builder.addOutputArc(tfail, nodeFailed);
                 builder.addInhibitionArc(nodeFailed, tfail);
-                uint64_t j = 0;
-                for (auto const& child : dftPor->children()) {
-                    uint64_t tfailsf = builder.addImmediateTransition(getFailPriority(dftPor), 0.0, dftPor->name() + STR_FAILSAVING + std::to_string(j));
-                    builder.addInputArc(failedNodes.at(child->id()), tfailsf);
-                    builder.addOutputArc(tfailsf, failedNodes.at(child->id()));
-                    // TODO
-//                    builder.addInhibitionArc(<#const uint_fast64_t &from#>, <#const uint_fast64_t &to#>)
-                    ++j;
+                
+                builder.addInputArc(failedNodes.at(dftPor->children().front()->id()), tfail);
+                builder.addOutputArc(tfail, failedNodes.at(dftPor->children().front()->id()));
+                
+                if(!smart || isRepresentative) {
+                    builder.addOutputArc(tfail, unavailableNode);
                 }
+                
+                if(dftPor->isInclusive()) {
+                    uint64_t nodeFS = builder.addPlace(defaultCapacity, 0, dftPor->name() + STR_FAILSAVE);
+                    builder.addInhibitionArc(nodeFS, tfail);
+                    uint64_t j = 0;
+                    for (auto const& child : dftPor->children()) {
+                        if(j > 0) {
+                            uint64_t tfailsf = builder.addImmediateTransition(getFailPriority(dftPor), 0.0, dftPor->name() + STR_FAILSAVING + std::to_string(j));
+                            builder.addInputArc(failedNodes.at(child->id()), tfailsf);
+                            builder.addOutputArc(tfailsf, failedNodes.at(child->id()));
+                            builder.addOutputArc(tfailsf, nodeFS);
+                            builder.addInhibitionArc(nodeFS, tfailsf);
+                            builder.addInhibitionArc(failedNodes.at(dftPor->children().front()->id()), tfailsf);
+                        }
+                        
+                        ++j;
+                    }
+                } else {
+                    uint64_t j = 0;
+                    for (auto const& child : dftPor->children()) {
+                        if(j > 0) {
+                            builder.addInhibitionArc(failedNodes.at(child->id()), tfail);
+                        }
+                        ++j;
+                    }
+                    
+                }
+                
 			}
             
 //			
@@ -366,18 +422,21 @@ namespace storm {
             template <typename ValueType>
             void DftToGspnTransformator<ValueType>::drawSeq(std::shared_ptr<storm::storage::DFTSeq<ValueType> const> dftSeq) {
                 STORM_LOG_THROW(dftSeq->allChildrenBEs(), storm::exceptions::NotImplementedException, "Sequence enforcers with gates as children are currently not supported");
-                bool first = true;
+                uint64_t j = 0;
                 uint64_t tEnable = 0;
                 uint64_t nextPlace = 0;
                 for(auto const& child : dftSeq->children()) {
-                    nextPlace = builder.addPlace(defaultCapacity, first ? 1 : 0, dftSeq->name() + "_next_" + child->name());
-                    if(!first) {
+                    nextPlace = builder.addPlace(defaultCapacity, j==0 ? 1 : 0, dftSeq->name() + "_next_" + child->name());
+                    if (j>0) {
                         builder.addOutputArc(tEnable, nextPlace);
                     }
                     tEnable = builder.addImmediateTransition(defaultPriority, 0.0, dftSeq->name() + "_unblock_" +child->name() );
                     builder.addInputArc(nextPlace, tEnable);
                     builder.addInputArc(disabledNodes.at(child->id()), tEnable);
-                    first = false;
+                    if (j>0) {
+                        builder.addInputArc(failedNodes.at(dftSeq->children().at(j-1)->id()), tEnable);
+                    }
+                    ++j;
                 }
                 
             }
@@ -436,7 +495,7 @@ namespace storm {
 			template <typename ValueType>
             uint64_t DftToGspnTransformator<ValueType>::getFailPriority(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftElement)
 			{
-                return mDft.maxRank() - dftElement->rank();
+                return mDft.maxRank() - dftElement->rank() + 2;
 			}
 
 			

@@ -110,8 +110,16 @@ namespace storm {
                         success = builder.addVotElement(name, threshold, childNames);
                     } else if (tokens[1] == "pand") {
                         success = builder.addPandElement(name, childNames);
+                    } else if (tokens[1] == "pand-inc") {
+                        success = builder.addPandElement(name, childNames, true);
+                    } else if (tokens[1] == "pand-ex") {
+                        success = builder.addPandElement(name, childNames, false);
                     } else if (tokens[1] == "por") {
                         success = builder.addPorElement(name, childNames);
+                    } else if (tokens[1] == "por-ex") {
+                        success = builder.addPorElement(name, childNames, false);
+                    } else if (tokens[1] == "por-inc") {
+                        success = builder.addPorElement(name, childNames, true);
                     } else if (tokens[1] == "wsp" || tokens[1] == "csp") {
                         success = builder.addSpareElement(name, childNames);
                     } else if (tokens[1] == "seq") {
