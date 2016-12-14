@@ -324,28 +324,50 @@ namespace storm {
             void DftToGspnTransformator<ValueType>::drawPOR(std::shared_ptr<storm::storage::DFTPor<ValueType> const> dftPor, bool isRepresentative) {
                 uint64_t nodeFailed = builder.addPlace(defaultCapacity, 0, dftPor->name() + STR_FAILED);
                 failedNodes.push_back(nodeFailed);
-                uint64_t nodeFS = builder.addPlace(defaultCapacity, 0, dftPor->name() + STR_FAILSAVE);
                 
+                uint64_t unavailableNode = 0;
+                if (!smart || isRepresentative) {
+                    unavailableNode = addUnavailableNode(dftPor);
+                }
                 
                 uint64_t tfail = builder.addImmediateTransition(getFailPriority(dftPor), 0.0, dftPor->name() + STR_FAILING);
-                builder.addInhibitionArc(nodeFS, tfail);
-                builder.addInputArc(failedNodes.at(dftPor->children().front()->id()), tfail);
-                builder.addOutputArc(tfail, failedNodes.at(dftPor->children().front()->id()));
                 builder.addOutputArc(tfail, nodeFailed);
                 builder.addInhibitionArc(nodeFailed, tfail);
-                uint64_t j = 0;
-                for (auto const& child : dftPor->children()) {
-                    if(j > 0) {
-                        uint64_t tfailsf = builder.addImmediateTransition(getFailPriority(dftPor), 0.0, dftPor->name() + STR_FAILSAVING + std::to_string(j));
-                        builder.addInputArc(failedNodes.at(child->id()), tfailsf);
-                        builder.addOutputArc(tfailsf, failedNodes.at(child->id()));
-                        builder.addOutputArc(tfailsf, nodeFS);
-                        builder.addInhibitionArc(nodeFS, tfailsf);
-                        builder.addInhibitionArc(failedNodes.at(dftPor->children().front()->id()), tfailsf);
+                
+                builder.addInputArc(failedNodes.at(dftPor->children().front()->id()), tfail);
+                builder.addOutputArc(tfail, failedNodes.at(dftPor->children().front()->id()));
+                
+                if(!smart || isRepresentative) {
+                    builder.addOutputArc(tfail, unavailableNode);
+                }
+                
+                if(dftPor->isInclusive()) {
+                    uint64_t nodeFS = builder.addPlace(defaultCapacity, 0, dftPor->name() + STR_FAILSAVE);
+                    builder.addInhibitionArc(nodeFS, tfail);
+                    uint64_t j = 0;
+                    for (auto const& child : dftPor->children()) {
+                        if(j > 0) {
+                            uint64_t tfailsf = builder.addImmediateTransition(getFailPriority(dftPor), 0.0, dftPor->name() + STR_FAILSAVING + std::to_string(j));
+                            builder.addInputArc(failedNodes.at(child->id()), tfailsf);
+                            builder.addOutputArc(tfailsf, failedNodes.at(child->id()));
+                            builder.addOutputArc(tfailsf, nodeFS);
+                            builder.addInhibitionArc(nodeFS, tfailsf);
+                            builder.addInhibitionArc(failedNodes.at(dftPor->children().front()->id()), tfailsf);
+                        }
+                        
+                        ++j;
+                    }
+                } else {
+                    uint64_t j = 0;
+                    for (auto const& child : dftPor->children()) {
+                        if(j > 0) {
+                            builder.addInhibitionArc(failedNodes.at(child->id()), tfail);
+                        }
+                        ++j;
                     }
                     
-                    ++j;
                 }
+                
 			}
             
 //			
