@@ -35,6 +35,7 @@ namespace storm {
             void readFile(std::string const& filename);
 
             std::string stripQuotsFromName(std::string const& name);
+            std::string parseNodeIdentifier(std::string const& name);
 
             ValueType parseRationalExpression(std::string const& expr);
         };

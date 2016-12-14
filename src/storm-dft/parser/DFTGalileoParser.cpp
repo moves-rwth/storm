@@ -4,6 +4,7 @@
 #include <fstream>
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/algorithm/string/replace.hpp>
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/FileIoException.h"
@@ -33,6 +34,11 @@ namespace storm {
                 STORM_LOG_THROW(secondQuots != std::string::npos, storm::exceptions::FileIoException, "No ending quotation mark found in " << name);
                 return name.substr(firstQuots+1,secondQuots-1);
             }
+        }
+        
+        template<typename ValueType>
+        std::string DFTGalileoParser<ValueType>::parseNodeIdentifier(std::string const& name) {
+            return boost::replace_all_copy(name, "'", "__prime__");
         }
 
         template<typename ValueType>
@@ -84,11 +90,11 @@ namespace storm {
                 } else {
                     std::vector<std::string> tokens;
                     boost::split(tokens, line, boost::is_any_of(" "));
-                    std::string name(stripQuotsFromName(tokens[0]));
+                    std::string name(parseNodeIdentifier(stripQuotsFromName(tokens[0])));
 
                     std::vector<std::string> childNames;
                     for(unsigned i = 2; i < tokens.size(); ++i) {
-                        childNames.push_back(stripQuotsFromName(tokens[i]));
+                        childNames.push_back(parseNodeIdentifier(stripQuotsFromName(tokens[i])));
                     }
                     if(tokens[1] == "and") {
                         success = builder.addAndElement(name, childNames);
