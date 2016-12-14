@@ -37,6 +37,10 @@ namespace storm {
              * @return The number of places.
              */
             uint64_t getNumberOfPlaces() const;
+            
+            uint64_t getNumberOfImmediateTransitions() const;
+            
+            uint64_t getNumberOfTimedTransitions() const;
 
             /*!
              *  
@@ -146,9 +150,11 @@ namespace storm {
              */
             bool isValid() const;
             // TODO doc
-            void toPnpro(std::ostream &stream) const;
+            void toPnpro(std::ostream& stream) const;
             // TODO doc
-            void toPnml(std::ostream &stream) const;
+            void toPnml(std::ostream& stream) const;
+            
+            void writeStatsToStream(std::ostream& stream) const;
         private:
             storm::gspn::Place* getPlace(uint64_t id);
             storm::gspn::Place* getPlace(std::string const& name);

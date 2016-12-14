@@ -36,6 +36,14 @@ namespace storm {
         uint64_t GSPN::getNumberOfPlaces() const {
             return places.size();
         }
+        
+        uint64_t GSPN::getNumberOfImmediateTransitions() const {
+            return immediateTransitions.size();
+        }
+        
+        uint64_t GSPN::getNumberOfTimedTransitions() const {
+            return timedTransitions.size();
+        }
 
         std::vector<storm::gspn::TimedTransition<GSPN::RateType>> const& GSPN::getTimedTransitions() const {
             return this->timedTransitions;
@@ -564,6 +572,12 @@ namespace storm {
 
             stream << space << "</net>" << std::endl;
             stream << "</pnml>" << std::endl;
+        }
+        
+        void GSPN::writeStatsToStream(std::ostream& stream) const {
+            stream << "Number of places: " << getNumberOfPlaces() << std::endl;
+            stream << "Number of timed transitions: " << getNumberOfTimedTransitions() << std::endl;
+            stream << "Number of immediate transitions: " << getNumberOfImmediateTransitions() << std::endl;
         }
     }
 }

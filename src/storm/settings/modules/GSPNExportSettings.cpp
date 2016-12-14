@@ -19,6 +19,8 @@ namespace storm {
             
             const std::string GSPNExportSettings::writeToPnmlOptionName = "to-pnml";
             const std::string GSPNExportSettings::writeToPnproOptionName = "to-pnpro";
+            const std::string GSPNExportSettings::writeStatsOptionName = "to-stats";
+            const std::string GSPNExportSettings::displayStatsOptionName = "show-stats";
             
             //const std::string GSPNExportSettings::janiFileOptionShortName = "dotoutput";
             
@@ -27,6 +29,8 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, writeToDotOptionName, false, "Destination for the dot output.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "path to file").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, writeToPnmlOptionName, false, "Destination for the pnml output").addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "path to file").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, writeToPnproOptionName, false, "Destination for the pnpro output").addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "path to file").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, writeStatsOptionName, false, "Destination for the stats file").addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "path to file").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, displayStatsOptionName, false, "Print stats to stdout").build());
             }
             
             bool GSPNExportSettings::isWriteToDotSet() const {
@@ -53,6 +57,18 @@ namespace storm {
                 return this->getOption(writeToPnproOptionName).getArgumentByName("filename").getValueAsString();
             }
             
+            
+            bool GSPNExportSettings::isDisplayStatsSet() const {
+                return this->getOption(displayStatsOptionName).getHasOptionBeenSet();
+            }
+            
+            bool GSPNExportSettings::isWriteStatsToFileSet() const {
+                return this->getOption(writeStatsOptionName).getHasOptionBeenSet();
+            }
+            
+            std::string GSPNExportSettings::getWriteStatsFilename() const {
+                return this->getOption(writeStatsOptionName).getArgumentByName("filename").getValueAsString();
+            }
             
             void GSPNExportSettings::finalize() {
                 

@@ -22,10 +22,38 @@ namespace storm {
         if (exportSettings.isWriteToDotSet()) {
             std::ofstream fs;
             fs.open(exportSettings.getWriteToDotFilename());
-            gspn.writeDotToStream(std::cout);
             gspn.writeDotToStream(fs);
             fs.close();
         }
+        
+        if (exportSettings.isWriteToPnproSet()) {
+            std::ofstream fs;
+            fs.open(exportSettings.getWriteToPnproFilename());
+            gspn.toPnpro(fs);
+            fs.close();
+        }
+        
+        if (exportSettings.isWriteToPnmlSet()) {
+            std::ofstream fs;
+            fs.open(exportSettings.getWriteToPnmlFilename());
+            gspn.toPnml(fs);
+            fs.close();
+        }
+        
+        if (exportSettings.isDisplayStatsSet()) {
+            std::cout << "============GSPN Statistics==============" << std::endl;
+            gspn.writeStatsToStream(std::cout);
+            std::cout << "=========================================" << std::endl;
+        }
+        
+        if (exportSettings.isWriteStatsToFileSet()) {
+            std::ofstream fs;
+            fs.open(exportSettings.getWriteStatsFilename());
+            gspn.writeStatsToStream(fs);
+            fs.close();
+        }
+        
+        
         
     }
     

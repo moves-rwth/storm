@@ -136,6 +136,7 @@ int main(const int argc, const char** argv) {
             gspnTransformator.transform();
             storm::gspn::GSPN* gspn = gspnTransformator.obtainGSPN();
             uint64_t toplevelFailedPlace = gspnTransformator.toplevelFailedPlaceId();
+            
             storm::handleGSPNExportSettings(*gspn);
             
             std::shared_ptr<storm::expressions::ExpressionManager> exprManager(new storm::expressions::ExpressionManager());
