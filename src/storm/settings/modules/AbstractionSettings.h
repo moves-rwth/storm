@@ -108,6 +108,13 @@ namespace storm {
                  */
                 bool isReuseAllResultsSet() const;
                 
+                /*!
+                 * Retrieves whether the option to use the decomposition was set.
+                 *
+                 * @return True iff the option was set.
+                 */
+                bool isUseDecompositionSet() const;
+                
                 const static std::string moduleName;
                 
             private:
@@ -124,6 +131,7 @@ namespace storm {
                 const static std::string reuseQualitativeResultsOptionName;
                 const static std::string reuseQuantitativeResultsOptionName;
                 const static std::string reuseAllResultsOptionName;
+                const static std::string useDecompositionOptionName;
             };
             
         }

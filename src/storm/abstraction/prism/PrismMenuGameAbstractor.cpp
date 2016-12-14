@@ -62,8 +62,9 @@ namespace storm {
                 abstractionInformation.createEncodingVariables(static_cast<uint_fast64_t>(std::ceil(std::log2(totalNumberOfCommands))), 100, static_cast<uint_fast64_t>(std::ceil(std::log2(maximalUpdateCount))));
                 
                 // For each module of the concrete program, we create an abstract counterpart.
+                bool useDecomposition = storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isUseDecompositionSet();
                 for (auto const& module : program.getModules()) {
-                    this->modules.emplace_back(module, abstractionInformation, this->smtSolverFactory, invalidBlockDetectionStrategy);
+                    this->modules.emplace_back(module, abstractionInformation, this->smtSolverFactory, invalidBlockDetectionStrategy, useDecomposition);
                 }
                 
                 // Retrieve the command-update probability ADD, so we can multiply it with the abstraction BDD later.
@@ -167,7 +168,7 @@ namespace storm {
                 // If there are deadlock states, we fix them now.
                 storm::dd::Add<DdType, ValueType> deadlockTransitions = abstractionInformation.getDdManager().template getAddZero<ValueType>();
                 if (!deadlockStates.isZero()) {
-                    deadlockTransitions = (deadlockStates && abstractionInformation.getAllPredicateIdentities() && abstractionInformation.encodePlayer1Choice(0, abstractionInformation.getPlayer1VariableCount()) && abstractionInformation.encodePlayer2Choice(0, game.numberOfPlayer2Variables) && abstractionInformation.encodeAux(0, 0, abstractionInformation.getAuxVariableCount())).template toAdd<ValueType>();
+                    deadlockTransitions = (deadlockStates && abstractionInformation.getAllPredicateIdentities() && abstractionInformation.encodePlayer1Choice(0, abstractionInformation.getPlayer1VariableCount()) && abstractionInformation.encodePlayer2Choice(0, 0, game.numberOfPlayer2Variables) && abstractionInformation.encodeAux(0, 0, abstractionInformation.getAuxVariableCount())).template toAdd<ValueType>();
                 }
                 
                 // Compute bottom states and the appropriate transitions if necessary.

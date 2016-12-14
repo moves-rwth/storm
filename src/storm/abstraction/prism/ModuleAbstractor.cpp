@@ -23,7 +23,7 @@ namespace storm {
             using storm::settings::modules::AbstractionSettings;
             
             template <storm::dd::DdType DdType, typename ValueType>
-            ModuleAbstractor<DdType, ValueType>::ModuleAbstractor(storm::prism::Module const& module, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, storm::settings::modules::AbstractionSettings::InvalidBlockDetectionStrategy invalidBlockDetectionStrategy) : smtSolverFactory(smtSolverFactory), abstractionInformation(abstractionInformation), commands(), module(module) {
+            ModuleAbstractor<DdType, ValueType>::ModuleAbstractor(storm::prism::Module const& module, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, storm::settings::modules::AbstractionSettings::InvalidBlockDetectionStrategy invalidBlockDetectionStrategy, bool useDecomposition) : smtSolverFactory(smtSolverFactory), abstractionInformation(abstractionInformation), commands(), module(module) {
                 
                 bool allowInvalidSuccessorsInCommands = false;
                 if (invalidBlockDetectionStrategy == AbstractionSettings::InvalidBlockDetectionStrategy::None || invalidBlockDetectionStrategy == AbstractionSettings::InvalidBlockDetectionStrategy::Global) {
@@ -32,7 +32,7 @@ namespace storm {
                 
                 // For each concrete command, we create an abstract counterpart.
                 for (auto const& command : module.getCommands()) {
-                    commands.emplace_back(command, abstractionInformation, smtSolverFactory, allowInvalidSuccessorsInCommands);
+                    commands.emplace_back(command, abstractionInformation, smtSolverFactory, allowInvalidSuccessorsInCommands, useDecomposition);
                 }
             }
             

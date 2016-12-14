@@ -52,6 +52,8 @@ namespace storm {
                 } else {
                     preprocessedModel = originalProgram;
                 }
+                
+                STORM_LOG_TRACE("Game-based model checker got program " << preprocessedModel.asPrismProgram());
             } else {
                 storm::jani::Model const& originalModel = model.asJaniModel();
                 STORM_LOG_THROW(originalModel.getModelType() == storm::jani::ModelType::DTMC || originalModel.getModelType() == storm::jani::ModelType::MDP, storm::exceptions::NotSupportedException, "Currently only DTMCs/MDPs are supported by the game-based model checker.");
@@ -330,7 +332,7 @@ namespace storm {
                 }
                 
                 // #ifdef LOCAL_DEBUG
-                // abstractor.exportToDot("game" + std::to_string(iterations) + ".dot", targetStates, game.getManager().getBddOne());
+                // abstractor->exportToDot("game" + std::to_string(iterations) + ".dot", targetStates, game.getManager().getBddOne());
                 // #endif
                 
                 // (3) compute all states with probability 0/1 wrt. to the two different player 2 goals (min/max).
@@ -354,14 +356,14 @@ namespace storm {
                 bool qualitativeRefinement = false;
                 if (initialMaybeStates.isZero()) {
                     // In this case, we know the result for the initial states for both player 2 minimizing and maximizing.
-                    STORM_LOG_TRACE("No initial state is a 'maybe' state. Refining abstraction based on qualitative check.");
+                    STORM_LOG_TRACE("No initial state is a 'maybe' state.");
                     
                     result = checkForResultAfterQualitativeCheck<Type, ValueType>(checkTask, initialStates, qualitativeResult);
                     if (result) {
                         printStatistics(*abstractor, game);
                         return result;
                     } else {
-                        STORM_LOG_DEBUG("Obtained qualitative bounds [0, 1] on the actual value for the initial states.");
+                        STORM_LOG_DEBUG("Obtained qualitative bounds [0, 1] on the actual value for the initial states. Refining abstraction based on qualitative check.");
                         
                         auto qualitativeRefinementStart = std::chrono::high_resolution_clock::now();
                         // If we get here, the initial states were all identified as prob0/1 states, but the value (0 or 1)

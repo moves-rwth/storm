@@ -209,8 +209,8 @@ namespace storm {
         }
         
         template<storm::dd::DdType DdType>
-        storm::dd::Bdd<DdType> AbstractionInformation<DdType>::encodePlayer2Choice(uint_fast64_t index, uint_fast64_t end) const {
-            return encodeChoice(index, 0, end, player2VariableBdds);
+        storm::dd::Bdd<DdType> AbstractionInformation<DdType>::encodePlayer2Choice(uint_fast64_t index, uint_fast64_t start, uint_fast64_t end) const {
+            return encodeChoice(index, start, end, player2VariableBdds);
         }
 
         template<storm::dd::DdType DdType>

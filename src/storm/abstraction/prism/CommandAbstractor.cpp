@@ -23,7 +23,7 @@ namespace storm {
     namespace abstraction {
         namespace prism {
             template <storm::dd::DdType DdType, typename ValueType>
-            CommandAbstractor<DdType, ValueType>::CommandAbstractor(storm::prism::Command const& command, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool allowInvalidSuccessors) : smtSolver(smtSolverFactory->create(abstractionInformation.getExpressionManager())), abstractionInformation(abstractionInformation), command(command), localExpressionInformation(abstractionInformation), evaluator(abstractionInformation.getExpressionManager()), relevantPredicatesAndVariables(), cachedDd(abstractionInformation.getDdManager().getBddZero(), 0), decisionVariables(), allowInvalidSuccessors(allowInvalidSuccessors), skipBottomStates(false), forceRecomputation(true), abstractGuard(abstractionInformation.getDdManager().getBddZero()), bottomStateAbstractor(abstractionInformation, {!command.getGuardExpression()}, smtSolverFactory) {
+            CommandAbstractor<DdType, ValueType>::CommandAbstractor(storm::prism::Command const& command, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool allowInvalidSuccessors, bool useDecomposition) : smtSolver(smtSolverFactory->create(abstractionInformation.getExpressionManager())), abstractionInformation(abstractionInformation), command(command), localExpressionInformation(abstractionInformation), evaluator(abstractionInformation.getExpressionManager()), relevantPredicatesAndVariables(), cachedDd(abstractionInformation.getDdManager().getBddZero(), 0), decisionVariables(), allowInvalidSuccessors(allowInvalidSuccessors), useDecomposition(useDecomposition), skipBottomStates(false), forceRecomputation(true), abstractGuard(abstractionInformation.getDdManager().getBddZero()), bottomStateAbstractor(abstractionInformation, {!command.getGuardExpression()}, smtSolverFactory) {
 
                 // Make the second component of relevant predicates have the right size.
                 relevantPredicatesAndVariables.second.resize(command.getNumberOfUpdates());
@@ -92,7 +92,7 @@ namespace storm {
                         allRelevantBlocks.insert(rhsVariableBlocks.begin(), rhsVariableBlocks.end());
                     }
                 }
-                STORM_LOG_TRACE("Found " << allRelevantBlocks.size() << " relevant block.");
+                STORM_LOG_TRACE("Found " << allRelevantBlocks.size() << " relevant block(s).");
 
                 // Create a block partition.
                 std::vector<std::set<uint64_t>> relevantBlockPartition;
@@ -174,61 +174,187 @@ namespace storm {
                     STORM_LOG_TRACE("Relevant block partition size is one, falling back to regular computation.");
                     recomputeCachedBdd();
                 } else {
-                    // otherwise, enumerate the abstract guard so we do this only once
-                    std::set<uint64_t> relatedGuardPredicates = localExpressionInformation.getRelatedExpressions(command.get().getGuardExpression().getVariables());
-                    std::vector<storm::expressions::Variable> guardDecisionVariables;
-                    std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>> guardVariablesAndPredicates;
-                    for (auto const& element : relevantPredicatesAndVariables.first) {
-                        if (relatedGuardPredicates.find(element.second) != relatedGuardPredicates.end()) {
-                            guardDecisionVariables.push_back(element.first);
-                            guardVariablesAndPredicates.push_back(element);
+                    std::set<storm::expressions::Variable> variablesContainedInGuard = command.get().getGuardExpression().getVariables();
+                    
+                    // Check whether we need to enumerate the guard. This is the case if the blocks related by the guard
+                    // are not contained within a single block of our decomposition.
+                    bool enumerateAbstractGuard = true;
+                    std::set<uint64_t> guardBlocks = localExpressionInformation.getBlockIndicesOfVariables(variablesContainedInGuard);
+                    for (auto const& block : relevantBlockPartition) {
+                        bool allContained = true;
+                        for (auto const& guardBlock : guardBlocks) {
+                            if (block.find(guardBlock) == block.end()) {
+                                allContained = false;
+                                break;
+                            }
+                        }
+                        if (allContained) {
+                            enumerateAbstractGuard = false;
                         }
                     }
+
                     uint64_t numberOfSolutions = 0;
-                    abstractGuard = this->getAbstractionInformation().getDdManager().getBddZero();
-                    smtSolver->allSat(decisionVariables, [this,&guardVariablesAndPredicates,&numberOfSolutions] (storm::solver::SmtSolver::ModelReference const& model) {
-                        abstractGuard |= getSourceStateBdd(model, guardVariablesAndPredicates);
-                        ++numberOfSolutions;
-                        return true;
-                    });
-                    STORM_LOG_TRACE("Enumerated " << numberOfSolutions << " for abstract guard.");
+
+                    if (enumerateAbstractGuard) {
+                        // otherwise, enumerate the abstract guard so we do this only once
+                        std::set<uint64_t> relatedGuardPredicates = localExpressionInformation.getRelatedExpressions(variablesContainedInGuard);
+                        std::vector<storm::expressions::Variable> guardDecisionVariables;
+                        std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>> guardVariablesAndPredicates;
+                        for (auto const& element : relevantPredicatesAndVariables.first) {
+                            if (relatedGuardPredicates.find(element.second) != relatedGuardPredicates.end()) {
+                                guardDecisionVariables.push_back(element.first);
+                                guardVariablesAndPredicates.push_back(element);
+                            }
+                        }
+                        abstractGuard = this->getAbstractionInformation().getDdManager().getBddZero();
+                        smtSolver->allSat(guardDecisionVariables, [this,&guardVariablesAndPredicates,&numberOfSolutions] (storm::solver::SmtSolver::ModelReference const& model) {
+                            abstractGuard |= getSourceStateBdd(model, guardVariablesAndPredicates);
+                            ++numberOfSolutions;
+                            return true;
+                        });
+                        STORM_LOG_TRACE("Enumerated " << numberOfSolutions << " for abstract guard.");
+                        
+                        // now that we have the abstract guard, we can add it as an assertion to the solver before enumerating
+                        // the other solutions.
+                        
+                        // Create a new backtracking point before adding the guard.
+                        smtSolver->push();
+                        
+                        // Create the guard constraint.
+                        std::pair<std::vector<storm::expressions::Expression>, std::unordered_map<uint_fast64_t, storm::expressions::Variable>> result = abstractGuard.toExpression(this->getAbstractionInformation().getExpressionManager());
+                        
+                        // Then add it to the solver.
+                        for (auto const& expression : result.first) {
+                            smtSolver->add(expression);
+                        }
+                        
+                        // Finally associate the level variables with the predicates.
+                        for (auto const& indexVariablePair : result.second) {
+                            smtSolver->add(storm::expressions::iff(indexVariablePair.second, this->getAbstractionInformation().getPredicateForDdVariableIndex(indexVariablePair.first)));
+                        }
+                    }
                     
                     // then enumerate the solutions for each of the blocks of the decomposition
+                    uint64_t usedNondeterminismVariables = 0;
+                    uint64_t blockCounter = 0;
+                    std::vector<storm::dd::Bdd<DdType>> blockBdds;
                     for (auto const& block : relevantBlockPartition) {
                         std::set<uint64_t> relevantPredicates;
                         for (auto const& innerBlock : block) {
                             relevantPredicates.insert(localExpressionInformation.getExpressionBlock(innerBlock).begin(), localExpressionInformation.getExpressionBlock(innerBlock).end());
                         }
 
-                        std::vector<storm::expressions::Variable> decisionVariables;
-                        std::vector<std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>>> variablesAndPredicates;
+                        std::vector<storm::expressions::Variable> transitionDecisionVariables;
+                        std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>> sourceVariablesAndPredicates;
+                        for (auto const& element : relevantPredicatesAndVariables.first) {
+                            if (relevantPredicates.find(element.second) != relevantPredicates.end()) {
+                                transitionDecisionVariables.push_back(element.first);
+                                sourceVariablesAndPredicates.push_back(element);
+                            }
+                        }
+                        
+                        std::vector<std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>>> destinationVariablesAndPredicates;
                         for (uint64_t updateIndex = 0; updateIndex < command.get().getNumberOfUpdates(); ++updateIndex) {
-                            variablesAndPredicates.emplace_back();
-                            for (auto const& element : relevantPredicatesAndVariables.second[updateIndex]) {
-                                if (relevantPredicates.find(element.second) != relevantPredicates.end()) {
-                                    decisionVariables.push_back(element.first);
-                                    variablesAndPredicates.back().push_back(element);
+                            destinationVariablesAndPredicates.emplace_back();
+                            for (auto const& assignment : command.get().getUpdate(updateIndex).getAssignments()) {
+                                uint64_t assignmentVariableBlockIndex = localExpressionInformation.getBlockIndexOfVariable(assignment.getVariable());
+                                std::set<uint64_t> const& assignmentVariableBlock = localExpressionInformation.getExpressionBlock(assignmentVariableBlockIndex);
+                                if (block.find(assignmentVariableBlockIndex) != block.end()) {
+                                    for (auto const& element : relevantPredicatesAndVariables.second[updateIndex]) {
+                                        if (assignmentVariableBlock.find(element.second) != assignmentVariableBlock.end()) {
+                                            destinationVariablesAndPredicates.back().push_back(element);
+                                            transitionDecisionVariables.push_back(element.first);
+                                        }
+                                    }
                                 }
                             }
                         }
                     
                         std::unordered_map<storm::dd::Bdd<DdType>, std::vector<storm::dd::Bdd<DdType>>> sourceToDistributionsMap;
                         numberOfSolutions = 0;
-                        smtSolver->allSat(decisionVariables, [&sourceToDistributionsMap,this,&numberOfSolutions] (storm::solver::SmtSolver::ModelReference const& model) {
-                            sourceToDistributionsMap[getSourceStateBdd(model, relevantPredicatesAndVariables.first)].push_back(getDistributionBdd(model, relevantPredicatesAndVariables.second));
+                        smtSolver->allSat(transitionDecisionVariables, [&sourceToDistributionsMap,this,&numberOfSolutions,&sourceVariablesAndPredicates,&destinationVariablesAndPredicates] (storm::solver::SmtSolver::ModelReference const& model) {
+                            sourceToDistributionsMap[getSourceStateBdd(model, sourceVariablesAndPredicates)].push_back(getDistributionBdd(model, destinationVariablesAndPredicates));
                             ++numberOfSolutions;
                             return true;
                         });
+                        STORM_LOG_TRACE("Enumerated " << numberOfSolutions << " solutions for block " << blockCounter << ".");
+                        numberOfSolutions = 0;
+
+                        // Now we search for the maximal number of choices of player 2 to determine how many DD variables we
+                        // need to encode the nondeterminism.
+                        uint_fast64_t maximalNumberOfChoices = 0;
+                        for (auto const& sourceDistributionsPair : sourceToDistributionsMap) {
+                            maximalNumberOfChoices = std::max(maximalNumberOfChoices, static_cast<uint_fast64_t>(sourceDistributionsPair.second.size()));
+                        }
+
+                        // We now compute how many variables we need to encode the choices. We add one to the maximal number of
+                        // choices to account for a possible transition to a bottom state.
+                        uint_fast64_t numberOfVariablesNeeded = static_cast<uint_fast64_t>(std::ceil(std::log2(maximalNumberOfChoices + 1)));
+                        
+                        // Finally, build overall result.
+                        storm::dd::Bdd<DdType> resultBdd = this->getAbstractionInformation().getDdManager().getBddZero();
+
+                        uint_fast64_t sourceStateIndex = 0;
+                        for (auto const& sourceDistributionsPair : sourceToDistributionsMap) {
+                            STORM_LOG_ASSERT(!sourceDistributionsPair.first.isZero(), "The source BDD must not be empty.");
+                            STORM_LOG_ASSERT(!sourceDistributionsPair.second.empty(), "The distributions must not be empty.");
+                            // We start with the distribution index of 1, becase 0 is reserved for a potential bottom choice.
+                            uint_fast64_t distributionIndex = 1;
+                            storm::dd::Bdd<DdType> allDistributions = this->getAbstractionInformation().getDdManager().getBddZero();
+                            for (auto const& distribution : sourceDistributionsPair.second) {
+                                allDistributions |= distribution && this->getAbstractionInformation().encodePlayer2Choice(distributionIndex, usedNondeterminismVariables, usedNondeterminismVariables + numberOfVariablesNeeded);
+                                ++distributionIndex;
+                                STORM_LOG_ASSERT(!allDistributions.isZero(), "The BDD must not be empty.");
+                            }
+                            resultBdd |= sourceDistributionsPair.first && allDistributions;
+                            ++sourceStateIndex;
+                            STORM_LOG_ASSERT(!resultBdd.isZero(), "The BDD must not be empty.");
+                        }
+                        usedNondeterminismVariables += numberOfVariablesNeeded;
+
+                        blockBdds.push_back(resultBdd);
+                        ++blockCounter;
                     }
                     
-                    // multiply the results
+                    smtSolver->pop();
                     
-                    // multiply with the abstract guard
+                    // multiply the results
+                    storm::dd::Bdd<DdType> resultBdd = getAbstractionInformation().getDdManager().getBddOne();
+                    for (auto const& blockBdd : blockBdds) {
+                        resultBdd &= blockBdd;
+                    }
+                    
+                    // if we did not explicitly enumerate the guard, we can construct it from the result BDD.
+                    if (!enumerateAbstractGuard) {
+                        std::set<storm::expressions::Variable> allVariables(getAbstractionInformation().getSuccessorVariables());
+                        auto player2Variables = getAbstractionInformation().getPlayer2VariableSet(usedNondeterminismVariables);
+                        allVariables.insert(player2Variables.begin(), player2Variables.end());
+                        auto auxVariables = getAbstractionInformation().getAuxVariableSet(0, getAbstractionInformation().getAuxVariableCount());
+                        allVariables.insert(auxVariables.begin(), auxVariables.end());
+                        
+                        std::set<storm::expressions::Variable> variablesToAbstract;
+                        std::set_intersection(allVariables.begin(), allVariables.end(), resultBdd.getContainedMetaVariables().begin(), resultBdd.getContainedMetaVariables().end(), std::inserter(variablesToAbstract, variablesToAbstract.begin()));
+                        
+                        abstractGuard = resultBdd.existsAbstract(variablesToAbstract);
+                    } else {
+                        // Multiply the abstract guard as it can contain predicates that are not mentioned in the blocks.
+                        resultBdd &= abstractGuard;
+                    }
                     
                     // multiply with missing identities
+                    resultBdd &= computeMissingIdentities();
                     
                     // cache and return result
-
+                    resultBdd &= this->getAbstractionInformation().encodePlayer1Choice(command.get().getGlobalIndex(), this->getAbstractionInformation().getPlayer1VariableCount());
+                    
+                    // Cache the result.
+                    cachedDd = GameBddResult<DdType>(resultBdd, usedNondeterminismVariables);
+                    
+                    auto end = std::chrono::high_resolution_clock::now();
+                    STORM_LOG_TRACE("Enumerated " << numberOfSolutions << " solutions in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
+                    forceRecomputation = false;
+                    
+                    resultBdd.template toAdd<ValueType>().exportToDot("cmd_" + std::to_string(command.get().getGlobalIndex()) + ".dot");
                 }
             }
             
@@ -262,24 +388,22 @@ namespace storm {
                 if (!skipBottomStates) {
                     abstractGuard = this->getAbstractionInformation().getDdManager().getBddZero();
                 }
-                uint_fast64_t sourceStateIndex = 0;
                 for (auto const& sourceDistributionsPair : sourceToDistributionsMap) {
                     if (!skipBottomStates) {
                         abstractGuard |= sourceDistributionsPair.first;
                     }
-                    
+
                     STORM_LOG_ASSERT(!sourceDistributionsPair.first.isZero(), "The source BDD must not be empty.");
                     STORM_LOG_ASSERT(!sourceDistributionsPair.second.empty(), "The distributions must not be empty.");
                     // We start with the distribution index of 1, becase 0 is reserved for a potential bottom choice.
                     uint_fast64_t distributionIndex = 1;
                     storm::dd::Bdd<DdType> allDistributions = this->getAbstractionInformation().getDdManager().getBddZero();
                     for (auto const& distribution : sourceDistributionsPair.second) {
-                        allDistributions |= distribution && this->getAbstractionInformation().encodePlayer2Choice(distributionIndex, numberOfVariablesNeeded);
+                        allDistributions |= distribution && this->getAbstractionInformation().encodePlayer2Choice(distributionIndex, 0, numberOfVariablesNeeded);
                         ++distributionIndex;
                         STORM_LOG_ASSERT(!allDistributions.isZero(), "The BDD must not be empty.");
                     }
                     resultBdd |= sourceDistributionsPair.first && allDistributions;
-                    ++sourceStateIndex;
                     STORM_LOG_ASSERT(!resultBdd.isZero(), "The BDD must not be empty.");
                 }
                 
@@ -501,11 +625,17 @@ namespace storm {
             template <storm::dd::DdType DdType, typename ValueType>
             GameBddResult<DdType> CommandAbstractor<DdType, ValueType>::abstract() {
                 if (forceRecomputation) {
-                    this->recomputeCachedBdd();
+                    if (useDecomposition) {
+                        this->recomputeCachedBddUsingDecomposition();
+                    } else {
+                        this->recomputeCachedBdd();
+                    }
                 } else {
                     cachedDd.bdd &= computeMissingGlobalIdentities();
                 }
                 
+                STORM_LOG_TRACE("Command produces " << cachedDd.bdd.getNonZeroCount() << " transitions.");
+
                 return cachedDd;
             }
             
@@ -519,6 +649,8 @@ namespace storm {
                     STORM_LOG_TRACE("Skipping bottom state computation for this command.");
                     return result;
                 }
+                
+//                abstractGuard.template toAdd<ValueType>().exportToDot("abstractguard_" + std::to_string(command.get().getGlobalIndex()) + ".dot");
                 
                 // Use the state abstractor to compute the set of abstract states that has this command enabled but
                 // still has a transition to a bottom state.
@@ -537,7 +669,7 @@ namespace storm {
                 result.states &= this->getAbstractionInformation().getBottomStateBdd(true, false);
                 
                 // Add the command encoding and the next free player 2 encoding.
-                result.transitions &= this->getAbstractionInformation().encodePlayer1Choice(command.get().getGlobalIndex(), this->getAbstractionInformation().getPlayer1VariableCount()) && this->getAbstractionInformation().encodePlayer2Choice(0, numberOfPlayer2Variables) && this->getAbstractionInformation().encodeAux(0, 0, this->getAbstractionInformation().getAuxVariableCount());
+                result.transitions &= this->getAbstractionInformation().encodePlayer1Choice(command.get().getGlobalIndex(), this->getAbstractionInformation().getPlayer1VariableCount()) && this->getAbstractionInformation().encodePlayer2Choice(0, 0, numberOfPlayer2Variables) && this->getAbstractionInformation().encodeAux(0, 0, this->getAbstractionInformation().getAuxVariableCount());
                 
                 return result;
             }

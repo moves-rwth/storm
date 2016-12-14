@@ -214,10 +214,11 @@ namespace storm {
              * Encodes the given index using the indicated player 2 variables.
              *
              * @param index The index to encode.
+             * @param start The index of the first variable of the range that is used to encode the index.
              * @param end The index of the variable past the end of the range that is used to encode the index.
              * @return The index encoded as a BDD.
              */
-            storm::dd::Bdd<DdType> encodePlayer2Choice(uint_fast64_t index, uint_fast64_t end) const;
+            storm::dd::Bdd<DdType> encodePlayer2Choice(uint_fast64_t index, uint_fast64_t start, uint_fast64_t end) const;
 
             /*!
              * Decodes the player 2 choice in the given valuation.

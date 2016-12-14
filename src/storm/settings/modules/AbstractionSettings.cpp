@@ -23,6 +23,7 @@ namespace storm {
             const std::string AbstractionSettings::reuseQualitativeResultsOptionName = "reuse-qualitative";
             const std::string AbstractionSettings::reuseQuantitativeResultsOptionName = "reuse-quantitative";
             const std::string AbstractionSettings::reuseAllResultsOptionName = "reuse-all";
+            const std::string AbstractionSettings::useDecompositionOptionName = "decomposition";
 
             AbstractionSettings::AbstractionSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, addAllGuardsOptionName, true, "Sets whether all guards are added as initial predicates.").build());
@@ -44,6 +45,7 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, reuseQualitativeResultsOptionName, true, "Sets whether to reuse qualitative results.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, reuseQuantitativeResultsOptionName, true, "Sets whether to reuse quantitative results.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, reuseAllResultsOptionName, true, "Sets whether to reuse all results.").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, useDecompositionOptionName, true, "Sets whether to apply decomposition during the abstraction.").build());
             }
             
             bool AbstractionSettings::isAddAllGuardsSet() const {
@@ -108,6 +110,10 @@ namespace storm {
             
             bool AbstractionSettings::isReuseAllResultsSet() const {
                 return this->getOption(reuseAllResultsOptionName).getHasOptionBeenSet();
+            }
+            
+            bool AbstractionSettings::isUseDecompositionSet() const {
+                return this->getOption(useDecompositionOptionName).getHasOptionBeenSet();
             }
 
         }

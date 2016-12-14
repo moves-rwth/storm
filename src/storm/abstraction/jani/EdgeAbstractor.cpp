@@ -112,7 +112,7 @@ namespace storm {
                     uint_fast64_t distributionIndex = 1;
                     storm::dd::Bdd<DdType> allDistributions = this->getAbstractionInformation().getDdManager().getBddZero();
                     for (auto const& distribution : sourceDistributionsPair.second) {
-                        allDistributions |= distribution && this->getAbstractionInformation().encodePlayer2Choice(distributionIndex, numberOfVariablesNeeded);
+                        allDistributions |= distribution && this->getAbstractionInformation().encodePlayer2Choice(distributionIndex, 0, numberOfVariablesNeeded);
                         ++distributionIndex;
                         STORM_LOG_ASSERT(!allDistributions.isZero(), "The BDD must not be empty.");
                     }
@@ -375,7 +375,7 @@ namespace storm {
                 result.states &= this->getAbstractionInformation().getBottomStateBdd(true, false);
                 
                 // Add the edge encoding and the next free player 2 encoding.
-                result.transitions &= this->getAbstractionInformation().encodePlayer1Choice(edgeId, this->getAbstractionInformation().getPlayer1VariableCount()) && this->getAbstractionInformation().encodePlayer2Choice(0, numberOfPlayer2Variables) && this->getAbstractionInformation().encodeAux(0, 0, this->getAbstractionInformation().getAuxVariableCount());
+                result.transitions &= this->getAbstractionInformation().encodePlayer1Choice(edgeId, this->getAbstractionInformation().getPlayer1VariableCount()) && this->getAbstractionInformation().encodePlayer2Choice(0, 0,numberOfPlayer2Variables) && this->getAbstractionInformation().encodeAux(0, 0, this->getAbstractionInformation().getAuxVariableCount());
                 
                 return result;
             }
