@@ -36,9 +36,9 @@ namespace storm{
         if (storm::settings::getModule<storm::settings::modules::JaniExportSettings>().isExportAsStandardJaniSet()) {
             storm::jani::Model normalisedModel = model;
             normalisedModel.makeStandardJaniCompliant();
-            storm::jani::JsonExporter::toFile(normalisedModel, formulasInProperties(properties), filepath);
+            storm::jani::JsonExporter::toFile(normalisedModel, properties, filepath);
         } else {
-            storm::jani::JsonExporter::toFile(model, formulasInProperties(properties), filepath);
+            storm::jani::JsonExporter::toFile(model, properties, filepath);
         }
     }
 

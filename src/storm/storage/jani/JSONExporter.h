@@ -4,6 +4,7 @@
 #include "storm/storage/expressions/ExpressionVisitor.h"
 #include "storm/logic/FormulaVisitor.h"
 #include "Model.h"
+#include "storm/storage/jani/Property.h"
 #include "storm/adapters/NumberAdapter.h"
 // JSON parser
 #include "json.hpp"
@@ -66,12 +67,13 @@ namespace storm {
             JsonExporter() = default;
             
         public:
-            static void toFile(storm::jani::Model const& janiModel, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, std::string const& filepath, bool checkValid = true);
-            static void toStream(storm::jani::Model const& janiModel, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, std::ostream& ostream, bool checkValid = false);
+            static void toFile(storm::jani::Model const& janiModel, std::vector<storm::jani::Property> const& formulas, std::string const& filepath, bool checkValid = true);
+            static void toStream(storm::jani::Model const& janiModel, std::vector<storm::jani::Property> const& formulas, std::ostream& ostream, bool checkValid = false);
+            
             
         private:
             void convertModel(storm::jani::Model const& model);
-            void convertProperties(std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, storm::jani::Model const& model);
+            void convertProperties(std::vector<storm::jani::Property> const& formulas, storm::jani::Model const& model);
             void appendVariableDeclaration(storm::jani::Variable const& variable);
             
             modernjson::json finalize() {
