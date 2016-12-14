@@ -90,8 +90,8 @@ namespace storm {
             
             template <typename ValueType>
             void DftToGspnTransformator<ValueType>::drawBE(std::shared_ptr<storm::storage::DFTBE<ValueType> const> dftBE, bool isRepresentative) {
-                double xcenter = 10.0;
-                double ycenter = 10.0;
+                double xcenter = mDft.getElementLayoutInfo(dftBE->id()).x;
+                double ycenter = mDft.getElementLayoutInfo(dftBE->id()).y;
 				uint64_t beActive = builder.addPlace(defaultCapacity, isBEActive(dftBE) ? 1 : 0, dftBE->name() + STR_ACTIVATED);
                 activeNodes.emplace(dftBE->id(), beActive);
                 uint64_t beFailed = builder.addPlace(defaultCapacity, 0, dftBE->name() + STR_FAILED);
@@ -137,8 +137,8 @@ namespace storm {
 			
 			template <typename ValueType>
             void DftToGspnTransformator<ValueType>::drawAND(std::shared_ptr<storm::storage::DFTAnd<ValueType> const> dftAnd, bool isRepresentative) {
-                double xcenter = 10.0;
-                double ycenter = 20.0;
+                double xcenter = mDft.getElementLayoutInfo(dftAnd->id()).x;
+                double ycenter = mDft.getElementLayoutInfo(dftAnd->id()).y;
                 uint64_t nodeFailed = builder.addPlace(defaultCapacity, 0, dftAnd->name() + STR_FAILED);
                 assert(failedNodes.size() == dftAnd->id());
                 failedNodes.push_back(nodeFailed);

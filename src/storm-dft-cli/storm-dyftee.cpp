@@ -15,6 +15,7 @@
 #include "storm/settings/modules/EliminationSettings.h"
 
 #include "storm-dft/parser/DFTGalileoParser.h"
+#include "storm-dft/parser/DFTJsonParser.h"
 #include "storm-dft/modelchecker/dft/DFTModelChecker.h"
 #include "storm-dft/modelchecker/dft/DFTASFChecker.h"
 #include "storm-dft/transformations/DftToGspnTransformator.h"
@@ -29,6 +30,7 @@
 
 
 #include <boost/lexical_cast.hpp>
+#include <memory>
 
 /*!
  * Load DFT from filename, build corresponding Model and check against given property.
@@ -123,16 +125,21 @@ int main(const int argc, const char** argv) {
         
         storm::settings::modules::DFTSettings const& dftSettings = storm::settings::getModule<storm::settings::modules::DFTSettings>();
         storm::settings::modules::GeneralSettings const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
-        if (!dftSettings.isDftFileSet()) {
+        if (!dftSettings.isDftFileSet() && !dftSettings.isDftJsonFileSet()) {
             STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "No input model.");
         }
 
         
         if (dftSettings.isTransformToGspn()) {
-            
-            storm::parser::DFTGalileoParser<double> parser;
-            storm::storage::DFT<double> dft = parser.parseDFT(dftSettings.getDftFilename());
-            storm::transformations::dft::DftToGspnTransformator<double> gspnTransformator(dft);
+            std::shared_ptr<storm::storage::DFT<double>> dft;
+            if (dftSettings.isDftJsonFileSet()) {
+                storm::parser::DFTJsonParser<double> parser;
+                dft = std::make_shared<storm::storage::DFT<double>>(parser.parseJson(dftSettings.getDftJsonFilename()));
+            } else {
+                storm::parser::DFTGalileoParser<double> parser;
+                dft = std::make_shared<storm::storage::DFT<double>>(parser.parseDFT(dftSettings.getDftFilename()));
+            }
+            storm::transformations::dft::DftToGspnTransformator<double> gspnTransformator(*dft);
             gspnTransformator.transform();
             storm::gspn::GSPN* gspn = gspnTransformator.obtainGSPN();
             uint64_t toplevelFailedPlace = gspnTransformator.toplevelFailedPlaceId();

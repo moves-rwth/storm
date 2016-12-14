@@ -73,8 +73,16 @@ namespace storm {
             for(DFTElementPointer e : elems) {
                 e->setId(id++);
             }
+
             STORM_LOG_ASSERT(!mTopLevelIdentifier.empty(), "No top level element.");
-            return DFT<ValueType>(elems, mElements[mTopLevelIdentifier]);
+            DFT<ValueType> dft(elems, mElements[mTopLevelIdentifier]);
+
+            // Set layout info
+            for (auto& elem : mElements) {
+                dft.setElementLayoutInfo(elem.second->id(), mLayoutInfo.at(elem.first));
+            }
+
+            return dft;
         }
 
         template<typename ValueType>

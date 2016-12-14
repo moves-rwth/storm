@@ -35,6 +35,20 @@ namespace storm {
                 std::string getDftFilename() const;
 
                 /*!
+                 * Retrieves whether the dft file option for Json was set.
+                 *
+                 * @return True if the dft file option was set.
+                 */
+                bool isDftJsonFileSet() const;
+
+                /*!
+                 * Retrieves the name of the json file that contains the dft specification.
+                 *
+                 * @return The name of the json file that contains the dft specification.
+                 */
+                std::string getDftJsonFilename() const;
+
+                /*!
                  * Retrieves whether the option to use symmetry reduction is set.
                  *
                  * @return True iff the option was set.
@@ -144,6 +158,8 @@ namespace storm {
                // Define the string names of the options as constants.
                 static const std::string dftFileOptionName;
                 static const std::string dftFileOptionShortName;
+                static const std::string dftJsonFileOptionName;
+                static const std::string dftJsonFileOptionShortName;
                 static const std::string symmetryReductionOptionName;
                 static const std::string symmetryReductionOptionShortName;
                 static const std::string modularisationOptionName;

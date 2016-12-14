@@ -7,7 +7,7 @@
 
 #include "storm-dft/storage/dft/DFTElements.h"
 #include "storm-dft/storage/dft/elements/DFTRestriction.h"
-
+#include "storm-dft/storage/dft/DFTLayoutInfo.h"
 
 namespace storm {
     namespace storage {
@@ -33,6 +33,7 @@ namespace storm {
             std::unordered_map<DFTRestrictionPointer, std::vector<std::string>> mRestrictionChildNames;
             std::vector<DFTDependencyPointer> mDependencies;
             std::vector<DFTRestrictionPointer> mRestrictions;
+            std::unordered_map<std::string, DFTLayoutInfo> mLayoutInfo;
             
         public:
             DFTBuilder(bool defaultInclusive = true) : pandDefaultInclusive(defaultInclusive), porDefaultInclusive(defaultInclusive) {
@@ -153,6 +154,11 @@ namespace storm {
 
                 mElements[name] = std::make_shared<DFTBE<ValueType>>(mNextId++, name, failureRate, dormancyFactor);
                 return true;
+            }
+
+            void addLayoutInfo(std::string const& name, double x, double y) {
+                STORM_LOG_ASSERT(mElements.count(name) > 0, "Element '" << name << "' not found.");
+                mLayoutInfo[name] = storm::storage::DFTLayoutInfo(x, y);
             }
             
             bool setTopLevel(std::string const& tle) {

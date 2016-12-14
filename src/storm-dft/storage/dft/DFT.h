@@ -15,7 +15,7 @@
 #include "storm-dft/storage/dft/DFTElements.h"
 #include "storm-dft/storage/dft/SymmetricUnits.h"
 #include "storm-dft/storage/dft/DFTStateGenerationInfo.h"
-
+#include "storm-dft/storage/dft/DFTLayoutInfo.h"
 
 namespace storm {
     namespace storage {
@@ -63,7 +63,8 @@ namespace storm {
             std::vector<size_t> mTopModule;
             std::map<size_t, size_t> mRepresentants; // id element -> id representative
             std::vector<std::vector<size_t>> mSymmetries;
-            
+            std::map<size_t, DFTLayoutInfo> mLayoutInfo;
+
         public:
             DFT(DFTElementVector const& elements, DFTElementPointer const& tle);
             
@@ -263,7 +264,15 @@ namespace storm {
             std::vector<size_t> immediateFailureCauses(size_t index) const;
             
             std::vector<size_t> findModularisationRewrite() const;
-        
+
+            void setElementLayoutInfo(size_t id, DFTLayoutInfo const& layoutInfo) {
+                mLayoutInfo[id] = layoutInfo;
+            }
+
+            DFTLayoutInfo const& getElementLayoutInfo(size_t id) const {
+                return mLayoutInfo.at(id);
+            }
+
         private:
             std::pair<std::vector<size_t>, std::vector<size_t>> getSortedParentAndOutDepIds(size_t index) const;
             
