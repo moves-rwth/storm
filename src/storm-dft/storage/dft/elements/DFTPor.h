@@ -42,7 +42,7 @@ namespace storm {
             }
             
             std::string  typestring() const override {
-                return "POR" + inclusive ? "" : "-ex";
+                return inclusive ? "POR" : "POR-ex";
             }
             
             bool isInclusive() {
