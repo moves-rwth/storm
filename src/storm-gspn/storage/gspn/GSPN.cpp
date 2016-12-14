@@ -408,6 +408,7 @@ namespace storm {
             for (auto& trans : immediateTransitions) {
                 stream << space3 << "<transition name=\"" << trans.getName() << "\" ";
                 stream << "type=\"IMM\" ";
+                stream << "priority=\"" << trans.getPriority() << "\" ";
                 stream << "x=\"" << x << "\" ";
                 stream << "y=\"4\" ";
                 stream << "/>" << std::endl;
