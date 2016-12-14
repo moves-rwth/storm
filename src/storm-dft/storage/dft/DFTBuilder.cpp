@@ -175,7 +175,13 @@ namespace storm {
             } else if(visited[n] == topoSortColour::WHITE) {
                 if(n->isGate()) {
                     visited[n] = topoSortColour::GREY;
-                    for(DFTElementPointer const& c : std::static_pointer_cast<DFTGate<ValueType>>(n)->children()) {
+                    for (DFTElementPointer const& c : std::static_pointer_cast<DFTGate<ValueType>>(n)->children()) {
+                        topoVisit(c, visited, L);
+                    }
+                }
+                if(n->isRestriction()) {
+                    visited[n] = topoSortColour::GREY;
+                    for (DFTElementPointer const& c : std::static_pointer_cast<DFTRestriction<ValueType>>(n)->children()) {
                         topoVisit(c, visited, L);
                     }
                 }
