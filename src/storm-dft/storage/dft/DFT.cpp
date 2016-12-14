@@ -284,7 +284,13 @@ namespace storm {
         
         template<typename ValueType>
         uint64_t DFT<ValueType>::maxRank() const {
-            return mElements.back()->rank();
+            uint64_t max = 0;
+            for (auto const& e : mElements) {
+                if(e->rank() > max) {
+                    max = e->rank();
+                }
+            }
+            return max;
         }
         
         template<typename ValueType>
