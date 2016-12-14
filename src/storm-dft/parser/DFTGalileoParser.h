@@ -26,7 +26,7 @@ namespace storm {
             std::unordered_map<std::string, storm::expressions::Expression> identifierMapping;
 
         public:
-            DFTGalileoParser() : manager(new storm::expressions::ExpressionManager()), parser(*manager), evaluator(*manager) {
+            DFTGalileoParser(bool defaultInclusive = true) : builder(defaultInclusive), manager(new storm::expressions::ExpressionManager()), parser(*manager), evaluator(*manager) {
             }
 
             storm::storage::DFT<ValueType> parseDFT(std::string const& filename);
@@ -38,6 +38,8 @@ namespace storm {
             std::string parseNodeIdentifier(std::string const& name);
 
             ValueType parseRationalExpression(std::string const& expr);
+            
+            bool defaultInclusive;
         };
     }
 }

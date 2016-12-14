@@ -35,7 +35,7 @@ namespace storm {
             std::vector<DFTRestrictionPointer> mRestrictions;
             
         public:
-            DFTBuilder() {
+            DFTBuilder(bool defaultInclusive = true) : pandDefaultInclusive(defaultInclusive), porDefaultInclusive(defaultInclusive) {
                 
             }
             
@@ -49,6 +49,13 @@ namespace storm {
             
             bool addPandElement(std::string const& name, std::vector<std::string> const& children) {
                 return addStandardGate(name, children, DFTElementType::PAND);
+            }
+            
+            bool addPandElement(std::string const& name, std::vector<std::string> const& children, bool inclusive) {
+                bool tmpDefault = pandDefaultInclusive;
+                bool result = addStandardGate(name, children, DFTElementType::PAND);
+                pandDefaultInclusive = tmpDefault;
+                return result;
             }
             
             bool addPorElement(std::string const& name, std::vector<std::string> const& children) {
@@ -186,6 +193,11 @@ namespace storm {
             void topoVisit(DFTElementPointer const& n, std::map<DFTElementPointer, topoSortColour, OrderElementsById<ValueType>>& visited, DFTElementVector& L);
 
             DFTElementVector topoSort();
+            
+            // If true, the standard gate adders make a pand inclusive, and exclusive otherwise.
+            bool pandDefaultInclusive;
+            // If true, the standard gate adders make a pand inclusive, and exclusive otherwise.
+            bool porDefaultInclusive;
             
         };
     }

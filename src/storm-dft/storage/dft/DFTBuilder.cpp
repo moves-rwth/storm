@@ -144,10 +144,10 @@ namespace storm {
                     element = std::make_shared<DFTOr<ValueType>>(mNextId++, name);
                     break;
                 case DFTElementType::PAND:
-                    element = std::make_shared<DFTPand<ValueType>>(mNextId++, name);
+                    element = std::make_shared<DFTPand<ValueType>>(mNextId++, name, pandDefaultInclusive);
                     break;
                 case DFTElementType::POR:
-                    element = std::make_shared<DFTPor<ValueType>>(mNextId++, name);
+                    element = std::make_shared<DFTPor<ValueType>>(mNextId++, name, porDefaultInclusive);
                     break;
                 case DFTElementType::SPARE:
                    element = std::make_shared<DFTSpare<ValueType>>(mNextId++, name);

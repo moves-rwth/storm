@@ -7,11 +7,13 @@ namespace storm {
         class DFTPand : public DFTGate<ValueType> {
 
         public:
-            DFTPand(size_t id, std::string const& name, std::vector<std::shared_ptr<DFTElement<ValueType>>> const& children = {}) :
-                    DFTGate<ValueType>(id, name, children)
+            DFTPand(size_t id, std::string const& name, bool inclusive, std::vector<std::shared_ptr<DFTElement<ValueType>>> const& children = {}) :
+                    DFTGate<ValueType>(id, name, children),
+                    inclusive(inclusive)
             {}
 
             void checkFails(storm::storage::DFTState<ValueType>& state,  DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
+                assert(inclusive);
                 if(state.isOperational(this->mId)) {
                     bool childOperationalBefore = false;
                     for(auto const& child : this->mChildren)
@@ -31,6 +33,7 @@ namespace storm {
             }
 
             void checkFailsafe(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
+                bool(inclusive);
                 STORM_LOG_ASSERT(this->hasFailsafeChild(state), "No failsafe child.");
                 if(state.isOperational(this->mId)) {
                     this->failsafe(state, queues);
@@ -42,9 +45,15 @@ namespace storm {
                 return DFTElementType::PAND;
             }
             
-            std::string typestring() const override {
-                return "PAND";
+            bool isInclusive() const {
+                return inclusive;
             }
+            
+            std::string typestring() const override {
+                return "PAND" + inclusive ? "" : "-ex";
+            }
+        protected:
+            bool inclusive;
         };
         
         template<typename ValueType>
