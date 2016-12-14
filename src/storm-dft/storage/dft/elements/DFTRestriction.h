@@ -36,6 +36,15 @@ namespace storm {
             virtual bool isSeqEnforcer() const {
                 return false;
             }
+            
+            bool allChildrenBEs() const {
+                for(auto const& elem : mChildren) {
+                    if (!elem->isBasicElement()) {
+                        return false;
+                    }
+                }
+                return true;
+            }
 
 
             virtual std::string typestring() const = 0;

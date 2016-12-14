@@ -114,8 +114,10 @@ namespace storm {
 				/*
 				 * Draw a Petri net PDEP (FDEP is included with a firerate of 1).
 				 */
-				void drawPDEP(std::shared_ptr<storm::storage::DFTDependency<ValueType> const> dftDependency, bool isRepresentative);
+				void drawPDEP(std::shared_ptr<storm::storage::DFTDependency<ValueType> const> dftDependency);
 				
+                
+                void drawSeq(std::shared_ptr<storm::storage::DFTSeq<ValueType> const> dftSeq);
 				 /*
 				  * Return true if BE is active (corresponding place contains one initial token) or false if BE is inactive (corresponding place contains no initial token).
 				  * 
@@ -136,11 +138,15 @@ namespace storm {
                 
                 uint64_t addUnavailableNode(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftElement, bool initialAvailable = true);
                 
+                uint64_t addDisabledPlace(std::shared_ptr<storm::storage::DFTBE<ValueType> const> dftBe);
+                
                 storm::storage::DFT<ValueType> const& mDft;
                 storm::gspn::GspnBuilder builder;
                 std::vector<uint64_t> failedNodes;
                 std::map<uint64_t, uint64_t> unavailableNodes;
                 std::map<uint64_t, uint64_t> activeNodes;
+                std::map<uint64_t, uint64_t> disabledNodes;
+                bool smart = true;
                 
                 static constexpr const char* STR_FAILING = "_failing";			// Name standard for transitions that point towards a place, which in turn indicates the failure of a gate.
                 static constexpr const char* STR_FAILED = "_failed";			// Name standard for place which indicates the failure of a gate.

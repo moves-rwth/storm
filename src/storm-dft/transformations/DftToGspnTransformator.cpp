@@ -63,8 +63,8 @@ namespace storm {
 							drawPOR(std::static_pointer_cast<storm::storage::DFTPor<ValueType> const>(dftElement), isRepresentative);
 							break;
 						case storm::storage::DFTElementType::SEQ:
-							// No method call needed here. SEQ only consists of restrictions, which are handled later.
-							break;
+                            drawSeq(std::static_pointer_cast<storm::storage::DFTSeq<ValueType> const>(dftElement));
+                            break;
 						case storm::storage::DFTElementType::MUTEX:
 							// No method call needed here. MUTEX only consists of restrictions, which are handled later.
 							break;
@@ -78,7 +78,7 @@ namespace storm {
 							drawCONSTS(dftElement, isRepresentative);
 							break;
 						case storm::storage::DFTElementType::PDEP:
-							drawPDEP(std::static_pointer_cast<storm::storage::DFTDependency<ValueType> const>(dftElement), isRepresentative);
+                            drawPDEP(std::static_pointer_cast<storm::storage::DFTDependency<ValueType> const>(dftElement));
 							break;
 						default:
 							STORM_LOG_ASSERT(false, "DFT type unknown.");
@@ -96,9 +96,13 @@ namespace storm {
                 activeNodes.emplace(dftBE->id(), beActive);
                 uint64_t beFailed = builder.addPlace(defaultCapacity, 0, dftBE->name() + STR_FAILED);
                 
+                uint64_t disabledNode = 0;
+                if (!smart || dftBE->nrRestrictions() > 0) {
+                    disabledNode = addDisabledPlace(dftBE);
+                }
                 
                 uint64_t unavailableNode = 0;
-                if (isRepresentative) {
+                if (!smart || isRepresentative) {
                     unavailableNode = addUnavailableNode(dftBE);
                 }
                 
@@ -114,7 +118,12 @@ namespace storm {
                 builder.addInhibitionArc(beFailed, tPassive);
                 builder.addOutputArc(tPassive, beFailed);
                 
-                if (isRepresentative) {
+                if (!smart || dftBE->nrRestrictions() > 0) {
+                    builder.addInhibitionArc(disabledNode, tActive);
+                    builder.addInhibitionArc(disabledNode, tPassive);
+                }
+                
+                if (!smart || isRepresentative) {
                     builder.addOutputArc(tActive, unavailableNode);
                     builder.addOutputArc(tPassive, unavailableNode);
                 }
@@ -350,25 +359,28 @@ namespace storm {
 			}
 //			
 			template <typename ValueType>
-            void DftToGspnTransformator<ValueType>::drawPDEP(std::shared_ptr<storm::storage::DFTDependency<ValueType> const> dftDependency, bool isRepresentative) {
-//				// Only draw dependency, if it wasn't drawn before.
-//				std::string gateName = dftDependency->name().substr(0, dftDependency->name().find("_"));
-//				auto exists = mGspn.getPlace(gateName + STR_FAILED);
-//				if (!exists.first) {
-//					storm::gspn::Place placeDEPFailed;
-//					placeDEPFailed.setName(gateName + STR_FAILED);
-//					placeDEPFailed.setNumberOfInitialTokens(0);
-//					mGspn.addPlace(placeDEPFailed);
-//					
-//					storm::gspn::TimedTransition<double> timedTransitionDEPFailure;
-//					timedTransitionDEPFailure.setName(gateName + STR_FAILING);
-//					timedTransitionDEPFailure.setPriority(getPriority(0, dftDependency));
-//					timedTransitionDEPFailure.setRate(dftDependency->probability());
-//					timedTransitionDEPFailure.setOutputArcMultiplicity(placeDEPFailed, 1);
-//					timedTransitionDEPFailure.setInhibitionArcMultiplicity(placeDEPFailed, 1);
-//					mGspn.addTimedTransition(timedTransitionDEPFailure);
-//				}
+            void DftToGspnTransformator<ValueType>::drawPDEP(std::shared_ptr<storm::storage::DFTDependency<ValueType> const> dftDependency) {
+
 			}
+            
+            template <typename ValueType>
+            void DftToGspnTransformator<ValueType>::drawSeq(std::shared_ptr<storm::storage::DFTSeq<ValueType> const> dftSeq) {
+                STORM_LOG_THROW(dftSeq->allChildrenBEs(), storm::exceptions::NotImplementedException, "Sequence enforcers with gates as children are currently not supported");
+                bool first = true;
+                uint64_t tEnable = 0;
+                uint64_t nextPlace = 0;
+                for(auto const& child : dftSeq->children()) {
+                    nextPlace = builder.addPlace(defaultCapacity, first ? 1 : 0, dftSeq->name() + "_next_" + child->name());
+                    if(!first) {
+                        builder.addOutputArc(tEnable, nextPlace);
+                    }
+                    tEnable = builder.addImmediateTransition(defaultPriority, 0.0, dftSeq->name() + "_unblock_" +child->name() );
+                    builder.addInputArc(nextPlace, tEnable);
+                    builder.addInputArc(disabledNodes.at(child->id()), tEnable);
+                    first = false;
+                }
+                
+            }
             
             template<typename ValueType>
             uint64_t DftToGspnTransformator<ValueType>::addUnavailableNode(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftElement, bool initialAvailable) {
@@ -376,6 +388,13 @@ namespace storm {
                 assert(unavailableNode != 0);
                 unavailableNodes.emplace(dftElement->id(), unavailableNode);
                 return unavailableNode;
+            }
+            
+            template<typename ValueType>
+            uint64_t DftToGspnTransformator<ValueType>::addDisabledPlace(std::shared_ptr<const storm::storage::DFTBE<ValueType> > dftBe) {
+                uint64_t disabledNode = builder.addPlace(dftBe->nrRestrictions(), dftBe->nrRestrictions(), dftBe->name() + "_dabled");
+                disabledNodes.emplace(dftBe->id(), disabledNode);
+                return disabledNode;
             }
 //			
 			
