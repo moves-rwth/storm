@@ -229,20 +229,22 @@ namespace storm {
                 assert(failedNodes.size() == dftPand->id());
                 failedNodes.push_back(nodeFailed);
                 uint64_t unavailableNode = 0;
-                if (isRepresentative) {
+                if (!smart || isRepresentative) {
                     unavailableNode = addUnavailableNode(dftPand);
                 }
+                
+                uint64_t tNodeFailed = builder.addImmediateTransition(getFailPriority(dftPand), 0.0,  dftPand->name() + STR_FAILING);
+                builder.addInhibitionArc(nodeFailed, tNodeFailed);
+                builder.addOutputArc(tNodeFailed, nodeFailed);
+                if (!smart || isRepresentative) {
+                    builder.addOutputArc(tNodeFailed, nodeFailed);
+                }
+                
                 
                 if(dftPand->isInclusive()) {
                     
                     uint64_t nodeFS = builder.addPlace(defaultCapacity, 0, dftPand->name() + STR_FAILSAVE);
-                    uint64_t tNodeFailed = builder.addImmediateTransition(getFailPriority(dftPand), 0.0,  dftPand->name() + STR_FAILING);
-                    builder.addInhibitionArc(nodeFailed, tNodeFailed);
                     builder.addInhibitionArc(nodeFS, tNodeFailed);
-                    builder.addOutputArc(tNodeFailed, nodeFailed);
-                    if (isRepresentative) {
-                        builder.addOutputArc(tNodeFailed, nodeFailed);
-                    }
                     for(auto const& child : dftPand->children()) {
                         builder.addInputArc(failedNodes[child->id()], tNodeFailed);
                         builder.addOutputArc(tNodeFailed, failedNodes[child->id()]);
@@ -257,7 +259,29 @@ namespace storm {
                         
                     }
                 } else {
-                    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "NOt yet implemented");
+                    uint64_t fi = 0;
+                    uint64_t tn = 0;
+                    for(uint64_t j = 0; j < dftPand->nrChildren(); ++j) {
+                        auto const& child = dftPand->children()[j];
+                        if (j > 0) {
+                            builder.addInhibitionArc(failedNodes.at(child->id()), tn);
+                        }
+                        if (j != dftPand->nrChildren() - 1) {
+                            tn = builder.addImmediateTransition(getFailPriority(dftPand), 0.0, dftPand->name() + STR_FAILING + "_" +std::to_string(j));
+                        } else {
+                            tn = tNodeFailed;
+                        }
+                        builder.addInputArc(failedNodes.at(child->id()), tn);
+                        builder.addOutputArc(tn, failedNodes.at(child->id()));
+                        if (j > 0) {
+                            builder.addInputArc(fi, tn);
+                        }
+                        if (j != dftPand->nrChildren() - 1) {
+                            fi = builder.addPlace(defaultCapacity, 0, dftPand->name() + "_F_" + std::to_string(j));
+                            builder.addOutputArc(tn, fi);
+                        }
+                        
+                    }
                 }
             }
 //			
