@@ -23,6 +23,15 @@ namespace storm {
             places.push_back(place);
             return newId;
         }
+        
+        
+        void GspnBuilder::setPlaceLayoutInfo(uint64_t placeId, LayoutInfo const& layoutInfo) {
+            placeLayout[placeId] = layoutInfo;
+        }
+        
+        void GspnBuilder::setTransitionLayoutInfo(uint64_t transitionId, LayoutInfo const& layoutInfo) {
+            transitionLayout[transitionId] = layoutInfo;
+        }
 
         uint_fast64_t GspnBuilder::addImmediateTransition(uint_fast64_t const& priority, double const& weight, std::string const& name) {
             auto trans = storm::gspn::ImmediateTransition<double>();
@@ -164,7 +173,10 @@ namespace storm {
             }
             std::reverse(orderedPartitions.begin(), orderedPartitions.end());
             
-            return new GSPN(gspnName, places, immediateTransitions, timedTransitions, orderedPartitions);
+            GSPN* result = new GSPN(gspnName, places, immediateTransitions, timedTransitions, orderedPartitions);
+            result->setTransitionLayoutInfo(transitionLayout);
+            result->setPlaceLayoutInfo(placeLayout);
+            return result;
         }
     }
 }

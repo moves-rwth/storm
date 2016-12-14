@@ -20,29 +20,32 @@ namespace storm {
             
             /**
              * Add a place to the gspn.
-             * @param id The id must be unique for the gspn.
              * @param name The name must be unique for the gspn.
              * @param capacity The capacity is the limit of tokens in the place.
              *                 A capacity of -1 indicates an unbounded place.
              * @param initialTokens The number of inital tokens in the place.
              */
             uint_fast64_t addPlace(int_fast64_t const& capacity = 1, uint_fast64_t const& initialTokens = 0, std::string const& name = "");
+            
+            void setPlaceLayoutInfo(uint64_t placeId, LayoutInfo const& layoutInfo);
 
             /**
              * Adds an immediate transition to the gspn.
-             * @param id The id must be unique for the gspn.
              * @param priority The priority for the transtion.
              * @param weight The weight for the transition.
              */
             uint_fast64_t addImmediateTransition(uint_fast64_t const& priority = 0, WeightType const& weight = 0, std::string const& name = "");
-
+            
+            
             /**
              * Adds an timed transition to the gspn.
-             * @param id The name id be unique for the gspn.
              * @param priority The priority for the transtion.
              * @param weight The weight for the transition.
              */
             uint_fast64_t addTimedTransition(uint_fast64_t const &priority, RateType const& rate, std::string const& name = "");
+            
+            void setTransitionLayoutInfo(uint64_t transitionId, LayoutInfo const& layoutInfo);
+
 
             /**
              * Adds an new input arc from a place to an transition.
@@ -112,6 +115,9 @@ namespace storm {
             
             // set containing all places
             std::vector<storm::gspn::Place> places;
+            
+            std::map<uint64_t, LayoutInfo> placeLayout;
+            std::map<uint64_t, LayoutInfo> transitionLayout;
         };
     }
 }

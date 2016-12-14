@@ -376,6 +376,20 @@ namespace storm {
 
             return result;
         }
+        
+        void GSPN::setPlaceLayoutInfo(uint64_t placeId, LayoutInfo const& layout) const {
+            placeLayout[placeId] = layout;
+        }
+        void GSPN::setTransitionLayoutInfo(uint64_t transitionId, LayoutInfo const& layout) const {
+            transitionLayout[transitionId] = layout;
+        }
+        
+        void GSPN::setPlaceLayoutInfo(std::map<uint64_t, LayoutInfo> const& placeLayout) const {
+            this->placeLayout = placeLayout;
+        }
+        void GSPN::setTransitionLayoutInfo(std::map<uint64_t, LayoutInfo> const& transitionLayout) const {
+            this->transitionLayout = transitionLayout;
+        }
 
         void GSPN::toPnpro(std::ostream &stream) const {
             auto space = "  ";
@@ -390,8 +404,14 @@ namespace storm {
             for (auto& place : places) {
                 stream << space3 << "<place marking=\"" << place.getNumberOfInitialTokens() <<"\" ";
                 stream << "name =\"" << place.getName() << "\" ";
-                stream << "x=\"" << x << "\" ";
-                stream << "y=\"1\" ";
+                if (placeLayout.count(place.getID()) > 0) {
+                    stream << "x=\"" << placeLayout.at(place.getID()).x << "\" ";
+                    stream << "y=\"" << placeLayout.at(place.getID()).y << "\" ";
+                } else {
+                    stream << "x=\"" << x << "\" ";
+                    stream << "y=\"1\" ";
+                    
+                }
                 stream << "/>" << std::endl;
                 x = x + 3;
             }
@@ -400,8 +420,14 @@ namespace storm {
                 stream << space3 << "<transition name=\"" << trans.getName() << "\" ";
                 stream << "type=\"EXP\" ";
                 stream << "nservers-x=\"" << trans.getRate() << "\" ";
-                stream << "x=\"" << x << "\" ";
-                stream << "y=\"4\" ";
+                if (transitionLayout.count(trans.getID()) > 0) {
+                    stream << "x=\"" << transitionLayout.at(trans.getID()).x << "\" ";
+                    stream << "y=\"" << transitionLayout.at(trans.getID()).y << "\" ";
+                } else {
+                    stream << "x=\"" << x << "\" ";
+                    stream << "y=\"4\" ";
+                    
+                }
                 stream << "/>" << std::endl;
                 x = x + 3;
             }
@@ -409,8 +435,13 @@ namespace storm {
                 stream << space3 << "<transition name=\"" << trans.getName() << "\" ";
                 stream << "type=\"IMM\" ";
                 stream << "priority=\"" << trans.getPriority() << "\" ";
-                stream << "x=\"" << x << "\" ";
-                stream << "y=\"4\" ";
+                if (transitionLayout.count(trans.getID()) > 0) {
+                    stream << "x=\"" << transitionLayout.at(trans.getID()).x << "\" ";
+                    stream << "y=\"" << transitionLayout.at(trans.getID()).y << "\" ";
+                } else {
+                    stream << "x=\"" << x << "\" ";
+                    stream << "y=\"4\" ";
+                }
                 stream << "/>" << std::endl;
                 x = x + 3;
             }

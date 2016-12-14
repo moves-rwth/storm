@@ -90,10 +90,12 @@ namespace storm {
             
             template <typename ValueType>
             void DftToGspnTransformator<ValueType>::drawBE(std::shared_ptr<storm::storage::DFTBE<ValueType> const> dftBE, bool isRepresentative) {
-                
+                double xcenter = 10.0;
+                double ycenter = 10.0;
 				uint64_t beActive = builder.addPlace(defaultCapacity, isBEActive(dftBE) ? 1 : 0, dftBE->name() + STR_ACTIVATED);
                 activeNodes.emplace(dftBE->id(), beActive);
                 uint64_t beFailed = builder.addPlace(defaultCapacity, 0, dftBE->name() + STR_FAILED);
+                
                 
                 uint64_t unavailableNode = 0;
                 if (isRepresentative) {
@@ -116,10 +118,18 @@ namespace storm {
                     builder.addOutputArc(tActive, unavailableNode);
                     builder.addOutputArc(tPassive, unavailableNode);
                 }
+                
+                builder.setPlaceLayoutInfo(beActive, storm::gspn::LayoutInfo(xcenter - 3.0, ycenter));
+                builder.setPlaceLayoutInfo(beFailed, storm::gspn::LayoutInfo(xcenter + 3.0, ycenter));
+                builder.setTransitionLayoutInfo(tActive, storm::gspn::LayoutInfo(xcenter, ycenter + 3.0));
+                builder.setTransitionLayoutInfo(tPassive, storm::gspn::LayoutInfo(xcenter, ycenter - 3.0));
+                
             }
 			
 			template <typename ValueType>
             void DftToGspnTransformator<ValueType>::drawAND(std::shared_ptr<storm::storage::DFTAnd<ValueType> const> dftAnd, bool isRepresentative) {
+                double xcenter = 10.0;
+                double ycenter = 20.0;
                 uint64_t nodeFailed = builder.addPlace(defaultCapacity, 0, dftAnd->name() + STR_FAILED);
                 assert(failedNodes.size() == dftAnd->id());
                 failedNodes.push_back(nodeFailed);
@@ -141,6 +151,9 @@ namespace storm {
                     builder.addInputArc(failedNodes[child->id()], tAndFailed);
                     builder.addOutputArc(tAndFailed, failedNodes[child->id()]);
                 }
+                
+                builder.setPlaceLayoutInfo(nodeFailed, storm::gspn::LayoutInfo(xcenter, ycenter-3.0));
+                builder.setTransitionLayoutInfo(tAndFailed, storm::gspn::LayoutInfo(xcenter, ycenter+3.0));
                 
 			}
 
