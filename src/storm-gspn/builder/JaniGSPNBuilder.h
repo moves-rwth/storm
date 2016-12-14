@@ -16,10 +16,6 @@ namespace storm {
                 
             }
             
-            void setIgnoreWeights(bool ignore = true)  {
-                //ignoreWeights = ignore;
-            }
-            
             
             storm::jani::Model* build() {
                 storm::jani::Model* model = new storm::jani::Model(gspn.getName(), storm::jani::ModelType::MA, janiVersion, expressionManager);
@@ -30,6 +26,10 @@ namespace storm {
                 model->addAutomaton(mainAutomaton);
                 model->setStandardSystemComposition();
                 return model;
+            }
+            
+            storm::jani::Variable const& getPlaceVariable(uint64_t placeId) {
+                return *vars.at(placeId);
             }
             
             void addVariables(storm::jani::Model* model) {
@@ -86,7 +86,7 @@ namespace storm {
                             destguard = destguard && (vars[inPlaceEntry.first]->getExpressionVariable() >= inPlaceEntry.second);
                         }
                         for (auto const& inhibPlaceEntry : trans.getInhibitionPlaces()) {
-                            destguard = destguard && (vars[inhibPlaceEntry.first]->getExpressionVariable() >= inhibPlaceEntry.second);
+                            destguard = destguard && (vars[inhibPlaceEntry.first]->getExpressionVariable() < inhibPlaceEntry.second);
                         }
                         totalWeight = totalWeight + storm::expressions::ite(destguard, expressionManager->rational(trans.getWeight()), expressionManager->rational(0.0));
                         
@@ -103,13 +103,13 @@ namespace storm {
                         storm::expressions::Expression destguard = expressionManager->boolean(true);
                         std::vector<storm::jani::Assignment> assignments;
                         for (auto const& inPlaceEntry : trans.getInputPlaces()) {
-                            destguard = destguard && (vars[inPlaceEntry.first]->getExpressionVariable() > inPlaceEntry.second);
+                            destguard = destguard && (vars[inPlaceEntry.first]->getExpressionVariable() >= inPlaceEntry.second);
                             if (trans.getOutputPlaces().count(inPlaceEntry.first) == 0) {
                                 assignments.emplace_back( *vars[inPlaceEntry.first], (vars[inPlaceEntry.first])->getExpressionVariable() - inPlaceEntry.second);
                             }
                         }
                         for (auto const& inhibPlaceEntry : trans.getInhibitionPlaces()) {
-                            destguard = destguard && (vars[inhibPlaceEntry.first]->getExpressionVariable() > inhibPlaceEntry.second);
+                            destguard = destguard && (vars[inhibPlaceEntry.first]->getExpressionVariable() < inhibPlaceEntry.second);
                         }
                         for (auto const& outputPlaceEntry : trans.getOutputPlaces()) {
                             if (trans.getInputPlaces().count(outputPlaceEntry.first) == 0) {
@@ -140,7 +140,7 @@ namespace storm {
                         }
                     }
                     for (auto const& inhibPlaceEntry : trans.getInhibitionPlaces()) {
-                        guard = guard && (vars[inhibPlaceEntry.first]->getExpressionVariable() >= inhibPlaceEntry.second);
+                        guard = guard && (vars[inhibPlaceEntry.first]->getExpressionVariable() < inhibPlaceEntry.second);
                     }
                     for (auto const& outputPlaceEntry : trans.getOutputPlaces()) {
                         if (trans.getInputPlaces().count(outputPlaceEntry.first) == 0) {

@@ -33,6 +33,9 @@ namespace storm {
                  */
                 gspn::GSPN* obtainGSPN();
                 
+                
+                uint64_t toplevelFailedPlaceId();
+                
             private:
                 /*
 				 * Draw all elements of the GSPN.

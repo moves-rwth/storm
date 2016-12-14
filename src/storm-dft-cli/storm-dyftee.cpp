@@ -4,6 +4,7 @@
 #include "storm/cli/cli.h"
 #include "storm/exceptions/BaseException.h"
 
+#include "storm/logic/Formula.h"
 
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/CoreSettings.h"
@@ -71,20 +72,6 @@ void analyzeWithSMT(std::string filename) {
     //std::cout << "SMT result: " << sat << std::endl;
 }
 
-/*!
- * Load DFT from filename and transform into a GSPN.
- *
- * @param filename Path to DFT file in Galileo format.
- *
- */
-template <typename ValueType>
-storm::gspn::GSPN* transformDFT(std::string filename) {
-    storm::parser::DFTGalileoParser<ValueType> parser;
-    storm::storage::DFT<ValueType> dft = parser.parseDFT(filename);
-    storm::transformations::dft::DftToGspnTransformator<ValueType> gspnTransformator(dft);
-    gspnTransformator.transform();
-    return gspnTransformator.obtainGSPN();
-}
 
 /*!
  * Initialize the settings manager.
@@ -140,15 +127,30 @@ int main(const int argc, const char** argv) {
             STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "No input model.");
         }
 
+        
         if (dftSettings.isTransformToGspn()) {
-            storm::gspn::GSPN* gspn = transformDFT<double>(dftSettings.getDftFilename());
+            
+            storm::parser::DFTGalileoParser<double> parser;
+            storm::storage::DFT<double> dft = parser.parseDFT(dftSettings.getDftFilename());
+            storm::transformations::dft::DftToGspnTransformator<double> gspnTransformator(dft);
+            gspnTransformator.transform();
+            storm::gspn::GSPN* gspn = gspnTransformator.obtainGSPN();
+            uint64_t toplevelFailedPlace = gspnTransformator.toplevelFailedPlaceId();
             storm::handleGSPNExportSettings(*gspn);
             
-            storm::jani::Model* model = storm::buildJani(*gspn);
+            std::shared_ptr<storm::expressions::ExpressionManager> exprManager(new storm::expressions::ExpressionManager());
+            storm::builder::JaniGSPNBuilder builder(*gspn, exprManager);
+            storm::jani::Model* model =  builder.build();
+            storm::jani::Variable const& topfailedVar = builder.getPlaceVariable(toplevelFailedPlace);
+            
+            
+            auto evtlFormula = std::make_shared<storm::logic::AtomicExpressionFormula>(exprManager->integer(1) == topfailedVar.getExpressionVariable().getExpression());
+            auto tbFormula = std::make_shared<storm::logic::BoundedUntilFormula>(std::make_shared<storm::logic::BooleanLiteralFormula>(true), evtlFormula, 0.0, 10.0);
+            auto tbUntil = std::make_shared<storm::logic::ProbabilityOperatorFormula>(tbFormula);
             
             storm::settings::modules::JaniExportSettings const& janiSettings = storm::settings::getModule<storm::settings::modules::JaniExportSettings>();
             if (janiSettings.isJaniFileSet()) {
-                storm::exportJaniModel(*model, {}, janiSettings.getJaniFilename());
+                storm::exportJaniModel(*model, {storm::jani::Property("time-bounded", tbUntil)}, janiSettings.getJaniFilename());
             }
             
             delete model;

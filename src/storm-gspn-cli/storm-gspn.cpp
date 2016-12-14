@@ -66,9 +66,7 @@ std::unordered_map<std::string, uint64_t> parseCapacitiesList(std::string const&
 }
 
 void handleJani(storm::gspn::GSPN const& gspn) {
-    std::shared_ptr<storm::expressions::ExpressionManager> exprManager(new storm::expressions::ExpressionManager());
-    storm::builder::JaniGSPNBuilder builder(gspn, exprManager);
-    storm::jani::Model* model = builder.build();
+
     storm::jani::JsonExporter::toFile(*model, {}, storm::settings::getModule<storm::settings::modules::JaniExportSettings>().getJaniFilename());
     delete model;
 }

@@ -8,7 +8,7 @@ namespace storm {
             
             // Prevent some magic constants
             static constexpr const uint64_t defaultPriority = 0;
-            static constexpr const uint64_t defaultCapacity = 0;
+            static constexpr const uint64_t defaultCapacity = 1;
 
             template <typename ValueType>
             DftToGspnTransformator<ValueType>::DftToGspnTransformator(storm::storage::DFT<ValueType> const& dft) : mDft(dft) {
@@ -25,6 +25,12 @@ namespace storm {
 
 				// Draw restrictions into the GSPN (i.e. SEQ or MUTEX).
 				//drawGSPNRestrictions();
+            }
+            
+            template<typename ValueType>
+            uint64_t DftToGspnTransformator<ValueType>::toplevelFailedPlaceId() {
+                assert(failedNodes.size() > mDft.getTopLevelIndex());
+                return failedNodes[mDft.getTopLevelIndex()];
             }
             
 			template <typename ValueType>
@@ -133,6 +139,7 @@ namespace storm {
                 for(auto const& child : dftAnd->children()) {
                     assert(failedNodes.size() > child->id());
                     builder.addInputArc(failedNodes[child->id()], tAndFailed);
+                    builder.addOutputArc(tAndFailed, failedNodes[child->id()]);
                 }
                 
 			}
@@ -157,6 +164,7 @@ namespace storm {
                     }
                     assert(failedNodes.size() > child->id());
                     builder.addInputArc(failedNodes[child->id()], tNodeFailed);
+                    builder.addOutputArc(tNodeFailed, failedNodes[child->id()]);
                     ++i;
                 }
 			}
@@ -188,6 +196,7 @@ namespace storm {
                     builder.addOutputArc(tCollect, childInhibPlace);
                     builder.addInhibitionArc(childInhibPlace, tCollect);
                     builder.addInputArc(failedNodes[child->id()], tCollect);
+                    builder.addOutputArc(tCollect, failedNodes[child->id()]);
                     ++i;
                 }
 			}
@@ -212,12 +221,15 @@ namespace storm {
                 }
                 for(auto const& child : dftPand->children()) {
                     builder.addInputArc(failedNodes[child->id()], tNodeFailed);
+                    builder.addOutputArc(tNodeFailed, failedNodes[child->id()]);
                 }
                 for (uint64_t j = 1; j < dftPand->nrChildren(); ++j) {
                     uint64_t tfs = builder.addImmediateTransition(getFailPriority(dftPand), 0.0, dftPand->name() + STR_FAILSAVING + std::to_string(j));
                     builder.addInputArc(failedNodes[dftPand->children().at(j)->id()], tfs);
+                    builder.addOutputArc(tfs, failedNodes[dftPand->children().at(j)->id()]);
                     builder.addInhibitionArc(failedNodes[dftPand->children().at(j-1)->id()], tfs);
                     builder.addOutputArc(tfs, nodeFS);
+                    builder.addInhibitionArc(nodeFS, tfs);
 
                 }
             }
