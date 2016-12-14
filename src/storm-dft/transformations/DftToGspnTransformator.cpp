@@ -7,7 +7,7 @@ namespace storm {
         namespace dft {
             
             // Prevent some magic constants
-            static constexpr const uint64_t defaultPriority = 0;
+            static constexpr const uint64_t defaultPriority = 1;
             static constexpr const uint64_t defaultCapacity = 1;
 
             template <typename ValueType>
@@ -436,7 +436,7 @@ namespace storm {
 			template <typename ValueType>
             uint64_t DftToGspnTransformator<ValueType>::getFailPriority(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftElement)
 			{
-                return mDft.maxRank() - dftElement->rank();
+                return mDft.maxRank() - dftElement->rank() + 2;
 			}
 
 			
