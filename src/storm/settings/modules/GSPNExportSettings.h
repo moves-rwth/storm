@@ -15,7 +15,7 @@ namespace storm {
                 GSPNExportSettings();
                 
                 /**
-                 * Retrievew whether the pgcl file option was set
+                 * Retrieve whether the pgcl file option was set
                  */
                 bool isWriteToDotSet() const;
                 

@@ -22,6 +22,7 @@
 #include "storm-dft/settings/modules/DFTSettings.h"
 
 #include "storm-gspn/storage/gspn/GSPN.h"
+#include "storm-gspn/storm-gspn.h"
 #include "storm/settings/modules/GSPNSettings.h"
 #include "storm/settings/modules/GSPNExportSettings.h"
 
@@ -112,6 +113,7 @@ void initializeSettings() {
     // For translation into JANI via GSPN.
     storm::settings::addModule<storm::settings::modules::GSPNSettings>();
     storm::settings::addModule<storm::settings::modules::GSPNExportSettings>();
+    storm::settings::addModule<storm::settings::modules::JaniExportSettings>();
 }
 
 /*!
@@ -140,7 +142,16 @@ int main(const int argc, const char** argv) {
 
         if (dftSettings.isTransformToGspn()) {
             storm::gspn::GSPN* gspn = transformDFT<double>(dftSettings.getDftFilename());
+            storm::handleGSPNExportSettings(*gspn);
             
+            storm::jani::Model* model = storm::buildJani(*gspn);
+            
+            storm::settings::modules::JaniExportSettings const& janiSettings = storm::settings::getModule<storm::settings::modules::JaniExportSettings>();
+            if (janiSettings.isJaniFileSet()) {
+                storm::exportJaniModel(*model, {}, janiSettings.getJaniFilename());
+            }
+            
+            delete model;
             delete gspn;
             storm::utility::cleanUp();
             return 0;

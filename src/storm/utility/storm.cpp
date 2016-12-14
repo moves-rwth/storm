@@ -30,6 +30,17 @@ namespace storm{
         modelAndFormulae.first.checkValid();
         return modelAndFormulae;
     }
+    
+    void exportJaniModel(storm::jani::Model const& model, std::vector<storm::jani::Property> const& properties, std::string const& filepath) {
+        STORM_LOG_TRACE("Exporting JANI model.");
+        if (storm::settings::getModule<storm::settings::modules::JaniExportSettings>().isExportAsStandardJaniSet()) {
+            storm::jani::Model normalisedModel = model;
+            normalisedModel.makeStandardJaniCompliant();
+            storm::jani::JsonExporter::toFile(normalisedModel, formulasInProperties(properties), filepath);
+        } else {
+            storm::jani::JsonExporter::toFile(model, formulasInProperties(properties), filepath);
+        }
+    }
 
     /**
      * Helper
