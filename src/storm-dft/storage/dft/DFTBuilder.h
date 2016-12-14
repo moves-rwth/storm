@@ -53,6 +53,7 @@ namespace storm {
             
             bool addPandElement(std::string const& name, std::vector<std::string> const& children, bool inclusive) {
                 bool tmpDefault = pandDefaultInclusive;
+                pandDefaultInclusive = inclusive;
                 bool result = addStandardGate(name, children, DFTElementType::PAND);
                 pandDefaultInclusive = tmpDefault;
                 return result;
@@ -60,6 +61,14 @@ namespace storm {
             
             bool addPorElement(std::string const& name, std::vector<std::string> const& children) {
                 return addStandardGate(name, children, DFTElementType::POR);
+            }
+            
+            bool addPorElement(std::string const& name, std::vector<std::string> const& children, bool inclusive) {
+                bool tmpDefault = porDefaultInclusive;
+                porDefaultInclusive = inclusive;
+                bool result = addStandardGate(name, children, DFTElementType::POR);
+                pandDefaultInclusive = tmpDefault;
+                return result;
             }
             
             bool addSpareElement(std::string const& name, std::vector<std::string> const& children) {
