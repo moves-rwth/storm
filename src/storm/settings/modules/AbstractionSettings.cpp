@@ -10,7 +10,7 @@ namespace storm {
         namespace modules {
          
             const std::string AbstractionSettings::moduleName = "abstraction";
-            const std::string AbstractionSettings::addAllGuardsOptionName = "allguards";
+            const std::string AbstractionSettings::addAllGuardsOptionName = "all-guards";
             const std::string AbstractionSettings::splitPredicatesOptionName = "split-preds";
             const std::string AbstractionSettings::splitInitialGuardsOptionName = "split-init-guards";
             const std::string AbstractionSettings::splitGuardsOptionName = "split-guards";

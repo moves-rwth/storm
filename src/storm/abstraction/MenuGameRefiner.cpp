@@ -169,6 +169,7 @@ namespace storm {
                             if (quantitativeResult) {
                                 storm::dd::Add<Type, ValueType> frontierMinPivotStatesAdd = frontierMinPivotStates.template toAdd<ValueType>();
                                 storm::dd::Add<Type, ValueType> frontierMaxPivotStatesAdd = frontierMaxPivotStates.template toAdd<ValueType>();
+
                                 storm::dd::Add<Type, ValueType> diffMin = frontierMinPivotStatesAdd * quantitativeResult.get().max.values - frontierMinPivotStatesAdd * quantitativeResult.get().min.values;
                                 storm::dd::Add<Type, ValueType> diffMax = frontierMaxPivotStatesAdd * quantitativeResult.get().max.values - frontierMaxPivotStatesAdd * quantitativeResult.get().min.values;
                                 
@@ -254,10 +255,6 @@ namespace storm {
             } else {
                 STORM_LOG_TRACE("No bottom state successor. Deriving a new predicate using weakest precondition.");
             
-//                player1Choice.template toAdd<ValueType>().exportToDot("choice.dot");
-//                lowerChoice.template toAdd<ValueType>().exportToDot("lower.dot");
-//                upperChoice.template toAdd<ValueType>().exportToDot("upper.dot");
-                
                 // Decode both choices to explicit mappings.
                 std::map<uint64_t, std::pair<storm::storage::BitVector, ValueType>> lowerChoiceUpdateToSuccessorMapping = abstractionInformation.template decodeChoiceToUpdateSuccessorMapping<ValueType>(lowerChoice);
                 std::map<uint64_t, std::pair<storm::storage::BitVector, ValueType>> upperChoiceUpdateToSuccessorMapping = abstractionInformation.template decodeChoiceToUpdateSuccessorMapping<ValueType>(upperChoice);
@@ -379,23 +376,12 @@ namespace storm {
             
             bool player1ChoicesDifferent = !(pivotState && minPlayer1Strategy).exclusiveOr(pivotState && maxPlayer1Strategy).isZero();
             
-            pivotState.template toAdd<ValueType>().exportToDot("pivot.dot");
-            
-            minPlayer1Strategy.template toAdd<ValueType>().exportToDot("minpl1.dot");
-            maxPlayer1Strategy.template toAdd<ValueType>().exportToDot("maxpl1.dot");
-            
-            (pivotState && minPlayer1Strategy).template toAdd<ValueType>().exportToDot("minpivot.dot");
-            (pivotState && maxPlayer1Strategy).template toAdd<ValueType>().exportToDot("maxpivot.dot");
-            
             boost::optional<RefinementPredicates> predicates;
             
             // Derive predicates from lower choice.
             storm::dd::Bdd<Type> lowerChoice = pivotState && game.getExtendedTransitionMatrix().toBdd() && minPlayer1Strategy;
             storm::dd::Bdd<Type> lowerChoice1 = (lowerChoice && minPlayer2Strategy).existsAbstract(variablesToAbstract);
             storm::dd::Bdd<Type> lowerChoice2 = (lowerChoice && maxPlayer2Strategy).existsAbstract(variablesToAbstract);
-            
-            lowerChoice1.template toAdd<ValueType>().exportToDot("lower1.dot");
-            lowerChoice2.template toAdd<ValueType>().exportToDot("lower2.dot");
             
             bool lowerChoicesDifferent = !lowerChoice1.exclusiveOr(lowerChoice2).isZero();
             if (lowerChoicesDifferent) {
@@ -411,9 +397,6 @@ namespace storm {
                 storm::dd::Bdd<Type> upperChoice = pivotState && game.getExtendedTransitionMatrix().toBdd() && maxPlayer1Strategy;
                 storm::dd::Bdd<Type> upperChoice1 = (upperChoice && minPlayer2Strategy).existsAbstract(variablesToAbstract);
                 storm::dd::Bdd<Type> upperChoice2 = (upperChoice && maxPlayer2Strategy).existsAbstract(variablesToAbstract);
-
-                upperChoice1.template toAdd<ValueType>().exportToDot("upper1.dot");
-                upperChoice2.template toAdd<ValueType>().exportToDot("upper2.dot");
                 
                 bool upperChoicesDifferent = !upperChoice1.exclusiveOr(upperChoice2).isZero();
                 if (upperChoicesDifferent) {
@@ -469,8 +452,6 @@ namespace storm {
             for (auto& predicate : predicates.back()) {
                 predicate = predicate.changeManager(expressionManager);
             }
-            
-//            pivotState.template toAdd<ValueType>().exportToDot("pivot.dot");
             
             // Perform a backward search for an initial state.
             storm::dd::Bdd<Type> currentState = pivotState;
@@ -643,7 +624,7 @@ namespace storm {
             
             // Now that we have the pivot state candidates, we need to pick one.
             PivotStateResult<Type, ValueType> pivotStateResult = pickPivotState<Type, ValueType>(pivotSelectionHeuristic, game, pivotStateCandidatesResult, boost::none, quantitativeResult);
-            
+
             boost::optional<RefinementPredicates> predicates;
             if (useInterpolation) {
                 predicates = derivePredicatesFromInterpolation(game, pivotStateResult, minPlayer1Strategy, minPlayer2Strategy, maxPlayer1Strategy, maxPlayer2Strategy);

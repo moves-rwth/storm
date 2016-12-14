@@ -353,8 +353,6 @@ namespace storm {
                     auto end = std::chrono::high_resolution_clock::now();
                     STORM_LOG_TRACE("Enumerated " << numberOfSolutions << " solutions in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
                     forceRecomputation = false;
-                    
-                    resultBdd.template toAdd<ValueType>().exportToDot("cmd_" + std::to_string(command.get().getGlobalIndex()) + ".dot");
                 }
             }
             
@@ -649,8 +647,6 @@ namespace storm {
                     STORM_LOG_TRACE("Skipping bottom state computation for this command.");
                     return result;
                 }
-                
-//                abstractGuard.template toAdd<ValueType>().exportToDot("abstractguard_" + std::to_string(command.get().getGlobalIndex()) + ".dot");
                 
                 // Use the state abstractor to compute the set of abstract states that has this command enabled but
                 // still has a transition to a bottom state.

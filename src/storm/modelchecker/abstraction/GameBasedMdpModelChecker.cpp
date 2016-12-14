@@ -276,6 +276,9 @@ namespace storm {
                 result.player2Strategy = combinedPlayer2QualitativeStrategies.existsAbstract(game.getPlayer2Variables()).ite(combinedPlayer2QualitativeStrategies, result.player2Strategy);
             } else {
                 STORM_LOG_TRACE("No maybe states.");
+
+                // Extend the values of the maybe states by the qualitative values.
+                result.values += min ? qualitativeResult.prob1Min.getPlayer1States().template toAdd<ValueType>() : qualitativeResult.prob1Max.getPlayer1States().template toAdd<ValueType>();
             }
             
             auto end = std::chrono::high_resolution_clock::now();
