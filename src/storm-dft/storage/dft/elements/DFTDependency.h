@@ -14,7 +14,7 @@ namespace storm {
         protected:
             ValueType mProbability;
             DFTGatePointer mTriggerEvent;
-            DFTBEPointer mDependentEvent;
+            std::vector<DFTBEPointer> mDependentEvents;
 
         public:
             DFTDependency(size_t id, std::string const& name, ValueType probability) :
@@ -30,7 +30,7 @@ namespace storm {
             }
 
             void setDependentEvent(DFTBEPointer const& dependentEvent) {
-                mDependentEvent = dependentEvent;
+                mDependentEvents = { dependentEvent };
             }
 
 
@@ -43,9 +43,9 @@ namespace storm {
                 return mTriggerEvent;
             }
 
-            DFTBEPointer const& dependentEvent() const {
-                STORM_LOG_ASSERT(mDependentEvent, "Dependent element does not exists.");
-                return mDependentEvent;
+            std::vector<DFTBEPointer> const& dependentEvents() const {
+                STORM_LOG_ASSERT(mDependentEvents.size() > 0, "Dependent element does not exists.");
+                return mDependentEvents;
             }
 
             DFTElementType type() const override {
@@ -69,9 +69,11 @@ namespace storm {
 
             virtual std::vector<size_t> independentUnit() const override {
                 std::set<size_t> unit = {this->mId};
-                mDependentEvent->extendUnit(unit);
-                if(unit.count(mTriggerEvent->id()) != 0) {
-                    return {};
+                for(auto const& depEv : mDependentEvents) {
+                    depEv->extendUnit(unit);
+                    if(unit.count(mTriggerEvent->id()) != 0) {
+                        return {};
+                    }
                 }
                 return std::vector<size_t>(unit.begin(), unit.end());
             }
@@ -83,7 +85,10 @@ namespace storm {
                     // Parent in the subdft, ie it is *not* a subdft
                     return;
                 }
-                mDependentEvent->extendSubDft(elemsInSubtree, parentsOfSubRoot, blockParents, sparesAsLeaves);
+                for (auto const& depEv : mDependentEvents) {
+                    depEv->extendSubDft(elemsInSubtree, parentsOfSubRoot, blockParents, sparesAsLeaves);
+                    if (elemsInSubtree.empty()) return;
+                }
                 if(elemsInSubtree.empty()) {
                     // Parent in the subdft, ie it is *not* a subdft
                     return;
@@ -95,7 +100,11 @@ namespace storm {
             virtual std::string toString() const override {
                 std::stringstream stream;
                 bool fdep = storm::utility::isOne(mProbability);
-                stream << "{" << this->name() << "} " << (fdep ? "FDEP" : "PDEP") << "(" << mTriggerEvent->name() << " => " << mDependentEvent->name() << ")";
+                stream << "{" << this->name() << "} " << (fdep ? "FDEP" : "PDEP") << "(" << mTriggerEvent->name() << " => { ";
+                for(auto const& depEv : mDependentEvents) {
+                    stream << depEv->name() << " ";
+                }
+                stream << "}";
                 if (!fdep) {
                     stream << " with probability " << mProbability;
                 }

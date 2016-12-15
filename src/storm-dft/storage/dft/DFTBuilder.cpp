@@ -268,7 +268,9 @@ namespace storm {
                 {
                     DFTDependencyPointer dependency = std::static_pointer_cast<DFTDependency<ValueType>>(element);
                     children.push_back(dependency->triggerEvent()->name());
-                    children.push_back(dependency->dependentEvent()->name());
+                    for(auto const& depEv : dependency->dependentEvents()) {
+                        children.push_back(depEv->name());
+                    }
                     addDepElement(element->name(), children, dependency->probability());
                     break;
                 }

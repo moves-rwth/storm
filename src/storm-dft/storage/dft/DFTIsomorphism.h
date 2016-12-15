@@ -258,7 +258,8 @@ namespace storage {
         }
         
         void colourize(std::shared_ptr<const DFTDependency<ValueType>> const& dep) {
-            depColour[dep->id()] = std::pair<ValueType, ValueType>(dep->probability(), dep->dependentEvent()->activeFailureRate());
+            // TODO this can be improved for n-ary dependencies.
+            depColour[dep->id()] = std::pair<ValueType, ValueType>(dep->probability(), dep->dependentEvents()[0]->activeFailureRate());
         }
         
         void colourize(std::shared_ptr<const DFTRestriction<ValueType>> const& restr) {
@@ -486,10 +487,26 @@ namespace storage {
                     STORM_LOG_ASSERT(dft.isDependency(indexpair.second), "Element is no dependency.");
                     auto const& lDep = dft.getDependency(indexpair.first);
                     auto const& rDep = dft.getDependency(indexpair.second);
+
                     if(bijection.at(lDep->triggerEvent()->id()) != rDep->triggerEvent()->id()) {
                         return false;
-                    } 
-                    if(bijection.at(lDep->dependentEvent()->id()) != rDep->dependentEvent()->id()) {
+                    }
+
+                    std::set<size_t> dependenciesLeftMapped;
+                    for (auto const& depEv : lDep->dependentEvents()) {
+                        if (bleft.has(depEv->id())) {
+                            dependenciesLeftMapped.insert(bijection.at(depEv->id()));
+                        }
+                    }
+
+                    std::set<size_t> dependenciesRight;
+                    for (auto const& depEv : rDep->dependentEvents()) {
+                        if (bright.has(depEv->id())) {
+                            dependenciesRight.insert(depEv->id());
+                        }
+                    }
+
+                    if (dependenciesLeftMapped != dependenciesRight) {
                         return false;
                     }
                 } else if(dft.isRestriction(indexpair.first)) {

@@ -174,7 +174,8 @@ namespace storm {
                 std::shared_ptr<DFTDependency<ValueType> const> dependency = getDependency(idDependency);
                 visitQueue.push(dependency->id());
                 visitQueue.push(dependency->triggerEvent()->id());
-                visitQueue.push(dependency->dependentEvent()->id());
+                STORM_LOG_THROW(dependency->dependentEvents().size() == 1, storm::exceptions::NotSupportedException, "Direct state generation does not support n-ary dependencies. Consider rewriting them by setting the binary dependency flag.");
+                visitQueue.push(dependency->dependentEvents()[0]->id());
             }
             stateIndex = performStateGenerationInfoDFS(generationInfo, visitQueue, visited, stateIndex);
 

@@ -38,7 +38,8 @@ namespace storm {
             }
             
             bool addIngoingDependency(DFTDependencyPointer const& e) {
-                STORM_LOG_ASSERT(e->dependentEvent()->id() == this->id(), "Ids do not match.");
+                // TODO write this assertion for n-ary dependencies, probably by addign a method to the dependencies to support this.
+                //STORM_LOG_ASSERT(e->dependentEvent()->id() == this->id(), "Ids do not match.");
                 if(std::find(mIngoingDependencies.begin(), mIngoingDependencies.end(), e) != mIngoingDependencies.end()) {
                     return false;
                 }

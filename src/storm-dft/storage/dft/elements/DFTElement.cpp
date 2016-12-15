@@ -14,8 +14,10 @@ namespace storm {
             }
             
             // Check that no outgoing dependencies can be triggered anymore
+            // Notice that n-ary dependencies are supported via rewriting them during build-time
             for (DFTDependencyPointer dependency : mOutgoingDependencies) {
-                if (state.isOperational(dependency->dependentEvent()->id()) && state.isOperational(dependency->triggerEvent()->id())) {
+                assert(dependency->dependentEvents().size() == 1);
+                if (state.isOperational(dependency->dependentEvents()[0]->id()) && state.isOperational(dependency->triggerEvent()->id())) {
                     return false;
                 }
             }
