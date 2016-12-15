@@ -91,7 +91,9 @@ namespace storm {
 
             // Set layout info
             for (auto& elem : mElements) {
-                dft.setElementLayoutInfo(elem.second->id(), mLayoutInfo.at(elem.first));
+                if(mLayoutInfo.count(elem.first) > 0) {
+                    dft.setElementLayoutInfo(elem.second->id(), mLayoutInfo.at(elem.first));
+                }
             }
 
             return dft;
