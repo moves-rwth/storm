@@ -25,9 +25,11 @@ namespace storm {
                     if (itFind != mElements.end()) {
                         // Child found
                         DFTElementPointer childElement = itFind->second;
-                        STORM_LOG_ASSERT(!childElement->isDependency(), "Child is dependency.");
-                        gate->pushBackChild(childElement);
-                        childElement->addParent(gate);
+                        STORM_LOG_TRACE("Ignore functional dependency " << child << " in gate " << gate->name());
+                        if(!childElement->isDependency()) {
+                            gate->pushBackChild(childElement);
+                            childElement->addParent(gate);
+                        }
                     } else {
                         // Child not found -> find first dependent event to assure that child is dependency
                         // TODO: Not sure whether this is the intended behaviour?
