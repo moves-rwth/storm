@@ -425,7 +425,6 @@ namespace storm {
                     uint64_t tnextcl = builder.addImmediateTransition(getFailPriority(dftSpare), 0.0, dftSpare->name() + "_next_claim_" + std::to_string(j));
                     builder.setTransitionLayoutInfo(tnextcl, storm::gspn::LayoutInfo(xcenter-3.0+j*14.0, ycenter+5.0));
                     builder.addInputArc(cucNodes.back(), tnextcl);
-                    builder.addOutputArc(tnextcl, cucNodes.back());
                     builder.addInputArc(failedNodes.at(child->id()), tnextcl);
                     builder.addOutputArc(tnextcl, failedNodes.at(child->id()));
                     nextclTransitions.push_back(tnextcl);
@@ -434,6 +433,7 @@ namespace storm {
                         
                         uint64_t tactive = builder.addImmediateTransition(defaultPriority+1, 0.0, dftSpare->name() + "_activate_" + std::to_string(j) + "_" +  std::to_string(k));
                         builder.addInputArc(cucNodes.back(), tactive);
+                        builder.addOutputArc(tactive, cucNodes.back());
                         builder.addInputArc(spareActive, tactive);
                         builder.addOutputArc(tactive, activeNodes.at(k));
                         builder.addInhibitionArc(activeNodes.at(k), tactive);
