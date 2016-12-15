@@ -31,7 +31,7 @@ namespace storm {
             using storm::settings::modules::AbstractionSettings;
             
             template <storm::dd::DdType DdType, typename ValueType>
-            JaniMenuGameAbstractor<DdType, ValueType>::JaniMenuGameAbstractor(storm::jani::Model const& model, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory) : model(model), smtSolverFactory(smtSolverFactory), abstractionInformation(model.getManager(), model.getAllExpressionVariables(), smtSolverFactory->create(model.getManager())), automata(), initialStateAbstractor(abstractionInformation, {model.getInitialStatesExpression()}, this->smtSolverFactory), validBlockAbstractor(abstractionInformation, smtSolverFactory), currentGame(nullptr), refinementPerformed(false), invalidBlockDetectionStrategy(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getInvalidBlockDetectionStrategy()) {
+            JaniMenuGameAbstractor<DdType, ValueType>::JaniMenuGameAbstractor(storm::jani::Model const& model, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory) : model(model), smtSolverFactory(smtSolverFactory), abstractionInformation(model.getManager(), model.getAllExpressionVariables(), smtSolverFactory->create(model.getManager())), automata(), initialStateAbstractor(abstractionInformation, {model.getInitialStatesExpression()}, this->smtSolverFactory), validBlockAbstractor(abstractionInformation, smtSolverFactory), currentGame(nullptr), refinementPerformed(false) {
                 
                 // For now, we assume that there is a single module. If the program has more than one module, it needs
                 // to be flattened before the procedure.
@@ -60,8 +60,9 @@ namespace storm {
                 abstractionInformation.createEncodingVariables(static_cast<uint_fast64_t>(std::ceil(std::log2(totalNumberOfCommands))), 100, static_cast<uint_fast64_t>(std::ceil(std::log2(maximalUpdateCount))));
                 
                 // For each module of the concrete program, we create an abstract counterpart.
+                bool useDecomposition = storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isUseDecompositionSet();
                 for (auto const& automaton : model.getAutomata()) {
-                    automata.emplace_back(automaton, abstractionInformation, this->smtSolverFactory, invalidBlockDetectionStrategy);
+                    automata.emplace_back(automaton, abstractionInformation, this->smtSolverFactory, useDecomposition);
                 }
                 
                 // Retrieve the edge-update probability ADD, so we can multiply it with the abstraction BDD later.
@@ -135,15 +136,6 @@ namespace storm {
             std::unique_ptr<MenuGame<DdType, ValueType>> JaniMenuGameAbstractor<DdType, ValueType>::buildGame() {
                 // As long as there is only one module, we only build its game representation.
                 GameBddResult<DdType> game = automata.front().abstract();
-                
-                if (invalidBlockDetectionStrategy == AbstractionSettings::InvalidBlockDetectionStrategy::Global) {
-                    auto validBlockStart = std::chrono::high_resolution_clock::now();
-                    storm::dd::Bdd<DdType> validBlocks = validBlockAbstractor.getValidBlocks();
-                    // Cut away all invalid successor blocks.
-                    game.bdd &= validBlocks.swapVariables(abstractionInformation.getExtendedSourceSuccessorVariablePairs());
-                    auto validBlockEnd = std::chrono::high_resolution_clock::now();
-                    STORM_LOG_DEBUG("Global invalid block detection completed in " << std::chrono::duration_cast<std::chrono::milliseconds>(validBlockEnd - validBlockStart).count() << "ms.");
-                }
                 
                 // Construct a set of all unnecessary variables, so we can abstract from it.
                 std::set<storm::expressions::Variable> variablesToAbstract(abstractionInformation.getPlayer1VariableSet(abstractionInformation.getPlayer1VariableCount()));

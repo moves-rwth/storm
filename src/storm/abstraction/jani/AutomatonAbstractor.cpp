@@ -23,17 +23,12 @@ namespace storm {
             using storm::settings::modules::AbstractionSettings;
             
             template <storm::dd::DdType DdType, typename ValueType>
-            AutomatonAbstractor<DdType, ValueType>::AutomatonAbstractor(storm::jani::Automaton const& automaton, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, storm::settings::modules::AbstractionSettings::InvalidBlockDetectionStrategy invalidBlockDetectionStrategy) : smtSolverFactory(smtSolverFactory), abstractionInformation(abstractionInformation), edges(), automaton(automaton) {
-                
-                bool allowInvalidSuccessorsInCommands = false;
-                if (invalidBlockDetectionStrategy == AbstractionSettings::InvalidBlockDetectionStrategy::None || invalidBlockDetectionStrategy == AbstractionSettings::InvalidBlockDetectionStrategy::Global) {
-                    allowInvalidSuccessorsInCommands = true;
-                }
+            AutomatonAbstractor<DdType, ValueType>::AutomatonAbstractor(storm::jani::Automaton const& automaton, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool useDecomposition) : smtSolverFactory(smtSolverFactory), abstractionInformation(abstractionInformation), edges(), automaton(automaton) {
                 
                 // For each concrete command, we create an abstract counterpart.
                 uint64_t edgeId = 0;
                 for (auto const& edge : automaton.getEdges()) {
-                    edges.emplace_back(edgeId, edge, abstractionInformation, smtSolverFactory, allowInvalidSuccessorsInCommands);
+                    edges.emplace_back(edgeId, edge, abstractionInformation, smtSolverFactory, useDecomposition);
                     ++edgeId;
                 }
             }

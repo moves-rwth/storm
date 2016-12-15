@@ -56,9 +56,9 @@ namespace storm {
                  * @param edge The concrete edge for which to build the abstraction.
                  * @param abstractionInformation An object holding information about the abstraction such as predicates and BDDs.
                  * @param smtSolverFactory A factory that is to be used for creating new SMT solvers.
-                 * @param allowInvalidSuccessors A flag indicating whether it is allowed to enumerate invalid successors.
+                 * @param useDecomposition A flag indicating whether to use an edge decomposition during abstraction.
                  */
-                EdgeAbstractor(uint64_t edgeId, storm::jani::Edge const& edge, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool allowInvalidSuccessors);
+                EdgeAbstractor(uint64_t edgeId, storm::jani::Edge const& edge, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool useDecomposition);
                                
                 /*!
                  * Refines the abstract edge with the given predicates.
@@ -149,7 +149,7 @@ namespace storm {
                  * @param model The model to translate.
                  * @return The source state encoded as a DD.
                  */
-                storm::dd::Bdd<DdType> getSourceStateBdd(storm::solver::SmtSolver::ModelReference const& model) const;
+                storm::dd::Bdd<DdType> getSourceStateBdd(storm::solver::SmtSolver::ModelReference const& model, std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>> const& variablePredicates) const;
 
                 /*!
                  * Translates the given model to a distribution over successor states.
@@ -157,12 +157,22 @@ namespace storm {
                  * @param model The model to translate.
                  * @return The source state encoded as a DD.
                  */
-                storm::dd::Bdd<DdType> getDistributionBdd(storm::solver::SmtSolver::ModelReference const& model) const;
+                storm::dd::Bdd<DdType> getDistributionBdd(storm::solver::SmtSolver::ModelReference const& model, std::vector<std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>>> const& variablePredicates) const;
                 
                 /*!
                  * Recomputes the cached BDD. This needs to be triggered if any relevant predicates change.
                  */
                 void recomputeCachedBdd();
+
+                /*!
+                 * Recomputes the cached BDD without the decomposition\.
+                 */
+                void recomputeCachedBddWithoutDecomposition();
+
+                /*!
+                 * Recomputes the cached BDD using the decomposition.
+                 */
+                void recomputeCachedBddWithDecomposition();
 
                 /*!
                  * Computes the missing state identities.
@@ -232,11 +242,9 @@ namespace storm {
                 // All relevant decision variables over which to perform AllSat.
                 std::vector<storm::expressions::Variable> decisionVariables;
                 
-                // A flag indicating whether it is allowed to enumerate invalid successors. Invalid successors may be
-                // enumerated if the predicates that are (indirectly) related to an assignment variable are not
-                // considered as source predicates.
-                bool allowInvalidSuccessors;
-                
+                // A flag indicating whether to use the decomposition when abstracting.
+                bool useDecomposition;
+
                 // A flag indicating whether the computation of bottom states can be skipped (for example, if the bottom
                 // states become empty at some point).
                 bool skipBottomStates;

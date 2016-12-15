@@ -19,7 +19,6 @@ namespace storm {
             const std::string AbstractionSettings::splitAllOptionName = "split-all";
             const std::string AbstractionSettings::precisionOptionName = "precision";
             const std::string AbstractionSettings::pivotHeuristicOptionName = "pivot-heuristic";
-            const std::string AbstractionSettings::invalidBlockStrategyOptionName = "invalid-blocks";
             const std::string AbstractionSettings::reuseQualitativeResultsOptionName = "reuse-qualitative";
             const std::string AbstractionSettings::reuseQuantitativeResultsOptionName = "reuse-quantitative";
             const std::string AbstractionSettings::reuseAllResultsOptionName = "reuse-all";
@@ -38,10 +37,6 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, pivotHeuristicOptionName, true, "Sets the pivot selection heuristic.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of an available heuristic. Available are: 'nearest-max-dev', 'most-prob-path' and 'max-weighted-dev'.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(pivotHeuristic)).setDefaultValueString("nearest-max-dev").build()).build());
 
-                std::vector<std::string> invalidBlockStrategies = {"none", "local", "global"};
-                this->addOption(storm::settings::OptionBuilder(moduleName, invalidBlockStrategyOptionName, true, "Sets the strategy to detect invalid blocks.")
-                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of an available strategy. Available are: 'none', 'local' and 'global'.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(invalidBlockStrategies)).setDefaultValueString("local").build()).build());
-                
                 this->addOption(storm::settings::OptionBuilder(moduleName, reuseQualitativeResultsOptionName, true, "Sets whether to reuse qualitative results.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, reuseQuantitativeResultsOptionName, true, "Sets whether to reuse quantitative results.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, reuseAllResultsOptionName, true, "Sets whether to reuse all results.").build());
@@ -86,18 +81,6 @@ namespace storm {
                     return AbstractionSettings::PivotSelectionHeuristic::MaxWeightedDeviation;
                 }
                 STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown pivot selection heuristic '" << heuristicName << "'.");
-            }
-            
-            AbstractionSettings::InvalidBlockDetectionStrategy AbstractionSettings::getInvalidBlockDetectionStrategy() const {
-                std::string strategyName = this->getOption(invalidBlockStrategyOptionName).getArgumentByName("name").getValueAsString();
-                if (strategyName == "none") {
-                    return AbstractionSettings::InvalidBlockDetectionStrategy::None;
-                } else if (strategyName == "local") {
-                    return AbstractionSettings::InvalidBlockDetectionStrategy::Local;
-                } else if (strategyName == "global") {
-                    return AbstractionSettings::InvalidBlockDetectionStrategy::Global;
-                }
-                STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown invalid block detection strategy '" << strategyName << "'.");
             }
             
             bool AbstractionSettings::isReuseQualitativeResultsSet() const {

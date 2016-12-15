@@ -54,10 +54,9 @@ namespace storm {
                  * @param command The concrete command for which to build the abstraction.
                  * @param abstractionInformation An object holding information about the abstraction such as predicates and BDDs.
                  * @param smtSolverFactory A factory that is to be used for creating new SMT solvers.
-                 * @param allowInvalidSuccessors A flag indicating whether it is allowed to enumerate invalid successors.
                  * @param useDecomposition A flag indicating whether to use the decomposition during abstraction.
                  */
-                CommandAbstractor(storm::prism::Command const& command, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool allowInvalidSuccessors, bool useDecomposition);
+                CommandAbstractor(storm::prism::Command const& command, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool useDecomposition);
                                
                 /*!
                  * Refines the abstract command with the given predicates.
@@ -164,9 +163,14 @@ namespace storm {
                 void recomputeCachedBdd();
                 
                 /*!
-                 * Recomputes the cached BDD using a decomposition. This needs to be triggered if any relevant predicates change.
+                 * Recomputes the cached BDD without using the decomposition.
                  */
-                void recomputeCachedBddUsingDecomposition();
+                void recomputeCachedBddWithoutDecomposition();
+                
+                /*!
+                 * Recomputes the cached BDD using th decomposition.
+                 */
+                void recomputeCachedBddWithDecomposition();
 
                 /*!
                  * Computes the missing state identities.
@@ -232,11 +236,6 @@ namespace storm {
                 
                 // All relevant decision variables over which to perform AllSat.
                 std::vector<storm::expressions::Variable> decisionVariables;
-                
-                // A flag indicating whether it is allowed to enumerate invalid successors. Invalid successors may be
-                // enumerated if the predicates that are (indirectly) related to an assignment variable are not
-                // considered as source predicates.
-                bool allowInvalidSuccessors;
                 
                 // A flag indicating whether to use the decomposition when abstracting.
                 bool useDecomposition;

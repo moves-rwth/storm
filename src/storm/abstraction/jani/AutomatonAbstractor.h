@@ -33,8 +33,9 @@ namespace storm {
                  * @param automaton The concrete automaton for which to build the abstraction.
                  * @param abstractionInformation An object holding information about the abstraction such as predicates and BDDs.
                  * @param smtSolverFactory A factory that is to be used for creating new SMT solvers.
+                 * @param useDecomposition A flag indicating whether to use the decomposition during abstraction.
                  */
-                AutomatonAbstractor(storm::jani::Automaton const& automaton, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, storm::settings::modules::AbstractionSettings::InvalidBlockDetectionStrategy invalidBlockDetectionStrategy);
+                AutomatonAbstractor(storm::jani::Automaton const& automaton, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool useDecomposition);
                 
                 AutomatonAbstractor(AutomatonAbstractor const&) = default;
                 AutomatonAbstractor& operator=(AutomatonAbstractor const&) = default;

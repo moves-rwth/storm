@@ -36,10 +36,9 @@ namespace storm {
                  * @param module The concrete module for which to build the abstraction.
                  * @param abstractionInformation An object holding information about the abstraction such as predicates and BDDs.
                  * @param smtSolverFactory A factory that is to be used for creating new SMT solvers.
-                 * @param invalidBlockDetectionStrategy The strategy to use for detecting invalid blocks.
                  * @param useDecomposition A flag that governs whether to use the decomposition in the abstraction.
                  */
-                ModuleAbstractor(storm::prism::Module const& module, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, storm::settings::modules::AbstractionSettings::InvalidBlockDetectionStrategy invalidBlockDetectionStrategy, bool useDecomposition);
+                ModuleAbstractor(storm::prism::Module const& module, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool useDecomposition);
                 
                 ModuleAbstractor(ModuleAbstractor const&) = default;
                 ModuleAbstractor& operator=(ModuleAbstractor const&) = default;

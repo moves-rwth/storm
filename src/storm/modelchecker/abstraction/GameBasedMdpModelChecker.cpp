@@ -269,7 +269,7 @@ namespace storm {
                 // Construct an ADD holding the initial values of initial states and check it for validity.
                 storm::dd::Add<Type, ValueType> initialStateValueAdd = initialStatesAdd * result.values;
                 // For min, we can only require a non-zero count of *at most* one, because the result may actually be 0.
-                STORM_LOG_ASSERT((!min || initialStateValueAdd.getNonZeroCount() == 1) && (min || initialStateValueAdd.getNonZeroCount() <= 1), "Wrong number of results for initial states. Expected " << (min ? "<= 1" : "1") << ", but got " << initialStateValueAdd.getNonZeroCount() << ".");
+                STORM_LOG_ASSERT((!min && initialStateValueAdd.getNonZeroCount() == 1) || (min && initialStateValueAdd.getNonZeroCount() <= 1), "Wrong number of results for initial states. Expected " << (min ? "<= 1" : "1") << ", but got " << initialStateValueAdd.getNonZeroCount() << ".");
                 result.initialStateValue = result.initialStateValue = initialStateValueAdd.getMax();
                 
                 result.player1Strategy = combinedPlayer1QualitativeStrategies.existsAbstract(game.getPlayer1Variables()).ite(combinedPlayer1QualitativeStrategies, result.player1Strategy);

@@ -23,8 +23,8 @@ namespace storm {
     namespace abstraction {
         namespace prism {
             template <storm::dd::DdType DdType, typename ValueType>
-            CommandAbstractor<DdType, ValueType>::CommandAbstractor(storm::prism::Command const& command, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool allowInvalidSuccessors, bool useDecomposition) : smtSolver(smtSolverFactory->create(abstractionInformation.getExpressionManager())), abstractionInformation(abstractionInformation), command(command), localExpressionInformation(abstractionInformation), evaluator(abstractionInformation.getExpressionManager()), relevantPredicatesAndVariables(), cachedDd(abstractionInformation.getDdManager().getBddZero(), 0), decisionVariables(), allowInvalidSuccessors(allowInvalidSuccessors), useDecomposition(useDecomposition), skipBottomStates(false), forceRecomputation(true), abstractGuard(abstractionInformation.getDdManager().getBddZero()), bottomStateAbstractor(abstractionInformation, {!command.getGuardExpression()}, smtSolverFactory) {
-
+            CommandAbstractor<DdType, ValueType>::CommandAbstractor(storm::prism::Command const& command, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool useDecomposition) : smtSolver(smtSolverFactory->create(abstractionInformation.getExpressionManager())), abstractionInformation(abstractionInformation), command(command), localExpressionInformation(abstractionInformation), evaluator(abstractionInformation.getExpressionManager()), relevantPredicatesAndVariables(), cachedDd(abstractionInformation.getDdManager().getBddZero(), 0), decisionVariables(), useDecomposition(useDecomposition), skipBottomStates(false), forceRecomputation(true), abstractGuard(abstractionInformation.getDdManager().getBddZero()), bottomStateAbstractor(abstractionInformation, {!command.getGuardExpression()}, smtSolverFactory) {
+                
                 // Make the second component of relevant predicates have the right size.
                 relevantPredicatesAndVariables.second.resize(command.getNumberOfUpdates());
                 
@@ -44,7 +44,7 @@ namespace storm {
                 for (auto predicateIndex : predicates) {
                     localExpressionInformation.addExpression(predicateIndex);
                 }
-                                
+                
                 // Next, we check whether there is work to be done by recomputing the relevant predicates and checking
                 // whether they changed.
                 std::pair<std::set<uint_fast64_t>, std::vector<std::set<uint_fast64_t>>> newRelevantPredicates = this->computeRelevantPredicates();
@@ -69,12 +69,21 @@ namespace storm {
             std::map<storm::expressions::Variable, storm::expressions::Expression> CommandAbstractor<DdType, ValueType>::getVariableUpdates(uint64_t auxiliaryChoice) const {
                 return command.get().getUpdate(auxiliaryChoice).getAsVariableToExpressionMap();
             }
-
+            
             template <storm::dd::DdType DdType, typename ValueType>
-            void CommandAbstractor<DdType, ValueType>::recomputeCachedBddUsingDecomposition() {
+            void CommandAbstractor<DdType, ValueType>::recomputeCachedBdd() {
+                if (useDecomposition) {
+                    recomputeCachedBddWithDecomposition();
+                } else {
+                    recomputeCachedBddWithoutDecomposition();
+                }
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
+            void CommandAbstractor<DdType, ValueType>::recomputeCachedBddWithDecomposition() {
                 STORM_LOG_TRACE("Recomputing BDD for command " << command.get() << " using the decomposition.");
                 auto start = std::chrono::high_resolution_clock::now();
-
+                
                 // compute a decomposition of the command
                 //  * start with all relevant blocks: blocks of assignment variables and variables in the rhs of assignments
                 //  * go through all assignments of all updates and merge relevant blocks that are related via an assignment
@@ -87,13 +96,13 @@ namespace storm {
                 for (auto const& update : command.get().getUpdates()) {
                     for (auto const& assignment : update.getAssignments()) {
                         allRelevantBlocks.insert(localExpressionInformation.getBlockIndexOfVariable(assignment.getVariable()));
-
+                        
                         auto rhsVariableBlocks = localExpressionInformation.getBlockIndicesOfVariables(assignment.getExpression().getVariables());
                         allRelevantBlocks.insert(rhsVariableBlocks.begin(), rhsVariableBlocks.end());
                     }
                 }
                 STORM_LOG_TRACE("Found " << allRelevantBlocks.size() << " relevant block(s).");
-
+                
                 // Create a block partition.
                 std::vector<std::set<uint64_t>> relevantBlockPartition;
                 std::map<storm::expressions::Variable, uint64_t> variableToLocalBlockIndex;
@@ -110,7 +119,7 @@ namespace storm {
                 for (auto const& update : command.get().getUpdates()) {
                     for (auto const& assignment : update.getAssignments()) {
                         std::set<storm::expressions::Variable> rhsVariables = assignment.getExpression().getVariables();
-
+                        
                         if (!rhsVariables.empty()) {
                             uint64_t blockToKeep = variableToLocalBlockIndex.at(*rhsVariables.begin());
                             for (auto const& variable : rhsVariables) {
@@ -172,7 +181,7 @@ namespace storm {
                 // if the decomposition has size 1, use the plain technique from before
                 if (relevantBlockPartition.size() == 1) {
                     STORM_LOG_TRACE("Relevant block partition size is one, falling back to regular computation.");
-                    recomputeCachedBdd();
+                    recomputeCachedBddWithoutDecomposition();
                 } else {
                     std::set<storm::expressions::Variable> variablesContainedInGuard = command.get().getGuardExpression().getVariables();
                     
@@ -192,9 +201,9 @@ namespace storm {
                             enumerateAbstractGuard = false;
                         }
                     }
-
+                    
                     uint64_t numberOfSolutions = 0;
-
+                    
                     if (enumerateAbstractGuard) {
                         // otherwise, enumerate the abstract guard so we do this only once
                         std::set<uint64_t> relatedGuardPredicates = localExpressionInformation.getRelatedExpressions(variablesContainedInGuard);
@@ -243,7 +252,7 @@ namespace storm {
                         for (auto const& innerBlock : block) {
                             relevantPredicates.insert(localExpressionInformation.getExpressionBlock(innerBlock).begin(), localExpressionInformation.getExpressionBlock(innerBlock).end());
                         }
-
+                        
                         std::vector<storm::expressions::Variable> transitionDecisionVariables;
                         std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>> sourceVariablesAndPredicates;
                         for (auto const& element : relevantPredicatesAndVariables.first) {
@@ -269,7 +278,7 @@ namespace storm {
                                 }
                             }
                         }
-                    
+                        
                         std::unordered_map<storm::dd::Bdd<DdType>, std::vector<storm::dd::Bdd<DdType>>> sourceToDistributionsMap;
                         numberOfSolutions = 0;
                         smtSolver->allSat(transitionDecisionVariables, [&sourceToDistributionsMap,this,&numberOfSolutions,&sourceVariablesAndPredicates,&destinationVariablesAndPredicates] (storm::solver::SmtSolver::ModelReference const& model) {
@@ -279,21 +288,21 @@ namespace storm {
                         });
                         STORM_LOG_TRACE("Enumerated " << numberOfSolutions << " solutions for block " << blockCounter << ".");
                         numberOfSolutions = 0;
-
+                        
                         // Now we search for the maximal number of choices of player 2 to determine how many DD variables we
                         // need to encode the nondeterminism.
                         uint_fast64_t maximalNumberOfChoices = 0;
                         for (auto const& sourceDistributionsPair : sourceToDistributionsMap) {
                             maximalNumberOfChoices = std::max(maximalNumberOfChoices, static_cast<uint_fast64_t>(sourceDistributionsPair.second.size()));
                         }
-
+                        
                         // We now compute how many variables we need to encode the choices. We add one to the maximal number of
                         // choices to account for a possible transition to a bottom state.
                         uint_fast64_t numberOfVariablesNeeded = static_cast<uint_fast64_t>(std::ceil(std::log2(maximalNumberOfChoices + 1)));
                         
                         // Finally, build overall result.
                         storm::dd::Bdd<DdType> resultBdd = this->getAbstractionInformation().getDdManager().getBddZero();
-
+                        
                         uint_fast64_t sourceStateIndex = 0;
                         for (auto const& sourceDistributionsPair : sourceToDistributionsMap) {
                             STORM_LOG_ASSERT(!sourceDistributionsPair.first.isZero(), "The source BDD must not be empty.");
@@ -311,12 +320,14 @@ namespace storm {
                             STORM_LOG_ASSERT(!resultBdd.isZero(), "The BDD must not be empty.");
                         }
                         usedNondeterminismVariables += numberOfVariablesNeeded;
-
+                        
                         blockBdds.push_back(resultBdd);
                         ++blockCounter;
                     }
                     
-                    smtSolver->pop();
+                    if (enumerateAbstractGuard) {
+                        smtSolver->pop();
+                    }
                     
                     // multiply the results
                     storm::dd::Bdd<DdType> resultBdd = getAbstractionInformation().getDdManager().getBddOne();
@@ -357,7 +368,7 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            void CommandAbstractor<DdType, ValueType>::recomputeCachedBdd() {
+            void CommandAbstractor<DdType, ValueType>::recomputeCachedBddWithoutDecomposition() {
                 STORM_LOG_TRACE("Recomputing BDD for command " << command.get());
                 auto start = std::chrono::high_resolution_clock::now();
                 
@@ -390,7 +401,7 @@ namespace storm {
                     if (!skipBottomStates) {
                         abstractGuard |= sourceDistributionsPair.first;
                     }
-
+                    
                     STORM_LOG_ASSERT(!sourceDistributionsPair.first.isZero(), "The source BDD must not be empty.");
                     STORM_LOG_ASSERT(!sourceDistributionsPair.second.empty(), "The distributions must not be empty.");
                     // We start with the distribution index of 1, becase 0 is reserved for a potential bottom choice.
@@ -436,10 +447,8 @@ namespace storm {
                     assignedVariables.insert(assignedVariable);
                 }
                 
-                if (!allowInvalidSuccessors) {
-                    auto const& predicatesRelatedToAssignedVariable = localExpressionInformation.getRelatedExpressions(assignedVariables);
-                    result.first.insert(predicatesRelatedToAssignedVariable.begin(), predicatesRelatedToAssignedVariable.end());
-                }
+                auto const& predicatesRelatedToAssignedVariable = localExpressionInformation.getRelatedExpressions(assignedVariables);
+                result.first.insert(predicatesRelatedToAssignedVariable.begin(), predicatesRelatedToAssignedVariable.end());
                 
                 return result;
             }
@@ -447,7 +456,7 @@ namespace storm {
             template <storm::dd::DdType DdType, typename ValueType>
             std::pair<std::set<uint_fast64_t>, std::vector<std::set<uint_fast64_t>>> CommandAbstractor<DdType, ValueType>::computeRelevantPredicates() const {
                 std::pair<std::set<uint_fast64_t>, std::vector<std::set<uint_fast64_t>>> result;
-
+                
                 // To start with, all predicates related to the guard are relevant source predicates.
                 result.first = localExpressionInformation.getRelatedExpressions(command.get().getGuardExpression().getVariables());
                 
@@ -525,7 +534,7 @@ namespace storm {
                 
                 for (uint_fast64_t updateIndex = 0; updateIndex < command.get().getNumberOfUpdates(); ++updateIndex) {
                     storm::dd::Bdd<DdType> updateBdd = this->getAbstractionInformation().getDdManager().getBddOne();
-
+                    
                     // Translate block variables for this update into a successor block.
                     for (auto const& variableIndexPair : variablePredicates[updateIndex]) {
                         if (model.getBooleanValue(variableIndexPair.first)) {
@@ -560,27 +569,17 @@ namespace storm {
                     auto updateRelevantIte = relevantPredicatesAndVariables.second[updateIndex].end();
                     
                     storm::dd::Bdd<DdType> updateIdentity = this->getAbstractionInformation().getDdManager().getBddOne();
-                    if (allowInvalidSuccessors) {
-                        for (uint_fast64_t predicateIndex = 0; predicateIndex < this->getAbstractionInformation().getNumberOfPredicates(); ++predicateIndex) {
-                            if (updateRelevantIt == updateRelevantIte || updateRelevantIt->second != predicateIndex) {
-                                updateIdentity &= this->getAbstractionInformation().getPredicateIdentity(predicateIndex);
-                            } else {
-                                ++updateRelevantIt;
-                            }
-                        }
-                    } else {
-                        auto sourceRelevantIt = relevantPredicatesAndVariables.first.begin();
-                        auto sourceRelevantIte = relevantPredicatesAndVariables.first.end();
-                        
-                        // Go through all relevant source predicates. This is guaranteed to be a superset of the set of
-                        // relevant successor predicates for any update.
-                        for (; sourceRelevantIt != sourceRelevantIte; ++sourceRelevantIt) {
-                            // If the predicates do not match, there is a predicate missing, so we need to add its identity.
-                            if (updateRelevantIt == updateRelevantIte || sourceRelevantIt->second != updateRelevantIt->second) {
-                                updateIdentity &= this->getAbstractionInformation().getPredicateIdentity(sourceRelevantIt->second);
-                            } else {
-                                ++updateRelevantIt;
-                            }
+                    auto sourceRelevantIt = relevantPredicatesAndVariables.first.begin();
+                    auto sourceRelevantIte = relevantPredicatesAndVariables.first.end();
+                    
+                    // Go through all relevant source predicates. This is guaranteed to be a superset of the set of
+                    // relevant successor predicates for any update.
+                    for (; sourceRelevantIt != sourceRelevantIte; ++sourceRelevantIt) {
+                        // If the predicates do not match, there is a predicate missing, so we need to add its identity.
+                        if (updateRelevantIt == updateRelevantIte || sourceRelevantIt->second != updateRelevantIt->second) {
+                            updateIdentity &= this->getAbstractionInformation().getPredicateIdentity(sourceRelevantIt->second);
+                        } else {
+                            ++updateRelevantIt;
                         }
                     }
                     
@@ -592,48 +591,31 @@ namespace storm {
             template <storm::dd::DdType DdType, typename ValueType>
             storm::dd::Bdd<DdType> CommandAbstractor<DdType, ValueType>::computeMissingGlobalIdentities() const {
                 storm::dd::Bdd<DdType> result = this->getAbstractionInformation().getDdManager().getBddOne();
-
-                if (allowInvalidSuccessors) {
-                    auto allRelevantIt = allRelevantPredicates.cbegin();
-                    auto allRelevantIte = allRelevantPredicates.cend();
-                    
-                    for (uint_fast64_t predicateIndex = 0; predicateIndex < this->getAbstractionInformation().getNumberOfPredicates(); ++predicateIndex) {
-                        if (allRelevantIt == allRelevantIte || *allRelevantIt != predicateIndex) {
-                            result &= this->getAbstractionInformation().getPredicateIdentity(predicateIndex);
-                        } else {
-                            ++allRelevantIt;
-                        }
-                    }
-                } else {
-                    auto relevantIt = relevantPredicatesAndVariables.first.begin();
-                    auto relevantIte = relevantPredicatesAndVariables.first.end();
-                    
-                    for (uint_fast64_t predicateIndex = 0; predicateIndex < this->getAbstractionInformation().getNumberOfPredicates(); ++predicateIndex) {
-                        if (relevantIt == relevantIte || relevantIt->second != predicateIndex) {
-                            result &= this->getAbstractionInformation().getPredicateIdentity(predicateIndex);
-                        } else {
-                            ++relevantIt;
-                        }
+                
+                auto relevantIt = relevantPredicatesAndVariables.first.begin();
+                auto relevantIte = relevantPredicatesAndVariables.first.end();
+                
+                for (uint_fast64_t predicateIndex = 0; predicateIndex < this->getAbstractionInformation().getNumberOfPredicates(); ++predicateIndex) {
+                    if (relevantIt == relevantIte || relevantIt->second != predicateIndex) {
+                        result &= this->getAbstractionInformation().getPredicateIdentity(predicateIndex);
+                    } else {
+                        ++relevantIt;
                     }
                 }
                 
                 return result;
             }
-
+            
             template <storm::dd::DdType DdType, typename ValueType>
             GameBddResult<DdType> CommandAbstractor<DdType, ValueType>::abstract() {
                 if (forceRecomputation) {
-                    if (useDecomposition) {
-                        this->recomputeCachedBddUsingDecomposition();
-                    } else {
-                        this->recomputeCachedBdd();
-                    }
+                    this->recomputeCachedBdd();
                 } else {
                     cachedDd.bdd &= computeMissingGlobalIdentities();
                 }
                 
                 STORM_LOG_TRACE("Command produces " << cachedDd.bdd.getNonZeroCount() << " transitions.");
-
+                
                 return cachedDd;
             }
             
@@ -641,7 +623,7 @@ namespace storm {
             BottomStateResult<DdType> CommandAbstractor<DdType, ValueType>::getBottomStateTransitions(storm::dd::Bdd<DdType> const& reachableStates, uint_fast64_t numberOfPlayer2Variables) {
                 STORM_LOG_TRACE("Computing bottom state transitions of command " << command.get());
                 BottomStateResult<DdType> result(this->getAbstractionInformation().getDdManager().getBddZero(), this->getAbstractionInformation().getDdManager().getBddZero());
-
+                
                 // If the guard of this command is a predicate, there are not bottom states/transitions.
                 if (skipBottomStates) {
                     STORM_LOG_TRACE("Skipping bottom state computation for this command.");
@@ -657,7 +639,7 @@ namespace storm {
                 if (result.states.isZero()) {
                     skipBottomStates = true;
                 }
-
+                
                 // Now equip all these states with an actual transition to a bottom state.
                 result.transitions = result.states && this->getAbstractionInformation().getAllPredicateIdentities() && this->getAbstractionInformation().getBottomStateBdd(false, false);
                 
@@ -698,7 +680,7 @@ namespace storm {
             template class CommandAbstractor<storm::dd::DdType::CUDD, double>;
             template class CommandAbstractor<storm::dd::DdType::Sylvan, double>;
 #ifdef STORM_HAVE_CARL
-			template class CommandAbstractor<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+            template class CommandAbstractor<storm::dd::DdType::Sylvan, storm::RationalFunction>;
 #endif
         }
     }

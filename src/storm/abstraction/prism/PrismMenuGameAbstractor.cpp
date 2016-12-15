@@ -33,7 +33,7 @@ namespace storm {
             template <storm::dd::DdType DdType, typename ValueType>
             PrismMenuGameAbstractor<DdType, ValueType>::PrismMenuGameAbstractor(storm::prism::Program const& program,
                                                                 std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory)
-            : program(program), smtSolverFactory(smtSolverFactory), abstractionInformation(program.getManager(), program.getAllExpressionVariables(), smtSolverFactory->create(program.getManager())), modules(), initialStateAbstractor(abstractionInformation, {program.getInitialStatesExpression()}, this->smtSolverFactory), validBlockAbstractor(abstractionInformation, smtSolverFactory), currentGame(nullptr), refinementPerformed(false), invalidBlockDetectionStrategy(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getInvalidBlockDetectionStrategy()) {
+            : program(program), smtSolverFactory(smtSolverFactory), abstractionInformation(program.getManager(), program.getAllExpressionVariables(), smtSolverFactory->create(program.getManager())), modules(), initialStateAbstractor(abstractionInformation, {program.getInitialStatesExpression()}, this->smtSolverFactory), validBlockAbstractor(abstractionInformation, smtSolverFactory), currentGame(nullptr), refinementPerformed(false) {
                 
                 // For now, we assume that there is a single module. If the program has more than one module, it needs
                 // to be flattened before the procedure.
@@ -64,7 +64,7 @@ namespace storm {
                 // For each module of the concrete program, we create an abstract counterpart.
                 bool useDecomposition = storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isUseDecompositionSet();
                 for (auto const& module : program.getModules()) {
-                    this->modules.emplace_back(module, abstractionInformation, this->smtSolverFactory, invalidBlockDetectionStrategy, useDecomposition);
+                    this->modules.emplace_back(module, abstractionInformation, this->smtSolverFactory, useDecomposition);
                 }
                 
                 // Retrieve the command-update probability ADD, so we can multiply it with the abstraction BDD later.
@@ -138,16 +138,7 @@ namespace storm {
             std::unique_ptr<MenuGame<DdType, ValueType>> PrismMenuGameAbstractor<DdType, ValueType>::buildGame() {
                 // As long as there is only one module, we only build its game representation.
                 GameBddResult<DdType> game = modules.front().abstract();
-                
-                if (invalidBlockDetectionStrategy == AbstractionSettings::InvalidBlockDetectionStrategy::Global) {
-                    auto validBlockStart = std::chrono::high_resolution_clock::now();
-                    storm::dd::Bdd<DdType> validBlocks = validBlockAbstractor.getValidBlocks();
-                    // Cut away all invalid successor blocks.
-                    game.bdd &= validBlocks.swapVariables(abstractionInformation.getExtendedSourceSuccessorVariablePairs());
-                    auto validBlockEnd = std::chrono::high_resolution_clock::now();
-                    STORM_LOG_DEBUG("Global invalid block detection completed in " << std::chrono::duration_cast<std::chrono::milliseconds>(validBlockEnd - validBlockStart).count() << "ms.");
-                }
-                
+                                
                 // Construct a set of all unnecessary variables, so we can abstract from it.
                 std::set<storm::expressions::Variable> variablesToAbstract(abstractionInformation.getPlayer1VariableSet(abstractionInformation.getPlayer1VariableCount()));
                 auto player2Variables = abstractionInformation.getPlayer2VariableSet(game.numberOfPlayer2Variables);

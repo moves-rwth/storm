@@ -158,9 +158,6 @@ namespace storm {
                 
                 // A flag storing whether a refinement was performed.
                 bool refinementPerformed;
-                
-                // The strategy to use for detecting invalid blocks.
-                storm::settings::modules::AbstractionSettings::InvalidBlockDetectionStrategy invalidBlockDetectionStrategy;
             };
         }
     }
