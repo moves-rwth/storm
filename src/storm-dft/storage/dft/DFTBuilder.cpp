@@ -50,17 +50,29 @@ namespace storm {
                 }
             }
 
-            // Initialize dependencies
-            for (auto& dependency : mDependencies) {
-                DFTGatePointer triggerEvent = std::static_pointer_cast<DFTGate<ValueType>>(mElements[dependency->nameTrigger()]);
-                STORM_LOG_ASSERT(mElements[dependency->nameDependent()]->isBasicElement(), "Dependent element is not BE.");
-                std::shared_ptr<DFTBE<ValueType>> dependentEvent = std::static_pointer_cast<DFTBE<ValueType>>(mElements[dependency->nameDependent()]);
-                dependency->initialize(triggerEvent, dependentEvent);
-                triggerEvent->addOutgoingDependency(dependency);
-                dependentEvent->addIngoingDependency(dependency);
+            for(auto& elem : mDependencyChildNames) {
+                bool first = true;
+                std::vector<std::shared_ptr<DFTBE<ValueType>>> dependencies;
+                for(auto const& childName : elem.second) {
+                    auto itFind = mElements.find(childName);
+                    STORM_LOG_ASSERT(itFind != mElements.end(), "Child '" << childName << "' not found");
+                    DFTElementPointer childElement = itFind->second;
+                    if (!first) {
+                        dependencies.push_back(std::static_pointer_cast<DFTBE<ValueType>>(childElement));
+                    } else {
+                        elem.first->setTriggerElement(std::static_pointer_cast<DFTGate<ValueType>>(childElement));
+                        childElement->addOutgoingDependency(elem.first);
+                    }
+                    first = false;
+                }
+                if (binaryDependencies) {
+                    assert(dependencies.size() == 1);
+                }
+                assert(binaryDependencies);
+                elem.first->setDependentEvent(dependencies[0]);
+                dependencies[0]->addIngoingDependency(elem.first);
             }
-
-
+            
 
             // Sort elements topologically
             // compute rank

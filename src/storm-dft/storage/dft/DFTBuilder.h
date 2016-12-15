@@ -31,6 +31,7 @@ namespace storm {
             std::unordered_map<std::string, DFTElementPointer> mElements;
             std::unordered_map<DFTElementPointer, std::vector<std::string>> mChildNames;
             std::unordered_map<DFTRestrictionPointer, std::vector<std::string>> mRestrictionChildNames;
+            std::unordered_map<DFTDependencyPointer, std::vector<std::string>> mDependencyChildNames;
             std::vector<DFTDependencyPointer> mDependencies;
             std::vector<DFTRestrictionPointer> mRestrictions;
             std::unordered_map<std::string, DFTLayoutInfo> mLayoutInfo;
@@ -101,7 +102,7 @@ namespace storm {
 
                 //TODO Matthias: collect constraints for SMT solving
                 //0 <= probability <= 1
-                if (!storm::utility::isOne(probability) && children.size() > 2) {
+                if (binaryDependencies && !storm::utility::isOne(probability) && children.size() > 2) {
                     // Introduce additional element for first capturing the proabilistic dependency
                     std::string nameAdditional = name + "_additional";
                     addBasicElement(nameAdditional, storm::utility::zero<ValueType>(), storm::utility::zero<ValueType>());
@@ -114,17 +115,25 @@ namespace storm {
                     return true;
                 } else {
                     // Add dependencies
-                    for (size_t i = 1; i < children.size(); ++i) {
-                        std::string nameDep = name + "_" + std::to_string(i);
-                        if(mElements.count(nameDep) != 0) {
-                            // Element with that name already exists.
-                            STORM_LOG_ERROR("Element with name: " << nameDep << " already exists.");
-                            return false;
+                    if(binaryDependencies) {
+                        for (size_t i = 1; i < children.size(); ++i) {
+                            std::string nameDep = name + "_" + std::to_string(i);
+                            if (mElements.count(nameDep) != 0) {
+                                // Element with that name already exists.
+                                STORM_LOG_ERROR("Element with name: " << nameDep << " already exists.");
+                                return false;
+                            }
+                            STORM_LOG_ASSERT(storm::utility::isOne(probability) || children.size() == 2,
+                                             "PDep with multiple children supported.");
+                            DFTDependencyPointer element = std::make_shared<DFTDependency<ValueType>>(mNextId++,
+                                                                                                      nameDep,
+                                                                                                      probability);
+                            mElements[element->name()] = element;
+                            mDependencyChildNames[element] = {trigger, children[i]};
+                            mDependencies.push_back(element);
                         }
-                        STORM_LOG_ASSERT(storm::utility::isOne(probability) || children.size() == 2, "PDep with multiple children supported.");
-                        DFTDependencyPointer element = std::make_shared<DFTDependency<ValueType>>(mNextId++, nameDep, trigger, children[i], probability);
-                        mElements[element->name()] = element;
-                        mDependencies.push_back(element);
+                    } else {
+
                     }
                     return true;
                 }
@@ -213,6 +222,8 @@ namespace storm {
             bool pandDefaultInclusive;
             // If true, the standard gate adders make a pand inclusive, and exclusive otherwise.
             bool porDefaultInclusive;
+
+            bool binaryDependencies;
             
         };
     }

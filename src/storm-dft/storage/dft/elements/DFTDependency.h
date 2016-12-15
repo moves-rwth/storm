@@ -12,34 +12,27 @@ namespace storm {
             using DFTBEPointer = std::shared_ptr<DFTBE<ValueType>>;
             
         protected:
-            std::string mNameTrigger;
-            std::string mNameDependent;
             ValueType mProbability;
             DFTGatePointer mTriggerEvent;
             DFTBEPointer mDependentEvent;
 
         public:
-            DFTDependency(size_t id, std::string const& name, std::string const& trigger, std::string const& dependent, ValueType probability) :
-                DFTElement<ValueType>(id, name), mNameTrigger(trigger), mNameDependent(dependent), mProbability(probability)
+            DFTDependency(size_t id, std::string const& name, ValueType probability) :
+                DFTElement<ValueType>(id, name), mProbability(probability)
             {
             }
 
             virtual ~DFTDependency() {}
 
-            void initialize(DFTGatePointer triggerEvent, DFTBEPointer dependentEvent) {
-                STORM_LOG_ASSERT(triggerEvent->name() == mNameTrigger, "Name does not match.");
-                STORM_LOG_ASSERT(dependentEvent->name() == mNameDependent, "Name does not match.");
+            void setTriggerElement(DFTGatePointer const& triggerEvent) {
                 mTriggerEvent = triggerEvent;
+
+            }
+
+            void setDependentEvent(DFTBEPointer const& dependentEvent) {
                 mDependentEvent = dependentEvent;
             }
 
-            std::string nameTrigger() const {
-                return mNameTrigger;
-            }
-
-            std::string nameDependent() const {
-                return mNameDependent;
-            }
 
             ValueType const& probability() const {
                 return mProbability;
