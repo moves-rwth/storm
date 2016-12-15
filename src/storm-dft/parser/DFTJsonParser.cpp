@@ -126,7 +126,7 @@ namespace storm {
                 json position = element.at("position");
                 double x = position.at("x");
                 double y = position.at("y");
-                builder.addLayoutInfo(name, x / 10, y / 10);
+                builder.addLayoutInfo(name, x / 7, y / 7);
                 STORM_LOG_THROW(success, storm::exceptions::FileIoException, "Error while adding element '" << element << "'.");
             }
 

@@ -93,6 +93,12 @@ namespace storm {
                 uint64_t beActive = builder.addPlace(defaultCapacity, isBEActive(dftBE) ? 1 : 0, dftBE->name() + STR_ACTIVATED);
                 activeNodes.emplace(dftBE->id(), beActive);
                 uint64_t beFailed = builder.addPlace(defaultCapacity, 0, dftBE->name() + STR_FAILED);
+
+                double xcenter = mDft.getElementLayoutInfo(dftBE->id()).x;
+                double ycenter = mDft.getElementLayoutInfo(dftBE->id()).y;
+                builder.setPlaceLayoutInfo(beActive, storm::gspn::LayoutInfo(xcenter - 3.0, ycenter));
+                builder.setPlaceLayoutInfo(beFailed, storm::gspn::LayoutInfo(xcenter + 3.0, ycenter));
+
                 
                 uint64_t disabledNode = 0;
                 if (!smart || dftBE->nrRestrictions() > 0) {
@@ -101,17 +107,19 @@ namespace storm {
                 
                 uint64_t unavailableNode = 0;
                 if (!smart || isRepresentative) {
-                    unavailableNode = addUnavailableNode(dftBE);
+                    unavailableNode = addUnavailableNode(dftBE, storm::gspn::LayoutInfo(xcenter+9.0, ycenter));
                 }
                 
                 assert(failedNodes.size() == dftBE->id());
                 failedNodes.push_back(beFailed);
                 uint64_t tActive = builder.addTimedTransition(defaultPriority, dftBE->activeFailureRate(), dftBE->name() + "_activeFailing");
+                builder.setTransitionLayoutInfo(tActive, storm::gspn::LayoutInfo(xcenter, ycenter + 3.0));
                 builder.addInputArc(beActive, tActive);
                 builder.addInhibitionArc(beFailed, tActive);
                 builder.addOutputArc(tActive, beActive);
                 builder.addOutputArc(tActive, beFailed);
                 uint64_t tPassive = builder.addTimedTransition(defaultPriority, dftBE->passiveFailureRate(), dftBE->name() + "_passiveFailing");
+                builder.setTransitionLayoutInfo(tPassive, storm::gspn::LayoutInfo(xcenter, ycenter - 3.0));
                 builder.addInhibitionArc(beActive, tPassive);
                 builder.addInhibitionArc(beFailed, tPassive);
                 builder.addOutputArc(tPassive, beFailed);
@@ -125,15 +133,6 @@ namespace storm {
                     builder.addOutputArc(tActive, unavailableNode);
                     builder.addOutputArc(tPassive, unavailableNode);
                 }
-
-                double xcenter = mDft.getElementLayoutInfo(dftBE->id()).x;
-                double ycenter = mDft.getElementLayoutInfo(dftBE->id()).y;
-
-                builder.setPlaceLayoutInfo(beActive, storm::gspn::LayoutInfo(xcenter - 3.0, ycenter));
-                builder.setPlaceLayoutInfo(beFailed, storm::gspn::LayoutInfo(xcenter + 3.0, ycenter));
-                builder.setTransitionLayoutInfo(tActive, storm::gspn::LayoutInfo(xcenter, ycenter + 3.0));
-                builder.setTransitionLayoutInfo(tPassive, storm::gspn::LayoutInfo(xcenter, ycenter - 3.0));
-                
             }
 			
 			template <typename ValueType>
@@ -141,14 +140,19 @@ namespace storm {
                 uint64_t nodeFailed = builder.addPlace(defaultCapacity, 0, dftAnd->name() + STR_FAILED);
                 assert(failedNodes.size() == dftAnd->id());
                 failedNodes.push_back(nodeFailed);
-                
+
+                double xcenter = mDft.getElementLayoutInfo(dftAnd->id()).x;
+                double ycenter = mDft.getElementLayoutInfo(dftAnd->id()).y;
+                builder.setPlaceLayoutInfo(nodeFailed, storm::gspn::LayoutInfo(xcenter, ycenter-3.0));
+
                 uint64_t unavailableNode = 0;
                 if (isRepresentative) {
-                    unavailableNode = addUnavailableNode(dftAnd);
+                    unavailableNode = addUnavailableNode(dftAnd, storm::gspn::LayoutInfo(xcenter+6.0, ycenter-3.0));
                 }
 
                 
                 uint64_t tAndFailed = builder.addImmediateTransition( getFailPriority(dftAnd)  , 0.0, dftAnd->name() + STR_FAILING );
+                builder.setTransitionLayoutInfo(tAndFailed, storm::gspn::LayoutInfo(xcenter, ycenter+3.0));
                 builder.addInhibitionArc(nodeFailed, tAndFailed);
                 builder.addOutputArc(tAndFailed, nodeFailed);
                 if (isRepresentative) {
@@ -159,13 +163,6 @@ namespace storm {
                     builder.addInputArc(failedNodes[child->id()], tAndFailed);
                     builder.addOutputArc(tAndFailed, failedNodes[child->id()]);
                 }
-
-                double xcenter = mDft.getElementLayoutInfo(dftAnd->id()).x;
-                double ycenter = mDft.getElementLayoutInfo(dftAnd->id()).y;
-
-                builder.setPlaceLayoutInfo(nodeFailed, storm::gspn::LayoutInfo(xcenter, ycenter-3.0));
-                builder.setTransitionLayoutInfo(tAndFailed, storm::gspn::LayoutInfo(xcenter, ycenter+3.0));
-                
 			}
 
 			template <typename ValueType>
@@ -180,12 +177,13 @@ namespace storm {
 
                 uint64_t unavailableNode = 0;
                 if (isRepresentative) {
-                    unavailableNode = addUnavailableNode(dftOr);
+                    unavailableNode = addUnavailableNode(dftOr, storm::gspn::LayoutInfo(xcenter+6.0, ycenter-3.0));
                 }
                 
                 uint64_t i = 0;
                 for (auto const& child : dftOr->children()) {
-                    uint64_t tNodeFailed = builder.addImmediateTransition( getFailPriority(dftOr)  , 0.0, dftOr->name() + STR_FAILING + std::to_string(i) );
+                    uint64_t tNodeFailed = builder.addImmediateTransition( getFailPriority(dftOr), 0.0, dftOr->name() + STR_FAILING + std::to_string(i) );
+                    builder.setTransitionLayoutInfo(tNodeFailed, storm::gspn::LayoutInfo(xcenter-5.0+i*3.0, ycenter+3.0));
                     builder.addInhibitionArc(nodeFailed, tNodeFailed);
                     builder.addOutputArc(tNodeFailed, nodeFailed);
                     if (isRepresentative) {
@@ -195,21 +193,28 @@ namespace storm {
                     builder.addInputArc(failedNodes[child->id()], tNodeFailed);
                     builder.addOutputArc(tNodeFailed, failedNodes[child->id()]);
                     ++i;
-                    builder.setTransitionLayoutInfo(tNodeFailed, storm::gspn::LayoutInfo(xcenter-5+i*3, ycenter+3.0));
                 }
 			}
 			
 			template <typename ValueType>
             void DftToGspnTransformator<ValueType>::drawVOT(std::shared_ptr<storm::storage::DFTVot<ValueType> const> dftVot, bool isRepresentative) {
+                // TODO: finish layouting
                 uint64_t nodeFailed = builder.addPlace(defaultCapacity, 0, dftVot->name() + STR_FAILED);
                 assert(failedNodes.size() == dftVot->id());
                 failedNodes.push_back(nodeFailed);
+
+                double xcenter = mDft.getElementLayoutInfo(dftVot->id()).x;
+                double ycenter = mDft.getElementLayoutInfo(dftVot->id()).y;
+                builder.setPlaceLayoutInfo(nodeFailed, storm::gspn::LayoutInfo(xcenter, ycenter-3.0));
+
                 uint64_t unavailableNode = 0;
                 if (isRepresentative) {
-                    unavailableNode = addUnavailableNode(dftVot);
+                    unavailableNode = addUnavailableNode(dftVot, storm::gspn::LayoutInfo(xcenter+6.0, ycenter-3.0));
                 }
                 
                 uint64_t nodeCollector = builder.addPlace(dftVot->nrChildren(), 0, dftVot->name() + "_collector");
+                builder.setPlaceLayoutInfo(nodeCollector, storm::gspn::LayoutInfo(xcenter, ycenter));
+
                 uint64_t tNodeFailed = builder.addImmediateTransition(getFailPriority(dftVot), 0.0, dftVot->name() + STR_FAILING);
                 builder.addOutputArc(tNodeFailed, nodeFailed);
                 if (isRepresentative) {
@@ -239,24 +244,26 @@ namespace storm {
 
                 double xcenter = mDft.getElementLayoutInfo(dftPand->id()).x;
                 double ycenter = mDft.getElementLayoutInfo(dftPand->id()).y;
-                builder.setPlaceLayoutInfo(nodeFailed, storm::gspn::LayoutInfo(xcenter, ycenter-3.0));
+                builder.setPlaceLayoutInfo(nodeFailed, storm::gspn::LayoutInfo(xcenter+3.0, ycenter-3.0));
 
                 uint64_t unavailableNode = 0;
                 if (!smart || isRepresentative) {
-                    unavailableNode = addUnavailableNode(dftPand);
+                    unavailableNode = addUnavailableNode(dftPand, storm::gspn::LayoutInfo(xcenter+9.0, ycenter-3.0));
                 }
                 
                 uint64_t tNodeFailed = builder.addImmediateTransition(getFailPriority(dftPand), 0.0,  dftPand->name() + STR_FAILING);
+                builder.setTransitionLayoutInfo(tNodeFailed, storm::gspn::LayoutInfo(xcenter+3.0, ycenter+3.0));
                 builder.addInhibitionArc(nodeFailed, tNodeFailed);
                 builder.addOutputArc(tNodeFailed, nodeFailed);
                 if (!smart || isRepresentative) {
                     builder.addOutputArc(tNodeFailed, nodeFailed);
                 }
-                
-                
+
                 if(dftPand->isInclusive()) {
-                    
+                    // Inclusive PAND
                     uint64_t nodeFS = builder.addPlace(defaultCapacity, 0, dftPand->name() + STR_FAILSAVE);
+                    builder.setPlaceLayoutInfo(nodeFS, storm::gspn::LayoutInfo(xcenter-3.0, ycenter-3.0));
+
                     builder.addInhibitionArc(nodeFS, tNodeFailed);
                     for(auto const& child : dftPand->children()) {
                         builder.addInputArc(failedNodes[child->id()], tNodeFailed);
@@ -264,6 +271,8 @@ namespace storm {
                     }
                     for (uint64_t j = 1; j < dftPand->nrChildren(); ++j) {
                         uint64_t tfs = builder.addImmediateTransition(getFailPriority(dftPand), 0.0, dftPand->name() + STR_FAILSAVING + std::to_string(j));
+                        builder.setTransitionLayoutInfo(tfs, storm::gspn::LayoutInfo(xcenter-6.0+j*3.0, ycenter+3.0));
+
                         builder.addInputArc(failedNodes[dftPand->children().at(j)->id()], tfs);
                         builder.addOutputArc(tfs, failedNodes[dftPand->children().at(j)->id()]);
                         builder.addInhibitionArc(failedNodes[dftPand->children().at(j-1)->id()], tfs);
@@ -272,6 +281,7 @@ namespace storm {
                         
                     }
                 } else {
+                    // Exclusive PAND
                     uint64_t fi = 0;
                     uint64_t tn = 0;
                     for(uint64_t j = 0; j < dftPand->nrChildren(); ++j) {
@@ -281,6 +291,7 @@ namespace storm {
                         }
                         if (j != dftPand->nrChildren() - 1) {
                             tn = builder.addImmediateTransition(getFailPriority(dftPand), 0.0, dftPand->name() + STR_FAILING + "_" +std::to_string(j));
+                            builder.setTransitionLayoutInfo(tn, storm::gspn::LayoutInfo(xcenter-3.0, ycenter+3.0));
                         } else {
                             tn = tNodeFailed;
                         }
@@ -291,54 +302,128 @@ namespace storm {
                         }
                         if (j != dftPand->nrChildren() - 1) {
                             fi = builder.addPlace(defaultCapacity, 0, dftPand->name() + "_F_" + std::to_string(j));
+                            builder.setPlaceLayoutInfo(fi, storm::gspn::LayoutInfo(xcenter-3.0+j*3.0, ycenter));
                             builder.addOutputArc(tn, fi);
                         }
                         
                     }
                 }
             }
-//			
+
+            template <typename ValueType>
+            void DftToGspnTransformator<ValueType>::drawPOR(std::shared_ptr<storm::storage::DFTPor<ValueType> const> dftPor, bool isRepresentative) {
+                uint64_t nodeFailed = builder.addPlace(defaultCapacity, 0, dftPor->name() + STR_FAILED);
+                failedNodes.push_back(nodeFailed);
+
+                double xcenter = mDft.getElementLayoutInfo(dftPor->id()).x;
+                double ycenter = mDft.getElementLayoutInfo(dftPor->id()).y;
+                builder.setPlaceLayoutInfo(nodeFailed, storm::gspn::LayoutInfo(xcenter+3.0, ycenter-3.0));
+
+                uint64_t unavailableNode = 0;
+                if (!smart || isRepresentative) {
+                    unavailableNode = addUnavailableNode(dftPor, storm::gspn::LayoutInfo(xcenter+9.0, ycenter-3.0));
+                }
+
+                uint64_t tfail = builder.addImmediateTransition(getFailPriority(dftPor), 0.0, dftPor->name() + STR_FAILING);
+                builder.setTransitionLayoutInfo(tfail, storm::gspn::LayoutInfo(xcenter+3.0, ycenter+3.0));
+                builder.addOutputArc(tfail, nodeFailed);
+                builder.addInhibitionArc(nodeFailed, tfail);
+
+                builder.addInputArc(failedNodes.at(dftPor->children().front()->id()), tfail);
+                builder.addOutputArc(tfail, failedNodes.at(dftPor->children().front()->id()));
+
+                if(!smart || isRepresentative) {
+                    builder.addOutputArc(tfail, unavailableNode);
+                }
+
+                if(dftPor->isInclusive()) {
+                    // Inclusive POR
+                    uint64_t nodeFS = builder.addPlace(defaultCapacity, 0, dftPor->name() + STR_FAILSAVE);
+                    builder.setPlaceLayoutInfo(nodeFS, storm::gspn::LayoutInfo(xcenter-3.0, ycenter-3.0));
+
+                    builder.addInhibitionArc(nodeFS, tfail);
+                    uint64_t j = 0;
+                    for (auto const& child : dftPor->children()) {
+                        if(j > 0) {
+                            uint64_t tfailsf = builder.addImmediateTransition(getFailPriority(dftPor), 0.0, dftPor->name() + STR_FAILSAVING + std::to_string(j));
+                            builder.setTransitionLayoutInfo(tfailsf, storm::gspn::LayoutInfo(xcenter-3.0+j*3.0, ycenter+3.0));
+                            builder.addInputArc(failedNodes.at(child->id()), tfailsf);
+                            builder.addOutputArc(tfailsf, failedNodes.at(child->id()));
+                            builder.addOutputArc(tfailsf, nodeFS);
+                            builder.addInhibitionArc(nodeFS, tfailsf);
+                            builder.addInhibitionArc(failedNodes.at(dftPor->children().front()->id()), tfailsf);
+                        }
+
+                        ++j;
+                    }
+                } else {
+                    // Exclusive POR
+                    uint64_t j = 0;
+                    for (auto const& child : dftPor->children()) {
+                        if(j > 0) {
+                            builder.addInhibitionArc(failedNodes.at(child->id()), tfail);
+                        }
+                        ++j;
+                    }
+
+                }
+                
+            }
+
 			template <typename ValueType>
             void DftToGspnTransformator<ValueType>::drawSPARE(std::shared_ptr<storm::storage::DFTSpare<ValueType> const> dftSpare, bool isRepresentative) {
                 
                 uint64_t nodeFailed = builder.addPlace(defaultCapacity, 0, dftSpare->name() + STR_FAILED);
                 failedNodes.push_back(nodeFailed);
+
+                double xcenter = mDft.getElementLayoutInfo(dftSpare->id()).x;
+                double ycenter = mDft.getElementLayoutInfo(dftSpare->id()).y;
+                builder.setPlaceLayoutInfo(nodeFailed, storm::gspn::LayoutInfo(xcenter+10.0, ycenter-8.0));
+
                 uint64_t unavailableNode = 0;
                 if (isRepresentative) {
-                    unavailableNode = addUnavailableNode(dftSpare);
+                    unavailableNode = addUnavailableNode(dftSpare, storm::gspn::LayoutInfo(xcenter+16.0, ycenter-8.0));
                 }
                 uint64_t spareActive = builder.addPlace(defaultCapacity, 0, dftSpare->name() + STR_ACTIVATED);
+                builder.setPlaceLayoutInfo(spareActive, storm::gspn::LayoutInfo(xcenter-20.0, ycenter-8.0));
                 activeNodes.emplace(dftSpare->id(), spareActive);
 
                 
                 std::vector<uint64_t> cucNodes;
-                std::vector<uint64_t> nextClaimNodes;
+                std::vector<uint64_t> considerNodes;
                 std::vector<uint64_t> nextclTransitions;
                 std::vector<uint64_t> nextconsiderTransitions;
                 uint64_t j = 0;
                 for(auto const& child : dftSpare->children()) {
                     if (j > 0) {
-                        nextClaimNodes.push_back(builder.addPlace(defaultCapacity, 0, dftSpare->name()+ "_consider_" + child->name()));
-                        
-                        builder.addOutputArc(nextclTransitions.back(), nextClaimNodes.back(), 1);
+                        size_t nodeConsider = builder.addPlace(defaultCapacity, 0, dftSpare->name()+ "_consider_" + child->name());
+                        considerNodes.push_back(nodeConsider);
+                        builder.setPlaceLayoutInfo(nodeConsider, storm::gspn::LayoutInfo(xcenter-15.0+j*14.0, ycenter-8.0));
+
+                        builder.addOutputArc(nextclTransitions.back(), considerNodes.back(), 1);
                         if (j > 1) {
-                            builder.addOutputArc(nextconsiderTransitions.back(), nextClaimNodes.back());
+                            builder.addOutputArc(nextconsiderTransitions.back(), considerNodes.back());
                         }
                         
                         uint64_t tnextconsider = builder.addImmediateTransition(getFailPriority(dftSpare), 0.0, dftSpare->name() + "_cannot_claim_" + child->name());
-                        builder.addInputArc(nextClaimNodes.back(), tnextconsider);
+                        builder.setTransitionLayoutInfo(tnextconsider, storm::gspn::LayoutInfo(xcenter-7.0+j*14.0, ycenter-8.0));
+                        builder.addInputArc(considerNodes.back(), tnextconsider);
                         builder.addInputArc(unavailableNodes.at(child->id()), tnextconsider);
                         nextconsiderTransitions.push_back(tnextconsider);
                         
                     }
-                    cucNodes.push_back(builder.addPlace(defaultCapacity, j == 0 ? 1 : 0, dftSpare->name() + "_claimed_" + child->name()));
+                    size_t nodeCUC = builder.addPlace(defaultCapacity, j == 0 ? 1 : 0, dftSpare->name() + "_claimed_" + child->name());
+                    cucNodes.push_back(nodeCUC);
+                    builder.setPlaceLayoutInfo(nodeCUC, storm::gspn::LayoutInfo(xcenter-9.0+j*14.0, ycenter+5.0));
                     if (j > 0) {
                         uint64 tclaim = builder.addImmediateTransition(getFailPriority(dftSpare), 0.0, dftSpare->name() + "_claim_" + child->name());
+                        builder.setTransitionLayoutInfo(tclaim, storm::gspn::LayoutInfo(xcenter-9.0+j*14.0, ycenter));
                         builder.addInhibitionArc(unavailableNodes.at(child->id()), tclaim);
-                        builder.addInputArc(nextClaimNodes.back(), tclaim);
+                        builder.addInputArc(considerNodes.back(), tclaim);
                         builder.addOutputArc(tclaim, cucNodes.back());
                     }
                     uint64_t tnextcl = builder.addImmediateTransition(getFailPriority(dftSpare), 0.0, dftSpare->name() + "_next_claim_" + std::to_string(j));
+                    builder.setTransitionLayoutInfo(tnextcl, storm::gspn::LayoutInfo(xcenter-3.0+j*14.0, ycenter+5.0));
                     builder.addInputArc(cucNodes.back(), tnextcl);
                     builder.addOutputArc(tnextcl, cucNodes.back());
                     builder.addInputArc(failedNodes.at(child->id()), tnextcl);
@@ -356,64 +441,14 @@ namespace storm {
                 
 
 			}
-//			
-			template <typename ValueType>
-            void DftToGspnTransformator<ValueType>::drawPOR(std::shared_ptr<storm::storage::DFTPor<ValueType> const> dftPor, bool isRepresentative) {
-                uint64_t nodeFailed = builder.addPlace(defaultCapacity, 0, dftPor->name() + STR_FAILED);
-                failedNodes.push_back(nodeFailed);
-                
-                uint64_t unavailableNode = 0;
-                if (!smart || isRepresentative) {
-                    unavailableNode = addUnavailableNode(dftPor);
-                }
-                
-                uint64_t tfail = builder.addImmediateTransition(getFailPriority(dftPor), 0.0, dftPor->name() + STR_FAILING);
-                builder.addOutputArc(tfail, nodeFailed);
-                builder.addInhibitionArc(nodeFailed, tfail);
-                
-                builder.addInputArc(failedNodes.at(dftPor->children().front()->id()), tfail);
-                builder.addOutputArc(tfail, failedNodes.at(dftPor->children().front()->id()));
-                
-                if(!smart || isRepresentative) {
-                    builder.addOutputArc(tfail, unavailableNode);
-                }
-                
-                if(dftPor->isInclusive()) {
-                    uint64_t nodeFS = builder.addPlace(defaultCapacity, 0, dftPor->name() + STR_FAILSAVE);
-                    builder.addInhibitionArc(nodeFS, tfail);
-                    uint64_t j = 0;
-                    for (auto const& child : dftPor->children()) {
-                        if(j > 0) {
-                            uint64_t tfailsf = builder.addImmediateTransition(getFailPriority(dftPor), 0.0, dftPor->name() + STR_FAILSAVING + std::to_string(j));
-                            builder.addInputArc(failedNodes.at(child->id()), tfailsf);
-                            builder.addOutputArc(tfailsf, failedNodes.at(child->id()));
-                            builder.addOutputArc(tfailsf, nodeFS);
-                            builder.addInhibitionArc(nodeFS, tfailsf);
-                            builder.addInhibitionArc(failedNodes.at(dftPor->children().front()->id()), tfailsf);
-                        }
-                        
-                        ++j;
-                    }
-                } else {
-                    uint64_t j = 0;
-                    for (auto const& child : dftPor->children()) {
-                        if(j > 0) {
-                            builder.addInhibitionArc(failedNodes.at(child->id()), tfail);
-                        }
-                        ++j;
-                    }
-                    
-                }
-                
-			}
-            
-//			
+
 			template <typename ValueType>
             void DftToGspnTransformator<ValueType>::drawCONSTF(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftConstF, bool isRepresentative) {
 			    failedNodes.push_back(builder.addPlace(defaultCapacity, 1, dftConstF->name() + STR_FAILED));
                 uint64_t unavailableNode = 0;
                 if (isRepresentative) {
-                    unavailableNode = addUnavailableNode(dftConstF, false);
+                    // TODO set position
+                    unavailableNode = addUnavailableNode(dftConstF, storm::gspn::LayoutInfo(0, 0), false);
                 }
 
 			}
@@ -501,10 +536,11 @@ namespace storm {
             }
             
             template<typename ValueType>
-            uint64_t DftToGspnTransformator<ValueType>::addUnavailableNode(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftElement, bool initialAvailable) {
+            uint64_t DftToGspnTransformator<ValueType>::addUnavailableNode(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftElement, storm::gspn::LayoutInfo const& layoutInfo, bool initialAvailable) {
                 uint64_t unavailableNode = builder.addPlace(defaultCapacity, initialAvailable ? 0 : 1, dftElement->name() + "_unavailable");
                 assert(unavailableNode != 0);
                 unavailableNodes.emplace(dftElement->id(), unavailableNode);
+                builder.setPlaceLayoutInfo(unavailableNode, layoutInfo);
                 return unavailableNode;
             }
             

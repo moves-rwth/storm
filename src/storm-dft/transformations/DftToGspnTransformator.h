@@ -136,7 +136,7 @@ namespace storm {
 				 uint64_t getFailPriority(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dFTElement);
 
                 
-                uint64_t addUnavailableNode(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftElement, bool initialAvailable = true);
+                uint64_t addUnavailableNode(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftElement, storm::gspn::LayoutInfo const& layoutInfo, bool initialAvailable = true);
                 
                 uint64_t addDisabledPlace(std::shared_ptr<storm::storage::DFTBE<ValueType> const> dftBe);
                 
