@@ -151,8 +151,9 @@ int main(const int argc, const char** argv) {
             storm::jani::Model* model =  builder.build();
             storm::jani::Variable const& topfailedVar = builder.getPlaceVariable(toplevelFailedPlace);
             
-            
-            auto evtlFormula = std::make_shared<storm::logic::AtomicExpressionFormula>(exprManager->integer(1) == topfailedVar.getExpressionVariable().getExpression());
+
+            storm::expressions::Expression targetExpression = exprManager->integer(1) == topfailedVar.getExpressionVariable().getExpression();
+            auto evtlFormula = std::make_shared<storm::logic::AtomicExpressionFormula>(targetExpression);
             auto tbFormula = std::make_shared<storm::logic::BoundedUntilFormula>(std::make_shared<storm::logic::BooleanLiteralFormula>(true), evtlFormula, 0.0, 10.0);
             auto tbUntil = std::make_shared<storm::logic::ProbabilityOperatorFormula>(tbFormula);
             
