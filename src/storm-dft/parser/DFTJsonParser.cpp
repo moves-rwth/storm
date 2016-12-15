@@ -49,7 +49,7 @@ namespace storm {
 
         template<typename ValueType>
         void DFTJsonParser<ValueType>::readFile(const std::string& filename) {
-            std::cout << "Parsing from JSON" << std::endl;
+            STORM_LOG_DEBUG("Parsing from JSON");
 
             std::ifstream file;
             file.exceptions ( std::ifstream::failbit );
@@ -81,8 +81,6 @@ namespace storm {
             std::string toplevelId = nameMapping["1"];
 
             for (auto& element : parsedJson) {
-                std::cout << element << std::endl;
-
                 bool success = true;
                 if (element.at("classes") == "") {
                     continue;
@@ -124,10 +122,11 @@ namespace storm {
                     success = false;
                 }
 
+                // Set layout positions
                 json position = element.at("position");
                 double x = position.at("x");
                 double y = position.at("y");
-                builder.addLayoutInfo(name, x, y);
+                builder.addLayoutInfo(name, x / 10, y / 10);
                 STORM_LOG_THROW(success, storm::exceptions::FileIoException, "Error while adding element '" << element << "'.");
             }
 

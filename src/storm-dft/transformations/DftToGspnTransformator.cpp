@@ -90,9 +90,7 @@ namespace storm {
             
             template <typename ValueType>
             void DftToGspnTransformator<ValueType>::drawBE(std::shared_ptr<storm::storage::DFTBE<ValueType> const> dftBE, bool isRepresentative) {
-                double xcenter = mDft.getElementLayoutInfo(dftBE->id()).x;
-                double ycenter = mDft.getElementLayoutInfo(dftBE->id()).y;
-				uint64_t beActive = builder.addPlace(defaultCapacity, isBEActive(dftBE) ? 1 : 0, dftBE->name() + STR_ACTIVATED);
+                uint64_t beActive = builder.addPlace(defaultCapacity, isBEActive(dftBE) ? 1 : 0, dftBE->name() + STR_ACTIVATED);
                 activeNodes.emplace(dftBE->id(), beActive);
                 uint64_t beFailed = builder.addPlace(defaultCapacity, 0, dftBE->name() + STR_FAILED);
                 
@@ -127,7 +125,10 @@ namespace storm {
                     builder.addOutputArc(tActive, unavailableNode);
                     builder.addOutputArc(tPassive, unavailableNode);
                 }
-                
+
+                double xcenter = mDft.getElementLayoutInfo(dftBE->id()).x;
+                double ycenter = mDft.getElementLayoutInfo(dftBE->id()).y;
+
                 builder.setPlaceLayoutInfo(beActive, storm::gspn::LayoutInfo(xcenter - 3.0, ycenter));
                 builder.setPlaceLayoutInfo(beFailed, storm::gspn::LayoutInfo(xcenter + 3.0, ycenter));
                 builder.setTransitionLayoutInfo(tActive, storm::gspn::LayoutInfo(xcenter, ycenter + 3.0));
@@ -137,8 +138,6 @@ namespace storm {
 			
 			template <typename ValueType>
             void DftToGspnTransformator<ValueType>::drawAND(std::shared_ptr<storm::storage::DFTAnd<ValueType> const> dftAnd, bool isRepresentative) {
-                double xcenter = mDft.getElementLayoutInfo(dftAnd->id()).x;
-                double ycenter = mDft.getElementLayoutInfo(dftAnd->id()).y;
                 uint64_t nodeFailed = builder.addPlace(defaultCapacity, 0, dftAnd->name() + STR_FAILED);
                 assert(failedNodes.size() == dftAnd->id());
                 failedNodes.push_back(nodeFailed);
@@ -160,7 +159,10 @@ namespace storm {
                     builder.addInputArc(failedNodes[child->id()], tAndFailed);
                     builder.addOutputArc(tAndFailed, failedNodes[child->id()]);
                 }
-                
+
+                double xcenter = mDft.getElementLayoutInfo(dftAnd->id()).x;
+                double ycenter = mDft.getElementLayoutInfo(dftAnd->id()).y;
+
                 builder.setPlaceLayoutInfo(nodeFailed, storm::gspn::LayoutInfo(xcenter, ycenter-3.0));
                 builder.setTransitionLayoutInfo(tAndFailed, storm::gspn::LayoutInfo(xcenter, ycenter+3.0));
                 
@@ -171,6 +173,11 @@ namespace storm {
                 uint64_t nodeFailed = builder.addPlace(defaultCapacity, 0, dftOr->name() + STR_FAILED);
                 assert(failedNodes.size() == dftOr->id());
                 failedNodes.push_back(nodeFailed);
+
+                double xcenter = mDft.getElementLayoutInfo(dftOr->id()).x;
+                double ycenter = mDft.getElementLayoutInfo(dftOr->id()).y;
+                builder.setPlaceLayoutInfo(nodeFailed, storm::gspn::LayoutInfo(xcenter, ycenter-3.0));
+
                 uint64_t unavailableNode = 0;
                 if (isRepresentative) {
                     unavailableNode = addUnavailableNode(dftOr);
@@ -188,6 +195,7 @@ namespace storm {
                     builder.addInputArc(failedNodes[child->id()], tNodeFailed);
                     builder.addOutputArc(tNodeFailed, failedNodes[child->id()]);
                     ++i;
+                    builder.setTransitionLayoutInfo(tNodeFailed, storm::gspn::LayoutInfo(xcenter-5+i*3, ycenter+3.0));
                 }
 			}
 			
@@ -228,6 +236,11 @@ namespace storm {
                 uint64_t nodeFailed = builder.addPlace(defaultCapacity, 0, dftPand->name()  + STR_FAILED);
                 assert(failedNodes.size() == dftPand->id());
                 failedNodes.push_back(nodeFailed);
+
+                double xcenter = mDft.getElementLayoutInfo(dftPand->id()).x;
+                double ycenter = mDft.getElementLayoutInfo(dftPand->id()).y;
+                builder.setPlaceLayoutInfo(nodeFailed, storm::gspn::LayoutInfo(xcenter, ycenter-3.0));
+
                 uint64_t unavailableNode = 0;
                 if (!smart || isRepresentative) {
                     unavailableNode = addUnavailableNode(dftPand);
