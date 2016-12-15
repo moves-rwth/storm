@@ -698,6 +698,9 @@ namespace storm {
             return automata[index];
         }
         
+        Automaton const& Model::getAutomaton(uint64_t index) const {
+            return automata[index];        }
+        
         Automaton const& Model::getAutomaton(std::string const& name) const {
             auto it = automatonToIndex.find(name);
             STORM_LOG_THROW(it != automatonToIndex.end(), storm::exceptions::InvalidOperationException, "Unable to retrieve unknown automaton '" << name << "'.");

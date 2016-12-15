@@ -3,10 +3,10 @@
 #include "storm/storage/dd/DdType.h"
 
 #include "storm/abstraction/MenuGameAbstractor.h"
-#include "storm/abstraction/AbstractionInformation.h"
 #include "storm/abstraction/MenuGame.h"
 #include "storm/abstraction/RefinementCommand.h"
 #include "storm/abstraction/ValidBlockAbstractor.h"
+#include "storm/abstraction/jani/JaniAbstractionInformation.h"
 #include "storm/abstraction/jani/AutomatonAbstractor.h"
 
 #include "storm/storage/dd/Add.h"
@@ -139,7 +139,7 @@ namespace storm {
                 std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory;
                 
                 // An object containing all information about the abstraction like predicates and the corresponding DDs.
-                AbstractionInformation<DdType> abstractionInformation;
+                JaniAbstractionInformation<DdType> abstractionInformation;
                 
                 // The abstract modules of the abstract program.
                 std::vector<AutomatonAbstractor<DdType, ValueType>> automata;
@@ -150,8 +150,8 @@ namespace storm {
                 // An object that is used to compute the valid blocks.
                 ValidBlockAbstractor<DdType> validBlockAbstractor;
                                 
-                // An ADD characterizing the probabilities of edges and their updates.
-                storm::dd::Add<DdType, ValueType> edgeUpdateProbabilitiesAdd;
+                // An ADD characterizing the probabilities and source/target locations of edges and their updates.
+                storm::dd::Add<DdType, ValueType> edgeDecoratorAdd;
                 
                 // The current game-based abstraction.
                 std::unique_ptr<MenuGame<DdType, ValueType>> currentGame;

@@ -31,7 +31,7 @@ namespace storm {
             using storm::settings::modules::AbstractionSettings;
             
             template <storm::dd::DdType DdType, typename ValueType>
-            JaniMenuGameAbstractor<DdType, ValueType>::JaniMenuGameAbstractor(storm::jani::Model const& model, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory) : model(model), smtSolverFactory(smtSolverFactory), abstractionInformation(model.getManager(), model.getAllExpressionVariables(), smtSolverFactory->create(model.getManager())), automata(), initialStateAbstractor(abstractionInformation, {model.getInitialStatesExpression()}, this->smtSolverFactory), validBlockAbstractor(abstractionInformation, smtSolverFactory), currentGame(nullptr), refinementPerformed(false) {
+            JaniMenuGameAbstractor<DdType, ValueType>::JaniMenuGameAbstractor(storm::jani::Model const& model, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory) : model(model), smtSolverFactory(smtSolverFactory), abstractionInformation(model.getManager(), model.getAllExpressionVariables(), model.getAutomaton(0).getNumberOfLocations(), smtSolverFactory->create(model.getManager())), automata(), initialStateAbstractor(abstractionInformation, {model.getInitialStatesExpression()}, this->smtSolverFactory), validBlockAbstractor(abstractionInformation, smtSolverFactory), currentGame(nullptr), refinementPerformed(false) {
                 
                 // For now, we assume that there is a single module. If the program has more than one module, it needs
                 // to be flattened before the procedure.
@@ -65,8 +65,8 @@ namespace storm {
                     automata.emplace_back(automaton, abstractionInformation, this->smtSolverFactory, useDecomposition);
                 }
                 
-                // Retrieve the edge-update probability ADD, so we can multiply it with the abstraction BDD later.
-                edgeUpdateProbabilitiesAdd = automata.front().getEdgeUpdateProbabilitiesAdd();
+                // Retrieve the decorator ADD, so we can multiply it with the abstraction BDD later.
+                edgeDecoratorAdd = automata.front().getEdgeDecoratorAdd();
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
@@ -167,7 +167,7 @@ namespace storm {
                 
                 // Construct the transition matrix by cutting away the transitions of unreachable states.
                 storm::dd::Add<DdType, ValueType> transitionMatrix = (game.bdd && reachableStates).template toAdd<ValueType>();
-                transitionMatrix *= edgeUpdateProbabilitiesAdd;
+                transitionMatrix *= edgeDecoratorAdd;
                 transitionMatrix += deadlockTransitions;
                 
                 // Extend the current game information with the 'non-bottom' tag before potentially adding bottom state transitions.
@@ -188,8 +188,10 @@ namespace storm {
                 
                 std::set<storm::expressions::Variable> allSourceVariables(abstractionInformation.getSourceVariables());
                 allSourceVariables.insert(abstractionInformation.getBottomStateVariable(true));
+                allSourceVariables.insert(abstractionInformation.getSourceLocationVariables().begin(), abstractionInformation.getSourceLocationVariables().end());
                 std::set<storm::expressions::Variable> allSuccessorVariables(abstractionInformation.getSuccessorVariables());
                 allSuccessorVariables.insert(abstractionInformation.getBottomStateVariable(false));
+                allSuccessorVariables.insert(abstractionInformation.getSuccessorLocationVariables().begin(), abstractionInformation.getSuccessorLocationVariables().end());
                 
                 return std::make_unique<MenuGame<DdType, ValueType>>(abstractionInformation.getDdManagerAsSharedPointer(), reachableStates, initialStates, abstractionInformation.getDdManager().getBddZero(), transitionMatrix, bottomStateResult.states, allSourceVariables, allSuccessorVariables, abstractionInformation.getExtendedSourceSuccessorVariablePairs(), std::set<storm::expressions::Variable>(abstractionInformation.getPlayer1Variables().begin(), abstractionInformation.getPlayer1Variables().end()), usedPlayer2Variables, allNondeterminismVariables, auxVariables, abstractionInformation.getPredicateToBddMap());
             }

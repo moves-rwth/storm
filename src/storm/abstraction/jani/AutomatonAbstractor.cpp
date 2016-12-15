@@ -1,8 +1,8 @@
 #include "storm/abstraction/jani/AutomatonAbstractor.h"
 
-#include "storm/abstraction/AbstractionInformation.h"
 #include "storm/abstraction/BottomStateResult.h"
 #include "storm/abstraction/GameBddResult.h"
+#include "storm/abstraction/jani/JaniAbstractionInformation.h"
 
 #include "storm/storage/dd/DdManager.h"
 #include "storm/storage/dd/Add.h"
@@ -23,7 +23,7 @@ namespace storm {
             using storm::settings::modules::AbstractionSettings;
             
             template <storm::dd::DdType DdType, typename ValueType>
-            AutomatonAbstractor<DdType, ValueType>::AutomatonAbstractor(storm::jani::Automaton const& automaton, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool useDecomposition) : smtSolverFactory(smtSolverFactory), abstractionInformation(abstractionInformation), edges(), automaton(automaton) {
+            AutomatonAbstractor<DdType, ValueType>::AutomatonAbstractor(storm::jani::Automaton const& automaton, JaniAbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool useDecomposition) : smtSolverFactory(smtSolverFactory), abstractionInformation(abstractionInformation), edges(), automaton(automaton) {
                 
                 // For each concrete command, we create an abstract counterpart.
                 uint64_t edgeId = 0;
@@ -84,10 +84,10 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            storm::dd::Add<DdType, ValueType> AutomatonAbstractor<DdType, ValueType>::getEdgeUpdateProbabilitiesAdd() const {
+            storm::dd::Add<DdType, ValueType> AutomatonAbstractor<DdType, ValueType>::getEdgeDecoratorAdd() const {
                 storm::dd::Add<DdType, ValueType> result = this->getAbstractionInformation().getDdManager().template getAddZero<ValueType>();
                 for (auto const& edge : edges) {
-                    result += edge.getEdgeUpdateProbabilitiesAdd();
+                    result += edge.getEdgeDecoratorAdd();
                 }
                 return result;
             }
@@ -108,7 +108,7 @@ namespace storm {
             }
 
             template <storm::dd::DdType DdType, typename ValueType>
-            AbstractionInformation<DdType> const& AutomatonAbstractor<DdType, ValueType>::getAbstractionInformation() const {
+            JaniAbstractionInformation<DdType> const& AutomatonAbstractor<DdType, ValueType>::getAbstractionInformation() const {
                 return abstractionInformation.get();
             }
             

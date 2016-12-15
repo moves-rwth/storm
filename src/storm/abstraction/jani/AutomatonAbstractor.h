@@ -17,13 +17,13 @@ namespace storm {
     }
     
     namespace abstraction {
-        template <storm::dd::DdType DdType>
-        class AbstractionInformation;
-
         template<storm::dd::DdType DdType>
         struct BottomStateResult;
 
         namespace jani {
+            template <storm::dd::DdType DdType>
+            class JaniAbstractionInformation;
+            
             template <storm::dd::DdType DdType, typename ValueType>
             class AutomatonAbstractor {
             public:
@@ -35,7 +35,7 @@ namespace storm {
                  * @param smtSolverFactory A factory that is to be used for creating new SMT solvers.
                  * @param useDecomposition A flag indicating whether to use the decomposition during abstraction.
                  */
-                AutomatonAbstractor(storm::jani::Automaton const& automaton, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool useDecomposition);
+                AutomatonAbstractor(storm::jani::Automaton const& automaton, JaniAbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool useDecomposition);
                 
                 AutomatonAbstractor(AutomatonAbstractor const&) = default;
                 AutomatonAbstractor& operator=(AutomatonAbstractor const&) = default;
@@ -80,11 +80,11 @@ namespace storm {
                 BottomStateResult<DdType> getBottomStateTransitions(storm::dd::Bdd<DdType> const& reachableStates, uint_fast64_t numberOfPlayer2Variables);
                 
                 /*!
-                 * Retrieves an ADD that maps the encodings of edges and their updates to their probabilities.
+                 * Retrieves an ADD that maps the encodings of edges, source/target locations and their updates to their probabilities.
                  *
-                 * @return The edge-update probability ADD.
+                 * @return The edge decorator ADD.
                  */
-                storm::dd::Add<DdType, ValueType> getEdgeUpdateProbabilitiesAdd() const;
+                storm::dd::Add<DdType, ValueType> getEdgeDecoratorAdd() const;
                 
                 /*!
                  * Retrieves the abstract edges of this abstract automton.
@@ -113,13 +113,13 @@ namespace storm {
                  *
                  * @return The abstraction information.
                  */
-                AbstractionInformation<DdType> const& getAbstractionInformation() const;
+                JaniAbstractionInformation<DdType> const& getAbstractionInformation() const;
                 
                 // A factory that can be used to create new SMT solvers.
                 std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory;
                 
                 // The DD-related information.
-                std::reference_wrapper<AbstractionInformation<DdType> const> abstractionInformation;
+                std::reference_wrapper<JaniAbstractionInformation<DdType> const> abstractionInformation;
                 
                 // The abstract edge of the abstract automaton.
                 std::vector<EdgeAbstractor<DdType, ValueType>> edges;

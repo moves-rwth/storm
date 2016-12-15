@@ -240,6 +240,11 @@ namespace storm {
             Automaton& getAutomaton(uint64_t index);
 
             /*!
+             * Retrieves the automaton with the given index.
+             */
+            Automaton const& getAutomaton(uint64_t index) const;
+
+            /*!
              * Retrieves the automaton with the given name.
              */
             Automaton const& getAutomaton(std::string const& name) const;
