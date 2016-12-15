@@ -157,9 +157,12 @@ int main(const int argc, const char** argv) {
             auto tbFormula = std::make_shared<storm::logic::BoundedUntilFormula>(std::make_shared<storm::logic::BooleanLiteralFormula>(true), evtlFormula, 0.0, 10.0);
             auto tbUntil = std::make_shared<storm::logic::ProbabilityOperatorFormula>(tbFormula);
             
+            auto evFormula = std::make_shared<storm::logic::EventuallyFormula>(evtlFormula, storm::logic::FormulaContext::Time);
+            auto rewFormula = std::make_shared<storm::logic::TimeOperatorFormula>(evFormula, storm::logic::OperatorInformation(), storm::logic::RewardMeasureType::Expectation);
+            
             storm::settings::modules::JaniExportSettings const& janiSettings = storm::settings::getModule<storm::settings::modules::JaniExportSettings>();
             if (janiSettings.isJaniFileSet()) {
-                storm::exportJaniModel(*model, {storm::jani::Property("time-bounded", tbUntil)}, janiSettings.getJaniFilename());
+                storm::exportJaniModel(*model, {storm::jani::Property("time-bounded", tbUntil), storm::jani::Property("mttf", rewFormula)}, janiSettings.getJaniFilename());
             }
             
             delete model;
