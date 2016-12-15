@@ -29,8 +29,8 @@ namespace storm {
 
             }
 
-            void setDependentEvent(DFTBEPointer const& dependentEvent) {
-                mDependentEvents = { dependentEvent };
+            void setDependentEvents(std::vector<DFTBEPointer> const& dependentEvents) {
+                mDependentEvents = dependentEvents;
             }
 
 

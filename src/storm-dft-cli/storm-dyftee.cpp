@@ -136,7 +136,7 @@ int main(const int argc, const char** argv) {
                 storm::parser::DFTJsonParser<double> parser;
                 dft = std::make_shared<storm::storage::DFT<double>>(parser.parseJson(dftSettings.getDftJsonFilename()));
             } else {
-                storm::parser::DFTGalileoParser<double> parser;
+                storm::parser::DFTGalileoParser<double> parser(true, false);
                 dft = std::make_shared<storm::storage::DFT<double>>(parser.parseDFT(dftSettings.getDftFilename()));
             }
             storm::transformations::dft::DftToGspnTransformator<double> gspnTransformator(*dft);

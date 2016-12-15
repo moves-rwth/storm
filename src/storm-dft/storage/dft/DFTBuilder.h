@@ -37,7 +37,7 @@ namespace storm {
             std::unordered_map<std::string, DFTLayoutInfo> mLayoutInfo;
             
         public:
-            DFTBuilder(bool defaultInclusive = true) : pandDefaultInclusive(defaultInclusive), porDefaultInclusive(defaultInclusive) {
+            DFTBuilder(bool defaultInclusive = true, bool binaryDependencies = true) : pandDefaultInclusive(defaultInclusive), porDefaultInclusive(defaultInclusive), binaryDependencies(binaryDependencies) {
                 
             }
             
@@ -133,7 +133,10 @@ namespace storm {
                             mDependencies.push_back(element);
                         }
                     } else {
-
+                        DFTDependencyPointer element = std::make_shared<DFTDependency<ValueType>>(mNextId++, name, probability);
+                        mElements[element->name()] = element;
+                        mDependencyChildNames[element] = children;
+                        mDependencies.push_back(element);
                     }
                     return true;
                 }

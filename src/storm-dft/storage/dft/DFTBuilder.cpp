@@ -70,9 +70,11 @@ namespace storm {
                 if (binaryDependencies) {
                     assert(dependencies.size() == 1);
                 }
-                assert(binaryDependencies);
-                elem.first->setDependentEvent(dependencies[0]);
-                dependencies[0]->addIngoingDependency(elem.first);
+                elem.first->setDependentEvents(dependencies);
+                for (auto& dependency : dependencies) {
+                    dependency->addIngoingDependency(elem.first);
+                }
+                
             }
             
 
