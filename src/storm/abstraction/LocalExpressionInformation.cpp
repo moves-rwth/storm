@@ -59,10 +59,10 @@ namespace storm {
                 blocksToMerge.insert(getBlockIndexOfVariable(variable));
             }
             
-            STORM_LOG_ASSERT(!blocksToMerge.empty(), "Found no blocks to merge.");
+            STORM_LOG_ASSERT(variables.empty() || !blocksToMerge.empty(), "Found no blocks to merge.");
             
             // If we found a single block only, there is nothing to do.
-            if (blocksToMerge.size() == 1) {
+            if (blocksToMerge.size() <= 1) {
                 std::map<uint64_t, uint64_t> identity;
                 for (uint64_t i = 0; i < getNumberOfBlocks(); ++i) {
                     identity.emplace_hint(identity.end(), i, i);
