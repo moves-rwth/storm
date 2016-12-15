@@ -429,7 +429,29 @@ namespace storm {
 //			
 			template <typename ValueType>
             void DftToGspnTransformator<ValueType>::drawPDEP(std::shared_ptr<storm::storage::DFTDependency<ValueType> const> dftDependency) {
-
+                double xcenter = mDft.getElementLayoutInfo(dftDependency->id()).x;;
+                double ycenter = mDft.getElementLayoutInfo(dftDependency->id()).y;;
+                
+                uint64_t coinPlace = builder.addPlace(defaultCapacity, 1, dftDependency->name() + "_coin");
+                uint64_t flipPlace = builder.addPlace(defaultCapacity, 1, dftDependency->name() + "_flip");
+                uint64_t forwardPlace = builder.addPlace(defaultCapacity, 1, dftDependency->name() + "_forward");
+                uint64_t t1 = builder.addImmediateTransition(defaultPriority, 0.0, dftDependency->name() + "_start_flip");
+                builder.addInputArc(coinPlace, t1);
+                builder.addInputArc(failedNodes.at(dftDependency->triggerEvent()->id()), t1);
+                builder.addOutputArc(t1, failedNodes.at(dftDependency->triggerEvent()->id()));
+                builder.addOutputArc(t1, flipPlace);
+                uint64_t t2 = builder.addImmediateTransition(defaultPriority + 1, dftDependency->probability(), "_win_flip");
+                builder.addInputArc(flipPlace, t2);
+                builder.addOutputArc(t2, forwardPlace);
+                if (dftDependency->probability() < 1.0) {
+                    uint64_t t3 = builder.addImmediateTransition(defaultPriority + 1, 1 - dftDependency->probability(), "_loose_flip");
+                    builder.addInputArc(flipPlace, t3);
+                }
+                
+                builder.setPlaceLayoutInfo(coinPlace, storm::gspn::LayoutInfo(xcenter-5.0, ycenter+2.0));
+                builder.setPlaceLayoutInfo(flipPlace, storm::gspn::LayoutInfo(xcenter-2.0, ycenter+2.0));
+                builder.setPlaceLayoutInfo(forwardPlace, storm::gspn::LayoutInfo(xcenter+1.0, ycenter+2.0));
+                
 			}
             
             template <typename ValueType>
@@ -443,7 +465,7 @@ namespace storm {
                     if (j>0) {
                         builder.addOutputArc(tEnable, nextPlace);
                     }
-                    tEnable = builder.addImmediateTransition(defaultPriority, 0.0, dftSeq->name() + "_unblock_" +child->name() );
+                    tEnable = builder.addImmediateTransition(defaultPriority + 1, 0.0, dftSeq->name() + "_unblock_" +child->name() );
                     builder.addInputArc(nextPlace, tEnable);
                     builder.addInputArc(disabledNodes.at(child->id()), tEnable);
                     if (j>0) {
