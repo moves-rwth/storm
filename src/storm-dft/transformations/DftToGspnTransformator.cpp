@@ -433,24 +433,48 @@ namespace storm {
                 double ycenter = mDft.getElementLayoutInfo(dftDependency->id()).y;;
                 
                 uint64_t coinPlace = builder.addPlace(defaultCapacity, 1, dftDependency->name() + "_coin");
-                uint64_t flipPlace = builder.addPlace(defaultCapacity, 1, dftDependency->name() + "_flip");
-                uint64_t forwardPlace = builder.addPlace(defaultCapacity, 1, dftDependency->name() + "_forward");
+                builder.setPlaceLayoutInfo(coinPlace, storm::gspn::LayoutInfo(xcenter-5.0, ycenter+2.0));
                 uint64_t t1 = builder.addImmediateTransition(defaultPriority, 0.0, dftDependency->name() + "_start_flip");
+                
                 builder.addInputArc(coinPlace, t1);
                 builder.addInputArc(failedNodes.at(dftDependency->triggerEvent()->id()), t1);
                 builder.addOutputArc(t1, failedNodes.at(dftDependency->triggerEvent()->id()));
-                builder.addOutputArc(t1, flipPlace);
-                uint64_t t2 = builder.addImmediateTransition(defaultPriority + 1, dftDependency->probability(), "_win_flip");
-                builder.addInputArc(flipPlace, t2);
-                builder.addOutputArc(t2, forwardPlace);
-                if (dftDependency->probability() < 1.0) {
-                    uint64_t t3 = builder.addImmediateTransition(defaultPriority + 1, 1 - dftDependency->probability(), "_loose_flip");
-                    builder.addInputArc(flipPlace, t3);
+                uint64_t forwardPlace = builder.addPlace(defaultCapacity, 0, dftDependency->name() + "_forward");
+                builder.setPlaceLayoutInfo(forwardPlace, storm::gspn::LayoutInfo(xcenter+1.0, ycenter+2.0));
+                
+                if (!smart || dftDependency->probability() < 1.0) {
+                    uint64_t flipPlace = builder.addPlace(defaultCapacity, 0, dftDependency->name() + "_flip");
+                    builder.addOutputArc(t1, flipPlace);
+                    
+                    builder.setPlaceLayoutInfo(flipPlace, storm::gspn::LayoutInfo(xcenter-2.0, ycenter+2.0));
+                    uint64_t t2 = builder.addImmediateTransition(defaultPriority + 1, dftDependency->probability(), "_win_flip");
+                    builder.addInputArc(flipPlace, t2);
+                    builder.addOutputArc(t2, forwardPlace);
+                    if (dftDependency->probability() < 1.0) {
+                        uint64_t t3 = builder.addImmediateTransition(defaultPriority + 1, 1 - dftDependency->probability(), "_loose_flip");
+                        builder.addInputArc(flipPlace, t3);
+                    }
+                } else {
+                    builder.addOutputArc(t1, forwardPlace);
+                }
+                for(auto const& depEv : dftDependency->dependentEvents()) {
+                    uint64_t tx = builder.addImmediateTransition(defaultPriority, 0.0, dftDependency->name() + "_propagate_" + depEv->name());
+                    builder.addInputArc(forwardPlace, tx);
+                    builder.addOutputArc(tx, forwardPlace);
+                    builder.addOutputArc(tx, failedNodes.at(depEv->id()));
+                    builder.addInhibitionArc(failedNodes.at(depEv->id()), tx);
+                    if (!smart || depEv->nrRestrictions() > 0) {
+                        builder.addInhibitionArc(disabledNodes.at(depEv->id()), tx);
+                    }
+                    if (!smart || mDft.isRepresentative(depEv->id())) {
+                        builder.addOutputArc(tx, unavailableNodes.at(depEv->id()));
+                    }
+                   
                 }
                 
-                builder.setPlaceLayoutInfo(coinPlace, storm::gspn::LayoutInfo(xcenter-5.0, ycenter+2.0));
-                builder.setPlaceLayoutInfo(flipPlace, storm::gspn::LayoutInfo(xcenter-2.0, ycenter+2.0));
-                builder.setPlaceLayoutInfo(forwardPlace, storm::gspn::LayoutInfo(xcenter+1.0, ycenter+2.0));
+                
+                
+                
                 
 			}
             
@@ -536,59 +560,6 @@ namespace storm {
 			
 			template <typename ValueType>
             void DftToGspnTransformator<ValueType>::drawGSPNRestrictions() {
-//				for (std::size_t i = 0; i < mDft.nrElements(); i++) {
-//					auto dftElement = mDft.getElement(i);
-//					
-//					if (dftElement->isRestriction()) {
-//						switch (dftElement->type()) {
-//							case storm::storage::DFTElementType::SEQ:
-//							{
-//								auto children = mDft.getRestriction(i)->children();
-//								
-//								for (std::size_t j = 0; j < children.size() - 1; j++) {
-//									auto suppressor = mGspn.getPlace(children[j]->name() + STR_FAILED);
-//									
-//									switch (children[j + 1]->type()) {
-//										case storm::storage::DFTElementType::BE: // If suppressed is a BE, add 2 arcs to timed transitions.
-//										{
-//											auto suppressedActive = mGspn.getTimedTransition(children[j + 1]->name() + "_activeFailing");
-//											auto suppressedPassive = mGspn.getTimedTransition(children[j + 1]->name() + "_passiveFailing");
-//											
-//											if (suppressor.first && suppressedActive.first && suppressedPassive.first) { // Only add arcs if the objects have been found.
-//												suppressedActive.second->setInputArcMultiplicity(suppressor.second, 1);
-//												suppressedActive.second->setOutputArcMultiplicity(suppressor.second, 1);
-//												suppressedPassive.second->setInputArcMultiplicity(suppressor.second, 1);
-//												suppressedPassive.second->setOutputArcMultiplicity(suppressor.second, 1);
-//											}
-//											break;
-//										}
-//										default: // If supressed is not a BE, add single arc to immediate transition.
-//										{
-//											auto suppressed = mGspn.getImmediateTransition(children[j + 1]->name() + STR_FAILING);
-//											
-//											if (suppressor.first && suppressed.first) { // Only add arcs if the objects have been found.
-//												suppressed.second->setInputArcMultiplicity(suppressor.second, 1);
-//												suppressed.second->setOutputArcMultiplicity(suppressor.second, 1);
-//											}
-//											break;
-//										}
-//									}
-//								}
-//								break;
-//							}
-//							case storm::storage::DFTElementType::MUTEX:
-//							{
-//								// MUTEX is not implemented by the DFTGalileoParser yet. Nothing to do here.
-//								STORM_LOG_ASSERT(false, "MUTEX is not supported by DftToGspnTransformator.");
-//								break;
-//							}
-//							default:
-//							{
-//								break;
-//							}
-//						}
-//					}
-//				}
 			}
 
 			template <typename ValueType>
