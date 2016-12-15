@@ -280,7 +280,7 @@ namespace storm {
                             builder.addInhibitionArc(failedNodes.at(child->id()), tn);
                         }
                         if (j != dftPand->nrChildren() - 1) {
-                            tn = builder.addImmediateTransition(getFailPriority(dftPand), 0.0, dftPand->name() + STR_FAILING + "_" +std::to_string(j));
+                            tn = builder.addImmediateTransition(getFailPriority(dftPand), 0.0, dftPand->name() + STR_FAILING + "_" + std::to_string(j));
                         } else {
                             tn = tNodeFailed;
                         }
@@ -307,7 +307,7 @@ namespace storm {
                 if (isRepresentative) {
                     unavailableNode = addUnavailableNode(dftSpare);
                 }
-                uint64_t spareActive = builder.addPlace(defaultCapacity, 0, dftSpare->name() + STR_ACTIVATED);
+                uint64_t spareActive = builder.addPlace(defaultCapacity, isBEActive(dftSpare) ? 1 : 0, dftSpare->name() + STR_ACTIVATED);
                 activeNodes.emplace(dftSpare->id(), spareActive);
 
                 
@@ -345,6 +345,16 @@ namespace storm {
                     builder.addOutputArc(tnextcl, failedNodes.at(child->id()));
                     nextclTransitions.push_back(tnextcl);
                     ++j;
+                    for (uint64_t k : mDft.module(child->id())) {
+                        
+                        uint64_t tactive = builder.addImmediateTransition(defaultPriority+1, 0.0, dftSpare->name() + "_activate_" + std::to_string(j) + "_" +  std::to_string(k));
+                        builder.addInputArc(cucNodes.back(), tactive);
+                        builder.addInputArc(spareActive, tactive);
+                        builder.addOutputArc(tactive, activeNodes.at(k));
+                        builder.addInhibitionArc(activeNodes.at(k), tactive);
+                    }
+                    
+                    
                 }
                 builder.addOutputArc(nextconsiderTransitions.back(), nodeFailed);
                 builder.addOutputArc(nextclTransitions.back(), nodeFailed);
@@ -353,6 +363,7 @@ namespace storm {
                     builder.addOutputArc(nextconsiderTransitions.back(), unavailableNode);
                     builder.addOutputArc(nextclTransitions.back(), unavailableNode);
                 }
+                
                 
 
 			}
