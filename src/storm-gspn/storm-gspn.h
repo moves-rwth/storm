@@ -3,7 +3,7 @@
 #include "storm/storage/jani/Model.h"
 
 #include "storm-gspn/builder/JaniGSPNBuilder.h"
-#include "storm-gspn/storage/gspn/Gspn.h"
+#include "storm-gspn/storage/gspn/GSPN.h"
 
 #include "storm/settings/modules/GSPNExportSettings.h"
 
