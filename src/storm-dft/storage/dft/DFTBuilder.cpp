@@ -205,11 +205,19 @@ namespace storm {
                         topoVisit(c, visited, L);
                     }
                 }
+                // TODO restrictions and dependencies have no parents, so this can be done more efficiently.
                 if(n->isRestriction()) {
                     visited[n] = topoSortColour::GREY;
                     for (DFTElementPointer const& c : std::static_pointer_cast<DFTRestriction<ValueType>>(n)->children()) {
                         topoVisit(c, visited, L);
                     }
+                }
+                if(n->isDependency()) {
+                    visited[n] = topoSortColour::GREY;
+                    for (DFTElementPointer const& c : std::static_pointer_cast<DFTDependency<ValueType>>(n)->dependentEvents()) {
+                        topoVisit(c, visited, L);
+                    }
+                    topoVisit(std::static_pointer_cast<DFTDependency<ValueType>>(n)->triggerEvent(), visited, L);
                 }
                 visited[n] = topoSortColour::BLACK;
                 L.push_back(n);
