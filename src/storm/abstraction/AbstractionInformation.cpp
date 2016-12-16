@@ -14,7 +14,7 @@ namespace storm {
     namespace abstraction {
 
         template<storm::dd::DdType DdType>
-        AbstractionInformation<DdType>::AbstractionInformation(storm::expressions::ExpressionManager& expressionManager, std::set<storm::expressions::Variable> const& abstractedVariables, std::unique_ptr<storm::solver::SmtSolver>&& smtSolver, std::shared_ptr<storm::dd::DdManager<DdType>> ddManager) : expressionManager(expressionManager), equivalenceChecker(std::move(smtSolver)), abstractedVariables(abstractedVariables), ddManager(ddManager), allPredicateIdentities(ddManager->getBddOne()), expressionToBddMap() {
+        AbstractionInformation<DdType>::AbstractionInformation(storm::expressions::ExpressionManager& expressionManager, std::set<storm::expressions::Variable> const& abstractedVariables, std::unique_ptr<storm::solver::SmtSolver>&& smtSolver, std::shared_ptr<storm::dd::DdManager<DdType>> ddManager) : expressionManager(expressionManager), equivalenceChecker(std::move(smtSolver)), abstractedVariables(abstractedVariables), ddManager(ddManager), allPredicateIdentities(ddManager->getBddOne()), allLocationIdentities(ddManager->getBddOne()), expressionToBddMap() {
             // Intentionally left empty.
         }
         
@@ -292,6 +292,10 @@ namespace storm {
         storm::dd::Bdd<DdType> const& AbstractionInformation<DdType>::getAllPredicateIdentities() const {
             return allPredicateIdentities;
         }
+        template<storm::dd::DdType DdType>
+        storm::dd::Bdd<DdType> const& AbstractionInformation<DdType>::getAllLocationIdentities() const {
+            return allLocationIdentities;
+        }
         
         template<storm::dd::DdType DdType>
         std::size_t AbstractionInformation<DdType>::getPlayer1VariableCount() const {
@@ -483,12 +487,15 @@ namespace storm {
         
         template <storm::dd::DdType DdType>
         std::pair<std::pair<storm::expressions::Variable, storm::expressions::Variable>, uint64_t> AbstractionInformation<DdType>::addLocationVariables(uint64_t highestLocationIndex) {
-            locationVariablePairs.emplace_back(ddManager->addMetaVariable("loc_" + std::to_string(locationVariablePairs.size()), 0, highestLocationIndex));
-            allSourceLocationVariables.insert(locationVariablePairs.back().first);
-            sourceVariables.insert(locationVariablePairs.back().first);
-            allSuccessorLocationVariables.insert(locationVariablePairs.back().second);
-            successorVariables.insert(locationVariablePairs.back().second);
-            extendedPredicateDdVariables.emplace_back(locationVariablePairs.back());
+            auto newMetaVariable = ddManager->addMetaVariable("loc_" + std::to_string(locationVariablePairs.size()), 0, highestLocationIndex);
+            
+            locationVariablePairs.emplace_back(newMetaVariable);
+            allSourceLocationVariables.insert(newMetaVariable.first);
+            sourceVariables.insert(newMetaVariable.first);
+            allSuccessorLocationVariables.insert(newMetaVariable.second);
+            successorVariables.insert(newMetaVariable.second);
+            extendedPredicateDdVariables.emplace_back(newMetaVariable);
+            allLocationIdentities &= ddManager->template getIdentity<uint64_t>(newMetaVariable.first).equals(ddManager->template getIdentity<uint64_t>(newMetaVariable.second)) && ddManager->getRange(newMetaVariable.first) && ddManager->getRange(newMetaVariable.second);
             return std::make_pair(locationVariablePairs.back(), locationVariablePairs.size() - 1);
         }
         

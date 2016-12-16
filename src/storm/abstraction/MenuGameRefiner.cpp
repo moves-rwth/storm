@@ -74,7 +74,7 @@ namespace storm {
         
         template<storm::dd::DdType Type, typename ValueType>
         void MenuGameRefiner<Type, ValueType>::refine(std::vector<storm::expressions::Expression> const& predicates) const {
-            performRefinement(createGlobalRefinement(predicates));
+            performRefinement(createGlobalRefinement(preprocessPredicates(predicates, RefinementPredicates::Source::Manual)));
         }
         
         template<storm::dd::DdType Type, typename ValueType>

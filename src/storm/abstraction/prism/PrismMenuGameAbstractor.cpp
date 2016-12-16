@@ -2,6 +2,7 @@
 
 #include "storm/abstraction/BottomStateResult.h"
 #include "storm/abstraction/GameBddResult.h"
+#include "storm/abstraction/ExpressionTranslator.h"
 
 #include "storm/storage/BitVector.h"
 
@@ -129,9 +130,9 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            storm::dd::Bdd<DdType> PrismMenuGameAbstractor<DdType, ValueType>::getStates(storm::expressions::Expression const& expression) const {
-                STORM_LOG_ASSERT(currentGame != nullptr, "Game was not properly created.");
-                return abstractionInformation.getPredicateSourceVariable(expression);
+            storm::dd::Bdd<DdType> PrismMenuGameAbstractor<DdType, ValueType>::getStates(storm::expressions::Expression const& expression) {
+                storm::abstraction::ExpressionTranslator<DdType> translator(abstractionInformation, smtSolverFactory->create(abstractionInformation.getExpressionManager()));
+                return translator.translate(expression);
             }
             
             template <storm::dd::DdType DdType, typename ValueType>

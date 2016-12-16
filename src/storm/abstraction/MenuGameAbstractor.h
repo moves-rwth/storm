@@ -38,7 +38,7 @@ namespace storm {
              * Retrieves a BDD that characterizes the states corresponding to the given expression. For this to work,
              * appropriate predicates must have been used to refine the abstraction, otherwise this will fail.
              */
-            virtual storm::dd::Bdd<DdType> getStates(storm::expressions::Expression const& expression) const = 0;
+            virtual storm::dd::Bdd<DdType> getStates(storm::expressions::Expression const& expression) = 0;
             
             /// Methods to refine the abstraction.
             virtual void refine(RefinementCommand const& command) = 0;

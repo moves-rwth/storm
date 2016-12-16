@@ -209,7 +209,7 @@ namespace storm {
 
             // Cut away all columns targeting non-maybe states.
             submatrix *= maybeStatesAdd.swapVariables(game.getRowColumnMetaVariablePairs());
-
+            
             // Cut the starting vector to the maybe states of this query.
             storm::dd::Add<Type, ValueType> startVector;
             if (startInfo) {
@@ -311,6 +311,10 @@ namespace storm {
             storm::abstraction::MenuGameRefiner<Type, ValueType> refiner(*abstractor, smtSolverFactory->create(preprocessedModel.getManager()));
             refiner.refine(initialPredicates);
             
+            storm::dd::Bdd<Type> globalConstraintStates = abstractor->getStates(constraintExpression);
+            storm::dd::Bdd<Type> globalTargetStates = abstractor->getStates(targetStateExpression);
+            globalTargetStates.template toAdd<ValueType>().exportToDot("target.dot");
+            
             // Enter the main-loop of abstraction refinement.
             boost::optional<QualitativeResultMinMax<Type>> previousQualitativeResult = boost::none;
             boost::optional<QuantitativeResult<Type, ValueType>> previousMinQuantitativeResult = boost::none;
@@ -328,8 +332,8 @@ namespace storm {
                 // (2) Prepare transition matrix BDD and target state BDD for later use.
                 storm::dd::Bdd<Type> transitionMatrixBdd = game.getTransitionMatrix().toBdd();
                 storm::dd::Bdd<Type> initialStates = game.getInitialStates();
-                storm::dd::Bdd<Type> constraintStates = game.getStates(constraintExpression);
-                storm::dd::Bdd<Type> targetStates = game.getStates(targetStateExpression);
+                storm::dd::Bdd<Type> constraintStates = globalConstraintStates && game.getReachableStates();
+                storm::dd::Bdd<Type> targetStates = globalTargetStates && game.getReachableStates();
                 if (player1Direction == storm::OptimizationDirection::Minimize) {
                     targetStates |= game.getBottomStates();
                 }

@@ -2,6 +2,7 @@
 
 #include "storm/abstraction/BottomStateResult.h"
 #include "storm/abstraction/GameBddResult.h"
+#include "storm/abstraction/ExpressionTranslator.h"
 
 #include "storm/storage/BitVector.h"
 
@@ -128,9 +129,9 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            storm::dd::Bdd<DdType> JaniMenuGameAbstractor<DdType, ValueType>::getStates(storm::expressions::Expression const& predicate) const {
-                STORM_LOG_ASSERT(currentGame != nullptr, "Game was not properly created.");
-                return abstractionInformation.getPredicateSourceVariable(predicate);
+            storm::dd::Bdd<DdType> JaniMenuGameAbstractor<DdType, ValueType>::getStates(storm::expressions::Expression const& expression) {
+                storm::abstraction::ExpressionTranslator<DdType> translator(abstractionInformation, smtSolverFactory->create(abstractionInformation.getExpressionManager()));
+                return translator.translate(expression);
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
@@ -161,7 +162,7 @@ namespace storm {
                 // If there are deadlock states, we fix them now.
                 storm::dd::Add<DdType, ValueType> deadlockTransitions = abstractionInformation.getDdManager().template getAddZero<ValueType>();
                 if (!deadlockStates.isZero()) {
-                    deadlockTransitions = (deadlockStates && abstractionInformation.getAllPredicateIdentities() && abstractionInformation.encodePlayer1Choice(0, abstractionInformation.getPlayer1VariableCount()) && abstractionInformation.encodePlayer2Choice(0, 0, game.numberOfPlayer2Variables) && abstractionInformation.encodeAux(0, 0, abstractionInformation.getAuxVariableCount())).template toAdd<ValueType>();
+                    deadlockTransitions = (deadlockStates && abstractionInformation.getAllPredicateIdentities() && abstractionInformation.getAllLocationIdentities() && abstractionInformation.encodePlayer1Choice(0, abstractionInformation.getPlayer1VariableCount()) && abstractionInformation.encodePlayer2Choice(0, 0, game.numberOfPlayer2Variables) && abstractionInformation.encodeAux(0, 0, abstractionInformation.getAuxVariableCount())).template toAdd<ValueType>();
                 }
                 
                 // Compute bottom states and the appropriate transitions if necessary.

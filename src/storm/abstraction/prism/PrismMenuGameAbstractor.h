@@ -91,14 +91,7 @@ namespace storm {
                  */
                 storm::expressions::Expression getInitialExpression() const override;
                 
-                /*!
-                 * Retrieves the set of states (represented by a BDD) satisfying the given predicate, assuming that it
-                 * was either given as an initial predicate or used as a refining predicate later.
-                 *
-                 * @param predicate The predicate for which to retrieve the states.
-                 * @return The BDD representing the set of states.
-                 */
-                storm::dd::Bdd<DdType> getStates(storm::expressions::Expression const& expression) const;
+                storm::dd::Bdd<DdType> getStates(storm::expressions::Expression const& expression) override;
                 
                 /*!
                  * Performs the given refinement command.

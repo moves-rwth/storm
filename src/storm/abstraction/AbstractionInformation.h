@@ -349,6 +349,13 @@ namespace storm {
             storm::dd::Bdd<DdType> const& getAllPredicateIdentities() const;
             
             /*!
+             * Retrieves a BDD representing the identities of all location variables.
+             *
+             * @return All location identities.
+             */
+            storm::dd::Bdd<DdType> const& getAllLocationIdentities() const;
+            
+            /*!
              * Retrieves a mapping of the known predicates to the BDDs that represent the corresponding states.
              *
              * @return A mapping from predicates to their representing BDDs.
@@ -558,7 +565,10 @@ namespace storm {
             
             /// A BDD that represents the identity of all predicate variables.
             storm::dd::Bdd<DdType> allPredicateIdentities;
-            
+
+            /// A BDD that represents the identity of all location variables.
+            storm::dd::Bdd<DdType> allLocationIdentities;
+
             /// A meta variable pair that marks bottom states.
             std::pair<storm::expressions::Variable, storm::expressions::Variable> bottomStateVariables;
             

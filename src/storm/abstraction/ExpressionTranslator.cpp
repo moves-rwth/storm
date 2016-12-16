@@ -58,7 +58,7 @@ namespace storm {
             }
             
             storm::dd::Bdd<DdType> left = boost::any_cast<storm::dd::Bdd<DdType>>(expression.getFirstOperand()->accept(*this, boost::none));
-            storm::dd::Bdd<DdType> right = boost::any_cast<storm::dd::Bdd<DdType>>(expression.getFirstOperand()->accept(*this, boost::none));
+            storm::dd::Bdd<DdType> right = boost::any_cast<storm::dd::Bdd<DdType>>(expression.getSecondOperand()->accept(*this, boost::none));
             switch (expression.getOperatorType()) {
                 case BinaryBooleanFunctionExpression::OperatorType::And: return left && right;
                 case BinaryBooleanFunctionExpression::OperatorType::Or: return left || right;
@@ -93,7 +93,7 @@ namespace storm {
             
             if (hasLocationVariables) {
                 storm::dd::Add<DdType, double> left = boost::any_cast<storm::dd::Add<DdType, double>>(expression.getFirstOperand()->accept(*this, boost::none));
-                storm::dd::Add<DdType, double> right = boost::any_cast<storm::dd::Add<DdType, double>>(expression.getFirstOperand()->accept(*this, boost::none));
+                storm::dd::Add<DdType, double> right = boost::any_cast<storm::dd::Add<DdType, double>>(expression.getSecondOperand()->accept(*this, boost::none));
 
                 switch (expression.getRelationType()) {
                     case BinaryRelationExpression::RelationType::Equal: return left.equals(right);
@@ -180,7 +180,7 @@ namespace storm {
         
         template <storm::dd::DdType DdType>
         boost::any ExpressionTranslator<DdType>::visit(IntegerLiteralExpression const& expression, boost::any const& data) {
-            return abstractionInformation.get().getDdManager().template getConstant(expression.getValue());
+            return abstractionInformation.get().getDdManager().template getConstant<double>(expression.getValue());
         }
         
         template <storm::dd::DdType DdType>
