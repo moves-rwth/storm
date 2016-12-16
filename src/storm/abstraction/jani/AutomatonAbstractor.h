@@ -17,13 +17,13 @@ namespace storm {
     }
     
     namespace abstraction {
+        template <storm::dd::DdType DdType>
+        class AbstractionInformation;
+
         template<storm::dd::DdType DdType>
         struct BottomStateResult;
 
         namespace jani {
-            template <storm::dd::DdType DdType>
-            class JaniAbstractionInformation;
-            
             template <storm::dd::DdType DdType, typename ValueType>
             class AutomatonAbstractor {
             public:
@@ -35,7 +35,7 @@ namespace storm {
                  * @param smtSolverFactory A factory that is to be used for creating new SMT solvers.
                  * @param useDecomposition A flag indicating whether to use the decomposition during abstraction.
                  */
-                AutomatonAbstractor(storm::jani::Automaton const& automaton, JaniAbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool useDecomposition);
+                AutomatonAbstractor(storm::jani::Automaton const& automaton, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool useDecomposition);
                 
                 AutomatonAbstractor(AutomatonAbstractor const&) = default;
                 AutomatonAbstractor& operator=(AutomatonAbstractor const&) = default;
@@ -87,6 +87,11 @@ namespace storm {
                 storm::dd::Add<DdType, ValueType> getEdgeDecoratorAdd() const;
                 
                 /*!
+                 * Retrieves a BDD that encodes all initial locations of this abstract automaton.
+                 */
+                storm::dd::Bdd<DdType> getInitialLocationsBdd() const;
+                
+                /*!
                  * Retrieves the abstract edges of this abstract automton.
                  *
                  * @return The abstract edges.
@@ -113,19 +118,22 @@ namespace storm {
                  *
                  * @return The abstraction information.
                  */
-                JaniAbstractionInformation<DdType> const& getAbstractionInformation() const;
+                AbstractionInformation<DdType> const& getAbstractionInformation() const;
                 
                 // A factory that can be used to create new SMT solvers.
                 std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory;
                 
                 // The DD-related information.
-                std::reference_wrapper<JaniAbstractionInformation<DdType> const> abstractionInformation;
+                std::reference_wrapper<AbstractionInformation<DdType> const> abstractionInformation;
                 
                 // The abstract edge of the abstract automaton.
                 std::vector<EdgeAbstractor<DdType, ValueType>> edges;
                 
                 // The concrete module this abstract automaton refers to.
                 std::reference_wrapper<storm::jani::Automaton const> automaton;
+                
+                // If the automaton has more than one location, we need variables to encode that.
+                boost::optional<std::pair<storm::expressions::Variable, storm::expressions::Variable>> locationVariables;
             };
         }
     }

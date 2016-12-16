@@ -10,7 +10,7 @@ namespace storm {
     namespace abstraction {
         
         template <storm::dd::DdType DdType>
-        LocalExpressionInformation<DdType>::LocalExpressionInformation(AbstractionInformation<DdType> const& abstractionInformation) : relevantVariables(abstractionInformation.getVariables()), expressionBlocks(relevantVariables.size()), abstractionInformation(abstractionInformation) {
+        LocalExpressionInformation<DdType>::LocalExpressionInformation(AbstractionInformation<DdType> const& abstractionInformation) : relevantVariables(abstractionInformation.getAbstractedVariables()), expressionBlocks(relevantVariables.size()), abstractionInformation(abstractionInformation) {
             // Assign each variable to a new block.
             uint_fast64_t currentBlock = 0;
             variableBlocks.resize(relevantVariables.size());

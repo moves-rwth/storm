@@ -40,12 +40,12 @@ namespace storm {
     
     namespace abstraction {
         template <storm::dd::DdType DdType>
+        class AbstractionInformation;
+
+        template <storm::dd::DdType DdType>
         class BottomStateResult;
 
         namespace jani {
-            template <storm::dd::DdType DdType>
-            class JaniAbstractionInformation;
-
             template <storm::dd::DdType DdType, typename ValueType>
             class EdgeAbstractor {
             public:
@@ -58,7 +58,7 @@ namespace storm {
                  * @param smtSolverFactory A factory that is to be used for creating new SMT solvers.
                  * @param useDecomposition A flag indicating whether to use an edge decomposition during abstraction.
                  */
-                EdgeAbstractor(uint64_t edgeId, storm::jani::Edge const& edge, JaniAbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool useDecomposition);
+                EdgeAbstractor(uint64_t edgeId, storm::jani::Edge const& edge, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool useDecomposition);
                                
                 /*!
                  * Refines the abstract edge with the given predicates.
@@ -98,9 +98,11 @@ namespace storm {
                 /*!
                  * Retrieves an ADD that maps the encoding of the edge, source/target locations and its updates to their probabilities.
                  *
+                 * @param locationVariables If provided, the location variables are used to encode the source/destination locations of the edge
+                 * and its destinations.
                  * @return The decorator ADD.
                  */
-                storm::dd::Add<DdType, ValueType> getEdgeDecoratorAdd() const;
+                storm::dd::Add<DdType, ValueType> getEdgeDecoratorAdd(boost::optional<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& locationVariables) const;
                 
                 /*!
                  * Retrieves the concrete edge that is abstracted by this abstract edge.
@@ -194,14 +196,14 @@ namespace storm {
                  *
                  * @return The abstraction information object.
                  */
-                JaniAbstractionInformation<DdType> const& getAbstractionInformation() const;
+                AbstractionInformation<DdType> const& getAbstractionInformation() const;
 
                 /*!
                  * Retrieves the abstraction information object.
                  *
                  * @return The abstraction information object.
                  */
-                JaniAbstractionInformation<DdType>& getAbstractionInformation();
+                AbstractionInformation<DdType>& getAbstractionInformation();
                 
                 /*!
                  * Computes the globally missing state identities.
@@ -215,7 +217,7 @@ namespace storm {
                 std::unique_ptr<storm::solver::SmtSolver> smtSolver;
 
                 // The abstraction-related information.
-                std::reference_wrapper<JaniAbstractionInformation<DdType>> abstractionInformation;
+                std::reference_wrapper<AbstractionInformation<DdType>> abstractionInformation;
                 
                 // The ID of the edge.
                 uint64_t edgeId;

@@ -14,7 +14,7 @@ namespace storm {
     namespace abstraction {
         
         template <storm::dd::DdType DdType, typename ValueType>
-        StateSetAbstractor<DdType, ValueType>::StateSetAbstractor(AbstractionInformation<DdType>& abstractionInformation, std::vector<storm::expressions::Expression> const& statePredicates, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory) : smtSolver(smtSolverFactory->create(abstractionInformation.getExpressionManager())), abstractionInformation(abstractionInformation), localExpressionInformation(abstractionInformation), relevantPredicatesAndVariables(), concretePredicateVariables(), needsRecomputation(false), cachedBdd(abstractionInformation.getDdManager().getBddOne()), constraint(abstractionInformation.getDdManager().getBddOne()) {
+        StateSetAbstractor<DdType, ValueType>::StateSetAbstractor(AbstractionInformation<DdType>& abstractionInformation, std::vector<storm::expressions::Expression> const& statePredicates, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory) : smtSolver(smtSolverFactory->create(abstractionInformation.getExpressionManager())), abstractionInformation(abstractionInformation), localExpressionInformation(abstractionInformation), relevantPredicatesAndVariables(), concretePredicateVariables(), forceRecomputation(true), cachedBdd(abstractionInformation.getDdManager().getBddOne()), constraint(abstractionInformation.getDdManager().getBddOne()) {
             
             // Assert all state predicates.
             for (auto const& predicate : statePredicates) {
@@ -46,7 +46,22 @@ namespace storm {
             for (auto const& predicateIndex : newPredicates) {
                 localExpressionInformation.addExpression(predicateIndex);
             }
-            needsRecomputation = true;
+            
+            std::set<uint_fast64_t> newRelevantPredicateIndices = localExpressionInformation.getRelatedExpressions(concretePredicateVariables);
+            // Since the number of relevant predicates is monotonic, we can simply check for the size here.
+            STORM_LOG_ASSERT(newRelevantPredicateIndices.size() >= relevantPredicatesAndVariables.size(), "Illegal size of relevant predicates.");
+            if (newRelevantPredicateIndices.size() > relevantPredicatesAndVariables.size()) {
+                // Before adding the missing predicates, we need to remove the constraint BDD.
+                this->popConstraintBdd();
+                
+                // If we need to recompute the BDD, we start by introducing decision variables and the corresponding
+                // constraints in the SMT problem.
+                addMissingPredicates(newRelevantPredicateIndices);
+                
+                // Then re-add the constraint BDD.
+                this->pushConstraintBdd();
+                forceRecomputation = true;
+            }
         }
         
         template <storm::dd::DdType DdType, typename ValueType>
@@ -78,27 +93,6 @@ namespace storm {
         
         template <storm::dd::DdType DdType, typename ValueType>
         void StateSetAbstractor<DdType, ValueType>::recomputeCachedBdd() {
-            // Now check whether we need to recompute the cached BDD.
-            std::set<uint_fast64_t> newRelevantPredicateIndices = localExpressionInformation.getRelatedExpressions(concretePredicateVariables);
-            
-            // Since the number of relevant predicates is monotonic, we can simply check for the size here.
-            STORM_LOG_ASSERT(newRelevantPredicateIndices.size() >= relevantPredicatesAndVariables.size(), "Illegal size of relevant predicates.");
-            bool recomputeBdd = newRelevantPredicateIndices.size() > relevantPredicatesAndVariables.size();
-            
-            if (!recomputeBdd) {
-                return;
-            }
-            
-            // Before adding the missing predicates, we need to remove the constraint BDD.
-            this->popConstraintBdd();
-            
-            // If we need to recompute the BDD, we start by introducing decision variables and the corresponding
-            // constraints in the SMT problem.
-            addMissingPredicates(newRelevantPredicateIndices);
-            
-            // Then re-add the constraint BDD.
-            this->pushConstraintBdd();
-            
             STORM_LOG_TRACE("Recomputing BDD for state set abstraction.");
             
             storm::dd::Bdd<DdType> result = this->getAbstractionInformation().getDdManager().getBddZero();
@@ -141,7 +135,7 @@ namespace storm {
         
         template <storm::dd::DdType DdType, typename ValueType>
         storm::dd::Bdd<DdType> StateSetAbstractor<DdType, ValueType>::getAbstractStates() {
-            if (needsRecomputation) {
+            if (forceRecomputation) {
                 this->recomputeCachedBdd();
             }
             return cachedBdd;

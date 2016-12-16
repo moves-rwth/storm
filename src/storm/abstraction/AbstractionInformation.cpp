@@ -14,24 +14,19 @@ namespace storm {
     namespace abstraction {
 
         template<storm::dd::DdType DdType>
-        AbstractionInformation<DdType>::AbstractionInformation(storm::expressions::ExpressionManager& expressionManager, std::set<storm::expressions::Variable> const& allVariables, std::unique_ptr<storm::solver::SmtSolver>&& smtSolver, std::shared_ptr<storm::dd::DdManager<DdType>> ddManager) : expressionManager(expressionManager), equivalenceChecker(std::move(smtSolver)), variables(allVariables), ddManager(ddManager), allPredicateIdentities(ddManager->getBddOne()), expressionToBddMap() {
+        AbstractionInformation<DdType>::AbstractionInformation(storm::expressions::ExpressionManager& expressionManager, std::set<storm::expressions::Variable> const& abstractedVariables, std::unique_ptr<storm::solver::SmtSolver>&& smtSolver, std::shared_ptr<storm::dd::DdManager<DdType>> ddManager) : expressionManager(expressionManager), equivalenceChecker(std::move(smtSolver)), abstractedVariables(abstractedVariables), ddManager(ddManager), allPredicateIdentities(ddManager->getBddOne()), expressionToBddMap() {
             // Intentionally left empty.
         }
         
         template<storm::dd::DdType DdType>
         void AbstractionInformation<DdType>::addExpressionVariable(storm::expressions::Variable const& variable) {
-            variables.insert(variable);
+            abstractedVariables.insert(variable);
         }
         
         template<storm::dd::DdType DdType>
         void AbstractionInformation<DdType>::addExpressionVariable(storm::expressions::Variable const& variable, storm::expressions::Expression const& constraint) {
             addExpressionVariable(variable);
             addConstraint(constraint);
-        }
-        
-        template<storm::dd::DdType DdType>
-        std::set<storm::expressions::Variable> AbstractionInformation<DdType>::getExpressionVariables() const {
-            return variables;
         }
         
         template<storm::dd::DdType DdType>
@@ -68,8 +63,8 @@ namespace storm {
             allPredicateIdentities &= predicateIdentities.back();
             sourceVariables.insert(newMetaVariable.first);
             successorVariables.insert(newMetaVariable.second);
-            orderedSourceVariables.push_back(newMetaVariable.first);
-            orderedSuccessorVariables.push_back(newMetaVariable.second);
+            orderedSourcePredicateVariables.push_back(newMetaVariable.first);
+            orderedSuccessorPredicateVariables.push_back(newMetaVariable.second);
             ddVariableIndexToPredicateIndexMap[predicateIdentities.back().getIndex()] = predicateIndex;
             expressionToBddMap[predicate] = predicateBdds[predicateIndex].first && !bottomStateBdds.first;
 
@@ -164,8 +159,8 @@ namespace storm {
         }
         
         template<storm::dd::DdType DdType>
-        std::set<storm::expressions::Variable> const& AbstractionInformation<DdType>::getVariables() const {
-            return variables;
+        std::set<storm::expressions::Variable> const& AbstractionInformation<DdType>::getAbstractedVariables() const {
+            return abstractedVariables;
         }
         
         template<storm::dd::DdType DdType>
@@ -284,15 +279,15 @@ namespace storm {
         }
         
         template<storm::dd::DdType DdType>
-        std::vector<storm::expressions::Variable> const& AbstractionInformation<DdType>::getOrderedSuccessorVariables() const {
-            return orderedSuccessorVariables;
+        std::vector<storm::expressions::Variable> const& AbstractionInformation<DdType>::getOrderedSourcePredicateVariables() const {
+            return orderedSourcePredicateVariables;
         }
         
         template<storm::dd::DdType DdType>
-        std::vector<storm::expressions::Variable> const& AbstractionInformation<DdType>::getOrderedSourceVariables() const {
-            return orderedSourceVariables;
+        std::vector<storm::expressions::Variable> const& AbstractionInformation<DdType>::getOrderedSuccessorPredicateVariables() const {
+            return orderedSuccessorPredicateVariables;
         }
-        
+
         template<storm::dd::DdType DdType>
         storm::dd::Bdd<DdType> const& AbstractionInformation<DdType>::getAllPredicateIdentities() const {
             return allPredicateIdentities;
@@ -432,8 +427,8 @@ namespace storm {
             storm::dd::Add<DdType, double> add = state.template toAdd<double>();
             auto it = add.begin();
             auto stateValuePair = *it;
-            for (uint_fast64_t index = 0; index < this->getOrderedSourceVariables().size(); ++index) {
-                auto const& successorVariable = this->getOrderedSourceVariables()[index];
+            for (uint_fast64_t index = 0; index < this->getOrderedSourcePredicateVariables().size(); ++index) {
+                auto const& successorVariable = this->getOrderedSourcePredicateVariables()[index];
                 if (stateValuePair.first.getBooleanValue(successorVariable)) {
                     statePredicates.set(index);
                 }
@@ -452,8 +447,8 @@ namespace storm {
                 uint_fast64_t updateIndex = this->decodeAux(successorValuePair.first, 0, this->getAuxVariableCount());
                 
                 storm::storage::BitVector successor(this->getNumberOfPredicates());
-                for (uint_fast64_t index = 0; index < this->getOrderedSuccessorVariables().size(); ++index) {
-                    auto const& successorVariable = this->getOrderedSuccessorVariables()[index];
+                for (uint_fast64_t index = 0; index < this->getOrderedSuccessorPredicateVariables().size(); ++index) {
+                    auto const& successorVariable = this->getOrderedSuccessorPredicateVariables()[index];
                     if (successorValuePair.first.getBooleanValue(successorVariable)) {
                         successor.set(index);
                     }
@@ -475,8 +470,8 @@ namespace storm {
             auto stateValuePair = *it;
             uint64_t choiceIndex = this->decodePlayer1Choice(stateValuePair.first, this->getPlayer1VariableCount());
             uint64_t updateIndex = this->decodeAux(stateValuePair.first, 0, this->getAuxVariableCount());
-            for (uint_fast64_t index = 0; index < this->getOrderedSourceVariables().size(); ++index) {
-                auto const& successorVariable = this->getOrderedSourceVariables()[index];
+            for (uint_fast64_t index = 0; index < this->getOrderedSourcePredicateVariables().size(); ++index) {
+                auto const& successorVariable = this->getOrderedSourcePredicateVariables()[index];
 
                 if (stateValuePair.first.getBooleanValue(successorVariable)) {
                     statePredicates.set(index);
@@ -484,6 +479,41 @@ namespace storm {
             }
             
             return std::make_tuple(statePredicates, choiceIndex, updateIndex);
+        }
+        
+        template <storm::dd::DdType DdType>
+        std::pair<std::pair<storm::expressions::Variable, storm::expressions::Variable>, uint64_t> AbstractionInformation<DdType>::addLocationVariables(uint64_t highestLocationIndex) {
+            locationVariablePairs.emplace_back(ddManager->addMetaVariable("loc_" + std::to_string(locationVariablePairs.size()), 0, highestLocationIndex));
+            allSourceLocationVariables.insert(locationVariablePairs.back().first);
+            sourceVariables.insert(locationVariablePairs.back().first);
+            allSuccessorLocationVariables.insert(locationVariablePairs.back().second);
+            successorVariables.insert(locationVariablePairs.back().second);
+            extendedPredicateDdVariables.emplace_back(locationVariablePairs.back());
+            return std::make_pair(locationVariablePairs.back(), locationVariablePairs.size() - 1);
+        }
+        
+        template <storm::dd::DdType DdType>
+        storm::expressions::Variable AbstractionInformation<DdType>::getLocationVariable(uint64_t locationVariableIndex, bool source) const {
+            if (source) {
+                return locationVariablePairs[locationVariableIndex].first;
+            } else {
+                return locationVariablePairs[locationVariableIndex].second;
+            }
+        }
+        
+        template <storm::dd::DdType DdType>
+        std::set<storm::expressions::Variable> const& AbstractionInformation<DdType>::getSourceLocationVariables() const {
+            return allSourceLocationVariables;
+        }
+        
+        template <storm::dd::DdType DdType>
+        std::set<storm::expressions::Variable> const& AbstractionInformation<DdType>::getSuccessorLocationVariables() const {
+            return allSuccessorLocationVariables;
+        }
+        
+        template <storm::dd::DdType DdType>
+        storm::dd::Bdd<DdType> AbstractionInformation<DdType>::encodeLocation(storm::expressions::Variable const& locationVariable, uint64_t locationIndex) const {
+            return this->getDdManager().getEncoding(locationVariable, locationIndex);
         }
         
         template class AbstractionInformation<storm::dd::DdType::CUDD>;

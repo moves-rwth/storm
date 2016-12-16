@@ -11,6 +11,11 @@
 #include "storm/storage/expressions/Expression.h"
 
 namespace storm {
+    namespace dd {
+        template <storm::dd::DdType DdType>
+        class Bdd;
+    }
+    
     namespace abstraction {
         
         template <storm::dd::DdType DdType>
@@ -28,6 +33,12 @@ namespace storm {
             virtual std::pair<uint64_t, uint64_t> getPlayer1ChoiceRange() const = 0;
             virtual std::map<storm::expressions::Variable, storm::expressions::Expression> getVariableUpdates(uint64_t player1Choice, uint64_t auxiliaryChoice) const = 0;
             virtual storm::expressions::Expression getInitialExpression() const = 0;
+            
+            /*!
+             * Retrieves a BDD that characterizes the states corresponding to the given expression. For this to work,
+             * appropriate predicates must have been used to refine the abstraction, otherwise this will fail.
+             */
+            virtual storm::dd::Bdd<DdType> getStates(storm::expressions::Expression const& expression) const = 0;
             
             /// Methods to refine the abstraction.
             virtual void refine(RefinementCommand const& command) = 0;

@@ -146,7 +146,7 @@ namespace storm {
             std::vector<storm::expressions::Variable> decisionVariables;
             
             // A flag indicating whether the cached BDD needs recomputation.
-            bool needsRecomputation;
+            bool forceRecomputation;
             
             // The cached BDD representing the abstraction. This variable is written to in refinement steps (if work
             // needed to be done).

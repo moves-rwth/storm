@@ -2,7 +2,7 @@
 
 #include "storm/abstraction/BottomStateResult.h"
 #include "storm/abstraction/GameBddResult.h"
-#include "storm/abstraction/jani/JaniAbstractionInformation.h"
+#include "storm/abstraction/AbstractionInformation.h"
 
 #include "storm/storage/dd/DdManager.h"
 #include "storm/storage/dd/Add.h"
@@ -23,13 +23,17 @@ namespace storm {
             using storm::settings::modules::AbstractionSettings;
             
             template <storm::dd::DdType DdType, typename ValueType>
-            AutomatonAbstractor<DdType, ValueType>::AutomatonAbstractor(storm::jani::Automaton const& automaton, JaniAbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool useDecomposition) : smtSolverFactory(smtSolverFactory), abstractionInformation(abstractionInformation), edges(), automaton(automaton) {
+            AutomatonAbstractor<DdType, ValueType>::AutomatonAbstractor(storm::jani::Automaton const& automaton, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool useDecomposition) : smtSolverFactory(smtSolverFactory), abstractionInformation(abstractionInformation), edges(), automaton(automaton) {
                 
                 // For each concrete command, we create an abstract counterpart.
                 uint64_t edgeId = 0;
                 for (auto const& edge : automaton.getEdges()) {
                     edges.emplace_back(edgeId, edge, abstractionInformation, smtSolverFactory, useDecomposition);
                     ++edgeId;
+                }
+                
+                if (automaton.getNumberOfLocations() > 1) {
+                    locationVariables = abstractionInformation.addLocationVariables(automaton.getNumberOfLocations() - 1).first;
                 }
             }
             
@@ -87,7 +91,21 @@ namespace storm {
             storm::dd::Add<DdType, ValueType> AutomatonAbstractor<DdType, ValueType>::getEdgeDecoratorAdd() const {
                 storm::dd::Add<DdType, ValueType> result = this->getAbstractionInformation().getDdManager().template getAddZero<ValueType>();
                 for (auto const& edge : edges) {
-                    result += edge.getEdgeDecoratorAdd();
+                    result += edge.getEdgeDecoratorAdd(locationVariables);
+                }
+                return result;
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
+            storm::dd::Bdd<DdType> AutomatonAbstractor<DdType, ValueType>::getInitialLocationsBdd() const {
+                if (automaton.get().getNumberOfLocations()) {
+                    return this->getAbstractionInformation().getDdManager().getBddOne();
+                }
+                
+                std::set<uint64_t> const& initialLocationIndices = automaton.get().getInitialLocationIndices();
+                storm::dd::Bdd<DdType> result = this->getAbstractionInformation().getDdManager().getBddZero();
+                for (auto const& initialLocationIndex : initialLocationIndices) {
+                    result |= this->getAbstractionInformation().encodeLocation(locationVariables.get().first, initialLocationIndex);
                 }
                 return result;
             }
@@ -108,7 +126,7 @@ namespace storm {
             }
 
             template <storm::dd::DdType DdType, typename ValueType>
-            JaniAbstractionInformation<DdType> const& AutomatonAbstractor<DdType, ValueType>::getAbstractionInformation() const {
+            AbstractionInformation<DdType> const& AutomatonAbstractor<DdType, ValueType>::getAbstractionInformation() const {
                 return abstractionInformation.get();
             }
             

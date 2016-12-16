@@ -12,6 +12,10 @@ namespace storm {
             // Intentionally left empty.
         }
 
+        Expression BaseExpression::toExpression() const {
+            return Expression(shared_from_this());
+        }
+        
         Type const& BaseExpression::getType() const {
             return this->type;
         }

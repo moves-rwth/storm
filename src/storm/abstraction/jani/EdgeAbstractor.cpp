@@ -5,7 +5,7 @@
 #include <boost/iterator/transform_iterator.hpp>
 
 #include "storm/abstraction/BottomStateResult.h"
-#include "storm/abstraction/jani/JaniAbstractionInformation.h"
+#include "storm/abstraction/AbstractionInformation.h"
 
 #include "storm/storage/dd/DdManager.h"
 #include "storm/storage/dd/Add.h"
@@ -23,7 +23,7 @@ namespace storm {
     namespace abstraction {
         namespace jani {
             template <storm::dd::DdType DdType, typename ValueType>
-            EdgeAbstractor<DdType, ValueType>::EdgeAbstractor(uint64_t edgeId, storm::jani::Edge const& edge, JaniAbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool useDecomposition) : smtSolver(smtSolverFactory->create(abstractionInformation.getExpressionManager())), abstractionInformation(abstractionInformation), edgeId(edgeId), edge(edge), localExpressionInformation(abstractionInformation), evaluator(abstractionInformation.getExpressionManager()), relevantPredicatesAndVariables(), cachedDd(abstractionInformation.getDdManager().getBddZero(), 0), decisionVariables(), useDecomposition(useDecomposition), skipBottomStates(false), forceRecomputation(true), abstractGuard(abstractionInformation.getDdManager().getBddZero()), bottomStateAbstractor(abstractionInformation, {!edge.getGuard()}, smtSolverFactory) {
+            EdgeAbstractor<DdType, ValueType>::EdgeAbstractor(uint64_t edgeId, storm::jani::Edge const& edge, AbstractionInformation<DdType>& abstractionInformation, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory, bool useDecomposition) : smtSolver(smtSolverFactory->create(abstractionInformation.getExpressionManager())), abstractionInformation(abstractionInformation), edgeId(edgeId), edge(edge), localExpressionInformation(abstractionInformation), evaluator(abstractionInformation.getExpressionManager()), relevantPredicatesAndVariables(), cachedDd(abstractionInformation.getDdManager().getBddZero(), 0), decisionVariables(), useDecomposition(useDecomposition), skipBottomStates(false), forceRecomputation(true), abstractGuard(abstractionInformation.getDdManager().getBddZero()), bottomStateAbstractor(abstractionInformation, {!edge.getGuard()}, smtSolverFactory) {
                 
                 // Make the second component of relevant predicates have the right size.
                 relevantPredicatesAndVariables.second.resize(edge.getNumberOfDestinations());
@@ -653,12 +653,22 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            storm::dd::Add<DdType, ValueType> EdgeAbstractor<DdType, ValueType>::getEdgeDecoratorAdd() const {
+            storm::dd::Add<DdType, ValueType> EdgeAbstractor<DdType, ValueType>::getEdgeDecoratorAdd(boost::optional<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& locationVariables) const {
                 storm::dd::Add<DdType, ValueType> result = this->getAbstractionInformation().getDdManager().template getAddZero<ValueType>();
                 for (uint_fast64_t destinationIndex = 0; destinationIndex < edge.get().getNumberOfDestinations(); ++destinationIndex) {
-                    result += this->getAbstractionInformation().encodeAux(destinationIndex, 0, this->getAbstractionInformation().getAuxVariableCount()).template toAdd<ValueType>() * this->getAbstractionInformation().getDdManager().getConstant(evaluator.asRational(edge.get().getDestination(destinationIndex).getProbability())) * this->getAbstractionInformation().encodeLocation(edge.get().getDestination(destinationIndex).getLocationIndex(), false).template toAdd<ValueType>();
+                    result += this->getAbstractionInformation().encodeAux(destinationIndex, 0, this->getAbstractionInformation().getAuxVariableCount()).template toAdd<ValueType>() * this->getAbstractionInformation().getDdManager().getConstant(evaluator.asRational(edge.get().getDestination(destinationIndex).getProbability()));
+                    if (locationVariables) {
+                        result *= this->getAbstractionInformation().encodeLocation(locationVariables.get().second, edge.get().getDestination(destinationIndex).getLocationIndex()).template toAdd<ValueType>();
+                    }
                 }
-                result *= this->getAbstractionInformation().encodeLocation(edge.get().getSourceLocationIndex(), true).template toAdd<ValueType>() * this->getAbstractionInformation().encodePlayer1Choice(edgeId, this->getAbstractionInformation().getPlayer1VariableCount()).template toAdd<ValueType>();
+                
+                storm::dd::Add<DdType, ValueType> tmp = this->getAbstractionInformation().getDdManager().template getAddOne<ValueType>();
+                if (locationVariables) {
+                    tmp *= this->getAbstractionInformation().encodeLocation(locationVariables.get().first, edge.get().getSourceLocationIndex()).template toAdd<ValueType>();
+                }
+                tmp *= this->getAbstractionInformation().encodePlayer1Choice(edgeId, this->getAbstractionInformation().getPlayer1VariableCount()).template toAdd<ValueType>();
+                
+                result *= tmp;
                 return result;
             }
             
@@ -668,12 +678,12 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            JaniAbstractionInformation<DdType> const& EdgeAbstractor<DdType, ValueType>::getAbstractionInformation() const {
+            AbstractionInformation<DdType> const& EdgeAbstractor<DdType, ValueType>::getAbstractionInformation() const {
                 return abstractionInformation.get();
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            JaniAbstractionInformation<DdType>& EdgeAbstractor<DdType, ValueType>::getAbstractionInformation() {
+            AbstractionInformation<DdType>& EdgeAbstractor<DdType, ValueType>::getAbstractionInformation() {
                 return abstractionInformation.get();
             }
             

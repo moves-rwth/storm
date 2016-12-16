@@ -34,11 +34,11 @@ namespace storm {
              * Creates a new abstraction information object.
              *
              * @param expressionManager The manager responsible for all variables and expressions during the abstraction process.
-             * @param allVariables All expression variables that can appear in predicates known to this object.
+             * @param abstractedVariables All expression variables that can appear in predicates known to this object.
              * @param smtSolver An SMT solver that is used to detect equivalent predicates.
              * @param ddManager The manager responsible for the DDs.
              */
-            AbstractionInformation(storm::expressions::ExpressionManager& expressionManager, std::set<storm::expressions::Variable> const& allVariables, std::unique_ptr<storm::solver::SmtSolver>&& smtSolver, std::shared_ptr<storm::dd::DdManager<DdType>> ddManager = std::make_shared<storm::dd::DdManager<DdType>>());
+            AbstractionInformation(storm::expressions::ExpressionManager& expressionManager, std::set<storm::expressions::Variable> const& abstractedVariables, std::unique_ptr<storm::solver::SmtSolver>&& smtSolver, std::shared_ptr<storm::dd::DdManager<DdType>> ddManager = std::make_shared<storm::dd::DdManager<DdType>>());
 
             /*!
              * Adds the given variable.
@@ -46,13 +46,6 @@ namespace storm {
              * @param variable The variable to add.
              */
             void addExpressionVariable(storm::expressions::Variable const& variable);
-
-            /*!
-             * Retrieves all known variables that may be used in predicates.
-             *
-             * @return All known variables.
-             */
-            std::set<storm::expressions::Variable> getExpressionVariables() const;
             
             /*!
              * Adds the given variable whose range is restricted.
@@ -181,7 +174,7 @@ namespace storm {
              *
              * @return The set of known variables.
              */
-            std::set<storm::expressions::Variable> const& getVariables() const;
+            std::set<storm::expressions::Variable> const& getAbstractedVariables() const;
             
             /*!
              * Creates the given number of variables used to encode the choices of player 1/2 and auxiliary information.
@@ -347,20 +340,6 @@ namespace storm {
              * @return All successor meta variables.
              */
             std::set<storm::expressions::Variable> const& getSuccessorVariables() const;
-
-            /*!
-             * Retrieves the ordered collection of source meta variables.
-             *
-             * @return All source meta variables.
-             */
-            std::vector<storm::expressions::Variable> const& getOrderedSourceVariables() const;
-            
-            /*!
-             * Retrieves the ordered collection of successor meta variables.
-             *
-             * @return All successor meta variables.
-             */
-            std::vector<storm::expressions::Variable> const& getOrderedSuccessorVariables() const;
             
             /*!
              * Retrieves a BDD representing the identities of all predicates.
@@ -466,7 +445,46 @@ namespace storm {
              */
             std::tuple<storm::storage::BitVector, uint64_t, uint64_t> decodeStatePlayer1ChoiceAndUpdate(storm::dd::Bdd<DdType> const& stateChoiceAndUpdate) const;
             
-        private:
+            /*!
+             * Adds a location variable of appropriate range and returns the pair of meta variables.
+             */
+            std::pair<std::pair<storm::expressions::Variable, storm::expressions::Variable>, uint64_t> addLocationVariables(uint64_t highestLocationIndex);
+            
+            /*!
+             * Retrieves the location variable with the given index as either source or successor.
+             */
+            storm::expressions::Variable getLocationVariable(uint64_t locationVariableIndex, bool source) const;
+            
+            /*!
+             * Retrieves the source location variables.
+             */
+            std::set<storm::expressions::Variable> const& getSourceLocationVariables() const;
+            
+            /*!
+             * Retrieves the source location variables.
+             */
+            std::set<storm::expressions::Variable> const& getSuccessorLocationVariables() const;
+            
+            /*!
+             * Encodes the given location index as either source or successor.
+             */
+            storm::dd::Bdd<DdType> encodeLocation(storm::expressions::Variable const& locationVariable, uint64_t locationIndex) const;
+            
+        protected:
+            /*!
+             * Retrieves the ordered collection of source predicate meta variables.
+             *
+             * @return All source meta variables.
+             */
+            std::vector<storm::expressions::Variable> const& getOrderedSourcePredicateVariables() const;
+
+            /*!
+             * Retrieves the ordered collection of successor predicate meta variables.
+             *
+             * @return All successor meta variables.
+             */
+            std::vector<storm::expressions::Variable> const& getOrderedSuccessorPredicateVariables() const;
+
             /*!
              * Encodes the given index with the given number of variables from the given variables.
              *
@@ -503,8 +521,8 @@ namespace storm {
             /// The current set of predicates used in the abstraction.
             std::vector<storm::expressions::Expression> predicates;
             
-            /// The set of all variables.
-            std::set<storm::expressions::Variable> variables;
+            /// The set of all abstracted variables.
+            std::set<storm::expressions::Variable> abstractedVariables;
             
             /// The expressions characterizing legal variable values.
             std::vector<storm::expressions::Expression> constraints;
@@ -527,10 +545,10 @@ namespace storm {
             std::set<storm::expressions::Variable> successorVariables;
 
             /// An ordered collection of the source variables.
-            std::vector<storm::expressions::Variable> orderedSourceVariables;
+            std::vector<storm::expressions::Variable> orderedSourcePredicateVariables;
 
             /// An ordered collection of the successor variables.
-            std::vector<storm::expressions::Variable> orderedSuccessorVariables;
+            std::vector<storm::expressions::Variable> orderedSuccessorPredicateVariables;
             
             /// The BDDs corresponding to the predicates.
             std::vector<std::pair<storm::dd::Bdd<DdType>, storm::dd::Bdd<DdType>>> predicateBdds;
@@ -570,6 +588,16 @@ namespace storm {
             
             /// A mapping from expressions to the corresponding BDDs.
             std::map<storm::expressions::Expression, storm::dd::Bdd<DdType>> expressionToBddMap;
+            
+            /// The location variable pairs (source/successor).
+            std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> locationVariablePairs;
+            
+            // All source location variables.
+            std::set<storm::expressions::Variable> allSourceLocationVariables;
+            
+            // All successor location variables.
+            std::set<storm::expressions::Variable> allSuccessorLocationVariables;
+            
         };
         
     }

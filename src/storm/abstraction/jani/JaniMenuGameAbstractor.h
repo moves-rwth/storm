@@ -6,7 +6,7 @@
 #include "storm/abstraction/MenuGame.h"
 #include "storm/abstraction/RefinementCommand.h"
 #include "storm/abstraction/ValidBlockAbstractor.h"
-#include "storm/abstraction/jani/JaniAbstractionInformation.h"
+#include "storm/abstraction/AbstractionInformation.h"
 #include "storm/abstraction/jani/AutomatonAbstractor.h"
 
 #include "storm/storage/dd/Add.h"
@@ -98,7 +98,7 @@ namespace storm {
                  * @param predicate The predicate for which to retrieve the states.
                  * @return The BDD representing the set of states.
                  */
-                storm::dd::Bdd<DdType> getStates(storm::expressions::Expression const& predicate);
+                storm::dd::Bdd<DdType> getStates(storm::expressions::Expression const& predicate) const override;
                 
                 /*!
                  * Performs the given refinement command.
@@ -139,7 +139,7 @@ namespace storm {
                 std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory;
                 
                 // An object containing all information about the abstraction like predicates and the corresponding DDs.
-                JaniAbstractionInformation<DdType> abstractionInformation;
+                AbstractionInformation<DdType> abstractionInformation;
                 
                 // The abstract modules of the abstract program.
                 std::vector<AutomatonAbstractor<DdType, ValueType>> automata;
@@ -149,7 +149,10 @@ namespace storm {
                 
                 // An object that is used to compute the valid blocks.
                 ValidBlockAbstractor<DdType> validBlockAbstractor;
-                                
+                
+                // A BDD characterizing the initial locations of the abstracted automata.
+                storm::dd::Bdd<DdType> initialLocationsBdd;
+                
                 // An ADD characterizing the probabilities and source/target locations of edges and their updates.
                 storm::dd::Add<DdType, ValueType> edgeDecoratorAdd;
                 

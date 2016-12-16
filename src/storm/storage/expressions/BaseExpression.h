@@ -16,6 +16,7 @@ namespace storm {
         // Forward-declare expression classes.
         class ExpressionManager;
         class Variable;
+        class Expression;
         class Valuation;
         class ExpressionVisitor;
         enum struct OperatorType;
@@ -53,6 +54,11 @@ namespace storm {
             
             // Make the destructor virtual (to allow destruction via base class pointer) and default it.
             virtual ~BaseExpression() = default;
+
+            /*!
+             * Converts the base expression to a proper expression.
+             */
+            Expression toExpression() const;
             
             /*!
              * Evaluates the expression under the valuation of unknowns (variables and constants) given by the

@@ -129,9 +129,9 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            storm::dd::Bdd<DdType> PrismMenuGameAbstractor<DdType, ValueType>::getStates(storm::expressions::Expression const& predicate) {
+            storm::dd::Bdd<DdType> PrismMenuGameAbstractor<DdType, ValueType>::getStates(storm::expressions::Expression const& expression) const {
                 STORM_LOG_ASSERT(currentGame != nullptr, "Game was not properly created.");
-                return abstractionInformation.getPredicateSourceVariable(predicate);
+                return abstractionInformation.getPredicateSourceVariable(expression);
             }
             
             template <storm::dd::DdType DdType, typename ValueType>

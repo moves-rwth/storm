@@ -407,7 +407,7 @@ namespace storm {
 
                     auto quantitativeEnd = std::chrono::high_resolution_clock::now();
                     STORM_LOG_DEBUG("Obtained quantitative bounds [" << quantitativeResult.min.initialStateValue << ", " << quantitativeResult.max.initialStateValue << "] on the actual value for the initial states in " << std::chrono::duration_cast<std::chrono::milliseconds>(quantitativeEnd - quantitativeStart).count() << "ms.");
-
+                    
                     // (9) Check whether the lower and upper bounds are close enough to terminate with an answer.
                     result = checkForResultAfterQuantitativeCheck<ValueType>(checkTask, quantitativeResult.min.initialStateValue, quantitativeResult.max.initialStateValue, comparator);
                     if (result) {

@@ -98,7 +98,7 @@ namespace storm {
                  * @param predicate The predicate for which to retrieve the states.
                  * @return The BDD representing the set of states.
                  */
-                storm::dd::Bdd<DdType> getStates(storm::expressions::Expression const& predicate);
+                storm::dd::Bdd<DdType> getStates(storm::expressions::Expression const& expression) const;
                 
                 /*!
                  * Performs the given refinement command.
