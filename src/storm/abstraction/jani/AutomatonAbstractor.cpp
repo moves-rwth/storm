@@ -79,7 +79,7 @@ namespace storm {
                 BottomStateResult<DdType> result(this->getAbstractionInformation().getDdManager().getBddZero(), this->getAbstractionInformation().getDdManager().getBddZero());
                 
                 for (auto& edge : edges) {
-                    BottomStateResult<DdType> commandBottomStateResult = edge.getBottomStateTransitions(reachableStates, numberOfPlayer2Variables);
+                    BottomStateResult<DdType> commandBottomStateResult = edge.getBottomStateTransitions(reachableStates, numberOfPlayer2Variables, locationVariables);
                     result.states |= commandBottomStateResult.states;
                     result.transitions |= commandBottomStateResult.transitions;
                 }
@@ -98,7 +98,7 @@ namespace storm {
             
             template <storm::dd::DdType DdType, typename ValueType>
             storm::dd::Bdd<DdType> AutomatonAbstractor<DdType, ValueType>::getInitialLocationsBdd() const {
-                if (automaton.get().getNumberOfLocations()) {
+                if (automaton.get().getNumberOfLocations() == 1) {
                     return this->getAbstractionInformation().getDdManager().getBddOne();
                 }
                 

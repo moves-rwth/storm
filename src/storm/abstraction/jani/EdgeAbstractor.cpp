@@ -620,7 +620,10 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            BottomStateResult<DdType> EdgeAbstractor<DdType, ValueType>::getBottomStateTransitions(storm::dd::Bdd<DdType> const& reachableStates, uint_fast64_t numberOfPlayer2Variables) {
+            BottomStateResult<DdType> EdgeAbstractor<DdType, ValueType>::getBottomStateTransitions(storm::dd::Bdd<DdType> const& reachableStates, uint_fast64_t numberOfPlayer2Variables, boost::optional<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& locationVariables) {
+                // Compute the reachable states that have this edge enabled.
+                storm::dd::Bdd<DdType> reachableStatesWithEdge = (reachableStates && abstractGuard && this->getAbstractionInformation().encodeLocation(locationVariables.get().first, edge.get().getSourceLocationIndex())).existsAbstract(this->getAbstractionInformation().getSourceLocationVariables());
+                
                 STORM_LOG_TRACE("Computing bottom state transitions of edge with guard " << edge.get().getGuard());
                 BottomStateResult<DdType> result(this->getAbstractionInformation().getDdManager().getBddZero(), this->getAbstractionInformation().getDdManager().getBddZero());
                 
@@ -632,8 +635,8 @@ namespace storm {
                 
                 // Use the state abstractor to compute the set of abstract states that has this edge enabled but still
                 // has a transition to a bottom state.
-                bottomStateAbstractor.constrain(reachableStates && abstractGuard);
-                result.states = bottomStateAbstractor.getAbstractStates();
+                bottomStateAbstractor.constrain(reachableStatesWithEdge);
+                result.states = bottomStateAbstractor.getAbstractStates() && reachableStatesWithEdge && this->getAbstractionInformation().encodeLocation(locationVariables.get().first, edge.get().getSourceLocationIndex());
                 
                 // If the result is empty one time, we can skip the bottom state computation from now on.
                 if (result.states.isZero()) {
@@ -643,11 +646,14 @@ namespace storm {
                 // Now equip all these states with an actual transition to a bottom state.
                 result.transitions = result.states && this->getAbstractionInformation().getAllPredicateIdentities() && this->getAbstractionInformation().getBottomStateBdd(false, false);
                 
-                // Mark the states as bottom states.
+                // Mark the states as bottom states and add source location information.
                 result.states &= this->getAbstractionInformation().getBottomStateBdd(true, false);
                 
-                // Add the edge encoding and the next free player 2 encoding.
+                // Add the edge encoding.
                 result.transitions &= this->getAbstractionInformation().encodePlayer1Choice(edgeId, this->getAbstractionInformation().getPlayer1VariableCount()) && this->getAbstractionInformation().encodePlayer2Choice(0, 0,numberOfPlayer2Variables) && this->getAbstractionInformation().encodeAux(0, 0, this->getAbstractionInformation().getAuxVariableCount());
+                
+                // Add the location identity to the transitions.
+                result.transitions &= this->getAbstractionInformation().getAllLocationIdentities();
                 
                 return result;
             }

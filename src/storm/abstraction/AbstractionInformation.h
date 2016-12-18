@@ -342,6 +342,13 @@ namespace storm {
             std::set<storm::expressions::Variable> const& getSuccessorVariables() const;
             
             /*!
+             * Retrieves the set of source predicate meta variables.
+             *
+             * @return All source predicate meta variables.
+             */
+            std::set<storm::expressions::Variable> const& getSourcePredicateVariables() const;
+            
+            /*!
              * Retrieves a BDD representing the identities of all predicates.
              *
              * @return All predicate identities.
@@ -551,6 +558,9 @@ namespace storm {
             /// The set of all successor variables.
             std::set<storm::expressions::Variable> successorVariables;
 
+            /// The set of all source predicate variables.
+            std::set<storm::expressions::Variable> sourcePredicateVariables;
+            
             /// An ordered collection of the source variables.
             std::vector<storm::expressions::Variable> orderedSourcePredicateVariables;
 

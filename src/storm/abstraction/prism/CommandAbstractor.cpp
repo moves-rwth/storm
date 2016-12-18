@@ -630,10 +630,12 @@ namespace storm {
                     return result;
                 }
                 
+                storm::dd::Bdd<DdType> reachableStatesWithCommand = reachableStates && abstractGuard;
+                
                 // Use the state abstractor to compute the set of abstract states that has this command enabled but
                 // still has a transition to a bottom state.
-                bottomStateAbstractor.constrain(reachableStates && abstractGuard);
-                result.states = bottomStateAbstractor.getAbstractStates();
+                bottomStateAbstractor.constrain(reachableStatesWithCommand);
+                result.states = bottomStateAbstractor.getAbstractStates() && reachableStatesWithCommand;
                 
                 // If the result is empty one time, we can skip the bottom state computation from now on.
                 if (result.states.isZero()) {

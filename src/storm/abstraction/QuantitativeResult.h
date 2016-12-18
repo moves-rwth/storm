@@ -11,11 +11,11 @@ namespace storm {
         struct QuantitativeResult {
             QuantitativeResult() = default;
             
-            QuantitativeResult(ValueType initialStateValue, storm::dd::Add<Type, ValueType> const& values, storm::dd::Bdd<Type> const& player1Strategy, storm::dd::Bdd<Type> const& player2Strategy) : initialStateValue(initialStateValue), values(values), player1Strategy(player1Strategy), player2Strategy(player2Strategy) {
+            QuantitativeResult(std::pair<ValueType, ValueType> initialStatesRange, storm::dd::Add<Type, ValueType> const& values, storm::dd::Bdd<Type> const& player1Strategy, storm::dd::Bdd<Type> const& player2Strategy) : initialStatesRange(initialStatesRange), values(values), player1Strategy(player1Strategy), player2Strategy(player2Strategy) {
                 // Intentionally left empty.
             }
             
-            ValueType initialStateValue;
+            std::pair<ValueType, ValueType> initialStatesRange;
             storm::dd::Add<Type, ValueType> values;
             storm::dd::Bdd<Type> player1Strategy;
             storm::dd::Bdd<Type> player2Strategy;

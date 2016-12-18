@@ -152,6 +152,7 @@ namespace storm {
                 // Do a reachability analysis on the raw transition relation.
                 storm::dd::Bdd<DdType> transitionRelation = game.bdd.existsAbstract(variablesToAbstract);
                 storm::dd::Bdd<DdType> initialStates = initialLocationsBdd && initialStateAbstractor.getAbstractStates();
+                initialStates.addMetaVariables(abstractionInformation.getSourcePredicateVariables());
                 storm::dd::Bdd<DdType> reachableStates = storm::utility::dd::computeReachableStates(initialStates, transitionRelation, abstractionInformation.getSourceVariables(), abstractionInformation.getSuccessorVariables());
                 
                 // Find the deadlock states in the model. Note that this does not find the 'deadlocks' in bottom states,
@@ -167,7 +168,7 @@ namespace storm {
                 
                 // Compute bottom states and the appropriate transitions if necessary.
                 BottomStateResult<DdType> bottomStateResult(abstractionInformation.getDdManager().getBddZero(), abstractionInformation.getDdManager().getBddZero());
-                bottomStateResult = automata.front().getBottomStateTransitions(reachableStates.existsAbstract(abstractionInformation.getSourceLocationVariables()), game.numberOfPlayer2Variables);
+                bottomStateResult = automata.front().getBottomStateTransitions(reachableStates, game.numberOfPlayer2Variables);
                 bool hasBottomStates = !bottomStateResult.states.isZero();
                 
                 // Construct the transition matrix by cutting away the transitions of unreachable states.

@@ -150,6 +150,7 @@ namespace storm {
                 // Do a reachability analysis on the raw transition relation.
                 storm::dd::Bdd<DdType> transitionRelation = game.bdd.existsAbstract(variablesToAbstract);
                 storm::dd::Bdd<DdType> initialStates = initialStateAbstractor.getAbstractStates();
+                initialStates.addMetaVariables(abstractionInformation.getSourcePredicateVariables());
                 storm::dd::Bdd<DdType> reachableStates = storm::utility::dd::computeReachableStates(initialStates, transitionRelation, abstractionInformation.getSourceVariables(), abstractionInformation.getSuccessorVariables());
                 
                 // Find the deadlock states in the model. Note that this does not find the 'deadlocks' in bottom states,

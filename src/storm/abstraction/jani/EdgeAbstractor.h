@@ -93,7 +93,7 @@ namespace storm {
                  * @param numberOfPlayer2Variables The number of variables used to encode the choices of player 2.
                  * @return The bottom state transitions in the form of a BDD.
                  */
-                BottomStateResult<DdType> getBottomStateTransitions(storm::dd::Bdd<DdType> const& reachableStates, uint_fast64_t numberOfPlayer2Variables);
+                BottomStateResult<DdType> getBottomStateTransitions(storm::dd::Bdd<DdType> const& reachableStates, uint_fast64_t numberOfPlayer2Variables, boost::optional<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& locationVariables);
 
                 /*!
                  * Retrieves an ADD that maps the encoding of the edge, source/target locations and its updates to their probabilities.
