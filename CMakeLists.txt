@@ -36,7 +36,6 @@ option(USE_HYPRO "Sets whether HyPro should be included." OFF)
 option(XML_SUPPORT "Sets whether xml based format parsing should be included." ON)
 option(FORCE_COLOR "Force color output" OFF)
 mark_as_advanced(FORCE_COLOR)
-option(STORM_PYTHON "Build the API for Python" OFF)
 option(STORM_COMPILE_WITH_CCACHE "Compile using CCache [if found]" ON)
 mark_as_advanced(STORM_COMPILE_WITH_CCACHE)
 option(STORM_LOG_DISABLE_DEBUG "Disable log and trace message support" OFF)
@@ -131,11 +130,6 @@ elseif (WIN32)
 endif()
 message(STATUS "Assuming extension for shared libraries: ${DYNAMIC_EXT}")
 message(STATUS "Assuming extension for static libraries: ${STATIC_EXT}")
-
-# Python bindings need shared library
-if(STORM_PYTHON)
-    set(BUILD_SHARED_LIBS ON CACHE BOOL "Build the Storm library dynamically" FORCE)
-endif()
 
 if(BUILD_SHARED_LIBS)
     set(LIB_EXT ${DYNAMIC_EXT})
@@ -365,7 +359,6 @@ set(CMAKE_CTEST_COMMAND_VERBOSE ${CMAKE_CTEST_COMMAND} -V)
 add_custom_target(check-verbose COMMAND ${CMAKE_CTEST_COMMAND_VERBOSE})
 
 
-# Python bindings for storm
 set(STORM_TARGETS "")
 add_subdirectory(src)
 
