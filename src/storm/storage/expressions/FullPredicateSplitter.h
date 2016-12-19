@@ -8,7 +8,7 @@ namespace storm {
     namespace expressions {
         class Expression;
         
-        class PredicateSplitter : public ExpressionVisitor {
+        class FullPredicateSplitter : public ExpressionVisitor {
         public:
             std::vector<storm::expressions::Expression> split(storm::expressions::Expression const& expression);
             

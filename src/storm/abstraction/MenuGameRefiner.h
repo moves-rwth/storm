@@ -11,7 +11,7 @@
 #include "storm/abstraction/QuantitativeResultMinMax.h"
 
 #include "storm/storage/expressions/Expression.h"
-#include "storm/storage/expressions/PredicateSplitter.h"
+#include "storm/storage/expressions/FullPredicateSplitter.h"
 #include "storm/storage/expressions/EquivalenceChecker.h"
 
 #include "storm/storage/dd/DdType.h"
@@ -143,7 +143,7 @@ namespace storm {
             storm::settings::modules::AbstractionSettings::PivotSelectionHeuristic pivotSelectionHeuristic;
             
             /// An object that can be used for splitting predicates.
-            mutable storm::expressions::PredicateSplitter splitter;
+            mutable storm::expressions::FullPredicateSplitter splitter;
             
             /// An object that can be used to determine whether predicates are equivalent.
             mutable storm::expressions::EquivalenceChecker equivalenceChecker;

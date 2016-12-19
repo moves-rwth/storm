@@ -354,10 +354,10 @@ namespace storm {
             if (!hasInitialStatesRestriction()) {
                 return false;
             }
-            if (getInitialStatesExpression().containsVariables()) {
+            if (getInitialStatesRestriction().containsVariables()) {
                 return true;
             } else {
-                return !getInitialStatesExpression().evaluateAsBool();
+                return !getInitialStatesRestriction().evaluateAsBool();
             }
         }
 

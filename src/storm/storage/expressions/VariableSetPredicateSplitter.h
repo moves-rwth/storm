@@ -1,6 +1,7 @@
 #pragma once
 
 #include <set>
+#include <vector>
 
 #include "storm/storage/expressions/ExpressionVisitor.h"
 
@@ -10,11 +11,11 @@ namespace storm {
         class Variable;
         class Expression;
         
-        class VariableSetAbstractor : public ExpressionVisitor {
+        class VariableSetPredicateSplitter : public ExpressionVisitor {
         public:
-            VariableSetAbstractor(std::set<storm::expressions::Variable> const& variablesToAbstract);
+            VariableSetPredicateSplitter(std::set<storm::expressions::Variable> const& irrelevantVariables);
             
-            storm::expressions::Expression abstract(storm::expressions::Expression const& expression);
+            std::vector<storm::expressions::Expression> split(storm::expressions::Expression const& expression);
             
             virtual boost::any visit(IfThenElseExpression const& expression, boost::any const& data) override;
             virtual boost::any visit(BinaryBooleanFunctionExpression const& expression, boost::any const& data) override;
@@ -28,7 +29,8 @@ namespace storm {
             virtual boost::any visit(RationalLiteralExpression const& expression, boost::any const& data) override;
             
         private:
-            std::set<storm::expressions::Variable> variablesToAbstract;
+            std::set<storm::expressions::Variable> irrelevantVariables;
+            std::vector<storm::expressions::Expression> resultPredicates;
         };
         
     }

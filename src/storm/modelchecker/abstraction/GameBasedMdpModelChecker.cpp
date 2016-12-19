@@ -8,7 +8,7 @@
 #include "storm/models/symbolic/Mdp.h"
 
 #include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/storage/expressions/VariableSetAbstractor.h"
+#include "storm/storage/expressions/VariableSetPredicateSplitter.h"
 
 #include "storm/storage/dd/DdManager.h"
 
@@ -78,8 +78,22 @@ namespace storm {
         template<storm::dd::DdType Type, typename ModelType>
         std::unique_ptr<CheckResult> GameBasedMdpModelChecker<Type, ModelType>::computeUntilProbabilities(CheckTask<storm::logic::UntilFormula> const& checkTask) {
             storm::logic::UntilFormula const& pathFormula = checkTask.getFormula();
-            std::map<std::string, storm::expressions::Expression> labelToExpressionMapping = preprocessedModel.asPrismProgram().getLabelToExpressionMapping();
-            return performGameBasedAbstractionRefinement(checkTask.substituteFormula<storm::logic::Formula>(pathFormula), pathFormula.getLeftSubformula().toExpression(preprocessedModel.getManager(), labelToExpressionMapping), pathFormula.getRightSubformula().toExpression(preprocessedModel.getManager(), labelToExpressionMapping));
+            std::map<std::string, storm::expressions::Expression> labelToExpressionMapping;
+            if (preprocessedModel.isPrismProgram()) {
+                labelToExpressionMapping = preprocessedModel.asPrismProgram().getLabelToExpressionMapping();
+            } else {
+                storm::jani::Model const& janiModel = preprocessedModel.asJaniModel();
+                for (auto const& variable : janiModel.getGlobalVariables().getBooleanVariables()) {
+                    if (variable.isTransient()) {
+                        labelToExpressionMapping[variable.getName()] = janiModel.getLabelExpression(variable.asBooleanVariable());
+                    }
+                }
+            }
+            
+            storm::expressions::Expression constraintExpression = pathFormula.getLeftSubformula().toExpression(preprocessedModel.getManager(), labelToExpressionMapping);
+            storm::expressions::Expression targetStateExpression = pathFormula.getRightSubformula().toExpression(preprocessedModel.getManager(), labelToExpressionMapping);
+            
+            return performGameBasedAbstractionRefinement(checkTask.substituteFormula<storm::logic::Formula>(pathFormula), constraintExpression, targetStateExpression);
         }
         
         template<storm::dd::DdType Type, typename ModelType>
@@ -88,8 +102,19 @@ namespace storm {
             std::map<std::string, storm::expressions::Expression> labelToExpressionMapping;
             if (preprocessedModel.isPrismProgram()) {
                 labelToExpressionMapping = preprocessedModel.asPrismProgram().getLabelToExpressionMapping();
+            } else {
+                storm::jani::Model const& janiModel = preprocessedModel.asJaniModel();
+                for (auto const& variable : janiModel.getGlobalVariables().getBooleanVariables()) {
+                    if (variable.isTransient()) {
+                        labelToExpressionMapping[variable.getName()] = janiModel.getLabelExpression(variable.asBooleanVariable());
+                    }
+                }
             }
-            return performGameBasedAbstractionRefinement(checkTask.substituteFormula<storm::logic::Formula>(pathFormula), preprocessedModel.getManager().boolean(true), pathFormula.getSubformula().toExpression(preprocessedModel.getManager(), labelToExpressionMapping));
+            
+            storm::expressions::Expression constraintExpression = preprocessedModel.getManager().boolean(true);
+            storm::expressions::Expression targetStateExpression = pathFormula.getSubformula().toExpression(preprocessedModel.getManager(), labelToExpressionMapping);
+            
+            return performGameBasedAbstractionRefinement(checkTask.substituteFormula<storm::logic::Formula>(pathFormula), constraintExpression, targetStateExpression);
         }
         
         template<storm::dd::DdType Type, typename ValueType>
@@ -326,7 +351,7 @@ namespace storm {
                 auto iterationStart = std::chrono::high_resolution_clock::now();
                 STORM_LOG_TRACE("Starting iteration " << iterations << ".");
 
-                // (1) build initial abstraction based on the the constraint expression (if not 'true') and the target state expression.
+                // (1) build the abstraction.
                 auto abstractionStart = std::chrono::high_resolution_clock::now();
                 storm::abstraction::MenuGame<Type, ValueType> game = abstractor->abstract();
                 auto abstractionEnd = std::chrono::high_resolution_clock::now();
@@ -447,17 +472,13 @@ namespace storm {
         std::vector<storm::expressions::Expression> GameBasedMdpModelChecker<Type, ModelType>::getInitialPredicates(storm::expressions::Expression const& constraintExpression, storm::expressions::Expression const& targetStateExpression) {
             std::vector<storm::expressions::Expression> initialPredicates;
             if (preprocessedModel.isJaniModel()) {
-                storm::expressions::VariableSetAbstractor abstractor(preprocessedModel.asJaniModel().getAllLocationExpressionVariables());
+                storm::expressions::VariableSetPredicateSplitter splitter(preprocessedModel.asJaniModel().getAllLocationExpressionVariables());
 
-                storm::expressions::Expression abstractedExpression = abstractor.abstract(targetStateExpression);
-                if (abstractedExpression.isInitialized() && !abstractedExpression.isTrue() && !abstractedExpression.isFalse()) {
-                    initialPredicates.push_back(abstractedExpression);
-                }
-                
-                abstractedExpression = abstractor.abstract(constraintExpression);
-                if (abstractedExpression.isInitialized() && !abstractedExpression.isTrue() && !abstractedExpression.isFalse()) {
-                    initialPredicates.push_back(abstractedExpression);
-                }
+                std::vector<storm::expressions::Expression> splitExpressions = splitter.split(targetStateExpression);
+                initialPredicates.insert(initialPredicates.end(), splitExpressions.begin(), splitExpressions.end());
+
+                splitExpressions = splitter.split(constraintExpression);
+                initialPredicates.insert(initialPredicates.end(), splitExpressions.begin(), splitExpressions.end());
             } else {
                 if (!targetStateExpression.isTrue() && !targetStateExpression.isFalse()) {
                     initialPredicates.push_back(targetStateExpression);
