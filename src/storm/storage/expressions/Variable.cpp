@@ -3,7 +3,15 @@
 
 namespace storm {
     namespace expressions {
+        Variable::Variable() {
+            // Intentionally left empty.
+        }
+        
         Variable::Variable(std::shared_ptr<ExpressionManager const> const& manager, uint_fast64_t index) : manager(manager), index(index) {
+            // Intentionally left empty.
+        }
+        
+        Variable::~Variable() {
             // Intentionally left empty.
         }
 

@@ -958,7 +958,7 @@ namespace storm {
         storm::jani::Automaton JaniParser::parseAutomaton(json const &automatonStructure, storm::jani::Model const& parentModel) {
             STORM_LOG_THROW(automatonStructure.count("name") == 1, storm::exceptions::InvalidJaniException, "Each automaton must have a name");
             std::string name = getString(automatonStructure.at("name"), " the name field for automaton");
-            storm::jani::Automaton automaton(name);
+            storm::jani::Automaton automaton(name, expressionManager->declareIntegerVariable("_loc_" + name));
             STORM_LOG_THROW(automatonStructure.count("locations") > 0, storm::exceptions::InvalidJaniException, "Automaton '" << name << "' does not have locations.");
             std::unordered_map<std::string, uint64_t> locIds;
             for(auto const& locEntry : automatonStructure.at("locations")) {

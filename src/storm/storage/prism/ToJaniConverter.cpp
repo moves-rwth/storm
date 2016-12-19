@@ -146,7 +146,7 @@ namespace storm {
                 // Keep track of the action indices contained in this module.
                 std::set<uint_fast64_t> actionIndicesOfModule;
 
-                storm::jani::Automaton automaton(module.getName());
+                storm::jani::Automaton automaton(module.getName(), manager->declareIntegerVariable("_loc_prism2jani_" + module.getName()));
                 for (auto const& variable : module.getIntegerVariables()) {
                     storm::jani::BoundedIntegerVariable newIntegerVariable = *storm::jani::makeBoundedIntegerVariable(variable.getName(), variable.getExpressionVariable(), variable.hasInitialValue() ? boost::make_optional(variable.getInitialValueExpression()) : boost::none, false, variable.getLowerBoundExpression(), variable.getUpperBoundExpression());
                     std::set<uint_fast64_t> const& accessingModuleIndices = variablesToAccessingModuleIndices[variable.getExpressionVariable()];

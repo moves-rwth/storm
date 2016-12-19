@@ -418,7 +418,7 @@ namespace storm {
             ParallelComposition const& parallelComposition = systemComposition.asParallelComposition();
 
             // Create the new automaton that will hold the flattened system.
-            Automaton newAutomaton(this->getName() + "_flattening");
+            Automaton newAutomaton(this->getName() + "_flattened", expressionManager->declareIntegerVariable("_loc_flattened_" + this->getName()));
 
             std::map<Variable const*, std::reference_wrapper<Variable const>> variableRemapping;
             for (auto const& variable : getGlobalVariables()) {

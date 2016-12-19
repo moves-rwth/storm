@@ -56,6 +56,10 @@ namespace storm {
             // Intentionally left empty.
         }
         
+        ExpressionManager::~ExpressionManager() {
+            // Intentionally left empty.
+        }
+        
         std::shared_ptr<ExpressionManager> ExpressionManager::clone() const {
             return std::shared_ptr<ExpressionManager>(new ExpressionManager(*this));
         }

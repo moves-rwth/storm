@@ -50,7 +50,7 @@ namespace storm {
             }
         }
         
-        Automaton::Automaton(std::string const& name) : name(name) {
+        Automaton::Automaton(std::string const& name, storm::expressions::Variable const& locationExpressionVariable) : name(name), locationExpressionVariable(locationExpressionVariable) {
             // Add a sentinel element to the mapping from locations to starting indices.
             locationToStartingIndex.push_back(0);
         }
@@ -165,6 +165,10 @@ namespace storm {
                 ++i;
             }
             return mapping;
+        }
+        
+        storm::expressions::Variable const& Automaton::getLocationExpressionVariable() const {
+            return locationExpressionVariable;
         }
 
         Automaton::Edges Automaton::getEdgesFromLocation(std::string const& name) {

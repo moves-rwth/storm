@@ -95,7 +95,12 @@ namespace storm {
             /*!
              * Creates an empty automaton.
              */
-            Automaton(std::string const& name);
+            Automaton(std::string const& name, storm::expressions::Variable const& locationExpressionVariable);
+            
+            Automaton(Automaton const& other) = default;
+            Automaton& operator=(Automaton const& other) = default;
+            Automaton(Automaton&& other) = default;
+            Automaton& operator=(Automaton&& other) = default;
             
             /*!
              * Retrieves the name of the automaton.
@@ -206,6 +211,11 @@ namespace storm {
              * Builds a map from ID to Location Name.
              */
             std::map<uint64_t, std::string> buildIdToLocationNameMap() const;
+            
+            /*!
+             * Retrieves the expression variable that represents the location of this automaton.
+             */
+            storm::expressions::Variable const& getLocationExpressionVariable() const;
             
             /*!
              * Retrieves the edges of the location with the given name.
@@ -357,6 +367,9 @@ namespace storm {
         private:
             /// The name of the automaton.
             std::string name;
+            
+            /// The expression variable representing the location of this automaton.
+            storm::expressions::Variable locationExpressionVariable;
 
             /// The set of variables of this automaton.
             VariableSet variables;

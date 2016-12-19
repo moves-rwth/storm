@@ -71,6 +71,8 @@ namespace storm {
              */
             ExpressionManager();
             
+            ~ExpressionManager();
+            
             /*!
              * Creates a new expression manager with the same set of variables.
              */
