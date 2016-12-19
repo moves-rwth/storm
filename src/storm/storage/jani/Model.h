@@ -379,7 +379,7 @@ namespace storm {
              * Creates the expression that characterizes all states in which the provided transient boolean variable is
              * true. The provided location variables are used to encode the location of the automata.
              */
-            storm::expressions::Expression getLabelExpression(BooleanVariable const& transientVariable, std::map<std::string, storm::expressions::Variable> const& automatonToLocationVariableMap) const;
+            storm::expressions::Expression getLabelExpression(BooleanVariable const& transientVariable, std::vector<std::reference_wrapper<Automaton const>> const& automata) const;
             
             /*!
              * Checks that undefined constants (parameters) of the model preserve the graph of the underlying model.

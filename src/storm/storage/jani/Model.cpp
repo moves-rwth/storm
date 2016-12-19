@@ -969,18 +969,19 @@ namespace storm {
             STORM_LOG_ASSERT(composition != nullptr, "Composition is not set");
         }
         
-        storm::expressions::Expression Model::getLabelExpression(BooleanVariable const& transientVariable, std::map<std::string, storm::expressions::Variable> const& automatonToLocationVariableMap) const {
+        storm::expressions::Expression Model::getLabelExpression(BooleanVariable const& transientVariable, std::vector<std::reference_wrapper<Automaton const>> const& automata) const {
             STORM_LOG_THROW(transientVariable.isTransient(), storm::exceptions::InvalidArgumentException, "Expected transient variable.");
             
             storm::expressions::Expression result;
             bool negate = transientVariable.getInitExpression().isTrue();
             
-            for (auto const& automaton : this->getAutomata()) {
-                storm::expressions::Variable const& locationVariable = automatonToLocationVariableMap.at(automaton.getName());
-                for (auto const& location : automaton.getLocations()) {
+            for (auto const& automaton : automata) {
+                storm::expressions::Variable const& locationVariable = automaton.get().getLocationExpressionVariable();
+                
+                for (auto const& location : automaton.get().getLocations()) {
                     for (auto const& assignment : location.getAssignments().getTransientAssignments()) {
                         if (assignment.getExpressionVariable() == transientVariable.getExpressionVariable()) {
-                            auto newExpression = (locationVariable == this->getManager().integer(automaton.getLocationIndex(location.getName()))) && (negate ? !assignment.getAssignedExpression() : assignment.getAssignedExpression());
+                            auto newExpression = (locationVariable == this->getManager().integer(automaton.get().getLocationIndex(location.getName()))) && (negate ? !assignment.getAssignedExpression() : assignment.getAssignedExpression());
                             if (result.isInitialized()) {
                                 result = result || newExpression;
                             } else {

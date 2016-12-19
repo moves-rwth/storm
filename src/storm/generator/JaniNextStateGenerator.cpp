@@ -80,11 +80,9 @@ namespace storm {
             
             // If there are terminal states we need to handle, we now need to translate all labels to expressions.
             if (this->options.hasTerminalStates()) {
-                std::map<std::string, storm::expressions::Variable> locationVariables;
-                auto locationVariableIt = this->variableInformation.locationVariables.begin();
+                std::vector<std::reference_wrapper<storm::jani::Automaton const>> composedAutomata;
                 for (auto const& automaton : this->model.getAutomata()) {
-                    locationVariables[automaton.getName()] = locationVariableIt->variable;
-                    ++locationVariableIt;
+                    composedAutomata.emplace_back(automaton);
                 }
                 
                 for (auto const& expressionOrLabelAndBool : this->options.getTerminalStates()) {
@@ -100,7 +98,7 @@ namespace storm {
                             STORM_LOG_THROW(variable.isBooleanVariable(), storm::exceptions::InvalidSettingsException, "Terminal states refer to non-boolean variable '" << expressionOrLabelAndBool.first.getLabel() << "'.");
                             STORM_LOG_THROW(variable.isTransient(), storm::exceptions::InvalidSettingsException, "Terminal states refer to non-transient variable '" << expressionOrLabelAndBool.first.getLabel() << "'.");
                             
-                            this->terminalStates.push_back(std::make_pair(this->model.getLabelExpression(variable.asBooleanVariable(), locationVariables), expressionOrLabelAndBool.second));
+                            this->terminalStates.push_back(std::make_pair(this->model.getLabelExpression(variable.asBooleanVariable(), composedAutomata), expressionOrLabelAndBool.second));
                         }
                     }
                 }
@@ -618,11 +616,9 @@ namespace storm {
         storm::models::sparse::StateLabeling JaniNextStateGenerator<ValueType, StateType>::label(storm::storage::BitVectorHashMap<StateType> const& states, std::vector<StateType> const& initialStateIndices, std::vector<StateType> const& deadlockStateIndices) {
             
             // Prepare a mapping from automata names to the location variables.
-            std::map<std::string, storm::expressions::Variable> locationVariables;
-            auto locationVariableIt = this->variableInformation.locationVariables.begin();
+            std::vector<std::reference_wrapper<storm::jani::Automaton const>> composedAutomata;
             for (auto const& automaton : model.getAutomata()) {
-                locationVariables[automaton.getName()] = locationVariableIt->variable;
-                ++locationVariableIt;
+                composedAutomata.emplace_back(automaton);
             }
             
             // As in JANI we can use transient boolean variable assignments in locations to identify states, we need to
@@ -631,7 +627,7 @@ namespace storm {
             for (auto const& variable : model.getGlobalVariables().getTransientVariables()) {
                 if (variable.isBooleanVariable()) {
                     if (this->options.isBuildAllLabelsSet() || this->options.getLabelNames().find(variable.getName()) != this->options.getLabelNames().end()) {
-                        transientVariableToExpressionMap[variable.getExpressionVariable()] = model.getLabelExpression(variable.asBooleanVariable(), locationVariables);
+                        transientVariableToExpressionMap[variable.getExpressionVariable()] = model.getLabelExpression(variable.asBooleanVariable(), composedAutomata);
                     }
                 }
             }

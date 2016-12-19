@@ -161,7 +161,6 @@ namespace storm {
                 // Members that store information about the model. They are used in the process of assembling the model
                 // data that is used in the skeleton.
                 std::unordered_map<storm::expressions::Variable, std::string> variableToName;
-                std::map<std::string, storm::expressions::Variable> automatonToLocationVariable;
                 storm::expressions::ToCppVisitor expressionTranslator;
                 std::map<storm::expressions::Variable, storm::expressions::Expression> lowerBoundShiftSubstitution;
                 std::map<storm::expressions::Variable, int_fast64_t> lowerBounds;
