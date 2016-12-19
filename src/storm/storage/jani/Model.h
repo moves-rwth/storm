@@ -183,11 +183,19 @@ namespace storm {
             VariableSet const& getGlobalVariables() const;
             
             /*!
-             * Retrieves all expression variables used by this model.
+             * Retrieves all expression variables used by this model. Note that this does not include the location
+             * expression variables by default.
              *
              * @return The set of expression variables used by this model.
              */
-            std::set<storm::expressions::Variable> getAllExpressionVariables() const;
+            std::set<storm::expressions::Variable> getAllExpressionVariables(bool includeLocationExpressionVariables = false) const;
+
+            /*!
+             * Retrieves all location expression variables used by this model.
+             *
+             * @return The set of expression variables used by this model.
+             */
+            std::set<storm::expressions::Variable> getAllLocationExpressionVariables() const;
 
             /*!
              * Retrieves whether this model has a global variable with the given name.
@@ -380,7 +388,13 @@ namespace storm {
              * true. The provided location variables are used to encode the location of the automata.
              */
             storm::expressions::Expression getLabelExpression(BooleanVariable const& transientVariable, std::vector<std::reference_wrapper<Automaton const>> const& automata) const;
-            
+
+            /*!
+             * Creates the expression that characterizes all states in which the provided transient boolean variable is
+             * true. The provided location variables are used to encode the location of the automata.
+             */
+            storm::expressions::Expression getLabelExpression(BooleanVariable const& transientVariable) const;
+
             /*!
              * Checks that undefined constants (parameters) of the model preserve the graph of the underlying model.
              * That is, undefined constants may only appear in the probability expressions of edge destinations as well

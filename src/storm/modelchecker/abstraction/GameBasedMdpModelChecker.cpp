@@ -8,6 +8,7 @@
 #include "storm/models/symbolic/Mdp.h"
 
 #include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/storage/expressions/VariableSetAbstractor.h"
 
 #include "storm/storage/dd/DdManager.h"
 
@@ -445,9 +446,25 @@ namespace storm {
         template<storm::dd::DdType Type, typename ModelType>
         std::vector<storm::expressions::Expression> GameBasedMdpModelChecker<Type, ModelType>::getInitialPredicates(storm::expressions::Expression const& constraintExpression, storm::expressions::Expression const& targetStateExpression) {
             std::vector<storm::expressions::Expression> initialPredicates;
-            initialPredicates.push_back(targetStateExpression);
-            if (!constraintExpression.isTrue() && !constraintExpression.isFalse()) {
-                initialPredicates.push_back(constraintExpression);
+            if (preprocessedModel.isJaniModel()) {
+                storm::expressions::VariableSetAbstractor abstractor(preprocessedModel.asJaniModel().getAllLocationExpressionVariables());
+
+                storm::expressions::Expression abstractedExpression = abstractor.abstract(targetStateExpression);
+                if (abstractedExpression.isInitialized() && !abstractedExpression.isTrue() && !abstractedExpression.isFalse()) {
+                    initialPredicates.push_back(abstractedExpression);
+                }
+                
+                abstractedExpression = abstractor.abstract(constraintExpression);
+                if (abstractedExpression.isInitialized() && !abstractedExpression.isTrue() && !abstractedExpression.isFalse()) {
+                    initialPredicates.push_back(abstractedExpression);
+                }
+            } else {
+                if (!targetStateExpression.isTrue() && !targetStateExpression.isFalse()) {
+                    initialPredicates.push_back(targetStateExpression);
+                }
+                if (!constraintExpression.isTrue() && !constraintExpression.isFalse()) {
+                    initialPredicates.push_back(constraintExpression);
+                }
             }
             return initialPredicates;
         }

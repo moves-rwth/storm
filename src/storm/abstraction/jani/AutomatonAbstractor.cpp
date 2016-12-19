@@ -33,7 +33,7 @@ namespace storm {
                 }
                 
                 if (automaton.getNumberOfLocations() > 1) {
-                    locationVariables = abstractionInformation.addLocationVariables(automaton.getNumberOfLocations() - 1).first;
+                    locationVariables = abstractionInformation.addLocationVariables(automaton.getLocationExpressionVariable(), automaton.getNumberOfLocations() - 1).first;
                 }
             }
             

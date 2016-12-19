@@ -492,9 +492,11 @@ namespace storm {
         }
         
         template <storm::dd::DdType DdType>
-        std::pair<std::pair<storm::expressions::Variable, storm::expressions::Variable>, uint64_t> AbstractionInformation<DdType>::addLocationVariables(uint64_t highestLocationIndex) {
+        std::pair<std::pair<storm::expressions::Variable, storm::expressions::Variable>, uint64_t> AbstractionInformation<DdType>::addLocationVariables(storm::expressions::Variable const& locationExpressionVariable, uint64_t highestLocationIndex) {
             auto newMetaVariable = ddManager->addMetaVariable("loc_" + std::to_string(locationVariablePairs.size()), 0, highestLocationIndex);
             
+            locationExpressionVariables.insert(locationExpressionVariable);
+            locationExpressionToDdVariableMap.emplace(locationExpressionVariable, newMetaVariable);
             locationVariablePairs.emplace_back(newMetaVariable);
             allSourceLocationVariables.insert(newMetaVariable.first);
             sourceVariables.insert(newMetaVariable.first);
@@ -522,6 +524,21 @@ namespace storm {
         template <storm::dd::DdType DdType>
         std::set<storm::expressions::Variable> const& AbstractionInformation<DdType>::getSuccessorLocationVariables() const {
             return allSuccessorLocationVariables;
+        }
+        
+        template <storm::dd::DdType DdType>
+        storm::expressions::Variable const& AbstractionInformation<DdType>::getDdLocationVariable(storm::expressions::Variable const& locationExpressionVariable, bool source) {
+            auto const& metaVariablePair = locationExpressionToDdVariableMap.at(locationExpressionVariable);
+            if (source) {
+                return metaVariablePair.first;
+            } else {
+                return metaVariablePair.second;
+            }
+        }
+        
+        template <storm::dd::DdType DdType>
+        std::set<storm::expressions::Variable> const& AbstractionInformation<DdType>::getLocationExpressionVariables() const {
+            return locationExpressionVariables;
         }
         
         template <storm::dd::DdType DdType>

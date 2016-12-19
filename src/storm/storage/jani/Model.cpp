@@ -630,7 +630,7 @@ namespace storm {
             return globalVariables;
         }
         
-        std::set<storm::expressions::Variable> Model::getAllExpressionVariables() const {
+        std::set<storm::expressions::Variable> Model::getAllExpressionVariables(bool includeLocationExpressionVariables) const {
             std::set<storm::expressions::Variable> result;
             
             for (auto const& constant : constants) {
@@ -642,8 +642,19 @@ namespace storm {
             for (auto const& automaton : automata) {
                 auto const& automatonVariables = automaton.getAllExpressionVariables();
                 result.insert(automatonVariables.begin(), automatonVariables.end());
+                if (includeLocationExpressionVariables) {
+                    result.insert(automaton.getLocationExpressionVariable());
+                }
             }
             
+            return result;
+        }
+        
+        std::set<storm::expressions::Variable> Model::getAllLocationExpressionVariables() const {
+            std::set<storm::expressions::Variable> result;
+            for (auto const& automaton : automata) {
+                result.insert(automaton.getLocationExpressionVariable());
+            }
             return result;
         }
         
@@ -967,6 +978,14 @@ namespace storm {
             STORM_LOG_ASSERT(getModelType() != storm::jani::ModelType::UNDEFINED, "Model type not set");
             STORM_LOG_ASSERT(!automata.empty(), "No automata set");
             STORM_LOG_ASSERT(composition != nullptr, "Composition is not set");
+        }
+
+        storm::expressions::Expression Model::getLabelExpression(BooleanVariable const& transientVariable) const {
+            std::vector<std::reference_wrapper<Automaton const>> allAutomata;
+            for (auto const& automaton : automata) {
+                allAutomata.emplace_back(automaton);
+            }
+            return getLabelExpression(transientVariable, allAutomata);
         }
         
         storm::expressions::Expression Model::getLabelExpression(BooleanVariable const& transientVariable, std::vector<std::reference_wrapper<Automaton const>> const& automata) const {

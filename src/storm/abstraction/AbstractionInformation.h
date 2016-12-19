@@ -462,7 +462,7 @@ namespace storm {
             /*!
              * Adds a location variable of appropriate range and returns the pair of meta variables.
              */
-            std::pair<std::pair<storm::expressions::Variable, storm::expressions::Variable>, uint64_t> addLocationVariables(uint64_t highestLocationIndex);
+            std::pair<std::pair<storm::expressions::Variable, storm::expressions::Variable>, uint64_t> addLocationVariables(storm::expressions::Variable const& locationExpressionVariable, uint64_t highestLocationIndex);
             
             /*!
              * Retrieves the location variable with the given index as either source or successor.
@@ -478,6 +478,16 @@ namespace storm {
              * Retrieves the source location variables.
              */
             std::set<storm::expressions::Variable> const& getSuccessorLocationVariables() const;
+            
+            /*!
+             * Retrieves the DD variable for the given location expression variable.
+             */
+            storm::expressions::Variable const& getDdLocationVariable(storm::expressions::Variable const& locationExpressionVariable, bool source);
+            
+            /*!
+             * Retrieves the source location variables.
+             */
+            std::set<storm::expressions::Variable> const& getLocationExpressionVariables() const;
             
             /*!
              * Encodes the given location index as either source or successor.
@@ -611,6 +621,12 @@ namespace storm {
             
             /// The location variable pairs (source/successor).
             std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> locationVariablePairs;
+            
+            /// A mapping from location expression variables to their source/successor counterparts.
+            std::map<storm::expressions::Variable, std::pair<storm::expressions::Variable, storm::expressions::Variable>> locationExpressionToDdVariableMap;
+            
+            /// The set of all location expression variables.
+            std::set<storm::expressions::Variable> locationExpressionVariables;
             
             // All source location variables.
             std::set<storm::expressions::Variable> allSourceLocationVariables;

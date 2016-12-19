@@ -16,7 +16,7 @@ namespace storm {
         using namespace storm::expressions;
         
         template <storm::dd::DdType DdType>
-        ExpressionTranslator<DdType>::ExpressionTranslator(AbstractionInformation<DdType>& abstractionInformation, std::unique_ptr<storm::solver::SmtSolver>&& smtSolver) : abstractionInformation(abstractionInformation), equivalenceChecker(std::move(smtSolver)), locationVariables(abstractionInformation.getSourceLocationVariables()), abstractedVariables(abstractionInformation.getAbstractedVariables()) {
+        ExpressionTranslator<DdType>::ExpressionTranslator(AbstractionInformation<DdType>& abstractionInformation, std::unique_ptr<storm::solver::SmtSolver>&& smtSolver) : abstractionInformation(abstractionInformation), equivalenceChecker(std::move(smtSolver)), locationVariables(abstractionInformation.getLocationExpressionVariables()), abstractedVariables(abstractionInformation.getAbstractedVariables()) {
             // Intentionally left empty.
         }
 
@@ -127,7 +127,7 @@ namespace storm {
                 
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Expressions of this kind are currently not supported by the abstraction expression translator.");
             } else {
-                return abstractionInformation.get().getDdManager().template getIdentity<double>(expression.getVariable());
+                return abstractionInformation.get().getDdManager().template getIdentity<double>(abstractionInformation.get().getDdLocationVariable(expression.getVariable(), true));
             }
         }
         
