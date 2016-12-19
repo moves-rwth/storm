@@ -3,6 +3,7 @@
 #include "storm-gspn/storage/gspn/GSPN.h"
 #include "storm-gspn/storage/gspn/GspnBuilder.h"
 #include "storm-gspn/builder/JaniGSPNBuilder.h"
+#include "storm-gspn/storm-gspn.h"
 
 #include "storm/exceptions/BaseException.h"
 #include "storm/exceptions/WrongFormatException.h"
@@ -65,11 +66,6 @@ std::unordered_map<std::string, uint64_t> parseCapacitiesList(std::string const&
     
 }
 
-void handleJani(storm::gspn::GSPN const& gspn) {
-
-    storm::jani::JsonExporter::toFile(*model, {}, storm::settings::getModule<storm::settings::modules::JaniExportSettings>().getJaniFilename());
-    delete model;
-}
 
 int main(const int argc, const char **argv) {
     try {
@@ -107,7 +103,9 @@ int main(const int argc, const char **argv) {
         }
         
         if(storm::settings::getModule<storm::settings::modules::JaniExportSettings>().isJaniFileSet()) {
-            handleJani(*gspn);
+            storm::jani::Model* model = storm::buildJani(*gspn);
+            storm::exportJaniModel(*model, {}, storm::settings::getModule<storm::settings::modules::JaniExportSettings>().getJaniFilename());
+            delete model;
         }
         
         
