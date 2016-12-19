@@ -168,6 +168,9 @@ namespace storm {
             void setID(uint64_t const& id) {
                 this->id = id;
             }
+            
+            
+            uint64_t getID() const { return id; }
         private:
 
             // maps place ids connected to this transition with an input arc to the corresponding multiplicity

@@ -25,9 +25,11 @@ namespace storm {
                     if (itFind != mElements.end()) {
                         // Child found
                         DFTElementPointer childElement = itFind->second;
-                        STORM_LOG_ASSERT(!childElement->isDependency(), "Child is dependency.");
-                        gate->pushBackChild(childElement);
-                        childElement->addParent(gate);
+                        STORM_LOG_TRACE("Ignore functional dependency " << child << " in gate " << gate->name());
+                        if(!childElement->isDependency()) {
+                            gate->pushBackChild(childElement);
+                            childElement->addParent(gate);
+                        }
                     } else {
                         // Child not found -> find first dependent event to assure that child is dependency
                         // TODO: Not sure whether this is the intended behaviour?
@@ -50,17 +52,31 @@ namespace storm {
                 }
             }
 
-            // Initialize dependencies
-            for (auto& dependency : mDependencies) {
-                DFTGatePointer triggerEvent = std::static_pointer_cast<DFTGate<ValueType>>(mElements[dependency->nameTrigger()]);
-                STORM_LOG_ASSERT(mElements[dependency->nameDependent()]->isBasicElement(), "Dependent element is not BE.");
-                std::shared_ptr<DFTBE<ValueType>> dependentEvent = std::static_pointer_cast<DFTBE<ValueType>>(mElements[dependency->nameDependent()]);
-                dependency->initialize(triggerEvent, dependentEvent);
-                triggerEvent->addOutgoingDependency(dependency);
-                dependentEvent->addIngoingDependency(dependency);
+            for(auto& elem : mDependencyChildNames) {
+                bool first = true;
+                std::vector<std::shared_ptr<DFTBE<ValueType>>> dependencies;
+                for(auto const& childName : elem.second) {
+                    auto itFind = mElements.find(childName);
+                    STORM_LOG_ASSERT(itFind != mElements.end(), "Child '" << childName << "' not found");
+                    DFTElementPointer childElement = itFind->second;
+                    if (!first) {
+                        dependencies.push_back(std::static_pointer_cast<DFTBE<ValueType>>(childElement));
+                    } else {
+                        elem.first->setTriggerElement(std::static_pointer_cast<DFTGate<ValueType>>(childElement));
+                        childElement->addOutgoingDependency(elem.first);
+                    }
+                    first = false;
+                }
+                if (binaryDependencies) {
+                    assert(dependencies.size() == 1);
+                }
+                elem.first->setDependentEvents(dependencies);
+                for (auto& dependency : dependencies) {
+                    dependency->addIngoingDependency(elem.first);
+                }
+                
             }
-
-
+            
 
             // Sort elements topologically
             // compute rank
@@ -73,8 +89,18 @@ namespace storm {
             for(DFTElementPointer e : elems) {
                 e->setId(id++);
             }
+
             STORM_LOG_ASSERT(!mTopLevelIdentifier.empty(), "No top level element.");
-            return DFT<ValueType>(elems, mElements[mTopLevelIdentifier]);
+            DFT<ValueType> dft(elems, mElements[mTopLevelIdentifier]);
+
+            // Set layout info
+            for (auto& elem : mElements) {
+                if(mLayoutInfo.count(elem.first) > 0) {
+                    dft.setElementLayoutInfo(elem.second->id(), mLayoutInfo.at(elem.first));
+                }
+            }
+
+            return dft;
         }
 
         template<typename ValueType>
@@ -144,10 +170,10 @@ namespace storm {
                     element = std::make_shared<DFTOr<ValueType>>(mNextId++, name);
                     break;
                 case DFTElementType::PAND:
-                    element = std::make_shared<DFTPand<ValueType>>(mNextId++, name);
+                    element = std::make_shared<DFTPand<ValueType>>(mNextId++, name, pandDefaultInclusive);
                     break;
                 case DFTElementType::POR:
-                    element = std::make_shared<DFTPor<ValueType>>(mNextId++, name);
+                    element = std::make_shared<DFTPor<ValueType>>(mNextId++, name, porDefaultInclusive);
                     break;
                 case DFTElementType::SPARE:
                    element = std::make_shared<DFTSpare<ValueType>>(mNextId++, name);
@@ -175,9 +201,23 @@ namespace storm {
             } else if(visited[n] == topoSortColour::WHITE) {
                 if(n->isGate()) {
                     visited[n] = topoSortColour::GREY;
-                    for(DFTElementPointer const& c : std::static_pointer_cast<DFTGate<ValueType>>(n)->children()) {
+                    for (DFTElementPointer const& c : std::static_pointer_cast<DFTGate<ValueType>>(n)->children()) {
                         topoVisit(c, visited, L);
                     }
+                }
+                // TODO restrictions and dependencies have no parents, so this can be done more efficiently.
+                if(n->isRestriction()) {
+                    visited[n] = topoSortColour::GREY;
+                    for (DFTElementPointer const& c : std::static_pointer_cast<DFTRestriction<ValueType>>(n)->children()) {
+                        topoVisit(c, visited, L);
+                    }
+                }
+                if(n->isDependency()) {
+                    visited[n] = topoSortColour::GREY;
+                    for (DFTElementPointer const& c : std::static_pointer_cast<DFTDependency<ValueType>>(n)->dependentEvents()) {
+                        topoVisit(c, visited, L);
+                    }
+                    topoVisit(std::static_pointer_cast<DFTDependency<ValueType>>(n)->triggerEvent(), visited, L);
                 }
                 visited[n] = topoSortColour::BLACK;
                 L.push_back(n);
@@ -240,7 +280,9 @@ namespace storm {
                 {
                     DFTDependencyPointer dependency = std::static_pointer_cast<DFTDependency<ValueType>>(element);
                     children.push_back(dependency->triggerEvent()->name());
-                    children.push_back(dependency->dependentEvent()->name());
+                    for(auto const& depEv : dependency->dependentEvents()) {
+                        children.push_back(depEv->name());
+                    }
                     addDepElement(element->name(), children, dependency->probability());
                     break;
                 }

@@ -11,6 +11,7 @@
 #include "storm-gspn/storage/gspn/Place.h"
 #include "storm-gspn/storage/gspn/TimedTransition.h"
 #include "storm-gspn/storage/gspn/TransitionPartition.h"
+#include "storm-gspn/storage/gspn/PlacementInfo.h"
 
 namespace storm {
     namespace gspn {
@@ -37,6 +38,10 @@ namespace storm {
              * @return The number of places.
              */
             uint64_t getNumberOfPlaces() const;
+            
+            uint64_t getNumberOfImmediateTransitions() const;
+            
+            uint64_t getNumberOfTimedTransitions() const;
 
             /*!
              *  
@@ -136,7 +141,13 @@ namespace storm {
              *  Set Capacities according to name->capacity map.
              */
             void setCapacities(std::unordered_map<std::string, uint64_t> const& mapping);
-
+            
+            void setPlaceLayoutInfo(uint64_t placeId, LayoutInfo const& layout) const;
+            void setTransitionLayoutInfo(uint64_t transitionId, LayoutInfo const& layout) const;
+            void setPlaceLayoutInfo(std::map<uint64_t, LayoutInfo> const& placeLayout) const;
+            void setTransitionLayoutInfo(std::map<uint64_t, LayoutInfo> const& transitionLayout) const;
+            
+            
             /*!
              * Performe some checks
              * - testPlaces()
@@ -146,9 +157,11 @@ namespace storm {
              */
             bool isValid() const;
             // TODO doc
-            void toPnpro(std::ostream &stream) const;
+            void toPnpro(std::ostream& stream) const;
             // TODO doc
-            void toPnml(std::ostream &stream) const;
+            void toPnml(std::ostream& stream) const;
+            
+            void writeStatsToStream(std::ostream& stream) const;
         private:
             storm::gspn::Place* getPlace(uint64_t id);
             storm::gspn::Place* getPlace(std::string const& name);
@@ -184,6 +197,10 @@ namespace storm {
             std::vector<storm::gspn::TimedTransition<RateType>> timedTransitions;
 
             std::vector<storm::gspn::TransitionPartition> partitions;
+            
+            mutable std::map<uint64_t, LayoutInfo> placeLayout;
+            mutable std::map<uint64_t, LayoutInfo> transitionLayout;
+            
             
         };
     }

@@ -12,7 +12,7 @@
 #include "storm/settings/modules/JaniExportSettings.h"
 
 #include "storm/utility/storm-version.h"
-#include "storm/storage/jani/JSONExporter.h"
+
 
 
 // Includes for the linked libraries and versions header.
@@ -253,14 +253,7 @@ namespace storm {
                 }
                 
                 if (model.isJaniModel() && storm::settings::getModule<storm::settings::modules::JaniExportSettings>().isJaniFileSet()) {
-                    STORM_LOG_TRACE("Exporting JANI model.");
-                    if (storm::settings::getModule<storm::settings::modules::JaniExportSettings>().isExportAsStandardJaniSet()) {
-                        storm::jani::Model normalisedModel = storm::jani::Model(model.asJaniModel());
-                        normalisedModel.makeStandardJaniCompliant();
-                        storm::jani::JsonExporter::toFile(normalisedModel, formulasInProperties(properties), storm::settings::getModule<storm::settings::modules::JaniExportSettings>().getJaniFilename());
-                    } else {
-                        storm::jani::JsonExporter::toFile(model.asJaniModel(), formulasInProperties(properties), storm::settings::getModule<storm::settings::modules::JaniExportSettings>().getJaniFilename());
-                    }
+                    exportJaniModel(model.asJaniModel(), properties, storm::settings::getModule<storm::settings::modules::JaniExportSettings>().getJaniFilename());
                 }
                 
                 if (ioSettings.isNoBuildModelSet()) {

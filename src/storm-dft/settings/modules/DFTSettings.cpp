@@ -16,6 +16,8 @@ namespace storm {
             const std::string DFTSettings::moduleName = "dft";
             const std::string DFTSettings::dftFileOptionName = "dftfile";
             const std::string DFTSettings::dftFileOptionShortName = "dft";
+            const std::string DFTSettings::dftJsonFileOptionName = "dftfile-json";
+            const std::string DFTSettings::dftJsonFileOptionShortName = "dftjson";
             const std::string DFTSettings::symmetryReductionOptionName = "symmetryreduction";
             const std::string DFTSettings::symmetryReductionOptionShortName = "symred";
             const std::string DFTSettings::modularisationOptionName = "modularisation";
@@ -37,6 +39,8 @@ namespace storm {
             DFTSettings::DFTSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, dftFileOptionName, false, "Parses the model given in the Galileo format.").setShortName(dftFileOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file from which to read the DFT model.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, dftJsonFileOptionName, false, "Parses the model given in the Cytoscape JSON format.").setShortName(dftJsonFileOptionShortName)
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the JSON file from which to read the DFT model.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, symmetryReductionOptionName, false, "Exploit symmetric structure of model.").setShortName(symmetryReductionOptionShortName).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, modularisationOptionName, false, "Use modularisation (not applicable for expected time).").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, disableDCOptionName, false, "Disable Dont Care propagation.").build());
@@ -60,7 +64,15 @@ namespace storm {
             std::string DFTSettings::getDftFilename() const {
                 return this->getOption(dftFileOptionName).getArgumentByName("filename").getValueAsString();
             }
-            
+
+            bool DFTSettings::isDftJsonFileSet() const {
+                return this->getOption(dftJsonFileOptionName).getHasOptionBeenSet();
+            }
+
+            std::string DFTSettings::getDftJsonFilename() const {
+                return this->getOption(dftJsonFileOptionName).getArgumentByName("filename").getValueAsString();
+            }
+
             bool DFTSettings::useSymmetryReduction() const {
                 return this->getOption(symmetryReductionOptionName).getHasOptionBeenSet();
             }

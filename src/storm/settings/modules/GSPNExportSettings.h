@@ -15,7 +15,7 @@ namespace storm {
                 GSPNExportSettings();
                 
                 /**
-                 * Retrievew whether the pgcl file option was set
+                 * Retrieve whether the pgcl file option was set
                  */
                 bool isWriteToDotSet() const;
                 
@@ -38,6 +38,12 @@ namespace storm {
                  */
                 std::string getWriteToPnproFilename() const;
                 
+                bool isDisplayStatsSet() const;
+                
+                bool isWriteStatsToFileSet() const;
+                
+                std::string getWriteStatsFilename() const;
+                
                 
                 bool check() const override;
                 void finalize() override;
@@ -48,6 +54,9 @@ namespace storm {
                 static const std::string writeToDotOptionName;
                 static const std::string writeToPnmlOptionName;
                 static const std::string writeToPnproOptionName;
+                static const std::string displayStatsOptionName;
+                static const std::string writeStatsOptionName;
+                
                 //static const std::string writeToDotOptionShortName;
                 
             };

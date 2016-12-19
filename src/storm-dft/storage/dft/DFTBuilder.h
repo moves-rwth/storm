@@ -7,7 +7,7 @@
 
 #include "storm-dft/storage/dft/DFTElements.h"
 #include "storm-dft/storage/dft/elements/DFTRestriction.h"
-
+#include "storm-dft/storage/dft/DFTLayoutInfo.h"
 
 namespace storm {
     namespace storage {
@@ -31,11 +31,13 @@ namespace storm {
             std::unordered_map<std::string, DFTElementPointer> mElements;
             std::unordered_map<DFTElementPointer, std::vector<std::string>> mChildNames;
             std::unordered_map<DFTRestrictionPointer, std::vector<std::string>> mRestrictionChildNames;
+            std::unordered_map<DFTDependencyPointer, std::vector<std::string>> mDependencyChildNames;
             std::vector<DFTDependencyPointer> mDependencies;
             std::vector<DFTRestrictionPointer> mRestrictions;
+            std::unordered_map<std::string, DFTLayoutInfo> mLayoutInfo;
             
         public:
-            DFTBuilder() {
+            DFTBuilder(bool defaultInclusive = true, bool binaryDependencies = true) : pandDefaultInclusive(defaultInclusive), porDefaultInclusive(defaultInclusive), binaryDependencies(binaryDependencies) {
                 
             }
             
@@ -51,8 +53,24 @@ namespace storm {
                 return addStandardGate(name, children, DFTElementType::PAND);
             }
             
+            bool addPandElement(std::string const& name, std::vector<std::string> const& children, bool inclusive) {
+                bool tmpDefault = pandDefaultInclusive;
+                pandDefaultInclusive = inclusive;
+                bool result = addStandardGate(name, children, DFTElementType::PAND);
+                pandDefaultInclusive = tmpDefault;
+                return result;
+            }
+            
             bool addPorElement(std::string const& name, std::vector<std::string> const& children) {
                 return addStandardGate(name, children, DFTElementType::POR);
+            }
+            
+            bool addPorElement(std::string const& name, std::vector<std::string> const& children, bool inclusive) {
+                bool tmpDefault = porDefaultInclusive;
+                porDefaultInclusive = inclusive;
+                bool result = addStandardGate(name, children, DFTElementType::POR);
+                pandDefaultInclusive = tmpDefault;
+                return result;
             }
             
             bool addSpareElement(std::string const& name, std::vector<std::string> const& children) {
@@ -84,7 +102,7 @@ namespace storm {
 
                 //TODO Matthias: collect constraints for SMT solving
                 //0 <= probability <= 1
-                if (!storm::utility::isOne(probability) && children.size() > 2) {
+                if (binaryDependencies && !storm::utility::isOne(probability) && children.size() > 2) {
                     // Introduce additional element for first capturing the proabilistic dependency
                     std::string nameAdditional = name + "_additional";
                     addBasicElement(nameAdditional, storm::utility::zero<ValueType>(), storm::utility::zero<ValueType>());
@@ -97,16 +115,27 @@ namespace storm {
                     return true;
                 } else {
                     // Add dependencies
-                    for (size_t i = 1; i < children.size(); ++i) {
-                        std::string nameDep = name + "_" + std::to_string(i);
-                        if(mElements.count(nameDep) != 0) {
-                            // Element with that name already exists.
-                            STORM_LOG_ERROR("Element with name: " << nameDep << " already exists.");
-                            return false;
+                    if(binaryDependencies) {
+                        for (size_t i = 1; i < children.size(); ++i) {
+                            std::string nameDep = name + "_" + std::to_string(i);
+                            if (mElements.count(nameDep) != 0) {
+                                // Element with that name already exists.
+                                STORM_LOG_ERROR("Element with name: " << nameDep << " already exists.");
+                                return false;
+                            }
+                            STORM_LOG_ASSERT(storm::utility::isOne(probability) || children.size() == 2,
+                                             "PDep with multiple children supported.");
+                            DFTDependencyPointer element = std::make_shared<DFTDependency<ValueType>>(mNextId++,
+                                                                                                      nameDep,
+                                                                                                      probability);
+                            mElements[element->name()] = element;
+                            mDependencyChildNames[element] = {trigger, children[i]};
+                            mDependencies.push_back(element);
                         }
-                        STORM_LOG_ASSERT(storm::utility::isOne(probability) || children.size() == 2, "PDep with multiple children supported.");
-                        DFTDependencyPointer element = std::make_shared<DFTDependency<ValueType>>(mNextId++, nameDep, trigger, children[i], probability);
+                    } else {
+                        DFTDependencyPointer element = std::make_shared<DFTDependency<ValueType>>(mNextId++, name, probability);
                         mElements[element->name()] = element;
+                        mDependencyChildNames[element] = children;
                         mDependencies.push_back(element);
                     }
                     return true;
@@ -147,6 +176,11 @@ namespace storm {
                 mElements[name] = std::make_shared<DFTBE<ValueType>>(mNextId++, name, failureRate, dormancyFactor);
                 return true;
             }
+
+            void addLayoutInfo(std::string const& name, double x, double y) {
+                STORM_LOG_ASSERT(mElements.count(name) > 0, "Element '" << name << "' not found.");
+                mLayoutInfo[name] = storm::storage::DFTLayoutInfo(x, y);
+            }
             
             bool setTopLevel(std::string const& tle) {
                 mTopLevelIdentifier = tle;
@@ -186,6 +220,13 @@ namespace storm {
             void topoVisit(DFTElementPointer const& n, std::map<DFTElementPointer, topoSortColour, OrderElementsById<ValueType>>& visited, DFTElementVector& L);
 
             DFTElementVector topoSort();
+            
+            // If true, the standard gate adders make a pand inclusive, and exclusive otherwise.
+            bool pandDefaultInclusive;
+            // If true, the standard gate adders make a pand inclusive, and exclusive otherwise.
+            bool porDefaultInclusive;
+
+            bool binaryDependencies;
             
         };
     }

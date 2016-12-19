@@ -109,6 +109,8 @@ namespace storm {
              */
             void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution);
 
+            friend std::ostream& operator<<(std::ostream& stream, OrderedAssignments const& assignments);
+            
         private:
             static std::vector<std::shared_ptr<Assignment>>::const_iterator lowerBound(Assignment const& assignment, std::vector<std::shared_ptr<Assignment>> const& assignments);
                         
