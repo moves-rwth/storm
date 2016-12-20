@@ -28,6 +28,9 @@ if (ADDITIONAL_LINK_DIRS)
 	link_directories(${ADDITIONAL_LINK_DIRS})
 endif(ADDITIONAL_LINK_DIRS)
 
+# Disable Debug compiler flags for PrismParser to lessen memory consumption during compilation
+SET_SOURCE_FILES_PROPERTIES(${PROJECT_SOURCE_DIR}/src/storm/parser/PrismParser.cpp PROPERTIES COMPILE_FLAGS -g0)
+
 ###############################################################################
 ##                                                                            
 ##	Binary creation (All link_directories() calls must be made before this point.)
@@ -39,7 +42,9 @@ add_library(storm SHARED ${STORM_LIB_SOURCES} ${STORM_LIB_HEADERS})
 # Remove define symbol for shared libstorm.
 set_target_properties(storm PROPERTIES DEFINE_SYMBOL "")
 add_dependencies(storm resources)
-target_link_libraries(storm ${STORM_LINK_LIBRARIES})
+target_link_libraries(storm PUBLIC ${STORM_DEP_TARGETS}  ${STORM_DEP_IMP_TARGETS} ${STORM_LINK_LIBRARIES})
+list(APPEND STORM_TARGETS storm)
+set(STORM_TARGETS ${STORM_TARGETS} PARENT_SCOPE)
 
 # Create storm.
 add_executable(storm-main ${STORM_MAIN_SOURCES} ${STORM_MAIN_HEADERS})

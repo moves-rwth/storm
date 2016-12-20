@@ -23,14 +23,42 @@ namespace storm {
             places.push_back(place);
             return newId;
         }
+        
+        
+        void GspnBuilder::setPlaceLayoutInfo(uint64_t placeId, LayoutInfo const& layoutInfo) {
+            placeLayout[placeId] = layoutInfo;
+        }
+        
+        void GspnBuilder::setTransitionLayoutInfo(uint64_t transitionId, LayoutInfo const& layoutInfo) {
+            transitionLayout[transitionId] = layoutInfo;
+        }
 
         uint_fast64_t GspnBuilder::addImmediateTransition(uint_fast64_t const& priority, double const& weight, std::string const& name) {
             auto trans = storm::gspn::ImmediateTransition<double>();
             auto newId = GSPN::immediateTransitionIdToTransitionId(immediateTransitions.size());
             trans.setName(name);
             trans.setPriority(priority);
-            trans.setWeight(weight);
             trans.setID(newId);
+            
+            // ensure that the first partition is for the 'general/weighted' transitions
+            if(partitions.count(priority) == 0) {
+                TransitionPartition newPart;
+                newPart.priority = priority;
+                partitions[priority].push_back(newPart);
+            }
+            
+            if(storm::utility::isZero(weight)) {
+                trans.setWeight(storm::utility::one<double>());
+                TransitionPartition newPart;
+                newPart.priority = priority;
+                newPart.transitions = {newId};
+                partitions.at(priority).push_back(newPart);
+            } else {
+                trans.setWeight(weight);
+                partitions.at(priority).front().transitions.push_back(newId);
+                
+                
+            }
             immediateTransitions.push_back(trans);
             return newId;
             
@@ -131,7 +159,24 @@ namespace storm {
         
 
         storm::gspn::GSPN* GspnBuilder::buildGspn() const {
-            return new GSPN(gspnName, places, immediateTransitions, timedTransitions);
+            std::vector<TransitionPartition> orderedPartitions;
+            for(auto const& priorityPartitions : partitions) {
+                for (auto const& partition : priorityPartitions.second) {
+                    // sanity check
+                    assert(partition.priority == priorityPartitions.first);
+                    
+                    if(partition.nrTransitions() > 0) {
+                        orderedPartitions.push_back(partition);
+                    }
+                }
+                
+            }
+            std::reverse(orderedPartitions.begin(), orderedPartitions.end());
+            
+            GSPN* result = new GSPN(gspnName, places, immediateTransitions, timedTransitions, orderedPartitions);
+            result->setTransitionLayoutInfo(transitionLayout);
+            result->setPlaceLayoutInfo(placeLayout);
+            return result;
         }
     }
 }

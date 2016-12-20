@@ -9,17 +9,11 @@ namespace storm {
         class JaniGSPNBuilder {
         public:
             JaniGSPNBuilder(storm::gspn::GSPN const& gspn, std::shared_ptr<storm::expressions::ExpressionManager> const& expManager) : gspn(gspn), expressionManager(expManager) {
-                gspn.writeDotToStream(std::cout);
+                
             }
             
             virtual ~JaniGSPNBuilder() {
-                for (auto const& varEntry : vars) {
-                    delete varEntry.second;
-                }
-            }
-            
-            void setIgnoreWeights(bool ignore = true)  {
-                ignoreWeights = ignore;
+                
             }
             
             
@@ -34,6 +28,10 @@ namespace storm {
                 return model;
             }
             
+            storm::jani::Variable const& getPlaceVariable(uint64_t placeId) {
+                return *vars.at(placeId);
+            }
+            
             void addVariables(storm::jani::Model* model) {
                 for (auto const& place : gspn.getPlaces()) {
                     storm::jani::Variable* janiVar = nullptr;
@@ -46,8 +44,8 @@ namespace storm {
                     }
                     assert(janiVar != nullptr);
                     assert(vars.count(place.getID()) == 0);
-                    vars[place.getID()] = janiVar;
-                    model->addVariable(*janiVar);
+                    vars[place.getID()] = &model->addVariable(*janiVar);
+                    delete janiVar;
                 }
             }
             
@@ -59,66 +57,66 @@ namespace storm {
             
             void addEdges(storm::jani::Automaton& automaton, uint64_t locId) {
                 
-                storm::expressions::Expression guard = expressionManager->boolean(true);
-                for (auto const& trans : gspn.getImmediateTransitions()) {
-                    if (ignoreWeights || trans.noWeightAttached()) {
-                        std::vector<storm::jani::Assignment> assignments;
-                        for (auto const& inPlaceEntry : trans.getInputPlaces()) {
-                            guard = guard && (vars[inPlaceEntry.first]->getExpressionVariable() > inPlaceEntry.second);
-                            assignments.emplace_back( *vars[inPlaceEntry.first], (vars[inPlaceEntry.first])->getExpressionVariable() - inPlaceEntry.second);
-                        }
-                        for (auto const& inhibPlaceEntry : trans.getInhibitionPlaces()) {
-                            guard = guard && (vars[inhibPlaceEntry.first]->getExpressionVariable() > inhibPlaceEntry.second);
-                        }
-                        for (auto const& outputPlaceEntry : trans.getOutputPlaces()) {
-                            assignments.emplace_back( *vars[outputPlaceEntry.first], (vars[outputPlaceEntry.first])->getExpressionVariable() + outputPlaceEntry.second );
-                        }
-                        storm::jani::OrderedAssignments oa(assignments);
-                        storm::jani::EdgeDestination dest(locId, expressionManager->integer(1), oa);
-                        storm::jani::Edge e(locId, storm::jani::Model::SILENT_ACTION_INDEX, boost::none, guard, {dest});
-                        automaton.addEdge(e);
-                    }
-                    
-                }
-                if(!ignoreWeights) {
+                uint64_t lastPriority = -1;
+                storm::expressions::Expression lastPriorityGuard = expressionManager->boolean(false);
+                storm::expressions::Expression priorityGuard = expressionManager->boolean(true);
+                // TODO here there is something to fix if we add transition partitions.
                 
-                    // TODO here there is something to fix if we add transition partitions.
+                for (auto const& partition : gspn.getPartitions()) {
                     storm::expressions::Expression guard = expressionManager->boolean(false);
                     std::vector<storm::jani::EdgeDestination> weightedDestinations;
                     
+                    assert(lastPriority >= partition.priority);
+                    if (lastPriority > partition.priority) {
+                        priorityGuard = priorityGuard && !lastPriorityGuard;
+                        lastPriority = partition.priority;
+                    } else {
+                        assert(lastPriority == partition.priority);
+                    }
+                    
                     // Compute enabled weight expression.
                     storm::expressions::Expression totalWeight = expressionManager->rational(0.0);
-                    for (auto const& trans : gspn.getImmediateTransitions()) {
+                    for (auto const& transId : partition.transitions) {
+                        auto const& trans = gspn.getImmediateTransitions()[transId];
                         if (trans.noWeightAttached()) {
                             continue;
                         }
                         storm::expressions::Expression destguard = expressionManager->boolean(true);
                         for (auto const& inPlaceEntry : trans.getInputPlaces()) {
-                            destguard = destguard && (vars[inPlaceEntry.first]->getExpressionVariable() > inPlaceEntry.second);
+                            destguard = destguard && (vars[inPlaceEntry.first]->getExpressionVariable() >= inPlaceEntry.second);
                         }
                         for (auto const& inhibPlaceEntry : trans.getInhibitionPlaces()) {
-                            destguard = destguard && (vars[inhibPlaceEntry.first]->getExpressionVariable() > inhibPlaceEntry.second);
+                            destguard = destguard && (vars[inhibPlaceEntry.first]->getExpressionVariable() < inhibPlaceEntry.second);
                         }
                         totalWeight = totalWeight + storm::expressions::ite(destguard, expressionManager->rational(trans.getWeight()), expressionManager->rational(0.0));
                         
                     }
                     totalWeight = totalWeight.simplify();
                     
-                    for (auto const& trans : gspn.getImmediateTransitions()) {
+                    
+                    for (auto const& transId : partition.transitions) {
+                        auto const& trans = gspn.getImmediateTransitions()[transId];
                         if (trans.noWeightAttached()) {
+                            std::cout << "ERROR -- no weights attached at transition" << std::endl;
                             continue;
                         }
                         storm::expressions::Expression destguard = expressionManager->boolean(true);
                         std::vector<storm::jani::Assignment> assignments;
                         for (auto const& inPlaceEntry : trans.getInputPlaces()) {
-                            destguard = destguard && (vars[inPlaceEntry.first]->getExpressionVariable() > inPlaceEntry.second);
-                            assignments.emplace_back( *vars[inPlaceEntry.first], (vars[inPlaceEntry.first]->getExpressionVariable() - inPlaceEntry.second) );
+                            destguard = destguard && (vars[inPlaceEntry.first]->getExpressionVariable() >= inPlaceEntry.second);
+                            if (trans.getOutputPlaces().count(inPlaceEntry.first) == 0) {
+                                assignments.emplace_back( *vars[inPlaceEntry.first], (vars[inPlaceEntry.first])->getExpressionVariable() - inPlaceEntry.second);
+                            }
                         }
                         for (auto const& inhibPlaceEntry : trans.getInhibitionPlaces()) {
-                            destguard = destguard && (vars[inhibPlaceEntry.first]->getExpressionVariable() > inhibPlaceEntry.second);
+                            destguard = destguard && (vars[inhibPlaceEntry.first]->getExpressionVariable() < inhibPlaceEntry.second);
                         }
                         for (auto const& outputPlaceEntry : trans.getOutputPlaces()) {
-                            assignments.emplace_back( *vars[outputPlaceEntry.first], (vars[outputPlaceEntry.first]->getExpressionVariable() + outputPlaceEntry.second) );
+                            if (trans.getInputPlaces().count(outputPlaceEntry.first) == 0) {
+                                assignments.emplace_back( *vars[outputPlaceEntry.first], (vars[outputPlaceEntry.first])->getExpressionVariable() + outputPlaceEntry.second );
+                            } else {
+                                assignments.emplace_back( *vars[outputPlaceEntry.first], (vars[outputPlaceEntry.first])->getExpressionVariable() + outputPlaceEntry.second -  trans.getInputPlaces().at(outputPlaceEntry.first));
+                            }
                         }
                         destguard = destguard.simplify();
                         guard = guard || destguard;
@@ -126,35 +124,43 @@ namespace storm {
                         storm::jani::EdgeDestination dest(locId, storm::expressions::ite(destguard, (expressionManager->rational(trans.getWeight()) / totalWeight), expressionManager->rational(0.0)), oa);
                         weightedDestinations.push_back(dest);
                     }
-                    storm::jani::Edge e(locId, storm::jani::Model::SILENT_ACTION_INDEX, boost::none, guard.simplify(), weightedDestinations);
+                    storm::jani::Edge e(locId, storm::jani::Model::SILENT_ACTION_INDEX, boost::none, (priorityGuard && guard).simplify(), weightedDestinations);
                     automaton.addEdge(e);
+                    lastPriorityGuard = lastPriorityGuard || guard;
+                    
                 }
                 for (auto const& trans : gspn.getTimedTransitions()) {
                     storm::expressions::Expression guard = expressionManager->boolean(true);
                     
                     std::vector<storm::jani::Assignment> assignments;
                     for (auto const& inPlaceEntry : trans.getInputPlaces()) {
-                        guard = guard && (vars[inPlaceEntry.first]->getExpressionVariable() > inPlaceEntry.second);
-                        assignments.emplace_back( *vars[inPlaceEntry.first], (vars[inPlaceEntry.first]->getExpressionVariable() - inPlaceEntry.second) );
+                        guard = guard && (vars[inPlaceEntry.first]->getExpressionVariable() >= inPlaceEntry.second);
+                        if (trans.getOutputPlaces().count(inPlaceEntry.first) == 0) {
+                            assignments.emplace_back( *vars[inPlaceEntry.first], (vars[inPlaceEntry.first])->getExpressionVariable() - inPlaceEntry.second);
+                        }
                     }
                     for (auto const& inhibPlaceEntry : trans.getInhibitionPlaces()) {
-                        guard = guard && (vars[inhibPlaceEntry.first]->getExpressionVariable() > inhibPlaceEntry.second);
+                        guard = guard && (vars[inhibPlaceEntry.first]->getExpressionVariable() < inhibPlaceEntry.second);
                     }
                     for (auto const& outputPlaceEntry : trans.getOutputPlaces()) {
-                        assignments.emplace_back( *vars[outputPlaceEntry.first], (vars[outputPlaceEntry.first]->getExpressionVariable() + outputPlaceEntry.second) );
+                        if (trans.getInputPlaces().count(outputPlaceEntry.first) == 0) {
+                            assignments.emplace_back( *vars[outputPlaceEntry.first], (vars[outputPlaceEntry.first])->getExpressionVariable() + outputPlaceEntry.second );
+                        } else {
+                            assignments.emplace_back( *vars[outputPlaceEntry.first], (vars[outputPlaceEntry.first])->getExpressionVariable() + outputPlaceEntry.second -  trans.getInputPlaces().at(outputPlaceEntry.first));
+                        }
                     }
                     storm::jani::OrderedAssignments oa(assignments);
                     storm::jani::EdgeDestination dest(locId, expressionManager->integer(1), oa);
                     storm::jani::Edge e(locId, storm::jani::Model::SILENT_ACTION_INDEX, expressionManager->rational(trans.getRate()), guard, {dest});
                     automaton.addEdge(e);
+                    
                 }
             }
             
         private:
-            bool ignoreWeights;
             const uint64_t janiVersion = 1;
             storm::gspn::GSPN const& gspn;
-            std::map<uint64_t, storm::jani::Variable*> vars;
+            std::map<uint64_t, storm::jani::Variable const*> vars;
             std::shared_ptr<storm::expressions::ExpressionManager> expressionManager;
             
         };

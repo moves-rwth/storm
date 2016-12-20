@@ -57,7 +57,8 @@ namespace storm {
             for (size_t dependencyId : mDft.getDependencies()) {
                 std::shared_ptr<DFTDependency<ValueType> const> dependency = mDft.getDependency(dependencyId);
                 STORM_LOG_ASSERT(dependencyId == dependency->id(), "Ids do not match.");
-                if (hasFailed(dependency->triggerEvent()->id()) && getElementState(dependency->dependentEvent()->id()) == DFTElementState::Operational) {
+                assert(dependency->dependentEvents().size() == 1);
+                if (hasFailed(dependency->triggerEvent()->id()) && getElementState(dependency->dependentEvents()[0]->id()) == DFTElementState::Operational) {
                     mFailableDependencies.push_back(dependencyId);
                     STORM_LOG_TRACE("New dependency failure: " << dependency->toString());
                 }
@@ -198,8 +199,9 @@ namespace storm {
             
             for (auto dependency : mDft.getElement(id)->outgoingDependencies()) {
                 STORM_LOG_ASSERT(dependency->triggerEvent()->id() == id, "Ids do not match.");
-                if (getElementState(dependency->dependentEvent()->id()) == DFTElementState::Operational) {
-                    STORM_LOG_ASSERT(!isFailsafe(dependency->dependentEvent()->id()), "Dependent event is failsafe.");
+                assert(dependency->dependentEvents().size() == 1);
+                if (getElementState(dependency->dependentEvents()[0]->id()) == DFTElementState::Operational) {
+                    STORM_LOG_ASSERT(!isFailsafe(dependency->dependentEvents()[0]->id()), "Dependent event is failsafe.");
                     mFailableDependencies.push_back(dependency->id());
                     STORM_LOG_TRACE("New dependency failure: " << dependency->toString());
                 }
@@ -213,7 +215,8 @@ namespace storm {
             STORM_LOG_ASSERT(hasFailed(id), "Element has not failed.");
             
             for (auto dependency : mDft.getBasicElement(id)->ingoingDependencies()) {
-                STORM_LOG_ASSERT(dependency->dependentEvent()->id() == id, "Ids do not match.");
+                assert(dependency->dependentEvents().size() == 1);
+                STORM_LOG_ASSERT(dependency->dependentEvents()[0]->id() == id, "Ids do not match.");
                 setDependencyDontCare(dependency->id());
             }
         }
@@ -244,7 +247,8 @@ namespace storm {
                 // Consider failure due to dependency
                 STORM_LOG_ASSERT(index < nrFailableDependencies(), "Index invalid.");
                 std::shared_ptr<DFTDependency<ValueType> const> dependency = mDft.getDependency(mFailableDependencies[index]);
-                std::pair<std::shared_ptr<DFTBE<ValueType> const>,bool> res(mDft.getBasicElement(dependency->dependentEvent()->id()), true);
+                assert(dependency->dependentEvents().size() == 1);
+                std::pair<std::shared_ptr<DFTBE<ValueType> const>,bool> res(mDft.getBasicElement(dependency->dependentEvents()[0]->id()), true);
                 mFailableDependencies.erase(mFailableDependencies.begin() + index);
                 setFailed(res.first->id());
                 setDependencySuccessful(dependency->id());

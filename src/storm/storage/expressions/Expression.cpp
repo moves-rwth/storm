@@ -245,6 +245,12 @@ namespace storm {
         
         Expression operator&&(Expression const& first, Expression const& second) {
             assertSameManager(first.getBaseExpression(), second.getBaseExpression());
+            if (first.isTrue()) {
+                return second;
+            }
+            if (second.isTrue()) {
+                return first;
+            }
             return Expression(std::shared_ptr<BaseExpression>(new BinaryBooleanFunctionExpression(first.getBaseExpression().getManager(), first.getType().logicalConnective(second.getType()), first.getBaseExpressionPointer(), second.getBaseExpressionPointer(), BinaryBooleanFunctionExpression::OperatorType::And)));
         }
         

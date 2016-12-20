@@ -13,6 +13,8 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/resources/cmak
 
 include(ExternalProject)
 include(RegisterSourceGroup)
+include(imported)
+
 
 #############################################################
 ##
@@ -34,7 +36,6 @@ option(USE_HYPRO "Sets whether HyPro should be included." OFF)
 option(XML_SUPPORT "Sets whether xml based format parsing should be included." ON)
 option(FORCE_COLOR "Force color output" OFF)
 mark_as_advanced(FORCE_COLOR)
-option(STORM_PYTHON "Build the API for Python" OFF)
 option(STORM_COMPILE_WITH_CCACHE "Compile using CCache [if found]" ON)
 mark_as_advanced(STORM_COMPILE_WITH_CCACHE)
 option(STORM_LOG_DISABLE_DEBUG "Disable log and trace message support" OFF)
@@ -55,10 +56,22 @@ mark_as_advanced(CMAKE_OSX_ARCHITECTURES)
 mark_as_advanced(CMAKE_OSX_SYSROOT)
 mark_as_advanced(CMAKE_OSX_DEPLOYMENT_TARGET)
 
+# Offer the user the choice of overriding the installation directories
+set(INCLUDE_INSTALL_DIR include/ CACHE PATH "Installation directory for header files" )
+set(LIB_INSTALL_DIR lib/ CACHE PATH "Installation directory for libraries")
+#set(SYSCONFIG_INSTALL_DIR etc/carl/  CACHE PATH "Installation for system configuration files)
+set(BIN_INSTALL_DIR lib/ CACHE PATH "Installation directory for executables")
+
+
 # By default, we build a release version.
 if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "RELEASE")
 endif()
+# Install dir for cmake files (info for other libraries that include storm)
+set(DEF_INSTALL_CMAKE_DIR "lib/CMake/storm")
+set(CMAKE_INSTALL_DIR ${DEF_INSTALL_CMAKE_DIR} CACHE PATH  "Installation directory for CMake files")
+
+message("CMAKE_INSTALL_DIR: ${CMAKE_INSTALL_DIR}")
 
 # If the STORM_DEVELOPER option was turned on, we target a debug version.
 if (STORM_DEVELOPER)
@@ -117,11 +130,6 @@ elseif (WIN32)
 endif()
 message(STATUS "Assuming extension for shared libraries: ${DYNAMIC_EXT}")
 message(STATUS "Assuming extension for static libraries: ${STATIC_EXT}")
-
-# Python bindings need shared library
-if(STORM_PYTHON)
-    set(BUILD_SHARED_LIBS ON CACHE BOOL "Build the Storm library dynamically" FORCE)
-endif()
 
 if(BUILD_SHARED_LIBS)
     set(LIB_EXT ${DYNAMIC_EXT})
@@ -346,12 +354,14 @@ set(STORM_GENERATED_SOURCES "${PROJECT_BINARY_DIR}/src/storm/utility/storm-versi
 include_directories("${PROJECT_BINARY_DIR}/include")
 
 include(CTest)
+add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND})
+set(CMAKE_CTEST_COMMAND_VERBOSE ${CMAKE_CTEST_COMMAND} -V)
+add_custom_target(check-verbose COMMAND ${CMAKE_CTEST_COMMAND_VERBOSE})
 
-# Python bindings for storm
-if(STORM_PYTHON)
-	add_subdirectory(stormpy)
-endif()
 
+set(STORM_TARGETS "")
 add_subdirectory(src)
+
+include(export)
 
 include(StormCPackConfig.cmake)

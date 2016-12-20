@@ -23,6 +23,7 @@
 #include "storm/settings/modules/RegionSettings.h"
 #include "storm/settings/modules/EliminationSettings.h"
 #include "storm/settings/modules/JitBuilderSettings.h"
+#include "storm/settings/modules/JaniExportSettings.h"
 
 // Formula headers.
 #include "storm/logic/Formulas.h"
@@ -55,6 +56,7 @@
 #include "storm/storage/bisimulation/NondeterministicModelBisimulationDecomposition.h"
 #include "storm/storage/ModelFormulasPair.h"
 #include "storm/storage/SymbolicModelDescription.h"
+#include "storm/storage/jani/JSONExporter.h"
 
 // Headers for model checking.
 #include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
@@ -228,6 +230,7 @@ namespace storm {
     std::shared_ptr<storm::models::ModelBase> preprocessModel(std::shared_ptr<storm::models::ModelBase> model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
         if (model->getType() == storm::models::ModelType::MarkovAutomaton && model->isSparseModel()) {
             std::shared_ptr<storm::models::sparse::MarkovAutomaton<typename ModelType::ValueType>> ma = model->template as<storm::models::sparse::MarkovAutomaton<typename ModelType::ValueType>>();
+            ma->close();
             if (ma->hasOnlyTrivialNondeterminism()) {
                 // Markov automaton can be converted into CTMC.
                 model = ma->convertToCTMC();
@@ -593,7 +596,12 @@ namespace storm {
             return modelchecker.check(task);
         }
     }
-
+    
+    /**
+     *
+     */
+    void exportJaniModel(storm::jani::Model const& model, std::vector<storm::jani::Property> const& properties, std::string const& filepath);
+    
     template<typename ValueType>
     void exportMatrixToFile(std::shared_ptr<storm::models::sparse::Model<ValueType>> model, std::string const& filepath) {
         STORM_LOG_THROW(model->getType() != storm::models::ModelType::Ctmc, storm::exceptions::NotImplementedException, "This functionality is not yet implemented." );

@@ -516,7 +516,7 @@ namespace storm {
         
         
         
-        void JsonExporter::toFile(storm::jani::Model const& janiModel, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, std::string const& filepath, bool checkValid) {
+        void JsonExporter::toFile(storm::jani::Model const& janiModel, std::vector<storm::jani::Property> const& formulas, std::string const& filepath, bool checkValid) {
             std::ofstream ofs;
             ofs.open (filepath, std::ofstream::out );
             if(ofs.is_open()) {
@@ -526,7 +526,7 @@ namespace storm {
             }
         }
         
-        void JsonExporter::toStream(storm::jani::Model const& janiModel,  std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, std::ostream& os, bool checkValid) {
+        void JsonExporter::toStream(storm::jani::Model const& janiModel,  std::vector<storm::jani::Property> const& formulas, std::ostream& os, bool checkValid) {
             if(checkValid) {
                 janiModel.checkValid();
             }
@@ -650,6 +650,7 @@ namespace storm {
         }
         
         modernjson::json buildDestinations(std::vector<EdgeDestination> const& destinations, std::map<uint64_t, std::string> const& locationNames) {
+            assert(destinations.size() > 0);
             std::vector<modernjson::json> destDeclarations;
             for(auto const& destination : destinations) {
                 modernjson::json destEntry;
@@ -664,6 +665,10 @@ namespace storm {
         modernjson::json buildEdges(std::vector<Edge> const& edges , std::map<uint64_t, std::string> const& actionNames, std::map<uint64_t, std::string> const& locationNames) {
             std::vector<modernjson::json> edgeDeclarations;
             for(auto const& edge : edges) {
+                if (edge.getGuard().isFalse()) {
+                    continue;
+                }
+                STORM_LOG_THROW(edge.getDestinations().size() > 0, storm::exceptions::InvalidJaniException, "An edge without destinations is not allowed.");
                 modernjson::json edgeEntry;
                 edgeEntry["location"] = locationNames.at(edge.getSourceLocationIndex());
                 if(!edge.hasSilentAction()) {
@@ -754,13 +759,13 @@ namespace storm {
         }
         
         
-        void JsonExporter::convertProperties( std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, storm::jani::Model const& model) {
+        void JsonExporter::convertProperties( std::vector<storm::jani::Property> const& formulas, storm::jani::Model const& model) {
             std::vector<modernjson::json> properties;
             uint64_t index = 0;
             for(auto const& f : formulas) {
                 modernjson::json propDecl;
-                propDecl["name"] = "prop" + std::to_string(index);
-                propDecl["expression"] = convertFilterExpression(storm::jani::FilterExpression(f), model);
+                propDecl["name"] = f.getName();
+                propDecl["expression"] = convertFilterExpression(f.getFilter(), model);
                 ++index;
                 properties.push_back(propDecl);
             }

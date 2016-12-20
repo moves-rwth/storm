@@ -119,6 +119,8 @@ namespace storm {
              */
             void changeAssignmentVariables(std::map<Variable const*, std::reference_wrapper<Variable const>> const& remapping);
 
+            friend std::ostream& operator<<(std::ostream& stream, OrderedAssignments const& assignments);
+            
         private:
             static std::vector<std::shared_ptr<Assignment>>::const_iterator lowerBound(Assignment const& assignment, std::vector<std::shared_ptr<Assignment>> const& assignments);
                         

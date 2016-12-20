@@ -4,14 +4,6 @@ add_custom_target(test-resources)
 set(STORM_3RDPARTY_SOURCE_DIR ${PROJECT_SOURCE_DIR}/resources/3rdparty)
 set(STORM_3RDPARTY_BINARY_DIR ${PROJECT_BINARY_DIR}/resources/3rdparty)
 
-if (STORM_PYTHON)
-    find_package(PythonInterp 3 REQUIRED QUIET)
-    find_package(PythonLibs 3 REQUIRED QUIET)
-
-    message(STATUS "Python executable: ${PYTHON_EXECUTABLE}")
-    message(STATUS "Python include: ${PYTHON_INCLUDE_DIRS}")
-    message(STATUS "Python include: ${PYTHON_LIBRARIES}")
-endif()
 
 #############################################################
 ##
@@ -21,7 +13,7 @@ endif()
 
 # Do not take a branch, needs internet connection.
 ExternalProject_Add(
-        l3pp
+        l3pp_ext
         GIT_REPOSITORY https://github.com/hbruintjes/l3pp.git
         GIT_TAG e4f8d7fe6c328849aff34d2dfd6fd592c14070d5
         SOURCE_DIR ${STORM_3RDPARTY_SOURCE_DIR}/l3pp
@@ -31,10 +23,10 @@ ExternalProject_Add(
         INSTALL_COMMAND ""
         LOG_INSTALL ON
 )
-ExternalProject_Get_Property(l3pp source_dir)
+ExternalProject_Get_Property(l3pp_ext source_dir)
 set(l3pp_INCLUDE "${source_dir}/")
-include_directories(${l3pp_INCLUDE})
-add_dependencies(resources l3pp)
+add_imported_library_interface(l3pp "${l3pp_INCLUDE}")
+list(APPEND STORM_DEP_TARGETS l3pp)
 
 #############################################################
 ##
@@ -42,9 +34,8 @@ add_dependencies(resources l3pp)
 ##
 #############################################################
 
-# Add the shipped version of GMM to the include pathes
-set(GMMXX_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/resources/3rdparty/gmm-5.0/include")
-include_directories(${GMMXX_INCLUDE_DIR})
+add_imported_library_interface(gmm "${PROJECT_SOURCE_DIR}/resources/3rdparty/gmm-5.0/include")
+list(APPEND STORM_DEP_TARGETS gmm)
 
 #############################################################
 ##
@@ -52,9 +43,8 @@ include_directories(${GMMXX_INCLUDE_DIR})
 ##
 #############################################################
 
-# Add the shipped version of Eigen to the include pathes
-set(EIGEN_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/resources/3rdparty/eigen-3.3-beta1")
-include_directories(${EIGEN_INCLUDE_DIR})
+add_imported_library_interface(Eigen33 "${PROJECT_SOURCE_DIR}/resources/3rdparty/eigen-3.3-beta1")
+list(APPEND STORM_DEP_TARGETS Eigen33)
 
 
 #############################################################
@@ -95,7 +85,8 @@ set(STORM_BOOST_INCLUDE_DIR "${Boost_INCLUDE_DIRS}")
 
 # Use the shipped version of ExprTK
 message (STATUS "Storm - Including ExprTk.")
-include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/exprtk")
+add_imported_library_interface(ExprTk "${PROJECT_SOURCE_DIR}/resources/3rdparty/exprtk")
+list(APPEND STORM_DEP_TARGETS ExprTk)
 
 #############################################################
 ##
@@ -124,7 +115,8 @@ list(APPEND STORM_RESOURCES_HEADERS "${CMAKE_BINARY_DIR}/include/resources/3rdpa
 
 #use the shipped version of modernjson
 message (STATUS "Storm - Including ModernJSON.")
-include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/modernjson/src/")
+add_imported_library_interface(ModernJSON "${PROJECT_SOURCE_DIR}/resources/3rdparty/modernjson/src/")
+list(APPEND STORM_DEP_TARGETS ModernJSON)
 
 #############################################################
 ##
@@ -162,9 +154,8 @@ if (STORM_USE_GUROBI)
     set(STORM_HAVE_GUROBI ${GUROBI_FOUND})
     if (GUROBI_FOUND)
         message (STATUS "Storm - Linking with Gurobi.")
-        include_directories(${GUROBI_INCLUDE_DIRS})
-        list(APPEND STORM_LINK_LIBRARIES ${GUROBI_LIBRARY})
-        #link_directories("${GUROBI_ROOT}/lib")
+        add_imported_library(Gurobi "" ${GUROBI_LIBRARY} ${GUROBI_INCLUDE_DIRS})
+		list(APPEND STORM_DEP_TARGETS Gurobi)
     endif()
 else()
     set(STORM_HAVE_GUROBI OFF)
@@ -184,25 +175,7 @@ include(${STORM_3RDPARTY_SOURCE_DIR}/include_cudd.cmake)
 #############################################################
 include(${STORM_3RDPARTY_SOURCE_DIR}/include_cpptemplate.cmake)
 
-#############################################################
-##
-##      CLN
-##
-#############################################################
 
-find_package(CLN QUIET)
-
-if(CLN_FOUND)
-    set(STORM_HAVE_CLN ON)
-    message(STATUS "Storm - Linking with CLN ${CLN_VERSION_STRING}.")
-    include_directories("${CLN_INCLUDE_DIR}")
-    list(APPEND STORM_LINK_LIBRARIES ${CLN_LIBRARIES})
-else()
-    set(STORM_HAVE_CLN OFF)
-    if(NOT GMP_FOUND)
-        message(FATAL_ERROR "Storm - Neither CLN nor GMP found.")
-    endif()
-endif()
 
 #############################################################
 ##
@@ -216,39 +189,60 @@ if(USE_CARL)
     if(carl_FOUND)
         set(STORM_HAVE_CARL ON)
         message(STATUS "Storm - Use system version of carl.")
-        message(STATUS "Storm - Linking with carl ${carl_VERSION_STRING}.")
-        include_directories("${carl_INCLUDE_DIR}")
-        list(APPEND STORM_LINK_LIBRARIES ${carl_LIBRARIES})
+        message(STATUS "Storm - Linking with carl ${carl_VERSION} (CARL_USE_CLN_NUMBERS: ${CARL_USE_CLN_NUMBERS}).")
+        set(STORM_HAVE_CLN ${CARL_USE_CLN_NUMBERS})
     else()
+		# The first external project will be built at *configure stage*
+		message("START CARL CONFIG PROCESS")
+		file(MAKE_DIRECTORY ${STORM_3RDPARTY_BINARY_DIR}/carl_download) 
+			execute_process(
+			COMMAND ${CMAKE_COMMAND} ${STORM_3RDPARTY_SOURCE_DIR}/carl "-DSTORM_3RDPARTY_BINARY_DIR=${STORM_3RDPARTY_BINARY_DIR}"
+			WORKING_DIRECTORY ${STORM_3RDPARTY_BINARY_DIR}/carl_download
+			OUTPUT_VARIABLE carlconfig_out
+			RESULT_VARIABLE carlconfig_result
+					)
+		
+								
+		if(NOT carlconfig_result)
+			message("${carlconfig_out}")
+		endif()
+		execute_process(
+			COMMAND ${CMAKE_COMMAND} --build . --target carl-config
+			WORKING_DIRECTORY ${STORM_3RDPARTY_BINARY_DIR}/carl_download
+			OUTPUT_VARIABLE carlconfig_out
+			RESULT_VARIABLE carlconfig_result
+			)
+			if(NOT carlconfig_result)
+			message("${carlconfig_out}")
+		endif()
+    	message("END CARL CONFIG PROCESS")
+    	
         message(STATUS "Storm - Using shipped version of carl.")
         set(CARL_BUILD_COMMAND make lib_carl)
-        if(STORM_PYTHON)
-            set(CARL_BUILD_COMMAND ${CARL_BUILD_COMMAND} PythonBindingsDevelop)
-        endif()
         ExternalProject_Add(
                 carl
-                GIT_REPOSITORY https://github.com/smtrat/carl
-                GIT_TAG master
-                INSTALL_DIR ${STORM_3RDPARTY_BINARY_DIR}/carl
-                SOURCE_DIR ${STORM_3RDPARTY_SOURCE_DIR}/carl
-		        CMAKE_ARGS -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} -DBOOST_INCLUDEDIR=${Boost_INCLUDE_DIRS} -DBOOST_LIBRARYDIR=${Boost_LIBRARY_DIRS} -DBoost_NO_SYSTEM_PATHS=1 -DEXPORT_TO_CMAKE=0 -DUSE_CLN_NUMBERS=1 -DCMAKE_SKIP_INSTALL_ALL_DEPENDENCY=1 -DCMAKE_INSTALL_PREFIX:PATH=${STORM_3RDPARTY_BINARY_DIR}/carl -DBINDINGS_PYTHON=${STORM_PYTHON} -DPYTHON_LIBRARY=${PYTHON_LIBRARY} -DPYTHON_INCLUDE_DIR=${PYTHON_INCLUDE_DIR} -DPYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}
-                BUILD_IN_SOURCE 0
-                BUILD_COMMAND ${CARL_BUILD_COMMAND}
+                SOURCE_DIR ${STORM_3RDPARTY_BINARY_DIR}/carl
+                CONFIGURE_COMMAND ""
+                BUILD_IN_SOURCE 1
+                BUILD_COMMAND make lib_carl
                 INSTALL_COMMAND ""
-                LOG_UPDATE ON
-                LOG_CONFIGURE ON
                 LOG_BUILD ON
                 BUILD_BYPRODUCTS ${STORM_3RDPARTY_BINARY_DIR}/carl/lib/libcarl${DYNAMIC_EXT}
         )
-
-        add_dependencies(resources carl)
-        set(carl_INCLUDE_DIR "${STORM_3RDPARTY_BINARY_DIR}/carl/include")
-        include_directories("${carl_INCLUDE_DIR}")
-        list(APPEND STORM_LINK_LIBRARIES ${STORM_3RDPARTY_BINARY_DIR}/carl/lib/libcarl${DYNAMIC_EXT})
+        include(${STORM_3RDPARTY_BINARY_DIR}/carl/carlConfig.cmake)
+        message("CARL_USE_CLN_NUMBERS: ${CARL_USE_CLN_NUMBERS}")
+		set(STORM_HAVE_CLN ${CARL_USE_CLN_NUMBERS})
+		add_dependencies(resources carl)
+        set(carl_INCLUDE_DIR "${STORM_3RDPARTY_BINARY_DIR}/carl/build/include")
         set(STORM_HAVE_CARL ON)
     endif()
+    if(STORM_USE_CLN_NUMBERS AND NOT STORM_HAVE_CLN)
+		message(FATAL_ERROR "Cannot use CLN numbers if carl is build without")
+	endif()
+	
+	list(APPEND STORM_DEP_IMP_TARGETS lib_carl) 
+    
 endif()
-set(STORM_CARL_INCLUDE_DIR "${carl_INCLUDE_DIR}")
 
 
 #############################################################
@@ -291,26 +285,6 @@ if(USE_HYPRO)
 	endif()
 endif()
 
-
-
-#############################################################
-##
-##      GiNaC
-##
-#############################################################
-
-find_package(GiNaC QUIET)
-
-if(GINAC_FOUND)
-    set(STORM_HAVE_GINAC ON)
-    message(STATUS "Storm - Linking with GiNaC ${GINAC_VERSION_STRING}.")
-    # Right now only link with GiNaC for carl
-    #include_directories("${GINAC_INCLUDE_DIR}")
-    list(APPEND STORM_LINK_LIBRARIES ${GINAC_LIBRARIES})
-else()
-    set(STORM_HAVE_GINAC OFF)
-    #TODO: Check if CARL actually requires the use of GiNaC
-endif()
 
 
 #############################################################
@@ -372,13 +346,13 @@ ExternalProject_Add(
         PREFIX "sylvan"
         SOURCE_DIR ${STORM_3RDPARTY_SOURCE_DIR}/sylvan
         CMAKE_ARGS -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DSYLVAN_BUILD_TEST=Off -DSYLVAN_BUILD_EXAMPLES=Off -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=ON
-        BINARY_DIR ${PROJECT_BINARY_DIR}/sylvan
+        BINARY_DIR ${STORM_3RDPARTY_BINARY_DIR}/sylvan
         BUILD_IN_SOURCE 0
         INSTALL_COMMAND ""
         INSTALL_DIR ${STORM_3RDPARTY_BINARY_DIR}/sylvan
         LOG_CONFIGURE ON
         LOG_BUILD ON
-        BUILD_BYPRODUCTS ${PROJECT_BINARY_DIR}/sylvan/src/libsylvan${STATIC_EXT}
+        BUILD_BYPRODUCTS ${STORM_3RDPARTY_BINARY_DIR}/sylvan/src/libsylvan${STATIC_EXT}
 )
 ExternalProject_Get_Property(sylvan source_dir)
 ExternalProject_Get_Property(sylvan binary_dir)
@@ -386,15 +360,16 @@ set(Sylvan_INCLUDE_DIR "${source_dir}/src")
 set(Sylvan_LIBRARY "${binary_dir}/src/libsylvan${STATIC_EXT}")
 message(STATUS "Storm - Using shipped version of sylvan.")
 message(STATUS "Storm - Linking with sylvan.")
-include_directories("${Sylvan_INCLUDE_DIR}")
-list(APPEND STORM_LINK_LIBRARIES ${Sylvan_LIBRARY})
-add_dependencies(resources sylvan)
+add_imported_library(sylvan STATIC ${Sylvan_LIBRARY} ${Sylvan_INCLUDE_DIR})
+add_dependencies(sylvan_STATIC sylvan)
+list(APPEND STORM_DEP_TARGETS sylvan_STATIC)
 
 if(${OPERATING_SYSTEM} MATCHES "Linux")
     find_package(Hwloc QUIET REQUIRED)
     if(HWLOC_FOUND)
         message(STATUS "Storm - Linking with hwloc ${HWLOC_VERSION}.")
-        list(APPEND STORM_LINK_LIBRARIES ${HWLOC_LIBRARIES})
+        add_imported_library(hwloc STATIC ${HWLOC_LIBRARIES} "")
+        list(APPEND STORM_DEP_TARGETS hwloc_STATIC)
     else()
         message(FATAL_ERROR "HWLOC is required but was not found.")
     endif()

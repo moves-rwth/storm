@@ -27,14 +27,22 @@ namespace storm {
             return tId;
         }
         
-        GSPN::GSPN(std::string const& name, std::vector<Place> const& places, std::vector<ImmediateTransition<WeightType>> const& itransitions, std::vector<TimedTransition<RateType>> const& ttransitions)
-        : name(name), places(places), immediateTransitions(itransitions), timedTransitions(ttransitions)
+        GSPN::GSPN(std::string const& name, std::vector<Place> const& places, std::vector<ImmediateTransition<WeightType>> const& itransitions, std::vector<TimedTransition<RateType>> const& ttransitions, std::vector<TransitionPartition> const& partitions)
+        : name(name), places(places), immediateTransitions(itransitions), timedTransitions(ttransitions), partitions(partitions)
         {
             
         }
         
         uint64_t GSPN::getNumberOfPlaces() const {
             return places.size();
+        }
+        
+        uint64_t GSPN::getNumberOfImmediateTransitions() const {
+            return immediateTransitions.size();
+        }
+        
+        uint64_t GSPN::getNumberOfTimedTransitions() const {
+            return timedTransitions.size();
         }
 
         std::vector<storm::gspn::TimedTransition<GSPN::RateType>> const& GSPN::getTimedTransitions() const {
@@ -57,6 +65,10 @@ namespace storm {
             return m;
         }
 
+        std::vector<TransitionPartition> const&  GSPN::getPartitions() const {
+            return partitions;
+        }
+        
         
         storm::gspn::Place const* GSPN::getPlace(uint64_t id) const {
             if(id < places.size()) {
@@ -364,6 +376,20 @@ namespace storm {
 
             return result;
         }
+        
+        void GSPN::setPlaceLayoutInfo(uint64_t placeId, LayoutInfo const& layout) const {
+            placeLayout[placeId] = layout;
+        }
+        void GSPN::setTransitionLayoutInfo(uint64_t transitionId, LayoutInfo const& layout) const {
+            transitionLayout[transitionId] = layout;
+        }
+        
+        void GSPN::setPlaceLayoutInfo(std::map<uint64_t, LayoutInfo> const& placeLayout) const {
+            this->placeLayout = placeLayout;
+        }
+        void GSPN::setTransitionLayoutInfo(std::map<uint64_t, LayoutInfo> const& transitionLayout) const {
+            this->transitionLayout = transitionLayout;
+        }
 
         void GSPN::toPnpro(std::ostream &stream) const {
             auto space = "  ";
@@ -378,8 +404,14 @@ namespace storm {
             for (auto& place : places) {
                 stream << space3 << "<place marking=\"" << place.getNumberOfInitialTokens() <<"\" ";
                 stream << "name =\"" << place.getName() << "\" ";
-                stream << "x=\"" << x << "\" ";
-                stream << "y=\"1\" ";
+                if (placeLayout.count(place.getID()) > 0) {
+                    stream << "x=\"" << placeLayout.at(place.getID()).x << "\" ";
+                    stream << "y=\"" << placeLayout.at(place.getID()).y << "\" ";
+                } else {
+                    stream << "x=\"" << x << "\" ";
+                    stream << "y=\"1\" ";
+                    
+                }
                 stream << "/>" << std::endl;
                 x = x + 3;
             }
@@ -388,16 +420,28 @@ namespace storm {
                 stream << space3 << "<transition name=\"" << trans.getName() << "\" ";
                 stream << "type=\"EXP\" ";
                 stream << "nservers-x=\"" << trans.getRate() << "\" ";
-                stream << "x=\"" << x << "\" ";
-                stream << "y=\"4\" ";
+                if (transitionLayout.count(trans.getID()) > 0) {
+                    stream << "x=\"" << transitionLayout.at(trans.getID()).x << "\" ";
+                    stream << "y=\"" << transitionLayout.at(trans.getID()).y << "\" ";
+                } else {
+                    stream << "x=\"" << x << "\" ";
+                    stream << "y=\"4\" ";
+                    
+                }
                 stream << "/>" << std::endl;
                 x = x + 3;
             }
             for (auto& trans : immediateTransitions) {
                 stream << space3 << "<transition name=\"" << trans.getName() << "\" ";
                 stream << "type=\"IMM\" ";
-                stream << "x=\"" << x << "\" ";
-                stream << "y=\"4\" ";
+                stream << "priority=\"" << trans.getPriority() << "\" ";
+                if (transitionLayout.count(trans.getID()) > 0) {
+                    stream << "x=\"" << transitionLayout.at(trans.getID()).x << "\" ";
+                    stream << "y=\"" << transitionLayout.at(trans.getID()).y << "\" ";
+                } else {
+                    stream << "x=\"" << x << "\" ";
+                    stream << "y=\"4\" ";
+                }
                 stream << "/>" << std::endl;
                 x = x + 3;
             }
@@ -560,6 +604,12 @@ namespace storm {
 
             stream << space << "</net>" << std::endl;
             stream << "</pnml>" << std::endl;
+        }
+        
+        void GSPN::writeStatsToStream(std::ostream& stream) const {
+            stream << "Number of places: " << getNumberOfPlaces() << std::endl;
+            stream << "Number of timed transitions: " << getNumberOfTimedTransitions() << std::endl;
+            stream << "Number of immediate transitions: " << getNumberOfImmediateTransitions() << std::endl;
         }
     }
 }

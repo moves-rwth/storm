@@ -6,12 +6,14 @@ namespace storm {
         template<typename ValueType>
         class DFTPor : public DFTGate<ValueType> {
         public:
-            DFTPor(size_t id, std::string const& name, std::vector<std::shared_ptr<DFTElement<ValueType>>> const& children = {}) :
-                    DFTGate<ValueType>(id, name, children)
+            DFTPor(size_t id, std::string const& name, bool inclusive, std::vector<std::shared_ptr<DFTElement<ValueType>>> const& children = {}) :
+                    DFTGate<ValueType>(id, name, children),
+                    inclusive(inclusive)
             {}
 
             void checkFails(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
-                 if(state.isOperational(this->mId)) {
+                assert(inclusive);
+                if(state.isOperational(this->mId)) {
                     if (state.hasFailed(this->mChildren.front()->id())) {
                         // First child has failed before others
                         this->fail(state, queues);
@@ -28,6 +30,7 @@ namespace storm {
             }
 
             void checkFailsafe(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
+                assert(inclusive);
                 if (state.isFailsafe(this->mChildren.front()->id())) {
                     this->failsafe(state, queues);
                     this->childrenDontCare(state, queues);
@@ -39,8 +42,14 @@ namespace storm {
             }
             
             std::string  typestring() const override {
-                return "POR";
+                return inclusive ? "POR-inc" : "POR-ex";
             }
+            
+            bool isInclusive() const {
+                return inclusive;
+            }
+        protected:
+            bool inclusive;
         };
 
         template<typename ValueType>

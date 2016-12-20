@@ -19,15 +19,21 @@ namespace storm {
         };
         
         struct JaniProgramGraphBuilderSetting {
+            /// Method how to obtain domain for the variables; currently only unrestricted is supported
             JaniProgramGraphVariableDomainMethod variableDomainMethod = JaniProgramGraphVariableDomainMethod::Unrestricted;
+            /// If this is true, reward variables will be given special treatment, effectively removing them from the state space.
+            /// Disable in order to obtain full state space.
+            bool filterRewardVariables = true;
         };
         
         class JaniProgramGraphBuilder {
         public:
             static unsigned janiVersion;
             
-            JaniProgramGraphBuilder(storm::ppg::ProgramGraph const& pg) : programGraph(pg) {
-                rewards = programGraph.rewardVariables();
+            JaniProgramGraphBuilder(storm::ppg::ProgramGraph const& pg, JaniProgramGraphBuilderSetting const& pgbs = JaniProgramGraphBuilderSetting()) : programGraph(pg), pgbs(pgbs) {
+                if (pgbs.filterRewardVariables) {
+                    rewards = programGraph.rewardVariables();
+                }
                 constants = programGraph.constants();
                 auto boundedVars = programGraph.constantAssigned();
                 for(auto const& v : boundedVars) {
@@ -40,10 +46,6 @@ namespace storm {
                     delete var.second;
                 }
             }
-            
-            //void addVariableRestriction(storm::expressions::Variable const& var, storm::IntegerInterval const& interval ) {
-                
-            //}
             
         
             void restrictAllVariables(int64_t from, int64_t to) {
@@ -167,7 +169,7 @@ namespace storm {
             /// Restrictions on variables (provided by users)
             std::map<uint64_t, storm::storage::IntegerInterval> userVariableRestrictions;
             
-            /// Locations for variables that would have gone ot o
+            /// Locations for variables that would have gone out of bounds
             std::map<uint64_t, uint64_t> varOutOfBoundsLocations;
             std::map<storm::ppg::ProgramLocationIdentifier, uint64_t> janiLocId;
             std::map<storm::ppg::ProgramVariableIdentifier, storm::jani::Variable*> variables;
@@ -176,6 +178,8 @@ namespace storm {
             std::shared_ptr<storm::expressions::ExpressionManager> expManager;
             /// The program graph to be translated
             storm::ppg::ProgramGraph const& programGraph;
+            /// Settings
+            JaniProgramGraphBuilderSetting pgbs;
             
             
         };

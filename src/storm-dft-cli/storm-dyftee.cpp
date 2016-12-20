@@ -1,33 +1,36 @@
 #include "storm/logic/Formula.h"
 #include "storm/utility/initialize.h"
 #include "storm/utility/storm.h"
-#include "storm-dft/parser/DFTGalileoParser.h"
-#include "storm-dft/modelchecker/dft/DFTModelChecker.h"
-
-#include "storm-dft/modelchecker/dft/DFTASFChecker.h"
 #include "storm/cli/cli.h"
 #include "storm/exceptions/BaseException.h"
-#include "storm/utility/macros.h"
 
+#include "storm/logic/Formula.h"
 
 #include "storm/settings/modules/GeneralSettings.h"
-#include "storm-dft/settings/modules/DFTSettings.h"
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/settings/modules/DebugSettings.h"
-//#include "storm/settings/modules/CounterexampleGeneratorSettings.h"
-//#include "storm/settings/modules/CuddSettings.h"
-//#include "storm/settings/modules/SylvanSettings.h"
 #include "storm/settings/modules/GmmxxEquationSolverSettings.h"
 #include "storm/settings/modules/MinMaxEquationSolverSettings.h"
 #include "storm/settings/modules/NativeEquationSolverSettings.h"
-//#include "storm/settings/modules/BisimulationSettings.h"
-//#include "storm/settings/modules/GlpkSettings.h"
-//#include "storm/settings/modules/GurobiSettings.h"
-//#include "storm/settings/modules/TopologicalValueIterationEquationSolverSettings.h"
-//#include "storm/settings/modules/ParametricSettings.h"
 #include "storm/settings/modules/EliminationSettings.h"
 
+#include "storm-dft/parser/DFTGalileoParser.h"
+#include "storm-dft/parser/DFTJsonParser.h"
+#include "storm-dft/modelchecker/dft/DFTModelChecker.h"
+#include "storm-dft/modelchecker/dft/DFTASFChecker.h"
+#include "storm-dft/transformations/DftToGspnTransformator.h"
+
+
+#include "storm-dft/settings/modules/DFTSettings.h"
+
+#include "storm-gspn/storage/gspn/GSPN.h"
+#include "storm-gspn/storm-gspn.h"
+#include "storm/settings/modules/GSPNSettings.h"
+#include "storm/settings/modules/GSPNExportSettings.h"
+
+
 #include <boost/lexical_cast.hpp>
+#include <memory>
 
 /*!
  * Load DFT from filename, build corresponding Model and check against given property.
@@ -71,21 +74,6 @@ void analyzeWithSMT(std::string filename) {
     //std::cout << "SMT result: " << sat << std::endl;
 }
 
-/*!
- * Load DFT from filename and transform into a GSPN.
- *
- * @param filename Path to DFT file in Galileo format.
- *
- */
-template <typename ValueType>
-void transformDFT(std::string filename) {
-    std::cout << "Transforming DFT from file " << filename << std::endl;
-    storm::parser::DFTGalileoParser<ValueType> parser;
-    storm::storage::DFT<ValueType> dft = parser.parseDFT(filename);
-    // TODO: activate again
-    //storm::transformations::dft::DftToGspnTransformator<ValueType> gspnTransformator(dft);
-    //gspnTransformator.transform();
-}
 
 /*!
  * Initialize the settings manager.
@@ -110,6 +98,11 @@ void initializeSettings() {
     //storm::settings::addModule<storm::settings::modules::TopologicalValueIterationEquationSolverSettings>();
     //storm::settings::addModule<storm::settings::modules::ParametricSettings>();
     storm::settings::addModule<storm::settings::modules::EliminationSettings>();
+    
+    // For translation into JANI via GSPN.
+    storm::settings::addModule<storm::settings::modules::GSPNSettings>();
+    storm::settings::addModule<storm::settings::modules::GSPNExportSettings>();
+    storm::settings::addModule<storm::settings::modules::JaniExportSettings>();
 }
 
 /*!
@@ -132,13 +125,48 @@ int main(const int argc, const char** argv) {
         
         storm::settings::modules::DFTSettings const& dftSettings = storm::settings::getModule<storm::settings::modules::DFTSettings>();
         storm::settings::modules::GeneralSettings const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
-        if (!dftSettings.isDftFileSet()) {
+        if (!dftSettings.isDftFileSet() && !dftSettings.isDftJsonFileSet()) {
             STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "No input model.");
         }
 
+        
         if (dftSettings.isTransformToGspn()) {
-            // For now we only transform the DFT to a GSPN and then exit
-            transformDFT<double>(dftSettings.getDftFilename());
+            std::shared_ptr<storm::storage::DFT<double>> dft;
+            if (dftSettings.isDftJsonFileSet()) {
+                storm::parser::DFTJsonParser<double> parser;
+                dft = std::make_shared<storm::storage::DFT<double>>(parser.parseJson(dftSettings.getDftJsonFilename()));
+            } else {
+                storm::parser::DFTGalileoParser<double> parser(true, false);
+                dft = std::make_shared<storm::storage::DFT<double>>(parser.parseDFT(dftSettings.getDftFilename()));
+            }
+            storm::transformations::dft::DftToGspnTransformator<double> gspnTransformator(*dft);
+            gspnTransformator.transform();
+            storm::gspn::GSPN* gspn = gspnTransformator.obtainGSPN();
+            uint64_t toplevelFailedPlace = gspnTransformator.toplevelFailedPlaceId();
+            
+            storm::handleGSPNExportSettings(*gspn);
+            
+            std::shared_ptr<storm::expressions::ExpressionManager> exprManager(new storm::expressions::ExpressionManager());
+            storm::builder::JaniGSPNBuilder builder(*gspn, exprManager);
+            storm::jani::Model* model =  builder.build();
+            storm::jani::Variable const& topfailedVar = builder.getPlaceVariable(toplevelFailedPlace);
+            
+
+            storm::expressions::Expression targetExpression = exprManager->integer(1) == topfailedVar.getExpressionVariable().getExpression();
+            auto evtlFormula = std::make_shared<storm::logic::AtomicExpressionFormula>(targetExpression);
+            auto tbFormula = std::make_shared<storm::logic::BoundedUntilFormula>(std::make_shared<storm::logic::BooleanLiteralFormula>(true), evtlFormula, 0.0, 10.0);
+            auto tbUntil = std::make_shared<storm::logic::ProbabilityOperatorFormula>(tbFormula);
+            
+            auto evFormula = std::make_shared<storm::logic::EventuallyFormula>(evtlFormula, storm::logic::FormulaContext::Time);
+            auto rewFormula = std::make_shared<storm::logic::TimeOperatorFormula>(evFormula, storm::logic::OperatorInformation(), storm::logic::RewardMeasureType::Expectation);
+            
+            storm::settings::modules::JaniExportSettings const& janiSettings = storm::settings::getModule<storm::settings::modules::JaniExportSettings>();
+            if (janiSettings.isJaniFileSet()) {
+                storm::exportJaniModel(*model, {storm::jani::Property("time-bounded", tbUntil), storm::jani::Property("mttf", rewFormula)}, janiSettings.getJaniFilename());
+            }
+            
+            delete model;
+            delete gspn;
             storm::utility::cleanUp();
             return 0;
         }

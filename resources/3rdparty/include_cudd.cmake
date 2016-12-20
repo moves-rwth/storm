@@ -37,12 +37,16 @@ set(CUDD_INCLUDE_DIR ${STORM_3RDPARTY_BINARY_DIR}/cudd-3.0.0/include)
 set(CUDD_SHARED_LIBRARY ${CUDD_LIB_DIR}/libcudd${DYNAMIC_EXT})
 set(CUDD_STATIC_LIBRARY ${CUDD_LIB_DIR}/libcudd${STATIC_EXT})
 set(CUDD_VERSION_STRING 3.0.0)
-if(BUILD_SHARED_LIBS)
-    list(APPEND STORM_LINK_LIBRARIES ${CUDD_SHARED_LIBRARY})
-else()
-    list(APPEND STORM_LINK_LIBRARIES ${CUDD_STATIC_LIBRARY})
-endif()
+
+add_imported_library(cudd SHARED ${CUDD_SHARED_LIBRARY} ${CUDD_INCLUDE_DIR})
+add_imported_library(cudd STATIC ${CUDD_STATIC_LIBRARY} ${CUDD_INCLUDE_DIR})
+
 add_dependencies(resources cudd3)
 
+if(BUILD_SHARED_LIBS)
+	list(APPEND STORM_DEP_TARGETS cudd_SHARED)
+else()
+    list(APPEND STORM_DEP_TARGETS cudd_STATIC)
+endif()
+
 message(STATUS "Storm - Linking with CUDD ${CUDD_VERSION_STRING}.")
-include_directories(${CUDD_INCLUDE_DIR})
