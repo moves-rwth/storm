@@ -12,6 +12,7 @@
 #include "storm/builder/DdPrismModelBuilder.h"
 #include "storm/builder/ExplicitModelBuilder.h"
 #include "storm/utility/graph.h"
+#include "storm/utility/shortestPaths.cpp"
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
 #include "storm/storage/dd/DdManager.h"
