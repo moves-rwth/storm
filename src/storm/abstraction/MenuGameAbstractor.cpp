@@ -2,6 +2,8 @@
 
 #include "storm/abstraction/AbstractionInformation.h"
 
+#include "storm/models/symbolic/StandardRewardModel.h"
+
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
 #include "storm/utility/dd.h"
