@@ -48,7 +48,7 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 find_package(GMP REQUIRED)
 include_directories(${GMP_INCLUDE_DIR})
 include_directories("${PROJECT_SOURCE_DIR}/../../../src")
-include_directories("${PROJECT_BINARY_DIR}/../include")
+include_directories("${PROJECT_BINARY_DIR}/../../../include")
 include_directories(src)
 
 include_directories(src)
