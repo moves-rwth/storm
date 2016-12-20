@@ -518,7 +518,7 @@ TEST(PrismMenuGame, TwoDiceAbstractionAndRefinementTest_Cudd) {
 
     EXPECT_EQ(276, game.getNumberOfTransitions());
     EXPECT_EQ(16, game.getNumberOfStates());
-    EXPECT_EQ(4, game.getBottomStates().getNonZeroCount());
+    EXPECT_EQ(8, game.getBottomStates().getNonZeroCount());
 }
 
 TEST(PrismMenuGame, TwoDiceAbstractionAndRefinementTest_Sylvan) {
@@ -544,7 +544,7 @@ TEST(PrismMenuGame, TwoDiceAbstractionAndRefinementTest_Sylvan) {
     
     EXPECT_EQ(276, game.getNumberOfTransitions());
     EXPECT_EQ(16, game.getNumberOfStates());
-    EXPECT_EQ(4, game.getBottomStates().getNonZeroCount());
+    EXPECT_EQ(8, game.getBottomStates().getNonZeroCount());
 }
 
 TEST(PrismMenuGame, TwoDiceFullAbstractionTest_Cudd) {
@@ -677,9 +677,9 @@ TEST(PrismMenuGame, WlanAbstractionTest_Cudd) {
 
     storm::abstraction::MenuGame<storm::dd::DdType::CUDD, double> game = abstractor.abstract();
     
-    EXPECT_EQ(1507, game.getNumberOfTransitions());
-    EXPECT_EQ(12, game.getNumberOfStates());
-    EXPECT_EQ(8, game.getBottomStates().getNonZeroCount());
+    EXPECT_EQ(915, game.getNumberOfTransitions());
+    EXPECT_EQ(8, game.getNumberOfStates());
+    EXPECT_EQ(4, game.getBottomStates().getNonZeroCount());
 }
 
 TEST(PrismMenuGame, WlanAbstractionTest_Sylvan) {
@@ -702,9 +702,9 @@ TEST(PrismMenuGame, WlanAbstractionTest_Sylvan) {
 
     storm::abstraction::MenuGame<storm::dd::DdType::Sylvan, double> game = abstractor.abstract();
     
-    EXPECT_EQ(1507, game.getNumberOfTransitions());
-    EXPECT_EQ(12, game.getNumberOfStates());
-    EXPECT_EQ(8, game.getBottomStates().getNonZeroCount());
+    EXPECT_EQ(915, game.getNumberOfTransitions());
+    EXPECT_EQ(8, game.getNumberOfStates());
+    EXPECT_EQ(4, game.getBottomStates().getNonZeroCount());
 }
 
 TEST(PrismMenuGame, WlanAbstractionAndRefinementTest_Cudd) {
@@ -729,9 +729,9 @@ TEST(PrismMenuGame, WlanAbstractionAndRefinementTest_Cudd) {
 
     storm::abstraction::MenuGame<storm::dd::DdType::CUDD, double> game = abstractor.abstract();
 
-    EXPECT_EQ(3000, game.getNumberOfTransitions());
-    EXPECT_EQ(24, game.getNumberOfStates());
-    EXPECT_EQ(16, game.getBottomStates().getNonZeroCount());
+    EXPECT_EQ(1824, game.getNumberOfTransitions());
+    EXPECT_EQ(16, game.getNumberOfStates());
+    EXPECT_EQ(8, game.getBottomStates().getNonZeroCount());
 }
 
 TEST(PrismMenuGame, WlanAbstractionAndRefinementTest_Sylvan) {
@@ -756,9 +756,9 @@ TEST(PrismMenuGame, WlanAbstractionAndRefinementTest_Sylvan) {
     
     storm::abstraction::MenuGame<storm::dd::DdType::Sylvan, double> game = abstractor.abstract();
     
-    EXPECT_EQ(3000, game.getNumberOfTransitions());
-    EXPECT_EQ(24, game.getNumberOfStates());
-    EXPECT_EQ(16, game.getBottomStates().getNonZeroCount());
+    EXPECT_EQ(1824, game.getNumberOfTransitions());
+    EXPECT_EQ(16, game.getNumberOfStates());
+    EXPECT_EQ(8, game.getBottomStates().getNonZeroCount());
 }
 
 TEST(PrismMenuGame, WlanFullAbstractionTest_Cudd) {
