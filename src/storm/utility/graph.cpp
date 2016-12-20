@@ -990,86 +990,8 @@ namespace storm {
                 
                 return topologicalSort;
             }
-            
-            
 
-            // There seems to be a lot of stuff wrong here. FIXME: Check whether it works now. -Tom
-            template <typename T>
-            std::pair<std::vector<T>, std::vector<uint_fast64_t>> performDijkstra(storm::models::sparse::Model<T> const& model,
-                                                                                  storm::storage::SparseMatrix<T> const& transitions,
-                                                                                  storm::storage::BitVector const& startingStates,
-                                                                                  storm::storage::BitVector const* filterStates) {
-                
-                STORM_LOG_INFO("Performing Dijkstra search.");
-                
-                const uint_fast64_t noPredecessorValue = storm::utility::zero<uint_fast64_t>();
-                std::vector<T> probabilities(model.getNumberOfStates(), storm::utility::zero<T>());
-                std::vector<uint_fast64_t> predecessors(model.getNumberOfStates(), noPredecessorValue);
-                
-                // Set the probability to 1 for all starting states.
-                std::set<std::pair<T, uint_fast64_t>, DistanceCompare<T>> probabilityStateSet;
-                
-                for (auto state : startingStates) {
-                    probabilityStateSet.emplace(storm::utility::one<T>(), state);
-                    probabilities[state] = storm::utility::one<T>();
-                }
-                
-                // As long as there is one reachable state, we need to consider it.
-                while (!probabilityStateSet.empty()) {
-                    // Get the state with the least distance from the set and remove it.
-                    // FIXME? is this correct? this used to take the second element!!
-                    std::pair<T, uint_fast64_t> probabilityStatePair = *(probabilityStateSet.begin());
-                    probabilityStateSet.erase(probabilityStateSet.begin());
 
-                    uint_fast64_t currentNode = probabilityStatePair.second;
-
-                    // Now check the new distances for all successors of the current state.
-                    typename storm::storage::SparseMatrix<T>::const_rows row = transitions.getRowGroup(currentNode);
-                    for (auto const& transition : row) {
-                        uint_fast64_t targetNode = transition.getColumn();
-
-                        // Only follow the transition if it lies within the filtered states.
-                        // -- shouldn't "no filter" (nullptr) mean that all nodes are checked? - Tom FIXME
-                        if (filterStates == nullptr || filterStates->get(targetNode)) {
-
-                            // Calculate the distance we achieve when we take the path to the successor via the current state.
-                            // FIXME: this should be multiplied with the distance to the current node, right?
-                            //T newDistance = probabilityStatePair.first;
-                            T edgeProbability = probabilityStatePair.first;
-                            T newDistance = probabilities[currentNode] * edgeProbability;
-
-                            // DEBUG
-                            if (newDistance != 1) {
-                                std::cout << "yay" << std::endl;
-                            }
-
-                            // We found a cheaper way to get to the target state of the transition.
-                            if (newDistance > probabilities[targetNode]) {
-                                // Remove the old distance.
-                                if (probabilities[targetNode] != noPredecessorValue) {
-                                    probabilityStateSet.erase(std::make_pair(probabilities[targetNode], targetNode));
-                                }
-                                
-                                // Set and add the new distance.
-                                probabilities[targetNode] = newDistance;
-                                predecessors[targetNode] = currentNode;
-                                probabilityStateSet.insert(std::make_pair(newDistance, targetNode));
-                            }
-                        }
-                    }
-                }
-                
-                // Move the values into the result and return it.
-                std::pair<std::vector<T>, std::vector<uint_fast64_t>> result;
-                result.first = std::move(probabilities);
-                result.second = std::move(predecessors);
-                STORM_LOG_INFO("Done performing Dijkstra search.");
-                return result;
-            }
-            
-            
-            
-            
             template storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, bool useStepBound, uint_fast64_t maximalSteps);
             
             template storm::storage::BitVector getBsccCover(storm::storage::SparseMatrix<double> const& transitionMatrix);
@@ -1198,8 +1120,6 @@ namespace storm {
             
             
             template std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<float> const& matrix);
-
-            template std::pair<std::vector<double>, std::vector<uint_fast64_t>> performDijkstra(storm::models::sparse::Model<double> const& model, storm::storage::SparseMatrix<double> const& transitions, storm::storage::BitVector const& startingStates, storm::storage::BitVector const* filterStates);
 
 
             // Instantiations for storm::RationalNumber.
