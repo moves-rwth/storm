@@ -14,6 +14,7 @@
 #include "storm/exceptions/FileIoException.h"
 
 #include "storm/settings/modules/GeneralSettings.h"
+#include "storm/settings/modules/ResourceSettings.h"
 #include "storm/settings/modules/PGCLSettings.h"
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/settings/modules/DebugSettings.h"
@@ -28,6 +29,7 @@ void initializeSettings() {
     
     // Register all known settings modules.
     storm::settings::addModule<storm::settings::modules::GeneralSettings>();
+    storm::settings::addModule<storm::settings::modules::ResourceSettings>();
     storm::settings::addModule<storm::settings::modules::PGCLSettings>();
     storm::settings::addModule<storm::settings::modules::CoreSettings>();
     storm::settings::addModule<storm::settings::modules::DebugSettings>();
@@ -80,7 +82,7 @@ int main(const int argc, const char** argv) {
             // To disable reward detection, uncomment the following line
             // TODO add a setting for this.
             // settings.filterRewardVariables = false;
-            storm::builder::JaniProgramGraphBuilder builder(*progGraph);
+            storm::builder::JaniProgramGraphBuilder builder(*progGraph, settings);
             if (storm::settings::getModule<storm::settings::modules::PGCLSettings>().isProgramVariableRestrictionSet()) {
                 // TODO More fine grained control
                 storm::storage::IntegerInterval restr = storm::storage::parseIntegerInterval(storm::settings::getModule<storm::settings::modules::PGCLSettings>().getProgramVariableRestrictions());

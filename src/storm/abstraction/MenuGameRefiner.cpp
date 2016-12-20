@@ -64,7 +64,10 @@ namespace storm {
                 
                 std::pair<uint64_t, uint64_t> player1Choices = this->abstractor.get().getPlayer1ChoiceRange();
                 for (uint64_t index = player1Choices.first; index < player1Choices.second; ++index) {
-                    guards.push_back(this->abstractor.get().getGuard(index));
+                    storm::expressions::Expression guard = this->abstractor.get().getGuard(index);
+                    if (!guard.isTrue() && !guard.isFalse()) {
+                        guards.push_back(guard);
+                    }
                 }
                 performRefinement(createGlobalRefinement(preprocessPredicates(guards, RefinementPredicates::Source::InitialGuard)));
                 

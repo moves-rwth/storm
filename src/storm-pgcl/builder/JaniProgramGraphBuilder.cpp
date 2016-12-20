@@ -63,23 +63,24 @@ namespace storm {
             return storm::jani::OrderedAssignments(vec);
         }
         
-        std::vector<storm::jani::EdgeDestination> JaniProgramGraphBuilder::buildProbabilisticDestinations(storm::jani::Automaton& automaton, storm::ppg::ProgramEdge const& edge ) {
+        std::vector<std::pair<uint64_t, storm::expressions::Expression>> JaniProgramGraphBuilder::buildProbabilisticDestinations(storm::jani::Automaton& automaton, storm::ppg::ProgramEdge const& edge, storm::jani::TemplateEdge& templateEdge) {
             storm::ppg::ProbabilisticProgramAction const& act = static_cast<storm::ppg::ProbabilisticProgramAction const&>(edge.getAction());
-            std::vector<storm::jani::EdgeDestination> vec;
-            for(auto const& assign : act ) {
-                storm::jani::Assignment  assignment(automaton.getVariables().getVariable(act.getVariableName()), expManager->integer(assign.value) ,0);
-                vec.emplace_back(janiLocId.at(edge.getTargetId()), assign.probability, assignment);
+            std::vector<std::pair<uint64_t, storm::expressions::Expression>> vec;
+            for(auto const& assign : act) {
+                storm::jani::Assignment assignment(automaton.getVariables().getVariable(act.getVariableName()), expManager->integer(assign.value), 0);
+                templateEdge.addDestination(storm::jani::TemplateEdgeDestination(storm::jani::OrderedAssignments(assignment)));
+                vec.emplace_back(janiLocId.at(edge.getTargetId()), assign.probability);
             }
             return vec;
         }
     
-        std::vector<storm::jani::EdgeDestination> JaniProgramGraphBuilder::buildDestinations(storm::jani::Automaton& automaton, storm::ppg::ProgramEdge const& edge ) {
+        std::vector<std::pair<uint64_t, storm::expressions::Expression>> JaniProgramGraphBuilder::buildDestinations(storm::jani::Automaton& automaton, storm::ppg::ProgramEdge const& edge, storm::jani::TemplateEdge& templateEdge) {
             if (edge.getAction().isProbabilistic()) {
-                return buildProbabilisticDestinations(automaton, edge);
+                return buildProbabilisticDestinations(automaton, edge, templateEdge);
             } else {
                 storm::jani::OrderedAssignments oa = buildOrderedAssignments(automaton, static_cast<storm::ppg::DeterministicProgramAction const&>(edge.getAction()));
-                storm::jani::EdgeDestination dest(janiLocId.at(edge.getTargetId()), expManager->rational(1.0), oa);
-                return {dest};
+                templateEdge.addDestination(storm::jani::TemplateEdgeDestination(oa));
+                return {std::make_pair(janiLocId.at(edge.getTargetId()), expManager->rational(1.0))};
             }
         }
         
@@ -88,7 +89,7 @@ namespace storm {
             return in.simplify();
         }
         
-        std::pair<std::vector<storm::jani::Edge>, storm::expressions::Expression> JaniProgramGraphBuilder::addVariableChecks(storm::ppg::ProgramEdge const& edge) {
+        std::pair<std::vector<storm::jani::Edge>, storm::expressions::Expression> JaniProgramGraphBuilder::addVariableChecks(storm::jani::Automaton& automaton, storm::ppg::ProgramEdge const& edge) {
             std::vector<storm::jani::Edge> edges;
             storm::expressions::Expression newGuard;
             newGuard = expManager->boolean(true);
@@ -116,8 +117,10 @@ namespace storm {
                                 // TODO currently only fully bounded restrictions are supported;
                                 assert(userVariableRestrictions.at(assignment.first).hasLeftBound() && userVariableRestrictions.at(assignment.first).hasRightBound());
                                 storm::expressions::Expression newCondition = simplifyExpression(edge.getCondition() && (assignment.second > bound.getRightBound().get() || assignment.second < bound.getLeftBound().get()));
-                                storm::jani::EdgeDestination dest(varOutOfBoundsLocations.at(assignment.first), expManager->rational(1.0), storm::jani::OrderedAssignments());
-                                storm::jani::Edge e(janiLocId.at(edge.getSourceId()), storm::jani::Model::SILENT_ACTION_INDEX, boost::none, newCondition, {dest});
+                                
+                                std::shared_ptr<storm::jani::TemplateEdge> templateEdge = automaton.createTemplateEdge(newCondition);
+                                templateEdge->addDestination(storm::jani::TemplateEdgeDestination());
+                                storm::jani::Edge e(janiLocId.at(edge.getSourceId()), storm::jani::Model::SILENT_ACTION_INDEX, boost::none, templateEdge, {varOutOfBoundsLocations.at(assignment.first)}, {expManager->rational(1.0)});
                                 edges.push_back(e);
                                 newGuard = newGuard && assignment.second <= bound.getRightBound().get() && assignment.second >= bound.getLeftBound().get();
                             }
@@ -133,17 +136,20 @@ namespace storm {
             for(auto it = programGraph.locationBegin(); it != programGraph.locationEnd(); ++it) {
                 ppg::ProgramLocation const& loc = it->second;
                 if (loc.nrOutgoingEdgeGroups() == 0) {
-                    storm::jani::OrderedAssignments oa;
-                    storm::jani::EdgeDestination dest(janiLocId.at(loc.id()), expManager->integer(1), oa);
-                    storm::jani::Edge e(janiLocId.at(loc.id()), storm::jani::Model::SILENT_ACTION_INDEX, boost::none, expManager->boolean(true), {dest});
+                    std::shared_ptr<storm::jani::TemplateEdge> templateEdge = automaton.createTemplateEdge(expManager->boolean(true));
+                    templateEdge->addDestination(storm::jani::TemplateEdgeDestination());
+                    storm::jani::Edge e(janiLocId.at(loc.id()), storm::jani::Model::SILENT_ACTION_INDEX, boost::none, templateEdge, {janiLocId.at(loc.id())}, {expManager->rational(1.0)});
                     automaton.addEdge(e);
                 } else if (loc.nrOutgoingEdgeGroups() == 1) {
                     for(auto const& edge :  **(loc.begin())) {
-                        std::pair<std::vector<storm::jani::Edge>, storm::expressions::Expression> checks = addVariableChecks(*edge);
+                        std::pair<std::vector<storm::jani::Edge>, storm::expressions::Expression> checks = addVariableChecks(automaton, *edge);
                         for(auto const& check : checks.first) {
                             automaton.addEdge(check);
                         }
-                        storm::jani::Edge e(janiLocId.at(loc.id()), storm::jani::Model::SILENT_ACTION_INDEX, boost::none, simplifyExpression(edge->getCondition() && checks.second), buildDestinations(automaton, *edge));
+                        std::shared_ptr<storm::jani::TemplateEdge> templateEdge = automaton.createTemplateEdge(simplifyExpression(edge->getCondition() && checks.second));
+                        std::vector<std::pair<uint64_t, storm::expressions::Expression>> destinationLocationsAndProbabilities = buildDestinations(automaton, *edge, *templateEdge);
+
+                        storm::jani::Edge e(janiLocId.at(loc.id()), storm::jani::Model::SILENT_ACTION_INDEX, boost::none, templateEdge, destinationLocationsAndProbabilities);
                         automaton.addEdge(e);
                     }
                 } else {
@@ -152,15 +158,20 @@ namespace storm {
                     {
                         STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Combi of nondeterminism and probabilistic choices within a loc not supported yet");
                     } else {
-                        std::vector<storm::jani::EdgeDestination> destinations;
+                        std::shared_ptr<storm::jani::TemplateEdge> templateEdge = automaton.createTemplateEdge(expManager->boolean(true));
+
+                        std::vector<storm::expressions::Expression> destinationProbabilities;
+                        std::vector<uint64_t> destinationLocations;
                         for(auto const& eg : loc) {
                             // TODO add assignments
                             assert(eg->nrEdges() < 2); // Otherwise, non-determinism occurs.
                             assert(eg->nrEdges() > 0); // Empty edge groups should not occur in input.
-                            uint64_t target = janiLocId.at((*eg->begin())->getTargetId());
-                            destinations.emplace_back(target, eg->getProbability());
+                            destinationLocations.push_back(janiLocId.at((*eg->begin())->getTargetId()));
+                            destinationProbabilities.push_back(eg->getProbability());
+                            templateEdge->addDestination(storm::jani::TemplateEdgeDestination());
                         }
-                        storm::jani::Edge e(janiLocId.at(it->second.id()), storm::jani::Model::SILENT_ACTION_INDEX, boost::none,  expManager->boolean(true), destinations);
+                        
+                        storm::jani::Edge e(janiLocId.at(it->second.id()), storm::jani::Model::SILENT_ACTION_INDEX, boost::none, templateEdge, destinationLocations, destinationProbabilities);
                         automaton.addEdge(e);
                     }
                 }

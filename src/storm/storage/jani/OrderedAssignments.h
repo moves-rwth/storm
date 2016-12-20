@@ -53,6 +53,11 @@ namespace storm {
             void clear();
             
             /*!
+             * Retrieves the total number of assignments.
+             */
+            std::size_t getNumberOfAssignments() const;
+            
+            /*!
              * Retrieves the lowest level among all assignments. Note that this may only be called if there is at least
              * one assignment.
              */

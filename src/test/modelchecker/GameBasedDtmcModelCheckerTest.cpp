@@ -8,7 +8,7 @@
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/parser/PrismParser.h"
-#include "storm/dtmc/DdPrismModelBuilder.h"
+#include "storm/builder/DdPrismModelBuilder.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
 #include "storm/models/symbolic/Dtmc.h"
 #include "storm/settings/SettingsManager.h"

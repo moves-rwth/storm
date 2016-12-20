@@ -69,7 +69,7 @@ namespace storm {
             storm::jani::Model* build(std::string const& name = "program_graph") {
                 expManager = programGraph.getExpressionManager();
                 storm::jani::Model* model = new storm::jani::Model(name, storm::jani::ModelType::MDP, janiVersion, expManager);
-                storm::jani::Automaton mainAutomaton("main");
+                storm::jani::Automaton mainAutomaton("main", expManager->declareIntegerVariable("pc"));
                 addProcedureVariables(*model, mainAutomaton);
                 janiLocId = addProcedureLocations(*model, mainAutomaton);
                 addVariableOoBLocations(mainAutomaton);
@@ -90,13 +90,13 @@ namespace storm {
             
             storm::jani::OrderedAssignments buildOrderedAssignments(storm::jani::Automaton& automaton, storm::ppg::DeterministicProgramAction const& act) ;
             void addEdges(storm::jani::Automaton& automaton);
-            std::vector<storm::jani::EdgeDestination> buildDestinations(storm::jani::Automaton& automaton, storm::ppg::ProgramEdge const& edge );
+            std::vector<std::pair<uint64_t, storm::expressions::Expression>> buildDestinations(storm::jani::Automaton& automaton, storm::ppg::ProgramEdge const& edge, storm::jani::TemplateEdge& templateEdge);
             /**
              * Helper for probabilistic assignments
              */
-            std::vector<storm::jani::EdgeDestination> buildProbabilisticDestinations(storm::jani::Automaton& automaton, storm::ppg::ProgramEdge const& edge );
+            std::vector<std::pair<uint64_t, storm::expressions::Expression>> buildProbabilisticDestinations(storm::jani::Automaton& automaton, storm::ppg::ProgramEdge const& edge, storm::jani::TemplateEdge& templateEdge);
             
-            std::pair<std::vector<storm::jani::Edge>, storm::expressions::Expression> addVariableChecks(storm::ppg::ProgramEdge const& edge);
+            std::pair<std::vector<storm::jani::Edge>, storm::expressions::Expression> addVariableChecks(storm::jani::Automaton& automaton, storm::ppg::ProgramEdge const& edge);
             
             bool isUserRestrictedVariable(storm::ppg::ProgramVariableIdentifier i) const {
                 return userVariableRestrictions.count(i) == 1 && !isRewardVariable(i);

@@ -86,6 +86,10 @@ namespace storm {
             nonTransientAssignments.clear();
         }
         
+        std::size_t OrderedAssignments::getNumberOfAssignments() const {
+            return allAssignments.size();
+        }
+        
         int_fast64_t OrderedAssignments::getLowestLevel() const {
             return allAssignments.front()->getLevel();
         }
