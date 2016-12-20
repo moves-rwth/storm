@@ -205,7 +205,7 @@ TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_plus, MTBDD*, pa, MTBDD*, p
 		storm_rational_function_ptr mres = storm_rational_function_plus(ma, mb);
         MTBDD res = mtbdd_storm_rational_function(mres);
         
-		// TODO: Delete mres?
+		storm_rational_function_destroy(mres);
 
         return res;
     }
@@ -240,7 +240,7 @@ TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_minus, MTBDD*, pa, MTBDD*, 
 		storm_rational_function_ptr mres = storm_rational_function_minus(ma, mb);
 		MTBDD res = mtbdd_storm_rational_function(mres);
 
-		// TODO: Delete mres?
+		storm_rational_function_destroy(mres);
 
         return res;
     }
@@ -273,7 +273,7 @@ TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_times, MTBDD*, pa, MTBDD*, 
 		storm_rational_function_ptr mres = storm_rational_function_times(ma, mb);		
 		MTBDD res = mtbdd_storm_rational_function(mres);
 
-		// TODO: Delete mres?
+		storm_rational_function_destroy(mres);
 
         return res;
     }
@@ -307,7 +307,7 @@ TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_divide, MTBDD*, pa, MTBDD*,
 		storm_rational_function_ptr mres = storm_rational_function_divide(ma, mb);
 		MTBDD res = mtbdd_storm_rational_function(mres);
 
-		// TODO: Delete mres?
+		storm_rational_function_destroy(mres);
 
         return res;
     }
@@ -369,7 +369,8 @@ TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_neg, MTBDD, dd, size_t, p)
 		storm_rational_function_ptr mres = storm_rational_function_negate(mdd);
 		MTBDD res = mtbdd_storm_rational_function(mres);
 
-		// TODO: Delete mres?
+		storm_rational_function_destroy(mres);
+
         return res;
     }
 
@@ -397,6 +398,30 @@ TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_replace_leaves, MTBDD, dd, 
     }
 
     return mtbdd_invalid;
+}
+/**
+ * Operation to double for one storm::RationalFunction MTBDD
+ */
+TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_to_double, MTBDD, dd, size_t, p)
+{
+	LOG_I("task_impl_2 op_toDouble")
+    /* Handle partial functions */
+    if (dd == mtbdd_false) return mtbdd_false;
+
+    /* Compute result for leaf */
+    if (mtbdd_isleaf(dd)) {
+		if (mtbdd_gettype(dd) != sylvan_storm_rational_function_type) {
+			printf("Can not convert to double, this has type %u!\n", mtbdd_gettype(dd));
+			assert(0);
+		}
+
+		storm_rational_function_ptr mdd = (storm_rational_function_ptr)mtbdd_getvalue(dd);
+		MTBDD result = mtbdd_double(storm_rational_function_get_constant(mdd));
+		return result;
+    }
+
+    return mtbdd_invalid;
+	(void)p;
 }
 
 /**
@@ -475,5 +500,42 @@ TASK_IMPL_3(MTBDD, sylvan_storm_rational_function_and_exists, MTBDD, a, MTBDD, b
 
     /* Store in cache */
     cache_put3(CACHE_STORM_RATIONAL_FUNCTION_AND_EXISTS, a, b, v, result);
+    return result;
+}
+
+/**
+ * Apply a unary operation <op> to <dd>.
+ */
+TASK_IMPL_3(MTBDD, mtbdd_uapply_nocache, MTBDD, dd, mtbdd_uapply_op, op, size_t, param)
+{
+    /* Maybe perform garbage collection */
+    sylvan_gc_test();
+
+    /* Check cache */
+    MTBDD result;
+    //if (cache_get3(CACHE_MTBDD_UAPPLY, dd, (size_t)op, param, &result)) return result;
+
+    /* Check terminal case */
+    result = WRAP(op, dd, param);
+    if (result != mtbdd_invalid) {
+        /* Store in cache */
+        //cache_put3(CACHE_MTBDD_UAPPLY, dd, (size_t)op, param, result);
+        return result;
+    }
+
+    /* Get cofactors */
+    mtbddnode_t ndd = MTBDD_GETNODE(dd);
+    MTBDD ddlow = node_getlow(dd, ndd);
+    MTBDD ddhigh = node_gethigh(dd, ndd);
+
+    /* Recursive */
+    mtbdd_refs_spawn(SPAWN(mtbdd_uapply_nocache, ddhigh, op, param));
+    MTBDD low = mtbdd_refs_push(CALL(mtbdd_uapply_nocache, ddlow, op, param));
+    MTBDD high = mtbdd_refs_sync(SYNC(mtbdd_uapply_nocache));
+    mtbdd_refs_pop(1);
+    result = mtbdd_makenode(mtbddnode_getvariable(ndd), low, high);
+
+    /* Store in cache */
+    //cache_put3(CACHE_MTBDD_UAPPLY, dd, (size_t)op, param, result);
     return result;
 }
