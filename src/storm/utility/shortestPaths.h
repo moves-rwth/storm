@@ -4,8 +4,8 @@
 #include <vector>
 #include <boost/optional/optional.hpp>
 #include <unordered_set>
-#include "src/models/sparse/Model.h"
-#include "src/storage/sparse/StateType.h"
+#include "storm/models/sparse/Model.h"
+#include "storm/storage/sparse/StateType.h"
 #include "constants.h"
 
 // NOTE: You'll (eventually) find the usual API documentation below;
