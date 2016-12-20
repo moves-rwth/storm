@@ -109,6 +109,9 @@ namespace storm {
                  */
                 void exportToDot(std::string const& filename, storm::dd::Bdd<DdType> const& highlightStates, storm::dd::Bdd<DdType> const& filter) const override;
                 
+            protected:
+                using MenuGameAbstractor<DdType, ValueType>::exportToDot;
+                
             private:                
                 /*!
                  * Builds the stochastic game representing the abstraction of the program.

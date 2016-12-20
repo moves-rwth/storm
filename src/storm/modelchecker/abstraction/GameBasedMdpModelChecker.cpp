@@ -368,7 +368,7 @@ namespace storm {
                 }
                 
                 // #ifdef LOCAL_DEBUG
-                // abstractor->exportToDot("game" + std::to_string(iterations) + ".dot", targetStates, game.getManager().getBddOne());
+                abstractor->exportToDot("game" + std::to_string(iterations) + ".dot", targetStates, game.getManager().getBddOne());
                 // #endif
                 
                 // (3) compute all states with probability 0/1 wrt. to the two different player 2 goals (min/max).

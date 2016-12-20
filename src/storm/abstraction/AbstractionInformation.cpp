@@ -64,6 +64,7 @@ namespace storm {
             sourceVariables.insert(newMetaVariable.first);
             successorVariables.insert(newMetaVariable.second);
             sourcePredicateVariables.insert(newMetaVariable.first);
+            successorPredicateVariables.insert(newMetaVariable.second);
             orderedSourcePredicateVariables.push_back(newMetaVariable.first);
             orderedSuccessorPredicateVariables.push_back(newMetaVariable.second);
             ddVariableIndexToPredicateIndexMap[predicateIdentities.back().getIndex()] = predicateIndex;
@@ -223,16 +224,6 @@ namespace storm {
         uint_fast64_t AbstractionInformation<DdType>::decodeAux(storm::expressions::Valuation const& valuation, uint_fast64_t start, uint_fast64_t end) const {
             return decodeChoice(valuation, start, end, auxVariables);
         }
-
-        template<storm::dd::DdType DdType>
-        storm::dd::Bdd<DdType> AbstractionInformation<DdType>::getPlayer2ZeroCube(uint_fast64_t start, uint_fast64_t end) const {
-            storm::dd::Bdd<DdType> result = ddManager->getBddOne();
-            for (uint_fast64_t index = start; index < end; ++index) {
-                result &= !player2VariableBdds[index];
-            }
-            STORM_LOG_ASSERT(!result.isZero(), "Zero cube must not be zero.");
-            return result;
-        }
         
         template<storm::dd::DdType DdType>
         std::vector<storm::expressions::Variable> const& AbstractionInformation<DdType>::getPlayer1Variables() const {
@@ -283,7 +274,12 @@ namespace storm {
         std::set<storm::expressions::Variable> const& AbstractionInformation<DdType>::getSourcePredicateVariables() const {
             return sourcePredicateVariables;
         }
-        
+
+        template<storm::dd::DdType DdType>
+        std::set<storm::expressions::Variable> const& AbstractionInformation<DdType>::getSuccessorPredicateVariables() const {
+            return successorPredicateVariables;
+        }
+
         template<storm::dd::DdType DdType>
         std::vector<storm::expressions::Variable> const& AbstractionInformation<DdType>::getOrderedSourcePredicateVariables() const {
             return orderedSourcePredicateVariables;

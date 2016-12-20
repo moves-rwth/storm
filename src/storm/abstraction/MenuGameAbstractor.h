@@ -42,9 +42,12 @@ namespace storm {
             
             /// Methods to refine the abstraction.
             virtual void refine(RefinementCommand const& command) = 0;
-            
+
             /// Exports a representation of the current abstraction state in the dot format.
-            virtual void exportToDot(std::string const& filename, storm::dd::Bdd<DdType> const& highlightStates, storm::dd::Bdd<DdType> const& filter) const = 0;
+            virtual void exportToDot(std::string const& filename, storm::dd::Bdd<DdType> const& highlightStatesBdd, storm::dd::Bdd<DdType> const& filter) const = 0;
+
+        protected:
+            void exportToDot(storm::abstraction::MenuGame<DdType, ValueType> const& currentGame, std::string const& filename, storm::dd::Bdd<DdType> const& highlightStatesBdd, storm::dd::Bdd<DdType> const& filter) const;
         };
         
     }

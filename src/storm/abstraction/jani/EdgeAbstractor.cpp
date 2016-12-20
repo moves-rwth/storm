@@ -81,7 +81,7 @@ namespace storm {
             
             template <storm::dd::DdType DdType, typename ValueType>
             void EdgeAbstractor<DdType, ValueType>::recomputeCachedBddWithDecomposition() {
-                STORM_LOG_TRACE("Recomputing BDD for edge with guard " << edge.get().getGuard() << " using the decomposition.");
+                STORM_LOG_TRACE("Recomputing BDD for edge with id " << edgeId << " and guard " << edge.get().getGuard() << " using the decomposition.");
                 auto start = std::chrono::high_resolution_clock::now();
                 
                 // compute a decomposition of the command
@@ -369,7 +369,7 @@ namespace storm {
             
             template <storm::dd::DdType DdType, typename ValueType>
             void EdgeAbstractor<DdType, ValueType>::recomputeCachedBddWithoutDecomposition() {
-                STORM_LOG_TRACE("Recomputing BDD for edge with guard " << edge.get().getGuard());
+                STORM_LOG_TRACE("Recomputing BDD for edge with id " << edgeId << " and guard " << edge.get().getGuard());
                 auto start = std::chrono::high_resolution_clock::now();
                 
                 // Create a mapping from source state DDs to their distributions.

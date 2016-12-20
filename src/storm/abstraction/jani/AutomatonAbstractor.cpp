@@ -69,7 +69,7 @@ namespace storm {
                 // DDs use the same amount DD variable encoding the choices of player 2.
                 storm::dd::Bdd<DdType> result = this->getAbstractionInformation().getDdManager().getBddZero();
                 for (auto const& edgeDd : edgeDdsAndUsedOptionVariableCounts) {
-                    result |= edgeDd.bdd && this->getAbstractionInformation().getPlayer2ZeroCube(edgeDd.numberOfPlayer2Variables, maximalNumberOfUsedOptionVariables);
+                    result |= edgeDd.bdd && this->getAbstractionInformation().encodePlayer2Choice(1, edgeDd.numberOfPlayer2Variables, maximalNumberOfUsedOptionVariables);
                 }
                 return GameBddResult<DdType>(result, maximalNumberOfUsedOptionVariables);
             }

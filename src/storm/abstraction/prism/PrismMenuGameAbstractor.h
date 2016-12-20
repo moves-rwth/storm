@@ -107,9 +107,12 @@ namespace storm {
                  * @param highlightStates A BDD characterizing states that will be highlighted.
                  * @param filter A filter that is applied to select which part of the game to export.
                  */
-                void exportToDot(std::string const& filename, storm::dd::Bdd<DdType> const& highlightStates, storm::dd::Bdd<DdType> const& filter) const override;
+                virtual void exportToDot(std::string const& filename, storm::dd::Bdd<DdType> const& highlightStates, storm::dd::Bdd<DdType> const& filter) const override;
+
+            protected:
+                using MenuGameAbstractor<DdType, ValueType>::exportToDot;
                 
-            private:                
+            private:
                 /*!
                  * Builds the stochastic game representing the abstraction of the program.
                  *

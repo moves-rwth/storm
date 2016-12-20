@@ -1,0 +1,140 @@
+#include "storm/abstraction/MenuGameAbstractor.h"
+
+#include "storm/abstraction/AbstractionInformation.h"
+
+#include "storm/storage/dd/Add.h"
+#include "storm/storage/dd/Bdd.h"
+#include "storm/utility/dd.h"
+
+#include "storm-config.h"
+#include "storm/adapters/CarlAdapter.h"
+
+namespace storm {
+    namespace abstraction {
+        
+        template <typename ValueType>
+        std::string getStateName(std::pair<storm::expressions::SimpleValuation, ValueType> const& stateValue, std::set<storm::expressions::Variable> const& locationVariables, std::set<storm::expressions::Variable> const& predicateVariables, storm::expressions::Variable const& bottomVariable) {
+            std::stringstream stateName;
+
+            if (!locationVariables.empty()) {
+                stateName << "loc";
+            }
+
+            for (auto const& variable : locationVariables) {
+                stateName << stateValue.first.getIntegerValue(variable);
+            }
+            
+            if (!locationVariables.empty() && !predicateVariables.empty()) {
+                stateName << "_";
+            }
+            
+            for (auto const& variable : predicateVariables) {
+                if (stateValue.first.getBooleanValue(variable)) {
+                    stateName << "1";
+                } else {
+                    stateName << "0";
+                }
+            }
+            
+            if (stateValue.first.getBooleanValue(bottomVariable)) {
+                stateName << "bot";
+            }
+            return stateName.str();
+        }
+        
+        template <storm::dd::DdType DdType, typename ValueType>
+        void MenuGameAbstractor<DdType, ValueType>::exportToDot(storm::abstraction::MenuGame<DdType, ValueType> const& currentGame, std::string const& filename, storm::dd::Bdd<DdType> const& highlightStatesBdd, storm::dd::Bdd<DdType> const& filter) const {
+
+            std::ofstream out(filename);
+            AbstractionInformation<DdType> const& abstractionInformation = this->getAbstractionInformation();
+            
+            storm::dd::Add<DdType, ValueType> filteredTransitions = filter.template toAdd<ValueType>() * currentGame.getTransitionMatrix();
+            storm::dd::Bdd<DdType> filteredTransitionsBdd = filteredTransitions.toBdd().existsAbstract(currentGame.getNondeterminismVariables());
+            storm::dd::Bdd<DdType> filteredReachableStates = storm::utility::dd::computeReachableStates(currentGame.getInitialStates(), filteredTransitionsBdd, currentGame.getRowVariables(), currentGame.getColumnVariables());
+            filteredTransitions *= filteredReachableStates.template toAdd<ValueType>();
+            
+            // Determine all initial states so we can color them blue.
+            std::unordered_set<std::string> initialStates;
+            storm::dd::Add<DdType, ValueType> initialStatesAsAdd = currentGame.getInitialStates().template toAdd<ValueType>();
+            for (auto stateValue : initialStatesAsAdd) {
+                initialStates.insert(getStateName(stateValue, abstractionInformation.getSourceLocationVariables(), abstractionInformation.getSourcePredicateVariables(), abstractionInformation.getBottomStateVariable(true)));
+            }
+            
+            // Determine all highlight states so we can color them red.
+            std::unordered_set<std::string> highlightStates;
+            storm::dd::Add<DdType, ValueType> highlightStatesAdd = highlightStatesBdd.template toAdd<ValueType>();
+            for (auto stateValue : highlightStatesAdd) {
+                highlightStates.insert(getStateName(stateValue, abstractionInformation.getSourceLocationVariables(), abstractionInformation.getSourcePredicateVariables(), abstractionInformation.getBottomStateVariable(true)));
+            }
+            
+            out << "digraph game {" << std::endl;
+            
+            // Create the player 1 nodes.
+            storm::dd::Add<DdType, ValueType> statesAsAdd = filteredReachableStates.template toAdd<ValueType>();
+            for (auto stateValue : statesAsAdd) {
+                out << "\tpl1_";
+                std::string stateName = getStateName(stateValue, abstractionInformation.getSourceLocationVariables(), abstractionInformation.getSourcePredicateVariables(), abstractionInformation.getBottomStateVariable(true));
+                out << stateName;
+                out << " [ label=\"";
+                if (stateValue.first.getBooleanValue(abstractionInformation.getBottomStateVariable(true))) {
+                    out << "*\", margin=0, width=0, height=0, shape=\"none\"";
+                } else {
+                    out << stateName << "\", margin=0, width=0, height=0, shape=\"oval\"";
+                }
+                bool isInitial = initialStates.find(stateName) != initialStates.end();
+                bool isHighlight = highlightStates.find(stateName) != highlightStates.end();
+                if (isInitial && isHighlight) {
+                    out << ", style=\"filled\", fillcolor=\"yellow\"";
+                } else if (isInitial) {
+                    out << ", style=\"filled\", fillcolor=\"blue\"";
+                } else if (isHighlight) {
+                    out << ", style=\"filled\", fillcolor=\"red\"";
+                }
+                out << " ];" << std::endl;
+            }
+            
+            // Create the nodes of the second player.
+            storm::dd::Add<DdType, ValueType> player2States = filteredTransitions.toBdd().existsAbstract(currentGame.getColumnVariables()).existsAbstract(currentGame.getPlayer2Variables()).template toAdd<ValueType>();
+            for (auto stateValue : player2States) {
+                out << "\tpl2_";
+                std::string stateName = getStateName(stateValue, abstractionInformation.getSourceLocationVariables(), abstractionInformation.getSourcePredicateVariables(), abstractionInformation.getBottomStateVariable(true));
+                uint_fast64_t index = abstractionInformation.decodePlayer1Choice(stateValue.first, abstractionInformation.getPlayer1VariableCount());
+                out << stateName << "_" << index;
+                out << " [ shape=\"square\", width=0, height=0, margin=0, label=\"" << index << "\" ];" << std::endl;
+                out << "\tpl1_" << stateName << " -> " << "pl2_" << stateName << "_" << index << " [ label=\"" << index << "\" ];" << std::endl;
+            }
+            
+            // Create the nodes of the probabilistic player.
+            storm::dd::Add<DdType, ValueType> playerPStates = filteredTransitions.toBdd().existsAbstract(currentGame.getColumnVariables()).template toAdd<ValueType>();
+            for (auto stateValue : playerPStates) {
+                out << "\tplp_";
+                std::stringstream stateNameStream;
+                stateNameStream << getStateName(stateValue, abstractionInformation.getSourceLocationVariables(), abstractionInformation.getSourcePredicateVariables(), abstractionInformation.getBottomStateVariable(true));
+                uint_fast64_t index = abstractionInformation.decodePlayer1Choice(stateValue.first, abstractionInformation.getPlayer1VariableCount());
+                stateNameStream << "_" << index;
+                std::string stateName = stateNameStream.str();
+                index = abstractionInformation.decodePlayer2Choice(stateValue.first, currentGame.getPlayer2Variables().size());
+                out << stateName << "_" << index;
+                out << " [ shape=\"point\", label=\"\" ];" << std::endl;
+                out << "\tpl2_" << stateName << " -> " << "plp_" << stateName << "_" << index << " [ label=\"" << index << "\" ];" << std::endl;
+            }
+            
+            for (auto stateValue : filteredTransitions) {
+                std::string sourceStateName = getStateName(stateValue, abstractionInformation.getSourceLocationVariables(), abstractionInformation.getSourcePredicateVariables(), abstractionInformation.getBottomStateVariable(true));
+                std::string successorStateName = getStateName(stateValue, abstractionInformation.getSuccessorLocationVariables(), abstractionInformation.getSuccessorPredicateVariables(), abstractionInformation.getBottomStateVariable(false));
+                uint_fast64_t pl1Index = abstractionInformation.decodePlayer1Choice(stateValue.first, abstractionInformation.getPlayer1VariableCount());
+                uint_fast64_t pl2Index = abstractionInformation.decodePlayer2Choice(stateValue.first, currentGame.getPlayer2Variables().size());
+                out << "\tplp_" << sourceStateName << "_" << pl1Index << "_" << pl2Index << " -> pl1_" << successorStateName << " [ label=\"" << stateValue.second << "\"];" << std::endl;
+            }
+            
+            out << "}" << std::endl;
+        }
+        
+        template class MenuGameAbstractor<storm::dd::DdType::CUDD, double>;
+        template class MenuGameAbstractor<storm::dd::DdType::Sylvan, double>;
+        
+#ifdef STORM_HAVE_CARL
+        template class MenuGameAbstractor<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+#endif
+    }
+}

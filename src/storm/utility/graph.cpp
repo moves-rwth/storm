@@ -1008,7 +1008,7 @@ namespace storm {
                 boost::optional<storm::dd::Bdd<Type>> consideredPlayer1States;
                 boost::optional<storm::dd::Bdd<Type>> player2StrategyBdd;
                 boost::optional<storm::dd::Bdd<Type>> consideredPlayer2States;
-
+                
                 bool maybeStatesDone = false;
                 uint_fast64_t maybeStateIterations = 0;
                 while (!maybeStatesDone || produceStrategiesInIteration) {
@@ -1032,7 +1032,6 @@ namespace storm {
                     while (!solutionStatesDone) {
                         // Start by computing the transitions that have only maybe states as successors. Note that at
                         // this point, there may be illegal transitions.
-                        // FIXME: use getIllegalSuccessorMask instead of !transitionMatrix?
                         storm::dd::Bdd<Type> distributionsStayingInMaybe = (!transitionMatrix || maybePlayer1States.swapVariables(model.getRowColumnMetaVariablePairs())).universalAbstract(model.getColumnVariables());
                         
                         // Then, determine all distributions that have at least one successor in the states that have

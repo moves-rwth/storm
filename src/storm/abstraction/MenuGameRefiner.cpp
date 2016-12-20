@@ -438,6 +438,7 @@ namespace storm {
             
             std::map<storm::expressions::Variable, storm::expressions::Variable> oldToNewVariables;
             for (auto const& variable : oldVariables) {
+                std::cout << "got old variable " << variable.getName() << std::endl;
                 oldToNewVariables[variable] = expressionManager.getVariable(variable.getName());
             }
             std::map<storm::expressions::Variable, storm::expressions::Expression> lastSubstitution;
@@ -470,6 +471,7 @@ namespace storm {
                 // Retrieve the variable updates that the predecessor needs to perform to get to the current state.
                 auto variableUpdates = abstractor.get().getVariableUpdates(std::get<1>(decodedPredecessor), std::get<2>(decodedPredecessor));
                 for (auto const& update : variableUpdates) {
+                    std::cout << "looking up old variable " << update.first.getName() << std::endl;
                     storm::expressions::Variable newVariable = oldToNewVariables.at(update.first);
                     if (update.second.hasBooleanType()) {
                         predicates.back().push_back(storm::expressions::iff(lastSubstitution.at(oldToNewVariables.at(update.first)), update.second.changeManager(expressionManager).substitute(substitution)));

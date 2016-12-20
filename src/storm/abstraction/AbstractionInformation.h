@@ -241,16 +241,6 @@ namespace storm {
              * @return The decoded auxiliary index.
              */
             uint_fast64_t decodeAux(storm::expressions::Valuation const& valuation, uint_fast64_t start, uint_fast64_t end) const;
-
-            /*!
-             * Retrieves the cube of player 2 variables in the given range [offset, numberOfVariables).
-             *
-             * @param numberOfVariables The number of variables to use in total. The number of variables in the returned
-             * cube is the number of variables minus the offset.
-             * @param offset The first variable of the range to return.
-             * @return The cube of variables starting from the offset until the given number of variables is reached.
-             */
-            storm::dd::Bdd<DdType> getPlayer2ZeroCube(uint_fast64_t numberOfVariables, uint_fast64_t offset) const;
             
             /*!
              * Retrieves the meta variables associated with the player 1 choices.
@@ -347,7 +337,14 @@ namespace storm {
              * @return All source predicate meta variables.
              */
             std::set<storm::expressions::Variable> const& getSourcePredicateVariables() const;
-            
+
+            /*!
+             * Retrieves the set of successor predicate meta variables.
+             *
+             * @return All successor predicate meta variables.
+             */
+            std::set<storm::expressions::Variable> const& getSuccessorPredicateVariables() const;
+
             /*!
              * Retrieves a BDD representing the identities of all predicates.
              *
@@ -570,7 +567,10 @@ namespace storm {
 
             /// The set of all source predicate variables.
             std::set<storm::expressions::Variable> sourcePredicateVariables;
-            
+
+            /// The set of all successor predicate variables.
+            std::set<storm::expressions::Variable> successorPredicateVariables;
+
             /// An ordered collection of the source variables.
             std::vector<storm::expressions::Variable> orderedSourcePredicateVariables;
 
