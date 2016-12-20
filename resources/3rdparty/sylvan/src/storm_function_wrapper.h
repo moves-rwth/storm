@@ -33,6 +33,8 @@ int storm_rational_function_is_zero(storm_rational_function_ptr a);
 
 MTBDD storm_rational_function_leaf_parameter_replacement(MTBDD dd, storm_rational_function_ptr a, void* context);
 
+double storm_rational_function_get_constant(storm_rational_function_ptr a);
+
 #ifdef __cplusplus
 }
 #endif

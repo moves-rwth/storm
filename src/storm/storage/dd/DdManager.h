@@ -163,6 +163,14 @@ namespace storm {
              * @return True if the given meta variable name is managed by this manager.
              */
             bool hasMetaVariable(std::string const& variableName) const;
+			
+			/*!
+             * Retrieves the given meta variable by name.
+             *
+             * @param variableName The name of the variable.
+             * @return The meta variable.
+             */
+            storm::expressions::Variable getMetaVariable(std::string const& variableName) const;
             
             /*!
              * Checks whether this manager supports the ordered insertion of variables, i.e. inserting variables at

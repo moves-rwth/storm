@@ -254,6 +254,13 @@ namespace storm {
              * @return The resulting function represented as an ADD.
              */
             Add<LibraryType, ValueType> replaceLeaves(std::map<storm::RationalFunctionVariable, std::pair<storm::expressions::Variable, std::pair<storm::RationalNumber, storm::RationalNumber>>> const& replacementMap) const;
+			
+			/*!
+             * Replaces the leaves in this MTBDD, converting them to double if possible, and -1.0 else.
+             *
+             * @return The resulting function represented as an ADD.
+             */
+            Add<LibraryType, double> toDouble() const;
 #endif
 			
             /*!

@@ -791,9 +791,17 @@ namespace storm {
 		}
 
 		template<>
-        Add<storm::dd::DdType::Sylvan, storm::RationalFunction> Add<storm::dd::DdType::Sylvan, storm::RationalFunction>::replaceLeaves(std::map<storm::RationalFunctionVariable, std::pair<storm::expressions::Variable, std::pair<storm::RationalNumber, storm::RationalNumber>>> const& replacementMap) const {
-			std::map<storm::RationalFunctionVariable, std::pair<uint32_t, std::pair<storm::RationalNumber, storm::RationalNumber>>> internalReplacementMap;
+		Add<storm::dd::DdType::Sylvan, storm::RationalFunction> Add<storm::dd::DdType::Sylvan, storm::RationalFunction>::replaceLeaves(std::map<storm::RationalFunctionVariable, std::pair<storm::expressions::Variable, std::pair<storm::RationalNumber, storm::RationalNumber>>> const& replacementMap) const {
+			std::map<uint32_t, std::pair<storm::RationalFunctionVariable, std::pair<storm::RationalNumber, storm::RationalNumber>>> internalReplacementMap;
 			std::set<storm::expressions::Variable> containedMetaVariables = this->getContainedMetaVariables();
+			
+			uint32_t highestIndex = 0;
+			for (storm::expressions::Variable const& var: containedMetaVariables) {
+				uint32_t index = this->getDdManager().getMetaVariable(var).getDdVariables().at(0).getIndex();
+				if (index > highestIndex) {
+					highestIndex = index;
+				}
+			}
 			
 			std::map<storm::RationalFunctionVariable, std::pair<storm::expressions::Variable, std::pair<storm::RationalNumber, storm::RationalNumber>>>::const_iterator it = replacementMap.cbegin();
 			std::map<storm::RationalFunctionVariable, std::pair<storm::expressions::Variable, std::pair<storm::RationalNumber, storm::RationalNumber>>>::const_iterator end = replacementMap.cend();
@@ -803,12 +811,23 @@ namespace storm {
 				STORM_LOG_THROW(metaVariable.getNumberOfDdVariables() == 1, storm::exceptions::InvalidArgumentException, "Cannot use MetaVariable with more then one internal DD variable.");
 				
 				auto const& ddVariable = metaVariable.getDdVariables().at(0);
+				STORM_LOG_ASSERT(ddVariable.getIndex() > highestIndex, "Can not replace leaves with DD variable that would not be at the bottom!");
 				
-				internalReplacementMap.insert(std::make_pair(it->first, std::make_pair(ddVariable.getIndex(), it->second.second)));
+				internalReplacementMap.insert(std::make_pair(ddVariable.getIndex(), std::make_pair(it->first, it->second.second)));
 				containedMetaVariables.insert(it->second.first);
 			}
 			
 			return Add<storm::dd::DdType::Sylvan, storm::RationalFunction>(this->getDdManager(), internalAdd.replaceLeaves(internalReplacementMap), containedMetaVariables);
+		}
+		
+		template<DdType LibraryType, typename ValueType>
+		Add<LibraryType, double> Add<LibraryType, ValueType>::toDouble() const {
+			STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Not yet implemented: replaceLeaves");
+		}
+
+		template<>
+		Add<storm::dd::DdType::Sylvan, double> Add<storm::dd::DdType::Sylvan, storm::RationalFunction>::toDouble() const {
+			return Add<storm::dd::DdType::Sylvan, double>(this->getDdManager(), internalAdd.toDouble(), this->getContainedMetaVariables());
 		}
 #endif
 		

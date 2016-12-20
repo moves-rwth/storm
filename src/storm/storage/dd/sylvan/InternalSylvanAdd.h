@@ -255,7 +255,14 @@ namespace storm {
              * @param replacementMap The variable replacement map.
              * @return The resulting function represented as an ADD.
              */
-            InternalAdd<DdType::Sylvan, ValueType> replaceLeaves(std::map<storm::RationalFunctionVariable, std::pair<uint32_t, std::pair<storm::RationalNumber, storm::RationalNumber>>> const& replacementMap) const;
+            InternalAdd<DdType::Sylvan, ValueType> replaceLeaves(std::map<uint32_t, std::pair<storm::RationalFunctionVariable, std::pair<storm::RationalNumber, storm::RationalNumber>>> const& replacementMap) const;
+			
+			/*!
+             * Replaces the leaves in this MTBDD, converting them to double if possible, and -1.0 else.
+             *
+             * @return The resulting function represented as an ADD.
+             */
+            InternalAdd<DdType::Sylvan, double> toDouble() const;
 #endif
 			
             /*!

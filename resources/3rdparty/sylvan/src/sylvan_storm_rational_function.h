@@ -105,13 +105,15 @@ TASK_DECL_3(MTBDD, sylvan_storm_rational_function_and_exists, MTBDD, MTBDD, MTBD
 #define sylvan_storm_rational_function_abstract_plus(dd, v) mtbdd_abstract(dd, v, TASK(sylvan_storm_rational_function_abstract_op_plus))
 
 /**
- * Functionality regarding the replacement of leaves in MTBDDs.
- *
- * uint64_t mtbdd_getvalue
- * uint32_t mtbdd_gettype
- * void* custom context ptr
+ * Apply a unary operation <op> to <dd>.
+ * Callback <op> is consulted after the cache, thus the application to a terminal is cached.
  */
-typedef MTBDD (*mtbddLeaveReplacementFunction)(uint64_t, uint32_t, void*);
+TASK_DECL_3(MTBDD, mtbdd_uapply_nocache, MTBDD, mtbdd_uapply_op, size_t);
+#define mtbdd_uapply_nocache(dd, op, param) CALL(mtbdd_uapply_nocache, dd, op, param)
+
+/**
+ * Functionality regarding the replacement of leaves in MTBDDs.
+ */
 
 /**
  * Operation "replace" for one storm::RationalFunction MTBDD
@@ -121,7 +123,17 @@ TASK_DECL_2(MTBDD, sylvan_storm_rational_function_op_replace_leaves, MTBDD, size
 /**
  * Compute the MTBDD that arises from a after calling the mtbddLeaveReplacementFunction on each leaf.
  */
-#define sylvan_storm_rational_function_replace_leaves(a, ctx) mtbdd_uapply(a, TASK(sylvan_storm_rational_function_op_replace_leaves), ctx)
+#define sylvan_storm_rational_function_replace_leaves(a, ctx) mtbdd_uapply_nocache(a, TASK(sylvan_storm_rational_function_op_replace_leaves), ctx)
+
+/**
+ * Takes a storm::RationalFunction MTBDD and transforms it into a double MTBDD
+ */
+TASK_DECL_2(MTBDD, sylvan_storm_rational_function_op_to_double, MTBDD, size_t)
+
+/**
+ * Compute the MTBDD that arises from a after calling the mtbddLeaveReplacementFunction on each leaf.
+ */
+#define sylvan_storm_rational_function_to_double(a) mtbdd_uapply_nocache(a, TASK(sylvan_storm_rational_function_op_to_double), 0)
 
 #ifdef __cplusplus
 }

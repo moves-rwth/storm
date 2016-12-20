@@ -234,6 +234,14 @@ namespace storm {
         bool DdManager<LibraryType>::hasMetaVariable(std::string const& metaVariableName) const {
             return manager->hasVariable(metaVariableName);
         }
+
+		template<DdType LibraryType>
+		storm::expressions::Variable DdManager<LibraryType>::getMetaVariable(std::string const& metaVariableName) const {
+			// Check whether the meta variable exists.
+			STORM_LOG_THROW(hasMetaVariable(metaVariableName), storm::exceptions::InvalidArgumentException, "Unknown meta variable name '" << metaVariableName << "'.");
+			
+			return manager->getVariable(metaVariableName);
+		}
         
         template<DdType LibraryType>
         bool DdManager<LibraryType>::supportsOrderedInsertion() const {
