@@ -34,7 +34,7 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type, typename ValueType>
-        storm::dd::Bdd<Type> MenuGame<Type, ValueType>::getStates(std::string const& label) const {
+        storm::dd::Bdd<Type> MenuGame<Type, ValueType>::getStates(std::string const&) const {
             STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Menu games do not provide labels.");
         }
         
@@ -75,7 +75,7 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type, typename ValueType>
-        bool MenuGame<Type, ValueType>::hasLabel(std::string const& label) const {
+        bool MenuGame<Type, ValueType>::hasLabel(std::string const&) const {
             return false;
         }
         

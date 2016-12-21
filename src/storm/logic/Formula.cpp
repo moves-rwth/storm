@@ -460,15 +460,15 @@ namespace storm {
             return this->shared_from_this();
         }
         
-        void Formula::gatherAtomicExpressionFormulas(std::vector<std::shared_ptr<AtomicExpressionFormula const>>& atomicExpressionFormulas) const {
+        void Formula::gatherAtomicExpressionFormulas(std::vector<std::shared_ptr<AtomicExpressionFormula const>>&) const {
             return;
         }
         
-        void Formula::gatherAtomicLabelFormulas(std::vector<std::shared_ptr<AtomicLabelFormula const>>& atomicLabelFormulas) const {
+        void Formula::gatherAtomicLabelFormulas(std::vector<std::shared_ptr<AtomicLabelFormula const>>&) const {
             return;
         }
         
-        void Formula::gatherReferencedRewardModels(std::set<std::string>& referencedRewardModels) const {
+        void Formula::gatherReferencedRewardModels(std::set<std::string>&) const {
             return;
         }
                 

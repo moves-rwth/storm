@@ -222,7 +222,7 @@ namespace storm {
                 return createVariables();
             }
             
-            boost::any visit(storm::jani::AutomatonComposition const& composition, boost::any const& data) override {
+            boost::any visit(storm::jani::AutomatonComposition const& composition, boost::any const&) override {
                 auto it = automata.find(composition.getAutomatonName());
                 STORM_LOG_THROW(it == automata.end(), storm::exceptions::InvalidArgumentException, "Cannot build symbolic model from JANI model whose system composition that refers to the automaton '" << composition.getAutomatonName() << "' multiple times.");
                 automata.insert(it, composition.getAutomatonName());
@@ -231,7 +231,7 @@ namespace storm {
 
             boost::any visit(storm::jani::ParallelComposition const& composition, boost::any const& data) override {
                 for (auto const& subcomposition : composition.getSubcompositions()) {
-                    subcomposition->accept(*this, boost::none);
+                    subcomposition->accept(*this, data);
                 }
                 return boost::none;
             }

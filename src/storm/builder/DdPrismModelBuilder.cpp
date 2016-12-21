@@ -424,7 +424,7 @@ namespace storm {
                             action.second = emptyAction;
                         } else {
                             // Otherwise, the actions of the modules are synchronized.
-                            action.second = DdPrismModelBuilder<Type, ValueType>::combineSynchronizingActions(generationInfo, action.second, right.synchronizingActionToDecisionDiagramMap[action.first]);
+                            action.second = DdPrismModelBuilder<Type, ValueType>::combineSynchronizingActions(action.second, right.synchronizingActionToDecisionDiagramMap[action.first]);
                         }
                     } else {
                         // If we don't synchronize over this action, we need to construct the interleaving.
@@ -893,7 +893,7 @@ namespace storm {
         }
         
         template <storm::dd::DdType Type, typename ValueType>
-        typename DdPrismModelBuilder<Type, ValueType>::ActionDecisionDiagram DdPrismModelBuilder<Type, ValueType>::combineSynchronizingActions(GenerationInformation const& generationInfo, ActionDecisionDiagram const& action1, ActionDecisionDiagram const& action2) {
+        typename DdPrismModelBuilder<Type, ValueType>::ActionDecisionDiagram DdPrismModelBuilder<Type, ValueType>::combineSynchronizingActions(ActionDecisionDiagram const& action1, ActionDecisionDiagram const& action2) {
             std::set<storm::expressions::Variable> assignedGlobalVariables;
             std::set_union(action1.assignedGlobalVariables.begin(), action1.assignedGlobalVariables.end(), action2.assignedGlobalVariables.begin(), action2.assignedGlobalVariables.end(), std::inserter(assignedGlobalVariables, assignedGlobalVariables.begin()));
             return ActionDecisionDiagram(action1.guardDd * action2.guardDd, action1.transitionsDd * action2.transitionsDd, assignedGlobalVariables, std::max(action1.numberOfUsedNondeterminismVariables, action2.numberOfUsedNondeterminismVariables));
@@ -1107,7 +1107,7 @@ namespace storm {
         }
         
         template <storm::dd::DdType Type, typename ValueType>
-        storm::models::symbolic::StandardRewardModel<Type, ValueType> DdPrismModelBuilder<Type, ValueType>::createRewardModelDecisionDiagrams(GenerationInformation& generationInfo, storm::prism::RewardModel const& rewardModel, ModuleDecisionDiagram const& globalModule, storm::dd::Add<Type, ValueType> const& transitionMatrix, storm::dd::Add<Type, ValueType> const& reachableStatesAdd, storm::dd::Add<Type, ValueType> const& stateActionDd) {
+        storm::models::symbolic::StandardRewardModel<Type, ValueType> DdPrismModelBuilder<Type, ValueType>::createRewardModelDecisionDiagrams(GenerationInformation& generationInfo, storm::prism::RewardModel const& rewardModel, ModuleDecisionDiagram const& globalModule, storm::dd::Add<Type, ValueType> const& reachableStatesAdd, storm::dd::Add<Type, ValueType> const& stateActionDd) {
             
             // Start by creating the state reward vector.
             boost::optional<storm::dd::Add<Type, ValueType>> stateRewards;
@@ -1384,7 +1384,7 @@ namespace storm {
             
             std::unordered_map<std::string, storm::models::symbolic::StandardRewardModel<Type, ValueType>> rewardModels;
             for (auto const& rewardModel : selectedRewardModels) {
-                rewardModels.emplace(rewardModel.get().getName(), createRewardModelDecisionDiagrams(generationInfo, rewardModel.get(), globalModule, transitionMatrix, reachableStatesAdd, stateActionDd));
+                rewardModels.emplace(rewardModel.get().getName(), createRewardModelDecisionDiagrams(generationInfo, rewardModel.get(), globalModule, reachableStatesAdd, stateActionDd));
             }
             
             // Build the labels that can be accessed as a shortcut.

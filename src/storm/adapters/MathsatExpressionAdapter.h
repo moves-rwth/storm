@@ -176,15 +176,15 @@ namespace storm {
                 }
 			}
 
-			virtual boost::any visit(storm::expressions::BooleanLiteralExpression const& expression, boost::any const& data) override {
+			virtual boost::any visit(storm::expressions::BooleanLiteralExpression const& expression, boost::any const&) override {
                 return expression.getValue() ? msat_make_true(env) : msat_make_false(env);
 			}
 
-			virtual boost::any visit(storm::expressions::RationalLiteralExpression const& expression, boost::any const& data) override {
+			virtual boost::any visit(storm::expressions::RationalLiteralExpression const& expression, boost::any const&) override {
 				return msat_make_number(env, std::to_string(expression.getValueAsDouble()).c_str());
 			}
 
-			virtual boost::any visit(storm::expressions::IntegerLiteralExpression const& expression, boost::any const& data) override {
+			virtual boost::any visit(storm::expressions::IntegerLiteralExpression const& expression, boost::any const&) override {
 				return msat_make_number(env, std::to_string(static_cast<int>(expression.getValue())).c_str());
 			}
 
@@ -218,7 +218,7 @@ namespace storm {
 				}
 			}
 
-			virtual boost::any visit(storm::expressions::VariableExpression const& expression, boost::any const& data) override {
+			virtual boost::any visit(storm::expressions::VariableExpression const& expression, boost::any const&) override {
                 return translateExpression(expression.getVariable());
 			}
 

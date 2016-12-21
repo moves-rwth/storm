@@ -26,7 +26,7 @@ namespace storm {
         }
         
         template <storm::dd::DdType DdType>
-        boost::any ExpressionTranslator<DdType>::visit(IfThenElseExpression const& expression, boost::any const& data) {
+        boost::any ExpressionTranslator<DdType>::visit(IfThenElseExpression const&, boost::any const&) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Expressions of this kind are currently not supported by the abstraction expression translator.");
         }
         
@@ -57,8 +57,8 @@ namespace storm {
                 // At this point, none of the predicates was found to be equivalent, so we split the expression.
             }
             
-            storm::dd::Bdd<DdType> left = boost::any_cast<storm::dd::Bdd<DdType>>(expression.getFirstOperand()->accept(*this, boost::none));
-            storm::dd::Bdd<DdType> right = boost::any_cast<storm::dd::Bdd<DdType>>(expression.getSecondOperand()->accept(*this, boost::none));
+            storm::dd::Bdd<DdType> left = boost::any_cast<storm::dd::Bdd<DdType>>(expression.getFirstOperand()->accept(*this, data));
+            storm::dd::Bdd<DdType> right = boost::any_cast<storm::dd::Bdd<DdType>>(expression.getSecondOperand()->accept(*this, data));
             switch (expression.getOperatorType()) {
                 case BinaryBooleanFunctionExpression::OperatorType::And: return left && right;
                 case BinaryBooleanFunctionExpression::OperatorType::Or: return left || right;
@@ -69,7 +69,7 @@ namespace storm {
         }
         
         template <storm::dd::DdType DdType>
-        boost::any ExpressionTranslator<DdType>::visit(BinaryNumericalFunctionExpression const& expression, boost::any const& data) {
+        boost::any ExpressionTranslator<DdType>::visit(BinaryNumericalFunctionExpression const&, boost::any const&) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Expressions of this kind are currently not supported by the abstraction expression translator.");
         }
         
@@ -92,8 +92,8 @@ namespace storm {
             STORM_LOG_THROW(!hasLocationVariables || !hasAbstractedVariables, storm::exceptions::NotSupportedException, "Expressions with two types (location variables and abstracted variables) of variables are currently not supported by the abstraction expression translator.");
             
             if (hasLocationVariables) {
-                storm::dd::Add<DdType, double> left = boost::any_cast<storm::dd::Add<DdType, double>>(expression.getFirstOperand()->accept(*this, boost::none));
-                storm::dd::Add<DdType, double> right = boost::any_cast<storm::dd::Add<DdType, double>>(expression.getSecondOperand()->accept(*this, boost::none));
+                storm::dd::Add<DdType, double> left = boost::any_cast<storm::dd::Add<DdType, double>>(expression.getFirstOperand()->accept(*this, data));
+                storm::dd::Add<DdType, double> right = boost::any_cast<storm::dd::Add<DdType, double>>(expression.getSecondOperand()->accept(*this, data));
 
                 switch (expression.getRelationType()) {
                     case BinaryRelationExpression::RelationType::Equal: return left.equals(right);
@@ -117,7 +117,7 @@ namespace storm {
         }
         
         template <storm::dd::DdType DdType>
-        boost::any ExpressionTranslator<DdType>::visit(VariableExpression const& expression, boost::any const& data) {
+        boost::any ExpressionTranslator<DdType>::visit(VariableExpression const& expression, boost::any const&) {
             if (abstractedVariables.find(expression.getVariable()) != abstractedVariables.end()) {
                 for (uint64_t predicateIndex = 0; predicateIndex < abstractionInformation.get().getNumberOfPredicates(); ++predicateIndex) {
                     if (equivalenceChecker.areEquivalent(abstractionInformation.get().getPredicateByIndex(predicateIndex), expression.toExpression())) {
@@ -158,19 +158,19 @@ namespace storm {
                 // At this point, none of the predicates was found to be equivalent, so we split the expression.
             }
             
-            storm::dd::Bdd<DdType> sub = boost::any_cast<storm::dd::Bdd<DdType>>(expression.getOperand()->accept(*this, boost::none));
+            storm::dd::Bdd<DdType> sub = boost::any_cast<storm::dd::Bdd<DdType>>(expression.getOperand()->accept(*this, data));
             switch (expression.getOperatorType()) {
                 case UnaryBooleanFunctionExpression::OperatorType::Not: return !sub;
             }
         }
         
         template <storm::dd::DdType DdType>
-        boost::any ExpressionTranslator<DdType>::visit(UnaryNumericalFunctionExpression const& expression, boost::any const& data) {
+        boost::any ExpressionTranslator<DdType>::visit(UnaryNumericalFunctionExpression const&, boost::any const&) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Expressions of this kind are currently not supported by the abstraction expression translator.");
         }
         
         template <storm::dd::DdType DdType>
-        boost::any ExpressionTranslator<DdType>::visit(BooleanLiteralExpression const& expression, boost::any const& data) {
+        boost::any ExpressionTranslator<DdType>::visit(BooleanLiteralExpression const& expression, boost::any const&) {
             if (expression.isTrue()) {
                 return abstractionInformation.get().getDdManager().getBddOne();
             } else {
@@ -179,12 +179,12 @@ namespace storm {
         }
         
         template <storm::dd::DdType DdType>
-        boost::any ExpressionTranslator<DdType>::visit(IntegerLiteralExpression const& expression, boost::any const& data) {
+        boost::any ExpressionTranslator<DdType>::visit(IntegerLiteralExpression const& expression, boost::any const&) {
             return abstractionInformation.get().getDdManager().template getConstant<double>(expression.getValue());
         }
         
         template <storm::dd::DdType DdType>
-        boost::any ExpressionTranslator<DdType>::visit(RationalLiteralExpression const& expression, boost::any const& data) {
+        boost::any ExpressionTranslator<DdType>::visit(RationalLiteralExpression const&, boost::any const&) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Expressions of this kind are currently not supported by the abstraction expression translator.");
         }
         
