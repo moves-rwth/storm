@@ -32,6 +32,11 @@ namespace storm {
                  */
                 uint_fast64_t getNumberOfThreads() const;
                 
+                /*!
+                 * Retrieves whether the number of threads to use was set.
+                 */
+                bool isNumberOfThreadsSet() const;
+                
                 // The name of the module.
                 static const std::string moduleName;
                 

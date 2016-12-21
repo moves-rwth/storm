@@ -33,8 +33,12 @@ namespace storm {
         
         InternalDdManager<DdType::Sylvan>::InternalDdManager() {
             if (numberOfInstances == 0) {
-                // Initialize lace: auto-detect number of workers.
-                lace_init(storm::settings::getModule<storm::settings::modules::SylvanSettings>().getNumberOfThreads(), 1000000);
+                storm::settings::modules::SylvanSettings const& settings = storm::settings::getModule<storm::settings::modules::SylvanSettings>();
+                if (settings.isNumberOfThreadsSet()) {
+                    lace_init(settings.getNumberOfThreads(), 1000000);
+                } else {
+                    lace_init(0, 1000000);
+                }
                 lace_startup(0, 0, 0);
                 
                 // Each node takes 24 bytes and the maximal memory is specified in megabytes.
