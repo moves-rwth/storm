@@ -24,11 +24,11 @@ namespace storm {
             }
         }
         
-        int_fast64_t MathsatSmtSolver::MathsatAllsatModelReference::getIntegerValue(storm::expressions::Variable const& variable) const {
+        int_fast64_t MathsatSmtSolver::MathsatAllsatModelReference::getIntegerValue(storm::expressions::Variable const&) const {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Unable to retrieve integer value from model that only contains boolean values.");
         }
         
-        double MathsatSmtSolver::MathsatAllsatModelReference::getRationalValue(storm::expressions::Variable const& variable) const {
+        double MathsatSmtSolver::MathsatAllsatModelReference::getRationalValue(storm::expressions::Variable const&) const {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Unable to retrieve double value from model that only contains boolean values.");
         }
         
@@ -93,8 +93,11 @@ namespace storm {
         
 		MathsatSmtSolver::~MathsatSmtSolver() {
 #ifdef STORM_HAVE_MSAT
-            STORM_LOG_THROW(!MSAT_ERROR_ENV(env), storm::exceptions::UnexpectedException, "Illegal MathSAT environment.");
-			msat_destroy_env(env);
+            if (!MSAT_ERROR_ENV(env)) {
+                msat_destroy_env(env);
+            } else {
+                STORM_LOG_ERROR("Trying to destroy illegal MathSAT environment.");
+            }
 #else
             // Empty.
 #endif
@@ -330,7 +333,7 @@ namespace storm {
                 // Intentionally left empty.
             }
             
-            static int allsatModelReferenceCallback(msat_term* model, int size, void* user_data) {
+            static int allsatModelReferenceCallback(msat_term* model, int, void* user_data) {
                 AllsatModelReferenceCallbackUserData* user = reinterpret_cast<AllsatModelReferenceCallbackUserData*>(user_data);
                 MathsatSmtSolver::MathsatAllsatModelReference modelReference(user->manager, user->env, model, user->atomToSlotMapping);
                 if (user->callback(modelReference)) {
