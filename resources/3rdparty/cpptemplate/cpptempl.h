@@ -114,8 +114,8 @@ namespace cpptempl
 	{
 	public:
 		TemplateException(std::string reason) : m_reason(reason){}
-		~TemplateException() throw() {}
-		const char* what() throw() {
+		~TemplateException() {}
+		const char* what() const noexcept {
 			return m_reason.c_str();
 		}
 	private:

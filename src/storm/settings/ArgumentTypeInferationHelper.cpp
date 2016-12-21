@@ -34,7 +34,7 @@ namespace storm {
         }
         
         template <typename T>
-        std::string const& inferToString(ArgumentType const& argumentType, T const& value) {
+        std::string const& inferToString(ArgumentType const&, T const&) {
             STORM_LOG_THROW(false, storm::exceptions::InternalTypeErrorException, "Unable to infer string from non-string argument value.");
         }
         
@@ -45,7 +45,7 @@ namespace storm {
         }
         
         template <typename T>
-        int_fast64_t inferToInteger(ArgumentType const& argumentType, T const& value) {
+        int_fast64_t inferToInteger(ArgumentType const&, T const&) {
             STORM_LOG_THROW(false, storm::exceptions::InternalTypeErrorException, "Unable to infer integer from non-integer argument value.");
         }
         
@@ -56,7 +56,7 @@ namespace storm {
         }
         
         template <typename T>
-        uint_fast64_t inferToUnsignedInteger(ArgumentType const& argumentType, T const& value) {
+        uint_fast64_t inferToUnsignedInteger(ArgumentType const&, T const&) {
             STORM_LOG_THROW(false, storm::exceptions::InternalTypeErrorException, "Unable to infer unsigned integer from non-unsigned argument value.");
         }
         
@@ -67,7 +67,7 @@ namespace storm {
         }
         
         template <typename T>
-        double inferToDouble(ArgumentType const& argumentType, T const& value) {
+        double inferToDouble(ArgumentType const&, T const&) {
             STORM_LOG_THROW(false, storm::exceptions::InternalTypeErrorException, "Unable to infer double from non-double argument value.");
         }
         
@@ -78,7 +78,7 @@ namespace storm {
         }
         
         template <typename T>
-        bool inferToBoolean(ArgumentType const& argumentType, T const& value) {
+        bool inferToBoolean(ArgumentType const&, T const&) {
             STORM_LOG_THROW(false, storm::exceptions::InternalTypeErrorException, "Unable to infer boolean from non-boolean argument value.");
         }
         

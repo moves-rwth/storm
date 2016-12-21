@@ -593,7 +593,7 @@ namespace storm {
                         
                         auto index = std::distance(enabledEdges.begin(), edgeSetIt);
                         if (it != writtenGlobalVariables.end()) {
-                            STORM_LOG_THROW(it->second == index, storm::exceptions::WrongFormatException, "Multiple writes to global variable '" << globalVariable.getName() << "' in synchronizing edges.");
+                            STORM_LOG_THROW(it->second == static_cast<uint64_t>(index), storm::exceptions::WrongFormatException, "Multiple writes to global variable '" << globalVariable.getName() << "' in synchronizing edges.");
                         } else {
                             writtenGlobalVariables.emplace(globalVariable, index);
                         }

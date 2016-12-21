@@ -880,7 +880,6 @@ namespace storm {
 			STORM_LOG_ASSERT(mtbdd_isleaf(node), "Expected leaf, but got variable " << mtbdd_getvar(node) << ".");
 
 			bool negated = mtbdd_hascomp(node);
-			MTBDD n = mtbdd_regular(node);
 
 			STORM_LOG_ASSERT(mtbdd_gettype(node) == sylvan_storm_rational_function_get_type(), "Expected a storm::RationalFunction value.");
 			uint64_t value = mtbdd_getvalue(node);
