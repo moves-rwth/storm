@@ -601,33 +601,8 @@ namespace storm {
              * @return A vector of indices that is a topological sort of the states.
              */
             template <typename T>
-            std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<T> const& matrix);
-            
-            /*!
-             * A class needed to compare the distances for two states in the Dijkstra search.
-             */
-            template<typename T>
-            struct DistanceCompare {
-                bool operator()(std::pair<T, uint_fast64_t> const& lhs, std::pair<T, uint_fast64_t> const& rhs) const {
-                    return lhs.first > rhs.first || (lhs.first == rhs.first && lhs.second > rhs.second);
-                }
-            };
-            
-            /*!
-             * Performs a Dijkstra search from the given starting states to determine the most probable paths to all other states
-             * by only passing through the given state set.
-             *
-             * @param model The model whose state space is to be searched.
-             * @param transitions The transitions wrt to which to compute the most probable paths.
-             * @param startingStates The starting states of the Dijkstra search.
-             * @param filterStates A set of states that must not be left on any path.
-             */
-            template <typename T>
-            std::pair<std::vector<T>, std::vector<uint_fast64_t>> performDijkstra(storm::models::sparse::Model<T> const& model,
-                                                                                  storm::storage::SparseMatrix<T> const& transitions,
-                                                                                  storm::storage::BitVector const& startingStates,
-                                                                                  storm::storage::BitVector const* filterStates = nullptr);
-            
+            std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<T> const& matrix) ;
+
         } // namespace graph
     } // namespace utility
 } // namespace storm
