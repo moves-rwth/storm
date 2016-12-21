@@ -46,5 +46,9 @@ namespace storm {
         bool TemplateEdgeDestination::usesAssignmentLevels() const {
             return assignments.hasMultipleLevels();
         }
+        
+        bool TemplateEdgeDestination::isLinear() const {
+            return assignments.areLinear();
+        }
     }
 }

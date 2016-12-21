@@ -39,6 +39,11 @@ namespace storm {
              */
             bool usesAssignmentLevels() const;
             
+            /*!
+             * Checks the template edge destination for linearity.
+             */
+            bool isLinear() const;
+            
         private:
             // The (ordered) assignments to make when choosing this destination.
             OrderedAssignments assignments;

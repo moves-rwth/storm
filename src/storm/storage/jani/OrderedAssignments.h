@@ -124,6 +124,11 @@ namespace storm {
              */
             void changeAssignmentVariables(std::map<Variable const*, std::reference_wrapper<Variable const>> const& remapping);
 
+            /*!
+             * Checks the assignments for linearity.
+             */
+            bool areLinear() const;
+            
             friend std::ostream& operator<<(std::ostream& stream, OrderedAssignments const& assignments);
             
         private:

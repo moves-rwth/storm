@@ -2,6 +2,8 @@
 
 #include "storm/storage/jani/Model.h"
 
+#include "storm/storage/expressions/LinearityCheckVisitor.h"
+
 namespace storm {
     namespace jani {
         
@@ -132,6 +134,16 @@ namespace storm {
                 }
             }
             return false;
+        }
+        
+        bool TemplateEdge::isLinear() const {
+            storm::expressions::LinearityCheckVisitor linearityChecker;
+            
+            bool result = linearityChecker.check(this->getGuard());
+            for (auto const& destination : destinations) {
+                result &= destination.isLinear();
+            }
+            return result;
         }
         
     }

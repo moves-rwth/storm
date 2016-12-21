@@ -84,6 +84,11 @@ namespace storm {
              */
             bool usesAssignmentLevels() const;
 
+            /*!
+             * Checks the template edge for linearity.
+             */
+            bool isLinear() const;
+            
         private:
             // The guard of the template edge.
             storm::expressions::Expression guard;

@@ -499,5 +499,18 @@ namespace storm {
             return false;
         }
         
+        bool Automaton::isLinear() const {
+            bool result = true;
+
+            for (auto const& location : this->getLocations()) {
+                result &= location.isLinear();
+            }
+            
+            for (auto const& templateEdge : templateEdges) {
+                result &= templateEdge->isLinear();
+            }
+            
+            return result;
+        }
     }
 }

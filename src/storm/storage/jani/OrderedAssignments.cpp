@@ -157,6 +157,14 @@ namespace storm {
             return std::lower_bound(assignments.begin(), assignments.end(), assignment, storm::jani::AssignmentPartialOrderByLevelAndVariable());
         }
         
+        bool OrderedAssignments::areLinear() const {
+            bool result = true;
+            for (auto const& assignment : getAllAssignments()) {
+                result &= assignment.isLinear();
+            }
+            return result;
+        }
+        
         std::ostream& operator<<(std::ostream& stream, OrderedAssignments const& assignments) {
             stream << "[";
             for(auto const& e : assignments.allAssignments) {

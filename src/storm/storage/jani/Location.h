@@ -49,6 +49,11 @@ namespace storm {
              */
             void checkValid() const;
             
+            /*!
+             * Checks the automaton for linearity.
+             */
+            bool isLinear() const;
+            
         private:
             /// The name of the location.
             std::string name;

@@ -266,7 +266,7 @@ namespace storm {
              * Retrieves the edges of the automaton.
              */
             std::vector<Edge> const& getEdges() const;
-
+            
             /*!
              * Retrieves the set of action indices that are labels of edges of this automaton.
              */
@@ -363,6 +363,11 @@ namespace storm {
              * Retrieves whether the automaton uses an assignment level other than zero.
              */
             bool usesAssignmentLevels() const;
+            
+            /*!
+             * Checks the automaton for linearity.
+             */
+            bool isLinear() const;
             
         private:
             /// The name of the automaton.

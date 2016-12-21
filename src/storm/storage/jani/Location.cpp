@@ -38,5 +38,9 @@ namespace storm {
             // Intentionally left empty.
         }
         
+        bool Location::isLinear() const {
+            return assignments.areLinear();
+        }
+        
     }
 }

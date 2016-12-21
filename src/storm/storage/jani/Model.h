@@ -335,13 +335,18 @@ namespace storm {
              * Gets the expression restricting the legal initial values of the global variables.
              */
             storm::expressions::Expression const& getInitialStatesRestriction() const;
-            
+
+            /*!
+             * Retrieves the expression defining the legal initial values of the variables.
+             */
+            storm::expressions::Expression getInitialStatesExpression() const;
+
             /*!
              * Retrieves the expression defining the legal initial values of the variables.
              *
              * @param automata The resulting expression will also characterize the legal initial states for these automata.
              */
-            storm::expressions::Expression getInitialStatesExpression(std::vector<std::reference_wrapper<storm::jani::Automaton const>> const& automata = {}) const;
+            storm::expressions::Expression getInitialStatesExpression(std::vector<std::reference_wrapper<storm::jani::Automaton const>> const& automata) const;
             
             /*!
              * Determines whether this model is a deterministic one in the sense that each state only has one choice.
@@ -416,6 +421,12 @@ namespace storm {
              * Retrieves whether the model uses an assignment level other than zero.
              */
             bool usesAssignmentLevels() const;
+            
+            /*!
+             * Checks the model for linearity. A model is linear if all expressions appearing in guards and assignments
+             * are linear.
+             */
+            bool isLinear() const;
             
             void makeStandardJaniCompliant();
             

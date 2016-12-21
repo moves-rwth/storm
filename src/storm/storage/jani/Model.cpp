@@ -5,6 +5,8 @@
 #include "storm/storage/jani/Compositions.h"
 #include "storm/storage/jani/CompositionInformationVisitor.h"
 
+#include "storm/storage/expressions/LinearityCheckVisitor.h"
+
 #include "storm/utility/combinatorics.h"
 
 #include "storm/utility/macros.h"
@@ -911,6 +913,14 @@ namespace storm {
             return initialStatesRestriction;
         }
         
+        storm::expressions::Expression Model::getInitialStatesExpression() const {
+            std::vector<std::reference_wrapper<storm::jani::Automaton const>> allAutomata;
+            for (auto const& automaton : this->getAutomata()) {
+                allAutomata.push_back(automaton);
+            }
+            return getInitialStatesExpression(allAutomata);
+        }
+        
         storm::expressions::Expression Model::getInitialStatesExpression(std::vector<std::reference_wrapper<storm::jani::Automaton const>> const& automata) const {
             // Start with the restriction of variables.
             storm::expressions::Expression result = initialStatesRestriction;
@@ -1115,6 +1125,19 @@ namespace storm {
                 }
             }
             return false;
+        }
+        
+        bool Model::isLinear() const {
+            bool result = true;
+            
+            storm::expressions::LinearityCheckVisitor linearityChecker;
+            result &= linearityChecker.check(this->getInitialStatesExpression());
+            
+            for (auto const& automaton : this->getAutomata()) {
+                result &= automaton.isLinear();
+            }
+            
+            return result;
         }
         
         Model Model::createModelFromAutomaton(Automaton const& automaton) const {
