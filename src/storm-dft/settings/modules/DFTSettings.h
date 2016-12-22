@@ -138,6 +138,20 @@ namespace storm {
                  * @return True iff the option was set.
                  */
                 bool isTransformToGspn() const;
+
+                /*!
+                 * Retrieves whether the export to Json file option was set.
+                 *
+                 * @return True if the export to json file option was set.
+                 */
+                bool isExportToJson() const;
+
+                /*!
+                 * Retrieves the name of the json file to export to.
+                 *
+                 * @return The name of the json file to export to.
+                 */
+                std::string getExportJsonFilename() const;
                 
 #ifdef STORM_HAVE_Z3
                 /*!
@@ -177,6 +191,7 @@ namespace storm {
                 static const std::string solveWithSmtOptionName;
 #endif
                 static const std::string transformToGspnOptionName;
+                static const std::string exportToJsonOptionName;
                 
             };
 

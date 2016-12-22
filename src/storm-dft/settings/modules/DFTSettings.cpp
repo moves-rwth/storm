@@ -32,6 +32,7 @@ namespace storm {
             const std::string DFTSettings::minValueOptionName = "min";
             const std::string DFTSettings::maxValueOptionName = "max";
             const std::string DFTSettings::transformToGspnOptionName = "gspn";
+            const std::string DFTSettings::exportToJsonOptionName = "export-json";
 #ifdef STORM_HAVE_Z3
             const std::string DFTSettings::solveWithSmtOptionName = "smt";
 #endif
@@ -55,8 +56,9 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, solveWithSmtOptionName, true, "Solve the DFT with SMT.").build());
 #endif
                 this->addOption(storm::settings::OptionBuilder(moduleName, transformToGspnOptionName, false, "Transform DFT to GSPN.").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, exportToJsonOptionName, false,  "Export the model to the Cytoscape JSON format.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the JSON file to export to.").build()).build());
             }
-            
+
             bool DFTSettings::isDftFileSet() const {
                 return this->getOption(dftFileOptionName).getHasOptionBeenSet();
             }
@@ -139,6 +141,14 @@ namespace storm {
             
             bool DFTSettings::isTransformToGspn() const {
                 return this->getOption(transformToGspnOptionName).getHasOptionBeenSet();
+            }
+
+            bool DFTSettings::isExportToJson() const {
+                return this->getOption(exportToJsonOptionName).getHasOptionBeenSet();
+            }
+
+            std::string DFTSettings::getExportJsonFilename() const {
+                return this->getOption(exportToJsonOptionName).getArgumentByName("filename").getValueAsString();
             }
 
             void DFTSettings::finalize() {

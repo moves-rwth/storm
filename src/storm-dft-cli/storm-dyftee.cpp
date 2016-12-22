@@ -19,7 +19,7 @@
 #include "storm-dft/modelchecker/dft/DFTModelChecker.h"
 #include "storm-dft/modelchecker/dft/DFTASFChecker.h"
 #include "storm-dft/transformations/DftToGspnTransformator.h"
-
+#include "storm-dft/storage/dft/DftJsonExporter.h"
 
 #include "storm-dft/settings/modules/DFTSettings.h"
 
@@ -127,6 +127,16 @@ int main(const int argc, const char** argv) {
         storm::settings::modules::GeneralSettings const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
         if (!dftSettings.isDftFileSet() && !dftSettings.isDftJsonFileSet()) {
             STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "No input model.");
+        }
+
+        if (dftSettings.isExportToJson()) {
+            STORM_LOG_THROW(dftSettings.isDftFileSet(), storm::exceptions::InvalidSettingsException, "No input model in Galileo format given.");
+            storm::parser::DFTGalileoParser<double> parser;
+            storm::storage::DFT<double> dft = parser.parseDFT(dftSettings.getDftFilename());
+            // Export to json
+            storm::storage::DftJsonExporter<double>::toFile(dft, dftSettings.getExportJsonFilename());
+            storm::utility::cleanUp();
+            return 0;
         }
 
         
