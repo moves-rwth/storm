@@ -13,7 +13,7 @@ namespace storm {
             return result;
         }
         
-        boost::any CompositionToJaniVisitor::visit(ModuleComposition const& composition, boost::any const& data) {
+        boost::any CompositionToJaniVisitor::visit(ModuleComposition const& composition, boost::any const&) {
             std::shared_ptr<storm::jani::Composition> result = std::make_shared<storm::jani::AutomatonComposition>(composition.getModuleName());
             return result;
         }

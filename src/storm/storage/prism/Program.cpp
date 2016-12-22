@@ -40,7 +40,7 @@ namespace storm {
                 }
             }
             
-            virtual boost::any visit(ModuleComposition const& composition, boost::any const& data) override {
+            virtual boost::any visit(ModuleComposition const& composition, boost::any const&) override {
                 bool isValid = program.hasModule(composition.getModuleName());
                 STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "The module \"" << composition.getModuleName() << "\" referred to in the system composition does not exist.");
                 isValid = appearingModules.find(composition.getModuleName()) == appearingModules.end();

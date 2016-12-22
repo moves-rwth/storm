@@ -18,12 +18,12 @@ namespace storm {
         }
         
         template<typename RationalNumberType>
-        boost::any ToRationalNumberVisitor<RationalNumberType>::visit(IfThenElseExpression const& expression, boost::any const& data) {
+        boost::any ToRationalNumberVisitor<RationalNumberType>::visit(IfThenElseExpression const&, boost::any const&) {
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression cannot be translated into a rational number.");
         }
         
         template<typename RationalNumberType>
-        boost::any ToRationalNumberVisitor<RationalNumberType>::visit(BinaryBooleanFunctionExpression const& expression, boost::any const& data) {
+        boost::any ToRationalNumberVisitor<RationalNumberType>::visit(BinaryBooleanFunctionExpression const&, boost::any const&) {
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression cannot be translated into a rational number.");
         }
         
@@ -63,32 +63,33 @@ namespace storm {
         }
         
         template<typename RationalNumberType>
-        boost::any ToRationalNumberVisitor<RationalNumberType>::visit(BinaryRelationExpression const& expression, boost::any const& data) {
+        boost::any ToRationalNumberVisitor<RationalNumberType>::visit(BinaryRelationExpression const&, boost::any const&) {
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression cannot be translated into a rational number.");
         }
         
         template<typename RationalNumberType>
-        boost::any ToRationalNumberVisitor<RationalNumberType>::visit(VariableExpression const& expression, boost::any const& data) {
+        boost::any ToRationalNumberVisitor<RationalNumberType>::visit(VariableExpression const&, boost::any const&) {
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Cannot transform expressions containing variables to a rational number.");
         }
         
         template<typename RationalNumberType>
-        boost::any ToRationalNumberVisitor<RationalNumberType>::visit(UnaryBooleanFunctionExpression const& expression, boost::any const& data) {
+        boost::any ToRationalNumberVisitor<RationalNumberType>::visit(UnaryBooleanFunctionExpression const&, boost::any const&) {
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression cannot be translated into a rational number.");
         }
         
         template<typename RationalNumberType>
-        boost::any ToRationalNumberVisitor<RationalNumberType>::visit(UnaryNumericalFunctionExpression const& expression, boost::any const& data) {
+        boost::any ToRationalNumberVisitor<RationalNumberType>::visit(UnaryNumericalFunctionExpression const&, boost::any const& ) {
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression cannot be translated into a rational number.");
         }
         
         template<typename RationalNumberType>
-        boost::any ToRationalNumberVisitor<RationalNumberType>::visit(BooleanLiteralExpression const& expression, boost::any const& data) {
+        boost::any ToRationalNumberVisitor<RationalNumberType>::visit(BooleanLiteralExpression const&, boost::any const&) {
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression cannot be translated into a rational number.");
         }
         
         template<typename RationalNumberType>
-        boost::any ToRationalNumberVisitor<RationalNumberType>::visit(IntegerLiteralExpression const& expression, boost::any const& data) {
+        boost::any ToRationalNumberVisitor<RationalNumberType>::visit(IntegerLiteralExpression const& expression, boost::any const&) {
+            (void)expression;
 #ifdef STORM_HAVE_CARL
             return RationalNumberType(carl::rationalize<storm::RationalNumber>(static_cast<size_t>(expression.getValue())));
 #else
@@ -97,7 +98,8 @@ namespace storm {
         }
         
         template<typename RationalNumberType>
-        boost::any ToRationalNumberVisitor<RationalNumberType>::visit(RationalLiteralExpression const& expression, boost::any const& data) {
+        boost::any ToRationalNumberVisitor<RationalNumberType>::visit(RationalLiteralExpression const& expression, boost::any const&) {
+            (void)expression;
 #ifdef STORM_HAVE_CARL
             return expression.getValue();
 #else

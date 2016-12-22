@@ -66,6 +66,7 @@ namespace storm {
                 case BinaryBooleanFunctionExpression::OperatorType::Implies: return !left || right;
                 case BinaryBooleanFunctionExpression::OperatorType::Iff: return (left && right) || (!left && !right);
             }
+            return boost::any();
         }
         
         template <storm::dd::DdType DdType>
@@ -114,6 +115,7 @@ namespace storm {
                 
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Expressions of this kind are currently not supported by the abstraction expression translator.");
             }
+            return boost::any();
         }
         
         template <storm::dd::DdType DdType>
@@ -162,6 +164,7 @@ namespace storm {
             switch (expression.getOperatorType()) {
                 case UnaryBooleanFunctionExpression::OperatorType::Not: return !sub;
             }
+            return boost::any();
         }
         
         template <storm::dd::DdType DdType>

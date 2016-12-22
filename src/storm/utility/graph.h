@@ -291,7 +291,6 @@ namespace storm {
              * this means that these states have a probability greater 0 of satisfying phi until psi if the
              * scheduler tries to minimize this probability.
              *
-             * @param model The model whose graph structure to search.
              * @param backwardTransitions The reversed transition relation of the model.
              * @param phiStates The set of all states satisfying phi.
              * @param psiStates The set of all states satisfying psi.
@@ -300,10 +299,10 @@ namespace storm {
              * @return A bit vector that represents all states with probability 0.
              */
             template <typename T>
-            storm::storage::BitVector performProbGreater0E(storm::storage::SparseMatrix<T> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool useStepBound = false, uint_fast64_t maximalSteps = 0) ;
+            storm::storage::BitVector performProbGreater0E(storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool useStepBound = false, uint_fast64_t maximalSteps = 0) ;
             
             template <typename T>
-            storm::storage::BitVector performProb0A(storm::storage::SparseMatrix<T> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
+            storm::storage::BitVector performProb0A(storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
             
             /*!
              * Computes the sets of states that have probability 0 of satisfying phi until psi under all

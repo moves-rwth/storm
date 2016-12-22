@@ -11,7 +11,7 @@ namespace storm {
     namespace utility {
         namespace numerical {
             template<typename ValueType>
-            std::tuple<uint_fast64_t, uint_fast64_t, ValueType, std::vector<ValueType>> getFoxGlynnCutoff(ValueType lambda, ValueType underflow, ValueType overflow, ValueType accuracy) {
+            std::tuple<uint_fast64_t, uint_fast64_t, ValueType, std::vector<ValueType>> getFoxGlynnCutoff(ValueType lambda, ValueType overflow, ValueType accuracy) {
                 STORM_LOG_THROW(lambda != storm::utility::zero<ValueType>(), storm::exceptions::InvalidArgumentException, "Error in Fox-Glynn algorithm: lambda must not be zero.");
                 
                 // This code is a modified version of the one in PRISM. According to their implementation, for lambda

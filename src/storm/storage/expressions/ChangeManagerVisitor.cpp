@@ -38,7 +38,7 @@ namespace storm {
             return std::shared_ptr<BaseExpression const>(new BinaryRelationExpression(manager, expression.getType(), newFirstOperand, newSecondOperand, expression.getRelationType()));
         }
         
-        boost::any ChangeManagerVisitor::visit(VariableExpression const& expression, boost::any const& data) {
+        boost::any ChangeManagerVisitor::visit(VariableExpression const& expression, boost::any const&) {
             return std::shared_ptr<BaseExpression const>(new VariableExpression(manager.getVariable(expression.getVariableName())));
         }
         
@@ -52,15 +52,15 @@ namespace storm {
             return std::shared_ptr<BaseExpression const>(new UnaryNumericalFunctionExpression(manager, expression.getType(), newOperand, expression.getOperatorType()));
         }
         
-        boost::any ChangeManagerVisitor::visit(BooleanLiteralExpression const& expression, boost::any const& data) {
+        boost::any ChangeManagerVisitor::visit(BooleanLiteralExpression const& expression, boost::any const&) {
             return std::shared_ptr<BaseExpression const>(new BooleanLiteralExpression(manager, expression.getValue()));
         }
         
-        boost::any ChangeManagerVisitor::visit(IntegerLiteralExpression const& expression, boost::any const& data) {
+        boost::any ChangeManagerVisitor::visit(IntegerLiteralExpression const& expression, boost::any const&) {
             return std::shared_ptr<BaseExpression const>(new IntegerLiteralExpression(manager, expression.getValue()));
         }
         
-        boost::any ChangeManagerVisitor::visit(RationalLiteralExpression const& expression, boost::any const& data) {
+        boost::any ChangeManagerVisitor::visit(RationalLiteralExpression const& expression, boost::any const&) {
             return std::shared_ptr<BaseExpression const>(new RationalLiteralExpression(manager, expression.getValue()));
         }
         

@@ -38,6 +38,7 @@ namespace storm {
                 case storm::logic::ComparisonType::GreaterEqual:
                     return fromVector<double>(ddManager, explicitValues, odd, metaVariables, std::bind(std::less_equal<double>(), value, std::placeholders::_1));
             }
+            return Bdd<LibraryType>();
         }
         
         template<DdType LibraryType>

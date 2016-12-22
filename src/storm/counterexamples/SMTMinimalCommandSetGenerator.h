@@ -95,7 +95,7 @@ namespace storm {
                 // Compute all relevant states, i.e. states for which there exists a scheduler that has a non-zero
                 // probabilitiy of satisfying phi until psi.
                 storm::storage::SparseMatrix<T> backwardTransitions = labeledMdp.getBackwardTransitions();
-                relevancyInformation.relevantStates = storm::utility::graph::performProbGreater0E(labeledMdp.getTransitionMatrix(), labeledMdp.getNondeterministicChoiceIndices(), backwardTransitions, phiStates, psiStates);
+                relevancyInformation.relevantStates = storm::utility::graph::performProbGreater0E(backwardTransitions, phiStates, psiStates);
                 relevancyInformation.relevantStates &= ~psiStates;
 
                 STORM_LOG_DEBUG("Found " << relevancyInformation.relevantStates.getNumberOfSetBits() << " relevant states.");
@@ -1410,7 +1410,7 @@ namespace storm {
                 }
                 
                 storm::storage::BitVector unreachableRelevantStates = ~reachableStates & relevancyInformation.relevantStates;
-                storm::storage::BitVector statesThatCanReachTargetStates = storm::utility::graph::performProbGreater0E(subMdp.getTransitionMatrix(), subMdp.getNondeterministicChoiceIndices(), subMdp.getBackwardTransitions(), phiStates, psiStates);
+                storm::storage::BitVector statesThatCanReachTargetStates = storm::utility::graph::performProbGreater0E(subMdp.getBackwardTransitions(), phiStates, psiStates);
                 
                 boost::container::flat_set<uint_fast64_t> locallyRelevantLabels;
                 std::set_difference(relevancyInformation.relevantLabels.begin(), relevancyInformation.relevantLabels.end(), commandSet.begin(), commandSet.end(), std::inserter(locallyRelevantLabels, locallyRelevantLabels.begin()));
@@ -1530,7 +1530,7 @@ namespace storm {
                 STORM_LOG_DEBUG("Successfully determined reachable state space.");
                 
                 storm::storage::BitVector unreachableRelevantStates = ~reachableStates & relevancyInformation.relevantStates;
-                storm::storage::BitVector statesThatCanReachTargetStates = storm::utility::graph::performProbGreater0E(subMdp.getTransitionMatrix(), subMdp.getNondeterministicChoiceIndices(), subMdp.getBackwardTransitions(), phiStates, psiStates);
+                storm::storage::BitVector statesThatCanReachTargetStates = storm::utility::graph::performProbGreater0E(subMdp.getBackwardTransitions(), phiStates, psiStates);
                 
                 boost::container::flat_set<uint_fast64_t> locallyRelevantLabels;
                 std::set_difference(relevancyInformation.relevantLabels.begin(), relevancyInformation.relevantLabels.end(), commandSet.begin(), commandSet.end(), std::inserter(locallyRelevantLabels, locallyRelevantLabels.begin()));

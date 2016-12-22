@@ -332,7 +332,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        AddIterator<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::begin(DdManager<DdType::CUDD> const& fullDdManager, InternalBdd<DdType::CUDD> const& variableCube, uint_fast64_t numberOfDdVariables, std::set<storm::expressions::Variable> const& metaVariables, bool enumerateDontCareMetaVariables) const {
+        AddIterator<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::begin(DdManager<DdType::CUDD> const& fullDdManager, InternalBdd<DdType::CUDD> const&, uint_fast64_t, std::set<storm::expressions::Variable> const& metaVariables, bool enumerateDontCareMetaVariables) const {
             int* cube;
             double value;
             DdGen* generator = this->getCuddAdd().FirstCube(&cube, &value);

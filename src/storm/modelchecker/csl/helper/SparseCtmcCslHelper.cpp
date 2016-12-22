@@ -269,7 +269,7 @@ namespace storm {
             }
             
             template <typename ValueType, typename RewardModelType, typename std::enable_if<!storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
-            std::vector<ValueType> SparseCtmcCslHelper::computeCumulativeRewards(storm::storage::SparseMatrix<ValueType> const& rateMatrix, std::vector<ValueType> const& exitRateVector, RewardModelType const& rewardModel, double timeBound, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+            std::vector<ValueType> SparseCtmcCslHelper::computeCumulativeRewards(storm::storage::SparseMatrix<ValueType> const&, std::vector<ValueType> const&, RewardModelType const&, double, storm::solver::LinearEquationSolverFactory<ValueType> const&) {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Computing cumulative rewards is unsupported for this value type.");
             }
             
@@ -325,7 +325,7 @@ namespace storm {
             }
             
             template <typename ValueType, typename RewardModelType, typename std::enable_if<!storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
-            std::vector<ValueType> SparseCtmcCslHelper::computeReachabilityRewards(storm::storage::SparseMatrix<ValueType> const& rateMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& exitRateVector, RewardModelType const& rewardModel, storm::storage::BitVector const& targetStates, bool qualitative, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+            std::vector<ValueType> SparseCtmcCslHelper::computeReachabilityRewards(storm::storage::SparseMatrix<ValueType> const&, storm::storage::SparseMatrix<ValueType> const&, std::vector<ValueType> const&, RewardModelType const&, storm::storage::BitVector const&, bool, storm::solver::LinearEquationSolverFactory<ValueType> const&) {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Computing reachability rewards is unsupported for this value type.");
             }
             
@@ -591,7 +591,7 @@ namespace storm {
                 }
                 
                 // Use Fox-Glynn to get the truncation points and the weights.
-                std::tuple<uint_fast64_t, uint_fast64_t, ValueType, std::vector<ValueType>> foxGlynnResult = storm::utility::numerical::getFoxGlynnCutoff(lambda, 1e-300, 1e+300, storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision() / 8.0);
+                std::tuple<uint_fast64_t, uint_fast64_t, ValueType, std::vector<ValueType>> foxGlynnResult = storm::utility::numerical::getFoxGlynnCutoff(lambda, 1e+300, storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision() / 8.0);
                 STORM_LOG_DEBUG("Fox-Glynn cutoff points: left=" << std::get<0>(foxGlynnResult) << ", right=" << std::get<1>(foxGlynnResult));
                 
                 // Scale the weights so they add up to one.

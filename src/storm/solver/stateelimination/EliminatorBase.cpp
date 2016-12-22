@@ -252,22 +252,22 @@ namespace storm {
             }
             
             template<typename ValueType, ScalingMode Mode>
-            void EliminatorBase<ValueType, Mode>::updateValue(storm::storage::sparse::state_type const& state, ValueType const& loopProbability) {
+            void EliminatorBase<ValueType, Mode>::updateValue(storm::storage::sparse::state_type const&, ValueType const&) {
                 // Intentionally left empty.
             }
             
             template<typename ValueType, ScalingMode Mode>
-            void EliminatorBase<ValueType, Mode>::updatePredecessor(storm::storage::sparse::state_type const& predecessor, ValueType const& probability, storm::storage::sparse::state_type const& state) {
+            void EliminatorBase<ValueType, Mode>::updatePredecessor(storm::storage::sparse::state_type const&, ValueType const&, storm::storage::sparse::state_type const&) {
                 // Intentionally left empty.
             }
             
             template<typename ValueType, ScalingMode Mode>
-            void EliminatorBase<ValueType, Mode>::updatePriority(storm::storage::sparse::state_type const& state) {
+            void EliminatorBase<ValueType, Mode>::updatePriority(storm::storage::sparse::state_type const&) {
                 // Intentionally left empty.
             }
             
             template<typename ValueType, ScalingMode Mode>
-            bool EliminatorBase<ValueType, Mode>::filterPredecessor(storm::storage::sparse::state_type const& state) {
+            bool EliminatorBase<ValueType, Mode>::filterPredecessor(storm::storage::sparse::state_type const&) {
                 STORM_LOG_ASSERT(false, "Must not filter predecessors.");
                 return false;
             }

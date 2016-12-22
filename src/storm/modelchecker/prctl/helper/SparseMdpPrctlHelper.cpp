@@ -35,7 +35,7 @@ namespace storm {
                 if (dir == OptimizationDirection::Minimize) {
                     maybeStates = storm::utility::graph::performProbGreater0A(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions, phiStates, psiStates, true, stepBound);
                 } else {
-                    maybeStates = storm::utility::graph::performProbGreater0E(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions, phiStates, psiStates, true, stepBound);
+                    maybeStates = storm::utility::graph::performProbGreater0E(backwardTransitions, phiStates, psiStates, true, stepBound);
                 }
                 maybeStates &= ~psiStates;
                 STORM_LOG_INFO("Found " << maybeStates.getNumberOfSetBits() << " 'maybe' states.");

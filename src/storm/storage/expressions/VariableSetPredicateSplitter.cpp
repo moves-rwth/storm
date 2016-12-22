@@ -31,7 +31,7 @@ namespace storm {
             return resultPredicates;
         }
         
-        boost::any VariableSetPredicateSplitter::visit(IfThenElseExpression const& expression, boost::any const& data) {
+        boost::any VariableSetPredicateSplitter::visit(IfThenElseExpression const& expression, boost::any const&) {
             std::set<storm::expressions::Variable> conditionVariables;
             expression.getCondition()->gatherVariables(conditionVariables);
             bool conditionOnlyIrrelevantVariables = std::includes(irrelevantVariables.begin(), irrelevantVariables.end(), conditionVariables.begin(), conditionVariables.end());
@@ -103,11 +103,11 @@ namespace storm {
             return boost::any();
         }
         
-        boost::any VariableSetPredicateSplitter::visit(BinaryNumericalFunctionExpression const& expression, boost::any const& data) {
+        boost::any VariableSetPredicateSplitter::visit(BinaryNumericalFunctionExpression const& expression, boost::any const&) {
             return boost::any();
         }
         
-        boost::any VariableSetPredicateSplitter::visit(BinaryRelationExpression const& expression, boost::any const& data) {
+        boost::any VariableSetPredicateSplitter::visit(BinaryRelationExpression const& expression, boost::any const&) {
             std::set<storm::expressions::Variable> leftContainedVariables;
             expression.getFirstOperand()->gatherVariables(leftContainedVariables);
             bool leftOnlyIrrelevantVariables = std::includes(irrelevantVariables.begin(), irrelevantVariables.end(), leftContainedVariables.begin(), leftContainedVariables.end());
@@ -132,7 +132,7 @@ namespace storm {
             return boost::any();
         }
         
-        boost::any VariableSetPredicateSplitter::visit(VariableExpression const& expression, boost::any const& data) {
+        boost::any VariableSetPredicateSplitter::visit(VariableExpression const& expression, boost::any const&) {
             if (expression.hasBooleanType() && irrelevantVariables.find(expression.getVariable()) == irrelevantVariables.end()) {
                 resultPredicates.push_back(expression.toExpression());
             }
@@ -160,19 +160,19 @@ namespace storm {
             return boost::any();
         }
         
-        boost::any VariableSetPredicateSplitter::visit(UnaryNumericalFunctionExpression const& expression, boost::any const& data) {
+        boost::any VariableSetPredicateSplitter::visit(UnaryNumericalFunctionExpression const&, boost::any const&) {
             return boost::any();
         }
         
-        boost::any VariableSetPredicateSplitter::visit(BooleanLiteralExpression const& expression, boost::any const& data) {
+        boost::any VariableSetPredicateSplitter::visit(BooleanLiteralExpression const&, boost::any const&) {
             return boost::any();
         }
         
-        boost::any VariableSetPredicateSplitter::visit(IntegerLiteralExpression const& expression, boost::any const& data) {
+        boost::any VariableSetPredicateSplitter::visit(IntegerLiteralExpression const&, boost::any const&) {
             return boost::any();
         }
         
-        boost::any VariableSetPredicateSplitter::visit(RationalLiteralExpression const& expression, boost::any const& data) {
+        boost::any VariableSetPredicateSplitter::visit(RationalLiteralExpression const&, boost::any const&) {
             return boost::any();
         }
         

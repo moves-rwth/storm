@@ -99,7 +99,7 @@ namespace storm {
             return std::static_pointer_cast<Formula>(std::make_shared<RewardOperatorFormula>(subformula, f.getOptionalRewardModelName(), f.getOperatorInformation()));
         }
         
-        boost::any CloneVisitor::visit(TotalRewardFormula const& f, boost::any const&) const {
+        boost::any CloneVisitor::visit(TotalRewardFormula const&, boost::any const&) const {
             return std::static_pointer_cast<Formula>(std::make_shared<TotalRewardFormula>());
         }
         

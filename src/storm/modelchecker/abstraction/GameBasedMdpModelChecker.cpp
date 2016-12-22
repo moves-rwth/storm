@@ -214,7 +214,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        std::unique_ptr<CheckResult> checkForResultAfterQuantitativeCheck(CheckTask<storm::logic::Formula> const& checkTask, ValueType const& minValue, ValueType const& maxValue, storm::utility::ConstantsComparator<ValueType> const& comparator) {
+        std::unique_ptr<CheckResult> checkForResultAfterQuantitativeCheck(ValueType const& minValue, ValueType const& maxValue, storm::utility::ConstantsComparator<ValueType> const& comparator) {
             std::unique_ptr<CheckResult> result;
 
             // If the lower and upper bounds are close enough, we can return the result.
@@ -440,7 +440,7 @@ namespace storm {
                     STORM_LOG_DEBUG("Obtained quantitative bounds [" << quantitativeResult.min.initialStatesRange.first << ", " << quantitativeResult.max.initialStatesRange.second << "] on the actual value for the initial states in " << std::chrono::duration_cast<std::chrono::milliseconds>(quantitativeEnd - quantitativeStart).count() << "ms.");
                     
                     // (9) Check whether the lower and upper bounds are close enough to terminate with an answer.
-                    result = checkForResultAfterQuantitativeCheck<ValueType>(checkTask, quantitativeResult.min.initialStatesRange.first, quantitativeResult.max.initialStatesRange.second, comparator);
+                    result = checkForResultAfterQuantitativeCheck<ValueType>(quantitativeResult.min.initialStatesRange.first, quantitativeResult.max.initialStatesRange.second, comparator);
                     if (result) {
                         printStatistics(*abstractor, game);
                         return result;

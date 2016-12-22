@@ -71,7 +71,7 @@ namespace storm {
         }
         
 		template<typename MapType>
-        boost::any SubstitutionVisitor<MapType>::visit(VariableExpression const& expression, boost::any const& data) {
+        boost::any SubstitutionVisitor<MapType>::visit(VariableExpression const& expression, boost::any const&) {
             // If the variable is in the key set of the substitution, we need to replace it.
             auto const& nameExpressionPair = this->variableToExpressionMapping.find(expression.getVariable());
             if (nameExpressionPair != this->variableToExpressionMapping.end()) {
@@ -106,17 +106,17 @@ namespace storm {
         }
         
 		template<typename MapType>
-        boost::any SubstitutionVisitor<MapType>::visit(BooleanLiteralExpression const& expression, boost::any const& data) {
+        boost::any SubstitutionVisitor<MapType>::visit(BooleanLiteralExpression const& expression, boost::any const&) {
             return expression.getSharedPointer();
         }
         
 		template<typename MapType>
-        boost::any SubstitutionVisitor<MapType>::visit(IntegerLiteralExpression const& expression, boost::any const& data) {
+        boost::any SubstitutionVisitor<MapType>::visit(IntegerLiteralExpression const& expression, boost::any const&) {
             return expression.getSharedPointer();
         }
         
 		template<typename MapType>
-        boost::any SubstitutionVisitor<MapType>::visit(RationalLiteralExpression const& expression, boost::any const& data) {
+        boost::any SubstitutionVisitor<MapType>::visit(RationalLiteralExpression const& expression, boost::any const&) {
             return expression.getSharedPointer();
         }
         

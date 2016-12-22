@@ -34,6 +34,7 @@ namespace storm {
                     return left || right;
                     break;
             }
+            return boost::any();
         }
         
         boost::any ToExpressionVisitor::visit(BooleanLiteralFormula const& f, boost::any const& data) const {
@@ -109,6 +110,7 @@ namespace storm {
                     return !subexpression;
                     break;
             }
+            return boost::any();
         }
         
         boost::any ToExpressionVisitor::visit(UntilFormula const&, boost::any const&) const {

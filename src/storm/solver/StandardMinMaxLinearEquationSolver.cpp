@@ -91,6 +91,7 @@ namespace storm {
                 case StandardMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::PolicyIteration:
                     return solveEquationsPolicyIteration(dir, x, b);
             }
+            return true;
         }
         
         template<typename ValueType>

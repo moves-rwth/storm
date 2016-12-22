@@ -455,7 +455,7 @@ namespace storm {
                 throw storm::exceptions::NotImplementedException() << "This version of Storm was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
             }
 
-            void GurobiLpSolver::toggleOutput(bool set) const {
+            void GurobiLpSolver::toggleOutput(bool) const {
                 throw storm::exceptions::NotImplementedException() << "This version of Storm was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
             }
 

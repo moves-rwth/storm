@@ -89,11 +89,11 @@ namespace storm {
             return sylvanBdd != other.sylvanBdd;
         }
         
-        InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::relationalProduct(InternalBdd<DdType::Sylvan> const& relation, std::vector<InternalBdd<DdType::Sylvan>> const& rowVariables, std::vector<InternalBdd<DdType::Sylvan>> const& columnVariables) const {
+        InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::relationalProduct(InternalBdd<DdType::Sylvan> const& relation, std::vector<InternalBdd<DdType::Sylvan>> const&, std::vector<InternalBdd<DdType::Sylvan>> const&) const {
             return InternalBdd<DdType::Sylvan>(ddManager, this->sylvanBdd.RelNext(relation.sylvanBdd, sylvan::Bdd(sylvan_false)));
         }
 
-        InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::inverseRelationalProduct(InternalBdd<DdType::Sylvan> const& relation, std::vector<InternalBdd<DdType::Sylvan>> const& rowVariables, std::vector<InternalBdd<DdType::Sylvan>> const& columnVariables) const {
+        InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::inverseRelationalProduct(InternalBdd<DdType::Sylvan> const& relation, std::vector<InternalBdd<DdType::Sylvan>> const&, std::vector<InternalBdd<DdType::Sylvan>> const&) const {
             return InternalBdd<DdType::Sylvan>(ddManager, this->sylvanBdd.RelPrev(relation.sylvanBdd, sylvan::Bdd(sylvan_false)));
         }
         
@@ -144,7 +144,7 @@ namespace storm {
         }
         
         InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::implies(InternalBdd<DdType::Sylvan> const& other) const {
-            return InternalBdd<DdType::Sylvan>(ddManager, !this->sylvanBdd | other.sylvanBdd);
+            return InternalBdd<DdType::Sylvan>(ddManager, (!this->sylvanBdd) | other.sylvanBdd);
         }
         
         InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::operator!() const {
@@ -230,7 +230,7 @@ namespace storm {
             return this->getIndex();
         }
         
-        void InternalBdd<DdType::Sylvan>::exportToDot(std::string const& filename, std::vector<std::string> const& ddVariableNamesAsStrings) const {
+        void InternalBdd<DdType::Sylvan>::exportToDot(std::string const& filename, std::vector<std::string> const&) const {
             FILE* filePointer = fopen(filename.c_str() , "w");
             this->sylvanBdd.PrintDot(filePointer);
             fclose(filePointer);

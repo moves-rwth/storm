@@ -288,7 +288,11 @@ namespace storm {
 		template<typename ValueType>
 		std::vector<std::pair<bool, storm::storage::StateBlock>>
 			TopologicalMinMaxLinearEquationSolver<ValueType>::getOptimalGroupingFromTopologicalSccDecomposition(storm::storage::StronglyConnectedComponentDecomposition<ValueType> const& sccDecomposition, std::vector<uint_fast64_t> const& topologicalSort, storm::storage::SparseMatrix<ValueType> const& matrix) const {
+                
+                (void)matrix;
+                
 				std::vector<std::pair<bool, storm::storage::StateBlock>> result;
+                
 #ifdef STORM_HAVE_CUDA
 				// 95% to have a bit of padding
 				size_t const cudaFreeMemory = static_cast<size_t>(getFreeCudaMemory() * 0.95);

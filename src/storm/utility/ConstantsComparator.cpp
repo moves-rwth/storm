@@ -31,7 +31,7 @@ namespace storm {
         }
 
         template<typename ValueType>
-        bool ConstantsComparator<ValueType>::isInfinity(ValueType const& value) const {
+        bool ConstantsComparator<ValueType>::isInfinity(ValueType const&) const {
             return false;
         }
         
@@ -60,7 +60,7 @@ namespace storm {
             return std::abs(value1 - value2) <= precision;
         }
         
-        bool ConstantsComparator<float>::isConstant(float const& value) const {
+        bool ConstantsComparator<float>::isConstant(float const&) const {
             return true;
         }
         
@@ -96,7 +96,7 @@ namespace storm {
             return std::abs(value1 - value2) <= precision;
         }
         
-        bool ConstantsComparator<double>::isConstant(double const& value) const {
+        bool ConstantsComparator<double>::isConstant(double const&) const {
             return true;
         }
         

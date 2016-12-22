@@ -140,7 +140,7 @@ namespace storm {
 
 #ifdef STORM_HAVE_CARL
 		template<>
-        InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, storm::RationalFunction>::equals(InternalAdd<DdType::Sylvan, storm::RationalFunction> const& other) const {
+        InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, storm::RationalFunction>::equals(InternalAdd<DdType::Sylvan, storm::RationalFunction> const&) const {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented: Equals");
         }
 #endif
@@ -152,7 +152,7 @@ namespace storm {
 
 #ifdef STORM_HAVE_CARL
 		template<>
-        InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, storm::RationalFunction>::notEquals(InternalAdd<DdType::Sylvan, storm::RationalFunction> const& other) const {
+        InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, storm::RationalFunction>::notEquals(InternalAdd<DdType::Sylvan, storm::RationalFunction> const&) const {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented: Not Equals");
         }
 #endif
@@ -164,7 +164,7 @@ namespace storm {
 
 #ifdef STORM_HAVE_CARL
 		template<>
-        InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, storm::RationalFunction>::less(InternalAdd<DdType::Sylvan, storm::RationalFunction> const& other) const {
+        InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, storm::RationalFunction>::less(InternalAdd<DdType::Sylvan, storm::RationalFunction> const&) const {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented: Less");
         }
 #endif
@@ -176,7 +176,7 @@ namespace storm {
 
 #ifdef STORM_HAVE_CARL
 		template<>
-        InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, storm::RationalFunction>::lessOrEqual(InternalAdd<DdType::Sylvan, storm::RationalFunction> const& other) const {
+        InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, storm::RationalFunction>::lessOrEqual(InternalAdd<DdType::Sylvan, storm::RationalFunction> const&) const {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented: Less or Equal");
         }
 #endif
@@ -188,7 +188,7 @@ namespace storm {
 
 #ifdef STORM_HAVE_CARL
 		template<>
-        InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, storm::RationalFunction>::greater(InternalAdd<DdType::Sylvan, storm::RationalFunction> const& other) const {
+        InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, storm::RationalFunction>::greater(InternalAdd<DdType::Sylvan, storm::RationalFunction> const&) const {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented: Greater");
         }
 #endif
@@ -200,7 +200,7 @@ namespace storm {
 
 #ifdef STORM_HAVE_CARL
 		template<>
-        InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, storm::RationalFunction>::greaterOrEqual(InternalAdd<DdType::Sylvan, storm::RationalFunction> const& other) const {
+        InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, storm::RationalFunction>::greaterOrEqual(InternalAdd<DdType::Sylvan, storm::RationalFunction> const&) const {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented: Greater or Equal");
         }
 #endif
@@ -212,7 +212,7 @@ namespace storm {
 
 #ifdef STORM_HAVE_CARL
 		template<>
-        InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalAdd<DdType::Sylvan, storm::RationalFunction>::pow(InternalAdd<DdType::Sylvan, storm::RationalFunction> const& other) const {
+        InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalAdd<DdType::Sylvan, storm::RationalFunction>::pow(InternalAdd<DdType::Sylvan, storm::RationalFunction> const&) const {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented: Pow");
         }
 #endif
@@ -224,7 +224,7 @@ namespace storm {
 
 #ifdef STORM_HAVE_CARL
 		template<>
-        InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalAdd<DdType::Sylvan, storm::RationalFunction>::mod(InternalAdd<DdType::Sylvan, storm::RationalFunction> const& other) const {
+        InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalAdd<DdType::Sylvan, storm::RationalFunction>::mod(InternalAdd<DdType::Sylvan, storm::RationalFunction> const&) const {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented: Mod");
         }
 #endif
@@ -236,7 +236,7 @@ namespace storm {
 
 #ifdef STORM_HAVE_CARL
 		template<>
-        InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalAdd<DdType::Sylvan, storm::RationalFunction>::logxy(InternalAdd<DdType::Sylvan, storm::RationalFunction> const& other) const {
+        InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalAdd<DdType::Sylvan, storm::RationalFunction>::logxy(InternalAdd<DdType::Sylvan, storm::RationalFunction> const&) const {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented: logxy");
         }
 #endif
@@ -272,7 +272,7 @@ namespace storm {
 
 #ifdef STORM_HAVE_CARL
 		template<>
-        InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalAdd<DdType::Sylvan, storm::RationalFunction>::minimum(InternalAdd<DdType::Sylvan, storm::RationalFunction> const& other) const {
+        InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalAdd<DdType::Sylvan, storm::RationalFunction>::minimum(InternalAdd<DdType::Sylvan, storm::RationalFunction> const&) const {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented: Minimum");
         }
 #endif
@@ -284,13 +284,13 @@ namespace storm {
 
 #ifdef STORM_HAVE_CARL
 		template<>
-        InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalAdd<DdType::Sylvan, storm::RationalFunction>::maximum(InternalAdd<DdType::Sylvan, storm::RationalFunction> const& other) const {
+        InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalAdd<DdType::Sylvan, storm::RationalFunction>::maximum(InternalAdd<DdType::Sylvan, storm::RationalFunction> const&) const {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented: Maximum");
         }
 #endif
 
         template<typename ValueType>
-        InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::replaceLeaves(std::map<uint32_t, std::pair<storm::RationalFunctionVariable, std::pair<storm::RationalNumber, storm::RationalNumber>>> const& replacementMap) const {
+        InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::replaceLeaves(std::map<uint32_t, std::pair<storm::RationalFunctionVariable, std::pair<storm::RationalNumber, storm::RationalNumber>>> const&) const {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented: replaceLeaves");
         }
 
@@ -337,19 +337,19 @@ namespace storm {
 
 #ifdef STORM_HAVE_CARL
 		template<>
-        InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalAdd<DdType::Sylvan, storm::RationalFunction>::minAbstract(InternalBdd<DdType::Sylvan> const& cube) const {
+        InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalAdd<DdType::Sylvan, storm::RationalFunction>::minAbstract(InternalBdd<DdType::Sylvan> const&) const {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented: minAbstract");
         }
 #endif
         
         template<typename ValueType>
-        InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::minAbstractExcept0(InternalBdd<DdType::Sylvan> const& cube) const {
+        InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::minAbstractExcept0(InternalBdd<DdType::Sylvan> const&) const {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented: minAbstractExcept0");
         }
 
 #ifdef STORM_HAVE_CARL
         template<>
-        InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalAdd<DdType::Sylvan, storm::RationalFunction>::minAbstractExcept0(InternalBdd<DdType::Sylvan> const& cube) const {
+        InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalAdd<DdType::Sylvan, storm::RationalFunction>::minAbstractExcept0(InternalBdd<DdType::Sylvan> const&) const {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented: minAbstractExcept0");
         }
 #endif
@@ -366,7 +366,7 @@ namespace storm {
 
 #ifdef STORM_HAVE_CARL
 		template<>
-        InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalAdd<DdType::Sylvan, storm::RationalFunction>::maxAbstract(InternalBdd<DdType::Sylvan> const& cube) const {
+        InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalAdd<DdType::Sylvan, storm::RationalFunction>::maxAbstract(InternalBdd<DdType::Sylvan> const&) const {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented: maxAbstract");
         }
 #endif
@@ -382,7 +382,7 @@ namespace storm {
 
 #ifdef STORM_HAVE_CARL
 		template<>
-        bool InternalAdd<DdType::Sylvan, storm::RationalFunction>::equalModuloPrecision(InternalAdd<DdType::Sylvan, storm::RationalFunction> const& other, double precision, bool relative) const {
+        bool InternalAdd<DdType::Sylvan, storm::RationalFunction>::equalModuloPrecision(InternalAdd<DdType::Sylvan, storm::RationalFunction> const&, double, bool) const {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented: equalModuloPrecision");
         }
 #endif
@@ -416,7 +416,7 @@ namespace storm {
         }
 
 		template<>
-		InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, storm::RationalFunction>::greater(storm::RationalFunction const& value) const {
+		InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, storm::RationalFunction>::greater(storm::RationalFunction const& ) const {
 			STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
 		}
         
@@ -426,7 +426,7 @@ namespace storm {
         }
         
 		template<>
-		InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, storm::RationalFunction>::greaterOrEqual(storm::RationalFunction const& value) const {
+		InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, storm::RationalFunction>::greaterOrEqual(storm::RationalFunction const&) const {
 			STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
 		}
 
@@ -451,7 +451,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::restrict(InternalAdd<DdType::Sylvan, ValueType> const& constraint) const {
+        InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::restrict(InternalAdd<DdType::Sylvan, ValueType> const&) const {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
         }
         
@@ -519,7 +519,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void InternalAdd<DdType::Sylvan, ValueType>::exportToDot(std::string const& filename, std::vector<std::string> const& ddVariableNamesAsStrings) const {
+        void InternalAdd<DdType::Sylvan, ValueType>::exportToDot(std::string const& filename, std::vector<std::string> const&) const {
             // Open the file, dump the DD and close it again.
             FILE* filePointer = fopen(filename.c_str() , "w");
             this->sylvanMtbdd.PrintDot(filePointer);

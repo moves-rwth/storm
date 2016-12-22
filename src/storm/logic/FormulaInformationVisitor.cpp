@@ -9,19 +9,19 @@ namespace storm {
             return boost::any_cast<FormulaInformation>(result);
         }
         
-        boost::any FormulaInformationVisitor::visit(AtomicExpressionFormula const& f, boost::any const&) const {
+        boost::any FormulaInformationVisitor::visit(AtomicExpressionFormula const&, boost::any const&) const {
             return FormulaInformation();
         }
         
-        boost::any FormulaInformationVisitor::visit(AtomicLabelFormula const& f, boost::any const&) const {
+        boost::any FormulaInformationVisitor::visit(AtomicLabelFormula const&, boost::any const&) const {
             return FormulaInformation();
         }
         
-        boost::any FormulaInformationVisitor::visit(BinaryBooleanStateFormula const& f, boost::any const&) const {
+        boost::any FormulaInformationVisitor::visit(BinaryBooleanStateFormula const&, boost::any const&) const {
             return FormulaInformation();
         }
         
-        boost::any FormulaInformationVisitor::visit(BooleanLiteralFormula const& f, boost::any const&) const {
+        boost::any FormulaInformationVisitor::visit(BooleanLiteralFormula const&, boost::any const&) const {
             return FormulaInformation();
         }
         
@@ -33,7 +33,7 @@ namespace storm {
             return boost::any_cast<FormulaInformation>(f.getSubformula().accept(*this, data)).join(boost::any_cast<FormulaInformation>(f.getConditionFormula().accept(*this)));
         }
         
-        boost::any FormulaInformationVisitor::visit(CumulativeRewardFormula const& f, boost::any const&) const {
+        boost::any FormulaInformationVisitor::visit(CumulativeRewardFormula const&, boost::any const&) const {
             return FormulaInformation();
         }
         
@@ -49,7 +49,7 @@ namespace storm {
             return f.getSubformula().accept(*this, data);
         }
         
-        boost::any FormulaInformationVisitor::visit(InstantaneousRewardFormula const& f, boost::any const&) const {
+        boost::any FormulaInformationVisitor::visit(InstantaneousRewardFormula const&, boost::any const&) const {
             return FormulaInformation();
         }
         
@@ -57,7 +57,7 @@ namespace storm {
             return f.getSubformula().accept(*this, data);
         }
         
-        boost::any FormulaInformationVisitor::visit(LongRunAverageRewardFormula const& f, boost::any const&) const {
+        boost::any FormulaInformationVisitor::visit(LongRunAverageRewardFormula const&, boost::any const&) const {
             return FormulaInformation();
         }
         
@@ -81,7 +81,7 @@ namespace storm {
             return boost::any_cast<FormulaInformation>(f.getSubformula().accept(*this, data)).setContainsRewardOperator();
         }
         
-        boost::any FormulaInformationVisitor::visit(TotalRewardFormula const& f, boost::any const&) const {
+        boost::any FormulaInformationVisitor::visit(TotalRewardFormula const&, boost::any const&) const {
             return FormulaInformation();
         }
         

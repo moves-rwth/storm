@@ -94,7 +94,7 @@ namespace storm {
              */
             static struct StateInformation determineRelevantAndProblematicStates(storm::models::sparse::Mdp<T> const& labeledMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
                 StateInformation result;
-                result.relevantStates = storm::utility::graph::performProbGreater0E(labeledMdp.getTransitionMatrix(), labeledMdp.getNondeterministicChoiceIndices(), labeledMdp.getBackwardTransitions(), phiStates, psiStates);
+                result.relevantStates = storm::utility::graph::performProbGreater0E(labeledMdp.getBackwardTransitions(), phiStates, psiStates);
                 result.relevantStates &= ~psiStates;
                 result.problematicStates = storm::utility::graph::performProb0E(labeledMdp.getTransitionMatrix(), labeledMdp.getNondeterministicChoiceIndices(), labeledMdp.getBackwardTransitions(), phiStates, psiStates);
                 result.problematicStates &= result.relevantStates;

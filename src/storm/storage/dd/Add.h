@@ -610,11 +610,9 @@ namespace storm {
             /*!
              * Retrieves an iterator that points past the end of the container.
              *
-             * @param enumerateDontCareMetaVariables If set to true, all meta variable assignments are enumerated, even
-             * if a meta variable does not at all influence the the function value.
              * @return An iterator that points past the end of the container.
              */
-            AddIterator<LibraryType, ValueType> end(bool enumerateDontCareMetaVariables = true) const;
+            AddIterator<LibraryType, ValueType> end() const;
             
             template<DdType LibraryTypePrime, typename ValueTypePrime>
             friend std::ostream & operator<<(std::ostream& out, Add<LibraryTypePrime, ValueTypePrime> const& add);

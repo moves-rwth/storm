@@ -2,9 +2,11 @@
 #include <set>
 #include <string>
 
-#include "macros.h"
-#include "shortestPaths.h"
-#include "graph.h"
+#include "storm/utility/macros.h"
+#include "storm/utility/shortestPaths.h"
+#include "storm/utility/graph.h"
+
+#include "storm/models/sparse/StandardRewardModel.h"
 
 // FIXME: I've accidentally used k=0 *twice* now without realizing that k>=1 is required!
 // Accessing zero should trigger a warning!

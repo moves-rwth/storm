@@ -282,14 +282,7 @@ namespace storm {
                     conditionalMetaEdge.components = components;
                     
                     // Set the action index.
-                    conditionalMetaEdge.actionIndex = Model::SILENT_ACTION_INDEX;
-                    if (vector.getOutput() != Model::SILENT_ACTION_NAME) {
-                        if (newModel.hasAction(vector.getOutput())) {
-                            conditionalMetaEdge.actionIndex = newModel.getActionIndex(vector.getOutput());
-                        } else {
-                            conditionalMetaEdge.actionIndex = newModel.addAction(Action(vector.getOutput()));
-                        }
-                    }
+                    conditionalMetaEdge.actionIndex = resultingActionIndex;
                     
                     result.push_back(conditionalMetaEdge);
                     
@@ -321,7 +314,7 @@ namespace storm {
             }
         }
         
-        void addEdgesToReachableLocations(Model const& model, std::vector<std::reference_wrapper<Automaton const>> const& composedAutomata, Automaton& newAutomaton, std::vector<ConditionalMetaEdge> const& conditionalMetaEdges) {
+        void addEdgesToReachableLocations(std::vector<std::reference_wrapper<Automaton const>> const& composedAutomata, Automaton& newAutomaton, std::vector<ConditionalMetaEdge> const& conditionalMetaEdges) {
             
             // Maintain a stack of locations that still need to be to explored.
             std::vector<std::vector<uint64_t>> locationsToExplore;
@@ -507,7 +500,7 @@ namespace storm {
             
             // Now that all meta edges have been built, we can explore the location space and add all edges based
             // on the templates.
-            addEdgesToReachableLocations(*this, composedAutomata, newAutomaton, conditionalMetaEdges);
+            addEdgesToReachableLocations(composedAutomata, newAutomaton, conditionalMetaEdges);
 
             // Fix all variables mentioned in assignments by applying the constructed remapping.
             newAutomaton.changeAssignmentVariables(variableRemapping);

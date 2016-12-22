@@ -276,7 +276,7 @@ namespace storm {
             }
             
             template<storm::dd::DdType DdType, class ValueType>
-            std::unique_ptr<CheckResult> HybridCtmcCslHelper<DdType, ValueType>::computeLongRunAverageProbabilities(storm::models::symbolic::Ctmc<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector, storm::dd::Bdd<DdType> const& psiStates, bool qualitative, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+            std::unique_ptr<CheckResult> HybridCtmcCslHelper<DdType, ValueType>::computeLongRunAverageProbabilities(storm::models::symbolic::Ctmc<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector, storm::dd::Bdd<DdType> const& psiStates, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
                 storm::dd::Add<DdType, ValueType> probabilityMatrix = computeProbabilityMatrix(rateMatrix, exitRateVector);
                 
                 // Create ODD for the translation.

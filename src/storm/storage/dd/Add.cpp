@@ -749,7 +749,7 @@ namespace storm {
         }
         
         template<DdType LibraryType, typename ValueType>
-        AddIterator<LibraryType, ValueType> Add<LibraryType, ValueType>::end(bool enumerateDontCareMetaVariables) const {
+        AddIterator<LibraryType, ValueType> Add<LibraryType, ValueType>::end() const {
             return internalAdd.end(this->getDdManager());
         }
         
@@ -786,7 +786,7 @@ namespace storm {
         
 #ifdef STORM_HAVE_CARL
 		template<DdType LibraryType, typename ValueType>
-        Add<LibraryType, ValueType> Add<LibraryType, ValueType>::replaceLeaves(std::map<storm::RationalFunctionVariable, std::pair<storm::expressions::Variable, std::pair<storm::RationalNumber, storm::RationalNumber>>> const& replacementMap) const {
+        Add<LibraryType, ValueType> Add<LibraryType, ValueType>::replaceLeaves(std::map<storm::RationalFunctionVariable, std::pair<storm::expressions::Variable, std::pair<storm::RationalNumber, storm::RationalNumber>>> const&) const {
 			STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Not yet implemented: replaceLeaves");
 		}
 

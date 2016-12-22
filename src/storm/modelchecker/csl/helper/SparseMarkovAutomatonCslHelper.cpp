@@ -402,7 +402,7 @@ namespace storm {
                     
                     if (!unionOfNonGoalMaximalEndComponents.empty()) {
                         // Now we need to check for which states there exists a scheduler that reaches one of the previously computed states.
-                        infinityStates = storm::utility::graph::performProbGreater0E(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions, storm::storage::BitVector(numberOfStates, true), unionOfNonGoalMaximalEndComponents);
+                        infinityStates = storm::utility::graph::performProbGreater0E(backwardTransitions, storm::storage::BitVector(numberOfStates, true), unionOfNonGoalMaximalEndComponents);
                     } else {
                         // Otherwise, we have no infinity states.
                         infinityStates = storm::storage::BitVector(numberOfStates);

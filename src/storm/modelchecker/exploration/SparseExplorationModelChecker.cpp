@@ -440,7 +440,7 @@ namespace storm {
                 // duplicate work is the following. Optimally, we would only do the MEC decomposition, because we need
                 // it anyway. However, when only detecting (accepting) MECs, we do not infer which of the other states
                 // (not contained in MECs) also have probability 0/1.
-                statesWithProbability0 = storm::utility::graph::performProb0A(relevantStatesMatrix, relevantStatesMatrix.getRowGroupIndices(), transposedMatrix, allStates, targetStates);
+                statesWithProbability0 = storm::utility::graph::performProb0A(transposedMatrix, allStates, targetStates);
                 targetStates.set(sink, true);
                 statesWithProbability1 = storm::utility::graph::performProb1E(relevantStatesMatrix, relevantStatesMatrix.getRowGroupIndices(), transposedMatrix, allStates, targetStates);
                 

@@ -48,15 +48,15 @@ namespace storm {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "This solver does not support model generation.");
         }
         
-        std::vector<storm::expressions::SimpleValuation> SmtSolver::allSat(std::vector<storm::expressions::Variable> const& important) {
+        std::vector<storm::expressions::SimpleValuation> SmtSolver::allSat(std::vector<storm::expressions::Variable> const&) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "This solver does not support model generation.");
         }
         
-        uint_fast64_t SmtSolver::allSat(std::vector<storm::expressions::Variable> const& important, std::function<bool(storm::expressions::SimpleValuation&)> const& callback) {
+        uint_fast64_t SmtSolver::allSat(std::vector<storm::expressions::Variable> const&, std::function<bool(storm::expressions::SimpleValuation&)> const&) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "This solver does not support model generation.");
         }
         
-        uint_fast64_t SmtSolver::allSat(std::vector<storm::expressions::Variable> const& important, std::function<bool(ModelReference&)> const& callback) {
+        uint_fast64_t SmtSolver::allSat(std::vector<storm::expressions::Variable> const&, std::function<bool(ModelReference&)> const&) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "This solver does not support model generation.");
         }
         
@@ -72,7 +72,7 @@ namespace storm {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "This solver does not support generation of interpolants.");
         }
 
-        storm::expressions::Expression SmtSolver::getInterpolant(std::vector<uint_fast64_t> const& groupsA) {
+        storm::expressions::Expression SmtSolver::getInterpolant(std::vector<uint_fast64_t> const&) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "This solver does not support generation of interpolants.");
         }
 

@@ -36,6 +36,7 @@ namespace storm {
                 case ModelType::SHA:
                     return "sha";
             }
+            return "invalid";
         }
 
         ModelType getModelType(std::string const& input) {

@@ -17,12 +17,12 @@ namespace storm {
             return result == LinearityStatus::LinearWithoutVariables || result == LinearityStatus::LinearContainsVariables;
         }
         
-        boost::any LinearityCheckVisitor::visit(IfThenElseExpression const& expression, boost::any const& data) {
+        boost::any LinearityCheckVisitor::visit(IfThenElseExpression const&, boost::any const&) {
             // An if-then-else expression is never linear.
             return LinearityStatus::NonLinear;
         }
         
-        boost::any LinearityCheckVisitor::visit(BinaryBooleanFunctionExpression const& expression, boost::any const& data) {
+        boost::any LinearityCheckVisitor::visit(BinaryBooleanFunctionExpression const&, boost::any const&) {
             // Boolean function applications are not allowed in linear expressions.
             return LinearityStatus::NonLinear;
         }
@@ -56,15 +56,15 @@ namespace storm {
             STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Illegal binary numerical expression operator.");
         }
         
-        boost::any LinearityCheckVisitor::visit(BinaryRelationExpression const& expression, boost::any const& data) {
+        boost::any LinearityCheckVisitor::visit(BinaryRelationExpression const&, boost::any const&) {
             return LinearityStatus::NonLinear;
         }
         
-        boost::any LinearityCheckVisitor::visit(VariableExpression const& expression, boost::any const& data) {
+        boost::any LinearityCheckVisitor::visit(VariableExpression const&, boost::any const&) {
             return LinearityStatus::LinearContainsVariables;
         }
         
-        boost::any LinearityCheckVisitor::visit(UnaryBooleanFunctionExpression const& expression, boost::any const& data) {
+        boost::any LinearityCheckVisitor::visit(UnaryBooleanFunctionExpression const&, boost::any const&) {
             // Boolean function applications are not allowed in linear expressions.
             return LinearityStatus::NonLinear;
         }
@@ -78,15 +78,15 @@ namespace storm {
             STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Illegal unary numerical expression operator.");
         }
         
-        boost::any LinearityCheckVisitor::visit(BooleanLiteralExpression const& expression, boost::any const& data) {
+        boost::any LinearityCheckVisitor::visit(BooleanLiteralExpression const&, boost::any const&) {
             return LinearityStatus::NonLinear;
         }
         
-        boost::any LinearityCheckVisitor::visit(IntegerLiteralExpression const& expression, boost::any const& data) {
+        boost::any LinearityCheckVisitor::visit(IntegerLiteralExpression const&, boost::any const&) {
             return LinearityStatus::LinearWithoutVariables;
         }
         
-        boost::any LinearityCheckVisitor::visit(RationalLiteralExpression const& expression, boost::any const& data) {
+        boost::any LinearityCheckVisitor::visit(RationalLiteralExpression const&, boost::any const&) {
             return LinearityStatus::LinearWithoutVariables;
         }
     }

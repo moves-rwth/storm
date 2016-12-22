@@ -2400,7 +2400,7 @@ namespace storm {
             }
                 
             template<typename RationalFunctionType, typename TP = typename RationalFunctionType::PolyType, carl::DisableIf<carl::needs_cache<TP>> = carl::dummy>
-            RationalFunctionType convertVariableToPolynomial(carl::Variable const& variable, std::shared_ptr<carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>>> cache) {
+            RationalFunctionType convertVariableToPolynomial(carl::Variable const& variable, std::shared_ptr<carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>>>) {
                 return RationalFunctionType(variable);
             }
             
