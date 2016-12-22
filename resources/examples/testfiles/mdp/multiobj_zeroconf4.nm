@@ -1,0 +1,153 @@
+// IPv4: PTA model with digitial clocks
+// multi-objective model of the host
+// gxn/dxp 28/09/09
+
+mdp
+
+//-------------------------------------------------------------
+// VARIABLES
+const int N=20; // number of abstract hosts
+const int K=4; // number of probes to send
+
+// PROBABILITIES
+const double old = N/65024; // probability pick an ip address being used
+//const double old = 0.5; // probability pick an ip address being used
+const double new = (1-old); // probability pick a new ip address
+
+// TIMING CONSTANTS
+const int CONSEC = 2;  // time interval between sending consecutive probles 
+const int TRANSTIME = 1; // upper bound on transmission time delay
+const int LONGWAIT = 60; // minimum time delay after a high number of address collisions
+const int DEFEND = 10;
+
+const int TIME_MAX_X = 60; // max value of clock x
+const int TIME_MAX_Y = 10; // max value of clock y
+const int TIME_MAX_Z = 1;  // max value of clock z
+
+// OTHER CONSTANTS
+const int MAXCOLL = 10;  // maximum number of collisions before long wait
+const int M=1; // time between sending and receiving a message
+
+
+//-------------------------------------------------------------
+// CONCRETE HOST
+module host0
+	
+	x : [0..TIME_MAX_X]; // first clock of the host
+	y : [0..TIME_MAX_Y]; // second clock of the host
+	
+	coll : [0..MAXCOLL]; // number of address collisions
+	probes : [0..K]; // counter (number of probes sent)
+	mess : [0..1]; // need to send a message or not
+	defend : [0..1]; // defend (if =1, try to defend IP address)
+	
+	ip : [1..2]; // ip address (1 - in use & 2 - fresh)
+	
+	l : [0..4] init 1; // location
+	// 0 : RECONFIGURE 
+	// 1 : RANDOM
+	// 2 : WAITSP
+	// 3 : WAITSG 
+	// 4 : USE
+	
+	// RECONFIGURE
+	[reset] l=0 -> (l'=1);
+	
+	// RANDOM (choose IP address)
+	[rec0] (l=1) -> true; // get message (ignore since have no ip address)
+	[rec1] (l=1) -> true; // get message (ignore since have no ip address)
+	// small number of collisions (choose straight away)
+	[] l=1 & coll<MAXCOLL -> 1/3*old : (l'=2) & (ip'=1) & (x'=0) 
+		                     + 1/3*old : (l'=2) & (ip'=1) & (x'=1) 
+		                     + 1/3*old : (l'=2) & (ip'=1) & (x'=2) 
+		                     + 1/3*new : (l'=2) & (ip'=2) & (x'=0) 
+		                     + 1/3*new : (l'=2) & (ip'=2) & (x'=1) 
+		                     + 1/3*new : (l'=2) & (ip'=2) & (x'=2); 
+	// large number of collisions: (wait for LONGWAIT)
+	[time] l=1 & coll=MAXCOLL & x<LONGWAIT -> (x'=min(x+1,TIME_MAX_X));
+	[]     l=1 & coll=MAXCOLL & x=LONGWAIT -> 1/3*old : (l'=2) & (ip'=1) & (x'=0) 
+			                                   + 1/3*old : (l'=2) & (ip'=1) & (x'=1) 
+			                                   + 1/3*old : (l'=2) & (ip'=1) & (x'=2) 
+			                                   + 1/3*new : (l'=2) & (ip'=2) & (x'=0) 
+			                                   + 1/3*new : (l'=2) & (ip'=2) & (x'=1) 
+			                                   + 1/3*new : (l'=2) & (ip'=2) & (x'=2);
+	
+	// WAITSP 
+	// let time pass
+	[time]  l=2 & x<2 -> (x'=min(x+1,2));
+	// send probe
+	[send1] l=2 & ip=1 & x=2  & probes<K -> (x'=0) & (probes'=probes+1);
+	[send2] l=2 & ip=2 & x=2  & probes<K -> (x'=0) & (probes'=probes+1);
+	// sent K probes and waited 2 seconds
+	[] l=2 & x=2 & probes=K -> (l'=3) & (probes'=0) & (coll'=0) & (x'=0);
+	// get message and ip does not match: ignore
+	[rec0] l=2 & ip!=0 -> (l'=l);
+	[rec1] l=2 & ip!=1 -> (l'=l);
+	// get a message with matching ip: reconfigure
+	[rec1] l=2 & ip=1 -> (l'=0) & (coll'=min(coll+1,MAXCOLL)) & (x'=0) & (probes'=0);
+	
+	// WAITSG (sends two gratuitious arp probes)
+	// time passage
+	[time] l=3 & mess=0 & defend=0 & x<CONSEC -> (x'=min(x+1,TIME_MAX_X)); 
+	[time] l=3 & mess=0 & defend=1 & x<CONSEC -> (x'=min(x+1,TIME_MAX_X)) & (y'=min(y+1,DEFEND));
+	
+	// receive message and same ip: defend
+	[rec1] l=3 & mess=0 & ip=1 & (defend=0 | y>=DEFEND) -> (defend'=1) & (mess'=1) & (y'=0);
+	// receive message and same ip: defer
+	[rec1] l=3 & mess=0 & ip=1 & (defend=0 | y<DEFEND) -> (l'=0) & (probes'=0) & (defend'=0) & (x'=0) & (y'=0);
+	// receive message and different ip
+	[rec0] l=3 & mess=0 & ip!=0 -> (l'=l);
+	[rec1] l=3 & mess=0 & ip!=1 -> (l'=l);
+	
+		
+	// send probe reply or message for defence
+	[send1] l=3 & ip=1 & mess=1 -> (mess'=0);
+	[send2] l=3 & ip=2 & mess=1 -> (mess'=0);
+	// send first gratuitous arp message
+	[send1] l=3 & ip=1 & mess=0 & x=CONSEC & probes<1 -> (x'=0) & (probes'=probes+1);
+	[send2] l=3 & ip=2 & mess=0 & x=CONSEC & probes<1 -> (x'=0) & (probes'=probes+1);
+	// send second gratuitous arp message (move to use)
+	[send1] l=3 & ip=1 & mess=0 & x=CONSEC & probes=1 -> (l'=4) & (x'=0) & (y'=0) & (probes'=0);
+	[send2] l=3 & ip=2 & mess=0 & x=CONSEC & probes=1 -> (l'=4) & (x'=0) & (y'=0) & (probes'=0);
+	
+	// USE (only interested in reaching this state so do not need to add anything here)
+	[] l=4 -> true;
+	
+endmodule
+
+//-------------------------------------------------------------
+// error automaton for the environment assumption
+// do not get a reply when K probes are sent
+
+module env_error4
+
+	env : [0..1]; // 0 active and 1 done
+	k : [0..4]; // counts the number of messages sent
+	c1 : [0..M+1]; // time since first message
+	c2 : [0..M+1]; // time since second message
+	c3 : [0..M+1]; // time since third message
+	c4 : [0..M+1]; // time since fourth message
+	error : [0..1];
+
+	// message with new ip address arrives so done
+	[send2] error=0 & env=0 -> (env'=1);
+	// message with old ip address arrives so count
+	[send1] error=0 & env=0 -> (k'=min(k+1,K));
+	// time passgae so update relevant clocks
+	[time] error=0 & env=0 & k=0 -> true;
+	[time] error=0 & env=0 & k=1 & min(c1,c2,c3,c4)<M -> (c1'=min(c1+1,M+1));
+	[time] error=0 & env=0 & k=2 & min(c1,c2,c3,c4)<M -> (c1'=min(c1+1,M+1)) & (c2'=min(c2+1,M+1));
+	[time] error=0 & env=0 & k=3 & min(c1,c2,c3,c4)<M -> (c1'=min(c1+1,M+1)) & (c2'=min(c2+1,M+1)) & (c3'=min(c3+1,M+1));
+	[time] error=0 & env=0 & k=4 & min(c1,c2,c3,c4)<M -> (c1'=min(c1+1,M+1)) & (c2'=min(c2+1,M+1)) & (c3'=min(c3+1,M+1)) & (c4'=min(c4+1,M+1));
+	// all clocks reached their bound so an error
+	[time] error=0 & env=0 & min(c1,c2,c3,c4)=M -> (error'=1); 
+	// send a reply (then done)
+	[rec1] error=0 & env=0 & k>0 & min(c1,c2,c3,c4)<=M -> (env'=1);
+	// finished so any action can be performed
+	[time]  error=1 | env=1 -> true;
+	[send1]  error=1 | env=1 -> true;
+	[send2]  error=1 | env=1 -> true;
+	[send2]  error=1 | env=1 -> true;
+	[rec1]  error=1 | env=1 -> true;
+
+endmodule
