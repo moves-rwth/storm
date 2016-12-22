@@ -68,7 +68,7 @@ namespace storm {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "This solver does not support generation of unsatisfiable cores.");
         }
         
-        void SmtSolver::setInterpolationGroup(uint_fast64_t group) {
+        void SmtSolver::setInterpolationGroup(uint_fast64_t) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "This solver does not support generation of interpolants.");
         }
 
@@ -84,7 +84,7 @@ namespace storm {
             return manager;
         }
         
-        bool SmtSolver::setTimeout(uint_fast64_t milliseconds) {
+        bool SmtSolver::setTimeout(uint_fast64_t) {
             return false;
         }
         

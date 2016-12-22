@@ -103,7 +103,7 @@ namespace storm {
             return boost::any();
         }
         
-        boost::any VariableSetPredicateSplitter::visit(BinaryNumericalFunctionExpression const& expression, boost::any const&) {
+        boost::any VariableSetPredicateSplitter::visit(BinaryNumericalFunctionExpression const&, boost::any const&) {
             return boost::any();
         }
         

@@ -49,7 +49,7 @@ namespace storm {
             }
             
             template<typename ValueType>
-            uint_fast64_t estimateComplexity(ValueType const& value) {
+            uint_fast64_t estimateComplexity(ValueType const&) {
                 return 1;
             }
             
@@ -91,7 +91,7 @@ namespace storm {
             }
             
             template<typename ValueType>
-            uint_fast64_t computeStatePenaltyRegularExpression(storm::storage::sparse::state_type const& state, storm::storage::FlexibleSparseMatrix<ValueType> const& transitionMatrix, storm::storage::FlexibleSparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& oneStepProbabilities) {
+            uint_fast64_t computeStatePenaltyRegularExpression(storm::storage::sparse::state_type const& state, storm::storage::FlexibleSparseMatrix<ValueType> const& transitionMatrix, storm::storage::FlexibleSparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const&) {
                 return backwardTransitions.getRow(state).size() * transitionMatrix.getRow(state).size();
             }
             

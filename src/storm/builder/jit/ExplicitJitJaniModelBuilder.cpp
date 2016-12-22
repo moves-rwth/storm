@@ -2405,7 +2405,7 @@ namespace storm {
             }
             
             template<typename ValueType>
-            std::vector<storm::RationalFunction> getParameters(storm::jani::Model const&, std::shared_ptr<carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>>> cache) {
+            std::vector<storm::RationalFunction> getParameters(storm::jani::Model const&, std::shared_ptr<carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>>>) {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidStateException, "This function must not be called for this type.");
             }
                 

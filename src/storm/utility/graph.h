@@ -305,22 +305,6 @@ namespace storm {
             storm::storage::BitVector performProb0A(storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
             
             /*!
-             * Computes the sets of states that have probability 0 of satisfying phi until psi under all
-             * possible resolutions of non-determinism in a non-deterministic model. Stated differently,
-             * this means that these states have probability 0 of satisfying phi until psi even if the
-             * scheduler tries to maximize this probability.
-             *
-             * @param model The model whose graph structure to search.
-             * @param backwardTransitions The reversed transition relation of the model.
-             * @param phiStates The set of all states satisfying phi.
-             * @param psiStates The set of all states satisfying psi.
-             * @param useStepBound A flag that indicates whether or not to use the given number of maximal steps for the search.
-             * @param maximalSteps The maximal number of steps to reach the psi states.
-             * @return A bit vector that represents all states with probability 0.
-             */
-            template <typename T, typename RM>
-            storm::storage::BitVector performProb0A(storm::models::sparse::NondeterministicModel<T, RM> const& model, storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) ;
-            /*!
              * Computes the sets of states that have probability 1 of satisfying phi until psi under at least
              * one possible resolution of non-determinism in a non-deterministic model. Stated differently,
              * this means that these states have probability 1 of satisfying phi until psi if the

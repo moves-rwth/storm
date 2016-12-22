@@ -262,7 +262,7 @@ namespace storm {
 
         }
         
-        boost::any FormulaToJaniJson::visit(storm::logic::LongRunAverageRewardFormula const& f, boost::any const& data) const {
+        boost::any FormulaToJaniJson::visit(storm::logic::LongRunAverageRewardFormula const&, boost::any const&) const {
 //            modernjson::json opDecl;
 //            if(f.()) {
 //                auto bound = f.getBound();
