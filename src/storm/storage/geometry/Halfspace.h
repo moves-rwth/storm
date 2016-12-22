@@ -41,7 +41,7 @@ namespace storm {
                  * In contrast to the euclideanDistance method, there are no inaccuracies introduced (providing ValueType is exact for +, -, and *)
                  */
                 ValueType distance(std::vector<ValueType> const& point) const {
-                    return std::max(storm::utility::zero<ValueType>(), storm::utility::vector::dotProduct(point, normalVector()) - offset());
+                    return std::max(storm::utility::zero<ValueType>(), (ValueType) (storm::utility::vector::dotProduct(point, normalVector()) - offset()));
                 }
                 
                 /*
