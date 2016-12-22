@@ -229,7 +229,7 @@ TEST(GraphTest, SymbolicProb01StochasticGameDieSmall) {
     storm::dd::Bdd<storm::dd::DdType::CUDD> targetStates = game.getStates(initialPredicates[0], true);
     
     storm::utility::graph::GameProb01Result<storm::dd::DdType::CUDD> result = storm::utility::graph::performProb0(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Minimize, storm::OptimizationDirection::Minimize, true, true);
-    EXPECT_EQ(1, result.getPlayer1States().getNonZeroCount());
+    EXPECT_EQ(1ull, result.getPlayer1States().getNonZeroCount());
     EXPECT_TRUE(result.hasPlayer1Strategy());
     EXPECT_TRUE(result.hasPlayer2Strategy());
     

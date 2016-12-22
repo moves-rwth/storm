@@ -539,7 +539,7 @@ namespace storm {
                     
                     // (2) min/min: compute prob1 using the MDP functions
                     storm::dd::Bdd<Type> candidates = game.getReachableStates() && !result.prob0Min.player1States;
-                    storm::dd::Bdd<Type> prob1MinMinMdp = storm::utility::graph::performProb1A(game, transitionMatrixBdd, constraintStates, previousQualitativeResult ? previousQualitativeResult.get().prob1Min.player1States : targetStates, candidates);
+                    storm::dd::Bdd<Type> prob1MinMinMdp = storm::utility::graph::performProb1A(game, transitionMatrixBdd, previousQualitativeResult ? previousQualitativeResult.get().prob1Min.player1States : targetStates, candidates);
 
                     // (3) min/min: compute prob1 using the game functions
                     result.prob1Min = storm::utility::graph::performProb1(game, transitionMatrixBdd, constraintStates, targetStates, player1Direction, storm::OptimizationDirection::Minimize, true, true, boost::make_optional(prob1MinMinMdp));
