@@ -169,7 +169,7 @@ namespace storm {
 
                             // note that distances are probabilities, thus they are multiplied and larger is better
                             T alternateDistance = shortestPathDistances[currentNode] * convertDistance(currentNode, otherNode, transition.getValue());
-                            assert(zero<T>() <= alternateDistance <= one<T>()); // FIXME: there is a negative transition! SM gives us a placeholder!
+                            assert((zero<T>() <= alternateDistance) && (alternateDistance <= one<T>()));
                             if (alternateDistance > shortestPathDistances[otherNode]) {
                                 shortestPathDistances[otherNode] = alternateDistance;
                                 shortestPathPredecessors[otherNode] = boost::optional<state_t>(currentNode);
