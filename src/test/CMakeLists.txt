@@ -17,8 +17,7 @@ foreach (testsuite abstraction adapter builder logic modelchecker parser permiss
 	  target_link_libraries(test-${testsuite} ${STORM_TEST_LINK_LIBRARIES})
 
 	  add_dependencies(test-${testsuite} test-resources)
-	  add_test(run-test-${testsuite} test-${testsuite})
-	  add_dependencies(check test-${testsuite})
-	  add_dependencies(check-verbose test-${testsuite})
+	  add_test(NAME run-test-${testsuite} COMMAND $<TARGET_FILE:test-${testsuite}>)
+      add_dependencies(tests test-${testsuite})
 	
 endforeach ()

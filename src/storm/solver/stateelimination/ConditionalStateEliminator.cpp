@@ -13,12 +13,12 @@ namespace storm {
             
             template<typename ValueType>
             void ConditionalStateEliminator<ValueType>::updateValue(storm::storage::sparse::state_type const& state, ValueType const& loopProbability) {
-                oneStepProbabilities[state] = storm::utility::simplify(loopProbability * oneStepProbabilities[state]);
+                oneStepProbabilities[state] = storm::utility::simplify((ValueType) (loopProbability * oneStepProbabilities[state]));
             }
             
             template<typename ValueType>
             void ConditionalStateEliminator<ValueType>::updatePredecessor(storm::storage::sparse::state_type const& predecessor, ValueType const& probability, storm::storage::sparse::state_type const& state) {
-                oneStepProbabilities[predecessor] = storm::utility::simplify(oneStepProbabilities[predecessor] * storm::utility::simplify(probability * oneStepProbabilities[state]));
+                oneStepProbabilities[predecessor] = storm::utility::simplify((ValueType) (oneStepProbabilities[predecessor] * storm::utility::simplify((ValueType) (probability * oneStepProbabilities[state]))));
             }
                         
             template<typename ValueType>

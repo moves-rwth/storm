@@ -58,8 +58,7 @@ namespace storm {
                     for (auto entryIt = entriesInRow.begin(), entryIte = entriesInRow.end(); entryIt != entryIte; ++entryIt) {
                         // Only scale the entries in a different column.
                         if (entryIt->getColumn() != column) {
-                            auto tmpVal = entryIt->getValue() * columnValue;
-                            entryIt->setValue(storm::utility::simplify(tmpVal));
+                            entryIt->setValue(storm::utility::simplify((ValueType) (entryIt->getValue() * columnValue)));
                         }
                     }
                     updateValue(column, columnValue);

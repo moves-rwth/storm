@@ -354,10 +354,14 @@ set(STORM_GENERATED_SOURCES "${PROJECT_BINARY_DIR}/src/storm/utility/storm-versi
 include_directories("${PROJECT_BINARY_DIR}/include")
 
 include(CTest)
+# Compiles all tests
+add_custom_target(tests)
+# Compiles and runs all tests
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND})
 set(CMAKE_CTEST_COMMAND_VERBOSE ${CMAKE_CTEST_COMMAND} -V)
 add_custom_target(check-verbose COMMAND ${CMAKE_CTEST_COMMAND_VERBOSE})
-
+add_dependencies(check tests)
+add_dependencies(check-verbose tests)
 
 set(STORM_TARGETS "")
 add_subdirectory(src)

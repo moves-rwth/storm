@@ -396,7 +396,7 @@ namespace storm {
              */
             template<class ValueType1, class ValueType2>
             void scaleVectorInPlace(std::vector<ValueType1>& target, ValueType2 const& factor) {
-                applyPointwise<ValueType1, ValueType2>(target, target, [&] (ValueType1 const& argument) -> ValueType1 { return argument * factor; });
+                applyPointwise<ValueType1, ValueType1>(target, target, [&] (ValueType1 const& argument) -> ValueType1 { return argument * factor; });
             }
             
             /*!

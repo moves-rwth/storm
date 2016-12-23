@@ -312,10 +312,10 @@ namespace storm {
         RationalNumber convertNumber(double const& number){
             return carl::rationalize<RationalNumber>(number);
         }
-        
+
         template<>
         RationalNumber convertNumber(uint_fast64_t const& number){
-            return RationalNumber(number);
+            return carl::rationalize<RationalNumber>(number);
         }
 
         template<>
