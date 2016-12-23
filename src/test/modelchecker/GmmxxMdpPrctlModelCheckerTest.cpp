@@ -200,14 +200,14 @@ TEST(GmmxxMdpPrctlModelCheckerTest, SchedulerGeneration) {
     storm::generator::NextStateGeneratorOptions options;
     options.setBuildAllLabels();
     std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program, options).build();
-    EXPECT_EQ(4ul, model->getNumberOfStates());
-    EXPECT_EQ(11ul, model->getNumberOfTransitions());
+    EXPECT_EQ(4ull, model->getNumberOfStates());
+    EXPECT_EQ(11ull, model->getNumberOfTransitions());
     
     ASSERT_EQ(model->getType(), storm::models::ModelType::Mdp);
 
     std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = model->as<storm::models::sparse::Mdp<double>>();
 
-    EXPECT_EQ(7ul, mdp->getNumberOfChoices());
+    EXPECT_EQ(7ull, mdp->getNumberOfChoices());
 
     auto solverFactory = std::make_unique<storm::solver::GmmxxMinMaxLinearEquationSolverFactory<double>>();
     solverFactory->getSettings().setSolutionMethod(storm::solver::StandardMinMaxLinearEquationSolverSettings<double>::SolutionMethod::PolicyIteration);
@@ -223,10 +223,10 @@ TEST(GmmxxMdpPrctlModelCheckerTest, SchedulerGeneration) {
     ASSERT_TRUE(result->isExplicitQuantitativeCheckResult());
     ASSERT_TRUE(result->asExplicitQuantitativeCheckResult<double>().hasScheduler());
     storm::storage::Scheduler const& scheduler = result->asExplicitQuantitativeCheckResult<double>().getScheduler();
-    EXPECT_EQ(0, scheduler.getChoice(0));
-    EXPECT_EQ(1, scheduler.getChoice(1));
-    EXPECT_EQ(0, scheduler.getChoice(2));
-    EXPECT_EQ(0, scheduler.getChoice(3));
+    EXPECT_EQ(0ull, scheduler.getChoice(0));
+    EXPECT_EQ(1ull, scheduler.getChoice(1));
+    EXPECT_EQ(0ull, scheduler.getChoice(2));
+    EXPECT_EQ(0ull, scheduler.getChoice(3));
     
     formula = formulaParser.parseSingleFormulaFromString("Pmax=? [F \"target\"]");
     
@@ -237,10 +237,10 @@ TEST(GmmxxMdpPrctlModelCheckerTest, SchedulerGeneration) {
     ASSERT_TRUE(result->isExplicitQuantitativeCheckResult());
     ASSERT_TRUE(result->asExplicitQuantitativeCheckResult<double>().hasScheduler());
     storm::storage::Scheduler const& scheduler2 = result->asExplicitQuantitativeCheckResult<double>().getScheduler();
-    EXPECT_EQ(1, scheduler2.getChoice(0));
-    EXPECT_EQ(2, scheduler2.getChoice(1));
-    EXPECT_EQ(0, scheduler2.getChoice(2));
-    EXPECT_EQ(0, scheduler2.getChoice(3));
+    EXPECT_EQ(1ull, scheduler2.getChoice(0));
+    EXPECT_EQ(2ull, scheduler2.getChoice(1));
+    EXPECT_EQ(0ull, scheduler2.getChoice(2));
+    EXPECT_EQ(0ull, scheduler2.getChoice(3));
 }
 
 TEST(GmmxxMdpPrctlModelCheckerTest, TinyRewards) {
@@ -250,14 +250,14 @@ TEST(GmmxxMdpPrctlModelCheckerTest, TinyRewards) {
     storm::parser::FormulaParser formulaParser;
     
     std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program, storm::generator::NextStateGeneratorOptions(true, true)).build();
-    EXPECT_EQ(3ul, model->getNumberOfStates());
-    EXPECT_EQ(4ul, model->getNumberOfTransitions());
+    EXPECT_EQ(3ull, model->getNumberOfStates());
+    EXPECT_EQ(4ull, model->getNumberOfTransitions());
     
     ASSERT_EQ(model->getType(), storm::models::ModelType::Mdp);
 
     std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = model->as<storm::models::sparse::Mdp<double>>();
 
-    EXPECT_EQ(4ul, mdp->getNumberOfChoices());
+    EXPECT_EQ(4ull, mdp->getNumberOfChoices());
 
     storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> checker(*mdp, std::make_unique<storm::solver::GmmxxMinMaxLinearEquationSolverFactory<double>>());
     
@@ -268,8 +268,8 @@ TEST(GmmxxMdpPrctlModelCheckerTest, TinyRewards) {
     std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(checkTask);
     
     ASSERT_TRUE(result->isExplicitQuantitativeCheckResult());
-    EXPECT_NEAR(1,result->asExplicitQuantitativeCheckResult<double>().getValueVector()[0], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
-    EXPECT_NEAR(1,result->asExplicitQuantitativeCheckResult<double>().getValueVector()[1], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
-    EXPECT_NEAR(0,result->asExplicitQuantitativeCheckResult<double>().getValueVector()[2], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
+    EXPECT_NEAR(1, result->asExplicitQuantitativeCheckResult<double>().getValueVector()[0], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
+    EXPECT_NEAR(1, result->asExplicitQuantitativeCheckResult<double>().getValueVector()[1], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
+    EXPECT_NEAR(0, result->asExplicitQuantitativeCheckResult<double>().getValueVector()[2], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
     
 }

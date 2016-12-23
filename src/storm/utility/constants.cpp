@@ -315,7 +315,8 @@ namespace storm {
 
         template<>
         RationalNumber convertNumber(uint_fast64_t const& number){
-            return carl::rationalize<RationalNumber>(number);
+            STORM_LOG_ASSERT(static_cast<carl::uint>(number) == number, "Rationalizing failed, because the number is too large.");
+            return carl::rationalize<RationalNumber>(static_cast<carl::uint>(number));
         }
 
         template<>

@@ -14,8 +14,8 @@ TEST(PrismProgramTest, FlattenModules) {
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
     
     ASSERT_NO_THROW(program = program.flattenModules(smtSolverFactory));
-    EXPECT_EQ(1, program.getNumberOfModules());
-    EXPECT_EQ(74, program.getModule(0).getNumberOfCommands());
+    EXPECT_EQ(1ull, program.getNumberOfModules());
+    EXPECT_EQ(74ull, program.getModule(0).getNumberOfCommands());
 }
 
 TEST(PrismProgramTest, FlattenModules_Wlan_Mathsat) {
@@ -25,8 +25,8 @@ TEST(PrismProgramTest, FlattenModules_Wlan_Mathsat) {
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
 
     ASSERT_NO_THROW(program = program.flattenModules(smtSolverFactory));
-    EXPECT_EQ(1, program.getNumberOfModules());
-    EXPECT_EQ(179, program.getModule(0).getNumberOfCommands());
+    EXPECT_EQ(1ull, program.getNumberOfModules());
+    EXPECT_EQ(179ull, program.getModule(0).getNumberOfCommands());
 }
 
 TEST(PrismProgramTest, FlattenModules_Csma_Mathsat) {
@@ -36,8 +36,8 @@ TEST(PrismProgramTest, FlattenModules_Csma_Mathsat) {
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
 
     ASSERT_NO_THROW(program = program.flattenModules(smtSolverFactory));
-    EXPECT_EQ(1, program.getNumberOfModules());
-    EXPECT_EQ(70, program.getModule(0).getNumberOfCommands());
+    EXPECT_EQ(1ull, program.getNumberOfModules());
+    EXPECT_EQ(70ull, program.getModule(0).getNumberOfCommands());
 }
 
 TEST(PrismProgramTest, FlattenModules_Firewire_Mathsat) {
@@ -47,8 +47,8 @@ TEST(PrismProgramTest, FlattenModules_Firewire_Mathsat) {
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
 
     ASSERT_NO_THROW(program = program.flattenModules(smtSolverFactory));
-    EXPECT_EQ(1, program.getNumberOfModules());
-    EXPECT_EQ(5024, program.getModule(0).getNumberOfCommands());
+    EXPECT_EQ(1ull, program.getNumberOfModules());
+    EXPECT_EQ(5024ull, program.getModule(0).getNumberOfCommands());
 }
 
 TEST(PrismProgramTest, FlattenModules_Coin_Mathsat) {
@@ -58,8 +58,8 @@ TEST(PrismProgramTest, FlattenModules_Coin_Mathsat) {
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
 
     ASSERT_NO_THROW(program = program.flattenModules(smtSolverFactory));
-    EXPECT_EQ(1, program.getNumberOfModules());
-    EXPECT_EQ(13, program.getModule(0).getNumberOfCommands());
+    EXPECT_EQ(1ull, program.getNumberOfModules());
+    EXPECT_EQ(13ull, program.getModule(0).getNumberOfCommands());
 }
 
 TEST(PrismProgramTest, FlattenModules_Dice_Mathsat) {
@@ -69,8 +69,8 @@ TEST(PrismProgramTest, FlattenModules_Dice_Mathsat) {
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
 
     ASSERT_NO_THROW(program = program.flattenModules(smtSolverFactory));
-    EXPECT_EQ(1, program.getNumberOfModules());
-    EXPECT_EQ(16, program.getModule(0).getNumberOfCommands());
+    EXPECT_EQ(1ull, program.getNumberOfModules());
+    EXPECT_EQ(16ull, program.getModule(0).getNumberOfCommands());
 }
 #endif
 
@@ -82,8 +82,8 @@ TEST(PrismProgramTest, FlattenModules_Leader_Z3) {
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::Z3SmtSolverFactory>();
     
     ASSERT_NO_THROW(program = program.flattenModules(smtSolverFactory));
-    EXPECT_EQ(1, program.getNumberOfModules());
-    EXPECT_EQ(74, program.getModule(0).getNumberOfCommands());
+    EXPECT_EQ(1ull, program.getNumberOfModules());
+    EXPECT_EQ(74ull, program.getModule(0).getNumberOfCommands());
 }
 
 TEST(PrismProgramTest, FlattenModules_Wlan_Z3) {
@@ -93,8 +93,8 @@ TEST(PrismProgramTest, FlattenModules_Wlan_Z3) {
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::Z3SmtSolverFactory>();
     
     ASSERT_NO_THROW(program = program.flattenModules(smtSolverFactory));
-    EXPECT_EQ(1, program.getNumberOfModules());
-    EXPECT_EQ(179, program.getModule(0).getNumberOfCommands());
+    EXPECT_EQ(1ull, program.getNumberOfModules());
+    EXPECT_EQ(179ull, program.getModule(0).getNumberOfCommands());
 }
 
 TEST(PrismProgramTest, FlattenModules_Csma_Z3) {
@@ -104,8 +104,8 @@ TEST(PrismProgramTest, FlattenModules_Csma_Z3) {
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::Z3SmtSolverFactory>();
     
     ASSERT_NO_THROW(program = program.flattenModules(smtSolverFactory));
-    EXPECT_EQ(1, program.getNumberOfModules());
-    EXPECT_EQ(70, program.getModule(0).getNumberOfCommands());
+    EXPECT_EQ(1ull, program.getNumberOfModules());
+    EXPECT_EQ(70ull, program.getModule(0).getNumberOfCommands());
 }
 
 TEST(PrismProgramTest, FlattenModules_Firewire_Z3) {
@@ -115,8 +115,8 @@ TEST(PrismProgramTest, FlattenModules_Firewire_Z3) {
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::Z3SmtSolverFactory>();
     
     ASSERT_NO_THROW(program = program.flattenModules(smtSolverFactory));
-    EXPECT_EQ(1, program.getNumberOfModules());
-    EXPECT_EQ(5024, program.getModule(0).getNumberOfCommands());
+    EXPECT_EQ(1ull, program.getNumberOfModules());
+    EXPECT_EQ(5024ull, program.getModule(0).getNumberOfCommands());
 }
 
 TEST(PrismProgramTest, FlattenModules_Coin_Z3) {
@@ -126,8 +126,8 @@ TEST(PrismProgramTest, FlattenModules_Coin_Z3) {
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::Z3SmtSolverFactory>();
     
     ASSERT_NO_THROW(program = program.flattenModules(smtSolverFactory));
-    EXPECT_EQ(1, program.getNumberOfModules());
-    EXPECT_EQ(13, program.getModule(0).getNumberOfCommands());
+    EXPECT_EQ(1ull, program.getNumberOfModules());
+    EXPECT_EQ(13ull, program.getModule(0).getNumberOfCommands());
 }
 
 TEST(PrismProgramTest, FlattenModules_Dice_Z3) {
@@ -137,8 +137,8 @@ TEST(PrismProgramTest, FlattenModules_Dice_Z3) {
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::Z3SmtSolverFactory>();
     
     ASSERT_NO_THROW(program = program.flattenModules(smtSolverFactory));
-    EXPECT_EQ(1, program.getNumberOfModules());
-    EXPECT_EQ(16, program.getModule(0).getNumberOfCommands());
+    EXPECT_EQ(1ull, program.getNumberOfModules());
+    EXPECT_EQ(16ull, program.getModule(0).getNumberOfCommands());
 }
 #endif
 
