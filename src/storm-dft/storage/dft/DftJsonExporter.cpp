@@ -97,7 +97,9 @@ namespace storm {
         template<typename ValueType>
         modernjson::json DftJsonExporter<ValueType>::translateEdge(std::shared_ptr<DFTGate<ValueType> const> const& gate, DFTElementCPointer const& child, size_t index) {
             modernjson::json nodeData;
-            nodeData["id"] = currentId;
+            std::stringstream stream;
+            stream << gate->id() << "e" << child->id();
+            nodeData["id"] = stream.str();
             ++currentId;
             nodeData["source"] = gate->id();
             nodeData["target"] = child->id();
