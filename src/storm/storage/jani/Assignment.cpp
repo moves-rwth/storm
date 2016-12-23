@@ -1,5 +1,7 @@
 #include "storm/storage/jani/Assignment.h"
 
+#include "storm/storage/expressions/LinearityCheckVisitor.h"
+
 #include "storm/utility/macros.h"
 #include "storm/exceptions/NotImplementedException.h"
 
@@ -40,6 +42,11 @@ namespace storm  {
         
         int64_t Assignment::getLevel() const {
             return level;
+        }
+        
+        bool Assignment::isLinear() const {
+            storm::expressions::LinearityCheckVisitor linearityChecker;
+            return linearityChecker.check(this->getAssignedExpression());
         }
         
         std::ostream& operator<<(std::ostream& stream, Assignment const& assignment) {

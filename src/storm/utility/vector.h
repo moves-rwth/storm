@@ -20,6 +20,18 @@ namespace storm {
     namespace utility {
         namespace vector {
 
+            template<typename ValueType>
+            struct VectorHash {
+                size_t operator()(std::vector<ValueType> const& vec) const {
+                    std::hash<ValueType> hasher;
+                    std::size_t seed = 0;
+                    for (ValueType const& element : vec) {
+                        seed ^= hasher(element) + 0x9e3779b9 + (seed<<6) + (seed>>2);
+                    }
+                    return seed;
+                }
+            };
+            
             /*!
              * Finds the given element in the given vector.
              * If the vector does not contain the element, it is inserted (at the end of vector).
@@ -384,7 +396,7 @@ namespace storm {
              */
             template<class ValueType1, class ValueType2>
             void scaleVectorInPlace(std::vector<ValueType1>& target, ValueType2 const& factor) {
-                applyPointwise<ValueType1, ValueType2>(target, target, [&] (ValueType1 const& argument) -> ValueType1 { return argument * factor; });
+                applyPointwise<ValueType1, ValueType1>(target, target, [&] (ValueType1 const& argument) -> ValueType1 { return argument * factor; });
             }
             
             /*!
@@ -817,7 +829,7 @@ namespace storm {
              * @return String containing the representation of the vector.
              */
             template<typename ValueType>
-            std::string toString(std::vector<ValueType> vector) {
+            std::string toString(std::vector<ValueType> const& vector) {
                 std::stringstream stream;
                 stream << "vector (" << vector.size() << ") [ ";
                 if (!vector.empty()) {

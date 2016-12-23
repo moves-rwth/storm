@@ -166,7 +166,7 @@ namespace storm {
             }
         }
         
-        storm::expressions::Expression ExpressionCreator::createIntegerLiteralExpression(int value, bool& pass) const {
+        storm::expressions::Expression ExpressionCreator::createIntegerLiteralExpression(int value, bool&) const {
             if (this->createExpressions) {
                 return manager.integer(value);
             } else {
@@ -175,7 +175,7 @@ namespace storm {
         }
         
         
-        storm::expressions::Expression ExpressionCreator::createBooleanLiteralExpression(bool value, bool& pass) const {
+        storm::expressions::Expression ExpressionCreator::createBooleanLiteralExpression(bool value, bool&) const {
             if (this->createExpressions) {
                 return manager.boolean(value);
             } else {
@@ -213,7 +213,7 @@ namespace storm {
             return manager.boolean(false);
         }
         
-        storm::expressions::Expression ExpressionCreator::getIdentifierExpression(std::string const& identifier, bool allowBacktracking, bool& pass) const {
+        storm::expressions::Expression ExpressionCreator::getIdentifierExpression(std::string const& identifier, bool& pass) const {
             if (this->createExpressions) {
                 STORM_LOG_THROW(this->identifiers != nullptr, storm::exceptions::WrongFormatException, "Unable to substitute identifier expressions without given mapping.");
                 storm::expressions::Expression const* expression = this->identifiers->find(identifier);

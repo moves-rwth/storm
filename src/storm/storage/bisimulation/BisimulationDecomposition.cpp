@@ -41,7 +41,7 @@ namespace storm {
                 this->preserveSingleFormula(model, *formulas.front());
             } else {
                 for (auto const& formula : formulas) {
-                    preserveFormula(model, *formula);
+                    preserveFormula(*formula);
                 }
             }
         }
@@ -52,7 +52,7 @@ namespace storm {
         }
         
         template<typename ModelType, typename BlockDataType>
-        void BisimulationDecomposition<ModelType, BlockDataType>::Options::preserveFormula(ModelType const& model, storm::logic::Formula const& formula) {
+        void BisimulationDecomposition<ModelType, BlockDataType>::Options::preserveFormula(storm::logic::Formula const& formula) {
             // Disable the measure driven initial partition.
             measureDrivenInitialPartition = false;
             phiStates = boost::none;

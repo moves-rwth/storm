@@ -14,7 +14,7 @@ namespace storm {
             return boost::any_cast<std::shared_ptr<Formula>>(result);
         }
         
-        boost::any LabelSubstitutionVisitor::visit(AtomicLabelFormula const& f, boost::any const& data) const {
+        boost::any LabelSubstitutionVisitor::visit(AtomicLabelFormula const& f, boost::any const&) const {
             auto it = labelToExpressionMapping.find(f.getLabel());
             if (it != labelToExpressionMapping.end()) {
                 return std::static_pointer_cast<Formula>(std::make_shared<AtomicExpressionFormula>(it->second));

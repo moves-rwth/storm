@@ -92,10 +92,10 @@ namespace storm {
             virtual ValueType const& getPrecision() const;// override;
         protected:
             // The matrix defining the coefficients of the linear equation system.
-            storm::dd::Add<DdType, ValueType> const& A;
+            storm::dd::Add<DdType, ValueType> A;
             
             // A BDD characterizing all rows of the equation system.
-            storm::dd::Bdd<DdType> const& allRows;
+            storm::dd::Bdd<DdType> allRows;
             
             // An ADD characterizing the illegal choices.
             storm::dd::Add<DdType, ValueType> illegalMaskAdd;
@@ -107,10 +107,10 @@ namespace storm {
             std::set<storm::expressions::Variable> columnMetaVariables;
             
             // The choice variables
-            std::set<storm::expressions::Variable> const& choiceVariables;
+            std::set<storm::expressions::Variable> choiceVariables;
             
             // The pairs of meta variables used for renaming.
-            std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs;
+            std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> rowColumnMetaVariablePairs;
             
             // The precision to achieve.
             double precision;

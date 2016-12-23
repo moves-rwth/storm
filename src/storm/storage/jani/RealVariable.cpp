@@ -11,6 +11,10 @@ namespace storm {
             // Intentionally left empty.
         }
         
+        std::unique_ptr<Variable> RealVariable::clone() const {
+            return std::make_unique<RealVariable>(*this);
+        }
+        
         bool RealVariable::isRealVariable() const {
             return true;
         }

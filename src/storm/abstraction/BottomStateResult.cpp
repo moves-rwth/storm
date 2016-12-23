@@ -1,0 +1,14 @@
+#include "storm/abstraction/BottomStateResult.h"
+
+namespace storm {
+    namespace abstraction {
+        
+        template <storm::dd::DdType DdType>
+        BottomStateResult<DdType>::BottomStateResult(storm::dd::Bdd<DdType> const& states, storm::dd::Bdd<DdType> const& transitions) : states(states), transitions(transitions) {
+            // Intentionally left empty.
+        }
+        
+        template class BottomStateResult<storm::dd::DdType::CUDD>;
+        template class BottomStateResult<storm::dd::DdType::Sylvan>;
+    }
+}

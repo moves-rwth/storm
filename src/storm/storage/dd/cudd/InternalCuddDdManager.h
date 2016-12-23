@@ -1,6 +1,8 @@
 #ifndef STORM_STORAGE_DD_INTERNALCUDDDDMANAGER_H_
 #define STORM_STORAGE_DD_INTERNALCUDDDDMANAGER_H_
 
+#include <boost/optional.hpp>
+
 #include "storm/storage/dd/DdType.h"
 #include "storm/storage/dd/InternalDdManager.h"
 
@@ -76,9 +78,19 @@ namespace storm {
             /*!
              * Creates a new pair of DD variables and returns the two cubes as a result.
              *
+             * @param position An optional position at which to insert the new variable pair. This may only be given, if
+             * the manager supports ordered insertion.
              * @return The two cubes belonging to the DD variables.
              */
-            std::pair<InternalBdd<DdType::CUDD>, InternalBdd<DdType::CUDD>> createNewDdVariablePair();
+            std::pair<InternalBdd<DdType::CUDD>, InternalBdd<DdType::CUDD>> createNewDdVariablePair(boost::optional<uint_fast64_t> const& position = boost::none);
+            
+            /*!
+             * Checks whether this manager supports the ordered insertion of variables, i.e. inserting variables at
+             * positions between already existing variables.
+             *
+             * @return True iff the manager supports ordered insertion.
+             */
+            bool supportsOrderedInsertion() const;
             
             /*!
              * Sets whether or not dynamic reordering is allowed for the DDs managed by this manager.
@@ -99,6 +111,13 @@ namespace storm {
              */
             void triggerReordering();
             
+            /*!
+             * Retrieves the number of DD variables managed by this manager.
+             *
+             * @return The number of managed variables.
+             */
+            uint_fast64_t getNumberOfDdVariables() const;
+
         private:
             /*!
              * Retrieves the underlying CUDD manager.
@@ -119,6 +138,9 @@ namespace storm {
             
             // The technique that is used for dynamic reordering.
             Cudd_ReorderingType reorderingTechnique;
+            
+            // Keeps track of the number of registered DD variables.
+            uint_fast64_t numberOfDdVariables;
         };        
     }
 }

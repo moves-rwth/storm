@@ -13,6 +13,9 @@
 
 #include "storm/models/symbolic/StandardRewardModel.h"
 
+#include "storm-config.h"
+#include "storm/adapters/CarlAdapter.h"
+
 namespace storm {
     namespace models {
         namespace symbolic {
@@ -55,6 +58,11 @@ namespace storm {
             }
             
             template<storm::dd::DdType Type, typename ValueType>
+            std::shared_ptr<storm::dd::DdManager<Type>> const& Model<Type, ValueType>::getManagerAsSharedPointer() const {
+                return manager;
+            }
+            
+            template<storm::dd::DdType Type, typename ValueType>
             storm::dd::Bdd<Type> const& Model<Type, ValueType>::getReachableStates() const {
                 return reachableStates;
             }
@@ -66,21 +74,18 @@ namespace storm {
             
             template<storm::dd::DdType Type, typename ValueType>
             storm::dd::Bdd<Type> Model<Type, ValueType>::getStates(std::string const& label) const {
-                auto labelIt = labelToExpressionMap.find(label);
-                if (labelIt != labelToExpressionMap.end()) {
-                    return rowExpressionAdapter->translateExpression(labelIt->second).toBdd() && this->reachableStates;
-                } else {
-                    if (label == "init") {
-                        return initialStates;
-                    } else if (label == "deadlock") {
-                        return deadlockStates;
-                    }
-                }
-                STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "The label " << label << " is invalid for the labeling of the model.");
+                STORM_LOG_THROW(labelToExpressionMap.find(label) != labelToExpressionMap.end(), storm::exceptions::IllegalArgumentException, "The label " << label << " is invalid for the labeling of the model.");
+                return this->getStates(labelToExpressionMap.at(label));
             }
             
             template<storm::dd::DdType Type, typename ValueType>
             storm::dd::Bdd<Type> Model<Type, ValueType>::getStates(storm::expressions::Expression const& expression) const {
+                if (expression.isTrue()) {
+                    return this->getReachableStates();
+                } else if (expression.isFalse()) {
+                    return manager->getBddZero();
+                }
+                STORM_LOG_THROW(rowExpressionAdapter != nullptr, storm::exceptions::InvalidOperationException, "Cannot create BDD for expression without expression adapter.");
                 return rowExpressionAdapter->translateExpression(expression).toBdd() && this->reachableStates;
             }
             
@@ -102,6 +107,11 @@ namespace storm {
             template<storm::dd::DdType Type, typename ValueType>
             storm::dd::Add<Type, ValueType>& Model<Type, ValueType>::getTransitionMatrix() {
                 return transitionMatrix;
+            }
+            
+            template<storm::dd::DdType Type, typename ValueType>
+            storm::dd::Bdd<Type> Model<Type, ValueType>::getQualitativeTransitionMatrix() const {
+                return this->getTransitionMatrix().notZero();
             }
             
             template<storm::dd::DdType Type, typename ValueType>
@@ -252,7 +262,9 @@ namespace storm {
             // Explicitly instantiate the template class.
             template class Model<storm::dd::DdType::CUDD, double>;
             template class Model<storm::dd::DdType::Sylvan, double>;
-
+#ifdef STORM_HAVE_CARL
+			template class Model<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+#endif
         } // namespace symbolic
     } // namespace models
 } // namespace storm

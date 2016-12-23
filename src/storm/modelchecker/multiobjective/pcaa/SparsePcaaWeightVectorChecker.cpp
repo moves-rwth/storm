@@ -133,7 +133,7 @@ namespace storm {
                         nonZeroRewardStates.set(state);
                     }
                 }
-                storm::storage::BitVector subsystemStates = storm::utility::graph::performProbGreater0E(model.getTransitionMatrix(), model.getTransitionMatrix().getRowGroupIndices(), model.getTransitionMatrix().transpose(true), storm::storage::BitVector(model.getNumberOfStates(), true), nonZeroRewardStates);
+                storm::storage::BitVector subsystemStates = storm::utility::graph::performProbGreater0E(model.getTransitionMatrix().transpose(true), storm::storage::BitVector(model.getNumberOfStates(), true), nonZeroRewardStates);
                 
                 // Remove neutral end components, i.e., ECs in which no reward is earned.
                 auto ecEliminatorResult = storm::transformer::EndComponentEliminator<ValueType>::transform(model.getTransitionMatrix(), subsystemStates, ecActions & zeroRewardActions, possiblyRecurrentStates);

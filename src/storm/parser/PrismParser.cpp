@@ -176,7 +176,7 @@ namespace storm {
             renamingComposition = (atomicComposition >> (qi::lit("{") > (actionRenamingList > qi::lit("}"))))[qi::_val = phoenix::bind(&PrismParser::createRenamingComposition, phoenix::ref(*this), qi::_1, qi::_2)];
             renamingComposition.name("renaming composition");
             
-            atomicComposition = qi::lit("(") > parallelComposition > qi::lit(")") | moduleComposition;
+            atomicComposition = (qi::lit("(") > parallelComposition > qi::lit(")")) | moduleComposition;
             atomicComposition.name("atomic composition");
             
             moduleComposition = identifier[qi::_val = phoenix::bind(&PrismParser::createModuleComposition, phoenix::ref(*this), qi::_1)];

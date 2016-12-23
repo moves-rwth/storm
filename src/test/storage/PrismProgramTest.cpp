@@ -8,20 +8,137 @@
 
 #ifdef STORM_HAVE_MSAT
 TEST(PrismProgramTest, FlattenModules) {
-    storm::prism::Program result;
-    ASSERT_NO_THROW(result = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/leader3.nm"));
+    storm::prism::Program program;
+    ASSERT_NO_THROW(program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/leader3.nm"));
 
-    std::unique_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory(new storm::utility::solver::MathsatSmtSolverFactory());
+    std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
     
-    ASSERT_NO_THROW(result = result.flattenModules(smtSolverFactory));
-    EXPECT_EQ(1, result.getNumberOfModules());
-    EXPECT_EQ(74, result.getModule(0).getNumberOfCommands());
+    ASSERT_NO_THROW(program = program.flattenModules(smtSolverFactory));
+    EXPECT_EQ(1, program.getNumberOfModules());
+    EXPECT_EQ(74, program.getModule(0).getNumberOfCommands());
+}
 
-    ASSERT_NO_THROW(result = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/wlan0_collide.nm"));
+TEST(PrismProgramTest, FlattenModules_Wlan_Mathsat) {
+    storm::prism::Program program;
+    ASSERT_NO_THROW(program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/wlan0_collide.nm"));
     
-    ASSERT_NO_THROW(result = result.flattenModules(smtSolverFactory));
-    EXPECT_EQ(1, result.getNumberOfModules());
-    EXPECT_EQ(180, result.getModule(0).getNumberOfCommands());
+    std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
+
+    ASSERT_NO_THROW(program = program.flattenModules(smtSolverFactory));
+    EXPECT_EQ(1, program.getNumberOfModules());
+    EXPECT_EQ(179, program.getModule(0).getNumberOfCommands());
+}
+
+TEST(PrismProgramTest, FlattenModules_Csma_Mathsat) {
+    storm::prism::Program program;
+    ASSERT_NO_THROW(program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/csma2_2.nm"));
+    
+    std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
+
+    ASSERT_NO_THROW(program = program.flattenModules(smtSolverFactory));
+    EXPECT_EQ(1, program.getNumberOfModules());
+    EXPECT_EQ(70, program.getModule(0).getNumberOfCommands());
+}
+
+TEST(PrismProgramTest, FlattenModules_Firewire_Mathsat) {
+    storm::prism::Program program;
+    ASSERT_NO_THROW(program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/firewire.nm"));
+    
+    std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
+
+    ASSERT_NO_THROW(program = program.flattenModules(smtSolverFactory));
+    EXPECT_EQ(1, program.getNumberOfModules());
+    EXPECT_EQ(5024, program.getModule(0).getNumberOfCommands());
+}
+
+TEST(PrismProgramTest, FlattenModules_Coin_Mathsat) {
+    storm::prism::Program program;
+    ASSERT_NO_THROW(program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/coin2.nm"));
+    
+    std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
+
+    ASSERT_NO_THROW(program = program.flattenModules(smtSolverFactory));
+    EXPECT_EQ(1, program.getNumberOfModules());
+    EXPECT_EQ(13, program.getModule(0).getNumberOfCommands());
+}
+
+TEST(PrismProgramTest, FlattenModules_Dice_Mathsat) {
+    storm::prism::Program program;
+    ASSERT_NO_THROW(program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/two_dice.nm"));
+
+    std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
+
+    ASSERT_NO_THROW(program = program.flattenModules(smtSolverFactory));
+    EXPECT_EQ(1, program.getNumberOfModules());
+    EXPECT_EQ(16, program.getModule(0).getNumberOfCommands());
+}
+#endif
+
+#ifdef STORM_HAVE_Z3
+TEST(PrismProgramTest, FlattenModules_Leader_Z3) {
+    storm::prism::Program program;
+    ASSERT_NO_THROW(program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/leader3.nm"));
+    
+    std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::Z3SmtSolverFactory>();
+    
+    ASSERT_NO_THROW(program = program.flattenModules(smtSolverFactory));
+    EXPECT_EQ(1, program.getNumberOfModules());
+    EXPECT_EQ(74, program.getModule(0).getNumberOfCommands());
+}
+
+TEST(PrismProgramTest, FlattenModules_Wlan_Z3) {
+    storm::prism::Program program;
+    ASSERT_NO_THROW(program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/wlan0_collide.nm"));
+    
+    std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::Z3SmtSolverFactory>();
+    
+    ASSERT_NO_THROW(program = program.flattenModules(smtSolverFactory));
+    EXPECT_EQ(1, program.getNumberOfModules());
+    EXPECT_EQ(179, program.getModule(0).getNumberOfCommands());
+}
+
+TEST(PrismProgramTest, FlattenModules_Csma_Z3) {
+    storm::prism::Program program;
+    ASSERT_NO_THROW(program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/csma2_2.nm"));
+    
+    std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::Z3SmtSolverFactory>();
+    
+    ASSERT_NO_THROW(program = program.flattenModules(smtSolverFactory));
+    EXPECT_EQ(1, program.getNumberOfModules());
+    EXPECT_EQ(70, program.getModule(0).getNumberOfCommands());
+}
+
+TEST(PrismProgramTest, FlattenModules_Firewire_Z3) {
+    storm::prism::Program program;
+    ASSERT_NO_THROW(program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/firewire.nm"));
+    
+    std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::Z3SmtSolverFactory>();
+    
+    ASSERT_NO_THROW(program = program.flattenModules(smtSolverFactory));
+    EXPECT_EQ(1, program.getNumberOfModules());
+    EXPECT_EQ(5024, program.getModule(0).getNumberOfCommands());
+}
+
+TEST(PrismProgramTest, FlattenModules_Coin_Z3) {
+    storm::prism::Program program;
+    ASSERT_NO_THROW(program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/coin2.nm"));
+    
+    std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::Z3SmtSolverFactory>();
+    
+    ASSERT_NO_THROW(program = program.flattenModules(smtSolverFactory));
+    EXPECT_EQ(1, program.getNumberOfModules());
+    EXPECT_EQ(13, program.getModule(0).getNumberOfCommands());
+}
+
+TEST(PrismProgramTest, FlattenModules_Dice_Z3) {
+    storm::prism::Program program;
+    ASSERT_NO_THROW(program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/two_dice.nm"));
+    
+    std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::Z3SmtSolverFactory>();
+    
+    ASSERT_NO_THROW(program = program.flattenModules(smtSolverFactory));
+    EXPECT_EQ(1, program.getNumberOfModules());
+    EXPECT_EQ(16, program.getModule(0).getNumberOfCommands());
 }
 #endif
 

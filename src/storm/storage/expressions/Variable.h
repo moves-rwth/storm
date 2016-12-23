@@ -17,7 +17,8 @@ namespace storm {
         // This class captures a simple variable.
         class Variable {
         public:
-            Variable() = default;
+            Variable();
+            ~Variable();
             
             /*!
              * Constructs a variable with the given index and type.

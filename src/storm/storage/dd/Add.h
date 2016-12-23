@@ -14,6 +14,9 @@
 #include "storm/storage/dd/cudd/CuddAddIterator.h"
 #include "storm/storage/dd/sylvan/SylvanAddIterator.h"
 
+#include "storm-config.h"
+#include "storm/adapters/CarlAdapter.h"
+
 namespace storm {
     namespace dd {
         template<DdType LibraryType>
@@ -243,6 +246,23 @@ namespace storm {
              */
             Add<LibraryType, ValueType> maximum(Add<LibraryType, ValueType> const& other) const;
             
+#ifdef STORM_HAVE_CARL
+			/*!
+             * Replaces the leaves in this MTBDD, using the supplied variable replacement map.
+             *
+             * @param replacementMap The variable replacement map.
+             * @return The resulting function represented as an ADD.
+             */
+            Add<LibraryType, ValueType> replaceLeaves(std::map<storm::RationalFunctionVariable, std::pair<storm::expressions::Variable, std::pair<storm::RationalNumber, storm::RationalNumber>>> const& replacementMap) const;
+			
+			/*!
+             * Replaces the leaves in this MTBDD, converting them to double if possible, and -1.0 else.
+             *
+             * @return The resulting function represented as an ADD.
+             */
+            Add<LibraryType, double> toDouble() const;
+#endif
+			
             /*!
              * Sum-abstracts from the given meta variables.
              *
@@ -256,13 +276,38 @@ namespace storm {
              * @param metaVariables The meta variables from which to abstract.
              */
             Add<LibraryType, ValueType> minAbstract(std::set<storm::expressions::Variable> const& metaVariables) const;
-            
+
+            /*!
+             * Min-abstracts from the given meta variables but treats 0 as the largest possible value.
+             *
+             * @param metaVariables The meta variables from which to abstract.
+             */
+            Add<LibraryType, ValueType> minAbstractExcept0(std::set<storm::expressions::Variable> const& metaVariables) const;
+
+			/*!
+             * Similar to <code>minAbstract</code>, but does not abstract from the variables but rather picks a
+             * valuation of each of the meta variables "to abstract from" such that for this valuation, there exists a
+             * valuation (of the other variables) that make the function evaluate to the minimal value.
+             *
+             * @param metaVariables The meta variables from which to abstract.
+             */
+            Bdd<LibraryType> minAbstractRepresentative(std::set<storm::expressions::Variable> const& metaVariables) const;
+			
             /*!
              * Max-abstracts from the given meta variables.
              *
              * @param metaVariables The meta variables from which to abstract.
              */
             Add<LibraryType, ValueType> maxAbstract(std::set<storm::expressions::Variable> const& metaVariables) const;
+			
+			/*!
+             * Similar to <code>maxAbstract</code>, but does not abstract from the variables but rather picks a
+             * valuation of each of the meta variables "to abstract from" such that for this valuation, there exists a
+             * valuation (of the other variables) that make the function evaluate to the maximal value.
+             *
+             * @param metaVariables The meta variables from which to abstract.
+             */
+            Bdd<LibraryType> maxAbstractRepresentative(std::set<storm::expressions::Variable> const& metaVariables) const;
             
             /*!
              * Checks whether the current and the given ADD represent the same function modulo some given precision.
@@ -468,12 +513,9 @@ namespace storm {
              */
             bool isConstant() const;
             
-            /*!
-             * Retrieves the index of the topmost variable in the DD.
-             *
-             * @return The index of the topmost variable in DD.
-             */
             virtual uint_fast64_t getIndex() const override;
+            
+            virtual uint_fast64_t getLevel() const override;
             
             /*!
              * Converts the ADD to a vector.
@@ -568,11 +610,9 @@ namespace storm {
             /*!
              * Retrieves an iterator that points past the end of the container.
              *
-             * @param enumerateDontCareMetaVariables If set to true, all meta variable assignments are enumerated, even
-             * if a meta variable does not at all influence the the function value.
              * @return An iterator that points past the end of the container.
              */
-            AddIterator<LibraryType, ValueType> end(bool enumerateDontCareMetaVariables = true) const;
+            AddIterator<LibraryType, ValueType> end() const;
             
             template<DdType LibraryTypePrime, typename ValueTypePrime>
             friend std::ostream & operator<<(std::ostream& out, Add<LibraryTypePrime, ValueTypePrime> const& add);

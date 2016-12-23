@@ -6,8 +6,9 @@
 #include "storm/storage/dd/Odd.h"
 
 #include "storm/storage/BitVector.h"
+#include "storm/storage/PairHash.h"
 
-#include <iostream>
+#include "storm/utility/macros.h"
 
 namespace storm {
     namespace dd {
@@ -112,6 +113,10 @@ namespace storm {
             return InternalBdd<DdType::CUDD>(ddManager, this->getCuddBdd().ExistAbstract(cube.getCuddBdd()));
         }
         
+        InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::existsAbstractRepresentative(InternalBdd<DdType::CUDD> const& cube) const {
+            return InternalBdd<DdType::CUDD>(ddManager, this->getCuddBdd().ExistAbstractRepresentative(cube.getCuddBdd()));
+        }
+        
         InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::universalAbstract(InternalBdd<DdType::CUDD> const& cube) const {
             return InternalBdd<DdType::CUDD>(ddManager, this->getCuddBdd().UnivAbstract(cube.getCuddBdd()));
         }
@@ -169,6 +174,10 @@ namespace storm {
         
         uint_fast64_t InternalBdd<DdType::CUDD>::getIndex() const {
             return static_cast<uint_fast64_t>(this->getCuddBdd().NodeReadIndex());
+        }
+        
+        uint_fast64_t InternalBdd<DdType::CUDD>::getLevel() const {
+            return static_cast<uint_fast64_t>(ddManager->getCuddManager().ReadPerm(this->getIndex()));
         }
         
         void InternalBdd<DdType::CUDD>::exportToDot(std::string const& filename, std::vector<std::string> const& ddVariableNamesAsStrings) const {
@@ -306,7 +315,7 @@ namespace storm {
         
         Odd InternalBdd<DdType::CUDD>::createOdd(std::vector<uint_fast64_t> const& ddVariableIndices) const {
             // Prepare a unique table for each level that keeps the constructed ODD nodes unique.
-            std::vector<std::unordered_map<std::pair<DdNode*, bool>, std::shared_ptr<Odd>, HashFunctor>> uniqueTableForLevels(ddVariableIndices.size() + 1);
+            std::vector<std::unordered_map<std::pair<DdNode const*, bool>, std::shared_ptr<Odd>, HashFunctor>> uniqueTableForLevels(ddVariableIndices.size() + 1);
             
             // Now construct the ODD structure from the BDD.
             std::shared_ptr<Odd> rootOdd = createOddRec(Cudd_Regular(this->getCuddDdNode()), ddManager->getCuddManager(), 0, Cudd_IsComplement(this->getCuddDdNode()), ddVariableIndices.size(), ddVariableIndices, uniqueTableForLevels);
@@ -315,14 +324,14 @@ namespace storm {
             return Odd(*rootOdd);
         }
         
-        std::size_t InternalBdd<DdType::CUDD>::HashFunctor::operator()(std::pair<DdNode*, bool> const& key) const {
+        std::size_t InternalBdd<DdType::CUDD>::HashFunctor::operator()(std::pair<DdNode const*, bool> const& key) const {
             std::size_t result = 0;
             boost::hash_combine(result, key.first);
             boost::hash_combine(result, key.second);
             return result;
         }
         
-        std::shared_ptr<Odd> InternalBdd<DdType::CUDD>::createOddRec(DdNode* dd, cudd::Cudd const& manager, uint_fast64_t currentLevel, bool complement, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<std::unordered_map<std::pair<DdNode*, bool>, std::shared_ptr<Odd>, HashFunctor>>& uniqueTableForLevels) {
+        std::shared_ptr<Odd> InternalBdd<DdType::CUDD>::createOddRec(DdNode const* dd, cudd::Cudd const& manager, uint_fast64_t currentLevel, bool complement, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<std::unordered_map<std::pair<DdNode const*, bool>, std::shared_ptr<Odd>, HashFunctor>>& uniqueTableForLevels) {
             // Check whether the ODD for this node has already been computed (for this level) and if so, return this instead.
             auto const& iterator = uniqueTableForLevels[currentLevel].find(std::make_pair(dd, complement));
             if (iterator != uniqueTableForLevels[currentLevel].end()) {
@@ -378,7 +387,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void InternalBdd<DdType::CUDD>::filterExplicitVectorRec(DdNode* dd, cudd::Cudd const& manager, uint_fast64_t currentLevel, bool complement, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, uint_fast64_t currentOffset, storm::dd::Odd const& odd, std::vector<ValueType>& result, uint_fast64_t& currentIndex, std::vector<ValueType> const& values) {
+        void InternalBdd<DdType::CUDD>::filterExplicitVectorRec(DdNode const* dd, cudd::Cudd const& manager, uint_fast64_t currentLevel, bool complement, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, uint_fast64_t currentOffset, storm::dd::Odd const& odd, std::vector<ValueType>& result, uint_fast64_t& currentIndex, std::vector<ValueType> const& values) {
             // If there are no more values to select, we can directly return.
             if (dd == Cudd_ReadLogicZero(manager.getManager()) && !complement) {
                 return;
@@ -407,14 +416,94 @@ namespace storm {
             }
         }
         
+        std::pair<std::vector<storm::expressions::Expression>, std::unordered_map<uint_fast64_t, storm::expressions::Variable>> InternalBdd<DdType::CUDD>::toExpression(storm::expressions::ExpressionManager& manager) const {
+            std::pair<std::vector<storm::expressions::Expression>, std::unordered_map<uint_fast64_t, storm::expressions::Variable>> result;
+            
+            // Create (and maintain) a mapping from the DD nodes to a counter that says the how-many-th node (within the
+            // nodes of equal index) the node was.
+            std::unordered_map<DdNode const*, uint_fast64_t> nodeToCounterMap;
+            std::vector<uint_fast64_t> nextCounterForIndex(ddManager->getNumberOfDdVariables(), 0);
+            std::unordered_map<std::pair<uint_fast64_t, uint_fast64_t>, storm::expressions::Variable> countIndexToVariablePair;
+
+            bool negated = Cudd_Regular(this->getCuddDdNode()) != this->getCuddDdNode();
+            
+            // Translate from the top node downwards.
+            storm::expressions::Variable topVariable = this->toExpressionRec(Cudd_Regular(this->getCuddDdNode()), ddManager->getCuddManager(), manager, result.first, result.second, countIndexToVariablePair, nodeToCounterMap, nextCounterForIndex);
+            
+            // Create the final expression.
+            if (negated) {
+                result.first.push_back(!topVariable);
+            } else {
+                result.first.push_back(topVariable);
+            }
+            
+            return result;
+        }
+        
+        storm::expressions::Variable InternalBdd<DdType::CUDD>::toExpressionRec(DdNode const* dd, cudd::Cudd const& ddManager, storm::expressions::ExpressionManager& manager, std::vector<storm::expressions::Expression>& expressions, std::unordered_map<uint_fast64_t, storm::expressions::Variable>& indexToVariableMap, std::unordered_map<std::pair<uint_fast64_t, uint_fast64_t>, storm::expressions::Variable>& countIndexToVariablePair, std::unordered_map<DdNode const*, uint_fast64_t>& nodeToCounterMap, std::vector<uint_fast64_t>& nextCounterForIndex) {
+            STORM_LOG_ASSERT(dd == Cudd_Regular(dd), "Expected non-negated BDD node.");
+            
+            // First, try to look up the current node if it's not a terminal node.
+            auto nodeCounterIt = nodeToCounterMap.find(dd);
+            if (nodeCounterIt != nodeToCounterMap.end()) {
+                // If we have found the node, this means we can look up the counter-index pair and get the corresponding variable.
+                auto variableIt = countIndexToVariablePair.find(std::make_pair(nodeCounterIt->second, Cudd_NodeReadIndex(dd)));
+                STORM_LOG_ASSERT(variableIt != countIndexToVariablePair.end(), "Unable to find node.");
+                return variableIt->second;
+            }
+            
+            // If the node was not yet encountered, we create a variable and associate it with the appropriate expression.
+            storm::expressions::Variable newNodeVariable = manager.declareFreshBooleanVariable();
+            
+            // Since we want to reuse the variable whenever possible, we insert the appropriate entries in the hash table.
+            if (!Cudd_IsConstant_const(dd)) {
+                // If we are dealing with a non-terminal node, we count it as a new node with this index.
+                nodeToCounterMap[dd] = nextCounterForIndex[Cudd_NodeReadIndex(dd)];
+                countIndexToVariablePair[std::make_pair(nextCounterForIndex[Cudd_NodeReadIndex(dd)], Cudd_NodeReadIndex(dd))] = newNodeVariable;
+                ++nextCounterForIndex[Cudd_NodeReadIndex(dd)];
+            } else {
+                // If it's a terminal node, it is the one leaf and there's no need to keep track of a counter for this level.
+                nodeToCounterMap[dd] = 0;
+                countIndexToVariablePair[std::make_pair(0, Cudd_NodeReadIndex(dd))] = newNodeVariable;
+            }
+            
+            // In the terminal case, we can only have a one since we are considering non-negated nodes only.
+            if (dd == Cudd_ReadOne(ddManager.getManager())) {
+                // Push the expression that enforces that the new variable is true.
+                expressions.push_back(storm::expressions::iff(manager.boolean(true), newNodeVariable));
+            } else {
+                // In the non-terminal case, we recursively translate the children nodes and then construct and appropriate ite-expression.
+                DdNode const* t = Cudd_T_const(dd);
+                DdNode const* e = Cudd_E_const(dd);
+                DdNode const* T = Cudd_Regular(t);
+                DdNode const* E = Cudd_Regular(e);
+                storm::expressions::Variable thenVariable = toExpressionRec(T, ddManager, manager, expressions, indexToVariableMap, countIndexToVariablePair, nodeToCounterMap, nextCounterForIndex);
+                storm::expressions::Variable elseVariable = toExpressionRec(E, ddManager, manager, expressions, indexToVariableMap, countIndexToVariablePair, nodeToCounterMap, nextCounterForIndex);
+                
+                // Create the appropriate expression.
+                auto indexVariable = indexToVariableMap.find(Cudd_NodeReadIndex(dd));
+                storm::expressions::Variable levelVariable;
+                if (indexVariable == indexToVariableMap.end()) {
+                    levelVariable = manager.declareFreshBooleanVariable();
+                    indexToVariableMap[Cudd_NodeReadIndex(dd)] = levelVariable;
+                } else {
+                    levelVariable = indexVariable->second;
+                }
+                expressions.push_back(storm::expressions::iff(newNodeVariable, storm::expressions::ite(levelVariable, t == T ? thenVariable : !thenVariable, e == E ? elseVariable : !elseVariable)));
+            }
+            
+            // Return the variable for this node.
+            return newNodeVariable;
+        }
+        
         template InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::fromVector(InternalDdManager<DdType::CUDD> const* ddManager, std::vector<double> const& values, Odd const& odd, std::vector<uint_fast64_t> const& sortedDdVariableIndices, std::function<bool (double const&)> const& filter);
         template InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::fromVector(InternalDdManager<DdType::CUDD> const* ddManager, std::vector<uint_fast64_t> const& values, Odd const& odd, std::vector<uint_fast64_t> const& sortedDdVariableIndices, std::function<bool (uint_fast64_t const&)> const& filter);
         
         template InternalAdd<DdType::CUDD, double> InternalBdd<DdType::CUDD>::toAdd() const;
         template InternalAdd<DdType::CUDD, uint_fast64_t> InternalBdd<DdType::CUDD>::toAdd() const;
         
-        template void InternalBdd<DdType::CUDD>::filterExplicitVectorRec<double>(DdNode* dd, cudd::Cudd const& manager, uint_fast64_t currentLevel, bool complement, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, uint_fast64_t currentOffset, storm::dd::Odd const& odd, std::vector<double>& result, uint_fast64_t& currentIndex, std::vector<double> const& values);
-        template void InternalBdd<DdType::CUDD>::filterExplicitVectorRec<uint_fast64_t>(DdNode* dd, cudd::Cudd const& manager, uint_fast64_t currentLevel, bool complement, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, uint_fast64_t currentOffset, storm::dd::Odd const& odd, std::vector<uint_fast64_t>& result, uint_fast64_t& currentIndex, std::vector<uint_fast64_t> const& values);
+        template void InternalBdd<DdType::CUDD>::filterExplicitVectorRec<double>(DdNode const* dd, cudd::Cudd const& manager, uint_fast64_t currentLevel, bool complement, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, uint_fast64_t currentOffset, storm::dd::Odd const& odd, std::vector<double>& result, uint_fast64_t& currentIndex, std::vector<double> const& values);
+        template void InternalBdd<DdType::CUDD>::filterExplicitVectorRec<uint_fast64_t>(DdNode const* dd, cudd::Cudd const& manager, uint_fast64_t currentLevel, bool complement, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, uint_fast64_t currentOffset, storm::dd::Odd const& odd, std::vector<uint_fast64_t>& result, uint_fast64_t& currentIndex, std::vector<uint_fast64_t> const& values);
 
         template void InternalBdd<DdType::CUDD>::filterExplicitVector(Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<double> const& sourceValues, std::vector<double>& targetValues) const;
         template void InternalBdd<DdType::CUDD>::filterExplicitVector(Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<uint_fast64_t> const& sourceValues, std::vector<uint_fast64_t>& targetValues) const;

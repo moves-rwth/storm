@@ -14,7 +14,7 @@ namespace storm {
             return boost::any_cast<std::shared_ptr<Formula>>(result);
         }
         
-        boost::any VariableSubstitutionVisitor::visit(AtomicExpressionFormula const& f, boost::any const& data) const {
+        boost::any VariableSubstitutionVisitor::visit(AtomicExpressionFormula const& f, boost::any const&) const {
             return std::static_pointer_cast<Formula>(std::make_shared<AtomicExpressionFormula>(f.getExpression().substitute(substitution)));
         }
     }

@@ -117,7 +117,7 @@ namespace storm {
                 }
                 
                 template<typename Entity, typename First, typename Last>
-                result_type operator()(Entity& entity, First f, Last l) const {
+                result_type operator()(Entity& entity, First f, Last) const {
                     entity.setLineNumber(get_line(f));
                 }
             private:

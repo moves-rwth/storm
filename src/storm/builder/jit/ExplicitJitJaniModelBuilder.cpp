@@ -97,11 +97,6 @@ namespace storm {
                     }
                 }
                 
-                // Create location variables for all the automata that we put in parallel.
-                for (auto const& automaton : parallelAutomata) {
-                    automatonToLocationVariable.emplace(automaton.get().getName(), this->model.getManager().declareFreshIntegerVariable(false, automaton.get().getName() + "_"));
-                }
-                
                 // If the program still contains undefined constants and we are not in a parametric setting, assemble an appropriate error message.
 #ifdef STORM_HAVE_CARL
                 if (!std::is_same<ValueType, storm::RationalFunction>::value && this->model.hasUndefinedConstants()) {
@@ -1514,7 +1509,7 @@ namespace storm {
                         if (this->options.isBuildAllLabelsSet() || this->options.getLabelNames().find(variable.getName()) != this->options.getLabelNames().end()) {
                             cpptempl::data_map label;
                             label["name"] = variable.getName();
-                            label["predicate"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(model.getLabelExpression(variable.asBooleanVariable(), automatonToLocationVariable)), storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName));
+                            label["predicate"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(model.getLabelExpression(variable.asBooleanVariable(), parallelAutomata)), storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName));
                             labels.push_back(label);
                         }
                     }
@@ -1542,7 +1537,7 @@ namespace storm {
                         auto const& variable = variables.getVariable(labelOrExpression.getLabel());
                         STORM_LOG_THROW(variable.isBooleanVariable(), storm::exceptions::WrongFormatException, "Terminal label refers to non-boolean variable '" << variable.getName() << ".");
                         STORM_LOG_THROW(variable.isTransient(), storm::exceptions::WrongFormatException, "Terminal label refers to non-transient variable '" << variable.getName() << ".");
-                        auto labelExpression = model.getLabelExpression(variable.asBooleanVariable(), automatonToLocationVariable);
+                        auto labelExpression = model.getLabelExpression(variable.asBooleanVariable(), parallelAutomata);
                         if (terminalEntry.second) {
                             labelExpression = !labelExpression;
                         }
@@ -1590,7 +1585,7 @@ namespace storm {
                 
             template <typename ValueType, typename RewardModelType>
             storm::expressions::Variable const& ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::getLocationVariable(storm::jani::Automaton const& automaton) const {
-                return automatonToLocationVariable.at(automaton.getName());
+                return automaton.getLocationExpressionVariable();
             }
             
             template <typename ValueType, typename RewardModelType>
@@ -2405,12 +2400,12 @@ namespace storm {
             }
                 
             template<typename RationalFunctionType, typename TP = typename RationalFunctionType::PolyType, carl::DisableIf<carl::needs_cache<TP>> = carl::dummy>
-            RationalFunctionType convertVariableToPolynomial(carl::Variable const& variable, std::shared_ptr<carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>>> cache) {
+            RationalFunctionType convertVariableToPolynomial(carl::Variable const& variable, std::shared_ptr<carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>>>) {
                 return RationalFunctionType(variable);
             }
             
             template<typename ValueType>
-            std::vector<storm::RationalFunction> getParameters(storm::jani::Model const& model, std::shared_ptr<carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>>> cache) {
+            std::vector<storm::RationalFunction> getParameters(storm::jani::Model const&, std::shared_ptr<carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>>>) {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidStateException, "This function must not be called for this type.");
             }
                 

@@ -6,6 +6,7 @@
 #include "storm/storage/expressions/SubstitutionVisitor.h"
 #include "storm/storage/expressions/LinearityCheckVisitor.h"
 #include "storm/storage/expressions/SyntacticalEqualityCheckVisitor.h"
+#include "storm/storage/expressions/ChangeManagerVisitor.h"
 #include "storm/storage/expressions/Expressions.h"
 #include "storm/exceptions/InvalidTypeException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
@@ -30,6 +31,11 @@ namespace storm {
         
         Expression::Expression(Variable const& variable) : expressionPtr(std::shared_ptr<BaseExpression>(new VariableExpression(variable))) {
             // Intentionally left empty.
+        }
+        
+        Expression Expression::changeManager(ExpressionManager const& newExpressionManager) const {
+            ChangeManagerVisitor visitor(newExpressionManager);
+            return visitor.changeManager(*this);
         }
         
 		Expression Expression::substitute(std::map<Variable, Expression> const& identifierToExpressionMap) const {
@@ -94,6 +100,10 @@ namespace storm {
         
         bool Expression::isFalse() const {
             return this->getBaseExpression().isFalse();
+        }
+        
+        bool Expression::areSame(storm::expressions::Expression const& other) const {
+            return this->expressionPtr == other.expressionPtr;
         }
 
 		std::set<storm::expressions::Variable> Expression::getVariables() const {
@@ -236,9 +246,11 @@ namespace storm {
         Expression operator&&(Expression const& first, Expression const& second) {
             assertSameManager(first.getBaseExpression(), second.getBaseExpression());
             if (first.isTrue()) {
+                STORM_LOG_THROW(second.hasBooleanType(), storm::exceptions::InvalidTypeException, "Operator requires boolean operands.");
                 return second;
             }
             if (second.isTrue()) {
+                STORM_LOG_THROW(first.hasBooleanType(), storm::exceptions::InvalidTypeException, "Operator requires boolean operands.");
                 return first;
             }
             return Expression(std::shared_ptr<BaseExpression>(new BinaryBooleanFunctionExpression(first.getBaseExpression().getManager(), first.getType().logicalConnective(second.getType()), first.getBaseExpressionPointer(), second.getBaseExpressionPointer(), BinaryBooleanFunctionExpression::OperatorType::And)));

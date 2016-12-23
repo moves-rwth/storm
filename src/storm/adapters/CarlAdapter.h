@@ -28,6 +28,7 @@
 #include <carl/core/FactorizedPolynomial.h>
 #include <carl/core/Relation.h>
 #include <carl/core/SimpleConstraint.h>
+#include <carl/util/stringparser.h>
 
 namespace carl {
     // Define hash values for all polynomials and rational function.
@@ -79,6 +80,7 @@ namespace storm {
     typedef carl::Variable RationalFunctionVariable;
     typedef carl::MultivariatePolynomial<RationalNumber> RawPolynomial;
     typedef carl::FactorizedPolynomial<RawPolynomial> Polynomial;
+	typedef carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>> RawPolynomialCache;
     typedef carl::Relation CompareRelation;
     
     typedef carl::RationalFunction<Polynomial, true> RationalFunction;

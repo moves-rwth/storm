@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_DD_SYLVAN_SYLVAN_H_
-#define STORM_STORAGE_DD_SYLVAN_SYLVAN_H_
+#pragma once
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wextra-semi"
@@ -14,8 +13,7 @@
 #pragma GCC system_header // Only way to suppress some warnings atm.
 
 #include "sylvan_obj.hpp"
+#include "sylvan_storm_rational_function.h"
 
 #pragma GCC diagnostic pop
 #pragma clang diagnostic pop
-
-#endif /* STORM_STORAGE_DD_SYLVAN_SYLVAN_H_ */

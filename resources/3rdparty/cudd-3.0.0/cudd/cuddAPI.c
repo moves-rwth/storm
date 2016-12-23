@@ -553,6 +553,20 @@ int Cudd_IsConstant(DdNode *node)
 
 } /* end of Cudd_IsConstant */
 
+/**
+ @brief Returns 1 if the node is a constant node.
+ 
+ @details A constant node is not an internal node.  The pointer
+ passed to Cudd_IsConstant may be either regular or complemented.
+ 
+ @sideeffect none
+ 
+ */
+int Cudd_IsConstant_const(DdNode const*node)
+{
+    return Cudd_Regular(node)->index == CUDD_CONST_INDEX;
+    
+} /* end of Cudd_IsConstant_const */
 
 /**
   @brief Returns 1 if a %DD node is not constant.
@@ -575,7 +589,6 @@ Cudd_IsNonConstant(
     return(f == DD_NON_CONSTANT || !Cudd_IsConstantInt(f));
 
 } /* end of Cudd_IsNonConstant */
-
 
 /**
   @brief Returns the then child of an internal node.

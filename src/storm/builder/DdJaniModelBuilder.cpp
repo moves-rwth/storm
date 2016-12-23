@@ -121,12 +121,12 @@ namespace storm {
         bool DdJaniModelBuilder<Type, ValueType>::Options::isBuildAllRewardModelsSet() const {
             return buildAllRewardModels;
         }
-
+        
         template <storm::dd::DdType Type, typename ValueType>
         bool DdJaniModelBuilder<Type, ValueType>::Options::isBuildAllLabelsSet() const {
             return buildAllLabels;
         }
-        
+                
         template <storm::dd::DdType Type, typename ValueType>
         void DdJaniModelBuilder<Type, ValueType>::Options::addLabel(std::string const& labelName) {
             STORM_LOG_THROW(!buildAllLabels, storm::exceptions::InvalidSettingsException, "Cannot add label, because all labels are built anyway.");
@@ -159,7 +159,6 @@ namespace storm {
             std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> rowColumnMetaVariablePairs;
             
             // A mapping from automata to the meta variables encoding their location.
-            std::map<std::string, storm::expressions::Variable> automatonToLocationVariableMap;
             std::map<std::string, std::pair<storm::expressions::Variable, storm::expressions::Variable>> automatonToLocationDdVariableMap;
             
             // A mapping from action indices to the meta variables used to encode these actions.
@@ -223,7 +222,7 @@ namespace storm {
                 return createVariables();
             }
             
-            boost::any visit(storm::jani::AutomatonComposition const& composition, boost::any const& data) override {
+            boost::any visit(storm::jani::AutomatonComposition const& composition, boost::any const&) override {
                 auto it = automata.find(composition.getAutomatonName());
                 STORM_LOG_THROW(it == automata.end(), storm::exceptions::InvalidArgumentException, "Cannot build symbolic model from JANI model whose system composition that refers to the automaton '" << composition.getAutomatonName() << "' multiple times.");
                 automata.insert(it, composition.getAutomatonName());
@@ -232,7 +231,7 @@ namespace storm {
 
             boost::any visit(storm::jani::ParallelComposition const& composition, boost::any const& data) override {
                 for (auto const& subcomposition : composition.getSubcompositions()) {
-                    subcomposition->accept(*this, boost::none);
+                    subcomposition->accept(*this, data);
                 }
                 return boost::none;
             }
@@ -264,10 +263,11 @@ namespace storm {
                     result.allNondeterminismVariables.insert(result.markovNondeterminismVariable);
                 }
                 
-                for (auto const& automaton : this->model.getAutomata()) {
+                for (auto const& automatonName : this->automata) {
+                    storm::jani::Automaton const& automaton =  this->model.getAutomaton(automatonName);
+                    
                     // Start by creating a meta variable for the location of the automaton.
-                    storm::expressions::Variable locationExpressionVariable = model.getManager().declareFreshIntegerVariable(false, "loc");
-                    result.automatonToLocationVariableMap[automaton.getName()] = locationExpressionVariable;
+                    storm::expressions::Variable locationExpressionVariable = automaton.getLocationExpressionVariable();
                     std::pair<storm::expressions::Variable, storm::expressions::Variable> variablePair = result.manager->addMetaVariable("l_" + automaton.getName(), 0, automaton.getNumberOfLocations() - 1);
                     result.automatonToLocationDdVariableMap[automaton.getName()] = variablePair;
                     result.rowColumnMetaVariablePairs.push_back(variablePair);
@@ -1785,10 +1785,16 @@ namespace storm {
         std::map<std::string, storm::expressions::Expression> buildLabelExpressions(storm::jani::Model const& model, CompositionVariables<Type, ValueType> const& variables, typename DdJaniModelBuilder<Type, ValueType>::Options const& options) {
             std::map<std::string, storm::expressions::Expression> result;
             
+            // Create a list of composed automata to restrict the labels to locations of these automata.
+            std::vector<std::reference_wrapper<storm::jani::Automaton const>> composedAutomata;
+            for (auto const& entry : variables.automatonToIdentityMap) {
+                composedAutomata.emplace_back(model.getAutomaton(entry.first));
+            }
+            
             for (auto const& variable : model.getGlobalVariables().getTransientVariables()) {
                 if (variable.isBooleanVariable()) {
                     if (options.buildAllLabels || options.labelNames.find(variable.getName()) != options.labelNames.end()) {
-                        result[variable.getName()] = model.getLabelExpression(variable.asBooleanVariable(), variables.automatonToLocationVariableMap);
+                        result[variable.getName()] = model.getLabelExpression(variable.asBooleanVariable(), composedAutomata);
                     }
                 }
             }

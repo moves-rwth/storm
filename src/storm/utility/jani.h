@@ -17,6 +17,7 @@ namespace storm {
             
             std::map<storm::expressions::Variable, storm::expressions::Expression> parseConstantDefinitionString(storm::jani::Model const& model, std::string const& constantDefinitionString);
             
+            void requireNoUndefinedConstants(storm::jani::Model const& model);
         }
     }
 }

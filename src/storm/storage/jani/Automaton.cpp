@@ -50,7 +50,7 @@ namespace storm {
             }
         }
         
-        Automaton::Automaton(std::string const& name) : name(name) {
+        Automaton::Automaton(std::string const& name, storm::expressions::Variable const& locationExpressionVariable) : name(name), locationExpressionVariable(locationExpressionVariable) {
             // Add a sentinel element to the mapping from locations to starting indices.
             locationToStartingIndex.push_back(0);
         }
@@ -95,6 +95,14 @@ namespace storm {
 
         VariableSet const& Automaton::getVariables() const {
             return variables;
+        }
+        
+        std::set<storm::expressions::Variable> Automaton::getAllExpressionVariables() const {
+            std::set<storm::expressions::Variable> result;
+            for (auto const& variable : this->getVariables()) {
+                result.insert(variable.getExpressionVariable());
+            }
+            return result;
         }
         
         bool Automaton::hasTransientVariable() const {
@@ -157,6 +165,10 @@ namespace storm {
                 ++i;
             }
             return mapping;
+        }
+        
+        storm::expressions::Variable const& Automaton::getLocationExpressionVariable() const {
+            return locationExpressionVariable;
         }
 
         Automaton::Edges Automaton::getEdgesFromLocation(std::string const& name) {
@@ -285,6 +297,11 @@ namespace storm {
             return ConstEdges(it1, it2);
         }
         
+        std::shared_ptr<TemplateEdge> Automaton::createTemplateEdge(storm::expressions::Expression const& guard) {
+            templateEdges.emplace_back(std::make_shared<TemplateEdge>(guard));
+            return templateEdges.back();
+        }
+        
         void Automaton::addEdge(Edge const& edge) {
             STORM_LOG_THROW(edge.getSourceLocationIndex() < locations.size(), storm::exceptions::InvalidArgumentException, "Cannot add edge with unknown source location index '" << edge.getSourceLocationIndex() << "'.");
             
@@ -308,7 +325,6 @@ namespace storm {
             // Update the set of action indices of this automaton.
             actionIndices.insert(edge.getActionIndex());
         }
-        
         
         std::vector<Edge>& Automaton::getEdges() {
             return edges;
@@ -338,10 +354,10 @@ namespace storm {
             if (!hasInitialStatesRestriction()) {
                 return false;
             }
-            if (getInitialStatesExpression().containsVariables()) {
+            if (getInitialStatesRestriction().containsVariables()) {
                 return true;
             } else {
-                return !getInitialStatesExpression().evaluateAsBool();
+                return !getInitialStatesRestriction().evaluateAsBool();
             }
         }
 
@@ -407,14 +423,26 @@ namespace storm {
             
             this->setInitialStatesRestriction(this->getInitialStatesRestriction().substitute(substitution));
             
+            for (auto& templateEdge : templateEdges) {
+                templateEdge->substitute(substitution);
+            }
             for (auto& edge : this->getEdges()) {
                 edge.substitute(substitution);
             }
         }
         
+        void Automaton::changeAssignmentVariables(std::map<Variable const*, std::reference_wrapper<Variable const>> const& remapping) {
+            for (auto& location : locations) {
+                location.changeAssignmentVariables(remapping);
+            }
+            for (auto& templateEdge : templateEdges) {
+                templateEdge->changeAssignmentVariables(remapping);
+            }
+        }
+        
         void Automaton::finalize(Model const& containingModel) {
-            for (auto& edge : edges) {
-                edge.finalize(containingModel);
+            for (auto& templateEdge : templateEdges) {
+                templateEdge->finalize(containingModel);
             }
         }
         
@@ -442,8 +470,8 @@ namespace storm {
         }
         
         void Automaton::pushEdgeAssignmentsToDestinations() {
-            for (auto& edge : edges) {
-                edge.pushAssignmentsToDestinations();
+            for (auto& templateEdge : templateEdges) {
+                templateEdge->pushAssignmentsToDestinations();
             }
         }
         
@@ -457,8 +485,8 @@ namespace storm {
         }
         
         void Automaton::liftTransientEdgeDestinationAssignments() {
-            for (auto& edge : this->getEdges()) {
-                edge.liftTransientDestinationAssignments();
+            for (auto& templateEdge : templateEdges) {
+                templateEdge->liftTransientDestinationAssignments();
             }
         }
         
@@ -471,5 +499,18 @@ namespace storm {
             return false;
         }
         
+        bool Automaton::isLinear() const {
+            bool result = true;
+
+            for (auto const& location : this->getLocations()) {
+                result &= location.isLinear();
+            }
+            
+            for (auto const& templateEdge : templateEdges) {
+                result &= templateEdge->isLinear();
+            }
+            
+            return result;
+        }
     }
 }

@@ -61,7 +61,7 @@ namespace storm {
             }
             return result;
         }
-        
+
         std::size_t Module::getNumberOfCommands() const {
             return this->commands.size();
         }

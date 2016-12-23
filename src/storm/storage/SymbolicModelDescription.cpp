@@ -5,6 +5,7 @@
 
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidOperationException.h"
+#include "storm/exceptions/InvalidTypeException.h"
 
 namespace storm {
     namespace storage {
@@ -39,6 +40,38 @@ namespace storm {
             return modelDescription.get().which() == 1;
         }
         
+        SymbolicModelDescription::ModelType SymbolicModelDescription::getModelType() const {
+            if (this->isJaniModel()) {
+                storm::jani::Model const& janiModel = this->asJaniModel();
+                switch (janiModel.getModelType()) {
+                    case storm::jani::ModelType::DTMC: return SymbolicModelDescription::ModelType::DTMC;
+                    case storm::jani::ModelType::CTMC: return SymbolicModelDescription::ModelType::CTMC;
+                    case storm::jani::ModelType::MDP: return SymbolicModelDescription::ModelType::MDP;
+                    case storm::jani::ModelType::MA: return SymbolicModelDescription::ModelType::MA;
+                    default:
+                        STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Expected other JANI model type.");
+                }
+            } else {
+                storm::prism::Program const& prismProgram = this->asPrismProgram();
+                switch (prismProgram.getModelType()) {
+                    case storm::prism::Program::ModelType::DTMC: return SymbolicModelDescription::ModelType::DTMC;
+                    case storm::prism::Program::ModelType::CTMC: return SymbolicModelDescription::ModelType::CTMC;
+                    case storm::prism::Program::ModelType::MDP: return SymbolicModelDescription::ModelType::MDP;
+                    case storm::prism::Program::ModelType::MA: return SymbolicModelDescription::ModelType::MA;
+                    default:
+                        STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Expected other PRISM model type.");
+                }
+            }
+        }
+        
+        storm::expressions::ExpressionManager& SymbolicModelDescription::getManager() const {
+            if (this->isPrismProgram()) {
+                return this->asPrismProgram().getManager();
+            } else {
+                return this->asJaniModel().getManager();
+            }
+        }
+        
         void SymbolicModelDescription::setModel(storm::jani::Model const& model) {
             modelDescription = model;
         }
@@ -59,7 +92,7 @@ namespace storm {
         
         std::vector<std::string> SymbolicModelDescription::getParameterNames() const {
             std::vector<std::string> result;
-            if(isJaniModel()) {
+            if (isJaniModel()) {
                 for(auto const& c : asJaniModel().getUndefinedConstants()) {
                     result.push_back(c.get().getName());
                 }
@@ -94,5 +127,12 @@ namespace storm {
             return *this;
         }
         
+        void SymbolicModelDescription::requireNoUndefinedConstants() const {
+            if (this->isJaniModel()) {
+                storm::utility::jani::requireNoUndefinedConstants(this->asJaniModel());
+            } else {
+                storm::utility::prism::requireNoUndefinedConstants(this->asPrismProgram());
+            }
+        }
     }
 }

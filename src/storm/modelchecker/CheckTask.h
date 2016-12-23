@@ -160,7 +160,14 @@ namespace storm {
             storm::logic::Bound<ValueType> const& getBound() const {
                 return bound.get();
             }
-            
+
+            /*!
+             * Retrieves the bound (if set).
+             */
+            boost::optional<storm::logic::Bound<ValueType>> const& getOptionalBound() const {
+                return bound;
+            }
+
             /*!
              * Retrieves whether the computation only needs to be performed qualitatively, because the values will only
              * be compared to 0/1.

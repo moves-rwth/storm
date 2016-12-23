@@ -23,6 +23,8 @@
 #include <lace.h>
 #include <sylvan.h>
 
+#include "storm/adapters/CarlAdapter.h"
+
 namespace sylvan {
 
 class BddSet;
@@ -542,6 +544,13 @@ public:
      */
     static Mtbdd doubleTerminal(double value);
 
+#if defined(SYLVAN_HAVE_CARL) || defined(STORM_HAVE_CARL)
+	/**
+     * @brief Creates a Mtbdd leaf representing the rational function value <value>
+     */
+    static Mtbdd stormRationalFunctionTerminal(storm::RationalFunction const& value);
+#endif
+	
     /**
      * @brief Creates a Mtbdd leaf representing the fraction value <nominator>/<denominator>
      * Internally, Sylvan uses 32-bit values and reports overflows to stderr.

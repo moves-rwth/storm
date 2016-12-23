@@ -9,7 +9,7 @@ namespace storm {
             // Intentionally left empty.
         }
         
-        int_fast64_t IntegerLiteralExpression::evaluateAsInt(Valuation const* valuation) const {
+        int_fast64_t IntegerLiteralExpression::evaluateAsInt(Valuation const*) const {
             return this->getValue();
         }
         
@@ -21,7 +21,7 @@ namespace storm {
             return true;
 		}
 
-        void IntegerLiteralExpression::gatherVariables(std::set<storm::expressions::Variable>& variables) const {
+        void IntegerLiteralExpression::gatherVariables(std::set<storm::expressions::Variable>&) const {
 			return;
 		}
 

@@ -102,7 +102,7 @@ namespace storm {
                 // model. If this is set, the outgoing transitions of these states are replaced with a self-loop.
                 boost::optional<storm::expressions::Expression> negatedTerminalStates;
             };
-            
+                        
             /*!
              * Translates the given program into a symbolic model (i.e. one that stores the transition relation as a
              * decision diagram).

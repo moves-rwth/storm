@@ -86,20 +86,6 @@ namespace storm {
                 std::string getProperty() const;
 
                 /*!
-                 * Retrieves whether the timeout option was set.
-                 *
-                 * @return True if the timeout option was set.
-                 */
-                bool isTimeoutSet() const;
-
-                /*!
-                 * Retrieves the time after which the computation has to be aborted in case the timeout option was set.
-                 *
-                 * @return The number of seconds after which to timeout.
-                 */
-                uint_fast64_t getTimeoutInSeconds() const;
-
-                /*!
                  * Retrieves whether the option to perform bisimulation minimization is set.
                  *
                  * @return True iff the option was set.
@@ -163,8 +149,6 @@ namespace storm {
                 static const std::string configOptionShortName;
                 static const std::string propertyOptionName;
                 static const std::string propertyOptionShortName;
-                static const std::string timeoutOptionName;
-                static const std::string timeoutOptionShortName;
                 static const std::string bisimulationOptionName;
                 static const std::string bisimulationOptionShortName;
                 static const std::string parametricOptionName;

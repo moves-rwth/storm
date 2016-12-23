@@ -18,6 +18,11 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type, typename ValueType>
+        SymbolicQuantitativeCheckResult<Type, ValueType>::SymbolicQuantitativeCheckResult(storm::dd::Bdd<Type> const& reachableStates, storm::dd::Bdd<Type> const& states, storm::dd::Add<Type, ValueType> const& values) : reachableStates(reachableStates), states(states), values(values) {
+            // Intentionally left empty.
+        }
+        
+        template<storm::dd::DdType Type, typename ValueType>
         std::unique_ptr<CheckResult> SymbolicQuantitativeCheckResult<Type, ValueType>::compareAgainstBound(storm::logic::ComparisonType comparisonType, ValueType const& bound) const {
             storm::dd::Bdd<Type> states;
             if (comparisonType == storm::logic::ComparisonType::Less) {

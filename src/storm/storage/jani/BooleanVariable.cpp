@@ -11,6 +11,10 @@ namespace storm {
             // Intentionally left empty.
         }
         
+        std::unique_ptr<Variable> BooleanVariable::clone() const {
+            return std::make_unique<BooleanVariable>(*this);
+        }
+        
         bool BooleanVariable::isBooleanVariable() const {
             return true;
         }

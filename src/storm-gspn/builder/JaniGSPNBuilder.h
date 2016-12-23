@@ -19,7 +19,7 @@ namespace storm {
             
             storm::jani::Model* build() {
                 storm::jani::Model* model = new storm::jani::Model(gspn.getName(), storm::jani::ModelType::MA, janiVersion, expressionManager);
-                storm::jani::Automaton mainAutomaton("immediate");
+                storm::jani::Automaton mainAutomaton("immediate", expressionManager->declareIntegerVariable("loc"));
                 addVariables(model);
                 uint64_t locId = addLocation(mainAutomaton);
                 addEdges(mainAutomaton, locId);
@@ -64,7 +64,6 @@ namespace storm {
                 
                 for (auto const& partition : gspn.getPartitions()) {
                     storm::expressions::Expression guard = expressionManager->boolean(false);
-                    std::vector<storm::jani::EdgeDestination> weightedDestinations;
                     
                     assert(lastPriority >= partition.priority);
                     if (lastPriority > partition.priority) {
@@ -94,6 +93,9 @@ namespace storm {
                     totalWeight = totalWeight.simplify();
                     
                     
+                    std::vector<storm::jani::OrderedAssignments> oas;
+                    std::vector<storm::expressions::Expression> probabilities;
+                    std::vector<uint64_t> destinationLocations;
                     for (auto const& transId : partition.transitions) {
                         auto const& trans = gspn.getImmediateTransitions()[transId];
                         if (trans.noWeightAttached()) {
@@ -120,11 +122,17 @@ namespace storm {
                         }
                         destguard = destguard.simplify();
                         guard = guard || destguard;
-                        storm::jani::OrderedAssignments oa(assignments);
-                        storm::jani::EdgeDestination dest(locId, storm::expressions::ite(destguard, (expressionManager->rational(trans.getWeight()) / totalWeight), expressionManager->rational(0.0)), oa);
-                        weightedDestinations.push_back(dest);
+                        
+                        oas.emplace_back(assignments);
+                        destinationLocations.emplace_back(locId);
+                        probabilities.emplace_back(storm::expressions::ite(destguard, (expressionManager->rational(trans.getWeight()) / totalWeight), expressionManager->rational(0.0)));
                     }
-                    storm::jani::Edge e(locId, storm::jani::Model::SILENT_ACTION_INDEX, boost::none, (priorityGuard && guard).simplify(), weightedDestinations);
+                    
+                    std::shared_ptr<storm::jani::TemplateEdge> templateEdge = automaton.createTemplateEdge((priorityGuard && guard).simplify());
+                    for (auto const& oa : oas) {
+                        templateEdge->addDestination(storm::jani::TemplateEdgeDestination(oa));
+                    }
+                    storm::jani::Edge e(locId, storm::jani::Model::SILENT_ACTION_INDEX, boost::none, templateEdge, destinationLocations, probabilities);
                     automaton.addEdge(e);
                     lastPriorityGuard = lastPriorityGuard || guard;
                     
@@ -149,9 +157,10 @@ namespace storm {
                             assignments.emplace_back( *vars[outputPlaceEntry.first], (vars[outputPlaceEntry.first])->getExpressionVariable() + outputPlaceEntry.second -  trans.getInputPlaces().at(outputPlaceEntry.first));
                         }
                     }
-                    storm::jani::OrderedAssignments oa(assignments);
-                    storm::jani::EdgeDestination dest(locId, expressionManager->integer(1), oa);
-                    storm::jani::Edge e(locId, storm::jani::Model::SILENT_ACTION_INDEX, expressionManager->rational(trans.getRate()), guard, {dest});
+                    
+                    std::shared_ptr<storm::jani::TemplateEdge> templateEdge = automaton.createTemplateEdge(guard);
+                    templateEdge->addDestination(assignments);
+                    storm::jani::Edge e(locId, storm::jani::Model::SILENT_ACTION_INDEX, expressionManager->rational(trans.getRate()), templateEdge, {locId}, {expressionManager->integer(1)});
                     automaton.addEdge(e);
                     
                 }

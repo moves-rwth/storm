@@ -94,7 +94,7 @@ namespace storm {
              */
             static struct StateInformation determineRelevantAndProblematicStates(storm::models::sparse::Mdp<T> const& labeledMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
                 StateInformation result;
-                result.relevantStates = storm::utility::graph::performProbGreater0E(labeledMdp.getTransitionMatrix(), labeledMdp.getNondeterministicChoiceIndices(), labeledMdp.getBackwardTransitions(), phiStates, psiStates);
+                result.relevantStates = storm::utility::graph::performProbGreater0E(labeledMdp.getBackwardTransitions(), phiStates, psiStates);
                 result.relevantStates &= ~psiStates;
                 result.problematicStates = storm::utility::graph::performProb0E(labeledMdp.getTransitionMatrix(), labeledMdp.getNondeterministicChoiceIndices(), labeledMdp.getBackwardTransitions(), phiStates, psiStates);
                 result.problematicStates &= result.relevantStates;
@@ -262,11 +262,9 @@ namespace storm {
              * Creates the variable for the probability of the virtual initial state.
              *
              * @param solver The MILP solver.
-             * @param maximizeProbability If set to true, the objective function is constructed in a way that a
-             * label-minimal subsystem of maximal probability is computed.
              * @return The index of the variable for the probability of the virtual initial state.
              */
-            static std::pair<storm::expressions::Variable, uint_fast64_t> createVirtualInitialStateVariable(storm::solver::LpSolver& solver, bool maximizeProbability = false) {
+            static std::pair<storm::expressions::Variable, uint_fast64_t> createVirtualInitialStateVariable(storm::solver::LpSolver& solver) {
                 std::stringstream variableNameBuffer;
                 variableNameBuffer << "pinit";
                 storm::expressions::Variable variable = solver.addBoundedContinuousVariable(variableNameBuffer.str(), 0, 1);
@@ -415,13 +413,12 @@ namespace storm {
              * exceeds the given threshold.
              *
              * @param solver The MILP solver.
-             * @param labeledMdp The labeled MDP.
              * @param variableInformation A struct with information about the variables of the model.
              * @param probabilityThreshold The probability that the subsystem must exceed.
              * @param strictBound A flag indicating whether the threshold must be exceeded or only matched.
              * @return The total number of constraints that were created.
              */
-            static uint_fast64_t assertProbabilityGreaterThanThreshold(storm::solver::LpSolver& solver, storm::models::sparse::Mdp<T> const& labeledMdp, VariableInformation const& variableInformation, double probabilityThreshold, bool strictBound) {
+            static uint_fast64_t assertProbabilityGreaterThanThreshold(storm::solver::LpSolver& solver, VariableInformation const& variableInformation, double probabilityThreshold, bool strictBound) {
                 storm::expressions::Expression constraint;
                 if (strictBound) {
                     constraint = variableInformation.virtualInitialStateVariable > solver.getConstant(probabilityThreshold);
@@ -506,11 +503,10 @@ namespace storm {
              *
              * @param solver The MILP solver.
              * @param stateInformation The information about the states in the model.
-             * @param choiceInformation The information about the choices in the model.
              * @param variableInformation A struct with information about the variables of the model.
              * @return The total number of constraints that were created.
              */
-            static uint_fast64_t assertZeroProbabilityWithoutChoice(storm::solver::LpSolver& solver, StateInformation const& stateInformation, ChoiceInformation const& choiceInformation, VariableInformation const& variableInformation) {
+            static uint_fast64_t assertZeroProbabilityWithoutChoice(storm::solver::LpSolver& solver, StateInformation const& stateInformation, VariableInformation const& variableInformation) {
                 uint_fast64_t numberOfConstraintsCreated = 0;
                 for (auto state : stateInformation.relevantStates) {
                     storm::expressions::Expression constraint = variableInformation.stateToProbabilityVariableMap.at(state);
@@ -624,13 +620,11 @@ namespace storm {
              * Asserts that labels that are on all paths from initial to target states are definitely taken.
              *
              * @param solver The MILP solver.
-             * @param labeledMdp The labeled MDP.
-             * @param psiStates A bit vector characterizing the psi states in the model.
              * @param choiceInformation The information about the choices in the model.
              * @param variableInformation A struct with information about the variables of the model.
              * @return The total number of constraints that were created.
              */
-            static uint_fast64_t assertKnownLabels(storm::solver::LpSolver& solver, storm::models::sparse::Mdp<T> const& labeledMdp, storm::storage::BitVector const& psiStates, ChoiceInformation const& choiceInformation, VariableInformation const& variableInformation) {
+            static uint_fast64_t assertKnownLabels(storm::solver::LpSolver& solver, ChoiceInformation const& choiceInformation, VariableInformation const& variableInformation) {
                 uint_fast64_t numberOfConstraintsCreated = 0;
 
                 for (auto label : choiceInformation.knownLabels) {
@@ -815,7 +809,7 @@ namespace storm {
              */
             static void buildConstraintSystem(storm::solver::LpSolver& solver, storm::models::sparse::Mdp<T> const& labeledMdp, storm::storage::BitVector const& psiStates, StateInformation const& stateInformation, ChoiceInformation const& choiceInformation, VariableInformation const& variableInformation, double probabilityThreshold, bool strictBound, bool includeSchedulerCuts = false) {
                 // Assert that the reachability probability in the subsystem exceeds the given threshold.
-                uint_fast64_t numberOfConstraints = assertProbabilityGreaterThanThreshold(solver, labeledMdp, variableInformation, probabilityThreshold, strictBound);
+                uint_fast64_t numberOfConstraints = assertProbabilityGreaterThanThreshold(solver, variableInformation, probabilityThreshold, strictBound);
                 STORM_LOG_DEBUG("Asserted that reachability probability exceeds threshold.");
 
                 // Add constraints that assert the policy takes at most one action in each state.
@@ -828,7 +822,7 @@ namespace storm {
 
                 // Add constraints that encode that the reachability probability from states which do not pick any action
                 // is zero.
-                numberOfConstraints += assertZeroProbabilityWithoutChoice(solver, stateInformation, choiceInformation, variableInformation);
+                numberOfConstraints += assertZeroProbabilityWithoutChoice(solver, stateInformation, variableInformation);
                 STORM_LOG_DEBUG("Asserted that reachability probability is zero if no choice is taken.");
 
                 // Add constraints that encode the reachability probabilities for states.
@@ -840,7 +834,7 @@ namespace storm {
                 STORM_LOG_DEBUG("Asserted that unproblematic state reachable from problematic states.");
 
                 // Add constraints that express that certain labels are already known to be taken.
-                numberOfConstraints += assertKnownLabels(solver, labeledMdp, psiStates, choiceInformation, variableInformation);
+                numberOfConstraints += assertKnownLabels(solver, choiceInformation, variableInformation);
                 STORM_LOG_DEBUG("Asserted known labels are taken.");
                 
                 // If required, assert additional constraints that reduce the number of possible policies.
@@ -923,7 +917,7 @@ namespace storm {
             }
                 
         public:
-            static boost::container::flat_set<uint_fast64_t> getMinimalLabelSet(storm::logic::Formula const& pathFormula, storm::models::sparse::Mdp<T> const& labeledMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, double probabilityThreshold, bool strictBound, bool checkThresholdFeasible = false, bool includeSchedulerCuts = false) {
+            static boost::container::flat_set<uint_fast64_t> getMinimalLabelSet(storm::models::sparse::Mdp<T> const& labeledMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, double probabilityThreshold, bool strictBound, bool checkThresholdFeasible = false, bool includeSchedulerCuts = false) {
                 // (0) Check whether the MDP is indeed labeled.
                 if (!labeledMdp.hasChoiceLabeling()) {
                     throw storm::exceptions::InvalidArgumentException() << "Minimal label set generation is impossible for unlabeled model.";
@@ -1015,7 +1009,7 @@ namespace storm {
                 
                 // Delegate the actual computation work to the function of equal name.
                 auto startTime = std::chrono::high_resolution_clock::now();
-                boost::container::flat_set<uint_fast64_t> usedLabelSet = getMinimalLabelSet(probabilityOperator.getSubformula(), labeledMdp, phiStates, psiStates, threshold, strictBound, true, storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>().isUseSchedulerCutsSet());
+                boost::container::flat_set<uint_fast64_t> usedLabelSet = getMinimalLabelSet(labeledMdp, phiStates, psiStates, threshold, strictBound, true, storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>().isUseSchedulerCutsSet());
                 auto endTime = std::chrono::high_resolution_clock::now();
                 std::cout << std::endl << "Computed minimal label set of size " << usedLabelSet.size() << " in " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << "ms." << std::endl;
 

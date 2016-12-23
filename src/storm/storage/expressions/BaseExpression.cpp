@@ -12,6 +12,10 @@ namespace storm {
             // Intentionally left empty.
         }
 
+        Expression BaseExpression::toExpression() const {
+            return Expression(shared_from_this());
+        }
+        
         Type const& BaseExpression::getType() const {
             return this->type;
         }
@@ -36,15 +40,15 @@ namespace storm {
             return this->getType().isRationalType();
         }
         
-        int_fast64_t BaseExpression::evaluateAsInt(Valuation const* valuation) const {
+        int_fast64_t BaseExpression::evaluateAsInt(Valuation const*) const {
             STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Unable to evaluate expression as integer.");
         }
         
-        bool BaseExpression::evaluateAsBool(Valuation const* valuation) const {
+        bool BaseExpression::evaluateAsBool(Valuation const*) const {
             STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Unable to evaluate expression as boolean.");
         }
         
-        double BaseExpression::evaluateAsDouble(Valuation const* valuation) const {
+        double BaseExpression::evaluateAsDouble(Valuation const*) const {
             STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Unable to evaluate expression as double.");
         }
         

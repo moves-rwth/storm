@@ -33,12 +33,13 @@
 #include "storm/settings/modules/RegionSettings.h"
 #include "storm/settings/modules/TopologicalValueIterationEquationSolverSettings.h"
 #include "storm/settings/modules/ExplorationSettings.h"
+#include "storm/settings/modules/ResourceSettings.h"
+#include "storm/settings/modules/AbstractionSettings.h"
 #include "storm/settings/modules/JaniExportSettings.h"
 #include "storm/settings/modules/JitBuilderSettings.h"
 #include "storm/settings/modules/MultiObjectiveSettings.h"
 #include "storm/utility/macros.h"
 #include "storm/settings/Option.h"
-
 
 namespace storm {
     namespace settings {
@@ -527,6 +528,8 @@ namespace storm {
             storm::settings::addModule<storm::settings::modules::RegionSettings>();
             storm::settings::addModule<storm::settings::modules::Smt2SmtSolverSettings>();
             storm::settings::addModule<storm::settings::modules::ExplorationSettings>();
+            storm::settings::addModule<storm::settings::modules::ResourceSettings>();
+            storm::settings::addModule<storm::settings::modules::AbstractionSettings>();
             storm::settings::addModule<storm::settings::modules::JaniExportSettings>();
             storm::settings::addModule<storm::settings::modules::JitBuilderSettings>();
             storm::settings::addModule<storm::settings::modules::MultiObjectiveSettings>();

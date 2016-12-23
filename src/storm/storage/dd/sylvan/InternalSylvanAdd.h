@@ -13,6 +13,9 @@
 
 #include "storm/storage/expressions/Variable.h"
 
+#include "storm/adapters/CarlAdapter.h"
+#include "storm-config.h"
+
 namespace storm {
     namespace storage {
         template<typename T>
@@ -245,6 +248,23 @@ namespace storm {
              */
             InternalAdd<DdType::Sylvan, ValueType> maximum(InternalAdd<DdType::Sylvan, ValueType> const& other) const;
             
+#ifdef STORM_HAVE_CARL
+			/*!
+             * Replaces the leaves in this MTBDD, using the supplied variable replacement map.
+             *
+             * @param replacementMap The variable replacement map.
+             * @return The resulting function represented as an ADD.
+             */
+            InternalAdd<DdType::Sylvan, ValueType> replaceLeaves(std::map<uint32_t, std::pair<storm::RationalFunctionVariable, std::pair<storm::RationalNumber, storm::RationalNumber>>> const& replacementMap) const;
+			
+			/*!
+             * Replaces the leaves in this MTBDD, converting them to double if possible, and -1.0 else.
+             *
+             * @return The resulting function represented as an ADD.
+             */
+            InternalAdd<DdType::Sylvan, double> toDouble() const;
+#endif
+			
             /*!
              * Sum-abstracts from the given cube.
              *
@@ -258,6 +278,20 @@ namespace storm {
              * @param cube The cube from which to abstract.
              */
             InternalAdd<DdType::Sylvan, ValueType> minAbstract(InternalBdd<DdType::Sylvan> const& cube) const;
+
+            /*!
+             * Min-abstracts from the given cube, but treats 0 as the largest possible value.
+             *
+             * @param cube The cube from which to abstract.
+             */
+            InternalAdd<DdType::Sylvan, ValueType> minAbstractExcept0(InternalBdd<DdType::Sylvan> const& cube) const;
+			
+			/*!
+             * Min-abstracts from the given cube and returns a representative.
+             *
+             * @param cube The cube from which to abstract.
+             */
+            InternalBdd<DdType::Sylvan> minAbstractRepresentative(InternalBdd<DdType::Sylvan> const& cube) const;
             
             /*!
              * Max-abstracts from the given cube.
@@ -265,6 +299,13 @@ namespace storm {
              * @param cube The cube from which to abstract.
              */
             InternalAdd<DdType::Sylvan, ValueType> maxAbstract(InternalBdd<DdType::Sylvan> const& cube) const;
+			
+			/*!
+             * Max-abstracts from the given cube and returns a representative.
+             *
+             * @param cube The cube from which to abstract.
+             */
+            InternalBdd<DdType::Sylvan> maxAbstractRepresentative(InternalBdd<DdType::Sylvan> const& cube) const;
             
             /*!
              * Checks whether the current and the given ADD represent the same function modulo some given precision.
@@ -433,11 +474,18 @@ namespace storm {
             bool isConstant() const;
             
             /*!
-             * Retrieves the index of the topmost variable in the DD.
+             * Retrieves the index of the topmost variable in the ADD.
              *
-             * @return The index of the topmost variable in DD.
+             * @return The index of the topmost variable in ADD.
              */
-            virtual uint_fast64_t getIndex() const;
+            uint_fast64_t getIndex() const;
+            
+            /*!
+             * Retrieves the level of the topmost variable in the ADD.
+             *
+             * @return The level of the topmost variable in ADD.
+             */
+            uint_fast64_t getLevel() const;
             
             /*!
              * Exports the DD to the given file in the dot format.
@@ -655,6 +703,15 @@ namespace storm {
              * @return The sylvan node for the given value.
              */
             static MTBDD getLeaf(uint_fast64_t value);
+
+#ifdef STORM_HAVE_CARL
+			/*!
+			* Retrieves the sylvan representation of the given storm::RatíonalFunction value.
+			*
+			* @return The sylvan node for the given value.
+			*/
+			static MTBDD getLeaf(storm::RationalFunction const& value);
+#endif
             
             /*!
              * Retrieves the value of the given node (that must be a leaf).

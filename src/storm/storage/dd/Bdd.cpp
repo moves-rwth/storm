@@ -15,6 +15,9 @@
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 
+#include "storm-config.h"
+#include "storm/adapters/CarlAdapter.h"
+
 namespace storm {
     namespace dd {
         
@@ -35,6 +38,7 @@ namespace storm {
                 case storm::logic::ComparisonType::GreaterEqual:
                     return fromVector<double>(ddManager, explicitValues, odd, metaVariables, std::bind(std::less_equal<double>(), value, std::placeholders::_1));
             }
+            return Bdd<LibraryType>();
         }
         
         template<DdType LibraryType>
@@ -122,6 +126,12 @@ namespace storm {
         Bdd<LibraryType> Bdd<LibraryType>::existsAbstract(std::set<storm::expressions::Variable> const& metaVariables) const {
             Bdd<LibraryType> cube = getCube(this->getDdManager(), metaVariables);
             return Bdd<LibraryType>(this->getDdManager(), internalBdd.existsAbstract(cube), Dd<LibraryType>::subtractMetaVariables(*this, cube));
+        }
+        
+        template<DdType LibraryType>
+        Bdd<LibraryType> Bdd<LibraryType>::existsAbstractRepresentative(std::set<storm::expressions::Variable> const& metaVariables) const {
+            Bdd<LibraryType> cube = getCube(this->getDdManager(), metaVariables);
+            return Bdd<LibraryType>(this->getDdManager(), internalBdd.existsAbstractRepresentative(cube), this->getContainedMetaVariables());
         }
 
         template<DdType LibraryType>
@@ -263,6 +273,11 @@ namespace storm {
         }
         
         template<DdType LibraryType>
+        std::pair<std::vector<storm::expressions::Expression>, std::unordered_map<uint_fast64_t, storm::expressions::Variable>> Bdd<LibraryType>::toExpression(storm::expressions::ExpressionManager& manager) const {
+            return internalBdd.toExpression(manager);
+        }
+        
+        template<DdType LibraryType>
         Bdd<LibraryType> Bdd<LibraryType>::getSupport() const {
             return Bdd<LibraryType>(this->getDdManager(), internalBdd.getSupport(), this->getContainedMetaVariables());
         }
@@ -289,6 +304,11 @@ namespace storm {
         template<DdType LibraryType>
         uint_fast64_t Bdd<LibraryType>::getIndex() const {
             return internalBdd.getIndex();
+        }
+        
+        template<DdType LibraryType>
+        uint_fast64_t Bdd<LibraryType>::getLevel() const {
+            return internalBdd.getLevel();
         }
         
         template<DdType LibraryType>
@@ -352,14 +372,27 @@ namespace storm {
 
         template Bdd<DdType::Sylvan> Bdd<DdType::Sylvan>::fromVector(DdManager<DdType::Sylvan> const& ddManager, std::vector<double> const& values, Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables, std::function<bool (double const&)> const& filter);
         template Bdd<DdType::Sylvan> Bdd<DdType::Sylvan>::fromVector(DdManager<DdType::Sylvan> const& ddManager, std::vector<uint_fast64_t> const& values, Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables, std::function<bool (uint_fast64_t const&)> const& filter);
+#ifdef STORM_HAVE_CARL
+		template Bdd<DdType::Sylvan> Bdd<DdType::Sylvan>::fromVector(DdManager<DdType::Sylvan> const& ddManager, std::vector<storm::RationalFunction> const& values, Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables, std::function<bool (storm::RationalFunction const&)> const& filter);
+#endif
         
         template Add<DdType::Sylvan, double> Bdd<DdType::Sylvan>::toAdd() const;
         template Add<DdType::Sylvan, uint_fast64_t> Bdd<DdType::Sylvan>::toAdd() const;
+#ifdef STORM_HAVE_CARL
+		template Add<DdType::Sylvan, storm::RationalFunction> Bdd<DdType::Sylvan>::toAdd() const;
+#endif
         
         template std::vector<double> Bdd<DdType::Sylvan>::filterExplicitVector(Odd const& odd, std::vector<double> const& values) const;
         template std::vector<uint_fast64_t> Bdd<DdType::Sylvan>::filterExplicitVector(Odd const& odd, std::vector<uint_fast64_t> const& values) const;
+#ifdef STORM_HAVE_CARL
+		template std::vector<storm::RationalFunction> Bdd<DdType::Sylvan>::filterExplicitVector(Odd const& odd, std::vector<storm::RationalFunction> const& values) const;
+#endif
+		
         
         template Add<DdType::Sylvan, double> Bdd<DdType::Sylvan>::ite(Add<DdType::Sylvan, double> const& thenAdd, Add<DdType::Sylvan, double> const& elseAdd) const;
         template Add<DdType::Sylvan, uint_fast64_t> Bdd<DdType::Sylvan>::ite(Add<DdType::Sylvan, uint_fast64_t> const& thenAdd, Add<DdType::Sylvan, uint_fast64_t> const& elseAdd) const;
+#ifdef STORM_HAVE_CARL
+		template Add<DdType::Sylvan, storm::RationalFunction> Bdd<DdType::Sylvan>::ite(Add<DdType::Sylvan, storm::RationalFunction> const& thenAdd, Add<DdType::Sylvan, storm::RationalFunction> const& elseAdd) const;
+#endif
     }
 }

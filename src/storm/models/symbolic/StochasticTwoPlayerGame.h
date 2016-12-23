@@ -75,7 +75,27 @@ namespace storm {
                  */
                 std::set<storm::expressions::Variable> const& getPlayer2Variables() const;
                 
+                /*!
+                 * Retrieves a BDD characterizing all illegal player 1 choice encodings in the model.
+                 *
+                 * @return A BDD characterizing all illegal player 1 choice encodings in the model.
+                 */
+                storm::dd::Bdd<Type> getIllegalPlayer1Mask() const;
+                
+                /*!
+                 * Retrieves a BDD characterizing all illegal player 2 choice encodings in the model.
+                 *
+                 * @return A BDD characterizing all illegal player 2 choice encodings in the model.
+                 */
+                storm::dd::Bdd<Type> getIllegalPlayer2Mask() const;
+                
             private:
+                // A mask that characterizes all illegal player 1 choices.
+                storm::dd::Bdd<Type> illegalPlayer1Mask;
+
+                // A mask that characterizes all illegal player 2 choices.
+                storm::dd::Bdd<Type> illegalPlayer2Mask;
+
                 // The meta variables used to encode the nondeterministic choices of player 1.
                 std::set<storm::expressions::Variable> player1Variables;
                 

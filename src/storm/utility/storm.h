@@ -66,6 +66,7 @@
 #include "storm/modelchecker/prctl/SymbolicDtmcPrctlModelChecker.h"
 #include "storm/modelchecker/prctl/SymbolicMdpPrctlModelChecker.h"
 #include "storm/modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
+#include "storm/modelchecker/abstraction/GameBasedMdpModelChecker.h"
 #include "storm/modelchecker/region/SparseDtmcRegionModelChecker.h"
 #include "storm/modelchecker/region/SparseMdpRegionModelChecker.h"
 #include "storm/modelchecker/region/ParameterRegion.h"
@@ -95,6 +96,8 @@
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/NotSupportedException.h"
 
+#include "storm/storage/jani/JSONExporter.h"
+
 namespace storm {
 
     template<typename ValueType>
@@ -110,7 +113,7 @@ namespace storm {
     std::vector<std::shared_ptr<storm::logic::Formula const>> parseFormulasForJaniModel(std::string const& inputString, storm::jani::Model const& model);
 
     template<typename ValueType>
-    std::shared_ptr<storm::models::sparse::Model<ValueType>> buildSparseModel(storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool onlyInitialStatesRelevant = false) {
+    std::shared_ptr<storm::models::sparse::Model<ValueType>> buildSparseModel(storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
         storm::builder::BuilderOptions options(formulas);
         
         if (storm::settings::getModule<storm::settings::modules::IOSettings>().isBuildFullModelSet()) {
@@ -556,7 +559,6 @@ namespace storm {
         return result;
     }
 
-
     template<storm::dd::DdType DdType>
     std::unique_ptr<storm::modelchecker::CheckResult> verifySymbolicModelWithDdEngine(std::shared_ptr<storm::models::symbolic::Model<DdType>> model, std::shared_ptr<storm::logic::Formula const> const& formula, bool onlyInitialStatesRelevant) {
         std::unique_ptr<storm::modelchecker::CheckResult> result;
@@ -579,6 +581,21 @@ namespace storm {
         return result;
     }
     
+    template<storm::dd::DdType DdType, typename ValueType>
+    std::unique_ptr<storm::modelchecker::CheckResult> verifySymbolicModelWithAbstractionRefinementEngine(storm::storage::SymbolicModelDescription const& model, std::shared_ptr<const storm::logic::Formula> const& formula, bool onlyInitialStatesRelevant = false) {
+        
+        STORM_LOG_THROW(model.getModelType() == storm::storage::SymbolicModelDescription::ModelType::DTMC || model.getModelType() == storm::storage::SymbolicModelDescription::ModelType::MDP, storm::exceptions::InvalidSettingsException, "Can only treat DTMCs/MDPs using the abstraction refinement engine.");
+        
+        if (model.getModelType() == storm::storage::SymbolicModelDescription::ModelType::DTMC) {
+            storm::modelchecker::GameBasedMdpModelChecker<DdType, storm::models::symbolic::Dtmc<DdType, ValueType>> modelchecker(model);
+            storm::modelchecker::CheckTask<storm::logic::Formula> task(*formula, onlyInitialStatesRelevant);
+            return modelchecker.check(task);
+        } else {
+            storm::modelchecker::GameBasedMdpModelChecker<DdType, storm::models::symbolic::Mdp<DdType, ValueType>> modelchecker(model);
+            storm::modelchecker::CheckTask<storm::logic::Formula> task(*formula, onlyInitialStatesRelevant);
+            return modelchecker.check(task);
+        }
+    }
     
     /**
      *

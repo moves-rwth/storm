@@ -79,7 +79,7 @@ namespace storm {
             }
             for (auto const& automaton : model.getAutomata()) {
                 uint_fast64_t bitwidth = static_cast<uint_fast64_t>(std::ceil(std::log2(automaton.getNumberOfLocations())));
-                locationVariables.emplace_back(model.getManager().declareFreshIntegerVariable(false, "loc"), automaton.getNumberOfLocations() - 1, totalBitOffset, bitwidth);
+                locationVariables.emplace_back(automaton.getLocationExpressionVariable(), automaton.getNumberOfLocations() - 1, totalBitOffset, bitwidth);
                 totalBitOffset += bitwidth;
                 
                 for (auto const& variable : automaton.getVariables().getBooleanVariables()) {

@@ -53,6 +53,11 @@ namespace storm {
             void clear();
             
             /*!
+             * Retrieves the total number of assignments.
+             */
+            std::size_t getNumberOfAssignments() const;
+            
+            /*!
              * Retrieves the lowest level among all assignments. Note that this may only be called if there is at least
              * one assignment.
              */
@@ -85,6 +90,11 @@ namespace storm {
             detail::ConstAssignments getNonTransientAssignments() const;
 
             /*!
+             * Retrieves whether the set of assignments has at least one transient assignment.
+             */
+            bool hasTransientAssignment() const;
+            
+            /*!
              * Returns an iterator to the assignments.
              */
             detail::Assignments::iterator begin();
@@ -108,7 +118,17 @@ namespace storm {
              * Substitutes all variables in all expressions according to the given substitution.
              */
             void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution);
+            
+            /*!
+             * Changes all variables in assignments based on the given mapping.
+             */
+            void changeAssignmentVariables(std::map<Variable const*, std::reference_wrapper<Variable const>> const& remapping);
 
+            /*!
+             * Checks the assignments for linearity.
+             */
+            bool areLinear() const;
+            
             friend std::ostream& operator<<(std::ostream& stream, OrderedAssignments const& assignments);
             
         private:

@@ -9,10 +9,11 @@
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/exceptions/OptionParserException.h"
+#include "storm/settings/modules/ResourceSettings.h"
 #include "storm/settings/modules/JaniExportSettings.h"
 
+#include "storm/utility/resources.h"
 #include "storm/utility/storm-version.h"
-
 
 
 // Includes for the linked libraries and versions header.
@@ -180,27 +181,35 @@ namespace storm {
                 throw e;
                 return false;
             }
-
-            if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isHelpSet()) {
+            
+            storm::settings::modules::GeneralSettings const& general = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
+            storm::settings::modules::ResourceSettings const& resources = storm::settings::getModule<storm::settings::modules::ResourceSettings>();
+            storm::settings::modules::DebugSettings const& debug = storm::settings::getModule<storm::settings::modules::DebugSettings>();
+            
+            if (general.isHelpSet()) {
                 storm::settings::manager().printHelp(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getHelpModuleName());
                 return false;
             }
-
-            if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isVersionSet()) {
+            // If we were given a time limit, we put it in place now.
+            if (resources.isTimeoutSet()) {
+                storm::utility::resources::setCPULimit(resources.getTimeoutInSeconds());
+            }
+            
+            if (general.isVersionSet()) {
                 storm::settings::manager().printVersion();
                 return false;
             }
-
-            if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isVerboseSet()) {
+            
+            if (general.isVerboseSet()) {
                 storm::utility::setLogLevel(l3pp::LogLevel::INFO);
             }
-            if (storm::settings::getModule<storm::settings::modules::DebugSettings>().isDebugSet()) {
+            if (debug.isDebugSet()) {
                 storm::utility::setLogLevel(l3pp::LogLevel::DEBUG);
             }
-            if (storm::settings::getModule<storm::settings::modules::DebugSettings>().isTraceSet()) {
+            if (debug.isTraceSet()) {
                  storm::utility::setLogLevel(l3pp::LogLevel::TRACE);
             }
-            if (storm::settings::getModule<storm::settings::modules::DebugSettings>().isLogfileSet()) {
+            if (debug.isLogfileSet()) {
                 storm::utility::initializeFileLogging();
             }
             return true;
@@ -263,7 +272,7 @@ namespace storm {
                 // Get the string that assigns values to the unknown currently undefined constants in the model.
                 std::string constantDefinitionString = ioSettings.getConstantDefinitionString();
                 model = model.preprocess(constantDefinitionString);
-                
+
                 STORM_LOG_TRACE("Building and checking symbolic model.");
                 if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isParametricSet()) {
 #ifdef STORM_HAVE_CARL

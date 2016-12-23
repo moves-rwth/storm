@@ -8,6 +8,9 @@
 #include "storm/storage/jani/Constant.h"
 #include "storm/storage/jani/Composition.h"
 
+#include "storm/utility/solver.h"
+#include "storm/utility/vector.h"
+
 namespace storm {
     namespace expressions {
         class ExpressionManager;
@@ -16,6 +19,7 @@ namespace storm {
     namespace jani {
         
         class Exporter;
+        class SynchronizationVector;
         
         class Model {
         public:
@@ -31,6 +35,19 @@ namespace storm {
              */
             Model(std::string const& name, ModelType const& modelType, uint64_t version = 1, boost::optional<std::shared_ptr<storm::expressions::ExpressionManager>> const& expressionManager = boost::none);
 
+            /*!
+             * Copies the given model.
+             */
+            Model(Model const& other);
+            
+            /*!
+             * Copy-assigns the given model
+             */
+            Model& operator=(Model const& other);
+            
+            Model(Model&& other) = default;
+            Model& operator=(Model&& other) = default;
+            
             /*!
              * Retrieves the expression manager responsible for the expressions in the model.
              */
@@ -50,6 +67,14 @@ namespace storm {
              * Retrievest the name of the model.
              */
             std::string const& getName() const;
+            
+            /*!
+             * Flatten the composition to obtain an equivalent model that contains exactly one automaton that has the
+             * standard composition.
+             *
+             * @param smtSolverFactory A factory that can be used to create new SMT solvers.
+             */
+            Model flattenComposition(std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory = std::make_shared<storm::utility::solver::SmtSolverFactory>()) const;
             
             /**
              * Checks whether the model has an action with the given name.
@@ -156,6 +181,21 @@ namespace storm {
              * Retrieves the variables of this automaton.
              */
             VariableSet const& getGlobalVariables() const;
+            
+            /*!
+             * Retrieves all expression variables used by this model. Note that this does not include the location
+             * expression variables by default.
+             *
+             * @return The set of expression variables used by this model.
+             */
+            std::set<storm::expressions::Variable> getAllExpressionVariables(bool includeLocationExpressionVariables = false) const;
+
+            /*!
+             * Retrieves all location expression variables used by this model.
+             *
+             * @return The set of expression variables used by this model.
+             */
+            std::set<storm::expressions::Variable> getAllLocationExpressionVariables() const;
 
             /*!
              * Retrieves whether this model has a global variable with the given name.
@@ -201,6 +241,16 @@ namespace storm {
              * Retrieves the automaton with the given name.
              */
             Automaton& getAutomaton(std::string const& name);
+
+            /*!
+             * Retrieves the automaton with the given index.
+             */
+            Automaton& getAutomaton(uint64_t index);
+
+            /*!
+             * Retrieves the automaton with the given index.
+             */
+            Automaton const& getAutomaton(uint64_t index) const;
 
             /*!
              * Retrieves the automaton with the given name.
@@ -285,13 +335,18 @@ namespace storm {
              * Gets the expression restricting the legal initial values of the global variables.
              */
             storm::expressions::Expression const& getInitialStatesRestriction() const;
-            
+
+            /*!
+             * Retrieves the expression defining the legal initial values of the variables.
+             */
+            storm::expressions::Expression getInitialStatesExpression() const;
+
             /*!
              * Retrieves the expression defining the legal initial values of the variables.
              *
              * @param automata The resulting expression will also characterize the legal initial states for these automata.
              */
-            storm::expressions::Expression getInitialStatesExpression(std::vector<std::reference_wrapper<storm::jani::Automaton const>> const& automata = {}) const;
+            storm::expressions::Expression getInitialStatesExpression(std::vector<std::reference_wrapper<storm::jani::Automaton const>> const& automata) const;
             
             /*!
              * Determines whether this model is a deterministic one in the sense that each state only has one choice.
@@ -337,8 +392,14 @@ namespace storm {
              * Creates the expression that characterizes all states in which the provided transient boolean variable is
              * true. The provided location variables are used to encode the location of the automata.
              */
-            storm::expressions::Expression getLabelExpression(BooleanVariable const& transientVariable, std::map<std::string, storm::expressions::Variable> const& automatonToLocationVariableMap) const;
-            
+            storm::expressions::Expression getLabelExpression(BooleanVariable const& transientVariable, std::vector<std::reference_wrapper<Automaton const>> const& automata) const;
+
+            /*!
+             * Creates the expression that characterizes all states in which the provided transient boolean variable is
+             * true. The provided location variables are used to encode the location of the automata.
+             */
+            storm::expressions::Expression getLabelExpression(BooleanVariable const& transientVariable) const;
+
             /*!
              * Checks that undefined constants (parameters) of the model preserve the graph of the underlying model.
              * That is, undefined constants may only appear in the probability expressions of edge destinations as well
@@ -361,6 +422,12 @@ namespace storm {
              */
             bool usesAssignmentLevels() const;
             
+            /*!
+             * Checks the model for linearity. A model is linear if all expressions appearing in guards and assignments
+             * are linear.
+             */
+            bool isLinear() const;
+            
             void makeStandardJaniCompliant();
             
             /// The name of the silent action.
@@ -370,6 +437,11 @@ namespace storm {
             static const uint64_t SILENT_ACTION_INDEX;
             
         private:
+            /*!
+             * Creates a new model from the given automaton (which must be contained in the current model).
+             */
+            Model createModelFromAutomaton(Automaton const& automaton) const;
+                        
             /// The model name.
             std::string name;
             

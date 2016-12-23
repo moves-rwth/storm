@@ -272,7 +272,7 @@ namespace storm {
             // points.
             template<typename DataType>
             bool Partition<DataType>::splitBlock(Block<DataType>& block, std::function<bool (storm::storage::sparse::state_type, storm::storage::sparse::state_type)> const& less) {
-                return this->splitBlock(block, less, [] (Block<DataType>& block) {});
+                return this->splitBlock(block, less, [] (Block<DataType>&) {});
             }
             
             template<typename DataType>
@@ -289,7 +289,7 @@ namespace storm {
             
             template<typename DataType>
             bool Partition<DataType>::split(std::function<bool (storm::storage::sparse::state_type, storm::storage::sparse::state_type)> const& less) {
-                return this->split(less, [] (Block<DataType>& block) {});
+                return this->split(less, [] (Block<DataType>&) {});
             }
             
             template<typename DataType>

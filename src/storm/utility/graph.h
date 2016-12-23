@@ -12,6 +12,8 @@
 #include "storm/models/sparse/DeterministicModel.h"
 #include "storm/storage/dd/DdType.h"
 
+#include "storm/solver/OptimizationDirection.h"
+
 namespace storm {
     namespace storage {
         class BitVector;
@@ -29,6 +31,9 @@ namespace storm {
             
             template<storm::dd::DdType Type, typename ValueType>
             class NondeterministicModel;
+            
+            template<storm::dd::DdType Type, typename ValueType>
+            class StochasticTwoPlayerGame;
         }
         
     }
@@ -286,7 +291,6 @@ namespace storm {
              * this means that these states have a probability greater 0 of satisfying phi until psi if the
              * scheduler tries to minimize this probability.
              *
-             * @param model The model whose graph structure to search.
              * @param backwardTransitions The reversed transition relation of the model.
              * @param phiStates The set of all states satisfying phi.
              * @param psiStates The set of all states satisfying psi.
@@ -295,27 +299,11 @@ namespace storm {
              * @return A bit vector that represents all states with probability 0.
              */
             template <typename T>
-            storm::storage::BitVector performProbGreater0E(storm::storage::SparseMatrix<T> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool useStepBound = false, uint_fast64_t maximalSteps = 0) ;
+            storm::storage::BitVector performProbGreater0E(storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool useStepBound = false, uint_fast64_t maximalSteps = 0) ;
             
             template <typename T>
-            storm::storage::BitVector performProb0A(storm::storage::SparseMatrix<T> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
+            storm::storage::BitVector performProb0A(storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
             
-            /*!
-             * Computes the sets of states that have probability 0 of satisfying phi until psi under all
-             * possible resolutions of non-determinism in a non-deterministic model. Stated differently,
-             * this means that these states have probability 0 of satisfying phi until psi even if the
-             * scheduler tries to maximize this probability.
-             *
-             * @param model The model whose graph structure to search.
-             * @param backwardTransitions The reversed transition relation of the model.
-             * @param phiStates The set of all states satisfying phi.
-             * @param psiStates The set of all states satisfying psi.
-             * @param useStepBound A flag that indicates whether or not to use the given number of maximal steps for the search.
-             * @param maximalSteps The maximal number of steps to reach the psi states.
-             * @return A bit vector that represents all states with probability 0.
-             */
-            template <typename T, typename RM>
-            storm::storage::BitVector performProb0A(storm::models::sparse::NondeterministicModel<T, RM> const& model, storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) ;
             /*!
              * Computes the sets of states that have probability 1 of satisfying phi until psi under at least
              * one possible resolution of non-determinism in a non-deterministic model. Stated differently,
@@ -494,7 +482,7 @@ namespace storm {
              * @return A BDD representing all such states.
              */
             template <storm::dd::DdType Type, typename ValueType = double>
-            storm::dd::Bdd<Type> performProb1A(storm::models::symbolic::NondeterministicModel<Type, ValueType> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates, storm::dd::Bdd<Type> const& statesWithProbabilityGreater0A);
+            storm::dd::Bdd<Type> performProb1A(storm::models::symbolic::NondeterministicModel<Type, ValueType> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& psiStates, storm::dd::Bdd<Type> const& statesWithProbabilityGreater0A);
             
             /*!
              * Computes the set of states for which there exists a scheduler that achieves probability one of satisfying
@@ -516,6 +504,78 @@ namespace storm {
             
             template <storm::dd::DdType Type, typename ValueType = double>
             std::pair<storm::dd::Bdd<Type>, storm::dd::Bdd<Type>> performProb01Min(storm::models::symbolic::NondeterministicModel<Type, ValueType> const& model, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates);
+
+            template <storm::dd::DdType Type>
+            struct GameProb01Result {
+                GameProb01Result() = default;
+                GameProb01Result(storm::dd::Bdd<Type> const& player1States, storm::dd::Bdd<Type> const& player2States, boost::optional<storm::dd::Bdd<Type>> const& player1Strategy = boost::none, boost::optional<storm::dd::Bdd<Type>> const& player2Strategy = boost::none) : player1States(player1States), player2States(player2States), player1Strategy(player1Strategy), player2Strategy(player2Strategy) {
+                    // Intentionally left empty.
+                }
+                
+                bool hasPlayer1Strategy() const {
+                    return static_cast<bool>(player1Strategy);
+                }
+                
+                storm::dd::Bdd<Type> const& getPlayer1Strategy() const {
+                    return player1Strategy.get();
+                }
+                
+                boost::optional<storm::dd::Bdd<Type>> const& getOptionalPlayer1Strategy() {
+                    return player1Strategy;
+                }
+
+                bool hasPlayer2Strategy() const {
+                    return static_cast<bool>(player2Strategy);
+                }
+
+                storm::dd::Bdd<Type> const& getPlayer2Strategy() const {
+                    return player2Strategy.get();
+                }
+
+                boost::optional<storm::dd::Bdd<Type>> const& getOptionalPlayer2Strategy() {
+                    return player2Strategy;
+                }
+
+                storm::dd::Bdd<Type> const& getPlayer1States() const {
+                    return player1States;
+                }
+
+                storm::dd::Bdd<Type> const& getPlayer2States() const {
+                    return player2States;
+                }
+
+                storm::dd::Bdd<Type> player1States;
+                storm::dd::Bdd<Type> player2States;
+                boost::optional<storm::dd::Bdd<Type>> player1Strategy;
+                boost::optional<storm::dd::Bdd<Type>> player2Strategy;
+            };
+            
+            /*!
+             * Computes the set of states that have probability 0 given the strategies of the two players.
+             *
+             * @param model The (symbolic) model for which to compute the set of states.
+             * @param transitionMatrix The transition matrix of the model as a BDD.
+             * @param phiStates The BDD containing all phi states of the model.
+             * @param psiStates The BDD containing all psi states of the model.
+             * @param producePlayer1Strategy A flag indicating whether the strategy of player 1 shall be produced.
+             * @param producePlayer2Strategy A flag indicating whether the strategy of player 2 shall be produced.
+             */
+            template <storm::dd::DdType Type, typename ValueType>
+            GameProb01Result<Type> performProb0(storm::models::symbolic::StochasticTwoPlayerGame<Type, ValueType> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool producePlayer1Strategy = false, bool producePlayer2Strategy = false);
+            
+            /*!
+             * Computes the set of states that have probability 1 given the strategies of the two players.
+             *
+             * @param model The (symbolic) model for which to compute the set of states.
+             * @param transitionMatrix The transition matrix of the model as a BDD.
+             * @param phiStates The BDD containing all phi states of the model.
+             * @param psiStates The BDD containing all psi states of the model.
+             * @param producePlayer1Strategy A flag indicating whether the strategy of player 1 shall be produced.
+             * @param producePlayer2Strategy A flag indicating whether the strategy of player 2 shall be produced.
+             * @param player1Candidates If given, this set constrains the candidates of player 1 states that are considered.
+             */
+            template <storm::dd::DdType Type, typename ValueType>
+            GameProb01Result<Type> performProb1(storm::models::symbolic::StochasticTwoPlayerGame<Type, ValueType> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool producePlayer1Strategy = false, bool producePlayer2Strategy = false, boost::optional<storm::dd::Bdd<Type>> const& player1Candidates = boost::none);
             
             /*!
              * Performs a topological sort of the states of the system according to the given transitions.

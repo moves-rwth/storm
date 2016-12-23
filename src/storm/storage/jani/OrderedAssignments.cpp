@@ -73,7 +73,7 @@ namespace storm {
             if (allAssignments.empty()) {
                 return false;
             }
-            return getLowestLevel() == getHighestLevel();
+            return getLowestLevel() != getHighestLevel();
         }
         
         bool OrderedAssignments::empty() const {
@@ -84,6 +84,10 @@ namespace storm {
             allAssignments.clear();
             transientAssignments.clear();
             nonTransientAssignments.clear();
+        }
+        
+        std::size_t OrderedAssignments::getNumberOfAssignments() const {
+            return allAssignments.size();
         }
         
         int_fast64_t OrderedAssignments::getLowestLevel() const {
@@ -115,6 +119,10 @@ namespace storm {
             return detail::ConstAssignments(nonTransientAssignments.begin(), nonTransientAssignments.end());
         }
         
+        bool OrderedAssignments::hasTransientAssignment() const {
+            return !transientAssignments.empty();
+        }
+        
         detail::Assignments::iterator OrderedAssignments::begin() {
             return detail::Assignments::make_iterator(allAssignments.begin());
         }
@@ -137,8 +145,24 @@ namespace storm {
             }
         }
         
+        void OrderedAssignments::changeAssignmentVariables(std::map<Variable const*, std::reference_wrapper<Variable const>> const& remapping) {
+            std::vector<Assignment> newAssignments;
+            for (auto& assignment : allAssignments) {
+                newAssignments.emplace_back(remapping.at(&assignment->getVariable()), assignment->getAssignedExpression(), assignment->getLevel());
+            }
+            *this = OrderedAssignments(newAssignments);
+        }
+        
         std::vector<std::shared_ptr<Assignment>>::const_iterator OrderedAssignments::lowerBound(Assignment const& assignment, std::vector<std::shared_ptr<Assignment>> const& assignments) {
             return std::lower_bound(assignments.begin(), assignments.end(), assignment, storm::jani::AssignmentPartialOrderByLevelAndVariable());
+        }
+        
+        bool OrderedAssignments::areLinear() const {
+            bool result = true;
+            for (auto const& assignment : getAllAssignments()) {
+                result &= assignment.isLinear();
+            }
+            return result;
         }
         
         std::ostream& operator<<(std::ostream& stream, OrderedAssignments const& assignments) {

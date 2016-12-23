@@ -4,7 +4,7 @@ namespace storm {
     namespace solver {
         namespace stateelimination {
          
-            void StatePriorityQueue::update(storm::storage::sparse::state_type state) {
+            void StatePriorityQueue::update(storm::storage::sparse::state_type) {
                 // Intentionally left empty.
             }
             

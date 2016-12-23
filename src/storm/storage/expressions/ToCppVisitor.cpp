@@ -271,7 +271,7 @@ namespace storm {
             return boost::none;
         }
         
-        boost::any ToCppVisitor::visit(BooleanLiteralExpression const& expression, boost::any const& data) {
+        boost::any ToCppVisitor::visit(BooleanLiteralExpression const& expression, boost::any const&) {
             stream << std::boolalpha << expression.getValue();
             return boost::none;
         }

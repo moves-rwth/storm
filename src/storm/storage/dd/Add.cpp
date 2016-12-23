@@ -12,6 +12,9 @@
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 
+#include "storm-config.h"
+#include "storm/adapters/CarlAdapter.h"
+
 namespace storm {
     namespace dd {
         template<DdType LibraryType, typename ValueType>
@@ -90,7 +93,6 @@ namespace storm {
         template<DdType LibraryType, typename ValueType>
         Bdd<LibraryType> Add<LibraryType, ValueType>::notEquals(Add<LibraryType, ValueType> const& other) const {
             return Bdd<LibraryType>(this->getDdManager(), internalAdd.notEquals(other), Dd<LibraryType>::joinMetaVariables(*this, other));
-
         }
         
         template<DdType LibraryType, typename ValueType>
@@ -101,7 +103,6 @@ namespace storm {
         template<DdType LibraryType, typename ValueType>
         Bdd<LibraryType> Add<LibraryType, ValueType>::lessOrEqual(Add<LibraryType, ValueType> const& other) const {
             return Bdd<LibraryType>(this->getDdManager(), internalAdd.lessOrEqual(other), Dd<LibraryType>::joinMetaVariables(*this, other));
-
         }
         
         template<DdType LibraryType, typename ValueType>
@@ -122,7 +123,6 @@ namespace storm {
         template<DdType LibraryType, typename ValueType>
         Add<LibraryType, ValueType> Add<LibraryType, ValueType>::mod(Add<LibraryType, ValueType> const& other) const {
             return Add<LibraryType, ValueType>(this->getDdManager(), internalAdd.mod(other), Dd<LibraryType>::joinMetaVariables(*this, other));
-
         }
         
         template<DdType LibraryType, typename ValueType>
@@ -161,11 +161,29 @@ namespace storm {
             Bdd<LibraryType> cube = Bdd<LibraryType>::getCube(this->getDdManager(), metaVariables);
             return Add<LibraryType, ValueType>(this->getDdManager(), internalAdd.minAbstract(cube), Dd<LibraryType>::subtractMetaVariables(*this, cube));
         }
+		
+		template<DdType LibraryType, typename ValueType>
+        Bdd<LibraryType> Add<LibraryType, ValueType>::minAbstractRepresentative(std::set<storm::expressions::Variable> const& metaVariables) const {
+            Bdd<LibraryType> cube = Bdd<LibraryType>::getCube(this->getDdManager(), metaVariables);
+            return Bdd<LibraryType>(this->getDdManager(), internalAdd.minAbstractRepresentative(cube), this->getContainedMetaVariables());
+        }
+        
+        template<DdType LibraryType, typename ValueType>
+        Add<LibraryType, ValueType> Add<LibraryType, ValueType>::minAbstractExcept0(std::set<storm::expressions::Variable> const& metaVariables) const {
+            Bdd<LibraryType> cube = Bdd<LibraryType>::getCube(this->getDdManager(), metaVariables);
+            return Add<LibraryType, ValueType>(this->getDdManager(), internalAdd.minAbstractExcept0(cube), Dd<LibraryType>::subtractMetaVariables(*this, cube));
+        }
         
         template<DdType LibraryType, typename ValueType>
         Add<LibraryType, ValueType> Add<LibraryType, ValueType>::maxAbstract(std::set<storm::expressions::Variable> const& metaVariables) const {
             Bdd<LibraryType> cube = Bdd<LibraryType>::getCube(this->getDdManager(), metaVariables);
             return Add<LibraryType, ValueType>(this->getDdManager(), internalAdd.maxAbstract(cube), Dd<LibraryType>::subtractMetaVariables(*this, cube));
+        }
+		
+		template<DdType LibraryType, typename ValueType>
+        Bdd<LibraryType> Add<LibraryType, ValueType>::maxAbstractRepresentative(std::set<storm::expressions::Variable> const& metaVariables) const {
+            Bdd<LibraryType> cube = Bdd<LibraryType>::getCube(this->getDdManager(), metaVariables);
+            return Bdd<LibraryType>(this->getDdManager(), internalAdd.maxAbstractRepresentative(cube), this->getContainedMetaVariables());
         }
 
         template<DdType LibraryType, typename ValueType>
@@ -350,6 +368,11 @@ namespace storm {
         template<DdType LibraryType, typename ValueType>
         uint_fast64_t Add<LibraryType, ValueType>::getIndex() const {
             return internalAdd.getIndex();
+        }
+        
+        template<DdType LibraryType, typename ValueType>
+        uint_fast64_t Add<LibraryType, ValueType>::getLevel() const {
+            return internalAdd.getLevel();
         }
         
         template<DdType LibraryType, typename ValueType>
@@ -726,7 +749,7 @@ namespace storm {
         }
         
         template<DdType LibraryType, typename ValueType>
-        AddIterator<LibraryType, ValueType> Add<LibraryType, ValueType>::end(bool enumerateDontCareMetaVariables) const {
+        AddIterator<LibraryType, ValueType> Add<LibraryType, ValueType>::end() const {
             return internalAdd.end(this->getDdManager());
         }
         
@@ -761,10 +784,60 @@ namespace storm {
             return internalAdd;
         }
         
+#ifdef STORM_HAVE_CARL
+		template<DdType LibraryType, typename ValueType>
+        Add<LibraryType, ValueType> Add<LibraryType, ValueType>::replaceLeaves(std::map<storm::RationalFunctionVariable, std::pair<storm::expressions::Variable, std::pair<storm::RationalNumber, storm::RationalNumber>>> const&) const {
+			STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Not yet implemented: replaceLeaves");
+		}
+
+		template<>
+		Add<storm::dd::DdType::Sylvan, storm::RationalFunction> Add<storm::dd::DdType::Sylvan, storm::RationalFunction>::replaceLeaves(std::map<storm::RationalFunctionVariable, std::pair<storm::expressions::Variable, std::pair<storm::RationalNumber, storm::RationalNumber>>> const& replacementMap) const {
+			std::map<uint32_t, std::pair<storm::RationalFunctionVariable, std::pair<storm::RationalNumber, storm::RationalNumber>>> internalReplacementMap;
+			std::set<storm::expressions::Variable> containedMetaVariables = this->getContainedMetaVariables();
+			
+			uint32_t highestIndex = 0;
+			for (storm::expressions::Variable const& var: containedMetaVariables) {
+				uint32_t index = this->getDdManager().getMetaVariable(var).getDdVariables().at(0).getIndex();
+				if (index > highestIndex) {
+					highestIndex = index;
+				}
+			}
+			
+			std::map<storm::RationalFunctionVariable, std::pair<storm::expressions::Variable, std::pair<storm::RationalNumber, storm::RationalNumber>>>::const_iterator it = replacementMap.cbegin();
+			std::map<storm::RationalFunctionVariable, std::pair<storm::expressions::Variable, std::pair<storm::RationalNumber, storm::RationalNumber>>>::const_iterator end = replacementMap.cend();
+			
+			for (; it != end; ++it) {
+				DdMetaVariable<storm::dd::DdType::Sylvan> const& metaVariable = this->getDdManager().getMetaVariable(it->second.first);
+				STORM_LOG_THROW(metaVariable.getNumberOfDdVariables() == 1, storm::exceptions::InvalidArgumentException, "Cannot use MetaVariable with more then one internal DD variable.");
+				
+				auto const& ddVariable = metaVariable.getDdVariables().at(0);
+				STORM_LOG_ASSERT(ddVariable.getIndex() > highestIndex, "Can not replace leaves with DD variable that would not be at the bottom!");
+				
+				internalReplacementMap.insert(std::make_pair(ddVariable.getIndex(), std::make_pair(it->first, it->second.second)));
+				containedMetaVariables.insert(it->second.first);
+			}
+			
+			return Add<storm::dd::DdType::Sylvan, storm::RationalFunction>(this->getDdManager(), internalAdd.replaceLeaves(internalReplacementMap), containedMetaVariables);
+		}
+		
+		template<DdType LibraryType, typename ValueType>
+		Add<LibraryType, double> Add<LibraryType, ValueType>::toDouble() const {
+			STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Not yet implemented: replaceLeaves");
+		}
+
+		template<>
+		Add<storm::dd::DdType::Sylvan, double> Add<storm::dd::DdType::Sylvan, storm::RationalFunction>::toDouble() const {
+			return Add<storm::dd::DdType::Sylvan, double>(this->getDdManager(), internalAdd.toDouble(), this->getContainedMetaVariables());
+		}
+#endif
+		
         template class Add<storm::dd::DdType::CUDD, double>;
         template class Add<storm::dd::DdType::CUDD, uint_fast64_t>;
 
         template class Add<storm::dd::DdType::Sylvan, double>;
         template class Add<storm::dd::DdType::Sylvan, uint_fast64_t>;
+#ifdef STORM_HAVE_CARL
+		template class Add<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+#endif
     }
 }

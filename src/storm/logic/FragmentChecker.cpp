@@ -28,12 +28,12 @@ namespace storm {
             return result;
         }
         
-        boost::any FragmentChecker::visit(AtomicExpressionFormula const& f, boost::any const& data) const {
+        boost::any FragmentChecker::visit(AtomicExpressionFormula const&, boost::any const& data) const {
             InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
             return inherited.getSpecification().areAtomicExpressionFormulasAllowed();
         }
         
-        boost::any FragmentChecker::visit(AtomicLabelFormula const& f, boost::any const& data) const {
+        boost::any FragmentChecker::visit(AtomicLabelFormula const&, boost::any const& data) const {
             InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
             return inherited.getSpecification().areAtomicLabelFormulasAllowed();
         }
@@ -46,7 +46,7 @@ namespace storm {
             return result;
         }
         
-        boost::any FragmentChecker::visit(BooleanLiteralFormula const& f, boost::any const& data) const {
+        boost::any FragmentChecker::visit(BooleanLiteralFormula const&, boost::any const& data) const {
             InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
             return inherited.getSpecification().areBooleanLiteralFormulasAllowed();
         }
@@ -88,7 +88,7 @@ namespace storm {
             return result;
         }
         
-        boost::any FragmentChecker::visit(CumulativeRewardFormula const& f, boost::any const& data) const {
+        boost::any FragmentChecker::visit(CumulativeRewardFormula const&, boost::any const& data) const {
             InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
             return inherited.getSpecification().areCumulativeRewardFormulasAllowed();
         }
@@ -137,7 +137,7 @@ namespace storm {
             return result;
         }
         
-        boost::any FragmentChecker::visit(InstantaneousRewardFormula const& f, boost::any const& data) const {
+        boost::any FragmentChecker::visit(InstantaneousRewardFormula const&, boost::any const& data) const {
             InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
             return inherited.getSpecification().areInstantaneousRewardFormulasAllowed();
         }
@@ -154,7 +154,7 @@ namespace storm {
             return result;
         }
         
-        boost::any FragmentChecker::visit(LongRunAverageRewardFormula const& f, boost::any const& data) const {
+        boost::any FragmentChecker::visit(LongRunAverageRewardFormula const&, boost::any const& data) const {
             InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
             return inherited.getSpecification().areLongRunAverageRewardFormulasAllowed();
         }
@@ -219,7 +219,7 @@ namespace storm {
             return result;
         }
         
-        boost::any FragmentChecker::visit(TotalRewardFormula const& f, boost::any const& data) const {
+        boost::any FragmentChecker::visit(TotalRewardFormula const&, boost::any const& data) const {
             InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
             return inherited.getSpecification().areTotalRewardFormulasAllowed();
         }

@@ -8,7 +8,7 @@ namespace storm {
             // Intentionally left empty.
         }
         
-        bool BooleanLiteralExpression::evaluateAsBool(Valuation const* valuation) const {
+        bool BooleanLiteralExpression::evaluateAsBool(Valuation const*) const {
             return this->getValue();
         }
         
@@ -24,7 +24,7 @@ namespace storm {
             return this->getValue() == false;
         }
         
-        void BooleanLiteralExpression::gatherVariables(std::set<storm::expressions::Variable>& variables) const {
+        void BooleanLiteralExpression::gatherVariables(std::set<storm::expressions::Variable>&) const {
             return;
 		}
         

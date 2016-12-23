@@ -10,6 +10,10 @@ namespace storm {
         
         class SymbolicModelDescription {
         public:
+            enum class ModelType {
+                DTMC, CTMC, MDP, MA
+            };
+            
             SymbolicModelDescription() = default;
             SymbolicModelDescription(storm::jani::Model const& model);
             SymbolicModelDescription(storm::prism::Program const& program);
@@ -20,6 +24,9 @@ namespace storm {
             bool hasModel() const;
             bool isJaniModel() const;
             bool isPrismProgram() const;
+            
+            ModelType getModelType() const;
+            storm::expressions::ExpressionManager& getManager() const;
 
             void setModel(storm::jani::Model const& model);
             void setModel(storm::prism::Program const& program);
@@ -32,6 +39,8 @@ namespace storm {
             SymbolicModelDescription toJani(bool makeVariablesGlobal = true) const;
             
             SymbolicModelDescription preprocess(std::string const& constantDefinitionString = "") const;
+            
+            void requireNoUndefinedConstants() const;
             
         private:
             boost::optional<boost::variant<storm::jani::Model, storm::prism::Program>> modelDescription;

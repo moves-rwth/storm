@@ -24,7 +24,7 @@ namespace storm {
              * @param manager The manager that can be used to build expressions.
              * @param useReadableVarNames sets whether the expressions should use human readable names for the variables or the internal representation
              */
-            Smt2ExpressionAdapter(storm::expressions::ExpressionManager& manager, bool useReadableVarNames)
+            Smt2ExpressionAdapter(storm::expressions::ExpressionManager&, bool useReadableVarNames)
             : useReadableVarNames(useReadableVarNames) {
                 declaredVariables.emplace_back(std::set<std::string>());
             }
