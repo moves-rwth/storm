@@ -128,11 +128,9 @@ namespace storm {
 			virtual bool getValueAsBoolean() const = 0;
             
             /*!
-             * Retrieves the (print) length of the argument.
-             *
-             * @return The length of the argument.
+             * Prints a string representation of the argument to the provided stream.
              */
-            uint_fast64_t getPrintLength() const;
+            virtual void printToStream(std::ostream& out) const = 0;
             
             friend std::ostream& operator<<(std::ostream& out, ArgumentBase const& argument);
             

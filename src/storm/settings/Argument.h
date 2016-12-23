@@ -95,6 +95,8 @@ namespace storm {
             
             virtual bool getValueAsBoolean() const override;
             
+            virtual void printToStream(std::ostream& out) const override;
+            
         private:
             // The value of the argument (in case it has been set).
             T argumentValue;

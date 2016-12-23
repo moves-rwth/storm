@@ -43,7 +43,7 @@ namespace storm {
                 reorderingTechniques.push_back("annealing");
                 reorderingTechniques.push_back("genetic");
                 reorderingTechniques.push_back("exact");
-                this->addOption(storm::settings::OptionBuilder(moduleName, reorderOptionName, true, "Sets the reordering technique used by Cudd.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("method", "Sets which technique is used by Cudd's reordering routines. Must be in {none, random, randompivot, sift, siftconv, ssift, ssiftconv, gsift, gsiftconv, win2, win2conv, win3, win3conv, win4, win4conv, annealing, genetic, exact}.").setDefaultValueString("gsift").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(reorderingTechniques)).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, reorderOptionName, true, "Sets the reordering technique used by Cudd.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("method", "Sets which technique is used by Cudd's reordering routines.").setDefaultValueString("gsift").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(reorderingTechniques)).build()).build());
             }
             
             double CuddSettings::getConstantPrecision() const {

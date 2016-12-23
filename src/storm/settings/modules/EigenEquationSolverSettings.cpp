@@ -26,11 +26,11 @@ namespace storm {
             
             EigenEquationSolverSettings::EigenEquationSolverSettings() : ModuleSettings(moduleName) {
                 std::vector<std::string> methods = {"sparselu", "bicgstab", "dgmres", "gmres"};
-                this->addOption(storm::settings::OptionBuilder(moduleName, techniqueOptionName, true, "The method to be used for solving linear equation systems with the eigen solver. Available are {sparselu, bicgstab, dgmres, gmres}.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the method to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(methods)).setDefaultValueString("sparselu").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, techniqueOptionName, true, "The method to be used for solving linear equation systems with the eigen solver.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the method to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(methods)).setDefaultValueString("sparselu").build()).build());
                 
                 // Register available preconditioners.
                 std::vector<std::string> preconditioner = {"ilu", "diagonal", "none"};
-                this->addOption(storm::settings::OptionBuilder(moduleName, preconditionOptionName, true, "The preconditioning technique used for solving linear equation systems. Available are {ilu, diagonal, none}.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the preconditioning method.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(preconditioner)).setDefaultValueString("ilu").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, preconditionOptionName, true, "The preconditioning technique used for solving linear equation systems.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the preconditioning method.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(preconditioner)).setDefaultValueString("ilu").build()).build());
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, restartOptionName, true, "The number of iteration until restarted methods are actually restarted.").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("count", "The number of iterations.").setDefaultValueUnsignedInteger(50).build()).build());
 
