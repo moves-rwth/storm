@@ -15,10 +15,32 @@ namespace storm {
                     NearestMaximalDeviation, MostProbablePath, MaxWeightedDeviation
                 };
                 
+                enum class SplitMode {
+                    All, None, NonGuard
+                };
+                
+                enum class ReuseMode {
+                    All, None, Qualitative, Quantitative
+                };
+                
                 /*!
                  * Creates a new set of abstraction settings.
                  */
                 AbstractionSettings();
+                
+                /*!
+                 * Retrieves whether the option to use the decomposition was set.
+                 *
+                 * @return True iff the option was set.
+                 */
+                bool isUseDecompositionSet() const;
+                
+                /*!
+                 * Retrieves the selected split mode.
+                 *
+                 * @return The selected split mode.
+                 */
+                SplitMode getSplitMode() const;
                 
                 /*!
                  * Retrieves whether the option to add all guards was set.
@@ -26,34 +48,6 @@ namespace storm {
                  * @return True iff the option was set.
                  */
                 bool isAddAllGuardsSet() const;
-
-                /*!
-                 * Retrieves whether the option to split predicates to atoms was set.
-                 *
-                 * @return True iff the option was set.
-                 */
-                bool isSplitPredicatesSet() const;
-
-                /*!
-                 * Retrieves whether the option to split the initially added guards to atoms was set.
-                 *
-                 * @return True iff the option was set.
-                 */
-                bool isSplitInitialGuardsSet() const;
-
-                /*!
-                 * Retrieves whether the option to split guards derived later to atoms was set.
-                 *
-                 * @return True iff the option was set.
-                 */
-                bool isSplitGuardsSet() const;
-
-                /*!
-                 * Retrieves whether the option to split all predicates to atoms was set.
-                 *
-                 * @return True iff the option was set.
-                 */
-                bool isSplitAllSet() const;
                 
                 /*!
                  * Retrieves whether the option to use interpolation was set.
@@ -75,51 +69,24 @@ namespace storm {
                  * @return The selected heuristic.
                  */
                 PivotSelectionHeuristic getPivotSelectionHeuristic() const;
-                                
-                /*!
-                 * Retrieves whether the option to reuse the qualitative results was set.
-                 *
-                 * @param True iff the option was set.
-                 */
-                bool isReuseQualitativeResultsSet() const;
                 
                 /*!
-                 * Retrieves whether the option to reuse the quantitative results was set.
+                 * Retrieves the selected reuse mode.
                  *
-                 * @param True iff the option was set.
+                 * @return The selected reuse mode.
                  */
-                bool isReuseQuantitativeResultsSet() const;
-
-                /*!
-                 * Retrieves whether the option to reuse all results was set.
-                 *
-                 * @param True iff the option was set.
-                 */
-                bool isReuseAllResultsSet() const;
-                
-                /*!
-                 * Retrieves whether the option to use the decomposition was set.
-                 *
-                 * @return True iff the option was set.
-                 */
-                bool isUseDecompositionSet() const;
+                ReuseMode getReuseMode() const;
                 
                 const static std::string moduleName;
                 
             private:
+                const static std::string useDecompositionOptionName;
+                const static std::string splitModeOptionName;
                 const static std::string addAllGuardsOptionName;
-                const static std::string splitPredicatesOptionName;
-                const static std::string splitInitialGuardsOptionName;
-                const static std::string splitGuardsOptionName;
                 const static std::string useInterpolationOptionName;
-                const static std::string splitInterpolantsOptionName;
-                const static std::string splitAllOptionName;
                 const static std::string precisionOptionName;
                 const static std::string pivotHeuristicOptionName;
-                const static std::string reuseQualitativeResultsOptionName;
-                const static std::string reuseQuantitativeResultsOptionName;
-                const static std::string reuseAllResultsOptionName;
-                const static std::string useDecompositionOptionName;
+                const static std::string reuseResultsOptionName;
             };
             
         }

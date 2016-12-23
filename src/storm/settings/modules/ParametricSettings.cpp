@@ -5,6 +5,8 @@
 #include "storm/settings/ArgumentBuilder.h"
 #include "storm/settings/Argument.h"
 
+#include "storm/utility/macros.h"
+#include "storm/exceptions/IllegalArgumentValueException.h"
 
 namespace storm {
     namespace settings {

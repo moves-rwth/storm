@@ -7,6 +7,9 @@
 #include "storm/settings/ArgumentBuilder.h"
 #include "storm/settings/Argument.h"
 
+#include "storm/utility/macros.h"
+#include "storm/exceptions/IllegalArgumentValueException.h"
+
 namespace storm {
     namespace settings {
         namespace modules {
@@ -17,7 +20,7 @@ namespace storm {
             const std::string CuddSettings::reorderOptionName = "reorder";
             
             CuddSettings::CuddSettings() : ModuleSettings(moduleName) {
-                this->addOption(storm::settings::OptionBuilder(moduleName, precisionOptionName, true, "Sets the precision used by Cudd.").addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision up to which to constants are considered to be different.").setDefaultValueDouble(1e-15).addValidationFunctionDouble(storm::settings::ArgumentValidators::doubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, precisionOptionName, true, "Sets the precision used by Cudd.").addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision up to which to constants are considered to be different.").setDefaultValueDouble(1e-15).addValidatorDouble(ArgumentValidatorFactory::createDoubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, maximalMemoryOptionName, true, "Sets the upper bound of memory available to Cudd in MB.").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("value", "The memory available to Cudd (0 means unlimited).").setDefaultValueUnsignedInteger(4096).build()).build());
                 
@@ -40,7 +43,7 @@ namespace storm {
                 reorderingTechniques.push_back("annealing");
                 reorderingTechniques.push_back("genetic");
                 reorderingTechniques.push_back("exact");
-                this->addOption(storm::settings::OptionBuilder(moduleName, reorderOptionName, true, "Sets the reordering technique used by Cudd.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("method", "Sets which technique is used by Cudd's reordering routines. Must be in {none, random, randompivot, sift, siftconv, ssift, ssiftconv, gsift, gsiftconv, win2, win2conv, win3, win3conv, win4, win4conv, annealing, genetic, exact}.").setDefaultValueString("gsift").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(reorderingTechniques)).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, reorderOptionName, true, "Sets the reordering technique used by Cudd.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("method", "Sets which technique is used by Cudd's reordering routines. Must be in {none, random, randompivot, sift, siftconv, ssift, ssiftconv, gsift, gsiftconv, win2, win2conv, win3, win3conv, win4, win4conv, annealing, genetic, exact}.").setDefaultValueString("gsift").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(reorderingTechniques)).build()).build());
             }
             
             double CuddSettings::getConstantPrecision() const {

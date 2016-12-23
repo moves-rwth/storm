@@ -5,66 +5,83 @@
 #include "storm/settings/ArgumentBuilder.h"
 #include "storm/settings/Argument.h"
 
+#include "storm/utility/macros.h"
+#include "storm/exceptions/IllegalArgumentValueException.h"
+
 namespace storm {
     namespace settings {
         namespace modules {
-         
+            
             const std::string AbstractionSettings::moduleName = "abstraction";
+            const std::string AbstractionSettings::useDecompositionOptionName = "decomposition";
+            const std::string AbstractionSettings::splitModeOptionName = "split";
             const std::string AbstractionSettings::addAllGuardsOptionName = "all-guards";
-            const std::string AbstractionSettings::splitPredicatesOptionName = "split-preds";
-            const std::string AbstractionSettings::splitInitialGuardsOptionName = "split-init-guards";
-            const std::string AbstractionSettings::splitGuardsOptionName = "split-guards";
             const std::string AbstractionSettings::useInterpolationOptionName = "interpolation";
-            const std::string AbstractionSettings::splitInterpolantsOptionName = "split-interpolants";
-            const std::string AbstractionSettings::splitAllOptionName = "split-all";
             const std::string AbstractionSettings::precisionOptionName = "precision";
             const std::string AbstractionSettings::pivotHeuristicOptionName = "pivot-heuristic";
-            const std::string AbstractionSettings::reuseQualitativeResultsOptionName = "reuse-qualitative";
-            const std::string AbstractionSettings::reuseQuantitativeResultsOptionName = "reuse-quantitative";
-            const std::string AbstractionSettings::reuseAllResultsOptionName = "reuse-all";
-            const std::string AbstractionSettings::useDecompositionOptionName = "decomposition";
-
+            const std::string AbstractionSettings::reuseResultsOptionName = "reuse";
+            
             AbstractionSettings::AbstractionSettings() : ModuleSettings(moduleName) {
-                this->addOption(storm::settings::OptionBuilder(moduleName, addAllGuardsOptionName, true, "Sets whether all guards are added as initial predicates.").build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, splitPredicatesOptionName, true, "Sets whether the predicates are split into atoms before they are added.").build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, splitInitialGuardsOptionName, true, "Sets whether the initial guards are split into atoms before they are added.").build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, splitGuardsOptionName, true, "Sets whether the guards are split into atoms before they are added.").build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, splitAllOptionName, true, "Sets whether all predicates are split into atoms before they are added.").build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, useInterpolationOptionName, true, "Sets whether interpolation is to be used to eliminate spurious pivot blocks.").build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, precisionOptionName, true, "The precision used for detecting convergence.").addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to achieve.").setDefaultValueDouble(1e-03).addValidationFunctionDouble(storm::settings::ArgumentValidators::doubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
-
+                std::vector<std::string> onOff = {"on", "off"};
+                
+                this->addOption(storm::settings::OptionBuilder(moduleName, useDecompositionOptionName, true, "Sets whether to apply decomposition during the abstraction.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("value", "The value of the flag ('on' or 'off').").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(onOff))
+                                             .setDefaultValueString("on").build())
+                                .build());
+                
+                std::vector<std::string> splitModes = {"all", "none", "non-guard"};
+                this->addOption(storm::settings::OptionBuilder(moduleName, splitModeOptionName, true, "Sets which predicates are split into atoms for the refinement.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("mode", "The split mode: 'all', 'none' or 'non-guard'.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(splitModes))
+                                             .setDefaultValueString("all").build())
+                                .build());
+                
+                this->addOption(storm::settings::OptionBuilder(moduleName, addAllGuardsOptionName, true, "Sets whether all guards are added as initial predicates.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("value", "The value of the flag ('on' or 'off').").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(onOff))
+                                             .setDefaultValueString("on").build())
+                                .build());
+                
+                
+                this->addOption(storm::settings::OptionBuilder(moduleName, useInterpolationOptionName, true, "Sets whether interpolation is to be used to eliminate spurious pivot blocks.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("value", "The value of the flag ('on' or 'off').").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(onOff))
+                                             .setDefaultValueString("on").build())
+                                .build());
+                
+                this->addOption(storm::settings::OptionBuilder(moduleName, precisionOptionName, true, "The precision used for detecting convergence.").addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to achieve.").setDefaultValueDouble(1e-03).addValidatorDouble(ArgumentValidatorFactory::createDoubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
+                
                 std::vector<std::string> pivotHeuristic = {"nearest-max-dev", "most-prob-path", "max-weighted-dev"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, pivotHeuristicOptionName, true, "Sets the pivot selection heuristic.")
-                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of an available heuristic. Available are: 'nearest-max-dev', 'most-prob-path' and 'max-weighted-dev'.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(pivotHeuristic)).setDefaultValueString("nearest-max-dev").build()).build());
-
-                this->addOption(storm::settings::OptionBuilder(moduleName, reuseQualitativeResultsOptionName, true, "Sets whether to reuse qualitative results.").build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, reuseQuantitativeResultsOptionName, true, "Sets whether to reuse quantitative results.").build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, reuseAllResultsOptionName, true, "Sets whether to reuse all results.").build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, useDecompositionOptionName, true, "Sets whether to apply decomposition during the abstraction.").build());
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of an available heuristic. Available are: 'nearest-max-dev', 'most-prob-path' and 'max-weighted-dev'.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(pivotHeuristic))
+                                             .setDefaultValueString("nearest-max-dev").build()).build());
+                
+                std::vector<std::string> reuseModes = {"all", "none", "qualitative", "quantitative"};
+                this->addOption(storm::settings::OptionBuilder(moduleName, reuseResultsOptionName, true, "Sets whether to reuse all results.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("mode", "The reuse mode: 'all', 'none', 'qualitative' or 'quantitative'.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(reuseModes))
+                                             .setDefaultValueString("all").build())
+                                .build());
+            }
+            
+            bool AbstractionSettings::isUseDecompositionSet() const {
+                return this->getOption(useDecompositionOptionName).getHasOptionBeenSet();
+            }
+            
+            AbstractionSettings::SplitMode AbstractionSettings::getSplitMode() const {
+                std::string splitModeAsString = this->getOption(splitModeOptionName).getArgumentByName("mode").getValueAsString();
+                if (splitModeAsString == "all") {
+                    return SplitMode::All;
+                } else if (splitModeAsString == "none") {
+                    return SplitMode::None;
+                } else if (splitModeAsString == "non-guard") {
+                    return SplitMode::NonGuard;
+                }
+                return SplitMode::All;
             }
             
             bool AbstractionSettings::isAddAllGuardsSet() const {
-                return this->getOption(addAllGuardsOptionName).getHasOptionBeenSet();
-            }
-
-            bool AbstractionSettings::isSplitPredicatesSet() const {
-                return this->getOption(splitPredicatesOptionName).getHasOptionBeenSet();
-            }
-         
-            bool AbstractionSettings::isSplitInitialGuardsSet() const {
-                return this->getOption(splitInitialGuardsOptionName).getHasOptionBeenSet();
-            }
-            
-            bool AbstractionSettings::isSplitGuardsSet() const {
-                return this->getOption(splitGuardsOptionName).getHasOptionBeenSet();
-            }
-            
-            bool AbstractionSettings::isSplitAllSet() const {
-                return this->getOption(splitAllOptionName).getHasOptionBeenSet();
+                return this->getOption(addAllGuardsOptionName).getArgumentByName("value").getValueAsString() == "on";
             }
             
             bool AbstractionSettings::isUseInterpolationSet() const {
-                return this->getOption(useInterpolationOptionName).getHasOptionBeenSet();
+                return this->getOption(useInterpolationOptionName).getArgumentByName("value").getValueAsString() == "on";
             }
             
             double AbstractionSettings::getPrecision() const {
@@ -83,22 +100,20 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown pivot selection heuristic '" << heuristicName << "'.");
             }
             
-            bool AbstractionSettings::isReuseQualitativeResultsSet() const {
-                return this->getOption(reuseQualitativeResultsOptionName).getHasOptionBeenSet();
+            AbstractionSettings::ReuseMode AbstractionSettings::getReuseMode() const {
+                std::string reuseModeAsString = this->getOption(splitModeOptionName).getArgumentByName("mode").getValueAsString();
+                if (reuseModeAsString == "all") {
+                    return ReuseMode::All;
+                } else if (reuseModeAsString == "none") {
+                    return ReuseMode::None;
+                } else if (reuseModeAsString == "qualitative") {
+                    return ReuseMode::Qualitative;
+                } else if (reuseModeAsString == "quantitative") {
+                    return ReuseMode::Quantitative;
+                }
+                return ReuseMode::All;
             }
             
-            bool AbstractionSettings::isReuseQuantitativeResultsSet() const {
-                return this->getOption(reuseQuantitativeResultsOptionName).getHasOptionBeenSet();
-            }
-            
-            bool AbstractionSettings::isReuseAllResultsSet() const {
-                return this->getOption(reuseAllResultsOptionName).getHasOptionBeenSet();
-            }
-            
-            bool AbstractionSettings::isUseDecompositionSet() const {
-                return this->getOption(useDecompositionOptionName).getHasOptionBeenSet();
-            }
-
         }
     }
 }

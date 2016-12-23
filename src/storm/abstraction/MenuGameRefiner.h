@@ -129,12 +129,6 @@ namespace storm {
             
             /// A flag indicating whether predicates derived from weakest preconditions shall be split before using them for refinement.
             bool splitPredicates;
-
-            /// A flag indicating whether guards shall be split before using them for refinement.
-            bool splitGuards;
-            
-            /// A flag indicating whether the initially added guards shall be split before using them for refinement.
-            bool splitInitialGuards;
             
             /// A flag indicating whether all guards have been used to refine the abstraction.
             bool addedAllGuardsFlag;

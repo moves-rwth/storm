@@ -25,7 +25,7 @@ namespace storm {
             
             
             PGCLSettings::PGCLSettings() : ModuleSettings(moduleName) {
-                this->addOption(storm::settings::OptionBuilder(moduleName, pgclFileOptionName, false, "Parses the pgcl program.").setShortName(pgclFileOptionShortName).addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "path to file").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, pgclFileOptionName, false, "Parses the pgcl program.").setShortName(pgclFileOptionShortName).addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "path to file").addValidatorString(ArgumentValidatorFactory::createExistingFileValidator()).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, pgclToJaniOptionName, false, "Transform to JANI.").setShortName(pgclToJaniOptionShortName).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, programGraphToDotOptionName, false, "Destination for the program graph dot output.").setShortName(programGraphToDotShortOptionName).addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "path to file").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, programVariableRestrictionsOptionName, false, "Restrictions of program variables").setShortName(programVariableRestrictionShortOptionName).addArgument(storm::settings::ArgumentBuilder::createStringArgument("description", "description of the variable restrictions").build()).build());

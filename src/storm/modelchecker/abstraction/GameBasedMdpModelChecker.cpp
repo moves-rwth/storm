@@ -63,9 +63,9 @@ namespace storm {
                 preprocessedModel = model.asJaniModel().flattenComposition();
             }
             
-            bool reuseAll = storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isReuseAllResultsSet();
-            reuseQualitativeResults = reuseAll || storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isReuseQualitativeResultsSet();
-            reuseQuantitativeResults = reuseAll || storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isReuseQuantitativeResultsSet();
+            storm::settings::modules::AbstractionSettings::ReuseMode reuseMode = storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getReuseMode();
+            reuseQualitativeResults = reuseMode == storm::settings::modules::AbstractionSettings::ReuseMode::All || reuseMode == storm::settings::modules::AbstractionSettings::ReuseMode::Qualitative;
+            reuseQuantitativeResults = reuseMode == storm::settings::modules::AbstractionSettings::ReuseMode::All || reuseMode == storm::settings::modules::AbstractionSettings::ReuseMode::Quantitative;
         }
 
         template<storm::dd::DdType Type, typename ModelType>

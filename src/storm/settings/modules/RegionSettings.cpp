@@ -22,21 +22,21 @@ namespace storm {
             RegionSettings::RegionSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, regionfileOptionName, true, "Specifies the regions via a file. Format: 0.3<=p<=0.4,0.2<=q<=0.5; 0.6<=p<=0.7,0.8<=q<=0.9")
                             .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The file from which to read the regions.")
-                                .addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
+                                .addValidatorString(ArgumentValidatorFactory::createExistingFileValidator()).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, regionsOptionName, true, "Specifies the regions via command line. Format: '0.3<=p<=0.4,0.2<=q<=0.5; 0.6<=p<=0.7,0.8<=q<=0.9'")
                             .addArgument(storm::settings::ArgumentBuilder::createStringArgument("regions", "The considered regions.").build()).build());
                 std::vector<std::string> approxModes = {"off", "testfirst", "guessallsat", "guessallviolated"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, approxmodeOptionName, true, "Sets whether approximation should be done and whether lower or upper bounds are computed first.")
                             .addArgument(storm::settings::ArgumentBuilder::createStringArgument("mode", "The mode, (off, testfirst (default), guessallsat, guessallviolated). E.g. guessallsat will first try to prove ALLSAT")
-                                .addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(approxModes)).setDefaultValueString("testfirst").build()).build());
+                                .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(approxModes)).setDefaultValueString("testfirst").build()).build());
                 std::vector<std::string> sampleModes = {"off", "instantiate", "evaluate"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, samplemodeOptionName, true, "Sets whether sampling should be done and whether to instantiate a model or compute+evaluate a function.")
                             .addArgument(storm::settings::ArgumentBuilder::createStringArgument("mode", "The mode, (off, instantiate (default), evaluate)")
-                                .addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(sampleModes)).setDefaultValueString("instantiate").build()).build());
+                                .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(sampleModes)).setDefaultValueString("instantiate").build()).build());
                 std::vector<std::string> smtModes = {"off", "function", "model"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, smtmodeOptionName, true, "Sets whether SMT solving should be done and whether to encode it via a function or the model.")
                             .addArgument(storm::settings::ArgumentBuilder::createStringArgument("mode", "The mode, (off, function (default), model)")
-                                .addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(smtModes)).setDefaultValueString("off").build()).build());
+                                .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(smtModes)).setDefaultValueString("off").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, refinementOptionName, true, "Sets whether refinement (iteratively split regions) should be done. Only works if exactly one region (the parameter spaces) is specified.")
                             .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("threshold", "Number between zero and one. Sets the fraction of undiscovered area at which refinement stops.").build()).build());
             }
