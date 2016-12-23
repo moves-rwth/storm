@@ -2,11 +2,12 @@
 #include <set>
 #include <string>
 
+#include "storm/models/sparse/Model.h"
+#include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/storage/sparse/StateType.h"
+#include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/shortestPaths.h"
-#include "storm/utility/graph.h"
-
-#include "storm/models/sparse/StandardRewardModel.h"
 
 // FIXME: I've accidentally used k=0 *twice* now without realizing that k>=1 is required!
 // Accessing zero should trigger a warning!
@@ -177,7 +178,6 @@ namespace storm {
                         }
                     } else {
                         // node only has one "virtual edge" (with prob as per targetProbMap) to meta-target
-                        // FIXME: double check
                         T alternateDistance = shortestPathDistances[currentNode] * targetProbMap[currentNode];
                         if (alternateDistance > shortestPathDistances[metaTarget]) {
                             shortestPathDistances[metaTarget] = alternateDistance;
@@ -252,7 +252,7 @@ namespace storm {
                 } else {
                     // edge must be "virtual edge" to meta-target
                     assert(isMetaTargetPredecessor(tailNode));
-                    return targetProbMap.at(tailNode); // FIXME double check
+                    return targetProbMap.at(tailNode);
                 }
             }
 

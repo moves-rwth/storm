@@ -1,26 +1,33 @@
 #ifndef STORM_UTIL_SHORTESTPATHS_H_
 #define STORM_UTIL_SHORTESTPATHS_H_
 
+#include <unordered_set>
 #include <vector>
 #include <boost/optional/optional.hpp>
-#include <unordered_set>
-#include "storm/models/sparse/Model.h"
-#include "storm/storage/sparse/StateType.h"
+
 #include "constants.h"
-
-// NOTE: You'll (eventually) find the usual API documentation below;
-//       for more information about the purpose, design decisions,
-//       etc., you may consult `shortestPath.md`. - Tom
-
-// TODO: test whether using BitVector instead of vector<state_t> is
-//       faster for storing predecessors etc.
-
-// Now using BitVectors instead of vector<state_t> in the API because
-// BitVectors are used throughout Storm to represent a (unordered) list
-// of states.
-// (Even though both initialStates and targets are probably very sparse.)
+#include "storm/storage/BitVector.h"
 
 namespace storm {
+    namespace storage {
+        template<typename ValueType>
+        class SparseMatrix;
+
+        namespace sparse {
+            typedef uint_fast64_t state_type;
+        }
+    }
+
+    namespace models {
+        namespace sparse {
+            template<typename ValueType>
+            class StandardRewardModel;
+
+            template<class CValueType, class CRewardModelType>
+            class Model;
+        }
+    }
+
     namespace utility {
         namespace ksp {
             using state_t = storage::sparse::state_type;
@@ -60,7 +67,7 @@ namespace storm {
             public:
                 using Matrix = storage::SparseMatrix<T>;
                 using StateProbMap = std::unordered_map<state_t, T>;
-                using Model = models::sparse::Model<T>;
+                using Model = models::sparse::Model<T, models::sparse::StandardRewardModel<T>>;
 
                 /*!
                  * Performs precomputations (including meta-target insertion and Dijkstra).
