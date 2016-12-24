@@ -12,7 +12,7 @@
 #include <hypro/representations/Polytopes/HPolytope/HPolytope.h>
 
 #include "storm/adapters/CarlAdapter.h"
-#include "storm/storage/geometry/HalfSpace.h"
+#include "storm/storage/geometry/Halfspace.h"
 
 namespace storm {
     namespace adapters {
