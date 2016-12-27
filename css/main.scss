@@ -1,0 +1,15 @@
+---
+---
+@import "variables";
+@import "bootstrap/bootstrap";
+
+body { padding-top: 70px; }
+
+.starter-template {
+  text-align: center;
+  margin-top: 10rem;
+
+  .lead {
+    font-weight: 200;
+  }
+}
