@@ -81,7 +81,7 @@ namespace storm {
                 typedef typename std::unordered_map<FunctionSubstitution, ConstantType, FuncSubHash>::value_type FunctionEntry;
 
                 void initializeProbabilities(ParametricSparseModelType const& parametricModel, std::vector<std::size_t> const& newIndices);
-                void initializeRewards(ParametricSparseModelType const& parametricModel, std::vector<std::size_t> const& newIndices);
+                void initializeRewards(ParametricSparseModelType const& parametricModel);
                 void initializePlayer1Matrix(ParametricSparseModelType const& parametricModel);
                 void instantiate(ParameterRegion<ParametricType> const& region, bool computeLowerBounds);
                 void invokeSolver(bool computeLowerBounds, storm::storage::TotalScheduler& scheduler, bool allowEarlyTermination);

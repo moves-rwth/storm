@@ -23,7 +23,7 @@
 namespace storm {
     namespace solver {
 
-        SmtlibSmtSolver::SmtlibModelReference::SmtlibModelReference(storm::expressions::ExpressionManager const& manager, storm::adapters::Smt2ExpressionAdapter& expressionAdapter) : ModelReference(manager) {
+        SmtlibSmtSolver::SmtlibModelReference::SmtlibModelReference(storm::expressions::ExpressionManager const& manager) : ModelReference(manager) {
             // Intentionally left empty.
         }
 

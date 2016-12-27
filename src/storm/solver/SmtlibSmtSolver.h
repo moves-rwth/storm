@@ -22,15 +22,11 @@ namespace storm {
 
             class SmtlibModelReference : public SmtSolver::ModelReference {
             public:
-                SmtlibModelReference(storm::expressions::ExpressionManager const& manager, storm::adapters::Smt2ExpressionAdapter& expressionAdapter);
+                SmtlibModelReference(storm::expressions::ExpressionManager const& manager);
                 virtual bool getBooleanValue(storm::expressions::Variable const& variable) const override;
                 virtual int_fast64_t getIntegerValue(storm::expressions::Variable const& variable) const override;
                 virtual double getRationalValue(storm::expressions::Variable const& variable) const override;
 
-            private:
-
-                // The expression adapter that is used to translate the variable names.
-                //storm::adapters::Smt2ExpressionAdapter& expressionAdapter;
             };
 
         public:

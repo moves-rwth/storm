@@ -115,7 +115,7 @@ namespace storm {
             template<typename ParametricSparseModelType, typename ConstantType>
             SparseRegionModelCheckerSettings const& SparseRegionModelChecker<ParametricSparseModelType, ConstantType>::getSettings() const {
                 return this->settings;
-            };
+            }
 
 
 

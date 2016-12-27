@@ -464,7 +464,7 @@ namespace storm {
         regionModelChecker.reset();
         // Program and formula
         storm::prism::Program program = parseProgram(programFilePath);
-        program.checkValidity();
+        program = storm::utility::prism::preprocess(program, constantsString);
         std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = parseFormulasForPrismProgram(formulaString, program);
         if(formulas.size()!=1) {
             STORM_LOG_ERROR("The given formulaString does not specify exactly one formula");

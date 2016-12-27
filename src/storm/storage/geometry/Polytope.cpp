@@ -91,12 +91,6 @@ namespace storm {
                 // Intentionally left empty
             }
             
-            template <typename ValueType>
-            std::vector<typename Polytope<ValueType>::Point> Polytope<ValueType>::getVertices() const{
-                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Functionality not implemented.");
-                return std::vector<Point>();
-            }
-            
 #ifdef STORM_HAVE_CARL
             template <>
             std::vector<typename Polytope<storm::RationalNumber>::Point> Polytope<storm::RationalNumber>::getVerticesInClockwiseOrder() const{
@@ -151,7 +145,6 @@ namespace storm {
                 return result;
             }
 #endif
-            
 
             template <typename ValueType>
             std::vector<typename Polytope<ValueType>::Point> Polytope<ValueType>::getVerticesInClockwiseOrder() const{
@@ -160,76 +153,10 @@ namespace storm {
                 // checking whether the distance between halfspace and point is zero is problematic otherwise.
                 return std::vector<Point>();
             }
-            
-            template <typename ValueType>
-            std::vector<Halfspace<ValueType>> Polytope<ValueType>::getHalfspaces() const {
-                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Functionality not implemented.");
-                return std::vector<Halfspace<ValueType>>();
-            }
-            
-            template <typename ValueType>
-            bool Polytope<ValueType>::isEmpty() const {
-                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Functionality not implemented.");
-                return false;
-            }
-            
-            template <typename ValueType>
-            bool Polytope<ValueType>::isUniversal() const {
-                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Functionality not implemented.");
-                return false;
-            }
-            
-            template <typename ValueType>
-            bool Polytope<ValueType>::contains(Point const& point) const {
-                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Functionality not implemented.");
-                return false;
-            }
-            
-            template <typename ValueType>
-            bool Polytope<ValueType>::contains(std::shared_ptr<Polytope<ValueType>> const& other) const {
-                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Functionality not implemented.");
-                return false;
-            }
-            
-            template <typename ValueType>
-            std::shared_ptr<Polytope<ValueType>> Polytope<ValueType>::intersection(std::shared_ptr<Polytope<ValueType>> const& rhs) const {
-                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Functionality not implemented.");
-                return nullptr;
-            }
-            
-            template <typename ValueType>
-            std::shared_ptr<Polytope<ValueType>> Polytope<ValueType>::intersection(Halfspace<ValueType> const& halfspace) const {
-                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Functionality not implemented.");
-                return nullptr;
-            }
-            
-            template <typename ValueType>
-            std::shared_ptr<Polytope<ValueType>> Polytope<ValueType>::convexUnion(std::shared_ptr<Polytope<ValueType>> const& rhs) const {
-                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Functionality not implemented.");
-                return nullptr;
-            }
-            
-            template <typename ValueType>
-            std::shared_ptr<Polytope<ValueType>> Polytope<ValueType>::minkowskiSum(std::shared_ptr<Polytope<ValueType>> const& rhs) const {
-                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Functionality not implemented.");
-                return nullptr;
-            }
-            
-            template <typename ValueType>
-            std::shared_ptr<Polytope<ValueType>> Polytope<ValueType>::affineTransformation(std::vector<Point> const& matrix, Point const& vector) const {
-                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Functionality not implemented.");
-                return nullptr;
-            }
-            
+
             template <typename ValueType>
             std::shared_ptr<Polytope<ValueType>> Polytope<ValueType>::downwardClosure() const {
                 return createDownwardClosure(this->getVertices());
-            }
-            
-            template <typename ValueType>
-            std::pair<typename Polytope<ValueType>::Point, bool> Polytope<ValueType>::optimize(Point const& direction) const {
-                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Functionality not implemented.");
-                return std::make_pair(Point(), false);
             }
             
             template <typename ValueType>

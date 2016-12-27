@@ -160,12 +160,11 @@ namespace storm {
             std::is_same<MT,storm::models::sparse::Mdp<typename SparseModelType::ValueType>>::value ||
             std::is_same<MT,storm::models::sparse::Ctmc<typename SparseModelType::ValueType>>::value,
             MT>::type
-            createTransformedModel(MT const& originalModel,
-                                   storm::storage::BitVector const& subsystem,
+            createTransformedModel(MT const& /*originalModel*/,
+                                   storm::storage::BitVector const& /*subsystem*/,
                                    storm::storage::SparseMatrix<typename MT::ValueType>& matrix,
                                    storm::models::sparse::StateLabeling& stateLabeling,
-                                   std::unordered_map<std::string,
-                                   typename MT::RewardModelType>& rewardModels,
+                                   std::unordered_map<std::string, typename MT::RewardModelType>& rewardModels,
                                    boost::optional<std::vector<typename storm::models::sparse::LabelSet>>& choiceLabeling ) {
                 return MT(std::move(matrix), std::move(stateLabeling), std::move(rewardModels), std::move(choiceLabeling));
             }

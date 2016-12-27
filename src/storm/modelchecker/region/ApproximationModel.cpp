@@ -57,7 +57,7 @@ namespace storm {
                 //Now pre-compute the information for the equation system.
                 initializeProbabilities(parametricModel, newIndices);
                 if(this->computeRewards){
-                    initializeRewards(parametricModel, newIndices);
+                    initializeRewards(parametricModel);
                 }
                 this->matrixData.assignment.shrink_to_fit();
                 this->vectorData.assignment.shrink_to_fit();
@@ -198,7 +198,7 @@ namespace storm {
             }
 
             template<typename ParametricSparseModelType, typename ConstantType>
-            void ApproximationModel<ParametricSparseModelType, ConstantType>::initializeRewards(ParametricSparseModelType const& parametricModel, std::vector<std::size_t> const& newIndices){
+            void ApproximationModel<ParametricSparseModelType, ConstantType>::initializeRewards(ParametricSparseModelType const& parametricModel){
                 STORM_LOG_DEBUG("Approximation model initialization for Rewards");
                 //Note: Since the original model is assumed to be a DTMC, there is no outgoing transition of a maybeState that leads to an infinity state.
                 //Hence, we do not have to set entries of the eqSys vector to infinity (as it would be required for mdp model checking...)

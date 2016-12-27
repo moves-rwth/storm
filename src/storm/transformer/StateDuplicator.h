@@ -235,8 +235,8 @@ namespace storm {
             std::is_same<MT,storm::models::sparse::Mdp<typename SparseModelType::ValueType>>::value ||
             std::is_same<MT,storm::models::sparse::Ctmc<typename SparseModelType::ValueType>>::value,
             MT>::type
-            createTransformedModel(MT const& originalModel,
-                                   StateDuplicatorReturnType const& result,
+            createTransformedModel(MT const& /*originalModel*/,
+                                   StateDuplicatorReturnType const& /*result*/,
                                    storm::storage::SparseMatrix<typename MT::ValueType>& matrix,
                                    storm::models::sparse::StateLabeling& stateLabeling,
                                    std::unordered_map<std::string,
