@@ -7,7 +7,7 @@
 #include "storm/modelchecker/results/ParetoCurveCheckResult.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
-#include "storm/settings//SettingsManager.h"
+#include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/MultiObjectiveSettings.h"
 #include "storm/settings/modules/GeneralSettings.h"
 
@@ -22,7 +22,10 @@ namespace storm {
                 
                 // Set the precision of the weight vector checker
                 typename SparseModelType::ValueType weightedPrecision = storm::utility::convertNumber<typename SparseModelType::ValueType>(storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>().getPrecision());
-                weightedPrecision /= typename SparseModelType::ValueType(2);
+                weightedPrecision /= storm::utility::sqrt(storm::utility::convertNumber<typename SparseModelType::ValueType, uint_fast64_t>(this->objectives.size()));
+                // multiobjPrecision / sqrt(numObjectives) is the largest possible value for which termination is guaranteed.
+                // Lets be a little bit more precise to reduce the number of required iterations.
+                weightedPrecision *= storm::utility::convertNumber<typename SparseModelType::ValueType>(0.9);
                 this->weightVectorChecker->setWeightedPrecision(weightedPrecision);
                 
             }
