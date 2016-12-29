@@ -202,7 +202,7 @@ namespace storm {
                                   |
                                  (qi::lit("<") > -identifier > qi::lit(">")[qi::_a = true]))
                                  > +(qi::char_ - qi::lit(";"))
-                                 > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createCommand, phoenix::ref(*this), qi::_1, qi::_r1)];
+                                 > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createDummyCommand, phoenix::ref(*this), qi::_1, qi::_r1)];
             commandDefinition.name("command definition");
             
             moduleDefinition = ((qi::lit("module") >> identifier >> *(variableDefinition(qi::_a, qi::_b))) > *commandDefinition(qi::_r1) > qi::lit("endmodule"))[qi::_val = phoenix::bind(&PrismParser::createModule, phoenix::ref(*this), qi::_1, qi::_a, qi::_b, qi::_2, qi::_r1)];
@@ -484,7 +484,7 @@ namespace storm {
             return storm::prism::Command(globalProgramInformation.currentCommandIndex - 1, markovian, actionIndex, realActionName, guardExpression, updates, this->getFilename());
         }
         
-        storm::prism::Command PrismParser::createCommand(boost::optional<std::string> const& actionName, GlobalProgramInformation& globalProgramInformation) const {
+        storm::prism::Command PrismParser::createDummyCommand(boost::optional<std::string> const& actionName, GlobalProgramInformation& globalProgramInformation) const {
             STORM_LOG_ASSERT(!this->secondRun, "Dummy procedure must not be called in second run.");
             std::string realActionName = actionName ? actionName.get() : "";
 
