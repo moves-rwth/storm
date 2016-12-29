@@ -3,13 +3,14 @@
 namespace storm {
     namespace storage {
         struct DFTLayoutInfo {
-            DFTLayoutInfo() {};
+            DFTLayoutInfo() : x(20.0), y(20.0) {
+            };
             DFTLayoutInfo(double x, double y) : x(x), y(y) {};
             
             // x location
-            double x = 0.0;
+            double x;
             // y location
-            double y = 0.0;
+            double y;
         };
     }
 }

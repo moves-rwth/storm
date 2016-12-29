@@ -270,10 +270,6 @@ namespace storm {
             }
 
             DFTLayoutInfo const& getElementLayoutInfo(size_t id) const {
-                if(mLayoutInfo.count(id) == 0) {
-                    STORM_LOG_WARN("Layout info for element with id " << id << " not found");
-                    return DFTLayoutInfo();
-                }
                 return mLayoutInfo.at(id);
             }
 
