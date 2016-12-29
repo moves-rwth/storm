@@ -13,6 +13,7 @@
 #include "storm/settings/modules/MinMaxEquationSolverSettings.h"
 #include "storm/settings/modules/NativeEquationSolverSettings.h"
 #include "storm/settings/modules/EliminationSettings.h"
+#include "storm/settings/modules/ResourceSettings.h"
 
 #include "storm-dft/parser/DFTGalileoParser.h"
 #include "storm-dft/parser/DFTJsonParser.h"
@@ -98,6 +99,7 @@ void initializeSettings() {
     //storm::settings::addModule<storm::settings::modules::TopologicalValueIterationEquationSolverSettings>();
     //storm::settings::addModule<storm::settings::modules::ParametricSettings>();
     storm::settings::addModule<storm::settings::modules::EliminationSettings>();
+    storm::settings::addModule<storm::settings::modules::ResourceSettings>();
     
     // For translation into JANI via GSPN.
     storm::settings::addModule<storm::settings::modules::GSPNSettings>();
