@@ -117,7 +117,7 @@ namespace storm {
             
             template <class SparseModelType>
             void SparsePcaaWeightVectorChecker<SparseModelType>::unboundedWeightedPhase(std::vector<ValueType> const& weightedRewardVector) {
-                if(this->objectivesWithNoUpperTimeBound.empty()) {
+                if(this->objectivesWithNoUpperTimeBound.empty() || !storm::utility::vector::hasNonZeroEntry(weightedRewardVector)) {
                     this->weightedResult = std::vector<ValueType>(model.getNumberOfStates(), storm::utility::zero<ValueType>());
                     this->scheduler = storm::storage::TotalScheduler(model.getNumberOfStates());
                     return;

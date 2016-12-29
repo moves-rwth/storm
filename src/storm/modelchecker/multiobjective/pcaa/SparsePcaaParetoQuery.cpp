@@ -7,7 +7,7 @@
 #include "storm/modelchecker/results/ParetoCurveCheckResult.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
-#include "storm/settings//SettingsManager.h"
+#include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/MultiObjectiveSettings.h"
 #include "storm/settings/modules/GeneralSettings.h"
 
@@ -22,7 +22,10 @@ namespace storm {
                 
                 // Set the precision of the weight vector checker
                 typename SparseModelType::ValueType weightedPrecision = storm::utility::convertNumber<typename SparseModelType::ValueType>(storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>().getPrecision());
-                weightedPrecision /= typename SparseModelType::ValueType(2);
+                weightedPrecision /= storm::utility::sqrt(storm::utility::convertNumber<typename SparseModelType::ValueType, uint_fast64_t>(this->objectives.size()));
+                // multiobjPrecision / sqrt(numObjectives) is the largest possible value for which termination is guaranteed.
+                // Lets be a little bit more precise to reduce the number of required iterations.
+                weightedPrecision *= storm::utility::convertNumber<typename SparseModelType::ValueType>(0.9);
                 this->weightVectorChecker->setWeightedPrecision(weightedPrecision);
                 
             }
@@ -35,9 +38,10 @@ namespace storm {
                 
                 // obtain the data for the checkresult
                 std::vector<std::vector<typename SparseModelType::ValueType>> paretoOptimalPoints;
-                paretoOptimalPoints.reserve(this->refinementSteps.size());
-                for(auto const& step : this->refinementSteps) {
-                    paretoOptimalPoints.push_back(storm::utility::vector::convertNumericVector<typename SparseModelType::ValueType>(this->transformPointToOriginalModel(step.lowerBoundPoint)));
+                std::vector<Point> vertices = this->underApproximation->getVertices();
+                paretoOptimalPoints.reserve(vertices.size());
+                for(auto const& vertex : vertices) {
+                    paretoOptimalPoints.push_back(storm::utility::vector::convertNumericVector<typename SparseModelType::ValueType>(this->transformPointToOriginalModel(vertex)));
                 }
                 return std::unique_ptr<CheckResult>(new ParetoCurveCheckResult<typename SparseModelType::ValueType>(this->originalModel.getInitialStates().getNextSetIndex(0),
                                                                         std::move(paretoOptimalPoints),
