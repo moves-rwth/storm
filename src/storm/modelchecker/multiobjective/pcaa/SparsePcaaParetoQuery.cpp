@@ -38,9 +38,10 @@ namespace storm {
                 
                 // obtain the data for the checkresult
                 std::vector<std::vector<typename SparseModelType::ValueType>> paretoOptimalPoints;
-                paretoOptimalPoints.reserve(this->refinementSteps.size());
-                for(auto const& step : this->refinementSteps) {
-                    paretoOptimalPoints.push_back(storm::utility::vector::convertNumericVector<typename SparseModelType::ValueType>(this->transformPointToOriginalModel(step.lowerBoundPoint)));
+                std::vector<Point> vertices = this->underApproximation->getVertices();
+                paretoOptimalPoints.reserve(vertices.size());
+                for(auto const& vertex : vertices) {
+                    paretoOptimalPoints.push_back(storm::utility::vector::convertNumericVector<typename SparseModelType::ValueType>(this->transformPointToOriginalModel(vertex)));
                 }
                 return std::unique_ptr<CheckResult>(new ParetoCurveCheckResult<typename SparseModelType::ValueType>(this->originalModel.getInitialStates().getNextSetIndex(0),
                                                                         std::move(paretoOptimalPoints),

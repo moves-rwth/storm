@@ -349,6 +349,7 @@ namespace storm {
                     optionalChoiceLabeling = storm::utility::vector::filterVector(optionalChoiceLabeling.get(), keepStates);
                 }
                 //TODO update reward models according to kept states
+                STORM_LOG_WARN_COND(this->getRewardModels().empty(), "Conversion of MA to CTMC does not preserve rewards.");
                 std::unordered_map<std::string, RewardModelType> rewardModels = this->getRewardModels();
                 
                 return std::make_shared<storm::models::sparse::Ctmc<ValueType, RewardModelType>>(std::move(rateMatrix), std::move(stateLabeling), std::move(rewardModels), std::move(optionalChoiceLabeling));
