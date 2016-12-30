@@ -18,7 +18,7 @@ node {
    
    stage('Build') {
       dir("build") {
-          sh "make -j 4 storm"
+          sh "make  storm"
       }
       
    }
