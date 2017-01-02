@@ -1,1 +1,0 @@
- multi(R{"power"}min=? [ C<=300 ], R{"queue"}min=? [ C<=300 ]) 

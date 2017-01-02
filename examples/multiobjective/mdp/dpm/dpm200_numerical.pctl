@@ -1,3 +1,0 @@
- multi(R{"power"}min=? [ C<=200 ], R{"queue"}<=170 [ C<=200 ]) 
-// Note: The property file from http://www.prismmodelchecker.org/files/atva12mo/ does not provide a threshold for the second objective.
-// We pick a threshold that intersects the pareto curve.

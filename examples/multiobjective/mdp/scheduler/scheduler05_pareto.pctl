@@ -1,4 +1,0 @@
-  multi(R{"time"}min=?[ F "tasks_complete" ], R{"energy"}min=? [ F "tasks_complete" ]) 
- // Original query:
-  //multi(R{"energy"}min=?[ C ], R{"time"}min=? [ C ]) 
-// Note that the min values are actually infinity and prism (currently) gives wrong results for this, e.g., R{"time"}min=?[ C<=2000 ] gives a larger value than multi(R{"time"}min=?[ C ], R{"energy"}<=1.45 [ C ]) .

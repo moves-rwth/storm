@@ -566,7 +566,7 @@ BDD::operator+(
   const BDD& other) const
 {
     DdManager *mgr = checkSameManager(other);
-    DdNode *result = Cudd_bddOr(mgr,node,other.node);
+    DdNode *result = 	(mgr,node,other.node);
     checkReturnValue(result);
     return BDD(p, result);
 
@@ -2648,7 +2648,16 @@ ADD::MinAbstract(const ADD& cube) const
     checkReturnValue(result);
     return ADD(p, result);
 } // ADD::MinAbstract
-    
+
+ADD
+ADD::MinAbstractExcept0(const ADD& cube) const
+{
+    DdManager *mgr = checkSameManager(cube);
+    DdNode *result = Cudd_addMinExcept0Abstract(mgr, node, cube.node);
+    checkReturnValue(result);
+    return ADD(p, result);
+} // ADD::MinAbstractExcept0
+
 ADD
 ADD::MaxAbstract(const ADD& cube) const
 {
@@ -2657,6 +2666,24 @@ ADD::MaxAbstract(const ADD& cube) const
     checkReturnValue(result);
     return ADD(p, result);
 } // ADD::MaxAbstract
+
+BDD
+ADD::MinAbstractRepresentative(const ADD& cube) const
+{
+    DdManager *mgr = checkSameManager(cube);
+    DdNode *result = Cudd_addMinAbstractRepresentative(mgr, node, cube.node);
+    checkReturnValue(result);
+    return BDD(p, result);
+} // ADD::MinRepresentative
+
+BDD
+ADD::MaxAbstractRepresentative(const ADD& cube) const
+{
+    DdManager *mgr = checkSameManager(cube);
+    DdNode *result = Cudd_addMaxAbstractRepresentative(mgr, node, cube.node);
+    checkReturnValue(result);
+    return BDD(p, result);
+} // ADD::MaxRepresentative
 
 ADD
 ADD::Plus(
@@ -3137,6 +3164,66 @@ ADD::GreaterThanOrEqual(const ADD& g) const
 } // ADD::GreaterThanOrEqual
 
 BDD
+ADD::EqualsBdd(const ADD& g) const
+{
+    DdManager *mgr = checkSameManager(g);
+    DdNode *result = Cudd_addToBddApply(mgr, Cudd_addToBddEquals, node, g.node);
+    checkReturnValue(result);
+    return BDD(p, result);
+        
+} // ADD::EqualsBdd
+    
+BDD
+ADD::NotEqualsBdd(const ADD& g) const
+{
+    DdManager *mgr = checkSameManager(g);
+    DdNode *result = Cudd_addToBddApply(mgr, Cudd_addToBddNotEquals, node, g.node);
+    checkReturnValue(result);
+    return BDD(p, result);
+    
+} // ADD::NotEqualsBdd
+    
+BDD
+ADD::LessThanBdd(const ADD& g) const
+{
+    DdManager *mgr = checkSameManager(g);
+    DdNode *result = Cudd_addToBddApply(mgr, Cudd_addToBddLessThan, node, g.node);
+    checkReturnValue(result);
+    return BDD(p, result);
+        
+} // ADD::LessThanBdd
+    
+BDD
+ADD::LessThanOrEqualBdd(const ADD& g) const
+{
+    DdManager *mgr = checkSameManager(g);
+    DdNode *result = Cudd_addToBddApply(mgr, Cudd_addToBddLessThanEquals, node, g.node);
+    checkReturnValue(result);
+    return BDD(p, result);
+        
+} // ADD::LessThanOrEqualBdd
+    
+BDD
+ADD::GreaterThanBdd(const ADD& g) const
+{
+    DdManager *mgr = checkSameManager(g);
+    DdNode *result = Cudd_addToBddApply(mgr, Cudd_addToBddGreaterThan, node, g.node);
+    checkReturnValue(result);
+    return BDD(p, result);
+        
+} // ADD::GreaterThanBdd
+    
+BDD
+ADD::GreaterThanOrEqualBdd(const ADD& g) const
+{
+    DdManager *mgr = checkSameManager(g);
+    DdNode *result = Cudd_addToBddApply(mgr, Cudd_addToBddGreaterThanEquals, node, g.node);
+    checkReturnValue(result);
+    return BDD(p, result);
+        
+} // ADD::GreaterThanOrEqualBdd
+    
+BDD
 BDD::AndAbstract(
   const BDD& g,
   const BDD& cube,
@@ -3485,6 +3572,14 @@ BDD::ExistAbstract(
 
 } // BDD::ExistAbstract
 
+BDD
+BDD::ExistAbstractRepresentative(const BDD& cube) const {
+    DdManager *mgr = checkSameManager(cube);
+    DdNode *result;
+    result = Cudd_bddExistAbstractRepresentative(mgr, node, cube.node);
+    checkReturnValue(result);
+    return BDD(p, result);
+} // BDD::ExistAbstractRepresentative
 
 BDD
 BDD::XorExistAbstract(

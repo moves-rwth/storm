@@ -1,0 +1,21 @@
+set(storm_VERSION @storm_VERSION@)
+
+get_filename_component(storm_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
+
+include("@carl_CMAKE_DIR@/carlConfig.cmake")
+
+@DEP_TARGETS@
+
+@EXP_OPTIONS@
+
+# Our library dependencies (contains definitions for IMPORTED targets)
+if(NOT TARGET storm)
+  include("${storm_CMAKE_DIR}/stormTargets.cmake")
+endif()
+
+@PACKAGE_INIT@
+
+set(storm_INCLUDE_DIR "@CONF_INCLUDE_DIRS@")
+
+set(storm_LIBRARIES storm)
+check_required_components(storm)

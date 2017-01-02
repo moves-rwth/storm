@@ -13,6 +13,8 @@ add_library(sylvan
     sha2.c
     stats.h
     stats.c
+    storm_function_wrapper.h
+    storm_function_wrapper.cpp
     sylvan.h
     sylvan_bdd.h
     sylvan_bdd.c
@@ -30,6 +32,8 @@ add_library(sylvan
     sylvan_mtbdd_int.h
     sylvan_obj.hpp
     sylvan_obj.cpp
+    sylvan_storm_rational_function.h
+    sylvan_storm_rational_function.c
     tls.h
 )
 
@@ -40,7 +44,12 @@ set_target_properties(sylvan PROPERTIES
                       ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${CMAKE_CURRENT_BINARY_DIR}
                       ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${CMAKE_CURRENT_BINARY_DIR})
 
-target_link_libraries(sylvan m pthread)
+target_link_libraries(sylvan m pthread gmp)
+
+if(USE_CARL)
+   message(STATUS "Sylvan - linking CARL.")
+   target_link_libraries(sylvan ${carl_LIBRARIES})
+endif(USE_CARL)
 
 if(UNIX AND NOT APPLE)
     target_link_libraries(sylvan rt)

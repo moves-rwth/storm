@@ -30,69 +30,7 @@
 #include <sha2.h>
 #include <sylvan.h>
 #include <sylvan_common.h>
-
-/**
- * Complement handling macros
- */
-#define BDD_HASMARK(s)              (s&sylvan_complement?1:0)
-#define BDD_TOGGLEMARK(s)           (s^sylvan_complement)
-#define BDD_STRIPMARK(s)            (s&~sylvan_complement)
-#define BDD_TRANSFERMARK(from, to)  (to ^ (from & sylvan_complement))
-// Equal under mark
-#define BDD_EQUALM(a, b)            ((((a)^(b))&(~sylvan_complement))==0)
-
-/**
- * BDD node structure
- */
-typedef struct __attribute__((packed)) bddnode {
-    uint64_t a, b;
-} * bddnode_t; // 16 bytes
-
-#define GETNODE(bdd) ((bddnode_t)llmsset_index_to_ptr(nodes, bdd&0x000000ffffffffff))
-
-static inline int __attribute__((unused))
-bddnode_getcomp(bddnode_t n)
-{
-    return n->a & 0x8000000000000000 ? 1 : 0;
-}
-
-static inline uint64_t
-bddnode_getlow(bddnode_t n)
-{
-    return n->b & 0x000000ffffffffff; // 40 bits
-}
-
-static inline uint64_t
-bddnode_gethigh(bddnode_t n)
-{
-    return n->a & 0x800000ffffffffff; // 40 bits plus high bit of first
-}
-
-static inline uint32_t
-bddnode_getvariable(bddnode_t n)
-{
-    return (uint32_t)(n->b >> 40);
-}
-
-static inline int
-bddnode_getmark(bddnode_t n)
-{
-    return n->a & 0x2000000000000000 ? 1 : 0;
-}
-
-static inline void
-bddnode_setmark(bddnode_t n, int mark)
-{
-    if (mark) n->a |= 0x2000000000000000;
-    else n->a &= 0xdfffffffffffffff;
-}
-
-static inline void
-bddnode_makenode(bddnode_t n, uint32_t var, uint64_t low, uint64_t high)
-{
-    n->a = high;
-    n->b = ((uint64_t)var)<<40 | low;
-}
+#include <sylvan_bdd_int.h>
 
 /**
  * Implementation of garbage collection.
@@ -104,7 +42,7 @@ VOID_TASK_IMPL_1(sylvan_gc_mark_rec, BDD, bdd)
     if (bdd == sylvan_false || bdd == sylvan_true) return;
 
     if (llmsset_mark(nodes, bdd&0x000000ffffffffff)) {
-        bddnode_t n = GETNODE(bdd);
+        bddnode_t n = BDD_GETNODE(bdd);
         SPAWN(sylvan_gc_mark_rec, bddnode_getlow(n));
         CALL(sylvan_gc_mark_rec, bddnode_gethigh(n));
         SYNC(sylvan_gc_mark_rec);
@@ -348,7 +286,7 @@ sylvan_ithvar(BDDVAR level)
 BDDVAR
 sylvan_var(BDD bdd)
 {
-    return bddnode_getvariable(GETNODE(bdd));
+    return bddnode_getvariable(BDD_GETNODE(bdd));
 }
 
 static BDD
@@ -367,14 +305,14 @@ BDD
 sylvan_low(BDD bdd)
 {
     if (sylvan_isconst(bdd)) return bdd;
-    return node_low(bdd, GETNODE(bdd));
+    return node_low(bdd, BDD_GETNODE(bdd));
 }
 
 BDD
 sylvan_high(BDD bdd)
 {
     if (sylvan_isconst(bdd)) return bdd;
-    return node_high(bdd, GETNODE(bdd));
+    return node_high(bdd, BDD_GETNODE(bdd));
 }
 
 /**
@@ -401,8 +339,8 @@ TASK_IMPL_3(BDD, sylvan_and, BDD, a, BDD, b, BDDVAR, prev_level)
         a = t;
     }
 
-    bddnode_t na = GETNODE(a);
-    bddnode_t nb = GETNODE(b);
+    bddnode_t na = BDD_GETNODE(a);
+    bddnode_t nb = BDD_GETNODE(b);
 
     BDDVAR va = bddnode_getvariable(na);
     BDDVAR vb = bddnode_getvariable(nb);
@@ -497,8 +435,8 @@ TASK_IMPL_3(BDD, sylvan_xor, BDD, a, BDD, b, BDDVAR, prev_level)
         b = sylvan_not(b);
     }
 
-    bddnode_t na = GETNODE(a);
-    bddnode_t nb = GETNODE(b);
+    bddnode_t na = BDD_GETNODE(a);
+    bddnode_t nb = BDD_GETNODE(b);
 
     BDDVAR va = bddnode_getvariable(na);
     BDDVAR vb = bddnode_getvariable(nb);
@@ -594,9 +532,9 @@ TASK_IMPL_4(BDD, sylvan_ite, BDD, a, BDD, b, BDD, c, BDDVAR, prev_level)
         mark = 1;
     }
 
-    bddnode_t na = GETNODE(a);
-    bddnode_t nb = GETNODE(b);
-    bddnode_t nc = GETNODE(c);
+    bddnode_t na = BDD_GETNODE(a);
+    bddnode_t nb = BDD_GETNODE(b);
+    bddnode_t nc = BDD_GETNODE(c);
 
     BDDVAR va = bddnode_getvariable(na);
     BDDVAR vb = bddnode_getvariable(nb);
@@ -699,8 +637,8 @@ TASK_IMPL_3(BDD, sylvan_constrain, BDD, a, BDD, b, BDDVAR, prev_level)
     sylvan_stats_count(BDD_CONSTRAIN);
 
     // a != constant and b != constant
-    bddnode_t na = GETNODE(a);
-    bddnode_t nb = GETNODE(b);
+    bddnode_t na = BDD_GETNODE(a);
+    bddnode_t nb = BDD_GETNODE(b);
 
     BDDVAR va = bddnode_getvariable(na);
     BDDVAR vb = bddnode_getvariable(nb);
@@ -788,8 +726,8 @@ TASK_IMPL_3(BDD, sylvan_restrict, BDD, a, BDD, b, BDDVAR, prev_level)
     sylvan_stats_count(BDD_RESTRICT);
 
     // a != constant and b != constant
-    bddnode_t na = GETNODE(a);
-    bddnode_t nb = GETNODE(b);
+    bddnode_t na = BDD_GETNODE(a);
+    bddnode_t nb = BDD_GETNODE(b);
 
     BDDVAR va = bddnode_getvariable(na);
     BDDVAR vb = bddnode_getvariable(nb);
@@ -850,15 +788,15 @@ TASK_IMPL_3(BDD, sylvan_exists, BDD, a, BDD, variables, BDDVAR, prev_level)
     if (sylvan_set_isempty(variables)) return a;
 
     // a != constant
-    bddnode_t na = GETNODE(a);
+    bddnode_t na = BDD_GETNODE(a);
     BDDVAR level = bddnode_getvariable(na);
 
-    bddnode_t nv = GETNODE(variables);
+    bddnode_t nv = BDD_GETNODE(variables);
     BDDVAR vv = bddnode_getvariable(nv);
     while (vv < level) {
         variables = node_high(variables, nv);
         if (sylvan_set_isempty(variables)) return a;
-        nv = GETNODE(variables);
+        nv = BDD_GETNODE(variables);
         vv = bddnode_getvariable(nv);
     }
 
@@ -956,9 +894,9 @@ TASK_IMPL_4(BDD, sylvan_and_exists, BDD, a, BDD, b, BDDSET, v, BDDVAR, prev_leve
     sylvan_stats_count(BDD_AND_EXISTS);
 
     // a != constant
-    bddnode_t na = GETNODE(a);
-    bddnode_t nb = GETNODE(b);
-    bddnode_t nv = GETNODE(v);
+    bddnode_t na = BDD_GETNODE(a);
+    bddnode_t nb = BDD_GETNODE(b);
+    bddnode_t nv = BDD_GETNODE(v);
 
     BDDVAR va = bddnode_getvariable(na);
     BDDVAR vb = bddnode_getvariable(nb);
@@ -969,7 +907,7 @@ TASK_IMPL_4(BDD, sylvan_and_exists, BDD, a, BDD, b, BDDSET, v, BDDVAR, prev_leve
     while (vv < level) {
         v = node_high(v, nv); // get next variable in conjunction
         if (sylvan_set_isempty(v)) return sylvan_and(a, b);
-        nv = GETNODE(v);
+        nv = BDD_GETNODE(v);
         vv = bddnode_getvariable(nv);
     }
 
@@ -1069,8 +1007,8 @@ TASK_IMPL_4(BDD, sylvan_relnext, BDD, a, BDD, b, BDDSET, vars, BDDVAR, prev_leve
     sylvan_stats_count(BDD_RELNEXT);
 
     /* Determine top level */
-    bddnode_t na = sylvan_isconst(a) ? 0 : GETNODE(a);
-    bddnode_t nb = sylvan_isconst(b) ? 0 : GETNODE(b);
+    bddnode_t na = sylvan_isconst(a) ? 0 : BDD_GETNODE(a);
+    bddnode_t nb = sylvan_isconst(b) ? 0 : BDD_GETNODE(b);
 
     BDDVAR va = na ? bddnode_getvariable(na) : 0xffffffff;
     BDDVAR vb = nb ? bddnode_getvariable(nb) : 0xffffffff;
@@ -1082,7 +1020,7 @@ TASK_IMPL_4(BDD, sylvan_relnext, BDD, a, BDD, b, BDDSET, vars, BDDVAR, prev_leve
     if (vars == sylvan_false) {
         is_s_or_t = 1;
     } else {
-        nv = GETNODE(vars);
+        nv = BDD_GETNODE(vars);
         for (;;) {
             /* check if level is s/t */
             BDDVAR vv = bddnode_getvariable(nv);
@@ -1094,7 +1032,7 @@ TASK_IMPL_4(BDD, sylvan_relnext, BDD, a, BDD, b, BDDSET, vars, BDDVAR, prev_leve
             if (level < vv) break;
             vars = node_high(vars, nv); // get next in vars
             if (sylvan_set_isempty(vars)) return a;
-            nv = GETNODE(vars);
+            nv = BDD_GETNODE(vars);
         }
     }
 
@@ -1131,7 +1069,7 @@ TASK_IMPL_4(BDD, sylvan_relnext, BDD, a, BDD, b, BDDSET, vars, BDDVAR, prev_leve
 
         BDD b00, b01, b10, b11;
         if (!sylvan_isconst(b0)) {
-            bddnode_t nb0 = GETNODE(b0);
+            bddnode_t nb0 = BDD_GETNODE(b0);
             if (bddnode_getvariable(nb0) == t) {
                 b00 = node_low(b0, nb0);
                 b01 = node_high(b0, nb0);
@@ -1142,7 +1080,7 @@ TASK_IMPL_4(BDD, sylvan_relnext, BDD, a, BDD, b, BDDSET, vars, BDDVAR, prev_leve
             b00 = b01 = b0;
         }
         if (!sylvan_isconst(b1)) {
-            bddnode_t nb1 = GETNODE(b1);
+            bddnode_t nb1 = BDD_GETNODE(b1);
             if (bddnode_getvariable(nb1) == t) {
                 b10 = node_low(b1, nb1);
                 b11 = node_high(b1, nb1);
@@ -1267,8 +1205,8 @@ TASK_IMPL_4(BDD, sylvan_relprev, BDD, a, BDD, b, BDDSET, vars, BDDVAR, prev_leve
     sylvan_stats_count(BDD_RELPREV);
 
     /* Determine top level */
-    bddnode_t na = sylvan_isconst(a) ? 0 : GETNODE(a);
-    bddnode_t nb = sylvan_isconst(b) ? 0 : GETNODE(b);
+    bddnode_t na = sylvan_isconst(a) ? 0 : BDD_GETNODE(a);
+    bddnode_t nb = sylvan_isconst(b) ? 0 : BDD_GETNODE(b);
 
     BDDVAR va = na ? bddnode_getvariable(na) : 0xffffffff;
     BDDVAR vb = nb ? bddnode_getvariable(nb) : 0xffffffff;
@@ -1280,7 +1218,7 @@ TASK_IMPL_4(BDD, sylvan_relprev, BDD, a, BDD, b, BDDSET, vars, BDDVAR, prev_leve
     if (vars == sylvan_false) {
         is_s_or_t = 1;
     } else {
-        nv = GETNODE(vars);
+        nv = BDD_GETNODE(vars);
         for (;;) {
             /* check if level is s/t */
             BDDVAR vv = bddnode_getvariable(nv);
@@ -1292,7 +1230,7 @@ TASK_IMPL_4(BDD, sylvan_relprev, BDD, a, BDD, b, BDDSET, vars, BDDVAR, prev_leve
             if (level < vv) break;
             vars = node_high(vars, nv); // get next in vars
             if (sylvan_set_isempty(vars)) return b;
-            nv = GETNODE(vars);
+            nv = BDD_GETNODE(vars);
         }
     }
 
@@ -1329,7 +1267,7 @@ TASK_IMPL_4(BDD, sylvan_relprev, BDD, a, BDD, b, BDDSET, vars, BDDVAR, prev_leve
 
         BDD a00, a01, a10, a11;
         if (!sylvan_isconst(a0)) {
-            bddnode_t na0 = GETNODE(a0);
+            bddnode_t na0 = BDD_GETNODE(a0);
             if (bddnode_getvariable(na0) == t) {
                 a00 = node_low(a0, na0);
                 a01 = node_high(a0, na0);
@@ -1340,7 +1278,7 @@ TASK_IMPL_4(BDD, sylvan_relprev, BDD, a, BDD, b, BDDSET, vars, BDDVAR, prev_leve
             a00 = a01 = a0;
         }
         if (!sylvan_isconst(a1)) {
-            bddnode_t na1 = GETNODE(a1);
+            bddnode_t na1 = BDD_GETNODE(a1);
             if (bddnode_getvariable(na1) == t) {
                 a10 = node_low(a1, na1);
                 a11 = node_high(a1, na1);
@@ -1353,7 +1291,7 @@ TASK_IMPL_4(BDD, sylvan_relprev, BDD, a, BDD, b, BDDSET, vars, BDDVAR, prev_leve
 
         BDD b00, b01, b10, b11;
         if (!sylvan_isconst(b0)) {
-            bddnode_t nb0 = GETNODE(b0);
+            bddnode_t nb0 = BDD_GETNODE(b0);
             if (bddnode_getvariable(nb0) == t) {
                 b00 = node_low(b0, nb0);
                 b01 = node_high(b0, nb0);
@@ -1364,7 +1302,7 @@ TASK_IMPL_4(BDD, sylvan_relprev, BDD, a, BDD, b, BDDSET, vars, BDDVAR, prev_leve
             b00 = b01 = b0;
         }
         if (!sylvan_isconst(b1)) {
-            bddnode_t nb1 = GETNODE(b1);
+            bddnode_t nb1 = BDD_GETNODE(b1);
             if (bddnode_getvariable(nb1) == t) {
                 b10 = node_low(b1, nb1);
                 b11 = node_high(b1, nb1);
@@ -1536,7 +1474,7 @@ TASK_IMPL_2(BDD, sylvan_closure, BDD, a, BDDVAR, prev_level)
     sylvan_stats_count(BDD_CLOSURE);
 
     /* Determine top level */
-    bddnode_t n = GETNODE(a);
+    bddnode_t n = BDD_GETNODE(a);
     BDDVAR level = bddnode_getvariable(n);
 
     /* Consult cache */
@@ -1562,7 +1500,7 @@ TASK_IMPL_2(BDD, sylvan_closure, BDD, a, BDDVAR, prev_level)
 
     BDD a00, a01, a10, a11;
     if (!sylvan_isconst(a0)) {
-        bddnode_t na0 = GETNODE(a0);
+        bddnode_t na0 = BDD_GETNODE(a0);
         if (bddnode_getvariable(na0) == t) {
             a00 = node_low(a0, na0);
             a01 = node_high(a0, na0);
@@ -1573,7 +1511,7 @@ TASK_IMPL_2(BDD, sylvan_closure, BDD, a, BDDVAR, prev_level)
         a00 = a01 = a0;
     }
     if (!sylvan_isconst(a1)) {
-        bddnode_t na1 = GETNODE(a1);
+        bddnode_t na1 = BDD_GETNODE(a1);
         if (bddnode_getvariable(na1) == t) {
             a10 = node_low(a1, na1);
             a11 = node_high(a1, na1);
@@ -1641,16 +1579,16 @@ TASK_IMPL_3(BDD, sylvan_compose, BDD, a, BDDMAP, map, BDDVAR, prev_level)
     sylvan_stats_count(BDD_COMPOSE);
 
     /* Determine top level */
-    bddnode_t n = GETNODE(a);
+    bddnode_t n = BDD_GETNODE(a);
     BDDVAR level = bddnode_getvariable(n);
 
     /* Skip map */
-    bddnode_t map_node = GETNODE(map);
+    bddnode_t map_node = BDD_GETNODE(map);
     BDDVAR map_var = bddnode_getvariable(map_node);
     while (map_var < level) {
         map = node_low(map, map_node);
         if (sylvan_map_isempty(map)) return a;
-        map_node = GETNODE(map);
+        map_node = BDD_GETNODE(map);
         map_var = bddnode_getvariable(map_node);
     }
 
@@ -1690,7 +1628,7 @@ TASK_IMPL_3(BDD, sylvan_compose, BDD, a, BDDMAP, map, BDDVAR, prev_level)
 uint64_t sylvan_nodecount_do_1(BDD a)
 {
     if (sylvan_isconst(a)) return 0;
-    bddnode_t na = GETNODE(a);
+    bddnode_t na = BDD_GETNODE(a);
     if (bddnode_getmark(na)) return 0;
     bddnode_setmark(na, 1);
     uint64_t result = 1;
@@ -1702,7 +1640,7 @@ uint64_t sylvan_nodecount_do_1(BDD a)
 void sylvan_nodecount_do_2(BDD a)
 {
     if (sylvan_isconst(a)) return;
-    bddnode_t na = GETNODE(a);
+    bddnode_t na = BDD_GETNODE(a);
     if (!bddnode_getmark(na)) return;
     bddnode_setmark(na, 0);
     sylvan_nodecount_do_2(bddnode_getlow(na));
@@ -1771,14 +1709,14 @@ TASK_IMPL_3(double, sylvan_satcount, BDD, bdd, BDDSET, variables, BDDVAR, prev_l
     /* Count variables before var(bdd) */
     size_t skipped = 0;
     BDDVAR var = sylvan_var(bdd);
-    bddnode_t set_node = GETNODE(variables);
+    bddnode_t set_node = BDD_GETNODE(variables);
     BDDVAR set_var = bddnode_getvariable(set_node);
     while (var != set_var) {
         skipped++;
         variables = node_high(variables, set_node);
         // if this assertion fails, then variables is not the support of <bdd>
         assert(!sylvan_set_isempty(variables));
-        set_node = GETNODE(variables);
+        set_node = BDD_GETNODE(variables);
         set_var = bddnode_getvariable(set_node);
     }
 
@@ -1816,11 +1754,11 @@ sylvan_sat_one(BDD bdd, BDDSET vars, uint8_t *str)
     if (sylvan_set_isempty(vars)) return 1;
 
     for (;;) {
-        bddnode_t n_vars = GETNODE(vars);
+        bddnode_t n_vars = BDD_GETNODE(vars);
         if (bdd == sylvan_true) {
             *str = 0;
         } else {
-            bddnode_t n_bdd = GETNODE(bdd);
+            bddnode_t n_bdd = BDD_GETNODE(bdd);
             if (bddnode_getvariable(n_bdd) != bddnode_getvariable(n_vars)) {
                 *str = 0;
             } else {
@@ -1849,7 +1787,7 @@ sylvan_sat_one_bdd(BDD bdd)
     if (bdd == sylvan_false) return sylvan_false;
     if (bdd == sylvan_true) return sylvan_true;
 
-    bddnode_t node = GETNODE(bdd);
+    bddnode_t node = BDD_GETNODE(bdd);
     BDD low = node_low(bdd, node);
     BDD high = node_high(bdd, node);
 
@@ -1880,7 +1818,7 @@ sylvan_cube(BDDSET vars, uint8_t *cube)
 {
     if (sylvan_set_isempty(vars)) return sylvan_true;
 
-    bddnode_t n = GETNODE(vars);
+    bddnode_t n = BDD_GETNODE(vars);
     BDDVAR v = bddnode_getvariable(n);
     vars = node_high(vars, n);
 
@@ -1901,7 +1839,7 @@ TASK_IMPL_3(BDD, sylvan_union_cube, BDD, bdd, BDDSET, vars, uint8_t *, cube)
     if (bdd == sylvan_false) return sylvan_cube(vars, cube);
     if (sylvan_set_isempty(vars)) return sylvan_true;
 
-    bddnode_t nv = GETNODE(vars);
+    bddnode_t nv = BDD_GETNODE(vars);
 
     for (;;) {
         if (*cube == 0 || *cube == 1) break;
@@ -1909,14 +1847,14 @@ TASK_IMPL_3(BDD, sylvan_union_cube, BDD, bdd, BDDSET, vars, uint8_t *, cube)
         cube++;
         vars = node_high(vars, nv);
         if (sylvan_set_isempty(vars)) return sylvan_true;
-        nv = GETNODE(vars);
+        nv = BDD_GETNODE(vars);
     }
 
     sylvan_gc_test();
 
     // missing: SV_CNT_OP
 
-    bddnode_t n = GETNODE(bdd);
+    bddnode_t n = BDD_GETNODE(bdd);
     BDD result = bdd;
     BDDVAR v = bddnode_getvariable(nv);
     BDDVAR n_level = bddnode_getvariable(n);
@@ -2138,7 +2076,7 @@ int
 sylvan_set_in(BDDSET set, BDDVAR level)
 {
     while (!sylvan_set_isempty(set)) {
-        bddnode_t n = GETNODE(set);
+        bddnode_t n = BDD_GETNODE(set);
         BDDVAR n_level = bddnode_getvariable(n);
         if (n_level == level) return 1;
         if (n_level > level) return 0; // BDDs are ordered
@@ -2161,7 +2099,7 @@ sylvan_set_toarray(BDDSET set, BDDVAR *arr)
 {
     size_t i = 0;
     while (!sylvan_set_isempty(set)) {
-        bddnode_t n = GETNODE(set);
+        bddnode_t n = BDD_GETNODE(set);
         arr[i++] = bddnode_getvariable(n);
         set = node_high(set, n);
     }
@@ -2183,7 +2121,7 @@ sylvan_test_isset(BDDSET set)
     while (set != sylvan_false) {
         assert(set != sylvan_true);
         assert(llmsset_is_marked(nodes, set));
-        bddnode_t n = GETNODE(set);
+        bddnode_t n = BDD_GETNODE(set);
         assert(node_low(set, n) == sylvan_true);
         set = node_high(set, n);
     }
@@ -2198,7 +2136,7 @@ sylvan_map_add(BDDMAP map, BDDVAR key, BDD value)
 {
     if (sylvan_map_isempty(map)) return sylvan_makenode(key, sylvan_map_empty(), value);
 
-    bddnode_t n = GETNODE(map);
+    bddnode_t n = BDD_GETNODE(map);
     BDDVAR key_m = bddnode_getvariable(n);
 
     if (key_m < key) {
@@ -2221,10 +2159,10 @@ sylvan_map_addall(BDDMAP map_1, BDDMAP map_2)
     if (sylvan_map_isempty(map_1)) return map_2;
     if (sylvan_map_isempty(map_2)) return map_1;
 
-    bddnode_t n_1 = GETNODE(map_1);
+    bddnode_t n_1 = BDD_GETNODE(map_1);
     BDDVAR key_1 = bddnode_getvariable(n_1);
 
-    bddnode_t n_2 = GETNODE(map_2);
+    bddnode_t n_2 = BDD_GETNODE(map_2);
     BDDVAR key_2 = bddnode_getvariable(n_2);
 
     BDDMAP result;
@@ -2249,7 +2187,7 @@ sylvan_map_remove(BDDMAP map, BDDVAR key)
 {
     if (sylvan_map_isempty(map)) return map;
 
-    bddnode_t n = GETNODE(map);
+    bddnode_t n = BDD_GETNODE(map);
     BDDVAR key_m = bddnode_getvariable(n);
 
     if (key_m < key) {
@@ -2269,10 +2207,10 @@ sylvan_map_removeall(BDDMAP map, BDDSET toremove)
     if (sylvan_map_isempty(map)) return map;
     if (sylvan_set_isempty(toremove)) return map;
 
-    bddnode_t n_1 = GETNODE(map);
+    bddnode_t n_1 = BDD_GETNODE(map);
     BDDVAR key_1 = bddnode_getvariable(n_1);
 
-    bddnode_t n_2 = GETNODE(toremove);
+    bddnode_t n_2 = BDD_GETNODE(toremove);
     BDDVAR key_2 = bddnode_getvariable(n_2);
 
     if (key_1 < key_2) {
@@ -2290,7 +2228,7 @@ int
 sylvan_map_in(BDDMAP map, BDDVAR key)
 {
     while (!sylvan_map_isempty(map)) {
-        bddnode_t n = GETNODE(map);
+        bddnode_t n = BDD_GETNODE(map);
         BDDVAR n_level = bddnode_getvariable(n);
         if (n_level == key) return 1;
         if (n_level > key) return 0; // BDDs are ordered
@@ -2312,7 +2250,7 @@ BDDMAP
 sylvan_set_to_map(BDDSET set, BDD value)
 {
     if (sylvan_set_isempty(set)) return sylvan_map_empty();
-    bddnode_t set_n = GETNODE(set);
+    bddnode_t set_n = BDD_GETNODE(set);
     BDD sub = sylvan_set_to_map(node_high(set, set_n), value);
     BDD result = sylvan_makenode(sub, bddnode_getvariable(set_n), value);
     return result;
@@ -2335,7 +2273,7 @@ TASK_IMPL_1(BDD, sylvan_support, BDD, bdd)
         return result;
     }
 
-    bddnode_t n = GETNODE(bdd);
+    bddnode_t n = BDD_GETNODE(bdd);
     BDD high, low, set;
 
     /* compute recursively */
@@ -2359,8 +2297,8 @@ sylvan_unmark_rec(bddnode_t node)
 {
     if (bddnode_getmark(node)) {
         bddnode_setmark(node, 0);
-        if (!sylvan_isconst(bddnode_getlow(node))) sylvan_unmark_rec(GETNODE(bddnode_getlow(node)));
-        if (!sylvan_isconst(bddnode_gethigh(node))) sylvan_unmark_rec(GETNODE(bddnode_gethigh(node)));
+        if (!sylvan_isconst(bddnode_getlow(node))) sylvan_unmark_rec(BDD_GETNODE(bddnode_getlow(node)));
+        if (!sylvan_isconst(bddnode_gethigh(node))) sylvan_unmark_rec(BDD_GETNODE(bddnode_gethigh(node)));
     }
 }
 
@@ -2575,7 +2513,7 @@ static size_t
 sylvan_serialize_assign_rec(BDD bdd)
 {
     if (sylvan_isnode(bdd)) {
-        bddnode_t n = GETNODE(bdd);
+        bddnode_t n = BDD_GETNODE(bdd);
 
         struct sylvan_ser s, *ss;
         s.bdd = BDD_STRIPMARK(bdd);
@@ -2648,7 +2586,7 @@ sylvan_serialize_totext(FILE *out)
 
     while ((s=sylvan_ser_reversed_iter_next(it))) {
         BDD bdd = s->bdd;
-        bddnode_t n = GETNODE(bdd);
+        bddnode_t n = BDD_GETNODE(bdd);
         fprintf(out, "(%zu,%u,%zu,%zu,%u),", s->assigned,
                                              bddnode_getvariable(n),
                                              (size_t)bddnode_getlow(n),
@@ -2683,7 +2621,7 @@ sylvan_serialize_tofile(FILE *out)
         index++;
         assert(s->assigned == index);
 
-        bddnode_t n = GETNODE(s->bdd);
+        bddnode_t n = BDD_GETNODE(s->bdd);
 
         struct bddnode node;
         bddnode_makenode(&node, bddnode_getvariable(n), sylvan_serialize_get(bddnode_getlow(n)), sylvan_serialize_get(bddnode_gethigh(n)));
@@ -2738,7 +2676,7 @@ sylvan_sha2_rec(BDD bdd, SHA256_CTX *ctx)
         return;
     }
 
-    bddnode_t node = GETNODE(bdd);
+    bddnode_t node = BDD_GETNODE(bdd);
     if (bddnode_getmark(node) == 0) {
         bddnode_setmark(node, 1);
         uint32_t level = bddnode_getvariable(node);
@@ -2769,7 +2707,7 @@ sylvan_getsha(BDD bdd, char *target)
     SHA256_CTX ctx;
     SHA256_Init(&ctx);
     sylvan_sha2_rec(bdd, &ctx);
-    if (bdd != sylvan_true && bdd != sylvan_false) sylvan_unmark_rec(GETNODE(bdd));
+    if (bdd != sylvan_true && bdd != sylvan_false) sylvan_unmark_rec(BDD_GETNODE(bdd));
     SHA256_End(&ctx, target);
 }
 
@@ -2790,7 +2728,7 @@ TASK_2(int, sylvan_test_isbdd_rec, BDD, bdd, BDDVAR, parent_var)
         return result;
     }
 
-    bddnode_t n = GETNODE(bdd);
+    bddnode_t n = BDD_GETNODE(bdd);
     BDDVAR var = bddnode_getvariable(n);
     if (var <= parent_var) {
         result = 0;
@@ -2811,10 +2749,12 @@ TASK_IMPL_1(int, sylvan_test_isbdd, BDD, bdd)
 
     assert(llmsset_is_marked(nodes, BDD_STRIPMARK(bdd)));
 
-    bddnode_t n = GETNODE(bdd);
+    bddnode_t n = BDD_GETNODE(bdd);
     BDDVAR var = bddnode_getvariable(n);
     SPAWN(sylvan_test_isbdd_rec, node_low(bdd, n), var);
     int result = CALL(sylvan_test_isbdd_rec, node_high(bdd, n), var);
     if (!SYNC(sylvan_test_isbdd_rec)) result = 0;
     return result;
 }
+
+#include "sylvan_bdd_storm.c"

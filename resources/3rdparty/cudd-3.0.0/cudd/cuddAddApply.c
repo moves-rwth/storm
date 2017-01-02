@@ -117,6 +117,41 @@ Cudd_addApply(
 
 } /* end of Cudd_addApply */
 
+/**
+ @brief Applies op to the corresponding discriminants of f and g and produces a BDD as a result.
+ 
+ @return a pointer to the result if succssful; NULL otherwise.
+ 
+ @sideeffect None
+ 
+ @see Cudd_addMonadicApply Cudd_addPlus Cudd_addTimes
+ Cudd_addThreshold Cudd_addSetNZ Cudd_addDivide Cudd_addMinus Cudd_addMinimum
+ Cudd_addMaximum Cudd_addOneZeroMaximum Cudd_addDiff Cudd_addAgreement
+ Cudd_addOr Cudd_addNand Cudd_addNor Cudd_addXor Cudd_addXnor
+ 
+ added 23/08/2016 by Christian Dehnert
+ 
+ */
+DdNode *
+Cudd_addToBddApply(
+              DdManager * dd /**< manager */,
+              DD_AOP op /**< operator */,
+              DdNode * f /**< first operand */,
+              DdNode * g /**< second operand */)
+{
+    DdNode *res;
+    
+    do {
+        dd->reordered = 0;
+        res = cuddAddToBddApplyRecur(dd,op,f,g);
+    } while (dd->reordered == 1);
+    if (dd->errorCode == CUDD_TIMEOUT_EXPIRED && dd->timeoutHandler) {
+        dd->timeoutHandler(dd, dd->tohArg);
+    }
+    
+    return(res);
+    
+} /* end of Cudd_addToBddApply */
 
 /**
   @brief Integer and floating point addition.
@@ -371,6 +406,53 @@ Cudd_addMinimum(
 
 } /* end of Cudd_addMinimum */
 
+/**
+ @brief Integer and floating point min.
+ 
+ @details Integer and floating point min for Cudd_addApply.
+ 
+ @return NULL if not a terminal case; min(f,g) otherwise.
+ 
+ @sideeffect None
+ 
+ @see Cudd_addApply
+ 
+ added 24/08/2016
+ 
+ */
+DdNode *
+Cudd_addMinimumExcept0(
+                DdManager * dd,
+                DdNode ** f,
+                DdNode ** g)
+{
+    DdNode *F, *G;
+    
+    F = *f; G = *g;
+    if (F == DD_ZERO(dd)) return(G);
+    if (G == DD_ZERO(dd)) return(F);
+    if (F == DD_PLUS_INFINITY(dd)) return(G);
+    if (G == DD_PLUS_INFINITY(dd)) return(F);
+    if (F == G) return(F);
+#if 0
+    /* These special cases probably do not pay off. */
+    if (F == DD_MINUS_INFINITY(dd)) return(F);
+    if (G == DD_MINUS_INFINITY(dd)) return(G);
+#endif
+    if (cuddIsConstant(F) && cuddIsConstant(G)) {
+        if (cuddV(F) <= cuddV(G)) {
+            return(F);
+        } else {
+            return(G);
+        }
+    }
+    if (F > G) { /* swap f and g */
+        *f = G;
+        *g = F;
+    }
+    return(NULL);
+    
+} /* end of Cudd_addMinimumExcept0 */
 
 /**
   @brief Integer and floating point max.
@@ -817,6 +899,38 @@ Cudd_addEquals(
     
 } /* end of Cudd_addEquals */
 
+/**Function********************************************************************
+ 
+ Synopsis    [1 if f==g; 0 otherwise.]
+ 
+ Description [Returns NULL if not a terminal case; f op g otherwise,
+ where f op g is 1 if f==g; 0 otherwise.]
+ 
+ SideEffects [None]
+ 
+ SeeAlso     [Cudd_addApply]
+ 
+ Added 23/08/2016 by Christian Dehnert
+ 
+ ******************************************************************************/
+DdNode *
+Cudd_addToBddEquals(
+               DdManager * dd,
+               DdNode ** f,
+               DdNode ** g)
+{
+    DdNode *F, *G;
+    
+    F = *f; G = *g;
+    if (F == G) return(DD_ONE(dd));
+    if (cuddIsConstant(F) && cuddIsConstant(G)) return(Cudd_Not(DD_ONE(dd)));
+    if (F > G) { /* swap f and g */
+        *f = G;
+        *g = F;
+    }
+    return(NULL);
+    
+} /* end of Cudd_addToBddEquals */
 
 /**Function********************************************************************
  
@@ -851,6 +965,39 @@ Cudd_addNotEquals(
 
 /**Function********************************************************************
  
+ Synopsis    [1 if f!=g; 0 otherwise.]
+ 
+ Description [Returns NULL if not a terminal case; f op g otherwise,
+ where f op g is 1 if f!=g; 0 otherwise.]
+ 
+ SideEffects [None]
+ 
+ SeeAlso     [Cudd_addApply]
+ 
+ Added 23/08/2016 by Christian Dehnert
+
+ ******************************************************************************/
+DdNode *
+Cudd_addToBddNotEquals(
+                  DdManager * dd,
+                  DdNode ** f,
+                  DdNode ** g)
+{
+    DdNode *F, *G;
+    
+    F = *f; G = *g;
+    if (F == G) return(Cudd_Not(DD_ONE(dd)));
+    if (cuddIsConstant(F) && cuddIsConstant(G)) return(DD_ONE(dd));
+    if (F > G) { /* swap f and g */
+        *f = G;
+        *g = F;
+    }
+    return(NULL);
+    
+} /* end of Cudd_addToBddNotEquals */
+
+/**Function********************************************************************
+ 
  Synopsis    [1 if f>g; 0 otherwise.]
  
  Description [Returns NULL if not a terminal case; f op g otherwise,
@@ -877,6 +1024,37 @@ Cudd_addGreaterThan(
     return(NULL);
     
 } /* end of Cudd_addGreaterThan */
+
+/**Function********************************************************************
+ 
+ Synopsis    [1 if f>g; 0 otherwise.]
+ 
+ Description [Returns NULL if not a terminal case; f op g otherwise,
+ where f op g is 1 if f>g; 0 otherwise.]
+ 
+ SideEffects [None]
+ 
+ SeeAlso     [Cudd_addApply]
+ 
+ Added 23/08/2016 by Christian Dehnert
+
+ ******************************************************************************/
+DdNode *
+Cudd_addToBddGreaterThan(
+                    DdManager * dd,
+                    DdNode ** f,
+                    DdNode ** g)
+{
+    DdNode *F, *G;
+    
+    F = *f; G = *g;
+    if (F == G) return(Cudd_Not(DD_ONE(dd)));
+    if (cuddIsConstant(F) && cuddIsConstant(G)) {
+        if (cuddV(F)>cuddV(G)) return (DD_ONE(dd)); else return (Cudd_Not(DD_ONE(dd)));
+    }
+    return(NULL);
+    
+} /* end of Cudd_addToBddGreaterThan */
 
 
 /**Function********************************************************************
@@ -908,6 +1086,36 @@ Cudd_addGreaterThanEquals(
     
 } /* end of Cudd_addGreaterThanEquals */
 
+/**Function********************************************************************
+ 
+ Synopsis    [1 if f>=g; 0 otherwise.]
+ 
+ Description [Returns NULL if not a terminal case; f op g otherwise,
+ where f op g is 1 if f>=g; 0 otherwise.]
+ 
+ SideEffects [None]
+ 
+ SeeAlso     [Cudd_addApply]
+ 
+ Added 23/08/2016 by Christian Dehnert
+
+ ******************************************************************************/
+DdNode *
+Cudd_addToBddGreaterThanEquals(
+                          DdManager * dd,
+                          DdNode ** f,
+                          DdNode ** g)
+{
+    DdNode *F, *G;
+    
+    F = *f; G = *g;
+    if (F == G) return(DD_ONE(dd));
+    if (cuddIsConstant(F) && cuddIsConstant(G)) {
+        if (cuddV(F)>=cuddV(G)) return (DD_ONE(dd)); else return (Cudd_Not(DD_ONE(dd)));
+    }
+    return(NULL);
+    
+} /* end of Cudd_addToBddGreaterThanEquals */
 
 /**Function********************************************************************
  
@@ -938,6 +1146,36 @@ Cudd_addLessThan(
     
 } /* end of Cudd_addLessThan */
 
+/**Function********************************************************************
+ 
+ Synopsis    [1 if f<g; 0 otherwise.]
+ 
+ Description [Returns NULL if not a terminal case; f op g otherwise,
+ where f op g is 1 if f<g; 0 otherwise.]
+ 
+ SideEffects [None]
+ 
+ SeeAlso     [Cudd_addApply]
+ 
+ Added 23/08/2016 by Christian Dehnert
+
+ ******************************************************************************/
+DdNode *
+Cudd_addToBddLessThan(
+                 DdManager * dd,
+                 DdNode ** f,
+                 DdNode ** g)
+{
+    DdNode *F, *G;
+    
+    F = *f; G = *g;
+    if (F == G) return(Cudd_Not(DD_ONE(dd)));
+    if (cuddIsConstant(F) && cuddIsConstant(G)) {
+        if (cuddV(F)<cuddV(G)) return (DD_ONE(dd)); else return (Cudd_Not(DD_ONE(dd)));
+    }
+    return(NULL);
+    
+} /* end of Cudd_addToBddLessThan */
 
 /**Function********************************************************************
  
@@ -967,6 +1205,37 @@ Cudd_addLessThanEquals(
     return(NULL);
     
 } /* end of Cudd_addLessThanEquals */
+
+/**Function********************************************************************
+ 
+ Synopsis    [1 if f<=g; 0 otherwise.]
+ 
+ Description [Returns NULL if not a terminal case; f op g otherwise,
+ where f op g is 1 if f<=g; 0 otherwise.]
+ 
+ SideEffects [None]
+ 
+ SeeAlso     [Cudd_addApply]
+ 
+ Added 23/08/2016 by Christian Dehnert
+
+ ******************************************************************************/
+DdNode *
+Cudd_addToBddLessThanEquals(
+                       DdManager * dd,
+                       DdNode ** f,
+                       DdNode ** g)
+{
+    DdNode *F, *G;
+    
+    F = *f; G = *g;
+    if (F == G) return(DD_ONE(dd));
+    if (cuddIsConstant(F) && cuddIsConstant(G)) {
+        if (cuddV(F)<=cuddV(G)) return (DD_ONE(dd)); else return (Cudd_Not(DD_ONE(dd)));
+    }
+    return(NULL);
+    
+} /* end of Cudd_addToBddLessThanEquals */
 
 /**Function********************************************************************
  
@@ -1174,6 +1443,101 @@ cuddAddApplyRecur(
 
 } /* end of cuddAddApplyRecur */
 
+/**
+ @brief Performs the recursive step of Cudd_addToBddApply.
+ 
+ @return a pointer to the result if successful; NULL otherwise.
+ 
+ @sideeffect None
+ 
+ @see cuddAddMonadicApplyRecur
+ 
+ added 23/08/2016 by Christian Dehnert
+ 
+ */
+DdNode *
+cuddAddToBddApplyRecur(
+                  DdManager * dd,
+                  DD_AOP op,
+                  DdNode * f,
+                  DdNode * g)
+{
+    DdNode *res,
+	   *fv, *fvn, *gv, *gvn,
+	   *T, *E;
+    int ford, gord;
+    unsigned int index;
+    DD_CTFP cacheOp;
+    
+    /* Check terminal cases. Op may swap f and g to increase the
+     * cache hit rate.
+     */
+    statLine(dd);
+    res = (*op)(dd,&f,&g);
+    if (res != NULL) return(res);
+    
+    /* Check cache. */
+    cacheOp = (DD_CTFP) op;
+    res = cuddCacheLookup2(dd,cacheOp,f,g);
+    if (res != NULL) return(res);
+    
+    checkWhetherToGiveUp(dd);
+    
+    /* Recursive step. */
+    ford = cuddI(dd,f->index);
+    gord = cuddI(dd,g->index);
+    if (ford <= gord) {
+        index = f->index;
+        fv = cuddT(f);
+        fvn = cuddE(f);
+    } else {
+        index = g->index;
+        fv = fvn = f;
+    }
+    if (gord <= ford) {
+        gv = cuddT(g);
+        gvn = cuddE(g);
+    } else {
+        gv = gvn = g;
+    }
+    
+    T = cuddAddToBddApplyRecur(dd,op,fv,gv);
+    if (T == NULL) return(NULL);
+    cuddRef(T);
+    
+    E = cuddAddToBddApplyRecur(dd,op,fvn,gvn);
+    if (E == NULL) {
+        Cudd_IterDerefBdd(dd,T);
+        return(NULL);
+    }
+    cuddRef(E);
+    
+    int complT = Cudd_IsComplement(T);
+    
+    if (T == E) {
+        res = T;
+    } else {
+        res = cuddUniqueInter(dd,(int)index,Cudd_Regular(T),complT ? Cudd_Not(E) : E);
+        if (complT) {
+            res = Cudd_Not(res);
+        }
+    }
+    if (res == NULL) {
+        Cudd_IterDerefBdd(dd, T);
+        Cudd_IterDerefBdd(dd, E);
+        return(NULL);
+    }
+    cuddRef(res);
+    cuddDeref(T);
+    cuddDeref(E);
+    
+    /* Store result. */
+    cuddCacheInsert2(dd,cacheOp,f,g,res);
+    
+    cuddDeref(res);
+    return(res);
+    
+} /* end of cuddAddToBddApplyRecur */
 
 /**
   @brief Performs the recursive step of Cudd_addMonadicApply.

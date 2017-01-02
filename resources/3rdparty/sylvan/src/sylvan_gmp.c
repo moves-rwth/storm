@@ -549,13 +549,13 @@ TASK_IMPL_3(MTBDD, gmp_and_exists, MTBDD, a, MTBDD, b, MTBDD, v)
     /* Get top variable */
     int la = mtbdd_isleaf(a);
     int lb = mtbdd_isleaf(b);
-    mtbddnode_t na = la ? 0 : GETNODE(a);
-    mtbddnode_t nb = lb ? 0 : GETNODE(b);
+    mtbddnode_t na = la ? 0 : MTBDD_GETNODE(a);
+    mtbddnode_t nb = lb ? 0 : MTBDD_GETNODE(b);
     uint32_t va = la ? 0xffffffff : mtbddnode_getvariable(na);
     uint32_t vb = lb ? 0xffffffff : mtbddnode_getvariable(nb);
     uint32_t var = va < vb ? va : vb;
 
-    mtbddnode_t nv = GETNODE(v);
+    mtbddnode_t nv = MTBDD_GETNODE(v);
     uint32_t vv = mtbddnode_getvariable(nv);
 
     if (vv < var) {

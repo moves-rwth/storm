@@ -1,8 +1,0 @@
-// Minimise expected completion time given a bound on expected energy usage
-"num_time": multi(R{"time"}min=?[ C ], R{"energy"}<=1.45 [ C ])
-
-// Minimise expected energy usage given a bound on expected completion time
-"num_energy": multi( R{"energy"}min=?[ C ], R{"time"}<=1000[ C ])
-
-// Pareto query for assume-guarantee check
-"pareto": multi(R{"energy"}min=?[ C ], R{"time"}min=? [ C ])

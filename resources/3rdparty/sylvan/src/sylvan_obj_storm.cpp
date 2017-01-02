@@ -1,3 +1,9 @@
+Bdd
+Bdd::ExistAbstractRepresentative(const BddSet& cube) const {
+	LACE_ME;
+    return sylvan_existsRepresentative(bdd, cube.set.bdd);
+}
+
 Mtbdd
 Bdd::toDoubleMtbdd() const {
     LACE_ME;
@@ -9,6 +15,60 @@ Bdd::toInt64Mtbdd() const {
     LACE_ME;
     return mtbdd_bool_to_int64(bdd);
 }
+
+#if defined(SYLVAN_HAVE_CARL) || defined(STORM_HAVE_CARL)
+Mtbdd
+Bdd::toStormRationalFunctionMtbdd() const {
+    LACE_ME;
+    return mtbdd_bool_to_storm_rational_function(bdd);
+}
+
+Mtbdd 
+Mtbdd::ToDoubleRF() const {
+    LACE_ME;
+    return sylvan_storm_rational_function_to_double(mtbdd);
+}
+
+Mtbdd
+Mtbdd::PlusRF(const Mtbdd &other) const
+{
+    LACE_ME;
+    return sylvan_storm_rational_function_plus(mtbdd, other.mtbdd);
+}
+
+
+Mtbdd
+Mtbdd::TimesRF(const Mtbdd &other) const
+{
+    LACE_ME;
+    return sylvan_storm_rational_function_times(mtbdd, other.mtbdd);
+}
+
+Mtbdd
+Mtbdd::MinusRF(const Mtbdd &other) const
+{
+    LACE_ME;
+    return sylvan_storm_rational_function_minus(mtbdd, other.mtbdd);
+}
+
+Mtbdd
+Mtbdd::DivideRF(const Mtbdd &other) const
+{
+    LACE_ME;
+    return sylvan_storm_rational_function_divide(mtbdd, other.mtbdd);
+}
+
+Mtbdd Mtbdd::AbstractPlusRF(const BddSet &variables) const {
+	LACE_ME;
+    return sylvan_storm_rational_function_abstract_plus(mtbdd, variables.set.bdd);
+}
+
+Mtbdd Mtbdd::ReplaceLeavesRF(void* context) const {
+	LACE_ME;
+    return sylvan_storm_rational_function_replace_leaves(mtbdd, (size_t)context);
+}
+
+#endif
 
 Mtbdd
 Bdd::Ite(Mtbdd const& thenDd, Mtbdd const& elseDd) const {
@@ -139,3 +199,16 @@ Mtbdd::GetShaHash() const {
     return std::string(buf);
 }
 
+Bdd
+Mtbdd::AbstractMinRepresentative(const BddSet &variables) const
+{
+    LACE_ME;
+    return mtbdd_minExistsRepresentative(mtbdd, variables.set.bdd);
+}
+
+Bdd
+Mtbdd::AbstractMaxRepresentative(const BddSet &variables) const
+{
+    LACE_ME;
+    return mtbdd_maxExistsRepresentative(mtbdd, variables.set.bdd);
+}
