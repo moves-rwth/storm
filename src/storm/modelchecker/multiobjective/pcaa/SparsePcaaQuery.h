@@ -34,7 +34,16 @@ namespace storm {
                  * This only works for 2 dimensional queries.
                  */
                 void exportPlotOfCurrentApproximation(std::string const& destinationDir) const;
-                
+
+
+                void printInternalStatistics() const {
+                    std::cout << refinementSteps.size() << ";"
+                              << underApproximation->getVertices().size() << ";"
+                              << overApproximation->getVertices().size() << ";"
+                              << overApproximation->getVertices().size() << ";"
+                              << weightVectorChecker->maxStepBound << ";";
+                }
+
             protected:
                 
                 /*

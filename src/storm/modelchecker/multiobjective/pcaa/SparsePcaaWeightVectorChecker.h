@@ -77,7 +77,8 @@ namespace storm {
                  * Note that check(..) has to be called before retrieving the scheduler. Otherwise, an exception is thrown.
                  */
                 storm::storage::TotalScheduler const& getScheduler() const;
-                
+
+                uint_fast64_t maxStepBound = 0;
                 
             protected:
                 

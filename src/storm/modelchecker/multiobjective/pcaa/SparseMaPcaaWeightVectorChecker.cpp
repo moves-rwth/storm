@@ -69,6 +69,7 @@ namespace storm {
                 auto lowerTimeBoundIt = lowerTimeBounds.begin();
                 auto upperTimeBoundIt = upperTimeBounds.begin();
                 uint_fast64_t currentEpoch = std::max(lowerTimeBounds.empty() ? 0 : lowerTimeBoundIt->first, upperTimeBounds.empty() ? 0 : upperTimeBoundIt->first);
+                this->maxStepBound = std::max(this->maxStepBound, currentEpoch);
                 while(true) {
                     // Update the objectives that are considered at the current time epoch as well as the (weighted) reward vectors.
                     updateDataToCurrentEpoch(MS, PS, *minMax, consideredObjectives, currentEpoch, weightVector, lowerTimeBoundIt, lowerTimeBounds, upperTimeBoundIt, upperTimeBounds);
