@@ -31,8 +31,9 @@ node {
    }
    
    stage('Test') {
-       dir("build")
-       sh "make check"
+       	dir("build") {
+       	    sh "make check"
+	}
    }
    
    stage('Archive') {
