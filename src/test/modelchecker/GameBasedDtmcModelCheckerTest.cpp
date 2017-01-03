@@ -17,7 +17,11 @@
 
 #include "storm/settings/modules/GeneralSettings.h"
 
+#if defined STORM_HAVE_MSAT
 TEST(GameBasedDtmcModelCheckerTest, Die_Cudd) {
+#else
+TEST(GameBasedDtmcModelCheckerTest, DISABLED_Die_Cudd) {
+#endif
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm");
 	auto checker = std::make_shared<storm::modelchecker::GameBasedMdpModelChecker<storm::dd::DdType::CUDD, storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD>>>(program);
     
@@ -49,7 +53,11 @@ TEST(GameBasedDtmcModelCheckerTest, Die_Cudd) {
     EXPECT_NEAR(1.0/6.0, quantitativeResult3[0], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
 }
 
+#if defined STORM_HAVE_MSAT
 TEST(GameBasedDtmcModelCheckerTest, Die_Sylvan) {
+#else
+TEST(GameBasedDtmcModelCheckerTest, DISABLED_Die_Sylvan) {
+#endif
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm");
     
     // A parser that we use for conveniently constructing the formulas.
@@ -82,7 +90,11 @@ TEST(GameBasedDtmcModelCheckerTest, Die_Sylvan) {
     EXPECT_NEAR(1.0/6.0, quantitativeResult3[0], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
 }
 
+#if defined STORM_HAVE_MSAT
 TEST(GameBasedDtmcModelCheckerTest, SynchronousLeader_Cudd) {
+#else
+TEST(GameBasedDtmcModelCheckerTest, DISABLED_SynchronousLeader_Cudd) {
+#endif
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/leader-3-5.pm");
     program = program.substituteConstants();
     
@@ -100,7 +112,11 @@ TEST(GameBasedDtmcModelCheckerTest, SynchronousLeader_Cudd) {
     EXPECT_NEAR(1.0, quantitativeResult1[0], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
 }
 
+#if defined STORM_HAVE_MSAT
 TEST(GameBasedDtmcModelCheckerTest, SynchronousLeader_Sylvan) {
+#else
+TEST(GameBasedDtmcModelCheckerTest, DISABLED_SynchronousLeader_Sylvan) {
+#endif
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/leader-3-5.pm");
     program = program.substituteConstants();
 
