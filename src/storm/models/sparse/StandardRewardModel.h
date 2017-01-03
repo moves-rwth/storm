@@ -1,11 +1,11 @@
-#ifndef STORM_MODELS_SPARSE_STANDARDREWARDMODEL_H_
-#define STORM_MODELS_SPARSE_STANDARDREWARDMODEL_H_
+#pragma once
 
 #include <vector>
 #include <boost/optional.hpp>
 
 #include "storm/storage/SparseMatrix.h"
 #include "storm/utility/OsDetection.h"
+#include "storm/adapters/CarlAdapter.h"
 
 namespace storm {
     namespace models {
@@ -296,8 +296,8 @@ namespace storm {
             
             template <typename ValueType>
             std::ostream& operator<<(std::ostream& out, StandardRewardModel<ValueType> const& rewardModel);
+
+            std::set<storm::RationalFunctionVariable> getRewardModelParameters(StandardRewardModel<storm::RationalFunction> const& rewModel);
         }
     }
 }
-
-#endif /* STORM_MODELS_SPARSE_STANDARDREWARDMODEL_H_ */
