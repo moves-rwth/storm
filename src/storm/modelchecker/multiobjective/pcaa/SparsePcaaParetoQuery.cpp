@@ -53,11 +53,12 @@ namespace storm {
             
             template <class SparseModelType, typename GeometryValueType>
             void SparsePcaaParetoQuery<SparseModelType, GeometryValueType>::exploreSetOfAchievablePoints() {
-            
+            std::cout << std::endl;
                 //First consider the objectives individually
                 for(uint_fast64_t objIndex = 0; objIndex<this->objectives.size() && !this->maxStepsPerformed(); ++objIndex) {
                     WeightVector direction(this->objectives.size(), storm::utility::zero<GeometryValueType>());
                     direction[objIndex] = storm::utility::one<GeometryValueType>();
+                    std::cout << "STATISTICS_CURRPREC_CURRSTEPS;" << "\\infty" << ";" << this->refinementSteps.size() << std::endl;
                     this->performRefinementStep(std::move(direction));
                 }
                 
@@ -81,6 +82,7 @@ namespace storm {
                         return;
                     }
                     STORM_LOG_DEBUG("Current precision of the approximation of the pareto curve is ~" << storm::utility::convertNumber<double>(farestDistance));
+                    std::cout << "STATISTICS_CURRPREC_CURRSTEPS;" << storm::utility::convertNumber<double>(farestDistance) << ";" << this->refinementSteps.size() << std::endl;
                     WeightVector direction = underApproxHalfspaces[farestHalfspaceIndex].normalVector();
                     this->performRefinementStep(std::move(direction));
                 }
