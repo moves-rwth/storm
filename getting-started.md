@@ -31,7 +31,7 @@ cmake ..
 ```
 
 
-In case of errors, check the [requirements](requirements.html).
+In case of errors, check the [requirements](documentation/requirements.html).
 
 
 
