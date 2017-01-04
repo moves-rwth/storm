@@ -286,6 +286,7 @@ namespace storm {
                 storm::storage::BitVector infinityStates;
                 storm::storage::BitVector trueStates(transitionMatrix.getRowGroupCount(), true);
                 if (dir == OptimizationDirection::Minimize) {
+                    STORM_LOG_WARN("Results of reward computation may be too low, because of zero-reward loops.");
                     infinityStates = storm::utility::graph::performProb1E(transitionMatrix, nondeterministicChoiceIndices, backwardTransitions, trueStates, targetStates);
                 } else {
                     infinityStates = storm::utility::graph::performProb1A(transitionMatrix, nondeterministicChoiceIndices, backwardTransitions, trueStates, targetStates);

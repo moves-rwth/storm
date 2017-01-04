@@ -98,7 +98,6 @@ namespace storm {
                  * @return True iff the option was set.
                  */
                 bool isParametricSet() const;
-
                 
                 /*!
                  * Retrieves whether the option enabling parametric region model checking is set.
@@ -114,13 +113,6 @@ namespace storm {
                  */
                 bool isMinMaxEquationSolvingTechniqueSet() const;
                 
-                /*!
-                 * Retrieves whether time and memory consumption shall be printed at the end of a run.
-                 *
-                 * @return True iff the option was set.
-                 */
-                bool isPrintTimeAndMemorySet() const;
-
                 /*!
                  * Retrieves whether the option enabling exact model checking is set.
                  *
