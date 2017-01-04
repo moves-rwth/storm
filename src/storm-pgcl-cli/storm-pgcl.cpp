@@ -95,13 +95,11 @@ int main(const int argc, const char** argv) {
         } else {
             
         }
-        
-        
-        
-        
     }catch (storm::exceptions::BaseException const& exception) {
         STORM_LOG_ERROR("An exception caused StoRM-PGCL to terminate. The message of the exception is: " << exception.what());
+        return 1;
     } catch (std::exception const& exception) {
         STORM_LOG_ERROR("An unexpected exception occurred and caused StoRM-PGCL to terminate. The message of this exception is: " << exception.what());
+        return 2;
     }
 }
