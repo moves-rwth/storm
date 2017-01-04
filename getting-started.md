@@ -20,8 +20,8 @@ We currently provide two ways of running storm.
 
 ## Obtain the VM
 
+{:.alert .alert-danger} 
 The VM is not yet available.
-{:.todo} 
 
 ## Obtain the source
 
@@ -36,8 +36,8 @@ git clone https://github.com/moves-rwth/storm.git STORM_DIR
 wget https://github.com/moves-rwth/archive/master.zip
 ````
 
+{:.alert .alert-danger} 
 Currently, the source code is only available from our private repo.
-{:.todo} 
 
 
 # Build Storm
