@@ -360,6 +360,17 @@ namespace storm {
             std::set<storm::RationalFunctionVariable> getProbabilityParameters(Model<storm::RationalFunction> const& model) {
                 return storm::storage::getVariables(model.getTransitionMatrix());
             }
+
+
+
+            std::set<storm::RationalFunctionVariable> getRewardParameters(Model<storm::RationalFunction> const& model) {
+                std::set<storm::RationalFunctionVariable> result;
+                for(auto rewModel : model.getRewardModels()) {
+                    std::set<storm::RationalFunctionVariable> tmp = getRewardModelParameters(rewModel.second);
+                    result.insert(tmp.begin(), tmp.end());
+                }
+                return result;
+            }
 #endif
             
             template class Model<double>;

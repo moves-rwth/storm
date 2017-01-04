@@ -298,7 +298,24 @@ namespace storm {
                 << std::noboolalpha;
                 return out;
             }
-            
+
+            std::set<storm::RationalFunctionVariable> getRewardModelParameters(StandardRewardModel<storm::RationalFunction> const& rewModel) {
+                std::set<storm::RationalFunctionVariable> vars;
+                if (rewModel.hasTransitionRewards()) {
+                    vars = storm::storage::getVariables(rewModel.getTransitionRewardMatrix());
+                }
+                if (rewModel.hasStateActionRewards()) {
+                    std::set<storm::RationalFunctionVariable> tmp =  storm::utility::vector::getVariables(rewModel.getStateActionRewardVector());
+                    vars.insert(tmp.begin(), tmp.end());
+                }
+                if (rewModel.hasStateRewards()) {
+                    std::set<storm::RationalFunctionVariable> tmp = storm::utility::vector::getVariables(rewModel.getStateRewardVector());
+                    vars.insert(tmp.begin(), tmp.end());
+                }
+                return vars;
+
+            }
+
             // Explicitly instantiate the class.
             template std::vector<double> StandardRewardModel<double>::getTotalRewardVector(storm::storage::SparseMatrix<double> const& transitionMatrix) const;
             template std::vector<double> StandardRewardModel<double>::getTotalRewardVector(uint_fast64_t numberOfRows, storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::BitVector const& filter) const;

@@ -374,6 +374,7 @@ namespace storm {
             
 #ifdef STORM_HAVE_CARL
             std::set<storm::RationalFunctionVariable> getProbabilityParameters(Model<storm::RationalFunction> const& model);
+            std::set<storm::RationalFunctionVariable> getRewardParameters(Model<storm::RationalFunction> const& model);
 #endif
         } // namespace sparse
     } // namespace models

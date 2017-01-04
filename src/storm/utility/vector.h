@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <functional>
 #include <numeric>
+#include <storm/adapters/CarlAdapter.h>
 
 #include "storm/storage/BitVector.h"
 #include "storm/utility/constants.h"
@@ -820,6 +821,14 @@ namespace storm {
             template<typename T>
             bool hasNonZeroEntry(std::vector<T> const& v){
                 return std::any_of(v.begin(), v.end(), [](T value){return !storm::utility::isZero(value);});
+            }
+
+            inline std::set<storm::RationalFunctionVariable> getVariables(std::vector<storm::RationalFunction> const& vector) {
+                std::set<storm::RationalFunctionVariable> result;
+                for(auto const& entry : vector) {
+                    entry.gatherVariables(result);
+                }
+                return result;
             }
 
             /*!

@@ -16,7 +16,11 @@
 
 #include "storm/utility/storm.h"
 
+#if defined STORM_HAVE_MSAT
 TEST(GameBasedMdpModelCheckerTest, Dice_Cudd) {
+#else
+TEST(GameBasedMdpModelCheckerTest, DISABLED_Dice_Cudd) {
+#endif
     std::string programFile = STORM_TEST_RESOURCES_DIR "/mdp/two_dice.nm";
 
     storm::prism::Program program = storm::parseProgram(programFile);
@@ -87,7 +91,11 @@ TEST(GameBasedMdpModelCheckerTest, Dice_Cudd) {
     EXPECT_NEAR(0.083333283662796020508, quantitativeResult6[0], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
 }
 
+#if defined STORM_HAVE_MSAT
 TEST(GameBasedMdpModelCheckerTest, Dice_Sylvan) {
+#else
+TEST(GameBasedMdpModelCheckerTest, DISABLED_Dice_Sylvan) {
+#endif
     std::string programFile = STORM_TEST_RESOURCES_DIR "/mdp/two_dice.nm";
     
     storm::prism::Program program = storm::parseProgram(programFile);
