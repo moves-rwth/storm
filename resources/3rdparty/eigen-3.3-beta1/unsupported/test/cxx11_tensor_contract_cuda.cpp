@@ -18,7 +18,7 @@
 #include "main.h"
 #include <unsupported/Eigen/CXX11/Tensor>
 
-using Eigen::Tensor;
+using StormEigen::Tensor;
 typedef Tensor<float, 1>::DimensionPair DimPair;
 
 template<int DataLayout>
@@ -28,11 +28,11 @@ static void test_cuda_contraction(int m_size, int k_size, int n_size)
   // with these dimensions, the output has 300 * 140 elements, which is
   // more than 30 * 1024, which is the number of threads in blocks on
   // a 15 SM GK110 GPU
-  Tensor<float, 2, DataLayout> t_left(Eigen::array<int, 2>(m_size, k_size));
-  Tensor<float, 2, DataLayout> t_right(Eigen::array<int, 2>(k_size, n_size));
-  Tensor<float, 2, DataLayout> t_result(Eigen::array<int, 2>(m_size, n_size));
-  Tensor<float, 2, DataLayout> t_result_gpu(Eigen::array<int, 2>(m_size, n_size));
-  Eigen::array<DimPair, 1> dims(DimPair(1, 0));
+  Tensor<float, 2, DataLayout> t_left(StormEigen::array<int, 2>(m_size, k_size));
+  Tensor<float, 2, DataLayout> t_right(StormEigen::array<int, 2>(k_size, n_size));
+  Tensor<float, 2, DataLayout> t_result(StormEigen::array<int, 2>(m_size, n_size));
+  Tensor<float, 2, DataLayout> t_result_gpu(StormEigen::array<int, 2>(m_size, n_size));
+  StormEigen::array<DimPair, 1> dims(DimPair(1, 0));
 
   t_left.setRandom();
   t_right.setRandom();
@@ -52,15 +52,15 @@ static void test_cuda_contraction(int m_size, int k_size, int n_size)
   cudaMemcpy(d_t_left, t_left.data(), t_left_bytes, cudaMemcpyHostToDevice);
   cudaMemcpy(d_t_right, t_right.data(), t_right_bytes, cudaMemcpyHostToDevice);
 
-  Eigen::CudaStreamDevice stream;
-  Eigen::GpuDevice gpu_device(&stream);
+  StormEigen::CudaStreamDevice stream;
+  StormEigen::GpuDevice gpu_device(&stream);
 
-  Eigen::TensorMap<Eigen::Tensor<float, 2, DataLayout> >
-      gpu_t_left(d_t_left, Eigen::array<int, 2>(m_size, k_size));
-  Eigen::TensorMap<Eigen::Tensor<float, 2, DataLayout> >
-      gpu_t_right(d_t_right, Eigen::array<int, 2>(k_size, n_size));
-  Eigen::TensorMap<Eigen::Tensor<float, 2, DataLayout> >
-      gpu_t_result(d_t_result, Eigen::array<int, 2>(m_size, n_size));
+  StormEigen::TensorMap<StormEigen::Tensor<float, 2, DataLayout> >
+      gpu_t_left(d_t_left, StormEigen::array<int, 2>(m_size, k_size));
+  StormEigen::TensorMap<StormEigen::Tensor<float, 2, DataLayout> >
+      gpu_t_right(d_t_right, StormEigen::array<int, 2>(k_size, n_size));
+  StormEigen::TensorMap<StormEigen::Tensor<float, 2, DataLayout> >
+      gpu_t_result(d_t_result, StormEigen::array<int, 2>(m_size, n_size));
 
 
   gpu_t_result.device(gpu_device) = gpu_t_left.contract(gpu_t_right, dims);

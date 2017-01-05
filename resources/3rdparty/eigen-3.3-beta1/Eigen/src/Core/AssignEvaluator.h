@@ -12,7 +12,7 @@
 #ifndef EIGEN_ASSIGN_EVALUATOR_H
 #define EIGEN_ASSIGN_EVALUATOR_H
 
-namespace Eigen {
+namespace StormEigen {
 
 // This implementation is based on Assign.h
 
@@ -805,6 +805,6 @@ struct Assignment<DstXprType, SrcXprType, Functor, EigenBase2EigenBase, Scalar>
 
 } // namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_ASSIGN_EVALUATOR_H

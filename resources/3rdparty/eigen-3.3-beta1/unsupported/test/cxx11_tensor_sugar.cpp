@@ -2,8 +2,8 @@
 
 #include <Eigen/CXX11/Tensor>
 
-using Eigen::Tensor;
-using Eigen::RowMajor;
+using StormEigen::Tensor;
+using StormEigen::RowMajor;
 
 static void test_comparison_sugar() {
   // we already trust comparisons between tensors, we're simply checking that

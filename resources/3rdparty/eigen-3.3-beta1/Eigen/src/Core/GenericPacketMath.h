@@ -11,7 +11,7 @@
 #ifndef EIGEN_GENERIC_PACKET_MATH_H
 #define EIGEN_GENERIC_PACKET_MATH_H
 
-namespace Eigen {
+namespace StormEigen {
 
 namespace internal {
 
@@ -572,6 +572,6 @@ pblend(const Selector<unpacket_traits<Packet>::size>& ifPacket, const Packet& th
 
 } // end namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_GENERIC_PACKET_MATH_H

@@ -10,7 +10,7 @@
 #ifndef EIGEN_AUTODIFF_VECTOR_H
 #define EIGEN_AUTODIFF_VECTOR_H
 
-namespace Eigen {
+namespace StormEigen {
 
 /* \class AutoDiffScalar
   * \brief A scalar type replacement with automatic differentation capability
@@ -24,7 +24,7 @@ namespace Eigen {
   *  - internal::abs, internal::sqrt, numext::pow, internal::exp, internal::log, internal::sin, internal::cos,
   *  - internal::conj, internal::real, internal::imag, numext::abs2.
   *
-  * AutoDiffScalar can be used as the scalar type of an Eigen::Matrix object. However,
+  * AutoDiffScalar can be used as the scalar type of an StormEigen::Matrix object. However,
   * in that case, the expression template mechanism only occurs at the top Matrix level,
   * while derivatives are computed right away.
   *

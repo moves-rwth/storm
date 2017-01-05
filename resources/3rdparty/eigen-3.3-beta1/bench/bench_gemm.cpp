@@ -15,7 +15,7 @@
 #include <bench/BenchTimer.h>
 
 using namespace std;
-using namespace Eigen;
+using namespace StormEigen;
 
 #ifndef SCALAR
 // #define SCALAR std::complex<float>
@@ -222,7 +222,7 @@ int main(int argc, char ** argv)
 
   // check the parallel product is correct
   #if defined EIGEN_HAS_OPENMP
-  Eigen::initParallel();
+  StormEigen::initParallel();
   int procs = omp_get_max_threads();
   if(procs>1)
   {
@@ -274,7 +274,7 @@ int main(int argc, char ** argv)
   {
     BenchTimer tmono;
     omp_set_num_threads(1);
-    Eigen::setNbThreads(1);
+    StormEigen::setNbThreads(1);
     c = rc;
     BENCH(tmono, tries, rep, gemm(a,b,c));
     std::cout << "eigen mono cpu    " << tmono.best(CPU_TIMER)/rep  << "s  \t" << (double(m)*n*p*rep*2/tmono.best(CPU_TIMER))*1e-9  <<  " GFLOPS \t(" << tmono.total(CPU_TIMER)  << "s)\n";

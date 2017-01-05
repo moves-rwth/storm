@@ -58,7 +58,7 @@
 #ifndef EIGEN_ITERATION_CONTROLLER_H
 #define EIGEN_ITERATION_CONTROLLER_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 /** \ingroup IterativeSolvers_Module
   * \class IterationController
@@ -149,6 +149,6 @@ class IterationController
 
 };
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_ITERATION_CONTROLLER_H

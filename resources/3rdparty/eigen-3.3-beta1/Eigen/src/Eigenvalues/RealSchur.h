@@ -13,7 +13,7 @@
 
 #include "./HessenbergDecomposition.h"
 
-namespace Eigen { 
+namespace StormEigen { 
 
 /** \eigenvalues_module \ingroup Eigenvalues_Module
   *
@@ -64,7 +64,7 @@ template<typename _MatrixType> class RealSchur
     };
     typedef typename MatrixType::Scalar Scalar;
     typedef std::complex<typename NumTraits<Scalar>::Real> ComplexScalar;
-    typedef Eigen::Index Index; ///< \deprecated since Eigen 3.3
+    typedef StormEigen::Index Index; ///< \deprecated since Eigen 3.3
 
     typedef Matrix<ComplexScalar, ColsAtCompileTime, 1, Options & ~RowMajor, MaxColsAtCompileTime, 1> EigenvalueType;
     typedef Matrix<Scalar, ColsAtCompileTime, 1, Options & ~RowMajor, MaxColsAtCompileTime, 1> ColumnVectorType;
@@ -523,6 +523,6 @@ inline void RealSchur<MatrixType>::performFrancisQRStep(Index il, Index im, Inde
   }
 }
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_REAL_SCHUR_H

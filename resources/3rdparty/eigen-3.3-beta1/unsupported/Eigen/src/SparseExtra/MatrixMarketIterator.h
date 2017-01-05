@@ -11,7 +11,7 @@
 #ifndef EIGEN_BROWSE_MATRICES_H
 #define EIGEN_BROWSE_MATRICES_H
 
-namespace Eigen {
+namespace StormEigen {
 
 enum {
   SPD = 0x100,
@@ -242,6 +242,6 @@ class MatrixMarketIterator
     
 };
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif

@@ -33,7 +33,7 @@ typedef int int_t;
 
 #define SUPERLU_EMPTY (-1)
 
-namespace Eigen { struct SluMatrix; }
+namespace StormEigen { struct SluMatrix; }
 
 /** \ingroup Support_modules
   * \defgroup SuperLUSupport_Module SuperLUSupport module

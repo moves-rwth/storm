@@ -10,7 +10,7 @@
 #ifndef EIGEN_CXX11_TENSOR_TENSOR_REDUCTION_H
 #define EIGEN_CXX11_TENSOR_TENSOR_REDUCTION_H
 
-namespace Eigen {
+namespace StormEigen {
 
 /** \class TensorReduction
   * \ingroup CXX11_Tensor_Module
@@ -32,7 +32,7 @@ struct traits<TensorReductionOp<Op, Dims, XprType> >
 };
 
 template<typename Op, typename Dims, typename XprType>
-struct eval<TensorReductionOp<Op, Dims, XprType>, Eigen::Dense>
+struct eval<TensorReductionOp<Op, Dims, XprType>, StormEigen::Dense>
 {
   typedef const TensorReductionOp<Op, Dims, XprType>& type;
 };
@@ -348,14 +348,14 @@ __global__ void FullReductionKernel(R, const S, I, typename S::CoeffReturnType*)
 template <typename Op, typename Dims, typename XprType>
 class TensorReductionOp : public TensorBase<TensorReductionOp<Op, Dims, XprType>, ReadOnlyAccessors> {
   public:
-    typedef typename Eigen::internal::traits<TensorReductionOp>::Scalar Scalar;
-    typedef typename Eigen::internal::traits<TensorReductionOp>::Packet Packet;
-    typedef typename Eigen::NumTraits<Scalar>::Real RealScalar;
+    typedef typename StormEigen::internal::traits<TensorReductionOp>::Scalar Scalar;
+    typedef typename StormEigen::internal::traits<TensorReductionOp>::Packet Packet;
+    typedef typename StormEigen::NumTraits<Scalar>::Real RealScalar;
     typedef typename internal::remove_const<typename XprType::CoeffReturnType>::type CoeffReturnType;
     typedef typename internal::remove_const<typename XprType::PacketReturnType>::type PacketReturnType;
-    typedef typename Eigen::internal::nested<TensorReductionOp>::type Nested;
-    typedef typename Eigen::internal::traits<TensorReductionOp>::StorageKind StorageKind;
-    typedef typename Eigen::internal::traits<TensorReductionOp>::Index Index;
+    typedef typename StormEigen::internal::nested<TensorReductionOp>::type Nested;
+    typedef typename StormEigen::internal::traits<TensorReductionOp>::StorageKind StorageKind;
+    typedef typename StormEigen::internal::traits<TensorReductionOp>::Index Index;
 
     EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE
     TensorReductionOp(const XprType& expr, const Dims& dims) : m_expr(expr), m_dims(dims)
@@ -647,7 +647,7 @@ struct TensorEvaluator<const TensorReductionOp<Op, Dims, ArgType>, Device>
 
   // For full reductions
 #if defined(EIGEN_USE_GPU) && defined(__CUDACC__)
-  static const bool RunningOnGPU = internal::is_same<Device, Eigen::GpuDevice>::value;
+  static const bool RunningOnGPU = internal::is_same<Device, StormEigen::GpuDevice>::value;
 #else
   static const bool RunningOnGPU = false;
 #endif
@@ -656,6 +656,6 @@ struct TensorEvaluator<const TensorReductionOp<Op, Dims, ArgType>, Device>
   const Device& m_device;
 };
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_CXX11_TENSOR_TENSOR_REDUCTION_H

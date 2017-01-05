@@ -14,7 +14,7 @@ struct scalar_norm1_op {
   EIGEN_EMPTY_STRUCT_CTOR(scalar_norm1_op)
   inline RealScalar operator() (const Scalar& a) const { return numext::norm1(a); }
 };
-namespace Eigen {
+namespace StormEigen {
   namespace internal {
     template<> struct functor_traits<scalar_norm1_op >
     {

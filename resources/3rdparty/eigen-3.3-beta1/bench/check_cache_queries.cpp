@@ -3,7 +3,7 @@
 #include <iostream>
 #include "../Eigen/Core"
 
-using namespace Eigen;
+using namespace StormEigen;
 using namespace std;
 
 #define DUMP_CPUID(CODE) {\

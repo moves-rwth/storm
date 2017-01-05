@@ -10,7 +10,7 @@
 #ifndef EIGEN_SPARSEMATRIXBASE_H
 #define EIGEN_SPARSEMATRIXBASE_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 /** \ingroup SparseCore_Module
   *
@@ -106,7 +106,7 @@ template<typename Derived> class SparseMatrixBase
 
     /** \internal the return type of MatrixBase::adjoint() */
     typedef typename internal::conditional<NumTraits<Scalar>::IsComplex,
-                        CwiseUnaryOp<internal::scalar_conjugate_op<Scalar>, Eigen::Transpose<const Derived> >,
+                        CwiseUnaryOp<internal::scalar_conjugate_op<Scalar>, StormEigen::Transpose<const Derived> >,
                         Transpose<const Derived>
                      >::type AdjointReturnType;
     typedef Transpose<Derived> TransposeReturnType;
@@ -147,7 +147,7 @@ template<typename Derived> class SparseMatrixBase
     using Base::operator/;
 #endif // not EIGEN_PARSED_BY_DOXYGEN
 
-#define EIGEN_CURRENT_STORAGE_BASE_CLASS Eigen::SparseMatrixBase
+#define EIGEN_CURRENT_STORAGE_BASE_CLASS StormEigen::SparseMatrixBase
 #   include "../plugins/CommonCwiseUnaryOps.h"
 #   include "../plugins/CommonCwiseBinaryOps.h"
 #   include "../plugins/MatrixCwiseUnaryOps.h"
@@ -385,6 +385,6 @@ template<typename Derived> class SparseMatrixBase
     template<typename Dest> void evalTo(Dest &) const;
 };
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_SPARSEMATRIXBASE_H

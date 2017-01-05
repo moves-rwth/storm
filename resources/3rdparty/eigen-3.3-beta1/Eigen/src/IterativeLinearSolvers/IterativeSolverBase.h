@@ -10,7 +10,7 @@
 #ifndef EIGEN_ITERATIVE_SOLVER_BASE_H
 #define EIGEN_ITERATIVE_SOLVER_BASE_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 namespace internal {
 
@@ -337,8 +337,8 @@ public:
     
     Index rhsCols = b.cols();
     Index size = b.rows();
-    Eigen::Matrix<DestScalar,Dynamic,1> tb(size);
-    Eigen::Matrix<DestScalar,Dynamic,1> tx(cols());
+    StormEigen::Matrix<DestScalar,Dynamic,1> tb(size);
+    StormEigen::Matrix<DestScalar,Dynamic,1> tx(cols());
     // We do not directly fill dest because sparse expressions have to be free of aliasing issue.
     // For non square least-square problems, b and dest might not have the same size whereas they might alias each-other.
     SparseMatrix<DestScalar,DestOptions,DestIndex> tmp(cols(),rhsCols);
@@ -387,6 +387,6 @@ protected:
   mutable bool m_analysisIsOk, m_factorizationIsOk;
 };
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_ITERATIVE_SOLVER_BASE_H

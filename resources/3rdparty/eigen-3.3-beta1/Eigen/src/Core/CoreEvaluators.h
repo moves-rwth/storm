@@ -13,7 +13,7 @@
 #ifndef EIGEN_COREEVALUATORS_H
 #define EIGEN_COREEVALUATORS_H
 
-namespace Eigen {
+namespace StormEigen {
   
 namespace internal {
 
@@ -1371,6 +1371,6 @@ protected:
 
 } // namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_COREEVALUATORS_H

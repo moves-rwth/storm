@@ -36,7 +36,7 @@
 
 #include "Eigen/src/Core/util/MKL_support.h"
 
-namespace Eigen { 
+namespace StormEigen { 
 
 /** \internal Specialization for the data types supported by MKL */
 
@@ -93,6 +93,6 @@ EIGEN_MKL_QR_COLPIV(float,    float,         s, RowMajor, LAPACK_ROW_MAJOR)
 EIGEN_MKL_QR_COLPIV(dcomplex, MKL_Complex16, z, RowMajor, LAPACK_ROW_MAJOR)
 EIGEN_MKL_QR_COLPIV(scomplex, MKL_Complex8,  c, RowMajor, LAPACK_ROW_MAJOR)
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_COLPIVOTINGHOUSEHOLDERQR_MKL_H

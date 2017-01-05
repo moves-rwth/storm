@@ -14,7 +14,7 @@
 // * Eigen/Core
 // * Eigen/src/PolynomialSolver.h
 
-namespace Eigen { 
+namespace StormEigen { 
 
 namespace internal {
 
@@ -271,6 +271,6 @@ void companion<_Scalar,_Deg>::balance()
 
 } // end namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_COMPANION_H

@@ -1,5 +1,5 @@
 /// \brief Namespace containing all symbols from the %Eigen library.
-namespace Eigen {
+namespace StormEigen {
 
 /** \mainpage %Eigen's unsupported modules
 

@@ -10,9 +10,9 @@
 
 #include "main.h"
 
-// using namespace Eigen;
+// using namespace StormEigen;
 
-namespace Eigen {
+namespace StormEigen {
 namespace internal {
 template<typename T> T negate(const T& x) { return -x; }
 }

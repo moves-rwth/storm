@@ -11,7 +11,7 @@
 #ifndef EIGEN_PERMUTATIONMATRIX_H
 #define EIGEN_PERMUTATIONMATRIX_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 /** \class PermutationBase
   * \ingroup Core_Module
@@ -631,6 +631,6 @@ template<> struct AssignmentKind<DenseShape,PermutationShape> { typedef EigenBas
 
 } // end namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_PERMUTATIONMATRIX_H

@@ -10,7 +10,7 @@
 #ifndef EIGEN_SELFCWISEBINARYOP_H
 #define EIGEN_SELFCWISEBINARYOP_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 template<typename Derived>
 inline Derived& DenseBase<Derived>::operator*=(const Scalar& other)
@@ -44,6 +44,6 @@ inline Derived& DenseBase<Derived>::operator/=(const Scalar& other)
   return derived();
 }
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_SELFCWISEBINARYOP_H

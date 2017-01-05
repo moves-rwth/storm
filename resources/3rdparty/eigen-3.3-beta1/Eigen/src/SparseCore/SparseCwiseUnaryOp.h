@@ -10,7 +10,7 @@
 #ifndef EIGEN_SPARSE_CWISE_UNARY_OP_H
 #define EIGEN_SPARSE_CWISE_UNARY_OP_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 namespace internal {
   
@@ -193,6 +193,6 @@ SparseMatrixBase<Derived>::operator/=(const Scalar& other)
   return derived();
 }
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_SPARSE_CWISE_UNARY_OP_H

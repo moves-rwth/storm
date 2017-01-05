@@ -10,7 +10,7 @@
 #ifndef EIGEN_ARRAYWRAPPER_H
 #define EIGEN_ARRAYWRAPPER_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 /** \class ArrayWrapper
   * \ingroup Core_Module
@@ -294,6 +294,6 @@ class MatrixWrapper : public MatrixBase<MatrixWrapper<ExpressionType> >
     NestedExpressionType m_expression;
 };
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_ARRAYWRAPPER_H

@@ -10,7 +10,7 @@
 #include "main.h"
 
 #include <Eigen/CXX11/Tensor>
-using Eigen::Tensor;
+using StormEigen::Tensor;
 
 
 static void test_simple_assign()

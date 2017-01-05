@@ -1,14 +1,14 @@
-namespace Eigen {
+namespace StormEigen {
   namespace internal {
     template <class ArgType>
     struct traits<Circulant<ArgType> >
     {
-      typedef Eigen::Dense StorageKind;
-      typedef Eigen::MatrixXpr XprKind;
+      typedef StormEigen::Dense StorageKind;
+      typedef StormEigen::MatrixXpr XprKind;
       typedef typename ArgType::StorageIndex StorageIndex;
       typedef typename ArgType::Scalar Scalar;
       enum { 
-        Flags = Eigen::ColMajor,
+        Flags = StormEigen::ColMajor,
         RowsAtCompileTime = ArgType::RowsAtCompileTime,
         ColsAtCompileTime = ArgType::RowsAtCompileTime,
         MaxRowsAtCompileTime = ArgType::MaxRowsAtCompileTime,

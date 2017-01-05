@@ -1,5 +1,5 @@
 #include "../Eigen/Sparse"
-using namespace Eigen;
+using namespace StormEigen;
 
 typedef SparseMatrix<double,ColMajor> Mat1;
 #ifdef EIGEN_SHOULD_FAIL_TO_BUILD

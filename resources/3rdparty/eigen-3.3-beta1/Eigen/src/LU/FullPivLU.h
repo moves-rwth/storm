@@ -10,7 +10,7 @@
 #ifndef EIGEN_LU_H
 #define EIGEN_LU_H
 
-namespace Eigen {
+namespace StormEigen {
 
 namespace internal {
 template<typename _MatrixType> struct traits<FullPivLU<_MatrixType> >
@@ -275,8 +275,8 @@ template<typename _MatrixType> class FullPivLU
     /** Allows to come back to the default behavior, letting Eigen use its default formula for
       * determining the threshold.
       *
-      * You should pass the special object Eigen::Default as parameter here.
-      * \code lu.setThreshold(Eigen::Default); \endcode
+      * You should pass the special object StormEigen::Default as parameter here.
+      * \code lu.setThreshold(StormEigen::Default); \endcode
       *
       * See the documentation of setThreshold(const RealScalar&).
       */
@@ -856,6 +856,6 @@ MatrixBase<Derived>::fullPivLu() const
 }
 #endif
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_LU_H

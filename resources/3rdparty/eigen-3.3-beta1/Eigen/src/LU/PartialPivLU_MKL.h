@@ -35,7 +35,7 @@
 
 #include "Eigen/src/Core/util/MKL_support.h"
 
-namespace Eigen { 
+namespace StormEigen { 
 
 namespace internal {
 
@@ -80,6 +80,6 @@ EIGEN_MKL_LU_PARTPIV(scomplex, MKL_Complex8, c)
 
 } // end namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_PARTIALLU_LAPACK_H

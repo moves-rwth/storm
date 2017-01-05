@@ -11,7 +11,7 @@
 #ifndef EIGEN_VECTORBLOCK_H
 #define EIGEN_VECTORBLOCK_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 /** \class VectorBlock
   * \ingroup Core_Module
@@ -92,6 +92,6 @@ template<typename VectorType, int Size> class VectorBlock
 };
 
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_VECTORBLOCK_H

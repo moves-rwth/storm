@@ -1,7 +1,7 @@
 #include <unsupported/Eigen/MatrixFunctions>
 #include <iostream>
 
-using namespace Eigen;
+using namespace StormEigen;
 
 std::complex<double> expfn(std::complex<double> x, int)
 {

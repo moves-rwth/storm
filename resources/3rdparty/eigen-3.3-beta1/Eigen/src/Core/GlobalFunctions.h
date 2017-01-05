@@ -13,9 +13,9 @@
 
 #define EIGEN_ARRAY_DECLARE_GLOBAL_UNARY(NAME,FUNCTOR) \
   template<typename Derived> \
-  inline const Eigen::CwiseUnaryOp<Eigen::internal::FUNCTOR<typename Derived::Scalar>, const Derived> \
-  (NAME)(const Eigen::ArrayBase<Derived>& x) { \
-    return Eigen::CwiseUnaryOp<Eigen::internal::FUNCTOR<typename Derived::Scalar>, const Derived>(x.derived()); \
+  inline const StormEigen::CwiseUnaryOp<StormEigen::internal::FUNCTOR<typename Derived::Scalar>, const Derived> \
+  (NAME)(const StormEigen::ArrayBase<Derived>& x) { \
+    return StormEigen::CwiseUnaryOp<StormEigen::internal::FUNCTOR<typename Derived::Scalar>, const Derived>(x.derived()); \
   }
 
 #define EIGEN_ARRAY_DECLARE_GLOBAL_EIGEN_UNARY(NAME,FUNCTOR) \
@@ -23,18 +23,18 @@
   template<typename Derived> \
   struct NAME##_retval<ArrayBase<Derived> > \
   { \
-    typedef const Eigen::CwiseUnaryOp<Eigen::internal::FUNCTOR<typename Derived::Scalar>, const Derived> type; \
+    typedef const StormEigen::CwiseUnaryOp<StormEigen::internal::FUNCTOR<typename Derived::Scalar>, const Derived> type; \
   }; \
   template<typename Derived> \
   struct NAME##_impl<ArrayBase<Derived> > \
   { \
-    static inline typename NAME##_retval<ArrayBase<Derived> >::type run(const Eigen::ArrayBase<Derived>& x) \
+    static inline typename NAME##_retval<ArrayBase<Derived> >::type run(const StormEigen::ArrayBase<Derived>& x) \
     { \
       return typename NAME##_retval<ArrayBase<Derived> >::type(x.derived()); \
     } \
   };
 
-namespace Eigen
+namespace StormEigen
 {
   EIGEN_ARRAY_DECLARE_GLOBAL_UNARY(real,scalar_real_op)
   EIGEN_ARRAY_DECLARE_GLOBAL_UNARY(imag,scalar_imag_op)
@@ -70,8 +70,8 @@ namespace Eigen
   EIGEN_ARRAY_DECLARE_GLOBAL_UNARY(sign,scalar_sign_op)
   
   template<typename Derived>
-  inline const Eigen::CwiseUnaryOp<Eigen::internal::scalar_pow_op<typename Derived::Scalar>, const Derived>
-  pow(const Eigen::ArrayBase<Derived>& x, const typename Derived::Scalar& exponent) {
+  inline const StormEigen::CwiseUnaryOp<StormEigen::internal::scalar_pow_op<typename Derived::Scalar>, const Derived>
+  pow(const StormEigen::ArrayBase<Derived>& x, const typename Derived::Scalar& exponent) {
     return x.derived().pow(exponent);
   }
 
@@ -85,10 +85,10 @@ namespace Eigen
     * \sa ArrayBase::pow()
     */
   template<typename Derived,typename ExponentDerived>
-  inline const Eigen::CwiseBinaryOp<Eigen::internal::scalar_binary_pow_op<typename Derived::Scalar, typename ExponentDerived::Scalar>, const Derived, const ExponentDerived>
-  pow(const Eigen::ArrayBase<Derived>& x, const Eigen::ArrayBase<ExponentDerived>& exponents) 
+  inline const StormEigen::CwiseBinaryOp<StormEigen::internal::scalar_binary_pow_op<typename Derived::Scalar, typename ExponentDerived::Scalar>, const Derived, const ExponentDerived>
+  pow(const StormEigen::ArrayBase<Derived>& x, const StormEigen::ArrayBase<ExponentDerived>& exponents) 
   {
-    return Eigen::CwiseBinaryOp<Eigen::internal::scalar_binary_pow_op<typename Derived::Scalar, typename ExponentDerived::Scalar>, const Derived, const ExponentDerived>(
+    return StormEigen::CwiseBinaryOp<StormEigen::internal::scalar_binary_pow_op<typename Derived::Scalar, typename ExponentDerived::Scalar>, const Derived, const ExponentDerived>(
       x.derived(),
       exponents.derived()
     );
@@ -105,11 +105,11 @@ namespace Eigen
     * \sa ArrayBase::pow()
     */
   template<typename Derived>
-  inline const Eigen::CwiseBinaryOp<Eigen::internal::scalar_binary_pow_op<typename Derived::Scalar, typename Derived::Scalar>, const typename Derived::ConstantReturnType, const Derived>
-  pow(const typename Derived::Scalar& x, const Eigen::ArrayBase<Derived>& exponents) 
+  inline const StormEigen::CwiseBinaryOp<StormEigen::internal::scalar_binary_pow_op<typename Derived::Scalar, typename Derived::Scalar>, const typename Derived::ConstantReturnType, const Derived>
+  pow(const typename Derived::Scalar& x, const StormEigen::ArrayBase<Derived>& exponents) 
   {
     typename Derived::ConstantReturnType constant_x(exponents.rows(), exponents.cols(), x);
-    return Eigen::CwiseBinaryOp<Eigen::internal::scalar_binary_pow_op<typename Derived::Scalar, typename Derived::Scalar>, const typename Derived::ConstantReturnType, const Derived>(
+    return StormEigen::CwiseBinaryOp<StormEigen::internal::scalar_binary_pow_op<typename Derived::Scalar, typename Derived::Scalar>, const typename Derived::ConstantReturnType, const Derived>(
       constant_x,
       exponents.derived()
     );
@@ -119,12 +119,12 @@ namespace Eigen
   * \brief Component-wise division of a scalar by array elements.
   **/
   template <typename Derived>
-  inline const Eigen::CwiseUnaryOp<Eigen::internal::scalar_inverse_mult_op<typename Derived::Scalar>, const Derived>
-    operator/(const typename Derived::Scalar& s, const Eigen::ArrayBase<Derived>& a)
+  inline const StormEigen::CwiseUnaryOp<StormEigen::internal::scalar_inverse_mult_op<typename Derived::Scalar>, const Derived>
+    operator/(const typename Derived::Scalar& s, const StormEigen::ArrayBase<Derived>& a)
   {
-    return Eigen::CwiseUnaryOp<Eigen::internal::scalar_inverse_mult_op<typename Derived::Scalar>, const Derived>(
+    return StormEigen::CwiseUnaryOp<StormEigen::internal::scalar_inverse_mult_op<typename Derived::Scalar>, const Derived>(
       a.derived(),
-      Eigen::internal::scalar_inverse_mult_op<typename Derived::Scalar>(s)  
+      StormEigen::internal::scalar_inverse_mult_op<typename Derived::Scalar>(s)  
     );
   }
 

@@ -10,7 +10,7 @@
 #ifndef EIGEN_SELFADJOINT_MATRIX_VECTOR_H
 #define EIGEN_SELFADJOINT_MATRIX_VECTOR_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 namespace internal {
 
@@ -255,6 +255,6 @@ struct selfadjoint_product_impl<Lhs,0,true,Rhs,RhsMode,false>
 
 } // end namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_SELFADJOINT_MATRIX_VECTOR_H

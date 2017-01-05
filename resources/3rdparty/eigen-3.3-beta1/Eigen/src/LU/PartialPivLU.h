@@ -11,7 +11,7 @@
 #ifndef EIGEN_PARTIALLU_H
 #define EIGEN_PARTIALLU_H
 
-namespace Eigen {
+namespace StormEigen {
 
 namespace internal {
 template<typename _MatrixType> struct traits<PartialPivLU<_MatrixType> >
@@ -558,6 +558,6 @@ MatrixBase<Derived>::lu() const
 }
 #endif
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_PARTIALLU_H

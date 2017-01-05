@@ -170,9 +170,9 @@ template <int>
 void test_autodiff_hessian()
 {
   typedef AutoDiffScalar<VectorXd> AD;
-  typedef Matrix<AD,Eigen::Dynamic,1> VectorAD;
+  typedef Matrix<AD,StormEigen::Dynamic,1> VectorAD;
   typedef AutoDiffScalar<VectorAD> ADD;
-  typedef Matrix<ADD,Eigen::Dynamic,1> VectorADD;
+  typedef Matrix<ADD,StormEigen::Dynamic,1> VectorADD;
   VectorADD x(2);
   double s1 = internal::random<double>(), s2 = internal::random<double>(), s3 = internal::random<double>(), s4 = internal::random<double>();
   x(0).value()=s1;

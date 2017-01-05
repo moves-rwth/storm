@@ -1,7 +1,7 @@
 
 #include "main.h"
 
-namespace Eigen {
+namespace StormEigen {
 
   template<typename Lhs,typename Rhs>
   const Product<Lhs,Rhs>
@@ -94,7 +94,7 @@ namespace Eigen {
   
 }
 
-template<typename XprType> long get_cost(const XprType& ) { return Eigen::internal::evaluator<XprType>::CoeffReadCost; }
+template<typename XprType> long get_cost(const XprType& ) { return StormEigen::internal::evaluator<XprType>::CoeffReadCost; }
 
 using namespace std;
 

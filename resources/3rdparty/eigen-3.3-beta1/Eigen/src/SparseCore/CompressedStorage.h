@@ -10,7 +10,7 @@
 #ifndef EIGEN_COMPRESSED_STORAGE_H
 #define EIGEN_COMPRESSED_STORAGE_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 namespace internal {
 
@@ -248,6 +248,6 @@ class CompressedStorage
 
 } // end namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_COMPRESSED_STORAGE_H

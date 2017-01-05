@@ -11,7 +11,7 @@
 #ifndef EIGEN_RETURNBYVALUE_H
 #define EIGEN_RETURNBYVALUE_H
 
-namespace Eigen {
+namespace StormEigen {
 
 /** \class ReturnByValue
   * \ingroup Core_Module
@@ -113,6 +113,6 @@ protected:
 
 } // end namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_RETURNBYVALUE_H

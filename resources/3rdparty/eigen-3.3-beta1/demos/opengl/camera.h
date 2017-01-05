@@ -19,8 +19,8 @@ class Frame
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     
-    inline Frame(const Eigen::Vector3f& pos = Eigen::Vector3f::Zero(),
-                 const Eigen::Quaternionf& o = Eigen::Quaternionf())
+    inline Frame(const StormEigen::Vector3f& pos = StormEigen::Vector3f::Zero(),
+                 const StormEigen::Quaternionf& o = StormEigen::Quaternionf())
       : orientation(o), position(pos)
     {}
     Frame lerp(float alpha, const Frame& other) const
@@ -29,8 +29,8 @@ class Frame
                    orientation.slerp(alpha,other.orientation));
     }
 
-    Eigen::Quaternionf orientation;
-    Eigen::Vector3f position;
+    StormEigen::Quaternionf orientation;
+    StormEigen::Vector3f position;
 };
 
 class Camera
@@ -57,38 +57,38 @@ class Camera
     inline float fovY(void) const { return mFovY; }
     void setFovY(float value);
     
-    void setPosition(const Eigen::Vector3f& pos);
-    inline const Eigen::Vector3f& position(void) const { return mFrame.position; }
+    void setPosition(const StormEigen::Vector3f& pos);
+    inline const StormEigen::Vector3f& position(void) const { return mFrame.position; }
 
-    void setOrientation(const Eigen::Quaternionf& q);
-    inline const Eigen::Quaternionf& orientation(void) const { return mFrame.orientation; }
+    void setOrientation(const StormEigen::Quaternionf& q);
+    inline const StormEigen::Quaternionf& orientation(void) const { return mFrame.orientation; }
 
     void setFrame(const Frame& f);
     const Frame& frame(void) const { return mFrame; }
     
-    void setDirection(const Eigen::Vector3f& newDirection);
-    Eigen::Vector3f direction(void) const;
-    void setUp(const Eigen::Vector3f& vectorUp);
-    Eigen::Vector3f up(void) const;
-    Eigen::Vector3f right(void) const;
+    void setDirection(const StormEigen::Vector3f& newDirection);
+    StormEigen::Vector3f direction(void) const;
+    void setUp(const StormEigen::Vector3f& vectorUp);
+    StormEigen::Vector3f up(void) const;
+    StormEigen::Vector3f right(void) const;
     
-    void setTarget(const Eigen::Vector3f& target);
-    inline const Eigen::Vector3f& target(void) { return mTarget; }
+    void setTarget(const StormEigen::Vector3f& target);
+    inline const StormEigen::Vector3f& target(void) { return mTarget; }
     
-    const Eigen::Affine3f& viewMatrix(void) const;
-    const Eigen::Matrix4f& projectionMatrix(void) const;
+    const StormEigen::Affine3f& viewMatrix(void) const;
+    const StormEigen::Matrix4f& projectionMatrix(void) const;
     
-    void rotateAroundTarget(const Eigen::Quaternionf& q);
-    void localRotate(const Eigen::Quaternionf& q);
+    void rotateAroundTarget(const StormEigen::Quaternionf& q);
+    void localRotate(const StormEigen::Quaternionf& q);
     void zoom(float d);
     
-    void localTranslate(const Eigen::Vector3f& t);
+    void localTranslate(const StormEigen::Vector3f& t);
     
     /** Setup OpenGL matrices and viewport */
     void activateGL(void);
     
-    Eigen::Vector3f unProject(const Eigen::Vector2f& uv, float depth, const Eigen::Matrix4f& invModelview) const;
-    Eigen::Vector3f unProject(const Eigen::Vector2f& uv, float depth) const;
+    StormEigen::Vector3f unProject(const StormEigen::Vector2f& uv, float depth, const Eigen::Matrix4f& invModelview) const;
+    StormEigen::Vector3f unProject(const StormEigen::Vector2f& uv, float depth) const;
     
   protected:
     void updateViewMatrix(void) const;
@@ -101,14 +101,14 @@ class Camera
 
     Frame mFrame;
     
-    mutable Eigen::Affine3f mViewMatrix;
-    mutable Eigen::Matrix4f mProjectionMatrix;
+    mutable StormEigen::Affine3f mViewMatrix;
+    mutable StormEigen::Matrix4f mProjectionMatrix;
 
     mutable bool mViewIsUptodate;
     mutable bool mProjIsUptodate;
 
     // used by rotateAroundTarget
-    Eigen::Vector3f mTarget;
+    StormEigen::Vector3f mTarget;
     
     float mFovY;
     float mNearDist;

@@ -10,7 +10,7 @@
 #ifndef EIGEN_NULLARY_FUNCTORS_H
 #define EIGEN_NULLARY_FUNCTORS_H
 
-namespace Eigen {
+namespace StormEigen {
 
 namespace internal {
 
@@ -145,6 +145,6 @@ template<typename Scalar> struct functor_has_linear_access<scalar_identity_op<Sc
 
 } // end namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_NULLARY_FUNCTORS_H

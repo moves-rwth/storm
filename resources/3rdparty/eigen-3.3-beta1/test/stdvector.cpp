@@ -17,7 +17,7 @@ void check_stdvector_matrix(const MatrixType& m)
   typename MatrixType::Index rows = m.rows();
   typename MatrixType::Index cols = m.cols();
   MatrixType x = MatrixType::Random(rows,cols), y = MatrixType::Random(rows,cols);
-  std::vector<MatrixType,Eigen::aligned_allocator<MatrixType> > v(10, MatrixType(rows,cols)), w(20, y);
+  std::vector<MatrixType,StormEigen::aligned_allocator<MatrixType> > v(10, MatrixType(rows,cols)), w(20, y);
   v[5] = x;
   w[6] = v[5];
   VERIFY_IS_APPROX(w[6], v[5]);
@@ -52,7 +52,7 @@ void check_stdvector_transform(const TransformType&)
 {
   typedef typename TransformType::MatrixType MatrixType;
   TransformType x(MatrixType::Random()), y(MatrixType::Random());
-  std::vector<TransformType,Eigen::aligned_allocator<TransformType> > v(10), w(20, y);
+  std::vector<TransformType,StormEigen::aligned_allocator<TransformType> > v(10), w(20, y);
   v[5] = x;
   w[6] = v[5];
   VERIFY_IS_APPROX(w[6], v[5]);
@@ -87,7 +87,7 @@ void check_stdvector_quaternion(const QuaternionType&)
 {
   typedef typename QuaternionType::Coefficients Coefficients;
   QuaternionType x(Coefficients::Random()), y(Coefficients::Random());
-  std::vector<QuaternionType,Eigen::aligned_allocator<QuaternionType> > v(10), w(20, y);
+  std::vector<QuaternionType,StormEigen::aligned_allocator<QuaternionType> > v(10), w(20, y);
   v[5] = x;
   w[6] = v[5];
   VERIFY_IS_APPROX(w[6], v[5]);

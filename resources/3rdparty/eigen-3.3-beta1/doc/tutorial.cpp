@@ -5,8 +5,8 @@ int main(int argc, char *argv[])
   std::cout.precision(2);
 
   // demo static functions
-  Eigen::Matrix3f m3 = Eigen::Matrix3f::Random();
-  Eigen::Matrix4f m4 = Eigen::Matrix4f::Identity();
+  StormEigen::Matrix3f m3 = StormEigen::Matrix3f::Random();
+  StormEigen::Matrix4f m4 = StormEigen::Matrix4f::Identity();
 
   std::cout << "*** Step 1 ***\nm3:\n" << m3 << "\nm4:\n" << m4 << std::endl;
 
@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
 
   // demo intelligent auto-evaluation
   m4 = m4 * m4; // auto-evaluates so no aliasing problem (performance penalty is low)
-  Eigen::Matrix4f other = (m4 * m4).lazy(); // forces lazy evaluation
+  StormEigen::Matrix4f other = (m4 * m4).lazy(); // forces lazy evaluation
   m4 = m4 + m4; // here Eigen goes for lazy evaluation, as with most expressions
   m4 = -m4 + m4 + 5 * m4; // same here, Eigen chooses lazy evaluation for all that.
   m4 = m4 * (m4 + m4); // here Eigen chooses to first evaluate m4 + m4 into a temporary.

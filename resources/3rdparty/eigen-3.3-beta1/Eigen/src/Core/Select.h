@@ -10,7 +10,7 @@
 #ifndef EIGEN_SELECT_H
 #define EIGEN_SELECT_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 /** \class Select
   * \ingroup Core_Module
@@ -157,6 +157,6 @@ DenseBase<Derived>::select(const typename ElseDerived::Scalar& thenScalar,
     derived(), ElseDerived::Constant(rows(),cols(),thenScalar), elseMatrix.derived());
 }
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_SELECT_H

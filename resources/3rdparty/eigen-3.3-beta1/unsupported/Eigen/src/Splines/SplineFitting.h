@@ -20,7 +20,7 @@
 #include <Eigen/LU>
 #include <Eigen/QR>
 
-namespace Eigen
+namespace StormEigen
 {
   /**
    * \brief Computes knot averages.

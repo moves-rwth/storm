@@ -2,11 +2,11 @@
 #include <Eigen/Dense>
 
 using namespace std;
-using namespace Eigen;
+using namespace StormEigen;
 
 int main()
 {
-  Eigen::MatrixXf m(2,2);
+  StormEigen::MatrixXf m(2,2);
   
   m << 1, 2,
        3, 4;

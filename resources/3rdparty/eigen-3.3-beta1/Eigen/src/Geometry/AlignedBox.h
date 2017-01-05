@@ -10,7 +10,7 @@
 #ifndef EIGEN_ALIGNEDBOX_H
 #define EIGEN_ALIGNEDBOX_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 /** \geometry_module \ingroup Geometry_Module
   *
@@ -34,7 +34,7 @@ EIGEN_MAKE_ALIGNED_OPERATOR_NEW_IF_VECTORIZABLE_FIXED_SIZE(_Scalar,_AmbientDim)
   enum { AmbientDimAtCompileTime = _AmbientDim };
   typedef _Scalar                                   Scalar;
   typedef NumTraits<Scalar>                         ScalarTraits;
-  typedef Eigen::Index                              Index; ///< \deprecated since Eigen 3.3
+  typedef StormEigen::Index                              Index; ///< \deprecated since Eigen 3.3
   typedef typename ScalarTraits::Real               RealScalar;
   typedef typename ScalarTraits::NonInteger      NonInteger;
   typedef Matrix<Scalar,AmbientDimAtCompileTime,1>  VectorType;
@@ -387,6 +387,6 @@ EIGEN_MAKE_TYPEDEFS_ALL_SIZES(double,               d)
 #undef EIGEN_MAKE_TYPEDEFS_ALL_SIZES
 #undef EIGEN_MAKE_TYPEDEFS
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_ALIGNEDBOX_H

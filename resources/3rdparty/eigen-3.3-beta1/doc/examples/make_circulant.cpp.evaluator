@@ -1,4 +1,4 @@
-namespace Eigen {
+namespace StormEigen {
   namespace internal {
     template<typename ArgType>
     struct evaluator<Circulant<ArgType> >
@@ -11,7 +11,7 @@ namespace Eigen {
 
       enum { 
         CoeffReadCost = evaluator<ArgTypeNestedCleaned>::CoeffReadCost,
-        Flags = Eigen::ColMajor 
+        Flags = StormEigen::ColMajor 
       };
       
       evaluator(const XprType& xpr)

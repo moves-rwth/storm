@@ -1,4 +1,4 @@
-namespace Eigen {
+namespace StormEigen {
 
 /** \eigenManualPage TutorialSparse Sparse matrix manipulations
 
@@ -195,7 +195,7 @@ The simplest way to create a sparse matrix while guaranteeing good performance i
 
 Here is a typical usage example:
 \code
-typedef Eigen::Triplet<double> T;
+typedef StormEigen::Triplet<double> T;
 std::vector<T> tripletList;
 tripletList.reserve(estimation_of_entries);
 for(...)

@@ -10,7 +10,7 @@
 #ifndef EIGEN_CWISE_UNARY_VIEW_H
 #define EIGEN_CWISE_UNARY_VIEW_H
 
-namespace Eigen {
+namespace StormEigen {
 
 /** \class CwiseUnaryView
   * \ingroup Core_Module
@@ -123,6 +123,6 @@ class CwiseUnaryViewImpl<ViewOp,MatrixType,Dense>
     }
 };
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_CWISE_UNARY_VIEW_H

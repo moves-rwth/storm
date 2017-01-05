@@ -11,7 +11,7 @@
 #ifndef EIGEN_ORTHOMETHODS_H
 #define EIGEN_ORTHOMETHODS_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 /** \geometry_module
   *
@@ -222,6 +222,6 @@ MatrixBase<Derived>::unitOrthogonal() const
   return internal::unitOrthogonal_selector<Derived>::run(derived());
 }
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_ORTHOMETHODS_H

@@ -33,7 +33,7 @@
 #ifndef EIGEN_TRIANGULAR_MATRIX_VECTOR_MKL_H
 #define EIGEN_TRIANGULAR_MATRIX_VECTOR_MKL_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 namespace internal {
 
@@ -240,6 +240,6 @@ EIGEN_MKL_TRMV_RM(scomplex, MKL_Complex8, cf, c)
 
 } // end namespase internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_TRIANGULAR_MATRIX_VECTOR_MKL_H

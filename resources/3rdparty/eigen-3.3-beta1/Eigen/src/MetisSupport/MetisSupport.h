@@ -9,7 +9,7 @@
 #ifndef METIS_SUPPORT_H
 #define METIS_SUPPORT_H
 
-namespace Eigen {
+namespace StormEigen {
 /**
  * Get the fill-reducing ordering from the METIS package
  * 

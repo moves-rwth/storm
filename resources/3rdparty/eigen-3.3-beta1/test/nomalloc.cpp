@@ -94,18 +94,18 @@ void ctms_decompositions()
   const int maxSize = 16;
   const int size    = 12;
 
-  typedef Eigen::Matrix<Scalar,
-                        Eigen::Dynamic, Eigen::Dynamic,
+  typedef StormEigen::Matrix<Scalar,
+                        StormEigen::Dynamic, StormEigen::Dynamic,
                         0,
                         maxSize, maxSize> Matrix;
 
-  typedef Eigen::Matrix<Scalar,
-                        Eigen::Dynamic, 1,
+  typedef StormEigen::Matrix<Scalar,
+                        StormEigen::Dynamic, 1,
                         0,
                         maxSize, 1> Vector;
 
-  typedef Eigen::Matrix<std::complex<Scalar>,
-                        Eigen::Dynamic, Eigen::Dynamic,
+  typedef StormEigen::Matrix<std::complex<Scalar>,
+                        StormEigen::Dynamic, StormEigen::Dynamic,
                         0,
                         maxSize, maxSize> ComplexMatrix;
 
@@ -117,51 +117,51 @@ void ctms_decompositions()
   Vector x(size);
 
   // Cholesky module
-  Eigen::LLT<Matrix>  LLT;  LLT.compute(A);
+  StormEigen::LLT<Matrix>  LLT;  LLT.compute(A);
   X = LLT.solve(B);
   x = LLT.solve(b);
-  Eigen::LDLT<Matrix> LDLT; LDLT.compute(A);
+  StormEigen::LDLT<Matrix> LDLT; LDLT.compute(A);
   X = LDLT.solve(B);
   x = LDLT.solve(b);
 
   // Eigenvalues module
-  Eigen::HessenbergDecomposition<ComplexMatrix> hessDecomp;        hessDecomp.compute(complexA);
-  Eigen::ComplexSchur<ComplexMatrix>            cSchur(size);      cSchur.compute(complexA);
-  Eigen::ComplexEigenSolver<ComplexMatrix>      cEigSolver;        cEigSolver.compute(complexA);
-  Eigen::EigenSolver<Matrix>                    eigSolver;         eigSolver.compute(A);
-  Eigen::SelfAdjointEigenSolver<Matrix>         saEigSolver(size); saEigSolver.compute(saA);
-  Eigen::Tridiagonalization<Matrix>             tridiag;           tridiag.compute(saA);
+  StormEigen::HessenbergDecomposition<ComplexMatrix> hessDecomp;        hessDecomp.compute(complexA);
+  StormEigen::ComplexSchur<ComplexMatrix>            cSchur(size);      cSchur.compute(complexA);
+  StormEigen::ComplexEigenSolver<ComplexMatrix>      cEigSolver;        cEigSolver.compute(complexA);
+  StormEigen::EigenSolver<Matrix>                    eigSolver;         eigSolver.compute(A);
+  StormEigen::SelfAdjointEigenSolver<Matrix>         saEigSolver(size); saEigSolver.compute(saA);
+  StormEigen::Tridiagonalization<Matrix>             tridiag;           tridiag.compute(saA);
 
   // LU module
-  Eigen::PartialPivLU<Matrix> ppLU; ppLU.compute(A);
+  StormEigen::PartialPivLU<Matrix> ppLU; ppLU.compute(A);
   X = ppLU.solve(B);
   x = ppLU.solve(b);
-  Eigen::FullPivLU<Matrix>    fpLU; fpLU.compute(A);
+  StormEigen::FullPivLU<Matrix>    fpLU; fpLU.compute(A);
   X = fpLU.solve(B);
   x = fpLU.solve(b);
 
   // QR module
-  Eigen::HouseholderQR<Matrix>        hQR;  hQR.compute(A);
+  StormEigen::HouseholderQR<Matrix>        hQR;  hQR.compute(A);
   X = hQR.solve(B);
   x = hQR.solve(b);
-  Eigen::ColPivHouseholderQR<Matrix>  cpQR; cpQR.compute(A);
+  StormEigen::ColPivHouseholderQR<Matrix>  cpQR; cpQR.compute(A);
   X = cpQR.solve(B);
   x = cpQR.solve(b);
-  Eigen::FullPivHouseholderQR<Matrix> fpQR; fpQR.compute(A);
+  StormEigen::FullPivHouseholderQR<Matrix> fpQR; fpQR.compute(A);
   // FIXME X = fpQR.solve(B);
   x = fpQR.solve(b);
 
   // SVD module
-  Eigen::JacobiSVD<Matrix> jSVD; jSVD.compute(A, ComputeFullU | ComputeFullV);
+  StormEigen::JacobiSVD<Matrix> jSVD; jSVD.compute(A, ComputeFullU | ComputeFullV);
 }
 
 void test_zerosized() {
   // default constructors:
-  Eigen::MatrixXd A;
-  Eigen::VectorXd v;
+  StormEigen::MatrixXd A;
+  StormEigen::VectorXd v;
   // explicit zero-sized:
-  Eigen::ArrayXXd A0(0,0);
-  Eigen::ArrayXd v0(0);
+  StormEigen::ArrayXXd A0(0,0);
+  StormEigen::ArrayXd v0(0);
 
   // assigning empty objects to each other:
   A=A0;
@@ -170,14 +170,14 @@ void test_zerosized() {
 
 template<typename MatrixType> void test_reference(const MatrixType& m) {
   typedef typename MatrixType::Scalar Scalar;
-  enum { Flag          =  MatrixType::IsRowMajor ? Eigen::RowMajor : Eigen::ColMajor};
-  enum { TransposeFlag = !MatrixType::IsRowMajor ? Eigen::RowMajor : Eigen::ColMajor};
+  enum { Flag          =  MatrixType::IsRowMajor ? StormEigen::RowMajor : StormEigen::ColMajor};
+  enum { TransposeFlag = !MatrixType::IsRowMajor ? StormEigen::RowMajor : StormEigen::ColMajor};
   typename MatrixType::Index rows = m.rows(), cols=m.cols();
-  typedef Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, Flag         > MatrixX;
-  typedef Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, TransposeFlag> MatrixXT;
+  typedef StormEigen::Matrix<Scalar, StormEigen::Dynamic, Eigen::Dynamic, Flag         > MatrixX;
+  typedef StormEigen::Matrix<Scalar, StormEigen::Dynamic, Eigen::Dynamic, TransposeFlag> MatrixXT;
   // Dynamic reference:
-  typedef Eigen::Ref<const MatrixX  > Ref;
-  typedef Eigen::Ref<const MatrixXT > RefT;
+  typedef StormEigen::Ref<const MatrixX  > Ref;
+  typedef StormEigen::Ref<const MatrixXT > RefT;
 
   Ref r1(m);
   Ref r2(m.block(rows/3, cols/4, rows/2, cols/2));
@@ -193,10 +193,10 @@ template<typename MatrixType> void test_reference(const MatrixType& m) {
   RefT r9 = r3;
 
   // Initializing from a compatible Ref shall also never malloc
-  Eigen::Ref<const MatrixX, Unaligned, Stride<Dynamic, Dynamic> > r10=r8, r11=m;
+  StormEigen::Ref<const MatrixX, Unaligned, Stride<Dynamic, Dynamic> > r10=r8, r11=m;
 
   // Initializing from an incompatible Ref will malloc:
-  typedef Eigen::Ref<const MatrixX, Aligned> RefAligned;
+  typedef StormEigen::Ref<const MatrixX, Aligned> RefAligned;
   VERIFY_RAISES_ASSERT(RefAligned r12=r10);
   VERIFY_RAISES_ASSERT(Ref r13=r10); // r10 has more dynamic strides
 
@@ -205,11 +205,11 @@ template<typename MatrixType> void test_reference(const MatrixType& m) {
 void test_nomalloc()
 {
   // create some dynamic objects
-  Eigen::MatrixXd M1 = MatrixXd::Random(3,3);
+  StormEigen::MatrixXd M1 = MatrixXd::Random(3,3);
   Ref<const MatrixXd> R1 = 2.0*M1; // Ref requires temporary
 
   // from here on prohibit malloc:
-  Eigen::internal::set_is_malloc_allowed(false);
+  StormEigen::internal::set_is_malloc_allowed(false);
 
   // check that our operator new is indeed called:
   VERIFY_RAISES_ASSERT(MatrixXd dummy(MatrixXd::Random(3,3)));

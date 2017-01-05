@@ -11,7 +11,7 @@
 #ifndef EIGEN_DIAGONALMATRIX_H
 #define EIGEN_DIAGONALMATRIX_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 #ifndef EIGEN_PARSED_BY_DOXYGEN
 template<typename Derived>
@@ -335,6 +335,6 @@ struct Assignment<DstXprType, SrcXprType, Functor, Diagonal2Dense, Scalar>
 
 } // namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_DIAGONALMATRIX_H

@@ -10,7 +10,7 @@
 #ifndef EIGEN_SOLVE_H
 #define EIGEN_SOLVE_H
 
-namespace Eigen {
+namespace StormEigen {
 
 template<typename Decomposition, typename RhsType, typename StorageKind> class SolveImpl;
   
@@ -168,6 +168,6 @@ struct Assignment<DstXprType, Solve<CwiseUnaryOp<internal::scalar_conjugate_op<t
 
 } // end namepsace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_SOLVE_H

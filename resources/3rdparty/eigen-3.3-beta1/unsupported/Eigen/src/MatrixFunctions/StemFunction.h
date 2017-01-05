@@ -10,7 +10,7 @@
 #ifndef EIGEN_STEM_FUNCTION
 #define EIGEN_STEM_FUNCTION
 
-namespace Eigen { 
+namespace StormEigen { 
 
 namespace internal {
 
@@ -112,6 +112,6 @@ Scalar stem_function_sinh(Scalar x, int n)
 
 } // end namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_STEM_FUNCTION

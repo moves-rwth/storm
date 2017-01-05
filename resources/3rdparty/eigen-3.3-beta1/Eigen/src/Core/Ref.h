@@ -10,7 +10,7 @@
 #ifndef EIGEN_REF_H
 #define EIGEN_REF_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 /** \class Ref
   * \ingroup Core_Module
@@ -271,6 +271,6 @@ template<typename TPlainObjectType, int Options, typename StrideType> class Ref<
     TPlainObjectType m_object;
 };
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_REF_H

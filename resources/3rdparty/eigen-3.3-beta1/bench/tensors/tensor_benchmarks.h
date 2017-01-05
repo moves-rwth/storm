@@ -7,8 +7,8 @@ typedef int TensorIndex;
 #include "third_party/eigen3/unsupported/Eigen/CXX11/Tensor"
 #include "testing/base/public/benchmark.h"
 
-using Eigen::Tensor;
-using Eigen::TensorMap;
+using StormEigen::Tensor;
+using StormEigen::TensorMap;
 
 
 // TODO(bsteiner): also templatize on the input type since we have users
@@ -43,8 +43,8 @@ template <typename Device> class BenchmarkSuite {
 
   void random(int num_iters) {
     eigen_assert(m_ == k_ && k_ == n_);
-    const Eigen::array<TensorIndex, 2> sizes(m_, m_);
-    TensorMap<Tensor<float, 2>, Eigen::Aligned> C(c_, sizes);
+    const StormEigen::array<TensorIndex, 2> sizes(m_, m_);
+    TensorMap<Tensor<float, 2>, StormEigen::Aligned> C(c_, sizes);
 
     StartBenchmarkTiming();
     for (int iter = 0; iter < num_iters; ++iter) {
@@ -56,16 +56,16 @@ template <typename Device> class BenchmarkSuite {
 
   void slicing(int num_iters) {
     eigen_assert(m_ == k_ && k_ == n_);
-    const Eigen::array<TensorIndex, 2> sizes(m_, m_);
-    const TensorMap<Tensor<float, 2>, Eigen::Aligned> A(a_, sizes);
-    const TensorMap<Tensor<float, 2>, Eigen::Aligned> B(b_, sizes);
-    TensorMap<Tensor<float, 2>, Eigen::Aligned> C(c_, sizes);
+    const StormEigen::array<TensorIndex, 2> sizes(m_, m_);
+    const TensorMap<Tensor<float, 2>, StormEigen::Aligned> A(a_, sizes);
+    const TensorMap<Tensor<float, 2>, StormEigen::Aligned> B(b_, sizes);
+    TensorMap<Tensor<float, 2>, StormEigen::Aligned> C(c_, sizes);
 
-    const Eigen::DSizes<TensorIndex, 2> quarter_sizes(Eigen::array<TensorIndex, 2>(m_/2, m_/2));
-    const Eigen::DSizes<TensorIndex, 2> first_quadrant(Eigen::array<TensorIndex, 2>(0, 0));
-    const Eigen::DSizes<TensorIndex, 2> second_quadrant(Eigen::array<TensorIndex, 2>(0, m_/2));
-    const Eigen::DSizes<TensorIndex, 2> third_quadrant(Eigen::array<TensorIndex, 2>(m_/2, 0));
-    const Eigen::DSizes<TensorIndex, 2> fourth_quadrant(Eigen::array<TensorIndex, 2>(m_/2, m_/2));
+    const StormEigen::DSizes<TensorIndex, 2> quarter_sizes(StormEigen::array<TensorIndex, 2>(m_/2, m_/2));
+    const StormEigen::DSizes<TensorIndex, 2> first_quadrant(StormEigen::array<TensorIndex, 2>(0, 0));
+    const StormEigen::DSizes<TensorIndex, 2> second_quadrant(StormEigen::array<TensorIndex, 2>(0, m_/2));
+    const StormEigen::DSizes<TensorIndex, 2> third_quadrant(StormEigen::array<TensorIndex, 2>(m_/2, 0));
+    const StormEigen::DSizes<TensorIndex, 2> fourth_quadrant(StormEigen::array<TensorIndex, 2>(m_/2, m_/2));
 
     StartBenchmarkTiming();
     for (int iter = 0; iter < num_iters; ++iter) {
@@ -85,12 +85,12 @@ template <typename Device> class BenchmarkSuite {
 
   void shuffling(int num_iters) {
     eigen_assert(m_ == n_);
-    const Eigen::array<TensorIndex, 2> size_a(m_, k_);
-    const TensorMap<Tensor<float, 2>, Eigen::Aligned> A(a_, size_a);
-    const Eigen::array<TensorIndex, 2> size_b(k_, m_);
-    TensorMap<Tensor<float, 2>, Eigen::Aligned> B(b_, size_b);
+    const StormEigen::array<TensorIndex, 2> size_a(m_, k_);
+    const TensorMap<Tensor<float, 2>, StormEigen::Aligned> A(a_, size_a);
+    const StormEigen::array<TensorIndex, 2> size_b(k_, m_);
+    TensorMap<Tensor<float, 2>, StormEigen::Aligned> B(b_, size_b);
 
-    const Eigen::array<int, 2> shuffle(1, 0);
+    const StormEigen::array<int, 2> shuffle(1, 0);
 
     StartBenchmarkTiming();
     for (int iter = 0; iter < num_iters; ++iter) {
@@ -102,14 +102,14 @@ template <typename Device> class BenchmarkSuite {
 
  void padding(int num_iters) {
     eigen_assert(m_ == k_);
-    const Eigen::array<TensorIndex, 2> size_a(m_, k_-3);
-    const TensorMap<Tensor<float, 2>, Eigen::Aligned> A(a_, size_a);
-    const Eigen::array<TensorIndex, 2> size_b(k_, m_);
-    TensorMap<Tensor<float, 2>, Eigen::Aligned> B(b_, size_b);
+    const StormEigen::array<TensorIndex, 2> size_a(m_, k_-3);
+    const TensorMap<Tensor<float, 2>, StormEigen::Aligned> A(a_, size_a);
+    const StormEigen::array<TensorIndex, 2> size_b(k_, m_);
+    TensorMap<Tensor<float, 2>, StormEigen::Aligned> B(b_, size_b);
 
-    Eigen::array<Eigen::IndexPair<TensorIndex>, 2> paddings;
-    paddings[0] = Eigen::IndexPair<TensorIndex>(0, 0);
-    paddings[1] = Eigen::IndexPair<TensorIndex>(2, 1);
+    StormEigen::array<StormEigen::IndexPair<TensorIndex>, 2> paddings;
+    paddings[0] = StormEigen::IndexPair<TensorIndex>(0, 0);
+    paddings[1] = StormEigen::IndexPair<TensorIndex>(2, 1);
 
     StartBenchmarkTiming();
     for (int iter = 0; iter < num_iters; ++iter) {
@@ -121,12 +121,12 @@ template <typename Device> class BenchmarkSuite {
 
  void striding(int num_iters) {
     eigen_assert(m_ == k_);
-    const Eigen::array<TensorIndex, 2> size_a(m_, k_);
-    const TensorMap<Tensor<float, 2>, Eigen::Aligned> A(a_, size_a);
-    const Eigen::array<TensorIndex, 2> size_b(m_, k_ / 2);
-    TensorMap<Tensor<float, 2>, Eigen::Aligned> B(b_, size_b);
+    const StormEigen::array<TensorIndex, 2> size_a(m_, k_);
+    const TensorMap<Tensor<float, 2>, StormEigen::Aligned> A(a_, size_a);
+    const StormEigen::array<TensorIndex, 2> size_b(m_, k_ / 2);
+    TensorMap<Tensor<float, 2>, StormEigen::Aligned> B(b_, size_b);
 
-    const Eigen::array<TensorIndex, 2> strides(1, 2);
+    const StormEigen::array<TensorIndex, 2> strides(1, 2);
 
     StartBenchmarkTiming();
     for (int iter = 0; iter < num_iters; ++iter) {
@@ -137,18 +137,18 @@ template <typename Device> class BenchmarkSuite {
   }
 
   void broadcasting(int num_iters) {
-    const Eigen::array<TensorIndex, 2> size_a(m_, 1);
-    const TensorMap<Tensor<float, 2>, Eigen::Aligned> A(a_, size_a);
-    const Eigen::array<TensorIndex, 2> size_c(m_, n_);
-    TensorMap<Tensor<float, 2>, Eigen::Aligned> C(c_, size_c);
+    const StormEigen::array<TensorIndex, 2> size_a(m_, 1);
+    const TensorMap<Tensor<float, 2>, StormEigen::Aligned> A(a_, size_a);
+    const StormEigen::array<TensorIndex, 2> size_c(m_, n_);
+    TensorMap<Tensor<float, 2>, StormEigen::Aligned> C(c_, size_c);
 
 #if defined(__CUDACC__)
     // nvcc doesn't support cxx11
-    const Eigen::array<int, 2> broadcast(1, n_);
+    const StormEigen::array<int, 2> broadcast(1, n_);
 #else
     // Take advantage of cxx11 to give the compiler information it can use to
     // optimize the code.
-    Eigen::IndexList<Eigen::type2index<1>, int> broadcast;
+    StormEigen::IndexList<StormEigen::type2index<1>, int> broadcast;
     broadcast.set(1, n_);
 #endif
 
@@ -162,10 +162,10 @@ template <typename Device> class BenchmarkSuite {
 
   void coeffWiseOp(int num_iters) {
     eigen_assert(m_ == k_ && k_ == n_);
-    const Eigen::array<TensorIndex, 2> sizes(m_, m_);
-    const TensorMap<Tensor<float, 2>, Eigen::Aligned> A(a_, sizes);
-    const TensorMap<Tensor<float, 2>, Eigen::Aligned> B(b_, sizes);
-    TensorMap<Tensor<float, 2>, Eigen::Aligned> C(c_, sizes);
+    const StormEigen::array<TensorIndex, 2> sizes(m_, m_);
+    const TensorMap<Tensor<float, 2>, StormEigen::Aligned> A(a_, sizes);
+    const TensorMap<Tensor<float, 2>, StormEigen::Aligned> B(b_, sizes);
+    TensorMap<Tensor<float, 2>, StormEigen::Aligned> C(c_, sizes);
 
     StartBenchmarkTiming();
     for (int iter = 0; iter < num_iters; ++iter) {
@@ -178,10 +178,10 @@ template <typename Device> class BenchmarkSuite {
 
   void algebraicFunc(int num_iters) {
     eigen_assert(m_ == k_ && k_ == n_);
-    const Eigen::array<TensorIndex, 2> sizes(m_, m_);
-    const TensorMap<Tensor<float, 2>, Eigen::Aligned> A(a_, sizes);
-    const TensorMap<Tensor<float, 2>, Eigen::Aligned> B(b_, sizes);
-    TensorMap<Tensor<float, 2>, Eigen::Aligned> C(c_, sizes);
+    const StormEigen::array<TensorIndex, 2> sizes(m_, m_);
+    const TensorMap<Tensor<float, 2>, StormEigen::Aligned> A(a_, sizes);
+    const TensorMap<Tensor<float, 2>, StormEigen::Aligned> B(b_, sizes);
+    TensorMap<Tensor<float, 2>, StormEigen::Aligned> C(c_, sizes);
 
     StartBenchmarkTiming();
     for (int iter = 0; iter < num_iters; ++iter) {
@@ -194,10 +194,10 @@ template <typename Device> class BenchmarkSuite {
 
   void transcendentalFunc(int num_iters) {
     eigen_assert(m_ == k_ && k_ == n_);
-    const Eigen::array<TensorIndex, 2> sizes(m_, m_);
-    const TensorMap<Tensor<float, 2>, Eigen::Aligned> A(a_, sizes);
-    const TensorMap<Tensor<float, 2>, Eigen::Aligned> B(b_, sizes);
-    TensorMap<Tensor<float, 2>, Eigen::Aligned> C(c_, sizes);
+    const StormEigen::array<TensorIndex, 2> sizes(m_, m_);
+    const TensorMap<Tensor<float, 2>, StormEigen::Aligned> A(a_, sizes);
+    const TensorMap<Tensor<float, 2>, StormEigen::Aligned> B(b_, sizes);
+    TensorMap<Tensor<float, 2>, StormEigen::Aligned> C(c_, sizes);
 
     StartBenchmarkTiming();
     for (int iter = 0; iter < num_iters; ++iter) {
@@ -210,12 +210,12 @@ template <typename Device> class BenchmarkSuite {
 
   // Simple reduction
   void reduction(int num_iters) {
-    const Eigen::array<TensorIndex, 2> input_size(k_, n_);
-    const TensorMap<Tensor<float, 2>, Eigen::Aligned> B(b_, input_size);
-    const Eigen::array<TensorIndex, 1> output_size(n_);
-    TensorMap<Tensor<float, 1>, Eigen::Aligned> C(c_, output_size);
+    const StormEigen::array<TensorIndex, 2> input_size(k_, n_);
+    const TensorMap<Tensor<float, 2>, StormEigen::Aligned> B(b_, input_size);
+    const StormEigen::array<TensorIndex, 1> output_size(n_);
+    TensorMap<Tensor<float, 1>, StormEigen::Aligned> C(c_, output_size);
 
-    const Eigen::array<TensorIndex, 1> sum_along_dim(0);
+    const StormEigen::array<TensorIndex, 1> sum_along_dim(0);
 
     StartBenchmarkTiming();
     for (int iter = 0; iter < num_iters; ++iter) {
@@ -228,16 +228,16 @@ template <typename Device> class BenchmarkSuite {
 
   // do a contraction which is equivalent to a matrix multiplication
   void contraction(int num_iters) {
-    const Eigen::array<TensorIndex, 2> sizeA(m_, k_);
-    const Eigen::array<TensorIndex, 2> sizeB(k_, n_);
-    const Eigen::array<TensorIndex, 2> sizeC(m_, n_);
+    const StormEigen::array<TensorIndex, 2> sizeA(m_, k_);
+    const StormEigen::array<TensorIndex, 2> sizeB(k_, n_);
+    const StormEigen::array<TensorIndex, 2> sizeC(m_, n_);
 
-    const TensorMap<Tensor<float, 2>, Eigen::Aligned> A(a_, sizeA);
-    const TensorMap<Tensor<float, 2>, Eigen::Aligned> B(b_, sizeB);
-    TensorMap<Tensor<float, 2>, Eigen::Aligned> C(c_, sizeC);
+    const TensorMap<Tensor<float, 2>, StormEigen::Aligned> A(a_, sizeA);
+    const TensorMap<Tensor<float, 2>, StormEigen::Aligned> B(b_, sizeB);
+    TensorMap<Tensor<float, 2>, StormEigen::Aligned> C(c_, sizeC);
 
     typedef typename Tensor<float, 2>::DimensionPair DimPair;
-    const Eigen::array<DimPair, 1> dims(DimPair(1, 0));
+    const StormEigen::array<DimPair, 1> dims(DimPair(1, 0));
 
     StartBenchmarkTiming();
     for (int iter = 0; iter < num_iters; ++iter) {
@@ -249,14 +249,14 @@ template <typename Device> class BenchmarkSuite {
   }
 
   void convolution(int num_iters, int kernel_x, int kernel_y) {
-    const Eigen::array<TensorIndex, 2> input_sizes(m_, n_);
-    TensorMap<Tensor<float, 2>, Eigen::Aligned> A(a_, input_sizes);
-    const Eigen::array<TensorIndex, 2> kernel_sizes(kernel_x, kernel_y);
-    TensorMap<Tensor<float, 2>, Eigen::Aligned> B(b_, kernel_sizes);
-    const Eigen::array<TensorIndex, 2> result_sizes(
+    const StormEigen::array<TensorIndex, 2> input_sizes(m_, n_);
+    TensorMap<Tensor<float, 2>, StormEigen::Aligned> A(a_, input_sizes);
+    const StormEigen::array<TensorIndex, 2> kernel_sizes(kernel_x, kernel_y);
+    TensorMap<Tensor<float, 2>, StormEigen::Aligned> B(b_, kernel_sizes);
+    const StormEigen::array<TensorIndex, 2> result_sizes(
         m_ - kernel_x + 1, n_ - kernel_y + 1);
-    TensorMap<Tensor<float, 2>, Eigen::Aligned> C(c_, result_sizes);
-    Eigen::array<Tensor<float, 2>::Index, 2> dims(0, 1);
+    TensorMap<Tensor<float, 2>, StormEigen::Aligned> C(c_, result_sizes);
+    StormEigen::array<Tensor<float, 2>::Index, 2> dims(0, 1);
 
     StartBenchmarkTiming();
     for (int iter = 0; iter < num_iters; ++iter) {
@@ -285,7 +285,7 @@ template <typename Device> class BenchmarkSuite {
 
   inline void finalizeBenchmark(int64 num_items) {
 #if defined(EIGEN_USE_GPU) && defined(__CUDACC__)
-    if (Eigen::internal::is_same<Device, Eigen::GpuDevice>::value) {
+    if (StormEigen::internal::is_same<Device, StormEigen::GpuDevice>::value) {
       device_.synchronize();
     }
 #endif

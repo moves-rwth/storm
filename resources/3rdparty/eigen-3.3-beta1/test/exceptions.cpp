@@ -91,8 +91,8 @@ int ScalarWithExceptions::countdown = 0;
 
 void memoryleak()
 {
-  typedef Eigen::Matrix<ScalarWithExceptions,Dynamic,1> VectorType;
-  typedef Eigen::Matrix<ScalarWithExceptions,Dynamic,Dynamic> MatrixType;
+  typedef StormEigen::Matrix<ScalarWithExceptions,Dynamic,1> VectorType;
+  typedef StormEigen::Matrix<ScalarWithExceptions,Dynamic,Dynamic> MatrixType;
   
   {
     int n = 50;

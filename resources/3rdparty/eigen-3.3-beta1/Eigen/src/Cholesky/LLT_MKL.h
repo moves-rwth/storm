@@ -36,7 +36,7 @@
 #include "Eigen/src/Core/util/MKL_support.h"
 #include <iostream>
 
-namespace Eigen { 
+namespace StormEigen { 
 
 namespace internal {
 
@@ -73,7 +73,7 @@ template<> struct llt_inplace<EIGTYPE, Lower> \
   } \
   template<typename MatrixType, typename VectorType> \
   static Index rankUpdate(MatrixType& mat, const VectorType& vec, const typename MatrixType::RealScalar& sigma) \
-  { return Eigen::internal::llt_rank_update_lower(mat, vec, sigma); } \
+  { return StormEigen::internal::llt_rank_update_lower(mat, vec, sigma); } \
 }; \
 template<> struct llt_inplace<EIGTYPE, Upper> \
 { \
@@ -97,6 +97,6 @@ EIGEN_MKL_LLT(scomplex, MKL_Complex8, c)
 
 } // end namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_LLT_MKL_H

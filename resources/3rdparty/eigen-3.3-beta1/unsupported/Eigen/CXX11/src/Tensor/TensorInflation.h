@@ -10,7 +10,7 @@
 #ifndef EIGEN_CXX11_TENSOR_TENSOR_INFLATION_H
 #define EIGEN_CXX11_TENSOR_TENSOR_INFLATION_H
 
-namespace Eigen {
+namespace StormEigen {
 
 /** \class TensorInflation
   * \ingroup CXX11_Tensor_Module
@@ -35,7 +35,7 @@ struct traits<TensorInflationOp<Strides, XprType> > : public traits<XprType>
 };
 
 template<typename Strides, typename XprType>
-struct eval<TensorInflationOp<Strides, XprType>, Eigen::Dense>
+struct eval<TensorInflationOp<Strides, XprType>, StormEigen::Dense>
 {
   typedef const TensorInflationOp<Strides, XprType>& type;
 };
@@ -52,14 +52,14 @@ template<typename Strides, typename XprType>
 class TensorInflationOp : public TensorBase<TensorInflationOp<Strides, XprType>, ReadOnlyAccessors>
 {
   public:
-  typedef typename Eigen::internal::traits<TensorInflationOp>::Scalar Scalar;
-  typedef typename Eigen::internal::traits<TensorInflationOp>::Packet Packet;
-  typedef typename Eigen::NumTraits<Scalar>::Real RealScalar;
+  typedef typename StormEigen::internal::traits<TensorInflationOp>::Scalar Scalar;
+  typedef typename StormEigen::internal::traits<TensorInflationOp>::Packet Packet;
+  typedef typename StormEigen::NumTraits<Scalar>::Real RealScalar;
   typedef typename XprType::CoeffReturnType CoeffReturnType;
   typedef typename XprType::PacketReturnType PacketReturnType;
-  typedef typename Eigen::internal::nested<TensorInflationOp>::type Nested;
-  typedef typename Eigen::internal::traits<TensorInflationOp>::StorageKind StorageKind;
-  typedef typename Eigen::internal::traits<TensorInflationOp>::Index Index;
+  typedef typename StormEigen::internal::nested<TensorInflationOp>::type Nested;
+  typedef typename StormEigen::internal::traits<TensorInflationOp>::StorageKind StorageKind;
+  typedef typename StormEigen::internal::traits<TensorInflationOp>::Index Index;
 
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TensorInflationOp(const XprType& expr, const Strides& strides)
       : m_xpr(expr), m_strides(strides) {}
@@ -214,6 +214,6 @@ struct TensorEvaluator<const TensorInflationOp<Strides, ArgType>, Device>
   array<internal::TensorIntDivisor<Index>, NumDims> m_fastStrides;
 };
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_CXX11_TENSOR_TENSOR_INFLATION_H

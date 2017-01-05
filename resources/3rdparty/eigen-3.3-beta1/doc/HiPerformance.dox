@@ -1,5 +1,5 @@
 
-namespace Eigen {
+namespace StormEigen {
 
 /** \page TopicWritingEfficientProductExpression Writing efficient matrix product expressions
 

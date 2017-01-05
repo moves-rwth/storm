@@ -4,7 +4,7 @@
 #include <bench/BenchTimer.h>
 
 using namespace std;
-using namespace Eigen;
+using namespace StormEigen;
 
 #ifndef SCALAR
 #define SCALAR float

@@ -1,6 +1,6 @@
 #include <iostream>
 #include <Eigen/SVD>
-using namespace Eigen;
+using namespace StormEigen;
 using namespace std;
 
 float inv_cond(const Ref<const MatrixXf>& a)

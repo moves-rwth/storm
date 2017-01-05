@@ -228,8 +228,8 @@ template<typename SparseMatrixType> void sparse_block(const SparseMatrixType& re
 void test_sparse_block()
 {
   for(int i = 0; i < g_repeat; i++) {
-    int r = Eigen::internal::random<int>(1,200), c = Eigen::internal::random<int>(1,200);
-    if(Eigen::internal::random<int>(0,4) == 0) {
+    int r = StormEigen::internal::random<int>(1,200), c = StormEigen::internal::random<int>(1,200);
+    if(StormEigen::internal::random<int>(0,4) == 0) {
       r = c; // check square matrices in 25% of tries
     }
     EIGEN_UNUSED_VARIABLE(r+c);
@@ -242,9 +242,9 @@ void test_sparse_block()
     CALL_SUBTEST_3(( sparse_block(SparseMatrix<double,ColMajor,long int>(r, c)) ));
     CALL_SUBTEST_3(( sparse_block(SparseMatrix<double,RowMajor,long int>(r, c)) ));
     
-    r = Eigen::internal::random<int>(1,100);
-    c = Eigen::internal::random<int>(1,100);
-    if(Eigen::internal::random<int>(0,4) == 0) {
+    r = StormEigen::internal::random<int>(1,100);
+    c = StormEigen::internal::random<int>(1,100);
+    if(StormEigen::internal::random<int>(0,4) == 0) {
       r = c; // check square matrices in 25% of tries
     }
     

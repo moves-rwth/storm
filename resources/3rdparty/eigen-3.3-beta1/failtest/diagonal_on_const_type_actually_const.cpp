@@ -6,7 +6,7 @@
 #define CV_QUALIFIER
 #endif
 
-using namespace Eigen;
+using namespace StormEigen;
 
 void foo(){
     MatrixXf m;

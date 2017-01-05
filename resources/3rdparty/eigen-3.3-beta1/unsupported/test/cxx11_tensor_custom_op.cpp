@@ -11,7 +11,7 @@
 
 #include <Eigen/CXX11/Tensor>
 
-using Eigen::Tensor;
+using StormEigen::Tensor;
 
 
 struct InsertZeros {
@@ -30,8 +30,8 @@ struct InsertZeros {
     strides[1] = 2;
     output.stride(strides).device(device) = input;
 
-    Eigen::DSizes<DenseIndex, 2> offsets(1,1);
-    Eigen::DSizes<DenseIndex, 2> extents(output.dimension(0)-1, output.dimension(1)-1);
+    StormEigen::DSizes<DenseIndex, 2> offsets(1,1);
+    StormEigen::DSizes<DenseIndex, 2> extents(output.dimension(0)-1, output.dimension(1)-1);
     output.slice(offsets, extents).stride(strides).device(device) = input.constant(0.0f);
   }
 };

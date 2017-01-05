@@ -10,7 +10,7 @@
 #ifndef EIGEN_DYNAMIC_SPARSEMATRIX_H
 #define EIGEN_DYNAMIC_SPARSEMATRIX_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 /** \deprecated use a SparseMatrix in an uncompressed mode
   *
@@ -387,6 +387,6 @@ struct evaluator<DynamicSparseMatrix<_Scalar,_Options,_StorageIndex> >
 
 }
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_DYNAMIC_SPARSEMATRIX_H

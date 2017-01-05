@@ -10,7 +10,7 @@
 #ifndef EIGEN_TRANSLATION_H
 #define EIGEN_TRANSLATION_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 /** \geometry_module \ingroup Geometry_Module
   *
@@ -201,6 +201,6 @@ Translation<Scalar,Dim>::operator* (const EigenBase<OtherDerived>& linear) const
   return res;
 }
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_TRANSLATION_H

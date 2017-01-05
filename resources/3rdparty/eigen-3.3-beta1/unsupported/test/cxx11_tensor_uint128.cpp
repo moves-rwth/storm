@@ -11,8 +11,8 @@
 
 #include <Eigen/CXX11/Tensor>
 
-using Eigen::internal::TensorUInt128;
-using Eigen::internal::static_val;
+using StormEigen::internal::TensorUInt128;
+using StormEigen::internal::static_val;
 
 void VERIFY_EQUAL(TensorUInt128<uint64_t, uint64_t> actual, __uint128_t expected) {
   bool matchl = actual.lower() == static_cast<uint64_t>(expected);

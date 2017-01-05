@@ -10,7 +10,7 @@
 #ifndef EIGEN_COMPLEX_AVX_H
 #define EIGEN_COMPLEX_AVX_H
 
-namespace Eigen {
+namespace StormEigen {
 
 namespace internal {
 
@@ -210,7 +210,7 @@ template<> struct conj_helper<Packet8f, Packet4cf, false,false>
   { return padd(c, pmul(x,y)); }
 
   EIGEN_STRONG_INLINE Packet4cf pmul(const Packet8f& x, const Packet4cf& y) const
-  { return Packet4cf(Eigen::internal::pmul(x, y.v)); }
+  { return Packet4cf(StormEigen::internal::pmul(x, y.v)); }
 };
 
 template<> struct conj_helper<Packet4cf, Packet8f, false,false>
@@ -219,7 +219,7 @@ template<> struct conj_helper<Packet4cf, Packet8f, false,false>
   { return padd(c, pmul(x,y)); }
 
   EIGEN_STRONG_INLINE Packet4cf pmul(const Packet4cf& x, const Packet8f& y) const
-  { return Packet4cf(Eigen::internal::pmul(x.v, y)); }
+  { return Packet4cf(StormEigen::internal::pmul(x.v, y)); }
 };
 
 template<> EIGEN_STRONG_INLINE Packet4cf pdiv<Packet4cf>(const Packet4cf& a, const Packet4cf& b)
@@ -406,7 +406,7 @@ template<> struct conj_helper<Packet4d, Packet2cd, false,false>
   { return padd(c, pmul(x,y)); }
 
   EIGEN_STRONG_INLINE Packet2cd pmul(const Packet4d& x, const Packet2cd& y) const
-  { return Packet2cd(Eigen::internal::pmul(x, y.v)); }
+  { return Packet2cd(StormEigen::internal::pmul(x, y.v)); }
 };
 
 template<> struct conj_helper<Packet2cd, Packet4d, false,false>
@@ -415,7 +415,7 @@ template<> struct conj_helper<Packet2cd, Packet4d, false,false>
   { return padd(c, pmul(x,y)); }
 
   EIGEN_STRONG_INLINE Packet2cd pmul(const Packet2cd& x, const Packet4d& y) const
-  { return Packet2cd(Eigen::internal::pmul(x.v, y)); }
+  { return Packet2cd(StormEigen::internal::pmul(x.v, y)); }
 };
 
 template<> EIGEN_STRONG_INLINE Packet2cd pdiv<Packet2cd>(const Packet2cd& a, const Packet2cd& b)
@@ -458,6 +458,6 @@ ptranspose(PacketBlock<Packet2cd,2>& kernel) {
 
 } // end namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_COMPLEX_AVX_H

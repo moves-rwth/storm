@@ -13,7 +13,7 @@
 #ifndef EIGEN_LEVENBERGMARQUARDT__H
 #define EIGEN_LEVENBERGMARQUARDT__H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 namespace LevenbergMarquardtSpace {
     enum Status {
@@ -650,7 +650,7 @@ LevenbergMarquardt<FunctorType,Scalar>::lmdif1(
     return info;
 }
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_LEVENBERGMARQUARDT__H
 

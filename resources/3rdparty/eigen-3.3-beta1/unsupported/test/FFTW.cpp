@@ -14,7 +14,7 @@ template <typename T>
 std::complex<T> RandomCpx() { return std::complex<T>( (T)(rand()/(T)RAND_MAX - .5), (T)(rand()/(T)RAND_MAX - .5) ); }
 
 using namespace std;
-using namespace Eigen;
+using namespace StormEigen;
 
 
 template < typename T>
@@ -181,21 +181,21 @@ void test_complex(int nfft)
 template <typename T,int nrows,int ncols>
 void test_complex2d()
 {
-    typedef typename Eigen::FFT<T>::Complex Complex;
+    typedef typename StormEigen::FFT<T>::Complex Complex;
     FFT<T> fft;
-    Eigen::Matrix<Complex,nrows,ncols> src,src2,dst,dst2;
+    StormEigen::Matrix<Complex,nrows,ncols> src,src2,dst,dst2;
 
-    src = Eigen::Matrix<Complex,nrows,ncols>::Random();
-    //src =  Eigen::Matrix<Complex,nrows,ncols>::Identity();
+    src = StormEigen::Matrix<Complex,nrows,ncols>::Random();
+    //src =  StormEigen::Matrix<Complex,nrows,ncols>::Identity();
 
     for (int k=0;k<ncols;k++) {
-        Eigen::Matrix<Complex,nrows,1> tmpOut;
+        StormEigen::Matrix<Complex,nrows,1> tmpOut;
         fft.fwd( tmpOut,src.col(k) );
         dst2.col(k) = tmpOut;
     }
 
     for (int k=0;k<nrows;k++) {
-        Eigen::Matrix<Complex,1,ncols> tmpOut;
+        StormEigen::Matrix<Complex,1,ncols> tmpOut;
         fft.fwd( tmpOut,  dst2.row(k) );
         dst2.row(k) = tmpOut;
     }

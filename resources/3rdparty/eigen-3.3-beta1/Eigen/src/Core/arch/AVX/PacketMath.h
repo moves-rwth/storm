@@ -10,7 +10,7 @@
 #ifndef EIGEN_PACKET_MATH_AVX_H
 #define EIGEN_PACKET_MATH_AVX_H
 
-namespace Eigen {
+namespace StormEigen {
 
 namespace internal {
 
@@ -602,6 +602,6 @@ template<> EIGEN_STRONG_INLINE Packet4d pblend(const Selector<4>& ifPacket, cons
 
 } // end namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_PACKET_MATH_AVX_H

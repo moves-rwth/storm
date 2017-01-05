@@ -30,7 +30,7 @@
 #ifndef SPARSELU_PIVOTL_H
 #define SPARSELU_PIVOTL_H
 
-namespace Eigen {
+namespace StormEigen {
 namespace internal {
 
     template<typename Scalar, typename StorageIndex, typename std::enable_if<std::is_same<Scalar, double>::value, int>::type = 0>
@@ -163,6 +163,6 @@ Index SparseLUImpl<Scalar,StorageIndex>::pivotL(const Index jcol, const RealScal
 }
 
 } // end namespace internal
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // SPARSELU_PIVOTL_H

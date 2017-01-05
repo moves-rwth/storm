@@ -13,7 +13,7 @@
 #include <Eigen/Core>
 #include <Eigen/Cholesky>
 #include <bench/BenchUtil.h>
-using namespace Eigen;
+using namespace StormEigen;
 
 #ifndef REPEAT
 #define REPEAT 10000

@@ -10,7 +10,7 @@
 #ifndef EIGEN_SPARSE_SELFADJOINTVIEW_H
 #define EIGEN_SPARSE_SELFADJOINTVIEW_H
 
-namespace Eigen { 
+namespace StormEigen { 
   
 /** \ingroup SparseCore_Module
   * \class SparseSelfAdjointView
@@ -602,6 +602,6 @@ struct Assignment<DstXprType, SparseSymmetricPermutationProduct<MatrixType,Mode>
 
 } // end namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_SPARSE_SELFADJOINTVIEW_H

@@ -1,7 +1,7 @@
 #include <iostream>
 #include <Eigen/Dense>
 
-using Eigen::MatrixXd;
+using StormEigen::MatrixXd;
 
 int main()
 {

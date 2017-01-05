@@ -11,7 +11,7 @@
 #ifndef EIGEN_REDUX_H
 #define EIGEN_REDUX_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 namespace internal {
 
@@ -423,7 +423,7 @@ template<typename Derived>
 EIGEN_STRONG_INLINE typename internal::traits<Derived>::Scalar
 DenseBase<Derived>::minCoeff() const
 {
-  return derived().redux(Eigen::internal::scalar_min_op<Scalar>());
+  return derived().redux(StormEigen::internal::scalar_min_op<Scalar>());
 }
 
 /** \returns the maximum of all coefficients of \c *this.
@@ -433,7 +433,7 @@ template<typename Derived>
 EIGEN_STRONG_INLINE typename internal::traits<Derived>::Scalar
 DenseBase<Derived>::maxCoeff() const
 {
-  return derived().redux(Eigen::internal::scalar_max_op<Scalar>());
+  return derived().redux(StormEigen::internal::scalar_max_op<Scalar>());
 }
 
 /** \returns the sum of all coefficients of *this
@@ -446,7 +446,7 @@ DenseBase<Derived>::sum() const
 {
   if(SizeAtCompileTime==0 || (SizeAtCompileTime==Dynamic && size()==0))
     return Scalar(0);
-  return derived().redux(Eigen::internal::scalar_sum_op<Scalar>());
+  return derived().redux(StormEigen::internal::scalar_sum_op<Scalar>());
 }
 
 /** \returns the mean of all coefficients of *this
@@ -457,7 +457,7 @@ template<typename Derived>
 EIGEN_STRONG_INLINE typename internal::traits<Derived>::Scalar
 DenseBase<Derived>::mean() const
 {
-  return Scalar(derived().redux(Eigen::internal::scalar_sum_op<Scalar>())) / Scalar(this->size());
+  return Scalar(derived().redux(StormEigen::internal::scalar_sum_op<Scalar>())) / Scalar(this->size());
 }
 
 /** \returns the product of all coefficients of *this
@@ -473,7 +473,7 @@ DenseBase<Derived>::prod() const
 {
   if(SizeAtCompileTime==0 || (SizeAtCompileTime==Dynamic && size()==0))
     return Scalar(1);
-  return derived().redux(Eigen::internal::scalar_product_op<Scalar>());
+  return derived().redux(StormEigen::internal::scalar_product_op<Scalar>());
 }
 
 /** \returns the trace of \c *this, i.e. the sum of the coefficients on the main diagonal.
@@ -489,6 +489,6 @@ MatrixBase<Derived>::trace() const
   return derived().diagonal().sum();
 }
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_REDUX_H

@@ -11,8 +11,8 @@
 
 #include <Eigen/CXX11/Tensor>
 
-using Eigen::DefaultDevice;
-using Eigen::Tensor;
+using StormEigen::DefaultDevice;
+using StormEigen::Tensor;
 
 typedef Tensor<float, 1>::DimensionPair DimPair;
 
@@ -29,7 +29,7 @@ static void test_evals()
 
   Tensor<float, 2, DataLayout> mat4(3,3);
   mat4.setZero();
-  Eigen::array<DimPair, 1> dims3({{DimPair(0, 0)}});
+  StormEigen::array<DimPair, 1> dims3({{DimPair(0, 0)}});
   typedef TensorEvaluator<decltype(mat1.contract(mat2, dims3)), DefaultDevice> Evaluator;
   Evaluator eval(mat1.contract(mat2, dims3), DefaultDevice());
   eval.evalTo(mat4.data());
@@ -49,7 +49,7 @@ static void test_evals()
 
   Tensor<float, 2, DataLayout> mat5(2,2);
   mat5.setZero();
-  Eigen::array<DimPair, 1> dims4({{DimPair(1, 1)}});
+  StormEigen::array<DimPair, 1> dims4({{DimPair(1, 1)}});
   typedef TensorEvaluator<decltype(mat1.contract(mat2, dims4)), DefaultDevice> Evaluator2;
   Evaluator2 eval2(mat1.contract(mat2, dims4), DefaultDevice());
   eval2.evalTo(mat5.data());
@@ -64,7 +64,7 @@ static void test_evals()
 
   Tensor<float, 2, DataLayout> mat6(2,2);
   mat6.setZero();
-  Eigen::array<DimPair, 1> dims6({{DimPair(1, 0)}});
+  StormEigen::array<DimPair, 1> dims6({{DimPair(1, 0)}});
   typedef TensorEvaluator<decltype(mat1.contract(mat3, dims6)), DefaultDevice> Evaluator3;
   Evaluator3 eval3(mat1.contract(mat3, dims6), DefaultDevice());
   eval3.evalTo(mat6.data());
@@ -89,7 +89,7 @@ static void test_scalar()
 
   Tensor<float, 1, DataLayout> scalar(1);
   scalar.setZero();
-  Eigen::array<DimPair, 1> dims({{DimPair(0, 0)}});
+  StormEigen::array<DimPair, 1> dims({{DimPair(0, 0)}});
   typedef TensorEvaluator<decltype(vec1.contract(vec2, dims)), DefaultDevice> Evaluator;
   Evaluator eval(vec1.contract(vec2, dims), DefaultDevice());
   eval.evalTo(scalar.data());
@@ -113,7 +113,7 @@ static void test_multidims()
 
   Tensor<float, 3, DataLayout> mat3(2, 2, 2);
   mat3.setZero();
-  Eigen::array<DimPair, 2> dims({{DimPair(1, 2), DimPair(2, 3)}});
+  StormEigen::array<DimPair, 2> dims({{DimPair(1, 2), DimPair(2, 3)}});
   typedef TensorEvaluator<decltype(mat1.contract(mat2, dims)), DefaultDevice> Evaluator;
   Evaluator eval(mat1.contract(mat2, dims), DefaultDevice());
   eval.evalTo(mat3.data());
@@ -147,7 +147,7 @@ static void test_holes() {
   t1.setRandom();
   t2.setRandom();
 
-  Eigen::array<DimPair, 2> dims({{DimPair(0, 0), DimPair(3, 4)}});
+  StormEigen::array<DimPair, 2> dims({{DimPair(0, 0), DimPair(3, 4)}});
   Tensor<float, 5, DataLayout> result = t1.contract(t2, dims);
   VERIFY_IS_EQUAL(result.dimension(0), 5);
   VERIFY_IS_EQUAL(result.dimension(1), 7);
@@ -182,7 +182,7 @@ static void test_full_redux()
   t1.setRandom();
   t2.setRandom();
 
-  Eigen::array<DimPair, 2> dims({{DimPair(0, 0), DimPair(1, 1)}});
+  StormEigen::array<DimPair, 2> dims({{DimPair(0, 0), DimPair(1, 1)}});
   Tensor<float, 1, DataLayout> result = t1.contract(t2, dims);
   VERIFY_IS_EQUAL(result.dimension(0), 2);
   VERIFY_IS_APPROX(result(0), t1(0, 0) * t2(0, 0, 0) +  t1(1, 0) * t2(1, 0, 0)
@@ -212,7 +212,7 @@ static void test_contraction_of_contraction()
   t3.setRandom();
   t4.setRandom();
 
-  Eigen::array<DimPair, 1> dims({{DimPair(1, 0)}});
+  StormEigen::array<DimPair, 1> dims({{DimPair(1, 0)}});
   auto contract1 = t1.contract(t2, dims);
   auto diff = t3 - contract1;
   auto contract2 = t1.contract(t4, dims);
@@ -221,10 +221,10 @@ static void test_contraction_of_contraction()
   VERIFY_IS_EQUAL(result.dimension(0), 2);
   VERIFY_IS_EQUAL(result.dimension(1), 2);
 
-  Eigen::Map<Eigen::Matrix<float, Dynamic, Dynamic, DataLayout>>
+  StormEigen::Map<StormEigen::Matrix<float, Dynamic, Dynamic, DataLayout>>
       m1(t1.data(), 2, 2), m2(t2.data(), 2, 2), m3(t3.data(), 2, 2),
       m4(t4.data(), 2, 2);
-  Eigen::Matrix<float, Dynamic, Dynamic, DataLayout>
+  StormEigen::Matrix<float, Dynamic, Dynamic, DataLayout>
       expected = (m1 * m4) * (m3 - m1 * m2);
 
   VERIFY_IS_APPROX(result(0, 0), expected(0, 0));
@@ -243,7 +243,7 @@ static void test_expr()
 
   Tensor<float, 2, DataLayout> mat3(2,2);
 
-  Eigen::array<DimPair, 1> dims({{DimPair(1, 0)}});
+  StormEigen::array<DimPair, 1> dims({{DimPair(1, 0)}});
   mat3 = mat1.contract(mat2, dims);
 
   VERIFY_IS_APPROX(mat3(0,0), mat1(0,0)*mat2(0,0) + mat1(0,1)*mat2(1,0) + mat1(0,2)*mat2(2,0));
@@ -263,7 +263,7 @@ static void test_out_of_order_contraction()
 
   Tensor<float, 2, DataLayout> mat3(2, 2);
 
-  Eigen::array<DimPair, 2> dims({{DimPair(2, 0), DimPair(0, 2)}});
+  StormEigen::array<DimPair, 2> dims({{DimPair(2, 0), DimPair(0, 2)}});
   mat3 = mat1.contract(mat2, dims);
 
   VERIFY_IS_APPROX(mat3(0, 0),
@@ -279,7 +279,7 @@ static void test_out_of_order_contraction()
                    mat1(0,1,0)*mat2(0,1,0) + mat1(1,1,0)*mat2(0,1,1) +
                    mat1(0,1,1)*mat2(1,1,0) + mat1(1,1,1)*mat2(1,1,1));
 
-  Eigen::array<DimPair, 2> dims2({{DimPair(0, 2), DimPair(2, 0)}});
+  StormEigen::array<DimPair, 2> dims2({{DimPair(0, 2), DimPair(2, 0)}});
   mat3 = mat1.contract(mat2, dims2);
 
   VERIFY_IS_APPROX(mat3(0, 0),
@@ -311,8 +311,8 @@ static void test_consistency()
   Tensor<float, 4, DataLayout> mat4(2, 1, 5, 5);
 
   // contract on dimensions of size 4 and 3
-  Eigen::array<DimPair, 2> dims1({{DimPair(0, 4), DimPair(1, 0)}});
-  Eigen::array<DimPair, 2> dims2({{DimPair(4, 0), DimPair(0, 1)}});
+  StormEigen::array<DimPair, 2> dims1({{DimPair(0, 4), DimPair(1, 0)}});
+  StormEigen::array<DimPair, 2> dims2({{DimPair(4, 0), DimPair(0, 1)}});
 
   mat3 = mat1.contract(mat2, dims1);
   mat4 = mat2.contract(mat1, dims2);
@@ -348,13 +348,13 @@ static void test_large_contraction()
   t_left += t_left.constant(1.0f);
   t_right += t_right.constant(1.0f);
 
-  typedef Map<Eigen::Matrix<float, Dynamic, Dynamic, DataLayout>> MapXf;
+  typedef Map<StormEigen::Matrix<float, Dynamic, Dynamic, DataLayout>> MapXf;
   MapXf m_left(t_left.data(), 1500, 248);
   MapXf m_right(t_right.data(), 248, 1400);
-  Eigen::Matrix<float, Dynamic, Dynamic, DataLayout> m_result(1500, 1400);
+  StormEigen::Matrix<float, Dynamic, Dynamic, DataLayout> m_result(1500, 1400);
 
   // this contraction should be equivalent to a single matrix multiplication
-  Eigen::array<DimPair, 2> dims({{DimPair(2, 0), DimPair(3, 1)}});
+  StormEigen::array<DimPair, 2> dims({{DimPair(2, 0), DimPair(3, 1)}});
 
   // compute results by separate methods
   t_result = t_left.contract(t_right, dims);
@@ -376,13 +376,13 @@ static void test_matrix_vector()
   t_left.setRandom();
   t_right.setRandom();
 
-  typedef Map<Eigen::Matrix<float, Dynamic, Dynamic, DataLayout>> MapXf;
+  typedef Map<StormEigen::Matrix<float, Dynamic, Dynamic, DataLayout>> MapXf;
   MapXf m_left(t_left.data(), 30, 50);
   MapXf m_right(t_right.data(), 50, 1);
-  Eigen::Matrix<float, Dynamic, Dynamic, DataLayout> m_result(30, 1);
+  StormEigen::Matrix<float, Dynamic, Dynamic, DataLayout> m_result(30, 1);
 
   // this contraction should be equivalent to a single matrix multiplication
-  Eigen::array<DimPair, 1> dims{{DimPair(1, 0)}};
+  StormEigen::array<DimPair, 1> dims{{DimPair(1, 0)}};
 
   // compute results by separate methods
   t_result = t_left.contract(t_right, dims);
@@ -404,13 +404,13 @@ static void test_tensor_vector()
   t_right.setRandom();
   
   typedef typename Tensor<float, 1, DataLayout>::DimensionPair DimensionPair;
-  Eigen::array<DimensionPair, 1> dim_pair01{{{0, 1}}};
+  StormEigen::array<DimensionPair, 1> dim_pair01{{{0, 1}}};
   Tensor<float, 3, DataLayout> t_result = t_left.contract(t_right, dim_pair01);
 
-  typedef Map<Eigen::Matrix<float, Dynamic, Dynamic, DataLayout>> MapXf;
+  typedef Map<StormEigen::Matrix<float, Dynamic, Dynamic, DataLayout>> MapXf;
   MapXf m_left(t_left.data(), 7, 13*17);
   MapXf m_right(t_right.data(), 1, 7);
-  Eigen::Matrix<float, Dynamic, Dynamic, DataLayout> m_result = m_left.transpose() * m_right.transpose();
+  StormEigen::Matrix<float, Dynamic, Dynamic, DataLayout> m_result = m_left.transpose() * m_right.transpose();
 
   for (int i = 0; i < t_result.dimensions().TotalSize(); i++) {
     VERIFY(internal::isApprox(t_result(i), m_result(i, 0), 1));
@@ -431,17 +431,17 @@ static void test_small_blocking_factors()
   t_right += t_right.constant(1.0f);
 
   // Force the cache sizes, which results in smaller blocking factors.
-  Eigen::setCpuCacheSizes(896, 1920, 2944);
+  StormEigen::setCpuCacheSizes(896, 1920, 2944);
 
   // this contraction should be equivalent to a single matrix multiplication
-  Eigen::array<DimPair, 2> dims({{DimPair(2, 0), DimPair(3, 1)}});
+  StormEigen::array<DimPair, 2> dims({{DimPair(2, 0), DimPair(3, 1)}});
   Tensor<float, 5, DataLayout> t_result;
   t_result = t_left.contract(t_right, dims);
 
   // compute result using a simple eigen matrix product
-  Map<Eigen::Matrix<float, Dynamic, Dynamic, DataLayout>> m_left(t_left.data(), 150, 93);
-  Map<Eigen::Matrix<float, Dynamic, Dynamic, DataLayout>> m_right(t_right.data(), 93, 140);
-  Eigen::Matrix<float, Dynamic, Dynamic, DataLayout> m_result = m_left * m_right;
+  Map<StormEigen::Matrix<float, Dynamic, Dynamic, DataLayout>> m_left(t_left.data(), 150, 93);
+  Map<StormEigen::Matrix<float, Dynamic, Dynamic, DataLayout>> m_right(t_right.data(), 93, 140);
+  StormEigen::Matrix<float, Dynamic, Dynamic, DataLayout> m_result = m_left * m_right;
 
   for (int i = 0; i < t_result.dimensions().TotalSize(); i++) {
     VERIFY_IS_APPROX(t_result.data()[i], m_result.data()[i]);
@@ -456,7 +456,7 @@ static void test_tensor_product()
   mat1.setRandom();
   mat2.setRandom();
 
-  Tensor<float, 4, DataLayout> result = mat1.contract(mat2, Eigen::array<DimPair, 0>{{}});
+  Tensor<float, 4, DataLayout> result = mat1.contract(mat2, StormEigen::array<DimPair, 0>{{}});
 
   VERIFY_IS_EQUAL(result.dimension(0), 2);
   VERIFY_IS_EQUAL(result.dimension(1), 3);

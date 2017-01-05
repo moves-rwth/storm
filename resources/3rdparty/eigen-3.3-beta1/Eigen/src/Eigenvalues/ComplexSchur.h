@@ -14,7 +14,7 @@
 
 #include "./HessenbergDecomposition.h"
 
-namespace Eigen { 
+namespace StormEigen { 
 
 namespace internal {
 template<typename MatrixType, bool IsComplex> struct complex_schur_reduce_to_hessenberg;
@@ -63,7 +63,7 @@ template<typename _MatrixType> class ComplexSchur
     /** \brief Scalar type for matrices of type \p _MatrixType. */
     typedef typename MatrixType::Scalar Scalar;
     typedef typename NumTraits<Scalar>::Real RealScalar;
-    typedef Eigen::Index Index; ///< \deprecated since Eigen 3.3
+    typedef StormEigen::Index Index; ///< \deprecated since Eigen 3.3
 
     /** \brief Complex scalar type for \p _MatrixType. 
       *
@@ -454,6 +454,6 @@ void ComplexSchur<MatrixType>::reduceToTriangularForm(bool computeU)
   m_matUisUptodate = computeU;
 }
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_COMPLEX_SCHUR_H

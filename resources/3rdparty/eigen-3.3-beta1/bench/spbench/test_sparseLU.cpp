@@ -12,7 +12,7 @@
 #endif
 
 using namespace std;
-using namespace Eigen;
+using namespace StormEigen;
 
 int main(int argc, char **args)
 {

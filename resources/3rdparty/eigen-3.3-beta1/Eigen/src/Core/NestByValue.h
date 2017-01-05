@@ -11,7 +11,7 @@
 #ifndef EIGEN_NESTBYVALUE_H
 #define EIGEN_NESTBYVALUE_H
 
-namespace Eigen {
+namespace StormEigen {
 
 /** \class NestByValue
   * \ingroup Core_Module
@@ -106,6 +106,6 @@ DenseBase<Derived>::nestByValue() const
   return NestByValue<Derived>(derived());
 }
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_NESTBYVALUE_H

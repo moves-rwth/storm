@@ -10,7 +10,7 @@
 #ifndef EIGEN_CXX11_TENSOR_TENSOR_CONCATENATION_H
 #define EIGEN_CXX11_TENSOR_TENSOR_CONCATENATION_H
 
-namespace Eigen {
+namespace StormEigen {
 
 /** \class TensorConcatenationOp
   * \ingroup CXX11_Tensor_Module
@@ -41,7 +41,7 @@ struct traits<TensorConcatenationOp<Axis, LhsXprType, RhsXprType> >
 };
 
 template<typename Axis, typename LhsXprType, typename RhsXprType>
-struct eval<TensorConcatenationOp<Axis, LhsXprType, RhsXprType>, Eigen::Dense>
+struct eval<TensorConcatenationOp<Axis, LhsXprType, RhsXprType>, StormEigen::Dense>
 {
   typedef const TensorConcatenationOp<Axis, LhsXprType, RhsXprType>& type;
 };
@@ -343,6 +343,6 @@ template<typename Axis, typename LeftArgType, typename RightArgType, typename De
   }
 };
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_CXX11_TENSOR_TENSOR_CONCATENATION_H

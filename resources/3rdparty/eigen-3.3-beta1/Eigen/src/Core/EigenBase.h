@@ -11,7 +11,7 @@
 #ifndef EIGEN_EIGENBASE_H
 #define EIGEN_EIGENBASE_H
 
-namespace Eigen {
+namespace StormEigen {
 
 /** \class EigenBase
   * 
@@ -31,10 +31,10 @@ template<typename Derived> struct EigenBase
   
   /** \brief The interface type of indices
     * \details To change this, \c \#define the preprocessor symbol \c EIGEN_DEFAULT_DENSE_INDEX_TYPE.
-    * \deprecated Since Eigen 3.3, its usage is deprecated. Use Eigen::Index instead.
+    * \deprecated Since Eigen 3.3, its usage is deprecated. Use StormEigen::Index instead.
     * \sa StorageIndex, \ref TopicPreprocessorDirectives.
     */
-  typedef Eigen::Index Index;
+  typedef StormEigen::Index Index;
 
   // FIXME is it needed?
   typedef typename internal::traits<Derived>::StorageKind StorageKind;
@@ -150,6 +150,6 @@ Derived& DenseBase<Derived>::operator-=(const EigenBase<OtherDerived> &other)
   return derived();
 }
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_EIGENBASE_H

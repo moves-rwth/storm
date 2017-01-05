@@ -11,7 +11,7 @@
 #include <limits>
 #include <Eigen/CXX11/Tensor>
 
-using Eigen::Tensor;
+using StormEigen::Tensor;
 
 template <int DataLayout>
 static void test_trivial_reductions() {
@@ -345,7 +345,7 @@ static void test_static_dims() {
   reduction_axis[0] = 1;
   reduction_axis[1] = 3;
 #else
-  Eigen::IndexList<Eigen::type2index<1>, Eigen::type2index<3> > reduction_axis;
+  StormEigen::IndexList<StormEigen::type2index<1>, Eigen::type2index<3> > reduction_axis;
 #endif
 
   out = in.maximum(reduction_axis);
@@ -376,7 +376,7 @@ static void test_innermost_last_dims() {
   reduction_axis[1] = 1;
 #else
   // This triggers the use of packets for ColMajor.
-  Eigen::IndexList<Eigen::type2index<0>, Eigen::type2index<1> > reduction_axis;
+  StormEigen::IndexList<StormEigen::type2index<0>, Eigen::type2index<1> > reduction_axis;
 #endif
 
   out = in.maximum(reduction_axis);
@@ -407,7 +407,7 @@ static void test_innermost_first_dims() {
   reduction_axis[1] = 3;
 #else
   // This triggers the use of packets for RowMajor.
-  Eigen::IndexList<Eigen::type2index<2>, Eigen::type2index<3>> reduction_axis;
+  StormEigen::IndexList<StormEigen::type2index<2>, Eigen::type2index<3>> reduction_axis;
 #endif
 
   out = in.maximum(reduction_axis);
@@ -438,7 +438,7 @@ static void test_reduce_middle_dims() {
   reduction_axis[1] = 2;
 #else
   // This triggers the use of packets for RowMajor.
-  Eigen::IndexList<Eigen::type2index<1>, Eigen::type2index<2>> reduction_axis;
+  StormEigen::IndexList<StormEigen::type2index<1>, Eigen::type2index<2>> reduction_axis;
 #endif
 
   out = in.maximum(reduction_axis);

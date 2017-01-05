@@ -10,7 +10,7 @@
 #ifndef EIGEN_NUMTRAITS_H
 #define EIGEN_NUMTRAITS_H
 
-namespace Eigen {
+namespace StormEigen {
 
 /** \class NumTraits
   * \ingroup Core_Module
@@ -166,6 +166,6 @@ struct NumTraits<Array<Scalar, Rows, Cols, Options, MaxRows, MaxCols> >
   static inline RealScalar dummy_precision() { return NumTraits<RealScalar>::dummy_precision(); }
 };
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_NUMTRAITS_H

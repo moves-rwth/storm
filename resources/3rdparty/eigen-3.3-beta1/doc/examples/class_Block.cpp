@@ -1,20 +1,20 @@
 #include <Eigen/Core>
 #include <iostream>
-using namespace Eigen;
+using namespace StormEigen;
 using namespace std;
 
 template<typename Derived>
-Eigen::Block<Derived>
+StormEigen::Block<Derived>
 topLeftCorner(MatrixBase<Derived>& m, int rows, int cols)
 {
-  return Eigen::Block<Derived>(m.derived(), 0, 0, rows, cols);
+  return StormEigen::Block<Derived>(m.derived(), 0, 0, rows, cols);
 }
 
 template<typename Derived>
-const Eigen::Block<const Derived>
+const StormEigen::Block<const Derived>
 topLeftCorner(const MatrixBase<Derived>& m, int rows, int cols)
 {
-  return Eigen::Block<const Derived>(m.derived(), 0, 0, rows, cols);
+  return StormEigen::Block<const Derived>(m.derived(), 0, 0, rows, cols);
 }
 
 int main(int, char**)

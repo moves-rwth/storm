@@ -1,7 +1,7 @@
 #include <iostream>
 #include <Eigen/Dense>
 
-using namespace Eigen;
+using namespace StormEigen;
 using namespace std;
 int main()
 {

@@ -1,6 +1,6 @@
 #include "../Eigen/Core"
 
-using namespace Eigen;
+using namespace StormEigen;
 
 int main()
 {
