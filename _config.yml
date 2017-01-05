@@ -44,6 +44,9 @@ quiet:    false
 verbose:  true
 defaults: []
 
+# Content
+category-list: [Usage, Installation, Code]
+
 liquid:
   error_mode: warn
 

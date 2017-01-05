@@ -3,94 +3,143 @@ title: Start
 layout: initial
 ---
 
-<div class="container m-t-md">
+
  <!-- First row -->
- <div class="row">
-  <div class="col-xs-12 col-md-4">
+<div class="card-deck-wrapper">
+  <div class="card-deck">
    <!-- Card -->
    <article class="card animated fadeInLeft">
     <div class="card-block">
-     <h4 class="card-title">Animal Farm</h4>
-     <h6 class="text-muted">George Orwell</h6>
-     <p class="card-text">Tired of their servitude to man, a group of farm animals revolt and establish their own society, only to be betrayed into worse servitude by their leaders, the pigs. This satire addresses the communist philosophy the Soviet Union.</p>
-     <a href="#" class="btn btn-primary">Read more</a>
+     <img class="card-img-custom" src="http://www-i2.informatik.rwth-aachen.de/~katoen/Shonan.jpg" alt="Card image">
     </div>
    </article><!-- .end Card -->
-  </div>
-  <div class="col-xs-12 col-md-4">
   <!-- Card -->
   <article class="card animated fadeInUp">
    <div class="card-block">
-    <h4 class="card-title">Life After Life</h4>
-    <h6 class="text-muted">Kate Atkinson</h6>
-   </div>
-   <div class="card-block">
-    <p class="card-text">On a cold and snowy night, Ursula Todd is born, the 3rd child of a wealthy banker and his wife. She dies before she can draw her first breath. On that same cold and snowy night, lets out a lusty wail.</p>
-   </div>
-   <div class="card-block text-center">
-    <div class="btn-group hidden-sm-down hidden-md-down" role="group" aria-label="Card buttons">
-     <a href="#" class="btn btn-primary">Read more</a>
-     <a href="#" class="btn btn-primary">Save for later</a>
-    </div>
-    <div class="btn-group-vertical hidden-lg-up" role="group" aria-label="Card buttons">
-     <a href="#" class="btn btn-primary">Read more</a>
-     <a href="#" class="btn btn-primary">Save for later</a>
-    </div>
+    <h4 class="card-title">Storm</h4>
+    <h6 class="text-muted">A probabilistic model checker</h6>
+    <p class="card-text">Storm is a modern model checker for models featuring randomness. It has been designed with performance and modularity in mind</p>
+   <a href="about.html" class="btn btn-primary">Tell me more!</a>
    </div>
   </article><!-- .end Card -->
- </div>
- <div class="col-xs-12 col-md-4">
   <!-- Card -->
   <article class="card animated fadeInRight">
    <div class="card-block">
-    <h4 class="card-title">Wind, Sand and Stars</h4>
-    <h6 class="text-muted">Antoine de Saint-Exupéry</h6>
-    <p class="card-text">Story that captures the grandeur, danger, and isolation of flight. Its exciting account of air adventure, combined with lyrical prose and the spirit of a philosopher, makes it one of the most popular works ever written.</p>
-   </div>
-   <div class="card-block text-center">
-    <div class="btn-group hidden-sm-down hidden-md-down" role="group" aria-label="Card buttons">
-     <a href="#" class="card-link">Read more</a>
-     <a href="#" class="card-link">Save for later</a>
-    </div>
-    <div class="btn-group-vertical hidden-lg-up" role="group" aria-label="Card buttons">
-     <a href="#" class="card-link">Read more</a><br />
-     <a href="#" class="card-link">Save for later</a>
-    </div>
+    <h4 class="card-title">Running Storm</h4>
+    <p class="card-text">Storm has been written in native C++, which allows to use high-performance library for numerical and algebraic tasks. 
+    The source code is freely available. For users that just want to peek at storm, we provide a virtual disk image.</p>
+   <a href="getting-started.html" class="btn btn-primary">Get Started</a>
    </div>
   </article><!-- .end Card -->
- </div>
  </div><!-- .end First row -->
+</div>
  <!-- Second row -->
- <div class="row m-t-md">
-  <div class="col-xs-12 col-md-4">
+<div class="card-deck-wrapper">
+  <div class="card-deck">
    <!-- Card -->
-   <article class="card card-inverse animated fadeInLeft">
-    <div class="card-img-overlay">
-     <h4 class="card-title">Animal Farm</h4>
-     <h6 class="text-muted">George Orwell</h6>
-     <p class="card-text">Tired of their servitude to man, a group of farm animals revolt and establish their own society...</p>
+   <article class="card animated fadeInLeft">
+   <div class="card-block">
+     <h4 class="card-title">Languages</h4>
+    <div id="carousel-languages" class="carousel slide" data-ride="carousel">
+      <ol class="carousel-indicators">
+        <li data-target="#carousel-languages" data-slide-to="0" class="active"></li>
+        <li data-target="#carousel-languages" data-slide-to="1"></li>
+        <li data-target="#carousel-languages" data-slide-to="2"></li>
+        <li data-target="#carousel-languages" data-slide-to="3"></li>
+        <li data-target="#carousel-languages" data-slide-to="4"></li>
+        <li data-target="#carousel-languages" data-slide-to="5"></li>
+      </ol>
+      <div class="carousel-inner" role="listbox">
+      <div class="row">
+        <div class="col-xs-offset-3 col-xs-6">
+            <div class="carousel-inner">
+                <div class="carousel-item active">
+                    <div class="carousel-content">
+                        <div>
+                           Storm allows several types of input
+                            <ul><li>Prism</li><li>Jani</li><li>GSPNs</li><li>DFTs</li><li>cpGCL</li></ul>
+                        <a href="about.html" class="btn btn-primary">Read more</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="carousel-item">
+                    <div class="carousel-content">
+                        <div>
+                            <h6>Prism</h6>
+                            <p>The Prism language is command language to specify Markov Models. </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="carousel-item">
+                    <div class="carousel-content">
+                        <div>
+                            <h6>JANI</h6>
+                            <p>JANI is an interchange format for Markov Models, based on a straightforward JSON representation of networks of quantitative automata with variables. Discrete variables and a parallel composition operation allow models with large or even infinite state spaces to be represented succinctly.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="carousel-item">
+                    <div class="carousel-content">
+                        <div>
+                            <h6>GSPN</h6>                            
+                            <p>Generalised Stochastic Petri Nets (GSPNs) generalise Petri nets with random timing and allow to resolve conflicts probabilistically.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="carousel-item">
+                    <div class="carousel-content">
+                        <div>
+                            <h6>DFT</h6>                            
+                            <p>Dynamic Fault Trees (DFTs) are an expressive and concise formalism to express how component failures lead to system failures. Several aspects of DFTs have been standardised.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="carousel-item">
+                    <div class="carousel-content">
+                        <div>
+                            <h6>cpGCL</h6>                            
+                            <p>cpGCL is an probabilistic extension of Dijkstra's guarded command language. Probabilistic programming languages are an implementation-near model for several algorithms featuring randomisation.</p>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+    <!-- Controls --> <a class="left carousel-control" href="#carousel-languages" role="button" data-slide="prev">
+    <span class="icon-prev" aria-hidden="true"></span>
+    <span class="sr-only">Previous</span>
+  </a>
+  <a class="right carousel-control" href="#carousel-languages" role="button" data-slide="next">
+    <span class="icon-next" aria-hidden="true"></span>
+    <span class="sr-only">Next</span>
+  </a>
+      	
+    </div>
     </div>
    </article><!-- .end Card -->
-  </div>
-  <div class="col-xs-12 col-md-4">
    <!-- Card -->
-   <article class="card card-inverse animated fadeInDown">
-    <div class="card-img-overlay">
-     <h4 class="card-title">Life After Life</h4>
-     <h6 class="text-muted">Kate Atkinson</h6>
-     <p class="card-text">On a cold and snowy night, Ursula Todd is born, the 3rd child of a wealthy banker and his wife. She die...</p>
+   <article class="card animated fadeInDown">
+    <div class="card-block">
+     <h4 class="card-title">Models</h4>
+     Storm is built around discrete- and continuous-time Markov models:
+     <p class="card-text">
+     <ul><li>Deterministic Time Markov Chains</li><li>Markov Decision Processes</li><li>Continuous Time Markov Chains</li><li>Markov Automata</li></ul>
+     </p>
+     <a href="#" class="btn btn-primary">Read more</a>
     </div>
    </article><!-- .end Card -->
-  </div>
-  <div class="col-xs-12 col-md-4">
    <!-- Card -->
-   <article class="card card-inverse animated fadeInRight">
-    <div class="card-img-overlay">
-     <h4 class="card-title">Wind, Sand and Stars</h4>
-     <h6 class="text-muted">Antoine de Saint-Exupéry</h6>
-     <p class="card-text">Story that captures the grandeur, danger, and isolation of flight. Its exciting account of air adventure...</p>
+   <article class="card animated fadeInRight">
+    <div class="card-block">
+     <h4 class="card-title">Properties</h4>
+     Storm focusses on reachability queries and its support includes
+     <p class="card-text">
+     <ul><li>PCTL, CSL</li><li>Expected Rewards</li><li>Conditional Probabilities</li></ul>
+     </p>
+     <a href="#" class="btn btn-primary">Read more</a>
     </div>
    </article><!-- .end Card -->
   </div>
  </div><!-- .end Second row -->
-</div>
+

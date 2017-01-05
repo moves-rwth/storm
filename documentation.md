@@ -8,7 +8,7 @@ layout: default
 ### {{ cat }}
 <ul>
   {% for page in site.pages %}
-    {% if page.documentatin == true %}
+    {% if page.documentation == true %}
       {% for pc in page.categories %}
         {% if pc == cat %}
           <li><a href="{{ page.url }}">{{ page.title }}</a></li>

@@ -2,3 +2,26 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.2.0/js/tether.min.js"></script>
     <script src="https://cdn.rawgit.com/twbs/bootstrap/v4-dev/dist/js/bootstrap.js"></script>
+
+<script>
+  setCarouselHeight('#carousel-languages');
+
+    function setCarouselHeight(id)
+    {
+        var slideHeight = [];
+        $(id+' .carousel-item').each(function()
+        {
+            // add all slide heights to an array
+            slideHeight.push($(this).height());
+        });
+
+        // find the tallest item
+        max = Math.max.apply(null, slideHeight);
+
+        // set the slide's height
+        $(id+' .carousel-content').each(function()
+        {
+            $(this).css('height',max+'px');
+        });
+    }
+    </script>

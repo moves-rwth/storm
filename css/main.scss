@@ -5,18 +5,37 @@
 
 body { padding-top: 70px; }
 
-.starter-template {
-  text-align: center;
-  margin-top: 10rem;
+th, td {
+    padding: 10px;
+}
 
-  .lead {
-    font-weight: 200;
-  }
+.md-container {
+margin: auto;
+width: 95%;
+border-radius: 20px;
+	background-color: white;
+	max-width:1000px;
+	padding:20px;
+	
+}
+
+.card-img-custom{
+  width:100%;
+  height:auto;
+}
+
+.carousel-indicators li {
+  background-color: #999;
+  background-color: rgba(70,70,70,.25);
 }
 
 
-.todo:before {
-  content: "TODO: ";
-  color: red;
+.carousel-indicators .active {
+  background-color: #444;
 }
 
+.carousel-content {
+    color:black;
+    display:flex;
+    padding: 0px 30px 0px 30px;
+}
