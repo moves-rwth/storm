@@ -82,7 +82,7 @@ TEST(SparseMdpRegionModelCheckerTest, two_dice_Prob) {
     carl::VariablePool::getInstance().clear();
 }
 
-TEST(SparseMdpRegionModelCheckerTest, coin_Prob) {
+TEST(SparseMdpRegionModelCheckerTest, DISABLED_coin_Prob) {
     
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pmdp/coin2_2.pm";
     std::string formulaAsString = "P>0.25 [F \"finished\"&\"all_coins_equal_1\" ]";

@@ -225,7 +225,7 @@ TEST(SparseDtmcRegionModelCheckerTest, Brp_Rew_Infty) {
     carl::VariablePool::getInstance().clear();
 }
 
-TEST(SparseDtmcRegionModelCheckerTest, Brp_Rew_4Par) {
+TEST(SparseDtmcRegionModelCheckerTest, DISABLED_Brp_Rew_4Par) {
     
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/brp_rewards16_2.pm";
     std::string formulaAsString = "R>2.5 [F ((s=5) | (s=0&srep=3)) ]";
