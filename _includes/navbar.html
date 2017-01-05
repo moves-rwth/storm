@@ -6,7 +6,7 @@
     {% for p in navigation_pages %}
       {% if p.navigation_weight %}
         <li class="nav-item">
-          <a href="{{ p.url }}" class="nav-link {% if p.url == page.url %}active{% endif %}">
+          <a href="{{ p.url | prepend: site.github.url  }}" class="nav-link {% if p.url == page.url %}active{% endif %}">
             {{ p.title }}
           </a>
         </li>
