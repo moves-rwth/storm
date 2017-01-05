@@ -139,11 +139,6 @@ TEST(SparseDtmcRegionModelCheckerTest, Brp_Rew) {
     dtmcModelchecker->checkRegion(exBothRegion);
     EXPECT_EQ((storm::modelchecker::region::RegionCheckResult::EXISTSBOTH), exBothRegion.getCheckResult());
     dtmcModelchecker->checkRegion(exBothHardRegion);
-    //At this moment, Approximation should not be able to get a result for this region. (However, it is not wrong if it can)
-    EXPECT_TRUE(
-                (exBothHardRegion.getCheckResult()==(storm::modelchecker::region::RegionCheckResult::EXISTSBOTH)) ||
-                (exBothHardRegion.getCheckResult()==(storm::modelchecker::region::RegionCheckResult::EXISTSVIOLATED))
-            );
     dtmcModelchecker->checkRegion(allVioRegion);
     EXPECT_EQ((storm::modelchecker::region::RegionCheckResult::ALLVIOLATED), allVioRegion.getCheckResult());
 
