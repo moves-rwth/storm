@@ -32,7 +32,7 @@ node {
    
    stage('Test') {
        	dir("build") {
-       	    sh "make check"
+       	    sh "make check-verbose"
 	}
    }
    
