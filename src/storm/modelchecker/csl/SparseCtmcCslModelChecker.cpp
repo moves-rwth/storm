@@ -59,16 +59,19 @@ namespace storm {
             std::unique_ptr<CheckResult> rightResultPointer = this->check(pathFormula.getRightSubformula());
             ExplicitQualitativeCheckResult const& leftResult = leftResultPointer->asExplicitQualitativeCheckResult();;
             ExplicitQualitativeCheckResult const& rightResult = rightResultPointer->asExplicitQualitativeCheckResult();
+
+            STORM_LOG_THROW(!pathFormula.isStepBounded(), storm::exceptions::NotImplementedException, "Currently step-bounded properties on CTMCs are not supported.");
             double lowerBound = 0;
             double upperBound = 0;
-            if (!pathFormula.hasDiscreteTimeBound()) {
-                std::pair<double, double> const& intervalBounds =  pathFormula.getIntervalBounds();
-                lowerBound = intervalBounds.first;
-                upperBound = intervalBounds.second;
-            } else {
-                upperBound = pathFormula.getDiscreteTimeBound();
+            if (pathFormula.hasLowerBound()) {
+                lowerBound = pathFormula.getLowerBound<double>();
             }
-            
+            if (pathFormula.hasUpperBound()) {
+                upperBound = pathFormula.getUpperBound<double>();
+            } else {
+                upperBound = storm::utility::infinity<double>();
+            }
+
             std::vector<ValueType> numericResult = storm::modelchecker::helper::SparseCtmcCslHelper::computeBoundedUntilProbabilities(this->getModel().getTransitionMatrix(), this->getModel().getBackwardTransitions(), leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(), this->getModel().getExitRateVector(), checkTask.isQualitativeSet(), lowerBound, upperBound, *linearEquationSolverFactory);
             return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));
         }

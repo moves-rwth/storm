@@ -224,22 +224,20 @@ namespace storm {
             
             template<typename SparseModelType>
             void SparsePcaaPreprocessor<SparseModelType>::preprocessBoundedUntilFormula(storm::logic::BoundedUntilFormula const& formula, ReturnType& result, PcaaObjective<ValueType>& currentObjective) {
+                STORM_LOG_THROW(!result.originalModel.isOfType(storm::models::ModelType::MarkovAutomaton) || !formula.isStepBounded(), storm::exceptions::InvalidPropertyException, "Multi-objective model checking currently does not support step-bounded properties for Markov automata.");
                 
-                if(formula.hasDiscreteTimeBound()) {
-                    currentObjective.upperTimeBound = storm::utility::convertNumber<ValueType>(formula.getDiscreteTimeBound());
-                } else {
-                    if(result.originalModel.isOfType(storm::models::ModelType::Mdp)) {
-                        STORM_LOG_THROW(formula.getIntervalBounds().first == std::round(formula.getIntervalBounds().first), storm::exceptions::InvalidPropertyException, "Expected a boundedUntilFormula with discrete lower time bound but got " << formula << ".");
-                        STORM_LOG_THROW(formula.getIntervalBounds().second == std::round(formula.getIntervalBounds().second), storm::exceptions::InvalidPropertyException, "Expected a boundedUntilFormula with discrete upper time bound but got " << formula << ".");
-                    } else {
-                        STORM_LOG_THROW(result.originalModel.isOfType(storm::models::ModelType::MarkovAutomaton), storm::exceptions::InvalidPropertyException, "Got a boundedUntilFormula which can not be checked for the current model type.");
-                        STORM_LOG_THROW(formula.getIntervalBounds().second > formula.getIntervalBounds().first, storm::exceptions::InvalidPropertyException, "Neither empty nor point intervalls are allowed but got " << formula << ".");
-                    }
-                    if(!storm::utility::isZero(formula.getIntervalBounds().first)) {
-                        currentObjective.lowerTimeBound = storm::utility::convertNumber<ValueType>(formula.getIntervalBounds().first);
-                    }
-                    currentObjective.upperTimeBound = storm::utility::convertNumber<ValueType>(formula.getIntervalBounds().second);
+                if (formula.hasLowerBound()) {
+                    STORM_LOG_THROW(!result.originalModel.isOfType(storm::models::ModelType::Mdp) || formula.hasIntegerLowerBound(), storm::exceptions::InvalidPropertyException, "Expected discrete lower time-bound in formula.");
+                    currentObjective.lowerTimeBound = formula.getLowerBound<ValueType>();
                 }
+                if (formula.hasUpperBound()) {
+                    STORM_LOG_THROW(!result.originalModel.isOfType(storm::models::ModelType::Mdp) || formula.hasIntegerUpperBound(), storm::exceptions::InvalidPropertyException, "Expected discrete lower time-bound in formula.");
+                    currentObjective.upperTimeBound = formula.getUpperBound<ValueType>();
+                } else {
+                    currentObjective.upperTimeBound = storm::utility::infinity<ValueType>();
+                }
+                STORM_LOG_THROW(currentObjective.lowerTimeBound < currentObjective.upperTimeBound, storm::exceptions::InvalidPropertyException, "Empty or point time intervals are currently not supported by multi-objective model checking.");
+                
                 preprocessUntilFormula(storm::logic::UntilFormula(formula.getLeftSubformula().asSharedPointer(), formula.getRightSubformula().asSharedPointer()), result, currentObjective);
             }
             

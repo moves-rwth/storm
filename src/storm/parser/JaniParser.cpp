@@ -345,7 +345,7 @@ namespace storm {
                             upperBound--;
                         }
                         STORM_LOG_THROW(upperBound >= 0, storm::exceptions::InvalidJaniException, "Step-bounds cannot be negative");
-                        return std::make_shared<storm::logic::BoundedUntilFormula const>(args[0], args[1], upperBound);
+                        return std::make_shared<storm::logic::BoundedUntilFormula const>(args[0], args[1], std::make_pair(pi.lowerBound, !pi.lowerBoundStrict), std::make_pair(pi.upperBound, !pi.upperBoundStrict), storm::logic::BoundedUntilFormula::BoundedType::Steps);
                     } else if (propertyStructure.count("time-bounds") > 0) {
                         storm::jani::PropertyInterval pi = parsePropertyInterval(propertyStructure.at("time-bounds"));
                         STORM_LOG_THROW(pi.hasUpperBound(), storm::exceptions::NotSupportedException, "Storm only supports time-bounded until with an upper bound.");
@@ -356,7 +356,7 @@ namespace storm {
                         double upperBound = pi.upperBound.evaluateAsDouble();
                         STORM_LOG_THROW(lowerBound >= 0, storm::exceptions::InvalidJaniException, "(Lower) time-bounds cannot be negative");
                         STORM_LOG_THROW(upperBound >= 0, storm::exceptions::InvalidJaniException, "(Upper) time-bounds cannot be negative");
-                        return std::make_shared<storm::logic::BoundedUntilFormula const>(args[0], args[1], upperBound);
+                        return std::make_shared<storm::logic::BoundedUntilFormula const>(args[0], args[1], std::make_pair(pi.lowerBound, !pi.lowerBoundStrict), std::make_pair(pi.upperBound, !pi.upperBoundStrict), storm::logic::BoundedUntilFormula::BoundedType::Time);
                         
                     } else if (propertyStructure.count("reward-bounds") > 0 ) {
                         STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Reward bounded properties are not supported by Storm");
