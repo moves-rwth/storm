@@ -90,9 +90,6 @@ namespace storm {
             // The expression variable associated with the constant.
             storm::expressions::Variable variable;
             
-            // A flag that stores whether or not the constant is defined.
-            bool defined;
-            
             // The expression that defines the constant (in case it is defined).
             storm::expressions::Expression expression;
         };
