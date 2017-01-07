@@ -314,9 +314,9 @@ namespace storm {
             template<typename SparseModelType>
             void SparsePcaaPreprocessor<SparseModelType>::preprocessCumulativeRewardFormula(storm::logic::CumulativeRewardFormula const& formula, ReturnType& result, PcaaObjective<ValueType>& currentObjective, boost::optional<std::string> const& optionalRewardModelName) {
                 STORM_LOG_THROW(result.originalModel.isOfType(storm::models::ModelType::Mdp), storm::exceptions::InvalidPropertyException, "Cumulative reward formulas are not supported for the given model type.");
-                STORM_LOG_THROW(formula.hasDiscreteTimeBound(), storm::exceptions::InvalidPropertyException, "Expected a cumulativeRewardFormula with a discrete time bound but got " << formula << ".");
-                STORM_LOG_THROW(formula.getDiscreteTimeBound()>0, storm::exceptions::InvalidPropertyException, "Expected a cumulativeRewardFormula with a positive discrete time bound but got " << formula << ".");
-                currentObjective.upperTimeBound = storm::utility::convertNumber<ValueType>(formula.getDiscreteTimeBound());
+                STORM_LOG_THROW(!formula.hasIntegerBound(), storm::exceptions::InvalidPropertyException, "Expected a cumulativeRewardFormula with a discrete time bound but got " << formula << ".");
+                // FIXME: really convert to value type?
+                currentObjective.upperTimeBound = storm::utility::convertNumber<ValueType>(formula.getBound<uint64_t>());
                 
                 RewardModelType objectiveRewards = result.preprocessedModel.getRewardModel(optionalRewardModelName ? optionalRewardModelName.get() : "");
                 objectiveRewards.reduceToStateBasedRewards(result.preprocessedModel.getTransitionMatrix(), false);

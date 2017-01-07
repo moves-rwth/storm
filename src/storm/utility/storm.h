@@ -108,6 +108,7 @@ namespace storm {
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulasInProperties(std::vector<storm::jani::Property> const& properties);
     std::pair<storm::jani::Model, std::map<std::string, storm::jani::Property>> parseJaniModel(std::string const& path);
     storm::prism::Program parseProgram(std::string const& path);
+    std::vector<std::shared_ptr<storm::logic::Formula const>> substituteConstantsInFormulas(std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution);
     std::vector<std::shared_ptr<storm::logic::Formula const>> parseFormulasForExplicit(std::string const& inputString);
     std::vector<std::shared_ptr<storm::logic::Formula const>> parseFormulasForPrismProgram(std::string const& inputString, storm::prism::Program const& program);
     std::vector<std::shared_ptr<storm::logic::Formula const>> parseFormulasForJaniModel(std::string const& inputString, storm::jani::Model const& model);

@@ -47,7 +47,7 @@ namespace storm{
      * @param FormulaParser
      * @return The formulas.
      */
-    std::vector<std::shared_ptr<storm::logic::Formula const>> parseFormulas(storm::parser::FormulaParser & formulaParser, std::string const& inputString) {
+    std::vector<std::shared_ptr<storm::logic::Formula const>> parseFormulas(storm::parser::FormulaParser& formulaParser, std::string const& inputString) {
         // If the given property looks like a file (containing a dot and there exists a file with that name),
         // we try to parse it as a file, otherwise we assume it's a property.
         if (inputString.find(".") != std::string::npos && std::ifstream(inputString).good()) {
@@ -65,6 +65,7 @@ namespace storm{
 
     std::vector<std::shared_ptr<storm::logic::Formula const>> substituteConstantsInFormulas(std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
         std::vector<std::shared_ptr<storm::logic::Formula const>> preprocessedFormulas;
+        
         for (auto const& formula : formulas) {
             preprocessedFormulas.emplace_back(formula->substitute(substitution));
         }
@@ -78,7 +79,7 @@ namespace storm{
     }
     
     std::vector<std::shared_ptr<storm::logic::Formula const>> parseFormulasForPrismProgram(std::string const& inputString, storm::prism::Program const& program) {
-        storm::parser::FormulaParser formulaParser(program);
+        storm::parser::FormulaParser formulaParser(program.getManager().getSharedPointer());
         auto formulas = parseFormulas(formulaParser, inputString);
         return substituteConstantsInFormulas(formulas, program.getConstantsSubstitution());
     } 

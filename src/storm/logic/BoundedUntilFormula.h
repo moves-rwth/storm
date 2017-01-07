@@ -5,28 +5,14 @@
 
 #include "storm/logic/BinaryPathFormula.h"
 
+#include "storm/logic/TimeBound.h"
+#include "storm/logic/TimeBoundType.h"
+
 namespace storm {
     namespace logic {
-        class UntilBound {
-        public:
-            UntilBound(bool strict, storm::expressions::Expression const& bound);
-            
-            storm::expressions::Expression const& getBound() const;
-            bool isStrict() const;
-            
-        private:
-            bool strict;
-            storm::expressions::Expression bound;
-        };
-        
         class BoundedUntilFormula : public BinaryPathFormula {
         public:
-            enum class BoundedType {
-                Steps,
-                Time
-            };
-            
-            BoundedUntilFormula(std::shared_ptr<Formula const> const& leftSubformula, std::shared_ptr<Formula const> const& rightSubformula, boost::optional<UntilBound> const& lowerBound, boost::optional<UntilBound> const& upperBound, BoundedType const& boundedType = BoundedType::Time);
+            BoundedUntilFormula(std::shared_ptr<Formula const> const& leftSubformula, std::shared_ptr<Formula const> const& rightSubformula, boost::optional<TimeBound> const& lowerBound, boost::optional<TimeBound> const& upperBound, TimeBoundType const& timeBoundType = TimeBoundType::Time);
             
             virtual bool isBoundedUntilFormula() const override;
 
@@ -34,6 +20,7 @@ namespace storm {
             
             virtual boost::any accept(FormulaVisitor const& visitor, boost::any const& data) const override;
             
+            TimeBoundType const& getTimeBoundType() const;
             bool isStepBounded() const;
             bool isTimeBounded() const;
             
@@ -57,10 +44,11 @@ namespace storm {
             virtual std::ostream& writeToStream(std::ostream& out) const override;
             
         private:
-            BoundedType boundedType;
+            static void checkNoVariablesInBound(storm::expressions::Expression const& bound);
             
-            boost::optional<UntilBound> lowerBound;
-            boost::optional<UntilBound> upperBound;
+            TimeBoundType timeBoundType;
+            boost::optional<TimeBound> lowerBound;
+            boost::optional<TimeBound> upperBound;
         };
     }
 }

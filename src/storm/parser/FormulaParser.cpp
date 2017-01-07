@@ -17,16 +17,18 @@
 namespace storm {
     namespace parser {
         
-        
         FormulaParser::FormulaParser() : manager(new storm::expressions::ExpressionManager()), grammar(new FormulaParserGrammar(manager)) {
             // Intentionally left empty.
         }
 
-        
         FormulaParser::FormulaParser(std::shared_ptr<storm::expressions::ExpressionManager const> const& manager) : manager(manager), grammar(new FormulaParserGrammar(manager)) {
             // Intentionally left empty.
         }
-        
+
+        FormulaParser::FormulaParser(std::shared_ptr<storm::expressions::ExpressionManager> const& manager) : manager(manager), grammar(new FormulaParserGrammar(manager)) {
+            // Intentionally left empty.
+        }
+
         FormulaParser::FormulaParser(storm::prism::Program const& program) : manager(program.getManager().getSharedPointer()), grammar(new FormulaParserGrammar(manager)) {
             // Make the formulas of the program available to the parser.
             for (auto const& formula : program.getFormulas()) {

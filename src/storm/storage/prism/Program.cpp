@@ -760,12 +760,6 @@ namespace storm {
                 }
             }
             
-            // As a sanity check, we make sure that the given mapping does not contain any definitions for identifiers
-            // that are not undefined constants.
-            for (auto const& constantExpressionPair : constantDefinitions) {
-                STORM_LOG_THROW(definedUndefinedConstants.find(constantExpressionPair.first) != definedUndefinedConstants.end(), storm::exceptions::InvalidArgumentException, "Unable to define non-existant constant.");
-            }
-            
             return Program(this->manager, this->getModelType(), newConstants, this->getGlobalBooleanVariables(), this->getGlobalIntegerVariables(), this->getFormulas(), this->getModules(), this->getActionNameToIndexMapping(), this->getRewardModels(), this->getLabels(), this->getOptionalInitialConstruct(), this->getOptionalSystemCompositionConstruct());
         }
         

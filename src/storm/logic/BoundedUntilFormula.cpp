@@ -6,22 +6,11 @@
 #include "storm/logic/FormulaVisitor.h"
 
 #include "storm/exceptions/InvalidPropertyException.h"
+#include "storm/exceptions/InvalidOperationException.h"
 
 namespace storm {
     namespace logic {
-        UntilBound::UntilBound(bool strict, storm::expressions::Expression const& bound) : strict(strict), bound(bound) {
-            // Intentionally left empty.
-        }
-        
-        storm::expressions::Expression const& UntilBound::getBound() const {
-            return bound;
-        }
-        
-        bool UntilBound::isStrict() const {
-            return strict;
-        }
-        
-        BoundedUntilFormula::BoundedUntilFormula(std::shared_ptr<Formula const> const& leftSubformula, std::shared_ptr<Formula const> const& rightSubformula, boost::optional<UntilBound> const& lowerBound, boost::optional<UntilBound> const& upperBound, BoundedType const& boundedType) : BinaryPathFormula(leftSubformula, rightSubformula), boundedType(boundedType), lowerBound(lowerBound), upperBound(upperBound) {
+        BoundedUntilFormula::BoundedUntilFormula(std::shared_ptr<Formula const> const& leftSubformula, std::shared_ptr<Formula const> const& rightSubformula, boost::optional<TimeBound> const& lowerBound, boost::optional<TimeBound> const& upperBound, TimeBoundType const& timeBoundType) : BinaryPathFormula(leftSubformula, rightSubformula), timeBoundType(timeBoundType), lowerBound(lowerBound), upperBound(upperBound) {
             STORM_LOG_THROW(lowerBound || upperBound, storm::exceptions::InvalidArgumentException, "Bounded until formula requires at least one bound.");
         }
         
@@ -37,12 +26,16 @@ namespace storm {
             return visitor.visit(*this, data);
         }
         
+        TimeBoundType const& BoundedUntilFormula::getTimeBoundType() const {
+            return timeBoundType;
+        }
+        
         bool BoundedUntilFormula::isStepBounded() const {
-            return boundedType == BoundedType::Steps;
+            return timeBoundType == TimeBoundType::Steps;
         }
         
         bool BoundedUntilFormula::isTimeBounded() const {
-            return boundedType == BoundedType::Time;
+            return timeBoundType == TimeBoundType::Time;
         }
         
         bool BoundedUntilFormula::isLowerBoundStrict() const {
@@ -79,6 +72,7 @@ namespace storm {
         
         template <>
         double BoundedUntilFormula::getLowerBound() const {
+            checkNoVariablesInBound(this->getLowerBound());
             double bound = this->getLowerBound().evaluateAsDouble();
             STORM_LOG_THROW(bound >= 0, storm::exceptions::InvalidPropertyException, "Time-bound must not evaluate to negative number.");
             return bound;
@@ -86,6 +80,7 @@ namespace storm {
         
         template <>
         double BoundedUntilFormula::getUpperBound() const {
+            checkNoVariablesInBound(this->getUpperBound());
             double bound = this->getUpperBound().evaluateAsDouble();
             STORM_LOG_THROW(bound >= 0, storm::exceptions::InvalidPropertyException, "Time-bound must not evaluate to negative number.");
             return bound;
@@ -93,6 +88,7 @@ namespace storm {
         
         template <>
         uint64_t BoundedUntilFormula::getLowerBound() const {
+            checkNoVariablesInBound(this->getLowerBound());
             int_fast64_t bound = this->getLowerBound().evaluateAsInt();
             STORM_LOG_THROW(bound >= 0, storm::exceptions::InvalidPropertyException, "Time-bound must not evaluate to negative number.");
             return static_cast<uint64_t>(bound);
@@ -100,9 +96,14 @@ namespace storm {
         
         template <>
         uint64_t BoundedUntilFormula::getUpperBound() const {
+            checkNoVariablesInBound(this->getUpperBound());
             int_fast64_t bound = this->getUpperBound().evaluateAsInt();
             STORM_LOG_THROW(bound >= 0, storm::exceptions::InvalidPropertyException, "Time-bound must not evaluate to negative number.");
             return static_cast<uint64_t>(bound);
+        }
+        
+        void BoundedUntilFormula::checkNoVariablesInBound(storm::expressions::Expression const& bound) {
+            STORM_LOG_THROW(!bound.containsVariables(), storm::exceptions::InvalidOperationException, "Cannot evaluate time-bound '" << bound << "' as it contains undefined constants.");
         }
         
         std::ostream& BoundedUntilFormula::writeToStream(std::ostream& out) const {

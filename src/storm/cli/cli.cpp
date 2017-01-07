@@ -247,19 +247,30 @@ namespace storm {
                 // Then proceed to parsing the properties (if given), since the model we are building may depend on the property.
                 STORM_LOG_TRACE("Parsing properties.");
                 uint64_t i = 0;
+
+                // Get the string that assigns values to the unknown currently undefined constants in the model and formula.
+                std::string constantDefinitionString = ioSettings.getConstantDefinitionString();
+                std::map<storm::expressions::Variable, storm::expressions::Expression> constantDefinitions;
+
                 if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isPropertySet()) {
+                    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas;
                     if (model.isJaniModel()) {
-                        for(auto const& formula : storm::parseFormulasForJaniModel(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getProperty(), model.asJaniModel())) {
-                            properties.emplace_back(std::to_string(i), formula);
-                            ++i;
-                        }
+                        formulas = storm::parseFormulasForJaniModel(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getProperty(), model.asJaniModel());
                     } else {
-                        for(auto const& formula :storm::parseFormulasForPrismProgram(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getProperty(), model.asPrismProgram())) {
-                            properties.emplace_back(std::to_string(i), formula);
-                            ++i;
-                        }
+                        formulas = storm::parseFormulasForPrismProgram(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getProperty(), model.asPrismProgram());
                     }
+                    
+                    constantDefinitions = model.parseConstantDefinitions(constantDefinitionString);
+                    formulas = substituteConstantsInFormulas(formulas, constantDefinitions);
+
+                    for (auto const& formula : formulas) {
+                        properties.emplace_back(std::to_string(i), formula);
+                        ++i;
+                    }
+                } else {
+                    constantDefinitions = model.parseConstantDefinitions(constantDefinitionString);
                 }
+                model = model.preprocess(constantDefinitions);
                 
                 if (model.isJaniModel() && storm::settings::getModule<storm::settings::modules::JaniExportSettings>().isJaniFileSet()) {
                     exportJaniModel(model.asJaniModel(), properties, storm::settings::getModule<storm::settings::modules::JaniExportSettings>().getJaniFilename());
@@ -269,10 +280,6 @@ namespace storm {
                     return;
                 }
                 
-                // Get the string that assigns values to the unknown currently undefined constants in the model.
-                std::string constantDefinitionString = ioSettings.getConstantDefinitionString();
-                model = model.preprocess(constantDefinitionString);
-
                 STORM_LOG_TRACE("Building and checking symbolic model.");
                 if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isParametricSet()) {
 #ifdef STORM_HAVE_CARL
