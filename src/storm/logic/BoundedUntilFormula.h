@@ -9,7 +9,7 @@ namespace storm {
     namespace logic {
         class UntilBound {
         public:
-            UntilBound(bool strict, storm::expressions::Expression bound);
+            UntilBound(bool strict, storm::expressions::Expression const& bound);
             
             storm::expressions::Expression const& getBound() const;
             bool isStrict() const;

@@ -15,6 +15,7 @@ namespace storm {
             class CoreSettings;
             class IOSettings;
             class ModuleSettings;
+            class AbstractionSettings;
         }
         class Option;
         
@@ -266,10 +267,10 @@ namespace storm {
         }
         
         /*!
-         * Retrieves the markov chain settings in a mutable form. This is only meant to be used for debug purposes or very
+         * Retrieves the core settings in a mutable form. This is only meant to be used for debug purposes or very
          * rare cases where it is necessary.
          *
-         * @return An object that allows accessing and modifying the markov chain settings.
+         * @return An object that allows accessing and modifying the core settings.
          */
         storm::settings::modules::CoreSettings& mutableCoreSettings();
         
@@ -280,6 +281,14 @@ namespace storm {
          * @return An object that allows accessing and modifying the IO settings.
          */
         storm::settings::modules::IOSettings& mutableIOSettings();
+        
+        /*!
+         * Retrieves the abstraction settings in a mutable form. This is only meant to be used for debug purposes or very
+         * rare cases where it is necessary.
+         *
+         * @return An object that allows accessing and modifying the abstraction settings.
+         */
+        storm::settings::modules::AbstractionSettings& mutableAbstractionSettings();
         
     } // namespace settings
 } // namespace storm

@@ -40,7 +40,6 @@ namespace storm {
                                              .setDefaultValueString("on").build())
                                 .build());
                 
-                
                 this->addOption(storm::settings::OptionBuilder(moduleName, useInterpolationOptionName, true, "Sets whether interpolation is to be used to eliminate spurious pivot blocks.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("value", "The value of the flag.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(onOff))
                                              .setDefaultValueString("on").build())
@@ -78,6 +77,10 @@ namespace storm {
             
             bool AbstractionSettings::isAddAllGuardsSet() const {
                 return this->getOption(addAllGuardsOptionName).getArgumentByName("value").getValueAsString() == "on";
+            }
+            
+            void AbstractionSettings::setAddAllGuards(bool value) {
+                this->getOption(addAllGuardsOptionName).getArgumentByName("value").setFromStringValue(value ? "on" : "off");
             }
             
             bool AbstractionSettings::isUseInterpolationSet() const {

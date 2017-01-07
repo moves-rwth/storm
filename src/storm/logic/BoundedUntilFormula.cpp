@@ -9,7 +9,19 @@
 
 namespace storm {
     namespace logic {
-        BoundedUntilFormula::BoundedUntilFormula(std::shared_ptr<Formula const> const& leftSubformula, std::shared_ptr<Formula const> const& rightSubformula, boost::optional<UntilBound> const& lowerBound, boost::optional<UntilBound> const& upperBound, BoundedType const& boundedType) : BinaryPathFormula(leftSubformula, rightSubformula), lowerBound(lowerBound), upperBound(upperBound), boundedType(boundedType) {
+        UntilBound::UntilBound(bool strict, storm::expressions::Expression const& bound) : strict(strict), bound(bound) {
+            // Intentionally left empty.
+        }
+        
+        storm::expressions::Expression const& UntilBound::getBound() const {
+            return bound;
+        }
+        
+        bool UntilBound::isStrict() const {
+            return strict;
+        }
+        
+        BoundedUntilFormula::BoundedUntilFormula(std::shared_ptr<Formula const> const& leftSubformula, std::shared_ptr<Formula const> const& rightSubformula, boost::optional<UntilBound> const& lowerBound, boost::optional<UntilBound> const& upperBound, BoundedType const& boundedType) : BinaryPathFormula(leftSubformula, rightSubformula), boundedType(boundedType), lowerBound(lowerBound), upperBound(upperBound) {
             STORM_LOG_THROW(lowerBound || upperBound, storm::exceptions::InvalidArgumentException, "Bounded until formula requires at least one bound.");
         }
         
@@ -128,6 +140,7 @@ namespace storm {
                 }
                 out << this->getUpperBound();
             }
+            out << " ";
             
             this->getRightSubformula().writeToStream(out);
             return out;

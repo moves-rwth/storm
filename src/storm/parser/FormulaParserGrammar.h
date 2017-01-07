@@ -149,7 +149,7 @@ namespace storm {
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(storm::logic::FormulaContext), Skipper> globallyFormula;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(storm::logic::FormulaContext), Skipper> untilFormula;
             
-            qi::rule<Iterator, std::pair<boost::optional<storm::logic::UntilBound>>(), qi::locals<bool, bool>, Skipper> timeBound;
+            qi::rule<Iterator, std::pair<boost::optional<storm::logic::UntilBound>, boost::optional<storm::logic::UntilBound>>(), qi::locals<bool, bool>, Skipper> timeBound;
             
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> rewardPathFormula;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> cumulativeRewardFormula;

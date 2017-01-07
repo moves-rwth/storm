@@ -504,6 +504,10 @@ namespace storm {
             return dynamic_cast<storm::settings::modules::IOSettings&>(mutableManager().getModule(storm::settings::modules::IOSettings::moduleName));
         }
         
+        storm::settings::modules::AbstractionSettings& mutableAbstractionSettings() {
+            return dynamic_cast<storm::settings::modules::AbstractionSettings&>(mutableManager().getModule(storm::settings::modules::AbstractionSettings::moduleName));
+        }
+        
         void initializeAll(std::string const& name, std::string const& executableName) {
             storm::settings::mutableManager().setName(name, executableName);
 

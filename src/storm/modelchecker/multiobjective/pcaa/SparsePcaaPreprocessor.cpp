@@ -1,4 +1,4 @@
- #include "storm/modelchecker/multiobjective/pcaa/SparsePcaaPreprocessor.h"
+#include "storm/modelchecker/multiobjective/pcaa/SparsePcaaPreprocessor.h"
 
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
@@ -228,11 +228,21 @@ namespace storm {
                 
                 if (formula.hasLowerBound()) {
                     STORM_LOG_THROW(!result.originalModel.isOfType(storm::models::ModelType::Mdp) || formula.hasIntegerLowerBound(), storm::exceptions::InvalidPropertyException, "Expected discrete lower time-bound in formula.");
-                    currentObjective.lowerTimeBound = formula.getLowerBound<ValueType>();
+                    // FIXME: really convert formula bound to value type?
+                    if (formula.hasIntegerLowerBound()) {
+                        currentObjective.lowerTimeBound = storm::utility::convertNumber<ValueType>(formula.getLowerBound<uint64_t>());
+                    } else {
+                        currentObjective.lowerTimeBound = storm::utility::convertNumber<ValueType>(formula.getLowerBound<double>());
+                    }
                 }
                 if (formula.hasUpperBound()) {
                     STORM_LOG_THROW(!result.originalModel.isOfType(storm::models::ModelType::Mdp) || formula.hasIntegerUpperBound(), storm::exceptions::InvalidPropertyException, "Expected discrete lower time-bound in formula.");
-                    currentObjective.upperTimeBound = formula.getUpperBound<ValueType>();
+                    // FIXME: really convert formula bound to value type?
+                    if (formula.hasIntegerUpperBound()) {
+                        currentObjective.upperTimeBound = storm::utility::convertNumber<ValueType>(formula.getUpperBound<uint64_t>());
+                    } else {
+                        currentObjective.upperTimeBound = storm::utility::convertNumber<ValueType>(formula.getUpperBound<double>());
+                    }
                 } else {
                     currentObjective.upperTimeBound = storm::utility::infinity<ValueType>();
                 }

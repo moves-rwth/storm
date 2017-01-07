@@ -224,7 +224,7 @@ namespace storm {
         
         std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createEventuallyFormula(boost::optional<std::pair<boost::optional<storm::logic::UntilBound>, boost::optional<storm::logic::UntilBound>>> const& timeBound, storm::logic::FormulaContext context, std::shared_ptr<storm::logic::Formula const> const& subformula) const {
             if (timeBound) {
-                return std::shared_ptr<storm::logic::Formula const>(new storm::logic::BoundedUntilFormula(createBooleanLiteralFormula(true), subformula, timeBound.get().first, timeBound.get().second, storm::logic::BoundedUntil::BoundedType::Time));
+                return std::shared_ptr<storm::logic::Formula const>(new storm::logic::BoundedUntilFormula(createBooleanLiteralFormula(true), subformula, timeBound.get().first, timeBound.get().second, storm::logic::BoundedUntilFormula::BoundedType::Time));
             } else {
                 return std::shared_ptr<storm::logic::Formula const>(new storm::logic::EventuallyFormula(subformula, context));
             }
@@ -240,7 +240,7 @@ namespace storm {
         
         std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createUntilFormula(std::shared_ptr<storm::logic::Formula const> const& leftSubformula, boost::optional<std::pair<boost::optional<storm::logic::UntilBound>, boost::optional<storm::logic::UntilBound>>> const& timeBound, std::shared_ptr<storm::logic::Formula const> const& rightSubformula) {
             if (timeBound) {
-                return std::shared_ptr<storm::logic::Formula const>(new storm::logic::BoundedUntilFormula(leftSubformula, rightSubformula, timeBound.get().first, timeBound.get().second, storm::logic::BoundedUntil::BoundedType::Time));
+                return std::shared_ptr<storm::logic::Formula const>(new storm::logic::BoundedUntilFormula(leftSubformula, rightSubformula, timeBound.get().first, timeBound.get().second, storm::logic::BoundedUntilFormula::BoundedType::Time));
             } else {
                 return std::shared_ptr<storm::logic::Formula const>(new storm::logic::UntilFormula(leftSubformula, rightSubformula));
             }
