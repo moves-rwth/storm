@@ -6,8 +6,6 @@ layout: default
 
 This document shows you the steps to get started with storm.
 
-# TOC
- {:.no_toc}
 - list
 {:toc}
 
@@ -42,6 +40,8 @@ Currently, the source code is only available from our private repo.
 
 # Build Storm
 
+This guide helps you building a standard version of storm. There are plenty of configuration options, please check our [configuration guide](documentation/installation/configuration-guide.html).
+
 ## Configuration Step
 Switch to the directory where you put storm in the previous step.
 
@@ -63,7 +63,7 @@ cmake ..
 ```
 
 
-In case of errors, check the [requirements](documentation/requirements.html).
+In case of errors, check the [requirements](documentation/installation/requirements.html).
 
 ## Build Step
 
@@ -75,11 +75,9 @@ To compile just the storm main command line interface, do
 make storm
 ```
 
-If you have multiple cores at your disposal and 8GB of memory, you can do 
-
-```bash
-make -jNUMBER_OF_CORES storm
-```
+{:.alert .alert-info}
+If you have multiple cores at your disposal and 8GB of memory, you can execute 
+`make -jNUMBER_OF_CORES storm`
 
 If you are interested in one of the other binaries, replace storm with the appropriate target
 
@@ -96,12 +94,17 @@ If you are interested in one of the other binaries, replace storm with the appro
 
 This step is optional. We recommend you run it in order to make sure storm produces correct results on your platform.
 
+```bash
+make check
+```
 
 # Run Storm
 
 In order to get you started, we discuss some common scenarios here.
 
 ## Standard Model Checking
+
+
 
 ## DFT Analysis
 

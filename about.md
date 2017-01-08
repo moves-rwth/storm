@@ -3,6 +3,14 @@ title: About
 navigation_weight: 1
 layout: default
 ---
+
+
+
+
+
+
+## Distinguishing features
+
 <div class="container-fluid feature-container">
    <div class="row">
     <div class="col-md-3">
@@ -23,4 +31,3 @@ layout: default
 </div>
   </div>
 </div>
-
