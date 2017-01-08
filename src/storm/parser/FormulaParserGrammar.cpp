@@ -122,7 +122,7 @@ namespace storm {
             constantDefinition = (qi::lit("const") > qi::eps[qi::_a = true] > -(qi::lit("int") | qi::lit("double")[qi::_a = false]) >> identifier)[phoenix::bind(&FormulaParserGrammar::addConstant, phoenix::ref(*this), qi::_1, qi::_a)];
             constantDefinition.name("constant definition");
             
-            start = qi::eps > (((-formulaName >> stateFormula)[phoenix::bind(&FormulaParserGrammar::addProperty, phoenix::ref(*this), qi::_val, qi::_1, qi::_2)] | qi::eps(phoenix::bind(&FormulaParserGrammar::areConstantDefinitionsAllowed, phoenix::ref(*this))) >> constantDefinition) % +(qi::char_("\n;"))) >> qi::skip(boost::spirit::ascii::space | qi::lit("//") >> *(qi::char_ - (qi::eol | qi::eoi)))[qi::eps] >> qi::eoi;
+            start = qi::eps > (((-formulaName >> stateFormula)[phoenix::bind(&FormulaParserGrammar::addProperty, phoenix::ref(*this), qi::_val, qi::_1, qi::_2)] | qi::eps(phoenix::bind(&FormulaParserGrammar::areConstantDefinitionsAllowed, phoenix::ref(*this))) >> constantDefinition | qi::eps) % +(qi::char_("\n;"))) >> qi::skip(boost::spirit::ascii::space | qi::lit("//") >> *(qi::char_ - (qi::eol | qi::eoi)))[qi::eps] >> qi::eoi;
             start.name("start");
             
             // Enable the following lines to print debug output for most the rules.
