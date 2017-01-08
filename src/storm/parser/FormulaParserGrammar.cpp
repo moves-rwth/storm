@@ -4,7 +4,7 @@
 namespace storm {
     namespace parser {
         
-        FormulaParserGrammar::FormulaParserGrammar(std::shared_ptr<storm::expressions::ExpressionManager const> const& manager) : FormulaParserGrammar::base_type(start), constManager(manager), expressionParser(*manager, keywords_, true, true) {
+        FormulaParserGrammar::FormulaParserGrammar(std::shared_ptr<storm::expressions::ExpressionManager const> const& manager) : FormulaParserGrammar::base_type(start), constManager(manager), manager(nullptr), expressionParser(*manager, keywords_, true, true) {
             initialize();
         }
 
@@ -14,7 +14,7 @@ namespace storm {
 
         void FormulaParserGrammar::initialize() {
             // Register all variables so we can parse them in the expressions.
-            for (auto variableTypePair : *manager) {
+            for (auto variableTypePair : *constManager) {
                 identifiers_.add(variableTypePair.first.getName(), variableTypePair.first);
             }
             // Set the identifier mapping to actually generate expressions.
@@ -270,7 +270,7 @@ namespace storm {
         
         storm::logic::OperatorInformation FormulaParserGrammar::createOperatorInformation(boost::optional<storm::OptimizationDirection> const& optimizationDirection, boost::optional<storm::logic::ComparisonType> const& comparisonType, boost::optional<storm::expressions::Expression> const& threshold) const {
             if (comparisonType && threshold) {
-                storm::expressions::ExpressionEvaluator<storm::RationalNumber> evaluator(*manager);
+                storm::expressions::ExpressionEvaluator<storm::RationalNumber> evaluator(*constManager);
                 return storm::logic::OperatorInformation(optimizationDirection, storm::logic::Bound<RationalNumber>(comparisonType.get(), evaluator.asRational(threshold.get())));
             } else {
                 return storm::logic::OperatorInformation(optimizationDirection, boost::none);
