@@ -5,6 +5,7 @@
 
 #include "storm/parser/SpiritErrorHandler.h"
 #include "storm/exceptions/WrongFormatException.h"
+#include "storm/storage/jani/Property.h"
 #include "storm/logic/Formulas.h"
 #include "storm/parser/ExpressionParser.h"
 
@@ -17,7 +18,7 @@ namespace storm {
     
     namespace parser {
         
-        class FormulaParserGrammar : public qi::grammar<Iterator, std::vector<std::shared_ptr<storm::logic::Formula const>>(), Skipper> {
+        class FormulaParserGrammar : public qi::grammar<Iterator, std::vector<storm::jani::Property>(), Skipper> {
         public:
             FormulaParserGrammar(std::shared_ptr<storm::expressions::ExpressionManager const> const& manager);
             FormulaParserGrammar(std::shared_ptr<storm::expressions::ExpressionManager> const& manager);
@@ -121,10 +122,11 @@ namespace storm {
             // they are to be replaced with.
             qi::symbols<char, storm::expressions::Expression> identifiers_;
             
-            qi::rule<Iterator, std::vector<std::shared_ptr<storm::logic::Formula const>>(), Skipper> start;
+            qi::rule<Iterator, std::vector<storm::jani::Property>(), Skipper> start;
             
             qi::rule<Iterator, qi::unused_type(), qi::locals<bool>, Skipper> constantDefinition;
             qi::rule<Iterator, std::string(), Skipper> identifier;
+            qi::rule<Iterator, std::string(), Skipper> formulaName;
             
             qi::rule<Iterator, storm::logic::OperatorInformation(), qi::locals<boost::optional<storm::OptimizationDirection>, boost::optional<storm::logic::ComparisonType>, boost::optional<storm::expressions::Expression>>, Skipper> operatorInformation;
             qi::rule<Iterator, storm::logic::RewardMeasureType(), Skipper> rewardMeasureType;
@@ -171,6 +173,7 @@ namespace storm {
 
             bool areConstantDefinitionsAllowed() const;
             void addConstant(std::string const& name, bool integer);
+            void addProperty(std::vector<storm::jani::Property>& properties, boost::optional<std::string> const& name, std::shared_ptr<storm::logic::Formula const> const& formula);
             
             std::pair<boost::optional<storm::logic::TimeBound>, boost::optional<storm::logic::TimeBound>> createTimeBoundFromInterval(storm::expressions::Expression const& lowerBound, storm::expressions::Expression const& upperBound) const;
             std::pair<boost::optional<storm::logic::TimeBound>, boost::optional<storm::logic::TimeBound>> createTimeBoundFromSingleBound(storm::expressions::Expression const& bound, bool upperBound, bool strict) const;
@@ -199,6 +202,8 @@ namespace storm {
             
             // An error handler function.
             phoenix::function<SpiritErrorHandler> handler;
+            
+            uint64_t propertyCount;
         };
 
     }

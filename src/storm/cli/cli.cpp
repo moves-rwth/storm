@@ -221,6 +221,12 @@ namespace storm {
                 storm::utility::initializeFileLogging();
             }
 
+            boost::optional<std::set<std::string>> propertyFilter;
+            std::string propertyFilterString = storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPropertyFilter();
+            if (propertyFilterString != "all") {
+                propertyFilter = storm::parsePropertyFilter(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPropertyFilter());
+            }
+            
             auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
             if (ioSettings.isPrismOrJaniInputSet()) {
                 storm::storage::SymbolicModelDescription model;
@@ -244,29 +250,21 @@ namespace storm {
                     
                 }
                 
-                // Then proceed to parsing the properties (if given), since the model we are building may depend on the property.
-                STORM_LOG_TRACE("Parsing properties.");
-                uint64_t i = 0;
-
                 // Get the string that assigns values to the unknown currently undefined constants in the model and formula.
                 std::string constantDefinitionString = ioSettings.getConstantDefinitionString();
                 std::map<storm::expressions::Variable, storm::expressions::Expression> constantDefinitions;
 
+                // Then proceed to parsing the properties (if given), since the model we are building may depend on the property.
+                STORM_LOG_TRACE("Parsing properties.");
                 if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isPropertySet()) {
-                    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas;
                     if (model.isJaniModel()) {
-                        formulas = storm::parseFormulasForJaniModel(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getProperty(), model.asJaniModel());
+                        properties = storm::parsePropertiesForJaniModel(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getProperty(), model.asJaniModel(), propertyFilter);
                     } else {
-                        formulas = storm::parseFormulasForPrismProgram(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getProperty(), model.asPrismProgram());
+                        properties = storm::parsePropertiesForPrismProgram(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getProperty(), model.asPrismProgram(), propertyFilter);
                     }
                     
                     constantDefinitions = model.parseConstantDefinitions(constantDefinitionString);
-                    formulas = substituteConstantsInFormulas(formulas, constantDefinitions);
-
-                    for (auto const& formula : formulas) {
-                        properties.emplace_back(std::to_string(i), formula);
-                        ++i;
-                    }
+                    properties = substituteConstantsInProperties(properties, constantDefinitions);
                 } else {
                     constantDefinitions = model.parseConstantDefinitions(constantDefinitionString);
                 }
@@ -303,12 +301,7 @@ namespace storm {
                 // in formulas.
                 std::vector<storm::jani::Property> properties;
                 if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isPropertySet()) {
-                    uint64_t i = 0;
-                    for(auto const& formula : storm::parseFormulasForExplicit(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getProperty())) {
-                        properties.emplace_back(std::to_string(i), formula);
-                        ++i;
-                        
-                    }
+                    properties = storm::parsePropertiesForExplicit(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getProperty(), propertyFilter);
                 }
 
                 buildAndCheckExplicitModel<double>(properties, true);

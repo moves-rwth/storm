@@ -105,13 +105,15 @@ namespace storm {
         return storm::parser::AutoParser<>::parseModel(transitionsFile, labelingFile, stateRewardsFile ? stateRewardsFile.get() : "", transitionRewardsFile ? transitionRewardsFile.get() : "", choiceLabelingFile ? choiceLabelingFile.get() : "" );
     }
 
-    std::vector<std::shared_ptr<storm::logic::Formula const>> formulasInProperties(std::vector<storm::jani::Property> const& properties);
+    std::vector<std::shared_ptr<storm::logic::Formula const>> extractFormulasFromProperties(std::vector<storm::jani::Property> const& properties);
     std::pair<storm::jani::Model, std::map<std::string, storm::jani::Property>> parseJaniModel(std::string const& path);
     storm::prism::Program parseProgram(std::string const& path);
-    std::vector<std::shared_ptr<storm::logic::Formula const>> substituteConstantsInFormulas(std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution);
-    std::vector<std::shared_ptr<storm::logic::Formula const>> parseFormulasForExplicit(std::string const& inputString);
-    std::vector<std::shared_ptr<storm::logic::Formula const>> parseFormulasForPrismProgram(std::string const& inputString, storm::prism::Program const& program);
-    std::vector<std::shared_ptr<storm::logic::Formula const>> parseFormulasForJaniModel(std::string const& inputString, storm::jani::Model const& model);
+    std::vector<storm::jani::Property> substituteConstantsInProperties(std::vector<storm::jani::Property> const& properties, std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution);
+    std::vector<storm::jani::Property> parsePropertiesForExplicit(std::string const& inputString, boost::optional<std::set<std::string>> const& propertyFilter = boost::none);
+    std::vector<storm::jani::Property> parsePropertiesForPrismProgram(std::string const& inputString, storm::prism::Program const& program, boost::optional<std::set<std::string>> const& propertyFilter = boost::none);
+    std::vector<storm::jani::Property> parsePropertiesForJaniModel(std::string const& inputString, storm::jani::Model const& model, boost::optional<std::set<std::string>> const& propertyFilter = boost::none);
+    boost::optional<std::set<std::string>> parsePropertyFilter(boost::optional<std::string> const& propertyFilter);
+    std::vector<storm::jani::Property> filterProperties(std::vector<storm::jani::Property> const& properties, boost::optional<std::set<std::string>> const& propertyFilter);
 
     template<typename ValueType>
     std::shared_ptr<storm::models::sparse::Model<ValueType>> buildSparseModel(storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
@@ -466,7 +468,7 @@ namespace storm {
         // Program and formula
         storm::prism::Program program = parseProgram(programFilePath);
         program = storm::utility::prism::preprocess(program, constantsString);
-        std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = parseFormulasForPrismProgram(formulaString, program);
+        std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = extractFormulasFromProperties(parsePropertiesForPrismProgram(formulaString, program));
         if(formulas.size()!=1) {
             STORM_LOG_ERROR("The given formulaString does not specify exactly one formula");
             return false;

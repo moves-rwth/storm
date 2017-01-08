@@ -4,11 +4,11 @@
 namespace storm {
     namespace parser {
         
-        FormulaParserGrammar::FormulaParserGrammar(std::shared_ptr<storm::expressions::ExpressionManager const> const& manager) : FormulaParserGrammar::base_type(start), constManager(manager), manager(nullptr), expressionParser(*manager, keywords_, true, true) {
+        FormulaParserGrammar::FormulaParserGrammar(std::shared_ptr<storm::expressions::ExpressionManager const> const& manager) : FormulaParserGrammar::base_type(start), constManager(manager), manager(nullptr), expressionParser(*manager, keywords_, true, true), propertyCount(0) {
             initialize();
         }
 
-        FormulaParserGrammar::FormulaParserGrammar(std::shared_ptr<storm::expressions::ExpressionManager> const& manager) : FormulaParserGrammar::base_type(start), constManager(manager), manager(manager), expressionParser(*manager, keywords_, true, true) {
+        FormulaParserGrammar::FormulaParserGrammar(std::shared_ptr<storm::expressions::ExpressionManager> const& manager) : FormulaParserGrammar::base_type(start), constManager(manager), manager(manager), expressionParser(*manager, keywords_, true, true), propertyCount(0) {
             initialize();
         }
 
@@ -116,10 +116,13 @@ namespace storm {
             identifier %= qi::as_string[qi::raw[qi::lexeme[((qi::alpha | qi::char_('_') | qi::char_('.')) >> *(qi::alnum | qi::char_('_')))]]];
             identifier.name("identifier");
             
+            formulaName = qi::lit("\"") >> identifier >> qi::lit("\"") >> qi::lit(":");
+            formulaName.name("formula name");
+            
             constantDefinition = (qi::lit("const") > qi::eps[qi::_a = true] > -(qi::lit("int") | qi::lit("double")[qi::_a = false]) >> identifier)[phoenix::bind(&FormulaParserGrammar::addConstant, phoenix::ref(*this), qi::_1, qi::_a)];
             constantDefinition.name("constant definition");
             
-            start = qi::eps > ((stateFormula[phoenix::push_back(qi::_val, qi::_1)] | qi::eps(phoenix::bind(&FormulaParserGrammar::areConstantDefinitionsAllowed, phoenix::ref(*this))) >> constantDefinition) % +(qi::char_("\n;"))) >> qi::skip(boost::spirit::ascii::space | qi::lit("//") >> *(qi::char_ - (qi::eol | qi::eoi)))[qi::eps] >> qi::eoi;
+            start = qi::eps > (((-formulaName >> stateFormula)[phoenix::bind(&FormulaParserGrammar::addProperty, phoenix::ref(*this), qi::_val, qi::_1, qi::_2)] | qi::eps(phoenix::bind(&FormulaParserGrammar::areConstantDefinitionsAllowed, phoenix::ref(*this))) >> constantDefinition) % +(qi::char_("\n;"))) >> qi::skip(boost::spirit::ascii::space | qi::lit("//") >> *(qi::char_ - (qi::eol | qi::eoi)))[qi::eps] >> qi::eoi;
             start.name("start");
             
             // Enable the following lines to print debug output for most the rules.
@@ -191,6 +194,15 @@ namespace storm {
                 newVariable = manager->declareRationalVariable(name);
             }
             addIdentifierExpression(name, newVariable);
+        }
+        
+        void FormulaParserGrammar::addProperty(std::vector<storm::jani::Property>& properties, boost::optional<std::string> const& name, std::shared_ptr<storm::logic::Formula const> const& formula) {
+            if (name) {
+                properties.emplace_back(name.get(), formula);
+            } else {
+                properties.emplace_back(std::to_string(propertyCount), formula);
+            }
+            ++propertyCount;
         }
         
         bool FormulaParserGrammar::areConstantDefinitionsAllowed() const {

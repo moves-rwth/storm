@@ -59,6 +59,17 @@ namespace storm {
                 
                 return constantDefinitions;
             }
+         
+            std::vector<std::string> parseCommaSeparatedStrings(std::string const& input) {
+                std::vector<std::string> result;
+                if (!input.empty()) {
+                    boost::split(result, input, boost::is_any_of(","));
+                    for (auto& entry : result) {
+                        boost::trim(entry);
+                    }
+                }
+                return result;
+            }
             
         }
     }
