@@ -74,12 +74,12 @@ namespace storm {
         template <storm::dd::DdType Type>
         std::ostream& SymbolicQualitativeCheckResult<Type>::writeToStream(std::ostream& out) const {
             if (states == truthValues) {
-                out << "[true]" << std::endl;
+                out << "{true}" << std::endl;
             } else {
                 if (truthValues.isZero()) {
-                    out << "[false]" << std::endl;
+                    out << "{false}" << std::endl;
                 } else {
-                    out << "[true false]" << std::endl;
+                    out << "{true, false}" << std::endl;
                 }
             }
             return out;
