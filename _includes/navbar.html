@@ -1,6 +1,6 @@
 <nav class="navbar navbar-fixed-top navbar-dark bg-inverse">
 <!-- Brand -->
-<a class="navbar-brand" href="index.html">Storm</a>
+<a class="navbar-brand" href="{{ site.github.url }}/index.html">Storm</a>
   <ul class="nav navbar-nav">
     {% assign navigation_pages = site.pages | sort: 'navigation_weight' %}
     {% for p in navigation_pages %}
