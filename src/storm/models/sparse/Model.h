@@ -239,6 +239,13 @@ namespace storm {
                  * @return The labels for the choices, if they're saved.
                  */
                 boost::optional<std::vector<LabelSet>> const&  getOptionalChoiceLabeling() const;
+
+                /*!
+                 * Retrieves an optional value that contains the choice labeling if there is one.
+                 *
+                 * @return The labels for the choices, if they're saved.
+                 */
+                boost::optional<std::vector<LabelSet>>&  getOptionalChoiceLabeling();
                 
                 /*!
                  * Returns the state labeling associated with this model.
