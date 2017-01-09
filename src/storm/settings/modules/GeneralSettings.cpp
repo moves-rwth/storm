@@ -44,8 +44,10 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, configOptionName, false, "If given, this file will be read and parsed for additional configuration settings.").setShortName(configOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file from which to read the configuration.").addValidatorString(ArgumentValidatorFactory::createExistingFileValidator()).build()).build());
 
-                this->addOption(storm::settings::OptionBuilder(moduleName, propertyOptionName, false, "Specifies the formulas to be checked on the model.").setShortName(propertyOptionShortName)
-                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("formula or filename", "The formula or the file containing the formulas.").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, propertyOptionName, false, "Specifies the properties to be checked on the model.").setShortName(propertyOptionShortName)
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("property or filename", "The formula or the file containing the formulas.").build())
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filter", "The names of the properties to check.").setDefaultValueString("all").build())
+                                .build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, parametricRegionOptionName, false, "Sets whether to use the parametric Region engine.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, bisimulationOptionName, false, "Sets whether to perform bisimulation minimization.").setShortName(bisimulationOptionShortName).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, parametricOptionName, false, "Sets whether to enable parametric model checking.").build());
@@ -85,9 +87,13 @@ namespace storm {
             }
             
             std::string GeneralSettings::getProperty() const {
-                return this->getOption(propertyOptionName).getArgumentByName("formula or filename").getValueAsString();
+                return this->getOption(propertyOptionName).getArgumentByName("property or filename").getValueAsString();
             }
-                                    
+
+            std::string GeneralSettings::getPropertyFilter() const {
+                return this->getOption(propertyOptionName).getArgumentByName("filter").getValueAsString();
+            }
+
             bool GeneralSettings::isBisimulationSet() const {
                 return this->getOption(bisimulationOptionName).getHasOptionBeenSet();
             }

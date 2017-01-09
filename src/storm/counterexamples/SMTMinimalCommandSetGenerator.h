@@ -14,7 +14,7 @@
 #include "storm/settings/modules/CoreSettings.h"
 
 #include "storm/utility/counterexamples.h"
-#include "storm/utility/prism.h"
+#include "storm/utility/cli.h"
 
 namespace storm {
     namespace counterexamples {
@@ -1612,7 +1612,7 @@ namespace storm {
                 auto analysisClock = std::chrono::high_resolution_clock::now();
                 decltype(std::chrono::high_resolution_clock::now() - analysisClock) totalAnalysisTime(0);
 
-                std::map<storm::expressions::Variable, storm::expressions::Expression> constantDefinitions = storm::utility::prism::parseConstantDefinitionString(program, constantDefinitionString);
+                std::map<storm::expressions::Variable, storm::expressions::Expression> constantDefinitions = storm::utility::cli::parseConstantDefinitionString(program.getManager(), constantDefinitionString);
                 storm::prism::Program preparedProgram = program.defineUndefinedConstants(constantDefinitions);
                 preparedProgram = preparedProgram.substituteConstants();
 

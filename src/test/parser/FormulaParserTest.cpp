@@ -154,11 +154,10 @@ TEST(FormulaParserTest, MultiObjectiveFormulaTest) {
     storm::parser::FormulaParser formulaParser;
     
     std::string input = "multi(P<0.9 [ F \"a\" ], R<42 [ F \"b\" ], Pmin=? [ F\"c\" ])";
-    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas;
-    ASSERT_NO_THROW(formulas = formulaParser.parseFromString(input));
-    ASSERT_EQ(1ull, formulas.size());
-    ASSERT_TRUE(formulas[0]->isMultiObjectiveFormula());
-    storm::logic::MultiObjectiveFormula mof = formulas[0]->asMultiObjectiveFormula();
+    std::shared_ptr<storm::logic::Formula const> formula;
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
+    ASSERT_TRUE(formula->isMultiObjectiveFormula());
+    storm::logic::MultiObjectiveFormula mof = formula->asMultiObjectiveFormula();
     ASSERT_EQ(3ull, mof.getNumberOfSubformulas());
     
     ASSERT_TRUE(mof.getSubformula(0).isProbabilityOperatorFormula());

@@ -50,6 +50,13 @@ namespace storm {
                 bool isAddAllGuardsSet() const;
                 
                 /*!
+                 * Sets the option to add all guards to the specified value.
+                 *
+                 * @param value The new value.
+                 */
+                void setAddAllGuards(bool value);
+                
+                /*!
                  * Retrieves whether the option to use interpolation was set.
                  *
                  * @return True iff the option was set.

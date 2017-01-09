@@ -50,7 +50,13 @@ namespace storm {
                 if (settings.isCompilerSet()) {
                     compiler = settings.getCompiler();
                 } else {
-                    compiler = "c++";
+                    const char* cxxEnv = std::getenv("CXX");
+                    if (cxxEnv != nullptr) {
+                        compiler = std::string(cxxEnv);
+                    }
+                    if (compiler.empty()) {
+                        compiler = "c++";
+                    }
                 }
                 if (settings.isCompilerFlagsSet()) {
                     compilerFlags = settings.getCompilerFlags();
@@ -1509,7 +1515,7 @@ namespace storm {
                         if (this->options.isBuildAllLabelsSet() || this->options.getLabelNames().find(variable.getName()) != this->options.getLabelNames().end()) {
                             cpptempl::data_map label;
                             label["name"] = variable.getName();
-                            label["predicate"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(model.getLabelExpression(variable.asBooleanVariable(), parallelAutomata)), storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName));
+                            label["predicate"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(model.getLabelExpression(variable.asBooleanVariable(), parallelAutomata)), storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName, storm::expressions::ToCppTranslationMode::CastDouble));
                             labels.push_back(label);
                         }
                     }
@@ -1518,7 +1524,7 @@ namespace storm {
                 for (auto const& expression : this->options.getExpressionLabels()) {
                     cpptempl::data_map label;
                     label["name"] = expression.toString();
-                    label["predicate"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(expression), storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName));
+                    label["predicate"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(expression), storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName, storm::expressions::ToCppTranslationMode::CastDouble));
                     labels.push_back(label);
                 }
                     

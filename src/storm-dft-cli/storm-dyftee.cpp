@@ -48,7 +48,7 @@ void analyzeDFT(std::string filename, std::string property, bool symred, bool al
 
     storm::parser::DFTGalileoParser<ValueType> parser;
     storm::storage::DFT<ValueType> dft = parser.parseDFT(filename);
-    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::parseFormulasForExplicit(property);
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::extractFormulasFromProperties(storm::parsePropertiesForExplicit(property));
     STORM_LOG_ASSERT(formulas.size() == 1, "Wrong number of formulas.");
 
     storm::modelchecker::DFTModelChecker<ValueType> modelChecker;
@@ -156,7 +156,7 @@ int main(const int argc, const char** argv) {
 
             storm::expressions::Expression targetExpression = exprManager->integer(1) == topfailedVar.getExpressionVariable().getExpression();
             auto evtlFormula = std::make_shared<storm::logic::AtomicExpressionFormula>(targetExpression);
-            auto tbFormula = std::make_shared<storm::logic::BoundedUntilFormula>(std::make_shared<storm::logic::BooleanLiteralFormula>(true), evtlFormula, 0.0, 10.0);
+            auto tbFormula = std::make_shared<storm::logic::BoundedUntilFormula>(std::make_shared<storm::logic::BooleanLiteralFormula>(true), evtlFormula, storm::logic::TimeBound(false, exprManager->integer(0)), storm::logic::TimeBound(false, exprManager->integer(10)), storm::logic::TimeBoundType::Time);
             auto tbUntil = std::make_shared<storm::logic::ProbabilityOperatorFormula>(tbFormula);
             
             auto evFormula = std::make_shared<storm::logic::EventuallyFormula>(evtlFormula, storm::logic::FormulaContext::Time);

@@ -349,6 +349,7 @@ namespace storm {
         
         void SettingsManager::setOptionArguments(std::string const& optionName, std::shared_ptr<Option> option, std::vector<std::string> const& argumentCache) {
             STORM_LOG_THROW(argumentCache.size() <= option->getArgumentCount(), storm::exceptions::OptionParserException, "Too many arguments for option '" << optionName << "'.");
+            STORM_LOG_THROW(!option->getHasOptionBeenSet(), storm::exceptions::OptionParserException, "Option '" << optionName << "' is set multiple times.");
             
             // Now set the provided argument values one by one.
             for (uint_fast64_t i = 0; i < argumentCache.size(); ++i) {
@@ -502,6 +503,10 @@ namespace storm {
         
         storm::settings::modules::IOSettings& mutableIOSettings() {
             return dynamic_cast<storm::settings::modules::IOSettings&>(mutableManager().getModule(storm::settings::modules::IOSettings::moduleName));
+        }
+        
+        storm::settings::modules::AbstractionSettings& mutableAbstractionSettings() {
+            return dynamic_cast<storm::settings::modules::AbstractionSettings&>(mutableManager().getModule(storm::settings::modules::AbstractionSettings::moduleName));
         }
         
         void initializeAll(std::string const& name, std::string const& executableName) {

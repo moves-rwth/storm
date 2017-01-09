@@ -28,19 +28,23 @@ namespace storm {
         
         class FilterExpression {
         public:
-            explicit FilterExpression(std::shared_ptr<storm::logic::Formula const> formula, storm::modelchecker::FilterType ft = storm::modelchecker::FilterType::VALUES) : values(formula), ft(ft) {}
+            explicit FilterExpression(std::shared_ptr<storm::logic::Formula const> formula, storm::modelchecker::FilterType ft = storm::modelchecker::FilterType::VALUES) : formula(formula), ft(ft) {}
             
             
             std::shared_ptr<storm::logic::Formula const> const& getFormula() const {
-                return values;
+                return formula;
             }
             
             storm::modelchecker::FilterType getFilterType() const {
                 return ft;
             }
+            
+            FilterExpression substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
+                return FilterExpression(formula->substitute(substitution), ft);
+            }
         private:
             // For now, we assume that the states are always the initial states.
-            std::shared_ptr<storm::logic::Formula const> values;
+            std::shared_ptr<storm::logic::Formula const> formula;
             storm::modelchecker::FilterType ft;
         };
         
@@ -58,6 +62,7 @@ namespace storm {
              * @param comment An optional comment
              */
             Property(std::string const& name, std::shared_ptr<storm::logic::Formula const> const& formula, std::string const& comment = "");
+            
             /**
              * Constructs the property
              * @param name the name
@@ -65,18 +70,24 @@ namespace storm {
              * @param comment An optional comment
              */
             Property(std::string const& name, FilterExpression const& fe, std::string const& comment = "");
+            
             /**
              * Get the provided name
              * @return the name
              */
             std::string const& getName() const;
+            
             /**
              * Get the provided comment, if any
              * @return the comment
              */
             std::string const& getComment() const;
             
+            Property substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const;
+            
             FilterExpression const& getFilter() const;
+            
+            std::shared_ptr<storm::logic::Formula const> getRawFormula() const;
         private:
             std::string name;
             std::string comment;

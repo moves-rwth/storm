@@ -31,11 +31,7 @@ namespace storm {
         boost::any CloneVisitor::visit(BoundedUntilFormula const& f, boost::any const& data) const {
             std::shared_ptr<Formula> left = boost::any_cast<std::shared_ptr<Formula>>(f.getLeftSubformula().accept(*this, data));
             std::shared_ptr<Formula> right = boost::any_cast<std::shared_ptr<Formula>>(f.getRightSubformula().accept(*this, data));
-            if (f.hasDiscreteTimeBound()) {
-                return std::static_pointer_cast<Formula>(std::make_shared<BoundedUntilFormula>(left, right, f.getDiscreteTimeBound()));
-            } else {
-                return std::static_pointer_cast<Formula>(std::make_shared<BoundedUntilFormula>(left, right, f.getIntervalBounds()));
-            }
+            return std::static_pointer_cast<Formula>(std::make_shared<BoundedUntilFormula>(f));
         }
         
         boost::any CloneVisitor::visit(ConditionalFormula const& f, boost::any const& data) const {

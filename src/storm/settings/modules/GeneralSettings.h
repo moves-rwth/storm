@@ -86,6 +86,13 @@ namespace storm {
                 std::string getProperty() const;
 
                 /*!
+                 * Retrieves the property filter.
+                 *
+                 * @return The property filter.
+                 */
+                std::string getPropertyFilter() const;
+                
+                /*!
                  * Retrieves whether the option to perform bisimulation minimization is set.
                  *
                  * @return True iff the option was set.

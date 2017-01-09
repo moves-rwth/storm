@@ -19,7 +19,12 @@
 
 #include "storm/adapters/CarlAdapter.h"
 
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/AbstractionSettings.h"
+
 TEST(PrismMenuGame, DieAbstractionTest_Cudd) {
+    storm::settings::mutableAbstractionSettings().setAddAllGuards(false);
+    
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm");
 
     std::vector<storm::expressions::Expression> initialPredicates;
@@ -37,9 +42,13 @@ TEST(PrismMenuGame, DieAbstractionTest_Cudd) {
     EXPECT_EQ(26ull, game.getNumberOfTransitions());
     EXPECT_EQ(4ull, game.getNumberOfStates());
     EXPECT_EQ(2ull, game.getBottomStates().getNonZeroCount());
+    
+    storm::settings::mutableAbstractionSettings().restoreDefaults();
 }
 
 TEST(PrismMenuGame, DieAbstractionTest_Sylvan) {
+    storm::settings::mutableAbstractionSettings().setAddAllGuards(false);
+
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm");
     
     std::vector<storm::expressions::Expression> initialPredicates;
@@ -58,6 +67,8 @@ TEST(PrismMenuGame, DieAbstractionTest_Sylvan) {
     EXPECT_EQ(26ull, game.getNumberOfTransitions());
     EXPECT_EQ(4ull, game.getNumberOfStates());
     EXPECT_EQ(2ull, game.getBottomStates().getNonZeroCount());
+
+    storm::settings::mutableAbstractionSettings().restoreDefaults();
 }
 
 #ifdef STORM_HAVE_CARL
@@ -86,6 +97,8 @@ TEST(PrismMenuGame, DieAbstractionTest_Sylvan) {
 #endif
 
 TEST(PrismMenuGame, DieAbstractionAndRefinementTest_Cudd) {
+    storm::settings::mutableAbstractionSettings().setAddAllGuards(false);
+
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm");
     
     std::vector<storm::expressions::Expression> initialPredicates;
@@ -106,9 +119,13 @@ TEST(PrismMenuGame, DieAbstractionAndRefinementTest_Cudd) {
     EXPECT_EQ(24ull, game.getNumberOfTransitions());
     EXPECT_EQ(5ull, game.getNumberOfStates());
     EXPECT_EQ(2ull, game.getBottomStates().getNonZeroCount());
+
+    storm::settings::mutableAbstractionSettings().restoreDefaults();
 }
 
 TEST(PrismMenuGame, DieAbstractionAndRefinementTest_Sylvan) {
+    storm::settings::mutableAbstractionSettings().setAddAllGuards(false);
+
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm");
     
     std::vector<storm::expressions::Expression> initialPredicates;
@@ -129,9 +146,13 @@ TEST(PrismMenuGame, DieAbstractionAndRefinementTest_Sylvan) {
     EXPECT_EQ(24ull, game.getNumberOfTransitions());
     EXPECT_EQ(5ull, game.getNumberOfStates());
     EXPECT_EQ(2ull, game.getBottomStates().getNonZeroCount());
+
+    storm::settings::mutableAbstractionSettings().restoreDefaults();
 }
 
 TEST(PrismMenuGame, DieFullAbstractionTest_Cudd) {
+    storm::settings::mutableAbstractionSettings().setAddAllGuards(false);
+
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm");
     
     std::vector<storm::expressions::Expression> initialPredicates;
@@ -165,9 +186,13 @@ TEST(PrismMenuGame, DieFullAbstractionTest_Cudd) {
     EXPECT_EQ(20ull, game.getNumberOfTransitions());
     EXPECT_EQ(13ull, game.getNumberOfStates());
     EXPECT_EQ(0ull, game.getBottomStates().getNonZeroCount());
+
+    storm::settings::mutableAbstractionSettings().restoreDefaults();
 }
 
 TEST(PrismMenuGame, DieFullAbstractionTest_Sylvan) {
+    storm::settings::mutableAbstractionSettings().setAddAllGuards(false);
+
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm");
     
     std::vector<storm::expressions::Expression> initialPredicates;
@@ -201,9 +226,13 @@ TEST(PrismMenuGame, DieFullAbstractionTest_Sylvan) {
     EXPECT_EQ(20ull, game.getNumberOfTransitions());
     EXPECT_EQ(13ull, game.getNumberOfStates());
     EXPECT_EQ(0ull, game.getBottomStates().getNonZeroCount());
+
+    storm::settings::mutableAbstractionSettings().restoreDefaults();
 }
 
 TEST(PrismMenuGame, CrowdsAbstractionTest_Cudd) {
+    storm::settings::mutableAbstractionSettings().setAddAllGuards(false);
+
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/crowds-5-5.pm");
     program = program.substituteConstants();
     
@@ -223,9 +252,13 @@ TEST(PrismMenuGame, CrowdsAbstractionTest_Cudd) {
     EXPECT_EQ(31ull, game.getNumberOfTransitions());
     EXPECT_EQ(4ull, game.getNumberOfStates());
     EXPECT_EQ(2ull, game.getBottomStates().getNonZeroCount());
+
+    storm::settings::mutableAbstractionSettings().restoreDefaults();
 }
 
 TEST(PrismMenuGame, CrowdsAbstractionTest_Sylvan) {
+    storm::settings::mutableAbstractionSettings().setAddAllGuards(false);
+
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/crowds-5-5.pm");
     program = program.substituteConstants();
     
@@ -245,9 +278,13 @@ TEST(PrismMenuGame, CrowdsAbstractionTest_Sylvan) {
     EXPECT_EQ(31ull, game.getNumberOfTransitions());
     EXPECT_EQ(4ull, game.getNumberOfStates());
     EXPECT_EQ(2ull, game.getBottomStates().getNonZeroCount());
+
+    storm::settings::mutableAbstractionSettings().restoreDefaults();
 }
 
 TEST(PrismMenuGame, CrowdsAbstractionAndRefinementTest_Cudd) {
+    storm::settings::mutableAbstractionSettings().setAddAllGuards(false);
+
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/crowds-5-5.pm");
     program = program.substituteConstants();
     
@@ -269,9 +306,13 @@ TEST(PrismMenuGame, CrowdsAbstractionAndRefinementTest_Cudd) {
     EXPECT_EQ(68ull, game.getNumberOfTransitions());
     EXPECT_EQ(8ull, game.getNumberOfStates());
     EXPECT_EQ(4ull, game.getBottomStates().getNonZeroCount());
+
+    storm::settings::mutableAbstractionSettings().restoreDefaults();
 }
 
 TEST(PrismMenuGame, CrowdsAbstractionAndRefinementTest_Sylvan) {
+    storm::settings::mutableAbstractionSettings().setAddAllGuards(false);
+
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/crowds-5-5.pm");
     program = program.substituteConstants();
     
@@ -293,9 +334,13 @@ TEST(PrismMenuGame, CrowdsAbstractionAndRefinementTest_Sylvan) {
     EXPECT_EQ(68ull, game.getNumberOfTransitions());
     EXPECT_EQ(8ull, game.getNumberOfStates());
     EXPECT_EQ(4ull, game.getBottomStates().getNonZeroCount());
+
+    storm::settings::mutableAbstractionSettings().restoreDefaults();
 }
 
 TEST(PrismMenuGame, CrowdsFullAbstractionTest_Cudd) {
+    storm::settings::mutableAbstractionSettings().setAddAllGuards(false);
+
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/crowds-5-5.pm");
     program = program.substituteConstants();
     
@@ -369,9 +414,13 @@ TEST(PrismMenuGame, CrowdsFullAbstractionTest_Cudd) {
     EXPECT_EQ(15113ull, game.getNumberOfTransitions());
     EXPECT_EQ(8607ull, game.getNumberOfStates());
     EXPECT_EQ(0ull, game.getBottomStates().getNonZeroCount());
+
+    storm::settings::mutableAbstractionSettings().restoreDefaults();
 }
 
 TEST(PrismMenuGame, CrowdsFullAbstractionTest_Sylvan) {
+    storm::settings::mutableAbstractionSettings().setAddAllGuards(false);
+
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/crowds-5-5.pm");
     program = program.substituteConstants();
     
@@ -445,9 +494,13 @@ TEST(PrismMenuGame, CrowdsFullAbstractionTest_Sylvan) {
     EXPECT_EQ(15113ull, game.getNumberOfTransitions());
     EXPECT_EQ(8607ull, game.getNumberOfStates());
     EXPECT_EQ(0ull, game.getBottomStates().getNonZeroCount());
+
+    storm::settings::mutableAbstractionSettings().restoreDefaults();
 }
 
 TEST(PrismMenuGame, TwoDiceAbstractionTest_Cudd) {
+    storm::settings::mutableAbstractionSettings().setAddAllGuards(false);
+
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/two_dice.nm");
     program = program.substituteConstants();
     program = program.flattenModules(std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
@@ -469,9 +522,13 @@ TEST(PrismMenuGame, TwoDiceAbstractionTest_Cudd) {
     EXPECT_EQ(90ull, game.getNumberOfTransitions());
     EXPECT_EQ(8ull, game.getNumberOfStates());
     EXPECT_EQ(4ull, game.getBottomStates().getNonZeroCount());
+
+    storm::settings::mutableAbstractionSettings().restoreDefaults();
 }
 
 TEST(PrismMenuGame, TwoDiceAbstractionTest_Sylvan) {
+    storm::settings::mutableAbstractionSettings().setAddAllGuards(false);
+
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/two_dice.nm");
     program = program.substituteConstants();
     program = program.flattenModules(std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
@@ -493,9 +550,13 @@ TEST(PrismMenuGame, TwoDiceAbstractionTest_Sylvan) {
     EXPECT_EQ(90ull, game.getNumberOfTransitions());
     EXPECT_EQ(8ull, game.getNumberOfStates());
     EXPECT_EQ(4ull, game.getBottomStates().getNonZeroCount());
+
+    storm::settings::mutableAbstractionSettings().restoreDefaults();
 }
 
 TEST(PrismMenuGame, TwoDiceAbstractionAndRefinementTest_Cudd) {
+    storm::settings::mutableAbstractionSettings().setAddAllGuards(false);
+
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/two_dice.nm");
     program = program.substituteConstants();
     program = program.flattenModules(std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
@@ -519,9 +580,13 @@ TEST(PrismMenuGame, TwoDiceAbstractionAndRefinementTest_Cudd) {
     EXPECT_EQ(276ull, game.getNumberOfTransitions());
     EXPECT_EQ(16ull, game.getNumberOfStates());
     EXPECT_EQ(8ull, game.getBottomStates().getNonZeroCount());
+
+    storm::settings::mutableAbstractionSettings().restoreDefaults();
 }
 
 TEST(PrismMenuGame, TwoDiceAbstractionAndRefinementTest_Sylvan) {
+    storm::settings::mutableAbstractionSettings().setAddAllGuards(false);
+
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/two_dice.nm");
     program = program.substituteConstants();
     program = program.flattenModules(std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
@@ -545,9 +610,13 @@ TEST(PrismMenuGame, TwoDiceAbstractionAndRefinementTest_Sylvan) {
     EXPECT_EQ(276ull, game.getNumberOfTransitions());
     EXPECT_EQ(16ull, game.getNumberOfStates());
     EXPECT_EQ(8ull, game.getBottomStates().getNonZeroCount());
+
+    storm::settings::mutableAbstractionSettings().restoreDefaults();
 }
 
 TEST(PrismMenuGame, TwoDiceFullAbstractionTest_Cudd) {
+    storm::settings::mutableAbstractionSettings().setAddAllGuards(false);
+
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/two_dice.nm");
     program = program.substituteConstants();
     program = program.flattenModules(std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
@@ -600,9 +669,13 @@ TEST(PrismMenuGame, TwoDiceFullAbstractionTest_Cudd) {
     EXPECT_EQ(436ull, game.getNumberOfTransitions());
     EXPECT_EQ(169ull, game.getNumberOfStates());
     EXPECT_EQ(0ull, game.getBottomStates().getNonZeroCount());
+
+    storm::settings::mutableAbstractionSettings().restoreDefaults();
 }
 
 TEST(PrismMenuGame, TwoDiceFullAbstractionTest_Sylvan) {
+    storm::settings::mutableAbstractionSettings().setAddAllGuards(false);
+
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/two_dice.nm");
     program = program.substituteConstants();
     program = program.flattenModules(std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
@@ -655,9 +728,13 @@ TEST(PrismMenuGame, TwoDiceFullAbstractionTest_Sylvan) {
     EXPECT_EQ(436ull, game.getNumberOfTransitions());
     EXPECT_EQ(169ull, game.getNumberOfStates());
     EXPECT_EQ(0ull, game.getBottomStates().getNonZeroCount());
+
+    storm::settings::mutableAbstractionSettings().restoreDefaults();
 }
 
 TEST(PrismMenuGame, WlanAbstractionTest_Cudd) {
+    storm::settings::mutableAbstractionSettings().setAddAllGuards(false);
+
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/wlan0-2-4.nm");
     program = program.substituteConstants();
     program = program.flattenModules(std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
@@ -680,9 +757,13 @@ TEST(PrismMenuGame, WlanAbstractionTest_Cudd) {
     EXPECT_EQ(915ull, game.getNumberOfTransitions());
     EXPECT_EQ(8ull, game.getNumberOfStates());
     EXPECT_EQ(4ull, game.getBottomStates().getNonZeroCount());
+
+    storm::settings::mutableAbstractionSettings().restoreDefaults();
 }
 
 TEST(PrismMenuGame, WlanAbstractionTest_Sylvan) {
+    storm::settings::mutableAbstractionSettings().setAddAllGuards(false);
+
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/wlan0-2-4.nm");
     program = program.substituteConstants();
     program = program.flattenModules(std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
@@ -705,9 +786,13 @@ TEST(PrismMenuGame, WlanAbstractionTest_Sylvan) {
     EXPECT_EQ(915ull, game.getNumberOfTransitions());
     EXPECT_EQ(8ull, game.getNumberOfStates());
     EXPECT_EQ(4ull, game.getBottomStates().getNonZeroCount());
+
+    storm::settings::mutableAbstractionSettings().restoreDefaults();
 }
 
 TEST(PrismMenuGame, WlanAbstractionAndRefinementTest_Cudd) {
+    storm::settings::mutableAbstractionSettings().setAddAllGuards(false);
+    
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/wlan0-2-4.nm");
     program = program.substituteConstants();
     program = program.flattenModules(std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
@@ -732,9 +817,13 @@ TEST(PrismMenuGame, WlanAbstractionAndRefinementTest_Cudd) {
     EXPECT_EQ(1824ull, game.getNumberOfTransitions());
     EXPECT_EQ(16ull, game.getNumberOfStates());
     EXPECT_EQ(8ull, game.getBottomStates().getNonZeroCount());
+
+    storm::settings::mutableAbstractionSettings().restoreDefaults();
 }
 
 TEST(PrismMenuGame, WlanAbstractionAndRefinementTest_Sylvan) {
+    storm::settings::mutableAbstractionSettings().setAddAllGuards(false);
+
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/wlan0-2-4.nm");
     program = program.substituteConstants();
     program = program.flattenModules(std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
@@ -759,9 +848,13 @@ TEST(PrismMenuGame, WlanAbstractionAndRefinementTest_Sylvan) {
     EXPECT_EQ(1824ull, game.getNumberOfTransitions());
     EXPECT_EQ(16ull, game.getNumberOfStates());
     EXPECT_EQ(8ull, game.getBottomStates().getNonZeroCount());
+
+    storm::settings::mutableAbstractionSettings().restoreDefaults();
 }
 
 TEST(PrismMenuGame, WlanFullAbstractionTest_Cudd) {
+    storm::settings::mutableAbstractionSettings().setAddAllGuards(false);
+
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/wlan0-2-4.nm");
     program = program.substituteConstants();
     program = program.flattenModules(std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
@@ -882,9 +975,13 @@ TEST(PrismMenuGame, WlanFullAbstractionTest_Cudd) {
     EXPECT_EQ(9503ull, game.getNumberOfTransitions());
     EXPECT_EQ(5523ull, game.getNumberOfStates());
     EXPECT_EQ(0ull, game.getBottomStates().getNonZeroCount());
+
+    storm::settings::mutableAbstractionSettings().restoreDefaults();
 }
 
 TEST(PrismMenuGame, WlanFullAbstractionTest_Sylvan) {
+    storm::settings::mutableAbstractionSettings().setAddAllGuards(false);
+
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/wlan0-2-4.nm");
     program = program.substituteConstants();
     program = program.flattenModules(std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>());
@@ -1005,6 +1102,8 @@ TEST(PrismMenuGame, WlanFullAbstractionTest_Sylvan) {
     EXPECT_EQ(9503ull, game.getNumberOfTransitions());
     EXPECT_EQ(5523ull, game.getNumberOfStates());
     EXPECT_EQ(0ull, game.getBottomStates().getNonZeroCount());
+
+    storm::settings::mutableAbstractionSettings().restoreDefaults();
 }
 
 #endif
