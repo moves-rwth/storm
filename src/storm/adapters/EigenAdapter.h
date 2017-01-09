@@ -1,7 +1,7 @@
 #pragma once
 
 #include <memory>
-
+#include <iostream>
 #include "storm/utility/eigen.h"
 
 #include "storm/storage/SparseMatrix.h"

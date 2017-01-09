@@ -105,7 +105,8 @@ namespace storm {
 #endif
 
         template<typename ValueType>
-        EigenLinearEquationSolver<ValueType>::EigenLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, EigenLinearEquationSolverSettings<ValueType> const& settings) : eigenA(storm::adapters::EigenAdapter::toEigenSparseMatrix<ValueType>(A)), settings(settings) {
+        EigenLinearEquationSolver<ValueType>::EigenLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, EigenLinearEquationSolverSettings<ValueType> const& settings) : settings(settings) {
+std::cout << "eigen  eq solver disabled since it requires a custom version that we disabled in this build." << std::endl;
             // Intentionally left empty.
         }
 
@@ -116,7 +117,7 @@ namespace storm {
         
         template<typename ValueType>
         void EigenLinearEquationSolver<ValueType>::setMatrix(storm::storage::SparseMatrix<ValueType> const& A) {
-            eigenA = storm::adapters::EigenAdapter::toEigenSparseMatrix<ValueType>(A);
+//            eigenA = storm::adapters::EigenAdapter::toEigenSparseMatrix<ValueType>(A);
             this->clearCache();
         }
         
@@ -131,7 +132,8 @@ namespace storm {
         template<typename ValueType>
         bool EigenLinearEquationSolver<ValueType>::solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             // Map the input vectors to Eigen's format.
-            auto eigenX = Eigen::Matrix<ValueType, Eigen::Dynamic, 1>::Map(x.data(), x.size());
+return false;   
+/*         auto eigenX = Eigen::Matrix<ValueType, Eigen::Dynamic, 1>::Map(x.data(), x.size());
             auto eigenB = Eigen::Matrix<ValueType, Eigen::Dynamic, 1>::Map(b.data(), b.size());
 
             typename EigenLinearEquationSolverSettings<ValueType>::SolutionMethod solutionMethod = this->getSettings().getSolutionMethod();
@@ -218,12 +220,12 @@ namespace storm {
                     }
                 }
             }
-            return false;
+            return false; */
         }
         
         template<typename ValueType>
         void EigenLinearEquationSolver<ValueType>::multiply(std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const {
-            // Typedef the map-type so we don't have to spell it out.
+     /*       // Typedef the map-type so we don't have to spell it out.
             typedef decltype(Eigen::Matrix<ValueType, Eigen::Dynamic, 1>::Map(b->data(), b->size())) MapType;
 
             auto eigenX = Eigen::Matrix<ValueType, Eigen::Dynamic, 1>::Map(x.data(), x.size());
@@ -247,7 +249,8 @@ namespace storm {
                     eigenResult = *eigenA * eigenX;
                 }
             }
-        }
+*/       
+ }
         
         template<typename ValueType>
         EigenLinearEquationSolverSettings<ValueType>& EigenLinearEquationSolver<ValueType>::getSettings() {
@@ -261,19 +264,20 @@ namespace storm {
         
         template<typename ValueType>
         uint64_t EigenLinearEquationSolver<ValueType>::getMatrixRowCount() const {
-            return eigenA->rows();
+            return 0; // eigenA->rows();
         }
         
         template<typename ValueType>
         uint64_t EigenLinearEquationSolver<ValueType>::getMatrixColumnCount() const {
-            return eigenA->cols();
+            return 0; //eigenA->cols();
         }
         
 #ifdef STORM_HAVE_CARL
         // Specialization for storm::RationalNumber
         template<>
         bool EigenLinearEquationSolver<storm::RationalNumber>::solveEquations(std::vector<storm::RationalNumber>& x, std::vector<storm::RationalNumber> const& b) const {
-            // Map the input vectors to Eigen's format.
+return false; /*            
+// Map the input vectors to Eigen's format.
             auto eigenX = Eigen::Matrix<storm::RationalNumber, Eigen::Dynamic, 1>::Map(x.data(), x.size());
             auto eigenB = Eigen::Matrix<storm::RationalNumber, Eigen::Dynamic, 1>::Map(b.data(), b.size());
                         
@@ -281,12 +285,13 @@ namespace storm {
             solver.compute(*eigenA);
             solver._solve_impl(eigenB, eigenX);
             return solver.info() == Eigen::ComputationInfo::Success;
-        }
+       */ }
         
         // Specialization for storm::RationalFunction
         template<>
         bool EigenLinearEquationSolver<storm::RationalFunction>::solveEquations(std::vector<storm::RationalFunction>& x, std::vector<storm::RationalFunction> const& b) const {
-            // Map the input vectors to Eigen's format.
+return false; /*         
+   // Map the input vectors to Eigen's format.
             auto eigenX = Eigen::Matrix<storm::RationalFunction, Eigen::Dynamic, 1>::Map(x.data(), x.size());
             auto eigenB = Eigen::Matrix<storm::RationalFunction, Eigen::Dynamic, 1>::Map(b.data(), b.size());
             
@@ -294,7 +299,7 @@ namespace storm {
             solver.compute(*eigenA);
             solver._solve_impl(eigenB, eigenX);
             return solver.info() == Eigen::ComputationInfo::Success;
-        }
+        */}
 #endif
 
         template<typename ValueType>
