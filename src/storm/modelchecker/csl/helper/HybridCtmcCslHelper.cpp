@@ -291,6 +291,21 @@ namespace storm {
             }
             
             template<storm::dd::DdType DdType, class ValueType>
+            std::unique_ptr<CheckResult> HybridCtmcCslHelper<DdType, ValueType>::computeLongRunAverageRewards(storm::models::symbolic::Ctmc<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector, RewardModelType const& rewardModel, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+                storm::dd::Add<DdType, ValueType> probabilityMatrix = computeProbabilityMatrix(rateMatrix, exitRateVector);
+                
+                // Create ODD for the translation.
+                storm::dd::Odd odd = model.getReachableStates().createOdd();
+                
+                storm::storage::SparseMatrix<ValueType> explicitProbabilityMatrix = probabilityMatrix.toMatrix(odd, odd);
+                std::vector<ValueType> explicitExitRateVector = exitRateVector.toVector(odd);
+                
+                std::vector<ValueType> result = storm::modelchecker::helper::SparseCtmcCslHelper::computeLongRunAverageRewards(explicitProbabilityMatrix, rewardModel.getStateRewardVector().toVector(odd), &explicitExitRateVector, linearEquationSolverFactory);
+                
+                return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType>(model.getReachableStates(), model.getManager().getBddZero(), model.getManager().template getAddZero<ValueType>(), model.getReachableStates(), std::move(odd), std::move(result)));
+            }
+            
+            template<storm::dd::DdType DdType, class ValueType>
             storm::dd::Add<DdType, ValueType> HybridCtmcCslHelper<DdType, ValueType>::computeUniformizedMatrix(storm::models::symbolic::Ctmc<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector, storm::dd::Bdd<DdType> const& maybeStates, ValueType uniformizationRate) {
                 STORM_LOG_DEBUG("Computing uniformized matrix using uniformization rate " << uniformizationRate << ".");
                 STORM_LOG_DEBUG("Keeping " << maybeStates.getNonZeroCount() << " rows.");
