@@ -28,7 +28,7 @@ cmake -DUSE_CLN_NUMBERS=ON ..
 ```
 
 
-## Xerces
+## Boost
 
 # CMake Options
 
