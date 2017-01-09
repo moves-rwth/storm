@@ -2,7 +2,7 @@
 #include <iostream>
 #include <Eigen/Core>
 #include <bench/BenchUtil.h>
-using namespace Eigen;
+using namespace StormEigen;
 
 #ifndef REPEAT
 #define REPEAT 100000

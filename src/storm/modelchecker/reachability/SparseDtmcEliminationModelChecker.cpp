@@ -323,6 +323,9 @@ namespace storm {
         std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeBoundedUntilProbabilities(CheckTask<storm::logic::BoundedUntilFormula, ValueType> const& checkTask) {
             storm::logic::BoundedUntilFormula const& pathFormula = checkTask.getFormula();
             
+            STORM_LOG_THROW(!pathFormula.hasLowerBound() && pathFormula.hasUpperBound(), storm::exceptions::InvalidPropertyException, "Formula needs to have single upper time bound.");
+            STORM_LOG_THROW(pathFormula.hasIntegerUpperBound(), storm::exceptions::InvalidPropertyException, "Formula needs to have discrete upper time bound.");
+            
             // Retrieve the appropriate bitvectors by model checking the subformulas.
             std::unique_ptr<CheckResult> leftResultPointer = this->check(pathFormula.getLeftSubformula());
             std::unique_ptr<CheckResult> rightResultPointer = this->check(pathFormula.getRightSubformula());
@@ -331,7 +334,7 @@ namespace storm {
             
             // Start by determining the states that have a non-zero probability of reaching the target states within the
             // time bound.
-            storm::storage::BitVector statesWithProbabilityGreater0 = storm::utility::graph::performProbGreater0(this->getModel().getBackwardTransitions(), phiStates, psiStates, true, pathFormula.getDiscreteTimeBound());
+            storm::storage::BitVector statesWithProbabilityGreater0 = storm::utility::graph::performProbGreater0(this->getModel().getBackwardTransitions(), phiStates, psiStates, true, pathFormula.getUpperBound<uint64_t>());
             statesWithProbabilityGreater0 &= ~psiStates;
             
             // Determine whether we need to perform some further computation.
@@ -350,7 +353,7 @@ namespace storm {
             std::vector<ValueType> result(transitionMatrix.getRowCount(), storm::utility::zero<ValueType>());
             
             if (furtherComputationNeeded) {
-                uint_fast64_t timeBound = pathFormula.getDiscreteTimeBound();
+                uint_fast64_t timeBound = pathFormula.getUpperBound<uint64_t>();
                 
                 if (checkTask.isOnlyInitialStatesRelevantSet()) {
                     // Determine the set of states that is reachable from the initial state without jumping over a target state.

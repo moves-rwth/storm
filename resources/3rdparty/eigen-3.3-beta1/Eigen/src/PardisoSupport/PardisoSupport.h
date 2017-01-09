@@ -32,7 +32,7 @@
 #ifndef EIGEN_PARDISOSUPPORT_H
 #define EIGEN_PARDISOSUPPORT_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 template<typename _MatrixType> class PardisoLU;
 template<typename _MatrixType, int Options=Upper> class PardisoLLT;
@@ -529,6 +529,6 @@ class PardisoLDLT : public PardisoImpl< PardisoLDLT<MatrixType,Options> >
     }
 };
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_PARDISOSUPPORT_H

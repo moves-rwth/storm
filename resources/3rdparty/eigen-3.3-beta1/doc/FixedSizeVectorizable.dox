@@ -1,4 +1,4 @@
-namespace Eigen {
+namespace StormEigen {
 
 /** \eigenManualPage TopicFixedSizeVectorizable Fixed-size vectorizable Eigen objects
 
@@ -9,17 +9,17 @@ The goal of this page is to explain what we mean by "fixed-size vectorizable".
 An Eigen object is called "fixed-size vectorizable" if it has fixed size and that size is a multiple of 16 bytes.
 
 Examples include:
-\li Eigen::Vector2d
-\li Eigen::Vector4d
-\li Eigen::Vector4f
-\li Eigen::Matrix2d
-\li Eigen::Matrix2f
-\li Eigen::Matrix4d
-\li Eigen::Matrix4f
-\li Eigen::Affine3d
-\li Eigen::Affine3f
-\li Eigen::Quaterniond
-\li Eigen::Quaternionf
+\li StormEigen::Vector2d
+\li StormEigen::Vector4d
+\li StormEigen::Vector4f
+\li StormEigen::Matrix2d
+\li StormEigen::Matrix2f
+\li StormEigen::Matrix4d
+\li StormEigen::Matrix4f
+\li StormEigen::Affine3d
+\li StormEigen::Affine3f
+\li StormEigen::Quaterniond
+\li StormEigen::Quaternionf
 
 \section FixedSizeVectorizable_explanation Explanation
 

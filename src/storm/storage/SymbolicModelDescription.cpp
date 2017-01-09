@@ -1,5 +1,6 @@
 #include "storm/storage/SymbolicModelDescription.h"
 
+#include "storm/utility/cli.h"
 #include "storm/utility/prism.h"
 #include "storm/utility/jani.h"
 
@@ -84,12 +85,22 @@ namespace storm {
             STORM_LOG_THROW(isJaniModel(), storm::exceptions::InvalidOperationException, "Cannot retrieve JANI model, because the symbolic description has a different type.");
             return boost::get<storm::jani::Model>(modelDescription.get());
         }
-        
+
+        storm::jani::Model& SymbolicModelDescription::asJaniModel() {
+            STORM_LOG_THROW(isJaniModel(), storm::exceptions::InvalidOperationException, "Cannot retrieve JANI model, because the symbolic description has a different type.");
+            return boost::get<storm::jani::Model>(modelDescription.get());
+        }
+
         storm::prism::Program const& SymbolicModelDescription::asPrismProgram() const {
             STORM_LOG_THROW(isPrismProgram(), storm::exceptions::InvalidOperationException, "Cannot retrieve JANI model, because the symbolic description has a different type.");
             return boost::get<storm::prism::Program>(modelDescription.get());
         }
-        
+
+        storm::prism::Program& SymbolicModelDescription::asPrismProgram() {
+            STORM_LOG_THROW(isPrismProgram(), storm::exceptions::InvalidOperationException, "Cannot retrieve JANI model, because the symbolic description has a different type.");
+            return boost::get<storm::prism::Program>(modelDescription.get());
+        }
+
         std::vector<std::string> SymbolicModelDescription::getParameterNames() const {
             std::vector<std::string> result;
             if (isJaniModel()) {
@@ -116,15 +127,32 @@ namespace storm {
         }
         
         SymbolicModelDescription SymbolicModelDescription::preprocess(std::string const& constantDefinitionString) const {
+            std::map<storm::expressions::Variable, storm::expressions::Expression> substitution = parseConstantDefinitions(constantDefinitionString);
             if (this->isJaniModel()) {
-                std::map<storm::expressions::Variable, storm::expressions::Expression> substitution = storm::utility::jani::parseConstantDefinitionString(this->asJaniModel(), constantDefinitionString);
                 storm::jani::Model preparedModel = this->asJaniModel().defineUndefinedConstants(substitution).substituteConstants();
                 return SymbolicModelDescription(preparedModel);
             } else if (this->isPrismProgram()) {
-                std::map<storm::expressions::Variable, storm::expressions::Expression> substitution = storm::utility::prism::parseConstantDefinitionString(this->asPrismProgram(), constantDefinitionString);
                 return SymbolicModelDescription(this->asPrismProgram().defineUndefinedConstants(substitution).substituteConstants());
             }
             return *this;
+        }
+        
+        SymbolicModelDescription SymbolicModelDescription::preprocess(std::map<storm::expressions::Variable, storm::expressions::Expression> const& constantDefinitions) const {
+            if (this->isJaniModel()) {
+                storm::jani::Model preparedModel = this->asJaniModel().defineUndefinedConstants(constantDefinitions).substituteConstants();
+                return SymbolicModelDescription(preparedModel);
+            } else if (this->isPrismProgram()) {
+                return SymbolicModelDescription(this->asPrismProgram().defineUndefinedConstants(constantDefinitions).substituteConstants());
+            }
+            return *this;
+        }
+        
+        std::map<storm::expressions::Variable, storm::expressions::Expression> SymbolicModelDescription::parseConstantDefinitions(std::string const& constantDefinitionString) const {
+            if (this->isJaniModel()) {
+                return storm::utility::cli::parseConstantDefinitionString(this->asJaniModel().getManager(), constantDefinitionString);
+            } else {
+                return storm::utility::cli::parseConstantDefinitionString(this->asPrismProgram().getManager(), constantDefinitionString);
+            }
         }
         
         void SymbolicModelDescription::requireNoUndefinedConstants() const {

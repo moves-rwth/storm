@@ -10,7 +10,7 @@
 #ifndef EIGEN_CXX11_TENSOR_TENSOR_REDUCTION_H
 #define EIGEN_CXX11_TENSOR_TENSOR_REDUCTION_H
 
-namespace Eigen {
+namespace StormEigen {
 namespace internal {
 
 
@@ -135,6 +135,6 @@ struct FullReducer<Self, Op, GpuDevice, Vectorizable> {
 
 
 } // end namespace internal
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_CXX11_TENSOR_TENSOR_REDUCTION_H

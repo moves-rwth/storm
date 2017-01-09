@@ -11,7 +11,7 @@
 #include "main.h"
 
 template<typename MatrixType, typename Index, typename Scalar>
-typename Eigen::internal::enable_if<!NumTraits<typename MatrixType::Scalar>::IsComplex,typename MatrixType::Scalar>::type
+typename StormEigen::internal::enable_if<!NumTraits<typename MatrixType::Scalar>::IsComplex,typename MatrixType::Scalar>::type
 block_real_only(const MatrixType &m1, Index r1, Index r2, Index c1, Index c2, const Scalar& s1) {
   // check cwise-Functions:
   VERIFY_IS_APPROX(m1.row(r1).cwiseMax(s1), m1.cwiseMax(s1).row(r1));
@@ -24,7 +24,7 @@ block_real_only(const MatrixType &m1, Index r1, Index r2, Index c1, Index c2, co
 }
 
 template<typename MatrixType, typename Index, typename Scalar>
-typename Eigen::internal::enable_if<NumTraits<typename MatrixType::Scalar>::IsComplex,typename MatrixType::Scalar>::type
+typename StormEigen::internal::enable_if<NumTraits<typename MatrixType::Scalar>::IsComplex,typename MatrixType::Scalar>::type
 block_real_only(const MatrixType &, Index, Index, Index, Index, const Scalar&) {
   return Scalar(0);
 }

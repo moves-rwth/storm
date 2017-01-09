@@ -131,90 +131,90 @@ namespace storm {
         template<typename ValueType>
         bool EigenLinearEquationSolver<ValueType>::solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             // Map the input vectors to Eigen's format.
-            auto eigenX = Eigen::Matrix<ValueType, Eigen::Dynamic, 1>::Map(x.data(), x.size());
-            auto eigenB = Eigen::Matrix<ValueType, Eigen::Dynamic, 1>::Map(b.data(), b.size());
+            auto eigenX = StormEigen::Matrix<ValueType, StormEigen::Dynamic, 1>::Map(x.data(), x.size());
+            auto eigenB = StormEigen::Matrix<ValueType, StormEigen::Dynamic, 1>::Map(b.data(), b.size());
 
             typename EigenLinearEquationSolverSettings<ValueType>::SolutionMethod solutionMethod = this->getSettings().getSolutionMethod();
             if (solutionMethod == EigenLinearEquationSolverSettings<ValueType>::SolutionMethod::SparseLU) {
-                Eigen::SparseLU<Eigen::SparseMatrix<ValueType>, Eigen::COLAMDOrdering<int>> solver;
+                StormEigen::SparseLU<StormEigen::SparseMatrix<ValueType>, StormEigen::COLAMDOrdering<int>> solver;
                 solver.compute(*this->eigenA);
                 solver._solve_impl(eigenB, eigenX);
             } else {
                 typename EigenLinearEquationSolverSettings<ValueType>::Preconditioner preconditioner = this->getSettings().getPreconditioner();
                 if (solutionMethod == EigenLinearEquationSolverSettings<ValueType>::SolutionMethod::BiCGSTAB) {
                     if (preconditioner == EigenLinearEquationSolverSettings<ValueType>::Preconditioner::Ilu) {
-                        Eigen::BiCGSTAB<Eigen::SparseMatrix<ValueType>, Eigen::IncompleteLUT<ValueType>> solver;
+                        StormEigen::BiCGSTAB<StormEigen::SparseMatrix<ValueType>, StormEigen::IncompleteLUT<ValueType>> solver;
                         solver.compute(*this->eigenA);
                         solver.setTolerance(this->getSettings().getPrecision());
                         solver.setMaxIterations(this->getSettings().getMaximalNumberOfIterations());
                         eigenX = solver.solveWithGuess(eigenB, eigenX);
-                        return solver.info() == Eigen::ComputationInfo::Success;
+                        return solver.info() == StormEigen::ComputationInfo::Success;
                     } else if (preconditioner == EigenLinearEquationSolverSettings<ValueType>::Preconditioner::Diagonal) {
-                        Eigen::BiCGSTAB<Eigen::SparseMatrix<ValueType>, Eigen::DiagonalPreconditioner<ValueType>> solver;
+                        StormEigen::BiCGSTAB<StormEigen::SparseMatrix<ValueType>, StormEigen::DiagonalPreconditioner<ValueType>> solver;
                         solver.setTolerance(this->getSettings().getPrecision());
                         solver.setMaxIterations(this->getSettings().getMaximalNumberOfIterations());
                         solver.compute(*this->eigenA);
                         eigenX = solver.solveWithGuess(eigenB, eigenX);
-                        return solver.info() == Eigen::ComputationInfo::Success;
+                        return solver.info() == StormEigen::ComputationInfo::Success;
                     } else {
-                        Eigen::BiCGSTAB<Eigen::SparseMatrix<ValueType>, Eigen::IdentityPreconditioner> solver;
+                        StormEigen::BiCGSTAB<StormEigen::SparseMatrix<ValueType>, StormEigen::IdentityPreconditioner> solver;
                         solver.setTolerance(this->getSettings().getPrecision());
                         solver.setMaxIterations(this->getSettings().getMaximalNumberOfIterations());
                         solver.compute(*this->eigenA);
                         eigenX = solver.solveWithGuess(eigenB, eigenX);
-                        return solver.info() == Eigen::ComputationInfo::Success;
+                        return solver.info() == StormEigen::ComputationInfo::Success;
                     }
                 } else if (solutionMethod == EigenLinearEquationSolverSettings<ValueType>::SolutionMethod::DGMRES) {
                     if (preconditioner == EigenLinearEquationSolverSettings<ValueType>::Preconditioner::Ilu) {
-                        Eigen::DGMRES<Eigen::SparseMatrix<ValueType>, Eigen::IncompleteLUT<ValueType>> solver;
+                        StormEigen::DGMRES<StormEigen::SparseMatrix<ValueType>, StormEigen::IncompleteLUT<ValueType>> solver;
                         solver.setTolerance(this->getSettings().getPrecision());
                         solver.setMaxIterations(this->getSettings().getMaximalNumberOfIterations());
                         solver.set_restart(this->getSettings().getNumberOfIterationsUntilRestart());
                         solver.compute(*this->eigenA);
                         eigenX = solver.solveWithGuess(eigenB, eigenX);
-                        return solver.info() == Eigen::ComputationInfo::Success;
+                        return solver.info() == StormEigen::ComputationInfo::Success;
                     } else if (preconditioner == EigenLinearEquationSolverSettings<ValueType>::Preconditioner::Diagonal) {
-                        Eigen::DGMRES<Eigen::SparseMatrix<ValueType>, Eigen::DiagonalPreconditioner<ValueType>> solver;
+                        StormEigen::DGMRES<StormEigen::SparseMatrix<ValueType>, StormEigen::DiagonalPreconditioner<ValueType>> solver;
                         solver.setTolerance(this->getSettings().getPrecision());
                         solver.setMaxIterations(this->getSettings().getMaximalNumberOfIterations());
                         solver.set_restart(this->getSettings().getNumberOfIterationsUntilRestart());
                         solver.compute(*this->eigenA);
                         eigenX = solver.solveWithGuess(eigenB, eigenX);
-                        return solver.info() == Eigen::ComputationInfo::Success;
+                        return solver.info() == StormEigen::ComputationInfo::Success;
                     } else {
-                        Eigen::DGMRES<Eigen::SparseMatrix<ValueType>, Eigen::IdentityPreconditioner> solver;
+                        StormEigen::DGMRES<StormEigen::SparseMatrix<ValueType>, StormEigen::IdentityPreconditioner> solver;
                         solver.setTolerance(this->getSettings().getPrecision());
                         solver.setMaxIterations(this->getSettings().getMaximalNumberOfIterations());
                         solver.set_restart(this->getSettings().getNumberOfIterationsUntilRestart());
                         solver.compute(*this->eigenA);
                         eigenX = solver.solveWithGuess(eigenB, eigenX);
-                        return solver.info() == Eigen::ComputationInfo::Success;
+                        return solver.info() == StormEigen::ComputationInfo::Success;
                     }
                 } else if (solutionMethod == EigenLinearEquationSolverSettings<ValueType>::SolutionMethod::GMRES) {
                     if (preconditioner == EigenLinearEquationSolverSettings<ValueType>::Preconditioner::Ilu) {
-                        Eigen::GMRES<Eigen::SparseMatrix<ValueType>, Eigen::IncompleteLUT<ValueType>> solver;
+                        StormEigen::GMRES<StormEigen::SparseMatrix<ValueType>, StormEigen::IncompleteLUT<ValueType>> solver;
                         solver.setTolerance(this->getSettings().getPrecision());
                         solver.setMaxIterations(this->getSettings().getMaximalNumberOfIterations());
                         solver.set_restart(this->getSettings().getNumberOfIterationsUntilRestart());
                         solver.compute(*this->eigenA);
                         eigenX = solver.solveWithGuess(eigenB, eigenX);
-                        return solver.info() == Eigen::ComputationInfo::Success;
+                        return solver.info() == StormEigen::ComputationInfo::Success;
                     } else if (preconditioner == EigenLinearEquationSolverSettings<ValueType>::Preconditioner::Diagonal) {
-                        Eigen::GMRES<Eigen::SparseMatrix<ValueType>, Eigen::DiagonalPreconditioner<ValueType>> solver;
+                        StormEigen::GMRES<StormEigen::SparseMatrix<ValueType>, StormEigen::DiagonalPreconditioner<ValueType>> solver;
                         solver.setTolerance(this->getSettings().getPrecision());
                         solver.setMaxIterations(this->getSettings().getMaximalNumberOfIterations());
                         solver.set_restart(this->getSettings().getNumberOfIterationsUntilRestart());
                         solver.compute(*this->eigenA);
                         eigenX = solver.solveWithGuess(eigenB, eigenX);
-                        return solver.info() == Eigen::ComputationInfo::Success;
+                        return solver.info() == StormEigen::ComputationInfo::Success;
                     } else {
-                        Eigen::GMRES<Eigen::SparseMatrix<ValueType>, Eigen::IdentityPreconditioner> solver;
+                        StormEigen::GMRES<StormEigen::SparseMatrix<ValueType>, StormEigen::IdentityPreconditioner> solver;
                         solver.setTolerance(this->getSettings().getPrecision());
                         solver.setMaxIterations(this->getSettings().getMaximalNumberOfIterations());
                         solver.set_restart(this->getSettings().getNumberOfIterationsUntilRestart());
                         solver.compute(*this->eigenA);
                         eigenX = solver.solveWithGuess(eigenB, eigenX);
-                        return solver.info() == Eigen::ComputationInfo::Success;
+                        return solver.info() == StormEigen::ComputationInfo::Success;
                     }
                 }
             }
@@ -224,14 +224,14 @@ namespace storm {
         template<typename ValueType>
         void EigenLinearEquationSolver<ValueType>::multiply(std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const {
             // Typedef the map-type so we don't have to spell it out.
-            typedef decltype(Eigen::Matrix<ValueType, Eigen::Dynamic, 1>::Map(b->data(), b->size())) MapType;
+            typedef decltype(StormEigen::Matrix<ValueType, StormEigen::Dynamic, 1>::Map(b->data(), b->size())) MapType;
 
-            auto eigenX = Eigen::Matrix<ValueType, Eigen::Dynamic, 1>::Map(x.data(), x.size());
-            auto eigenResult = Eigen::Matrix<ValueType, Eigen::Dynamic, 1>::Map(result.data(), result.size());
+            auto eigenX = StormEigen::Matrix<ValueType, StormEigen::Dynamic, 1>::Map(x.data(), x.size());
+            auto eigenResult = StormEigen::Matrix<ValueType, StormEigen::Dynamic, 1>::Map(result.data(), result.size());
 
             std::unique_ptr<MapType> eigenB;
             if (b != nullptr) {
-                eigenB = std::make_unique<MapType>(Eigen::Matrix<ValueType, Eigen::Dynamic, 1>::Map(b->data(), b->size()));
+                eigenB = std::make_unique<MapType>(StormEigen::Matrix<ValueType, StormEigen::Dynamic, 1>::Map(b->data(), b->size()));
             }
             
             if (&x != &result) {
@@ -274,26 +274,26 @@ namespace storm {
         template<>
         bool EigenLinearEquationSolver<storm::RationalNumber>::solveEquations(std::vector<storm::RationalNumber>& x, std::vector<storm::RationalNumber> const& b) const {
             // Map the input vectors to Eigen's format.
-            auto eigenX = Eigen::Matrix<storm::RationalNumber, Eigen::Dynamic, 1>::Map(x.data(), x.size());
-            auto eigenB = Eigen::Matrix<storm::RationalNumber, Eigen::Dynamic, 1>::Map(b.data(), b.size());
+            auto eigenX = StormEigen::Matrix<storm::RationalNumber, StormEigen::Dynamic, 1>::Map(x.data(), x.size());
+            auto eigenB = StormEigen::Matrix<storm::RationalNumber, StormEigen::Dynamic, 1>::Map(b.data(), b.size());
                         
-            Eigen::SparseLU<Eigen::SparseMatrix<storm::RationalNumber>, Eigen::COLAMDOrdering<int>> solver;
+            StormEigen::SparseLU<StormEigen::SparseMatrix<storm::RationalNumber>, StormEigen::COLAMDOrdering<int>> solver;
             solver.compute(*eigenA);
             solver._solve_impl(eigenB, eigenX);
-            return solver.info() == Eigen::ComputationInfo::Success;
+            return solver.info() == StormEigen::ComputationInfo::Success;
         }
         
         // Specialization for storm::RationalFunction
         template<>
         bool EigenLinearEquationSolver<storm::RationalFunction>::solveEquations(std::vector<storm::RationalFunction>& x, std::vector<storm::RationalFunction> const& b) const {
             // Map the input vectors to Eigen's format.
-            auto eigenX = Eigen::Matrix<storm::RationalFunction, Eigen::Dynamic, 1>::Map(x.data(), x.size());
-            auto eigenB = Eigen::Matrix<storm::RationalFunction, Eigen::Dynamic, 1>::Map(b.data(), b.size());
+            auto eigenX = StormEigen::Matrix<storm::RationalFunction, StormEigen::Dynamic, 1>::Map(x.data(), x.size());
+            auto eigenB = StormEigen::Matrix<storm::RationalFunction, StormEigen::Dynamic, 1>::Map(b.data(), b.size());
             
-            Eigen::SparseLU<Eigen::SparseMatrix<storm::RationalFunction>, Eigen::COLAMDOrdering<int>> solver;
+            StormEigen::SparseLU<StormEigen::SparseMatrix<storm::RationalFunction>, StormEigen::COLAMDOrdering<int>> solver;
             solver.compute(*eigenA);
             solver._solve_impl(eigenB, eigenX);
-            return solver.info() == Eigen::ComputationInfo::Success;
+            return solver.info() == StormEigen::ComputationInfo::Success;
         }
 #endif
 

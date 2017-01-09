@@ -1,4 +1,4 @@
-namespace Eigen {
+namespace StormEigen {
 
 /** \page TopicAssertions Assertions
 
@@ -41,7 +41,7 @@ One can easily come up with static assertions without messages, such as:
   switch(0) { case 0: case x:; }
 \endcode
 
-However, the example above obviously cannot tell why the assertion failed. Therefore, we define a \c struct in namespace Eigen::internal to handle available messages.
+However, the example above obviously cannot tell why the assertion failed. Therefore, we define a \c struct in namespace StormEigen::internal to handle available messages.
 
 \code
 template<bool condition>
@@ -58,7 +58,7 @@ struct static_assertion<true>
 };
 \endcode
 
-And then, we define EIGEN_STATIC_ASSERT(CONDITION,MSG) to access Eigen::internal::static_assertion<bool(CONDITION)>::MSG. If the condition evaluates into \c false, your compiler displays a lot of messages explaining there is no MSG in static_assert<false>. Nevertheless, this is \a not in what we are interested. As you can see, all members of static_assert<true> are ALL_CAPS_AND_THEY_ARE_SHOUTING.
+And then, we define EIGEN_STATIC_ASSERT(CONDITION,MSG) to access StormEigen::internal::static_assertion<bool(CONDITION)>::MSG. If the condition evaluates into \c false, your compiler displays a lot of messages explaining there is no MSG in static_assert<false>. Nevertheless, this is \a not in what we are interested. As you can see, all members of static_assert<true> are ALL_CAPS_AND_THEY_ARE_SHOUTING.
 
 \warning
 When using this macro, MSG should be a member of static_assertion<true>, or the static assertion \b always fails.

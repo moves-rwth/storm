@@ -10,7 +10,7 @@
 #ifndef EIGEN_CXX11_TENSOR_TENSOR_ASSIGN_H
 #define EIGEN_CXX11_TENSOR_TENSOR_ASSIGN_H
 
-namespace Eigen {
+namespace StormEigen {
 
 /** \class TensorAssign
   * \ingroup CXX11_Tensor_Module
@@ -42,7 +42,7 @@ struct traits<TensorAssignOp<LhsXprType, RhsXprType> >
 };
 
 template<typename LhsXprType, typename RhsXprType>
-struct eval<TensorAssignOp<LhsXprType, RhsXprType>, Eigen::Dense>
+struct eval<TensorAssignOp<LhsXprType, RhsXprType>, StormEigen::Dense>
 {
   typedef const TensorAssignOp<LhsXprType, RhsXprType>& type;
 };
@@ -61,14 +61,14 @@ template<typename LhsXprType, typename RhsXprType>
 class TensorAssignOp : public TensorBase<TensorAssignOp<LhsXprType, RhsXprType> >
 {
   public:
-  typedef typename Eigen::internal::traits<TensorAssignOp>::Scalar Scalar;
-  typedef typename Eigen::internal::traits<TensorAssignOp>::Packet Packet;
-  typedef typename Eigen::NumTraits<Scalar>::Real RealScalar;
+  typedef typename StormEigen::internal::traits<TensorAssignOp>::Scalar Scalar;
+  typedef typename StormEigen::internal::traits<TensorAssignOp>::Packet Packet;
+  typedef typename StormEigen::NumTraits<Scalar>::Real RealScalar;
   typedef typename LhsXprType::CoeffReturnType CoeffReturnType;
   typedef typename LhsXprType::PacketReturnType PacketReturnType;
-  typedef typename Eigen::internal::nested<TensorAssignOp>::type Nested;
-  typedef typename Eigen::internal::traits<TensorAssignOp>::StorageKind StorageKind;
-  typedef typename Eigen::internal::traits<TensorAssignOp>::Index Index;
+  typedef typename StormEigen::internal::nested<TensorAssignOp>::type Nested;
+  typedef typename StormEigen::internal::traits<TensorAssignOp>::StorageKind StorageKind;
+  typedef typename StormEigen::internal::traits<TensorAssignOp>::Index Index;
 
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TensorAssignOp(LhsXprType& lhs, const RhsXprType& rhs)
       : m_lhs_xpr(lhs), m_rhs_xpr(rhs) {}

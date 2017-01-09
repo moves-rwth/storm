@@ -18,7 +18,7 @@
   #include <GL/gl.h>
 #endif
 
-namespace Eigen {
+namespace StormEigen {
 
 /**
   * \defgroup OpenGLSUpport_Module OpenGL Support module
@@ -63,7 +63,7 @@ namespace internal {                                                            
   };                                                                                                                \
 }                                                                                                                   \
                                                                                                                     \
-template<typename Derived> inline void FUNC(const Eigen::DenseBase<Derived>& p) {                                   \
+template<typename Derived> inline void FUNC(const StormEigen::DenseBase<Derived>& p) {                                   \
   EIGEN_CAT(EIGEN_CAT(internal::gl_,FUNC),_impl)<Derived>::run(p.derived());                                        \
 }
 
@@ -215,7 +215,7 @@ namespace internal {                                                            
   };                                                                                                                            \
 }                                                                                                                               \
                                                                                                                                 \
-template<typename Derived> inline void FUNC(ARG1 a,EIGEN_GL_EVAL(EIGEN_GL_MAKE_CONST_##CONST) Eigen::DenseBase<Derived>& p) {   \
+template<typename Derived> inline void FUNC(ARG1 a,EIGEN_GL_EVAL(EIGEN_GL_MAKE_CONST_##CONST) StormEigen::DenseBase<Derived>& p) {   \
   EIGEN_CAT(EIGEN_CAT(internal::gl_,FUNC),_impl)<Derived>::run(a,p.derived());                                                  \
 }
 

@@ -31,7 +31,7 @@
 #ifndef SPARSE_COLETREE_H
 #define SPARSE_COLETREE_H
 
-namespace Eigen {
+namespace StormEigen {
 
 namespace internal {
 
@@ -201,6 +201,6 @@ void treePostorder(typename IndexVector::Scalar n, IndexVector& parent, IndexVec
 
 } // end namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // SPARSE_COLETREE_H

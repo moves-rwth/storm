@@ -10,7 +10,7 @@
 #ifndef EIGEN_CXX11_TENSOR_TENSOR_SHUFFLING_H
 #define EIGEN_CXX11_TENSOR_TENSOR_SHUFFLING_H
 
-namespace Eigen {
+namespace StormEigen {
 
 /** \class TensorShuffling
   * \ingroup CXX11_Tensor_Module
@@ -35,7 +35,7 @@ struct traits<TensorShufflingOp<Shuffle, XprType> > : public traits<XprType>
 };
 
 template<typename Shuffle, typename XprType>
-struct eval<TensorShufflingOp<Shuffle, XprType>, Eigen::Dense>
+struct eval<TensorShufflingOp<Shuffle, XprType>, StormEigen::Dense>
 {
   typedef const TensorShufflingOp<Shuffle, XprType>& type;
 };
@@ -54,14 +54,14 @@ template<typename Shuffle, typename XprType>
 class TensorShufflingOp : public TensorBase<TensorShufflingOp<Shuffle, XprType> >
 {
   public:
-  typedef typename Eigen::internal::traits<TensorShufflingOp>::Scalar Scalar;
-  typedef typename Eigen::internal::traits<TensorShufflingOp>::Packet Packet;
-  typedef typename Eigen::NumTraits<Scalar>::Real RealScalar;
+  typedef typename StormEigen::internal::traits<TensorShufflingOp>::Scalar Scalar;
+  typedef typename StormEigen::internal::traits<TensorShufflingOp>::Packet Packet;
+  typedef typename StormEigen::NumTraits<Scalar>::Real RealScalar;
   typedef typename XprType::CoeffReturnType CoeffReturnType;
   typedef typename XprType::PacketReturnType PacketReturnType;
-  typedef typename Eigen::internal::nested<TensorShufflingOp>::type Nested;
-  typedef typename Eigen::internal::traits<TensorShufflingOp>::StorageKind StorageKind;
-  typedef typename Eigen::internal::traits<TensorShufflingOp>::Index Index;
+  typedef typename StormEigen::internal::nested<TensorShufflingOp>::type Nested;
+  typedef typename StormEigen::internal::traits<TensorShufflingOp>::StorageKind StorageKind;
+  typedef typename StormEigen::internal::traits<TensorShufflingOp>::Index Index;
 
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TensorShufflingOp(const XprType& expr, const Shuffle& shuffle)
       : m_xpr(expr), m_shuffle(shuffle) {}
@@ -254,6 +254,6 @@ struct TensorEvaluator<TensorShufflingOp<Shuffle, ArgType>, Device>
 };
 
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_CXX11_TENSOR_TENSOR_SHUFFLING_H

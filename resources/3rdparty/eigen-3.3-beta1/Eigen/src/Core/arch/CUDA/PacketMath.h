@@ -10,7 +10,7 @@
 #ifndef EIGEN_PACKET_MATH_CUDA_H
 #define EIGEN_PACKET_MATH_CUDA_H
 
-namespace Eigen {
+namespace StormEigen {
 
 namespace internal {
 
@@ -303,7 +303,7 @@ ptranspose(PacketBlock<double2,2>& kernel) {
 
 } // end namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 
 #endif // EIGEN_PACKET_MATH_CUDA_H

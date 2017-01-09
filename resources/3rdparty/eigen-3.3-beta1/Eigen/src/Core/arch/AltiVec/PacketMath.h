@@ -10,7 +10,7 @@
 #ifndef EIGEN_PACKET_MATH_ALTIVEC_H
 #define EIGEN_PACKET_MATH_ALTIVEC_H
 
-namespace Eigen {
+namespace StormEigen {
 
 namespace internal {
 
@@ -934,6 +934,6 @@ ptranspose(PacketBlock<Packet2d,2>& kernel) {
 #endif // __VSX__
 } // end namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_PACKET_MATH_ALTIVEC_H

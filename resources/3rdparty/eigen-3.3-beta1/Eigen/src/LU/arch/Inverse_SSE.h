@@ -27,7 +27,7 @@
 #ifndef EIGEN_INVERSE_SSE_H
 #define EIGEN_INVERSE_SSE_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 namespace internal {
 
@@ -329,6 +329,6 @@ struct compute_inverse_size4<Architecture::SSE, double, MatrixType, ResultType>
 
 } // end namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_INVERSE_SSE_H

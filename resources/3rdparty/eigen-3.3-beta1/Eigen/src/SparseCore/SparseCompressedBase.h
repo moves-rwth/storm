@@ -10,7 +10,7 @@
 #ifndef EIGEN_SPARSE_COMPRESSED_BASE_H
 #define EIGEN_SPARSE_COMPRESSED_BASE_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 template<typename Derived> class SparseCompressedBase;
   
@@ -37,8 +37,8 @@ class SparseCompressedBase
     
   protected:
     typedef typename Base::IndexVector IndexVector;
-    Eigen::Map<IndexVector> innerNonZeros() { return Eigen::Map<IndexVector>(innerNonZeroPtr(), isCompressed()?0:derived().outerSize()); }
-    const  Eigen::Map<const IndexVector> innerNonZeros() const { return Eigen::Map<const IndexVector>(innerNonZeroPtr(), isCompressed()?0:derived().outerSize()); }
+    StormEigen::Map<IndexVector> innerNonZeros() { return StormEigen::Map<IndexVector>(innerNonZeroPtr(), isCompressed()?0:derived().outerSize()); }
+    const  StormEigen::Map<const IndexVector> innerNonZeros() const { return StormEigen::Map<const IndexVector>(innerNonZeroPtr(), isCompressed()?0:derived().outerSize()); }
         
   public:
     
@@ -272,6 +272,6 @@ struct evaluator<SparseCompressedBase<Derived> >
 
 }
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_SPARSE_COMPRESSED_BASE_H

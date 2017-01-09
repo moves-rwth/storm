@@ -10,7 +10,7 @@
 #ifndef EIGEN_TRIANGULARMATRIXVECTOR_H
 #define EIGEN_TRIANGULARMATRIXVECTOR_H
 
-namespace Eigen {
+namespace StormEigen {
 
 namespace internal {
 
@@ -331,6 +331,6 @@ template<int Mode> struct trmv_selector<Mode,RowMajor>
 
 } // end namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_TRIANGULARMATRIXVECTOR_H

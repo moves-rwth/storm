@@ -11,7 +11,7 @@
 #ifndef EIGEN_BLOCK_H
 #define EIGEN_BLOCK_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 /** \class Block
   * \ingroup Core_Module
@@ -431,6 +431,6 @@ class BlockImpl_dense<XprType,BlockRows,BlockCols, InnerPanel,true>
 
 } // end namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_BLOCK_H

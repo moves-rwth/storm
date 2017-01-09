@@ -13,7 +13,7 @@
 #ifndef EIGEN_NUMERICAL_DIFF_H
 #define EIGEN_NUMERICAL_DIFF_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 enum NumericalDiffMode {
     Forward,
@@ -123,7 +123,7 @@ private:
     NumericalDiff& operator=(const NumericalDiff&);
 };
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 //vim: ai ts=4 sts=4 et sw=4
 #endif // EIGEN_NUMERICAL_DIFF_H

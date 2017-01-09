@@ -10,7 +10,7 @@
 #ifndef EIGEN_SPARSELU_GEMM_KERNEL_H
 #define EIGEN_SPARSELU_GEMM_KERNEL_H
 
-namespace Eigen {
+namespace StormEigen {
 
 namespace internal {
 
@@ -25,7 +25,7 @@ template<typename Scalar>
 EIGEN_DONT_INLINE
 void sparselu_gemm(Index m, Index n, Index d, const Scalar* A, Index lda, const Scalar* B, Index ldb, Scalar* C, Index ldc)
 {
-  using namespace Eigen::internal;
+  using namespace StormEigen::internal;
   
   typedef typename packet_traits<Scalar>::type Packet;
   enum {
@@ -274,6 +274,6 @@ void sparselu_gemm(Index m, Index n, Index d, const Scalar* A, Index lda, const 
 
 } // namespace internal
 
-} // namespace Eigen
+} // namespace StormEigen
 
 #endif // EIGEN_SPARSELU_GEMM_KERNEL_H

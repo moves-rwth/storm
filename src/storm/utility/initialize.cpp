@@ -37,7 +37,7 @@ namespace storm {
         void setLogLevel(l3pp::LogLevel level) {
             l3pp::Logger::getRootLogger()->setLevel(level);
             if (level <= l3pp::LogLevel::DEBUG) {
-#if STORM_LOG_DISABLE_DEBUG
+#ifdef STORM_LOG_DISABLE_DEBUG
                 std::cout << "***** warning ***** requested loglevel is not compiled\n";
 #endif
             }

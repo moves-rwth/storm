@@ -1,4 +1,4 @@
-namespace Eigen {
+namespace StormEigen {
 /** \eigenManualPage TopicSparseSystems Solving Sparse Linear Systems
 In Eigen, there are several methods available to solve linear systems when the coefficient matrix is sparse. Because of the special representation of this class of matrices, special care should be taken in order to get a good performance. See \ref TutorialSparse for a detailed introduction about sparse matrices in Eigen. This page lists the sparse solvers available in Eigen. The main steps that are common to all these linear solvers are introduced as well. Depending on the properties of the matrix, the desired accuracy, the end-user is able to tune those steps in order to improve the performance of its code. Note that it is not required to know deeply what's hiding behind these steps: the last section presents a benchmark routine that can be easily used to get an insight on the performance of all the available solvers. 
 
@@ -112,7 +112,7 @@ For \c SPD solvers, a second optional template argument allows to specify which 
 \code
 #include <Eigen/IterativeLinearSolvers>
 
-ConjugateGradient<SparseMatrix<double>, Eigen::Upper> solver;
+ConjugateGradient<SparseMatrix<double>, StormEigen::Upper> solver;
 x = solver.compute(A).solve(b);
 \endcode
 In the above example, only the upper triangular part of the input matrix A is considered for solving. The opposite triangle might either be empty or contain arbitrary values.
@@ -180,9 +180,9 @@ To export your matrices and right-hand-side vectors in the matrix-market format,
 \code
 #include <unsupported/Eigen/SparseExtra>
 ...
-Eigen::saveMarket(A, "filename.mtx");
-Eigen::saveMarket(A, "filename_SPD.mtx", Eigen::Symmetric); // if A is symmetric-positive-definite
-Eigen::saveMarketVector(B, "filename_b.mtx");
+StormEigen::saveMarket(A, "filename.mtx");
+StormEigen::saveMarket(A, "filename_SPD.mtx", StormEigen::Symmetric); // if A is symmetric-positive-definite
+StormEigen::saveMarketVector(B, "filename_b.mtx");
 \endcode
 
 The following table gives an example of XML statistics from several Eigen built-in and external solvers. 

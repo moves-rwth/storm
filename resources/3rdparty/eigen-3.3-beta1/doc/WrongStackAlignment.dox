@@ -1,4 +1,4 @@
-namespace Eigen {
+namespace StormEigen {
 
 /** \eigenManualPage TopicWrongStackAlignment Compiler making a wrong assumption on stack alignment
 
@@ -12,7 +12,7 @@ By default, in a function like this,
 \code
 void foo()
 {
-  Eigen::Quaternionf q;
+  StormEigen::Quaternionf q;
   //...
 }
 \endcode
@@ -28,7 +28,7 @@ A local solution is to mark such a function with this attribute:
 \code
 __attribute__((force_align_arg_pointer)) void foo()
 {
-  Eigen::Quaternionf q;
+  StormEigen::Quaternionf q;
   //...
 }
 \endcode

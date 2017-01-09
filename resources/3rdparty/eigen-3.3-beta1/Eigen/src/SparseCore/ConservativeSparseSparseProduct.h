@@ -10,7 +10,7 @@
 #ifndef EIGEN_CONSERVATIVESPARSESPARSEPRODUCT_H
 #define EIGEN_CONSERVATIVESPARSESPARSEPRODUCT_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 namespace internal {
 
@@ -340,6 +340,6 @@ struct sparse_sparse_to_dense_product_selector<Lhs,Rhs,ResultType,RowMajor,RowMa
 
 } // end namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_CONSERVATIVESPARSESPARSEPRODUCT_H

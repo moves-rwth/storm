@@ -11,7 +11,7 @@
 #define EIGEN_CXX11_TENSOR_TENSOR_INTDIV_H
 
 
-namespace Eigen {
+namespace StormEigen {
 
 /** \internal
   *
@@ -224,6 +224,6 @@ static EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE T operator / (const T& numerator, c
 
 
 } // end namespace internal
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_CXX11_TENSOR_TENSOR_INTDIV_H

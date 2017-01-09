@@ -12,7 +12,7 @@
 
 #include <Eigen/Core>
 
-namespace Eigen
+namespace StormEigen
 {
     template <typename Scalar, int Dim, int Degree = Dynamic> class Spline;
 

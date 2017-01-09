@@ -825,11 +825,6 @@ namespace storm {
                 }
             }
             
-            // As a sanity check, we make sure that the given mapping does not contain any definitions for identifiers
-            // that are not undefined constants.
-            for (auto const& constantExpressionPair : constantDefinitions) {
-                STORM_LOG_THROW(definedUndefinedConstants.find(constantExpressionPair.first) != definedUndefinedConstants.end(), storm::exceptions::InvalidOperationException, "Unable to define non-existant constant '" << constantExpressionPair.first.getName() << "'.");
-            }
             return result;
         }
         

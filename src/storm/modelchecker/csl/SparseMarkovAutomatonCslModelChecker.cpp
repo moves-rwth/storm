@@ -53,16 +53,19 @@ namespace storm {
             STORM_LOG_THROW(this->getModel().isClosed(), storm::exceptions::InvalidPropertyException, "Unable to compute time-bounded reachability probabilities in non-closed Markov automaton.");
             std::unique_ptr<CheckResult> rightResultPointer = this->check(pathFormula.getRightSubformula());
             ExplicitQualitativeCheckResult const& rightResult = rightResultPointer->asExplicitQualitativeCheckResult();
+
+            STORM_LOG_THROW(!pathFormula.isStepBounded(), storm::exceptions::NotImplementedException, "Currently step-bounded properties on MAs are not supported.");
             double lowerBound = 0;
             double upperBound = 0;
-            if (!pathFormula.hasDiscreteTimeBound()) {
-                std::pair<double, double> const& intervalBounds =  pathFormula.getIntervalBounds();
-                lowerBound = intervalBounds.first;
-                upperBound = intervalBounds.second;
-            } else {
-                upperBound = pathFormula.getDiscreteTimeBound();
+            if (pathFormula.hasLowerBound()) {
+                lowerBound = pathFormula.getLowerBound<double>();
             }
-            
+            if (pathFormula.hasUpperBound()) {
+                upperBound = pathFormula.getUpperBound<double>();
+            } else {
+                upperBound = storm::utility::infinity<double>();
+            }
+
             std::vector<ValueType> result = storm::modelchecker::helper::SparseMarkovAutomatonCslHelper<ValueType>::computeBoundedUntilProbabilities(checkTask.getOptimizationDirection(), this->getModel().getTransitionMatrix(), this->getModel().getExitRates(), this->getModel().getMarkovianStates(), rightResult.getTruthValuesVector(), std::make_pair(lowerBound, upperBound), *minMaxLinearEquationSolverFactory);
             return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(result)));
         }

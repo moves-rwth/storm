@@ -23,7 +23,7 @@ extern "C"
   struct C_Map_MatrixXd {};
 
   // the C_MatrixXd class, wraps some of the functionality
-  // of Eigen::MatrixXd.
+  // of StormEigen::MatrixXd.
   struct C_MatrixXd* MatrixXd_new(int rows, int cols);
   void    MatrixXd_delete     (struct C_MatrixXd *m);
   double* MatrixXd_data       (struct C_MatrixXd *m);
@@ -46,7 +46,7 @@ extern "C"
                                struct C_MatrixXd *result);
   
   // the C_Map_MatrixXd class, wraps some of the functionality
-  // of Eigen::Map<MatrixXd>
+  // of StormEigen::Map<MatrixXd>
   struct C_Map_MatrixXd* Map_MatrixXd_new(double *array, int rows, int cols);
   void   Map_MatrixXd_delete     (struct C_Map_MatrixXd *m);
   void   Map_MatrixXd_set_zero   (struct C_Map_MatrixXd *m);

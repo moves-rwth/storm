@@ -105,7 +105,7 @@ void test_schur_real()
   CALL_SUBTEST_1(( schur<Matrix4f>() ));
   CALL_SUBTEST_2(( schur<MatrixXd>(internal::random<int>(1,EIGEN_TEST_MAX_SIZE/4)) ));
   CALL_SUBTEST_3(( schur<Matrix<float, 1, 1> >() ));
-  CALL_SUBTEST_4(( schur<Matrix<double, 3, 3, Eigen::RowMajor> >() ));
+  CALL_SUBTEST_4(( schur<Matrix<double, 3, 3, StormEigen::RowMajor> >() ));
 
   // Test problem size constructors
   CALL_SUBTEST_5(RealSchur<MatrixXf>(10));

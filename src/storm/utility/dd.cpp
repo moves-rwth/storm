@@ -11,6 +11,9 @@ namespace storm {
             
             template <storm::dd::DdType Type>
             storm::dd::Bdd<Type> computeReachableStates(storm::dd::Bdd<Type> const& initialStates, storm::dd::Bdd<Type> const& transitions, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables) {
+
+                STORM_LOG_TRACE("Computing reachable states: transition matrix BDD has " << transitions.getNodeCount() << " node(s) and " << transitions.getNonZeroCount() << " non-zero(s), " << initialStates.getNonZeroCount() << " initial states).");
+
                 auto start = std::chrono::high_resolution_clock::now();
                 storm::dd::Bdd<Type> reachableStates = initialStates;
                 
@@ -30,6 +33,7 @@ namespace storm {
                     reachableStates |= newReachableStates;
 
                     ++iteration;
+                    STORM_LOG_TRACE("Iteration " << iteration << " of reachability computation completed: " << reachableStates.getNonZeroCount() << " reachable states found.");
                 } while (changed);
 
                 auto end = std::chrono::high_resolution_clock::now();

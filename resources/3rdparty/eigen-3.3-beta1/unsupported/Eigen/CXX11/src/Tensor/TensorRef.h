@@ -10,7 +10,7 @@
 #ifndef EIGEN_CXX11_TENSOR_TENSOR_REF_H
 #define EIGEN_CXX11_TENSOR_TENSOR_REF_H
 
-namespace Eigen {
+namespace StormEigen {
 
 namespace internal {
 
@@ -121,7 +121,7 @@ template<typename PlainObjectType> class TensorRef : public TensorBase<TensorRef
   public:
     typedef TensorRef<PlainObjectType> Self;
     typedef typename PlainObjectType::Base Base;
-    typedef typename Eigen::internal::nested<Self>::type Nested;
+    typedef typename StormEigen::internal::nested<Self>::type Nested;
     typedef typename internal::traits<PlainObjectType>::StorageKind StorageKind;
     typedef typename internal::traits<PlainObjectType>::Index Index;
     typedef typename internal::traits<PlainObjectType>::Scalar Scalar;
@@ -424,6 +424,6 @@ struct TensorEvaluator<TensorRef<Derived>, Device> : public TensorEvaluator<cons
 
 
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_CXX11_TENSOR_TENSOR_REF_H

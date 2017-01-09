@@ -15,20 +15,20 @@
 #include <map>
 #include <set>
 
-using Eigen::Tensor;
-using Eigen::SGroup;
-using Eigen::DynamicSGroup;
-using Eigen::StaticSGroup;
-using Eigen::Symmetry;
-using Eigen::AntiSymmetry;
-using Eigen::Hermiticity;
-using Eigen::AntiHermiticity;
+using StormEigen::Tensor;
+using StormEigen::SGroup;
+using StormEigen::DynamicSGroup;
+using StormEigen::StaticSGroup;
+using StormEigen::Symmetry;
+using StormEigen::AntiSymmetry;
+using StormEigen::Hermiticity;
+using StormEigen::AntiHermiticity;
 
-using Eigen::NegationFlag;
-using Eigen::ConjugationFlag;
-using Eigen::GlobalZeroFlag;
-using Eigen::GlobalRealFlag;
-using Eigen::GlobalImagFlag;
+using StormEigen::NegationFlag;
+using StormEigen::ConjugationFlag;
+using StormEigen::GlobalZeroFlag;
+using StormEigen::GlobalRealFlag;
+using StormEigen::GlobalImagFlag;
 
 // helper function to determine if the compiler intantiated a static
 // or dynamic symmetry group

@@ -1,11 +1,11 @@
-namespace Eigen {
+namespace StormEigen {
 
 /** \eigenManualPage TopicUnalignedArrayAssert Explanation of the assertion on unaligned arrays
 
 Hello! You are seeing this webpage because your program terminated on an assertion failure like this one:
 <pre>
 my_program: path/to/eigen/Eigen/src/Core/DenseStorage.h:44:
-Eigen::internal::matrix_array<T, Size, MatrixOptions, Align>::internal::matrix_array()
+StormEigen::internal::matrix_array<T, Size, MatrixOptions, Align>::internal::matrix_array()
 [with T = double, int Size = 2, int MatrixOptions = 2, bool Align = true]:
 Assertion `(reinterpret_cast<size_t>(array) & 0xf) == 0 && "this assertion
 is explained here: http://eigen.tuxfamily.org/dox/UnalignedArrayAssert.html
@@ -35,7 +35,7 @@ If you have code like this,
 class Foo
 {
   //...
-  Eigen::Vector2d v;
+  StormEigen::Vector2d v;
   //...
 };
 //...
@@ -44,33 +44,33 @@ Foo *foo = new Foo;
 
 then you need to read this separate page: \ref TopicStructHavingEigenMembers "Structures Having Eigen Members".
 
-Note that here, Eigen::Vector2d is only used as an example, more generally the issue arises for all \ref TopicFixedSizeVectorizable "fixed-size vectorizable Eigen types".
+Note that here, StormEigen::Vector2d is only used as an example, more generally the issue arises for all \ref TopicFixedSizeVectorizable "fixed-size vectorizable Eigen types".
 
 \section c2 Cause 2: STL Containers
 
 If you use STL Containers such as std::vector, std::map, ..., with Eigen objects, or with classes containing Eigen objects, like this,
 
 \code
-std::vector<Eigen::Matrix2f> my_vector;
-struct my_class { ... Eigen::Matrix2f m; ... };
+std::vector<StormEigen::Matrix2f> my_vector;
+struct my_class { ... StormEigen::Matrix2f m; ... };
 std::map<int, my_class> my_map;
 \endcode
 
 then you need to read this separate page: \ref TopicStlContainers "Using STL Containers with Eigen".
 
-Note that here, Eigen::Matrix2f is only used as an example, more generally the issue arises for all \ref TopicFixedSizeVectorizable "fixed-size vectorizable Eigen types" and \ref TopicStructHavingEigenMembers "structures having such Eigen objects as member".
+Note that here, StormEigen::Matrix2f is only used as an example, more generally the issue arises for all \ref TopicFixedSizeVectorizable "fixed-size vectorizable Eigen types" and \ref TopicStructHavingEigenMembers "structures having such Eigen objects as member".
 
 \section c3 Cause 3: Passing Eigen objects by value
 
 If some function in your code is getting an Eigen object passed by value, like this,
 
 \code
-void func(Eigen::Vector4d v);
+void func(StormEigen::Vector4d v);
 \endcode
 
 then you need to read this separate page: \ref TopicPassingByValue "Passing Eigen objects by value to functions".
 
-Note that here, Eigen::Vector4d is only used as an example, more generally the issue arises for all \ref TopicFixedSizeVectorizable "fixed-size vectorizable Eigen types".
+Note that here, StormEigen::Vector4d is only used as an example, more generally the issue arises for all \ref TopicFixedSizeVectorizable "fixed-size vectorizable Eigen types".
 
 \section c4 Cause 4: Compiler making a wrong assumption on stack alignment (for instance GCC on Windows)
 
@@ -79,14 +79,14 @@ This is a must-read for people using GCC on Windows (like MinGW or TDM-GCC). If 
 \code
 void foo()
 {
-  Eigen::Quaternionf q;
+  StormEigen::Quaternionf q;
   //...
 }
 \endcode
 
 then you need to read this separate page: \ref TopicWrongStackAlignment "Compiler making a wrong assumption on stack alignment".
 
-Note that here, Eigen::Quaternionf is only used as an example, more generally the issue arises for all \ref TopicFixedSizeVectorizable "fixed-size vectorizable Eigen types".
+Note that here, StormEigen::Quaternionf is only used as an example, more generally the issue arises for all \ref TopicFixedSizeVectorizable "fixed-size vectorizable Eigen types".
 
 \section explanation General explanation of this assertion
 

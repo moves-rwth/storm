@@ -10,7 +10,7 @@
 #ifndef EIGEN_PACKET_MATH_SSE_H
 #define EIGEN_PACKET_MATH_SSE_H
 
-namespace Eigen {
+namespace StormEigen {
 
 namespace internal {
 
@@ -869,6 +869,6 @@ template<> EIGEN_STRONG_INLINE Packet2d pblend(const Selector<2>& ifPacket, cons
 
 } // end namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_PACKET_MATH_SSE_H

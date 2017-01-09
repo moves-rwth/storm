@@ -12,9 +12,9 @@
 
 #include <Eigen/CXX11/Tensor>
 
-using Eigen::Tensor;
-using Eigen::array;
-using Eigen::Tuple;
+using StormEigen::Tensor;
+using StormEigen::array;
+using StormEigen::Tuple;
 
 template <int DataLayout>
 static void test_simple_index_tuples()
@@ -44,7 +44,7 @@ static void test_index_tuples_dim()
 
   index_tuples = tensor.index_tuples();
 
-  for (Eigen::DenseIndex n = 0; n < tensor.size(); ++n) {
+  for (StormEigen::DenseIndex n = 0; n < tensor.size(); ++n) {
     const Tuple<DenseIndex, float>& v = index_tuples(n); //(i, j, k, l);
     VERIFY_IS_EQUAL(v.first, n);
     VERIFY_IS_EQUAL(v.second, tensor(n));

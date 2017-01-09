@@ -13,7 +13,7 @@
 #ifndef EIGEN_LDLT_H
 #define EIGEN_LDLT_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 namespace internal {
   template<typename MatrixType, int UpLo> struct LDLT_Traits;
@@ -59,7 +59,7 @@ template<typename _MatrixType, int _UpLo> class LDLT
     };
     typedef typename MatrixType::Scalar Scalar;
     typedef typename NumTraits<typename MatrixType::Scalar>::Real RealScalar;
-    typedef Eigen::Index Index; ///< \deprecated since Eigen 3.3
+    typedef StormEigen::Index Index; ///< \deprecated since Eigen 3.3
     typedef typename MatrixType::StorageIndex StorageIndex;
     typedef Matrix<Scalar, RowsAtCompileTime, 1, Options, MaxRowsAtCompileTime, 1> TmpMatrixType;
 
@@ -596,6 +596,6 @@ MatrixBase<Derived>::ldlt() const
 }
 #endif // __CUDACC__
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_LDLT_H

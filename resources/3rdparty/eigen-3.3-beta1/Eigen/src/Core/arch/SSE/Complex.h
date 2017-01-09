@@ -10,7 +10,7 @@
 #ifndef EIGEN_COMPLEX_SSE_H
 #define EIGEN_COMPLEX_SSE_H
 
-namespace Eigen {
+namespace StormEigen {
 
 namespace internal {
 
@@ -235,7 +235,7 @@ template<> struct conj_helper<Packet4f, Packet2cf, false,false>
   { return padd(c, pmul(x,y)); }
 
   EIGEN_STRONG_INLINE Packet2cf pmul(const Packet4f& x, const Packet2cf& y) const
-  { return Packet2cf(Eigen::internal::pmul<Packet4f>(x, y.v)); }
+  { return Packet2cf(StormEigen::internal::pmul<Packet4f>(x, y.v)); }
 };
 
 template<> struct conj_helper<Packet2cf, Packet4f, false,false>
@@ -244,7 +244,7 @@ template<> struct conj_helper<Packet2cf, Packet4f, false,false>
   { return padd(c, pmul(x,y)); }
 
   EIGEN_STRONG_INLINE Packet2cf pmul(const Packet2cf& x, const Packet4f& y) const
-  { return Packet2cf(Eigen::internal::pmul<Packet4f>(x.v, y)); }
+  { return Packet2cf(StormEigen::internal::pmul<Packet4f>(x.v, y)); }
 };
 
 template<> EIGEN_STRONG_INLINE Packet2cf pdiv<Packet2cf>(const Packet2cf& a, const Packet2cf& b)
@@ -436,7 +436,7 @@ template<> struct conj_helper<Packet2d, Packet1cd, false,false>
   { return padd(c, pmul(x,y)); }
 
   EIGEN_STRONG_INLINE Packet1cd pmul(const Packet2d& x, const Packet1cd& y) const
-  { return Packet1cd(Eigen::internal::pmul<Packet2d>(x, y.v)); }
+  { return Packet1cd(StormEigen::internal::pmul<Packet2d>(x, y.v)); }
 };
 
 template<> struct conj_helper<Packet1cd, Packet2d, false,false>
@@ -445,7 +445,7 @@ template<> struct conj_helper<Packet1cd, Packet2d, false,false>
   { return padd(c, pmul(x,y)); }
 
   EIGEN_STRONG_INLINE Packet1cd pmul(const Packet1cd& x, const Packet2d& y) const
-  { return Packet1cd(Eigen::internal::pmul<Packet2d>(x.v, y)); }
+  { return Packet1cd(StormEigen::internal::pmul<Packet2d>(x.v, y)); }
 };
 
 template<> EIGEN_STRONG_INLINE Packet1cd pdiv<Packet1cd>(const Packet1cd& a, const Packet1cd& b)
@@ -478,6 +478,6 @@ template<>  EIGEN_STRONG_INLINE Packet2cf pblend(const Selector<2>& ifPacket, co
 
 } // end namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_COMPLEX_SSE_H

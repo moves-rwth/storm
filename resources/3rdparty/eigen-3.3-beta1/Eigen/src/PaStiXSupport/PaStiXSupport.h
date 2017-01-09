@@ -10,7 +10,7 @@
 #ifndef EIGEN_PASTIXSUPPORT_H
 #define EIGEN_PASTIXSUPPORT_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 #if defined(DCOMPLEX)
   #define PASTIX_COMPLEX  COMPLEX
@@ -671,6 +671,6 @@ class PastixLDLT : public PastixBase< PastixLDLT<_MatrixType, _UpLo> >
     }
 };
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif

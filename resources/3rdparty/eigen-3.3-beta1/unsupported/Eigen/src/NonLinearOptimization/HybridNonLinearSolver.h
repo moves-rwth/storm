@@ -13,7 +13,7 @@
 #ifndef EIGEN_HYBRIDNONLINEARSOLVER_H
 #define EIGEN_HYBRIDNONLINEARSOLVER_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 namespace HybridNonLinearSolverSpace { 
     enum Status {
@@ -594,7 +594,7 @@ HybridNonLinearSolver<FunctorType,Scalar>::solveNumericalDiff(FVectorType  &x)
     return status;
 }
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_HYBRIDNONLINEARSOLVER_H
 

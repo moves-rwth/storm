@@ -10,7 +10,7 @@
 #ifndef EIGEN_SPARSE_REF_H
 #define EIGEN_SPARSE_REF_H
 
-namespace Eigen {
+namespace StormEigen {
 
 enum {
   StandardCompressedFormat = 2
@@ -362,6 +362,6 @@ struct evaluator<Ref<const SparseVector<MatScalar,MatOptions,MatIndex>, Options,
 
 }
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_SPARSE_REF_H

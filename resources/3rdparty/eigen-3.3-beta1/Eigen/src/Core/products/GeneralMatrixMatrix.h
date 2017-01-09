@@ -10,7 +10,7 @@
 #ifndef EIGEN_GENERAL_MATRIX_MATRIX_H
 #define EIGEN_GENERAL_MATRIX_MATRIX_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 namespace internal {
 
@@ -491,6 +491,6 @@ struct generic_product_impl<Lhs,Rhs,DenseShape,DenseShape,GemmProduct>
 
 } // end namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_GENERAL_MATRIX_MATRIX_H

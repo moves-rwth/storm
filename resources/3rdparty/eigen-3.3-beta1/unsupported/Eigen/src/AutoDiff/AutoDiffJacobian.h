@@ -10,7 +10,7 @@
 #ifndef EIGEN_AUTODIFF_JACOBIAN_H
 #define EIGEN_AUTODIFF_JACOBIAN_H
 
-namespace Eigen
+namespace StormEigen
 {
 
 template<typename Functor> class AutoDiffJacobian : public Functor

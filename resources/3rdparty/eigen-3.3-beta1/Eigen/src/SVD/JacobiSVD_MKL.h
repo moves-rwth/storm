@@ -35,7 +35,7 @@
 
 #include "Eigen/src/Core/util/MKL_support.h"
 
-namespace Eigen { 
+namespace StormEigen { 
 
 /** \internal Specialization for the data types supported by MKL */
 
@@ -87,6 +87,6 @@ EIGEN_MKL_SVD(float,    float,         float , s, RowMajor, LAPACK_ROW_MAJOR)
 EIGEN_MKL_SVD(dcomplex, MKL_Complex16, double, z, RowMajor, LAPACK_ROW_MAJOR)
 EIGEN_MKL_SVD(scomplex, MKL_Complex8,  float , c, RowMajor, LAPACK_ROW_MAJOR)
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_JACOBISVD_MKL_H

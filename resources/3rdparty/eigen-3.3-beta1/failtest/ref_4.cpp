@@ -1,6 +1,6 @@
 #include "../Eigen/Core"
 
-using namespace Eigen;
+using namespace StormEigen;
 
 void call_ref(Ref<MatrixXf,0,OuterStride<> > a) {}
 

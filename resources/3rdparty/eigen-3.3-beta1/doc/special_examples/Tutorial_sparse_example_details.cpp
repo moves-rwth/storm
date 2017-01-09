@@ -2,11 +2,11 @@
 #include <vector>
 #include <QImage>
 
-typedef Eigen::SparseMatrix<double> SpMat; // declares a column-major sparse matrix type of double
-typedef Eigen::Triplet<double> T;
+typedef StormEigen::SparseMatrix<double> SpMat; // declares a column-major sparse matrix type of double
+typedef StormEigen::Triplet<double> T;
 
 void insertCoefficient(int id, int i, int j, double w, std::vector<T>& coeffs,
-                       Eigen::VectorXd& b, const Eigen::VectorXd& boundary)
+                       StormEigen::VectorXd& b, const StormEigen::VectorXd& boundary)
 {
   int n = int(boundary.size());
   int id1 = i+j*n;
@@ -16,10 +16,10 @@ void insertCoefficient(int id, int i, int j, double w, std::vector<T>& coeffs,
   else  coeffs.push_back(T(id,id1,w));              // unknown coefficient
 }
 
-void buildProblem(std::vector<T>& coefficients, Eigen::VectorXd& b, int n)
+void buildProblem(std::vector<T>& coefficients, StormEigen::VectorXd& b, int n)
 {
   b.setZero();
-  Eigen::ArrayXd boundary = Eigen::ArrayXd::LinSpaced(n, 0,M_PI).sin().pow(2);
+  StormEigen::ArrayXd boundary = StormEigen::ArrayXd::LinSpaced(n, 0,M_PI).sin().pow(2);
   for(int j=0; j<n; ++j)
   {
     for(int i=0; i<n; ++i)
@@ -34,9 +34,9 @@ void buildProblem(std::vector<T>& coefficients, Eigen::VectorXd& b, int n)
   }
 }
 
-void saveAsBitmap(const Eigen::VectorXd& x, int n, const char* filename)
+void saveAsBitmap(const StormEigen::VectorXd& x, int n, const char* filename)
 {
-  Eigen::Array<unsigned char,Eigen::Dynamic,Eigen::Dynamic> bits = (x*255).cast<unsigned char>();
+  StormEigen::Array<unsigned char,StormEigen::Dynamic,Eigen::Dynamic> bits = (x*255).cast<unsigned char>();
   QImage img(bits.data(), n,n,QImage::Format_Indexed8);
   img.setColorCount(256);
   for(int i=0;i<256;i++) img.setColor(i,qRgb(i,i,i));

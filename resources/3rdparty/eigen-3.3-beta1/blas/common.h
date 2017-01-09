@@ -71,7 +71,7 @@ inline bool check_uplo(const char* uplo)
 }
 
 
-namespace Eigen {
+namespace StormEigen {
 #include "BandTriangularSolver.h"
 #include "GeneralRank1Update.h"
 #include "PackedSelfadjointProduct.h"
@@ -80,7 +80,7 @@ namespace Eigen {
 #include "Rank2Update.h"
 }
 
-using namespace Eigen;
+using namespace StormEigen;
 
 typedef SCALAR Scalar;
 typedef NumTraits<Scalar>::Real RealScalar;
@@ -88,7 +88,7 @@ typedef std::complex<RealScalar> Complex;
 
 enum
 {
-  IsComplex = Eigen::NumTraits<SCALAR>::IsComplex,
+  IsComplex = StormEigen::NumTraits<SCALAR>::IsComplex,
   Conj = IsComplex
 };
 

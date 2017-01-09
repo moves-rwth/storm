@@ -13,7 +13,7 @@
 #include "SkylineStorage.h"
 #include "SkylineMatrixBase.h"
 
-namespace Eigen { 
+namespace StormEigen { 
 
 /** \ingroup Skyline_Module
  *
@@ -857,6 +857,6 @@ protected:
     const Index m_end;
 };
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_SkylineMatrix_H

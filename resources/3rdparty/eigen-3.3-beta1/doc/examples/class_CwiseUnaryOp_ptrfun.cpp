@@ -1,6 +1,6 @@
 #include <Eigen/Core>
 #include <iostream>
-using namespace Eigen;
+using namespace StormEigen;
 using namespace std;
 
 // define function to be applied coefficient-wise

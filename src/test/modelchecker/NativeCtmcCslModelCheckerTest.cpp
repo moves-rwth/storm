@@ -63,14 +63,14 @@ TEST(NativeCtmcCslModelCheckerTest, Cluster) {
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeCheckResult4 = checkResult->asExplicitQuantitativeCheckResult<double>();
     EXPECT_NEAR(1, quantitativeCheckResult4[initialState], storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
     
-    formula = formulaParser.parseSingleFormulaFromString("P=? [ !\"minimum\" U[1,inf] \"minimum\"]");
+    formula = formulaParser.parseSingleFormulaFromString("P=? [ !\"minimum\" U>=1 \"minimum\"]");
     checkResult = modelchecker.check(*formula);
     
     ASSERT_TRUE(checkResult->isExplicitQuantitativeCheckResult());
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeCheckResult5 = checkResult->asExplicitQuantitativeCheckResult<double>();
     EXPECT_NEAR(0, quantitativeCheckResult5[initialState], storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
     
-    formula = formulaParser.parseSingleFormulaFromString("P=? [ \"minimum\" U[1,inf] !\"minimum\"]");
+    formula = formulaParser.parseSingleFormulaFromString("P=? [ \"minimum\" U>=1 !\"minimum\"]");
     checkResult = modelchecker.check(*formula);
     
     ASSERT_TRUE(checkResult->isExplicitQuantitativeCheckResult());

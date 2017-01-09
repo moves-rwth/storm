@@ -10,7 +10,7 @@
 #ifndef EIGEN_MAPPED_SPARSEMATRIX_H
 #define EIGEN_MAPPED_SPARSEMATRIX_H
 
-namespace Eigen {
+namespace StormEigen {
 
 /** \deprecated Use Map<SparseMatrix<> >
   * \class MappedSparseMatrix
@@ -62,6 +62,6 @@ struct evaluator<MappedSparseMatrix<_Scalar,_Options,_StorageIndex> >
 
 }
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_MAPPED_SPARSEMATRIX_H

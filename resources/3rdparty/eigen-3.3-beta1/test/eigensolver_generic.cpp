@@ -122,7 +122,7 @@ void test_eigensolver_generic()
   {
      MatrixXd A(1,1);
      A(0,0) = std::sqrt(-1.); // is Not-a-Number
-     Eigen::EigenSolver<MatrixXd> solver(A);
+     StormEigen::EigenSolver<MatrixXd> solver(A);
      VERIFY_IS_EQUAL(solver.info(), NumericalIssue);
   }
   );
@@ -134,7 +134,7 @@ void test_eigensolver_generic()
      a << 0,  0,  1,
           1,  1, 1,
           1, 1e+200,  1;
-     Eigen::EigenSolver<MatrixXd> eig(a);
+     StormEigen::EigenSolver<MatrixXd> eig(a);
      VERIFY_IS_APPROX(a * eig.pseudoEigenvectors(), eig.pseudoEigenvectors() * eig.pseudoEigenvalueMatrix());
      VERIFY_IS_APPROX(a * eig.eigenvectors(), eig.eigenvectors() * eig.eigenvalues().asDiagonal());
   }

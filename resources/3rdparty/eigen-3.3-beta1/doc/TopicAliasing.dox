@@ -1,4 +1,4 @@
-namespace Eigen {
+namespace StormEigen {
 
 /** \eigenManualPage TopicAliasing Aliasing
 
@@ -64,8 +64,8 @@ Again, the output shows the aliasing issue. However, by default %Eigen uses a ru
 and exits with a message like
 
 \verbatim
-void Eigen::DenseBase<Derived>::checkTransposeAliasing(const OtherDerived&) const 
-[with OtherDerived = Eigen::Transpose<Eigen::Matrix<int, 2, 2, 0, 2, 2> >, Derived = Eigen::Matrix<int, 2, 2, 0, 2, 2>]: 
+void StormEigen::DenseBase<Derived>::checkTransposeAliasing(const OtherDerived&) const 
+[with OtherDerived = StormEigen::Transpose<StormEigen::Matrix<int, 2, 2, 0, 2, 2> >, Derived = Eigen::Matrix<int, 2, 2, 0, 2, 2>]: 
 Assertion `(!internal::check_transpose_aliasing_selector<Scalar,internal::blas_traits<Derived>::IsTransposed,OtherDerived>::run(internal::extract_data(derived()), other)) 
 && "aliasing detected during transposition, use transposeInPlace() or evaluate the rhs into a temporary using .eval()"' failed.
 \endverbatim

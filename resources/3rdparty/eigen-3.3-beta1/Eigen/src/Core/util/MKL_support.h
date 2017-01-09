@@ -108,7 +108,7 @@
 #define EIGEN_MKL_DOMAIN_PARDISO MKL_PARDISO
 #endif
 
-namespace Eigen {
+namespace StormEigen {
 
 typedef std::complex<double> dcomplex;
 typedef std::complex<float>  scomplex;
@@ -151,7 +151,7 @@ inline void assign_conj_scalar_eig2mkl<MKL_Complex8,scomplex>(MKL_Complex8& mklS
 
 } // end namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif
 

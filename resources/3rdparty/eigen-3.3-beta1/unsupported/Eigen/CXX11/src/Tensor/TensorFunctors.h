@@ -10,7 +10,7 @@
 #ifndef EIGEN_CXX11_TENSOR_TENSOR_FUNCTORS_H
 #define EIGEN_CXX11_TENSOR_TENSOR_FUNCTORS_H
 
-namespace Eigen {
+namespace StormEigen {
 namespace internal {
 
 
@@ -742,6 +742,6 @@ class GaussianGenerator {
 
 
 } // end namespace internal
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_CXX11_TENSOR_TENSOR_FUNCTORS_H

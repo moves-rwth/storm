@@ -11,7 +11,7 @@
 #ifndef EIGEN_CONSTANTS_H
 #define EIGEN_CONSTANTS_H
 
-namespace Eigen {
+namespace StormEigen {
 
 /** This value means that a positive quantity (e.g., a size) is not known at compile-time, and that instead the value is
   * stored in some runtime variable.
@@ -541,6 +541,6 @@ enum ComparisonName {
 };
 } // end namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_CONSTANTS_H

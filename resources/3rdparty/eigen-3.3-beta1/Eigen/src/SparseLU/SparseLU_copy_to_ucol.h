@@ -29,7 +29,7 @@
 #ifndef SPARSELU_COPY_TO_UCOL_H
 #define SPARSELU_COPY_TO_UCOL_H
 
-namespace Eigen {
+namespace StormEigen {
 namespace internal {
 
 /**
@@ -102,6 +102,6 @@ Index SparseLUImpl<Scalar,StorageIndex>::copy_to_ucol(const Index jcol, const In
 }
 
 } // namespace internal
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // SPARSELU_COPY_TO_UCOL_H

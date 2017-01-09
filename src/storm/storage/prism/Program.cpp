@@ -760,12 +760,6 @@ namespace storm {
                 }
             }
             
-            // As a sanity check, we make sure that the given mapping does not contain any definitions for identifiers
-            // that are not undefined constants.
-            for (auto const& constantExpressionPair : constantDefinitions) {
-                STORM_LOG_THROW(definedUndefinedConstants.find(constantExpressionPair.first) != definedUndefinedConstants.end(), storm::exceptions::InvalidArgumentException, "Unable to define non-existant constant.");
-            }
-            
             return Program(this->manager, this->getModelType(), newConstants, this->getGlobalBooleanVariables(), this->getGlobalIntegerVariables(), this->getFormulas(), this->getModules(), this->getActionNameToIndexMapping(), this->getRewardModels(), this->getLabels(), this->getOptionalInitialConstruct(), this->getOptionalSystemCompositionConstruct());
         }
         
@@ -1292,18 +1286,29 @@ namespace storm {
                     }
                 }
                 
+                for (auto const& variable : module.getBooleanVariables()) {
+                    if (booleanVars.find(variable.getExpressionVariable()) != booleanVars.end()) {
+                        if (variable.hasInitialValue()) {
+                            newConstants.emplace_back(variable.getExpressionVariable(), variable.getInitialValueExpression());
+                        } else {
+                            newBooleanVars.push_back(variable);
+                        }
+                    }
+                }
+                for (auto const& variable : module.getIntegerVariables()) {
+                    if (integerVars.find(variable.getExpressionVariable()) != integerVars.end()) {
+                        if (variable.hasInitialValue()) {
+                            newConstants.emplace_back(variable.getExpressionVariable(), variable.getInitialValueExpression());
+                        } else {
+                            newIntegerVars.push_back(variable);
+                        }
+                    }
+                }
+                
                 newModules.emplace_back(module.getName(), newBooleanVars, newIntegerVars, newCommands);
                 
                 // Determine the set of action indices that have been deleted entirely.
                 std::set_difference(module.getSynchronizingActionIndices().begin(), module.getSynchronizingActionIndices().end(), newModules.back().getSynchronizingActionIndices().begin(), newModules.back().getSynchronizingActionIndices().end(), std::inserter(actionIndicesToDelete, actionIndicesToDelete.begin()));
-                
-                for (auto const& entry : booleanVars) {
-                    newConstants.emplace_back(entry.first, entry.second);
-                }
-                
-                for (auto const& entry : integerVars) {
-                    newConstants.emplace_back(entry.first, entry.second);
-                }
             }
             
             // If we have to delete whole actions, do so now.

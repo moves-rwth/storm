@@ -10,7 +10,7 @@
 #ifndef EIGEN_SKYLINEUTIL_H
 #define EIGEN_SKYLINEUTIL_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 #ifdef NDEBUG
 #define EIGEN_DBG_SKYLINE(X)
@@ -26,7 +26,7 @@ enum {IsSkyline = SkylineBit};
 
 #define EIGEN_SKYLINE_INHERIT_ASSIGNMENT_OPERATOR(Derived, Op) \
 template<typename OtherDerived> \
-EIGEN_STRONG_INLINE Derived& operator Op(const Eigen::SkylineMatrixBase<OtherDerived>& other) \
+EIGEN_STRONG_INLINE Derived& operator Op(const StormEigen::SkylineMatrixBase<OtherDerived>& other) \
 { \
   return Base::operator Op(other.derived()); \
 } \
@@ -51,14 +51,14 @@ EIGEN_STRONG_INLINE Derived& operator Op(const Other& scalar) \
 
 #define _EIGEN_SKYLINE_GENERIC_PUBLIC_INTERFACE(Derived, BaseClass) \
   typedef BaseClass Base; \
-  typedef typename Eigen::internal::traits<Derived>::Scalar Scalar; \
-  typedef typename Eigen::NumTraits<Scalar>::Real RealScalar; \
-  typedef typename Eigen::internal::traits<Derived>::StorageKind StorageKind; \
-  typedef typename Eigen::internal::index<StorageKind>::type Index; \
-  enum {  Flags = Eigen::internal::traits<Derived>::Flags, };
+  typedef typename StormEigen::internal::traits<Derived>::Scalar Scalar; \
+  typedef typename StormEigen::NumTraits<Scalar>::Real RealScalar; \
+  typedef typename StormEigen::internal::traits<Derived>::StorageKind StorageKind; \
+  typedef typename StormEigen::internal::index<StorageKind>::type Index; \
+  enum {  Flags = StormEigen::internal::traits<Derived>::Flags, };
 
 #define EIGEN_SKYLINE_GENERIC_PUBLIC_INTERFACE(Derived) \
-  _EIGEN_SKYLINE_GENERIC_PUBLIC_INTERFACE(Derived, Eigen::SkylineMatrixBase<Derived>)
+  _EIGEN_SKYLINE_GENERIC_PUBLIC_INTERFACE(Derived, StormEigen::SkylineMatrixBase<Derived>)
 
 template<typename Derived> class SkylineMatrixBase;
 template<typename _Scalar, int _Flags = 0> class SkylineMatrix;
@@ -84,6 +84,6 @@ template<typename T> class eval<T,IsSkyline>
 
 } // end namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_SKYLINEUTIL_H

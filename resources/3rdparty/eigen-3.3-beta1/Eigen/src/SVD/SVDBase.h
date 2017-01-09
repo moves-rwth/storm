@@ -16,7 +16,7 @@
 #ifndef EIGEN_SVDBASE_H
 #define EIGEN_SVDBASE_H
 
-namespace Eigen {
+namespace StormEigen {
 /** \ingroup SVD_Module
  *
  *
@@ -53,7 +53,7 @@ public:
   typedef typename MatrixType::Scalar Scalar;
   typedef typename NumTraits<typename MatrixType::Scalar>::Real RealScalar;
   typedef typename MatrixType::StorageIndex StorageIndex;
-  typedef Eigen::Index Index; ///< \deprecated since Eigen 3.3
+  typedef StormEigen::Index Index; ///< \deprecated since Eigen 3.3
   enum {
     RowsAtCompileTime = MatrixType::RowsAtCompileTime,
     ColsAtCompileTime = MatrixType::ColsAtCompileTime,
@@ -163,8 +163,8 @@ public:
   /** Allows to come back to the default behavior, letting Eigen use its default formula for
     * determining the threshold.
     *
-    * You should pass the special object Eigen::Default as parameter here.
-    * \code svd.setThreshold(Eigen::Default); \endcode
+    * You should pass the special object StormEigen::Default as parameter here.
+    * \code svd.setThreshold(StormEigen::Default); \endcode
     *
     * See the documentation of setThreshold(const RealScalar&).
     */

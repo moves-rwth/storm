@@ -1,4 +1,4 @@
-namespace Eigen {
+namespace StormEigen {
 
 /** \eigenManualPage TopicStructHavingEigenMembers Structures Having Eigen Members
 
@@ -16,7 +16,7 @@ The kind of code that needs to be changed is this:
 class Foo
 {
   ...
-  Eigen::Vector2d v;
+  StormEigen::Vector2d v;
   ...
 };
 
@@ -35,7 +35,7 @@ Very easy, you just need to put a EIGEN_MAKE_ALIGNED_OPERATOR_NEW macro in a pub
 class Foo
 {
   ...
-  Eigen::Vector2d v;
+  StormEigen::Vector2d v;
   ...
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -58,7 +58,7 @@ OK let's say that your code looks like this:
 class Foo
 {
   ...
-  Eigen::Vector2d v;
+  StormEigen::Vector2d v;
   ...
 };
 
@@ -67,11 +67,11 @@ class Foo
 Foo *foo = new Foo;
 \endcode
 
-A Eigen::Vector2d consists of 2 doubles, which is 128 bits. Which is exactly the size of a SSE packet, which makes it possible to use SSE for all sorts of operations on this vector. But SSE instructions (at least the ones that Eigen uses, which are the fast ones) require 128-bit alignment. Otherwise you get a segmentation fault.
+A StormEigen::Vector2d consists of 2 doubles, which is 128 bits. Which is exactly the size of a SSE packet, which makes it possible to use SSE for all sorts of operations on this vector. But SSE instructions (at least the ones that Eigen uses, which are the fast ones) require 128-bit alignment. Otherwise you get a segmentation fault.
 
-For this reason, Eigen takes care by itself to require 128-bit alignment for Eigen::Vector2d, by doing two things:
-\li Eigen requires 128-bit alignment for the Eigen::Vector2d's array (of 2 doubles). With GCC, this is done with a __attribute__ ((aligned(16))).
-\li Eigen overloads the "operator new" of Eigen::Vector2d so it will always return 128-bit aligned pointers.
+For this reason, Eigen takes care by itself to require 128-bit alignment for StormEigen::Vector2d, by doing two things:
+\li Eigen requires 128-bit alignment for the StormEigen::Vector2d's array (of 2 doubles). With GCC, this is done with a __attribute__ ((aligned(16))).
+\li Eigen overloads the "operator new" of StormEigen::Vector2d so it will always return 128-bit aligned pointers.
 
 Thus, normally, you don't have to worry about anything, Eigen handles alignment for you...
 
@@ -89,7 +89,7 @@ That's not required. Since Eigen takes care of declaring 128-bit alignment, all 
 class Foo
 {
   double x;
-  Eigen::Vector2d v;
+  StormEigen::Vector2d v;
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
@@ -97,7 +97,7 @@ public:
 
 \section StructHavingEigenMembers_dynamicsize What about dynamic-size matrices and vectors?
 
-Dynamic-size matrices and vectors, such as Eigen::VectorXd, allocate dynamically their own array of coefficients, so they take care of requiring absolute alignment automatically. So they don't cause this issue. The issue discussed here is only with \ref TopicFixedSizeVectorizable  "fixed-size vectorizable matrices and vectors".
+Dynamic-size matrices and vectors, such as StormEigen::VectorXd, allocate dynamically their own array of coefficients, so they take care of requiring absolute alignment automatically. So they don't cause this issue. The issue discussed here is only with \ref TopicFixedSizeVectorizable  "fixed-size vectorizable matrices and vectors".
 
 \section StructHavingEigenMembers_bugineigen So is this a bug in Eigen?
 
@@ -112,7 +112,7 @@ Example:
 \code
 template<int n> class Foo
 {
-  typedef Eigen::Matrix<float,n,1> Vector;
+  typedef StormEigen::Matrix<float,n,1> Vector;
   enum { NeedsToAlign = (sizeof(Vector)%16)==0 };
   ...
   Vector v;
@@ -139,7 +139,7 @@ The first is to disable alignment requirement for the fixed size members:
 class Foo
 {
   ...
-  Eigen::Matrix<double,2,1,Eigen::DontAlign> v;
+  StormEigen::Matrix<double,2,1,StormEigen::DontAlign> v;
   ...
 };
 \endcode
@@ -148,7 +148,7 @@ If a function of Foo uses it several times, then it still possible to re-enable 
 \code
 void Foo::bar()
 {
-  Eigen::Vector2d av(v);
+  StormEigen::Vector2d av(v);
   // use av instead of v
   ...
   // if av changed, then do:

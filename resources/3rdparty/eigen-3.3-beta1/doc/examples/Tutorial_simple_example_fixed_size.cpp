@@ -1,7 +1,7 @@
 #include <Eigen/Core>
 #include <iostream>
 
-using namespace Eigen;
+using namespace StormEigen;
 
 int main()
 {

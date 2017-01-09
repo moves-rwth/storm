@@ -10,7 +10,7 @@
 #ifndef EIGEN_SKYLINEPRODUCT_H
 #define EIGEN_SKYLINEPRODUCT_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 template<typename Lhs, typename Rhs, int ProductMode>
 struct SkylineProductReturnType {
@@ -290,6 +290,6 @@ SkylineMatrixBase<Derived>::operator*(const MatrixBase<OtherDerived> &other) con
     return typename SkylineProductReturnType<Derived, OtherDerived>::Type(derived(), other.derived());
 }
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_SKYLINEPRODUCT_H

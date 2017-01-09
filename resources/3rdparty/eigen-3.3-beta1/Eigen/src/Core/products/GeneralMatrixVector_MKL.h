@@ -33,7 +33,7 @@
 #ifndef EIGEN_GENERAL_MATRIX_VECTOR_MKL_H
 #define EIGEN_GENERAL_MATRIX_VECTOR_MKL_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 namespace internal {
 
@@ -125,6 +125,6 @@ EIGEN_MKL_GEMV_SPECIALIZATION(scomplex, MKL_Complex8,  c)
 
 } // end namespase internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_GENERAL_MATRIX_VECTOR_MKL_H

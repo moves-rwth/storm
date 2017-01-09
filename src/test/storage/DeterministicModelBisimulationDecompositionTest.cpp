@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 #include "storm/parser/AutoParser.h"
+#include "storm/parser/FormulaParser.h"
 #include "storm/storage/bisimulation/DeterministicModelBisimulationDecomposition.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/StandardRewardModel.h"
@@ -45,14 +46,10 @@ TEST(DeterministicModelBisimulationDecomposition, Die) {
     EXPECT_EQ(5ul, result->getNumberOfStates());
     EXPECT_EQ(8ul, result->getNumberOfTransitions());
 
-    auto labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("one");
-    auto eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(labelFormula);
-
-#ifdef WINDOWS
-    storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>>::Options options2(*dtmc, *eventuallyFormula);
-#else
-    typename storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>>::Options options2(*dtmc, *eventuallyFormula);
-#endif
+    storm::parser::FormulaParser formulaParser;
+    std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"one\"]");
+    
+    typename storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>>::Options options2(*dtmc, *formula);
 
     storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>> bisim4(*dtmc, options2);
     ASSERT_NO_THROW(bisim4.computeBisimulationDecomposition());
@@ -102,29 +99,11 @@ TEST(DeterministicModelBisimulationDecomposition, Crowds) {
     EXPECT_EQ(43ul, result->getNumberOfStates());
     EXPECT_EQ(83ul, result->getNumberOfTransitions());
 
-    auto labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("observe0Greater1");
-    auto eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(labelFormula);
+    storm::parser::FormulaParser formulaParser;
+    std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"observe0Greater1\"]");
 
-#ifdef WINDOWS
-    storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>>::Options options2(*dtmc, *eventuallyFormula);
-#else
-    typename storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>>::Options options2(*dtmc, *eventuallyFormula);
-#endif
-    storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>> bisim4(*dtmc, options2);
-    ASSERT_NO_THROW(bisim4.computeBisimulationDecomposition());
-    ASSERT_NO_THROW(result = bisim4.getQuotient());
+    typename storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>>::Options options3(*dtmc, *formula);
 
-    EXPECT_EQ(storm::models::ModelType::Dtmc, result->getType());
-    EXPECT_EQ(64ul, result->getNumberOfStates());
-    EXPECT_EQ(104ul, result->getNumberOfTransitions());
-
-    auto probabilityOperatorFormula = std::make_shared<storm::logic::ProbabilityOperatorFormula>(eventuallyFormula);
-
-#ifdef WINDOWS
-    storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>>::Options options3(*dtmc, *probabilityOperatorFormula);
-#else
-    typename storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>>::Options options3(*dtmc, *probabilityOperatorFormula);
-#endif
     storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>> bisim5(*dtmc, options3);
     ASSERT_NO_THROW(bisim5.computeBisimulationDecomposition());
     ASSERT_NO_THROW(result = bisim5.getQuotient());
@@ -133,13 +112,10 @@ TEST(DeterministicModelBisimulationDecomposition, Crowds) {
     EXPECT_EQ(64ul, result->getNumberOfStates());
     EXPECT_EQ(104ul, result->getNumberOfTransitions());
 
-    auto boundedUntilFormula = std::make_shared<storm::logic::BoundedUntilFormula>(std::make_shared<storm::logic::BooleanLiteralFormula>(true), labelFormula, 50);
+    formula = formulaParser.parseSingleFormulaFromString("P=? [true U<=50 \"observe0Greater1\"] ");
 
-#ifdef WINDOWS
-    storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>>::Options options4(*dtmc, *boundedUntilFormula);
-#else
-    typename storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>>::Options options4(*dtmc, *boundedUntilFormula);
-#endif
+    typename storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>>::Options options4(*dtmc, *formula);
+
     storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>> bisim6(*dtmc, options4);
     ASSERT_NO_THROW(bisim6.computeBisimulationDecomposition());
     ASSERT_NO_THROW(result = bisim6.getQuotient());

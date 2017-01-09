@@ -11,7 +11,7 @@
 #ifndef EIGEN_FULLPIVOTINGHOUSEHOLDERQR_H
 #define EIGEN_FULLPIVOTINGHOUSEHOLDERQR_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 namespace internal {
 
@@ -333,8 +333,8 @@ template<typename _MatrixType> class FullPivHouseholderQR
     /** Allows to come back to the default behavior, letting Eigen use its default formula for
       * determining the threshold.
       *
-      * You should pass the special object Eigen::Default as parameter here.
-      * \code qr.setThreshold(Eigen::Default); \endcode
+      * You should pass the special object StormEigen::Default as parameter here.
+      * \code qr.setThreshold(StormEigen::Default); \endcode
       *
       * See the documentation of setThreshold(const RealScalar&).
       */
@@ -657,6 +657,6 @@ MatrixBase<Derived>::fullPivHouseholderQr() const
 }
 #endif // __CUDACC__
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_FULLPIVOTINGHOUSEHOLDERQR_H

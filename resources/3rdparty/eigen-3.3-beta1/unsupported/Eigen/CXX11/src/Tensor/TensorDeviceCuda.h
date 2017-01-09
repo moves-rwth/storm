@@ -11,7 +11,7 @@
 #define EIGEN_CXX11_TENSOR_TENSOR_DEVICE_CUDA_H
 
 
-namespace Eigen {
+namespace StormEigen {
 
 // This defines an interface that GPUDevice can take to use
 // CUDA streams underneath.
@@ -253,6 +253,6 @@ static inline void setCudaSharedMemConfig(cudaSharedMemConfig config) {
 }
 #endif
 
-}  // end namespace Eigen
+}  // end namespace StormEigen
 
 #endif // EIGEN_CXX11_TENSOR_TENSOR_DEVICE_TYPE_H

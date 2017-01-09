@@ -125,44 +125,31 @@ namespace storm {
             template <typename ValueType, typename RewardModelType>
             void MarkovAutomaton<ValueType, RewardModelType>::close() {
                 if (!closed) {
-                    // First, count the number of hybrid states to know how many Markovian choices
-                    // will be removed.
-                    uint_fast64_t numberOfHybridStates = 0;
-                    for (uint_fast64_t state = 0; state < this->getNumberOfStates(); ++state) {
-                        if (this->isHybridState(state)) {
-                            ++numberOfHybridStates;
-                        }
-                    }
-                    
-                    // Create the matrix for the new transition relation and the corresponding nondeterministic choice vector.
-                    storm::storage::SparseMatrixBuilder<ValueType> newTransitionMatrixBuilder(0, 0, 0, false, true, this->getNumberOfStates());
-                    
-                    // Now copy over all choices that need to be kept.
-                    uint_fast64_t currentChoice = 0;
-                    for (uint_fast64_t state = 0; state < this->getNumberOfStates(); ++state) {
-                        // Record the new beginning of choices of this state.
-                        newTransitionMatrixBuilder.newRowGroup(currentChoice);
-
-                        // If the state is a hybrid state, closing it will make it a probabilistic state, so we remove the Markovian marking.
-                        // Additionally, we need to remember whether we need to skip the first choice of the state when
-                        // we assemble the new transition matrix.
-                        uint_fast64_t offset = 0;
-                        if (this->isHybridState(state)) {
+                    // Get the choices that we will keep
+                    storm::storage::BitVector keptChoices(this->getNumberOfChoices(), true);
+                    for(auto state : this->getMarkovianStates()) {
+                        if(this->getTransitionMatrix().getRowGroupSize(state) > 1) {
+                            // The state is hybrid, hence, we remove the first choice.
+                            keptChoices.set(this->getTransitionMatrix().getRowGroupIndices()[state], false);
+                            // Afterwards, the state will no longer be Markovian.
                             this->markovianStates.set(state, false);
-                            offset = 1;
-                        }
-                        
-                        for (uint_fast64_t row = this->getTransitionMatrix().getRowGroupIndices()[state] + offset; row < this->getTransitionMatrix().getRowGroupIndices()[state + 1]; ++row) {
-                            for (auto const& entry : this->getTransitionMatrix().getRow(row)) {
-                                newTransitionMatrixBuilder.addNextValue(currentChoice, entry.getColumn(), entry.getValue());
-                            }
-                            ++currentChoice;
+                            exitRates[state] = storm::utility::zero<ValueType>();
                         }
                     }
-                    
-                    // Finalize the matrix and put the new transition data in place.
-                    this->setTransitionMatrix(newTransitionMatrixBuilder.build());
-                    
+                    // Remove the Markovian choices for the different model ingredients
+                    this->getTransitionMatrix() = this->getTransitionMatrix().restrictRows(keptChoices);
+                    for(auto& rewModel : this->getRewardModels()) {
+                        if(rewModel.second.hasStateActionRewards()) {
+                            rewModel.second.getStateActionRewardVector() = storm::utility::vector::filterVector(rewModel.second.getStateActionRewardVector(), keptChoices);
+                        }
+                        if(rewModel.second.hasTransitionRewards()) {
+                            rewModel.second.getTransitionRewardMatrix() = rewModel.second.getTransitionRewardMatrix().restrictRows(keptChoices);
+                        }
+                    }
+                    if(this->hasChoiceLabeling()) {
+                        this->getOptionalChoiceLabeling() = storm::utility::vector::filterVector(this->getOptionalChoiceLabeling().get(), keptChoices);
+                    }
+
                     // Mark the automaton as closed.
                     closed = true;
                 }

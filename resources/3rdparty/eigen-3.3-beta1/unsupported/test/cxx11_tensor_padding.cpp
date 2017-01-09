@@ -11,7 +11,7 @@
 
 #include <Eigen/CXX11/Tensor>
 
-using Eigen::Tensor;
+using StormEigen::Tensor;
 
 template<int DataLayout>
 static void test_simple_padding()
@@ -60,7 +60,7 @@ static void test_padded_expr()
   paddings[2] = std::make_pair(3, 4);
   paddings[3] = std::make_pair(0, 0);
 
-  Eigen::DSizes<ptrdiff_t, 2> reshape_dims;
+  StormEigen::DSizes<ptrdiff_t, 2> reshape_dims;
   reshape_dims[0] = 12;
   reshape_dims[1] = 84;
 

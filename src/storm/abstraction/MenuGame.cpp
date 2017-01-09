@@ -50,6 +50,7 @@ namespace storm {
             } else if (expression.isFalse()) {
                 return this->getManager().getBddZero();
             }
+            
             auto it = expressionToBddMap.find(expression);
             STORM_LOG_THROW(it != expressionToBddMap.end(), storm::exceptions::InvalidArgumentException, "The given expression was not used in the abstraction process and can therefore not be retrieved.");
             if (negated) {

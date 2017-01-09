@@ -10,7 +10,7 @@
 #ifndef EIGEN_CXX11_TENSOR_TENSOR_EVALUATOR_H
 #define EIGEN_CXX11_TENSOR_TENSOR_EVALUATOR_H
 
-namespace Eigen {
+namespace StormEigen {
 
 /** \class TensorEvaluator
   * \ingroup CXX11_Tensor_Module
@@ -440,6 +440,6 @@ struct TensorEvaluator<const TensorSelectOp<IfArgType, ThenArgType, ElseArgType>
 };
 
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_CXX11_TENSOR_TENSOR_EVALUATOR_H

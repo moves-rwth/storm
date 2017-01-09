@@ -12,7 +12,7 @@
 
 
 
-namespace Eigen {
+namespace StormEigen {
 
 namespace internal {
 
@@ -304,7 +304,7 @@ inline bool array_zip_and_reduce(const array<A, N>& a, const array<B, N>& b) {
 
 }  // end namespace internal
 
-}  // end namespace Eigen
+}  // end namespace StormEigen
 
 
 

@@ -10,7 +10,7 @@
 #ifndef EIGEN_SPARSEPRODUCT_H
 #define EIGEN_SPARSEPRODUCT_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 /** \returns an expression of the product of two sparse matrices.
   * By default a conservative product preserving the symbolic non zeros is performed.
@@ -159,6 +159,6 @@ protected:
 
 } // end namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_SPARSEPRODUCT_H

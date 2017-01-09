@@ -11,7 +11,7 @@
 #ifndef EIGEN_MAP_H
 #define EIGEN_MAP_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 /** \class Map
   * \ingroup Core_Module
@@ -160,6 +160,6 @@ template<typename PlainObjectType, int MapOptions, typename StrideType> class Ma
 };
 
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_MAP_H

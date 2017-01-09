@@ -10,7 +10,7 @@
 #ifndef EIGEN_TRIANGULAR_SOLVER_VECTOR_H
 #define EIGEN_TRIANGULAR_SOLVER_VECTOR_H
 
-namespace Eigen {
+namespace StormEigen {
 
 namespace internal {
 
@@ -140,6 +140,6 @@ struct triangular_solve_vector<LhsScalar, RhsScalar, Index, OnTheLeft, Mode, Con
 
 } // end namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_TRIANGULAR_SOLVER_VECTOR_H

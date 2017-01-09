@@ -11,7 +11,7 @@
 #ifndef EIGEN_HOUSEHOLDER_H
 #define EIGEN_HOUSEHOLDER_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 namespace internal {
 template<int n> struct decrement_size
@@ -167,6 +167,6 @@ void MatrixBase<Derived>::applyHouseholderOnTheRight(
   }
 }
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_HOUSEHOLDER_H

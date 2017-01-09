@@ -5,7 +5,7 @@ using namespace std;
 
 int main()
 {
-  Eigen::MatrixXf m(3,3);
+  StormEigen::MatrixXf m(3,3);
   m << 1,2,3,
        4,5,6,
        7,8,9;

@@ -51,11 +51,11 @@ static void test_type2index_list()
   tensor.setRandom();
   tensor += tensor.constant(10.0f);
 
-  typedef Eigen::IndexList<Eigen::type2index<0>> Dims0;
-  typedef Eigen::IndexList<Eigen::type2index<0>, Eigen::type2index<1>> Dims1;
-  typedef Eigen::IndexList<Eigen::type2index<0>, Eigen::type2index<1>, Eigen::type2index<2>> Dims2;
-  typedef Eigen::IndexList<Eigen::type2index<0>, Eigen::type2index<1>, Eigen::type2index<2>, Eigen::type2index<3>> Dims3;
-  typedef Eigen::IndexList<Eigen::type2index<0>, Eigen::type2index<1>, Eigen::type2index<2>, Eigen::type2index<3>, Eigen::type2index<4>> Dims4;
+  typedef StormEigen::IndexList<StormEigen::type2index<0>> Dims0;
+  typedef StormEigen::IndexList<StormEigen::type2index<0>, Eigen::type2index<1>> Dims1;
+  typedef StormEigen::IndexList<StormEigen::type2index<0>, Eigen::type2index<1>, Eigen::type2index<2>> Dims2;
+  typedef StormEigen::IndexList<StormEigen::type2index<0>, Eigen::type2index<1>, Eigen::type2index<2>, Eigen::type2index<3>> Dims3;
+  typedef StormEigen::IndexList<StormEigen::type2index<0>, Eigen::type2index<1>, Eigen::type2index<2>, Eigen::type2index<3>, Eigen::type2index<4>> Dims4;
 
 #if 0
   EIGEN_STATIC_ASSERT((internal::indices_statically_known_to_increase<Dims0>() == true), YOU_MADE_A_PROGRAMMING_MISTAKE);
@@ -258,9 +258,9 @@ static void test_mixed_index_list()
 
 static void test_dim_check()
 {
-  Eigen::IndexList<Eigen::type2index<1>, int> dim1;
+  StormEigen::IndexList<StormEigen::type2index<1>, int> dim1;
   dim1.set(1, 2);
-  Eigen::IndexList<Eigen::type2index<1>, int> dim2;
+  StormEigen::IndexList<StormEigen::type2index<1>, int> dim2;
   dim2.set(1, 2);
   VERIFY(dimensions_match(dim1, dim2));
 }

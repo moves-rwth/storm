@@ -11,7 +11,7 @@
 #ifndef EIGEN_COMMAINITIALIZER_H
 #define EIGEN_COMMAINITIALIZER_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 /** \class CommaInitializer
   * \ingroup Core_Module
@@ -106,7 +106,7 @@ struct CommaInitializer
   EIGEN_DEVICE_FUNC
   inline ~CommaInitializer()
 #if defined VERIFY_RAISES_ASSERT && (!defined EIGEN_NO_ASSERTION_CHECKING) && defined EIGEN_EXCEPTIONS
-  EIGEN_EXCEPTION_SPEC(Eigen::eigen_assert_exception)
+  EIGEN_EXCEPTION_SPEC(StormEigen::eigen_assert_exception)
 #endif
   {
     eigen_assert((m_row+m_currentBlockRows) == m_xpr.rows()
@@ -158,6 +158,6 @@ DenseBase<Derived>::operator<<(const DenseBase<OtherDerived>& other)
   return CommaInitializer<Derived>(*static_cast<Derived *>(this), other);
 }
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_COMMAINITIALIZER_H

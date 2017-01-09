@@ -38,7 +38,7 @@ static void clobber() {
 
 #include <Eigen/Core>
 
-namespace Eigen
+namespace StormEigen
 {
 
 enum {

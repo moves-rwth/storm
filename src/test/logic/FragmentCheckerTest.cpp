@@ -83,7 +83,7 @@ TEST(FragmentCheckerTest, Prctl) {
     EXPECT_TRUE(checker.conformsToSpecification(*formula, prctl));
 
     ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString("P=? [F[0,1] \"label\"]"));
-    EXPECT_FALSE(checker.conformsToSpecification(*formula, prctl));
+    EXPECT_TRUE(checker.conformsToSpecification(*formula, prctl));
 }
 
 TEST(FragmentCheckerTest, Csl) {
@@ -160,7 +160,7 @@ TEST(FragmentCheckerTest, MultiObjective) {
     EXPECT_TRUE(checker.conformsToSpecification(*formula, multiobjective));
     
     ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString("P=? [F[0.5,1] \"label\"]"));
-    EXPECT_FALSE(checker.conformsToSpecification(*formula, multiobjective));
+    EXPECT_TRUE(checker.conformsToSpecification(*formula, multiobjective));
     
     ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString("multi(R<0.3 [ C ], P<0.6 [F \"label\"] & \"label\" & R<=4[F \"label\"])"));
     EXPECT_FALSE(checker.conformsToSpecification(*formula, multiobjective));

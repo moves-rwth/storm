@@ -12,7 +12,7 @@
 #ifndef EIGEN_QR_H
 #define EIGEN_QR_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 /** \ingroup QR_Module
   *
@@ -387,6 +387,6 @@ MatrixBase<Derived>::householderQr() const
 }
 #endif // __CUDACC__
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_QR_H

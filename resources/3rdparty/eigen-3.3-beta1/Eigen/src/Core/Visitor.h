@@ -10,7 +10,7 @@
 #ifndef EIGEN_VISITOR_H
 #define EIGEN_VISITOR_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 namespace internal {
 
@@ -266,6 +266,6 @@ DenseBase<Derived>::maxCoeff(IndexType* index) const
   return maxVisitor.res;
 }
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_VISITOR_H

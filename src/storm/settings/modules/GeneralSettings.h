@@ -86,6 +86,13 @@ namespace storm {
                 std::string getProperty() const;
 
                 /*!
+                 * Retrieves the property filter.
+                 *
+                 * @return The property filter.
+                 */
+                std::string getPropertyFilter() const;
+                
+                /*!
                  * Retrieves whether the option to perform bisimulation minimization is set.
                  *
                  * @return True iff the option was set.
@@ -98,7 +105,6 @@ namespace storm {
                  * @return True iff the option was set.
                  */
                 bool isParametricSet() const;
-
                 
                 /*!
                  * Retrieves whether the option enabling parametric region model checking is set.
@@ -114,13 +120,6 @@ namespace storm {
                  */
                 bool isMinMaxEquationSolvingTechniqueSet() const;
                 
-                /*!
-                 * Retrieves whether time and memory consumption shall be printed at the end of a run.
-                 *
-                 * @return True iff the option was set.
-                 */
-                bool isPrintTimeAndMemorySet() const;
-
                 /*!
                  * Retrieves whether the option enabling exact model checking is set.
                  *

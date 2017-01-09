@@ -63,7 +63,7 @@ void test_product_large()
   }
 
   {
-    Eigen::MatrixXd A(10,10), B, C;
+    StormEigen::MatrixXd A(10,10), B, C;
     A.setRandom();
     C = A;
     for(int k=0; k<79; ++k)

@@ -10,7 +10,7 @@
 #ifndef EIGEN_CXX11_TENSOR_TENSOR_EXECUTOR_H
 #define EIGEN_CXX11_TENSOR_TENSOR_EXECUTOR_H
 
-namespace Eigen {
+namespace StormEigen {
 
 /** \class TensorExecutor
   * \ingroup CXX11_Tensor_Module
@@ -253,6 +253,6 @@ inline void TensorExecutor<Expression, GpuDevice, true>::run(const Expression& e
 
 } // end namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_CXX11_TENSOR_TENSOR_EXECUTOR_H

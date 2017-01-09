@@ -15,7 +15,7 @@
 #ifndef EIGEN_MATH_FUNCTIONS_ALTIVEC_H
 #define EIGEN_MATH_FUNCTIONS_ALTIVEC_H
 
-namespace Eigen {
+namespace StormEigen {
 
 namespace internal {
 
@@ -285,6 +285,6 @@ Packet2d pexp<Packet2d>(const Packet2d& _x)
 
 }  // end namespace internal
 
-}  // end namespace Eigen
+}  // end namespace StormEigen
 
 #endif  // EIGEN_MATH_FUNCTIONS_ALTIVEC_H

@@ -13,7 +13,7 @@
 #define EIGEN_MINRES_H_
 
 
-namespace Eigen {
+namespace StormEigen {
     
     namespace internal {
         
@@ -283,7 +283,7 @@ namespace Eigen {
         
     };
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_MINRES_H
 

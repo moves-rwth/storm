@@ -11,7 +11,7 @@
 #ifndef EIGEN_ORDERING_H
 #define EIGEN_ORDERING_H
 
-namespace Eigen {
+namespace StormEigen {
   
 #include "Eigen_Colamd.h"
 
@@ -151,6 +151,6 @@ class COLAMDOrdering
     }
 };
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif

@@ -14,7 +14,7 @@
 
 #include "./ComplexSchur.h"
 
-namespace Eigen { 
+namespace StormEigen { 
 
 /** \eigenvalues_module \ingroup Eigenvalues_Module
   *
@@ -60,7 +60,7 @@ template<typename _MatrixType> class ComplexEigenSolver
     /** \brief Scalar type for matrices of type #MatrixType. */
     typedef typename MatrixType::Scalar Scalar;
     typedef typename NumTraits<Scalar>::Real RealScalar;
-    typedef Eigen::Index Index; ///< \deprecated since Eigen 3.3
+    typedef StormEigen::Index Index; ///< \deprecated since Eigen 3.3
 
     /** \brief Complex scalar type for #MatrixType.
       *
@@ -339,6 +339,6 @@ void ComplexEigenSolver<MatrixType>::sortEigenvalues(bool computeEigenvectors)
   }
 }
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_COMPLEX_EIGEN_SOLVER_H

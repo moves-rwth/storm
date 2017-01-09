@@ -22,7 +22,7 @@
   #define EIGEN_EMPTY_STRUCT_CTOR(X)
 #endif
 
-namespace Eigen {
+namespace StormEigen {
 
 typedef EIGEN_DEFAULT_DENSE_INDEX_TYPE DenseIndex;
 
@@ -709,6 +709,6 @@ std::string demangle_flags(int f)
                         : int(internal::is_same_or_void<LHS, RHS>::value)), \
     YOU_MIXED_DIFFERENT_NUMERIC_TYPES__YOU_NEED_TO_USE_THE_CAST_METHOD_OF_MATRIXBASE_TO_CAST_NUMERIC_TYPES_EXPLICITLY)
     
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_XPRHELPER_H

@@ -1,5 +1,5 @@
 template <class ArgType>
-class Circulant : public Eigen::MatrixBase<Circulant<ArgType> >
+class Circulant : public StormEigen::MatrixBase<Circulant<ArgType> >
 {
 public:
   Circulant(const ArgType& arg)
@@ -9,12 +9,12 @@ public:
                         YOU_TRIED_CALLING_A_VECTOR_METHOD_ON_A_MATRIX);
   }
 
-  typedef typename Eigen::internal::ref_selector<Circulant>::type Nested; 
+  typedef typename StormEigen::internal::ref_selector<Circulant>::type Nested; 
 
-  typedef Eigen::Index Index;
+  typedef StormEigen::Index Index;
   Index rows() const { return m_arg.rows(); }
   Index cols() const { return m_arg.rows(); }
 
-  typedef typename Eigen::internal::ref_selector<ArgType>::type ArgTypeNested;
+  typedef typename StormEigen::internal::ref_selector<ArgType>::type ArgTypeNested;
   ArgTypeNested m_arg;
 };

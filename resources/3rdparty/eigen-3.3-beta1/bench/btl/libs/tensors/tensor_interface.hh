@@ -13,20 +13,20 @@
 #include <vector>
 #include "btl.hh"
 
-using namespace Eigen;
+using namespace StormEigen;
 
 template<class real>
 class tensor_interface
 {
 public :
   typedef real real_type;
-  typedef typename Eigen::Tensor<real,2>::Index Index;
+  typedef typename StormEigen::Tensor<real,2>::Index Index;
 
   typedef std::vector<real> stl_vector;
   typedef std::vector<stl_vector> stl_matrix;
 
-  typedef Eigen::Tensor<real,2> gene_matrix;
-  typedef Eigen::Tensor<real,1> gene_vector;
+  typedef StormEigen::Tensor<real,2> gene_matrix;
+  typedef StormEigen::Tensor<real,1> gene_vector;
 
 
   static inline std::string name( void )
@@ -39,11 +39,11 @@ public :
   static void free_vector(gene_vector & /*B*/) {}
 
   static BTL_DONT_INLINE void matrix_from_stl(gene_matrix & A, stl_matrix & A_stl){
-    A.resize(Eigen::array<Index,2>(A_stl[0].size(), A_stl.size()));
+    A.resize(StormEigen::array<Index,2>(A_stl[0].size(), A_stl.size()));
 
     for (unsigned int j=0; j<A_stl.size() ; j++){
       for (unsigned int i=0; i<A_stl[j].size() ; i++){
-        A.coeffRef(Eigen::array<Index,2>(i,j)) = A_stl[j][i];
+        A.coeffRef(StormEigen::array<Index,2>(i,j)) = A_stl[j][i];
       }
     }
   }
@@ -68,20 +68,20 @@ public :
     for (int j=0;j<N;j++){
       A_stl[j].resize(N);
       for (int i=0;i<N;i++){
-        A_stl[j][i] = A.coeff(Eigen::array<Index,2>(i,j));
+        A_stl[j][i] = A.coeff(StormEigen::array<Index,2>(i,j));
       }
     }
   }
 
   static inline void matrix_matrix_product(const gene_matrix & A, const gene_matrix & B, gene_matrix & X, int  /*N*/){
-    typedef typename Eigen::Tensor<real_type, 1>::DimensionPair DimPair;
-    const Eigen::array<DimPair, 1> dims(DimPair(1, 0));
+    typedef typename StormEigen::Tensor<real_type, 1>::DimensionPair DimPair;
+    const StormEigen::array<DimPair, 1> dims(DimPair(1, 0));
     X/*.noalias()*/ = A.contract(B, dims);
   }
 
   static inline void matrix_vector_product(const gene_matrix & A, const gene_vector & B, gene_vector & X, int  /*N*/){
-    typedef typename Eigen::Tensor<real_type, 1>::DimensionPair DimPair;
-    const Eigen::array<DimPair, 1> dims(DimPair(1, 0));
+    typedef typename StormEigen::Tensor<real_type, 1>::DimensionPair DimPair;
+    const StormEigen::array<DimPair, 1> dims(DimPair(1, 0));
     X/*.noalias()*/ = A.contract(B, dims);
   }
 

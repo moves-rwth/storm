@@ -11,16 +11,16 @@
 
 #include <Eigen/CXX11/Tensor>
 
-using Eigen::Tensor;
+using StormEigen::Tensor;
 
 
 static void test_dynamic_size()
 {
-  Eigen::DSizes<int, 3> dimensions(2,3,7);
+  StormEigen::DSizes<int, 3> dimensions(2,3,7);
 
-  VERIFY_IS_EQUAL((int)Eigen::internal::array_get<0>(dimensions), 2);
-  VERIFY_IS_EQUAL((int)Eigen::internal::array_get<1>(dimensions), 3);
-  VERIFY_IS_EQUAL((int)Eigen::internal::array_get<2>(dimensions), 7);
+  VERIFY_IS_EQUAL((int)StormEigen::internal::array_get<0>(dimensions), 2);
+  VERIFY_IS_EQUAL((int)StormEigen::internal::array_get<1>(dimensions), 3);
+  VERIFY_IS_EQUAL((int)StormEigen::internal::array_get<2>(dimensions), 7);
   VERIFY_IS_EQUAL(dimensions.TotalSize(), 2*3*7);
   VERIFY_IS_EQUAL((int)dimensions[0], 2);
   VERIFY_IS_EQUAL((int)dimensions[1], 3);
@@ -29,24 +29,24 @@ static void test_dynamic_size()
 
 static void test_fixed_size()
 {
-  Eigen::Sizes<2,3,7> dimensions;
+  StormEigen::Sizes<2,3,7> dimensions;
 
-  VERIFY_IS_EQUAL((int)Eigen::internal::array_get<0>(dimensions), 2);
-  VERIFY_IS_EQUAL((int)Eigen::internal::array_get<1>(dimensions), 3);
-  VERIFY_IS_EQUAL((int)Eigen::internal::array_get<2>(dimensions), 7);
+  VERIFY_IS_EQUAL((int)StormEigen::internal::array_get<0>(dimensions), 2);
+  VERIFY_IS_EQUAL((int)StormEigen::internal::array_get<1>(dimensions), 3);
+  VERIFY_IS_EQUAL((int)StormEigen::internal::array_get<2>(dimensions), 7);
   VERIFY_IS_EQUAL(dimensions.TotalSize(), 2*3*7);
 }
 
 
 static void test_match()
 {
-  Eigen::DSizes<int, 3> dyn(2,3,7);
-  Eigen::Sizes<2,3,7> stat;
-  VERIFY_IS_EQUAL(Eigen::dimensions_match(dyn, stat), true);
+  StormEigen::DSizes<int, 3> dyn(2,3,7);
+  StormEigen::Sizes<2,3,7> stat;
+  VERIFY_IS_EQUAL(StormEigen::dimensions_match(dyn, stat), true);
 
-  Eigen::DSizes<int, 3> dyn1(2,3,7);
-  Eigen::DSizes<int, 2> dyn2(2,3);
-  VERIFY_IS_EQUAL(Eigen::dimensions_match(dyn1, dyn2), false);
+  StormEigen::DSizes<int, 3> dyn1(2,3,7);
+  StormEigen::DSizes<int, 2> dyn2(2,3);
+  VERIFY_IS_EQUAL(StormEigen::dimensions_match(dyn1, dyn2), false);
 }
 
 

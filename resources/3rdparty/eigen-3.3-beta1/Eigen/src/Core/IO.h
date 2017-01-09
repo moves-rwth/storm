@@ -11,7 +11,7 @@
 #ifndef EIGEN_IO_H
 #define EIGEN_IO_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 enum { DontAlignCols = 1 };
 enum { StreamPrecision = -1,
@@ -236,7 +236,7 @@ std::ostream & print_matrix(std::ostream & s, const Derived& _m, const IOFormat&
   * If you wish to print the matrix with a format different than the default, use DenseBase::format().
   *
   * It is also possible to change the default format by defining EIGEN_DEFAULT_IO_FORMAT before including Eigen headers.
-  * If not defined, this will automatically be defined to Eigen::IOFormat(), that is the Eigen::IOFormat with default parameters.
+  * If not defined, this will automatically be defined to StormEigen::IOFormat(), that is the StormEigen::IOFormat with default parameters.
   *
   * \sa DenseBase::format()
   */
@@ -248,6 +248,6 @@ std::ostream & operator <<
   return internal::print_matrix(s, m.eval(), EIGEN_DEFAULT_IO_FORMAT);
 }
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_IO_H

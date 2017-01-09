@@ -10,7 +10,7 @@
 #ifndef EIGEN_CXX11_TENSOR_TENSOR_EVAL_TO_H
 #define EIGEN_CXX11_TENSOR_TENSOR_EVAL_TO_H
 
-namespace Eigen {
+namespace StormEigen {
 
 /** \class TensorForcedEval
   * \ingroup CXX11_Tensor_Module
@@ -40,7 +40,7 @@ struct traits<TensorEvalToOp<XprType> >
 };
 
 template<typename XprType>
-struct eval<TensorEvalToOp<XprType>, Eigen::Dense>
+struct eval<TensorEvalToOp<XprType>, StormEigen::Dense>
 {
   typedef const TensorEvalToOp<XprType>& type;
 };
@@ -60,14 +60,14 @@ template<typename XprType>
 class TensorEvalToOp : public TensorBase<TensorEvalToOp<XprType> >
 {
   public:
-  typedef typename Eigen::internal::traits<TensorEvalToOp>::Scalar Scalar;
-  typedef typename Eigen::internal::traits<TensorEvalToOp>::Packet Packet;
-  typedef typename Eigen::NumTraits<Scalar>::Real RealScalar;
+  typedef typename StormEigen::internal::traits<TensorEvalToOp>::Scalar Scalar;
+  typedef typename StormEigen::internal::traits<TensorEvalToOp>::Packet Packet;
+  typedef typename StormEigen::NumTraits<Scalar>::Real RealScalar;
   typedef typename internal::remove_const<typename XprType::CoeffReturnType>::type CoeffReturnType;
   typedef typename internal::remove_const<typename XprType::PacketReturnType>::type PacketReturnType;
-  typedef typename Eigen::internal::nested<TensorEvalToOp>::type Nested;
-  typedef typename Eigen::internal::traits<TensorEvalToOp>::StorageKind StorageKind;
-  typedef typename Eigen::internal::traits<TensorEvalToOp>::Index Index;
+  typedef typename StormEigen::internal::nested<TensorEvalToOp>::type Nested;
+  typedef typename StormEigen::internal::traits<TensorEvalToOp>::StorageKind StorageKind;
+  typedef typename StormEigen::internal::traits<TensorEvalToOp>::Index Index;
 
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TensorEvalToOp(CoeffReturnType* buffer, const XprType& expr)
       : m_xpr(expr), m_buffer(buffer) {}
@@ -149,6 +149,6 @@ struct TensorEvaluator<const TensorEvalToOp<ArgType>, Device>
 };
 
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_CXX11_TENSOR_TENSOR_EVAL_TO_H

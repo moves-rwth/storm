@@ -10,7 +10,7 @@
 #include "trackball.h"
 #include "camera.h"
 
-using namespace Eigen;
+using namespace StormEigen;
 
 void Trackball::track(const Vector2i& point2D)
 {

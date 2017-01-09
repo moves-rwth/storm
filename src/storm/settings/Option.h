@@ -64,7 +64,7 @@ namespace storm {
              * @param other The other option with which to check compatibility.
              * @return True iff the given argument is compatible with the current one.
              */
-                bool isCompatibleWith(Option const& other);
+            bool isCompatibleWith(Option const& other);
 
             /*!
              * Retrieves the argument count this option expects.
@@ -96,6 +96,14 @@ namespace storm {
              * @return The argument with the given name.
              */
             ArgumentBase const& getArgumentByName(std::string const& argumentName) const;
+                
+            /*!
+             * Returns a reference to the argument with the specified long name.
+             *
+             * @param argumentName The name of the argument to retrieve.
+             * @return The argument with the given name.
+             */
+            ArgumentBase& getArgumentByName(std::string const& argumentName);
 
             /*!
              * Retrieves the long name of this option.

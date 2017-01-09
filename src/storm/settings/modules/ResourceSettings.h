@@ -19,6 +19,13 @@ namespace storm {
                 ResourceSettings();
 
                 /*!
+                 * Retrieves whether time and memory consumption shall be printed at the end of a run.
+                 *
+                 * @return True iff the option was set.
+                 */
+                bool isPrintTimeAndMemorySet() const;
+                
+                /*!
                  * Retrieves whether the timeout option was set.
                  *
                  * @return True if the timeout option was set.
@@ -39,6 +46,8 @@ namespace storm {
                 // Define the string names of the options as constants.
                 static const std::string timeoutOptionName;
                 static const std::string timeoutOptionShortName;
+                static const std::string printTimeAndMemoryOptionName;
+                static const std::string printTimeAndMemoryOptionShortName;
             };
         }
     }

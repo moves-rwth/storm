@@ -11,7 +11,7 @@
 #ifndef EIGEN_MATRIXBASEEIGENVALUES_H
 #define EIGEN_MATRIXBASEEIGENVALUES_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 namespace internal {
 
@@ -155,6 +155,6 @@ SelfAdjointView<MatrixType, UpLo>::operatorNorm() const
   return eigenvalues().cwiseAbs().maxCoeff();
 }
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif

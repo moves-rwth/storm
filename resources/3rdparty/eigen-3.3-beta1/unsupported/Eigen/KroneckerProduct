@@ -13,7 +13,7 @@
 
 #include "../../Eigen/src/Core/util/DisableStupidWarnings.h"
 
-namespace Eigen {
+namespace StormEigen {
 
 /**
   * \defgroup KroneckerProduct_Module KroneckerProduct module
@@ -25,7 +25,7 @@ namespace Eigen {
   * \endcode
   */
 
-} // namespace Eigen
+} // namespace StormEigen
 
 #include "src/KroneckerProduct/KroneckerTensorProduct.h"
 

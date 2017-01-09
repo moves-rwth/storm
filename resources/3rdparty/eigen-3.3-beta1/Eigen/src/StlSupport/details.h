@@ -12,10 +12,10 @@
 #define EIGEN_STL_DETAILS_H
 
 #ifndef EIGEN_ALIGNED_ALLOCATOR
-  #define EIGEN_ALIGNED_ALLOCATOR Eigen::aligned_allocator
+  #define EIGEN_ALIGNED_ALLOCATOR StormEigen::aligned_allocator
 #endif
 
-namespace Eigen {
+namespace StormEigen {
 
   // This one is needed to prevent reimplementing the whole std::vector.
   template <class T>
@@ -52,10 +52,10 @@ namespace Eigen {
   // in std::vector::resize(size_t s,T x) won't be aligned and generate an error
   // even if this function is never called. Whence this little wrapper.
 #define EIGEN_WORKAROUND_MSVC_STL_SUPPORT(T) \
-  typename Eigen::internal::conditional< \
-    Eigen::internal::is_arithmetic<T>::value, \
+  typename StormEigen::internal::conditional< \
+    StormEigen::internal::is_arithmetic<T>::value, \
     T, \
-    Eigen::internal::workaround_msvc_stl_support<T> \
+    StormEigen::internal::workaround_msvc_stl_support<T> \
   >::type
 
   namespace internal {

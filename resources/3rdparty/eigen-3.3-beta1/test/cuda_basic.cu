@@ -20,7 +20,7 @@
 // struct Foo{
 //   EIGEN_DEVICE_FUNC
 //   void operator()(int i, const float* mats, float* vecs) const {
-//     using namespace Eigen;
+//     using namespace StormEigen;
 //   //   Matrix3f M(data);
 //   //   Vector3f x(data+9);
 //   //   Map<Vector3f>(data+9) = M.inverse() * x;
@@ -38,7 +38,7 @@ struct coeff_wise {
   EIGEN_DEVICE_FUNC
   void operator()(int i, const typename T::Scalar* in, typename T::Scalar* out) const
   {
-    using namespace Eigen;
+    using namespace StormEigen;
     T x1(in+i);
     T x2(in+i+1);
     T x3(in+i+2);
@@ -53,7 +53,7 @@ struct replicate {
   EIGEN_DEVICE_FUNC
   void operator()(int i, const typename T::Scalar* in, typename T::Scalar* out) const
   {
-    using namespace Eigen;
+    using namespace StormEigen;
     T x1(in+i);
     int step   = x1.size() * 4;
     int stride = 3 * step;
@@ -70,7 +70,7 @@ struct redux {
   EIGEN_DEVICE_FUNC
   void operator()(int i, const typename T::Scalar* in, typename T::Scalar* out) const
   {
-    using namespace Eigen;
+    using namespace StormEigen;
     int N = 10;
     T x1(in+i);
     out[i*N+0] = x1.minCoeff();
@@ -90,7 +90,7 @@ struct prod_test {
   EIGEN_DEVICE_FUNC
   void operator()(int i, const typename T1::Scalar* in, typename T1::Scalar* out) const
   {
-    using namespace Eigen;
+    using namespace StormEigen;
     typedef Matrix<typename T1::Scalar, T1::RowsAtCompileTime, T2::ColsAtCompileTime> T3;
     T1 x1(in+i);
     T2 x2(in+i+1);
@@ -104,7 +104,7 @@ struct diagonal {
   EIGEN_DEVICE_FUNC
   void operator()(int i, const typename T1::Scalar* in, typename T1::Scalar* out) const
   {
-    using namespace Eigen;
+    using namespace StormEigen;
     T1 x1(in+i);
     Map<T2> res(out+i*T2::MaxSizeAtCompileTime);
     res += x1.diagonal();
@@ -116,7 +116,7 @@ struct eigenvalues {
   EIGEN_DEVICE_FUNC
   void operator()(int i, const typename T::Scalar* in, typename T::Scalar* out) const
   {
-    using namespace Eigen;
+    using namespace StormEigen;
     typedef Matrix<typename T::Scalar, T::RowsAtCompileTime, 1> Vec;
     T M(in+i);
     Map<Vec> res(out+i*Vec::MaxSizeAtCompileTime);
@@ -132,7 +132,7 @@ void test_cuda_basic()
   ei_test_init_cuda();
   
   int nthreads = 100;
-  Eigen::VectorXf in, out;
+  StormEigen::VectorXf in, out;
   
   #ifndef __CUDA_ARCH__
   int data_size = nthreads * 512;

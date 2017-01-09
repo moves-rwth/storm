@@ -12,7 +12,7 @@
 #ifndef EIGEN_MATH_FUNCTIONS_NEON_H
 #define EIGEN_MATH_FUNCTIONS_NEON_H
 
-namespace Eigen {
+namespace StormEigen {
 
 namespace internal {
 
@@ -86,6 +86,6 @@ Packet4f pexp<Packet4f>(const Packet4f& _x)
 
 } // end namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_MATH_FUNCTIONS_NEON_H

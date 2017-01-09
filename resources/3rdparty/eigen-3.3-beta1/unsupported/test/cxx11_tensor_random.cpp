@@ -26,7 +26,7 @@ static void test_default()
 static void test_normal()
 {
   Tensor<float, 1> vec(6);
-  vec.setRandom<Eigen::internal::NormalRandomGenerator<float>>();
+  vec.setRandom<StormEigen::internal::NormalRandomGenerator<float>>();
 
   // Fixme: we should check that the generated numbers follow a gaussian
   // distribution instead.
@@ -43,13 +43,13 @@ struct MyGenerator {
   // Return a random value to be used.  "element_location" is the
   // location of the entry to set in the tensor, it can typically
   // be ignored.
-  int operator()(Eigen::DenseIndex element_location, Eigen::DenseIndex /*unused*/ = 0) const {
+  int operator()(StormEigen::DenseIndex element_location, StormEigen::DenseIndex /*unused*/ = 0) const {
     return static_cast<int>(3 * element_location);
   }
 
   // Same as above but generates several numbers at a time.
   typename internal::packet_traits<int>::type packetOp(
-      Eigen::DenseIndex packet_location, Eigen::DenseIndex /*unused*/ = 0) const {
+      StormEigen::DenseIndex packet_location, StormEigen::DenseIndex /*unused*/ = 0) const {
     const int packetSize = internal::packet_traits<int>::size;
     EIGEN_ALIGN_MAX int values[packetSize];
     for (int i = 0; i < packetSize; ++i) {

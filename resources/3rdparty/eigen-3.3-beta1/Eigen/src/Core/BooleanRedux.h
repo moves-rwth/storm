@@ -10,7 +10,7 @@
 #ifndef EIGEN_ALLANDANY_H
 #define EIGEN_ALLANDANY_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 namespace internal {
 
@@ -126,7 +126,7 @@ inline bool DenseBase<Derived>::any() const
   * \sa all(), any()
   */
 template<typename Derived>
-inline Eigen::Index DenseBase<Derived>::count() const
+inline StormEigen::Index DenseBase<Derived>::count() const
 {
   return derived().template cast<bool>().template cast<Index>().sum();
 }
@@ -159,6 +159,6 @@ inline bool DenseBase<Derived>::allFinite() const
 #endif
 }
     
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_ALLANDANY_H

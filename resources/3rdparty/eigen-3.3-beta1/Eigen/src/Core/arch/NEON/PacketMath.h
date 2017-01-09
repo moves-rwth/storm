@@ -12,7 +12,7 @@
 #ifndef EIGEN_PACKET_MATH_NEON_H
 #define EIGEN_PACKET_MATH_NEON_H
 
-namespace Eigen {
+namespace StormEigen {
 
 namespace internal {
 
@@ -726,6 +726,6 @@ ptranspose(PacketBlock<Packet2d,2>& kernel) {
 
 } // end namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_PACKET_MATH_NEON_H

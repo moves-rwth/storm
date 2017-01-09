@@ -10,7 +10,7 @@
 #include "main.h"
 #include <unsupported/Eigen/AlignedVector3>
 
-namespace Eigen {
+namespace StormEigen {
 
 template<typename T,typename Derived>
 T test_relative_error(const AlignedVector3<T> &a, const MatrixBase<Derived> &b)

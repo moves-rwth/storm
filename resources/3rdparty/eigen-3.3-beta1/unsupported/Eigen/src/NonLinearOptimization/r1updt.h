@@ -1,4 +1,4 @@
-namespace Eigen { 
+namespace StormEigen { 
 
 namespace internal {
 
@@ -96,4 +96,4 @@ void r1updt(
 
 } // end namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
