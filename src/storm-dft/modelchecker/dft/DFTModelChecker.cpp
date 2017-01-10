@@ -20,13 +20,8 @@ namespace storm {
         template<typename ValueType>
         void DFTModelChecker<ValueType>::check(storm::storage::DFT<ValueType> const& origDft, std::shared_ptr<const storm::logic::Formula> const& formula, bool symred, bool allowModularisation, bool enableDC, double approximationError) {
             // Initialize
-            this->explorationTime = std::chrono::duration<double>::zero();
-            this->buildingTime = std::chrono::duration<double>::zero();
-            this->bisimulationTime = std::chrono::duration<double>::zero();
-            this->modelCheckingTime = std::chrono::duration<double>::zero();
-            this->totalTime = std::chrono::duration<double>::zero();
             this->approximationError = approximationError;
-            totalStart = std::chrono::high_resolution_clock::now();
+            totalTimer.start();
 
             // Optimizing DFT
             storm::storage::DFT<ValueType> dft = origDft.optimize();
@@ -44,7 +39,7 @@ namespace storm {
                 checkResult = result->asExplicitQuantitativeCheckResult<ValueType>().getValueMap().begin()->second;
 
             }
-            this->totalTime = std::chrono::high_resolution_clock::now() - totalStart;
+            totalTimer.stop();
         }
 
         template<typename ValueType>
@@ -191,7 +186,7 @@ namespace storm {
                     std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> composedModel;
                     for (auto const ft : dfts) {
                         STORM_LOG_INFO("Building Model via parallel composition...");
-                        std::chrono::high_resolution_clock::time_point checkingStart = std::chrono::high_resolution_clock::now();
+                        explorationTimer.start();
 
                         // Find symmetries
                         std::map<size_t, std::vector<std::vector<size_t>>> emptySymmetry;
@@ -212,7 +207,7 @@ namespace storm {
                         //model->printModelInformationToStream(std::cout);
                         STORM_LOG_INFO("No. states (Explored): " << model->getNumberOfStates());
                         STORM_LOG_INFO("No. transitions (Explored): " << model->getNumberOfTransitions());
-                        explorationTime += std::chrono::high_resolution_clock::now() - checkingStart;
+                        explorationTimer.stop();
 
                         STORM_LOG_THROW(model->isOfType(storm::models::ModelType::Ctmc), storm::exceptions::NotSupportedException, "Parallel composition only applicable for CTMCs");
                         std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> ctmc = model->template as<storm::models::sparse::Ctmc<ValueType>>();
@@ -227,10 +222,10 @@ namespace storm {
                         }
 
                         // Apply bisimulation
-                        std::chrono::high_resolution_clock::time_point bisimulationStart = std::chrono::high_resolution_clock::now();
+                        bisimulationTimer.start();
                         composedModel =  storm::performDeterministicSparseBisimulationMinimization<storm::models::sparse::Ctmc<ValueType>>(composedModel, {formula}, storm::storage::BisimulationType::Weak)->template as<storm::models::sparse::Ctmc<ValueType>>();
                         std::chrono::high_resolution_clock::time_point bisimulationEnd = std::chrono::high_resolution_clock::now();
-                        bisimulationTime += bisimulationEnd - bisimulationStart;
+                        bisimulationTimer.stop();
 
                         STORM_LOG_INFO("No. states (Composed): " << composedModel->getNumberOfStates());
                         STORM_LOG_INFO("No. transitions (Composed): " << composedModel->getNumberOfTransitions());
@@ -247,7 +242,7 @@ namespace storm {
 
             // If we are here, no composition was possible
             STORM_LOG_ASSERT(!modularisationPossible, "Modularisation should not be possible.");
-            std::chrono::high_resolution_clock::time_point checkingStart = std::chrono::high_resolution_clock::now();
+            explorationTimer.start();
             // Find symmetries
             std::map<size_t, std::vector<std::vector<size_t>>> emptySymmetry;
             storm::storage::DFTIndependentSymmetries symmetries(emptySymmetry);
@@ -268,7 +263,7 @@ namespace storm {
             //model->printModelInformationToStream(std::cout);
             STORM_LOG_INFO("No. states (Explored): " << model->getNumberOfStates());
             STORM_LOG_INFO("No. transitions (Explored): " << model->getNumberOfTransitions());
-            explorationTime += std::chrono::high_resolution_clock::now() - checkingStart;
+            explorationTimer.stop();
             STORM_LOG_THROW(model->isOfType(storm::models::ModelType::Ctmc), storm::exceptions::NotSupportedException, "Parallel composition only applicable for CTMCs");
 
             return model->template as<storm::models::sparse::Ctmc<ValueType>>();
@@ -276,7 +271,7 @@ namespace storm {
 
         template<typename ValueType>
         typename DFTModelChecker<ValueType>::dft_result DFTModelChecker<ValueType>::checkDFT(storm::storage::DFT<ValueType> const& dft, std::shared_ptr<const storm::logic::Formula> const& formula, bool symred, bool enableDC, double approximationError) {
-            std::chrono::high_resolution_clock::time_point checkingStart = std::chrono::high_resolution_clock::now();
+            explorationTimer.start();
 
             // Find symmetries
             std::map<size_t, std::vector<std::vector<size_t>>> emptySymmetry;
@@ -302,12 +297,14 @@ namespace storm {
                 size_t iteration = 0;
                 do {
                     // Iteratively build finer models
-                    std::chrono::high_resolution_clock::time_point explorationStart = std::chrono::high_resolution_clock::now();
+                    if (iteration > 0) {
+                        explorationTimer.start();
+                    }
                     STORM_LOG_INFO("Building model...");
                     // TODO Matthias refine model using existing model and MC results
                     builder.buildModel(labeloptions, iteration, approximationError);
-                    std::chrono::high_resolution_clock::time_point explorationEnd = std::chrono::high_resolution_clock::now();
-                    explorationTime += explorationEnd - explorationStart;
+                    explorationTimer.stop();
+                    buildingTimer.start();
 
                     // TODO Matthias: possible to do bisimulation on approximated model and not on concrete one?
 
@@ -317,7 +314,7 @@ namespace storm {
                     // We only output the info from the lower bound as the info for the upper bound is the same
                     STORM_LOG_INFO("No. states: " << model->getNumberOfStates());
                     STORM_LOG_INFO("No. transitions: " << model->getNumberOfTransitions());
-                    buildingTime += std::chrono::high_resolution_clock::now() - explorationEnd;
+                    buildingTimer.stop();
 
                     // Check lower bound
                     std::unique_ptr<storm::modelchecker::CheckResult> result = checkModel(model, formula);
@@ -328,9 +325,9 @@ namespace storm {
 
                     // Build model for upper bound
                     STORM_LOG_INFO("Getting model for upper bound...");
-                    explorationEnd = std::chrono::high_resolution_clock::now();
+                    buildingTimer.start();
                     model = builder.getModelApproximation(probabilityFormula ? true : false);
-                    buildingTime += std::chrono::high_resolution_clock::now() - explorationEnd;
+                    buildingTimer.stop();
                     // Check upper bound
                     result = checkModel(model, formula);
                     result->filter(storm::modelchecker::ExplicitQualitativeCheckResult(model->getInitialStates()));
@@ -340,8 +337,9 @@ namespace storm {
 
                     ++iteration;
                     STORM_LOG_INFO("Result after iteration " << iteration << ": (" << std::setprecision(10) << approxResult.first << ", " << approxResult.second << ")");
-                    totalTime = std::chrono::high_resolution_clock::now() - totalStart;
+                    totalTimer.stop();
                     printTimings();
+                    totalTimer.start();
                     STORM_LOG_THROW(!storm::utility::isInfinity<ValueType>(approxResult.first) && !storm::utility::isInfinity<ValueType>(approxResult.second), storm::exceptions::NotSupportedException, "Approximation does not work if result might be infinity.");
                 } while (!isApproximationSufficient(approxResult.first, approxResult.second, approximationError, probabilityFormula));
 
@@ -365,7 +363,7 @@ namespace storm {
                 //model->printModelInformationToStream(std::cout);
                 STORM_LOG_INFO("No. states (Explored): " << model->getNumberOfStates());
                 STORM_LOG_INFO("No. transitions (Explored): " << model->getNumberOfTransitions());
-                explorationTime += std::chrono::high_resolution_clock::now() - checkingStart;
+                explorationTimer.stop();
 
                 // Model checking
                 std::unique_ptr<storm::modelchecker::CheckResult> result = checkModel(model, formula);
@@ -377,22 +375,22 @@ namespace storm {
         template<typename ValueType>
         std::unique_ptr<storm::modelchecker::CheckResult> DFTModelChecker<ValueType>::checkModel(std::shared_ptr<storm::models::sparse::Model<ValueType>>& model, std::shared_ptr<const storm::logic::Formula> const& formula) {
             // Bisimulation
-            std::chrono::high_resolution_clock::time_point bisimulationStart = std::chrono::high_resolution_clock::now();
+            bisimulationTimer.start();
             if (model->isOfType(storm::models::ModelType::Ctmc) && storm::settings::getModule<storm::settings::modules::GeneralSettings>().isBisimulationSet()) {
                 STORM_LOG_INFO("Bisimulation...");
                 model =  storm::performDeterministicSparseBisimulationMinimization<storm::models::sparse::Ctmc<ValueType>>(model->template as<storm::models::sparse::Ctmc<ValueType>>(), {formula}, storm::storage::BisimulationType::Weak)->template as<storm::models::sparse::Ctmc<ValueType>>();
                 STORM_LOG_INFO("No. states (Bisimulation): " << model->getNumberOfStates());
                 STORM_LOG_INFO("No. transitions (Bisimulation): " << model->getNumberOfTransitions());
             }
-            std::chrono::high_resolution_clock::time_point bisimulationEnd = std::chrono::high_resolution_clock::now();
-            bisimulationTime += bisimulationEnd - bisimulationStart;
+            bisimulationTimer.stop();
+            modelCheckingTimer.start();
 
             // Check the model
             STORM_LOG_INFO("Model checking...");
             std::unique_ptr<storm::modelchecker::CheckResult> result(storm::verifySparseModel(model, formula));
             STORM_LOG_INFO("Model checking done.");
             STORM_LOG_ASSERT(result, "Result does not exist.");
-            modelCheckingTime += std::chrono::high_resolution_clock::now() - bisimulationEnd;
+            modelCheckingTimer.stop();
             return result;
         }
 
@@ -414,11 +412,11 @@ namespace storm {
         template<typename ValueType>
         void DFTModelChecker<ValueType>::printTimings(std::ostream& os) {
             os << "Times:" << std::endl;
-            os << "Exploration:\t" << explorationTime.count() << std::endl;
-            os << "Building:\t" << buildingTime.count() << std::endl;
-            os << "Bisimulation:\t" << bisimulationTime.count() << std::endl;
-            os << "Modelchecking:\t" << modelCheckingTime.count() << std::endl;
-            os << "Total:\t\t" << totalTime.count() << std::endl;
+            os << "Exploration:\t" << explorationTimer.getTimeSeconds() << "s" << std::endl;
+            os << "Building:\t" << buildingTimer.getTimeSeconds() << "s" << std::endl;
+            os << "Bisimulation:\t" << bisimulationTimer.getTimeSeconds() << "s" << std::endl;
+            os << "Modelchecking:\t" << modelCheckingTimer.getTimeSeconds() << "s" << std::endl;
+            os << "Total:\t\t" << totalTimer.getTimeSeconds() << "s" << std::endl;
         }
 
         template<typename ValueType>
