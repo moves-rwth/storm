@@ -51,7 +51,6 @@ include_directories("${PROJECT_SOURCE_DIR}/../../../src")
 include_directories("${PROJECT_BINARY_DIR}/../../../include")
 include_directories(src)
 
-include_directories(src)
 
 add_subdirectory(src)
 
