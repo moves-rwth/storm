@@ -337,14 +337,18 @@ namespace storm {
                         thenOffset = 1 - thenOffset;
                     }
                     
-                    return std::make_shared<Odd>(nullptr, elseOffset, nullptr, thenOffset);
+                    auto oddNode = std::make_shared<Odd>(nullptr, elseOffset, nullptr, thenOffset);
+                    uniqueTableForLevels[currentLevel].emplace(std::make_pair(dd, complement), oddNode);
+                    return oddNode;
                 } else if (bdd_isterminal(dd) || ddVariableIndices[currentLevel] < sylvan_var(dd)) {
                     // If we skipped the level in the DD, we compute the ODD just for the else-successor and use the same
                     // node for the then-successor as well.
                     std::shared_ptr<Odd> elseNode = createOddRec(dd, complement, currentLevel + 1, maxLevel, ddVariableIndices, uniqueTableForLevels);
                     std::shared_ptr<Odd> thenNode = elseNode;
                     uint_fast64_t totalOffset = elseNode->getElseOffset() + elseNode->getThenOffset();
-                    return std::make_shared<Odd>(elseNode, totalOffset, thenNode, totalOffset);
+                    auto oddNode = std::make_shared<Odd>(elseNode, totalOffset, thenNode, totalOffset);
+                    uniqueTableForLevels[currentLevel].emplace(std::make_pair(dd, complement), oddNode);
+                    return oddNode;
                 } else {
                     // Otherwise, we compute the ODDs for both the then- and else successors.
                     BDD thenDdNode = sylvan_high(dd);
@@ -357,7 +361,9 @@ namespace storm {
                     std::shared_ptr<Odd> elseNode = createOddRec(bdd_regular(elseDdNode), elseComplemented, currentLevel + 1, maxLevel, ddVariableIndices, uniqueTableForLevels);
                     std::shared_ptr<Odd> thenNode = createOddRec(bdd_regular(thenDdNode), thenComplemented, currentLevel + 1, maxLevel, ddVariableIndices, uniqueTableForLevels);
                     
-                    return std::make_shared<Odd>(elseNode, elseNode->getElseOffset() + elseNode->getThenOffset(), thenNode, thenNode->getElseOffset() + thenNode->getThenOffset());
+                    auto oddNode = std::make_shared<Odd>(elseNode, elseNode->getElseOffset() + elseNode->getThenOffset(), thenNode, thenNode->getElseOffset() + thenNode->getThenOffset());
+                    uniqueTableForLevels[currentLevel].emplace(std::make_pair(dd, complement), oddNode);
+                    return oddNode;
                 }
             }
         }
