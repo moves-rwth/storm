@@ -224,7 +224,7 @@ namespace storm {
                 STORM_LOG_THROW(rewardModel.hasStateRewards(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
                 
                 // Create ODD for the translation.
-                storm::dd::Odd odd =model.getReachableStates().createOdd();
+                storm::dd::Odd odd = model.getReachableStates().createOdd();
                 
                 // Initialize result to state rewards of the model.
                 std::vector<ValueType> result = rewardModel.getStateRewardVector().toVector(odd);
@@ -267,7 +267,7 @@ namespace storm {
                 storm::storage::SparseMatrix<ValueType> explicitUniformizedMatrix = uniformizedMatrix.toMatrix(odd, odd);
                 
                 // Then compute the state reward vector to use in the computation.
-                storm::dd::Add<DdType, ValueType> totalRewardVector = rewardModel.getTotalRewardVector(rateMatrix, model.getColumnVariables(), exitRateVector);
+                storm::dd::Add<DdType, ValueType> totalRewardVector = rewardModel.getTotalRewardVector(rateMatrix, model.getColumnVariables(), exitRateVector, false);
                 std::vector<ValueType> explicitTotalRewardVector = totalRewardVector.toVector(odd);
                 
                 // Finally, compute the transient probabilities.
@@ -292,6 +292,8 @@ namespace storm {
             
             template<storm::dd::DdType DdType, class ValueType>
             std::unique_ptr<CheckResult> HybridCtmcCslHelper<DdType, ValueType>::computeLongRunAverageRewards(storm::models::symbolic::Ctmc<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector, RewardModelType const& rewardModel, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+                
+                STORM_LOG_THROW(!rewardModel.empty(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
                 storm::dd::Add<DdType, ValueType> probabilityMatrix = computeProbabilityMatrix(rateMatrix, exitRateVector);
                 
                 // Create ODD for the translation.
@@ -300,7 +302,7 @@ namespace storm {
                 storm::storage::SparseMatrix<ValueType> explicitProbabilityMatrix = probabilityMatrix.toMatrix(odd, odd);
                 std::vector<ValueType> explicitExitRateVector = exitRateVector.toVector(odd);
                 
-                std::vector<ValueType> result = storm::modelchecker::helper::SparseCtmcCslHelper::computeLongRunAverageRewards(explicitProbabilityMatrix, rewardModel.getStateRewardVector().toVector(odd), &explicitExitRateVector, linearEquationSolverFactory);
+                std::vector<ValueType> result = storm::modelchecker::helper::SparseCtmcCslHelper::computeLongRunAverageRewards(explicitProbabilityMatrix, rewardModel.getTotalRewardVector(probabilityMatrix, model.getColumnVariables(), exitRateVector, true).toVector(odd), &explicitExitRateVector, linearEquationSolverFactory);
                 
                 return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType>(model.getReachableStates(), model.getManager().getBddZero(), model.getManager().template getAddZero<ValueType>(), model.getReachableStates(), std::move(odd), std::move(result)));
             }

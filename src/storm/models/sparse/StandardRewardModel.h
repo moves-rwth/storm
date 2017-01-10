@@ -198,11 +198,13 @@ namespace storm {
                  * transition-based rewards in the reward model.
                  *
                  * @param transitionMatrix The matrix that is used to weight the values of the transition reward matrix.
-                 * @param weights A vector used for scaling the entries of the state-action rewards (if present).
+                 * @param weights A vector used for scaling the entries of transition and/or state-action rewards (if present).
+                 * @param scaleTransAndActions If true both transition rewards and state-action rewards are scaled by the
+                 * weights. Otherwise, only the state-action rewards are scaled.
                  * @return The full state-action reward vector.
                  */
                 template<typename MatrixValueType>
-                std::vector<ValueType> getTotalRewardVector(storm::storage::SparseMatrix<MatrixValueType> const& transitionMatrix, std::vector<MatrixValueType> const& weights) const;
+                std::vector<ValueType> getTotalRewardVector(storm::storage::SparseMatrix<MatrixValueType> const& transitionMatrix, std::vector<MatrixValueType> const& weights, bool scaleTransAndActions) const;
                 
                 /*!
                  * Creates a vector representing the complete reward vector based on the state-, state-action- and

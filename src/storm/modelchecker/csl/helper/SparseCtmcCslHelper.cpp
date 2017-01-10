@@ -262,7 +262,7 @@ namespace storm {
                 storm::storage::SparseMatrix<ValueType> uniformizedMatrix = computeUniformizedMatrix(rateMatrix, storm::storage::BitVector(numberOfStates, true), uniformizationRate, exitRateVector);
                 
                 // Compute the total state reward vector.
-                std::vector<ValueType> totalRewardVector = rewardModel.getTotalRewardVector(rateMatrix, exitRateVector);
+                std::vector<ValueType> totalRewardVector = rewardModel.getTotalRewardVector(rateMatrix, exitRateVector, false);
                 
                 // Finally, compute the transient probabilities.
                 return computeTransientProbabilities<ValueType, true>(uniformizedMatrix, nullptr, timeBound, uniformizationRate, totalRewardVector, linearEquationSolverFactory);
@@ -360,14 +360,9 @@ namespace storm {
             template <typename ValueType, typename RewardModelType>
             std::vector<ValueType> SparseCtmcCslHelper::computeLongRunAverageRewards(storm::storage::SparseMatrix<ValueType> const& probabilityMatrix, RewardModelType const& rewardModel, std::vector<ValueType> const* exitRateVector, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
                 // Only compute the result if the model has a state-based reward model.
-                STORM_LOG_THROW(!rewardModel.hasStateRewards(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
+                STORM_LOG_THROW(!rewardModel.empty(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
 
-                return computeLongRunAverages<ValueType>(probabilityMatrix,
-                                              [&rewardModel] (storm::storage::sparse::state_type const& state) -> ValueType {
-                                                  return rewardModel.getStateReward(state);
-                                              },
-                                              exitRateVector,
-                                              linearEquationSolverFactory);
+                return computeLongRunAverageRewards(probabilityMatrix, rewardModel.getTotalRewardVector(probabilityMatrix, *exitRateVector, true), exitRateVector, linearEquationSolverFactory);
             }
             
             template <typename ValueType>
@@ -490,7 +485,7 @@ namespace storm {
                         storm::storage::StronglyConnectedComponent const& bscc = bsccDecomposition[bsccIndex];
                         
                         for (auto const& state : bscc) {
-                            bsccEquationSystemSolution[indexInStatesInBsccs[state]] = one /  bscc.size();
+                            bsccEquationSystemSolution[indexInStatesInBsccs[state]] = one / bscc.size();
                         }
                     }
                     
@@ -500,6 +495,12 @@ namespace storm {
                         std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(std::move(bsccEquationSystem));
                         solver->solveEquations(bsccEquationSystemSolution, bsccEquationSystemRightSide);
                     }
+                    
+//                    std::vector<ValueType> tmp(probabilityMatrix.getRowCount(), storm::utility::zero<ValueType>());
+//                    probabilityMatrix.multiplyVectorWithMatrix(bsccEquationSystemSolution, tmp);
+//                    for (uint64_t i = 0; i < tmp.size(); ++i) {
+//                        std::cout << tmp[i] << " vs. " << bsccEquationSystemSolution[i] << std::endl;
+//                    }
                     
                     // If exit rates were given, we need to 'fix' the results to also account for the timing behaviour.
                     if (exitRateVector != nullptr) {
@@ -512,6 +513,11 @@ namespace storm {
                             bsccEquationSystemSolution[indexInStatesInBsccs[*stateIter]] = (bsccEquationSystemSolution[indexInStatesInBsccs[*stateIter]] * (one / (*exitRateVector)[*stateIter])) / bsccTotalValue[stateToBsccIndexMap[indexInStatesInBsccs[*stateIter]]];
                         }
                     }
+                    
+//                    for (auto const& val : bsccEquationSystemSolution) {
+//                        std::cout << "val: " << val << std::endl;
+//                    }
+                    
                     // Calculate LRA Value for each BSCC from steady state distribution in BSCCs.
                     for (uint_fast64_t bsccIndex = 0; bsccIndex < bsccDecomposition.size(); ++bsccIndex) {
                         storm::storage::StronglyConnectedComponent const& bscc = bsccDecomposition[bsccIndex];

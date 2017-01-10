@@ -264,7 +264,7 @@ namespace storm {
                 storm::dd::Odd odd = model.getReachableStates().createOdd();
                 storm::storage::SparseMatrix<ValueType> explicitProbabilityMatrix = model.getTransitionMatrix().toMatrix(odd, odd);
                 
-                std::vector<ValueType> result = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeLongRunAverageRewards(explicitProbabilityMatrix, rewardModel.getStateRewardVector().toVector(odd), linearEquationSolverFactory);
+                std::vector<ValueType> result = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeLongRunAverageRewards(explicitProbabilityMatrix, rewardModel.getTotalRewardVector(model.getTransitionMatrix(), model.getColumnVariables()).toVector(odd), linearEquationSolverFactory);
                 return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType>(model.getReachableStates(), model.getManager().getBddZero(), model.getManager().template getAddZero<ValueType>(), model.getReachableStates(), std::move(odd), std::move(result)));
             }
             
