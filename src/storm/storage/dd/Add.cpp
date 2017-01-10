@@ -453,12 +453,9 @@ namespace storm {
                 ++i;
             }
             
-            // Use the toMatrix function to compute the number of elements in each row. Using the flag, we prevent
-            // it from actually generating the entries in the entry vector.
-            internalAdd.toMatrixComponents(trivialRowGroupIndices, rowIndications, columnsAndValues, rowOdd, columnOdd, ddRowVariableIndices, ddColumnVariableIndices, false);
-            
-            // TODO: counting might be faster by just summing over the primed variables and then using the ODD to convert
-            // the resulting (DD) vector to an explicit vector.
+            // Count the number of elements in the rows.
+            rowIndications = this->notZero().template toAdd<uint_fast64_t>().sumAbstract(columnMetaVariables).toVector(rowOdd);
+            rowIndications.emplace_back();
             
             // Now that we computed the number of entries in each row, compute the corresponding offsets in the entry vector.
             uint_fast64_t tmp = 0;
