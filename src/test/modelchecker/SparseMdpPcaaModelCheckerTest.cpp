@@ -22,7 +22,7 @@ TEST(SparseMdpPcaaModelCheckerTest, consensus) {
     // programm, model,  formula
     storm::prism::Program program = storm::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, "");
-    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::parseFormulasForPrismProgram(formulasAsString, program);
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::extractFormulasFromProperties(storm::parsePropertiesForPrismProgram(formulasAsString, program));
     std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::buildSparseModel<double>(program, formulas)->as<storm::models::sparse::Mdp<double>>();
     uint_fast64_t const initState = *mdp->getInitialStates().begin();;
     
@@ -48,7 +48,7 @@ TEST(SparseMdpPcaaModelCheckerTest, zeroconf) {
     // programm, model,  formula
     storm::prism::Program program = storm::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, "");
-    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::parseFormulasForPrismProgram(formulasAsString, program);
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::extractFormulasFromProperties(storm::parsePropertiesForPrismProgram(formulasAsString, program));
     std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::buildSparseModel<double>(program, formulas)->as<storm::models::sparse::Mdp<double>>();
     uint_fast64_t const initState = *mdp->getInitialStates().begin();
     
@@ -60,12 +60,12 @@ TEST(SparseMdpPcaaModelCheckerTest, zeroconf) {
 TEST(SparseMdpPcaaModelCheckerTest, team3with3objectives) {
     
     std::string programFile = STORM_TEST_RESOURCES_DIR "/mdp/multiobj_team3.nm";
-    std::string formulasAsString = "multi(Pmax=? [ F task1_completed ], R{\"w_1_total\"}>=2.210204082 [ C ],  P>=0.5 [ F task2_completed ])"; // numerical
+    std::string formulasAsString = "multi(Pmax=? [ F \"task1_compl\" ], R{\"w_1_total\"}>=2.210204082 [ C ],  P>=0.5 [ F \"task2_compl\" ])"; // numerical
     
     // programm, model,  formula
     storm::prism::Program program = storm::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, "");
-    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::parseFormulasForPrismProgram(formulasAsString, program);
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::extractFormulasFromProperties(storm::parsePropertiesForPrismProgram(formulasAsString, program));
     std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::buildSparseModel<double>(program, formulas)->as<storm::models::sparse::Mdp<double>>();
     uint_fast64_t const initState = *mdp->getInitialStates().begin();
     
@@ -82,7 +82,7 @@ TEST(SparseMdpPcaaModelCheckerTest, scheduler) {
     // programm, model,  formula
     storm::prism::Program program = storm::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, "");
-    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::parseFormulasForPrismProgram(formulasAsString, program);
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::extractFormulasFromProperties(storm::parsePropertiesForPrismProgram(formulasAsString, program));
     std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::buildSparseModel<double>(program, formulas)->as<storm::models::sparse::Mdp<double>>();
     uint_fast64_t const initState = *mdp->getInitialStates().begin();
     
@@ -98,7 +98,7 @@ TEST(SparseMdpPcaaModelCheckerTest, dpm) {
     // programm, model,  formula
     storm::prism::Program program = storm::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, "");
-    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::parseFormulasForPrismProgram(formulasAsString, program);
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::extractFormulasFromProperties(storm::parsePropertiesForPrismProgram(formulasAsString, program));
     std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::buildSparseModel<double>(program, formulas)->as<storm::models::sparse::Mdp<double>>();
     uint_fast64_t const initState = *mdp->getInitialStates().begin();
     
