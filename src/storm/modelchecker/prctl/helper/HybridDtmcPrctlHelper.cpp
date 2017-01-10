@@ -1,5 +1,6 @@
 #include "storm/modelchecker/prctl/helper/HybridDtmcPrctlHelper.h"
 
+#include "storm/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
 
 #include "storm/solver/LinearEquationSolver.h"
 
@@ -247,6 +248,26 @@ namespace storm {
                 }
             }
 
+            template<storm::dd::DdType DdType, typename ValueType>
+            std::unique_ptr<CheckResult> HybridDtmcPrctlHelper<DdType, ValueType>::computeLongRunAverageProbabilities(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Bdd<DdType> const& targetStates, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+                // Create ODD for the translation.
+                storm::dd::Odd odd = model.getReachableStates().createOdd();
+                storm::storage::SparseMatrix<ValueType> explicitProbabilityMatrix = model.getTransitionMatrix().toMatrix(odd, odd);
+
+                std::vector<ValueType> result = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeLongRunAverageProbabilities(explicitProbabilityMatrix, targetStates.toVector(odd), linearEquationSolverFactory);
+                return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType>(model.getReachableStates(), model.getManager().getBddZero(), model.getManager().template getAddZero<ValueType>(), model.getReachableStates(), std::move(odd), std::move(result)));
+            }
+
+            template<storm::dd::DdType DdType, typename ValueType>
+            std::unique_ptr<CheckResult> HybridDtmcPrctlHelper<DdType, ValueType>::computeLongRunAverageRewards(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, RewardModelType const& rewardModel, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+                // Create ODD for the translation.
+                storm::dd::Odd odd = model.getReachableStates().createOdd();
+                storm::storage::SparseMatrix<ValueType> explicitProbabilityMatrix = model.getTransitionMatrix().toMatrix(odd, odd);
+                
+                std::vector<ValueType> result = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeLongRunAverageRewards(explicitProbabilityMatrix, rewardModel.getStateRewardVector().toVector(odd), linearEquationSolverFactory);
+                return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType>(model.getReachableStates(), model.getManager().getBddZero(), model.getManager().template getAddZero<ValueType>(), model.getReachableStates(), std::move(odd), std::move(result)));
+            }
+            
             template class HybridDtmcPrctlHelper<storm::dd::DdType::CUDD, double>;
             template class HybridDtmcPrctlHelper<storm::dd::DdType::Sylvan, double>;
         }

@@ -134,8 +134,8 @@ set(STORM_HAVE_Z3 ${Z3_FOUND})
 
 if(Z3_FOUND)
     message (STATUS "Storm - Linking with Z3.")
-    include_directories(${Z3_INCLUDE_DIRS})
-    list(APPEND STORM_LINK_LIBRARIES ${Z3_LIBRARIES})
+    add_imported_library(z3 SHARED ${Z3_LIBRARIES} ${Z3_INCLUDE_DIRS})
+    list(APPEND STORM_DEP_TARGETS z3_SHARED)
 endif(Z3_FOUND)
 
 #############################################################
