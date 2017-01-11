@@ -271,6 +271,10 @@ formula agent3_joins_successful_team_of_1 = (task1_completed & m3_t1=1 & team_si
 formula agent3_joins_successful_team_of_2 = (task1_completed & m3_t1=1 & team_size_t1=2) | (task2_completed & m3_t2=1 & team_size_t2=2);
 formula agent3_joins_successful_team_of_3 = (task1_completed & m3_t1=1 & team_size_t1=3) | (task2_completed & m3_t2=1 & team_size_t2=3);
 
+
+label "task1_compl" = task1_completed;
+label "task2_compl" = task2_completed;
+
 // rewards
 rewards "w_1_total"
     [] agent1_joins_successful_team : 1;

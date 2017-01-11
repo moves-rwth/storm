@@ -17,6 +17,7 @@ namespace storm {
             for (auto variableTypePair : *constManager) {
                 identifiers_.add(variableTypePair.first.getName(), variableTypePair.first);
             }
+            
             // Set the identifier mapping to actually generate expressions.
             expressionParser.setIdentifierMapping(&identifiers_);
             
@@ -126,32 +127,30 @@ namespace storm {
             start.name("start");
             
             // Enable the following lines to print debug output for most the rules.
-            /*
-             debug(start);
-             debug(constantDefinition);
-             debug(stateFormula);
-             debug(orStateFormula);
-             debug(andStateFormula);
-             debug(probabilityOperator);
-             debug(rewardOperator);
-             debug(longRunAverageOperator);
-             debug(timeOperator);
-             debug(pathFormulaWithoutUntil);
-             debug(pathFormula);
-             //            debug(conditionalFormula);
-             debug(nextFormula);
-             debug(globallyFormula);
-             //            debug(eventuallyFormula);
-             debug(atomicStateFormula);
-             debug(booleanLiteralFormula);
-             debug(labelFormula);
-             debug(expressionFormula);
-             debug(rewardPathFormula);
-             debug(cumulativeRewardFormula);
-             debug(totalRewardFormula);
-             debug(instantaneousRewardFormula);
-             debug(multiObjectiveFormula);
-             */
+//            debug(start);
+//            debug(constantDefinition);
+//            debug(stateFormula);
+//            debug(orStateFormula);
+//            debug(andStateFormula);
+//            debug(probabilityOperator);
+//            debug(rewardOperator);
+//            debug(longRunAverageOperator);
+//            debug(timeOperator);
+//            debug(pathFormulaWithoutUntil);
+//            debug(pathFormula);
+//            debug(conditionalFormula);
+//            debug(nextFormula);
+//            debug(globallyFormula);
+//            debug(eventuallyFormula);
+//            debug(atomicStateFormula);
+//            debug(booleanLiteralFormula);
+//            debug(labelFormula);
+//            debug(expressionFormula);
+//            debug(rewardPathFormula);
+//            debug(cumulativeRewardFormula);
+//            debug(totalRewardFormula);
+//            debug(instantaneousRewardFormula);
+//            debug(multiObjectiveFormula);
             
             // Enable error reporting.
             qi::on_error<qi::fail>(start, handler(qi::_1, qi::_2, qi::_3, qi::_4));

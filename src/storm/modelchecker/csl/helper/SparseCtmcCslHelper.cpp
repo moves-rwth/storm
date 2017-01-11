@@ -208,7 +208,7 @@ namespace storm {
             
             template <typename ValueType, typename RewardModelType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
             std::vector<ValueType> SparseCtmcCslHelper::computeInstantaneousRewards(storm::storage::SparseMatrix<ValueType> const& rateMatrix, std::vector<ValueType> const& exitRateVector, RewardModelType const& rewardModel, double timeBound, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
-                // Only compute the result if the model has a state-based reward this->getModel().
+                // Only compute the result if the model has a state-based reward model.
                 STORM_LOG_THROW(!rewardModel.empty(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
                 
                 uint_fast64_t numberOfStates = rateMatrix.getRowCount();
@@ -239,7 +239,7 @@ namespace storm {
             
             template <typename ValueType, typename RewardModelType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
             std::vector<ValueType> SparseCtmcCslHelper::computeCumulativeRewards(storm::storage::SparseMatrix<ValueType> const& rateMatrix, std::vector<ValueType> const& exitRateVector, RewardModelType const& rewardModel, double timeBound, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
-                // Only compute the result if the model has a state-based reward this->getModel().
+                // Only compute the result if the model has a state-based reward model.
                 STORM_LOG_THROW(!rewardModel.empty(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
                 
                 uint_fast64_t numberOfStates = rateMatrix.getRowCount();
@@ -262,7 +262,7 @@ namespace storm {
                 storm::storage::SparseMatrix<ValueType> uniformizedMatrix = computeUniformizedMatrix(rateMatrix, storm::storage::BitVector(numberOfStates, true), uniformizationRate, exitRateVector);
                 
                 // Compute the total state reward vector.
-                std::vector<ValueType> totalRewardVector = rewardModel.getTotalRewardVector(rateMatrix, exitRateVector);
+                std::vector<ValueType> totalRewardVector = rewardModel.getTotalRewardVector(rateMatrix, exitRateVector, false);
                 
                 // Finally, compute the transient probabilities.
                 return computeTransientProbabilities<ValueType, true>(uniformizedMatrix, nullptr, timeBound, uniformizationRate, totalRewardVector, linearEquationSolverFactory);
@@ -331,6 +331,7 @@ namespace storm {
             
             template <typename ValueType>
             std::vector<ValueType> SparseCtmcCslHelper::computeLongRunAverageProbabilities(storm::storage::SparseMatrix<ValueType> const& probabilityMatrix, storm::storage::BitVector const& psiStates, std::vector<ValueType> const* exitRateVector, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+                
                 // If there are no goal states, we avoid the computation and directly return zero.
                 uint_fast64_t numberOfStates = probabilityMatrix.getRowCount();
                 if (psiStates.empty()) {
@@ -342,7 +343,43 @@ namespace storm {
                     return std::vector<ValueType>(numberOfStates, storm::utility::one<ValueType>());
                 }
                 
-                // Start by decomposing the DTMC into its BSCCs.
+                ValueType zero = storm::utility::zero<ValueType>();
+                ValueType one = storm::utility::one<ValueType>();
+                
+                return computeLongRunAverages<ValueType>(probabilityMatrix,
+                                              [&zero, &one, &psiStates] (storm::storage::sparse::state_type const& state) -> ValueType {
+                                                  if (psiStates.get(state)) {
+                                                      return one;
+                                                  }
+                                                  return zero;
+                                              },
+                                              exitRateVector,
+                                              linearEquationSolverFactory);
+            }
+            
+            template <typename ValueType, typename RewardModelType>
+            std::vector<ValueType> SparseCtmcCslHelper::computeLongRunAverageRewards(storm::storage::SparseMatrix<ValueType> const& probabilityMatrix, RewardModelType const& rewardModel, std::vector<ValueType> const* exitRateVector, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+                // Only compute the result if the model has a state-based reward model.
+                STORM_LOG_THROW(!rewardModel.empty(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
+
+                return computeLongRunAverageRewards(probabilityMatrix, rewardModel.getTotalRewardVector(probabilityMatrix, *exitRateVector, true), exitRateVector, linearEquationSolverFactory);
+            }
+            
+            template <typename ValueType>
+            std::vector<ValueType> SparseCtmcCslHelper::computeLongRunAverageRewards(storm::storage::SparseMatrix<ValueType> const& probabilityMatrix, std::vector<ValueType> const& stateRewardVector, std::vector<ValueType> const* exitRateVector, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+                return computeLongRunAverages<ValueType>(probabilityMatrix,
+                                                         [&stateRewardVector] (storm::storage::sparse::state_type const& state) -> ValueType {
+                                                             return stateRewardVector[state];
+                                                         },
+                                                         exitRateVector,
+                                                         linearEquationSolverFactory);
+            }
+            
+            template <typename ValueType>
+            std::vector<ValueType> SparseCtmcCslHelper::computeLongRunAverages(storm::storage::SparseMatrix<ValueType> const& probabilityMatrix, std::function<ValueType (storm::storage::sparse::state_type const& state)> const& valueGetter, std::vector<ValueType> const* exitRateVector, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory){
+                uint_fast64_t numberOfStates = probabilityMatrix.getRowCount();
+
+                // Start by decomposing the CTMC into its BSCCs.
                 storm::storage::StronglyConnectedComponentDecomposition<ValueType> bsccDecomposition(probabilityMatrix, storm::storage::BitVector(probabilityMatrix.getRowCount(), true), false, true);
                 
                 STORM_LOG_DEBUG("Found " << bsccDecomposition.size() << " BSCCs.");
@@ -448,7 +485,7 @@ namespace storm {
                         storm::storage::StronglyConnectedComponent const& bscc = bsccDecomposition[bsccIndex];
                         
                         for (auto const& state : bscc) {
-                            bsccEquationSystemSolution[indexInStatesInBsccs[state]] = one /  bscc.size();
+                            bsccEquationSystemSolution[indexInStatesInBsccs[state]] = one / bscc.size();
                         }
                     }
                     
@@ -458,6 +495,12 @@ namespace storm {
                         std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(std::move(bsccEquationSystem));
                         solver->solveEquations(bsccEquationSystemSolution, bsccEquationSystemRightSide);
                     }
+                    
+//                    std::vector<ValueType> tmp(probabilityMatrix.getRowCount(), storm::utility::zero<ValueType>());
+//                    probabilityMatrix.multiplyVectorWithMatrix(bsccEquationSystemSolution, tmp);
+//                    for (uint64_t i = 0; i < tmp.size(); ++i) {
+//                        std::cout << tmp[i] << " vs. " << bsccEquationSystemSolution[i] << std::endl;
+//                    }
                     
                     // If exit rates were given, we need to 'fix' the results to also account for the timing behaviour.
                     if (exitRateVector != nullptr) {
@@ -470,14 +513,17 @@ namespace storm {
                             bsccEquationSystemSolution[indexInStatesInBsccs[*stateIter]] = (bsccEquationSystemSolution[indexInStatesInBsccs[*stateIter]] * (one / (*exitRateVector)[*stateIter])) / bsccTotalValue[stateToBsccIndexMap[indexInStatesInBsccs[*stateIter]]];
                         }
                     }
+                    
+//                    for (auto const& val : bsccEquationSystemSolution) {
+//                        std::cout << "val: " << val << std::endl;
+//                    }
+                    
                     // Calculate LRA Value for each BSCC from steady state distribution in BSCCs.
                     for (uint_fast64_t bsccIndex = 0; bsccIndex < bsccDecomposition.size(); ++bsccIndex) {
                         storm::storage::StronglyConnectedComponent const& bscc = bsccDecomposition[bsccIndex];
                         
                         for (auto const& state : bscc) {
-                            if (psiStates.get(state)) {
-                                bsccLra[stateToBsccIndexMap[indexInStatesInBsccs[state]]] += bsccEquationSystemSolution[indexInStatesInBsccs[state]];
-                            }
+                            bsccLra[stateToBsccIndexMap[indexInStatesInBsccs[state]]] += valueGetter(state) * bsccEquationSystemSolution[indexInStatesInBsccs[state]];
                         }
                     }
                     
@@ -490,9 +536,7 @@ namespace storm {
                         
                         // At this point, all BSCCs are known to contain exactly one state, which is why we can set all values
                         // directly (based on whether or not the contained state is a psi state).
-                        if (psiStates.get(*bscc.begin())) {
-                            bsccLra[bsccIndex] = storm::utility::one<ValueType>();
-                        }
+                        bsccLra[bsccIndex] = valueGetter(*bscc.begin());
                     }
                     
                     for (uint_fast64_t bsccIndex = 0; bsccIndex < bsccDecomposition.size(); ++bsccIndex) {
@@ -700,6 +744,8 @@ namespace storm {
             template std::vector<double> SparseCtmcCslHelper::computeReachabilityRewards(storm::storage::SparseMatrix<double> const& rateMatrix, storm::storage::SparseMatrix<double> const& backwardTransitions, std::vector<double> const& exitRateVector, storm::models::sparse::StandardRewardModel<double> const& rewardModel, storm::storage::BitVector const& targetStates, bool qualitative, storm::solver::LinearEquationSolverFactory<double> const& linearEquationSolverFactory);
             
             template std::vector<double> SparseCtmcCslHelper::computeLongRunAverageProbabilities(storm::storage::SparseMatrix<double> const& probabilityMatrix, storm::storage::BitVector const& psiStates, std::vector<double> const* exitRateVector, storm::solver::LinearEquationSolverFactory<double> const& linearEquationSolverFactory);
+            template std::vector<double> SparseCtmcCslHelper::computeLongRunAverageRewards(storm::storage::SparseMatrix<double> const& probabilityMatrix, storm::models::sparse::StandardRewardModel<double> const& rewardModel, std::vector<double> const* exitRateVector, storm::solver::LinearEquationSolverFactory<double> const& linearEquationSolverFactory);
+            template std::vector<double> SparseCtmcCslHelper::computeLongRunAverageRewards(storm::storage::SparseMatrix<double> const& probabilityMatrix, std::vector<double> const& stateRewardVector, std::vector<double> const* exitRateVector, storm::solver::LinearEquationSolverFactory<double> const& linearEquationSolverFactory);
             
             template std::vector<double> SparseCtmcCslHelper::computeCumulativeRewards(storm::storage::SparseMatrix<double> const& rateMatrix, std::vector<double> const& exitRateVector, storm::models::sparse::StandardRewardModel<double> const& rewardModel, double timeBound, storm::solver::LinearEquationSolverFactory<double> const& linearEquationSolverFactory);
             
@@ -728,6 +774,12 @@ namespace storm {
 
             template std::vector<storm::RationalNumber> SparseCtmcCslHelper::computeLongRunAverageProbabilities(storm::storage::SparseMatrix<storm::RationalNumber> const& probabilityMatrix, storm::storage::BitVector const& psiStates, std::vector<storm::RationalNumber> const* exitRateVector, storm::solver::LinearEquationSolverFactory<storm::RationalNumber> const& linearEquationSolverFactory);
             template std::vector<storm::RationalFunction> SparseCtmcCslHelper::computeLongRunAverageProbabilities(storm::storage::SparseMatrix<storm::RationalFunction> const& probabilityMatrix, storm::storage::BitVector const& psiStates, std::vector<storm::RationalFunction> const* exitRateVector, storm::solver::LinearEquationSolverFactory<storm::RationalFunction> const& linearEquationSolverFactory);
+            
+            template std::vector<storm::RationalNumber> SparseCtmcCslHelper::computeLongRunAverageRewards(storm::storage::SparseMatrix<storm::RationalNumber> const& probabilityMatrix, storm::models::sparse::StandardRewardModel<RationalNumber> const& rewardModel, std::vector<storm::RationalNumber> const* exitRateVector, storm::solver::LinearEquationSolverFactory<storm::RationalNumber> const& linearEquationSolverFactory);
+            template std::vector<storm::RationalFunction> SparseCtmcCslHelper::computeLongRunAverageRewards(storm::storage::SparseMatrix<storm::RationalFunction> const& probabilityMatrix, storm::models::sparse::StandardRewardModel<RationalFunction> const& rewardModel, std::vector<storm::RationalFunction> const* exitRateVector, storm::solver::LinearEquationSolverFactory<storm::RationalFunction> const& linearEquationSolverFactory);
+
+            template std::vector<storm::RationalNumber> SparseCtmcCslHelper::computeLongRunAverageRewards(storm::storage::SparseMatrix<storm::RationalNumber> const& probabilityMatrix, std::vector<storm::RationalNumber> const& stateRewardVector, std::vector<storm::RationalNumber> const* exitRateVector, storm::solver::LinearEquationSolverFactory<storm::RationalNumber> const& linearEquationSolverFactory);
+            template std::vector<storm::RationalFunction> SparseCtmcCslHelper::computeLongRunAverageRewards(storm::storage::SparseMatrix<storm::RationalFunction> const& probabilityMatrix, std::vector<storm::RationalFunction> const& stateRewardVector, std::vector<storm::RationalFunction> const* exitRateVector, storm::solver::LinearEquationSolverFactory<storm::RationalFunction> const& linearEquationSolverFactory);
 
             template std::vector<storm::RationalNumber> SparseCtmcCslHelper::computeCumulativeRewards(storm::storage::SparseMatrix<storm::RationalNumber> const& rateMatrix, std::vector<storm::RationalNumber> const& exitRateVector, storm::models::sparse::StandardRewardModel<storm::RationalNumber> const& rewardModel, double timeBound, storm::solver::LinearEquationSolverFactory<storm::RationalNumber> const& linearEquationSolverFactory);
             template std::vector<storm::RationalFunction> SparseCtmcCslHelper::computeCumulativeRewards(storm::storage::SparseMatrix<storm::RationalFunction> const& rateMatrix, std::vector<storm::RationalFunction> const& exitRateVector, storm::models::sparse::StandardRewardModel<storm::RationalFunction> const& rewardModel, double timeBound, storm::solver::LinearEquationSolverFactory<storm::RationalFunction> const& linearEquationSolverFactory);

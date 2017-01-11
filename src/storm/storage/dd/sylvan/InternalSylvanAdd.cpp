@@ -570,13 +570,17 @@ namespace storm {
                         thenOffset = 1;
                     }
 
-                    return std::make_shared<Odd>(nullptr, elseOffset, nullptr, thenOffset);
+                    auto oddNode = std::make_shared<Odd>(nullptr, elseOffset, nullptr, thenOffset);
+                    uniqueTableForLevels[currentLevel].emplace(dd, oddNode);
+                    return oddNode;
                 } else if (mtbdd_isleaf(dd) || ddVariableIndices[currentLevel] < mtbdd_getvar(dd)) {
                     // If we skipped the level in the DD, we compute the ODD just for the else-successor and use the same
                     // node for the then-successor as well.
                     std::shared_ptr<Odd> elseNode = createOddRec(dd, currentLevel + 1, maxLevel, ddVariableIndices, uniqueTableForLevels);
                     std::shared_ptr<Odd> thenNode = elseNode;
-                    return std::make_shared<Odd>(elseNode, elseNode->getElseOffset() + elseNode->getThenOffset(), thenNode, thenNode->getElseOffset() + thenNode->getThenOffset());
+                    auto oddNode = std::make_shared<Odd>(elseNode, elseNode->getElseOffset() + elseNode->getThenOffset(), thenNode, thenNode->getElseOffset() + thenNode->getThenOffset());
+                    uniqueTableForLevels[currentLevel].emplace(dd, oddNode);
+                    return oddNode;
                 } else {
                     // Otherwise, we compute the ODDs for both the then- and else successors.
                     std::shared_ptr<Odd> elseNode = createOddRec(mtbdd_regular(mtbdd_getlow(dd)), currentLevel + 1, maxLevel, ddVariableIndices, uniqueTableForLevels);
@@ -585,7 +589,9 @@ namespace storm {
                     uint_fast64_t totalElseOffset = elseNode->getElseOffset() + elseNode->getThenOffset();
                     uint_fast64_t totalThenOffset = thenNode->getElseOffset() + thenNode->getThenOffset();
                     
-                    return std::make_shared<Odd>(elseNode, totalElseOffset, thenNode, totalThenOffset);
+                    auto oddNode = std::make_shared<Odd>(elseNode, totalElseOffset, thenNode, totalThenOffset);
+                    uniqueTableForLevels[currentLevel].emplace(dd, oddNode);
+                    return oddNode;
                 }
             }
         }
