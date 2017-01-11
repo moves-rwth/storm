@@ -482,11 +482,16 @@ namespace storm {
         
         template <storm::dd::DdType Type, typename ValueType>
         DdPrismModelBuilder<Type, ValueType>::Options::Options(std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) : buildAllRewardModels(false), rewardModelsToBuild(), buildAllLabels(false), labelsToBuild(), terminalStates(), negatedTerminalStates() {
-            for (auto const& formula : formulas) {
-                this->preserveFormula(*formula);
-            }
-            if (formulas.size() == 1) {
-                this->setTerminalStatesFromFormula(*formulas.front());
+            if (formulas.empty()) {
+                this->buildAllRewardModels = true;
+                this->buildAllLabels = true;
+            } else {
+                for (auto const& formula : formulas) {
+                    this->preserveFormula(*formula);
+                }
+                if (formulas.size() == 1) {
+                    this->setTerminalStatesFromFormula(*formulas.front());
+                }
             }
         }
         
@@ -548,13 +553,13 @@ namespace storm {
         
         template <storm::dd::DdType Type, typename ValueType>
         struct DdPrismModelBuilder<Type, ValueType>::SystemResult {
-            SystemResult(storm::dd::Add<Type, ValueType> const& allTransitionsDd, DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram const& globalModule, boost::optional<storm::dd::Add<Type, ValueType>> const& stateActionDd) : allTransitionsDd(allTransitionsDd), globalModule(globalModule), stateActionDd(stateActionDd) {
+            SystemResult(storm::dd::Add<Type, ValueType> const& allTransitionsDd, DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram const& globalModule, storm::dd::Add<Type, ValueType> const& stateActionDd) : allTransitionsDd(allTransitionsDd), globalModule(globalModule), stateActionDd(stateActionDd) {
                 // Intentionally left empty.
             }
             
             storm::dd::Add<Type, ValueType> allTransitionsDd;
             typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram globalModule;
-            boost::optional<storm::dd::Add<Type, ValueType>> stateActionDd;
+            storm::dd::Add<Type, ValueType> stateActionDd;
         };
         
         template <storm::dd::DdType Type, typename ValueType>
@@ -1084,12 +1089,12 @@ namespace storm {
             storm::dd::Add<Type, ValueType> result = createSystemFromModule(generationInfo, system);
 
             // Create an auxiliary DD that is used later during the construction of reward models.
-            boost::optional<storm::dd::Add<Type, ValueType>> stateActionDd;
+            STORM_LOG_TRACE("Counting: " << result.getNonZeroCount() << " // " << result.getNodeCount());
+            storm::dd::Add<Type, ValueType> stateActionDd = result.sumAbstract(generationInfo.columnMetaVariables);
             
             // For DTMCs, we normalize each row to 1 (to account for non-determinism).
             if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::DTMC) {
-                stateActionDd = result.sumAbstract(generationInfo.columnMetaVariables);
-                result = result / stateActionDd.get();
+                result = result / stateActionDd;
             } else if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::MDP) {
                 // For MDPs, we need to throw away the nondeterminism variables from the generation information that
                 // were never used.
@@ -1103,7 +1108,7 @@ namespace storm {
         }
         
         template <storm::dd::DdType Type, typename ValueType>
-        storm::models::symbolic::StandardRewardModel<Type, ValueType> DdPrismModelBuilder<Type, ValueType>::createRewardModelDecisionDiagrams(GenerationInformation& generationInfo, storm::prism::RewardModel const& rewardModel, ModuleDecisionDiagram const& globalModule, storm::dd::Add<Type, ValueType> const& reachableStatesAdd, storm::dd::Add<Type, ValueType> const& transitionMatrix, boost::optional<storm::dd::Add<Type, ValueType>> stateActionDd) {
+        storm::models::symbolic::StandardRewardModel<Type, ValueType> DdPrismModelBuilder<Type, ValueType>::createRewardModelDecisionDiagrams(GenerationInformation& generationInfo, storm::prism::RewardModel const& rewardModel, ModuleDecisionDiagram const& globalModule, storm::dd::Add<Type, ValueType> const& reachableStatesAdd, storm::dd::Add<Type, ValueType> const& stateActionDd) {
             
             // Start by creating the state reward vector.
             boost::optional<storm::dd::Add<Type, ValueType>> stateRewards;
@@ -1141,15 +1146,13 @@ namespace storm {
                     }
                     ActionDecisionDiagram const& actionDd = stateActionReward.isLabeled() ? globalModule.synchronizingActionToDecisionDiagramMap.at(stateActionReward.getActionIndex()) : globalModule.independentAction;
                     states *= actionDd.guardDd * reachableStatesAdd;
-                    storm::dd::Add<Type, ValueType> stateActionRewardDd = synchronization * (reachableStatesAdd * states * rewards);
+                    storm::dd::Add<Type, ValueType> stateActionRewardDd = synchronization * states * rewards;
                     
                     // If we are building the state-action rewards for an MDP, we need to make sure that the encoding
                     // of the nondeterminism is present in the reward vector, so we ne need to multiply it with the
                     // legal state-actions.
                     if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::MDP) {
-                        // FIXME: get synchronization encoding differently.
-                        // stateActionRewardDd *= stateActionDd;
-                        stateActionRewardDd *= transitionMatrix.notZero().existsAbstract(generationInfo.columnMetaVariables).template toAdd<ValueType>();
+                        stateActionRewardDd *= stateActionDd;
                     } else if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::CTMC) {
                         // For CTMCs, we need to multiply the entries with the exit rate of the corresponding action.
                         stateActionRewardDd *= actionDd.transitionsDd.sumAbstract(generationInfo.columnMetaVariables);
@@ -1165,7 +1168,7 @@ namespace storm {
                 
                 // Scale state-action rewards for DTMCs and CTMCs.
                 if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::DTMC || generationInfo.program.getModelType() == storm::prism::Program::ModelType::CTMC) {
-                    // stateActionRewards.get() /= stateActionDd;
+                    stateActionRewards.get() /= stateActionDd;
                 }
             }
             
@@ -1213,7 +1216,7 @@ namespace storm {
                 
                 // Scale transition rewards for DTMCs.
                 if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::DTMC) {
-                    transitionRewards.get() /= stateActionDd.get();
+                    transitionRewards.get() /= stateActionDd;
                 }
             }
                         
@@ -1248,6 +1251,7 @@ namespace storm {
             storm::dd::Add<Type, ValueType> transitionMatrix = system.allTransitionsDd;
             
             ModuleDecisionDiagram const& globalModule = system.globalModule;
+            storm::dd::Add<Type, ValueType> stateActionDd = system.stateActionDd;
             
             // If we were asked to treat some states as terminal states, we cut away their transitions now.
             storm::dd::Bdd<Type> terminalStatesBdd = generationInfo.manager->getBddZero();
@@ -1300,6 +1304,8 @@ namespace storm {
                 transitionMatrix *= (!terminalStatesBdd).template toAdd<ValueType>();
             }
             
+            std::cout << "trans matrix has size " << transitionMatrix.getNodeCount() << std::endl;
+            
             // Cut the transitions and rewards to the reachable fragment of the state space.
             storm::dd::Bdd<Type> initialStates = createInitialStatesDecisionDiagram(generationInfo);
                         
@@ -1311,9 +1317,7 @@ namespace storm {
             storm::dd::Bdd<Type> reachableStates = storm::utility::dd::computeReachableStates<Type>(initialStates, transitionMatrixBdd, generationInfo.rowMetaVariables, generationInfo.columnMetaVariables);
             storm::dd::Add<Type, ValueType> reachableStatesAdd = reachableStates.template toAdd<ValueType>();
             transitionMatrix *= reachableStatesAdd;
-            if (system.stateActionDd) {
-                system.stateActionDd.get() *= reachableStatesAdd;
-            }
+            stateActionDd *= reachableStatesAdd;
             
             // Detect deadlocks and 1) fix them if requested 2) throw an error otherwise.
             storm::dd::Bdd<Type> statesWithTransition = transitionMatrixBdd.existsAbstract(generationInfo.columnMetaVariables);
@@ -1372,6 +1376,7 @@ namespace storm {
             
             for (auto const& rewardModel : program.getRewardModels()) {
                 if (options.buildAllRewardModels || options.rewardModelsToBuild.find(rewardModel.getName()) != options.rewardModelsToBuild.end()) {
+                    std::cout << "build all? " << buildAllRewardModels << std::endl;
                     selectedRewardModels.push_back(rewardModel);
                 }
             }
@@ -1383,7 +1388,7 @@ namespace storm {
             
             std::unordered_map<std::string, storm::models::symbolic::StandardRewardModel<Type, ValueType>> rewardModels;
             for (auto const& rewardModel : selectedRewardModels) {
-                rewardModels.emplace(rewardModel.get().getName(), createRewardModelDecisionDiagrams(generationInfo, rewardModel.get(), globalModule, reachableStatesAdd, transitionMatrix, system.stateActionDd));
+                rewardModels.emplace(rewardModel.get().getName(), createRewardModelDecisionDiagrams(generationInfo, rewardModel.get(), globalModule, reachableStatesAdd, stateActionDd));
             }
             
             // Build the labels that can be accessed as a shortcut.

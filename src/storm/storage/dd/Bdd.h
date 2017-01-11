@@ -35,7 +35,7 @@ namespace storm {
             Bdd& operator=(Bdd<LibraryType> const& other) = default;
             Bdd(Bdd<LibraryType>&& other) = default;
             Bdd& operator=(Bdd<LibraryType>&& other) = default;
-            
+
             /*!
              * Constructs a BDD representation of all encodings that are in the requested relation with the given value.
              *

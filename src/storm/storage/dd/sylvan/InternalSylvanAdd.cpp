@@ -15,6 +15,11 @@
 namespace storm {
     namespace dd {
         template<typename ValueType>
+        InternalAdd<DdType::Sylvan, ValueType>::InternalAdd() : ddManager(nullptr), sylvanMtbdd() {
+            // Intentionally left empty.
+        }
+        
+        template<typename ValueType>
         InternalAdd<DdType::Sylvan, ValueType>::InternalAdd(InternalDdManager<DdType::Sylvan> const* ddManager, sylvan::Mtbdd const& sylvanMtbdd) : ddManager(ddManager), sylvanMtbdd(sylvanMtbdd) {
             // Intentionally left empty.
         }

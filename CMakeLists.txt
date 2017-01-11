@@ -77,6 +77,8 @@ message("CMAKE_INSTALL_DIR: ${CMAKE_INSTALL_DIR}")
 if (STORM_DEVELOPER)
     set(CMAKE_BUILD_TYPE "DEBUG")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSTORM_DEV")
+else()
+    set(STORM_LOG_DISABLE_DEBUG ON)
 endif()
 message(STATUS "Storm - Building ${CMAKE_BUILD_TYPE} version.")
 

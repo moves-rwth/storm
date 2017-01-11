@@ -18,6 +18,10 @@
 
 namespace storm {
     namespace dd {
+        InternalBdd<DdType::Sylvan>::InternalBdd() : ddManager(nullptr), sylvanBdd() {
+            // Intentionally left empty.
+        }
+
         InternalBdd<DdType::Sylvan>::InternalBdd(InternalDdManager<DdType::Sylvan> const* ddManager, sylvan::Bdd const& sylvanBdd) : ddManager(ddManager), sylvanBdd(sylvanBdd) {
             // Intentionally left empty.
         }

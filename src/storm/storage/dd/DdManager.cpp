@@ -111,8 +111,17 @@ namespace storm {
 		
         template<DdType LibraryType>
         Bdd<LibraryType> DdManager<LibraryType>::getCube(storm::expressions::Variable const& variable) const {
-            storm::dd::DdMetaVariable<LibraryType> const& metaVariable = this->getMetaVariable(variable);
-            return metaVariable.getCube();
+            return getCube({variable});
+        }
+        
+        template<DdType LibraryType>
+        Bdd<LibraryType> DdManager<LibraryType>::getCube(std::set<storm::expressions::Variable> const& variables) const {
+            Bdd<LibraryType> result = this->getBddOne();
+            for (auto const& variable : variables) {
+                storm::dd::DdMetaVariable<LibraryType> const& metaVariable = this->getMetaVariable(variable);
+                result &= metaVariable.getCube();
+            }
+            return result;
         }
         
         template<DdType LibraryType>

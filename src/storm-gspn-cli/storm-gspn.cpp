@@ -31,6 +31,7 @@
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/settings/modules/DebugSettings.h"
 #include "storm/settings/modules/JaniExportSettings.h"
+#include "storm/settings/modules/ResourceSettings.h"
 
 /*!
  * Initialize the settings manager.
@@ -45,6 +46,7 @@ void initializeSettings() {
     storm::settings::addModule<storm::settings::modules::CoreSettings>();
     storm::settings::addModule<storm::settings::modules::DebugSettings>();
     storm::settings::addModule<storm::settings::modules::JaniExportSettings>();
+    storm::settings::addModule<storm::settings::modules::ResourceSettings>();
 }
 
 
