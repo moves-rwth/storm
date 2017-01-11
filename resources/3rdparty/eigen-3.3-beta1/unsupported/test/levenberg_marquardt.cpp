@@ -15,11 +15,11 @@
 #include <stdio.h>
 
 #include "main.h"
-#include <unsupported/Eigen/LevenbergMarquardt>
+#include <unsupported/StormEigen/LevenbergMarquardt>
 
 // This disables some useless Warnings on MSVC.
 // It is intended to be done for this test only.
-#include <Eigen/src/Core/util/DisableStupidWarnings.h>
+#include <StormEigen/src/Core/util/DisableStupidWarnings.h>
 
 using std::sqrt;
 

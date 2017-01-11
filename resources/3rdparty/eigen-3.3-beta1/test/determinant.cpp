@@ -9,7 +9,7 @@
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "main.h"
-#include <Eigen/LU>
+#include <StormEigen/LU>
 
 template<typename MatrixType> void determinant(const MatrixType& m)
 {
@@ -60,7 +60,7 @@ void test_determinant()
     CALL_SUBTEST_3( determinant(Matrix<double, 3, 3>()) );
     CALL_SUBTEST_4( determinant(Matrix<double, 4, 4>()) );
     CALL_SUBTEST_5( determinant(Matrix<std::complex<double>, 10, 10>()) );
-    s = internal::random<int>(1,EIGEN_TEST_MAX_SIZE/4);
+    s = internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE/4);
     CALL_SUBTEST_6( determinant(MatrixXd(s, s)) );
     TEST_SET_BUT_UNUSED_VARIABLE(s)
   }

@@ -1,4 +1,4 @@
-#include <Eigen/Sparse>
+#include <StormEigen/Sparse>
 #include <vector>
 #include <QImage>
 

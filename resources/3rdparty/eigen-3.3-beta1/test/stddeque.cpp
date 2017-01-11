@@ -9,8 +9,8 @@
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "main.h"
-#include <Eigen/StdDeque>
-#include <Eigen/Geometry>
+#include <StormEigen/StdDeque>
+#include <StormEigen/Geometry>
 
 template<typename MatrixType>
 void check_stddeque_matrix(const MatrixType& m)

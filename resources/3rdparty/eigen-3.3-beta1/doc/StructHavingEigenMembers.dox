@@ -6,7 +6,7 @@ namespace StormEigen {
 
 \section StructHavingEigenMembers_summary Executive Summary
 
-If you define a structure having members of \ref TopicFixedSizeVectorizable "fixed-size vectorizable Eigen types", you must overload its "operator new" so that it generates 16-bytes-aligned pointers. Fortunately, Eigen provides you with a macro EIGEN_MAKE_ALIGNED_OPERATOR_NEW that does that for you.
+If you define a structure having members of \ref TopicFixedSizeVectorizable "fixed-size vectorizable Eigen types", you must overload its "operator new" so that it generates 16-bytes-aligned pointers. Fortunately, Eigen provides you with a macro STORMEIGEN_MAKE_ALIGNED_OPERATOR_NEW that does that for you.
 
 \section StructHavingEigenMembers_what What kind of code needs to be changed?
 
@@ -29,7 +29,7 @@ In other words: you have a class that has as a member a \ref TopicFixedSizeVecto
 
 \section StructHavingEigenMembers_how How should such code be modified?
 
-Very easy, you just need to put a EIGEN_MAKE_ALIGNED_OPERATOR_NEW macro in a public part of your class, like this:
+Very easy, you just need to put a STORMEIGEN_MAKE_ALIGNED_OPERATOR_NEW macro in a public part of your class, like this:
 
 \code
 class Foo
@@ -38,7 +38,7 @@ class Foo
   StormEigen::Vector2d v;
   ...
 public:
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+  STORMEIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 
 ...
@@ -91,7 +91,7 @@ class Foo
   double x;
   StormEigen::Vector2d v;
 public:
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+  STORMEIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 \endcode
 
@@ -105,7 +105,7 @@ No, it's not our bug. It's more like an inherent problem of the C++98 language s
 
 \section StructHavingEigenMembers_conditional What if I want to do this conditionnally (depending on template parameters) ?
 
-For this situation, we offer the macro EIGEN_MAKE_ALIGNED_OPERATOR_NEW_IF(NeedsToAlign). It will generate aligned operators like EIGEN_MAKE_ALIGNED_OPERATOR_NEW if NeedsToAlign is true. It will generate operators with the default alignment if NeedsToAlign is false.
+For this situation, we offer the macro STORMEIGEN_MAKE_ALIGNED_OPERATOR_NEW_IF(NeedsToAlign). It will generate aligned operators like STORMEIGEN_MAKE_ALIGNED_OPERATOR_NEW if NeedsToAlign is true. It will generate operators with the default alignment if NeedsToAlign is false.
 
 Example:
 
@@ -118,7 +118,7 @@ template<int n> class Foo
   Vector v;
   ...
 public:
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW_IF(NeedsToAlign)
+  STORMEIGEN_MAKE_ALIGNED_OPERATOR_NEW_IF(NeedsToAlign)
 };
 
 ...
@@ -130,7 +130,7 @@ Foo<3> *foo3 = new Foo<3>; // foo3 has only the system default alignment guarant
 
 \section StructHavingEigenMembers_othersolutions Other solutions
 
-In case putting the EIGEN_MAKE_ALIGNED_OPERATOR_NEW macro everywhere is too intrusive, there exists at least two other solutions.
+In case putting the STORMEIGEN_MAKE_ALIGNED_OPERATOR_NEW macro everywhere is too intrusive, there exists at least two other solutions.
 
 \subsection othersolutions1 Disabling alignment
 
@@ -163,7 +163,7 @@ The second consist in storing the fixed-size objects into a private struct which
 \code
 struct Foo_d
 {
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+  STORMEIGEN_MAKE_ALIGNED_OPERATOR_NEW
   Vector2d v;
   ...
 };

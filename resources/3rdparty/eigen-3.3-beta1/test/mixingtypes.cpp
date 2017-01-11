@@ -9,16 +9,16 @@
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 // work around "uninitialized" warnings and give that option some testing
-#define EIGEN_INITIALIZE_MATRICES_BY_ZERO
+#define STORMEIGEN_INITIALIZE_MATRICES_BY_ZERO
 
-#ifndef EIGEN_NO_STATIC_ASSERT
-#define EIGEN_NO_STATIC_ASSERT // turn static asserts into runtime asserts in order to check them
+#ifndef STORMEIGEN_NO_STATIC_ASSERT
+#define STORMEIGEN_NO_STATIC_ASSERT // turn static asserts into runtime asserts in order to check them
 #endif
 
-#if defined(EIGEN_TEST_PART_1) || defined(EIGEN_TEST_PART_2) || defined(EIGEN_TEST_PART_3)
+#if defined(STORMEIGEN_TEST_PART_1) || defined(STORMEIGEN_TEST_PART_2) || defined(STORMEIGEN_TEST_PART_3)
 
-#ifndef EIGEN_DONT_VECTORIZE
-#define EIGEN_DONT_VECTORIZE
+#ifndef STORMEIGEN_DONT_VECTORIZE
+#define STORMEIGEN_DONT_VECTORIZE
 #endif
 
 #endif
@@ -56,12 +56,12 @@ template<int SizeAtCompileType> void mixingtypes(int size = SizeAtCompileType)
 
   mf+mf;
   VERIFY_RAISES_ASSERT(mf+md);
-#ifndef EIGEN_HAS_STD_RESULT_OF
+#ifndef STORMEIGEN_HAS_STD_RESULT_OF
   // this one does not even compile with C++11
   VERIFY_RAISES_ASSERT(mf+mcf);
 #endif
 
-#ifdef EIGEN_DONT_VECTORIZE
+#ifdef STORMEIGEN_DONT_VECTORIZE
   VERIFY_RAISES_ASSERT(vf=vd);
   VERIFY_RAISES_ASSERT(vf+=vd);
   VERIFY_RAISES_ASSERT(mcd=md);
@@ -154,10 +154,10 @@ void test_mixingtypes()
   for(int i = 0; i < g_repeat; i++) {
     CALL_SUBTEST_1(mixingtypes<3>());
     CALL_SUBTEST_2(mixingtypes<4>());
-    CALL_SUBTEST_3(mixingtypes<Dynamic>(internal::random<int>(1,EIGEN_TEST_MAX_SIZE)));
+    CALL_SUBTEST_3(mixingtypes<Dynamic>(internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE)));
 
     CALL_SUBTEST_4(mixingtypes<3>());
     CALL_SUBTEST_5(mixingtypes<4>());
-    CALL_SUBTEST_6(mixingtypes<Dynamic>(internal::random<int>(1,EIGEN_TEST_MAX_SIZE)));
+    CALL_SUBTEST_6(mixingtypes<Dynamic>(internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE)));
   }
 }

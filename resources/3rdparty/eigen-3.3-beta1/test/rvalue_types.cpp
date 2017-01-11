@@ -9,9 +9,9 @@
 
 #include "main.h"
 
-#include <Eigen/Core>
+#include <StormEigen/Core>
 
-#ifdef EIGEN_HAVE_RVALUE_REFERENCES
+#ifdef STORMEIGEN_HAVE_RVALUE_REFERENCES
 template <typename MatrixType>
 void rvalue_copyassign(const MatrixType& m)
 {

@@ -8,13 +8,13 @@
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "main.h"
-#include <Eigen/Dense>
+#include <StormEigen/Dense>
 
 #define NUMBER_DIRECTIONS 16
-#include <unsupported/Eigen/AdolcForward>
+#include <unsupported/StormEigen/AdolcForward>
 
 template<typename Vector>
-EIGEN_DONT_INLINE typename Vector::Scalar foo(const Vector& p)
+STORMEIGEN_DONT_INLINE typename Vector::Scalar foo(const Vector& p)
 {
   typedef typename Vector::Scalar Scalar;
   return (p-Vector(Scalar(-1),Scalar(1.))).norm() + (p.array().sqrt().abs() * p.array().sin()).sum() + p.dot(p);

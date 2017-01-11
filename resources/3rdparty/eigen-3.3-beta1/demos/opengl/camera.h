@@ -7,17 +7,17 @@
 // Public License v. 2.0. If a copy of the MPL was not distributed
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-#ifndef EIGEN_CAMERA_H
-#define EIGEN_CAMERA_H
+#ifndef STORMEIGEN_CAMERA_H
+#define STORMEIGEN_CAMERA_H
 
-#include <Eigen/Geometry>
+#include <StormEigen/Geometry>
 #include <QObject>
 // #include <frame.h>
 
 class Frame
 {
   public:
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    STORMEIGEN_MAKE_ALIGNED_OPERATOR_NEW
     
     inline Frame(const StormEigen::Vector3f& pos = StormEigen::Vector3f::Zero(),
                  const StormEigen::Quaternionf& o = StormEigen::Quaternionf())
@@ -36,7 +36,7 @@ class Frame
 class Camera
 {
   public:
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    STORMEIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     Camera(void);
     
@@ -115,4 +115,4 @@ class Camera
     float mFarDist;
 };
 
-#endif // EIGEN_CAMERA_H
+#endif // STORMEIGEN_CAMERA_H

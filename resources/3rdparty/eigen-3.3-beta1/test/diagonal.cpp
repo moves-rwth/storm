@@ -68,10 +68,10 @@ void test_diagonal()
     CALL_SUBTEST_1( diagonal(Matrix<float, 4, 9>()) );
     CALL_SUBTEST_1( diagonal(Matrix<float, 7, 3>()) );
     CALL_SUBTEST_2( diagonal(Matrix4d()) );
-    CALL_SUBTEST_2( diagonal(MatrixXcf(internal::random<int>(1,EIGEN_TEST_MAX_SIZE), internal::random<int>(1,EIGEN_TEST_MAX_SIZE))) );
-    CALL_SUBTEST_2( diagonal(MatrixXi(internal::random<int>(1,EIGEN_TEST_MAX_SIZE), internal::random<int>(1,EIGEN_TEST_MAX_SIZE))) );
-    CALL_SUBTEST_2( diagonal(MatrixXcd(internal::random<int>(1,EIGEN_TEST_MAX_SIZE), internal::random<int>(1,EIGEN_TEST_MAX_SIZE))) );
-    CALL_SUBTEST_1( diagonal(MatrixXf(internal::random<int>(1,EIGEN_TEST_MAX_SIZE), internal::random<int>(1,EIGEN_TEST_MAX_SIZE))) );
+    CALL_SUBTEST_2( diagonal(MatrixXcf(internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE), internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE))) );
+    CALL_SUBTEST_2( diagonal(MatrixXi(internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE), internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE))) );
+    CALL_SUBTEST_2( diagonal(MatrixXcd(internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE), internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE))) );
+    CALL_SUBTEST_1( diagonal(MatrixXf(internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE), internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE))) );
     CALL_SUBTEST_1( diagonal(Matrix<float,Dynamic,4>(3, 4)) );
   }
 }

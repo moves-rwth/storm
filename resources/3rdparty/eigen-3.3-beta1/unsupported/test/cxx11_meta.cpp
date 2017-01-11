@@ -9,7 +9,7 @@
 
 #include "main.h"
 
-#include <Eigen/CXX11/Core>
+#include <StormEigen/CXX11/Core>
 
 using StormEigen::internal::is_same;
 using StormEigen::internal::type_list;

@@ -9,7 +9,7 @@
 
 #include "main.h"
 
-#include <Eigen/Core>
+#include <StormEigen/Core>
 
 template <typename T, int Rows, int Cols>
 void dense_storage_copy()

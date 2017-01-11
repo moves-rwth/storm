@@ -15,10 +15,10 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //
-#ifndef EIGEN3_INTERFACE_HH
-#define EIGEN3_INTERFACE_HH
+#ifndef STORMEIGEN3_INTERFACE_HH
+#define STORMEIGEN3_INTERFACE_HH
 
-#include <Eigen/Eigen>
+#include <StormEigen/Eigen>
 #include <vector>
 #include "btl.hh"
 
@@ -42,7 +42,7 @@ public :
 
   static inline std::string name( void )
   {
-    return EIGEN_MAKESTRING(BTL_PREFIX);
+    return STORMEIGEN_MAKESTRING(BTL_PREFIX);
   }
 
   static void free_matrix(gene_matrix & /*A*/, int /*N*/) {}
@@ -155,18 +155,18 @@ public :
     }
   }
 
-  static EIGEN_DONT_INLINE void syr2(gene_matrix & A,  gene_vector & X, gene_vector & Y, int  N){
+  static STORMEIGEN_DONT_INLINE void syr2(gene_matrix & A,  gene_vector & X, gene_vector & Y, int  N){
     // internal::product_selfadjoint_rank2_update<real,0,LowerTriangularBit>(N,A.data(),N, X.data(), 1, Y.data(), 1, -1);
     for(int j=0; j<N; ++j)
       A.col(j).tail(N-j) += X[j] * Y.tail(N-j) + Y[j] * X.tail(N-j);
   }
 
-  static EIGEN_DONT_INLINE void ger(gene_matrix & A,  gene_vector & X, gene_vector & Y, int  N){
+  static STORMEIGEN_DONT_INLINE void ger(gene_matrix & A,  gene_vector & X, gene_vector & Y, int  N){
     for(int j=0; j<N; ++j)
       A.col(j) += X * Y[j];
   }
 
-  static EIGEN_DONT_INLINE void rot(gene_vector & A,  gene_vector & B, real c, real s, int  /*N*/){
+  static STORMEIGEN_DONT_INLINE void rot(gene_vector & A,  gene_vector & B, real c, real s, int  /*N*/){
     internal::apply_rotation_in_the_plane(A, B, JacobiRotation<real>(c,s));
   }
 
@@ -182,11 +182,11 @@ public :
     Y = a*X + b*Y;
   }
 
-  static EIGEN_DONT_INLINE void copy_matrix(const gene_matrix & source, gene_matrix & cible, int  /*N*/){
+  static STORMEIGEN_DONT_INLINE void copy_matrix(const gene_matrix & source, gene_matrix & cible, int  /*N*/){
     cible = source;
   }
 
-  static EIGEN_DONT_INLINE void copy_vector(const gene_vector & source, gene_vector & cible, int  /*N*/){
+  static STORMEIGEN_DONT_INLINE void copy_vector(const gene_vector & source, gene_vector & cible, int  /*N*/){
     cible = source;
   }
 

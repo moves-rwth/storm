@@ -12,14 +12,14 @@
 void test_product_large()
 {
   for(int i = 0; i < g_repeat; i++) {
-    CALL_SUBTEST_1( product(MatrixXf(internal::random<int>(1,EIGEN_TEST_MAX_SIZE), internal::random<int>(1,EIGEN_TEST_MAX_SIZE))) );
-    CALL_SUBTEST_2( product(MatrixXd(internal::random<int>(1,EIGEN_TEST_MAX_SIZE), internal::random<int>(1,EIGEN_TEST_MAX_SIZE))) );
-    CALL_SUBTEST_3( product(MatrixXi(internal::random<int>(1,EIGEN_TEST_MAX_SIZE), internal::random<int>(1,EIGEN_TEST_MAX_SIZE))) );
-    CALL_SUBTEST_4( product(MatrixXcf(internal::random<int>(1,EIGEN_TEST_MAX_SIZE/2), internal::random<int>(1,EIGEN_TEST_MAX_SIZE/2))) );
-    CALL_SUBTEST_5( product(Matrix<float,Dynamic,Dynamic,RowMajor>(internal::random<int>(1,EIGEN_TEST_MAX_SIZE), internal::random<int>(1,EIGEN_TEST_MAX_SIZE))) );
+    CALL_SUBTEST_1( product(MatrixXf(internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE), internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE))) );
+    CALL_SUBTEST_2( product(MatrixXd(internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE), internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE))) );
+    CALL_SUBTEST_3( product(MatrixXi(internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE), internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE))) );
+    CALL_SUBTEST_4( product(MatrixXcf(internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE/2), internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE/2))) );
+    CALL_SUBTEST_5( product(Matrix<float,Dynamic,Dynamic,RowMajor>(internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE), internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE))) );
   }
 
-#if defined EIGEN_TEST_PART_6
+#if defined STORMEIGEN_TEST_PART_6
   {
     // test a specific issue in DiagonalProduct
     int N = 1000000;
@@ -75,10 +75,10 @@ void test_product_large()
 #endif
 
   // Regression test for bug 714:
-#if defined EIGEN_HAS_OPENMP
+#if defined STORMEIGEN_HAS_OPENMP
   omp_set_dynamic(1);
   for(int i = 0; i < g_repeat; i++) {
-    CALL_SUBTEST_6( product(Matrix<float,Dynamic,Dynamic>(internal::random<int>(1,EIGEN_TEST_MAX_SIZE), internal::random<int>(1,EIGEN_TEST_MAX_SIZE))) );
+    CALL_SUBTEST_6( product(Matrix<float,Dynamic,Dynamic>(internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE), internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE))) );
   }
 #endif
 }

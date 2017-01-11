@@ -8,7 +8,7 @@
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "sparse_solver.h"
-#include <Eigen/IterativeLinearSolvers>
+#include <StormEigen/IterativeLinearSolvers>
 
 template<typename T, typename I> void test_conjugate_gradient_T()
 {

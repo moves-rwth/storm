@@ -12,10 +12,10 @@ static int nb_loadu;
 static int nb_store;
 static int nb_storeu;
 
-#define EIGEN_DEBUG_ALIGNED_LOAD    { nb_load++;    }
-#define EIGEN_DEBUG_UNALIGNED_LOAD  { nb_loadu++;   }
-#define EIGEN_DEBUG_ALIGNED_STORE   { nb_store++;   }
-#define EIGEN_DEBUG_UNALIGNED_STORE { nb_storeu++;  }
+#define STORMEIGEN_DEBUG_ALIGNED_LOAD    { nb_load++;    }
+#define STORMEIGEN_DEBUG_UNALIGNED_LOAD  { nb_loadu++;   }
+#define STORMEIGEN_DEBUG_ALIGNED_STORE   { nb_store++;   }
+#define STORMEIGEN_DEBUG_UNALIGNED_STORE { nb_storeu++;  }
 
 #define VERIFY_ALIGNED_UNALIGNED_COUNT(XPR,AL,UL,AS,US) {\
     nb_load = nb_loadu = nb_store = nb_storeu = 0; \
@@ -30,14 +30,14 @@ static int nb_storeu;
 
 void test_unalignedcount()
 {
-  #if defined(EIGEN_VECTORIZE_AVX)
+  #if defined(STORMEIGEN_VECTORIZE_AVX)
   VectorXf a(40), b(40);
   VERIFY_ALIGNED_UNALIGNED_COUNT(a += b, 10, 0, 5, 0);
   VERIFY_ALIGNED_UNALIGNED_COUNT(a.segment(0,40) += b.segment(0,40), 5, 5, 5, 0);
   VERIFY_ALIGNED_UNALIGNED_COUNT(a.segment(0,40) -= b.segment(0,40), 5, 5, 5, 0);
   VERIFY_ALIGNED_UNALIGNED_COUNT(a.segment(0,40) *= 3.5, 5, 0, 5, 0);
   VERIFY_ALIGNED_UNALIGNED_COUNT(a.segment(0,40) /= 3.5, 5, 0, 5, 0);
-  #elif defined(EIGEN_VECTORIZE_SSE)
+  #elif defined(STORMEIGEN_VECTORIZE_SSE)
   VectorXf a(40), b(40);
   VERIFY_ALIGNED_UNALIGNED_COUNT(a += b, 20, 0, 10, 0);
   VERIFY_ALIGNED_UNALIGNED_COUNT(a.segment(0,40) += b.segment(0,40), 10, 10, 10, 0);

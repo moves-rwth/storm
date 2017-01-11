@@ -8,7 +8,7 @@
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "main.h"
-#include <unsupported/Eigen/AutoDiff>
+#include <unsupported/StormEigen/AutoDiff>
 
 /*
  * In this file scalar derivations are tested for correctness.

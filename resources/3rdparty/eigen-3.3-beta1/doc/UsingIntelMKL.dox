@@ -44,7 +44,7 @@ Intel MKL is available on Linux, Mac and Windows for both Intel64 and IA32 archi
 Intel® MKL is a proprietary software and it is the responsibility of users to buy or register for community (free) Intel MKL licenses for their products. Moreover, the license of the user product has to allow linking to proprietary software that excludes any unmodified versions of the GPL.
 
 Using Intel MKL through Eigen is easy:
--# define the \c EIGEN_USE_MKL_ALL macro before including any Eigen's header
+-# define the \c STORMEIGEN_USE_MKL_ALL macro before including any Eigen's header
 -# link your program to MKL libraries (see the <a href="http://software.intel.com/en-us/articles/intel-mkl-link-line-advisor/">MKL linking advisor</a>)
 -# on a 64bits system, you must use the LP64 interface (not the ILP64 one)
 
@@ -55,11 +55,11 @@ Operations on other scalar types or mixing reals and complexes will continue to 
 In addition you can coarsely select choose which parts will be substituted by defining one or multiple of the following macros:
 
 <table class="manual">
-<tr><td>\c EIGEN_USE_BLAS </td><td>Enables the use of external BLAS level 2 and 3 routines (currently works with Intel MKL only)</td></tr>
-<tr class="alt"><td>\c EIGEN_USE_LAPACKE </td><td>Enables the use of external Lapack routines via the <a href="http://www.netlib.org/lapack/lapacke.html">Intel Lapacke</a> C interface to Lapack (currently works with Intel MKL only)</td></tr>
-<tr><td>\c EIGEN_USE_LAPACKE_STRICT </td><td>Same as \c EIGEN_USE_LAPACKE but algorithm of lower robustness are disabled. This currently concerns only JacobiSVD which otherwise would be replaced by \c gesvd that is less robust than Jacobi rotations.</td></tr>
-<tr class="alt"><td>\c EIGEN_USE_MKL_VML </td><td>Enables the use of Intel VML (vector operations)</td></tr>
-<tr><td>\c EIGEN_USE_MKL_ALL </td><td>Defines \c EIGEN_USE_BLAS, \c EIGEN_USE_LAPACKE, and \c EIGEN_USE_MKL_VML </td></tr>
+<tr><td>\c STORMEIGEN_USE_BLAS </td><td>Enables the use of external BLAS level 2 and 3 routines (currently works with Intel MKL only)</td></tr>
+<tr class="alt"><td>\c STORMEIGEN_USE_LAPACKE </td><td>Enables the use of external Lapack routines via the <a href="http://www.netlib.org/lapack/lapacke.html">Intel Lapacke</a> C interface to Lapack (currently works with Intel MKL only)</td></tr>
+<tr><td>\c STORMEIGEN_USE_LAPACKE_STRICT </td><td>Same as \c STORMEIGEN_USE_LAPACKE but algorithm of lower robustness are disabled. This currently concerns only JacobiSVD which otherwise would be replaced by \c gesvd that is less robust than Jacobi rotations.</td></tr>
+<tr class="alt"><td>\c STORMEIGEN_USE_MKL_VML </td><td>Enables the use of Intel VML (vector operations)</td></tr>
+<tr><td>\c STORMEIGEN_USE_MKL_ALL </td><td>Defines \c STORMEIGEN_USE_BLAS, \c STORMEIGEN_USE_LAPACKE, and \c STORMEIGEN_USE_MKL_VML </td></tr>
 </table>
 
 Finally, the PARDISO sparse solver shipped with Intel MKL can be used through the \ref PardisoLU, \ref PardisoLLT and \ref PardisoLDLT classes of the \ref PardisoSupport_Module.
@@ -70,7 +70,7 @@ Finally, the PARDISO sparse solver shipped with Intel MKL can be used through th
 The breadth of Eigen functionality covered by Intel MKL is listed in the table below.
 <table class="manual">
 <tr><th>Functional domain</th><th>Code example</th><th>MKL routines</th></tr>
-<tr><td>Matrix-matrix operations \n \c EIGEN_USE_BLAS </td><td>\code
+<tr><td>Matrix-matrix operations \n \c STORMEIGEN_USE_BLAS </td><td>\code
 m1*m2.transpose();
 m1.selfadjointView<Lower>()*m2;
 m1*m2.triangularView<Upper>();
@@ -81,7 +81,7 @@ m1.selfadjointView<Lower>().rankUpdate(m2,1.0);
 ?trmm
 dsyrk/ssyrk
 \endcode</td></tr>
-<tr class="alt"><td>Matrix-vector operations \n \c EIGEN_USE_BLAS </td><td>\code
+<tr class="alt"><td>Matrix-vector operations \n \c STORMEIGEN_USE_BLAS </td><td>\code
 m1.adjoint()*b;
 m1.selfadjointView<Lower>()*b;
 m1.triangularView<Upper>()*b;
@@ -90,30 +90,30 @@ m1.triangularView<Upper>()*b;
 ?symv/?hemv
 ?trmv
 \endcode</td></tr>
-<tr><td>LU decomposition \n \c EIGEN_USE_LAPACKE \n \c EIGEN_USE_LAPACKE_STRICT </td><td>\code
+<tr><td>LU decomposition \n \c STORMEIGEN_USE_LAPACKE \n \c STORMEIGEN_USE_LAPACKE_STRICT </td><td>\code
 v1 = m1.lu().solve(v2);
 \endcode</td><td>\code
 ?getrf
 \endcode</td></tr>
-<tr class="alt"><td>Cholesky decomposition \n \c EIGEN_USE_LAPACKE \n \c EIGEN_USE_LAPACKE_STRICT </td><td>\code
+<tr class="alt"><td>Cholesky decomposition \n \c STORMEIGEN_USE_LAPACKE \n \c STORMEIGEN_USE_LAPACKE_STRICT </td><td>\code
 v1 = m2.selfadjointView<Upper>().llt().solve(v2);
 \endcode</td><td>\code
 ?potrf
 \endcode</td></tr>
-<tr><td>QR decomposition \n \c EIGEN_USE_LAPACKE \n \c EIGEN_USE_LAPACKE_STRICT </td><td>\code
+<tr><td>QR decomposition \n \c STORMEIGEN_USE_LAPACKE \n \c STORMEIGEN_USE_LAPACKE_STRICT </td><td>\code
 m1.householderQr();
 m1.colPivHouseholderQr();
 \endcode</td><td>\code
 ?geqrf
 ?geqp3
 \endcode</td></tr>
-<tr class="alt"><td>Singular value decomposition \n \c EIGEN_USE_LAPACKE </td><td>\code
+<tr class="alt"><td>Singular value decomposition \n \c STORMEIGEN_USE_LAPACKE </td><td>\code
 JacobiSVD<MatrixXd> svd;
 svd.compute(m1, ComputeThinV);
 \endcode</td><td>\code
 ?gesvd
 \endcode</td></tr>
-<tr><td>Eigen-value decompositions \n \c EIGEN_USE_LAPACKE \n \c EIGEN_USE_LAPACKE_STRICT </td><td>\code
+<tr><td>Eigen-value decompositions \n \c STORMEIGEN_USE_LAPACKE \n \c STORMEIGEN_USE_LAPACKE_STRICT </td><td>\code
 EigenSolver<MatrixXd> es(m1);
 ComplexEigenSolver<MatrixXcd> ces(m1);
 SelfAdjointEigenSolver<MatrixXd> saes(m1+m1.transpose());
@@ -126,13 +126,13 @@ GeneralizedSelfAdjointEigenSolver<MatrixXd>
 ?syev/?heev,
 ?potrf
 \endcode</td></tr>
-<tr class="alt"><td>Schur decomposition \n \c EIGEN_USE_LAPACKE \n \c EIGEN_USE_LAPACKE_STRICT </td><td>\code
+<tr class="alt"><td>Schur decomposition \n \c STORMEIGEN_USE_LAPACKE \n \c STORMEIGEN_USE_LAPACKE_STRICT </td><td>\code
 RealSchur<MatrixXd> schurR(m1);
 ComplexSchur<MatrixXcd> schurC(m1);
 \endcode</td><td>\code
 ?gees
 \endcode</td></tr>
-<tr><td>Vector Math \n \c EIGEN_USE_MKL_VML </td><td>\code
+<tr><td>Vector Math \n \c STORMEIGEN_USE_MKL_VML </td><td>\code
 v2=v1.array().sin();
 v2=v1.array().asin();
 v2=v1.array().cos();

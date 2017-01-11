@@ -10,7 +10,7 @@
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 static long g_realloc_count = 0;
-#define EIGEN_SPARSE_COMPRESSED_STORAGE_REALLOCATE_PLUGIN g_realloc_count++;
+#define STORMEIGEN_SPARSE_COMPRESSED_STORAGE_REALLOCATE_PLUGIN g_realloc_count++;
 
 #include "sparse.h"
 
@@ -491,7 +491,7 @@ void test_sparse_basic()
     if(StormEigen::internal::random<int>(0,4) == 0) {
       r = c; // check square matrices in 25% of tries
     }
-    EIGEN_UNUSED_VARIABLE(r+c);
+    STORMEIGEN_UNUSED_VARIABLE(r+c);
     CALL_SUBTEST_1(( sparse_basic(SparseMatrix<double>(1, 1)) ));
     CALL_SUBTEST_1(( sparse_basic(SparseMatrix<double>(8, 8)) ));
     CALL_SUBTEST_2(( sparse_basic(SparseMatrix<std::complex<double>, ColMajor>(r, c)) ));
@@ -515,7 +515,7 @@ void test_sparse_basic()
   CALL_SUBTEST_4((big_sparse_triplet<SparseMatrix<double, ColMajor, long int> >(10000, 10000, 0.125)));
 
   // Regression test for bug 1105
-#ifdef EIGEN_TEST_PART_6
+#ifdef STORMEIGEN_TEST_PART_6
   {
     int n = StormEigen::internal::random<int>(200,600);
     SparseMatrix<std::complex<double>,0, long> mat(n, n);

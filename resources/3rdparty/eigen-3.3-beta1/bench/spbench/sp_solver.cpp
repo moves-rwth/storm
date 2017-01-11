@@ -4,16 +4,16 @@
 #include <iostream>
 #include <fstream>
 #include <iomanip>
-#include <Eigen/Jacobi>
-#include <Eigen/Householder>
-#include <Eigen/IterativeLinearSolvers>
-#include <Eigen/LU>
-#include <unsupported/Eigen/SparseExtra>
-//#include <Eigen/SparseLU>
-#include <Eigen/SuperLUSupport>
-// #include <unsupported/Eigen/src/IterativeSolvers/Scaling.h>
+#include <StormEigen/Jacobi>
+#include <StormEigen/Householder>
+#include <StormEigen/IterativeLinearSolvers>
+#include <StormEigen/LU>
+#include <unsupported/StormEigen/SparseExtra>
+//#include <StormEigen/SparseLU>
+#include <StormEigen/SuperLUSupport>
+// #include <unsupported/StormEigen/src/IterativeSolvers/Scaling.h>
 #include <bench/BenchTimer.h>
-#include <unsupported/Eigen/IterativeSolvers>
+#include <unsupported/StormEigen/IterativeSolvers>
 using namespace std;
 using namespace StormEigen;
 

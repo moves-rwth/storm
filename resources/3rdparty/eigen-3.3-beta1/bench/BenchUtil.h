@@ -1,8 +1,8 @@
 
-#ifndef EIGEN_BENCH_UTIL_H
-#define EIGEN_BENCH_UTIL_H
+#ifndef STORMEIGEN_BENCH_UTIL_H
+#define STORMEIGEN_BENCH_UTIL_H
 
-#include <Eigen/Core>
+#include <StormEigen/Core>
 #include "BenchTimer.h"
 
 using namespace std;
@@ -89,4 +89,4 @@ void eiToUblasVec(const EigenType& src, UblasType& dst)
 }
 #endif
 
-#endif // EIGEN_BENCH_UTIL_H
+#endif // STORMEIGEN_BENCH_UTIL_H

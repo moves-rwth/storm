@@ -11,8 +11,8 @@ platform, they are the same for everybody.
 Method 1. Installing without using CMake
 ****************************************
 
-You can use right away the headers in the Eigen/ subdirectory. In order
-to install, just copy this Eigen/ subdirectory to your favorite location.
+You can use right away the headers in the StormEigen/ subdirectory. In order
+to install, just copy this StormEigen/ subdirectory to your favorite location.
 If you also want the unsupported features, copy the unsupported/
 subdirectory too.
 

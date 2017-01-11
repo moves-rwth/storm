@@ -9,7 +9,7 @@
 
 #include "main.h"
 
-#include <Eigen/CXX11/Tensor>
+#include <StormEigen/CXX11/Tensor>
 
 using StormEigen::Tensor;
 using StormEigen::DefaultDevice;
@@ -30,7 +30,7 @@ static void test_evals()
   typedef TensorEvaluator<decltype(input.convolve(kernel, dims3)), DefaultDevice> Evaluator;
   Evaluator eval(input.convolve(kernel, dims3), DefaultDevice());
   eval.evalTo(result.data());
-  EIGEN_STATIC_ASSERT(Evaluator::NumDims==2ul, YOU_MADE_A_PROGRAMMING_MISTAKE);
+  STORMEIGEN_STATIC_ASSERT(Evaluator::NumDims==2ul, YOU_MADE_A_PROGRAMMING_MISTAKE);
   VERIFY_IS_EQUAL(eval.dimensions()[0], 2);
   VERIFY_IS_EQUAL(eval.dimensions()[1], 3);
 

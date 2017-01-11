@@ -9,8 +9,8 @@
 
 #include "main.h"
 
-#include <Eigen/Core>
-#include <Eigen/CXX11/Tensor>
+#include <StormEigen/Core>
+#include <StormEigen/CXX11/Tensor>
 
 using StormEigen::MatrixXf;
 using StormEigen::Tensor;

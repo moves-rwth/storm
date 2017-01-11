@@ -9,7 +9,7 @@
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "main.h"
-#include <Eigen/LU>
+#include <StormEigen/LU>
 
 template<typename MatrixType> void inverse(const MatrixType& m)
 {
@@ -40,7 +40,7 @@ template<typename MatrixType> void inverse(const MatrixType& m)
   // since for the general case we implement separately row-major and col-major, test that
   VERIFY_IS_APPROX(MatrixType(m1.transpose().inverse()), MatrixType(m1.inverse().transpose()));
 
-#if !defined(EIGEN_TEST_PART_5) && !defined(EIGEN_TEST_PART_6)
+#if !defined(STORMEIGEN_TEST_PART_5) && !defined(STORMEIGEN_TEST_PART_6)
   typedef typename NumTraits<Scalar>::Real RealScalar;
   typedef Matrix<Scalar, MatrixType::ColsAtCompileTime, 1> VectorType;
   

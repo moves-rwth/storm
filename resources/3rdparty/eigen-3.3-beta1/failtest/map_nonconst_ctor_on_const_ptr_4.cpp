@@ -1,6 +1,6 @@
-#include "../Eigen/Core"
+#include "../StormEigen/Core"
 
-#ifdef EIGEN_SHOULD_FAIL_TO_BUILD
+#ifdef STORMEIGEN_SHOULD_FAIL_TO_BUILD
 #define CV_QUALIFIER
 #else
 #define CV_QUALIFIER const

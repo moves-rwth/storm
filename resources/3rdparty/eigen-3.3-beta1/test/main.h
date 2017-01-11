@@ -44,7 +44,7 @@
 #include <list>
 #if __cplusplus >= 201103L
 #include <random>
-#ifdef EIGEN_USE_THREADS
+#ifdef STORMEIGEN_USE_THREADS
 #include <future>
 #endif
 #endif
@@ -65,12 +65,12 @@
 
 // Unit tests calling Eigen's blas library must preserve the default blocking size
 // to avoid troubles.
-#ifndef EIGEN_NO_DEBUG_SMALL_PRODUCT_BLOCKS
-#define EIGEN_DEBUG_SMALL_PRODUCT_BLOCKS
+#ifndef STORMEIGEN_NO_DEBUG_SMALL_PRODUCT_BLOCKS
+#define STORMEIGEN_DEBUG_SMALL_PRODUCT_BLOCKS
 #endif
 
 // shuts down ICC's remark #593: variable "XXX" was set but never used
-#define TEST_SET_BUT_UNUSED_VARIABLE(X) EIGEN_UNUSED_VARIABLE(X)
+#define TEST_SET_BUT_UNUSED_VARIABLE(X) STORMEIGEN_UNUSED_VARIABLE(X)
 
 #ifdef TEST_ENABLE_TEMPORARY_TRACKING
 
@@ -81,7 +81,7 @@ inline void on_temporary_creation(long int size) {
   if(size!=0) nb_temporaries++;
 }
 
-#define EIGEN_DENSE_STORAGE_CTOR_PLUGIN { on_temporary_creation(size); }
+#define STORMEIGEN_DENSE_STORAGE_CTOR_PLUGIN { on_temporary_creation(size); }
 
 #define VERIFY_EVALUATION_COUNT(XPR,N) {\
     nb_temporaries = 0; \
@@ -106,11 +106,11 @@ inline void on_temporary_creation(long int size) {
 
 // bounds integer values for AltiVec
 #if defined(__ALTIVEC__) || defined(__VSX__)
-#define EIGEN_MAKING_DOCS
+#define STORMEIGEN_MAKING_DOCS
 #endif
 
-#ifndef EIGEN_TEST_FUNC
-#error EIGEN_TEST_FUNC must be defined
+#ifndef STORMEIGEN_TEST_FUNC
+#error STORMEIGEN_TEST_FUNC must be defined
 #endif
 
 #define DEFAULT_REPEAT 10
@@ -132,13 +132,13 @@ namespace StormEigen
 #define EI_PP_MAKE_STRING2(S) #S
 #define EI_PP_MAKE_STRING(S) EI_PP_MAKE_STRING2(S)
 
-#define EIGEN_DEFAULT_IO_FORMAT IOFormat(4, 0, "  ", "\n", "", "", "", "")
+#define STORMEIGEN_DEFAULT_IO_FORMAT IOFormat(4, 0, "  ", "\n", "", "", "", "")
 
 #if (defined(_CPPUNWIND) || defined(__EXCEPTIONS)) && !defined(__CUDA_ARCH__)
-  #define EIGEN_EXCEPTIONS
+  #define STORMEIGEN_EXCEPTIONS
 #endif
 
-#ifndef EIGEN_NO_ASSERTION_CHECKING
+#ifndef STORMEIGEN_NO_ASSERTION_CHECKING
 
   namespace StormEigen
   {
@@ -156,14 +156,14 @@ namespace StormEigen
       ~eigen_assert_exception() { StormEigen::no_more_assert = false; }
     };
   }
-  // If EIGEN_DEBUG_ASSERTS is defined and if no assertion is triggered while
+  // If STORMEIGEN_DEBUG_ASSERTS is defined and if no assertion is triggered while
   // one should have been, then the list of excecuted assertions is printed out.
   //
-  // EIGEN_DEBUG_ASSERTS is not enabled by default as it
+  // STORMEIGEN_DEBUG_ASSERTS is not enabled by default as it
   // significantly increases the compilation time
   // and might even introduce side effects that would hide
   // some memory errors.
-  #ifdef EIGEN_DEBUG_ASSERTS
+  #ifdef STORMEIGEN_DEBUG_ASSERTS
 
     namespace StormEigen
     {
@@ -179,14 +179,14 @@ namespace StormEigen
         if(report_on_cerr_on_assert_failure) \
           std::cerr <<  #a << " " __FILE__ << "(" << __LINE__ << ")\n"; \
         StormEigen::no_more_assert = true;       \
-        EIGEN_THROW_X(StormEigen::eigen_assert_exception()); \
+        STORMEIGEN_THROW_X(StormEigen::eigen_assert_exception()); \
       }                                     \
       else if (StormEigen::internal::push_assert)       \
       {                                     \
         eigen_assert_list.push_back(std::string(EI_PP_MAKE_STRING(__FILE__) " (" EI_PP_MAKE_STRING(__LINE__) ") : " #a) ); \
       }
 
-    #ifdef EIGEN_EXCEPTIONS
+    #ifdef STORMEIGEN_EXCEPTIONS
     #define VERIFY_RAISES_ASSERT(a)                                                   \
       {                                                                               \
         StormEigen::no_more_assert = false;                                                \
@@ -205,9 +205,9 @@ namespace StormEigen
         StormEigen::report_on_cerr_on_assert_failure = true;                               \
         StormEigen::internal::push_assert = false;                                         \
       }
-    #endif //EIGEN_EXCEPTIONS
+    #endif //STORMEIGEN_EXCEPTIONS
 
-  #elif !defined(__CUDACC__) // EIGEN_DEBUG_ASSERTS
+  #elif !defined(__CUDACC__) // STORMEIGEN_DEBUG_ASSERTS
     // see bug 89. The copy_bool here is working around a bug in gcc <= 4.3
     #define eigen_assert(a) \
       if( (!StormEigen::internal::copy_bool(a)) && (!no_more_assert) )\
@@ -216,9 +216,9 @@ namespace StormEigen
         if(report_on_cerr_on_assert_failure)  \
           eigen_plain_assert(a);              \
         else                                  \
-          EIGEN_THROW_X(StormEigen::eigen_assert_exception()); \
+          STORMEIGEN_THROW_X(StormEigen::eigen_assert_exception()); \
       }
-    #ifdef EIGEN_EXCEPTIONS
+    #ifdef STORMEIGEN_EXCEPTIONS
       #define VERIFY_RAISES_ASSERT(a) {                           \
         StormEigen::no_more_assert = false;                            \
         StormEigen::report_on_cerr_on_assert_failure = false;          \
@@ -229,8 +229,8 @@ namespace StormEigen
         catch (StormEigen::eigen_assert_exception&) { VERIFY(true); }  \
         StormEigen::report_on_cerr_on_assert_failure = true;           \
       }
-    #endif //EIGEN_EXCEPTIONS
-  #endif // EIGEN_DEBUG_ASSERTS
+    #endif //STORMEIGEN_EXCEPTIONS
+  #endif // STORMEIGEN_DEBUG_ASSERTS
 
 #ifndef VERIFY_RAISES_ASSERT
   #define VERIFY_RAISES_ASSERT(a) \
@@ -238,18 +238,18 @@ namespace StormEigen
 #endif
     
   #if !defined(__CUDACC__)
-  #define EIGEN_USE_CUSTOM_ASSERT
+  #define STORMEIGEN_USE_CUSTOM_ASSERT
   #endif
 
-#else // EIGEN_NO_ASSERTION_CHECKING
+#else // STORMEIGEN_NO_ASSERTION_CHECKING
 
   #define VERIFY_RAISES_ASSERT(a) {}
 
-#endif // EIGEN_NO_ASSERTION_CHECKING
+#endif // STORMEIGEN_NO_ASSERTION_CHECKING
 
 
-#define EIGEN_INTERNAL_DEBUGGING
-#include <Eigen/QR> // required for createRandomPIMatrixOfRank
+#define STORMEIGEN_INTERNAL_DEBUGGING
+#include <StormEigen/QR> // required for createRandomPIMatrixOfRank
 
 inline void verify_impl(bool condition, const char *testname, const char *file, int line, const char *condition_as_string)
 {
@@ -320,7 +320,7 @@ inline bool test_isMuchSmallerThan(const double& a, const double& b)
 inline bool test_isApproxOrLessThan(const double& a, const double& b)
 { return internal::isApproxOrLessThan(a, b, test_precision<double>()); }
 
-#ifndef EIGEN_TEST_NO_COMPLEX
+#ifndef STORMEIGEN_TEST_NO_COMPLEX
 inline bool test_isApprox(const std::complex<float>& a, const std::complex<float>& b)
 { return internal::isApprox(a, b, test_precision<std::complex<float> >()); }
 inline bool test_isMuchSmallerThan(const std::complex<float>& a, const std::complex<float>& b)
@@ -337,7 +337,7 @@ inline bool test_isMuchSmallerThan(const std::complex<long double>& a, const std
 { return internal::isMuchSmallerThan(a, b, test_precision<std::complex<long double> >()); }
 #endif
 
-#ifndef EIGEN_TEST_NO_LONGDOUBLE
+#ifndef STORMEIGEN_TEST_NO_LONGDOUBLE
 inline bool test_isApprox(const long double& a, const long double& b)
 {
     bool ret = internal::isApprox(a, b, test_precision<long double>());
@@ -351,7 +351,7 @@ inline bool test_isMuchSmallerThan(const long double& a, const long double& b)
 { return internal::isMuchSmallerThan(a, b, test_precision<long double>()); }
 inline bool test_isApproxOrLessThan(const long double& a, const long double& b)
 { return internal::isApproxOrLessThan(a, b, test_precision<long double>()); }
-#endif // EIGEN_TEST_NO_LONGDOUBLE
+#endif // STORMEIGEN_TEST_NO_LONGDOUBLE
 
 
 // test_relative_error returns the relative difference between a and b as a real scalar as used in isApprox.
@@ -618,7 +618,7 @@ template<> std::string type_name<std::complex<long double> >()  { return "comple
 template<> std::string type_name<std::complex<int> >()          { return "complex<int>"; }
 
 // forward declaration of the main test function
-void EIGEN_CAT(test_,EIGEN_TEST_FUNC)();
+void STORMEIGEN_CAT(test_,STORMEIGEN_TEST_FUNC)();
 
 using namespace StormEigen;
 
@@ -684,17 +684,17 @@ int main(int argc, char *argv[])
       std::cout << "  rN     Repeat each test N times (default: " << DEFAULT_REPEAT << ")" << std::endl;
       std::cout << "  sN     Use N as seed for random numbers (default: based on current time)" << std::endl;
       std::cout << std::endl;
-      std::cout << "If defined, the environment variables EIGEN_REPEAT and EIGEN_SEED" << std::endl;
+      std::cout << "If defined, the environment variables STORMEIGEN_REPEAT and STORMEIGEN_SEED" << std::endl;
       std::cout << "will be used as default values for these parameters." << std::endl;
       return 1;
     }
 
-    char *env_EIGEN_REPEAT = getenv("EIGEN_REPEAT");
-    if(!g_has_set_repeat && env_EIGEN_REPEAT)
-      set_repeat_from_string(env_EIGEN_REPEAT);
-    char *env_EIGEN_SEED = getenv("EIGEN_SEED");
-    if(!g_has_set_seed && env_EIGEN_SEED)
-      set_seed_from_string(env_EIGEN_SEED);
+    char *env_STORMEIGEN_REPEAT = getenv("STORMEIGEN_REPEAT");
+    if(!g_has_set_repeat && env_STORMEIGEN_REPEAT)
+      set_repeat_from_string(env_STORMEIGEN_REPEAT);
+    char *env_STORMEIGEN_SEED = getenv("STORMEIGEN_SEED");
+    if(!g_has_set_seed && env_STORMEIGEN_SEED)
+      set_seed_from_string(env_STORMEIGEN_SEED);
 
     if(!g_has_set_seed) g_seed = (unsigned int) time(NULL);
     if(!g_has_set_repeat) g_repeat = DEFAULT_REPEAT;
@@ -706,9 +706,9 @@ int main(int argc, char *argv[])
     srand(g_seed);
     std::cout << "Repeating each test " << g_repeat << " times" << std::endl;
 
-    StormEigen::g_test_stack.push_back(std::string(EI_PP_MAKE_STRING(EIGEN_TEST_FUNC)));
+    StormEigen::g_test_stack.push_back(std::string(EI_PP_MAKE_STRING(STORMEIGEN_TEST_FUNC)));
 
-    EIGEN_CAT(test_,EIGEN_TEST_FUNC)();
+    STORMEIGEN_CAT(test_,STORMEIGEN_TEST_FUNC)();
     return 0;
 }
 

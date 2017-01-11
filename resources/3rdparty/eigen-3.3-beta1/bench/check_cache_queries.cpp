@@ -1,7 +1,7 @@
 
-#define EIGEN_INTERNAL_DEBUG_CACHE_QUERY
+#define STORMEIGEN_INTERNAL_DEBUG_CACHE_QUERY
 #include <iostream>
-#include "../Eigen/Core"
+#include "../StormEigen/Core"
 
 using namespace StormEigen;
 using namespace std;
@@ -9,7 +9,7 @@ using namespace std;
 #define DUMP_CPUID(CODE) {\
   int abcd[4]; \
   abcd[0] = abcd[1] = abcd[2] = abcd[3] = 0;\
-  EIGEN_CPUID(abcd, CODE, 0); \
+  STORMEIGEN_CPUID(abcd, CODE, 0); \
   std::cout << "The code " << CODE << " gives " \
               << (int*)(abcd[0]) << " " << (int*)(abcd[1]) << " " \
               << (int*)(abcd[2]) << " " << (int*)(abcd[3]) << " " << std::endl; \
@@ -23,14 +23,14 @@ int main()
   internal::queryCacheSizes(l1, l2, l3);
   cout << "Eigen's L1, L2, L3       = " << l1 << " " << l2 << " " << l3 << endl;
   
-  #ifdef EIGEN_CPUID
+  #ifdef STORMEIGEN_CPUID
 
   int abcd[4];
   int string[8];
   char* string_char = (char*)(string);
 
   // vendor ID
-  EIGEN_CPUID(abcd,0x0,0);
+  STORMEIGEN_CPUID(abcd,0x0,0);
   string[0] = abcd[1];
   string[1] = abcd[3];
   string[2] = abcd[2];
@@ -59,7 +59,7 @@ int main()
     int cache_type = 0;
     do {
       abcd[0] = abcd[1] = abcd[2] = abcd[3] = 0;
-      EIGEN_CPUID(abcd,0x4,cache_id);
+      STORMEIGEN_CPUID(abcd,0x4,cache_id);
       cache_type  = (abcd[0] & 0x0F) >> 0;
       int cache_level = (abcd[0] & 0xE0) >> 5;  // A[7:5]
       int ways        = (abcd[1] & 0xFFC00000) >> 22; // B[31:22]
@@ -95,7 +95,7 @@ int main()
   DUMP_CPUID(0x80000007);
   DUMP_CPUID(0x80000008);
   #else
-  cout << "EIGEN_CPUID is not defined" << endl;
+  cout << "STORMEIGEN_CPUID is not defined" << endl;
   #endif
   return 0;
 }

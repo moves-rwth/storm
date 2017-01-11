@@ -8,17 +8,17 @@
 // Public License v. 2.0. If a copy of the MPL was not distributed
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-#if defined(EIGEN_TEST_PART_1)
+#if defined(STORMEIGEN_TEST_PART_1)
   // default
-#elif defined(EIGEN_TEST_PART_2)
-  #define EIGEN_MAX_STATIC_ALIGN_BYTES 16
-  #define EIGEN_MAX_ALIGN_BYTES 16
-#elif defined(EIGEN_TEST_PART_3)
-  #define EIGEN_MAX_STATIC_ALIGN_BYTES 32
-  #define EIGEN_MAX_ALIGN_BYTES 32
-#elif defined(EIGEN_TEST_PART_4)
-  #define EIGEN_MAX_STATIC_ALIGN_BYTES 64
-  #define EIGEN_MAX_ALIGN_BYTES 64
+#elif defined(STORMEIGEN_TEST_PART_2)
+  #define STORMEIGEN_MAX_STATIC_ALIGN_BYTES 16
+  #define STORMEIGEN_MAX_ALIGN_BYTES 16
+#elif defined(STORMEIGEN_TEST_PART_3)
+  #define STORMEIGEN_MAX_STATIC_ALIGN_BYTES 32
+  #define STORMEIGEN_MAX_ALIGN_BYTES 32
+#elif defined(STORMEIGEN_TEST_PART_4)
+  #define STORMEIGEN_MAX_STATIC_ALIGN_BYTES 64
+  #define STORMEIGEN_MAX_ALIGN_BYTES 64
 #endif
 
 #include "main.h"
@@ -54,15 +54,15 @@ struct TestNew3
 
 struct TestNew4
 {
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+  STORMEIGEN_MAKE_ALIGNED_OPERATOR_NEW
   Vector2d m;
   float f; // make the struct have sizeof%16!=0 to make it a little more tricky when we allow an array of 2 such objects
 };
 
 struct TestNew5
 {
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  float f; // try the f at first -- the EIGEN_ALIGN_MAX attribute of m should make that still work
+  STORMEIGEN_MAKE_ALIGNED_OPERATOR_NEW
+  float f; // try the f at first -- the STORMEIGEN_ALIGN_MAX attribute of m should make that still work
   Matrix4f m;
 };
 
@@ -74,7 +74,7 @@ struct TestNew6
 
 template<bool Align> struct Depends
 {
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW_IF(Align)
+  STORMEIGEN_MAKE_ALIGNED_OPERATOR_NEW_IF(Align)
   Vector2d m;
   float f;
 };
@@ -89,13 +89,13 @@ void check_unalignedassert_good()
   delete[] y;
 }
 
-#if EIGEN_MAX_STATIC_ALIGN_BYTES>0
+#if STORMEIGEN_MAX_STATIC_ALIGN_BYTES>0
 template<typename T>
 void construct_at_boundary(int boundary)
 {
   char buf[sizeof(T)+256];
   size_t _buf = reinterpret_cast<size_t>(buf);
-  _buf += (EIGEN_MAX_ALIGN_BYTES - (_buf % EIGEN_MAX_ALIGN_BYTES)); // make 16/32/...-byte aligned
+  _buf += (STORMEIGEN_MAX_ALIGN_BYTES - (_buf % STORMEIGEN_MAX_ALIGN_BYTES)); // make 16/32/...-byte aligned
   _buf += boundary; // make exact boundary-aligned
   T *x = ::new(reinterpret_cast<void*>(_buf)) T;
   x[0].setZero(); // just in order to silence warnings
@@ -105,34 +105,34 @@ void construct_at_boundary(int boundary)
 
 void unalignedassert()
 {
-#if EIGEN_MAX_STATIC_ALIGN_BYTES>0
+#if STORMEIGEN_MAX_STATIC_ALIGN_BYTES>0
   construct_at_boundary<Vector2f>(4);
   construct_at_boundary<Vector3f>(4);
   construct_at_boundary<Vector4f>(16);
   construct_at_boundary<Vector6f>(4);
-  construct_at_boundary<Vector8f>(EIGEN_MAX_ALIGN_BYTES);
+  construct_at_boundary<Vector8f>(STORMEIGEN_MAX_ALIGN_BYTES);
   construct_at_boundary<Vector12f>(16);
   construct_at_boundary<Matrix2f>(16);
   construct_at_boundary<Matrix3f>(4);
-  construct_at_boundary<Matrix4f>(EIGEN_MAX_ALIGN_BYTES);
+  construct_at_boundary<Matrix4f>(STORMEIGEN_MAX_ALIGN_BYTES);
 
   construct_at_boundary<Vector2d>(16);
   construct_at_boundary<Vector3d>(4);
-  construct_at_boundary<Vector4d>(EIGEN_MAX_ALIGN_BYTES);
+  construct_at_boundary<Vector4d>(STORMEIGEN_MAX_ALIGN_BYTES);
   construct_at_boundary<Vector5d>(4);
   construct_at_boundary<Vector6d>(16);
   construct_at_boundary<Vector7d>(4);
-  construct_at_boundary<Vector8d>(EIGEN_MAX_ALIGN_BYTES);
+  construct_at_boundary<Vector8d>(STORMEIGEN_MAX_ALIGN_BYTES);
   construct_at_boundary<Vector9d>(4);
   construct_at_boundary<Vector10d>(16);
-  construct_at_boundary<Vector12d>(EIGEN_MAX_ALIGN_BYTES);
-  construct_at_boundary<Matrix2d>(EIGEN_MAX_ALIGN_BYTES);
+  construct_at_boundary<Vector12d>(STORMEIGEN_MAX_ALIGN_BYTES);
+  construct_at_boundary<Matrix2d>(STORMEIGEN_MAX_ALIGN_BYTES);
   construct_at_boundary<Matrix3d>(4);
-  construct_at_boundary<Matrix4d>(EIGEN_MAX_ALIGN_BYTES);
+  construct_at_boundary<Matrix4d>(STORMEIGEN_MAX_ALIGN_BYTES);
 
   construct_at_boundary<Vector2cf>(16);
   construct_at_boundary<Vector3cf>(4);
-  construct_at_boundary<Vector2cd>(EIGEN_MAX_ALIGN_BYTES);
+  construct_at_boundary<Vector2cd>(STORMEIGEN_MAX_ALIGN_BYTES);
   construct_at_boundary<Vector3cd>(16);
 #endif
 
@@ -145,8 +145,8 @@ void unalignedassert()
   check_unalignedassert_good<TestNew6>();
   check_unalignedassert_good<Depends<true> >();
 
-#if EIGEN_MAX_STATIC_ALIGN_BYTES>0
-  if(EIGEN_MAX_ALIGN_BYTES>=16)
+#if STORMEIGEN_MAX_STATIC_ALIGN_BYTES>0
+  if(STORMEIGEN_MAX_ALIGN_BYTES>=16)
   {
     VERIFY_RAISES_ASSERT(construct_at_boundary<Vector4f>(8));
     VERIFY_RAISES_ASSERT(construct_at_boundary<Vector8f>(8));
@@ -162,7 +162,7 @@ void unalignedassert()
     //VERIFY_RAISES_ASSERT(construct_at_boundary<Vector2cf>(8));
     VERIFY_RAISES_ASSERT(construct_at_boundary<Vector4i>(8));
   }
-  for(int b=8; b<EIGEN_MAX_ALIGN_BYTES; b+=8)
+  for(int b=8; b<STORMEIGEN_MAX_ALIGN_BYTES; b+=8)
   {
     if(b<32)  VERIFY_RAISES_ASSERT(construct_at_boundary<Vector8f>(b));
     if(b<64)  VERIFY_RAISES_ASSERT(construct_at_boundary<Matrix4f>(b));

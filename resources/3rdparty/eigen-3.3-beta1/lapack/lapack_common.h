@@ -7,22 +7,22 @@
 // Public License v. 2.0. If a copy of the MPL was not distributed
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-#ifndef EIGEN_LAPACK_COMMON_H
-#define EIGEN_LAPACK_COMMON_H
+#ifndef STORMEIGEN_LAPACK_COMMON_H
+#define STORMEIGEN_LAPACK_COMMON_H
 
 #include "../blas/common.h"
 
-#define EIGEN_LAPACK_FUNC(FUNC,ARGLIST)               \
-  extern "C" { int EIGEN_BLAS_FUNC(FUNC) ARGLIST; }   \
-  int EIGEN_BLAS_FUNC(FUNC) ARGLIST
+#define STORMEIGEN_LAPACK_FUNC(FUNC,ARGLIST)               \
+  extern "C" { int STORMEIGEN_BLAS_FUNC(FUNC) ARGLIST; }   \
+  int STORMEIGEN_BLAS_FUNC(FUNC) ARGLIST
 
 typedef StormEigen::Map<StormEigen::Transpositions<Eigen::Dynamic,Eigen::Dynamic,int> > PivotsType;
 
 #if ISCOMPLEX
-#define EIGEN_LAPACK_ARG_IF_COMPLEX(X) X,
+#define STORMEIGEN_LAPACK_ARG_IF_COMPLEX(X) X,
 #else
-#define EIGEN_LAPACK_ARG_IF_COMPLEX(X)
+#define STORMEIGEN_LAPACK_ARG_IF_COMPLEX(X)
 #endif
 
 
-#endif // EIGEN_LAPACK_COMMON_H
+#endif // STORMEIGEN_LAPACK_COMMON_H

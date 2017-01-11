@@ -1,14 +1,14 @@
 // g++ -O3 -DNDEBUG -I.. -L /usr/lib64/atlas/ benchBlasGemm.cpp -o benchBlasGemm -lrt -lcblas
 // possible options:
-//    -DEIGEN_DONT_VECTORIZE
+//    -DSTORMEIGEN_DONT_VECTORIZE
 //    -msse2
 
-// #define EIGEN_DEFAULT_TO_ROW_MAJOR
+// #define STORMEIGEN_DEFAULT_TO_ROW_MAJOR
 #define _FLOAT
 
 #include <iostream>
 
-#include <Eigen/Core>
+#include <StormEigen/Core>
 #include "BenchTimer.h"
 
 // include the BLAS headers
@@ -119,7 +119,7 @@ int main(int argc, char *argv[])
     {
         timer.start();
         for (uint j=0 ; j<nbloops ; ++j)
-              #ifdef EIGEN_DEFAULT_TO_ROW_MAJOR
+              #ifdef STORMEIGEN_DEFAULT_TO_ROW_MAJOR
               CBLAS_GEMM(CblasRowMajor, CblasNoTrans, CblasNoTrans, M, N, K, alpha, ma.data(), K, mb.data(), N, beta, mc.data(), N);
               #else
               CBLAS_GEMM(CblasColMajor, CblasNoTrans, CblasNoTrans, M, N, K, alpha, ma.data(), M, mb.data(), K, beta, mc.data(), M);

@@ -7,8 +7,8 @@ INCLUDE_DIRECTORIES(../../../unsupported ../../../unsupported/test)
 FOREACH(example_src ${examples_SRCS})
   GET_FILENAME_COMPONENT(example ${example_src} NAME_WE)
   ADD_EXECUTABLE(example_${example} ${example_src})
-  if(EIGEN_STANDARD_LIBRARIES_TO_LINK_TO)
-    target_link_libraries(example_${example} ${EIGEN_STANDARD_LIBRARIES_TO_LINK_TO})
+  if(STORMEIGEN_STANDARD_LIBRARIES_TO_LINK_TO)
+    target_link_libraries(example_${example} ${STORMEIGEN_STANDARD_LIBRARIES_TO_LINK_TO})
   endif()
   ADD_CUSTOM_COMMAND(
     TARGET example_${example}

@@ -8,9 +8,9 @@
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "main.h"
-#include <Eigen/Geometry>
-#include <Eigen/LU>
-#include <Eigen/SVD>
+#include <StormEigen/Geometry>
+#include <StormEigen/LU>
+#include <StormEigen/SVD>
 
 /* this test covers the following files:
    Geometry/OrthoMethods.h

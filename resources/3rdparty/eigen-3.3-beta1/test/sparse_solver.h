@@ -8,7 +8,7 @@
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "sparse.h"
-#include <Eigen/SparseCore>
+#include <StormEigen/SparseCore>
 #include <sstream>
 
 template<typename Solver, typename Rhs, typename DenseMat, typename DenseRhs>
@@ -309,7 +309,7 @@ template<typename Solver> void check_sparse_spd_solving(Solver& solver, int maxS
     }
   }
 #else
-  EIGEN_UNUSED_VARIABLE(maxRealWorldSize);
+  STORMEIGEN_UNUSED_VARIABLE(maxRealWorldSize);
 #endif
 }
 
@@ -427,7 +427,7 @@ template<typename Solver> void check_sparse_square_solving(Solver& solver, int m
     }
   }
 #else
-  EIGEN_UNUSED_VARIABLE(maxRealWorldSize);
+  STORMEIGEN_UNUSED_VARIABLE(maxRealWorldSize);
 #endif
 
 }

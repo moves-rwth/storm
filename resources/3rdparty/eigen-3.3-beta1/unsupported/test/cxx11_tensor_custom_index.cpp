@@ -11,8 +11,8 @@
 #include <limits>
 #include <map>
 
-#include <Eigen/Dense>
-#include <Eigen/CXX11/Tensor>
+#include <StormEigen/Dense>
+#include <StormEigen/CXX11/Tensor>
 
 using StormEigen::Tensor;
 
@@ -20,7 +20,7 @@ using StormEigen::Tensor;
 template <int DataLayout>
 static void test_map_as_index()
 {
-#ifdef EIGEN_HAS_SFINAE
+#ifdef STORMEIGEN_HAS_SFINAE
   Tensor<float, 4, DataLayout> tensor(2, 3, 5, 7);
   tensor.setRandom();
 
@@ -42,7 +42,7 @@ static void test_map_as_index()
 template <int DataLayout>
 static void test_matrix_as_index()
 {
-#ifdef EIGEN_HAS_SFINAE
+#ifdef STORMEIGEN_HAS_SFINAE
   Tensor<float, 4, DataLayout> tensor(2, 3, 5, 7);
   tensor.setRandom();
 
@@ -60,7 +60,7 @@ static void test_matrix_as_index()
 template <int DataLayout>
 static void test_varlist_as_index()
 {
-#ifdef EIGEN_HAS_SFINAE
+#ifdef STORMEIGEN_HAS_SFINAE
   Tensor<float, 4, DataLayout> tensor(2, 3, 5, 7);
   tensor.setRandom();
 
@@ -75,7 +75,7 @@ static void test_varlist_as_index()
 template <int DataLayout>
 static void test_sizes_as_index()
 {
-#ifdef EIGEN_HAS_SFINAE
+#ifdef STORMEIGEN_HAS_SFINAE
   Tensor<float, 4, DataLayout> tensor(2, 3, 5, 7);
   tensor.setRandom();
 

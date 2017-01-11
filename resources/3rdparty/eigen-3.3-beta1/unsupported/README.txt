@@ -5,10 +5,10 @@ most of them are subject to be included in Eigen in the future.
 In order to use an unsupported module you have to do either:
 
  - add the path_to_eigen/unsupported directory to your include path and do:
-   #include <Eigen/ModuleHeader>
+   #include <StormEigen/ModuleHeader>
 
  - or directly do:
-   #include <unsupported/Eigen/ModuleHeader>
+   #include <unsupported/StormEigen/ModuleHeader>
 
 
 If you are interested in contributing to one of them, or have other stuff
@@ -28,16 +28,16 @@ but it shows an interesting way of using Eigen, then it could be a nice demo.
 
 This directory is organized as follow:
 
-unsupported/Eigen/ModuleHeader1
-unsupported/Eigen/ModuleHeader2
-unsupported/Eigen/...
-unsupported/Eigen/src/Module1/SourceFile1.h
-unsupported/Eigen/src/Module1/SourceFile2.h
-unsupported/Eigen/src/Module1/...
-unsupported/Eigen/src/Module2/SourceFile1.h
-unsupported/Eigen/src/Module2/SourceFile2.h
-unsupported/Eigen/src/Module2/...
-unsupported/Eigen/src/...
+unsupported/StormEigen/ModuleHeader1
+unsupported/StormEigen/ModuleHeader2
+unsupported/StormEigen/...
+unsupported/StormEigen/src/Module1/SourceFile1.h
+unsupported/StormEigen/src/Module1/SourceFile2.h
+unsupported/StormEigen/src/Module1/...
+unsupported/StormEigen/src/Module2/SourceFile1.h
+unsupported/StormEigen/src/Module2/SourceFile2.h
+unsupported/StormEigen/src/Module2/...
+unsupported/StormEigen/src/...
 unsupported/doc/snippets/.cpp   <- code snippets for the doc
 unsupported/doc/examples/.cpp   <- examples for the doc
 unsupported/doc/TutorialModule1.dox

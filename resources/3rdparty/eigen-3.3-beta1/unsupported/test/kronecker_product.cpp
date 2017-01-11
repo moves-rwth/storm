@@ -11,8 +11,8 @@
 
 
 #include "sparse.h"
-#include <Eigen/SparseExtra>
-#include <Eigen/KroneckerProduct>
+#include <StormEigen/SparseExtra>
+#include <StormEigen/KroneckerProduct>
 
 
 template<typename MatrixType>

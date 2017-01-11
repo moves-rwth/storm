@@ -4,11 +4,11 @@
 #include <iostream>
 #include <fstream>
 #include <iomanip>
-#include <unsupported/Eigen/SparseExtra>
-#include <Eigen/SparseLU>
+#include <unsupported/StormEigen/SparseExtra>
+#include <StormEigen/SparseLU>
 #include <bench/BenchTimer.h>
-#ifdef EIGEN_METIS_SUPPORT
-#include <Eigen/MetisSupport>
+#ifdef STORMEIGEN_METIS_SUPPORT
+#include <StormEigen/MetisSupport>
 #endif
 
 using namespace std;
@@ -24,7 +24,7 @@ int main(int argc, char **args)
   typedef Matrix<scalar, Dynamic, 1> DenseRhs;
   Matrix<scalar, Dynamic, 1> b, x, tmp;
 //   SparseLU<SparseMatrix<scalar, ColMajor>, AMDOrdering<int> >   solver;
-// #ifdef EIGEN_METIS_SUPPORT
+// #ifdef STORMEIGEN_METIS_SUPPORT
 //   SparseLU<SparseMatrix<scalar, ColMajor>, MetisOrdering<int> > solver; 
 //   std::cout<< "ORDERING : METIS\n"; 
 // #else

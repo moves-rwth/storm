@@ -9,15 +9,15 @@
 
 // SparseLU solve does not accept column major matrices for the destination.
 // However, as expected, the generic check_sparse_square_solving routines produces row-major
-// rhs and destination matrices when compiled with EIGEN_DEFAULT_TO_ROW_MAJOR
+// rhs and destination matrices when compiled with STORMEIGEN_DEFAULT_TO_ROW_MAJOR
 
-#ifdef EIGEN_DEFAULT_TO_ROW_MAJOR
-#undef EIGEN_DEFAULT_TO_ROW_MAJOR
+#ifdef STORMEIGEN_DEFAULT_TO_ROW_MAJOR
+#undef STORMEIGEN_DEFAULT_TO_ROW_MAJOR
 #endif
 
 #include "sparse_solver.h"
-#include <Eigen/SparseLU>
-#include <unsupported/Eigen/SparseExtra>
+#include <StormEigen/SparseLU>
+#include <unsupported/StormEigen/SparseExtra>
 
 template<typename T> void test_sparselu_T()
 {

@@ -9,7 +9,7 @@
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 static bool g_called;
-#define EIGEN_SPECIAL_SCALAR_MULTIPLE_PLUGIN { g_called = true; }
+#define STORMEIGEN_SPECIAL_SCALAR_MULTIPLE_PLUGIN { g_called = true; }
 
 #include "main.h"
 
@@ -103,19 +103,19 @@ void test_linearstructure()
     CALL_SUBTEST_2( linearStructure(Matrix2f()) );
     CALL_SUBTEST_3( linearStructure(Vector3d()) );
     CALL_SUBTEST_4( linearStructure(Matrix4d()) );
-    CALL_SUBTEST_5( linearStructure(MatrixXcf(internal::random<int>(1,EIGEN_TEST_MAX_SIZE/2), internal::random<int>(1,EIGEN_TEST_MAX_SIZE/2))) );
-    CALL_SUBTEST_6( linearStructure(MatrixXf (internal::random<int>(1,EIGEN_TEST_MAX_SIZE), internal::random<int>(1,EIGEN_TEST_MAX_SIZE))) );
-    CALL_SUBTEST_7( linearStructure(MatrixXi (internal::random<int>(1,EIGEN_TEST_MAX_SIZE), internal::random<int>(1,EIGEN_TEST_MAX_SIZE))) );
-    CALL_SUBTEST_8( linearStructure(MatrixXcd(internal::random<int>(1,EIGEN_TEST_MAX_SIZE/2), internal::random<int>(1,EIGEN_TEST_MAX_SIZE/2))) );
-    CALL_SUBTEST_9( linearStructure(ArrayXXf (internal::random<int>(1,EIGEN_TEST_MAX_SIZE), internal::random<int>(1,EIGEN_TEST_MAX_SIZE))) );
-    CALL_SUBTEST_10( linearStructure(ArrayXXcf (internal::random<int>(1,EIGEN_TEST_MAX_SIZE), internal::random<int>(1,EIGEN_TEST_MAX_SIZE))) );
+    CALL_SUBTEST_5( linearStructure(MatrixXcf(internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE/2), internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE/2))) );
+    CALL_SUBTEST_6( linearStructure(MatrixXf (internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE), internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE))) );
+    CALL_SUBTEST_7( linearStructure(MatrixXi (internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE), internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE))) );
+    CALL_SUBTEST_8( linearStructure(MatrixXcd(internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE/2), internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE/2))) );
+    CALL_SUBTEST_9( linearStructure(ArrayXXf (internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE), internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE))) );
+    CALL_SUBTEST_10( linearStructure(ArrayXXcf (internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE), internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE))) );
     
     CALL_SUBTEST_11( real_complex<Matrix4cd>() );
     CALL_SUBTEST_11( real_complex<MatrixXcf>(10,10) );
     CALL_SUBTEST_11( real_complex<ArrayXXcf>(10,10) );
   }
   
-#ifdef EIGEN_TEST_PART_4
+#ifdef STORMEIGEN_TEST_PART_4
   {
     // make sure that /=scalar and /scalar do not overflow
     // rational: 1.0/4.94e-320 overflow, but m/4.94e-320 should not

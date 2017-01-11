@@ -11,13 +11,13 @@
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 // discard stack allocation as that too bypasses malloc
-#define EIGEN_STACK_ALLOCATION_LIMIT 0
-#define EIGEN_RUNTIME_NO_MALLOC
+#define STORMEIGEN_STACK_ALLOCATION_LIMIT 0
+#define STORMEIGEN_RUNTIME_NO_MALLOC
 
 #include "main.h"
-#include <Eigen/SVD>
+#include <StormEigen/SVD>
 #include <iostream>
-#include <Eigen/LU>
+#include <StormEigen/LU>
 
 
 #define SVD_DEFAULT(M) BDCSVD<M>
@@ -77,8 +77,8 @@ void test_bdcsvd()
     CALL_SUBTEST_4(( bdcsvd<Matrix4d>() ));
     CALL_SUBTEST_5(( bdcsvd<Matrix<float,3,5> >() ));
 
-    int r = internal::random<int>(1, EIGEN_TEST_MAX_SIZE/2),
-        c = internal::random<int>(1, EIGEN_TEST_MAX_SIZE/2);
+    int r = internal::random<int>(1, STORMEIGEN_TEST_MAX_SIZE/2),
+        c = internal::random<int>(1, STORMEIGEN_TEST_MAX_SIZE/2);
     
     TEST_SET_BUT_UNUSED_VARIABLE(r)
     TEST_SET_BUT_UNUSED_VARIABLE(c)

@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-#include <Eigen/Core>
+#include <StormEigen/Core>
 
 #ifndef MATSIZE
 #define MATSIZE 3

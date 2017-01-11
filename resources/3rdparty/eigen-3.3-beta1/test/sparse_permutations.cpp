@@ -9,7 +9,7 @@
 
 
 static long int nb_transposed_copies;
-#define EIGEN_SPARSE_TRANSPOSED_COPY_PLUGIN {nb_transposed_copies++;}
+#define STORMEIGEN_SPARSE_TRANSPOSED_COPY_PLUGIN {nb_transposed_copies++;}
 #define VERIFY_TRANSPOSITION_COUNT(XPR,N) {\
     nb_transposed_copies = 0; \
     XPR; \
