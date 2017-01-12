@@ -155,7 +155,7 @@ TEST(SparseMaPcaaModelCheckerTest, jobscheduler_quantitative_3Obj) {
 TEST(SparseMaPcaaModelCheckerTest, jobscheduler_pareto_2Obj) {
 
     std::string programFile = STORM_TEST_RESOURCES_DIR "/ma/jobscheduler.ma";
-    std::string formulasAsString = "multi( Pmax=? [ F<=0.1 num_finished=1], Pmin=? [F<=0.2 \"all_jobs_finished\"]) ";
+    std::string formulasAsString = "multi( Pmax=? [ F<=0.1 \"one_job_finished\"], Pmin=? [F<=0.2 \"all_jobs_finished\"]) ";
 
     storm::prism::Program program = storm::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, "");
