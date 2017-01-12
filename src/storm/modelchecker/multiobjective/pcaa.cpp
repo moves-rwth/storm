@@ -25,7 +25,7 @@ namespace storm {
             template<typename SparseModelType>
             std::unique_ptr<CheckResult> performPcaa(SparseModelType const& model, storm::logic::MultiObjectiveFormula const& formula) {
                 STORM_LOG_ASSERT(model.getInitialStates().getNumberOfSetBits() == 1, "Multi-objective Model checking on model with multiple initial states is not supported.");
-                storm::utility::Stopwatch swPcaa,swPrep;
+                storm::utility::Stopwatch swPcaa(true), swPrep(true);
 #ifdef STORM_HAVE_CARL
 
                 // If we consider an MA, ensure that it is closed
@@ -51,11 +51,11 @@ namespace storm {
                         STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Unsupported multi-objective Query Type.");
                         break;
                 }
-                swPrep.pause();
-                storm::utility::Stopwatch swCheck;
+                swPrep.stop();
+                storm::utility::Stopwatch swCheck(true);
                 auto result = query->check();
-                swCheck.pause();
-                swPcaa.pause();
+                swCheck.stop();
+                swPcaa.stop();
 
                 std::cout << "STATISTICS_HEADERS;"
                           << "States;"
