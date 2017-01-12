@@ -190,11 +190,13 @@ set(STORM_HAVE_CARL OFF)
 if(USE_CARL)
     find_package(carl QUIET)
     if(carl_FOUND)
+	set(STORM_SHIPPED_CARL OFF)
         set(STORM_HAVE_CARL ON)
         message(STATUS "Storm - Use system version of carl.")
         message(STATUS "Storm - Linking with carl ${carl_VERSION} (CARL_USE_CLN_NUMBERS: ${CARL_USE_CLN_NUMBERS}).")
         set(STORM_HAVE_CLN ${CARL_USE_CLN_NUMBERS})
     else()
+	set(STORM_SHIPPED_CARL ON)
 		# The first external project will be built at *configure stage*
 		message("START CARL CONFIG PROCESS")
 		file(MAKE_DIRECTORY ${STORM_3RDPARTY_BINARY_DIR}/carl_download) 
@@ -221,22 +223,23 @@ if(USE_CARL)
     	message("END CARL CONFIG PROCESS")
     	
         message(STATUS "Storm - Using shipped version of carl.")
-        set(CARL_BUILD_COMMAND make lib_carl)
         ExternalProject_Add(
                 carl
                 SOURCE_DIR ${STORM_3RDPARTY_BINARY_DIR}/carl
                 CONFIGURE_COMMAND ""
                 BUILD_IN_SOURCE 1
                 BUILD_COMMAND make lib_carl
-                INSTALL_COMMAND ""
+                INSTALL_COMMAND make install
                 LOG_BUILD ON
+		LOG_INSTALL ON
                 BUILD_BYPRODUCTS ${STORM_3RDPARTY_BINARY_DIR}/carl/lib/libcarl${DYNAMIC_EXT}
         )
         include(${STORM_3RDPARTY_BINARY_DIR}/carl/carlConfig.cmake)
         message("CARL_USE_CLN_NUMBERS: ${CARL_USE_CLN_NUMBERS}")
 		set(STORM_HAVE_CLN ${CARL_USE_CLN_NUMBERS})
-		add_dependencies(resources carl)
-        set(carl_INCLUDE_DIR "${STORM_3RDPARTY_BINARY_DIR}/carl/build/include")
+	add_dependencies(resources carl)
+        set(carl_INCLUDE_DIR "${STORM_3RDPARTY_BINARY_DIR}/carl/include/")
+	set(carl_LIBRARIES ${STORM_3RDPARTY_BINARY_DIR}/carl/lib/libcarl${DYNAMIC_EXT})
         set(STORM_HAVE_CARL ON)
     endif()
     if(STORM_USE_CLN_NUMBERS AND NOT STORM_HAVE_CLN)
@@ -348,7 +351,7 @@ ExternalProject_Add(
         DOWNLOAD_COMMAND ""
         PREFIX "sylvan"
         SOURCE_DIR ${STORM_3RDPARTY_SOURCE_DIR}/sylvan
-        CMAKE_ARGS -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DSYLVAN_BUILD_TEST=Off -DSYLVAN_BUILD_EXAMPLES=Off -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+        CMAKE_ARGS -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DSYLVAN_BUILD_TEST=Off -DSYLVAN_BUILD_EXAMPLES=Off -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DUSE_CARL=ON -Dcarl_INCLUDE_DIR=${carl_INCLUDE_DIR} -Dcarl_LIBRARIES=${carl_LIBRARIES}
         BINARY_DIR ${STORM_3RDPARTY_BINARY_DIR}/sylvan
         BUILD_IN_SOURCE 0
         INSTALL_COMMAND ""
@@ -365,6 +368,9 @@ message(STATUS "Storm - Using shipped version of sylvan.")
 message(STATUS "Storm - Linking with sylvan.")
 add_imported_library(sylvan STATIC ${Sylvan_LIBRARY} ${Sylvan_INCLUDE_DIR})
 add_dependencies(sylvan_STATIC sylvan)
+if(USE_SHIPPED_CARL)
+	add_dependencies(sylvan carl)
+endif()
 list(APPEND STORM_DEP_TARGETS sylvan_STATIC)
 
 find_package(Hwloc QUIET REQUIRED)

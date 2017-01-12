@@ -26,7 +26,7 @@ TEST(SparseMaPcaaModelCheckerTest, serverRationalNumbers) {
     // programm, model,  formula
     storm::prism::Program program = storm::parseProgram(programFile);
     program.checkValidity();
-    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::parseFormulasForProgram(formulasAsString, program);
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::extractFormulasFromProperties(parseFormulasForProgram(formulasAsString, program));
     storm::generator::NextStateGeneratorOptions options(formulas);
     std::shared_ptr<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>> ma = storm::builder::ExplicitModelBuilder<storm::RationalNumber>(program, options).build()->as<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>();
     
@@ -55,7 +55,7 @@ TEST(SparseMaPcaaModelCheckerTest, server) {
 
     storm::prism::Program program = storm::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, "");
-    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::parseFormulasForPrismProgram(formulasAsString, program);
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::extractFormulasFromProperties(storm::parsePropertiesForPrismProgram(formulasAsString, program));
     std::shared_ptr<storm::models::sparse::MarkovAutomaton<double>> ma = storm::buildSparseModel<double>(program, formulas)->as<storm::models::sparse::MarkovAutomaton<double>>();
 
     std::unique_ptr<storm::modelchecker::CheckResult> result = storm::modelchecker::multiobjective::performPcaa(*ma, formulas[0]->asMultiObjectiveFormula());
@@ -74,17 +74,17 @@ TEST(SparseMaPcaaModelCheckerTest, server) {
 
     EXPECT_TRUE(expectedAchievableValues->minkowskiSum(bloatingBox)->contains(result->asParetoCurveCheckResult<double>().getUnderApproximation()->convertNumberRepresentation<storm::RationalNumber>()));
     EXPECT_TRUE(result->asParetoCurveCheckResult<double>().getOverApproximation()->convertNumberRepresentation<storm::RationalNumber>()->minkowskiSum(bloatingBox)->contains(expectedAchievableValues));
-    
+
 }
 
 TEST(SparseMaPcaaModelCheckerTest, jobscheduler_pareto_3Obj) {
 
     std::string programFile = STORM_TEST_RESOURCES_DIR "/ma/jobscheduler.ma";
-    std::string formulasAsString = "multi(Tmin=? [ F  num_finished=3 ], Pmax=? [ F<=0.2 num_finished=2 ], Pmin=? [ F f_j1=1 & f_j3=0  ]) ";
+    std::string formulasAsString = "multi(Tmin=? [ F  \"all_jobs_finished\" ], Pmax=? [ F<=0.2 \"half_of_jobs_finished\" ], Pmin=? [ F \"slowest_before_fastest\"  ]) ";
 
     storm::prism::Program program = storm::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, "");
-    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::parseFormulasForPrismProgram(formulasAsString, program);
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::extractFormulasFromProperties(storm::parsePropertiesForPrismProgram(formulasAsString, program));
     std::shared_ptr<storm::models::sparse::MarkovAutomaton<double>> ma = storm::buildSparseModel<double>(program, formulas)->as<storm::models::sparse::MarkovAutomaton<double>>();
 
     std::unique_ptr<storm::modelchecker::CheckResult> result = storm::modelchecker::multiobjective::performPcaa(*ma, formulas[0]->asMultiObjectiveFormula());
@@ -112,12 +112,12 @@ TEST(SparseMaPcaaModelCheckerTest, jobscheduler_pareto_3Obj) {
 TEST(SparseMaPcaaModelCheckerTest, jobscheduler_achievability_3Obj) {
 
     std::string programFile = STORM_TEST_RESOURCES_DIR "/ma/jobscheduler.ma";
-    std::string formulasAsString = "multi(T<=1.31 [ F  num_finished=3 ], P>=0.17 [ F<=0.2 num_finished=2 ], P<=0.31 [ F f_j1=1 & f_j3=0  ]) "; //true
-    formulasAsString += "; multi(T<=1.29 [ F  num_finished=3 ], P>=0.18 [ F<=0.2 num_finished=2 ], P<=0.29 [ F f_j1=1 & f_j3=0  ])"; //false
+    std::string formulasAsString = "multi(T<=1.31 [ F  \"all_jobs_finished\" ], P>=0.17 [ F<=0.2 \"half_of_jobs_finished\" ], P<=0.31 [ F \"slowest_before_fastest\"  ]) "; //true
+    formulasAsString += "; multi(T<=1.29 [ F  \"all_jobs_finished\" ], P>=0.18 [ F<=0.2 \"half_of_jobs_finished\" ], P<=0.29 [ F \"slowest_before_fastest\"  ])"; //false
 
     storm::prism::Program program = storm::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, "");
-    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::parseFormulasForPrismProgram(formulasAsString, program);
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::extractFormulasFromProperties(storm::parsePropertiesForPrismProgram(formulasAsString, program));
     std::shared_ptr<storm::models::sparse::MarkovAutomaton<double>> ma = storm::buildSparseModel<double>(program, formulas)->as<storm::models::sparse::MarkovAutomaton<double>>();
     uint_fast64_t const initState = *ma->getInitialStates().begin();
 
@@ -133,12 +133,12 @@ TEST(SparseMaPcaaModelCheckerTest, jobscheduler_achievability_3Obj) {
 TEST(SparseMaPcaaModelCheckerTest, jobscheduler_quantitative_3Obj) {
 
     std::string programFile = STORM_TEST_RESOURCES_DIR "/ma/jobscheduler.ma";
-    std::string formulasAsString = "multi(Tmin=? [ F  num_finished=3 ], P>=0.1797900683 [ F<=0.2 num_finished=2 ], P<=0.3 [ F f_j1=1 & f_j3=0  ]) "; //quantitative
-    formulasAsString += "; multi(T<=1.26 [ F  num_finished=3 ], P>=0.2 [ F<=0.2 num_finished=2 ], Pmin=? [ F f_j1=1 & f_j3=0  ])"; //false
+    std::string formulasAsString = "multi(Tmin=? [ F  \"all_jobs_finished\" ], P>=0.1797900683 [ F<=0.2 \"half_of_jobs_finished\" ], P<=0.3 [ F \"slowest_before_fastest\"  ]) "; //quantitative
+    formulasAsString += "; multi(T<=1.26 [ F  \"all_jobs_finished\" ], P>=0.2 [ F<=0.2 \"half_of_jobs_finished\" ], Pmin=? [ F \"slowest_before_fastest\"  ])"; //false
 
     storm::prism::Program program = storm::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, "");
-    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::parseFormulasForPrismProgram(formulasAsString, program);
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::extractFormulasFromProperties(storm::parsePropertiesForPrismProgram(formulasAsString, program));
     std::shared_ptr<storm::models::sparse::MarkovAutomaton<double>> ma = storm::buildSparseModel<double>(program, formulas)->as<storm::models::sparse::MarkovAutomaton<double>>();
     uint_fast64_t const initState = *ma->getInitialStates().begin();
 
@@ -155,11 +155,11 @@ TEST(SparseMaPcaaModelCheckerTest, jobscheduler_quantitative_3Obj) {
 TEST(SparseMaPcaaModelCheckerTest, jobscheduler_pareto_2Obj) {
 
     std::string programFile = STORM_TEST_RESOURCES_DIR "/ma/jobscheduler.ma";
-    std::string formulasAsString = "multi( Pmax=? [ F<=0.1 num_finished=1], Pmin=? [F<=0.2 num_finished=3]) ";
+    std::string formulasAsString = "multi( Pmax=? [ F<=0.1 \"one_job_finished\"], Pmin=? [F<=0.2 \"all_jobs_finished\"]) ";
 
     storm::prism::Program program = storm::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, "");
-    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::parseFormulasForPrismProgram(formulasAsString, program);
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::extractFormulasFromProperties(storm::parsePropertiesForPrismProgram(formulasAsString, program));
     std::shared_ptr<storm::models::sparse::MarkovAutomaton<double>> ma = storm::buildSparseModel<double>(program, formulas)->as<storm::models::sparse::MarkovAutomaton<double>>();
 
     std::unique_ptr<storm::modelchecker::CheckResult> result = storm::modelchecker::multiobjective::performPcaa(*ma, formulas[0]->asMultiObjectiveFormula());
