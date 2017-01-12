@@ -37,6 +37,7 @@ init
 endinit
 label "all_jobs_finished" = num_finished=3;
 label "half_of_jobs_finished" = num_finished=2;
+label "one_job_finished" = num_finished=1;
 label "slowest_before_fastest" = f_j1=1 & f_j3=0;
 rewards "avg_waiting_time"
  true : (3-num_finished)/3;
