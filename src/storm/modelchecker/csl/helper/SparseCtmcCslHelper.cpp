@@ -496,12 +496,6 @@ namespace storm {
                         solver->solveEquations(bsccEquationSystemSolution, bsccEquationSystemRightSide);
                     }
                     
-//                    std::vector<ValueType> tmp(probabilityMatrix.getRowCount(), storm::utility::zero<ValueType>());
-//                    probabilityMatrix.multiplyVectorWithMatrix(bsccEquationSystemSolution, tmp);
-//                    for (uint64_t i = 0; i < tmp.size(); ++i) {
-//                        std::cout << tmp[i] << " vs. " << bsccEquationSystemSolution[i] << std::endl;
-//                    }
-                    
                     // If exit rates were given, we need to 'fix' the results to also account for the timing behaviour.
                     if (exitRateVector != nullptr) {
                         std::vector<ValueType> bsccTotalValue(bsccDecomposition.size(), zero);
@@ -513,11 +507,7 @@ namespace storm {
                             bsccEquationSystemSolution[indexInStatesInBsccs[*stateIter]] = (bsccEquationSystemSolution[indexInStatesInBsccs[*stateIter]] * (one / (*exitRateVector)[*stateIter])) / bsccTotalValue[stateToBsccIndexMap[indexInStatesInBsccs[*stateIter]]];
                         }
                     }
-                    
-//                    for (auto const& val : bsccEquationSystemSolution) {
-//                        std::cout << "val: " << val << std::endl;
-//                    }
-                    
+                                        
                     // Calculate LRA Value for each BSCC from steady state distribution in BSCCs.
                     for (uint_fast64_t bsccIndex = 0; bsccIndex < bsccDecomposition.size(); ++bsccIndex) {
                         storm::storage::StronglyConnectedComponent const& bscc = bsccDecomposition[bsccIndex];

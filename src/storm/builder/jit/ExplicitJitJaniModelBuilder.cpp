@@ -32,6 +32,8 @@ namespace storm {
     namespace builder {
         namespace jit {
             
+            static const std::string JIT_VARIABLE_EXTENSION = "_jit_";
+            
 #ifdef LINUX
             static const std::string DYLIB_EXTENSION = ".so";
 #endif
@@ -924,19 +926,19 @@ namespace storm {
                     
                     if (hasLocationRewards) {
                         cpptempl::data_map locationReward;
-                        locationReward["variable"] = variable.getName();
+                        locationReward["variable"] = variable.getName() + JIT_VARIABLE_EXTENSION;
                         locationRewards.push_back(locationReward);
                     }
                     if (hasEdgeRewards) {
                         cpptempl::data_map edgeReward;
-                        edgeReward["variable"] = variable.getName();
+                        edgeReward["variable"] = variable.getName() + JIT_VARIABLE_EXTENSION;
                         edgeReward["index"] = asString(rewardModelIndex);
                         edgeRewards.push_back(edgeReward);
                     }
                     if (hasDestinationRewards) {
                         cpptempl::data_map destinationReward;
                         destinationReward["index"] = asString(rewardModelIndex);
-                        destinationReward["variable"] = variable.getName();
+                        destinationReward["variable"] = variable.getName() + JIT_VARIABLE_EXTENSION;
                         destinationRewards.push_back(destinationReward);
                     }
                     ++rewardModelIndex;
@@ -1578,7 +1580,7 @@ namespace storm {
             template <typename ValueType, typename RewardModelType>
             std::string const& ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::registerVariable(storm::expressions::Variable const& variable, bool transient) {
                 // Since the variable name might be illegal as a C++ identifier, we need to prepare it a bit.
-                variableToName[variable] = variable.getName() + "_jit_";
+                variableToName[variable] = variable.getName() + JIT_VARIABLE_EXTENSION;
                 if (transient) {
                     transientVariables.insert(variable);
                     variablePrefixes[variable] = "transientIn.";

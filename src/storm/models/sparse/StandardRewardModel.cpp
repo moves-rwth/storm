@@ -165,11 +165,6 @@ namespace storm {
             template<typename ValueType>
             template<typename MatrixValueType>
             std::vector<ValueType> StandardRewardModel<ValueType>::getTotalRewardVector(storm::storage::SparseMatrix<MatrixValueType> const& transitionMatrix) const {
-                if (this->hasStateActionRewards()) {
-                    for (auto const& e : this->getStateActionRewardVector()) {
-                        std::cout << "e " << e << std::endl;
-                    }
-                }
                 std::vector<ValueType> result = this->hasTransitionRewards() ? transitionMatrix.getPointwiseProductRowSumVector(this->getTransitionRewardMatrix()) : (this->hasStateActionRewards() ? this->getStateActionRewardVector() : std::vector<ValueType>(transitionMatrix.getRowCount()));
                 if (this->hasStateActionRewards() && this->hasTransitionRewards()) {
                     storm::utility::vector::addVectors(result, this->getStateActionRewardVector(), result);

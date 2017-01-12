@@ -32,6 +32,14 @@ namespace storm {
         }
 
         FormulaParser::FormulaParser(storm::prism::Program const& program) : manager(program.getManager().getSharedPointer()), grammar(new FormulaParserGrammar(manager)) {
+            this->addFormulasAsIdentifiers(program);
+        }
+
+        FormulaParser::FormulaParser(storm::prism::Program& program) : manager(program.getManager().getSharedPointer()), grammar(new FormulaParserGrammar(manager)) {
+            this->addFormulasAsIdentifiers(program);
+        }
+
+        void FormulaParser::addFormulasAsIdentifiers(storm::prism::Program const& program) {
             // Make the formulas of the program available to the parser.
             for (auto const& formula : program.getFormulas()) {
                 this->addIdentifierExpression(formula.getName(), formula.getExpression());

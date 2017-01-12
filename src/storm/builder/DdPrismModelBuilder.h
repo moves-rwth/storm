@@ -230,7 +230,9 @@ namespace storm {
             
             static storm::dd::Add<Type, ValueType> createSystemFromModule(GenerationInformation& generationInfo, ModuleDecisionDiagram const& module);
             
-            static storm::models::symbolic::StandardRewardModel<Type, ValueType> createRewardModelDecisionDiagrams(GenerationInformation& generationInfo, storm::prism::RewardModel const& rewardModel, ModuleDecisionDiagram const& globalModule, storm::dd::Add<Type, ValueType> const& reachableStatesAdd, storm::dd::Add<Type, ValueType> const& transitionMatrix, boost::optional<storm::dd::Add<Type, ValueType>> stateActionDd);
+            static std::unordered_map<std::string, storm::models::symbolic::StandardRewardModel<Type, ValueType>> createRewardModelDecisionDiagrams(std::vector<std::reference_wrapper<storm::prism::RewardModel const>> const& selectedRewardModels, SystemResult& system, GenerationInformation& generationInfo, ModuleDecisionDiagram const& globalModule, storm::dd::Add<Type, ValueType> const& reachableStatesAdd, storm::dd::Add<Type, ValueType> const& transitionMatrix);
+
+            static storm::models::symbolic::StandardRewardModel<Type, ValueType> createRewardModelDecisionDiagrams(GenerationInformation& generationInfo, storm::prism::RewardModel const& rewardModel, ModuleDecisionDiagram const& globalModule, storm::dd::Add<Type, ValueType> const& reachableStatesAdd, storm::dd::Add<Type, ValueType> const& transitionMatrix, boost::optional<storm::dd::Add<Type, ValueType>>& stateActionDd);
             
             static SystemResult createSystemDecisionDiagram(GenerationInformation& generationInfo);
             

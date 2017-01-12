@@ -73,13 +73,14 @@ namespace storm {
                     if (modelType == storm::jani::ModelType::CTMC) {
                         for (auto const& choice : choices) {
                             ValueType massOfChoice = storm::utility::zero<ValueType>();
-                            for (auto const& entry : choices.front().getDistribution()) {
+                            for (auto const& entry : choice.getDistribution()) {
                                 massOfChoice += entry.getValue();
                             }
-                            
+                            totalExitRate += massOfChoice;
+
                             auto outIt = newRewards.begin();
                             for (auto const& reward : choice.getRewards()) {
-                                *outIt += reward * massOfChoice / totalExitRate;
+                                *outIt += reward * massOfChoice;
                                 ++outIt;
                             }
                         }
@@ -87,12 +88,16 @@ namespace storm {
                         for (auto const& choice : choices) {
                             auto outIt = newRewards.begin();
                             for (auto const& reward : choice.getRewards()) {
-                                *outIt += reward / totalExitRate;
+                                *outIt += reward;
                                 ++outIt;
                             }
                         }
                     }
                     
+                    for (auto& entry : newRewards) {
+                        entry /= totalExitRate;
+                    }
+
                     choices.front().setRewards(std::move(newRewards));
                 }
                 

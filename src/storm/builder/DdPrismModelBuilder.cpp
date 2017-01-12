@@ -1103,7 +1103,16 @@ namespace storm {
         }
         
         template <storm::dd::DdType Type, typename ValueType>
-        storm::models::symbolic::StandardRewardModel<Type, ValueType> DdPrismModelBuilder<Type, ValueType>::createRewardModelDecisionDiagrams(GenerationInformation& generationInfo, storm::prism::RewardModel const& rewardModel, ModuleDecisionDiagram const& globalModule, storm::dd::Add<Type, ValueType> const& reachableStatesAdd, storm::dd::Add<Type, ValueType> const& transitionMatrix, boost::optional<storm::dd::Add<Type, ValueType>> stateActionDd) {
+        std::unordered_map<std::string, storm::models::symbolic::StandardRewardModel<Type, ValueType>> DdPrismModelBuilder<Type, ValueType>::createRewardModelDecisionDiagrams(std::vector<std::reference_wrapper<storm::prism::RewardModel const>> const& selectedRewardModels, SystemResult& system, GenerationInformation& generationInfo, ModuleDecisionDiagram const& globalModule, storm::dd::Add<Type, ValueType> const& reachableStatesAdd, storm::dd::Add<Type, ValueType> const& transitionMatrix) {
+            std::unordered_map<std::string, storm::models::symbolic::StandardRewardModel<Type, ValueType>> rewardModels;
+            for (auto const& rewardModel : selectedRewardModels) {
+                rewardModels.emplace(rewardModel.get().getName(), createRewardModelDecisionDiagrams(generationInfo, rewardModel.get(), globalModule, reachableStatesAdd, transitionMatrix, system.stateActionDd));
+            }
+            return rewardModels;
+        }
+        
+        template <storm::dd::DdType Type, typename ValueType>
+        storm::models::symbolic::StandardRewardModel<Type, ValueType> DdPrismModelBuilder<Type, ValueType>::createRewardModelDecisionDiagrams(GenerationInformation& generationInfo, storm::prism::RewardModel const& rewardModel, ModuleDecisionDiagram const& globalModule, storm::dd::Add<Type, ValueType> const& reachableStatesAdd, storm::dd::Add<Type, ValueType> const& transitionMatrix, boost::optional<storm::dd::Add<Type, ValueType>>& stateActionDd) {
             
             // Start by creating the state reward vector.
             boost::optional<storm::dd::Add<Type, ValueType>> stateRewards;
@@ -1141,15 +1150,16 @@ namespace storm {
                     }
                     ActionDecisionDiagram const& actionDd = stateActionReward.isLabeled() ? globalModule.synchronizingActionToDecisionDiagramMap.at(stateActionReward.getActionIndex()) : globalModule.independentAction;
                     states *= actionDd.guardDd * reachableStatesAdd;
-                    storm::dd::Add<Type, ValueType> stateActionRewardDd = synchronization * (reachableStatesAdd * states * rewards);
+                    storm::dd::Add<Type, ValueType> stateActionRewardDd = synchronization * states * rewards;
                     
                     // If we are building the state-action rewards for an MDP, we need to make sure that the encoding
                     // of the nondeterminism is present in the reward vector, so we ne need to multiply it with the
                     // legal state-actions.
                     if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::MDP) {
-                        // FIXME: get synchronization encoding differently.
-                        // stateActionRewardDd *= stateActionDd;
-                        stateActionRewardDd *= transitionMatrix.notZero().existsAbstract(generationInfo.columnMetaVariables).template toAdd<ValueType>();
+                        if (!stateActionDd) {
+                            stateActionDd = transitionMatrix.notZero().existsAbstract(generationInfo.columnMetaVariables).template toAdd<ValueType>();
+                        }
+                        stateActionRewardDd *= stateActionDd.get();
                     } else if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::CTMC) {
                         // For CTMCs, we need to multiply the entries with the exit rate of the corresponding action.
                         stateActionRewardDd *= actionDd.transitionsDd.sumAbstract(generationInfo.columnMetaVariables);
@@ -1165,7 +1175,10 @@ namespace storm {
                 
                 // Scale state-action rewards for DTMCs and CTMCs.
                 if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::DTMC || generationInfo.program.getModelType() == storm::prism::Program::ModelType::CTMC) {
-                    // stateActionRewards.get() /= stateActionDd;
+                    if (!stateActionDd) {
+                        stateActionDd = transitionMatrix.sumAbstract(generationInfo.columnMetaVariables);
+                    }
+                    stateActionRewards.get() /= stateActionDd.get();
                 }
             }
             
@@ -1381,10 +1394,7 @@ namespace storm {
                 selectedRewardModels.push_back(program.getRewardModel(0));
             }
             
-            std::unordered_map<std::string, storm::models::symbolic::StandardRewardModel<Type, ValueType>> rewardModels;
-            for (auto const& rewardModel : selectedRewardModels) {
-                rewardModels.emplace(rewardModel.get().getName(), createRewardModelDecisionDiagrams(generationInfo, rewardModel.get(), globalModule, reachableStatesAdd, transitionMatrix, system.stateActionDd));
-            }
+            std::unordered_map<std::string, storm::models::symbolic::StandardRewardModel<Type, ValueType>> rewardModels = createRewardModelDecisionDiagrams(selectedRewardModels, system, generationInfo, globalModule, reachableStatesAdd, transitionMatrix);
             
             // Build the labels that can be accessed as a shortcut.
             std::map<std::string, storm::expressions::Expression> labelToExpressionMapping;
@@ -1395,7 +1405,7 @@ namespace storm {
             if (program.getModelType() == storm::prism::Program::ModelType::DTMC) {
                 return std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>>(new storm::models::symbolic::Dtmc<Type, ValueType>(generationInfo.manager, reachableStates, initialStates, deadlockStates, transitionMatrix, generationInfo.rowMetaVariables, generationInfo.rowExpressionAdapter, generationInfo.columnMetaVariables, generationInfo.columnExpressionAdapter, generationInfo.rowColumnMetaVariablePairs, labelToExpressionMapping, rewardModels));
             } else if (program.getModelType() == storm::prism::Program::ModelType::CTMC) {
-                return std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>>(new storm::models::symbolic::Ctmc<Type, ValueType>(generationInfo.manager, reachableStates, initialStates, deadlockStates, transitionMatrix, generationInfo.rowMetaVariables, generationInfo.rowExpressionAdapter, generationInfo.columnMetaVariables, generationInfo.columnExpressionAdapter, generationInfo.rowColumnMetaVariablePairs, labelToExpressionMapping, rewardModels));
+                return std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>>(new storm::models::symbolic::Ctmc<Type, ValueType>(generationInfo.manager, reachableStates, initialStates, deadlockStates, transitionMatrix, system.stateActionDd, generationInfo.rowMetaVariables, generationInfo.rowExpressionAdapter, generationInfo.columnMetaVariables, generationInfo.columnExpressionAdapter, generationInfo.rowColumnMetaVariablePairs, labelToExpressionMapping, rewardModels));
             } else if (program.getModelType() == storm::prism::Program::ModelType::MDP) {
                 return std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>>(new storm::models::symbolic::Mdp<Type, ValueType>(generationInfo.manager, reachableStates, initialStates, deadlockStates, transitionMatrix, generationInfo.rowMetaVariables, generationInfo.rowExpressionAdapter, generationInfo.columnMetaVariables, generationInfo.columnExpressionAdapter, generationInfo.rowColumnMetaVariablePairs, generationInfo.allNondeterminismVariables, labelToExpressionMapping, rewardModels));
             } else {

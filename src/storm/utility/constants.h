@@ -85,7 +85,13 @@ namespace storm {
         
         template<typename ValueType>
         ValueType abs(ValueType const& number);
-        
+
+        template<typename ValueType>
+        ValueType floor(ValueType const& number);
+
+        template<typename ValueType>
+        ValueType ceil(ValueType const& number);
+
         template<typename ValueType>
         bool isInteger(ValueType const& number);
         

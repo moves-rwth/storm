@@ -325,7 +325,6 @@ namespace storm {
             return *this;
         }
         
-        
         bool FragmentSpecification::areTotalRewardFormulasAllowed() const {
             return totalRewardFormula;
         }

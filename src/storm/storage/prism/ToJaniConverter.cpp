@@ -141,6 +141,7 @@ namespace storm {
             
             // Now create the separate JANI automata from the modules of the PRISM program. While doing so, we use the
             // previously built mapping to make variables global that are read by more than one module.
+            std::set<uint64_t> firstModules;
             bool firstModule = true;
             for (auto const& module : program.getModules()) {
                 // Keep track of the action indices contained in this module.
@@ -179,7 +180,7 @@ namespace storm {
                 uint64_t onlyLocationIndex = automaton.addLocation(storm::jani::Location("l"));
                 automaton.addInitialLocation(onlyLocationIndex);
                 
-                // If we are translating the first module, we need to add the transient assignments to the location.
+                // If we are translating the first module that has the action, we need to add the transient assignments to the location.
                 if (firstModule) {
                     storm::jani::Location& onlyLocation = automaton.getLocation(onlyLocationIndex);
                     for (auto const& assignment : transientLocationAssignments) {
@@ -189,7 +190,7 @@ namespace storm {
                 
                 for (auto const& command : module.getCommands()) {
                     std::shared_ptr<storm::jani::TemplateEdge> templateEdge = automaton.createTemplateEdge(command.getGuardExpression());
-                    actionIndicesOfModule.insert(command.getActionIndex());
+                    actionIndicesOfModule.insert(janiModel.getActionIndex(command.getActionName()));
                     
                     boost::optional<storm::expressions::Expression> rateExpression;
                     if (program.getModelType() == Program::ModelType::CTMC || program.getModelType() == Program::ModelType::CTMDP || (program.getModelType() == Program::ModelType::MA && command.isMarkovian())) {
@@ -226,7 +227,6 @@ namespace storm {
                         for (auto const& assignment : transientEdgeAssignmentsToAdd->second) {
                             templateEdge->addTransientAssignment(assignment);
                         }
-                        transientEdgeAssignments.erase(transientEdgeAssignmentsToAdd);
                     }
 
                     // Create the edge object.

@@ -29,6 +29,7 @@ namespace storm {
             explicit FormulaParser(std::shared_ptr<storm::expressions::ExpressionManager const> const& manager);
             explicit FormulaParser(std::shared_ptr<storm::expressions::ExpressionManager> const& manager);
             explicit FormulaParser(storm::prism::Program const& program);
+            explicit FormulaParser(storm::prism::Program& program);
             
             FormulaParser(FormulaParser const& other);
             FormulaParser& operator=(FormulaParser const& other);
@@ -67,6 +68,8 @@ namespace storm {
             void addIdentifierExpression(std::string const& identifier, storm::expressions::Expression const& expression);
             
         private:
+            void addFormulasAsIdentifiers(storm::prism::Program const& program);
+            
             // The manager used to parse expressions.
             std::shared_ptr<storm::expressions::ExpressionManager const> manager;
             
