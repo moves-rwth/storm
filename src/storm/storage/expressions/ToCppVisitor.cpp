@@ -299,7 +299,7 @@ namespace storm {
             ToCppTranslationOptions const& options = boost::any_cast<ToCppTranslationOptions const&>(data);
             switch (options.getMode()) {
                 case ToCppTranslationMode::KeepType:
-                    stream << expression.getValue();
+                    stream << expression.getValueAsDouble();
                     break;
                 case ToCppTranslationMode::CastDouble:
                     stream << "static_cast<double>(" << expression.getValueAsDouble() << ")";

@@ -1,39 +1,9 @@
 // ----------------------------------------------------------------------
-// Copyright (c) 2016, Steven Gregory Popovitch - greg7mdp@gmail.com
+// Copyright (c) 2016, Gregory Popovitch - greg7mdp@gmail.com
 // All rights reserved.
 // 
 // This work is derived from Google's sparsehash library
-// (see https://github.com/sparsehash/sparsehash) whose copyright appears
-// below this one.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//     * The name of Steven Gregory Popovitch may not be used to 
-// endorse or promote products derived from this software without 
-// specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// ----------------------------------------------------------------------
-
-// ----------------------------------------------------------------------
 // Copyright (c) 2010, Google Inc.
 // All rights reserved.
 //
@@ -835,7 +805,7 @@ struct TypeList3
   typedef typelist::type1 classname##_type6;    \
   typedef typelist::type1 classname##_type7;   \
   typedef typelist::type1 classname##_type8;   \
-  typedef typelist::type1 classname##_type9; 
+  typedef typelist::type1 classname##_type9
 
 template<typename C1, typename C2, typename C3, typename C4, typename C5,
          typename C6, typename C7, typename C8, typename C9> 
@@ -862,7 +832,7 @@ struct TypeList9
   typedef typelist::type7 classname##_type7;    \
   typedef typelist::type8 classname##_type8;    \
   typedef typelist::type9 classname##_type9;    \
-  static const int classname##_numtypes = 9;
+  static const int classname##_numtypes = 9
 
 #define TYPED_TEST(superclass, testname)                                \
   template<typename TypeParam>                                          \
@@ -1171,7 +1141,7 @@ struct Identity
 // This is just to avoid memory leaks -- it's a global pointer to
 // all the memory allocated by UniqueObjectHelper.  We'll use it
 // to semi-test sparsetable as well. :-)
-sparsetable<char*> g_unique_charstar_objects(16);
+std::vector<char*> g_unique_charstar_objects(16, (char *)0);
 
 // This is an object-generator: pass in an index, and it will return a
 // unique object of type ItemType.  We provide specializations for the
@@ -1190,20 +1160,20 @@ template<> string UniqueObjectHelper(int index)
 template<> char* UniqueObjectHelper(int index) 
 {
     // First grow the table if need be.
-    sparsetable<char*>::size_type table_size = g_unique_charstar_objects.size();
+    size_t table_size = g_unique_charstar_objects.size();
     while (index >= static_cast<int>(table_size)) {
         assert(table_size * 2 > table_size);  // avoid overflow problems
         table_size *= 2;
     }
     if (table_size > g_unique_charstar_objects.size())
-        g_unique_charstar_objects.resize(table_size);
-
-    if (!g_unique_charstar_objects.test((size_t)index)) {
+        g_unique_charstar_objects.resize(table_size, (char *)0);
+    
+    if (!g_unique_charstar_objects[static_cast<size_t>(index)]) {
         char buffer[64];
         snprintf(buffer, sizeof(buffer), "%d", index);
-        g_unique_charstar_objects[(size_t)index] = _strdup(buffer);
+        g_unique_charstar_objects[static_cast<size_t>(index)] = _strdup(buffer);
     }
-    return g_unique_charstar_objects.get((size_t)index);
+    return g_unique_charstar_objects[static_cast<size_t>(index)];
 }
 template<> const char* UniqueObjectHelper(int index) {
     return UniqueObjectHelper<char*>(index);
@@ -1475,6 +1445,8 @@ TYPED_TEST(HashtableIntTest, Typedefs)
     (void)dt;
     (void)p;
     (void)cp;
+    (void)kt;
+    (void)st;
     i = this->ht_.begin();
     ci = this->ht_.begin();
     li = this->ht_.begin(0);
@@ -1492,6 +1464,93 @@ TYPED_TEST(HashtableAllTest, NormalIterators)
         EXPECT_TRUE(it == this->ht_.end());
     }
 }
+
+
+#if !defined(SPP_NO_CXX11_VARIADIC_TEMPLATES)
+
+template <class T> struct MyHash;
+typedef std::pair<std::string, std::string> StringPair;
+
+template<> struct MyHash<StringPair>
+{
+    size_t operator()(StringPair const& p) const 
+    {
+        return std::hash<string>()(p.first);
+    }
+};
+
+class MovableOnlyType 
+{
+    std::string   _str;
+    std::uint64_t _int;
+
+public:
+    // Make object movable and non-copyable
+    MovableOnlyType(MovableOnlyType &&) = default;
+    MovableOnlyType(const MovableOnlyType &) = delete;
+    MovableOnlyType& operator=(MovableOnlyType &&) = default;
+    MovableOnlyType& operator=(const MovableOnlyType &) = delete;
+    MovableOnlyType() : _str("whatever"), _int(2) {}
+};
+
+void movable_emplace_test(std::size_t iterations, int container_size) 
+{
+    for (std::size_t i=0;i<iterations;++i) 
+    {
+        spp::sparse_hash_map<std::string,MovableOnlyType> m;
+        m.reserve(static_cast<size_t>(container_size));
+        char buff[20];
+        for (int j=0; j<container_size; ++j) 
+        {
+            sprintf(buff, "%d", j);
+            m.emplace(buff, MovableOnlyType());
+        }
+    }
+}
+
+TEST(HashtableTest, Emplace) 
+{
+    {
+        sparse_hash_map<std::string, std::string> mymap;
+
+        mymap.emplace ("NCC-1701", "J.T. Kirk");
+        mymap.emplace ("NCC-1701-D", "J.L. Picard");
+        mymap.emplace ("NCC-74656", "K. Janeway");
+        EXPECT_TRUE(mymap["NCC-74656"] == std::string("K. Janeway"));
+
+        sparse_hash_set<StringPair, MyHash<StringPair> > myset;
+        myset.emplace ("NCC-1701", "J.T. Kirk");
+    }
+    
+    movable_emplace_test(10, 50);
+}
+#endif
+
+
+#if !defined(SPP_NO_CXX11_VARIADIC_TEMPLATES)
+TEST(HashtableTest, IncompleteTypes) 
+{
+    int i;
+    sparse_hash_map<int *, int> ht2;
+    ht2[&i] = 3;
+
+    struct Bogus;
+    sparse_hash_map<Bogus *, int> ht3;
+    ht3[(Bogus *)0] = 8;
+}
+#endif
+
+
+#if !defined(SPP_NO_CXX11_VARIADIC_TEMPLATES)
+TEST(HashtableTest, ReferenceWrapper) 
+{
+    sparse_hash_map<int, std::reference_wrapper<int>> x;
+    int a = 5;
+    x.insert(std::make_pair(3, std::ref(a)));
+    EXPECT_EQ(x.at(3), 5);
+}
+#endif
+
 
 TEST(HashtableTest, ModifyViaIterator) 
 {
