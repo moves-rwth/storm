@@ -1,7 +1,13 @@
-<nav class="navbar navbar-fixed-top navbar-dark bg-inverse">
+
+
+<nav class="navbar navbar-fixed-top navbar-toggleable-md  navbar-inverse bg-inverse"">
 <!-- Brand -->
-<a class="navbar-brand" href="{{ site.github.url }}/index.html">Storm</a>
-  <ul class="nav navbar-nav">
+<button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarTogglerDemo02" aria-controls="navbarTogglerDemo02" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+  <a class="navbar-brand" href="{{ site.github.url }}/index.html">Storm</a>
+  <div class="collapse navbar-collapse" id="navbarTogglerDemo02">
+    <ul class="navbar-nav mr-auto mt-2 mt-md-0">
     {% assign navigation_pages = site.pages | sort: 'navigation_weight' %}
     {% for p in navigation_pages %}
       {% if p.navigation_weight %}
@@ -16,4 +22,5 @@
        <a href="http://github.com/moves-rwth/storm" class="nav-link"><i class="fa fa-github" aria-hidden="true"></i> source code</a>
     </li>
   </ul>
+  </div>
 </nav>
