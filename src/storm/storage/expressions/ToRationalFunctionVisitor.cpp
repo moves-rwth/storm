@@ -68,6 +68,11 @@ namespace storm {
         
         template<typename RationalFunctionType>
         boost::any ToRationalFunctionVisitor<RationalFunctionType>::visit(VariableExpression const& expression, boost::any const&) {
+            auto valueIt = valueMapping.find(expression.getVariable());
+            if (valueIt != valueMapping.end()) {
+                return valueIt->second;
+            }
+            
             auto variablePair = variableToVariableMap.find(expression.getVariable());
             if (variablePair != variableToVariableMap.end()) {
                 return convertVariableToPolynomial(variablePair->second);
@@ -95,12 +100,17 @@ namespace storm {
         
         template<typename RationalFunctionType>
         boost::any ToRationalFunctionVisitor<RationalFunctionType>::visit(IntegerLiteralExpression const& expression, boost::any const&) {
-            return RationalFunctionType(carl::rationalize<storm::RationalNumber>(static_cast<size_t>(expression.getValue())));
+            return RationalFunctionType(storm::utility::convertNumber<storm::RationalFunction>(expression.getValue()));
         }
         
         template<typename RationalFunctionType>
         boost::any ToRationalFunctionVisitor<RationalFunctionType>::visit(RationalLiteralExpression const& expression, boost::any const&) {
             return storm::utility::convertNumber<storm::RationalFunction>(expression.getValue());
+        }
+        
+        template<typename RationalFunctionType>
+        void ToRationalFunctionVisitor<RationalFunctionType>::setMapping(storm::expressions::Variable const& variable, RationalFunctionType const& value) {
+            valueMapping[variable] = value;
         }
 
         template class ToRationalFunctionVisitor<storm::RationalFunction>;

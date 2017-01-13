@@ -37,9 +37,13 @@ namespace storm {
         
 #ifdef STORM_HAVE_CARL
         template<>
-        class ExpressionEvaluator<RationalNumber> : public ExpressionEvaluatorWithVariableToExpressionMap<RationalNumber> {
+        class ExpressionEvaluator<RationalNumber> : public ExprtkExpressionEvaluatorBase<RationalNumber> {
         public:
             ExpressionEvaluator(storm::expressions::ExpressionManager const& manager);
+            
+            void setBooleanValue(storm::expressions::Variable const& variable, bool value) override;
+            void setIntegerValue(storm::expressions::Variable const& variable, int_fast64_t value) override;
+            void setRationalValue(storm::expressions::Variable const& variable, double value) override;
             
             RationalNumber asRational(Expression const& expression) const override;
             
@@ -49,10 +53,14 @@ namespace storm {
         };
         
         template<>
-        class ExpressionEvaluator<RationalFunction> : public ExpressionEvaluatorWithVariableToExpressionMap<RationalFunction> {
+        class ExpressionEvaluator<RationalFunction> : public ExprtkExpressionEvaluatorBase<RationalFunction> {
         public:
             ExpressionEvaluator(storm::expressions::ExpressionManager const& manager);
             
+            void setBooleanValue(storm::expressions::Variable const& variable, bool value) override;
+            void setIntegerValue(storm::expressions::Variable const& variable, int_fast64_t value) override;
+            void setRationalValue(storm::expressions::Variable const& variable, double value) override;
+
             RationalFunction asRational(Expression const& expression) const override;
             
         private:

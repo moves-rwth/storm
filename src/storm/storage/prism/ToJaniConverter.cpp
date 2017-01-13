@@ -94,10 +94,18 @@ namespace storm {
                 }
             }
             
+            // Go through the labels and construct assignments to transient variables that are added to the loctions.
+            std::vector<storm::jani::Assignment> transientLocationAssignments;
+            for (auto const& label : program.getLabels()) {
+                auto newExpressionVariable = manager->declareBooleanVariable("label_" + label.getName());
+                storm::jani::BooleanVariable const& newTransientVariable = janiModel.addVariable(storm::jani::BooleanVariable(newExpressionVariable.getName(), newExpressionVariable, manager->boolean(false), true));
+
+                transientLocationAssignments.emplace_back(newTransientVariable, label.getStatePredicateExpression());
+            }
+            
             // Go through the reward models and construct assignments to the transient variables that are to be added to
             // edges and transient assignments that are added to the locations.
             std::map<uint_fast64_t, std::vector<storm::jani::Assignment>> transientEdgeAssignments;
-            std::vector<storm::jani::Assignment> transientLocationAssignments;
             for (auto const& rewardModel : program.getRewardModels()) {
                 auto newExpressionVariable = manager->declareRationalVariable(rewardModel.getName().empty() ? "default" : rewardModel.getName());
                 storm::jani::RealVariable const& newTransientVariable = janiModel.addVariable(storm::jani::RealVariable(rewardModel.getName().empty() ? "default" : rewardModel.getName(), newExpressionVariable, manager->rational(0.0), true));

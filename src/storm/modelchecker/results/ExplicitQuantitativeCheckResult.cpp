@@ -209,7 +209,7 @@ namespace storm {
                     printAsRange = true;
                 } else {
                     if (valuesAsMap.size() == 1) {
-                        out << valuesAsMap.begin()->second;
+                        print(out, valuesAsMap.begin()->second);
                     } else {
                         out << "{";
                         bool first = true;
