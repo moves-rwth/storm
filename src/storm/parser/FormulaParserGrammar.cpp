@@ -16,8 +16,7 @@ namespace storm {
             // Register all variables so we can parse them in the expressions.
             for (auto variableTypePair : *constManager) {
                 identifiers_.add(variableTypePair.first.getName(), variableTypePair.first);
-            }
-            
+            }            
             // Set the identifier mapping to actually generate expressions.
             expressionParser.setIdentifierMapping(&identifiers_);
             
@@ -54,7 +53,10 @@ namespace storm {
             atomicStateFormula = booleanLiteralFormula | labelFormula | expressionFormula | (qi::lit("(") > stateFormula > qi::lit(")")) | operatorFormula;
             atomicStateFormula.name("atomic state formula");
             
-            notStateFormula = (-unaryBooleanOperator_ >> atomicStateFormula)[qi::_val = phoenix::bind(&FormulaParserGrammar::createUnaryBooleanStateFormula, phoenix::ref(*this), qi::_2, qi::_1)];
+            atomicStateFormulaWithoutExpression = booleanLiteralFormula | labelFormula | (qi::lit("(") > stateFormula > qi::lit(")")) | operatorFormula;
+            atomicStateFormula.name("atomic state formula without expression");
+            
+            notStateFormula = (unaryBooleanOperator_ >> atomicStateFormulaWithoutExpression)[qi::_val = phoenix::bind(&FormulaParserGrammar::createUnaryBooleanStateFormula, phoenix::ref(*this), qi::_2, qi::_1)] | atomicStateFormula[qi::_val = qi::_1];
             notStateFormula.name("negation formula");
             
             eventuallyFormula = (qi::lit("F") >> -timeBound >> pathFormulaWithoutUntil(qi::_r1))[qi::_val = phoenix::bind(&FormulaParserGrammar::createEventuallyFormula, phoenix::ref(*this), qi::_1, qi::_r1, qi::_2)];

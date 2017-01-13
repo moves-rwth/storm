@@ -208,14 +208,20 @@ namespace storm {
                 if (valuesAsMap.size() >= 10 && minMaxSupported) {
                     printAsRange = true;
                 } else {
-                    bool first = true;
-                    for (auto const& element : valuesAsMap) {
-                        if (!first) {
-                            out << ", ";
-                        } else {
-                            first = false;
+                    if (valuesAsMap.size() == 1) {
+                        out << valuesAsMap.begin()->second;
+                    } else {
+                        out << "{";
+                        bool first = true;
+                        for (auto const& element : valuesAsMap) {
+                            if (!first) {
+                                out << ", ";
+                            } else {
+                                first = false;
+                            }
+                            print(out, element.second);
                         }
-                        print(out, element.second);
+                        out << "}";
                     }
                 }
             }

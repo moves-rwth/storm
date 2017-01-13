@@ -228,7 +228,6 @@ namespace storm {
         }
         
         void ExpressionCreator::setIdentifierMapping(qi::symbols<char, storm::expressions::Expression> const* identifiers_) {
-            
             if (identifiers_ != nullptr) {
                 createExpressions = true;
                 identifiers = identifiers_;

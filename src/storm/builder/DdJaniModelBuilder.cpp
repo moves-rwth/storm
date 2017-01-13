@@ -51,9 +51,7 @@ namespace storm {
         
         template <storm::dd::DdType Type, typename ValueType>
         DdJaniModelBuilder<Type, ValueType>::Options::Options(std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) : buildAllLabels(false), buildAllRewardModels(false), rewardModelsToBuild(), constantDefinitions(), terminalStates(), negatedTerminalStates() {
-            if (formulas.empty()) {
-                this->buildAllRewardModels = true;
-            } else {
+            if (!formulas.empty()) {
                 for (auto const& formula : formulas) {
                     this->preserveFormula(*formula);
                 }

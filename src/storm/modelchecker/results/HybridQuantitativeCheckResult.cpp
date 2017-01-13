@@ -94,7 +94,13 @@ namespace storm {
         std::ostream& HybridQuantitativeCheckResult<Type, ValueType>::writeToStream(std::ostream& out) const {
             uint64_t totalNumberOfStates = this->symbolicStates.getNonZeroCount() + this->explicitStates.getNonZeroCount();
             
-            if (totalNumberOfStates < 10) {
+            if (totalNumberOfStates == 1) {
+                if (this->symbolicStates.isZero()) {
+                    out << *this->explicitValues.begin();
+                } else {
+                    out << this->symbolicValues.getMax();
+                }
+            } else if (totalNumberOfStates < 10) {
                 out << "{";
                 bool first = true;
                 if (!this->symbolicStates.isZero()) {
