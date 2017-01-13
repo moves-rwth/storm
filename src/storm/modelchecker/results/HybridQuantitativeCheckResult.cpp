@@ -115,6 +115,9 @@ namespace storm {
                             }
                             out << valuationValuePair.second;
                         }
+                        if (symbolicStates.getNonZeroCount() != this->symbolicValues.getNonZeroCount()) {
+                            out << ", 0";
+                        }
                     }
                 }
                 if (!this->explicitStates.isZero()) {

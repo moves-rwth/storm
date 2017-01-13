@@ -54,11 +54,8 @@ namespace storm {
                 
                 // Now check if the process already converged within our precision.
                 converged = xCopy.equalModuloPrecision(tmp, precision, relative);
-                
-                // If the method did not converge yet, we prepare the x vector for the next iteration.
-                if (!converged) {
-                    xCopy = tmp;
-                }
+
+                xCopy = tmp;
                 
                 // Increase iteration count so we can abort if convergence is too slow.
                 ++iterationCount;
