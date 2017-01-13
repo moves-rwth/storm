@@ -1,14 +1,14 @@
 #pragma once
 
 #include "storm-config.h"
-#ifdef USE_XERCES
+#ifdef STORM_HAVE_XERCES
 #include <string>
 #include <xercesc/parsers/XercesDOMParser.hpp>
 #include <xercesc/util/XMLString.hpp>
 
-#include "storm/storage/gspn/GSPN.h"
+#include "storm-gspn/storage/gspn/GSPN.h"
 
-#include "storm/storage/gspn/GspnBuilder.h"
+#include "storm-gspn/storage/gspn/GspnBuilder.h"
 
 namespace storm {
     namespace parser {

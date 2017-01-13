@@ -1,9 +1,9 @@
 #include "GreatSpnEditorProjectParser.h"
-#ifdef USE_XERCES
+#ifdef STORM_HAVE_XERCES
 
 #include <iostream>
 
-#include "storm/adapters/XercesAdapter.h"
+#include "storm-gspn/adapters/XercesAdapter.h"
 
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/exceptions/WrongFormatException.h"

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "storm-config.h"
-#ifdef USE_XERCES
+#ifdef STORM_HAVE_XERCES
 #include <xercesc/parsers/XercesDOMParser.hpp>
 #include <xercesc/util/XMLString.hpp>
 
