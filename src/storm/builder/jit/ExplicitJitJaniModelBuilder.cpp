@@ -2350,7 +2350,7 @@ namespace storm {
                                 }
                                 
                                 void addStateBehaviour(IndexType const& stateId, StateBehaviour<IndexType, ValueType>& behaviour) {
-                                    if (behaviour.empty() && behaviour.expanded()) {
+                                    if (behaviour.empty() && behaviour.isExpanded()) {
                                         deadlockStates.push_back(stateId);
                                     }
                                     
