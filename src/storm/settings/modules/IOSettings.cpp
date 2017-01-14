@@ -195,7 +195,6 @@ namespace storm {
                 return storm::parser::parseCommaSeperatedValues(this->getOption(janiPropertyOptionName).getArgumentByName("values").getValueAsString());
             }
 
-            
             bool IOSettings::isPrismCompatibilityEnabled() const {
                 return this->getOption(prismCompatibilityOptionName).getHasOptionBeenSet();
             }

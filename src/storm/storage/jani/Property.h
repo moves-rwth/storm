@@ -42,6 +42,11 @@ namespace storm {
             FilterExpression substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
                 return FilterExpression(formula->substitute(substitution), ft);
             }
+            
+            FilterExpression substituteLabels(std::map<std::string, std::string> const& labelSubstitution) const {
+                return FilterExpression(formula->substitute(labelSubstitution), ft);
+            }
+
         private:
             // For now, we assume that the states are always the initial states.
             std::shared_ptr<storm::logic::Formula const> formula;
@@ -84,6 +89,7 @@ namespace storm {
             std::string const& getComment() const;
             
             Property substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const;
+            Property substituteLabels(std::map<std::string, std::string> const& labelSubstitution) const;
             
             FilterExpression const& getFilter() const;
             

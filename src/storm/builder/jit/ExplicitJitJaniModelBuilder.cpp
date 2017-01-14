@@ -1546,7 +1546,7 @@ namespace storm {
                         STORM_LOG_THROW(variable.isBooleanVariable(), storm::exceptions::WrongFormatException, "Terminal label refers to non-boolean variable '" << variable.getName() << ".");
                         STORM_LOG_THROW(variable.isTransient(), storm::exceptions::WrongFormatException, "Terminal label refers to non-transient variable '" << variable.getName() << ".");
                         auto labelExpression = model.getLabelExpression(variable.asBooleanVariable(), parallelAutomata);
-                        if (terminalEntry.second) {
+                        if (!terminalEntry.second) {
                             labelExpression = !labelExpression;
                         }
                         terminalExpressions.push_back(expressionTranslator.translate(shiftVariablesWrtLowerBound(labelExpression), storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName)));

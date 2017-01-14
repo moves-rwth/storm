@@ -32,6 +32,10 @@ namespace storm {
             return Property(name, filterExpression.substitute(substitution), comment);
         }
         
+        Property Property::substituteLabels(std::map<std::string, std::string> const& substitution) const {
+            return Property(name, filterExpression.substituteLabels(substitution), comment);
+        }
+        
         FilterExpression const& Property::getFilter() const {
             return this->filterExpression;
         }

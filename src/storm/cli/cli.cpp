@@ -227,16 +227,29 @@ namespace storm {
                 propertyFilter = storm::parsePropertyFilter(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPropertyFilter());
             }
             
+            auto coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
+            auto generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
             auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
             if (ioSettings.isPrismOrJaniInputSet()) {
                 storm::storage::SymbolicModelDescription model;
                 std::vector<storm::jani::Property> properties;
                 
                 STORM_LOG_TRACE("Parsing symbolic input.");
+                boost::optional<std::map<std::string, std::string>> labelRenaming;
                 if (ioSettings.isPrismInputSet()) {
                     model = storm::parseProgram(ioSettings.getPrismInputFilename());
-                    if (ioSettings.isPrismToJaniSet()) {
-                        model = model.toJani(true);
+                    
+                    bool transformToJani = ioSettings.isPrismToJaniSet();
+                    bool transformToJaniForJit = coreSettings.getEngine() == storm::settings::modules::CoreSettings::Engine::Sparse && ioSettings.isJitSet();
+                    STORM_LOG_WARN_COND(transformToJani || !transformToJaniForJit, "The JIT-based model builder is only available for JANI models, automatically converting the PRISM input model.");
+                    transformToJani |= transformToJaniForJit;
+                    
+                    if (transformToJani) {
+                        auto modelAndRenaming = model.toJaniWithLabelRenaming(true);
+                        if (!modelAndRenaming.second.empty()) {
+                            labelRenaming = modelAndRenaming.second;
+                        }
+                        model = modelAndRenaming.first;
                     }
                 } else if (ioSettings.isJaniInputSet()) {
                     auto input = storm::parseJaniModel(ioSettings.getJaniInputFilename());
@@ -256,11 +269,19 @@ namespace storm {
 
                 // Then proceed to parsing the properties (if given), since the model we are building may depend on the property.
                 STORM_LOG_TRACE("Parsing properties.");
-                if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isPropertySet()) {
+                if (generalSettings.isPropertySet()) {
                     if (model.isJaniModel()) {
-                        properties = storm::parsePropertiesForJaniModel(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getProperty(), model.asJaniModel(), propertyFilter);
+                        properties = storm::parsePropertiesForJaniModel(generalSettings.getProperty(), model.asJaniModel(), propertyFilter);
+                        
+                        if (labelRenaming) {
+                            std::vector<storm::jani::Property> amendedProperties;
+                            for (auto const& property : properties) {
+                                amendedProperties.emplace_back(property.substituteLabels(labelRenaming.get()));
+                            }
+                            properties = std::move(amendedProperties);
+                        }
                     } else {
-                        properties = storm::parsePropertiesForPrismProgram(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getProperty(), model.asPrismProgram(), propertyFilter);
+                        properties = storm::parsePropertiesForPrismProgram(generalSettings.getProperty(), model.asPrismProgram(), propertyFilter);
                     }
                     
                     constantDefinitions = model.parseConstantDefinitions(constantDefinitionString);
@@ -279,13 +300,13 @@ namespace storm {
                 }
                 
                 STORM_LOG_TRACE("Building and checking symbolic model.");
-                if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isParametricSet()) {
+                if (generalSettings.isParametricSet()) {
 #ifdef STORM_HAVE_CARL
                     buildAndCheckSymbolicModel<storm::RationalFunction>(model, properties, true);
 #else
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "No parameters are supported in this build.");
 #endif
-                } else if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isExactSet()) {
+                } else if (generalSettings.isExactSet()) {
 #ifdef STORM_HAVE_CARL
                     buildAndCheckSymbolicModel<storm::RationalNumber>(model, properties, true);
 #else
@@ -294,14 +315,14 @@ namespace storm {
                 } else {
                     buildAndCheckSymbolicModel<double>(model, properties, true);
                 }
-            } else if (storm::settings::getModule<storm::settings::modules::IOSettings>().isExplicitSet()) {
-                STORM_LOG_THROW(storm::settings::getModule<storm::settings::modules::CoreSettings>().getEngine() == storm::settings::modules::CoreSettings::Engine::Sparse, storm::exceptions::InvalidSettingsException, "Only the sparse engine supports explicit model input.");
+            } else if (ioSettings.isExplicitSet()) {
+                STORM_LOG_THROW(coreSettings.getEngine() == storm::settings::modules::CoreSettings::Engine::Sparse, storm::exceptions::InvalidSettingsException, "Only the sparse engine supports explicit model input.");
 
                 // If the model is given in an explicit format, we parse the properties without allowing expressions
                 // in formulas.
                 std::vector<storm::jani::Property> properties;
-                if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isPropertySet()) {
-                    properties = storm::parsePropertiesForExplicit(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getProperty(), propertyFilter);
+                if (generalSettings.isPropertySet()) {
+                    properties = storm::parsePropertiesForExplicit(generalSettings.getProperty(), propertyFilter);
                 }
 
                 buildAndCheckExplicitModel<double>(properties, true);

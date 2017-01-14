@@ -106,7 +106,7 @@ namespace storm {
             virtual std::ostream& writeToStream(std::ostream& out) const = 0;
         };
         
-        std::ostream& operator<<(std::ostream& out, CheckResult& checkResult);
+        std::ostream& operator<<(std::ostream& out, CheckResult const& checkResult);
     }
 }
 

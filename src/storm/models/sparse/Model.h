@@ -275,14 +275,7 @@ namespace storm {
                  * properties, but it preserves expected rewards.
                  */
                 virtual void reduceToStateBasedRewards() = 0;
-                
-                /*!
-                 * Retrieves (an approximation of) the size of the model in bytes.
-                 *
-                 * @return The size of the internal representation of the model measured in bytes.
-                 */
-                virtual std::size_t getSizeInBytes() const override;
-                
+                                
                 /*!
                  * Prints information about the model to the specified stream.
                  *

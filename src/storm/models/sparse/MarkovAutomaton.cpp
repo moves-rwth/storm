@@ -237,11 +237,6 @@ namespace storm {
             }
             
             template <typename ValueType, typename RewardModelType>
-            std::size_t MarkovAutomaton<ValueType, RewardModelType>::getSizeInBytes() const {
-                return NondeterministicModel<ValueType, RewardModelType>::getSizeInBytes() + markovianStates.getSizeInBytes() + exitRates.size() * sizeof(ValueType);
-            }
-            
-            template <typename ValueType, typename RewardModelType>
             void MarkovAutomaton<ValueType, RewardModelType>::turnRatesToProbabilities() {
                 this->exitRates.resize(this->getNumberOfStates());
                 for (uint_fast64_t state = 0; state< this->getNumberOfStates(); ++state) {

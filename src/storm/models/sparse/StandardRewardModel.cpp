@@ -270,22 +270,6 @@ namespace storm {
                 return true;
             }
 
-
-            template<typename ValueType>
-            std::size_t StandardRewardModel<ValueType>::getSizeInBytes() const {
-                std::size_t result = 0;
-                if (this->hasStateRewards()) {
-                    result += this->getStateRewardVector().size() * sizeof(ValueType);
-                }
-                if (this->hasStateActionRewards()) {
-                    result += this->getStateActionRewardVector().size() * sizeof(ValueType);
-                }
-                if (this->hasTransitionRewards()) {
-                    result += this->getTransitionRewardMatrix().getSizeInBytes();
-                }
-                return result;
-            }
-            
             template <typename ValueType>
             std::ostream& operator<<(std::ostream& out, StandardRewardModel<ValueType> const& rewardModel) {
                 out << std::boolalpha << "reward model [state reward: "

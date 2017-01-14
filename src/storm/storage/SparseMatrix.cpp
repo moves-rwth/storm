@@ -1296,19 +1296,6 @@ namespace storm {
         }
         
         template<typename ValueType>
-        std::size_t SparseMatrix<ValueType>::getSizeInBytes() const {
-            uint_fast64_t size = sizeof(*this);
-            
-            // Add size of columns and values.
-            size += sizeof(MatrixEntry<index_type, ValueType>) * columnsAndValues.capacity();
-            
-            // Add row_indications size.
-            size += sizeof(uint_fast64_t) * rowIndications.capacity();
-            
-            return size;
-        }
-        
-        template<typename ValueType>
         typename SparseMatrix<ValueType>::const_rows SparseMatrix<ValueType>::getRows(index_type startRow, index_type endRow) const {
             return const_rows(this->columnsAndValues.begin() + this->rowIndications[startRow], this->rowIndications[endRow] - this->rowIndications[startRow]);
         }

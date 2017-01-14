@@ -5,6 +5,7 @@
 #include <boost/algorithm/string/join.hpp>
 
 #include "storm/storage/jani/Model.h"
+#include "storm/storage/jani/Property.h"
 
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/settings/SettingsManager.h"
@@ -1009,7 +1010,6 @@ namespace storm {
             std::set<storm::expressions::Variable> variablesAndConstants;
             std::set_union(variables.begin(), variables.end(), constants.begin(), constants.end(), std::inserter(variablesAndConstants, variablesAndConstants.begin()));
             
-            
             // Check the commands of the modules.
             bool hasProbabilisticCommand = false;
             bool hasMarkovianCommand = false;
@@ -1627,9 +1627,17 @@ namespace storm {
         
         storm::jani::Model Program::toJani(bool allVariablesGlobal) const {
             ToJaniConverter converter;
-            return converter.convert(*this, allVariablesGlobal);
+            storm::jani::Model resultingModel = converter.convert(*this, allVariablesGlobal);
+            STORM_LOG_WARN_COND(!converter.labelsWereRenamed(), "Labels were renamed in PRISM-to-JANI conversion, but the mapping is not stored.");
+            return resultingModel;
         }
-        
+
+        std::pair<storm::jani::Model, std::map<std::string, std::string>> Program::toJaniWithLabelRenaming(bool allVariablesGlobal) const {
+            ToJaniConverter converter;
+            storm::jani::Model resultingModel = converter.convert(*this, allVariablesGlobal);
+            return std::make_pair(resultingModel, converter.getLabelRenaming());
+        }
+
         storm::expressions::ExpressionManager& Program::getManager() const {
             return *this->manager;
         }

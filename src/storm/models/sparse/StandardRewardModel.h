@@ -274,13 +274,6 @@ namespace storm {
                  * @param nrChoices The number of choices in the model
                  */
                 bool isCompatible(uint_fast64_t nrStates, uint_fast64_t nrChoices) const;
-
-                /*!
-                 * Retrieves (an approximation of) the size of the model in bytes.
-                 *
-                 * @return The size of the internal representation of the model measured in bytes.
-                 */
-                std::size_t getSizeInBytes() const;
                 
                 template <typename ValueTypePrime>
                 friend std::ostream& operator<<(std::ostream& out, StandardRewardModel<ValueTypePrime> const& rewardModel);

@@ -443,6 +443,11 @@ namespace storm {
             return visitor.substitute(*this);
         }
         
+        std::shared_ptr<Formula> Formula::substitute(std::map<std::string, std::string> const& labelSubstitution) const {
+            LabelSubstitutionVisitor visitor(labelSubstitution);
+            return visitor.substitute(*this);
+        }
+        
         storm::expressions::Expression Formula::toExpression(storm::expressions::ExpressionManager const& manager, std::map<std::string, storm::expressions::Expression> const& labelToExpressionMapping) const {
             ToExpressionVisitor visitor;
             if (labelToExpressionMapping.empty()) {

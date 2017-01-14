@@ -12,7 +12,7 @@
 namespace storm {
     namespace prism {
         
-        storm::jani::Model ToJaniConverter::convert(storm::prism::Program const& program, bool allVariablesGlobal) const {
+        storm::jani::Model ToJaniConverter::convert(storm::prism::Program const& program, bool allVariablesGlobal) {
             std::shared_ptr<storm::expressions::ExpressionManager> manager = program.getManager().getSharedPointer();
                         
             // Start by creating an empty JANI model.
@@ -97,9 +97,14 @@ namespace storm {
             // Go through the labels and construct assignments to transient variables that are added to the loctions.
             std::vector<storm::jani::Assignment> transientLocationAssignments;
             for (auto const& label : program.getLabels()) {
-                auto newExpressionVariable = manager->declareBooleanVariable("label_" + label.getName());
+                bool renameLabel = manager->hasVariable(label.getName()) || program.hasRewardModel(label.getName());
+                std::string finalLabelName = renameLabel ? "label_" + label.getName() : label.getName();
+                if (renameLabel) {
+                    STORM_LOG_WARN_COND(!renameLabel, "Label '" << label.getName() << "' was renamed to '" << finalLabelName << "' in PRISM-to-JANI conversion, as another variable with that name already exists.");
+                    labelRenaming[label.getName()] = finalLabelName;
+                }
+                auto newExpressionVariable = manager->declareBooleanVariable(finalLabelName);
                 storm::jani::BooleanVariable const& newTransientVariable = janiModel.addVariable(storm::jani::BooleanVariable(newExpressionVariable.getName(), newExpressionVariable, manager->boolean(false), true));
-
                 transientLocationAssignments.emplace_back(newTransientVariable, label.getStatePredicateExpression());
             }
             
@@ -282,6 +287,14 @@ namespace storm {
             janiModel.finalize();
             
             return janiModel;
+        }
+        
+        bool ToJaniConverter::labelsWereRenamed() const {
+            return !labelRenaming.empty();
+        }
+        
+        std::map<std::string, std::string> const& ToJaniConverter::getLabelRenaming() const {
+            return labelRenaming;
         }
         
     }
