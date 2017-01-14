@@ -130,47 +130,23 @@ namespace storm {
         }
 
         void showTimeAndMemoryStatistics(uint64_t wallclockMilliseconds) {
-#ifndef WINDOWS
             struct rusage ru;
             getrusage(RUSAGE_SELF, &ru);
 
-            std::cout << "Performance statistics:" << std::endl;
-            std::cout << "  * peak memory usage: " << ru.ru_maxrss/1024/1024 << " mb" << std::endl;
-            std::cout << "  * CPU time: " << ru.ru_utime.tv_sec << "." << std::setw(3) << std::setfill('0') << ru.ru_utime.tv_usec/1000 << " seconds" << std::endl;
-            if (wallclockMilliseconds != 0) {
-                std::cout << "  * wallclock time: " << (wallclockMilliseconds/1000) << "." << std::setw(3) << std::setfill('0') << (wallclockMilliseconds % 1000) << " seconds" << std::endl;
-            }
-#else
-            HANDLE hProcess = GetCurrentProcess ();
-            FILETIME ftCreation, ftExit, ftUser, ftKernel;
-            PROCESS_MEMORY_COUNTERS pmc;
-            if (GetProcessMemoryInfo( hProcess, &pmc, sizeof(pmc))) {
-                std::cout << "Memory Usage: " << std::endl;
-                std::cout << "\tPageFaultCount: " << pmc.PageFaultCount << std::endl;
-                std::cout << "\tPeakWorkingSetSize: " << pmc.PeakWorkingSetSize << std::endl;
-                std::cout << "\tWorkingSetSize: " << pmc.WorkingSetSize << std::endl;
-                std::cout << "\tQuotaPeakPagedPoolUsage: " << pmc.QuotaPeakPagedPoolUsage << std::endl;
-                std::cout << "\tQuotaPagedPoolUsage: " << pmc.QuotaPagedPoolUsage << std::endl;
-                std::cout << "\tQuotaPeakNonPagedPoolUsage: " << pmc.QuotaPeakNonPagedPoolUsage << std::endl;
-                std::cout << "\tQuotaNonPagedPoolUsage: " << pmc.QuotaNonPagedPoolUsage << std::endl;
-                std::cout << "\tPagefileUsage:" << pmc.PagefileUsage << std::endl;
-                std::cout << "\tPeakPagefileUsage: " << pmc.PeakPagefileUsage << std::endl;
-            }
-
-            GetProcessTimes (hProcess, &ftCreation, &ftExit, &ftKernel, &ftUser);
-
-            ULARGE_INTEGER uLargeInteger;
-            uLargeInteger.LowPart = ftKernel.dwLowDateTime;
-            uLargeInteger.HighPart = ftKernel.dwHighDateTime;
-            double kernelTime = static_cast<double>(uLargeInteger.QuadPart) / 10000.0; // 100 ns Resolution to milliseconds
-            uLargeInteger.LowPart = ftUser.dwLowDateTime;
-            uLargeInteger.HighPart = ftUser.dwHighDateTime;
-            double userTime = static_cast<double>(uLargeInteger.QuadPart) / 10000.0;
-
-            std::cout << "CPU Time: " << std::endl;
-            std::cout << "\tKernel Time: " << std::setprecision(5) << kernelTime << "ms" << std::endl;
-            std::cout << "\tUser Time: " << std::setprecision(5) << userTime << "ms" << std::endl;
+            std::cout << std::endl << "Performance statistics:" << std::endl;
+#ifdef MACOS
+            // For Mac OS, this is returned in bytes.
+            uint64_t maximumResidentSizeInMegabytes = ru.ru_maxrss / 1024 / 1024;
 #endif
+#ifdef LINUX
+            // For Linux, this is returned in kilobytes.
+            uint64_t maximumResidentSizeInMegabytes = ru.ru_maxrss / 1024;
+#endif
+            std::cout << "  * peak memory usage: " << maximumResidentSizeInMegabytes << "MB" << std::endl;
+            std::cout << "  * CPU time: " << ru.ru_utime.tv_sec << "." << std::setw(3) << std::setfill('0') << ru.ru_utime.tv_usec/1000 << "s" << std::endl;
+            if (wallclockMilliseconds != 0) {
+                std::cout << "  * wallclock time: " << (wallclockMilliseconds/1000) << "." << std::setw(3) << std::setfill('0') << (wallclockMilliseconds % 1000) << "s" << std::endl;
+            }
         }
 
         bool parseOptions(const int argc, const char* argv[]) {

@@ -81,11 +81,10 @@ namespace storm {
                 std::unique_ptr<storm::modelchecker::CheckResult> result(storm::verifySparseModel(model, property.getFilter().getFormula(), onlyInitialStatesRelevant));
                 modelCheckingWatch.stop();
                 if (result) {
-                    STORM_PRINT_AND_LOG("Time for model checking: " << modelCheckingWatch << "." << std::endl);
                     STORM_PRINT_AND_LOG("Result (initial states): ");
                     result->filter(storm::modelchecker::ExplicitQualitativeCheckResult(model->getInitialStates()));
                     applyFilterFunctionAndOutput<ValueType>(result, property.getFilter().getFilterType());
-                    STORM_PRINT_AND_LOG(std::endl);
+                    STORM_PRINT_AND_LOG("Time for model checking: " << modelCheckingWatch << "." << std::endl);
                 } else {
                     STORM_PRINT_AND_LOG(" skipped, because the modelling formalism is currently unsupported." << std::endl);
                 }
@@ -104,11 +103,10 @@ namespace storm {
                 std::unique_ptr<storm::modelchecker::CheckResult> result(storm::verifySparseModel(model, property.getFilter().getFormula(), onlyInitialStatesRelevant));
                 modelCheckingWatch.stop();
                 if (result) {
-                    STORM_PRINT_AND_LOG("Time for model checking: " << modelCheckingWatch << "." << std::endl);
                     STORM_PRINT_AND_LOG("Result (initial states): ");
                     result->filter(storm::modelchecker::ExplicitQualitativeCheckResult(model->getInitialStates()));
                     applyFilterFunctionAndOutput<storm::RationalFunction>(result, property.getFilter().getFilterType());
-                    STORM_PRINT_AND_LOG(std::endl);
+                    STORM_PRINT_AND_LOG("Time for model checking: " << modelCheckingWatch << "." << std::endl);
                 } else {
                     STORM_PRINT_AND_LOG(" skipped, because the modelling formalism is currently unsupported." << std::endl);
                 }
@@ -130,9 +128,9 @@ namespace storm {
                 std::unique_ptr<storm::modelchecker::CheckResult> result(storm::verifySymbolicModelWithAbstractionRefinementEngine<DdType, ValueType>(model, property.getFilter().getFormula(), onlyInitialStatesRelevant));
                 modelCheckingWatch.stop();
                 if (result) {
-                    STORM_PRINT_AND_LOG("Time for model checking: " << modelCheckingWatch << "." << std::endl);
                     STORM_PRINT_AND_LOG("Result (initial states): ");
-                    STORM_PRINT_AND_LOG(*result << std::endl);
+                    STORM_PRINT_AND_LOG(*result);
+                    STORM_PRINT_AND_LOG("Time for model checking: " << modelCheckingWatch << "." << std::endl);
                 } else {
                     STORM_PRINT_AND_LOG(" skipped, because the modelling formalism is currently unsupported." << std::endl);
                 }
@@ -182,10 +180,9 @@ namespace storm {
                 }
 
                 if (result) {
-                    STORM_PRINT_AND_LOG("Time for model checking: " << modelCheckingWatch << "." << std::endl);
                     STORM_PRINT_AND_LOG("Result (initial states): ");
                     applyFilterFunctionAndOutput<ValueType>(result, property.getFilter().getFilterType());
-                    STORM_PRINT_AND_LOG(std::endl);
+                    STORM_PRINT_AND_LOG("Time for model checking: " << modelCheckingWatch << "." << std::endl);
                 } else {
                     STORM_PRINT_AND_LOG(" skipped, because the modelling formalism is currently unsupported." << std::endl);
                 }
@@ -210,11 +207,10 @@ namespace storm {
                 modelCheckingWatch.stop();
 
                 if (result) {
-                    STORM_PRINT_AND_LOG("Time for model checking: " << modelCheckingWatch << "." << std::endl);
                     STORM_PRINT_AND_LOG("Result (initial states): ");
                     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<DdType>(model->getReachableStates(), model->getInitialStates()));
                     applyFilterFunctionAndOutput<double>(result, property.getFilter().getFilterType());
-                    STORM_PRINT_AND_LOG(std::endl);
+                    STORM_PRINT_AND_LOG("Time for model checking: " << modelCheckingWatch << "." << std::endl);
                 } else {
                     STORM_PRINT_AND_LOG(" skipped, because the modelling formalism is currently unsupported." << std::endl);
                 }
@@ -231,11 +227,10 @@ namespace storm {
                 std::unique_ptr<storm::modelchecker::CheckResult> result(storm::verifySymbolicModelWithDdEngine(model, property.getFilter().getFormula(), onlyInitialStatesRelevant));
                 modelCheckingWatch.stop();
                 if (result) {
-                    STORM_PRINT_AND_LOG("Time for model checking: " << modelCheckingWatch << "." << std::endl);
                     STORM_PRINT_AND_LOG("Result (initial states): ");
                     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<DdType>(model->getReachableStates(), model->getInitialStates()));
                     applyFilterFunctionAndOutput<double>(result, property.getFilter().getFilterType());
-                    STORM_PRINT_AND_LOG(std::endl);
+                    STORM_PRINT_AND_LOG("Time for model checking: " << modelCheckingWatch << "." << std::endl);
                 } else {
                     STORM_PRINT_AND_LOG(" skipped, because the modelling formalism is currently unsupported." << std::endl);
                 }
