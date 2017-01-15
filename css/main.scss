@@ -52,3 +52,20 @@ border-radius: 20px;
 .content h3 {
 	font-size: 1.2rem;
 }
+
+@media (max-width: 900px) { 
+	
+	.card-deck-wrapper {margin-right:0;margin-left:0;}
+	.card-deck {
+	    display: block;
+	    width: 100%;
+	    margin-bottom: .75rem;
+	    table-layout: fixed;
+	    border-spacing: 1.25rem 0;
+	}
+	.card-deck .card {
+	    display: block;
+	    margin-bottom: .75rem;
+	    vertical-align: top;
+	}
+}
