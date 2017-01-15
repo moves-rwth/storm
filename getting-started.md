@@ -90,13 +90,16 @@ If you are interested in one of the other binaries, replace storm with the appro
 |-------------+----------------| 
 
 
-## Test Step
+## Test Step (optional)
 
-This step is optional. We recommend you run it in order to make sure storm produces correct results on your platform.
+We recommend this step in order to make sure storm produces correct results on your platform.
 
 ```bash
 make check
 ```
+
+In case of errors, please do not hesistate to [contact us](about.html#people-behind-storm). Please provide the output of ```make check-verbose``` and the output obtained by running ```cmake .. ``` from the build folder.
+
 
 # Run Storm
 
