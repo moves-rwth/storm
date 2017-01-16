@@ -412,11 +412,11 @@ namespace storm {
         template<typename ValueType>
         void DFTModelChecker<ValueType>::printTimings(std::ostream& os) {
             os << "Times:" << std::endl;
-            os << "Exploration:\t" << explorationTimer.getTimeSeconds() << "s" << std::endl;
-            os << "Building:\t" << buildingTimer.getTimeSeconds() << "s" << std::endl;
-            os << "Bisimulation:\t" << bisimulationTimer.getTimeSeconds() << "s" << std::endl;
-            os << "Modelchecking:\t" << modelCheckingTimer.getTimeSeconds() << "s" << std::endl;
-            os << "Total:\t\t" << totalTimer.getTimeSeconds() << "s" << std::endl;
+            os << "Exploration:\t" << explorationTimer.getTimeInSeconds() << "s" << std::endl;
+            os << "Building:\t" << buildingTimer.getTimeInSeconds() << "s" << std::endl;
+            os << "Bisimulation:\t" << bisimulationTimer.getTimeInSeconds() << "s" << std::endl;
+            os << "Modelchecking:\t" << modelCheckingTimer.getTimeInSeconds() << "s" << std::endl;
+            os << "Total:\t\t" << totalTimer.getTimeInSeconds() << "s" << std::endl;
         }
 
         template<typename ValueType>
