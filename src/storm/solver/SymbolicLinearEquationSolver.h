@@ -83,7 +83,7 @@ namespace storm {
             
         protected:
             // The matrix defining the coefficients of the linear equation system.
-            storm::dd::Add<DdType, ValueType> const& A;
+            storm::dd::Add<DdType, ValueType> A;
             
             // A BDD characterizing all rows of the equation system.
             storm::dd::Bdd<DdType> const& allRows;
