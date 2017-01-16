@@ -37,7 +37,10 @@ namespace storm {
             
             storm::dd::Add<DdType, ValueType> lu = diagonal.ite(this->A.getDdManager().template getAddZero<ValueType>(), this->A);
             storm::dd::Add<DdType> diagonalAdd = diagonal.template toAdd<ValueType>();
-            storm::dd::Add<DdType, ValueType> dinv = diagonalAdd / (diagonalAdd * this->A);
+            storm::dd::Add<DdType, ValueType> diag = diagonalAdd.multiplyMatrix(this->A, this->columnMetaVariables);
+            
+            storm::dd::Add<DdType, ValueType> scaledLu = lu / diag;
+            storm::dd::Add<DdType, ValueType> scaledB = b / diag;
             
             // Set up additional environment variables.
             storm::dd::Add<DdType, ValueType> xCopy = x;
@@ -46,21 +49,23 @@ namespace storm {
             
             while (!converged && iterationCount < maximalNumberOfIterations) {
                 storm::dd::Add<DdType, ValueType> xCopyAsColumn = xCopy.swapVariables(this->rowColumnMetaVariablePairs);
-
-                storm::dd::Add<DdType, ValueType> tmp = lu.multiplyMatrix(xCopyAsColumn, this->columnMetaVariables);
-                tmp = b - tmp;
-                tmp = tmp.swapVariables(this->rowColumnMetaVariablePairs);
-                tmp = dinv.multiplyMatrix(tmp, this->columnMetaVariables);
+                storm::dd::Add<DdType, ValueType> tmp = scaledB - scaledLu.multiplyMatrix(xCopyAsColumn, this->columnMetaVariables);
                 
                 // Now check if the process already converged within our precision.
-                converged = xCopy.equalModuloPrecision(tmp, precision, relative);
+                converged = tmp.equalModuloPrecision(xCopy, precision, relative);
 
                 xCopy = tmp;
                 
                 // Increase iteration count so we can abort if convergence is too slow.
                 ++iterationCount;
             }
-                        
+            
+            if (converged) {
+                STORM_LOG_TRACE("Iterative solver converged in " << iterationCount << " iterations.");
+            } else {
+                STORM_LOG_WARN("Iterative solver did not converge in " << iterationCount << " iterstions.");
+            }
+            
             return xCopy;
         }
         
