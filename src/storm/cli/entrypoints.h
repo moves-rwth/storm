@@ -75,7 +75,7 @@ namespace storm {
         template<typename ValueType>
         void verifySparseModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> model, std::vector<storm::jani::Property> const& properties, bool onlyInitialStatesRelevant = false) {
             for (auto const& property : properties) {
-                STORM_PRINT_AND_LOG(std::endl << "Model checking property: " << *property.getRawFormula() << " ..." << std::endl);
+                STORM_PRINT_AND_LOG(std::endl << "Model checking property " << *property.getRawFormula() << " ..." << std::endl);
                 std::cout.flush();
                 storm::utility::Stopwatch modelCheckingWatch(true);
                 std::unique_ptr<storm::modelchecker::CheckResult> result(storm::verifySparseModel(model, property.getFilter().getFormula(), onlyInitialStatesRelevant));
@@ -97,7 +97,7 @@ namespace storm {
 
             for (auto const& property : properties) {
                 STORM_LOG_THROW(model->getType() == storm::models::ModelType::Dtmc || model->getType() == storm::models::ModelType::Ctmc, storm::exceptions::InvalidSettingsException, "Currently parametric verification is only available for DTMCs and CTMCs.");
-                STORM_PRINT_AND_LOG(std::endl << "Model checking property: " << *property.getRawFormula() << " ..." << std::endl);
+                STORM_PRINT_AND_LOG(std::endl << "Model checking property " << *property.getRawFormula() << " ..." << std::endl);
                 std::cout.flush();
                 storm::utility::Stopwatch modelCheckingWatch(true);
                 std::unique_ptr<storm::modelchecker::CheckResult> result(storm::verifySparseModel(model, property.getFilter().getFormula(), onlyInitialStatesRelevant));
@@ -122,7 +122,7 @@ namespace storm {
         void verifySymbolicModelWithAbstractionRefinementEngine(storm::storage::SymbolicModelDescription const& model, std::vector<storm::jani::Property> const& properties, bool onlyInitialStatesRelevant = false) {
             typedef double ValueType;
             for (auto const& property : properties) {
-                STORM_PRINT_AND_LOG(std::endl << "Model checking property: " << *property.getRawFormula() << " ..." << std::endl);
+                STORM_PRINT_AND_LOG(std::endl << "Model checking property " << *property.getRawFormula() << " ..." << std::endl);
                 std::cout.flush();
                 storm::utility::Stopwatch modelCheckingWatch(true);
                 std::unique_ptr<storm::modelchecker::CheckResult> result(storm::verifySymbolicModelWithAbstractionRefinementEngine<DdType, ValueType>(model, property.getFilter().getFormula(), onlyInitialStatesRelevant));
@@ -144,7 +144,7 @@ namespace storm {
             STORM_LOG_THROW(program.getModelType() == storm::prism::Program::ModelType::DTMC || program.getModelType() == storm::prism::Program::ModelType::MDP, storm::exceptions::InvalidSettingsException, "Currently exploration-based verification is only available for DTMCs and MDPs.");
 
             for (auto const& property : formulas) {
-                STORM_PRINT_AND_LOG(std::endl << "Model checking property: " << *property.getRawFormula() << " ..." << std::endl);
+                STORM_PRINT_AND_LOG(std::endl << "Model checking property " << *property.getRawFormula() << " ..." << std::endl);
                 std::cout.flush();
                 bool formulaSupported = false;
                 std::unique_ptr<storm::modelchecker::CheckResult> result;
@@ -199,7 +199,7 @@ namespace storm {
         template<storm::dd::DdType DdType>
         void verifySymbolicModelWithHybridEngine(std::shared_ptr<storm::models::symbolic::Model<DdType>> model, std::vector<storm::jani::Property> const& formulas, bool onlyInitialStatesRelevant = false) {
             for (auto const& property : formulas) {
-                STORM_PRINT_AND_LOG(std::endl << "Model checking property: " << *property.getRawFormula() << " ..." << std::endl);
+                STORM_PRINT_AND_LOG(std::endl << "Model checking property " << *property.getRawFormula() << " ..." << std::endl);
                 std::cout.flush();
                 
                 storm::utility::Stopwatch modelCheckingWatch(true);
@@ -220,7 +220,7 @@ namespace storm {
         template<storm::dd::DdType DdType>
         void verifySymbolicModelWithDdEngine(std::shared_ptr<storm::models::symbolic::Model<DdType>> model, std::vector<storm::jani::Property> const& formulas, bool onlyInitialStatesRelevant = false) {
             for (auto const& property : formulas) {
-                STORM_PRINT_AND_LOG(std::endl << "Model checking property: " << *property.getRawFormula() << " ..." << std::endl);
+                STORM_PRINT_AND_LOG(std::endl << "Model checking property " << *property.getRawFormula() << " ..." << std::endl);
                 std::cout.flush();
                 
                 storm::utility::Stopwatch modelCheckingWatch(true);
