@@ -58,7 +58,7 @@ namespace storm {
                         
                         // Solve the equation system.
                         std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, ValueType>> solver = linearEquationSolverFactory.create(submatrix, maybeStates, model.getRowVariables(), model.getColumnVariables(), model.getRowColumnMetaVariablePairs());
-                        storm::dd::Add<DdType, ValueType> result = solver->solveEquations(model.getManager().getConstant(0.5) * maybeStatesAdd, subvector);
+                        storm::dd::Add<DdType, ValueType> result = solver->solveEquations(model.getManager().getConstant(0.0) * maybeStatesAdd, subvector);
                         
                         return statesWithProbability01.second.template toAdd<ValueType>() + result;
                     } else {
