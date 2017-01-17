@@ -106,6 +106,7 @@ namespace storm {
                 if (!this->symbolicStates.isZero()) {
                     if (this->symbolicValues.isZero()) {
                         out << "0";
+                        first = false;
                     } else {
                         for (auto valuationValuePair : this->symbolicValues) {
                             if (!first) {

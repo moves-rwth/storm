@@ -88,7 +88,6 @@ namespace storm {
                             storm::utility::vector::selectVectorValues(x, maybeStates, resultHint.get());
                         }
 
-                        
                         // Prepare the right-hand side of the equation system. For entry i this corresponds to
                         // the accumulated probability of going from state i to some 'yes' state.
                         std::vector<ValueType> b = transitionMatrix.getConstrainedRowSumVector(maybeStates, statesWithProbability1);

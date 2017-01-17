@@ -54,15 +54,15 @@ namespace storm {
                 
                 xCopy = tmp;
                 
-                if (converged) {
-                    STORM_LOG_TRACE("Iterative solver converged in " << iterations << " iterations.");
-                } else {
-                    STORM_LOG_WARN("Iterative solver did not converge in " << iterations << " iterstions.");
-                }
-
                 ++iterations;
             }
-                        
+
+            if (converged) {
+                STORM_LOG_TRACE("Iterative solver converged in " << iterations << " iterations.");
+            } else {
+                STORM_LOG_WARN("Iterative solver did not converge in " << iterations << " iterstions.");
+            }
+
             return xCopy;
         }
         
