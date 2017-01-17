@@ -23,7 +23,7 @@ include(imported)
 #############################################################
 option(STORM_DEVELOPER "Sets whether the development mode is used." OFF)
 option(STORM_ALLWARNINGS "Compile with even more warnings" OFF)
-option(STORM_PORTABLE_RELEASE "Sets whether a release build needs to be portable to another machine. This is only effective for release builds in non-development mode." OFF)
+option(STORM_PORTABLE_RELEASE "Sets whether a release build needs to be portable to another machine." OFF)
 MARK_AS_ADVANCED(STORM_PORTABLE_RELEASE)
 option(STORM_USE_POPCNT "Sets whether the popcnt instruction is going to be used." ON)
 MARK_AS_ADVANCED(STORM_USE_POPCNT)

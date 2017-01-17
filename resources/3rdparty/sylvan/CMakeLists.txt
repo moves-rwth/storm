@@ -2,8 +2,15 @@ cmake_minimum_required(VERSION 2.6)
 project(sylvan C CXX)
 enable_testing()
 
+option(SYLVAN_PORTABLE "If set, the created library will be portable." OFF)
+
 set(CMAKE_C_FLAGS "-O3 -Wextra -Wall -fno-strict-aliasing -std=gnu11 -fPIC")
 set(CMAKE_CXX_FLAGS "-O3 -Wextra -Wall -fno-strict-aliasing -Wno-deprecated-register -std=gnu++11 -fPIC")
+
+if (NOT SYLVAN_PORTABLE)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=native")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
+endif()
 
 option(USE_CARL "Sets whether carl should be included." ON)
 option(WITH_COVERAGE "Add generation of test coverage" OFF)

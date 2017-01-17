@@ -618,14 +618,14 @@ namespace storm {
         template <storm::dd::DdType Type, typename ValueType>
         typename DdPrismModelBuilder<Type, ValueType>::ActionDecisionDiagram DdPrismModelBuilder<Type, ValueType>::createCommandDecisionDiagram(GenerationInformation& generationInfo, storm::prism::Module const& module, storm::prism::Command const& command) {
             STORM_LOG_TRACE("Translating guard " << command.getGuardExpression());
-            storm::dd::Add<Type, ValueType> guard = generationInfo.rowExpressionAdapter->translateExpression(command.getGuardExpression()) * generationInfo.moduleToRangeMap[module.getName()];
+            storm::dd::Bdd<Type> guard = generationInfo.rowExpressionAdapter->translateBooleanExpression(command.getGuardExpression()) && generationInfo.moduleToRangeMap[module.getName()].notZero();
             STORM_LOG_WARN_COND(!guard.isZero(), "The guard '" << command.getGuardExpression() << "' is unsatisfiable.");
             
             if (!guard.isZero()) {
                 // Create the DDs representing the individual updates.
                 std::vector<UpdateDecisionDiagram> updateResults;
                 for (storm::prism::Update const& update : command.getUpdates()) {
-                    updateResults.push_back(createUpdateDecisionDiagram(generationInfo, module, guard, update));
+                    updateResults.push_back(createUpdateDecisionDiagram(generationInfo, module, guard.template toAdd<ValueType>(), update));
                     
                     STORM_LOG_WARN_COND(!updateResults.back().updateDd.isZero(), "Update '" << update << "' does not have any effect.");
                 }
@@ -661,7 +661,7 @@ namespace storm {
                     commandDd += updateResultsIt->updateDd * probabilityDd;
                 }
                 
-                return ActionDecisionDiagram(guard, guard * commandDd, globalVariablesInSomeUpdate);
+                return ActionDecisionDiagram(guard, guard.template toAdd<ValueType>() * commandDd, globalVariablesInSomeUpdate);
             } else {
                 return ActionDecisionDiagram(*generationInfo.manager);
             }
@@ -749,9 +749,9 @@ namespace storm {
         
         template <storm::dd::DdType Type, typename ValueType>
         typename DdPrismModelBuilder<Type, ValueType>::ActionDecisionDiagram DdPrismModelBuilder<Type, ValueType>::combineCommandsToActionMarkovChain(GenerationInformation& generationInfo, std::vector<ActionDecisionDiagram>& commandDds) {
-            storm::dd::Add<Type, ValueType> allGuards = generationInfo.manager->template getAddZero<ValueType>();
+            storm::dd::Bdd<Type> allGuards = generationInfo.manager->getBddZero();
             storm::dd::Add<Type, ValueType> allCommands = generationInfo.manager->template getAddZero<ValueType>();
-            storm::dd::Add<Type, ValueType> temporary;
+            storm::dd::Bdd<Type> temporary;
             
             // Make all command DDs assign to the same global variables.
             std::set<storm::expressions::Variable> assignedGlobalVariables = equalizeAssignedGlobalVariables(generationInfo, commandDds);
@@ -759,12 +759,12 @@ namespace storm {
             // Then combine the commands to the full action DD and multiply missing identities along the way.
             for (auto& commandDd : commandDds) {
                 // Check for overlapping guards.
-                temporary = commandDd.guardDd * allGuards;
+                temporary = commandDd.guardDd && allGuards;
                 
                 // Issue a warning if there are overlapping guards in a non-CTMC model.
                 STORM_LOG_WARN_COND(temporary.isZero() || generationInfo.program.getModelType() == storm::prism::Program::ModelType::CTMC, "Guard of a command overlaps with previous guards.");
                 
-                allGuards += commandDd.guardDd;
+                allGuards |= commandDd.guardDd;
                 allCommands += commandDd.transitionsDd;
             }
             
@@ -801,8 +801,8 @@ namespace storm {
             // Sum all guards, so we can read off the maximal number of nondeterministic choices in any given state.
             storm::dd::Add<Type, ValueType> sumOfGuards = generationInfo.manager->template getAddZero<ValueType>();
             for (auto const& commandDd : commandDds) {
-                sumOfGuards += commandDd.guardDd;
-                allGuards |= commandDd.guardDd.toBdd();
+                sumOfGuards += commandDd.guardDd.template toAdd<ValueType>();
+                allGuards |= commandDd.guardDd;
             }
             uint_fast64_t maxChoices = static_cast<uint_fast64_t>(sumOfGuards.getMax());
             
@@ -816,7 +816,7 @@ namespace storm {
                 for (auto const& commandDd : commandDds) {
                     allCommands += commandDd.transitionsDd;
                 }
-                return ActionDecisionDiagram(sumOfGuards, allCommands, assignedGlobalVariables);
+                return ActionDecisionDiagram(allGuards, allCommands, assignedGlobalVariables);
             } else {
                 // Calculate number of required variables to encode the nondeterminism.
                 uint_fast64_t numberOfBinaryVariables = static_cast<uint_fast64_t>(std::ceil(storm::utility::math::log2(maxChoices)));
@@ -843,7 +843,7 @@ namespace storm {
                     for (std::size_t j = 0; j < commandDds.size(); ++j) {
                         // Check if command guard overlaps with equalsNumberOfChoicesDd. That is, there are states with exactly currentChoices
                         // choices such that one outgoing choice is given by the j-th command.
-                        storm::dd::Bdd<Type> guardChoicesIntersection = commandDds[j].guardDd.toBdd() && equalsNumberOfChoicesDd;
+                        storm::dd::Bdd<Type> guardChoicesIntersection = commandDds[j].guardDd && equalsNumberOfChoicesDd;
                         
                         // If there is no such state, continue with the next command.
                         if (guardChoicesIntersection.isZero()) {
@@ -883,7 +883,7 @@ namespace storm {
                     sumOfGuards = sumOfGuards * (!equalsNumberOfChoicesDd).template toAdd<ValueType>();
                 }
                 
-                return ActionDecisionDiagram(allGuards.template toAdd<ValueType>(), allCommands, assignedGlobalVariables, nondeterminismVariableOffset + numberOfBinaryVariables);
+                return ActionDecisionDiagram(allGuards, allCommands, assignedGlobalVariables, nondeterminismVariableOffset + numberOfBinaryVariables);
             }
         }
         
@@ -891,7 +891,7 @@ namespace storm {
         typename DdPrismModelBuilder<Type, ValueType>::ActionDecisionDiagram DdPrismModelBuilder<Type, ValueType>::combineSynchronizingActions(ActionDecisionDiagram const& action1, ActionDecisionDiagram const& action2) {
             std::set<storm::expressions::Variable> assignedGlobalVariables;
             std::set_union(action1.assignedGlobalVariables.begin(), action1.assignedGlobalVariables.end(), action2.assignedGlobalVariables.begin(), action2.assignedGlobalVariables.end(), std::inserter(assignedGlobalVariables, assignedGlobalVariables.begin()));
-            return ActionDecisionDiagram(action1.guardDd * action2.guardDd, action1.transitionsDd * action2.transitionsDd, assignedGlobalVariables, std::max(action1.numberOfUsedNondeterminismVariables, action2.numberOfUsedNondeterminismVariables));
+            return ActionDecisionDiagram(action1.guardDd && action2.guardDd, action1.transitionsDd * action2.transitionsDd, assignedGlobalVariables, std::max(action1.numberOfUsedNondeterminismVariables, action2.numberOfUsedNondeterminismVariables));
         }
         
         template <storm::dd::DdType Type, typename ValueType>
@@ -914,7 +914,7 @@ namespace storm {
             std::set<storm::expressions::Variable> assignedGlobalVariables = equalizeAssignedGlobalVariables(generationInfo, action1, action2);
             
             if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::DTMC || generationInfo.program.getModelType() == storm::prism::Program::ModelType::CTMC) {
-                return ActionDecisionDiagram(action1.guardDd + action2.guardDd, action1.transitionsDd + action2.transitionsDd, assignedGlobalVariables, 0);
+                return ActionDecisionDiagram(action1.guardDd || action2.guardDd, action1.transitionsDd + action2.transitionsDd, assignedGlobalVariables, 0);
             } else if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::MDP) {
                 if (action1.transitionsDd.isZero()) {
                     return ActionDecisionDiagram(action2.guardDd, action2.transitionsDd, assignedGlobalVariables, action2.numberOfUsedNondeterminismVariables);
@@ -943,7 +943,7 @@ namespace storm {
                 // Add a new variable that resolves the nondeterminism between the two choices.
                 storm::dd::Add<Type, ValueType> combinedTransitions = generationInfo.manager->getEncoding(generationInfo.nondeterminismMetaVariables[numberOfUsedNondeterminismVariables], 1).ite(action2.transitionsDd, action1.transitionsDd);
                 
-                return ActionDecisionDiagram((action1.guardDd.toBdd() || action2.guardDd.toBdd()).template toAdd<ValueType>(), combinedTransitions, assignedGlobalVariables, numberOfUsedNondeterminismVariables + 1);
+                return ActionDecisionDiagram(action1.guardDd || action2.guardDd, combinedTransitions, assignedGlobalVariables, numberOfUsedNondeterminismVariables + 1);
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidStateException, "Illegal model type.");
             }
@@ -1149,12 +1149,11 @@ namespace storm {
                         synchronization = getSynchronizationDecisionDiagram(generationInfo, stateActionReward.getActionIndex());
                     }
                     ActionDecisionDiagram const& actionDd = stateActionReward.isLabeled() ? globalModule.synchronizingActionToDecisionDiagramMap.at(stateActionReward.getActionIndex()) : globalModule.independentAction;
-                    states *= actionDd.guardDd * reachableStatesAdd;
+                    states *= actionDd.guardDd.template toAdd<ValueType>() * reachableStatesAdd;
                     storm::dd::Add<Type, ValueType> stateActionRewardDd = synchronization * states * rewards;
                     
-                    // If we are building the state-action rewards for an MDP, we need to make sure that the encoding
-                    // of the nondeterminism is present in the reward vector, so we ne need to multiply it with the
-                    // legal state-actions.
+                    // If we are building the state-action rewards for an MDP, we need to make sure that the reward is
+                    // only given on legal nondeterminism encodings, which is why we multiply with the state-action DD.
                     if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::MDP) {
                         if (!stateActionDd) {
                             stateActionDd = transitionMatrix.notZero().existsAbstract(generationInfo.columnMetaVariables).template toAdd<ValueType>();
@@ -1178,6 +1177,7 @@ namespace storm {
                     if (!stateActionDd) {
                         stateActionDd = transitionMatrix.sumAbstract(generationInfo.columnMetaVariables);
                     }
+                    
                     stateActionRewards.get() /= stateActionDd.get();
                 }
             }

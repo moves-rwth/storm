@@ -16,6 +16,11 @@ endif()
 
 set(CUDD_LIB_DIR ${STORM_3RDPARTY_BINARY_DIR}/cudd-3.0.0/lib)
 
+set(STORM_CUDD_FLAGS "CFLAGS=-O3 -w -DPIC -DHAVE_IEEE_754 -fno-common -ffast-math -fno-finite-math-only")
+if (NOT STORM_PORTABLE_RELEASE)
+	set(STORM_CUDD_FLAGS "${STORM_CUDD_FLAGS} -march=native")
+endif()
+
 ExternalProject_Add(
         cudd3
         DOWNLOAD_COMMAND ""
@@ -23,7 +28,7 @@ ExternalProject_Add(
         PREFIX ${STORM_3RDPARTY_BINARY_DIR}/cudd-3.0.0
         PATCH_COMMAND ${AUTORECONF}
         CONFIGURE_COMMAND ${STORM_3RDPARTY_SOURCE_DIR}/cudd-3.0.0/configure --enable-shared --enable-obj --with-pic=yes --prefix=${STORM_3RDPARTY_BINARY_DIR}/cudd-3.0.0 --libdir=${CUDD_LIB_DIR} CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER}
-        BUILD_COMMAND make "CFLAGS=-O3 -w"
+        BUILD_COMMAND make ${STORM_CUDD_FLAGS}
         INSTALL_COMMAND make install
         BUILD_IN_SOURCE 0
         LOG_CONFIGURE ON

@@ -31,11 +31,11 @@ namespace storm {
             // Intentionally left empty.
         }
 
-        FormulaParser::FormulaParser(storm::prism::Program const& program) : manager(program.getManager().getSharedPointer()), grammar(new FormulaParserGrammar(manager)) {
+        FormulaParser::FormulaParser(storm::prism::Program const& program) : manager(program.getManager().getSharedPointer()), grammar(new FormulaParserGrammar(program.getManager().getSharedPointer())) {
             this->addFormulasAsIdentifiers(program);
         }
 
-        FormulaParser::FormulaParser(storm::prism::Program& program) : manager(program.getManager().getSharedPointer()), grammar(new FormulaParserGrammar(manager)) {
+        FormulaParser::FormulaParser(storm::prism::Program& program) : manager(program.getManager().getSharedPointer()), grammar(new FormulaParserGrammar(program.getManager().getSharedPointer())) {
             this->addFormulasAsIdentifiers(program);
         }
 
