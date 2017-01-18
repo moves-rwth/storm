@@ -187,7 +187,7 @@ namespace storm {
                     }
                 }
                 
-                if(!this->isCachingEnabled()) {
+                if (!this->isCachingEnabled()) {
                     clearCache();
                 }
                 
