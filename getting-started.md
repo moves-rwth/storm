@@ -25,17 +25,8 @@ The VM is not yet available.
 
 The source code can be obtaind from [github](https://github.com/moves-rwth/storm).
 
-- via git:
-```bash
-git clone https://github.com/moves-rwth/storm.git STORM_DIR
-```
--  as an archive
-```bash
-wget https://github.com/moves-rwth/archive/master.zip
-````
-
-{:.alert .alert-danger} 
-Currently, the source code is only available from our private repo.
+- via git: `git clone https://github.com/moves-rwth/storm.git STORM_DIR`
+-  as an archive `wget https://github.com/moves-rwth/archive/master.zip`
 
 
 # Build Storm
@@ -72,12 +63,12 @@ If configuration went smoothly, the compilation step should run through. We reco
 To compile just the storm main command line interface, do
 
 ```bash
-make storm
+make storm-main
 ```
 
 {:.alert .alert-info}
 If you have multiple cores at your disposal and 8GB of memory, you can execute 
-`make -jNUMBER_OF_CORES storm`
+`make -jNUMBER_OF_CORES storm-main`
 
 If you are interested in one of the other binaries, replace storm with the appropriate target
 
