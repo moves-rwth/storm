@@ -6,10 +6,7 @@ layout: default
 
 
 
-
-
-
-## Distinguishing features
+# Distinguishing features
 
 <div class="container-fluid feature-container">
    <div class="row">
