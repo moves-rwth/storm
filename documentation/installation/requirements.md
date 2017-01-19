@@ -27,7 +27,17 @@ The following Compilers are known NOT to work:
 
 We collected some specific hints to ease the installation of storm on several supported operating systems.
 
-## Debian "Stretch" 
+## Debian 9 "Stretch" 
+
+- Required:
+```
+sudo apt-get install git cmake libboost-all-dev libcln-dev libginac-dev automake doxygen libglpk-dev
+```
+
+- Recommended
+```
+sudo apt-get install libz3-dev libxerces-c-dev
+```
 
 ## macOS 10.12 "Sierra"
 
