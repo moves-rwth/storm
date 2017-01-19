@@ -63,7 +63,7 @@ namespace storm {
             if (converged) {
                 STORM_LOG_TRACE("Iterative solver converged in " << iterationCount << " iterations.");
             } else {
-                STORM_LOG_WARN("Iterative solver did not converge in " << iterationCount << " iterstions.");
+                STORM_LOG_WARN("Iterative solver did not converge in " << iterationCount << " iterations.");
             }
             
             return xCopy;
