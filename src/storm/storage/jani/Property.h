@@ -28,8 +28,9 @@ namespace storm {
         
         class FilterExpression {
         public:
-            explicit FilterExpression(std::shared_ptr<storm::logic::Formula const> formula, storm::modelchecker::FilterType ft = storm::modelchecker::FilterType::VALUES) : formula(formula), ft(ft) {}
+            FilterExpression() = default;
             
+            explicit FilterExpression(std::shared_ptr<storm::logic::Formula const> formula, storm::modelchecker::FilterType ft = storm::modelchecker::FilterType::VALUES) : formula(formula), ft(ft) {}
             
             std::shared_ptr<storm::logic::Formula const> const& getFormula() const {
                 return formula;
@@ -60,6 +61,8 @@ namespace storm {
         
         class Property {
         public:
+            Property() = default;
+            
             /**
              * Constructs the property
              * @param name the name

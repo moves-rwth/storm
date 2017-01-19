@@ -22,20 +22,20 @@ namespace storm {
             if (result->isQuantitative()) {
                 switch (ft) {
                     case storm::modelchecker::FilterType::VALUES:
-                        STORM_PRINT_AND_LOG(*result << std::endl);
-                        return;
+                        STORM_PRINT_AND_LOG(*result);
+                        break;
                     case storm::modelchecker::FilterType::SUM:
                         STORM_PRINT_AND_LOG(result->asQuantitativeCheckResult<ValueType>().sum());
-                        return;
+                        break;
                     case storm::modelchecker::FilterType::AVG:
                         STORM_PRINT_AND_LOG(result->asQuantitativeCheckResult<ValueType>().average());
-                        return;
+                        break;
                     case storm::modelchecker::FilterType::MIN:
                         STORM_PRINT_AND_LOG(result->asQuantitativeCheckResult<ValueType>().getMin());
-                        return;
+                        break;
                     case storm::modelchecker::FilterType::MAX:
                         STORM_PRINT_AND_LOG(result->asQuantitativeCheckResult<ValueType>().getMax());
-                        return;
+                        break;
                     case storm::modelchecker::FilterType::ARGMIN:
                     case storm::modelchecker::FilterType::ARGMAX:
                         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Outputting states is not supported");
@@ -48,16 +48,16 @@ namespace storm {
                 switch (ft) {
                     case storm::modelchecker::FilterType::VALUES:
                         STORM_PRINT_AND_LOG(*result << std::endl);
-                        return;
+                        break;
                     case storm::modelchecker::FilterType::EXISTS:
                         STORM_PRINT_AND_LOG(result->asQualitativeCheckResult().existsTrue());
-                        return;
+                        break;
                     case storm::modelchecker::FilterType::FORALL:
                         STORM_PRINT_AND_LOG(result->asQualitativeCheckResult().forallTrue());
-                        return;
+                        break;
                     case storm::modelchecker::FilterType::COUNT:
                         STORM_PRINT_AND_LOG(result->asQualitativeCheckResult().count());
-                        return;
+                        break;
                         
                     case storm::modelchecker::FilterType::ARGMIN:
                     case storm::modelchecker::FilterType::ARGMAX:
@@ -68,8 +68,8 @@ namespace storm {
                     case storm::modelchecker::FilterType::MAX:
                         STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "FilterType only defined for quantitative results");
                 }
-                
             }
+            STORM_PRINT_AND_LOG(std::endl);
         }
         
         template<typename ValueType>

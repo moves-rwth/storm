@@ -9,6 +9,8 @@
 #include "storm/logic/Formulas.h"
 #include "storm/parser/ExpressionParser.h"
 
+#include "storm/modelchecker/results/FilterType.h"
+
 #include "storm/storage/expressions/ExpressionEvaluator.h"
 
 namespace storm {
@@ -111,6 +113,25 @@ namespace storm {
             // A parser used for recognizing the reward measure types.
             rewardMeasureTypeStruct rewardMeasureType_;
             
+            struct filterTypeStruct : qi::symbols<char, storm::modelchecker::FilterType> {
+                filterTypeStruct() {
+                    add
+                    ("min", storm::modelchecker::FilterType::MIN)
+                    ("max", storm::modelchecker::FilterType::MAX)
+                    ("sum", storm::modelchecker::FilterType::SUM)
+                    ("avg", storm::modelchecker::FilterType::AVG)
+                    ("count", storm::modelchecker::FilterType::COUNT)
+                    ("forall", storm::modelchecker::FilterType::FORALL)
+                    ("exists", storm::modelchecker::FilterType::EXISTS)
+                    ("argmin", storm::modelchecker::FilterType::ARGMIN)
+                    ("argmax", storm::modelchecker::FilterType::ARGMAX)
+                    ("values", storm::modelchecker::FilterType::VALUES);
+                }
+            };
+
+            // A parser used for recognizing the filter type.
+            filterTypeStruct filterType_;
+            
             // The manager used to parse expressions.
             std::shared_ptr<storm::expressions::ExpressionManager const> constManager;
             std::shared_ptr<storm::expressions::ExpressionManager> manager;
@@ -135,6 +156,7 @@ namespace storm {
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> timeOperator;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> longRunAverageOperator;
             
+            qi::rule<Iterator, storm::jani::Property(), Skipper> filterProperty;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> simpleFormula;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> stateFormula;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(storm::logic::FormulaContext), Skipper> pathFormula;
@@ -200,6 +222,9 @@ namespace storm {
             std::shared_ptr<storm::logic::Formula const> createBinaryBooleanStateFormula(std::shared_ptr<storm::logic::Formula const> const& leftSubformula, std::shared_ptr<storm::logic::Formula const> const& rightSubformula, storm::logic::BinaryBooleanStateFormula::OperatorType operatorType);
             std::shared_ptr<storm::logic::Formula const> createUnaryBooleanStateFormula(std::shared_ptr<storm::logic::Formula const> const& subformula, boost::optional<storm::logic::UnaryBooleanStateFormula::OperatorType> const& operatorType);
             std::shared_ptr<storm::logic::Formula const> createMultiObjectiveFormula(std::vector<std::shared_ptr<storm::logic::Formula const>> const& subformulas);
+            
+            storm::jani::Property createProperty(boost::optional<std::string> const& propertyName, storm::modelchecker::FilterType const& filterType, std::shared_ptr<storm::logic::Formula const> const& formula);
+            storm::jani::Property createPropertyWithDefaultFilterType(boost::optional<std::string> const& propertyName, std::shared_ptr<storm::logic::Formula const> const& formula);
             
             // An error handler function.
             phoenix::function<SpiritErrorHandler> handler;
