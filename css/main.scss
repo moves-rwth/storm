@@ -35,11 +35,24 @@ border-radius: 20px;
   height:auto;
 }
 
+.carousel-indicators {
+   bottom:-30px;
+}
+
 .carousel-indicators li {
   background-color: #999;
   background-color: rgba(70,70,70,.25);
 }
 
+.carousel-control-prev {
+  color:black;
+  left:-40px;
+}
+
+.carousel-control-next {
+  color:black;
+  right:-40px;
+}
 
 .carousel-indicators .active {
   background-color: #444;
