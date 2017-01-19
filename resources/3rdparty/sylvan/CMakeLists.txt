@@ -5,7 +5,7 @@ enable_testing()
 option(SYLVAN_PORTABLE "If set, the created library will be portable." OFF)
 
 set(CMAKE_C_FLAGS "-O3 -Wextra -Wall -fno-strict-aliasing -std=gnu11 -fPIC")
-set(CMAKE_CXX_FLAGS "-O3 -Wextra -Wall -fno-strict-aliasing -Wno-deprecated-register -std=gnu++11 -fPIC")
+set(CMAKE_CXX_FLAGS "-O3 -Wextra -Wall -fno-strict-aliasing -Wno-deprecated-register -std=c++14 -fPIC")
 
 if (NOT SYLVAN_PORTABLE)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=native")
