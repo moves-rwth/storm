@@ -3,6 +3,18 @@
 @import "variables";
 @import "bootstrap/bootstrap";
 
+html {
+height: 100%;
+  box-sizing: border-box;
+}
+
+body { 
+ position: relative;
+  margin: 0;
+  padding-bottom: 6rem;
+  min-height: 100%;
+}
+
 
 th, td {
     padding: 10px;
@@ -51,6 +63,16 @@ border-radius: 20px;
 
 .content h3 {
 	font-size: 1.2rem;
+}
+
+.footer-bar {
+	position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  padding: 1rem;
+  background-color: #efefef;
+  text-align: center;
 }
 
 @media (max-width: 900px) { 
