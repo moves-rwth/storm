@@ -10,15 +10,15 @@ categories: [Installation]
 
 
 #### Compiler:
- A C++11 compliant compiler is required to build StoRM. It is tested and known to work with the following compilers:
- - GCC 5.3
- - Clang 3.5.0
+A C++11 compliant compiler is required to build StoRM. It is tested and known to work with the following compilers:
+- GCC 5.3
+- Clang 3.5.0
 
- Other versions or compilers might work, but are not tested.
+Other versions or compilers might work, but are not tested.
 
- The following Compilers are known NOT to work:
- - Microsoft Visual Studio versions older than 2013,
- - GCC versions 4.9.1 and older.
+The following Compilers are known NOT to work:
+- Microsoft Visual Studio versions older than 2013,
+- GCC versions 4.9.1 and older.
 
 
 
