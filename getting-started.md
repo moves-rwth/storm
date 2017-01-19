@@ -9,96 +9,176 @@ This document shows you the steps to get started with storm.
 - list
 {:toc}
 
-# Obtain Storm
+# Obtaining storm
 
 We currently provide two ways of running storm. 
 
-- A Virtual Machine image 
-- Source code
+- a Virtual Machine image 
+- source code
 
-## Obtain the VM
+## Obtaining the VM
+
+The virtual machine image can be found [here](link).
 
 {:.alert .alert-danger} 
 The VM is not yet available.
 
-## Obtain the source
+When the VM was most recently updated and what changes were made to the VM can be taken from the following table.
 
-The source code can be obtaind from [github](https://github.com/moves-rwth/storm).
+|-------------------+----------------------|
+| updated on        | changes              |
+|-------------------+----------------------|
+| Jan 20, 2017      | first version        |
+|-------------------+----------------------| 
 
-- via git: `git clone https://github.com/moves-rwth/storm.git STORM_DIR`
--  as an archive `wget https://github.com/moves-rwth/archive/master.zip`
+## Obtaining the source code
 
+The source code can be downloaded from [github](https://github.com/moves-rwth/storm). You can either clone the git repository
+```bash
+git clone https://github.com/moves-rwth/storm.git STORM_DIR
+```
+or download a zip archive with the latest snapshot of the master branch:
+```bash
+wget https://github.com/moves-rwth/archive/master.zip
+unzip master.zip
+```
+In the following, we will use `STORM_DIR` to refer to the root directory of storm. If you want, you can set an environment variable to ease the following steps via
+```bash
+export STORM_DIR=<path to storm root>
+```
 
-# Build Storm
+# Building storm from source
 
-This guide helps you building a standard version of storm. There are plenty of configuration options, please check our [configuration guide](documentation/installation/configuration-guide.html).
+This guide helps you building a standard version of storm. There are plenty of configuration options, please check our [configuration guide](documentation/installation/configuration-guide.html) if you want to build a non-standard version. Most notably, you will have to set additional options if you want to include solvers that are not shipped with storm (for example Gurobi or MathSAT). However, the defaults should be suitable in most cases.
 
-## Configuration Step
-Switch to the directory where you put storm in the previous step.
+## Configuration step
+
+Switch to the directory `STORM_DIR` and create a build folder that will hold all files related to the build (in other words, building is done out-of source, in-source builds are discouraged and are likely to break). Finally change to the `build` directory.
 
 ```bash
 cd STORM_DIR
-```
-
-From there, create a build directory.
-
-```bash
 mkdir build
 cd build
 ```
 
-Configure storm using 
+Then, use cmake to configure the build of storm on your system by invoking
 
 ```bash
 cmake ..
 ```
 
+Check the output carefully for errors and warnings. If all requirements are properly installed and found, you are ready to build storm and move to the next step. If case of errors, check the [requirements](documentation/installation/requirements.html) or consult the [troubleshooting guide](documentation/installation/troubleshooting).
 
-In case of errors, check the [requirements](documentation/installation/requirements.html).
+## Build step
 
-## Build Step
+If the configuration step went smoothly, the compilation step should run through. Feel free to use the compilation time for a coffee or stroll through the park.
 
-If configuration went smoothly, the compilation step should run through. We recommend some coffee though.
-
-To compile just the storm main command line interface, do
+To compile just storm's main command line interface, enter
 
 ```bash
 make storm-main
 ```
 
 {:.alert .alert-info}
-If you have multiple cores at your disposal and 8GB of memory, you can execute 
-`make -jNUMBER_OF_CORES storm-main`
+If you have multiple cores at your disposal and at least 8GB of memory, you can execute 
+`make storm-main -j${NUMBER_OF_CORES}` to speed up compilation. You will still be able to get the coffee, no worries.
 
-If you are interested in one of the other binaries, replace storm with the appropriate target
+If you are interested in one of the other binaries, replace `storm-main` with the appropriate target:
 
 |-------------+----------------|
 | binary      | target         |
 |-------------+----------------|
 | DFTs        | storm-dft-cli  |
 | GSPNs       | storm-gspn-cli |
-| PGCL        | storm-pgcl-cli |
+| cpGCL       | storm-pgcl-cli |
 |-------------+----------------| 
 
 
-## Test Step (optional)
+## Test step (optional)
 
-We recommend this step in order to make sure storm produces correct results on your platform.
+While this step is optional, we recommend to execute it to verify that storm produces correct results on your platform. Invoking
 
 ```bash
 make check
 ```
 
-In case of errors, please do not hesistate to [contact us](about.html#people-behind-storm). Please provide the output of ```make check-verbose``` and the output obtained by running ```cmake .. ``` from the build folder.
+will build and run the tests. 
 
+In case of errors, please do not hesistate to [contact us](about.html#people-behind-storm). Please provide the output of ```make check-verbose``` and the output of `cmake` in the configuration step to ease solving the problem.
 
-# Run Storm
+# Running Storm
 
-In order to get you started, we discuss some common scenarios here.
+Congratulations, you are now ready to run storm!
 
-## Standard Model Checking
+We will now discuss some examples to get you started. While they should illustrate how the tool is run, there are many more features and options to explore.
 
+## Standard model checking
 
+For this task, you built the `storm-main` target and therefore produced the `storm` binary. So let's make sure that you can run storm:
+
+```bash
+cd STORM_DIR/build/bin
+./storm
+```
+
+If the storm binary was correctly built and is correctly located in the directory `STORM_DIR/build/bin`, this should produce output similar to
+
+```bash
+Storm
+---------------
+
+version: 0.10.1 (+398 commits) build from revision ga183b72.
+
+Linked with GNU Linear Programming Kit v4.60.
+Linked with Microsoft Z3 Optimizer v4.5 Build 0 Rev 0.
+Linked with MathSAT5 version 5.3.14 (0b98b661254c) (Nov 17 2016 11:27:06, gmp 5.1.3, clang/LLVM 6.0, 64-bit).
+Linked with CARL.
+Command line arguments: 
+Current working directory: /Users/chris/work/storm4/build_xcode
+
+ERROR (cli.cpp:306): No input model.
+ERROR (storm.cpp:39): An exception caused Storm to terminate. The message of the exception is: No input model.
+```
+
+Of course, your version, the git revision and the linked libraries are likely to differ, but the general picture should be the same. In particular, `storm` should complain about a missing input model. 
+
+### Example 1 (Analysis of a PRISM model of the Knuth-Yao die)
+
+For this example, we assume that you obtained the corresponding PRISM model from the single die version of the model from the [PRISM website](http://www.prismmodelchecker.org/casestudies/dice.php) and that the model file is stored as `die.pm` in `STORM_DIR/build/bin`. If you are not familiar with this model, we recommend you to read the description on the PRISM website.
+
+Let us start with a simple (exhaustive) exploration of the state space of the model.
+
+```bash
+./storm --prism die.pm
+```
+
+This will tell you that the model is a sparse [discrete-time Markov chain](models) with 13 states and 20 transitions, no reward model and two labels (`deadlock` and `init`). But wait, doesn't the PRISM model actually specify a reward model? Why does `storm` not find one? The reason is simple, `storm` doesn't build reward models or (custom) labels that are not referred to by properties unless you explicitly want all of them to be built:
+
+```bash
+./storm --prism die.pm --buildfull
+```
+
+This gives you the same model, but this time there is a reward model `coin_flips` attached to it. Unless you want to know how many states satisfy a custom label, you can let `storm` take care of generating the needed reward models and labels.
+
+Now, let's say we want to check whether the probability to roll a one with our simulated die is as we'd expect. For this, we specify a reachability property
+
+```bash
+./storm --prism die.pm --prop "P=? [F s=7&d=1]"
+```
+
+This will tell us that the probability for rolling a one is actually (very close to) 1/6. If, from the floating point figure, you are not convinced that the result is actually 1 over 6, try to provide the `--exact` flag. Congratulations, you have now checked your first property with `storm`! Now, say we are interested in the probability of rolling a one, provided that one of the outcomes "one", "two" or "three" were obtained, we can obtain this figure by using a conditional probability formula like this
+
+```bash
+./storm --prism die.pm --prop "P=? [F s=7&d=1 || F s=7&d<4]"
+```
+
+which tells us that this probability is 1/3. So far the model seems to simulate a proper six-sided die! Finally, we are interested in the expected number of coin flips that need to be made until the simulated die returns an outcome:
+
+```bash
+./storm --prism die.pm --prop "R{\"coin_flips\"}=? [F s=7]"
+```
+
+`storm` tells us that -- on average -- we will have to flip our fair coin 11/3 times.
 
 ## DFT Analysis
 
