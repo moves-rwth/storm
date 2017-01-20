@@ -2,7 +2,7 @@
 title: Usage
 layout: default
 documentation: true
-categories: [Usage]
+categories: []
 ---
 
 - list

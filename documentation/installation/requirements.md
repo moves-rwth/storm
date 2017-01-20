@@ -5,7 +5,7 @@ documentation: true
 categories: [Installation]
 ---
 
-Currently, we provide detailed instructions for Mac OS 10.12, Ubuntu 16.10 and Debian 9 "Stretch", which are known to enable the easy installation of Storm. Other Linux distributions are likely to work too, but it may take significant effort to get the required versions of the dependencies up and running. In the following, we will detail all dependencies of Storm and how to install them on the supported platforms.
+Currently, we provide detailed instructions for macOS 10.12, Ubuntu 16.10 and Debian 9 "Stretch", which are known to enable the easy installation of Storm. Other Linux distributions are likely to work too, but it may take significant effort to get the required versions of the dependencies up and running. In the following, we will detail all dependencies of Storm and how to install them on the supported platforms.
 
 # Dependencies
 
@@ -22,9 +22,29 @@ Newer versions of these compilers will probably work, but are not tested. In par
 - GCC versions 4.9.1 and older
 - Clang 3.4 and older
 
-# OS Specific Preparations
+## General Dependencies
 
-We collected some platform specific hints to ease the installation of Storm on the supported operating systems. Since Storm has some optional dependencies that enhance it's functionality, and some dependencies that are strictly required, we show how to install the *required* and *recommended* dependencies. The installation instructions of the *recommended* dependencies are to be understood incrementally, i.e. *in addition to the required dependencies*.
+The following two lists provide an overview over the *required* and *recommended* dependencies of Storm. *Required* dependencies are absolutely essential for Storm to be compiled and must be installed. *Recommended* dependencies are optional, but not installing them limits the offered functionality.
+
+Required:
+- git
+- cmake
+- boost (>= 1.61)
+- cln
+- ginac
+- autoreconf
+- doxygen
+- glpk
+- hwloc (on some systems)
+
+Recommended:
+- z3
+- xercesc
+- mathsat (needs to be configured manually during the [configuration step](documentation/installation/configuration-guide.html))
+
+# OS specific preparations
+
+We collected some platform specific hints to ease the installation of Storm on the supported operating systems. Since Storm has some optional dependencies that enhance it's functionality, and some dependencies that are strictly required, we show how to install the *required* and *recommended* dependencies. The installation instructions of the *recommended* dependencies are to be understood incrementally, i.e. **in addition to the required dependencies**.
 
 ## Debian 9 "Stretch" 
 
@@ -46,7 +66,7 @@ Furthermore, we recommend the usage of [homebrew](http://brew.sh) to install the
 
 - Required:
 ```
-brew install cln ginac boost autoconf cmake glpk
+brew install cln ginac boost autoconf cmake glpk doxygen
 ```
 
 - Recommended:
@@ -54,22 +74,15 @@ brew install cln ginac boost autoconf cmake glpk
 brew install z3 xerces-c
 ```
 
-## Ubuntu 16.04 LTS
-
 ## Ubuntu 16.10
 
 - Required:
 ```
-sudo apt-get install autoconf cmake git libhwloc-dev
+sudo apt-get install git cmake libboost-all-dev libcln-dev libginac-dev automake doxygen libglpk-dev libhwloc-dev
 ```
 
 - Recommended:
 ```
-sudo apt-get install z3
+sudo apt-get install z3 xerces-c
 ```
-
-{.alert alert-warning}
-Add boost packages
-
-
 

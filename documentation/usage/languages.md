@@ -5,12 +5,11 @@ documentation: true
 categories: [Usage]
 ---
 
-# Prism
+# PRISM
 
-The prismm language can be used to specify DTMCs, MDPs and CTMCs. A simple extension to support the declaration for MA is supported. 
+The PRISM language can be used to specify [DTMCs, CTMCs and MDPs](documentation/usage/models.html). Conceptually, it is a guarded command language using reactive modules. Storm supports (almost) the full PRISM language and extends it (in a straightforward way) to [Markov Automata](documentation/usage/models.html).
 
-For more information, please read the [prism-manual](http://www.prismmodelchecker.org/manual/ThePRISMLanguage/Introduction).
-A rich collection of examples is available at the [prism benchmark suite]().
+For more information, please read the [PRISM manual](http://www.prismmodelchecker.org/manual/ThePRISMLanguage/Introduction) and check out the [semantics document](). A rich collection of examples is available at the [prism benchmark suite]().
 
 # Jani
 
