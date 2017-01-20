@@ -16,6 +16,8 @@ We currently provide two ways of running storm.
 - a Virtual Machine image 
 - source code
 
+If you just want to have a peek at what Storm can do, the easiest way is to download the VM as it comes with the necessary dependencies preinstalled and let's you just run the tool. If, however, performance in terms of time and memory consumption is an issue or you want to implement something on top of Storm, you need to obtain the source code and [build it](#building-storm-from-source) yourself. While this is not always easy, we spent some effort on making this process easy. Please also consult our list of [requirements](documentation/installation/requirements) to see whether building Storm on your system promises to be successful. 
+
 ## Obtaining the VM
 
 The virtual machine image can be found [here](link).
@@ -23,13 +25,9 @@ The virtual machine image can be found [here](link).
 {:.alert .alert-danger} 
 The VM is not yet available.
 
-When the VM was most recently updated and what changes were made to the VM can be taken from the following table.
+When you have downloaded the OVA image, you can import it into, for example, [VirtualBox](link) and run it. The username and password are both *storm* and a `README` file is provided in the home folder of the user *storm*. In the virtual machine, Storm is installed into `/home/storm/storm` and the binaries can be found in `/home/storm/storm/build/bin`. For your convenience, an environment variable with the name `STORM_DIR` is set to the path containing the binaries and this directory is added to the `PATH`, meaning that you can run the Storm binaries from any location in the terminal and that `cd $STORM_DIR` will take you to the folders containing Storm's binaries. For more information on how to run Storm, please see [below](#running-storm). 
 
-|-------------------+----------------------|
-| updated on        | changes              |
-|-------------------+----------------------|
-| Jan 20, 2017      | first version        |
-|-------------------+----------------------| 
+The VM is periodically updated to include bug fixes, new versions, etc. You can find the history of updates [here](documentation/installation/vmchangelog.html).
 
 ## Obtaining the source code
 
@@ -67,7 +65,7 @@ Then, use cmake to configure the build of storm on your system by invoking
 cmake ..
 ```
 
-Check the output carefully for errors and warnings. If all requirements are properly installed and found, you are ready to build storm and move to the next step. If case of errors, check the [requirements](documentation/installation/requirements.html) or consult the [troubleshooting guide](documentation/installation/troubleshooting).
+Check the output carefully for errors and warnings. If all requirements are properly installed and found, you are ready to build storm and move to the next step. In case of errors, check the [requirements](documentation/installation/requirements.html), consult the [troubleshooting guide](documentation/installation/troubleshooting) and, if necessary, [file a bug](documentation/installation/troubleshooting.html#file-an-issue).
 
 ## Build step
 
@@ -85,13 +83,13 @@ If you have multiple cores at your disposal and at least 8GB of memory, you can 
 
 If you are interested in one of the other binaries, replace `storm-main` with the appropriate target:
 
-|-------------+----------------|
-| binary      | target         |
-|-------------+----------------|
-| DFTs        | storm-dft-cli  |
-| GSPNs       | storm-gspn-cli |
-| cpGCL       | storm-pgcl-cli |
-|-------------+----------------| 
+|-------------|----------------+----------------|
+| purpose     | target         | binary         |
+|-------------|----------------+----------------|
+| DFTs        | storm-dft-cli  |                |
+| GSPNs       | storm-gspn-cli |                |
+| cpGCL       | storm-pgcl-cli |                |
+|-------------|----------------+----------------|
 
 
 ## Test step (optional)
@@ -104,13 +102,13 @@ make check
 
 will build and run the tests. 
 
-In case of errors, please do not hesistate to [contact us](about.html#people-behind-storm). Please provide the output of ```make check-verbose``` and the output of `cmake` in the configuration step to ease solving the problem.
+In case of errors, please do not hesistate to [notify us](documentation/installation/troubleshooting.html#file-an-issue).
 
 # Running Storm
 
 Congratulations, you are now ready to run storm!
 
-We will now discuss some examples to get you started. While they should illustrate how the tool is run, there are many more features and options to explore.
+We will now discuss some examples to get you started. While they should illustrate how the tool is run, there are many more features and options to explore. For more details, be sure to check the [usage](documentation/usage/usage.html) and consult the help message of Storm.
 
 ## Standard model checking
 
@@ -144,7 +142,7 @@ Of course, your version, the git revision and the linked libraries are likely to
 
 ### Example 1 (Analysis of a PRISM model of the Knuth-Yao die)
 
-For this example, we assume that you obtained the corresponding PRISM model from the single die version of the model from the [PRISM website](http://www.prismmodelchecker.org/casestudies/dice.php) and that the model file is stored as `die.pm` in `STORM_DIR/build/bin`. If you are not familiar with this model, we recommend you to read the description on the PRISM website.
+For this example, we assume that you obtained the corresponding PRISM model from the single die version of the model from the [PRISM website](http://www.prismmodelchecker.org/casestudies/dice.php) and that the model file is stored as `die.pm` in `STORM_DIR/build/bin`. You can download the file [here](http://www.prismmodelchecker.org/casestudies/examples/die.pm). If you are not familiar with this model, we recommend you to read the description on the PRISM website.
 
 Let us start with a simple (exhaustive) exploration of the state space of the model.
 
@@ -152,13 +150,13 @@ Let us start with a simple (exhaustive) exploration of the state space of the mo
 ./storm --prism die.pm
 ```
 
-This will tell you that the model is a sparse [discrete-time Markov chain](models) with 13 states and 20 transitions, no reward model and two labels (`deadlock` and `init`). But wait, doesn't the PRISM model actually specify a reward model? Why does `storm` not find one? The reason is simple, `storm` doesn't build reward models or (custom) labels that are not referred to by properties unless you explicitly want all of them to be built:
+This will tell you that the model is a [discrete-time Markov chain](models) with 13 states and 20 transitions, no reward model and two labels (`deadlock` and `init`). But wait, doesn't the PRISM model actually specify a reward model? Why does `storm` not find one? The reason is simple, `storm` doesn't build reward models or (custom) labels that are not referred to by properties unless you explicitly want all of them to be built:
 
 ```bash
 ./storm --prism die.pm --buildfull
 ```
 
-This gives you the same model, but this time there is a reward model `coin_flips` attached to it. Unless you want to know how many states satisfy a custom label, you can let `storm` take care of generating the needed reward models and labels.
+This gives you the same model, but this time there is a reward model `coin_flips` attached to it. Unless you want to know how many states satisfy a custom label, you can let `storm` take care of generating the needed reward models and labels. Note that by default, the model is stored in an sparse matrix representation (hence the `(sparse)` marker after the model type). There are other formats supported by Storm; please look at the [usage guide](documentation/usage/usage.html) for more details.
 
 Now, let's say we want to check whether the probability to roll a one with our simulated die is as we'd expect. For this, we specify a reachability property
 
@@ -180,8 +178,34 @@ which tells us that this probability is 1/3. So far the model seems to simulate 
 
 `storm` tells us that -- on average -- we will have to flip our fair coin 11/3 times.
 
+### Example 2 (Analysis of a PRISM model of an asynchronous leader election protocol)
+
+In this example, we consider the model described [here](http://www.prismmodelchecker.org/casestudies/asynchronous_leader.php). One particular instance of this model can be downloaded from [here](http://www.prismmodelchecker.org/casestudies/examples/leader4.nm). Just like in Example 1, we will assume that the file `leader4.nm` is located in `STORM_DIR/build/bin`.
+
+As the name of the protocol suggests, it is supposed to elect a leader among a set of communicating agents. Well, let's see whether it lives up to it's name and check that almost surely (i.e. with probability 1) a leader will be elected eventually.
+
+```bash
+./bin/Debug/storm --prism leader4.nm --prop "P>=1 [F (s1=4 | s2=4 | s3=4 | s4=4) ]"
+```
+
+Apparently this is true. But what about the performance of the protocol? The property we just checked does not guarantee any upper bound on the number of steps that we need to make until a leader is elected. Suppose we have only 40 steps and want to know what's the probability to elect a leader *within this time bound*.
+
+```bash
+./bin/Debug/storm --prism leader4.nm --prop "P=? [F<=40 (s1=4 | s2=4 | s3=4 | s4=4) ]"
+```
+
+Likely, Storm will tell you that there is an error and that for nondeterministic models you need to specify whether minimal or maximal probabilities are to be computed. Why is that? Since the model is a [Markov Decision Process](documentation/usage/models.html), there are (potentially) nondeterministic choices in the model that need to be resolved. Storm doesn't know how to resolve them unless you tell it to either minimize or maximize (wrt. to the probability of the objective) whenever there is a nondeterministic choice.
+
+```bash
+./bin/Debug/storm --prism leader4.nm --prop "Pmin=? [F<=40 (s1=4 | s2=4 | s3=4 | s4=4) ]"
+```
+
+Storm should tell you that this probability is 0.375. So what does it mean? It means that even in the worst of all cases, so when every nondeterministic choice in the model is chosen to minimize the probability to elect a leader quickly, then we will elect a leader within our time bound in about 3 out of 8 cases.
+
+{:.alert .alert-info}
+For [nondeterministic models (MDPs and MAs)](documentation/usage/models.html), you will have to specify in which direction the nondeterminism is going to be resolved.
+
 ## DFT Analysis
 
-
-
-
+{:.alert .alert-danger}
+The tutorial on DFT analysis is currently under development.

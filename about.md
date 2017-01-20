@@ -41,6 +41,6 @@ Storm has been developed at the [Chair for Software Modeling and Verification](h
 - [Matthias Volk](#)
 
 and received significant contributions from 
-- [Philip Berger](#)
+- [Philipp Berger](#)
 - [Tim Quatman](#) 
 

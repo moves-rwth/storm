@@ -5,27 +5,26 @@ documentation: true
 categories: [Installation]
 ---
 
+Currently, we provide detailed instructions for Mac OS 10.12, Ubuntu 16.10 and Debian 9 "Stretch", which are known to enable the easy installation of Storm. Other Linux distributions are likely to work too, but it may take significant effort to get the required versions of the dependencies up and running. In the following, we will detail all dependencies of Storm and how to install them on the supported platforms.
 
 # Dependencies
 
+## Compiler
 
-#### Compiler:
-A C++11 compliant compiler is required to build StoRM. It is tested and known to work with the following compilers:
-- GCC 5.3
+For the compilation step, a C++14-compliant compiler is required. Storm is known to work with
+
+- GCC 5.3 
 - Clang 3.5.0
+- AppleClang 8.0.0
 
-Other versions or compilers might work, but are not tested.
+Newer versions of these compilers will probably work, but are not tested. In particular, the following list of compilers is known to *not* work.
 
-The following Compilers are known NOT to work:
-- Microsoft Visual Studio versions older than 2013,
-- GCC versions 4.9.1 and older.
-
-
-
+- GCC versions 4.9.1 and older
+- Clang 3.4 and older
 
 # OS Specific Preparations
 
-We collected some specific hints to ease the installation of storm on several supported operating systems.
+We collected some platform specific hints to ease the installation of Storm on the supported operating systems. Since Storm has some optional dependencies that enhance it's functionality, and some dependencies that are strictly required, we show how to install the *required* and *recommended* dependencies. The installation instructions of the *recommended* dependencies are to be understood incrementally, i.e. *in addition to the required dependencies*.
 
 ## Debian 9 "Stretch" 
 
@@ -41,16 +40,18 @@ sudo apt-get install libz3-dev libxerces-c-dev
 
 ## macOS 10.12 "Sierra"
 
-We recommend the usage of [homebrew](http://brew.sh) to install some packages.
+First of all, you need to download and install Xcode and its command line utilities to have the suitable command line tools. For more details, we refer to a [this tutorial](https://www.moncefbelyamani.com/how-to-install-xcode-homebrew-git-rvm-ruby-on-mac/).
+
+Furthermore, we recommend the usage of [homebrew](http://brew.sh) to install the missing packages, but macports might (at some point) have the desired dependencies as well.
 
 - Required:
 ```
-brew install cln
+brew install cln ginac boost autoconf cmake glpk
 ```
 
 - Recommended:
 ```
-brew install z3
+brew install z3 xerces-c
 ```
 
 ## Ubuntu 16.04 LTS
