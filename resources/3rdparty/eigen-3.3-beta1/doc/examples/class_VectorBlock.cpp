@@ -1,20 +1,20 @@
 #include <Eigen/Core>
 #include <iostream>
-using namespace Eigen;
+using namespace StormEigen;
 using namespace std;
 
 template<typename Derived>
-Eigen::VectorBlock<Derived>
+StormEigen::VectorBlock<Derived>
 segmentFromRange(MatrixBase<Derived>& v, int start, int end)
 {
-  return Eigen::VectorBlock<Derived>(v.derived(), start, end-start);
+  return StormEigen::VectorBlock<Derived>(v.derived(), start, end-start);
 }
 
 template<typename Derived>
-const Eigen::VectorBlock<const Derived>
+const StormEigen::VectorBlock<const Derived>
 segmentFromRange(const MatrixBase<Derived>& v, int start, int end)
 {
-  return Eigen::VectorBlock<const Derived>(v.derived(), start, end-start);
+  return StormEigen::VectorBlock<const Derived>(v.derived(), start, end-start);
 }
 
 int main(int, char**)

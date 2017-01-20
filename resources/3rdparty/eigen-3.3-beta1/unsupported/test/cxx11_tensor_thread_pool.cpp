@@ -14,7 +14,7 @@
 #include <iostream>
 #include <Eigen/CXX11/Tensor>
 
-using Eigen::Tensor;
+using StormEigen::Tensor;
 
 
 static void test_multithread_elementwise()
@@ -26,8 +26,8 @@ static void test_multithread_elementwise()
   in1.setRandom();
   in2.setRandom();
 
-  Eigen::ThreadPool tp(internal::random<int>(3, 11));
-  Eigen::ThreadPoolDevice thread_pool_device(&tp, internal::random<int>(3, 11));
+  StormEigen::ThreadPool tp(internal::random<int>(3, 11));
+  StormEigen::ThreadPoolDevice thread_pool_device(&tp, internal::random<int>(3, 11));
   out.device(thread_pool_device) = in1 + in2 * 3.14f;
 
   for (int i = 0; i < 2; ++i) {
@@ -49,8 +49,8 @@ static void test_multithread_compound_assignment()
   in1.setRandom();
   in2.setRandom();
 
-  Eigen::ThreadPool tp(internal::random<int>(3, 11));
-  Eigen::ThreadPoolDevice thread_pool_device(&tp, internal::random<int>(3, 11));
+  StormEigen::ThreadPool tp(internal::random<int>(3, 11));
+  StormEigen::ThreadPoolDevice thread_pool_device(&tp, internal::random<int>(3, 11));
   out.device(thread_pool_device) = in1;
   out.device(thread_pool_device) += in2 * 3.14f;
 
@@ -75,15 +75,15 @@ static void test_multithread_contraction()
 
   // this contraction should be equivalent to a single matrix multiplication
   typedef Tensor<float, 1>::DimensionPair DimPair;
-  Eigen::array<DimPair, 2> dims({{DimPair(2, 0), DimPair(3, 1)}});
+  StormEigen::array<DimPair, 2> dims({{DimPair(2, 0), DimPair(3, 1)}});
 
   typedef Map<Matrix<float, Dynamic, Dynamic, DataLayout>> MapXf;
   MapXf m_left(t_left.data(), 1500, 1147);
   MapXf m_right(t_right.data(), 1147, 1400);
   Matrix<float, Dynamic, Dynamic, DataLayout> m_result(1500, 1400);
 
-  Eigen::ThreadPool tp(4);
-  Eigen::ThreadPoolDevice thread_pool_device(&tp, 4);
+  StormEigen::ThreadPool tp(4);
+  StormEigen::ThreadPoolDevice thread_pool_device(&tp, 4);
 
   // compute results by separate methods
   t_result.device(thread_pool_device) = t_left.contract(t_right, dims);
@@ -111,15 +111,15 @@ static void test_contraction_corner_cases()
 
   // this contraction should be equivalent to a single matrix multiplication
   typedef Tensor<float, 1>::DimensionPair DimPair;
-  Eigen::array<DimPair, 1> dims{{DimPair(0, 0)}};
+  StormEigen::array<DimPair, 1> dims{{DimPair(0, 0)}};
 
   typedef Map<Matrix<float, Dynamic, Dynamic, DataLayout>> MapXf;
   MapXf m_left(t_left.data(), 32, 500);
   MapXf m_right(t_right.data(), 32, 28*28);
   Matrix<float, Dynamic, Dynamic, DataLayout> m_result(500, 28*28);
 
-  Eigen::ThreadPool tp(12);
-  Eigen::ThreadPoolDevice thread_pool_device(&tp, 12);
+  StormEigen::ThreadPool tp(12);
+  StormEigen::ThreadPoolDevice thread_pool_device(&tp, 12);
 
   // compute results by separate methods
   t_result.device(thread_pool_device) = t_left.contract(t_right, dims);
@@ -206,10 +206,10 @@ static void test_multithread_contraction_agrees_with_singlethread() {
   right += right.constant(1.5f);
 
   typedef Tensor<float, 1>::DimensionPair DimPair;
-  Eigen::array<DimPair, 1> dims({{DimPair(1, 2)}});
+  StormEigen::array<DimPair, 1> dims({{DimPair(1, 2)}});
 
-  Eigen::ThreadPool tp(internal::random<int>(2, 11));
-  Eigen::ThreadPoolDevice thread_pool_device(&tp, internal::random<int>(2, 11));
+  StormEigen::ThreadPool tp(internal::random<int>(2, 11));
+  StormEigen::ThreadPoolDevice thread_pool_device(&tp, internal::random<int>(2, 11));
 
   Tensor<float, 5, DataLayout> st_result;
   st_result = left.contract(right, dims);
@@ -232,7 +232,7 @@ template<int DataLayout>
 static void test_multithreaded_reductions() {
   const int num_threads = internal::random<int>(3, 11);
   ThreadPool thread_pool(num_threads);
-  Eigen::ThreadPoolDevice thread_pool_device(&thread_pool, num_threads);
+  StormEigen::ThreadPoolDevice thread_pool_device(&thread_pool, num_threads);
 
   const int num_rows = internal::random<int>(13, 732);
   const int num_cols = internal::random<int>(13, 732);
@@ -255,8 +255,8 @@ static void test_memcpy() {
 
   for (int i = 0; i < 5; ++i) {
     const int num_threads = internal::random<int>(3, 11);
-    Eigen::ThreadPool tp(num_threads);
-    Eigen::ThreadPoolDevice thread_pool_device(&tp, num_threads);
+    StormEigen::ThreadPool tp(num_threads);
+    StormEigen::ThreadPoolDevice thread_pool_device(&tp, num_threads);
 
     const int size = internal::random<int>(13, 7632);
     Tensor<float, 1> t1(size);
@@ -272,10 +272,10 @@ static void test_memcpy() {
 
 static void test_multithread_random()
 {
-  Eigen::ThreadPool tp(2);
-  Eigen::ThreadPoolDevice device(&tp, 2);
+  StormEigen::ThreadPool tp(2);
+  StormEigen::ThreadPoolDevice device(&tp, 2);
   Tensor<float, 1> t(1 << 20);
-  t.device(device) = t.random<Eigen::internal::NormalRandomGenerator<float>>();
+  t.device(device) = t.random<StormEigen::internal::NormalRandomGenerator<float>>();
 }
 
 

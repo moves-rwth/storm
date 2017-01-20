@@ -10,7 +10,7 @@
 #ifndef EIGEN_POLYNOMIAL_SOLVER_H
 #define EIGEN_POLYNOMIAL_SOLVER_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 /** \ingroup Polynomials_Module
  *  \class PolynomialSolverBase.
@@ -401,6 +401,6 @@ class PolynomialSolver<_Scalar,1> : public PolynomialSolverBase<_Scalar,1>
     using                   PS_Base::m_roots;
 };
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_POLYNOMIAL_SOLVER_H

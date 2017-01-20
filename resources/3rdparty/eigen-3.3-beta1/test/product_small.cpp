@@ -213,15 +213,15 @@ void test_product_small()
   
   {
     // regression test for pull-request #93
-    Eigen::Matrix<double, 1, 1> A;  A.setRandom();
-    Eigen::Matrix<double, 18, 1> B; B.setRandom();
-    Eigen::Matrix<double, 1, 18> C; C.setRandom();
+    StormEigen::Matrix<double, 1, 1> A;  A.setRandom();
+    StormEigen::Matrix<double, 18, 1> B; B.setRandom();
+    StormEigen::Matrix<double, 1, 18> C; C.setRandom();
     VERIFY_IS_APPROX(B * A.inverse(), B * A.inverse()[0]);
     VERIFY_IS_APPROX(A.inverse() * C, A.inverse()[0] * C);
   }
 
   {
-    Eigen::Matrix<double, 10, 10> A, B, C;
+    StormEigen::Matrix<double, 10, 10> A, B, C;
     A.setRandom();
     C = A;
     for(int k=0; k<79; ++k)

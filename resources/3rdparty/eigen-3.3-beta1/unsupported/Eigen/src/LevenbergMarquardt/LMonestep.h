@@ -14,7 +14,7 @@
 #ifndef EIGEN_LMONESTEP_H
 #define EIGEN_LMONESTEP_H
 
-namespace Eigen {
+namespace StormEigen {
 
 template<typename FunctorType>
 LevenbergMarquardtSpace::Status
@@ -197,6 +197,6 @@ LevenbergMarquardt<FunctorType>::minimizeOneStep(FVectorType  &x)
 }
 
   
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_LMONESTEP_H

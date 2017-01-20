@@ -10,7 +10,7 @@
 #ifndef EIGEN_ROTATIONBASE_H
 #define EIGEN_ROTATIONBASE_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 // forward declaration
 namespace internal {
@@ -201,6 +201,6 @@ static inline const MatrixBase<OtherDerived>& toRotationMatrix(const MatrixBase<
 
 } // end namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_ROTATIONBASE_H

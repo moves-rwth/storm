@@ -1,4 +1,4 @@
-namespace Eigen {
+namespace StormEigen {
 
 /** \page TopicNewExpressionType Adding a new expression type
 
@@ -51,7 +51,7 @@ to the \c makeCirculant function.
 \section TopicTraits The traits class
 
 For every expression class \c X, there should be a traits class 
-\c Traits<X> in the \c Eigen::internal namespace containing
+\c Traits<X> in the \c StormEigen::internal namespace containing
 information about \c X known as compile time.
 
 As explained in \ref TopicSetting, we designed the \c Circulant

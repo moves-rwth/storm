@@ -10,7 +10,7 @@
 #ifndef EIGEN_CXX11_TENSORSYMMETRY_DYNAMICSYMMETRY_H
 #define EIGEN_CXX11_TENSORSYMMETRY_DYNAMICSYMMETRY_H
 
-namespace Eigen {
+namespace StormEigen {
 
 class DynamicSGroup
 {
@@ -284,7 +284,7 @@ inline void DynamicSGroup::updateGlobalFlags(int flagDiffOfSameGenerator)
     }
 }
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_CXX11_TENSORSYMMETRY_DYNAMICSYMMETRY_H
 

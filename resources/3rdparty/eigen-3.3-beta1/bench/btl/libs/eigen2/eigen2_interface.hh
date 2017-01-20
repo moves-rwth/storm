@@ -25,7 +25,7 @@
 #include <vector>
 #include "btl.hh"
 
-using namespace Eigen;
+using namespace StormEigen;
 
 template<class real, int SIZE=Dynamic>
 class eigen2_interface
@@ -40,8 +40,8 @@ public :
   typedef std::vector<real> stl_vector;
   typedef std::vector<stl_vector> stl_matrix;
 
-  typedef Eigen::Matrix<real,SIZE,SIZE> gene_matrix;
-  typedef Eigen::Matrix<real,SIZE,1> gene_vector;
+  typedef StormEigen::Matrix<real,SIZE,SIZE> gene_matrix;
+  typedef StormEigen::Matrix<real,SIZE,1> gene_vector;
 
   static inline std::string name( void )
   {

@@ -30,7 +30,7 @@
  ********************************************************************************
 */
 
-namespace Eigen {
+namespace StormEigen {
 
 /** \page TopicUsingIntelMKL Using Intel® Math Kernel Library from Eigen
 

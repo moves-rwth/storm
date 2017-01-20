@@ -10,7 +10,7 @@
 #ifndef EIGEN_CXX11_TENSOR_TENSOR_CHIPPING_H
 #define EIGEN_CXX11_TENSOR_TENSOR_CHIPPING_H
 
-namespace Eigen {
+namespace StormEigen {
 
 /** \class TensorKChippingReshaping
   * \ingroup CXX11_Tensor_Module
@@ -36,7 +36,7 @@ struct traits<TensorChippingOp<DimId, XprType> > : public traits<XprType>
 };
 
 template<DenseIndex DimId, typename XprType>
-struct eval<TensorChippingOp<DimId, XprType>, Eigen::Dense>
+struct eval<TensorChippingOp<DimId, XprType>, StormEigen::Dense>
 {
   typedef const TensorChippingOp<DimId, XprType>& type;
 };
@@ -79,14 +79,14 @@ template<DenseIndex DimId, typename XprType>
 class TensorChippingOp : public TensorBase<TensorChippingOp<DimId, XprType> >
 {
   public:
-  typedef typename Eigen::internal::traits<TensorChippingOp>::Scalar Scalar;
-  typedef typename Eigen::internal::traits<TensorChippingOp>::Packet Packet;
-  typedef typename Eigen::NumTraits<Scalar>::Real RealScalar;
+  typedef typename StormEigen::internal::traits<TensorChippingOp>::Scalar Scalar;
+  typedef typename StormEigen::internal::traits<TensorChippingOp>::Packet Packet;
+  typedef typename StormEigen::NumTraits<Scalar>::Real RealScalar;
   typedef typename XprType::CoeffReturnType CoeffReturnType;
   typedef typename XprType::PacketReturnType PacketReturnType;
-  typedef typename Eigen::internal::nested<TensorChippingOp>::type Nested;
-  typedef typename Eigen::internal::traits<TensorChippingOp>::StorageKind StorageKind;
-  typedef typename Eigen::internal::traits<TensorChippingOp>::Index Index;
+  typedef typename StormEigen::internal::nested<TensorChippingOp>::type Nested;
+  typedef typename StormEigen::internal::traits<TensorChippingOp>::StorageKind StorageKind;
+  typedef typename StormEigen::internal::traits<TensorChippingOp>::Index Index;
 
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TensorChippingOp(const XprType& expr, const Index offset, const Index dim)
       : m_xpr(expr), m_offset(offset), m_dim(dim) {
@@ -360,6 +360,6 @@ struct TensorEvaluator<TensorChippingOp<DimId, ArgType>, Device>
 };
 
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_CXX11_TENSOR_TENSOR_CHIPPING_H

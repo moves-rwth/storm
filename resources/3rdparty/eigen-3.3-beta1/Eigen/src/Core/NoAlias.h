@@ -10,7 +10,7 @@
 #ifndef EIGEN_NOALIAS_H
 #define EIGEN_NOALIAS_H
 
-namespace Eigen {
+namespace StormEigen {
 
 /** \class NoAlias
   * \ingroup Core_Module
@@ -100,9 +100,9 @@ class NoAlias
 template<typename Derived>
 NoAlias<Derived,MatrixBase> MatrixBase<Derived>::noalias()
 {
-  return NoAlias<Derived, Eigen::MatrixBase >(derived());
+  return NoAlias<Derived, StormEigen::MatrixBase >(derived());
 }
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_NOALIAS_H

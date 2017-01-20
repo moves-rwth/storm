@@ -243,7 +243,9 @@ TEST(GmmxxMdpPrctlModelCheckerTest, SchedulerGeneration) {
     EXPECT_EQ(0ull, scheduler2.getChoice(3));
 }
 
-TEST(GmmxxMdpPrctlModelCheckerTest, TinyRewards) {
+// Test is currently disabled as the computation of this property requires eliminating the zero-reward MECs, which is
+// currently not implemented and also not supported by PRISM.
+TEST(DISABLED_GmmxxMdpPrctlModelCheckerTest, TinyRewards) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/tiny_rewards.nm");
 
     // A parser that we use for conveniently constructing the formulas.
@@ -271,5 +273,4 @@ TEST(GmmxxMdpPrctlModelCheckerTest, TinyRewards) {
     EXPECT_NEAR(1, result->asExplicitQuantitativeCheckResult<double>().getValueVector()[0], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
     EXPECT_NEAR(1, result->asExplicitQuantitativeCheckResult<double>().getValueVector()[1], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
     EXPECT_NEAR(0, result->asExplicitQuantitativeCheckResult<double>().getValueVector()[2], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
-    
 }

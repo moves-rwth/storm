@@ -10,7 +10,7 @@
 #ifndef EIGEN_ASSIGNMENT_FUNCTORS_H
 #define EIGEN_ASSIGNMENT_FUNCTORS_H
 
-namespace Eigen {
+namespace StormEigen {
 
 namespace internal {
   
@@ -161,6 +161,6 @@ struct functor_traits<swap_assign_op<Scalar> > {
 
 } // namespace internal
 
-} // namespace Eigen
+} // namespace StormEigen
 
 #endif // EIGEN_ASSIGNMENT_FUNCTORS_H

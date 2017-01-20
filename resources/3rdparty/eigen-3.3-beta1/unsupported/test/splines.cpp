@@ -11,7 +11,7 @@
 
 #include <unsupported/Eigen/Splines>
 
-namespace Eigen {
+namespace StormEigen {
   
   // lets do some explicit instantiations and thus
   // force the compilation of all spline functions...
@@ -207,13 +207,13 @@ void check_global_interpolation2d()
   ControlPointVectorType points = ControlPointVectorType::Random(2,100);
 
   KnotVectorType chord_lengths; // knot parameters
-  Eigen::ChordLengths(points, chord_lengths);
+  StormEigen::ChordLengths(points, chord_lengths);
 
   // interpolation without knot parameters
   {
     const Spline2d spline = SplineFitting<Spline2d>::Interpolate(points,3);  
 
-    for (Eigen::DenseIndex i=0; i<points.cols(); ++i)
+    for (StormEigen::DenseIndex i=0; i<points.cols(); ++i)
     {
       PointType pt = spline( chord_lengths(i) );
       PointType ref = points.col(i);
@@ -225,7 +225,7 @@ void check_global_interpolation2d()
   {
     const Spline2d spline = SplineFitting<Spline2d>::Interpolate(points,3,chord_lengths);  
 
-    for (Eigen::DenseIndex i=0; i<points.cols(); ++i)
+    for (StormEigen::DenseIndex i=0; i<points.cols(); ++i)
     {
       PointType pt = spline( chord_lengths(i) );
       PointType ref = points.col(i);
@@ -246,18 +246,18 @@ void check_global_interpolation_with_derivatives2d()
   ArrayXXd points = ArrayXXd::Random(dimension, numPoints);
 
   KnotVectorType knots;
-  Eigen::ChordLengths(points, knots);
+  StormEigen::ChordLengths(points, knots);
 
   ArrayXXd derivatives = ArrayXXd::Random(dimension, numPoints);
   VectorXd derivativeIndices(numPoints);
 
-  for (Eigen::DenseIndex i = 0; i < numPoints; ++i)
+  for (StormEigen::DenseIndex i = 0; i < numPoints; ++i)
       derivativeIndices(i) = static_cast<double>(i);
 
   const Spline2d spline = SplineFitting<Spline2d>::InterpolateWithDerivatives(
     points, derivatives, derivativeIndices, degree);  
     
-  for (Eigen::DenseIndex i = 0; i < points.cols(); ++i)
+  for (StormEigen::DenseIndex i = 0; i < points.cols(); ++i)
   {
     PointType point = spline(knots(i));
     PointType referencePoint = points.col(i);

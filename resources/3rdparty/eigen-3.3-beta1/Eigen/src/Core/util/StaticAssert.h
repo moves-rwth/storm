@@ -33,7 +33,7 @@
 
   #else // not CXX0X
 
-    namespace Eigen {
+    namespace StormEigen {
 
     namespace internal {
 
@@ -103,7 +103,7 @@
 
     } // end namespace internal
 
-    } // end namespace Eigen
+    } // end namespace StormEigen
 
     // Specialized implementation for MSVC to avoid "conditional
     // expression is constant" warnings.  This implementation doesn't
@@ -111,12 +111,12 @@
     #if EIGEN_COMP_MSVC
 
       #define EIGEN_STATIC_ASSERT(CONDITION,MSG) \
-        {Eigen::internal::static_assertion<bool(CONDITION)>::MSG;}
+        {StormEigen::internal::static_assertion<bool(CONDITION)>::MSG;}
 
     #else
       // In some cases clang interprets bool(CONDITION) as function declaration
       #define EIGEN_STATIC_ASSERT(CONDITION,MSG) \
-        if (Eigen::internal::static_assertion<static_cast<bool>(CONDITION)>::MSG) {}
+        if (StormEigen::internal::static_assertion<static_cast<bool>(CONDITION)>::MSG) {}
 
     #endif
 
@@ -136,12 +136,12 @@
 
 // static assertion failing if the type \a TYPE is not fixed-size
 #define EIGEN_STATIC_ASSERT_FIXED_SIZE(TYPE) \
-  EIGEN_STATIC_ASSERT(TYPE::SizeAtCompileTime!=Eigen::Dynamic, \
+  EIGEN_STATIC_ASSERT(TYPE::SizeAtCompileTime!=StormEigen::Dynamic, \
                       YOU_CALLED_A_FIXED_SIZE_METHOD_ON_A_DYNAMIC_SIZE_MATRIX_OR_VECTOR)
 
 // static assertion failing if the type \a TYPE is not dynamic-size
 #define EIGEN_STATIC_ASSERT_DYNAMIC_SIZE(TYPE) \
-  EIGEN_STATIC_ASSERT(TYPE::SizeAtCompileTime==Eigen::Dynamic, \
+  EIGEN_STATIC_ASSERT(TYPE::SizeAtCompileTime==StormEigen::Dynamic, \
                       YOU_CALLED_A_DYNAMIC_SIZE_METHOD_ON_A_FIXED_SIZE_MATRIX_OR_VECTOR)
 
 // static assertion failing if the type \a TYPE is not a vector type of the given size
@@ -157,8 +157,8 @@
 // static assertion failing if the two vector expression types are not compatible (same fixed-size or dynamic size)
 #define EIGEN_STATIC_ASSERT_SAME_VECTOR_SIZE(TYPE0,TYPE1) \
   EIGEN_STATIC_ASSERT( \
-      (int(TYPE0::SizeAtCompileTime)==Eigen::Dynamic \
-    || int(TYPE1::SizeAtCompileTime)==Eigen::Dynamic \
+      (int(TYPE0::SizeAtCompileTime)==StormEigen::Dynamic \
+    || int(TYPE1::SizeAtCompileTime)==StormEigen::Dynamic \
     || int(TYPE0::SizeAtCompileTime)==int(TYPE1::SizeAtCompileTime)),\
     YOU_MIXED_VECTORS_OF_DIFFERENT_SIZES)
 
@@ -166,11 +166,11 @@
      ( \
         (int(internal::size_of_xpr_at_compile_time<TYPE0>::ret)==0 && int(internal::size_of_xpr_at_compile_time<TYPE1>::ret)==0) \
     || (\
-          (int(TYPE0::RowsAtCompileTime)==Eigen::Dynamic \
-        || int(TYPE1::RowsAtCompileTime)==Eigen::Dynamic \
+          (int(TYPE0::RowsAtCompileTime)==StormEigen::Dynamic \
+        || int(TYPE1::RowsAtCompileTime)==StormEigen::Dynamic \
         || int(TYPE0::RowsAtCompileTime)==int(TYPE1::RowsAtCompileTime)) \
-      &&  (int(TYPE0::ColsAtCompileTime)==Eigen::Dynamic \
-        || int(TYPE1::ColsAtCompileTime)==Eigen::Dynamic \
+      &&  (int(TYPE0::ColsAtCompileTime)==StormEigen::Dynamic \
+        || int(TYPE1::ColsAtCompileTime)==StormEigen::Dynamic \
         || int(TYPE0::ColsAtCompileTime)==int(TYPE1::ColsAtCompileTime))\
        ) \
      )

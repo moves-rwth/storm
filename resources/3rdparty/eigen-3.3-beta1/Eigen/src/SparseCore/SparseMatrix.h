@@ -10,7 +10,7 @@
 #ifndef EIGEN_SPARSEMATRIX_H
 #define EIGEN_SPARSEMATRIX_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 /** \ingroup SparseCore_Module
   *
@@ -271,7 +271,7 @@ class SparseMatrix
         const value_type& operator[](i) const;
         \endcode
       * for \c i in the [0,this->outerSize()[ range.
-      * Typical choices include std::vector<int>, Eigen::VectorXi, Eigen::VectorXi::Constant, etc.
+      * Typical choices include std::vector<int>, StormEigen::VectorXi, StormEigen::VectorXi::Constant, etc.
       */
     template<class SizesType>
     inline void reserve(const SizesType& reserveSizes);
@@ -735,9 +735,9 @@ class SparseMatrix
     {
       eigen_assert(rows() == cols() && "ONLY FOR SQUARED MATRICES");
       this->m_data.resize(rows());
-      Eigen::Map<IndexVector>(&this->m_data.index(0), rows()).setLinSpaced(0, StorageIndex(rows()-1));
-      Eigen::Map<ScalarVector>(&this->m_data.value(0), rows()).setOnes();
-      Eigen::Map<IndexVector>(this->m_outerIndex, rows()+1).setLinSpaced(0, StorageIndex(rows()));
+      StormEigen::Map<IndexVector>(&this->m_data.index(0), rows()).setLinSpaced(0, StorageIndex(rows()-1));
+      StormEigen::Map<ScalarVector>(&this->m_data.value(0), rows()).setOnes();
+      StormEigen::Map<IndexVector>(this->m_outerIndex, rows()+1).setLinSpaced(0, StorageIndex(rows()));
       std::free(m_innerNonZeros);
       m_innerNonZeros = 0;
     }
@@ -949,7 +949,7 @@ void set_from_triplets(const InputIterator& begin, const InputIterator& end, Spa
   * Scalar row() const;   // the row index i
   * Scalar col() const;   // the column index j
   * \endcode
-  * See for instance the Eigen::Triplet template class.
+  * See for instance the StormEigen::Triplet template class.
   *
   * Here is a typical usage example:
   * \code
@@ -1062,7 +1062,7 @@ EIGEN_DONT_INLINE SparseMatrix<Scalar,_Options,_Index>& SparseMatrix<Scalar,_Opt
     OtherCopyEval otherCopyEval(otherCopy);
 
     SparseMatrix dest(other.rows(),other.cols());
-    Eigen::Map<IndexVector> (dest.m_outerIndex,dest.outerSize()).setZero();
+    StormEigen::Map<IndexVector> (dest.m_outerIndex,dest.outerSize()).setZero();
 
     // pass 1
     // FIXME the above copy could be merged with that pass
@@ -1380,6 +1380,6 @@ struct evaluator<SparseMatrix<_Scalar,_Options,_Index> >
 
 }
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_SPARSEMATRIX_H

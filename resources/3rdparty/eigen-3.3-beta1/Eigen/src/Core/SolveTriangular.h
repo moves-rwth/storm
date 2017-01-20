@@ -10,7 +10,7 @@
 #ifndef EIGEN_SOLVETRIANGULAR_H
 #define EIGEN_SOLVETRIANGULAR_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 namespace internal {
 
@@ -225,6 +225,6 @@ template<int Side, typename TriangularType, typename Rhs> struct triangular_solv
 
 } // namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_SOLVETRIANGULAR_H

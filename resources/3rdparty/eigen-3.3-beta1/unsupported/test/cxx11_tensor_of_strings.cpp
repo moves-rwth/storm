@@ -11,8 +11,8 @@
 
 #include <Eigen/CXX11/Tensor>
 
-using Eigen::Tensor;
-using Eigen::TensorMap;
+using StormEigen::Tensor;
+using StormEigen::TensorMap;
 
 static void test_assign()
 {
@@ -94,9 +94,9 @@ static void test_slices()
     }
   }
 
-  const Eigen::DSizes<ptrdiff_t, 2> half_size(2, 3);
-  const Eigen::DSizes<ptrdiff_t, 2> first_half(0, 0);
-  const Eigen::DSizes<ptrdiff_t, 2> second_half(0, 3);
+  const StormEigen::DSizes<ptrdiff_t, 2> half_size(2, 3);
+  const StormEigen::DSizes<ptrdiff_t, 2> first_half(0, 0);
+  const StormEigen::DSizes<ptrdiff_t, 2> second_half(0, 3);
 
   Tensor<std::string, 2> t1 = data.slice(first_half, half_size);
   Tensor<std::string, 2> t2 = data.slice(second_half, half_size);

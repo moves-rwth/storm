@@ -6,7 +6,7 @@
 #endif
 
 
-using namespace Eigen;
+using namespace StormEigen;
 using namespace std;
 
 int main(int, char**)

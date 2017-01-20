@@ -11,7 +11,7 @@
 #define EIGEN_CXX11_TENSOR_TENSOR_DIMENSIONS_H
 
 
-namespace Eigen {
+namespace StormEigen {
 
 /** \internal
   *
@@ -431,6 +431,6 @@ bool dimensions_match(Dims1& dims1, Dims2& dims2) {
   return internal::sizes_match_below_dim<Dims1, Dims2, internal::array_size<Dims1>::value, internal::array_size<Dims2>::value>::run(dims1, dims2);
 }
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_CXX11_TENSOR_TENSOR_DIMENSIONS_H

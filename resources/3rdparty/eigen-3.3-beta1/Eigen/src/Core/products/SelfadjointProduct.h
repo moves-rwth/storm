@@ -16,7 +16,7 @@
 * It corresponds to the level 3 SYRK and level 2 SYR Blas routines.
 **********************************************************************/
 
-namespace Eigen { 
+namespace StormEigen { 
 
 
 template<typename Scalar, typename Index, int UpLo, bool ConjLhs, bool ConjRhs>
@@ -116,6 +116,6 @@ SelfAdjointView<MatrixType,UpLo>& SelfAdjointView<MatrixType,UpLo>
   return *this;
 }
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_SELFADJOINT_PRODUCT_H

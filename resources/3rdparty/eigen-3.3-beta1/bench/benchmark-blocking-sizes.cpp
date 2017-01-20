@@ -25,7 +25,7 @@ int eigen_block_size_k, eigen_block_size_m, eigen_block_size_n;
 
 #include <bench/BenchTimer.h>
 
-using namespace Eigen;
+using namespace StormEigen;
 using namespace std;
 
 static BenchTimer timer;

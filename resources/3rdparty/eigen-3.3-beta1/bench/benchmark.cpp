@@ -9,7 +9,7 @@
 #endif
 
 using namespace std;
-using namespace Eigen;
+using namespace StormEigen;
 
 #ifndef REPEAT
 #define REPEAT 40000000

@@ -1,4 +1,4 @@
- #include "storm/modelchecker/multiobjective/pcaa/SparsePcaaPreprocessor.h"
+#include "storm/modelchecker/multiobjective/pcaa/SparsePcaaPreprocessor.h"
 
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
@@ -224,22 +224,30 @@ namespace storm {
             
             template<typename SparseModelType>
             void SparsePcaaPreprocessor<SparseModelType>::preprocessBoundedUntilFormula(storm::logic::BoundedUntilFormula const& formula, ReturnType& result, PcaaObjective<ValueType>& currentObjective) {
+                STORM_LOG_THROW(!result.originalModel.isOfType(storm::models::ModelType::MarkovAutomaton) || !formula.isStepBounded(), storm::exceptions::InvalidPropertyException, "Multi-objective model checking currently does not support step-bounded properties for Markov automata.");
                 
-                if(formula.hasDiscreteTimeBound()) {
-                    currentObjective.upperTimeBound = storm::utility::convertNumber<ValueType>(formula.getDiscreteTimeBound());
-                } else {
-                    if(result.originalModel.isOfType(storm::models::ModelType::Mdp)) {
-                        STORM_LOG_THROW(formula.getIntervalBounds().first == std::round(formula.getIntervalBounds().first), storm::exceptions::InvalidPropertyException, "Expected a boundedUntilFormula with discrete lower time bound but got " << formula << ".");
-                        STORM_LOG_THROW(formula.getIntervalBounds().second == std::round(formula.getIntervalBounds().second), storm::exceptions::InvalidPropertyException, "Expected a boundedUntilFormula with discrete upper time bound but got " << formula << ".");
+                if (formula.hasLowerBound()) {
+                    STORM_LOG_THROW(!result.originalModel.isOfType(storm::models::ModelType::Mdp) || formula.hasIntegerLowerBound(), storm::exceptions::InvalidPropertyException, "Expected discrete lower time-bound in formula.");
+                    // FIXME: really convert formula bound to value type?
+                    if (formula.hasIntegerLowerBound()) {
+                        currentObjective.lowerTimeBound = storm::utility::convertNumber<ValueType>(formula.getLowerBound<uint64_t>());
                     } else {
-                        STORM_LOG_THROW(result.originalModel.isOfType(storm::models::ModelType::MarkovAutomaton), storm::exceptions::InvalidPropertyException, "Got a boundedUntilFormula which can not be checked for the current model type.");
-                        STORM_LOG_THROW(formula.getIntervalBounds().second > formula.getIntervalBounds().first, storm::exceptions::InvalidPropertyException, "Neither empty nor point intervalls are allowed but got " << formula << ".");
+                        currentObjective.lowerTimeBound = storm::utility::convertNumber<ValueType>(formula.getLowerBound<double>());
                     }
-                    if(!storm::utility::isZero(formula.getIntervalBounds().first)) {
-                        currentObjective.lowerTimeBound = storm::utility::convertNumber<ValueType>(formula.getIntervalBounds().first);
-                    }
-                    currentObjective.upperTimeBound = storm::utility::convertNumber<ValueType>(formula.getIntervalBounds().second);
                 }
+                if (formula.hasUpperBound()) {
+                    STORM_LOG_THROW(!result.originalModel.isOfType(storm::models::ModelType::Mdp) || formula.hasIntegerUpperBound(), storm::exceptions::InvalidPropertyException, "Expected discrete lower time-bound in formula.");
+                    // FIXME: really convert formula bound to value type?
+                    if (formula.hasIntegerUpperBound()) {
+                        currentObjective.upperTimeBound = storm::utility::convertNumber<ValueType>(formula.getUpperBound<uint64_t>());
+                    } else {
+                        currentObjective.upperTimeBound = storm::utility::convertNumber<ValueType>(formula.getUpperBound<double>());
+                    }
+                } else {
+                    currentObjective.upperTimeBound = storm::utility::infinity<ValueType>();
+                }
+                STORM_LOG_THROW(currentObjective.lowerTimeBound < currentObjective.upperTimeBound, storm::exceptions::InvalidPropertyException, "Empty or point time intervals are currently not supported by multi-objective model checking.");
+                
                 preprocessUntilFormula(storm::logic::UntilFormula(formula.getLeftSubformula().asSharedPointer(), formula.getRightSubformula().asSharedPointer()), result, currentObjective);
             }
             
@@ -306,9 +314,9 @@ namespace storm {
             template<typename SparseModelType>
             void SparsePcaaPreprocessor<SparseModelType>::preprocessCumulativeRewardFormula(storm::logic::CumulativeRewardFormula const& formula, ReturnType& result, PcaaObjective<ValueType>& currentObjective, boost::optional<std::string> const& optionalRewardModelName) {
                 STORM_LOG_THROW(result.originalModel.isOfType(storm::models::ModelType::Mdp), storm::exceptions::InvalidPropertyException, "Cumulative reward formulas are not supported for the given model type.");
-                STORM_LOG_THROW(formula.hasDiscreteTimeBound(), storm::exceptions::InvalidPropertyException, "Expected a cumulativeRewardFormula with a discrete time bound but got " << formula << ".");
-                STORM_LOG_THROW(formula.getDiscreteTimeBound()>0, storm::exceptions::InvalidPropertyException, "Expected a cumulativeRewardFormula with a positive discrete time bound but got " << formula << ".");
-                currentObjective.upperTimeBound = storm::utility::convertNumber<ValueType>(formula.getDiscreteTimeBound());
+                STORM_LOG_THROW(!formula.hasIntegerBound(), storm::exceptions::InvalidPropertyException, "Expected a cumulativeRewardFormula with a discrete time bound but got " << formula << ".");
+                // FIXME: really convert to value type?
+                currentObjective.upperTimeBound = storm::utility::convertNumber<ValueType>(formula.getBound<uint64_t>());
                 
                 RewardModelType objectiveRewards = result.preprocessedModel.getRewardModel(optionalRewardModelName ? optionalRewardModelName.get() : "");
                 objectiveRewards.reduceToStateBasedRewards(result.preprocessedModel.getTransitionMatrix(), false);

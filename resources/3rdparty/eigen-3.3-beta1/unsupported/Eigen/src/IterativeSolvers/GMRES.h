@@ -11,7 +11,7 @@
 #ifndef EIGEN_GMRES_H
 #define EIGEN_GMRES_H
 
-namespace Eigen {
+namespace StormEigen {
 
 namespace internal {
 
@@ -337,6 +337,6 @@ protected:
 
 };
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_GMRES_H

@@ -1,4 +1,4 @@
-namespace Eigen {
+namespace StormEigen {
 
 /** \eigenManualPage TutorialMatrixArithmetic Matrix and vector arithmetic
 

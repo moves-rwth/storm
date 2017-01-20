@@ -28,8 +28,16 @@ namespace storm {
             return this->comment;
         }
         
+        Property Property::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
+            return Property(name, filterExpression.substitute(substitution), comment);
+        }
+        
         FilterExpression const& Property::getFilter() const {
             return this->filterExpression;
+        }
+        
+        std::shared_ptr<storm::logic::Formula const> Property::getRawFormula() const {
+            return this->filterExpression.getFormula();
         }
         
         std::ostream& operator<<(std::ostream& os, Property const& p) {

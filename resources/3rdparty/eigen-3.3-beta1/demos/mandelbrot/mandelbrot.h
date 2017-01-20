@@ -36,7 +36,7 @@ class MandelbrotWidget : public QWidget
     Q_OBJECT
 
     friend class MandelbrotThread;
-    Eigen::Vector2d center;
+    StormEigen::Vector2d center;
     double xradius;
     int size;
     unsigned char *buffer;

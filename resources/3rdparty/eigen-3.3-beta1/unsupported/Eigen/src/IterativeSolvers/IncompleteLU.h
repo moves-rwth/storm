@@ -10,7 +10,7 @@
 #ifndef EIGEN_INCOMPLETE_LU_H
 #define EIGEN_INCOMPLETE_LU_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 template <typename _Scalar>
 class IncompleteLU : public SparseSolverBase<IncompleteLU<_Scalar> >
@@ -85,6 +85,6 @@ class IncompleteLU : public SparseSolverBase<IncompleteLU<_Scalar> >
     FactorType m_lu;
 };
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_INCOMPLETE_LU_H

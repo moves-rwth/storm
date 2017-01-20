@@ -11,8 +11,8 @@
 
 #include <Eigen/CXX11/Tensor>
 
-using Eigen::Tensor;
-using Eigen::TensorMap;
+using StormEigen::Tensor;
+using StormEigen::TensorMap;
 
 
 
@@ -64,7 +64,7 @@ static void test_contractions()
 
   // This contraction should be equivalent to a regular matrix multiplication
   typedef Tensor<float, 1>::DimensionPair DimPair;
-  Eigen::array<DimPair, 2> dims({{DimPair(2, 0), DimPair(3, 1)}});
+  StormEigen::array<DimPair, 2> dims({{DimPair(2, 0), DimPair(3, 1)}});
   t_result = t_left.contract(t_right, dims);
   m_result = m_left * m_right;
   for (int i = 0; i < t_result.dimensions().TotalSize(); i++) {

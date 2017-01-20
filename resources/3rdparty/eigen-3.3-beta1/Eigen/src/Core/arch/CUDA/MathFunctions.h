@@ -10,7 +10,7 @@
 #ifndef EIGEN_MATH_FUNCTIONS_CUDA_H
 #define EIGEN_MATH_FUNCTIONS_CUDA_H
 
-namespace Eigen {
+namespace StormEigen {
 
 namespace internal {
 
@@ -107,6 +107,6 @@ double2 perfc<double2>(const double2& a)
 
 } // end namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_MATH_FUNCTIONS_CUDA_H

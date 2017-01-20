@@ -18,7 +18,7 @@
 #include "storm/settings/modules/GmmxxEquationSolverSettings.h"
 #include "storm/settings/modules/NativeEquationSolverSettings.h"
 
-TEST(NativeHybridDtmcPrctlModelCheckerTest, Die_CUDD) {
+TEST(NativeHybridDtmcPrctlModelCheckerTest, Die_Cudd) {
     storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm");
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
     
@@ -142,7 +142,7 @@ TEST(NativeHybridDtmcPrctlModelCheckerTest, Die_Sylvan) {
     EXPECT_NEAR(3.6666646003723145, quantitativeResult4.getMax(), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
 }
 
-TEST(NativeHybridDtmcPrctlModelCheckerTest, Crowds_CUDD) {
+TEST(NativeHybridDtmcPrctlModelCheckerTest, Crowds_Cudd) {
     storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/crowds-5-5.pm");
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
     
@@ -232,7 +232,7 @@ TEST(NativeHybridDtmcPrctlModelCheckerTest, Crowds_Sylvan) {
     EXPECT_NEAR(0.32153900158185761, quantitativeResult3.getMax(), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
 }
 
-TEST(NativeHybridDtmcPrctlModelCheckerTest, SynchronousLeader_CUDD) {
+TEST(NativeHybridDtmcPrctlModelCheckerTest, SynchronousLeader_Cudd) {
     storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/leader-3-5.pm");
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
     

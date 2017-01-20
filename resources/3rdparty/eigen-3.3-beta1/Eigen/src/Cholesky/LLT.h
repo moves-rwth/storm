@@ -10,7 +10,7 @@
 #ifndef EIGEN_LLT_H
 #define EIGEN_LLT_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 namespace internal{
 template<typename MatrixType, int UpLo> struct LLT_Traits;
@@ -59,7 +59,7 @@ template<typename _MatrixType, int _UpLo> class LLT
     };
     typedef typename MatrixType::Scalar Scalar;
     typedef typename NumTraits<typename MatrixType::Scalar>::Real RealScalar;
-    typedef Eigen::Index Index; ///< \deprecated since Eigen 3.3
+    typedef StormEigen::Index Index; ///< \deprecated since Eigen 3.3
     typedef typename MatrixType::StorageIndex StorageIndex;
 
     enum {
@@ -325,7 +325,7 @@ template<typename Scalar> struct llt_inplace<Scalar, Lower>
   template<typename MatrixType, typename VectorType>
   static Index rankUpdate(MatrixType& mat, const VectorType& vec, const RealScalar& sigma)
   {
-    return Eigen::internal::llt_rank_update_lower(mat, vec, sigma);
+    return StormEigen::internal::llt_rank_update_lower(mat, vec, sigma);
   }
 };
   
@@ -487,6 +487,6 @@ SelfAdjointView<MatrixType, UpLo>::llt() const
 }
 #endif // __CUDACC__
   
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_LLT_H

@@ -10,7 +10,7 @@
 #ifndef EIGEN_SPARSE_FUZZY_H
 #define EIGEN_SPARSE_FUZZY_H
 
-namespace Eigen {
+namespace StormEigen {
   
 template<typename Derived>
 template<typename OtherDerived>
@@ -24,6 +24,6 @@ bool SparseMatrixBase<Derived>::isApprox(const SparseMatrixBase<OtherDerived>& o
   return (actualA - actualB).squaredNorm() <= prec * prec * numext::mini(actualA.squaredNorm(), actualB.squaredNorm());
 }
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_SPARSE_FUZZY_H

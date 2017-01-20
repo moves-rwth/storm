@@ -10,7 +10,7 @@
 #ifndef EIGEN_STABLENORM_H
 #define EIGEN_STABLENORM_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 namespace internal {
 
@@ -214,6 +214,6 @@ MatrixBase<Derived>::hypotNorm() const
   return this->cwiseAbs().redux(internal::scalar_hypot_op<RealScalar>());
 }
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_STABLENORM_H

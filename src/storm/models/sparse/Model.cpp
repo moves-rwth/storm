@@ -167,6 +167,11 @@ namespace storm {
             boost::optional<std::vector<LabelSet>> const& Model<ValueType, RewardModelType>::getOptionalChoiceLabeling() const {
                 return choiceLabeling;
             }
+
+            template<typename ValueType, typename RewardModelType>
+            boost::optional<std::vector<LabelSet>>& Model<ValueType, RewardModelType>::getOptionalChoiceLabeling() {
+                return choiceLabeling;
+            }
             
             template<typename ValueType, typename RewardModelType>
             storm::models::sparse::StateLabeling const& Model<ValueType, RewardModelType>::getStateLabeling() const {

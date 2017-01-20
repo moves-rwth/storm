@@ -16,7 +16,7 @@
 #include <algorithm>
 #include <queue>
 
-namespace Eigen {
+namespace StormEigen {
 
 /**
   * \defgroup BVH_Module BVH module

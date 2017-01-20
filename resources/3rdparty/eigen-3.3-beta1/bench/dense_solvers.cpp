@@ -3,7 +3,7 @@
 #include <Eigen/Dense>
 #include <map>
 #include <string>
-using namespace Eigen;
+using namespace StormEigen;
 
 std::map<std::string,Array<float,1,4> > results;
 

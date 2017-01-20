@@ -1,4 +1,4 @@
-namespace Eigen {
+namespace StormEigen {
 
 /** \page TopicFunctionTakingEigenTypes Writing Functions Taking %Eigen Types as Parameters
 

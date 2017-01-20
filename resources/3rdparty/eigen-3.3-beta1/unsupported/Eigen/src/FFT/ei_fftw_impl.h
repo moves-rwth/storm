@@ -7,7 +7,7 @@
 // Public License v. 2.0. If a copy of the MPL was not distributed
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-namespace Eigen { 
+namespace StormEigen { 
 
 namespace internal {
 
@@ -256,6 +256,6 @@ namespace internal {
 
 } // end namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 /* vim: set filetype=cpp et sw=2 ts=2 ai: */

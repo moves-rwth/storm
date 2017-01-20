@@ -11,7 +11,7 @@
 #ifndef EIGEN_SUITESPARSEQRSUPPORT_H
 #define EIGEN_SUITESPARSEQRSUPPORT_H
 
-namespace Eigen {
+namespace StormEigen {
   
   template<typename MatrixType> class SPQR; 
   template<typename SPQRType> struct SPQRMatrixQReturnType; 
@@ -308,5 +308,5 @@ struct SPQRMatrixQTransposeReturnType{
   const SPQRType& m_spqr;
 };
 
-}// End namespace Eigen
+}// End namespace StormEigen
 #endif

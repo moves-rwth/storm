@@ -10,7 +10,7 @@
 #ifndef EIGEN_BASIC_PRECONDITIONERS_H
 #define EIGEN_BASIC_PRECONDITIONERS_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 /** \ingroup IterativeLinearSolvers_Module
   * \brief A preconditioner based on the digonal entries
@@ -206,6 +206,6 @@ class IdentityPreconditioner
     ComputationInfo info() { return Success; }
 };
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_BASIC_PRECONDITIONERS_H

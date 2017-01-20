@@ -11,8 +11,8 @@
 
 #include <Eigen/CXX11/Tensor>
 
-using Eigen::Tensor;
-using Eigen::RowMajor;
+using StormEigen::Tensor;
+using StormEigen::RowMajor;
 
 static void test_1d()
 {

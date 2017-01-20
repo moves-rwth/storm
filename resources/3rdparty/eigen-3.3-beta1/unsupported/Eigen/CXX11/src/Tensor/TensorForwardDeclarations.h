@@ -10,7 +10,7 @@
 #ifndef EIGEN_CXX11_TENSOR_TENSOR_FORWARD_DECLARATIONS_H
 #define EIGEN_CXX11_TENSOR_TENSOR_FORWARD_DECLARATIONS_H
 
-namespace Eigen {
+namespace StormEigen {
 
 template<typename Scalar_, int NumIndices_, int Options_ = 0, typename IndexType = DenseIndex> class Tensor;
 template<typename Scalar_, typename Dimensions, int Options_ = 0, typename IndexType = DenseIndex> class TensorFixedSize;
@@ -90,6 +90,6 @@ class TensorExecutor;
 
 }  // end namespace internal
 
-}  // end namespace Eigen
+}  // end namespace StormEigen
 
 #endif // EIGEN_CXX11_TENSOR_TENSOR_FORWARD_DECLARATIONS_H

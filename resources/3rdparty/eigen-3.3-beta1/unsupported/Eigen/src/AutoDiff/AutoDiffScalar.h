@@ -10,7 +10,7 @@
 #ifndef EIGEN_AUTODIFF_SCALAR_H
 #define EIGEN_AUTODIFF_SCALAR_H
 
-namespace Eigen {
+namespace StormEigen {
 
 namespace internal {
 
@@ -50,7 +50,7 @@ template<typename _DerType, bool Enable> struct auto_diff_special_op;
   *  - internal::abs, internal::sqrt, numext::pow, internal::exp, internal::log, internal::sin, internal::cos,
   *  - internal::conj, internal::real, internal::imag, numext::abs2.
   *
-  * AutoDiffScalar can be used as the scalar type of an Eigen::Matrix object. However,
+  * AutoDiffScalar can be used as the scalar type of an StormEigen::Matrix object. However,
   * in that case, the expression template mechanism only occurs at the top Matrix level,
   * while derivatives are computed right away.
   *
@@ -533,11 +533,11 @@ struct scalar_product_traits<typename DerType::Scalar,AutoDiffScalar<DerType> >
 
 #define EIGEN_AUTODIFF_DECLARE_GLOBAL_UNARY(FUNC,CODE) \
   template<typename DerType> \
-  inline const Eigen::AutoDiffScalar<Eigen::CwiseUnaryOp<Eigen::internal::scalar_multiple_op<typename Eigen::internal::traits<typename Eigen::internal::remove_all<DerType>::type>::Scalar>, const typename Eigen::internal::remove_all<DerType>::type> > \
-  FUNC(const Eigen::AutoDiffScalar<DerType>& x) { \
-    using namespace Eigen; \
-    typedef typename Eigen::internal::traits<typename Eigen::internal::remove_all<DerType>::type>::Scalar Scalar; \
-    typedef AutoDiffScalar<CwiseUnaryOp<Eigen::internal::scalar_multiple_op<Scalar>, const typename Eigen::internal::remove_all<DerType>::type> > ReturnType; \
+  inline const StormEigen::AutoDiffScalar<StormEigen::CwiseUnaryOp<Eigen::internal::scalar_multiple_op<typename Eigen::internal::traits<typename Eigen::internal::remove_all<DerType>::type>::Scalar>, const typename Eigen::internal::remove_all<DerType>::type> > \
+  FUNC(const StormEigen::AutoDiffScalar<DerType>& x) { \
+    using namespace StormEigen; \
+    typedef typename StormEigen::internal::traits<typename StormEigen::internal::remove_all<DerType>::type>::Scalar Scalar; \
+    typedef AutoDiffScalar<CwiseUnaryOp<StormEigen::internal::scalar_multiple_op<Scalar>, const typename StormEigen::internal::remove_all<DerType>::type> > ReturnType; \
     CODE; \
   }
 
@@ -589,12 +589,12 @@ EIGEN_AUTODIFF_DECLARE_GLOBAL_UNARY(log,
   return ReturnType(log(x.value()),x.derivatives() * (Scalar(1)/x.value()));)
 
 template<typename DerType>
-inline const Eigen::AutoDiffScalar<Eigen::CwiseUnaryOp<Eigen::internal::scalar_multiple_op<typename Eigen::internal::traits<DerType>::Scalar>, const DerType> >
-pow(const Eigen::AutoDiffScalar<DerType>& x, typename Eigen::internal::traits<DerType>::Scalar y)
+inline const StormEigen::AutoDiffScalar<StormEigen::CwiseUnaryOp<Eigen::internal::scalar_multiple_op<typename Eigen::internal::traits<DerType>::Scalar>, const DerType> >
+pow(const StormEigen::AutoDiffScalar<DerType>& x, typename StormEigen::internal::traits<DerType>::Scalar y)
 {
-  using namespace Eigen;
-  typedef typename Eigen::internal::traits<DerType>::Scalar Scalar;
-  return AutoDiffScalar<CwiseUnaryOp<Eigen::internal::scalar_multiple_op<Scalar>, const DerType> >(
+  using namespace StormEigen;
+  typedef typename StormEigen::internal::traits<DerType>::Scalar Scalar;
+  return AutoDiffScalar<CwiseUnaryOp<StormEigen::internal::scalar_multiple_op<Scalar>, const DerType> >(
     std::pow(x.value(),y),
     x.derivatives() * (y * std::pow(x.value(),y-1)));
 }

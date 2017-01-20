@@ -267,7 +267,7 @@ namespace storm {
         template<storm::dd::DdType LibraryType>
         void buildAndCheckSymbolicModelWithSymbolicEngine(bool hybrid, storm::storage::SymbolicModelDescription const& model, std::vector<storm::jani::Property> const& properties, bool onlyInitialStatesRelevant = false) {
             // Start by building the model.
-            auto markovModel = buildSymbolicModel<double, LibraryType>(model, formulasInProperties(properties));
+            auto markovModel = buildSymbolicModel<double, LibraryType>(model, extractFormulasFromProperties(properties));
             
             // Print some information about the model.
             markovModel->printModelInformationToStream(std::cout);
@@ -282,7 +282,7 @@ namespace storm {
         
         template<typename ValueType>
         void buildAndCheckSymbolicModelWithSparseEngine(storm::storage::SymbolicModelDescription const& model, std::vector<storm::jani::Property> const& properties, bool onlyInitialStatesRelevant = false) {
-            auto formulas = formulasInProperties(properties);
+            auto formulas = extractFormulasFromProperties(properties);
             // Start by building the model.
             std::shared_ptr<storm::models::ModelBase> markovModel = buildSparseModel<ValueType>(model, formulas);
 
@@ -362,7 +362,7 @@ namespace storm {
             std::shared_ptr<storm::models::ModelBase> model = buildExplicitModel<ValueType>(settings.getTransitionFilename(), settings.getLabelingFilename(), settings.isStateRewardsSet() ? boost::optional<std::string>(settings.getStateRewardsFilename()) : boost::none, settings.isTransitionRewardsSet() ? boost::optional<std::string>(settings.getTransitionRewardsFilename()) : boost::none, settings.isChoiceLabelingSet() ? boost::optional<std::string>(settings.getChoiceLabelingFilename()) : boost::none);
             
             // Preprocess the model if needed.
-            BRANCH_ON_MODELTYPE(model, model, ValueType, storm::dd::DdType::CUDD, preprocessModel, formulasInProperties(properties));
+            BRANCH_ON_MODELTYPE(model, model, ValueType, storm::dd::DdType::CUDD, preprocessModel, extractFormulasFromProperties(properties));
 
             // Print some information about the model.
             model->printModelInformationToStream(std::cout);

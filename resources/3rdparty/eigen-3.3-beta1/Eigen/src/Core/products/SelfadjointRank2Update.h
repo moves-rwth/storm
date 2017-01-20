@@ -10,7 +10,7 @@
 #ifndef EIGEN_SELFADJOINTRANK2UPTADE_H
 #define EIGEN_SELFADJOINTRANK2UPTADE_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 namespace internal {
 
@@ -88,6 +88,6 @@ SelfAdjointView<MatrixType,UpLo>& SelfAdjointView<MatrixType,UpLo>
   return *this;
 }
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_SELFADJOINTRANK2UPTADE_H

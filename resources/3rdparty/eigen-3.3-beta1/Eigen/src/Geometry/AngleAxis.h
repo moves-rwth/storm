@@ -10,7 +10,7 @@
 #ifndef EIGEN_ANGLEAXIS_H
 #define EIGEN_ANGLEAXIS_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 /** \geometry_module \ingroup Geometry_Module
   *
@@ -235,6 +235,6 @@ AngleAxis<Scalar>::toRotationMatrix(void) const
   return res;
 }
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_ANGLEAXIS_H

@@ -10,7 +10,7 @@
 #ifndef EIGEN_CXX11_TENSOR_TENSOR_PATCH_H
 #define EIGEN_CXX11_TENSOR_TENSOR_PATCH_H
 
-namespace Eigen {
+namespace StormEigen {
 
 /** \class TensorPatch
   * \ingroup CXX11_Tensor_Module
@@ -35,7 +35,7 @@ struct traits<TensorPatchOp<PatchDim, XprType> > : public traits<XprType>
 };
 
 template<typename PatchDim, typename XprType>
-struct eval<TensorPatchOp<PatchDim, XprType>, Eigen::Dense>
+struct eval<TensorPatchOp<PatchDim, XprType>, StormEigen::Dense>
 {
   typedef const TensorPatchOp<PatchDim, XprType>& type;
 };
@@ -54,14 +54,14 @@ template<typename PatchDim, typename XprType>
 class TensorPatchOp : public TensorBase<TensorPatchOp<PatchDim, XprType>, ReadOnlyAccessors>
 {
   public:
-  typedef typename Eigen::internal::traits<TensorPatchOp>::Scalar Scalar;
-  typedef typename Eigen::internal::traits<TensorPatchOp>::Packet Packet;
-  typedef typename Eigen::NumTraits<Scalar>::Real RealScalar;
+  typedef typename StormEigen::internal::traits<TensorPatchOp>::Scalar Scalar;
+  typedef typename StormEigen::internal::traits<TensorPatchOp>::Packet Packet;
+  typedef typename StormEigen::NumTraits<Scalar>::Real RealScalar;
   typedef typename XprType::CoeffReturnType CoeffReturnType;
   typedef typename XprType::PacketReturnType PacketReturnType;
-  typedef typename Eigen::internal::nested<TensorPatchOp>::type Nested;
-  typedef typename Eigen::internal::traits<TensorPatchOp>::StorageKind StorageKind;
-  typedef typename Eigen::internal::traits<TensorPatchOp>::Index Index;
+  typedef typename StormEigen::internal::nested<TensorPatchOp>::type Nested;
+  typedef typename StormEigen::internal::traits<TensorPatchOp>::StorageKind StorageKind;
+  typedef typename StormEigen::internal::traits<TensorPatchOp>::Index Index;
 
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TensorPatchOp(const XprType& expr, const PatchDim& patch_dims)
       : m_xpr(expr), m_patch_dims(patch_dims) {}
@@ -308,6 +308,6 @@ struct TensorEvaluator<const TensorPatchOp<PatchDim, ArgType>, Device>
   TensorEvaluator<ArgType, Device> m_impl;
 };
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_CXX11_TENSOR_TENSOR_PATCH_H

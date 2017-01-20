@@ -11,8 +11,8 @@
 
 #include <Eigen/CXX11/Tensor>
 
-using Eigen::Tensor;
-using Eigen::RowMajor;
+using StormEigen::Tensor;
+using StormEigen::RowMajor;
 
 static void test_simple_lvalue_ref()
 {
@@ -93,13 +93,13 @@ static void test_slice()
   Tensor<float, 5> tensor(2,3,5,7,11);
   tensor.setRandom();
 
-  Eigen::DSizes<ptrdiff_t, 5> indices(1,2,3,4,5);
-  Eigen::DSizes<ptrdiff_t, 5> sizes(1,1,1,1,1);
+  StormEigen::DSizes<ptrdiff_t, 5> indices(1,2,3,4,5);
+  StormEigen::DSizes<ptrdiff_t, 5> sizes(1,1,1,1,1);
   TensorRef<Tensor<float, 5>> slice = tensor.slice(indices, sizes);
   VERIFY_IS_EQUAL(slice(0,0,0,0,0), tensor(1,2,3,4,5));
 
-  Eigen::DSizes<ptrdiff_t, 5> indices2(1,1,3,4,5);
-  Eigen::DSizes<ptrdiff_t, 5> sizes2(1,1,2,2,3);
+  StormEigen::DSizes<ptrdiff_t, 5> indices2(1,1,3,4,5);
+  StormEigen::DSizes<ptrdiff_t, 5> sizes2(1,1,2,2,3);
   slice = tensor.slice(indices2, sizes2);
   for (int i = 0; i < 2; ++i) {
     for (int j = 0; j < 2; ++j) {
@@ -109,8 +109,8 @@ static void test_slice()
     }
   }
 
-  Eigen::DSizes<ptrdiff_t, 5> indices3(0,0,0,0,0);
-  Eigen::DSizes<ptrdiff_t, 5> sizes3(2,3,1,1,1);
+  StormEigen::DSizes<ptrdiff_t, 5> indices3(0,0,0,0,0);
+  StormEigen::DSizes<ptrdiff_t, 5> sizes3(2,3,1,1,1);
   slice = tensor.slice(indices3, sizes3);
   VERIFY_IS_EQUAL(slice.data(), tensor.data());
 }
@@ -206,7 +206,7 @@ static void test_nested_ops_with_ref()
   paddings[1] = std::make_pair(2, 1);
   paddings[2] = std::make_pair(3, 4);
   paddings[3] = std::make_pair(0, 0);
-  DSizes<Eigen::DenseIndex, 4> shuffle_dims(0, 1, 2, 3);
+  DSizes<StormEigen::DenseIndex, 4> shuffle_dims(0, 1, 2, 3);
   TensorRef<Tensor<const float, 4> > ref(m.pad(paddings));
   array<std::pair<ptrdiff_t, ptrdiff_t>, 4> trivial;
   trivial[0] = std::make_pair(0, 0);

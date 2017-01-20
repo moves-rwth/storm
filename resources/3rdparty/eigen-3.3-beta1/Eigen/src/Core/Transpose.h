@@ -11,7 +11,7 @@
 #ifndef EIGEN_TRANSPOSE_H
 #define EIGEN_TRANSPOSE_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 /** \class Transpose
   * \ingroup Core_Module
@@ -392,6 +392,6 @@ void check_for_aliasing(const Dst &dst, const Src &src)
 
 #endif // EIGEN_NO_DEBUG
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_TRANSPOSE_H

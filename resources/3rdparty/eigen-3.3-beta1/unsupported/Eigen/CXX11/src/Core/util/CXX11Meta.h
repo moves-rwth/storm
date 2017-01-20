@@ -10,7 +10,7 @@
 #ifndef EIGEN_CXX11META_H
 #define EIGEN_CXX11META_H
 
-namespace Eigen {
+namespace StormEigen {
 
 namespace internal {
 
@@ -525,6 +525,6 @@ InstType instantiate_by_c_array(ArrType* arr)
 
 } // end namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_CXX11META_H

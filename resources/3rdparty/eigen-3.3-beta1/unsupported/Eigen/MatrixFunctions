@@ -279,7 +279,7 @@ against inaccurate result, e.g. \code
 
 int main()
 {
-  Eigen::Matrix4d A;
+  StormEigen::Matrix4d A;
   A << 0, 0, 2, 3,
        0, 0, 4, 5,
        0, 0, 6, 7,

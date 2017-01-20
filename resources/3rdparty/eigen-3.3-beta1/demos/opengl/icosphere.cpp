@@ -12,7 +12,7 @@
 #include <GL/gl.h>
 #include <map>
 
-using namespace Eigen;
+using namespace StormEigen;
 
 //--------------------------------------------------------------------------------
 // icosahedron data

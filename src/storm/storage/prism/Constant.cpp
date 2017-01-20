@@ -4,11 +4,11 @@
 
 namespace storm {
     namespace prism {
-        Constant::Constant(storm::expressions::Variable const& variable, storm::expressions::Expression const& expression, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), variable(variable), defined(true), expression(expression) {
+        Constant::Constant(storm::expressions::Variable const& variable, storm::expressions::Expression const& expression, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), variable(variable), expression(expression) {
             // Intentionally left empty.
         }
         
-        Constant::Constant(storm::expressions::Variable const& variable, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), variable(variable), defined(false), expression() {
+        Constant::Constant(storm::expressions::Variable const& variable, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), variable(variable), expression() {
             // Intentionally left empty.
         }
         
@@ -25,7 +25,7 @@ namespace storm {
         }
         
         bool Constant::isDefined() const {
-            return this->defined;
+            return this->expression.isInitialized();
         }
         
         storm::expressions::Expression const& Constant::getExpression() const {

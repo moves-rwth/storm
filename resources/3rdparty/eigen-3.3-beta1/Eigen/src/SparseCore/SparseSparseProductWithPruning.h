@@ -10,7 +10,7 @@
 #ifndef EIGEN_SPARSESPARSEPRODUCTWITHPRUNING_H
 #define EIGEN_SPARSESPARSEPRODUCTWITHPRUNING_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 namespace internal {
 
@@ -193,6 +193,6 @@ struct sparse_sparse_product_with_pruning_selector<Lhs,Rhs,ResultType,RowMajor,C
 
 } // end namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_SPARSESPARSEPRODUCTWITHPRUNING_H

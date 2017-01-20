@@ -17,12 +17,12 @@
 #include "main.h"
 #include <unsupported/Eigen/CXX11/Tensor>
 
-using Eigen::Tensor;
-using Eigen::RowMajor;
+using StormEigen::Tensor;
+using StormEigen::RowMajor;
 
 // Context for evaluation on cpu
 struct CPUContext {
-  CPUContext(const Eigen::Tensor<float, 3>& in1, Eigen::Tensor<float, 3>& in2, Eigen::Tensor<float, 3>& out) : in1_(in1), in2_(in2), out_(out), kernel_1d_(2), kernel_2d_(2,2), kernel_3d_(2,2,2) {
+  CPUContext(const StormEigen::Tensor<float, 3>& in1, StormEigen::Tensor<float, 3>& in2, Eigen::Tensor<float, 3>& out) : in1_(in1), in2_(in2), out_(out), kernel_1d_(2), kernel_2d_(2,2), kernel_3d_(2,2,2) {
     kernel_1d_(0) = 3.14f;
     kernel_1d_(1) = 2.7f;
 
@@ -41,31 +41,31 @@ struct CPUContext {
     kernel_3d_(1,1,1) = -0.5f;
   }
 
-  const Eigen::DefaultDevice& device() const { return cpu_device_; }
+  const StormEigen::DefaultDevice& device() const { return cpu_device_; }
 
-  const Eigen::Tensor<float, 3>& in1() const { return in1_; }
-  const Eigen::Tensor<float, 3>& in2() const { return in2_; }
-  Eigen::Tensor<float, 3>& out() { return out_; }
-  const Eigen::Tensor<float, 1>& kernel1d() const { return kernel_1d_; }
-  const Eigen::Tensor<float, 2>& kernel2d() const { return kernel_2d_; }
-  const Eigen::Tensor<float, 3>& kernel3d() const { return kernel_3d_; }
+  const StormEigen::Tensor<float, 3>& in1() const { return in1_; }
+  const StormEigen::Tensor<float, 3>& in2() const { return in2_; }
+  StormEigen::Tensor<float, 3>& out() { return out_; }
+  const StormEigen::Tensor<float, 1>& kernel1d() const { return kernel_1d_; }
+  const StormEigen::Tensor<float, 2>& kernel2d() const { return kernel_2d_; }
+  const StormEigen::Tensor<float, 3>& kernel3d() const { return kernel_3d_; }
 
  private:
-  const Eigen::Tensor<float, 3>& in1_;
-  const Eigen::Tensor<float, 3>& in2_;
-  Eigen::Tensor<float, 3>& out_;
+  const StormEigen::Tensor<float, 3>& in1_;
+  const StormEigen::Tensor<float, 3>& in2_;
+  StormEigen::Tensor<float, 3>& out_;
 
-  Eigen::Tensor<float, 1> kernel_1d_;
-  Eigen::Tensor<float, 2> kernel_2d_;
-  Eigen::Tensor<float, 3> kernel_3d_;
+  StormEigen::Tensor<float, 1> kernel_1d_;
+  StormEigen::Tensor<float, 2> kernel_2d_;
+  StormEigen::Tensor<float, 3> kernel_3d_;
 
-  Eigen::DefaultDevice cpu_device_;
+  StormEigen::DefaultDevice cpu_device_;
 };
 
 
 // Context for evaluation on GPU
 struct GPUContext {
-  GPUContext(const Eigen::TensorMap<Eigen::Tensor<float, 3> >& in1, Eigen::TensorMap<Eigen::Tensor<float, 3> >& in2, Eigen::TensorMap<Eigen::Tensor<float, 3> >& out) : in1_(in1), in2_(in2), out_(out), gpu_device_(&stream_) {
+  GPUContext(const StormEigen::TensorMap<StormEigen::Tensor<float, 3> >& in1, Eigen::TensorMap<Eigen::Tensor<float, 3> >& in2, Eigen::TensorMap<Eigen::Tensor<float, 3> >& out) : in1_(in1), in2_(in2), out_(out), gpu_device_(&stream_) {
     assert(cudaMalloc((void**)(&kernel_1d_), 2*sizeof(float)) == cudaSuccess);
     float kernel_1d_val[] = {3.14f, 2.7f};
     assert(cudaMemcpy(kernel_1d_, kernel_1d_val, 2*sizeof(float), cudaMemcpyHostToDevice) == cudaSuccess);
@@ -84,26 +84,26 @@ struct GPUContext {
     assert(cudaFree(kernel_3d_) == cudaSuccess);
   }
 
-  const Eigen::GpuDevice& device() const { return gpu_device_; }
+  const StormEigen::GpuDevice& device() const { return gpu_device_; }
 
-  const Eigen::TensorMap<Eigen::Tensor<float, 3> >& in1() const { return in1_; }
-  const Eigen::TensorMap<Eigen::Tensor<float, 3> >& in2() const { return in2_; }
-  Eigen::TensorMap<Eigen::Tensor<float, 3> >& out() { return out_; }
-  Eigen::TensorMap<Eigen::Tensor<float, 1> > kernel1d() const { return Eigen::TensorMap<Eigen::Tensor<float, 1> >(kernel_1d_, 2); }
-  Eigen::TensorMap<Eigen::Tensor<float, 2> > kernel2d() const { return Eigen::TensorMap<Eigen::Tensor<float, 2> >(kernel_2d_, 2, 2); }
-  Eigen::TensorMap<Eigen::Tensor<float, 3> > kernel3d() const { return Eigen::TensorMap<Eigen::Tensor<float, 3> >(kernel_3d_, 2, 2, 2); }
+  const StormEigen::TensorMap<StormEigen::Tensor<float, 3> >& in1() const { return in1_; }
+  const StormEigen::TensorMap<StormEigen::Tensor<float, 3> >& in2() const { return in2_; }
+  StormEigen::TensorMap<StormEigen::Tensor<float, 3> >& out() { return out_; }
+  StormEigen::TensorMap<StormEigen::Tensor<float, 1> > kernel1d() const { return Eigen::TensorMap<Eigen::Tensor<float, 1> >(kernel_1d_, 2); }
+  StormEigen::TensorMap<StormEigen::Tensor<float, 2> > kernel2d() const { return Eigen::TensorMap<Eigen::Tensor<float, 2> >(kernel_2d_, 2, 2); }
+  StormEigen::TensorMap<StormEigen::Tensor<float, 3> > kernel3d() const { return Eigen::TensorMap<Eigen::Tensor<float, 3> >(kernel_3d_, 2, 2, 2); }
 
  private:
-  const Eigen::TensorMap<Eigen::Tensor<float, 3> >& in1_;
-  const Eigen::TensorMap<Eigen::Tensor<float, 3> >& in2_;
-  Eigen::TensorMap<Eigen::Tensor<float, 3> >& out_;
+  const StormEigen::TensorMap<StormEigen::Tensor<float, 3> >& in1_;
+  const StormEigen::TensorMap<StormEigen::Tensor<float, 3> >& in2_;
+  StormEigen::TensorMap<StormEigen::Tensor<float, 3> >& out_;
 
   float* kernel_1d_;
   float* kernel_2d_;
   float* kernel_3d_;
 
-  Eigen::CudaStreamDevice stream_;
-  Eigen::GpuDevice gpu_device_;
+  StormEigen::CudaStreamDevice stream_;
+  StormEigen::GpuDevice gpu_device_;
 };
 
 
@@ -131,14 +131,14 @@ static void test_compound_assignment(Context* context)
 template <typename Context>
 static void test_contraction(Context* context)
 {
-  Eigen::array<std::pair<int, int>, 2> dims;
+  StormEigen::array<std::pair<int, int>, 2> dims;
   dims[0] = std::make_pair(1, 1);
   dims[1] = std::make_pair(2, 2);
 
-  Eigen::array<int, 2> shape(40, 50*70);
+  StormEigen::array<int, 2> shape(40, 50*70);
 
-  Eigen::DSizes<int, 2> indices(0,0);
-  Eigen::DSizes<int, 2> sizes(40,40);
+  StormEigen::DSizes<int, 2> indices(0,0);
+  StormEigen::DSizes<int, 2> sizes(40,40);
 
   context->out().reshape(shape).slice(indices, sizes).device(context->device()) = context->in1().contract(context->in2(), dims);
 }
@@ -147,38 +147,38 @@ static void test_contraction(Context* context)
 template <typename Context>
 static void test_1d_convolution(Context* context)
 {
-  Eigen::DSizes<int, 3> indices(0,0,0);
-  Eigen::DSizes<int, 3> sizes(40,49,70);
+  StormEigen::DSizes<int, 3> indices(0,0,0);
+  StormEigen::DSizes<int, 3> sizes(40,49,70);
 
-  Eigen::array<int, 1> dims(1);
+  StormEigen::array<int, 1> dims(1);
   context->out().slice(indices, sizes).device(context->device()) = context->in1().convolve(context->kernel1d(), dims);
 }
 
 template <typename Context>
 static void test_2d_convolution(Context* context)
 {
-  Eigen::DSizes<int, 3> indices(0,0,0);
-  Eigen::DSizes<int, 3> sizes(40,49,69);
+  StormEigen::DSizes<int, 3> indices(0,0,0);
+  StormEigen::DSizes<int, 3> sizes(40,49,69);
 
-  Eigen::array<int, 2> dims(1,2);
+  StormEigen::array<int, 2> dims(1,2);
   context->out().slice(indices, sizes).device(context->device()) = context->in1().convolve(context->kernel2d(), dims);
 }
 
 template <typename Context>
 static void test_3d_convolution(Context* context)
 {
-  Eigen::DSizes<int, 3> indices(0,0,0);
-  Eigen::DSizes<int, 3> sizes(39,49,69);
+  StormEigen::DSizes<int, 3> indices(0,0,0);
+  StormEigen::DSizes<int, 3> sizes(39,49,69);
 
-  Eigen::array<int, 3> dims(0,1,2);
+  StormEigen::array<int, 3> dims(0,1,2);
   context->out().slice(indices, sizes).device(context->device()) = context->in1().convolve(context->kernel3d(), dims);
 }
 
 
 static void test_cpu() {
-  Eigen::Tensor<float, 3> in1(40,50,70);
-  Eigen::Tensor<float, 3> in2(40,50,70);
-  Eigen::Tensor<float, 3> out(40,50,70);
+  StormEigen::Tensor<float, 3> in1(40,50,70);
+  StormEigen::Tensor<float, 3> in2(40,50,70);
+  StormEigen::Tensor<float, 3> out(40,50,70);
 
   in1 = in1.random() + in1.constant(10.0f);
   in2 = in2.random() + in2.constant(10.0f);
@@ -268,9 +268,9 @@ static void test_cpu() {
 }
 
 static void test_gpu() {
-  Eigen::Tensor<float, 3> in1(40,50,70);
-  Eigen::Tensor<float, 3> in2(40,50,70);
-  Eigen::Tensor<float, 3> out(40,50,70);
+  StormEigen::Tensor<float, 3> in1(40,50,70);
+  StormEigen::Tensor<float, 3> in2(40,50,70);
+  StormEigen::Tensor<float, 3> out(40,50,70);
   in1 = in1.random() + in1.constant(10.0f);
   in2 = in2.random() + in2.constant(10.0f);
 
@@ -288,9 +288,9 @@ static void test_gpu() {
   cudaMemcpy(d_in1, in1.data(), in1_bytes, cudaMemcpyHostToDevice);
   cudaMemcpy(d_in2, in2.data(), in2_bytes, cudaMemcpyHostToDevice);
 
-  Eigen::TensorMap<Eigen::Tensor<float, 3> > gpu_in1(d_in1, 40,50,70);
-  Eigen::TensorMap<Eigen::Tensor<float, 3> > gpu_in2(d_in2, 40,50,70);
-  Eigen::TensorMap<Eigen::Tensor<float, 3> > gpu_out(d_out, 40,50,70);
+  StormEigen::TensorMap<StormEigen::Tensor<float, 3> > gpu_in1(d_in1, 40,50,70);
+  StormEigen::TensorMap<StormEigen::Tensor<float, 3> > gpu_in2(d_in2, 40,50,70);
+  StormEigen::TensorMap<StormEigen::Tensor<float, 3> > gpu_out(d_out, 40,50,70);
 
   GPUContext context(gpu_in1, gpu_in2, gpu_out);
   test_contextual_eval(&context);

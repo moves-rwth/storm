@@ -169,10 +169,10 @@ namespace storm {
             opDecl["op"] = "U";
             opDecl["left"] = boost::any_cast<modernjson::json>(f.getLeftSubformula().accept(*this, data));
             opDecl["right"] = boost::any_cast<modernjson::json>(f.getRightSubformula().accept(*this, data));
-            if(f.hasDiscreteTimeBound()) {
-                opDecl["step-bounds"] = constructPropertyInterval(0, f.getDiscreteTimeBound());
+            if(f.isStepBounded()) {
+                opDecl["step-bounds"] = constructPropertyInterval(0, f.getUpperBound<uint64_t>());
             } else {
-                opDecl["time-bounds"] = constructPropertyInterval(f.getIntervalBounds().first, f.getIntervalBounds().second);
+                opDecl["time-bounds"] = constructPropertyInterval(f.getLowerBound<double>(), f.getUpperBound<double>());
             }
             return opDecl;
         }

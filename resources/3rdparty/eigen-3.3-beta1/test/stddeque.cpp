@@ -20,14 +20,14 @@ void check_stddeque_matrix(const MatrixType& m)
   Index rows = m.rows();
   Index cols = m.cols();
   MatrixType x = MatrixType::Random(rows,cols), y = MatrixType::Random(rows,cols);
-  std::deque<MatrixType,Eigen::aligned_allocator<MatrixType> > v(10, MatrixType(rows,cols)), w(20, y);
+  std::deque<MatrixType,StormEigen::aligned_allocator<MatrixType> > v(10, MatrixType(rows,cols)), w(20, y);
   v.front() = x;
   w.front() = w.back();
   VERIFY_IS_APPROX(w.front(), w.back());
   v = w;
 
-  typename std::deque<MatrixType,Eigen::aligned_allocator<MatrixType> >::iterator vi = v.begin();
-  typename std::deque<MatrixType,Eigen::aligned_allocator<MatrixType> >::iterator wi = w.begin();
+  typename std::deque<MatrixType,StormEigen::aligned_allocator<MatrixType> >::iterator vi = v.begin();
+  typename std::deque<MatrixType,StormEigen::aligned_allocator<MatrixType> >::iterator wi = w.begin();
   for(int i = 0; i < 20; i++)
   {
     VERIFY_IS_APPROX(*vi, *wi);
@@ -49,14 +49,14 @@ void check_stddeque_transform(const TransformType&)
 {
   typedef typename TransformType::MatrixType MatrixType;
   TransformType x(MatrixType::Random()), y(MatrixType::Random());
-  std::deque<TransformType,Eigen::aligned_allocator<TransformType> > v(10), w(20, y);
+  std::deque<TransformType,StormEigen::aligned_allocator<TransformType> > v(10), w(20, y);
   v.front() = x;
   w.front() = w.back();
   VERIFY_IS_APPROX(w.front(), w.back());
   v = w;
 
-  typename std::deque<TransformType,Eigen::aligned_allocator<TransformType> >::iterator vi = v.begin();
-  typename std::deque<TransformType,Eigen::aligned_allocator<TransformType> >::iterator wi = w.begin();
+  typename std::deque<TransformType,StormEigen::aligned_allocator<TransformType> >::iterator vi = v.begin();
+  typename std::deque<TransformType,StormEigen::aligned_allocator<TransformType> >::iterator wi = w.begin();
   for(int i = 0; i < 20; i++)
   {
     VERIFY_IS_APPROX(*vi, *wi);
@@ -78,14 +78,14 @@ void check_stddeque_quaternion(const QuaternionType&)
 {
   typedef typename QuaternionType::Coefficients Coefficients;
   QuaternionType x(Coefficients::Random()), y(Coefficients::Random());
-  std::deque<QuaternionType,Eigen::aligned_allocator<QuaternionType> > v(10), w(20, y);
+  std::deque<QuaternionType,StormEigen::aligned_allocator<QuaternionType> > v(10), w(20, y);
   v.front() = x;
   w.front() = w.back();
   VERIFY_IS_APPROX(w.front(), w.back());
   v = w;
 
-  typename std::deque<QuaternionType,Eigen::aligned_allocator<QuaternionType> >::iterator vi = v.begin();
-  typename std::deque<QuaternionType,Eigen::aligned_allocator<QuaternionType> >::iterator wi = w.begin();
+  typename std::deque<QuaternionType,StormEigen::aligned_allocator<QuaternionType> >::iterator vi = v.begin();
+  typename std::deque<QuaternionType,StormEigen::aligned_allocator<QuaternionType> >::iterator wi = w.begin();
   for(int i = 0; i < 20; i++)
   {
     VERIFY_IS_APPROX(*vi, *wi);

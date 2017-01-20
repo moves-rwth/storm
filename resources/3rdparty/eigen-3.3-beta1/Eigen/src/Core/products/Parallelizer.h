@@ -10,7 +10,7 @@
 #ifndef EIGEN_PARALLELIZER_H
 #define EIGEN_PARALLELIZER_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 namespace internal {
 
@@ -115,7 +115,7 @@ void parallelize_gemm(const Functor& func, Index rows, Index cols, bool transpos
   if((!Condition) || (threads==1) || (omp_get_num_threads()>1))
     return func(0,rows, 0,cols);
 
-  Eigen::initParallel();
+  StormEigen::initParallel();
   func.initParallelSession(threads);
 
   if(transpose)
@@ -150,6 +150,6 @@ void parallelize_gemm(const Functor& func, Index rows, Index cols, bool transpos
 
 } // end namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_PARALLELIZER_H

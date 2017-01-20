@@ -10,7 +10,7 @@
 #ifndef EIGEN_SKYLINE_STORAGE_H
 #define EIGEN_SKYLINE_STORAGE_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 /** Stores a skyline set of values in three structures :
  * The diagonal elements
@@ -254,6 +254,6 @@ public:
 
 };
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_COMPRESSED_STORAGE_H

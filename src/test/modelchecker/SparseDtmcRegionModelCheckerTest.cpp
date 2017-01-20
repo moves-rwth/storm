@@ -24,7 +24,7 @@ TEST(SparseDtmcRegionModelCheckerTest, Brp_Prob) {
     // Program and formula
     storm::prism::Program program = storm::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, constantsAsString);
-    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::parseFormulasForPrismProgram(formulaAsString, program);;
+    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::extractFormulasFromProperties(storm::parsePropertiesForPrismProgram(formulaAsString, program));
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     auto const& regionSettings = storm::settings::getModule<storm::settings::modules::RegionSettings>();
     storm::modelchecker::region::SparseRegionModelCheckerSettings settings(regionSettings.getSampleMode(), regionSettings.getApproxMode(), regionSettings.getSmtMode());
@@ -95,7 +95,7 @@ TEST(SparseDtmcRegionModelCheckerTest, Brp_Rew) {
     
     storm::prism::Program program = storm::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, constantsAsString);
-    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::parseFormulasForPrismProgram(formulaAsString, program);;
+    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::extractFormulasFromProperties(storm::parsePropertiesForPrismProgram(formulaAsString, program));
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     auto const& regionSettings = storm::settings::getModule<storm::settings::modules::RegionSettings>();
     storm::modelchecker::region::SparseRegionModelCheckerSettings settings(regionSettings.getSampleMode(), regionSettings.getApproxMode(), regionSettings.getSmtMode());
@@ -139,11 +139,6 @@ TEST(SparseDtmcRegionModelCheckerTest, Brp_Rew) {
     dtmcModelchecker->checkRegion(exBothRegion);
     EXPECT_EQ((storm::modelchecker::region::RegionCheckResult::EXISTSBOTH), exBothRegion.getCheckResult());
     dtmcModelchecker->checkRegion(exBothHardRegion);
-    //At this moment, Approximation should not be able to get a result for this region. (However, it is not wrong if it can)
-    EXPECT_TRUE(
-                (exBothHardRegion.getCheckResult()==(storm::modelchecker::region::RegionCheckResult::EXISTSBOTH)) ||
-                (exBothHardRegion.getCheckResult()==(storm::modelchecker::region::RegionCheckResult::EXISTSVIOLATED))
-            );
     dtmcModelchecker->checkRegion(allVioRegion);
     EXPECT_EQ((storm::modelchecker::region::RegionCheckResult::ALLVIOLATED), allVioRegion.getCheckResult());
 
@@ -189,7 +184,7 @@ TEST(SparseDtmcRegionModelCheckerTest, Brp_Rew_Infty) {
     carl::VariablePool::getInstance().clear();
     storm::prism::Program program = storm::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, constantsAsString);
-    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::parseFormulasForPrismProgram(formulaAsString, program);;
+    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::extractFormulasFromProperties(storm::parsePropertiesForPrismProgram(formulaAsString, program));
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     auto const& regionSettings = storm::settings::getModule<storm::settings::modules::RegionSettings>();
     storm::modelchecker::region::SparseRegionModelCheckerSettings settings(regionSettings.getSampleMode(), regionSettings.getApproxMode(), regionSettings.getSmtMode());
@@ -225,7 +220,7 @@ TEST(SparseDtmcRegionModelCheckerTest, Brp_Rew_Infty) {
     carl::VariablePool::getInstance().clear();
 }
 
-TEST(SparseDtmcRegionModelCheckerTest, Brp_Rew_4Par) {
+TEST(SparseDtmcRegionModelCheckerTest, DISABLED_Brp_Rew_4Par) {
     
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/brp_rewards16_2.pm";
     std::string formulaAsString = "R>2.5 [F ((s=5) | (s=0&srep=3)) ]";
@@ -233,7 +228,7 @@ TEST(SparseDtmcRegionModelCheckerTest, Brp_Rew_4Par) {
     carl::VariablePool::getInstance().clear();
     storm::prism::Program program = storm::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, constantsAsString);
-    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::parseFormulasForPrismProgram(formulaAsString, program);;
+    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::extractFormulasFromProperties(storm::parsePropertiesForPrismProgram(formulaAsString, program));
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     auto const& regionSettings = storm::settings::getModule<storm::settings::modules::RegionSettings>();
     storm::modelchecker::region::SparseRegionModelCheckerSettings settings(regionSettings.getSampleMode(), regionSettings.getApproxMode(), regionSettings.getSmtMode());
@@ -297,7 +292,7 @@ TEST(SparseDtmcRegionModelCheckerTest, Crowds_Prob) {
 
     storm::prism::Program program = storm::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, constantsAsString);
-    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::parseFormulasForPrismProgram(formulaAsString, program);;
+    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::extractFormulasFromProperties(storm::parsePropertiesForPrismProgram(formulaAsString, program));
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     auto const& regionSettings = storm::settings::getModule<storm::settings::modules::RegionSettings>();
     storm::modelchecker::region::SparseRegionModelCheckerSettings settings(regionSettings.getSampleMode(), regionSettings.getApproxMode(), regionSettings.getSmtMode());
@@ -389,7 +384,7 @@ TEST(SparseDtmcRegionModelCheckerTest, Crowds_Prob_1Par) {
     
     storm::prism::Program program = storm::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, constantsAsString);
-    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::parseFormulasForPrismProgram(formulaAsString, program);;
+    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::extractFormulasFromProperties(storm::parsePropertiesForPrismProgram(formulaAsString, program));
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     auto const& regionSettings = storm::settings::getModule<storm::settings::modules::RegionSettings>();
     storm::modelchecker::region::SparseRegionModelCheckerSettings settings(regionSettings.getSampleMode(), regionSettings.getApproxMode(), regionSettings.getSmtMode());
@@ -455,7 +450,7 @@ TEST(SparseDtmcRegionModelCheckerTest, Crowds_Prob_Const) {
     
     storm::prism::Program program = storm::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, constantsAsString);
-    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::parseFormulasForPrismProgram(formulaAsString, program);;
+    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::extractFormulasFromProperties(storm::parsePropertiesForPrismProgram(formulaAsString, program));
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     auto const& regionSettings = storm::settings::getModule<storm::settings::modules::RegionSettings>();
     storm::modelchecker::region::SparseRegionModelCheckerSettings settings(regionSettings.getSampleMode(), regionSettings.getApproxMode(), regionSettings.getSmtMode());

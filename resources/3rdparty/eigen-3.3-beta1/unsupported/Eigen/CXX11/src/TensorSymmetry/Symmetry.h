@@ -10,7 +10,7 @@
 #ifndef EIGEN_CXX11_TENSORSYMMETRY_SYMMETRY_H
 #define EIGEN_CXX11_TENSORSYMMETRY_SYMMETRY_H
 
-namespace Eigen {
+namespace StormEigen {
 
 enum {
   NegationFlag           = 0x01,
@@ -329,7 +329,7 @@ class tensor_symmetry_value_setter
 
 } // end namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_CXX11_TENSORSYMMETRY_SYMMETRY_H
 

@@ -10,7 +10,7 @@
 #ifndef EIGEN_CXX11_TENSOR_TENSOR_BROADCASTING_H
 #define EIGEN_CXX11_TENSOR_TENSOR_BROADCASTING_H
 
-namespace Eigen {
+namespace StormEigen {
 
 /** \class TensorBroadcasting
   * \ingroup CXX11_Tensor_Module
@@ -35,7 +35,7 @@ struct traits<TensorBroadcastingOp<Broadcast, XprType> > : public traits<XprType
 };
 
 template<typename Broadcast, typename XprType>
-struct eval<TensorBroadcastingOp<Broadcast, XprType>, Eigen::Dense>
+struct eval<TensorBroadcastingOp<Broadcast, XprType>, StormEigen::Dense>
 {
   typedef const TensorBroadcastingOp<Broadcast, XprType>& type;
 };
@@ -54,14 +54,14 @@ template<typename Broadcast, typename XprType>
 class TensorBroadcastingOp : public TensorBase<TensorBroadcastingOp<Broadcast, XprType>, ReadOnlyAccessors>
 {
   public:
-  typedef typename Eigen::internal::traits<TensorBroadcastingOp>::Scalar Scalar;
-  typedef typename Eigen::internal::traits<TensorBroadcastingOp>::Packet Packet;
-  typedef typename Eigen::NumTraits<Scalar>::Real RealScalar;
+  typedef typename StormEigen::internal::traits<TensorBroadcastingOp>::Scalar Scalar;
+  typedef typename StormEigen::internal::traits<TensorBroadcastingOp>::Packet Packet;
+  typedef typename StormEigen::NumTraits<Scalar>::Real RealScalar;
   typedef typename XprType::CoeffReturnType CoeffReturnType;
   typedef typename XprType::PacketReturnType PacketReturnType;
-  typedef typename Eigen::internal::nested<TensorBroadcastingOp>::type Nested;
-  typedef typename Eigen::internal::traits<TensorBroadcastingOp>::StorageKind StorageKind;
-  typedef typename Eigen::internal::traits<TensorBroadcastingOp>::Index Index;
+  typedef typename StormEigen::internal::nested<TensorBroadcastingOp>::type Nested;
+  typedef typename StormEigen::internal::traits<TensorBroadcastingOp>::StorageKind StorageKind;
+  typedef typename StormEigen::internal::traits<TensorBroadcastingOp>::Index Index;
 
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TensorBroadcastingOp(const XprType& expr, const Broadcast& broadcast)
       : m_xpr(expr), m_broadcast(broadcast) {}
@@ -340,6 +340,6 @@ struct TensorEvaluator<const TensorBroadcastingOp<Broadcast, ArgType>, Device>
 };
 
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_CXX11_TENSOR_TENSOR_BROADCASTING_H

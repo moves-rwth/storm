@@ -58,7 +58,7 @@ namespace storm {
                 result = result && !f.getLeftSubformula().isPathFormula();
                 result = result && !f.getRightSubformula().isPathFormula();
             }
-            if (f.hasDiscreteTimeBound()) {
+            if (f.isStepBounded()) {
                 result = result && inherited.getSpecification().areStepBoundedUntilFormulasAllowed();
             } else {
                 result = result && inherited.getSpecification().areTimeBoundedUntilFormulasAllowed();

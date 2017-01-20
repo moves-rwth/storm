@@ -10,7 +10,7 @@
 #ifndef EIGEN_REPLICATE_H
 #define EIGEN_REPLICATE_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 /**
   * \class Replicate
@@ -136,6 +136,6 @@ VectorwiseOp<ExpressionType,Direction>::replicate(Index factor) const
           (_expression(),Direction==Vertical?factor:1,Direction==Horizontal?factor:1);
 }
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_REPLICATE_H

@@ -11,8 +11,8 @@
 
 #include <Eigen/CXX11/Tensor>
 
-using Eigen::Tensor;
-using Eigen::array;
+using StormEigen::Tensor;
+using StormEigen::array;
 
 static void test_simple_cast()
 {

@@ -1,4 +1,4 @@
-namespace Eigen { 
+namespace StormEigen { 
 
 namespace internal {
 
@@ -27,4 +27,4 @@ void r1mpyq(DenseIndex m, DenseIndex n, Scalar *a, const std::vector<JacobiRotat
 
 } // end namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen

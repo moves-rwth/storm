@@ -10,7 +10,7 @@
 #ifndef EIGEN_EULERANGLES_H
 #define EIGEN_EULERANGLES_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 /** \geometry_module \ingroup Geometry_Module
   *
@@ -99,6 +99,6 @@ MatrixBase<Derived>::eulerAngles(Index a0, Index a1, Index a2) const
   return res;
 }
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_EULERANGLES_H

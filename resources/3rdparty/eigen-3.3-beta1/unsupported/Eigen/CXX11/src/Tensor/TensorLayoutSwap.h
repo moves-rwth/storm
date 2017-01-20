@@ -10,7 +10,7 @@
 #ifndef EIGEN_CXX11_TENSOR_TENSOR_LAYOUT_SWAP_H
 #define EIGEN_CXX11_TENSOR_TENSOR_LAYOUT_SWAP_H
 
-namespace Eigen {
+namespace StormEigen {
 
 /** \class TensorLayoutSwap
   * \ingroup CXX11_Tensor_Module
@@ -50,7 +50,7 @@ struct traits<TensorLayoutSwapOp<XprType> > : public traits<XprType>
 };
 
 template<typename XprType>
-struct eval<TensorLayoutSwapOp<XprType>, Eigen::Dense>
+struct eval<TensorLayoutSwapOp<XprType>, StormEigen::Dense>
 {
   typedef const TensorLayoutSwapOp<XprType>& type;
 };
@@ -69,14 +69,14 @@ template<typename XprType>
 class TensorLayoutSwapOp : public TensorBase<TensorLayoutSwapOp<XprType>, WriteAccessors>
 {
   public:
-  typedef typename Eigen::internal::traits<TensorLayoutSwapOp>::Scalar Scalar;
-  typedef typename Eigen::internal::traits<TensorLayoutSwapOp>::Packet Packet;
-  typedef typename Eigen::NumTraits<Scalar>::Real RealScalar;
+  typedef typename StormEigen::internal::traits<TensorLayoutSwapOp>::Scalar Scalar;
+  typedef typename StormEigen::internal::traits<TensorLayoutSwapOp>::Packet Packet;
+  typedef typename StormEigen::NumTraits<Scalar>::Real RealScalar;
   typedef typename internal::remove_const<typename XprType::CoeffReturnType>::type CoeffReturnType;
   typedef typename internal::remove_const<typename XprType::PacketReturnType>::type PacketReturnType;
-  typedef typename Eigen::internal::nested<TensorLayoutSwapOp>::type Nested;
-  typedef typename Eigen::internal::traits<TensorLayoutSwapOp>::StorageKind StorageKind;
-  typedef typename Eigen::internal::traits<TensorLayoutSwapOp>::Index Index;
+  typedef typename StormEigen::internal::nested<TensorLayoutSwapOp>::type Nested;
+  typedef typename StormEigen::internal::traits<TensorLayoutSwapOp>::StorageKind StorageKind;
+  typedef typename StormEigen::internal::traits<TensorLayoutSwapOp>::Index Index;
 
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TensorLayoutSwapOp(const XprType& expr)
       : m_xpr(expr) {}
@@ -202,6 +202,6 @@ template<typename ArgType, typename Device>
   }
 };
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_CXX11_TENSOR_TENSOR_LAYOUT_SWAP_H

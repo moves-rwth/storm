@@ -15,7 +15,7 @@
 #define M_PI 3.141592653589793238462643383279503L
 #endif
 
-namespace Eigen { 
+namespace StormEigen { 
 
 namespace internal { 
 
@@ -372,6 +372,6 @@ const MatrixLogarithmReturnValue<Derived> MatrixBase<Derived>::log() const
   return MatrixLogarithmReturnValue<Derived>(derived());
 }
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_MATRIX_LOGARITHM

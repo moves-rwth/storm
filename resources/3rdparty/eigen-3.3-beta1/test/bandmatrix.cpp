@@ -57,7 +57,7 @@ template<typename MatrixType> void bandmatrix(const MatrixType& _m)
 
 }
 
-using Eigen::internal::BandMatrix;
+using StormEigen::internal::BandMatrix;
 
 void test_bandmatrix()
 {

@@ -25,7 +25,7 @@ namespace storm {
         class GlobalProgramInformation {
         public:
             // Default construct the header information.
-            GlobalProgramInformation() : modelType(), constants(), formulas(), globalBooleanVariables(), globalIntegerVariables(), moduleToIndexMap(), actionIndices(), modules(), rewardModels(), labels(), hasInitialConstruct(false), initialConstruct(), systemCompositionConstruct(boost::none), currentCommandIndex(0), currentUpdateIndex(0) {
+            GlobalProgramInformation() : modelType(storm::prism::Program::ModelType::UNDEFINED), constants(), formulas(), globalBooleanVariables(), globalIntegerVariables(), moduleToIndexMap(), actionIndices(), modules(), rewardModels(), labels(), hasInitialConstruct(false), initialConstruct(), systemCompositionConstruct(boost::none), currentCommandIndex(0), currentUpdateIndex(0) {
                 // Map the empty action to index 0.
                 actionIndices.emplace("", 0);
             }
@@ -245,7 +245,7 @@ namespace storm {
             bool isValidIdentifier(std::string const& identifier);
             bool addInitialStatesConstruct(storm::expressions::Expression const& initialStatesExpression, GlobalProgramInformation& globalProgramInformation);
             bool addSystemCompositionConstruct(std::shared_ptr<storm::prism::Composition> const& composition, GlobalProgramInformation& globalProgramInformation);
-            
+            void setModelType(GlobalProgramInformation& globalProgramInformation, storm::prism::Program::ModelType const& modelType);
             
             std::shared_ptr<storm::prism::Composition> createModuleComposition(std::string const& moduleName) const;
             std::shared_ptr<storm::prism::Composition> createRenamingComposition(std::shared_ptr<storm::prism::Composition> const& subcomposition, std::map<std::string, std::string> const& renaming) const;

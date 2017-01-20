@@ -10,7 +10,7 @@
 #ifndef EIGEN_SPARSEUTIL_H
 #define EIGEN_SPARSEUTIL_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 #ifdef NDEBUG
 #define EIGEN_DBG_SPARSE(X)
@@ -20,7 +20,7 @@ namespace Eigen {
 
 #define EIGEN_SPARSE_INHERIT_ASSIGNMENT_OPERATOR(Derived, Op) \
 template<typename OtherDerived> \
-EIGEN_STRONG_INLINE Derived& operator Op(const Eigen::SparseMatrixBase<OtherDerived>& other) \
+EIGEN_STRONG_INLINE Derived& operator Op(const StormEigen::SparseMatrixBase<OtherDerived>& other) \
 { \
   return Base::operator Op(other.derived()); \
 } \
@@ -173,6 +173,6 @@ protected:
   Scalar m_value;
 };
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_SPARSEUTIL_H

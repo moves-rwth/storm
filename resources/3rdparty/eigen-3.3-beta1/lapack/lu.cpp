@@ -28,7 +28,7 @@ EIGEN_LAPACK_FUNC(getrf,(int *m, int *n, RealScalar *pa, int *lda, int *ipiv, in
 
   Scalar* a = reinterpret_cast<Scalar*>(pa);
   int nb_transpositions;
-  int ret = int(Eigen::internal::partial_lu_impl<Scalar,ColMajor,int>
+  int ret = int(StormEigen::internal::partial_lu_impl<Scalar,ColMajor,int>
                      ::blocked_lu(*m, *n, a, *lda, ipiv, nb_transpositions));
 
   for(int i=0; i<std::min(*m,*n); ++i)

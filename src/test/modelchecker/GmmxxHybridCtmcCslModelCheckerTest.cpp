@@ -85,7 +85,7 @@ TEST(GmmxxHybridCtmcCslModelCheckerTest, Cluster_Cudd) {
     EXPECT_NEAR(1, quantitativeCheckResult4.getMin(), storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
     EXPECT_NEAR(1, quantitativeCheckResult4.getMax(), storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
     
-    formula = formulaParser.parseSingleFormulaFromString("P=? [ !\"minimum\" U[1,inf] \"minimum\"]");
+    formula = formulaParser.parseSingleFormulaFromString("P=? [ !\"minimum\" U>=1 \"minimum\"]");
     checkResult = modelchecker.check(*formula);
     
     ASSERT_TRUE(checkResult->isHybridQuantitativeCheckResult());
@@ -94,7 +94,7 @@ TEST(GmmxxHybridCtmcCslModelCheckerTest, Cluster_Cudd) {
     EXPECT_NEAR(0, quantitativeCheckResult5.getMin(), storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
     EXPECT_NEAR(0, quantitativeCheckResult5.getMax(), storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
     
-    formula = formulaParser.parseSingleFormulaFromString("P=? [ \"minimum\" U[1,inf] !\"minimum\"]");
+    formula = formulaParser.parseSingleFormulaFromString("P=? [ \"minimum\" U>=1 !\"minimum\"]");
     checkResult = modelchecker.check(*formula);
     
     ASSERT_TRUE(checkResult->isHybridQuantitativeCheckResult());
@@ -183,7 +183,7 @@ TEST(GmmxxHybridCtmcCslModelCheckerTest, Cluster_Sylvan) {
     EXPECT_NEAR(1, quantitativeCheckResult4.getMin(), storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
     EXPECT_NEAR(1, quantitativeCheckResult4.getMax(), storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
     
-    formula = formulaParser.parseSingleFormulaFromString("P=? [ !\"minimum\" U[1,inf] \"minimum\"]");
+    formula = formulaParser.parseSingleFormulaFromString("P=? [ !\"minimum\" U>=1 \"minimum\"]");
     checkResult = modelchecker.check(*formula);
     
     ASSERT_TRUE(checkResult->isHybridQuantitativeCheckResult());
@@ -192,7 +192,7 @@ TEST(GmmxxHybridCtmcCslModelCheckerTest, Cluster_Sylvan) {
     EXPECT_NEAR(0, quantitativeCheckResult5.getMin(), storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
     EXPECT_NEAR(0, quantitativeCheckResult5.getMax(), storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
     
-    formula = formulaParser.parseSingleFormulaFromString("P=? [ \"minimum\" U[1,inf] !\"minimum\"]");
+    formula = formulaParser.parseSingleFormulaFromString("P=? [ \"minimum\" U>=1 !\"minimum\"]");
     checkResult = modelchecker.check(*formula);
     
     ASSERT_TRUE(checkResult->isHybridQuantitativeCheckResult());

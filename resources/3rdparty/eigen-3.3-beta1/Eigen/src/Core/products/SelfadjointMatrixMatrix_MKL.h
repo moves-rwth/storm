@@ -33,7 +33,7 @@
 #ifndef EIGEN_SELFADJOINT_MATRIX_MATRIX_MKL_H
 #define EIGEN_SELFADJOINT_MATRIX_MATRIX_MKL_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 namespace internal {
 
@@ -290,6 +290,6 @@ EIGEN_MKL_HEMM_R(scomplex, MKL_Complex8, cf, c)
 
 } // end namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_SELFADJOINT_MATRIX_MATRIX_MKL_H

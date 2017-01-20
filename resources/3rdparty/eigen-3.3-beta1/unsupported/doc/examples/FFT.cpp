@@ -17,7 +17,7 @@
 #include <unsupported/Eigen/FFT>
 
 using namespace std;
-using namespace Eigen;
+using namespace StormEigen;
 
 template <typename T>
 T mag2(T a)

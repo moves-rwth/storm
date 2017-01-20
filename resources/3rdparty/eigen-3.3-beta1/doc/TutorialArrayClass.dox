@@ -1,4 +1,4 @@
-namespace Eigen {
+namespace StormEigen {
 
 /** \eigenManualPage TutorialArrayClass The Array class and coefficient-wise operations
 
@@ -111,7 +111,7 @@ arrays can be multiplied if and only if they have the same dimensions.
 The Array class defines other coefficient-wise operations besides the addition, subtraction and multiplication
 operators described above. For example, the \link ArrayBase::abs() .abs() \endlink method takes the absolute
 value of each coefficient, while \link ArrayBase::sqrt() .sqrt() \endlink computes the square root of the
-coefficients. If you have two arrays of the same size, you can call \link ArrayBase::min(const Eigen::ArrayBase<OtherDerived>&) const .min(.) \endlink to
+coefficients. If you have two arrays of the same size, you can call \link ArrayBase::min(const StormEigen::ArrayBase<OtherDerived>&) const .min(.) \endlink to
 construct the array whose coefficients are the minimum of the corresponding coefficients of the two given
 arrays. These operations are illustrated in the following example.
 

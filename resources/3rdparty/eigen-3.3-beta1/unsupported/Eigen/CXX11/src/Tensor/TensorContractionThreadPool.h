@@ -13,7 +13,7 @@
 // evaluator for thread pool device
 #ifdef EIGEN_USE_THREADS
 
-namespace Eigen {
+namespace StormEigen {
 namespace internal {
 
 template<typename LhsScalar, typename LhsMapper, typename Index>
@@ -389,7 +389,7 @@ struct TensorEvaluator<const TensorContractionOp<Indices, LeftArgType, RightArgT
   }
 };
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif  // EIGEN_USE_THREADS
 #endif // EIGEN_CXX11_TENSOR_TENSOR_CONTRACTION_THREAD_POOL_H

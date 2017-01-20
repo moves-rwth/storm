@@ -10,7 +10,7 @@
 #ifndef EIGEN_DENSECOEFFSBASE_H
 #define EIGEN_DENSECOEFFSBASE_H
 
-namespace Eigen {
+namespace StormEigen {
 
 namespace internal {
 template<typename T> struct add_const_on_value_type_if_arithmetic
@@ -652,6 +652,6 @@ struct outer_stride_at_compile_time<Derived, false>
 
 } // end namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_DENSECOEFFSBASE_H

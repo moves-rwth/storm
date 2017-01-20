@@ -26,11 +26,7 @@ TEST(GameBasedMdpModelCheckerTest, DISABLED_Dice_Cudd) {
     storm::prism::Program program = storm::parseProgram(programFile);
 	
 	// Build the die model
-#ifdef WINDOWS
-    storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::Options options;
-#else
     typename storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::Options options;
-#endif
     std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().build(program, options);
 
     ASSERT_EQ(model->getNumberOfStates(), 169ull);
@@ -101,11 +97,7 @@ TEST(GameBasedMdpModelCheckerTest, DISABLED_Dice_Sylvan) {
     storm::prism::Program program = storm::parseProgram(programFile);
     
     // Build the die model
-#ifdef WINDOWS
-    storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>::Options options;
-#else
     typename storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>::Options options;
-#endif
     std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().build(program, options);
     
     ASSERT_EQ(model->getNumberOfStates(), 169ull);

@@ -1,7 +1,7 @@
 #include <unsupported/Eigen/MatrixFunctions>
 #include <iostream>
 
-using namespace Eigen;
+using namespace StormEigen;
 
 int main()
 {

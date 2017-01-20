@@ -11,7 +11,7 @@
 #ifndef EIGEN_PARTIAL_REDUX_H
 #define EIGEN_PARTIAL_REDUX_H
 
-namespace Eigen {
+namespace StormEigen {
 
 /** \class PartialReduxExpr
   * \ingroup Core_Module
@@ -159,7 +159,7 @@ template<typename ExpressionType, int Direction> class VectorwiseOp
 
     typedef typename ExpressionType::Scalar Scalar;
     typedef typename ExpressionType::RealScalar RealScalar;
-    typedef Eigen::Index Index; ///< \deprecated since Eigen 3.3
+    typedef StormEigen::Index Index; ///< \deprecated since Eigen 3.3
     typedef typename internal::ref_selector<ExpressionType>::non_const_type ExpressionTypeNested;
     typedef typename internal::remove_all<ExpressionTypeNested>::type ExpressionTypeNestedCleaned;
 
@@ -679,6 +679,6 @@ DenseBase<Derived>::rowwise()
   return RowwiseReturnType(derived());
 }
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_PARTIAL_REDUX_H

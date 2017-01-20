@@ -7,12 +7,12 @@
 
 #ifdef __ANDROID__
 #define CREATE_THREAD_POOL(threads)             \
-Eigen::ThreadPoolDevice device(threads);
+StormEigen::ThreadPoolDevice device(threads);
 #else
 #define CREATE_THREAD_POOL(threads)             \
 ThreadPool tp(threads);                         \
 tp.StartWorkers();                              \
-Eigen::ThreadPoolDevice device(&tp, threads);
+StormEigen::ThreadPoolDevice device(&tp, threads);
 #endif
 
 // Simple functions
@@ -20,7 +20,7 @@ Eigen::ThreadPoolDevice device(&tp, threads);
   static void BM_##FUNC##_##THREADS##T(int iters, int N) {       \
     StopBenchmarkTiming();                                       \
     CREATE_THREAD_POOL(THREADS);                                 \
-    BenchmarkSuite<Eigen::ThreadPoolDevice> suite(device, N);    \
+    BenchmarkSuite<StormEigen::ThreadPoolDevice> suite(device, N);    \
     suite.FUNC(iters);                                           \
     SetBenchmarkLabel(StrCat("using ", THREADS, " threads"));    \
   }                                                              \
@@ -76,12 +76,12 @@ BM_FuncCPU(reduction, 12);
   static void BM_##FUNC##_##D1##x##D2##x##D3##_##THREADS##T(int iters, int N) {\
     StopBenchmarkTiming();                                                     \
     if (THREADS == 1) {                                                        \
-      Eigen::DefaultDevice device;                                             \
-      BenchmarkSuite<Eigen::DefaultDevice> suite(device, D1, D2, D3);          \
+      StormEigen::DefaultDevice device;                                             \
+      BenchmarkSuite<StormEigen::DefaultDevice> suite(device, D1, D2, D3);          \
       suite.FUNC(iters);                                                       \
     } else {                                                                   \
       CREATE_THREAD_POOL(THREADS);                                             \
-      BenchmarkSuite<Eigen::ThreadPoolDevice> suite(device, D1, D2, D3);       \
+      BenchmarkSuite<StormEigen::ThreadPoolDevice> suite(device, D1, D2, D3);       \
       suite.FUNC(iters);                                                       \
     }                                                                          \
     SetBenchmarkLabel(StrCat("using ", THREADS, " threads"));                  \
@@ -125,7 +125,7 @@ BM_FuncWithInputDimsCPU(contraction, N, N, 1, 16);
   static void BM_##FUNC##_##DIM1##x##DIM2##_##THREADS##T(int iters, int N) {   \
     StopBenchmarkTiming();                                                     \
     CREATE_THREAD_POOL(THREADS);                                               \
-    BenchmarkSuite<Eigen::ThreadPoolDevice> suite(device, N);                  \
+    BenchmarkSuite<StormEigen::ThreadPoolDevice> suite(device, N);                  \
     suite.FUNC(iters, DIM1, DIM2);                                             \
     SetBenchmarkLabel(StrCat("using ", THREADS, " threads"));                  \
   }                                                                            \

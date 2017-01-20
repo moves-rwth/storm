@@ -10,7 +10,7 @@
 #ifndef EIGEN_CONJUGATE_GRADIENT_H
 #define EIGEN_CONJUGATE_GRADIENT_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 namespace internal {
 
@@ -240,6 +240,6 @@ protected:
 
 };
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_CONJUGATE_GRADIENT_H

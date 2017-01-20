@@ -7,6 +7,8 @@
 #include "storm/storage/prism/Program.h"
 #include "storm/storage/jani/Model.h"
 
+#include "storm/logic/Formulas.h"
+
 // If the parser fails due to ill-formed data, this exception is thrown.
 #include "storm/exceptions/WrongFormatException.h"
 
@@ -17,16 +19,18 @@
 namespace storm {
     namespace parser {
         
-        
         FormulaParser::FormulaParser() : manager(new storm::expressions::ExpressionManager()), grammar(new FormulaParserGrammar(manager)) {
             // Intentionally left empty.
         }
 
-        
         FormulaParser::FormulaParser(std::shared_ptr<storm::expressions::ExpressionManager const> const& manager) : manager(manager), grammar(new FormulaParserGrammar(manager)) {
             // Intentionally left empty.
         }
-        
+
+        FormulaParser::FormulaParser(std::shared_ptr<storm::expressions::ExpressionManager> const& manager) : manager(manager), grammar(new FormulaParserGrammar(manager)) {
+            // Intentionally left empty.
+        }
+
         FormulaParser::FormulaParser(storm::prism::Program const& program) : manager(program.getManager().getSharedPointer()), grammar(new FormulaParserGrammar(manager)) {
             // Make the formulas of the program available to the parser.
             for (auto const& formula : program.getFormulas()) {
@@ -46,22 +50,22 @@ namespace storm {
         }
         
         std::shared_ptr<storm::logic::Formula const> FormulaParser::parseSingleFormulaFromString(std::string const& formulaString) const {
-            std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = parseFromString(formulaString);
-            STORM_LOG_THROW(formulas.size() == 1, storm::exceptions::WrongFormatException, "Expected exactly one formula, but found " << formulas.size() << " instead.");
-            return formulas.front();
+            std::vector<storm::jani::Property> property = parseFromString(formulaString);
+            STORM_LOG_THROW(property.size() == 1, storm::exceptions::WrongFormatException, "Expected exactly one formula, but found " << property.size() << " instead.");
+            return property.front().getRawFormula();
         }
         
-        std::vector<std::shared_ptr<storm::logic::Formula const>> FormulaParser::parseFromFile(std::string const& filename) const {
+        std::vector<storm::jani::Property> FormulaParser::parseFromFile(std::string const& filename) const {
             // Open file and initialize result.
             std::ifstream inputFileStream(filename, std::ios::in);
             STORM_LOG_THROW(inputFileStream.good(), storm::exceptions::WrongFormatException, "Unable to read from file '" << filename << "'.");
             
-            std::vector<std::shared_ptr<storm::logic::Formula const>> formulas;
+            std::vector<storm::jani::Property> properties;
             
             // Now try to parse the contents of the file.
             try {
                 std::string fileContent((std::istreambuf_iterator<char>(inputFileStream)), (std::istreambuf_iterator<char>()));
-                formulas = parseFromString(fileContent);
+                properties = parseFromString(fileContent);
             } catch(std::exception& e) {
                 // In case of an exception properly close the file before passing exception.
                 inputFileStream.close();
@@ -70,16 +74,16 @@ namespace storm {
             
             // Close the stream in case everything went smoothly and return result.
             inputFileStream.close();
-            return formulas;
+            return properties;
         }
         
-        std::vector<std::shared_ptr<storm::logic::Formula const>> FormulaParser::parseFromString(std::string const& formulaString) const {
+        std::vector<storm::jani::Property> FormulaParser::parseFromString(std::string const& formulaString) const {
             PositionIteratorType first(formulaString.begin());
             PositionIteratorType iter = first;
             PositionIteratorType last(formulaString.end());
             
             // Create empty result;
-            std::vector<std::shared_ptr<storm::logic::Formula const>> result;
+            std::vector<storm::jani::Property> result;
             
             // Create grammar.
             try {

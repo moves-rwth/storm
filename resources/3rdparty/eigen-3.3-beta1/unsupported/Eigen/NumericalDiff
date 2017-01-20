@@ -12,7 +12,7 @@
 
 #include <Eigen/Core>
 
-namespace Eigen {
+namespace StormEigen {
 
 /**
   * \defgroup NumericalDiff_Module Numerical differentiation module

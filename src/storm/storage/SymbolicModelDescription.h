@@ -32,13 +32,18 @@ namespace storm {
             void setModel(storm::prism::Program const& program);
             
             storm::jani::Model const& asJaniModel() const;
+            storm::jani::Model& asJaniModel();
             storm::prism::Program const& asPrismProgram() const;
+            storm::prism::Program& asPrismProgram();
             
             std::vector<std::string> getParameterNames() const;
             
             SymbolicModelDescription toJani(bool makeVariablesGlobal = true) const;
             
             SymbolicModelDescription preprocess(std::string const& constantDefinitionString = "") const;
+            SymbolicModelDescription preprocess(std::map<storm::expressions::Variable, storm::expressions::Expression> const& constantDefinitions) const;
+            
+            std::map<storm::expressions::Variable, storm::expressions::Expression> parseConstantDefinitions(std::string const& constantDefinitionString) const;
             
             void requireNoUndefinedConstants() const;
             

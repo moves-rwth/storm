@@ -1,6 +1,6 @@
 #include <iostream>
 #include <Eigen/Core>
-using namespace Eigen;
+using namespace StormEigen;
 
 template <typename Derived>
 void print_size(const EigenBase<Derived>& b)

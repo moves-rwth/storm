@@ -1,4 +1,4 @@
-namespace Eigen {
+namespace StormEigen {
 
 /** \page TopicCustomizingEigen Customizing/Extending Eigen
 
@@ -92,11 +92,11 @@ Output: \verbinclude CustomizingEigen_Inheritance.out
 
 This is the kind of error you can get if you don't provide those methods
 \verbatim
-error: no match for ‘operator=’ in ‘v = Eigen::operator*(
-const Eigen::MatrixBase<Eigen::Matrix<double, -0x000000001, 1, 0, -0x000000001, 1> >::Scalar&, 
-const Eigen::MatrixBase<Eigen::Matrix<double, -0x000000001, 1> >::StorageBaseType&)
-(((const Eigen::MatrixBase<Eigen::Matrix<double, -0x000000001, 1> >::StorageBaseType&)
-((const Eigen::MatrixBase<Eigen::Matrix<double, -0x000000001, 1> >::StorageBaseType*)(& v))))’
+error: no match for ‘operator=’ in ‘v = StormEigen::operator*(
+const StormEigen::MatrixBase<StormEigen::Matrix<double, -0x000000001, 1, 0, -0x000000001, 1> >::Scalar&, 
+const StormEigen::MatrixBase<StormEigen::Matrix<double, -0x000000001, 1> >::StorageBaseType&)
+(((const StormEigen::MatrixBase<StormEigen::Matrix<double, -0x000000001, 1> >::StorageBaseType&)
+((const StormEigen::MatrixBase<StormEigen::Matrix<double, -0x000000001, 1> >::StorageBaseType*)(& v))))’
 \endverbatim
 
 \anchor user_defined_scalars \section CustomScalarType Using custom scalar types
@@ -106,7 +106,7 @@ On x86-64 systems, \c long \c double permits to locally enforces the use of x87 
 
 In order to add support for a custom type \c T you need:
 -# make sure the common operator (+,-,*,/,etc.) are supported by the type \c T
--# add a specialization of struct Eigen::NumTraits<T> (see \ref NumTraits)
+-# add a specialization of struct StormEigen::NumTraits<T> (see \ref NumTraits)
 -# define the math functions that makes sense for your type. This includes standard ones like sqrt, pow, sin, tan, conj, real, imag, etc, as well as abs2 which is Eigen specific.
      (see the file Eigen/src/Core/MathFunctions.h)
 
@@ -122,7 +122,7 @@ Here is a concrete example adding support for the Adolc's \c adouble type. <a hr
 #include <adolc/adouble.h>
 #include <Eigen/Core>
 
-namespace Eigen {
+namespace StormEigen {
 
 template<> struct NumTraits<adtl::adouble>
  : NumTraits<double> // permits to get the epsilon, dummy_precision, lowest, highest functions
@@ -164,7 +164,7 @@ This other example adds support for the \c mpq_class type from <a href="https://
 #include <Eigen/Core>
 #include <boost/operators.hpp>
 
-namespace Eigen {
+namespace StormEigen {
   template<class> struct NumTraits;
   template<> struct NumTraits<mpq_class>
   {

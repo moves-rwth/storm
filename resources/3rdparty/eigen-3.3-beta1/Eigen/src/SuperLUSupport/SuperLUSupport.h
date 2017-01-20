@@ -10,7 +10,7 @@
 #ifndef EIGEN_SUPERLUSUPPORT_H
 #define EIGEN_SUPERLUSUPPORT_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 #define DECL_GSSVX(PREFIX,FLOATTYPE,KEYTYPE)		\
     extern "C" {                                                                                          \
@@ -993,6 +993,6 @@ void SuperILU<MatrixType>::_solve_impl(const MatrixBase<Rhs> &b, MatrixBase<Dest
 }
 #endif
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_SUPERLUSUPPORT_H

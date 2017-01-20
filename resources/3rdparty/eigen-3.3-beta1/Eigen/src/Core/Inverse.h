@@ -10,7 +10,7 @@
 #ifndef EIGEN_INVERSE_H
 #define EIGEN_INVERSE_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 template<typename XprType,typename StorageKind> class InverseImpl;
 
@@ -112,6 +112,6 @@ protected:
   
 } // end namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_INVERSE_H

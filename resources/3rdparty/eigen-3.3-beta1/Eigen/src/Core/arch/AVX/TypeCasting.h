@@ -10,7 +10,7 @@
 #ifndef EIGEN_TYPE_CASTING_AVX_H
 #define EIGEN_TYPE_CASTING_AVX_H
 
-namespace Eigen {
+namespace StormEigen {
 
 namespace internal {
 
@@ -46,6 +46,6 @@ template<> EIGEN_STRONG_INLINE Packet8f pcast<Packet8i, Packet8f>(const Packet8i
 
 } // end namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_TYPE_CASTING_AVX_H

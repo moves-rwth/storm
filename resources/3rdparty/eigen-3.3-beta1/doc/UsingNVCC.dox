@@ -1,5 +1,5 @@
 
-namespace Eigen {
+namespace StormEigen {
 
 /** \page TopicCUDA Using Eigen in CUDA kernels
 

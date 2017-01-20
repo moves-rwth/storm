@@ -10,7 +10,7 @@
 #ifndef EIGEN_SPARSE_CWISE_BINARY_OP_H
 #define EIGEN_SPARSE_CWISE_BINARY_OP_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 // Here we have to handle 3 cases:
 //  1 - sparse op dense
@@ -428,6 +428,6 @@ SparseMatrixBase<Derived>::cwiseProduct(const MatrixBase<OtherDerived> &other) c
   return typename CwiseProductDenseReturnType<OtherDerived>::Type(derived(), other.derived());
 }
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_SPARSE_CWISE_BINARY_OP_H
