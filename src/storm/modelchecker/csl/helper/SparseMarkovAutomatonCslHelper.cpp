@@ -190,8 +190,12 @@ namespace storm {
             template <typename ValueType>
             template <typename RewardModelType>
             std::vector<ValueType> SparseMarkovAutomatonCslHelper<ValueType>::computeReachabilityRewards(OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& exitRateVector, storm::storage::BitVector const& markovianStates, RewardModelType const& rewardModel, storm::storage::BitVector const& psiStates, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
-                std::vector<ValueType> totalRewardVector = rewardModel.getTotalRewardVector(transitionMatrix.getRowCount(), transitionMatrix, storm::storage::BitVector(transitionMatrix.getRowGroupCount(), true));
-                return computeExpectedRewards(dir, transitionMatrix, backwardTransitions, exitRateVector, markovianStates, psiStates, totalRewardVector, minMaxLinearEquationSolverFactory);
+                std::vector<ValueType> stateRewardWeights(transitionMatrix.getRowGroupCount());
+                for (auto const markovianState : markovianStates) {
+                    stateRewardWeights[markovianState] = storm::utility::one<ValueType>() / exitRateVector[markovianState];
+                }
+                std::vector<ValueType> totalRewardVector = rewardModel.getTotalActionRewardVector(transitionMatrix, stateRewardWeights);
+                return computeExpectedRewards(dir, transitionMatrix, backwardTransitions, psiStates, totalRewardVector, minMaxLinearEquationSolverFactory);
             }
             
             template<typename ValueType>
@@ -351,58 +355,77 @@ namespace storm {
             
             template <typename ValueType>
             std::vector<ValueType> SparseMarkovAutomatonCslHelper<ValueType>::computeTimes(OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& exitRateVector, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
-                 uint_fast64_t numberOfStates = transitionMatrix.getRowGroupCount();
-                std::vector<ValueType> rewardValues(numberOfStates, storm::utility::zero<ValueType>());
-                storm::utility::vector::setVectorValues(rewardValues, markovianStates, storm::utility::one<ValueType>());
-                return computeExpectedRewards(dir, transitionMatrix, backwardTransitions, exitRateVector, markovianStates, psiStates, rewardValues, minMaxLinearEquationSolverFactory);
+                std::vector<ValueType> rewardValues(transitionMatrix.getRowCount(), storm::utility::zero<ValueType>());
+                for (auto const markovianState : markovianStates) {
+                    rewardValues[transitionMatrix.getRowGroupIndices()[markovianState]] = storm::utility::one<ValueType>() / exitRateVector[markovianState];
+                }
+                return computeExpectedRewards(dir, transitionMatrix, backwardTransitions, psiStates, rewardValues, minMaxLinearEquationSolverFactory);
             }
-            
-            template <typename ValueType>
-            std::vector<ValueType> SparseMarkovAutomatonCslHelper<ValueType>::computeExpectedRewards(OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& exitRateVector, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& goalStates, std::vector<ValueType> const& stateRewards, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
+
+            template<typename ValueType>
+            std::vector<ValueType>
+            SparseMarkovAutomatonCslHelper<ValueType>::computeExpectedRewards(OptimizationDirection dir,
+                                                                              storm::storage::SparseMatrix<ValueType> const &transitionMatrix,
+                                                                              storm::storage::SparseMatrix<ValueType> const &backwardTransitions,
+                                                                              storm::storage::BitVector const &goalStates,
+                                                                              std::vector<ValueType> const &stateActionRewardVector,
+                                                                              storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const &minMaxLinearEquationSolverFactory) {
 
                 uint_fast64_t numberOfStates = transitionMatrix.getRowGroupCount();
-                
+
                 // First, we need to check which states have infinite expected time (by definition).
                 storm::storage::BitVector infinityStates;
-                if (dir ==OptimizationDirection::Minimize) {
+                if (dir == OptimizationDirection::Minimize) {
                     // If we need to compute the minimum expected times, we have to set the values of those states to infinity that, under all schedulers,
                     // reach a bottom SCC without a goal state.
-                    
+
                     // So we start by computing all bottom SCCs without goal states.
-                    storm::storage::StronglyConnectedComponentDecomposition<double> sccDecomposition(transitionMatrix, ~goalStates, true, true);
-                    
+                    storm::storage::StronglyConnectedComponentDecomposition<double> sccDecomposition(transitionMatrix,
+                                                                                                     ~goalStates, true,
+                                                                                                     true);
+
                     // Now form the union of all these SCCs.
                     storm::storage::BitVector unionOfNonGoalBSccs(numberOfStates);
-                    for (auto const& scc : sccDecomposition) {
+                    for (auto const &scc : sccDecomposition) {
                         for (auto state : scc) {
                             unionOfNonGoalBSccs.set(state);
                         }
                     }
-                    
+
                     // Finally, if this union is non-empty, compute the states such that all schedulers reach some state of the union.
                     if (!unionOfNonGoalBSccs.empty()) {
-                        infinityStates = storm::utility::graph::performProbGreater0A(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions, storm::storage::BitVector(numberOfStates, true), unionOfNonGoalBSccs);
+                        infinityStates = storm::utility::graph::performProbGreater0A(transitionMatrix,
+                                                                                     transitionMatrix.getRowGroupIndices(),
+                                                                                     backwardTransitions,
+                                                                                     storm::storage::BitVector(
+                                                                                             numberOfStates, true),
+                                                                                     unionOfNonGoalBSccs);
                     } else {
                         // Otherwise, we have no infinity states.
                         infinityStates = storm::storage::BitVector(numberOfStates);
                     }
                 } else {
                     // If we maximize the property, the expected time of a state is infinite, if an end-component without any goal state is reachable.
-                    
+
                     // So we start by computing all MECs that have no goal state.
-                    storm::storage::MaximalEndComponentDecomposition<double> mecDecomposition(transitionMatrix, backwardTransitions, ~goalStates);
-                    
+                    storm::storage::MaximalEndComponentDecomposition<double> mecDecomposition(transitionMatrix,
+                                                                                              backwardTransitions,
+                                                                                              ~goalStates);
+
                     // Now we form the union of all states in these end components.
                     storm::storage::BitVector unionOfNonGoalMaximalEndComponents(numberOfStates);
-                    for (auto const& mec : mecDecomposition) {
-                        for (auto const& stateActionPair : mec) {
+                    for (auto const &mec : mecDecomposition) {
+                        for (auto const &stateActionPair : mec) {
                             unionOfNonGoalMaximalEndComponents.set(stateActionPair.first);
                         }
                     }
-                    
+
                     if (!unionOfNonGoalMaximalEndComponents.empty()) {
                         // Now we need to check for which states there exists a scheduler that reaches one of the previously computed states.
-                        infinityStates = storm::utility::graph::performProbGreater0E(backwardTransitions, storm::storage::BitVector(numberOfStates, true), unionOfNonGoalMaximalEndComponents);
+                        infinityStates = storm::utility::graph::performProbGreater0E(backwardTransitions,
+                                                                                     storm::storage::BitVector(
+                                                                                             numberOfStates, true),
+                                                                                     unionOfNonGoalMaximalEndComponents);
                     } else {
                         // Otherwise, we have no infinity states.
                         infinityStates = storm::storage::BitVector(numberOfStates);
@@ -413,33 +436,31 @@ namespace storm {
 
                 // Create resulting vector.
                 std::vector<ValueType> result(numberOfStates);
-                
+
                 if (!maybeStates.empty()) {
                     // Then, we can eliminate the rows and columns for all states whose values are already known.
                     std::vector<ValueType> x(maybeStates.getNumberOfSetBits());
-                    storm::storage::SparseMatrix<ValueType> submatrix = transitionMatrix.getSubmatrix(true, maybeStates, maybeStates);
-                    
-                    // Now prepare the expected reward values for all states so they can be used as the right-hand side of the equation system.
-                    std::vector<ValueType> rewardValues(stateRewards);
-                    for (auto state : markovianStates) {
-                        rewardValues[state] = rewardValues[state] / exitRateVector[state];
-                    }
-                    
+                    storm::storage::SparseMatrix<ValueType> submatrix = transitionMatrix.getSubmatrix(true, maybeStates,
+                                                                                                      maybeStates);
+
                     // Finally, prepare the actual right-hand side.
                     std::vector<ValueType> b(submatrix.getRowCount());
-                    storm::utility::vector::selectVectorValuesRepeatedly(b, maybeStates, transitionMatrix.getRowGroupIndices(), rewardValues);
-                    
+                    storm::utility::vector::selectVectorValues(b, maybeStates,
+                                                               transitionMatrix.getRowGroupIndices(),
+                                                               stateActionRewardVector);
+
                     // Solve the corresponding system of equations.
-                    std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = minMaxLinearEquationSolverFactory.create(submatrix);
+                    std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = minMaxLinearEquationSolverFactory.create(
+                            submatrix);
                     solver->solveEquations(dir, x, b);
-                    
+
                     // Set values of resulting vector according to previous result and return the result.
                     storm::utility::vector::setVectorValues<ValueType>(result, maybeStates, x);
                 }
 
                 storm::utility::vector::setVectorValues(result, goalStates, storm::utility::zero<ValueType>());
                 storm::utility::vector::setVectorValues(result, infinityStates, storm::utility::infinity<ValueType>());
-                
+
                 return result;
             }
             
