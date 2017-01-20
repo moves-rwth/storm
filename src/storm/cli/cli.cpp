@@ -135,14 +135,14 @@ namespace storm {
             getrusage(RUSAGE_SELF, &ru);
 
             std::cout << "Performance statistics:" << std::endl;
-            std::cout << "  * peak memory usage: " << ru.ru_maxrss/1024/1024 << " mb" << std::endl;
+            std::cout << "  * peak memory usage: " << ru.ru_maxrss/1024 << " mb" << std::endl;
             std::cout << "  * CPU time: " << ru.ru_utime.tv_sec << "." << std::setw(3) << std::setfill('0') << ru.ru_utime.tv_usec/1000 << " seconds" << std::endl;
             if (wallclockMilliseconds != 0) {
                 std::cout << "  * wallclock time: " << (wallclockMilliseconds/1000) << "." << std::setw(3) << std::setfill('0') << (wallclockMilliseconds % 1000) << " seconds" << std::endl;
             }
             std::cout << "STATISTICS_OVERALL_HEADERS;" << "memory;CPU time;wallclock time;" << std::endl;
             std::cout << "STATISTICS_OVERALL_DATA;"
-                      << ru.ru_maxrss/1024/1024 << ";"
+                      << ru.ru_maxrss/1024 << ";"
                       << ru.ru_utime.tv_sec << "." << std::setw(3) << std::setfill('0') << ru.ru_utime.tv_usec/1000  << ";"
                       <<  (wallclockMilliseconds/1000) << "." << std::setw(3) << std::setfill('0') << (wallclockMilliseconds % 1000) << ";" << std::endl;
 #else

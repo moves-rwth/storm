@@ -43,8 +43,8 @@ list(APPEND STORM_DEP_TARGETS gmm)
 ##
 #############################################################
 
-add_imported_library_interface(Eigen33 "${PROJECT_SOURCE_DIR}/resources/3rdparty/eigen-3.3-beta1")
-list(APPEND STORM_DEP_TARGETS Eigen33)
+# add_imported_library_interface(Eigen33 "${PROJECT_SOURCE_DIR}/resources/3rdparty/eigen-3.3-beta1")
+# list(APPEND STORM_DEP_TARGETS Eigen33)
 
 
 #############################################################
@@ -589,3 +589,4 @@ if(ENABLE_CUDA)
 endif()
 
 add_custom_target(copy_resources_headers DEPENDS ${CMAKE_BINARY_DIR}/include/resources/3rdparty/sparsepp/sparsepp.h ${CMAKE_BINARY_DIR}/include/resources/3rdparty/sparsepp/sparsepp.h)
+

@@ -159,49 +159,62 @@ namespace storm {
             template <class SparseModelType>
             void SparsePcaaWeightVectorChecker<SparseModelType>::unboundedIndividualPhase(std::vector<ValueType> const& weightVector) {
                 
-                storm::storage::SparseMatrix<ValueType> deterministicMatrix = model.getTransitionMatrix().selectRowsFromRowGroups(this->scheduler.getChoices(), true);
-                storm::storage::SparseMatrix<ValueType> deterministicBackwardTransitions = deterministicMatrix.transpose();
-                std::vector<ValueType> deterministicStateRewards(deterministicMatrix.getRowCount());
-                storm::solver::GeneralLinearEquationSolverFactory<ValueType> linearEquationSolverFactory;
-                
-                // We compute an estimate for the results of the individual objectives which is obtained from the weighted result and the result of the objectives computed so far.
-                // Note that weightedResult = Sum_{i=1}^{n} w_i * objectiveResult_i.
-                std::vector<ValueType> weightedSumOfUncheckedObjectives = weightedResult;
-                ValueType sumOfWeightsOfUncheckedObjectives = storm::utility::vector::sum_if(weightVector, objectivesWithNoUpperTimeBound);
-                
-                for(uint_fast64_t const& objIndex : storm::utility::vector::getSortedIndices(weightVector)) {
-                    if(objectivesWithNoUpperTimeBound.get(objIndex)){
-                        offsetsToLowerBound[objIndex] = storm::utility::zero<ValueType>();
-                        offsetsToUpperBound[objIndex] = storm::utility::zero<ValueType>();
-                        storm::utility::vector::selectVectorValues(deterministicStateRewards, this->scheduler.getChoices(), model.getTransitionMatrix().getRowGroupIndices(), discreteActionRewards[objIndex]);
-                        storm::storage::BitVector statesWithRewards =  ~storm::utility::vector::filterZero(deterministicStateRewards);
-                        // As target states, we pick the states from which no reward is reachable.
-                        storm::storage::BitVector targetStates = ~storm::utility::graph::performProbGreater0(deterministicBackwardTransitions, storm::storage::BitVector(deterministicMatrix.getRowCount(), true), statesWithRewards);
-                        
-                        // Compute the estimate for this objective
-                        if(!storm::utility::isZero(weightVector[objIndex])) {
-                            objectiveResults[objIndex] = weightedSumOfUncheckedObjectives;
-                            storm::utility::vector::scaleVectorInPlace(objectiveResults[objIndex], storm::utility::one<ValueType>() / sumOfWeightsOfUncheckedObjectives);
+                if(objectivesWithNoUpperTimeBound.getNumberOfSetBits()==1) {
+                    auto objIndex = *objectivesWithNoUpperTimeBound.begin();
+                    objectiveResults[objIndex] = weightedResult;
+                    if(!storm::utility::isZero(weightVector[objIndex])) {
+                        storm::utility::vector::scaleVectorInPlace(objectiveResults[objIndex], storm::utility::one<ValueType>()/weightVector[objIndex]);
+                    }
+                    for (uint_fast64_t objIndex2 = 0; objIndex2 < objectives.size(); ++objIndex2) {
+			if(objIndex != objIndex2) {
+                            objectiveResults[objIndex2] = std::vector<ValueType>(model.getNumberOfStates(), storm::utility::zero<ValueType>());
                         }
+                    }
+                } else {
+                    storm::storage::SparseMatrix<ValueType> deterministicMatrix = model.getTransitionMatrix().selectRowsFromRowGroups(this->scheduler.getChoices(), true);
+                    storm::storage::SparseMatrix<ValueType> deterministicBackwardTransitions = deterministicMatrix.transpose();
+                    std::vector<ValueType> deterministicStateRewards(deterministicMatrix.getRowCount());
+                    storm::solver::GeneralLinearEquationSolverFactory<ValueType> linearEquationSolverFactory;
+                    
+                    // We compute an estimate for the results of the individual objectives which is obtained from the weighted result and the result of the objectives computed so far.
+                    // Note that weightedResult = Sum_{i=1}^{n} w_i * objectiveResult_i.
+                    std::vector<ValueType> weightedSumOfUncheckedObjectives = weightedResult;
+                    ValueType sumOfWeightsOfUncheckedObjectives = storm::utility::vector::sum_if(weightVector, objectivesWithNoUpperTimeBound);
+                    
+                    for(uint_fast64_t const& objIndex : storm::utility::vector::getSortedIndices(weightVector)) {
+                        if(objectivesWithNoUpperTimeBound.get(objIndex)){
+                            offsetsToLowerBound[objIndex] = storm::utility::zero<ValueType>();
+                            offsetsToUpperBound[objIndex] = storm::utility::zero<ValueType>();
+                            storm::utility::vector::selectVectorValues(deterministicStateRewards, this->scheduler.getChoices(), model.getTransitionMatrix().getRowGroupIndices(), discreteActionRewards[objIndex]);
+                            storm::storage::BitVector statesWithRewards =  ~storm::utility::vector::filterZero(deterministicStateRewards);
+                            // As target states, we pick the states from which no reward is reachable.
+                            storm::storage::BitVector targetStates = ~storm::utility::graph::performProbGreater0(deterministicBackwardTransitions, storm::storage::BitVector(deterministicMatrix.getRowCount(), true), statesWithRewards);
+                            
+                             // Compute the estimate for this objective
+                            if(!storm::utility::isZero(weightVector[objIndex])) {
+                                objectiveResults[objIndex] = weightedSumOfUncheckedObjectives;
+                                storm::utility::vector::scaleVectorInPlace(objectiveResults[objIndex], storm::utility::one<ValueType>() / sumOfWeightsOfUncheckedObjectives);
+                            }
+                            
+                            // Make sure that the objectiveResult is initialized in some way
+                            objectiveResults[objIndex].resize(model.getNumberOfStates(), storm::utility::zero<ValueType>());
                         
-                        // Make sure that the objectiveResult is initialized in some way
-                        objectiveResults[objIndex].resize(model.getNumberOfStates(), storm::utility::zero<ValueType>());
-                        
-                        // Invoke the linear equation solver
-                        objectiveResults[objIndex] = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeReachabilityRewards(deterministicMatrix,
+                            // Invoke the linear equation solver
+                            objectiveResults[objIndex] = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeReachabilityRewards(deterministicMatrix,
                                                                                                                                                deterministicBackwardTransitions,
                                                                                                                                                deterministicStateRewards,
                                                                                                                                                targetStates,
                                                                                                                                                false, //no qualitative checking,
                                                                                                                                                linearEquationSolverFactory,
                                                                                                                                                objectiveResults[objIndex]);
-                        // Update the estimate for the next objectives.
-                        if(!storm::utility::isZero(weightVector[objIndex])) {
-                            storm::utility::vector::addScaledVector(weightedSumOfUncheckedObjectives, objectiveResults[objIndex], -weightVector[objIndex]);
-                            sumOfWeightsOfUncheckedObjectives -= weightVector[objIndex];
+                            // Update the estimate for the next objectives.
+                            if(!storm::utility::isZero(weightVector[objIndex])) {
+                                storm::utility::vector::addScaledVector(weightedSumOfUncheckedObjectives, objectiveResults[objIndex], -weightVector[objIndex]);
+                                sumOfWeightsOfUncheckedObjectives -= weightVector[objIndex];
+                            }
+                        } else {
+                            objectiveResults[objIndex] = std::vector<ValueType>(model.getNumberOfStates(), storm::utility::zero<ValueType>());
                         }
-                    } else {
-                        objectiveResults[objIndex] = std::vector<ValueType>(model.getNumberOfStates(), storm::utility::zero<ValueType>());
                     }
                 }
             }
