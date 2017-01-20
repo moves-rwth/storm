@@ -467,6 +467,9 @@ namespace storm {
                                     // If the new state was already found as a successor state, update the probability
                                     // and otherwise insert it.
                                     auto probability = stateProbabilityPair.second * this->evaluator->asRational(destination.getProbability());
+                                    if (edge.hasRate()) {
+                                        probability *= this->evaluator->asRational(edge.getRate());
+                                    }
                                     if (probability != storm::utility::zero<ValueType>()) {
                                         auto targetStateIt = newTargetStates->find(newTargetState);
                                         if (targetStateIt != newTargetStates->end()) {

@@ -16,8 +16,7 @@ namespace storm {
             // Register all variables so we can parse them in the expressions.
             for (auto variableTypePair : *constManager) {
                 identifiers_.add(variableTypePair.first.getName(), variableTypePair.first);
-            }
-            
+            }            
             // Set the identifier mapping to actually generate expressions.
             expressionParser.setIdentifierMapping(&identifiers_);
             
@@ -54,7 +53,10 @@ namespace storm {
             atomicStateFormula = booleanLiteralFormula | labelFormula | expressionFormula | (qi::lit("(") > stateFormula > qi::lit(")")) | operatorFormula;
             atomicStateFormula.name("atomic state formula");
             
-            notStateFormula = (-unaryBooleanOperator_ >> atomicStateFormula)[qi::_val = phoenix::bind(&FormulaParserGrammar::createUnaryBooleanStateFormula, phoenix::ref(*this), qi::_2, qi::_1)];
+            atomicStateFormulaWithoutExpression = booleanLiteralFormula | labelFormula | (qi::lit("(") > stateFormula > qi::lit(")")) | operatorFormula;
+            atomicStateFormula.name("atomic state formula without expression");
+            
+            notStateFormula = (unaryBooleanOperator_ >> atomicStateFormulaWithoutExpression)[qi::_val = phoenix::bind(&FormulaParserGrammar::createUnaryBooleanStateFormula, phoenix::ref(*this), qi::_2, qi::_1)] | atomicStateFormula[qi::_val = qi::_1];
             notStateFormula.name("negation formula");
             
             eventuallyFormula = (qi::lit("F") >> -timeBound >> pathFormulaWithoutUntil(qi::_r1))[qi::_val = phoenix::bind(&FormulaParserGrammar::createEventuallyFormula, phoenix::ref(*this), qi::_1, qi::_r1, qi::_2)];
@@ -123,7 +125,15 @@ namespace storm {
             constantDefinition = (qi::lit("const") > qi::eps[qi::_a = true] > -(qi::lit("int") | qi::lit("double")[qi::_a = false]) >> identifier)[phoenix::bind(&FormulaParserGrammar::addConstant, phoenix::ref(*this), qi::_1, qi::_a)];
             constantDefinition.name("constant definition");
             
-            start = qi::eps > (((-formulaName >> stateFormula)[phoenix::bind(&FormulaParserGrammar::addProperty, phoenix::ref(*this), qi::_val, qi::_1, qi::_2)] | qi::eps(phoenix::bind(&FormulaParserGrammar::areConstantDefinitionsAllowed, phoenix::ref(*this))) >> constantDefinition | qi::eps) % +(qi::char_("\n;"))) >> qi::skip(boost::spirit::ascii::space | qi::lit("//") >> *(qi::char_ - (qi::eol | qi::eoi)))[qi::eps] >> qi::eoi;
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Woverloaded-shift-op-parentheses"
+            
+            filterProperty = (-formulaName >> qi::lit("filter") > qi::lit("(") > filterType_ > qi::lit(",") > stateFormula > -(qi::lit(",") > qi::lit("\"init\"") > qi::lit(")")))[qi::_val = phoenix::bind(&FormulaParserGrammar::createProperty, phoenix::ref(*this), qi::_1, qi::_2, qi::_3)] | (-formulaName >> stateFormula)[qi::_val = phoenix::bind(&FormulaParserGrammar::createPropertyWithDefaultFilterType, phoenix::ref(*this), qi::_1, qi::_2)];
+            filterProperty.name("filter property");
+
+#pragma clang diagnostic pop
+
+            start = ((qi::eps > filterProperty[phoenix::push_back(qi::_val, qi::_1)] | qi::eps(phoenix::bind(&FormulaParserGrammar::areConstantDefinitionsAllowed, phoenix::ref(*this))) >> constantDefinition | qi::eps) % +(qi::char_("\n;"))) >> qi::skip(boost::spirit::ascii::space | qi::lit("//") >> *(qi::char_ - (qi::eol | qi::eoi)))[qi::eps] >> qi::eoi;
             start.name("start");
             
             // Enable the following lines to print debug output for most the rules.
@@ -193,15 +203,6 @@ namespace storm {
                 newVariable = manager->declareRationalVariable(name);
             }
             addIdentifierExpression(name, newVariable);
-        }
-        
-        void FormulaParserGrammar::addProperty(std::vector<storm::jani::Property>& properties, boost::optional<std::string> const& name, std::shared_ptr<storm::logic::Formula const> const& formula) {
-            if (name) {
-                properties.emplace_back(name.get(), formula);
-            } else {
-                properties.emplace_back(std::to_string(propertyCount), formula);
-            }
-            ++propertyCount;
         }
         
         bool FormulaParserGrammar::areConstantDefinitionsAllowed() const {
@@ -327,5 +328,26 @@ namespace storm {
         std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createMultiObjectiveFormula(std::vector<std::shared_ptr<storm::logic::Formula const>> const& subformulas) {
             return std::shared_ptr<storm::logic::Formula const>(new storm::logic::MultiObjectiveFormula(subformulas));
         }
+                                               
+        storm::jani::Property FormulaParserGrammar::createProperty(boost::optional<std::string> const& propertyName, storm::modelchecker::FilterType const& filterType, std::shared_ptr<storm::logic::Formula const> const& formula) {
+            storm::jani::FilterExpression filterExpression(formula, filterType);
+            
+            ++propertyCount;
+            if (propertyName) {
+                return storm::jani::Property(propertyName.get(), filterExpression);
+            } else {
+                return storm::jani::Property(std::to_string(propertyCount -1 ), filterExpression);
+            }
+        }
+                                               
+        storm::jani::Property FormulaParserGrammar::createPropertyWithDefaultFilterType(boost::optional<std::string> const& propertyName, std::shared_ptr<storm::logic::Formula const> const& formula) {
+            ++propertyCount;
+            if (propertyName) {
+                return storm::jani::Property(propertyName.get(), formula);
+            } else {
+                return storm::jani::Property(std::to_string(propertyCount), formula);
+            }
+        }
+
     }
 }

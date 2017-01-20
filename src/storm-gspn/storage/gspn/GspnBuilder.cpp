@@ -21,6 +21,7 @@ namespace storm {
             place.setNumberOfInitialTokens(initialTokens);
             place.setName(name);
             places.push_back(place);
+            placeNames.emplace(name, newId);
             return newId;
         }
         
@@ -60,6 +61,8 @@ namespace storm {
                 
             }
             immediateTransitions.push_back(trans);
+            
+            transitionNames.emplace(name, newId);
             return newId;
             
         }
@@ -72,6 +75,8 @@ namespace storm {
             trans.setRate(rate);
             trans.setID(newId);
             timedTransitions.push_back(trans);
+            
+            transitionNames.emplace(name, newId);
             return newId;
         }
         

@@ -145,14 +145,7 @@ namespace storm {
                  * @param labeling A bit vector that represents the set of states that will get this label.
                  */
                 void setStates(std::string const& label, storage::BitVector&& labeling);
-                
-                /*!
-                 * Returns (an approximation of) the size of the labeling measured in bytes.
-                 *
-                 * @return The size of the labeling measured in bytes.
-                 */
-                std::size_t getSizeInBytes() const;
-                
+                                
                 /*!
                  * Prints information about the labeling to the specified stream.
                  *

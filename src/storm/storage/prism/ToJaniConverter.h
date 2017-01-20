@@ -1,5 +1,8 @@
 #pragma once
 
+#include <map>
+#include <string>
+
 namespace storm {
     namespace jani {
         class Model;
@@ -11,7 +14,13 @@ namespace storm {
         
         class ToJaniConverter {
         public:
-            storm::jani::Model convert(storm::prism::Program const& program, bool allVariablesGlobal = false) const;
+            storm::jani::Model convert(storm::prism::Program const& program, bool allVariablesGlobal = false);
+            
+            bool labelsWereRenamed() const;
+            std::map<std::string, std::string> const& getLabelRenaming() const;
+            
+        private:
+            std::map<std::string, std::string> labelRenaming;
         };
         
     }

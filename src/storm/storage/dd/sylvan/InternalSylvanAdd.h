@@ -55,12 +55,12 @@ namespace storm {
             InternalAdd(InternalDdManager<DdType::Sylvan> const* ddManager, sylvan::Mtbdd const& sylvanMtbdd);
             
             // Instantiate all copy/move constructors/assignments with the default implementation.
-            InternalAdd() = default;
+            InternalAdd();
             InternalAdd(InternalAdd<DdType::Sylvan, ValueType> const& other) = default;
             InternalAdd& operator=(InternalAdd<DdType::Sylvan, ValueType> const& other) = default;
             InternalAdd(InternalAdd<DdType::Sylvan, ValueType>&& other) = default;
             InternalAdd& operator=(InternalAdd<DdType::Sylvan, ValueType>&& other) = default;
-                        
+            
             /*!
              * Retrieves whether the two DDs represent the same function.
              *

@@ -140,6 +140,9 @@ namespace storm {
                 solver.compute(*this->eigenA);
                 solver._solve_impl(eigenB, eigenX);
             } else {
+                bool converged = false;
+                uint64_t numberOfIterations = 0;
+                
                 typename EigenLinearEquationSolverSettings<ValueType>::Preconditioner preconditioner = this->getSettings().getPreconditioner();
                 if (solutionMethod == EigenLinearEquationSolverSettings<ValueType>::SolutionMethod::BiCGSTAB) {
                     if (preconditioner == EigenLinearEquationSolverSettings<ValueType>::Preconditioner::Ilu) {
@@ -148,21 +151,24 @@ namespace storm {
                         solver.setTolerance(this->getSettings().getPrecision());
                         solver.setMaxIterations(this->getSettings().getMaximalNumberOfIterations());
                         eigenX = solver.solveWithGuess(eigenB, eigenX);
-                        return solver.info() == StormEigen::ComputationInfo::Success;
+                        converged = solver.info() == StormEigen::ComputationInfo::Success;
+                        numberOfIterations = solver.iterations();
                     } else if (preconditioner == EigenLinearEquationSolverSettings<ValueType>::Preconditioner::Diagonal) {
                         StormEigen::BiCGSTAB<StormEigen::SparseMatrix<ValueType>, StormEigen::DiagonalPreconditioner<ValueType>> solver;
                         solver.setTolerance(this->getSettings().getPrecision());
                         solver.setMaxIterations(this->getSettings().getMaximalNumberOfIterations());
                         solver.compute(*this->eigenA);
                         eigenX = solver.solveWithGuess(eigenB, eigenX);
-                        return solver.info() == StormEigen::ComputationInfo::Success;
+                        converged = solver.info() == StormEigen::ComputationInfo::Success;
+                        numberOfIterations = solver.iterations();
                     } else {
                         StormEigen::BiCGSTAB<StormEigen::SparseMatrix<ValueType>, StormEigen::IdentityPreconditioner> solver;
                         solver.setTolerance(this->getSettings().getPrecision());
                         solver.setMaxIterations(this->getSettings().getMaximalNumberOfIterations());
                         solver.compute(*this->eigenA);
                         eigenX = solver.solveWithGuess(eigenB, eigenX);
-                        return solver.info() == StormEigen::ComputationInfo::Success;
+                        numberOfIterations = solver.iterations();
+                        converged = solver.info() == StormEigen::ComputationInfo::Success;
                     }
                 } else if (solutionMethod == EigenLinearEquationSolverSettings<ValueType>::SolutionMethod::DGMRES) {
                     if (preconditioner == EigenLinearEquationSolverSettings<ValueType>::Preconditioner::Ilu) {
@@ -172,7 +178,8 @@ namespace storm {
                         solver.set_restart(this->getSettings().getNumberOfIterationsUntilRestart());
                         solver.compute(*this->eigenA);
                         eigenX = solver.solveWithGuess(eigenB, eigenX);
-                        return solver.info() == StormEigen::ComputationInfo::Success;
+                        converged = solver.info() == StormEigen::ComputationInfo::Success;
+                        numberOfIterations = solver.iterations();
                     } else if (preconditioner == EigenLinearEquationSolverSettings<ValueType>::Preconditioner::Diagonal) {
                         StormEigen::DGMRES<StormEigen::SparseMatrix<ValueType>, StormEigen::DiagonalPreconditioner<ValueType>> solver;
                         solver.setTolerance(this->getSettings().getPrecision());
@@ -180,7 +187,8 @@ namespace storm {
                         solver.set_restart(this->getSettings().getNumberOfIterationsUntilRestart());
                         solver.compute(*this->eigenA);
                         eigenX = solver.solveWithGuess(eigenB, eigenX);
-                        return solver.info() == StormEigen::ComputationInfo::Success;
+                        converged = solver.info() == StormEigen::ComputationInfo::Success;
+                        numberOfIterations = solver.iterations();
                     } else {
                         StormEigen::DGMRES<StormEigen::SparseMatrix<ValueType>, StormEigen::IdentityPreconditioner> solver;
                         solver.setTolerance(this->getSettings().getPrecision());
@@ -188,7 +196,8 @@ namespace storm {
                         solver.set_restart(this->getSettings().getNumberOfIterationsUntilRestart());
                         solver.compute(*this->eigenA);
                         eigenX = solver.solveWithGuess(eigenB, eigenX);
-                        return solver.info() == StormEigen::ComputationInfo::Success;
+                        converged = solver.info() == StormEigen::ComputationInfo::Success;
+                        numberOfIterations = solver.iterations();
                     }
                 } else if (solutionMethod == EigenLinearEquationSolverSettings<ValueType>::SolutionMethod::GMRES) {
                     if (preconditioner == EigenLinearEquationSolverSettings<ValueType>::Preconditioner::Ilu) {
@@ -198,7 +207,8 @@ namespace storm {
                         solver.set_restart(this->getSettings().getNumberOfIterationsUntilRestart());
                         solver.compute(*this->eigenA);
                         eigenX = solver.solveWithGuess(eigenB, eigenX);
-                        return solver.info() == StormEigen::ComputationInfo::Success;
+                        converged = solver.info() == StormEigen::ComputationInfo::Success;
+                        numberOfIterations = solver.iterations();
                     } else if (preconditioner == EigenLinearEquationSolverSettings<ValueType>::Preconditioner::Diagonal) {
                         StormEigen::GMRES<StormEigen::SparseMatrix<ValueType>, StormEigen::DiagonalPreconditioner<ValueType>> solver;
                         solver.setTolerance(this->getSettings().getPrecision());
@@ -206,7 +216,8 @@ namespace storm {
                         solver.set_restart(this->getSettings().getNumberOfIterationsUntilRestart());
                         solver.compute(*this->eigenA);
                         eigenX = solver.solveWithGuess(eigenB, eigenX);
-                        return solver.info() == StormEigen::ComputationInfo::Success;
+                        converged = solver.info() == StormEigen::ComputationInfo::Success;
+                        numberOfIterations = solver.iterations();
                     } else {
                         StormEigen::GMRES<StormEigen::SparseMatrix<ValueType>, StormEigen::IdentityPreconditioner> solver;
                         solver.setTolerance(this->getSettings().getPrecision());
@@ -214,10 +225,21 @@ namespace storm {
                         solver.set_restart(this->getSettings().getNumberOfIterationsUntilRestart());
                         solver.compute(*this->eigenA);
                         eigenX = solver.solveWithGuess(eigenB, eigenX);
-                        return solver.info() == StormEigen::ComputationInfo::Success;
+                        converged = solver.info() == StormEigen::ComputationInfo::Success;
+                        numberOfIterations = solver.iterations();
                     }
                 }
+                
+                // Check if the solver converged and issue a warning otherwise.
+                if (converged) {
+                    STORM_LOG_DEBUG("Iterative solver converged after " << numberOfIterations << " iterations.");
+                    return true;
+                } else {
+                    STORM_LOG_WARN("Iterative solver did not converge.");
+                    return false;
+                }
             }
+            
             return false;
         }
         

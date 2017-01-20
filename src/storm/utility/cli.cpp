@@ -36,7 +36,11 @@ namespace storm {
                             STORM_LOG_THROW(definedConstants.find(variable) == definedConstants.end(), storm::exceptions::WrongFormatException, "Illegally trying to define constant '" << constantName <<"' twice.");
                             definedConstants.insert(variable);
                             
-                            if (variable.hasBooleanType()) {
+                            if (manager.hasVariable(value)) {
+                                auto const& valueVariable = manager.getVariable(value);
+                                STORM_LOG_THROW(variable.getType() == valueVariable.getType(), storm::exceptions::WrongFormatException, "Illegally trying to define constant '" << constantName << "' by constant '" << valueVariable.getName() << " of different type.");
+                                constantDefinitions[variable] = valueVariable.getExpression();
+                            } else if (variable.hasBooleanType()) {
                                 if (value == "true") {
                                     constantDefinitions[variable] = manager.boolean(true);
                                 } else if (value == "false") {

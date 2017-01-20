@@ -920,6 +920,12 @@ template<int S, int H> class HashObject; // for Google's benchmark, not in spp n
     #define SPP_NOEXCEPT noexcept
 #endif
 
+#ifdef SPP_NO_CXX11_CONSTEXPR
+    #define SPP_CONSTEXPR
+#else
+    #define SPP_CONSTEXPR constexpr
+#endif
+
 #define SPP_INLINE
 
 #ifndef SPP_NAMESPACE
@@ -955,75 +961,109 @@ struct spp_hash<T *>
 
     SPP_INLINE size_t operator()(const T *__v) const SPP_NOEXCEPT 
     {
-        static const size_t shift = spp_log2(1 + sizeof(T));
+        static const size_t shift = 3; // spp_log2(1 + sizeof(T)); // T might be incomplete!
         return static_cast<size_t>((*(reinterpret_cast<const uintptr_t *>(&__v))) >> shift);
     }
 };
 
+// from http://burtleburtle.net/bob/hash/integer.html
+// fast and efficient for power of two table sizes where we always 
+// consider the last bits.
+// ---------------------------------------------------------------
+inline size_t spp_mix_32(uint32_t a)
+{
+    a = a ^ (a >> 4);
+    a = (a ^ 0xdeadbeef) + (a << 5);
+    a = a ^ (a >> 11);
+    return static_cast<size_t>(a);
+}
+
+// Maybe we should do a more thorough scrambling as described in 
+// https://gist.github.com/badboy/6267743
+// -------------------------------------------------------------
+inline size_t spp_mix_64(uint64_t a)
+{
+    a = a ^ (a >> 4);
+    a = (a ^ 0xdeadbeef) + (a << 5);
+    a = a ^ (a >> 11);
+    return a;
+}
+
 template <>
 struct spp_hash<bool> : public std::unary_function<bool, size_t>
 {
-    SPP_INLINE size_t operator()(bool __v) const SPP_NOEXCEPT {return static_cast<size_t>(__v);}
+    SPP_INLINE size_t operator()(bool __v) const SPP_NOEXCEPT 
+    { return static_cast<size_t>(__v); }
 };
 
 template <>
 struct spp_hash<char> : public std::unary_function<char, size_t>
 {
-    SPP_INLINE size_t operator()(char __v) const SPP_NOEXCEPT {return static_cast<size_t>(__v);}
+    SPP_INLINE size_t operator()(char __v) const SPP_NOEXCEPT 
+    { return static_cast<size_t>(__v); }
 };
 
 template <>
 struct spp_hash<signed char> : public std::unary_function<signed char, size_t>
 {
-    SPP_INLINE size_t operator()(signed char __v) const SPP_NOEXCEPT {return static_cast<size_t>(__v);}
+    SPP_INLINE size_t operator()(signed char __v) const SPP_NOEXCEPT 
+    { return static_cast<size_t>(__v); }
 };
 
 template <>
 struct spp_hash<unsigned char> : public std::unary_function<unsigned char, size_t>
 {
-    SPP_INLINE size_t operator()(unsigned char __v) const SPP_NOEXCEPT {return static_cast<size_t>(__v);}
+    SPP_INLINE size_t operator()(unsigned char __v) const SPP_NOEXCEPT 
+    { return static_cast<size_t>(__v); }
 };
 
 template <>
 struct spp_hash<wchar_t> : public std::unary_function<wchar_t, size_t>
 {
-    SPP_INLINE size_t operator()(wchar_t __v) const SPP_NOEXCEPT {return static_cast<size_t>(__v);}
+    SPP_INLINE size_t operator()(wchar_t __v) const SPP_NOEXCEPT 
+    { return static_cast<size_t>(__v); }
 };
 
 template <>
-struct spp_hash<short> : public std::unary_function<short, size_t>
+struct spp_hash<int16_t> : public std::unary_function<int16_t, size_t>
 {
-    SPP_INLINE size_t operator()(short __v) const SPP_NOEXCEPT {return static_cast<size_t>(__v);}
+    SPP_INLINE size_t operator()(int16_t __v) const SPP_NOEXCEPT 
+    { return spp_mix_32(static_cast<uint32_t>(__v)); }
 };
 
 template <> 
-struct spp_hash<unsigned short> : public std::unary_function<unsigned short, size_t>
+struct spp_hash<uint16_t> : public std::unary_function<uint16_t, size_t>
 {
-    SPP_INLINE size_t operator()(unsigned short __v) const SPP_NOEXCEPT {return static_cast<size_t>(__v);}
+    SPP_INLINE size_t operator()(uint16_t __v) const SPP_NOEXCEPT 
+    { return spp_mix_32(static_cast<uint32_t>(__v)); }
 };
 
 template <>
-struct spp_hash<int> : public std::unary_function<int, size_t>
+struct spp_hash<int32_t> : public std::unary_function<int32_t, size_t>
 {
-    SPP_INLINE size_t operator()(int __v) const SPP_NOEXCEPT {return static_cast<size_t>(__v);}
+    SPP_INLINE size_t operator()(int32_t __v) const SPP_NOEXCEPT 
+    { return spp_mix_32(static_cast<uint32_t>(__v)); }
 };
 
 template <>
-struct spp_hash<unsigned int> : public std::unary_function<unsigned int, size_t>
+struct spp_hash<uint32_t> : public std::unary_function<uint32_t, size_t>
 {
-    SPP_INLINE size_t operator()(unsigned int __v) const SPP_NOEXCEPT {return static_cast<size_t>(__v);}
+    SPP_INLINE size_t operator()(uint32_t __v) const SPP_NOEXCEPT 
+    { return spp_mix_32(static_cast<uint32_t>(__v)); }
 };
 
 template <>
-struct spp_hash<long> : public std::unary_function<long, size_t>
+struct spp_hash<int64_t> : public std::unary_function<int64_t, size_t>
 {
-    SPP_INLINE size_t operator()(long __v) const SPP_NOEXCEPT {return static_cast<size_t>(__v);}
+    SPP_INLINE size_t operator()(int64_t __v) const SPP_NOEXCEPT 
+    { return spp_mix_64(static_cast<uint64_t>(__v)); }
 };
 
 template <>
-struct spp_hash<unsigned long> : public std::unary_function<unsigned long, size_t>
+struct spp_hash<uint64_t> : public std::unary_function<uint64_t, size_t>
 {
-    SPP_INLINE size_t operator()(unsigned long __v) const SPP_NOEXCEPT {return static_cast<size_t>(__v);}
+    SPP_INLINE size_t operator()(uint64_t __v) const SPP_NOEXCEPT 
+    { return spp_mix_64(static_cast<uint64_t>(__v)); }
 };
 
 template <>
@@ -1033,22 +1073,20 @@ struct spp_hash<float> : public std::unary_function<float, size_t>
     {
         // -0.0 and 0.0 should return same hash
         uint32_t *as_int = reinterpret_cast<uint32_t *>(&__v);
-        return (__v == 0) ? static_cast<size_t>(0) : static_cast<size_t>(*as_int);
+        return (__v == 0) ? static_cast<size_t>(0) : spp_mix_32(*as_int);
     }
 };
 
-#if 0
-// todo: we should not ignore half of the double => see libcxx/include/functional
 template <>
 struct spp_hash<double> : public std::unary_function<double, size_t>
 {
     SPP_INLINE size_t operator()(double __v) const SPP_NOEXCEPT
     {
         // -0.0 and 0.0 should return same hash
-        return (__v == 0) ? (size_t)0 : (size_t)*((uint64_t *)&__v);
+        uint64_t *as_int = reinterpret_cast<uint64_t *>(&__v);
+        return (__v == 0) ? static_cast<size_t>(0) : spp_mix_64(*as_int);
     }
 };
-#endif
 
 template <class T, int sz> struct Combiner
 {
@@ -1080,7 +1118,7 @@ inline void hash_combine(std::size_t& seed, T const& v)
     combiner(seed, hasher(v));
 }
     
-};
+}
 
 #endif // spp_utils_h_guard_
 
@@ -1412,30 +1450,36 @@ namespace sparsehash_internal
     // Settings contains parameters for growing and shrinking the table.
     // It also packages zero-size functor (ie. hasher).
     //
-    // It does some munging of the hash value in cases where we think
-    // (fear) the original hash function might not be very good.  In
-    // particular, the default hash of pointers is the identity hash,
-    // so probably all the low bits are 0.  We identify when we think
-    // we're hashing a pointer, and chop off the low bits.  Note this
-    // isn't perfect: even when the key is a pointer, we can't tell
-    // for sure that the hash is the identity hash.  If it's not, this
-    // is needless work (and possibly, though not likely, harmful).
+    // It does some munging of the hash value for the cases where 
+    // the original hash function is not be very good.
     // ---------------------------------------------------------------
-    template<typename Key, typename HashFunc,
-             typename SizeType, int HT_MIN_BUCKETS>
+    template<typename Key, typename HashFunc, typename SizeType, int HT_MIN_BUCKETS>
     class sh_hashtable_settings : public HashFunc 
     {
     private:
+#ifndef SPP_MIX_HASH
+        template <class T, int sz> struct Mixer
+        {
+            inline T operator()(T h) const { return h; }
+        };
+#else
         template <class T, int sz> struct Mixer
         {
             inline T operator()(T h) const;
         };
 
-        template <class T> struct Mixer<T, 4>
+         template <class T> struct Mixer<T, 4>
         {
             inline T operator()(T h) const
             {
-                return h + (h >> 7) + (h >> 13) + (h >> 23);
+                // from Thomas Wang - https://gist.github.com/badboy/6267743
+                // ---------------------------------------------------------
+                h = (h ^ 61) ^ (h >> 16);
+                h = h + (h << 3);
+                h = h ^ (h >> 4);
+                h = h * 0x27d4eb2d;
+                h = h ^ (h >> 15);
+                return h;
             }
         };
 
@@ -1443,9 +1487,19 @@ namespace sparsehash_internal
         {
             inline T operator()(T h) const
             {
-                return h + (h >> 7) + (h >> 13) + (h >> 23) + (h >> 32);
+                // from Thomas Wang - https://gist.github.com/badboy/6267743
+                // ---------------------------------------------------------
+                h = (~h) + (h << 21);              // h = (h << 21) - h - 1;
+                h = h ^ (h >> 24);
+                h = (h + (h << 3)) + (h << 8);     // h * 265
+                h = h ^ (h >> 14);
+                h = (h + (h << 2)) + (h << 4);     // h * 21
+                h = h ^ (h >> 28);
+                h = h + (h << 31);
+                return h;
             }
         };
+#endif
 
     public:
         typedef Key key_type;
@@ -1507,8 +1561,8 @@ namespace sparsehash_internal
         // ------------------------------------------------------------
         void set_resizing_parameters(float shrink, float grow) 
         {
-            assert(shrink >= 0.0);
-            assert(grow <= 1.0);
+            assert(shrink >= 0.0f);
+            assert(grow <= 1.0f);
             if (shrink > grow/2.0f)
                 shrink = grow / 2.0f;     // otherwise we thrash hashtable size
             set_shrink_factor(shrink);
@@ -1724,34 +1778,6 @@ template <class T, class U> struct is_relocatable<std::pair<T, U> > :
 
 // ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
-template <class tabletype>
-class table_element_adaptor 
-{
-public:
-    typedef typename tabletype::value_type value_type;
-    typedef typename tabletype::size_type  size_type;
-    typedef typename tabletype::reference  reference;
-    typedef typename tabletype::pointer    pointer;
-
-    table_element_adaptor(tabletype *tbl, size_type p) :
-        table(tbl), pos(p) 
-    { }
-
-    table_element_adaptor& operator=(const value_type &val)
-    {
-        table->set(pos, val, false);
-        return *this;
-    }
-
-    operator value_type() { return table->get(pos); }   // we look like a value
-
-    pointer operator& () { return &table->mutating_get(pos); }
-
-private:
-    tabletype* table;
-    size_type pos;
-};
-
 // Our iterator as simple as iterators can be: basically it's just
 // the index into our table.  Dereference, the only complicated
 // thing, we punt to the table class.  This just goes to show how
@@ -1774,22 +1800,10 @@ public:
     typedef typename tabletype::value_type       value_type;
     typedef typename tabletype::difference_type  difference_type;
     typedef typename tabletype::size_type        size_type;
-    typedef table_element_adaptor<tabletype>     reference;
-    typedef table_element_adaptor<tabletype>*    pointer;
 
     explicit table_iterator(tabletype *tbl = 0, size_type p = 0) : 
         table(tbl), pos(p) 
     { }
-
-    // The main thing our iterator does is dereference.  If the table entry
-    // we point to is empty, we return the default value type.
-    // This is the big different function from the const iterator.
-    reference operator*()            
-    {
-        return table_element_adaptor<tabletype>(table, pos);
-    }
-
-    pointer operator->()  { return &(operator*()); }
 
     // Helper function to assert things are ok; eg pos is still in range
     void check() const 
@@ -1832,11 +1846,6 @@ public:
     {      // for "x = it2 - it"
         assert(table == it.table);
         return pos - it.pos;
-    }
-
-    reference operator[](difference_type n) const 
-    {
-        return *(*this + n);            // simple though not totally efficient
     }
 
     // Comparisons.
@@ -2306,7 +2315,6 @@ public:
     typedef value_type*                                    pointer;
     typedef const value_type*                              const_pointer;
 
-    typedef table_element_adaptor<sparsegroup<T, Alloc> >  element_adaptor;
     typedef uint8_t                                        size_type;        // max # of buckets
 
     // These are our special iterators, that go over non-empty buckets in a
@@ -2331,16 +2339,6 @@ public:
     reverse_ne_iterator       ne_rend()          { return reverse_ne_iterator(ne_begin()); }
     const_reverse_ne_iterator ne_rend() const    { return const_reverse_ne_iterator(ne_cbegin());  }
     const_reverse_ne_iterator ne_crend() const   { return const_reverse_ne_iterator(ne_cbegin());  }
-
-
-    // This gives us the "default" value to return for an empty bucket.
-    // We just use the default constructor on T, the template type
-    // ----------------------------------------------------------------
-    const_reference default_value() const 
-    {
-        static value_type defaultval = value_type();
-        return defaultval;
-    }
 
 private:
     // T can be std::pair<K, V>, but we need to return std::pair<const K, V>
@@ -2566,16 +2564,6 @@ public:
     // We also may want to know how many *used* buckets there are
     size_type num_nonempty() const   { return (size_type)_num_items(); }
 
-    // get()/set() are explicitly const/non-const.  You can use [] if
-    // you want something that can be either (potentially more expensive).
-    const_reference get(size_type i) const 
-    {
-        if (_bmtest(i))           // bucket i is occupied
-            return (const_reference)_group[pos_to_offset(i)];
-        else
-            return default_value();  // return the default reference
-    }
-
     // TODO(csilvers): make protected + friend
     // This is used by sparse_hashtable to get an element from the table
     // when we know it exists.
@@ -2587,35 +2575,6 @@ public:
 
     typedef std::pair<mutable_pointer, bool> SetResult;
 
-    // returns a reference which can be assigned, so we have to create an entry if not 
-    // already there
-    // -------------------------------------------------------------------------------
-    reference mutating_get(Alloc &alloc, size_type i) 
-    {
-        // fills bucket i before getting
-        if (!_bmtest(i))
-        {
-            SetResult sr = set(alloc, i, false);
-            if (!sr.second)
-                ::new (sr.first) mutable_value_type();
-            return *((pointer)sr.first);
-        }
-
-        return _group[pos_to_offset(i)];
-    }
-
-    // Syntactic sugar.  It's easy to return a const reference.  To
-    // return a non-const reference, we need to use the assigner adaptor.
-    const_reference operator[](size_type i) const 
-    {
-        return get(i);
-    }
-
-    element_adaptor operator[](size_type i)
-    {
-        return element_adaptor(this, i);
-    }
-
 private:
     typedef spp_::integral_constant<bool,
                                     (spp_::is_relocatable<value_type>::value &&
@@ -2623,11 +2582,45 @@ private:
                                                    spp_::libc_allocator_with_realloc<mutable_value_type> >::value)>
             realloc_and_memmove_ok; 
 
+    // ------------------------- memory at *p is uninitialized => need to construct
+    void _init_val(mutable_value_type *p, reference val)
+    {
+#if !defined(SPP_NO_CXX11_RVALUE_REFERENCES)
+        ::new (p) mutable_value_type(std::move(val));
+#else
+        ::new (p) mutable_value_type(val);
+#endif
+    }
+
+    // ------------------------- memory at *p is uninitialized => need to construct
+    void _init_val(mutable_value_type *p, const_reference val)
+    {
+        ::new (p) mutable_value_type(val);
+    }
+
+    // ------------------------------------------------ memory at *p is initialized
+    void _set_val(mutable_value_type *p, reference val)
+    {
+#if !defined(SPP_NO_CXX11_RVALUE_REFERENCES)
+        *p = std::move(val);
+#else
+        using std::swap;
+        swap(*p, spp_mutable_ref(val)); 
+#endif
+    }
+
+    // ------------------------------------------------ memory at *p is initialized
+    void _set_val(mutable_value_type *p, const_reference val)
+    {
+        *p = spp_const_mutable_ref(val);
+    }
+
     // Our default allocator - try to merge memory buffers
     // right now it uses Google's traits, but we should use something like folly::IsRelocatable
     // return true if the slot was constructed (i.e. contains a valid mutable_value_type
     // ---------------------------------------------------------------------------------
-    bool _set_aux(Alloc &alloc, size_type offset, spp_::true_type) 
+    template <class Val>
+    void _set_aux(Alloc &alloc, size_type offset, Val &val, spp_::true_type) 
     {
         //static int x=0;  if (++x < 10) printf("x\n"); // check we are getting here
         
@@ -2643,14 +2636,16 @@ private:
 
         for (uint32_t i = num_items; i > offset; --i)
             memcpy(_group + i, _group + i-1, sizeof(*_group));
-        return false;
+
+        _init_val(_group + offset, val);
     }
 
     // Create space at _group[offset], without special assumptions about value_type
     // and allocator_type, with a default value
     // return true if the slot was constructed (i.e. contains a valid mutable_value_type
     // ---------------------------------------------------------------------------------
-    bool _set_aux(Alloc &alloc, size_type offset, spp_::false_type) 
+    template <class Val>
+    void _set_aux(Alloc &alloc, size_type offset, Val &val, spp_::false_type) 
     {
         uint32_t  num_items = _num_items();
         uint32_t  num_alloc = _sizing(num_items);
@@ -2659,9 +2654,9 @@ private:
         if (num_items < num_alloc)
         {
             // create new object at end and rotate it to position
-            ::new (&_group[num_items]) mutable_value_type();
+            _init_val(&_group[num_items], val);
             std::rotate(_group + offset, _group + num_items, _group + num_items + 1);
-            return true;
+            return;
         }
 
         // This is valid because 0 <= offset <= num_items
@@ -2674,57 +2669,37 @@ private:
             std::uninitialized_copy(MK_MOVE_IT(_group + offset),
                                     MK_MOVE_IT(_group + num_items),
                                     p + offset + 1);
+        _init_val(p + offset, val);
         _free_group(alloc, num_alloc);
         _group = p;
-        return false;
+    }
+
+    // ----------------------------------------------------------------------------------
+    template <class Val>
+    void _set(Alloc &alloc, size_type i, size_type offset, Val &val)
+    {
+        if (!_bmtest(i)) 
+        {
+            _set_aux(alloc, offset, val, realloc_and_memmove_ok());
+            _incr_num_items();
+            _bmset(i);
+        }
+        else
+            _set_val(&_group[offset], val);
     }
 
 public:
 
-    // TODO(austern): Make this exception safe: handle exceptions from
-    // value_type's copy constructor.
-    // return true if the slot was constructed (i.e. contains a valid mutable_value_type)
-    // ----------------------------------------------------------------------------------
-    bool _set(Alloc &alloc, size_type i, size_type offset, bool erased)
+    // This returns the pointer to the inserted item
+    // ---------------------------------------------
+    template <class Val>
+    pointer set(Alloc &alloc, size_type i, Val &val)
     {
-        if (erased)
-        {
-            // assert(_bme_test(i));
-            _bme_clear(i);
-        }
+        _bme_clear(i); // in case this was an "erased" location
 
-        if (!_bmtest(i)) 
-        {
-            bool res = _set_aux(alloc, offset, realloc_and_memmove_ok());
-            _incr_num_items();
-            _bmset(i);
-            return res;
-        }
-        return true;
-    }
-
-    // This returns a pair (first is a pointer to the item's location, second is whether
-    // that location is constructed (i.e. contains a valid mutable_value_type)
-    // ---------------------------------------------------------------------------------
-    SetResult set(Alloc &alloc, size_type i, bool erased)
-    {
         size_type offset = pos_to_offset(i);  
-        bool constructed =  _set(alloc, i, offset, erased); // may change _group pointer
-        return std::make_pair(_group + offset, constructed);
-    }
-
-    // used in _move_from (where we can move the old value instead of copying it
-    // -------------------------------------------------------------------------
-    void move(Alloc &alloc, size_type i, reference val)
-    {
-        // assert(!_bmtest(i));
-
-        size_type offset = pos_to_offset(i); 
-        if (!_set(alloc, i, offset, false))
-            ::new (&_group[offset]) mutable_value_type();
-
-        using std::swap;
-        swap(_group[offset], spp_mutable_ref(val)); // called from _move_from, OK to swap
+        _set(alloc, i, offset, val);            // may change _group pointer
+        return (pointer)(_group + offset);
     }
     
     // We let you see if a bucket is non-empty without retrieving it
@@ -3074,7 +3049,6 @@ public:
 
     typedef table_iterator<sparsetable<T, Alloc> >        iterator;       // defined with index
     typedef const_table_iterator<sparsetable<T, Alloc> >  const_iterator; // defined with index
-    typedef table_element_adaptor<sparsetable<T, Alloc> > element_adaptor;
     typedef std::reverse_iterator<const_iterator>         const_reverse_iterator;
     typedef std::reverse_iterator<iterator>               reverse_iterator;
 
@@ -3438,14 +3412,6 @@ public:
         return which_group(pos.pos).test(pos_in_group(pos.pos));
     }
 
-    // We only return const_references because it's really hard to
-    // return something settable for empty buckets.  Use set() instead.
-    const_reference get(size_type i) const 
-    {
-        assert(i < _table_size);
-        return which_group(i).get(pos_in_group(i));
-    }
-
     // TODO(csilvers): make protected + friend
     // This is used by sparse_hashtable to get an element from the table
     // when we know it exists (because the caller has called test(i)).
@@ -3455,30 +3421,6 @@ public:
         assert(i < _table_size);
         // assert(test(i));
         return which_group(i).unsafe_get(pos_in_group(i));
-    }
-
-    // TODO(csilvers): make protected + friend element_adaptor
-    reference mutating_get(size_type i) 
-    {   
-        // fills bucket i before getting
-        assert(i < _table_size);
-
-        GroupsReference grp(which_group(i));
-        typename group_type::size_type old_numbuckets = grp.num_nonempty();
-        reference retval = grp.mutating_get(_alloc, pos_in_group(i));
-        _num_buckets += grp.num_nonempty() - old_numbuckets;
-        return retval;
-    }
-
-    // Syntactic sugar.  As in sparsegroup, the non-const version is harder
-    const_reference operator[](size_type i) const 
-    {
-        return get(i);
-    }
-
-    element_adaptor operator[](size_type i) 
-    {
-        return element_adaptor(this, i);
     }
 
     // Needed for hashtables, gets as a ne_iterator.  Crashes for empty bcks
@@ -3524,28 +3466,24 @@ public:
                 _first_group[current_row].offset_to_pos(current_col));
     }
 
-    // This returns a reference to the inserted item (which is a copy of val)
-    // The trick is to figure out whether we're replacing or inserting anew
-    // ----------------------------------------------------------------------
-    reference set(size_type i, const_reference val, bool erased = false) 
+    // Val can be reference or const_reference
+    // ---------------------------------------
+    template <class Val>
+    reference set(size_type i, Val &val) 
     {
         assert(i < _table_size);
         group_type &group = which_group(i);
         typename group_type::size_type old_numbuckets = group.num_nonempty();
-        typename group_type::SetResult sr(group.set(_alloc, pos_in_group(i), erased));
-        if (!sr.second)
-            ::new (sr.first) mutable_value_type(val);
-        else
-            *sr.first = spp_const_mutable_ref(val);
+        pointer p(group.set(_alloc, pos_in_group(i), val));
         _num_buckets += group.num_nonempty() - old_numbuckets;
-        return *((pointer)sr.first);
+        return *p;
     }
 
     // used in _move_from (where we can move the old value instead of copying it
     void move(size_type i, reference val) 
     {
         assert(i < _table_size);
-        which_group(i).move(_alloc, pos_in_group(i), val);
+        which_group(i).set(_alloc, pos_in_group(i), val);
         ++_num_buckets;
     }
 
@@ -3816,7 +3754,7 @@ private:
 public:
     typedef Key                                        key_type;
     typedef typename spp::cvt<Value>::type             value_type;
-    typedef HashFcn                                    hasher;
+    typedef HashFcn                                    hasher; // user provided or spp_hash<Key>
     typedef EqualKey                                   key_equal;
     typedef Alloc                                      allocator_type;
 
@@ -4101,7 +4039,7 @@ private:
                 assert(num_probes < bucket_count()
                        && "Hashtable is full: an error in key_equal<> or hash<>");
             }
-            table.set(bucknum, *it, false);               // copies the value to here
+            table.set(bucknum, *it);               // copies the value to here
         }
         settings.inc_num_ht_copies();
     }
@@ -4483,7 +4421,8 @@ public:
     // INSERTION ROUTINES
 private:
     // Private method used by insert_noresize and find_or_insert.
-    reference _insert_at(const_reference obj, size_type pos, bool erased) 
+    template <class T>
+    reference _insert_at(T& obj, size_type pos, bool erased) 
     {
         if (size() >= max_size()) 
         {
@@ -4494,11 +4433,12 @@ private:
             assert(num_deleted);
             --num_deleted;
         }
-        return table.set(pos, obj, erased);
+        return table.set(pos, obj);
     }
 
     // If you know *this is big enough to hold obj, use this routine
-    std::pair<iterator, bool> _insert_noresize(const_reference obj) 
+    template <class T>
+    std::pair<iterator, bool> _insert_noresize(T& obj) 
     {
         Position pos = _find_position(get_key(obj));
         bool already_there = (pos._t == pt_full);
@@ -4536,17 +4476,13 @@ private:
 
 public:
 
-#if 0 && !defined(SPP_NO_CXX11_VARIADIC_TEMPLATES)
+#if !defined(SPP_NO_CXX11_VARIADIC_TEMPLATES)
     template <class... Args>
-    pair<iterator, bool> emplace(Args&&... args) 
+    std::pair<iterator, bool> emplace(Args&&... args) 
     {
-        return rep.emplace_unique(std::forward<Args>(args)...);
-    }
-
-    template <class... Args>
-    iterator emplace_hint(const_iterator p, Args&&... args)
-    {
-        return rep.emplace_unique(std::forward<Args>(args)...).first;
+        _resize_delta(1);  
+        value_type obj(std::forward<Args>(args)...);
+        return _insert_noresize(obj);
     }
 #endif
 
@@ -4589,12 +4525,14 @@ public:
                 {
                     // needed to rehash to make room
                     // Since we resized, we can't use pos, so recalculate where to insert.
-                    return *(_insert_noresize(default_value(key)).first);
+                    value_type def(default_value(key));
+                    return *(_insert_noresize(def).first);
                 } 
                 else 
                 {
                     // no need to rehash, insert right here
-                    return _insert_at(default_value(key), erased ? erased_pos : bucknum, erased);
+                    value_type def(default_value(key));
+                    return _insert_at(def, erased ? erased_pos : bucknum, erased);
                 }
             }
             if (grp_pos.test())
@@ -5153,6 +5091,20 @@ public:
         return it->second;
     }
 
+#if !defined(SPP_NO_CXX11_VARIADIC_TEMPLATES)
+    template <class... Args>
+    std::pair<iterator, bool> emplace(Args&&... args) 
+    {
+        return rep.emplace(std::forward<Args>(args)...);
+    }
+
+    template <class... Args>
+    iterator emplace_hint(const_iterator , Args&&... args)
+    {
+        return rep.emplace(std::forward<Args>(args)...).first;
+    }
+#endif
+
     // Insert
     // ------
     std::pair<iterator, bool> 
@@ -5496,17 +5448,17 @@ public:
     std::pair<iterator, iterator> 
     equal_range(const key_type& key) const       { return rep.equal_range(key); }
 
-#if 0 && !defined(SPP_NO_CXX11_VARIADIC_TEMPLATES)
+#if !defined(SPP_NO_CXX11_VARIADIC_TEMPLATES)
     template <class... Args>
-    pair<iterator, bool> emplace(Args&&... args) 
+    std::pair<iterator, bool> emplace(Args&&... args) 
     {
-        return rep.emplace_unique(std::forward<Args>(args)...);
+        return rep.emplace(std::forward<Args>(args)...);
     }
 
     template <class... Args>
-    iterator emplace_hint(const_iterator p, Args&&... args)
+    iterator emplace_hint(const_iterator , Args&&... args)
     {
-        return rep.emplace_unique(std::forward<Args>(args)...).first;
+        return rep.emplace(std::forward<Args>(args)...).first;
     }
 #endif
 

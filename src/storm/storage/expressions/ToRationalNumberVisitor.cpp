@@ -68,8 +68,8 @@ namespace storm {
         }
         
         template<typename RationalNumberType>
-        boost::any ToRationalNumberVisitor<RationalNumberType>::visit(VariableExpression const&, boost::any const&) {
-            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Cannot transform expressions containing variables to a rational number.");
+        boost::any ToRationalNumberVisitor<RationalNumberType>::visit(VariableExpression const& expression, boost::any const&) {
+            return valueMapping.at(expression.getVariable());
         }
         
         template<typename RationalNumberType>
@@ -78,8 +78,13 @@ namespace storm {
         }
         
         template<typename RationalNumberType>
-        boost::any ToRationalNumberVisitor<RationalNumberType>::visit(UnaryNumericalFunctionExpression const&, boost::any const& ) {
-            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression cannot be translated into a rational number.");
+        boost::any ToRationalNumberVisitor<RationalNumberType>::visit(UnaryNumericalFunctionExpression const& expression, boost::any const& data) {
+            RationalNumberType operandAsRationalNumber = boost::any_cast<RationalNumberType>(expression.getOperand()->accept(*this, data));
+            switch (expression.getOperatorType()) {
+                case UnaryNumericalFunctionExpression::OperatorType::Minus: return -operandAsRationalNumber;
+                case UnaryNumericalFunctionExpression::OperatorType::Floor: return storm::utility::floor(operandAsRationalNumber);
+                case UnaryNumericalFunctionExpression::OperatorType::Ceil: return storm::utility::ceil(operandAsRationalNumber);
+            }
         }
         
         template<typename RationalNumberType>
@@ -105,6 +110,11 @@ namespace storm {
 #else
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Rational numbers are not supported in this build.");
 #endif
+        }
+        
+        template<typename RationalNumberType>
+        void ToRationalNumberVisitor<RationalNumberType>::setMapping(storm::expressions::Variable const& variable, RationalNumberType const& value) {
+            valueMapping[variable] = value;
         }
         
 #ifdef STORM_HAVE_CARL

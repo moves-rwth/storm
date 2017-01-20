@@ -32,7 +32,7 @@ int main(const int argc, const char** argv) {
         totalTimer.stop();
 
         if (storm::settings::getModule<storm::settings::modules::ResourceSettings>().isPrintTimeAndMemorySet()) {
-            storm::cli::showTimeAndMemoryStatistics(totalTimer.getTimeMilliseconds());
+            storm::cli::showTimeAndMemoryStatistics(totalTimer.getTimeInMilliseconds());
         }
         return 0;
     } catch (storm::exceptions::BaseException const& exception) {

@@ -256,13 +256,13 @@ namespace storm {
                         for (auto const& stateActionReward : rewardModel.get().getStateActionRewards()) {
                             for (auto const& choice : allChoices) {
                                 if (stateActionReward.getActionIndex() == choice.getActionIndex() && this->evaluator->asBool(stateActionReward.getStatePredicateExpression())) {
-                                    stateActionRewardValue += ValueType(this->evaluator->asRational(stateActionReward.getRewardValueExpression())) * choice.getTotalMass() / totalExitRate;
+                                    stateActionRewardValue += ValueType(this->evaluator->asRational(stateActionReward.getRewardValueExpression())) * choice.getTotalMass();
                                 }
                             }
                             
                         }
                     }
-                    globalChoice.addReward(stateActionRewardValue);
+                    globalChoice.addReward(stateActionRewardValue / totalExitRate);
                 }
                 
                 // Move the newly fused choice in place.

@@ -17,7 +17,7 @@ namespace storm {
         InternalAdd<DdType::CUDD, ValueType>::InternalAdd(InternalDdManager<DdType::CUDD> const* ddManager, cudd::ADD cuddAdd) : ddManager(ddManager), cuddAdd(cuddAdd) {
             // Intentionally left empty.
         }
-        
+                
         template<typename ValueType>
         bool InternalAdd<DdType::CUDD, ValueType>::operator==(InternalAdd<DdType::CUDD, ValueType> const& other) const {
             return this->getCuddAdd() == other.getCuddAdd();

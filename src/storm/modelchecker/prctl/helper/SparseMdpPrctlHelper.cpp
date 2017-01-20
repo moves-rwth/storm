@@ -330,7 +330,7 @@ namespace storm {
                                 }
                             }
                         }
-                        
+                                                
                         // Create vector for results for maybe states.
                         std::vector<ValueType> x(maybeStates.getNumberOfSetBits(), storm::utility::zero<ValueType>());
                         

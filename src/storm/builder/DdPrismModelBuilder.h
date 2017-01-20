@@ -122,11 +122,11 @@ namespace storm {
                     // Intentionally left empty.
                 }
                 
-                ActionDecisionDiagram(storm::dd::DdManager<Type> const& manager, std::set<storm::expressions::Variable> const& assignedGlobalVariables = std::set<storm::expressions::Variable>(), uint_fast64_t numberOfUsedNondeterminismVariables = 0) : guardDd(manager.template getAddZero<ValueType>()), transitionsDd(manager.template getAddZero<ValueType>()), numberOfUsedNondeterminismVariables(numberOfUsedNondeterminismVariables), assignedGlobalVariables(assignedGlobalVariables) {
+                ActionDecisionDiagram(storm::dd::DdManager<Type> const& manager, std::set<storm::expressions::Variable> const& assignedGlobalVariables = std::set<storm::expressions::Variable>(), uint_fast64_t numberOfUsedNondeterminismVariables = 0) : guardDd(manager.getBddZero()), transitionsDd(manager.template getAddZero<ValueType>()), numberOfUsedNondeterminismVariables(numberOfUsedNondeterminismVariables), assignedGlobalVariables(assignedGlobalVariables) {
                     // Intentionally left empty.
                 }
                 
-                ActionDecisionDiagram(storm::dd::Add<Type, ValueType> guardDd, storm::dd::Add<Type, ValueType> transitionsDd, std::set<storm::expressions::Variable> const& assignedGlobalVariables = std::set<storm::expressions::Variable>(), uint_fast64_t numberOfUsedNondeterminismVariables = 0) : guardDd(guardDd), transitionsDd(transitionsDd), numberOfUsedNondeterminismVariables(numberOfUsedNondeterminismVariables), assignedGlobalVariables(assignedGlobalVariables) {
+                ActionDecisionDiagram(storm::dd::Bdd<Type> guardDd, storm::dd::Add<Type, ValueType> transitionsDd, std::set<storm::expressions::Variable> const& assignedGlobalVariables = std::set<storm::expressions::Variable>(), uint_fast64_t numberOfUsedNondeterminismVariables = 0) : guardDd(guardDd), transitionsDd(transitionsDd), numberOfUsedNondeterminismVariables(numberOfUsedNondeterminismVariables), assignedGlobalVariables(assignedGlobalVariables) {
                     // Intentionally left empty.
                 }
                 
@@ -134,7 +134,7 @@ namespace storm {
                 ActionDecisionDiagram& operator=(ActionDecisionDiagram const& other) = default;
                 
                 // The guard of the action.
-                storm::dd::Add<Type, ValueType> guardDd;
+                storm::dd::Bdd<Type> guardDd;
                 
                 // The actual transitions (source and target states).
                 storm::dd::Add<Type, ValueType> transitionsDd;
@@ -230,7 +230,9 @@ namespace storm {
             
             static storm::dd::Add<Type, ValueType> createSystemFromModule(GenerationInformation& generationInfo, ModuleDecisionDiagram const& module);
             
-            static storm::models::symbolic::StandardRewardModel<Type, ValueType> createRewardModelDecisionDiagrams(GenerationInformation& generationInfo, storm::prism::RewardModel const& rewardModel, ModuleDecisionDiagram const& globalModule, storm::dd::Add<Type, ValueType> const& reachableStatesAdd, storm::dd::Add<Type, ValueType> const& stateActionDd);
+            static std::unordered_map<std::string, storm::models::symbolic::StandardRewardModel<Type, ValueType>> createRewardModelDecisionDiagrams(std::vector<std::reference_wrapper<storm::prism::RewardModel const>> const& selectedRewardModels, SystemResult& system, GenerationInformation& generationInfo, ModuleDecisionDiagram const& globalModule, storm::dd::Add<Type, ValueType> const& reachableStatesAdd, storm::dd::Add<Type, ValueType> const& transitionMatrix);
+
+            static storm::models::symbolic::StandardRewardModel<Type, ValueType> createRewardModelDecisionDiagrams(GenerationInformation& generationInfo, storm::prism::RewardModel const& rewardModel, ModuleDecisionDiagram const& globalModule, storm::dd::Add<Type, ValueType> const& reachableStatesAdd, storm::dd::Add<Type, ValueType> const& transitionMatrix, boost::optional<storm::dd::Add<Type, ValueType>>& stateActionDd);
             
             static SystemResult createSystemDecisionDiagram(GenerationInformation& generationInfo);
             

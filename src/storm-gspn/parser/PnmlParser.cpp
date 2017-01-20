@@ -1,9 +1,9 @@
 
 #include "storm-gspn/parser/PnmlParser.h"
-#ifdef USE_XERCES
+#ifdef STORM_HAVE_XERCES
 #include <iostream>
 
-#include "storm/adapters/XercesAdapter.h"
+#include "storm-gspn/adapters/XercesAdapter.h"
 
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/exceptions/WrongFormatException.h"
@@ -283,7 +283,7 @@ namespace storm {
                 STORM_PRINT_AND_LOG("unknown multiplicity (node=arc): " + id + "\n");
             }
 
-            STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "No arc type specified for arc '" + id + "'");
+        
             if (type.second == "normal") {
                 builder.addNormalArc(source.second, target.second, multiplicity.second);
             } else if (type.second == "inhibition") {

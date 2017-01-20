@@ -550,7 +550,11 @@ namespace storm {
             
             // Next, we split the matrix into one for each group. Note that this only works if the group variables are
             // at the very top.
-            std::vector<InternalAdd<LibraryType, ValueType>> groups = internalAdd.splitIntoGroups(ddGroupVariableIndices);
+            std::vector<InternalAdd<LibraryType, ValueType>> internalAddGroups = internalAdd.splitIntoGroups(ddGroupVariableIndices);
+            std::vector<Add<LibraryType, ValueType>> groups;
+            for (auto const& internalAdd : internalAddGroups) {
+                groups.push_back(Add<LibraryType, ValueType>(this->getDdManager(), internalAdd, rowAndColumnMetaVariables));
+            }
             
             // Create the actual storage for the non-zero entries.
             std::vector<storm::storage::MatrixEntry<uint_fast64_t, ValueType>> columnsAndValues(this->getNonZeroCount());
@@ -561,17 +565,20 @@ namespace storm {
             std::vector<InternalAdd<LibraryType, uint_fast64_t>> statesWithGroupEnabled(groups.size());
             InternalAdd<LibraryType, uint_fast64_t> stateToRowGroupCount = this->getDdManager().template getAddZero<uint_fast64_t>();
             for (uint_fast64_t i = 0; i < groups.size(); ++i) {
-                auto const& dd = groups[i];
+                auto const& group = groups[i];
+                auto groupNotZero = group.notZero();
                 
-                dd.toMatrixComponents(rowGroupIndices, rowIndications, columnsAndValues, rowOdd, columnOdd, ddRowVariableIndices, ddColumnVariableIndices, false);
+                std::vector<uint64_t> tmpRowIndications = groupNotZero.template toAdd<uint_fast64_t>().sumAbstract(columnMetaVariables).toVector(rowOdd);
+                for (uint64_t offset = 0; offset < tmpRowIndications.size(); ++offset) {
+                    rowIndications[rowGroupIndices[offset]] += tmpRowIndications[offset];
+                }
                 
-                statesWithGroupEnabled[i] = dd.notZero().existsAbstract(columnVariableCube).template toAdd<uint_fast64_t>();
-                stateToRowGroupCount += statesWithGroupEnabled[i];
+                statesWithGroupEnabled[i] = groupNotZero.existsAbstract(columnMetaVariables).template toAdd<uint_fast64_t>();
                 statesWithGroupEnabled[i].composeWithExplicitVector(rowOdd, ddRowVariableIndices, rowGroupIndices, std::plus<uint_fast64_t>());
             }
             
             // Since we modified the rowGroupIndices, we need to restore the correct values.
-            stateToRowGroupCount.composeWithExplicitVector(rowOdd, ddRowVariableIndices, rowGroupIndices, std::minus<uint_fast64_t>());
+            stateToNumberOfChoices.internalAdd.composeWithExplicitVector(rowOdd, ddRowVariableIndices, rowGroupIndices, std::minus<uint_fast64_t>());
             
             // Now that we computed the number of entries in each row, compute the corresponding offsets in the entry vector.
             tmp = 0;
@@ -585,15 +592,15 @@ namespace storm {
             
             // Now actually fill the entry vector.
             for (uint_fast64_t i = 0; i < groups.size(); ++i) {
-                auto const& dd = groups[i];
+                auto const& group = groups[i];
                 
-                dd.toMatrixComponents(rowGroupIndices, rowIndications, columnsAndValues, rowOdd, columnOdd, ddRowVariableIndices, ddColumnVariableIndices, true);
+                group.internalAdd.toMatrixComponents(rowGroupIndices, rowIndications, columnsAndValues, rowOdd, columnOdd, ddRowVariableIndices, ddColumnVariableIndices, true);
                 
                 statesWithGroupEnabled[i].composeWithExplicitVector(rowOdd, ddRowVariableIndices, rowGroupIndices, std::plus<uint_fast64_t>());
             }
             
             // Since we modified the rowGroupIndices, we need to restore the correct values.
-            stateToRowGroupCount.composeWithExplicitVector(rowOdd, ddRowVariableIndices, rowGroupIndices, std::minus<uint_fast64_t>());
+            stateToNumberOfChoices.internalAdd.composeWithExplicitVector(rowOdd, ddRowVariableIndices, rowGroupIndices, std::minus<uint_fast64_t>());
             
             // Since the last call to toMatrixRec modified the rowIndications, we need to restore the correct values.
             for (uint_fast64_t i = rowIndications.size() - 1; i > 0; --i) {
@@ -674,7 +681,11 @@ namespace storm {
             std::vector<ValueType> explicitVector(rowGroupIndices.back());
             
             // Next, we split the matrix into one for each group. Note that this only works if the group variables are at the very top.
-            std::vector<std::pair<InternalAdd<LibraryType, ValueType>, InternalAdd<LibraryType, ValueType>>> groups = internalAdd.splitIntoGroups(vector, ddGroupVariableIndices);
+            std::vector<std::pair<InternalAdd<LibraryType, ValueType>, InternalAdd<LibraryType, ValueType>>> internalAddGroups = internalAdd.splitIntoGroups(vector, ddGroupVariableIndices);
+            std::vector<std::pair<Add<LibraryType, ValueType>, Add<LibraryType, ValueType>>> groups;
+            for (auto const& internalAdd : internalAddGroups) {
+                groups.push_back(std::make_pair(Add<LibraryType, ValueType>(this->getDdManager(), internalAdd.first, rowAndColumnMetaVariables), Add<LibraryType, ValueType>(this->getDdManager(), internalAdd.second, rowMetaVariables)));
+            }
 
             // Create the actual storage for the non-zero entries.
             std::vector<storm::storage::MatrixEntry<uint_fast64_t, ValueType>> columnsAndValues(this->getNonZeroCount());
@@ -685,12 +696,18 @@ namespace storm {
             std::vector<InternalAdd<LibraryType, uint_fast64_t>> statesWithGroupEnabled(groups.size());
             InternalAdd<LibraryType, uint_fast64_t> stateToRowGroupCount = this->getDdManager().template getAddZero<uint_fast64_t>();
             for (uint_fast64_t i = 0; i < groups.size(); ++i) {
-                std::pair<InternalAdd<LibraryType, ValueType>, InternalAdd<LibraryType, ValueType>> const& ddPair = groups[i];
+                std::pair<Add<LibraryType, ValueType>, Add<LibraryType, ValueType>> const& ddPair = groups[i];
+                Bdd<LibraryType> matrixDdNotZero = ddPair.first.notZero();
+                Bdd<LibraryType> vectorDdNotZero = ddPair.second.notZero();
+
+                std::vector<uint64_t> tmpRowIndications = matrixDdNotZero.template toAdd<uint_fast64_t>().sumAbstract(columnMetaVariables).toVector(rowOdd);
+                for (uint64_t offset = 0; offset < tmpRowIndications.size(); ++offset) {
+                    rowIndications[rowGroupIndices[offset]] += tmpRowIndications[offset];
+                }
+
+                ddPair.second.internalAdd.composeWithExplicitVector(rowOdd, ddRowVariableIndices, rowGroupIndices, explicitVector, std::plus<ValueType>());
                 
-                ddPair.first.toMatrixComponents(rowGroupIndices, rowIndications, columnsAndValues, rowOdd, columnOdd, ddRowVariableIndices, ddColumnVariableIndices, false);
-                ddPair.second.composeWithExplicitVector(rowOdd, ddRowVariableIndices, rowGroupIndices, explicitVector, std::plus<ValueType>());
-                
-                statesWithGroupEnabled[i] = (ddPair.first.notZero().existsAbstract(columnVariableCube) || ddPair.second.notZero()).template toAdd<uint_fast64_t>();
+                statesWithGroupEnabled[i] = (matrixDdNotZero.existsAbstract(columnMetaVariables) || vectorDdNotZero).template toAdd<uint_fast64_t>();
                 stateToRowGroupCount += statesWithGroupEnabled[i];
                 statesWithGroupEnabled[i].composeWithExplicitVector(rowOdd, ddRowVariableIndices, rowGroupIndices, std::plus<uint_fast64_t>());
             }
@@ -712,8 +729,7 @@ namespace storm {
             for (uint_fast64_t i = 0; i < groups.size(); ++i) {
                 auto const& dd = groups[i].first;
                 
-                dd.toMatrixComponents(rowGroupIndices, rowIndications, columnsAndValues, rowOdd, columnOdd, ddRowVariableIndices, ddColumnVariableIndices, true);
-                
+                dd.internalAdd.toMatrixComponents(rowGroupIndices, rowIndications, columnsAndValues, rowOdd, columnOdd, ddRowVariableIndices, ddColumnVariableIndices, true);
                 statesWithGroupEnabled[i].composeWithExplicitVector(rowOdd, ddRowVariableIndices, rowGroupIndices, std::plus<uint_fast64_t>());
             }
             

@@ -998,7 +998,12 @@ namespace storm {
                 for (auto const& location : automaton.get().getLocations()) {
                     for (auto const& assignment : location.getAssignments().getTransientAssignments()) {
                         if (assignment.getExpressionVariable() == transientVariable.getExpressionVariable()) {
-                            auto newExpression = (locationVariable == this->getManager().integer(automaton.get().getLocationIndex(location.getName()))) && (negate ? !assignment.getAssignedExpression() : assignment.getAssignedExpression());
+                            storm::expressions::Expression newExpression;
+                            if (automaton.get().getNumberOfLocations() <= 1) {
+                                newExpression = (negate ? !assignment.getAssignedExpression() : assignment.getAssignedExpression());
+                            } else {
+                                newExpression = (locationVariable == this->getManager().integer(automaton.get().getLocationIndex(location.getName()))) && (negate ? !assignment.getAssignedExpression() : assignment.getAssignedExpression());
+                            }
                             if (result.isInitialized()) {
                                 result = result || newExpression;
                             } else {

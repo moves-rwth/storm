@@ -35,7 +35,7 @@ namespace storm {
             InternalBdd(InternalDdManager<DdType::Sylvan> const* ddManager, sylvan::Bdd const& sylvanBdd);
             
             // Instantiate all copy/move constructors/assignments with the default implementation.
-            InternalBdd() = default;
+            InternalBdd();
             InternalBdd(InternalBdd<DdType::Sylvan> const& other) = default;
             InternalBdd& operator=(InternalBdd<DdType::Sylvan> const& other) = default;
             InternalBdd(InternalBdd<DdType::Sylvan>&& other) = default;

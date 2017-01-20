@@ -39,7 +39,7 @@ namespace storm {
             return false;
         }
         
-        std::ostream& operator<<(std::ostream& out, CheckResult& checkResult) {
+        std::ostream& operator<<(std::ostream& out, CheckResult const& checkResult) {
             checkResult.writeToStream(out);
             return out;
         }

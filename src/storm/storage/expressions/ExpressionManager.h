@@ -8,6 +8,8 @@
 #include <unordered_set>
 #include <iostream>
 
+#include <boost/optional.hpp>
+
 #include "storm/storage/expressions/Variable.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/adapters/CarlAdapter.h"
@@ -455,8 +457,11 @@ namespace storm {
             uint_fast64_t freshVariableCounter;
             
             // The types managed by this manager.
-            mutable std::unordered_set<Type> types;
-            
+            mutable boost::optional<Type> booleanType;
+            mutable boost::optional<Type> integerType;
+            mutable std::unordered_set<Type> bitvectorTypes;
+            mutable boost::optional<Type> rationalType;
+
             // A mask that can be used to query whether a variable is an auxiliary variable.
             static const uint64_t auxiliaryMask = (1ull << 50);
             

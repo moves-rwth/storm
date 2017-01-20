@@ -96,7 +96,7 @@
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/NotSupportedException.h"
 
-#include "storm/storage/jani/JSONExporter.h"
+#include "storm/utility/Stopwatch.h"
 
 namespace storm {
 
@@ -231,7 +231,11 @@ namespace storm {
     
     template<typename ModelType>
     std::shared_ptr<storm::models::ModelBase> preprocessModel(std::shared_ptr<storm::models::ModelBase> model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
+        storm::utility::Stopwatch preprocessingWatch(true);
+        
+        bool operationPerformed = false;
         if (model->getType() == storm::models::ModelType::MarkovAutomaton && model->isSparseModel()) {
+            operationPerformed = true;
             std::shared_ptr<storm::models::sparse::MarkovAutomaton<typename ModelType::ValueType>> ma = model->template as<storm::models::sparse::MarkovAutomaton<typename ModelType::ValueType>>();
             ma->close();
             if (ma->hasOnlyTrivialNondeterminism()) {
@@ -241,6 +245,7 @@ namespace storm {
         }
 
         if (model->isSparseModel() && storm::settings::getModule<storm::settings::modules::GeneralSettings>().isBisimulationSet()) {
+            operationPerformed = true;
             storm::storage::BisimulationType bisimType = storm::storage::BisimulationType::Strong;
             if (storm::settings::getModule<storm::settings::modules::BisimulationSettings>().isWeakBisimulationSet()) {
                 bisimType = storm::storage::BisimulationType::Weak;
@@ -250,6 +255,11 @@ namespace storm {
             return performBisimulationMinimization<ModelType>(model->template as<storm::models::sparse::Model<typename ModelType::ValueType>>(), formulas, bisimType);
         }
 
+        preprocessingWatch.stop();
+        if (operationPerformed) {
+            STORM_PRINT_AND_LOG(std::endl << "Time for model preprocessing: " << preprocessingWatch << "." << std::endl << std::endl);
+        }
+        
         return model;
     }
 
@@ -300,17 +310,17 @@ namespace storm {
         switch(storm::settings::getModule<storm::settings::modules::CoreSettings>().getEngine()) {
             case storm::settings::modules::CoreSettings::Engine::Sparse: {
                 std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel = model->template as<storm::models::sparse::Model<ValueType>>();
-                STORM_LOG_THROW(sparseModel != nullptr, storm::exceptions::InvalidArgumentException, "Sparse engine requires a sparse input model");
+                STORM_LOG_THROW(sparseModel != nullptr, storm::exceptions::InvalidArgumentException, "Sparse engine requires a sparse input model.");
                 return (sparseModel, formula, onlyInitialStatesRelevant);
             }
             case storm::settings::modules::CoreSettings::Engine::Hybrid: {
                 std::shared_ptr<storm::models::symbolic::Model<DdType>> ddModel = model->template as<storm::models::symbolic::Model<DdType>>();
-                STORM_LOG_THROW(ddModel != nullptr, storm::exceptions::InvalidArgumentException, "Hybrid engine requires a dd input model");
+                STORM_LOG_THROW(ddModel != nullptr, storm::exceptions::InvalidArgumentException, "Hybrid engine requires a DD-based input model.");
                 return verifySymbolicModelWithHybridEngine(ddModel, formula, onlyInitialStatesRelevant);
             }
             case storm::settings::modules::CoreSettings::Engine::Dd: {
                 std::shared_ptr<storm::models::symbolic::Model<DdType>> ddModel = model->template as<storm::models::symbolic::Model<DdType>>();
-                STORM_LOG_THROW(ddModel != nullptr, storm::exceptions::InvalidArgumentException, "Dd engine requires a dd input model");
+                STORM_LOG_THROW(ddModel != nullptr, storm::exceptions::InvalidArgumentException, "Dd engine requires a DD-based input model.");
                 return verifySymbolicModelWithDdEngine(ddModel, formula, onlyInitialStatesRelevant);
             }
             default: {

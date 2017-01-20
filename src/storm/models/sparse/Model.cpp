@@ -189,18 +189,6 @@ namespace storm {
             }
             
             template<typename ValueType, typename RewardModelType>
-            std::size_t Model<ValueType, RewardModelType>::getSizeInBytes() const {
-                std::size_t result = transitionMatrix.getSizeInBytes() + stateLabeling.getSizeInBytes();
-                for (auto const& rewardModel : this->rewardModels) {
-                    result += rewardModel.second.getSizeInBytes();
-                }
-                if (hasChoiceLabeling()) {
-                    result += getChoiceLabeling().size() * sizeof(LabelSet);
-                }
-                return result;
-            }
-            
-            template<typename ValueType, typename RewardModelType>
             void Model<ValueType, RewardModelType>::printModelInformationToStream(std::ostream& out) const {
                 this->printModelInformationHeaderToStream(out);
                 this->printModelInformationFooterToStream(out);
@@ -219,7 +207,6 @@ namespace storm {
                 this->printRewardModelsInformationToStream(out);
                 this->getStateLabeling().printLabelingInformationToStream(out);
                 out << "choice labels: \t" << (this->hasChoiceLabeling() ? "yes" : "no")  << std::noboolalpha << std::endl;
-                out << "Size in memory: " << (this->getSizeInBytes())/1024 << " kbytes" << std::endl;
                 out << "-------------------------------------------------------------- " << std::endl;
             }
             

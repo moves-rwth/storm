@@ -13,106 +13,68 @@ namespace storm {
          */
         class Stopwatch {
         public:
-
+            typedef decltype(std::chrono::duration_cast<std::chrono::seconds>(std::chrono::seconds::zero()).count()) SecondType;
+            typedef decltype(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::milliseconds::zero()).count()) MilisecondType;
+            typedef decltype(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::nanoseconds::zero()).count()) NanosecondType;
+            
             /*!
              * Constructor.
              *
              * @param startNow If true, the stopwatch starts right away.
              */
-            Stopwatch(bool startNow = false) : accumulatedTime(std::chrono::nanoseconds::zero()), stopped(true), startOfCurrentMeasurement(std::chrono::nanoseconds::zero()) {
-                if (startNow) {
-                    start();
-                }
-            }
+            Stopwatch(bool startNow = false);
 
             /*!
-             * Destructor.
+             * Gets the measured time in seconds.
              */
-            ~Stopwatch() = default;
+            SecondType getTimeInSeconds() const;
 
             /*!
-             * Get measured time in seconds.
-             *
-             * @return seconds as floating point number.
+             * Gets the measured time in milliseconds.
              */
-            double getTimeSeconds() const {
-                return std::chrono::duration<float>(accumulatedTime).count();
-            }
+            MilisecondType getTimeInMilliseconds() const;
 
             /*!
-             * Get measured time in milliseconds.
-             *
-             * @return Milliseconds.
+             * Gets the measured time in nanoseconds.
              */
-            unsigned long long int getTimeMilliseconds() const {
-                return std::chrono::duration_cast<std::chrono::milliseconds>(accumulatedTime).count();
-            }
-
-            /*!
-             * Get measured time in nanoseconds.
-             *
-             * @return Nanoseconds.
-             */
-            unsigned long long int getTimeNanoseconds() const {
-                return accumulatedTime.count();
-            }
+            NanosecondType getTimeInNanoseconds() const;
 
             /*!
              * Add given time to measured time.
              *
              * @param timeNanoseconds Additional time in nanoseconds.
              */
-            void addToTime(std::chrono::nanoseconds timeNanoseconds) {
-                accumulatedTime += timeNanoseconds;
-            }
+            void addToTime(std::chrono::nanoseconds timeNanoseconds);
 
             /*!
              * Stop stopwatch and add measured time to total time.
              */
-            void stop() {
-                if (stopped) {
-                    // Assertions are only available in DEBUG build and therefore not used here.
-                    STORM_LOG_WARN("Stopwatch is already paused.");
-                }
-                stopped = true;
-                accumulatedTime += std::chrono::high_resolution_clock::now() - startOfCurrentMeasurement;
-            }
+            void stop();
 
             /*!
              * Start stopwatch (again) and start measuring time.
              */
-            void start() {
-                if (!stopped) {
-                    // Assertions are only available in DEBUG build and therefore not used here.
-                    STORM_LOG_WARN("Stopwatch is already running.");
-                }
-                stopped = false;
-                startOfCurrentMeasurement = std::chrono::high_resolution_clock::now();
-            }
+            void start();
             
             /*!
-             * Reset the stopwatch. Reset the measured time to zero and stop the stopwatch.
+             * Reset the stopwatch.
              */
-            void reset() {
-                accumulatedTime = std::chrono::nanoseconds::zero();
-                stopped = true;
-            }
+            void reset();
 
-            friend std::ostream& operator<<(std::ostream& out, Stopwatch const& stopwatch) {
-                out << stopwatch.getTimeSeconds();
-                return out;
-            }
-            
+            friend std::ostream& operator<<(std::ostream& out, Stopwatch const& stopwatch);
             
         private:
-            // Total measured time
+            // The time accumulated so far.
             std::chrono::nanoseconds accumulatedTime;
-            // Flag indicating if the stopwatch is stopped right now.
-            bool stopped;
-            // Timepoint when the stopwatch was started the last time.
-            std::chrono::high_resolution_clock::time_point startOfCurrentMeasurement;
             
+            // A flag indicating if the stopwatch is stopped right now.
+            bool stopped;
+            
+            // The timepoint when the stopwatch was started the last time (if it's not stopped).
+            std::chrono::high_resolution_clock::time_point startOfCurrentMeasurement;
         };
+        
+        std::ostream& operator<<(std::ostream& out, Stopwatch const& stopwatch);
     }
 }
 

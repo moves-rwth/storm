@@ -54,7 +54,7 @@ namespace storm {
             bool insertDiagonalEntriesIfMissing = !isRewardFile;
             DeterministicSparseTransitionParser<ValueType>::FirstPassResult firstPass = DeterministicSparseTransitionParser<ValueType>::firstPass(file.getData(), insertDiagonalEntriesIfMissing);
 
-            STORM_LOG_INFO("First pass on " << filename << " shows " << firstPass.numberOfNonzeroEntries << " NonZeros.");
+            STORM_LOG_TRACE("First pass on " << filename << " shows " << firstPass.numberOfNonzeroEntries << " non-zeros.");
 
             // If first pass returned zero, the file format was wrong.
             if (firstPass.numberOfNonzeroEntries == 0) {

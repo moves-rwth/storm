@@ -1,7 +1,10 @@
 #ifndef STORM_STORAGE_EXPRESSIONS_TORATIONALFUNCTIONVISITOR_H_
 #define STORM_STORAGE_EXPRESSIONS_TORATIONALFUNCTIONVISITOR_H_
 
+#include <unordered_map>
+
 #include "storm/adapters/CarlAdapter.h"
+
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/Expressions.h"
 #include "storm/storage/expressions/ExpressionVisitor.h"
@@ -29,6 +32,8 @@ namespace storm {
             virtual boost::any visit(IntegerLiteralExpression const& expression, boost::any const& data) override;
             virtual boost::any visit(RationalLiteralExpression const& expression, boost::any const& data) override;
             
+            void setMapping(storm::expressions::Variable const& variable, RationalFunctionType const& value);
+            
         private:
             template<typename TP = typename RationalFunctionType::PolyType, carl::EnableIf<carl::needs_cache<TP>> = carl::dummy>
             RationalFunctionType convertVariableToPolynomial(carl::Variable const& variable) {
@@ -45,6 +50,9 @@ namespace storm {
             
             // The cache that is used in case the underlying type needs a cache.
             std::shared_ptr<carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>>> cache;
+            
+            // A mapping from variables to their values.
+            std::unordered_map<storm::expressions::Variable, RationalFunctionType> valueMapping;
         };
 #endif
     }

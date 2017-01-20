@@ -293,7 +293,7 @@ namespace storm {
                 return storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeReachabilityRewards(probabilityMatrix, backwardTransitions, totalRewardVector, targetStates, qualitative, linearEquationSolverFactory);
             }
 
-            template <typename ValueType, typename RewardModelType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
+            template <typename ValueType, typename RewardModelType>
             std::vector<ValueType> SparseCtmcCslHelper::computeReachabilityRewards(storm::storage::SparseMatrix<ValueType> const& rateMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& exitRateVector, RewardModelType const& rewardModel, storm::storage::BitVector const& targetStates, bool qualitative, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
                 STORM_LOG_THROW(!rewardModel.empty(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
                 
@@ -322,11 +322,6 @@ namespace storm {
                 }
                 
                 return storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeReachabilityRewards(probabilityMatrix, backwardTransitions, totalRewardVector, targetStates, qualitative, linearEquationSolverFactory);
-            }
-            
-            template <typename ValueType, typename RewardModelType, typename std::enable_if<!storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
-            std::vector<ValueType> SparseCtmcCslHelper::computeReachabilityRewards(storm::storage::SparseMatrix<ValueType> const&, storm::storage::SparseMatrix<ValueType> const&, std::vector<ValueType> const&, RewardModelType const&, storm::storage::BitVector const&, bool, storm::solver::LinearEquationSolverFactory<ValueType> const&) {
-                STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Computing reachability rewards is unsupported for this value type.");
             }
             
             template <typename ValueType>
@@ -496,12 +491,6 @@ namespace storm {
                         solver->solveEquations(bsccEquationSystemSolution, bsccEquationSystemRightSide);
                     }
                     
-//                    std::vector<ValueType> tmp(probabilityMatrix.getRowCount(), storm::utility::zero<ValueType>());
-//                    probabilityMatrix.multiplyVectorWithMatrix(bsccEquationSystemSolution, tmp);
-//                    for (uint64_t i = 0; i < tmp.size(); ++i) {
-//                        std::cout << tmp[i] << " vs. " << bsccEquationSystemSolution[i] << std::endl;
-//                    }
-                    
                     // If exit rates were given, we need to 'fix' the results to also account for the timing behaviour.
                     if (exitRateVector != nullptr) {
                         std::vector<ValueType> bsccTotalValue(bsccDecomposition.size(), zero);
@@ -513,11 +502,7 @@ namespace storm {
                             bsccEquationSystemSolution[indexInStatesInBsccs[*stateIter]] = (bsccEquationSystemSolution[indexInStatesInBsccs[*stateIter]] * (one / (*exitRateVector)[*stateIter])) / bsccTotalValue[stateToBsccIndexMap[indexInStatesInBsccs[*stateIter]]];
                         }
                     }
-                    
-//                    for (auto const& val : bsccEquationSystemSolution) {
-//                        std::cout << "val: " << val << std::endl;
-//                    }
-                    
+                                        
                     // Calculate LRA Value for each BSCC from steady state distribution in BSCCs.
                     for (uint_fast64_t bsccIndex = 0; bsccIndex < bsccDecomposition.size(); ++bsccIndex) {
                         storm::storage::StronglyConnectedComponent const& bscc = bsccDecomposition[bsccIndex];

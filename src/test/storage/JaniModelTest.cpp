@@ -7,7 +7,7 @@
 #include "storm/storage/jani/Model.h"
 
 #ifdef STORM_HAVE_MSAT
-TEST(JaniModelTest, FlattenModules) {
+TEST(JaniModelTest, FlattenComposition) {
     storm::prism::Program program;
     ASSERT_NO_THROW(program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/leader3.nm"));
     storm::jani::Model janiModel = program.toJani();
@@ -19,7 +19,7 @@ TEST(JaniModelTest, FlattenModules) {
     EXPECT_EQ(74ull, janiModel.getAutomaton(0).getNumberOfEdges());
 }
 
-TEST(JaniModelTest, FlattenModules_Wlan_Mathsat) {
+TEST(JaniModelTest, FlattenComposition_Wlan_Mathsat) {
     storm::prism::Program program;
     ASSERT_NO_THROW(program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/wlan0_collide.nm"));
     storm::jani::Model janiModel = program.toJani();
@@ -31,7 +31,7 @@ TEST(JaniModelTest, FlattenModules_Wlan_Mathsat) {
     EXPECT_EQ(179ull, janiModel.getAutomaton(0).getNumberOfEdges());
 }
 
-TEST(JaniModelTest, FlattenModules_Csma_Mathsat) {
+TEST(JaniModelTest, FlattenComposition_Csma_Mathsat) {
     storm::prism::Program program;
     ASSERT_NO_THROW(program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/csma2_2.nm"));
     storm::jani::Model janiModel = program.toJani();
@@ -43,7 +43,7 @@ TEST(JaniModelTest, FlattenModules_Csma_Mathsat) {
     EXPECT_EQ(70ull, janiModel.getAutomaton(0).getNumberOfEdges());
 }
 
-TEST(JaniModelTest, FlattenModules_Firewire_Mathsat) {
+TEST(JaniModelTest, FlattenComposition_Firewire_Mathsat) {
     storm::prism::Program program;
     ASSERT_NO_THROW(program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/firewire.nm"));
     storm::jani::Model janiModel = program.toJani();
@@ -55,7 +55,7 @@ TEST(JaniModelTest, FlattenModules_Firewire_Mathsat) {
     EXPECT_EQ(5024ull, janiModel.getAutomaton(0).getNumberOfEdges());
 }
 
-TEST(JaniModelTest, FlattenModules_Coin_Mathsat) {
+TEST(JaniModelTest, FlattenComposition_Coin_Mathsat) {
     storm::prism::Program program;
     ASSERT_NO_THROW(program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/coin2.nm"));
     storm::jani::Model janiModel = program.toJani();
@@ -67,7 +67,7 @@ TEST(JaniModelTest, FlattenModules_Coin_Mathsat) {
     EXPECT_EQ(13ull, janiModel.getAutomaton(0).getNumberOfEdges());
 }
 
-TEST(JaniModelTest, FlattenModules_Dice_Mathsat) {
+TEST(JaniModelTest, FlattenComposition_Dice_Mathsat) {
     storm::prism::Program program;
     ASSERT_NO_THROW(program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/two_dice.nm"));
     storm::jani::Model janiModel = program.toJani();
@@ -81,7 +81,7 @@ TEST(JaniModelTest, FlattenModules_Dice_Mathsat) {
 #endif
 
 #ifdef STORM_HAVE_Z3
-TEST(JaniModelTest, FlattenModules_Leader_Z3) {
+TEST(JaniModelTest, FlattenComposition_Leader_Z3) {
     storm::prism::Program program;
     ASSERT_NO_THROW(program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/leader3.nm"));
     storm::jani::Model janiModel = program.toJani();
@@ -93,7 +93,7 @@ TEST(JaniModelTest, FlattenModules_Leader_Z3) {
     EXPECT_EQ(74ull, janiModel.getAutomaton(0).getNumberOfEdges());
 }
 
-TEST(JaniModelTest, FlattenModules_Wlan_Z3) {
+TEST(JaniModelTest, FlattenComposition_Wlan_Z3) {
     storm::prism::Program program;
     ASSERT_NO_THROW(program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/wlan0_collide.nm"));
     storm::jani::Model janiModel = program.toJani();
@@ -105,7 +105,7 @@ TEST(JaniModelTest, FlattenModules_Wlan_Z3) {
     EXPECT_EQ(179ull, janiModel.getAutomaton(0).getNumberOfEdges());
 }
 
-TEST(JaniModelTest, FlattenModules_Csma_Z3) {
+TEST(JaniModelTest, FlattenComposition_Csma_Z3) {
     storm::prism::Program program;
     ASSERT_NO_THROW(program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/csma2_2.nm"));
     storm::jani::Model janiModel = program.toJani();
@@ -117,7 +117,7 @@ TEST(JaniModelTest, FlattenModules_Csma_Z3) {
     EXPECT_EQ(70ull, janiModel.getAutomaton(0).getNumberOfEdges());
 }
 
-TEST(JaniModelTest, FlattenModules_Firewire_Z3) {
+TEST(JaniModelTest, FlattenComposition_Firewire_Z3) {
     storm::prism::Program program;
     ASSERT_NO_THROW(program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/firewire.nm"));
     storm::jani::Model janiModel = program.toJani();
@@ -129,7 +129,7 @@ TEST(JaniModelTest, FlattenModules_Firewire_Z3) {
     EXPECT_EQ(5024ull, janiModel.getAutomaton(0).getNumberOfEdges());
 }
 
-TEST(JaniModelTest, FlattenModules_Coin_Z3) {
+TEST(JaniModelTest, FlattenComposition_Coin_Z3) {
     storm::prism::Program program;
     ASSERT_NO_THROW(program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/coin2.nm"));
     storm::jani::Model janiModel = program.toJani();
@@ -141,7 +141,7 @@ TEST(JaniModelTest, FlattenModules_Coin_Z3) {
     EXPECT_EQ(13ull, janiModel.getAutomaton(0).getNumberOfEdges());
 }
 
-TEST(JaniModelTest, FlattenModules_Dice_Z3) {
+TEST(JaniModelTest, FlattenComposition_Dice_Z3) {
     storm::prism::Program program;
     ASSERT_NO_THROW(program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/two_dice.nm"));
     storm::jani::Model janiModel = program.toJani();

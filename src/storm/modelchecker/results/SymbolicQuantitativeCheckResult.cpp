@@ -59,7 +59,9 @@ namespace storm {
         
         template<storm::dd::DdType Type, typename ValueType>
         std::ostream& SymbolicQuantitativeCheckResult<Type, ValueType>::writeToStream(std::ostream& out) const {
-            if (states.getNonZeroCount() < 10) {
+            if (states.getNonZeroCount() == 1) {
+                out << this->values.getMax();
+            } else if (states.getNonZeroCount() < 10) {
                 out << "{";
                 if (this->values.isZero()) {
                     out << "0";
@@ -72,6 +74,9 @@ namespace storm {
                             first = false;
                         }
                         out << valuationValuePair.second;
+                    }
+                    if (states.getNonZeroCount() != this->values.getNonZeroCount()) {
+                        out << ", 0";
                     }
                 }
                 out << "}";

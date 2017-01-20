@@ -254,8 +254,6 @@ namespace storm {
                  */
                 uint_fast64_t getNumberOfRewardModels() const;
                 
-                virtual std::size_t getSizeInBytes() const override;
-                
                 virtual void printModelInformationToStream(std::ostream& out) const override;
                 
                 virtual bool isSymbolicModel() const override;

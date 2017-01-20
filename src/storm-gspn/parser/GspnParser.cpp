@@ -13,7 +13,7 @@ namespace storm {
     namespace parser {
         
         storm::gspn::GSPN* GspnParser::parse(std::string const& filename) {
-#ifdef USE_XERCES
+#ifdef STORM_HAVE_XERCES
                         // initialize xercesc
             try {
                 xercesc::XMLPlatformUtils::Initialize();

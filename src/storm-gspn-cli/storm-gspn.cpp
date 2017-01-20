@@ -31,6 +31,7 @@
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/settings/modules/DebugSettings.h"
 #include "storm/settings/modules/JaniExportSettings.h"
+#include "storm/settings/modules/ResourceSettings.h"
 
 /*!
  * Initialize the settings manager.
@@ -45,6 +46,7 @@ void initializeSettings() {
     storm::settings::addModule<storm::settings::modules::CoreSettings>();
     storm::settings::addModule<storm::settings::modules::DebugSettings>();
     storm::settings::addModule<storm::settings::modules::JaniExportSettings>();
+    storm::settings::addModule<storm::settings::modules::ResourceSettings>();
 }
 
 
@@ -94,21 +96,16 @@ int main(const int argc, const char **argv) {
             auto capacities = parseCapacitiesList(storm::settings::getModule<storm::settings::modules::GSPNSettings>().getCapacitiesFilename());
             gspn->setCapacities(capacities);
         }
-      
-        
-        if(storm::settings::getModule<storm::settings::modules::GSPNExportSettings>().isWriteToDotSet()) {
-            std::ofstream file;
-            file.open(storm::settings::getModule<storm::settings::modules::GSPNExportSettings>().getWriteToDotFilename());
-            gspn->writeDotToStream(file);
-        }
+
+        storm::handleGSPNExportSettings(*gspn);
         
         if(storm::settings::getModule<storm::settings::modules::JaniExportSettings>().isJaniFileSet()) {
             storm::jani::Model* model = storm::buildJani(*gspn);
             storm::exportJaniModel(*model, {}, storm::settings::getModule<storm::settings::modules::JaniExportSettings>().getJaniFilename());
             delete model;
         }
-        
-        
+
+        delete gspn;
         return 0;
         
 //

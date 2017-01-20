@@ -126,6 +126,18 @@ namespace storm {
             }
         }
         
+        std::pair<SymbolicModelDescription, std::map<std::string, std::string>> SymbolicModelDescription::toJaniWithLabelRenaming(bool makeVariablesGlobal) const {
+            if (this->isJaniModel()) {
+                return std::make_pair(*this, std::map<std::string, std::string>());
+            }
+            if (this->isPrismProgram()) {
+                auto modelAndRenaming = this->asPrismProgram().toJaniWithLabelRenaming(makeVariablesGlobal);
+                return std::make_pair(SymbolicModelDescription(modelAndRenaming.first), modelAndRenaming.second);
+            } else {
+                STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot transform model description to the JANI format.");
+            }
+        }
+        
         SymbolicModelDescription SymbolicModelDescription::preprocess(std::string const& constantDefinitionString) const {
             std::map<storm::expressions::Variable, storm::expressions::Expression> substitution = parseConstantDefinitions(constantDefinitionString);
             if (this->isJaniModel()) {

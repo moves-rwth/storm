@@ -1,6 +1,9 @@
 #pragma once
 
+#include <unordered_map>
+
 #include "storm/adapters/CarlAdapter.h"
+
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/Expressions.h"
 #include "storm/storage/expressions/ExpressionVisitor.h"
@@ -26,6 +29,11 @@ namespace storm {
             virtual boost::any visit(BooleanLiteralExpression const& expression, boost::any const& data) override;
             virtual boost::any visit(IntegerLiteralExpression const& expression, boost::any const& data) override;
             virtual boost::any visit(RationalLiteralExpression const& expression, boost::any const& data) override;
+            
+            void setMapping(storm::expressions::Variable const& variable, RationalNumberType const& value);
+            
+        private:
+            std::unordered_map<storm::expressions::Variable, RationalNumberType> valueMapping;
         };
     }
 }

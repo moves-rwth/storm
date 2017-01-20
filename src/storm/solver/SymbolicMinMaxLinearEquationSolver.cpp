@@ -43,8 +43,6 @@ namespace storm {
                 tmp += b;
                 
                 if (minimize) {
-                    // This is a hack and only here because of the lack of a suitable minAbstract/maxAbstract function
-                    // that can properly deal with a restriction of the choices.
                     tmp += illegalMaskAdd;
                     tmp = tmp.minAbstract(this->choiceVariables);
                 } else {
@@ -54,14 +52,17 @@ namespace storm {
                 // Now check if the process already converged within our precision.
                 converged = xCopy.equalModuloPrecision(tmp, precision, relative);
                 
-                // If the method did not converge yet, we prepare the x vector for the next iteration.
-                if (!converged) {
-                    xCopy = tmp;
-                }
+                xCopy = tmp;
                 
                 ++iterations;
             }
-                        
+
+            if (converged) {
+                STORM_LOG_TRACE("Iterative solver converged in " << iterations << " iterations.");
+            } else {
+                STORM_LOG_WARN("Iterative solver did not converge in " << iterations << " iterations.");
+            }
+
             return xCopy;
         }
         

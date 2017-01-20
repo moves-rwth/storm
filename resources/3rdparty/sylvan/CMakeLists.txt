@@ -2,8 +2,15 @@ cmake_minimum_required(VERSION 2.6)
 project(sylvan C CXX)
 enable_testing()
 
+option(SYLVAN_PORTABLE "If set, the created library will be portable." OFF)
+
 set(CMAKE_C_FLAGS "-O3 -Wextra -Wall -fno-strict-aliasing -std=gnu11 -fPIC")
-set(CMAKE_CXX_FLAGS "-O3 -Wextra -Wall -fno-strict-aliasing -Wno-deprecated-register -std=gnu++11 -fPIC")
+set(CMAKE_CXX_FLAGS "-O3 -Wextra -Wall -fno-strict-aliasing -Wno-deprecated-register -std=c++14 -fPIC")
+
+if (NOT SYLVAN_PORTABLE)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=native")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
+endif()
 
 option(USE_CARL "Sets whether carl should be included." ON)
 option(WITH_COVERAGE "Add generation of test coverage" OFF)
@@ -30,15 +37,9 @@ if(WITH_COVERAGE)
 endif()
 
 if(USE_CARL)
-	find_package(carl QUIET REQUIRED)
-	if(carl_FOUND)
-               add_definitions(-DSYLVAN_HAVE_CARL)
-		include_directories("${carl_INCLUDE_DIR}")
-		list(APPEND STORM_LINK_LIBRARIES ${carl_LIBRARIES})
-		message(STATUS "Sylvan - using CARL.")
-	else()
-		message(FATAL_ERROR "Sylvan - CARL was requested but not found")
-	endif()
+	add_definitions(-DSYLVAN_HAVE_CARL)
+	include_directories("${carl_INCLUDE_DIR}")
+	message(STATUS "Sylvan - using CARL.")
 else()
 	message(STATUS "Sylvan - not using CARL.")
 endif()
@@ -51,7 +52,6 @@ include_directories("${PROJECT_SOURCE_DIR}/../../../src")
 include_directories("${PROJECT_BINARY_DIR}/../../../include")
 include_directories(src)
 
-include_directories(src)
 
 add_subdirectory(src)
 

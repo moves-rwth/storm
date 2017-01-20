@@ -125,7 +125,15 @@ namespace storm {
              * @return The cube of the meta variable.
              */
             Bdd<LibraryType> getCube(storm::expressions::Variable const& variable) const;
-            
+
+            /*!
+             * Retrieves a BDD that is the cube of the variables representing the given meta variables.
+             *
+             * @param variables The expression variables associated with the meta variables.
+             * @return The cube of the meta variables.
+             */
+            Bdd<LibraryType> getCube(std::set<storm::expressions::Variable> const& variables) const;
+
             /*!
              * Adds an integer meta variable with the given range.
              *

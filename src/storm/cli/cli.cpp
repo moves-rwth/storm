@@ -130,52 +130,30 @@ namespace storm {
         }
 
         void showTimeAndMemoryStatistics(uint64_t wallclockMilliseconds) {
-#ifndef WINDOWS
             struct rusage ru;
             getrusage(RUSAGE_SELF, &ru);
 
-            std::cout << "Performance statistics:" << std::endl;
-            std::cout << "  * peak memory usage: " << ru.ru_maxrss/1024 << " mb" << std::endl;
-            std::cout << "  * CPU time: " << ru.ru_utime.tv_sec << "." << std::setw(3) << std::setfill('0') << ru.ru_utime.tv_usec/1000 << " seconds" << std::endl;
+            std::cout << std::endl << "Performance statistics:" << std::endl;
+#ifdef MACOS
+            // For Mac OS, this is returned in bytes.
+            uint64_t maximumResidentSizeInMegabytes = ru.ru_maxrss / 1024 / 1024;
+#endif
+#ifdef LINUX
+            // For Linux, this is returned in kilobytes.
+            uint64_t maximumResidentSizeInMegabytes = ru.ru_maxrss / 1024;
+#endif
+            std::cout << "  * peak memory usage: " << maximumResidentSizeInMegabytes << "MB" << std::endl;
+            std::cout << "  * CPU time: " << ru.ru_utime.tv_sec << "." << std::setw(3) << std::setfill('0') << ru.ru_utime.tv_usec/1000 << "s" << std::endl;
             if (wallclockMilliseconds != 0) {
-                std::cout << "  * wallclock time: " << (wallclockMilliseconds/1000) << "." << std::setw(3) << std::setfill('0') << (wallclockMilliseconds % 1000) << " seconds" << std::endl;
+                std::cout << "  * wallclock time: " << (wallclockMilliseconds/1000) << "." << std::setw(3) << std::setfill('0') << (wallclockMilliseconds % 1000) << "s" << std::endl;
             }
-            std::cout << "STATISTICS_OVERALL_HEADERS;" << "memory;CPU time;wallclock time;" << std::endl;
+
+                        std::cout << "STATISTICS_OVERALL_HEADERS;" << "memory;CPU time;wallclock time;" << std::endl;
             std::cout << "STATISTICS_OVERALL_DATA;"
                       << ru.ru_maxrss/1024 << ";"
                       << ru.ru_utime.tv_sec << "." << std::setw(3) << std::setfill('0') << ru.ru_utime.tv_usec/1000  << ";"
                       <<  (wallclockMilliseconds/1000) << "." << std::setw(3) << std::setfill('0') << (wallclockMilliseconds % 1000) << ";" << std::endl;
-#else
-            HANDLE hProcess = GetCurrentProcess ();
-            FILETIME ftCreation, ftExit, ftUser, ftKernel;
-            PROCESS_MEMORY_COUNTERS pmc;
-            if (GetProcessMemoryInfo( hProcess, &pmc, sizeof(pmc))) {
-                std::cout << "Memory Usage: " << std::endl;
-                std::cout << "\tPageFaultCount: " << pmc.PageFaultCount << std::endl;
-                std::cout << "\tPeakWorkingSetSize: " << pmc.PeakWorkingSetSize << std::endl;
-                std::cout << "\tWorkingSetSize: " << pmc.WorkingSetSize << std::endl;
-                std::cout << "\tQuotaPeakPagedPoolUsage: " << pmc.QuotaPeakPagedPoolUsage << std::endl;
-                std::cout << "\tQuotaPagedPoolUsage: " << pmc.QuotaPagedPoolUsage << std::endl;
-                std::cout << "\tQuotaPeakNonPagedPoolUsage: " << pmc.QuotaPeakNonPagedPoolUsage << std::endl;
-                std::cout << "\tQuotaNonPagedPoolUsage: " << pmc.QuotaNonPagedPoolUsage << std::endl;
-                std::cout << "\tPagefileUsage:" << pmc.PagefileUsage << std::endl;
-                std::cout << "\tPeakPagefileUsage: " << pmc.PeakPagefileUsage << std::endl;
-            }
 
-            GetProcessTimes (hProcess, &ftCreation, &ftExit, &ftKernel, &ftUser);
-
-            ULARGE_INTEGER uLargeInteger;
-            uLargeInteger.LowPart = ftKernel.dwLowDateTime;
-            uLargeInteger.HighPart = ftKernel.dwHighDateTime;
-            double kernelTime = static_cast<double>(uLargeInteger.QuadPart) / 10000.0; // 100 ns Resolution to milliseconds
-            uLargeInteger.LowPart = ftUser.dwLowDateTime;
-            uLargeInteger.HighPart = ftUser.dwHighDateTime;
-            double userTime = static_cast<double>(uLargeInteger.QuadPart) / 10000.0;
-
-            std::cout << "CPU Time: " << std::endl;
-            std::cout << "\tKernel Time: " << std::setprecision(5) << kernelTime << "ms" << std::endl;
-            std::cout << "\tUser Time: " << std::setprecision(5) << userTime << "ms" << std::endl;
-#endif
         }
 
         bool parseOptions(const int argc, const char* argv[]) {
@@ -232,16 +210,29 @@ namespace storm {
                 propertyFilter = storm::parsePropertyFilter(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPropertyFilter());
             }
             
+            auto coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
+            auto generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
             auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
             if (ioSettings.isPrismOrJaniInputSet()) {
                 storm::storage::SymbolicModelDescription model;
                 std::vector<storm::jani::Property> properties;
                 
                 STORM_LOG_TRACE("Parsing symbolic input.");
+                boost::optional<std::map<std::string, std::string>> labelRenaming;
                 if (ioSettings.isPrismInputSet()) {
                     model = storm::parseProgram(ioSettings.getPrismInputFilename());
-                    if (ioSettings.isPrismToJaniSet()) {
-                        model = model.toJani(true);
+                    
+                    bool transformToJani = ioSettings.isPrismToJaniSet();
+                    bool transformToJaniForJit = coreSettings.getEngine() == storm::settings::modules::CoreSettings::Engine::Sparse && ioSettings.isJitSet();
+                    STORM_LOG_WARN_COND(transformToJani || !transformToJaniForJit, "The JIT-based model builder is only available for JANI models, automatically converting the PRISM input model.");
+                    transformToJani |= transformToJaniForJit;
+                    
+                    if (transformToJani) {
+                        auto modelAndRenaming = model.toJaniWithLabelRenaming(true);
+                        if (!modelAndRenaming.second.empty()) {
+                            labelRenaming = modelAndRenaming.second;
+                        }
+                        model = modelAndRenaming.first;
                     }
                 } else if (ioSettings.isJaniInputSet()) {
                     auto input = storm::parseJaniModel(ioSettings.getJaniInputFilename());
@@ -261,11 +252,19 @@ namespace storm {
 
                 // Then proceed to parsing the properties (if given), since the model we are building may depend on the property.
                 STORM_LOG_TRACE("Parsing properties.");
-                if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isPropertySet()) {
+                if (generalSettings.isPropertySet()) {
                     if (model.isJaniModel()) {
-                        properties = storm::parsePropertiesForJaniModel(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getProperty(), model.asJaniModel(), propertyFilter);
+                        properties = storm::parsePropertiesForJaniModel(generalSettings.getProperty(), model.asJaniModel(), propertyFilter);
+                        
+                        if (labelRenaming) {
+                            std::vector<storm::jani::Property> amendedProperties;
+                            for (auto const& property : properties) {
+                                amendedProperties.emplace_back(property.substituteLabels(labelRenaming.get()));
+                            }
+                            properties = std::move(amendedProperties);
+                        }
                     } else {
-                        properties = storm::parsePropertiesForPrismProgram(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getProperty(), model.asPrismProgram(), propertyFilter);
+                        properties = storm::parsePropertiesForPrismProgram(generalSettings.getProperty(), model.asPrismProgram(), propertyFilter);
                     }
                     
                     constantDefinitions = model.parseConstantDefinitions(constantDefinitionString);
@@ -284,13 +283,13 @@ namespace storm {
                 }
                 
                 STORM_LOG_TRACE("Building and checking symbolic model.");
-                if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isParametricSet()) {
+                if (generalSettings.isParametricSet()) {
 #ifdef STORM_HAVE_CARL
                     buildAndCheckSymbolicModel<storm::RationalFunction>(model, properties, true);
 #else
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "No parameters are supported in this build.");
 #endif
-                } else if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isExactSet()) {
+                } else if (generalSettings.isExactSet()) {
 #ifdef STORM_HAVE_CARL
                     buildAndCheckSymbolicModel<storm::RationalNumber>(model, properties, true);
 #else
@@ -299,14 +298,14 @@ namespace storm {
                 } else {
                     buildAndCheckSymbolicModel<double>(model, properties, true);
                 }
-            } else if (storm::settings::getModule<storm::settings::modules::IOSettings>().isExplicitSet()) {
-                STORM_LOG_THROW(storm::settings::getModule<storm::settings::modules::CoreSettings>().getEngine() == storm::settings::modules::CoreSettings::Engine::Sparse, storm::exceptions::InvalidSettingsException, "Only the sparse engine supports explicit model input.");
+            } else if (ioSettings.isExplicitSet()) {
+                STORM_LOG_THROW(coreSettings.getEngine() == storm::settings::modules::CoreSettings::Engine::Sparse, storm::exceptions::InvalidSettingsException, "Only the sparse engine supports explicit model input.");
 
                 // If the model is given in an explicit format, we parse the properties without allowing expressions
                 // in formulas.
                 std::vector<storm::jani::Property> properties;
-                if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isPropertySet()) {
-                    properties = storm::parsePropertiesForExplicit(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getProperty(), propertyFilter);
+                if (generalSettings.isPropertySet()) {
+                    properties = storm::parsePropertiesForExplicit(generalSettings.getProperty(), propertyFilter);
                 }
 
                 buildAndCheckExplicitModel<double>(properties, true);

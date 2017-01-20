@@ -52,7 +52,7 @@ namespace storm {
             }
         }
         
-        ExpressionManager::ExpressionManager() : nameToIndexMapping(), indexToNameMapping(), indexToTypeMapping(), numberOfBooleanVariables(0), numberOfIntegerVariables(0), numberOfBitVectorVariables(0), numberOfRationalVariables(0), numberOfAuxiliaryVariables(0), numberOfAuxiliaryBooleanVariables(0), numberOfAuxiliaryIntegerVariables(0), numberOfAuxiliaryBitVectorVariables(0), numberOfAuxiliaryRationalVariables(0), freshVariableCounter(0), types() {
+        ExpressionManager::ExpressionManager() : nameToIndexMapping(), indexToNameMapping(), indexToTypeMapping(), numberOfBooleanVariables(0), numberOfIntegerVariables(0), numberOfBitVectorVariables(0), numberOfRationalVariables(0), numberOfAuxiliaryVariables(0), numberOfAuxiliaryBooleanVariables(0), numberOfAuxiliaryIntegerVariables(0), numberOfAuxiliaryBitVectorVariables(0), numberOfAuxiliaryRationalVariables(0), freshVariableCounter(0) {
             // Intentionally left empty.
         }
         
@@ -65,19 +65,19 @@ namespace storm {
         }
         
         Expression ExpressionManager::boolean(bool value) const {
-            return Expression(std::shared_ptr<BaseExpression>(new BooleanLiteralExpression(*this, value)));
+            return Expression(std::make_shared<BooleanLiteralExpression>(*this, value));
         }
 
         Expression ExpressionManager::integer(int_fast64_t value) const {
-            return Expression(std::shared_ptr<BaseExpression>(new IntegerLiteralExpression(*this, value)));
+            return Expression(std::make_shared<IntegerLiteralExpression>(*this, value));
         }
 
         Expression ExpressionManager::rational(double value) const {
-            return Expression(std::shared_ptr<BaseExpression>(new RationalLiteralExpression(*this, value)));
+            return Expression(std::make_shared<RationalLiteralExpression>(*this, value));
         }
         
         Expression ExpressionManager::rational(storm::RationalNumber const& value) const {
-            return Expression(std::shared_ptr<BaseExpression>(new RationalLiteralExpression(*this, value)));
+            return Expression(std::make_shared<RationalLiteralExpression>(*this, value));
         }
         
         bool ExpressionManager::operator==(ExpressionManager const& other) const {
@@ -85,43 +85,34 @@ namespace storm {
         }
         
         Type const& ExpressionManager::getBooleanType() const {
-            Type type(this->getSharedPointer(), std::shared_ptr<BaseType>(new BooleanType()));
-            auto typeIterator = types.find(type);
-            if (typeIterator == types.end()) {
-                auto iteratorBoolPair = types.insert(type);
-                return *iteratorBoolPair.first;
+            if (!booleanType) {
+                booleanType = Type(this->getSharedPointer(), std::shared_ptr<BaseType>(new BooleanType()));
             }
-            return *typeIterator;
+            return booleanType.get();
         }
         
         Type const& ExpressionManager::getIntegerType() const {
-            Type type(this->getSharedPointer(), std::shared_ptr<BaseType>(new IntegerType()));
-            auto typeIterator = types.find(type);
-            if (typeIterator == types.end()) {
-                auto iteratorBoolPair = types.insert(type);
-                return *iteratorBoolPair.first;
+            if (!integerType) {
+                integerType = Type(this->getSharedPointer(), std::shared_ptr<BaseType>(new IntegerType()));
             }
-            return *typeIterator;
+            return integerType.get();
         }
         
         Type const& ExpressionManager::getBitVectorType(std::size_t width) const {
             Type type(this->getSharedPointer(), std::shared_ptr<BaseType>(new BitVectorType(width)));
-            auto typeIterator = types.find(type);
-            if (typeIterator == types.end()) {
-                auto iteratorBoolPair = types.insert(type);
+            auto typeIterator = bitvectorTypes.find(type);
+            if (typeIterator == bitvectorTypes.end()) {
+                auto iteratorBoolPair = bitvectorTypes.insert(type);
                 return *iteratorBoolPair.first;
             }
             return *typeIterator;
         }
         
         Type const& ExpressionManager::getRationalType() const {
-            Type type(this->getSharedPointer(), std::shared_ptr<BaseType>(new RationalType()));
-            auto typeIterator = types.find(type);
-            if (typeIterator == types.end()) {
-                auto iteratorBoolPair = types.insert(type);
-                return *iteratorBoolPair.first;
+            if (!rationalType) {
+                rationalType = Type(this->getSharedPointer(), std::shared_ptr<BaseType>(new RationalType()));
             }
-            return *typeIterator;
+            return rationalType.get();
         }
         
         bool ExpressionManager::isValidVariableName(std::string const& name) {

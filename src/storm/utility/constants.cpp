@@ -195,6 +195,16 @@ namespace storm {
             return std::fabs(number);
         }
         
+        template<typename ValueType>
+        ValueType floor(ValueType const& number) {
+            return std::floor(number);
+        }
+        
+        template<typename ValueType>
+        ValueType ceil(ValueType const& number) {
+            return std::ceil(number);
+        }
+        
         template<>
         std::pair<storm::RationalFunction, storm::RationalFunction> minmax(std::vector<storm::RationalFunction> const&) {
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Minimum/maximum for rational functions is not defined.");
@@ -348,8 +358,20 @@ namespace storm {
         }
 
         template<>
+        RationalNumber convertNumber(int_fast64_t const& number){
+            STORM_LOG_ASSERT(static_cast<carl::sint>(number) == number, "Rationalizing failed, because the number is too large.");
+            return carl::rationalize<RationalNumber>(static_cast<carl::sint>(number));
+        }
+
+        template<>
         RationalFunction convertNumber(double const& number){
             return RationalFunction(carl::rationalize<RationalNumber>(number));
+        }
+
+        template<>
+        RationalFunction convertNumber(int_fast64_t const& number){
+            STORM_LOG_ASSERT(static_cast<carl::sint>(number) == number, "Rationalizing failed, because the number is too large.");
+            return RationalFunction(carl::rationalize<RationalNumber>(static_cast<carl::uint>(number)));
         }
 
         template<>
@@ -376,7 +398,17 @@ namespace storm {
         RationalNumber abs(storm::RationalNumber const& number) {
             return carl::abs(number);
         }
-        
+
+        template<>
+        RationalNumber floor(storm::RationalNumber const& number) {
+            return carl::floor(number);
+        }
+
+        template<>
+        RationalNumber ceil(storm::RationalNumber const& number) {
+            return carl::ceil(number);
+        }
+
         template<>
         RationalNumber pow(RationalNumber const& value, uint_fast64_t exponent) {
             return carl::pow(value, exponent);
@@ -502,15 +534,13 @@ namespace storm {
         template std::pair<double, double> minmax(std::map<uint64_t, double> const&);
         template double minimum(std::map<uint64_t, double> const&);
         template double maximum(std::map<uint64_t, double> const&);
-        
+
+#ifdef STORM_HAVE_CARL
+        // Instantiations for rational number.
         template std::pair<storm::RationalNumber, storm::RationalNumber> minmax(std::map<uint64_t, storm::RationalNumber> const&);
         template storm::RationalNumber minimum(std::map<uint64_t, storm::RationalNumber> const&);
         template storm::RationalNumber maximum(std::map<uint64_t, storm::RationalNumber> const&);
         
-        template storm::RationalFunction minimum(std::map<uint64_t, storm::RationalFunction> const&);
-        template storm::RationalFunction maximum(std::map<uint64_t, storm::RationalFunction> const&);
-#ifdef STORM_HAVE_CARL
-        // Instantiations for rational number.
         template bool isOne(storm::RationalNumber const& value);
         template bool isZero(storm::RationalNumber const& value);
         template bool isConstant(storm::RationalNumber const& value);
@@ -526,8 +556,9 @@ namespace storm {
         RationalNumber convertNumber(std::string const& number);
         
         template storm::RationalNumber sqrt(storm::RationalNumber const& number);
-
         template storm::RationalNumber abs(storm::RationalNumber const& number);
+        template storm::RationalNumber floor(storm::RationalNumber const& number);
+        template storm::RationalNumber ceil(storm::RationalNumber const& number);
 
         template storm::RationalNumber pow(storm::RationalNumber const& value, uint_fast64_t exponent);
 
@@ -561,6 +592,9 @@ namespace storm {
 
         template Interval one();
         template Interval zero();
+        
+        template storm::RationalFunction minimum(std::map<uint64_t, storm::RationalFunction> const&);
+        template storm::RationalFunction maximum(std::map<uint64_t, storm::RationalFunction> const&);
 
         template storm::storage::MatrixEntry<storm::storage::sparse::state_type, RationalFunction> simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, RationalFunction> matrixEntry);
         template storm::storage::MatrixEntry<storm::storage::sparse::state_type, RationalFunction>& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, RationalFunction>& matrixEntry);
