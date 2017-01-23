@@ -32,16 +32,16 @@ The VM is periodically updated to include bug fixes, new versions, etc. You can 
 ## Obtaining the source code
 
 The source code can be downloaded from [github](https://github.com/moves-rwth/storm). You can either clone the git repository
-```bash
+```shell
 git clone https://github.com/moves-rwth/storm.git STORM_DIR
 ```
 or download a zip archive with the latest snapshot of the master branch:
-```bash
+```shell
 wget https://github.com/moves-rwth/archive/master.zip
 unzip master.zip
 ```
 In the following, we will use `STORM_DIR` to refer to the root directory of storm. If you want, you can set an environment variable to ease the following steps via
-```bash
+```shell
 export STORM_DIR=<path to storm root>
 ```
 
@@ -53,7 +53,7 @@ This guide helps you building a standard version of storm. There are plenty of c
 
 Switch to the directory `STORM_DIR` and create a build folder that will hold all files related to the build (in other words, building is done out-of source, in-source builds are discouraged and are likely to break). Finally change to the `build` directory.
 
-```bash
+```shell
 cd STORM_DIR
 mkdir build
 cd build
@@ -61,7 +61,7 @@ cd build
 
 Then, use cmake to configure the build of storm on your system by invoking
 
-```bash
+```shell
 cmake ..
 ```
 
@@ -96,7 +96,7 @@ If you are interested in one of the other binaries, replace `storm-main` with th
 
 While this step is optional, we recommend to execute it to verify that storm produces correct results on your platform. Invoking
 
-```bash
+```shell
 make check
 ```
 
@@ -114,14 +114,14 @@ We will now discuss some examples to get you started. While they should illustra
 
 For this task, you built the `storm-main` target and therefore produced the `storm` binary. So let's make sure that you can run storm:
 
-```bash
+```shell
 cd STORM_DIR/build/bin
 ./storm
 ```
 
 If the storm binary was correctly built and is correctly located in the directory `STORM_DIR/build/bin`, this should produce output similar to
 
-```bash
+```shell
 Storm
 ---------------
 
@@ -146,13 +146,13 @@ For this example, we assume that you obtained the corresponding PRISM model from
 
 Let us start with a simple (exhaustive) exploration of the state space of the model.
 
-```bash
+```shell
 ./storm --prism die.pm
 ```
 
 This will tell you that the model is a [discrete-time Markov chain](models) with 13 states and 20 transitions, no reward model and two labels (`deadlock` and `init`). But wait, doesn't the PRISM model actually specify a reward model? Why does `storm` not find one? The reason is simple, `storm` doesn't build reward models or (custom) labels that are not referred to by properties unless you explicitly want all of them to be built:
 
-```bash
+```shell
 ./storm --prism die.pm --buildfull
 ```
 
@@ -160,19 +160,19 @@ This gives you the same model, but this time there is a reward model `coin_flips
 
 Now, let's say we want to check whether the probability to roll a one with our simulated die is as we'd expect. For this, we specify a reachability property
 
-```bash
+```shell
 ./storm --prism die.pm --prop "P=? [F s=7&d=1]"
 ```
 
 This will tell us that the probability for rolling a one is actually (very close to) 1/6. If, from the floating point figure, you are not convinced that the result is actually 1 over 6, try to provide the `--exact` flag. Congratulations, you have now checked your first property with `storm`! Now, say we are interested in the probability of rolling a one, provided that one of the outcomes "one", "two" or "three" were obtained, we can obtain this figure by using a conditional probability formula like this
 
-```bash
+```shell
 ./storm --prism die.pm --prop "P=? [F s=7&d=1 || F s=7&d<4]"
 ```
 
 which tells us that this probability is 1/3. So far the model seems to simulate a proper six-sided die! Finally, we are interested in the expected number of coin flips that need to be made until the simulated die returns an outcome:
 
-```bash
+```shell
 ./storm --prism die.pm --prop "R{\"coin_flips\"}=? [F s=7]"
 ```
 
@@ -184,19 +184,19 @@ In this example, we consider the model described [here](http://www.prismmodelche
 
 As the name of the protocol suggests, it is supposed to elect a leader among a set of communicating agents. Well, let's see whether it lives up to it's name and check that almost surely (i.e. with probability 1) a leader will be elected eventually.
 
-```bash
+```shell
 ./bin/Debug/storm --prism leader4.nm --prop "P>=1 [F (s1=4 | s2=4 | s3=4 | s4=4) ]"
 ```
 
 Apparently this is true. But what about the performance of the protocol? The property we just checked does not guarantee any upper bound on the number of steps that we need to make until a leader is elected. Suppose we have only 40 steps and want to know what's the probability to elect a leader *within this time bound*.
 
-```bash
+```shell
 ./bin/Debug/storm --prism leader4.nm --prop "P=? [F<=40 (s1=4 | s2=4 | s3=4 | s4=4) ]"
 ```
 
 Likely, Storm will tell you that there is an error and that for nondeterministic models you need to specify whether minimal or maximal probabilities are to be computed. Why is that? Since the model is a [Markov Decision Process](documentation/usage/models.html), there are (potentially) nondeterministic choices in the model that need to be resolved. Storm doesn't know how to resolve them unless you tell it to either minimize or maximize (wrt. to the probability of the objective) whenever there is a nondeterministic choice.
 
-```bash
+```shell
 ./bin/Debug/storm --prism leader4.nm --prop "Pmin=? [F<=40 (s1=4 | s2=4 | s3=4 | s4=4) ]"
 ```
 
