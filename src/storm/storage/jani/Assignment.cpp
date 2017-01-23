@@ -46,7 +46,7 @@ namespace storm  {
         
         bool Assignment::isLinear() const {
             storm::expressions::LinearityCheckVisitor linearityChecker;
-            return linearityChecker.check(this->getAssignedExpression());
+            return linearityChecker.check(this->getAssignedExpression(), true);
         }
         
         std::ostream& operator<<(std::ostream& stream, Assignment const& assignment) {

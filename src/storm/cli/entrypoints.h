@@ -129,7 +129,7 @@ namespace storm {
                 modelCheckingWatch.stop();
                 if (result) {
                     STORM_PRINT_AND_LOG("Result (initial states): ");
-                    STORM_PRINT_AND_LOG(*result);
+                    STORM_PRINT_AND_LOG(*result << std::endl);
                     STORM_PRINT_AND_LOG("Time for model checking: " << modelCheckingWatch << "." << std::endl);
                 } else {
                     STORM_PRINT_AND_LOG(" skipped, because the modelling formalism is currently unsupported." << std::endl);

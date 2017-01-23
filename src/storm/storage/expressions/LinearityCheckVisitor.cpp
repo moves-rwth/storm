@@ -12,19 +12,44 @@ namespace storm {
             // Intentionally left empty.
         }
         
-        bool LinearityCheckVisitor::check(Expression const& expression) {
-            LinearityStatus result = boost::any_cast<LinearityStatus>(expression.getBaseExpression().accept(*this, boost::none));
+        bool LinearityCheckVisitor::check(Expression const& expression, bool booleanIsLinear) {
+            LinearityStatus result = boost::any_cast<LinearityStatus>(expression.getBaseExpression().accept(*this, booleanIsLinear));
             return result == LinearityStatus::LinearWithoutVariables || result == LinearityStatus::LinearContainsVariables;
         }
         
-        boost::any LinearityCheckVisitor::visit(IfThenElseExpression const&, boost::any const&) {
-            // An if-then-else expression is never linear.
-            return LinearityStatus::NonLinear;
+        boost::any LinearityCheckVisitor::visit(IfThenElseExpression const& expression, boost::any const& data) {
+            bool booleanIsLinear = boost::any_cast<bool>(data);
+            
+            if (booleanIsLinear) {
+                auto conditionResult = boost::any_cast<LinearityStatus>(expression.getCondition()->accept(*this, booleanIsLinear));
+                auto thenResult = boost::any_cast<LinearityStatus>(expression.getThenExpression()->accept(*this, booleanIsLinear));
+                auto elseResult = boost::any_cast<LinearityStatus>(expression.getElseExpression()->accept(*this, booleanIsLinear));
+                
+                if (conditionResult != LinearityStatus::NonLinear && thenResult != LinearityStatus::NonLinear && elseResult != LinearityStatus::NonLinear) {
+                    return LinearityStatus::LinearContainsVariables;
+                } else {
+                    return LinearityStatus::NonLinear;
+                }
+            } else {
+                return LinearityStatus::NonLinear;
+            }
         }
         
-        boost::any LinearityCheckVisitor::visit(BinaryBooleanFunctionExpression const&, boost::any const&) {
-            // Boolean function applications are not allowed in linear expressions.
-            return LinearityStatus::NonLinear;
+        boost::any LinearityCheckVisitor::visit(BinaryBooleanFunctionExpression const& expression, boost::any const& data) {
+            bool booleanIsLinear = boost::any_cast<bool>(data);
+
+            if (booleanIsLinear) {
+                auto leftResult = boost::any_cast<LinearityStatus>(expression.getFirstOperand()->accept(*this, booleanIsLinear));
+                auto rightResult = boost::any_cast<LinearityStatus>(expression.getSecondOperand()->accept(*this, booleanIsLinear));
+
+                if (leftResult != LinearityStatus::NonLinear && rightResult != LinearityStatus::NonLinear) {
+                    return LinearityStatus::LinearContainsVariables;
+                } else {
+                    return LinearityStatus::NonLinear;
+                }
+            } else {
+                return LinearityStatus::NonLinear;
+            }
         }
         
         boost::any LinearityCheckVisitor::visit(BinaryNumericalFunctionExpression const& expression, boost::any const& data) {
@@ -56,15 +81,37 @@ namespace storm {
             STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Illegal binary numerical expression operator.");
         }
         
-        boost::any LinearityCheckVisitor::visit(BinaryRelationExpression const&, boost::any const&) {
-            return LinearityStatus::NonLinear;
+        boost::any LinearityCheckVisitor::visit(BinaryRelationExpression const& expression, boost::any const& data) {
+            bool booleanIsLinear = boost::any_cast<bool>(data);
+            
+            if (booleanIsLinear) {
+                auto leftResult = boost::any_cast<LinearityStatus>(expression.getFirstOperand()->accept(*this, booleanIsLinear));
+                auto rightResult = boost::any_cast<LinearityStatus>(expression.getSecondOperand()->accept(*this, booleanIsLinear));
+
+                if (leftResult != LinearityStatus::NonLinear && rightResult != LinearityStatus::NonLinear) {
+                    return LinearityStatus::LinearContainsVariables;
+                } else {
+                    return LinearityStatus::NonLinear;
+                }
+            } else {
+                return LinearityStatus::NonLinear;
+            }
         }
         
         boost::any LinearityCheckVisitor::visit(VariableExpression const&, boost::any const&) {
             return LinearityStatus::LinearContainsVariables;
         }
         
-        boost::any LinearityCheckVisitor::visit(UnaryBooleanFunctionExpression const&, boost::any const&) {
+        boost::any LinearityCheckVisitor::visit(UnaryBooleanFunctionExpression const& expression, boost::any const& data) {
+            bool booleanIsLinear = boost::any_cast<bool>(data);
+            
+            if (booleanIsLinear) {
+                return boost::any_cast<LinearityStatus>(expression.getOperand()->accept(*this, booleanIsLinear));
+            } else {
+                return LinearityStatus::NonLinear;
+            }
+
+            
             // Boolean function applications are not allowed in linear expressions.
             return LinearityStatus::NonLinear;
         }
@@ -78,8 +125,14 @@ namespace storm {
             STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Illegal unary numerical expression operator.");
         }
         
-        boost::any LinearityCheckVisitor::visit(BooleanLiteralExpression const&, boost::any const&) {
-            return LinearityStatus::NonLinear;
+        boost::any LinearityCheckVisitor::visit(BooleanLiteralExpression const& expression, boost::any const& data) {
+            bool booleanIsLinear = boost::any_cast<bool>(data);
+            
+            if (booleanIsLinear) {
+                return LinearityStatus::LinearWithoutVariables;
+            } else {
+                return LinearityStatus::NonLinear;
+            }
         }
         
         boost::any LinearityCheckVisitor::visit(IntegerLiteralExpression const&, boost::any const&) {

@@ -1124,7 +1124,7 @@ namespace storm {
             bool result = true;
             
             storm::expressions::LinearityCheckVisitor linearityChecker;
-            result &= linearityChecker.check(this->getInitialStatesExpression());
+            result &= linearityChecker.check(this->getInitialStatesExpression(), true);
             
             for (auto const& automaton : this->getAutomata()) {
                 result &= automaton.isLinear();

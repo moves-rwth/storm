@@ -706,6 +706,9 @@ namespace storm {
         void MenuGameRefiner<Type, ValueType>::performRefinement(std::vector<RefinementCommand> const& refinementCommands) const {
             for (auto const& command : refinementCommands) {
                 STORM_LOG_TRACE("Refining with " << command.getPredicates().size() << " predicates.");
+                for (auto const& predicate : command.getPredicates()) {
+                    STORM_LOG_TRACE(predicate);
+                }
                 abstractor.get().refine(command);
             }
             

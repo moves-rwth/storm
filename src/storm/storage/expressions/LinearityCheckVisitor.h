@@ -17,8 +17,9 @@ namespace storm {
              * Checks that the given expression is linear.
              *
              * @param expression The expression to check for linearity.
+             * @param booleanIsLinear A flag indicating whether boolean components are considered linear.
              */
-            bool check(Expression const& expression);
+            bool check(Expression const& expression, bool booleanIsLinear = false);
             
             virtual boost::any visit(IfThenElseExpression const& expression, boost::any const& data) override;
             virtual boost::any visit(BinaryBooleanFunctionExpression const& expression, boost::any const& data) override;
