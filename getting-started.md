@@ -20,10 +20,10 @@ If you just want to have a peek at what Storm can do, the easiest way is to down
 
 ## Obtaining the VM
 
-The virtual machine image can be found [here](link).
+The virtual machine image can be found [here](https://rwth-aachen.sciebo.de/index.php/s/nthEAQL4o49zkYp).
 
-{:.alert .alert-danger} 
-The VM is not yet available.
+{:.alert .alert-info}
+The virtual machine is hosted at sciebo, an academic cloud hoster. We are not able to trace the identity of downloaders, so reviewers can use this link without revealing their identity.
 
 When you have downloaded the OVA image, you can import it into, for example, [VirtualBox](link) and run it. The username and password are both *storm* and a `README` file is provided in the home folder of the user *storm*. In the virtual machine, Storm is installed into `/home/storm/storm` and the binaries can be found in `/home/storm/storm/build/bin`. For your convenience, an environment variable with the name `STORM_DIR` is set to the path containing the binaries and this directory is added to the `PATH`, meaning that you can run the Storm binaries from any location in the terminal and that `cd $STORM_DIR` will take you to the folders containing Storm's binaries. For more information on how to run Storm, please see [below](#running-storm). 
 

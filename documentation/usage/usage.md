@@ -19,3 +19,7 @@ You can find more information [here](documentation/usage/models.html).
 # Properties
 
 You can find more information [here](documentation/usage/properties.html).
+
+# Command Line
+
+You can find more information [here](documentation/usage/cli.html).
