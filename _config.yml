@@ -29,6 +29,7 @@ gems:      []
 # Conversion
 markdown:    kramdown
 incremental: false
+highlighter: rouge
 
 # Serving
 detach:  false
@@ -53,11 +54,6 @@ liquid:
   error_mode: warn
 
 # Markdown Processors
-rdiscount:
-  extensions: []
-
-redcarpet:
-  extensions: []
 
 kramdown:
   auto_ids:       true
@@ -68,3 +64,4 @@ kramdown:
   input:          GFM
   hard_wrap:      false
   footnote_nr:    1
+  syntax_highlighter: rouge
