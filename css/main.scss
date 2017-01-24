@@ -93,6 +93,19 @@ border-radius: 20px;
    color:#333;
 }
 
+.tab-pane {
+  background-color: #f4f4f4;
+}
+
+.md-container .nav-tabs {
+	border: 1px solid;
+}
+
+.md-container .nav-tabs a {
+	color: black;
+}
+
+
 @media (max-width: 900px) { 
 	
 	.card-deck-wrapper {margin-right:0;margin-left:0;}
