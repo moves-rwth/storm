@@ -4,10 +4,10 @@ navigation_weight: 1
 layout: default
 ---
 
-Storm is framework for probabilistic model checking[^1]. It can be used to verify that models including stochastic behavior satisfy properties.  
+storm is framework for probabilistic model checking[^1]. It can be used to verify that models including stochastic behavior satisfy properties.  
 
 # Distinguishing features
-Storm distinguishes itself from other probabilistic model checkers by a couple of features:
+storm distinguishes itself from other probabilistic model checkers by a couple of features:
 <!-- Tabs & box are in html -->
 
 <br/>
@@ -53,7 +53,7 @@ Moreover, many state-of-the-art solvers have an academic license -- this makes i
 Finally, e.g. the SMT community is very active, and state-of-the-art solvers of today may be deprecated tomorrow. The flexibility in adding new solvers ensures that storm is easiliy kept up-to-date, without destroying backward compatibility.
 </div>
 <div class="tab-pane" id="inputs" role="tabpanel">
-Storm has support for a variety of inputs: This is not only convenient for the user, it also allows domain-specific optimizations as the structure of the original problem is preserved and thus accesible for storm.
+storm has support for a variety of inputs: This is not only convenient for the user, it also allows domain-specific optimizations as the structure of the original problem is preserved and thus accesible for storm.
 </div>
 <div class="tab-pane" id="python" role="tabpanel">
 [Stormpy](https://moves-rwth.github.io/stormpy/) provides python bindings for an ever growing part of its code base. The bindings allow to utilize the high-performance routines of storm in combination with python. This has several advances, including but not limited to: 
@@ -89,7 +89,7 @@ $(this).tab('show')
 
 The developers can be reached via storm-dev ```at``` i2.informatik.rwth-aachen.de
 
-Storm has been developed at the [Chair for Software Modeling and Verification](http://moves.rwth-aachen.de) at RWTH Aachen University by
+storm has been developed at the [Chair for Software Modeling and Verification](http://moves.rwth-aachen.de) at RWTH Aachen University by
 
 - [Christian Dehnert](#)
 - [Sebastian Junges](#)
