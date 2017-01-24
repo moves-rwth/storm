@@ -17,14 +17,14 @@ This document collects these steps.
 
 ## Carl
 
-Obtain `carl <https://github.com/smtrat/carl>_`: 
+Obtain [carl](https://github.com/smtrat/carl): 
 
-```bash
+```shell
 git clone https://github.com/smtrat/carl
 cd carl
 mkdir build
 cd build
-cmake -DUSE_CLN_NUMBERS=ON ..
+cmake -DUSE_CLN_NUMBERS=ON -DUSE_GINAC=ON ..
 ```
 
 
