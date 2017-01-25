@@ -40,7 +40,7 @@ Required:
 Recommended:
 - z3
 - xercesc
-- mathsat (needs to be configured manually during the [configuration step](documentation/installation/configuration-guide.html))
+- mathsat (needs to be configured manually during the [configuration step](configuration-guide.html))
 
 # OS specific preparations
 
