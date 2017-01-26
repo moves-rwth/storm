@@ -83,6 +83,6 @@ sudo apt-get install git cmake libboost-all-dev libcln-dev libginac-dev automake
 
 - Recommended:
 ```
-sudo apt-get install z3 xerces-c
+sudo apt-get install libz3-dev libxerces-c-dev
 ```
 
