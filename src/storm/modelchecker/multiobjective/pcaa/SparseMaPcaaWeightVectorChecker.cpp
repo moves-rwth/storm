@@ -74,12 +74,12 @@ namespace storm {
                     updateDataToCurrentEpoch(MS, PS, *minMax, consideredObjectives, currentEpoch, weightVector, lowerTimeBoundIt, lowerTimeBounds, upperTimeBoundIt, upperTimeBounds);
                     
                     // Compute the values that can be obtained at probabilistic states in the current time epoch
-                    performPSStep(PS, MS, *minMax, *linEq, optimalChoicesAtCurrentEpoch,  consideredObjectives);
+                    performPSStep(PS, MS, *minMax, *linEq, optimalChoicesAtCurrentEpoch,  consideredObjectives, weightVector);
                     
                     // Compute values that can be obtained at Markovian states after letting one (digitized) time unit pass.
                     // Only perform such a step if there is time left.
                     if(currentEpoch>0) {
-                        performMSStep(MS, PS, consideredObjectives);
+                        performMSStep(MS, PS, consideredObjectives, weightVector);
                         --currentEpoch;
                     } else {
                         break;
@@ -354,55 +354,73 @@ namespace storm {
             }
             
             template <class SparseMaModelType>
-            void SparseMaPcaaWeightVectorChecker<SparseMaModelType>::performPSStep(SubModel& PS, SubModel const& MS, MinMaxSolverData& minMax, LinEqSolverData& linEq, std::vector<uint_fast64_t>& optimalChoicesAtCurrentEpoch,  storm::storage::BitVector const& consideredObjectives) const {
+            void SparseMaPcaaWeightVectorChecker<SparseMaModelType>::performPSStep(SubModel& PS, SubModel const& MS, MinMaxSolverData& minMax, LinEqSolverData& linEq, std::vector<uint_fast64_t>& optimalChoicesAtCurrentEpoch,  storm::storage::BitVector const& consideredObjectives, std::vector<ValueType> const& weightVector) const {
                 // compute a choice vector for the probabilistic states that is optimal w.r.t. the weighted reward vector
                 minMax.solver->solveEquations(PS.weightedSolutionVector, minMax.b);
                 auto newScheduler = minMax.solver->getScheduler();
-                // check whether the linEqSolver needs to be updated, i.e., whether the scheduler has changed
-                if(linEq.solver == nullptr || newScheduler->getChoices() != optimalChoicesAtCurrentEpoch) {
+                if(consideredObjectives.getNumberOfSetBits() == 1 && !storm::utility::isZero(weightVector[*consideredObjectives.begin()])) {
+                    // In this case there is no need to perform the computation on the individual objectives
                     optimalChoicesAtCurrentEpoch = newScheduler->getChoices();
-                    linEq.solver = nullptr;
-                    storm::storage::SparseMatrix<ValueType> linEqMatrix = PS.toPS.selectRowsFromRowGroups(optimalChoicesAtCurrentEpoch, true);
-                    linEqMatrix.convertToEquationSystem();
-                    linEq.solver = linEq.factory.create(std::move(linEqMatrix));
-                    linEq.solver->setCachingEnabled(true);
-                }
-                
-                // Get the results for the individual objectives.
-                // Note that we do not consider an estimate for each objective (as done in the unbounded phase) since the results from the previous epoch are already pretty close
-                for(auto objIndex : consideredObjectives) {
-                    auto const& objectiveRewardVectorPS = PS.objectiveRewardVectors[objIndex];
-                    auto const& objectiveSolutionVectorMS = MS.objectiveSolutionVectors[objIndex];
-                    // compute rhs of equation system, i.e., PS.toMS * x + Rewards
-                    // To safe some time, only do this for the obtained optimal choices
-                    auto itGroupIndex = PS.toPS.getRowGroupIndices().begin();
-                    auto itChoiceOffset = optimalChoicesAtCurrentEpoch.begin();
-                    for(auto& bValue : linEq.b) {
-                        uint_fast64_t row = (*itGroupIndex) + (*itChoiceOffset);
-                        bValue = objectiveRewardVectorPS[row];
-                        for(auto const& entry : PS.toMS.getRow(row)){
-                            bValue += entry.getValue() * objectiveSolutionVectorMS[entry.getColumn()];
-                        }
-                        ++itGroupIndex;
-                        ++itChoiceOffset;
+                    auto objIndex = *consideredObjectives.begin();
+                    PS.objectiveSolutionVectors[objIndex] = PS.weightedSolutionVector;
+                    if(!storm::utility::isOne(weightVector[objIndex])) {
+                        storm::utility::vector::scaleVectorInPlace(PS.objectiveSolutionVectors[objIndex], storm::utility::one<ValueType>()/weightVector[objIndex]);
                     }
-                    linEq.solver->solveEquations(PS.objectiveSolutionVectors[objIndex], linEq.b);
+                } else {
+                    // check whether the linEqSolver needs to be updated, i.e., whether the scheduler has changed
+                    if(linEq.solver == nullptr || newScheduler->getChoices() != optimalChoicesAtCurrentEpoch) {
+                        optimalChoicesAtCurrentEpoch = newScheduler->getChoices();
+                        linEq.solver = nullptr;
+                        storm::storage::SparseMatrix<ValueType> linEqMatrix = PS.toPS.selectRowsFromRowGroups(optimalChoicesAtCurrentEpoch, true);
+                        linEqMatrix.convertToEquationSystem();
+                        linEq.solver = linEq.factory.create(std::move(linEqMatrix));
+                        linEq.solver->setCachingEnabled(true);
+                    }
+                    
+                    // Get the results for the individual objectives.
+                    // Note that we do not consider an estimate for each objective (as done in the unbounded phase) since the results from the previous epoch are already pretty close
+                    for(auto objIndex : consideredObjectives) {
+                        auto const& objectiveRewardVectorPS = PS.objectiveRewardVectors[objIndex];
+                        auto const& objectiveSolutionVectorMS = MS.objectiveSolutionVectors[objIndex];
+                        // compute rhs of equation system, i.e., PS.toMS * x + Rewards
+                        // To safe some time, only do this for the obtained optimal choices
+                        auto itGroupIndex = PS.toPS.getRowGroupIndices().begin();
+                        auto itChoiceOffset = optimalChoicesAtCurrentEpoch.begin();
+                        for(auto& bValue : linEq.b) {
+                            uint_fast64_t row = (*itGroupIndex) + (*itChoiceOffset);
+                            bValue = objectiveRewardVectorPS[row];
+                            for(auto const& entry : PS.toMS.getRow(row)){
+                                bValue += entry.getValue() * objectiveSolutionVectorMS[entry.getColumn()];
+                            }
+                            ++itGroupIndex;
+                            ++itChoiceOffset;
+                        }
+                        linEq.solver->solveEquations(PS.objectiveSolutionVectors[objIndex], linEq.b);
+                    }
                 }
             }
 
             template <class SparseMaModelType>
-            void SparseMaPcaaWeightVectorChecker<SparseMaModelType>::performMSStep(SubModel& MS, SubModel const& PS, storm::storage::BitVector const& consideredObjectives) const {
+            void SparseMaPcaaWeightVectorChecker<SparseMaModelType>::performMSStep(SubModel& MS, SubModel const& PS, storm::storage::BitVector const& consideredObjectives, std::vector<ValueType> const& weightVector) const {
                 
                 MS.toMS.multiplyWithVector(MS.weightedSolutionVector, MS.auxChoiceValues);
                 storm::utility::vector::addVectors(MS.weightedRewardVector, MS.auxChoiceValues, MS.weightedSolutionVector);
                 MS.toPS.multiplyWithVector(PS.weightedSolutionVector, MS.auxChoiceValues);
                 storm::utility::vector::addVectors(MS.weightedSolutionVector, MS.auxChoiceValues, MS.weightedSolutionVector);
-                
-                for(auto objIndex : consideredObjectives) {
-                    MS.toMS.multiplyWithVector(MS.objectiveSolutionVectors[objIndex], MS.auxChoiceValues);
-                    storm::utility::vector::addVectors(MS.objectiveRewardVectors[objIndex], MS.auxChoiceValues, MS.objectiveSolutionVectors[objIndex]);
-                    MS.toPS.multiplyWithVector(PS.objectiveSolutionVectors[objIndex], MS.auxChoiceValues);
-                    storm::utility::vector::addVectors(MS.objectiveSolutionVectors[objIndex], MS.auxChoiceValues, MS.objectiveSolutionVectors[objIndex]);
+                if(consideredObjectives.getNumberOfSetBits() == 1 && !storm::utility::isZero(weightVector[*consideredObjectives.begin()])) {
+                    // In this case there is no need to perform the computation on the individual objectives
+                    auto objIndex = *consideredObjectives.begin();
+                    MS.objectiveSolutionVectors[objIndex] = MS.weightedSolutionVector;
+                    if(!storm::utility::isOne(weightVector[objIndex])) {
+                        storm::utility::vector::scaleVectorInPlace(MS.objectiveSolutionVectors[objIndex], storm::utility::one<ValueType>()/weightVector[objIndex]);
+                    }
+                } else {
+                    for(auto objIndex : consideredObjectives) {
+                        MS.toMS.multiplyWithVector(MS.objectiveSolutionVectors[objIndex], MS.auxChoiceValues);
+                        storm::utility::vector::addVectors(MS.objectiveRewardVectors[objIndex], MS.auxChoiceValues, MS.objectiveSolutionVectors[objIndex]);
+                        MS.toPS.multiplyWithVector(PS.objectiveSolutionVectors[objIndex], MS.auxChoiceValues);
+                        storm::utility::vector::addVectors(MS.objectiveSolutionVectors[objIndex], MS.auxChoiceValues, MS.objectiveSolutionVectors[objIndex]);
+                    }
                 }
             }
             
