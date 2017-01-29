@@ -5,64 +5,116 @@ documentation: true
 categories: [Usage]
 ---
 
-Storm takes properties very similar to the prism property language, or alternatively as part of the jani-specification language. 
+# Table of Contents
+ {:.no_toc}
+- list
+{:toc}
 
+# General
+
+storm takes properties very similar to the PRISM property language, or alternatively as part of the JANI-specification language. 
 
 {:.alert .alert-info}
-For DFTs, GSPNs and probabilistic programs, domain specific properties can be given. These are typically mapped to the properties discussed here. Their meaning and syntax can be found together with the documentation of these models. 
+For DFTs, GSPNs and probabilistic programs, domain specific properties can be given. These are typically mapped to the properties discussed here. Their meaning and syntax can be found below.
 
+## Identifying States
 
-# Identifying states
+storm allows to identify sets of states by either labels or via the symbolic variables describing the model. Note that it depends on the [input language](languages.html) which of these two ways are enabled. For example, for explicit models, there are no symbolic variables and therefore only labels can be used. For PRISM and JANI input, both labels and expressions over model variables are valid. Finally, the expression `true` can be used to describe the set of all states.
 
-Storm features two ways to identify sets of states, via labels or via the symbolic variables describing the Markov chain. 
+### Labels
 
-- To refer to a label, the name of the label should be put in quotes, e.g. `"label_1"`.
-- Integer-valued state-variables can compared to integers, e.g. `s < 5` describes all states in which the integer-variable `s` has a value smaller than `5`. 
-- Boolean-valued state-variables can be listed directly, e.g. `b` describes all states in which the variable `b` is `true`. 
+To refer to a label a model exports, put the name of the label in quotes. For example, if a model has the label `done` to express that in these states the model is done with something, write `"done"` to refer to these states.
 
+### Propositional Expressions
 
-# PCTL / CSL
+For symbolic input (PRISM and JANI), one may also use expressions over the model variables to identify states. For example, if the model has an integer-valued state variable `s`, then `s < 5` refers to all states in which `s` is smaller than five. Of course, boolean combinations of such expressions are allowed, i.e. `s < 5 & (b | s < y)` is valid for a model with integer variables `s` and `y` and boolean variable `b`.
 
-## Idea
-The (probability) measure on Markov models is typically defined on paths. 
-These paths are defined as in temporal logic, or more specifically CTL. That means that the formula alternates over descriptions of paths and descriptions of states.
+## Probabilistic Computation Tree Logic (PCTL) / Continuous Stochastic Logic (CSL)
 
-The simplest representation of states are the atomic propositions described above. 
-The simplest operators on paths are `F a` for finally `a` and `a U b` for `a` holds until at some point `b` holds. 
+### Idea
+The (probability) measure on Markov models is typically defined on paths. These paths are defined as in temporal logic, or more specifically computation tree logic (CTL), a branching-time logic. That means that the formula alternates over descriptions of paths and descriptions of states.
 
-The probability-mass of the paths can be compared to a constant, and yields a property for states: `P>0.4 [F "target"]` describes the set of states in which the outgoing paths which finally reach a state labelled `target` together have a probability  greater than `0.4`. 
+### Path Formulae
 
-## Path formulae
+For this, we assume that `a` and `b` are [state formulae](#state-formulae) and `{op}` is any one of `<, <=, >, >=`. The available path formulae are:
 
+- `a U b` to describe paths on which at some point `b` holds and in all prior steps `a` holds.
+- `F b` as a shortcut for `true U b.
+- `a U{p} k b` (where `k` is an expression evaluating to a number) to describe the paths on which b holds within `k` steps and `a` holds in all prior steps.
+- `F{p} k b` as a shortcut for `true U{p} k b`.
 
-## State formulae
+### State Formulae
 
-- `|` or
-- `&` and
+Here, we assume that `a` and `b` are state formulae, `phi` is a [path formula](#path-formulae) and `{op}` is any one of `<, <=, >, >=`. The available state formulae are:
 
+- `c` where `c` is either a [label](#labels) or an [expression](#propositional-expressions) over the model variables.
+- `a | b`, `a & b` to describe all states that satisfy `a` or `b` and `a` and `b`, respectively.
+- `!a` to describe the states *not* satisfying `a`.
+- `P{op} t [ phi ]` (where `t` is a threshold value) to describe the states in which the probability to satisfy `phi` conforms to the comparison `{op} t`.
+- `LRA{op} t [a]` to describe states in which the long-run average probability to be in a state satisfying `a` conforms to `{op} t`.
 
-## Obtaining probabilities
+### Obtaining Probabilities
 
-Although formally not allowed in PCTL, one can also request probability of of fulfilling a path formula from each state. Instead of comparing to a given value, the probability formula becomes `P=?`.
-On models featuring non-determinism, the probability does not exist. Instead, one can refer here to minimum or maximum probability, respectively. 
+Although formally not allowed in PCTL/CSL, one can also request probability of of fulfilling a path formula from each state. Instead of comparing to a given value `P{op} b [ phi ]`, one can write `P=? [ phi ]` to obtain the actual values rather then obtaining a truth value.
 
-{.alert .alert-danger}
-Describe the meaning on non-deterministic models
+### Nondeterministic Models
 
+For nondeterministic models, the formula can (and sometimes needs to) specify whether it refers to minimal or maximal probabilities. Since there is no information on how the nondeterminism in the models is to be resolved, storm needs information on whether it should resolve the choices to *minimize* or *maximize* the values. That is, you cannot write `P=? [F a]`, but have to either write `Pmin=? [F a]` or `Pmax=? [F a]`. While you can also specify `min` and `max` when comparing to a probability threshold, it's not necessary to do it. By default, if the comparison operator `{op}` is `<` or `<=`, then the probability is maximized and otherwise minimized. The reasoning is the following: if the property holds in a state, then no matter which resolution of nondeterminism is taken, the probability will always be below (or equal) to the threshold value.
 
-# Reward extensions
+## Reward extensions
 
+To measure rewards (or costs) in models, storm supports extensions of the aforementioned logics. More specifically, there are the following reward formulae, where `a` is a [state formula](#state-formulae)
 
+- `I=k` is the expected reward obtained in time point `k`.
+- `C<=k` is the expected reward obtained up until time point `k`.
+- `F a` is the expected reward obtained up until reaching the set of states characterized by `a`.
+- `LRA` is the long-run average reward.
 
-# Conditional properties
+Just like path formulae, these reward formulae can be embedded in an `R` operator to allow for value comparison or value computation:
 
+- `R{op} t [ r ]` (where `r` is a reward formulae) describes the states in which the reward of `r` conforms to the comparison `{op} t`.
+- `R=? [ r ]`, `Rmin=? [ r ]` and `Rmax=? [ r ]` have the straightforward interpretation.
 
+## Conditional Properties
 
-# Multi-objective Model Checking
+The extension to conditional properties let's you query the probabilities of an event conditioned on the fact that something else holds. The formula
 
-{:.alert .alert-danger} 
-coming soon
+- `P=? [ F a || F b ]`
 
+can be used to query the probability that a state satisfying `a` is reached provided that a state satisfying `b` is also reached.
 
+## Examples
 
+To illustrate how the formulae can be used, we give some examples of syntactically valid properties:
 
+- `P<0.5 [ F s=5 ]`
+- `Pmax=? [ Pmin>0.2 [ F<=10 "elected" ] U x+y=10 ]`
+- `LRA>=0.3 [ "up" ]`
+- `R=? [ I=10 ]`
+- `Rmax=? [F "elected" ]`
+- `R=? [ LRA ]`
+- `P=? [ F s<10 || F s<7 ]`
+
+## Multi-objective Model Checking
+
+{:.alert .alert-info} 
+Coming soon.
+
+# Naming Properties
+
+To allow referring to specific properties, they can be equipped with names. To give the name `name` to a property `P`, you can write `"name" : P`.
+
+# DFTs
+
+{:.alert .alert-info} 
+Coming soon.
+
+# GSPNs
+
+{:.alert .alert-info} 
+Coming soon.
+
+# cpGCL Programs
+
+{:.alert .alert-info} 
+Coming soon.

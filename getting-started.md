@@ -81,15 +81,18 @@ make storm-main
 If you have multiple cores at your disposal and at least 8GB of memory, you can execute 
 `make storm-main -j${NUMBER_OF_CORES}` to speed up compilation. You will still be able to get the coffee, no worries.
 
+## Other Binaries
+
 If you are interested in one of the other binaries, replace `storm-main` with the appropriate target:
 
-|-------------|----------------+----------------|
-| purpose     | target         | binary         |
-|-------------|----------------+----------------|
-| DFTs        | storm-dft-cli  |                |
-| GSPNs       | storm-gspn-cli |                |
-| cpGCL       | storm-pgcl-cli |                |
-|-------------|----------------+----------------|
+|------------------------|----------------+----------------|
+| purpose                | target         | binary         |
+|------------------------|----------------+----------------|
+| PRISM, JANI, explicit  | storm-main     | storm          |
+| DFTs                   | storm-dft-cli  |                |
+| GSPNs                  | storm-gspn-cli |                |
+| cpGCL                  | storm-pgcl-cli |                |
+|------------------------|----------------+----------------|
 
 
 ## Test step (optional)
@@ -176,7 +179,7 @@ which tells us that this probability is 1/3. So far the model seems to simulate 
 ./storm --prism die.pm --prop "R{\"coin_flips\"}=? [F s=7]"
 ```
 
-`storm` tells us that -- on average -- we will have to flip our fair coin 11/3 times.
+`storm` tells us that -- on average -- we will have to flip our fair coin 11/3 times. Note that we had to escape the quotes around the reward model name in the property string. If the property is placed within a file, there is no need to escape them.
 
 ### Example 2 (Analysis of a PRISM model of an asynchronous leader election protocol)
 
@@ -185,19 +188,19 @@ In this example, we consider the model described [here](http://www.prismmodelche
 As the name of the protocol suggests, it is supposed to elect a leader among a set of communicating agents. Well, let's see whether it lives up to it's name and check that almost surely (i.e. with probability 1) a leader will be elected eventually.
 
 ```shell
-./bin/Debug/storm --prism leader4.nm --prop "P>=1 [F (s1=4 | s2=4 | s3=4 | s4=4) ]"
+./storm --prism leader4.nm --prop "P>=1 [F (s1=4 | s2=4 | s3=4 | s4=4) ]"
 ```
 
 Apparently this is true. But what about the performance of the protocol? The property we just checked does not guarantee any upper bound on the number of steps that we need to make until a leader is elected. Suppose we have only 40 steps and want to know what's the probability to elect a leader *within this time bound*.
 
 ```shell
-./bin/Debug/storm --prism leader4.nm --prop "P=? [F<=40 (s1=4 | s2=4 | s3=4 | s4=4) ]"
+./storm --prism leader4.nm --prop "P=? [F<=40 (s1=4 | s2=4 | s3=4 | s4=4) ]"
 ```
 
 Likely, Storm will tell you that there is an error and that for nondeterministic models you need to specify whether minimal or maximal probabilities are to be computed. Why is that? Since the model is a [Markov Decision Process](documentation/usage/models.html), there are (potentially) nondeterministic choices in the model that need to be resolved. Storm doesn't know how to resolve them unless you tell it to either minimize or maximize (wrt. to the probability of the objective) whenever there is a nondeterministic choice.
 
 ```shell
-./bin/Debug/storm --prism leader4.nm --prop "Pmin=? [F<=40 (s1=4 | s2=4 | s3=4 | s4=4) ]"
+./storm --prism leader4.nm --prop "Pmin=? [F<=40 (s1=4 | s2=4 | s3=4 | s4=4) ]"
 ```
 
 Storm should tell you that this probability is 0.375. So what does it mean? It means that even in the worst of all cases, so when every nondeterministic choice in the model is chosen to minimize the probability to elect a leader quickly, then we will elect a leader within our time bound in about 3 out of 8 cases.
