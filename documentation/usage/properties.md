@@ -100,7 +100,7 @@ To illustrate how the formulae can be used, we give some examples of syntactical
 {:.alert .alert-info} 
 Coming soon.
 
-# Naming Properties
+## Naming Properties
 
 To allow referring to specific properties, they can be equipped with names. To give the name `name` to a property `P`, you can write `"name" : P`.
 
