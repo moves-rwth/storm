@@ -30,7 +30,7 @@ Generally, it depends on the characteristics of the input model, which of the mo
 - `--engine sparse`
 - `--engine hybrid`
 - `--engine dd`
-- `--engine exploration`
+- `--engine expl`
 - `--engine abs`
 
 Note that not all engines support all model types and/or properties.
