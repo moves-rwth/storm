@@ -5,6 +5,7 @@
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/EigenEquationSolverSettings.h"
 
+#include "storm/utility/vector.h"
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidSettingsException.h"
 
@@ -230,6 +231,9 @@ namespace storm {
                     }
                 }
                 
+                // Make sure that all results conform to the bounds.
+                storm::utility::vector::clip(x, this->lowerBound, this->upperBound);
+                
                 // Check if the solver converged and issue a warning otherwise.
                 if (converged) {
                     STORM_LOG_DEBUG("Iterative solver converged after " << numberOfIterations << " iterations.");
@@ -240,7 +244,7 @@ namespace storm {
                 }
             }
             
-            return false;
+            return true;
         }
         
         template<typename ValueType>

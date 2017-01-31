@@ -94,6 +94,7 @@ namespace storm {
                         
                         // Now solve the created system of linear equations.
                         std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(std::move(submatrix));
+                        solver->setBounds(storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
                         solver->solveEquations(x, b);
                         
                         // Set values of resulting vector according to result.
@@ -217,6 +218,7 @@ namespace storm {
                         
                         // Now solve the resulting equation system.
                         std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(std::move(submatrix));
+                        solver->setLowerBound(storm::utility::zero<ValueType>());
                         solver->solveEquations(x, b);
                         
                         // Set values of resulting vector according to result.

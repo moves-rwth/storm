@@ -73,6 +73,7 @@ namespace storm {
                         std::vector<ValueType> b = subvector.toVector(odd);
                         
                         std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(std::move(explicitSubmatrix));
+                        solver->setBounds(storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
                         solver->solveEquations(x, b);
                         
                         // Return a hybrid check result that stores the numerical values explicitly.
@@ -140,7 +141,6 @@ namespace storm {
                 }
             }
 
-            
             template<storm::dd::DdType DdType, typename ValueType>
             std::unique_ptr<CheckResult> HybridDtmcPrctlHelper<DdType, ValueType>::computeInstantaneousRewards(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, RewardModelType const& rewardModel, uint_fast64_t stepBound, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
                 // Only compute the result if the model has at least one reward this->getModel().
@@ -238,6 +238,7 @@ namespace storm {
                         
                         // Now solve the resulting equation system.
                         std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(std::move(explicitSubmatrix));
+                        solver->setLowerBound(storm::utility::zero<ValueType>());
                         solver->solveEquations(x, b);
                         
                         // Return a hybrid check result that stores the numerical values explicitly.

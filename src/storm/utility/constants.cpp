@@ -227,6 +227,26 @@ namespace storm {
         }
         
         template<>
+        std::pair<storm::RationalNumber, storm::RationalNumber> minmax(std::vector<storm::RationalNumber> const& values) {
+            assert(!values.empty());
+            storm::RationalNumber min = values.front();
+            storm::RationalNumber max = values.front();
+            for (auto const& vt : values) {
+                if (vt == storm::utility::infinity<storm::RationalNumber>()) {
+                    max = vt;
+                } else {
+                    if (vt < min) {
+                        min = vt;
+                    }
+                    if (vt > max) {
+                        max = vt;
+                    }
+                }
+            }
+            return std::make_pair(min, max);
+        }
+        
+        template<>
         storm::RationalFunction minimum(std::vector<storm::RationalFunction> const&) {
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Minimum for rational functions is not defined.");
         }
@@ -251,7 +271,7 @@ namespace storm {
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Maximum/maximum for rational functions is not defined.");
         }
 
-        template< typename K, typename ValueType>
+        template<typename K, typename ValueType>
         std::pair<ValueType, ValueType> minmax(std::map<K, ValueType> const& values) {
             assert(!values.empty());
             ValueType min = values.begin()->second;
@@ -268,20 +288,33 @@ namespace storm {
         }
 
         template<>
+        std::pair<storm::RationalNumber, storm::RationalNumber> minmax(std::map<uint64_t, storm::RationalNumber> const& values) {
+            assert(!values.empty());
+            storm::RationalNumber min = values.begin()->second;
+            storm::RationalNumber max = values.begin()->second;
+            for (auto const& vt : values) {
+                if (vt.second == storm::utility::infinity<storm::RationalNumber>()) {
+                    max = vt.second;
+                } else {
+                    if (vt.second < min) {
+                        min = vt.second;
+                    }
+                    if (vt.second > max) {
+                        max = vt.second;
+                    }
+                }
+            }
+            return std::make_pair(min, max);
+        }
+        
+        template<>
         storm::RationalFunction minimum(std::map<uint64_t, storm::RationalFunction> const&) {
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Minimum for rational functions is not defined.");
         }
         
         template< typename K, typename ValueType>
         ValueType minimum(std::map<K, ValueType> const& values) {
-            assert(!values.empty());
-            ValueType min = values.begin()->second;
-            for (auto const& vt : values) {
-                if (vt.second < min) {
-                    min = vt.second;
-                }
-            }
-            return min;
+            return minmax(values).first;
         }
         
         template<>
@@ -291,14 +324,7 @@ namespace storm {
         
         template<typename K, typename ValueType>
         ValueType maximum(std::map<K, ValueType> const& values) {
-            assert(!values.empty());
-            ValueType max = values.begin()->second;
-            for (auto const& vt : values) {
-                if (vt.second > max) {
-                    max = vt.second;
-                }
-            }
-            return max;
+            return minmax(values).second;
         }
         
 #ifdef STORM_HAVE_CARL
