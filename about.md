@@ -4,7 +4,7 @@ navigation_weight: 1
 layout: default
 ---
 
-storm is framework for probabilistic model checking[^1]. It can be used to verify that models including stochastic behavior satisfy properties.  
+storm is a framework for probabilistic model checking[^1]. It can be used to verify that models including stochastic behavior satisfy a set of given properties.  
 
 # Distinguishing features
 storm distinguishes itself from other probabilistic model checkers by a couple of features:
