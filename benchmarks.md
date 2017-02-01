@@ -1,6 +1,6 @@
 ---
 title: Benchmarks
-navigation-weight:5
+navigation_weight:5
 layout: default
 ---
 
