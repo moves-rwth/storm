@@ -83,7 +83,7 @@ $(this).tab('show')
 - Available as open source since 2017
 - Over 15 contributors
 - Supported on most Unix platforms
-
+- Impossible without all the cool libraries around: [Thank you](thanks.html)!
 
 # People behind storm
 
