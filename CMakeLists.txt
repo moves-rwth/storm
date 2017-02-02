@@ -23,6 +23,8 @@ include(imported)
 #############################################################
 option(STORM_DEVELOPER "Sets whether the development mode is used." OFF)
 option(STORM_ALLWARNINGS "Compile with even more warnings" OFF)
+option(STORM_USE_LTO "Sets whether link-time optimizations are enabled." ON)
+MARK_AS_ADVANCED(STORM_USE_LTO)
 option(STORM_PORTABLE_RELEASE "Sets whether a release build needs to be portable to another machine." OFF)
 MARK_AS_ADVANCED(STORM_PORTABLE_RELEASE)
 option(STORM_USE_POPCNT "Sets whether the popcnt instruction is going to be used." ON)
@@ -215,7 +217,7 @@ if (STORM_COMPILER_CLANG OR STORM_COMPILER_APPLECLANG)
     endif()
     
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -stdlib=${CLANG_STDLIB} -ftemplate-depth=1024")
-    set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -flto -ffast-math -fno-finite-math-only")
+    set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -ffast-math -fno-finite-math-only")
     set (CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-export_dynamic")
     set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-export_dynamic")
 elseif (STORM_COMPILER_GCC)
@@ -224,6 +226,10 @@ elseif (STORM_COMPILER_GCC)
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -rdynamic")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -rdynamic")
 endif ()
+
+if (STORM_USE_LTO)
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -flto")
+endif()
 
 # In release mode, we turn on even more optimizations if we do not have to provide a portable binary.
 if (NOT STORM_PORTABLE_RELEASE)
