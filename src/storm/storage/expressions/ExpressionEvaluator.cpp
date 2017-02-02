@@ -33,7 +33,7 @@ namespace storm {
         }
 
 #ifdef STORM_HAVE_CARL
-        ExpressionEvaluator<RationalNumber>::ExpressionEvaluator(storm::expressions::ExpressionManager const& manager) : ExprtkExpressionEvaluatorBase<RationalNumber>(manager) {
+        ExpressionEvaluator<RationalNumber>::ExpressionEvaluator(storm::expressions::ExpressionManager const& manager) : ExprtkExpressionEvaluatorBase<RationalNumber>(manager), rationalNumberVisitor(*this) {
             // Intentionally left empty.
         }
 
@@ -57,7 +57,7 @@ namespace storm {
             return this->rationalNumberVisitor.toRationalNumber(expression);
         }
         
-        ExpressionEvaluator<RationalFunction>::ExpressionEvaluator(storm::expressions::ExpressionManager const& manager) : ExprtkExpressionEvaluatorBase<RationalFunction>(manager) {
+        ExpressionEvaluator<RationalFunction>::ExpressionEvaluator(storm::expressions::ExpressionManager const& manager) : ExprtkExpressionEvaluatorBase<RationalFunction>(manager), rationalFunctionVisitor(*this) {
             // Intentionally left empty.
         }
         

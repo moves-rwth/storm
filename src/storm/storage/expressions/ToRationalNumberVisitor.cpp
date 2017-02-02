@@ -8,7 +8,7 @@
 namespace storm {
     namespace expressions {
         template<typename RationalNumberType>
-        ToRationalNumberVisitor<RationalNumberType>::ToRationalNumberVisitor() : ExpressionVisitor() {
+        ToRationalNumberVisitor<RationalNumberType>::ToRationalNumberVisitor(ExpressionEvaluatorBase<RationalNumberType> const& evaluator) : ExpressionVisitor(), evaluator(evaluator) {
             // Intentionally left empty.
         }
         
@@ -18,8 +18,13 @@ namespace storm {
         }
         
         template<typename RationalNumberType>
-        boost::any ToRationalNumberVisitor<RationalNumberType>::visit(IfThenElseExpression const&, boost::any const&) {
-            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression cannot be translated into a rational number.");
+        boost::any ToRationalNumberVisitor<RationalNumberType>::visit(IfThenElseExpression const& expression, boost::any const& data) {
+            bool conditionValue = evaluator.asBool(expression.getCondition());
+            if (conditionValue) {
+                return expression.getThenExpression()->accept(*this, data);
+            } else {
+                return expression.getElseExpression()->accept(*this, data);
+            }
         }
         
         template<typename RationalNumberType>
