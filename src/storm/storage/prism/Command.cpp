@@ -67,6 +67,11 @@ namespace storm {
                         return false;
                     }
                 }
+
+                // check likelihood, undefined constants may not occur in 'if' part of IfThenElseExpression
+                if (update.getLikelihoodExpression().containsVariableInITEGuard(undefinedConstantVariables)) {
+                    return false;
+                }
             }
             
             return true;

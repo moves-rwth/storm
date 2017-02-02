@@ -7,6 +7,7 @@
 #include "storm/storage/expressions/LinearityCheckVisitor.h"
 #include "storm/storage/expressions/SyntacticalEqualityCheckVisitor.h"
 #include "storm/storage/expressions/ChangeManagerVisitor.h"
+#include "storm/storage/expressions/CheckIfThenElseGuardVisitor.h"
 #include "storm/storage/expressions/Expressions.h"
 #include "storm/exceptions/InvalidTypeException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
@@ -118,6 +119,12 @@ namespace storm {
             std::set_intersection(variables.begin(), variables.end(), appearingVariables.begin(), appearingVariables.end(), std::inserter(intersection, intersection.begin()));
             return !intersection.empty();
         }
+
+        bool Expression::containsVariableInITEGuard(std::set<storm::expressions::Variable> const& variables) const {
+            CheckIfThenElseGuardVisitor visitor(variables);
+            return visitor.check(*this);
+        }
+
         
         bool Expression::isRelationalExpression() const {
             if (!this->isFunctionApplication()) {
