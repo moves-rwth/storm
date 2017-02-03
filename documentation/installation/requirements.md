@@ -66,7 +66,8 @@ Furthermore, we recommend the usage of [homebrew](http://brew.sh) to install the
 
 - Required:
 ```
-brew install cln ginac boost autoconf cmake glpk doxygen
+brew install cln ginac boost autoconf cmake doxygen
+brew install homebrew/science/glpk
 ```
 
 - Recommended:
