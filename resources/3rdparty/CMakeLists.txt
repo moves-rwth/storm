@@ -178,8 +178,6 @@ include(${STORM_3RDPARTY_SOURCE_DIR}/include_cudd.cmake)
 #############################################################
 include(${STORM_3RDPARTY_SOURCE_DIR}/include_cpptemplate.cmake)
 
-
-
 #############################################################
 ##
 ##      carl
@@ -188,25 +186,25 @@ include(${STORM_3RDPARTY_SOURCE_DIR}/include_cpptemplate.cmake)
 
 set(STORM_HAVE_CARL OFF)
 if(USE_CARL)
-    find_package(carl QUIET)
-    if(carl_FOUND)
-	set(STORM_SHIPPED_CARL OFF)
+	if (NOT STORM_FORCE_SHIPPED_CARL)
+    	find_package(carl QUIET)
+	endif()
+    if(carl_FOUND AND NOT STORM_FORCE_SHIPPED_CARL)
+		set(STORM_SHIPPED_CARL OFF)
         set(STORM_HAVE_CARL ON)
         message(STATUS "Storm - Use system version of carl.")
         message(STATUS "Storm - Linking with carl ${carl_VERSION} (CARL_USE_CLN_NUMBERS: ${CARL_USE_CLN_NUMBERS}).")
         set(STORM_HAVE_CLN ${CARL_USE_CLN_NUMBERS})
     else()
-	set(STORM_SHIPPED_CARL ON)
+		set(STORM_SHIPPED_CARL ON)
 		# The first external project will be built at *configure stage*
 		message("START CARL CONFIG PROCESS")
 		file(MAKE_DIRECTORY ${STORM_3RDPARTY_BINARY_DIR}/carl_download) 
-			execute_process(
-			COMMAND ${CMAKE_COMMAND} ${STORM_3RDPARTY_SOURCE_DIR}/carl "-DSTORM_3RDPARTY_BINARY_DIR=${STORM_3RDPARTY_BINARY_DIR}"
-			WORKING_DIRECTORY ${STORM_3RDPARTY_BINARY_DIR}/carl_download
-			OUTPUT_VARIABLE carlconfig_out
-			RESULT_VARIABLE carlconfig_result
-					)
-		
+		execute_process(
+		COMMAND ${CMAKE_COMMAND} ${STORM_3RDPARTY_SOURCE_DIR}/carl "-DSTORM_3RDPARTY_BINARY_DIR=${STORM_3RDPARTY_BINARY_DIR}"
+		WORKING_DIRECTORY ${STORM_3RDPARTY_BINARY_DIR}/carl_download
+		OUTPUT_VARIABLE carlconfig_out
+		RESULT_VARIABLE carlconfig_result)
 								
 		if(NOT carlconfig_result)
 			message("${carlconfig_out}")
@@ -237,17 +235,20 @@ if(USE_CARL)
         include(${STORM_3RDPARTY_BINARY_DIR}/carl/carlConfig.cmake)
         message("CARL_USE_CLN_NUMBERS: ${CARL_USE_CLN_NUMBERS}")
 		set(STORM_HAVE_CLN ${CARL_USE_CLN_NUMBERS})
-	add_dependencies(resources carl)
+		add_dependencies(resources carl)
         set(carl_INCLUDE_DIR "${STORM_3RDPARTY_BINARY_DIR}/carl/include/")
-	set(carl_LIBRARIES ${STORM_3RDPARTY_BINARY_DIR}/carl/lib/libcarl${DYNAMIC_EXT})
+		set(carl_LIBRARIES ${STORM_3RDPARTY_BINARY_DIR}/carl/lib/libcarl${DYNAMIC_EXT})
         set(STORM_HAVE_CARL ON)
+        
+        # install the carl dynamic library if we build it
+        get_filename_component(STORM_CARL_DYLIB_FULL_PATH ${STORM_3RDPARTY_BINARY_DIR}/carl/lib/libcarl${DYNAMIC_EXT} REALPATH)
+        install(FILES ${STORM_CARL_DYLIB_FULL_PATH} DESTINATION lib)
     endif()
     if(STORM_USE_CLN_NUMBERS AND NOT STORM_HAVE_CLN)
 		message(FATAL_ERROR "Cannot use CLN numbers if carl is build without")
 	endif()
 	
 	list(APPEND STORM_DEP_IMP_TARGETS lib_carl) 
-    
 endif()
 
 

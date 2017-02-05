@@ -33,6 +33,8 @@ option(USE_BOOST_STATIC_LIBRARIES "Sets whether the Boost libraries should be li
 option(STORM_USE_INTELTBB "Sets whether the Intel TBB libraries should be used." OFF)
 option(STORM_USE_GUROBI "Sets whether Gurobi should be used." OFF)
 option(USE_CARL "Sets whether carl should be included." ON)
+option(STORM_FORCE_SHIPPED_CARL "Sets whether the shipped version of carl is to be used no matter whether carl is found or not." OFF)
+MARK_AS_ADVANCED(STORM_FORCE_SHIPPED_CARL)
 option(USE_SMTRAT "Sets whether SMT-RAT should be included." OFF)
 option(USE_HYPRO "Sets whether HyPro should be included." OFF)
 option(XML_SUPPORT "Sets whether xml based format parsing should be included." ON)
@@ -265,6 +267,25 @@ if (STORM_DEVELOPER)
 else()
 	set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fomit-frame-pointer")
 endif()
+
+#############################################################
+##
+##	RPATH settings
+##
+#############################################################
+
+# don't skip the full RPATH for the build tree
+SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
+
+# when building, don't use the install RPATH already (but only when installing)
+SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+
+# the RPATH to be used when installing
+SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+
+# don't add the automatically determined parts of the RPATH
+# which point to directories outside the build tree to the install RPATH
+SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 #############################################################
 ##
