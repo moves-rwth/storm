@@ -28,7 +28,7 @@ namespace storm {
         }
         
         GSPN::GSPN(std::string const& name, std::vector<Place> const& places, std::vector<ImmediateTransition<WeightType>> const& itransitions, std::vector<TimedTransition<RateType>> const& ttransitions, std::vector<TransitionPartition> const& partitions, std::shared_ptr<storm::expressions::ExpressionManager> const& exprManager)
-        : name(name), places(places), immediateTransitions(itransitions), timedTransitions(ttransitions), partitions(partitions), exprManager(exprManager);
+        : name(name), places(places), immediateTransitions(itransitions), timedTransitions(ttransitions), partitions(partitions), exprManager(exprManager)
         {
             
         }
@@ -136,7 +136,7 @@ namespace storm {
         }
 
 
-    std::shared_ptr<storm::expressions::ExpressionManager> const& GSPN::getExpressionManager() {
+    std::shared_ptr<storm::expressions::ExpressionManager> const& GSPN::getExpressionManager() const {
         return exprManager;
     }
 

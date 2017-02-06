@@ -4,7 +4,6 @@
 #include "storm/exceptions/IllegalFunctionCallException.h"
 
 #include "storm/utility/macros.h"
-#include "storm/exceptions/IllegalFunctionCallException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "Place.h"
 
@@ -165,7 +164,6 @@ namespace storm {
 
         storm::gspn::GSPN* GspnBuilder::buildGspn() const {
             std::shared_ptr<storm::expressions::ExpressionManager> exprManager(new storm::expressions::ExpressionManager());
-            exprManager->
 
             std::vector<TransitionPartition> orderedPartitions;
             for(auto const& priorityPartitions : partitions) {
@@ -180,8 +178,11 @@ namespace storm {
                 
             }
             std::reverse(orderedPartitions.begin(), orderedPartitions.end());
-            
-            GSPN* result = new GSPN(gspnName, places, immediateTransitions, timedTransitions, orderedPartitions);
+            for(auto const& placeEntry : placeNames) {
+                exprManager->declareIntegerVariable(placeEntry.first, false);
+            }
+
+            GSPN* result = new GSPN(gspnName, places, immediateTransitions, timedTransitions, orderedPartitions, exprManager);
             result->setTransitionLayoutInfo(transitionLayout);
             result->setPlaceLayoutInfo(placeLayout);
             return result;
