@@ -13,8 +13,7 @@ namespace storm {
      *    Builds JANI model from GSPN.
      */
     storm::jani::Model* buildJani(storm::gspn::GSPN const& gspn) {
-        std::shared_ptr<storm::expressions::ExpressionManager> exprManager(new storm::expressions::ExpressionManager());
-        storm::builder::JaniGSPNBuilder builder(gspn, exprManager);
+        storm::builder::JaniGSPNBuilder builder(gspn);
         return builder.build();
     }
     

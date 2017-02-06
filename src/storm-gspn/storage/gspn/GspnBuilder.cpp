@@ -164,6 +164,9 @@ namespace storm {
         
 
         storm::gspn::GSPN* GspnBuilder::buildGspn() const {
+            std::shared_ptr<storm::expressions::ExpressionManager> exprManager(new storm::expressions::ExpressionManager());
+            exprManager->
+
             std::vector<TransitionPartition> orderedPartitions;
             for(auto const& priorityPartitions : partitions) {
                 for (auto const& partition : priorityPartitions.second) {
