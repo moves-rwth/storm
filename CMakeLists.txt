@@ -352,40 +352,46 @@ endif(DOXYGEN_FOUND)
 ##
 #############################################################
 
-# If a version was provided, we use it. This is useful, for example, when storm is built
-# from a tarball.
+# If storm is built from an archive, we need to skip the version detection based on git.
 if (STORM_SOURCE STREQUAL "archive")
-	if (NOT DEFINED STORM_CPP_VERSION_MAJOR OR NOT DEFINED STORM_CPP_VERSION_MINOR OR NOT DEFINED STORM_CPP_VERSION_PATCH)
+	if (NOT DEFINED STORM_VERSION_MAJOR OR NOT DEFINED STORM_VERSION_MINOR OR NOT DEFINED STORM_VERSION_PATCH)
 		message(FATAL_ERROR "storm - Building from archive requires setting a version via cmake.")
 	endif()
-	message(STATUS "storm - Version is ${STORM_CPP_VERSION_MAJOR}.${STORM_CPP_VERSION_MINOR}.${STORM_CPP_VERSION_PATCH} (building from archive).")
-	set(STORM_CPP_VERSION_COMMITS_AHEAD boost::none)
-	set(STORM_CPP_VERSION_HASH boost::none)
-	set(STORM_CPP_VERSION_DIRTY boost::none)
+	message(STATUS "storm - Version is ${STORM_VERSION_MAJOR}.${STORM_VERSION_MINOR}.${STORM_VERSION_PATCH} (building from archive).")
+	set(STORM_VERSION_COMMITS_AHEAD boost::none)
+	set(STORM_VERSION_GIT_HASH boost::none)
+	set(STORM_VERSION_DIRTY boost::none)
 else()
-	if (DEFINED STORM_CPP_VERSION_MAJOR OR DEFINED STORM_CPP_VERSION_MINOR OR DEFINED STORM_CPP_VERSION_PATCH)
+	if (DEFINED STORM_VERSION_MAJOR OR DEFINED STORM_VERSION_MINOR OR DEFINED STORM_VERSION_PATCH)
 		message(FATAL_ERROR "storm - Building from git does not support setting a version via cmake.")
 	endif()
 	
 	# Make a version file containing the current version from git.
 	include(GetGitRevisionDescription)
-	get_git_head_revision(STORM_CPP_VERSION_REFSPEC STORM_CPP_GIT_HASH)
-	set(STORM_CPP_GIT_HASH "std::string(\"${STORM_CPP_GIT_HASH}\")")
+	get_git_head_revision(STORM_VERSION_REFSPEC STORM_VERSION_GIT_HASH)
 
 	git_describe_checkout(STORM_GIT_VERSION_STRING)
 	# Parse the git Tag into variables
-	string(REGEX REPLACE "^([0-9]+)\\..*" "\\1" STORM_CPP_VERSION_MAJOR "${STORM_GIT_VERSION_STRING}")
-	string(REGEX REPLACE "^[0-9]+\\.([0-9]+).*" "\\1" STORM_CPP_VERSION_MINOR "${STORM_GIT_VERSION_STRING}")
-	string(REGEX REPLACE "^[0-9]+\\.[0-9]+\\.([0-9]+).*" "\\1" STORM_CPP_VERSION_PATCH "${STORM_GIT_VERSION_STRING}")
-	string(REGEX REPLACE "^[0-9]+\\.[0-9]+\\.[0-9]+\\-([0-9]+)\\-.*" "\\1" STORM_CPP_VERSION_COMMITS_AHEAD "${STORM_GIT_VERSION_STRING}")
-	string(REGEX REPLACE "^[0-9]+\\.[0-9]+\\.[0-9]+\\-[0-9]+\\-([a-z0-9]+).*" "\\1" STORM_CPP_TAG_HASH "${STORM_GIT_VERSION_STRING}")
-	string(REGEX REPLACE "^[0-9]+\\.[0-9]+\\.[0-9]+\\-[0-9]+\\-[a-z0-9]+\\-(.*)" "\\1" STORM_CPP_VERSION_APPENDIX "${STORM_GIT_VERSION_STRING}")
-	if ("${STORM_CPP_VERSION_APPENDIX}" MATCHES "^.*dirty.*$")
-		set(STORM_CPP_VERSION_DIRTY 1)
+	string(REGEX REPLACE "^([0-9]+)\\..*" "\\1" STORM_VERSION_MAJOR "${STORM_GIT_VERSION_STRING}")
+	string(REGEX REPLACE "^[0-9]+\\.([0-9]+).*" "\\1" STORM_VERSION_MINOR "${STORM_GIT_VERSION_STRING}")
+	string(REGEX REPLACE "^[0-9]+\\.[0-9]+\\.([0-9]+).*" "\\1" STORM_VERSION_PATCH "${STORM_GIT_VERSION_STRING}")
+	string(REGEX REPLACE "^[0-9]+\\.[0-9]+\\.[0-9]+\\-([0-9]+)\\-.*" "\\1" STORM_VERSION_COMMITS_AHEAD "${STORM_GIT_VERSION_STRING}")
+	string(REGEX REPLACE "^[0-9]+\\.[0-9]+\\.[0-9]+\\-[0-9]+\\-([a-z0-9]+).*" "\\1" STORM_VERSION_TAG_HASH "${STORM_GIT_VERSION_STRING}")
+	string(REGEX REPLACE "^[0-9]+\\.[0-9]+\\.[0-9]+\\-[0-9]+\\-[a-z0-9]+\\-(.*)" "\\1" STORM_VERSION_APPENDIX "${STORM_GIT_VERSION_STRING}")
+	if ("${STORM_VERSION_APPENDIX}" MATCHES "^.*dirty.*$")
+		set(STORM_VERSION_DIRTY 1)
 	else()
-		set(STORM_CPP_VERSION_DIRTY 0)
+		set(STORM_VERSION_DIRTY 0)
 	endif()
-	message(STATUS "storm - Version is ${STORM_CPP_VERSION_MAJOR}.${STORM_CPP_VERSION_MINOR}.${STORM_CPP_VERSION_PATCH} (${STORM_CPP_VERSION_COMMITS_AHEAD} commits ahead of tag) build from ${STORM_CPP_GIT_HASH} (dirty: ${STORM_CPP_VERSION_DIRTY}) (building from git).")
+	if (STORM_VERSION_DIRTY)
+		set(STORM_VERSION_DIRTY_STR "yes")
+	else()
+		set(STORM_VERSION_DIRTY_STR "no")
+	endif()
+	message(STATUS "storm - version is ${STORM_VERSION_MAJOR}.${STORM_VERSION_MINOR}.${STORM_VERSION_PATCH} (${STORM_VERSION_COMMITS_AHEAD} commits ahead of tag), building from git: ${STORM_VERSION_GIT_HASH} (dirty: ${STORM_VERSION_DIRTY_STR}).")
+
+	# proper type conversion so we can assign it to an optional
+	set(STORM_VERSION_GIT_HASH "std::string(\"${STORM_VERSION_GIT_HASH}\")")
 endif()
 
 # Configure a header file to pass some of the CMake settings to the source code
