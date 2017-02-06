@@ -99,7 +99,7 @@ namespace storm {
                         case OperatorType::Times: newValue = firstOperandEvaluation * secondOperandEvaluation; break;
                         case OperatorType::Min: newValue = std::min(firstOperandEvaluation, secondOperandEvaluation); break;
                         case OperatorType::Max: newValue = std::max(firstOperandEvaluation, secondOperandEvaluation); break;
-                        case OperatorType::Power: newValue = static_cast<int_fast64_t>(std::pow(firstOperandEvaluation, secondOperandEvaluation)); break;
+                        case OperatorType::Power: newValue = std::pow(firstOperandEvaluation, secondOperandEvaluation); break;
                         case OperatorType::Divide: STORM_LOG_THROW(false, storm::exceptions::InvalidStateException, "Unable to simplify division."); break;
                     }
                     return std::shared_ptr<BaseExpression>(new RationalLiteralExpression(this->getManager(), newValue));
