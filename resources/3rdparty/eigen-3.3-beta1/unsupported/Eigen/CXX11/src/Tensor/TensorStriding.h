@@ -10,7 +10,7 @@
 #ifndef EIGEN_CXX11_TENSOR_TENSOR_STRIDING_H
 #define EIGEN_CXX11_TENSOR_TENSOR_STRIDING_H
 
-namespace Eigen {
+namespace StormEigen {
 
 /** \class TensorStriding
   * \ingroup CXX11_Tensor_Module
@@ -35,7 +35,7 @@ struct traits<TensorStridingOp<Strides, XprType> > : public traits<XprType>
 };
 
 template<typename Strides, typename XprType>
-struct eval<TensorStridingOp<Strides, XprType>, Eigen::Dense>
+struct eval<TensorStridingOp<Strides, XprType>, StormEigen::Dense>
 {
   typedef const TensorStridingOp<Strides, XprType>& type;
 };
@@ -54,14 +54,14 @@ template<typename Strides, typename XprType>
 class TensorStridingOp : public TensorBase<TensorStridingOp<Strides, XprType> >
 {
   public:
-  typedef typename Eigen::internal::traits<TensorStridingOp>::Scalar Scalar;
-  typedef typename Eigen::internal::traits<TensorStridingOp>::Packet Packet;
-  typedef typename Eigen::NumTraits<Scalar>::Real RealScalar;
+  typedef typename StormEigen::internal::traits<TensorStridingOp>::Scalar Scalar;
+  typedef typename StormEigen::internal::traits<TensorStridingOp>::Packet Packet;
+  typedef typename StormEigen::NumTraits<Scalar>::Real RealScalar;
   typedef typename XprType::CoeffReturnType CoeffReturnType;
   typedef typename XprType::PacketReturnType PacketReturnType;
-  typedef typename Eigen::internal::nested<TensorStridingOp>::type Nested;
-  typedef typename Eigen::internal::traits<TensorStridingOp>::StorageKind StorageKind;
-  typedef typename Eigen::internal::traits<TensorStridingOp>::Index Index;
+  typedef typename StormEigen::internal::nested<TensorStridingOp>::type Nested;
+  typedef typename StormEigen::internal::traits<TensorStridingOp>::StorageKind StorageKind;
+  typedef typename StormEigen::internal::traits<TensorStridingOp>::Index Index;
 
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TensorStridingOp(const XprType& expr, const Strides& dims)
       : m_xpr(expr), m_dims(dims) {}
@@ -320,6 +320,6 @@ struct TensorEvaluator<TensorStridingOp<Strides, ArgType>, Device>
 };
 
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_CXX11_TENSOR_TENSOR_STRIDING_H

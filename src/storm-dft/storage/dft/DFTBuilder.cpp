@@ -97,6 +97,9 @@ namespace storm {
             for (auto& elem : mElements) {
                 if(mLayoutInfo.count(elem.first) > 0) {
                     dft.setElementLayoutInfo(elem.second->id(), mLayoutInfo.at(elem.first));
+                } else {
+                    // Set default layout
+                    dft.setElementLayoutInfo(elem.second->id(), storm::storage::DFTLayoutInfo());
                 }
             }
 

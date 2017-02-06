@@ -424,7 +424,7 @@ namespace storm {
 //                std::vector<std::size_t> statePriorities = eliminationModelChecker.getStatePriorities(forwardTransitions,backwardTransitions,newInitialStates,oneStepProbabilities);
 //                this->reachabilityFunction=std::make_shared<ParametricType>(eliminationModelChecker.computeReachabilityValue(forwardTransitions, oneStepProbabilities, backwardTransitions, newInitialStates , true, phiStates, simpleModel.getStates("target"), stateRewards, statePriorities));
 	          std::vector<ParametricType> reachFuncVector = storm::modelchecker::SparseDtmcEliminationModelChecker<storm::models::sparse::Dtmc<ParametricType>>::computeReachabilityValues(
-	                    forwardTransitions, values, backwardTransitions, newInitialStates , true, phiStates, simpleModel.getStates("target"), oneStepProbabilities);
+	                    forwardTransitions, values, backwardTransitions, newInitialStates, true, oneStepProbabilities);
 		  this->reachabilityFunction=std::make_shared<ParametricType>(std::move(reachFuncVector[*simpleModel.getInitialStates().begin()]));
                    /* std::string funcStr = " (/ " +
                                     this->reachabilityFunction->nominator().toString(false, true) + " " +

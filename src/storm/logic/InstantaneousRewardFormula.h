@@ -1,18 +1,17 @@
 #ifndef STORM_LOGIC_INSTANTANEOUSREWARDFORMULA_H_
 #define STORM_LOGIC_INSTANTANEOUSREWARDFORMULA_H_
 
-#include <boost/variant.hpp>
-
 #include "storm/logic/PathFormula.h"
+
+#include "storm/logic/TimeBoundType.h"
+#include "storm/storage/expressions/Expression.h"
 
 namespace storm {
     namespace logic {
         class InstantaneousRewardFormula : public PathFormula {
         public:
-            InstantaneousRewardFormula(uint_fast64_t timeBound);
-            
-            InstantaneousRewardFormula(double timeBound);
-            
+            InstantaneousRewardFormula(storm::expressions::Expression const& bound, TimeBoundType const& timeBoundType = TimeBoundType::Time);
+                        
             virtual ~InstantaneousRewardFormula() {
                 // Intentionally left empty.
             }
@@ -25,16 +24,22 @@ namespace storm {
             
             virtual std::ostream& writeToStream(std::ostream& out) const override;
             
-            bool hasDiscreteTimeBound() const;
+            TimeBoundType const& getTimeBoundType() const;
+            bool isStepBounded() const;
+            bool isTimeBounded() const;
             
-            uint_fast64_t getDiscreteTimeBound() const;
-
-            bool hasContinuousTimeBound() const;
+            bool hasIntegerBound() const;
             
-            double getContinuousTimeBound() const;
-                        
+            storm::expressions::Expression const& getBound() const;
+            
+            template <typename ValueType>
+            ValueType getBound() const;
+            
         private:
-            boost::variant<uint_fast64_t, double> timeBound;
+            static void checkNoVariablesInBound(storm::expressions::Expression const& bound);
+
+            TimeBoundType timeBoundType;
+            storm::expressions::Expression bound;
         };
     }
 }

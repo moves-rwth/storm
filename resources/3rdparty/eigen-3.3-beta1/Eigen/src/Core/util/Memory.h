@@ -81,7 +81,7 @@
   #define EIGEN_HAS_MM_MALLOC 0
 #endif
 
-namespace Eigen {
+namespace StormEigen {
 
 namespace internal {
 
@@ -642,14 +642,14 @@ template<typename T> class aligned_stack_memory_handler : noncopyable
       : m_ptr(ptr), m_size(size), m_deallocate(dealloc)
     {
       if(NumTraits<T>::RequireInitialization && m_ptr)
-        Eigen::internal::construct_elements_of_array(m_ptr, size);
+        StormEigen::internal::construct_elements_of_array(m_ptr, size);
     }
     ~aligned_stack_memory_handler()
     {
       if(NumTraits<T>::RequireInitialization && m_ptr)
-        Eigen::internal::destruct_elements_of_array<T>(m_ptr, m_size);
+        StormEigen::internal::destruct_elements_of_array<T>(m_ptr, m_size);
       if(m_deallocate)
-        Eigen::internal::aligned_free(m_ptr);
+        StormEigen::internal::aligned_free(m_ptr);
     }
   protected:
     T* m_ptr;
@@ -709,19 +709,19 @@ template<typename T> void swap(scoped_array<T> &a,scoped_array<T> &b)
   #endif
 
   #define ei_declare_aligned_stack_constructed_variable(TYPE,NAME,SIZE,BUFFER) \
-    Eigen::internal::check_size_for_overflow<TYPE>(SIZE); \
+    StormEigen::internal::check_size_for_overflow<TYPE>(SIZE); \
     TYPE* NAME = (BUFFER)!=0 ? (BUFFER) \
                : reinterpret_cast<TYPE*>( \
                       (sizeof(TYPE)*SIZE<=EIGEN_STACK_ALLOCATION_LIMIT) ? EIGEN_ALIGNED_ALLOCA(sizeof(TYPE)*SIZE) \
-                    : Eigen::internal::aligned_malloc(sizeof(TYPE)*SIZE) );  \
-    Eigen::internal::aligned_stack_memory_handler<TYPE> EIGEN_CAT(NAME,_stack_memory_destructor)((BUFFER)==0 ? NAME : 0,SIZE,sizeof(TYPE)*SIZE>EIGEN_STACK_ALLOCATION_LIMIT)
+                    : StormEigen::internal::aligned_malloc(sizeof(TYPE)*SIZE) );  \
+    StormEigen::internal::aligned_stack_memory_handler<TYPE> EIGEN_CAT(NAME,_stack_memory_destructor)((BUFFER)==0 ? NAME : 0,SIZE,sizeof(TYPE)*SIZE>EIGEN_STACK_ALLOCATION_LIMIT)
 
 #else
 
   #define ei_declare_aligned_stack_constructed_variable(TYPE,NAME,SIZE,BUFFER) \
-    Eigen::internal::check_size_for_overflow<TYPE>(SIZE); \
-    TYPE* NAME = (BUFFER)!=0 ? BUFFER : reinterpret_cast<TYPE*>(Eigen::internal::aligned_malloc(sizeof(TYPE)*SIZE));    \
-    Eigen::internal::aligned_stack_memory_handler<TYPE> EIGEN_CAT(NAME,_stack_memory_destructor)((BUFFER)==0 ? NAME : 0,SIZE,true)
+    StormEigen::internal::check_size_for_overflow<TYPE>(SIZE); \
+    TYPE* NAME = (BUFFER)!=0 ? BUFFER : reinterpret_cast<TYPE*>(StormEigen::internal::aligned_malloc(sizeof(TYPE)*SIZE));    \
+    StormEigen::internal::aligned_stack_memory_handler<TYPE> EIGEN_CAT(NAME,_stack_memory_destructor)((BUFFER)==0 ? NAME : 0,SIZE,true)
     
 #endif
 
@@ -733,20 +733,20 @@ template<typename T> void swap(scoped_array<T> &a,scoped_array<T> &b)
 #if EIGEN_MAX_ALIGN_BYTES!=0
   #define EIGEN_MAKE_ALIGNED_OPERATOR_NEW_NOTHROW(NeedsToAlign) \
       void* operator new(size_t size, const std::nothrow_t&) EIGEN_NO_THROW { \
-        EIGEN_TRY { return Eigen::internal::conditional_aligned_malloc<NeedsToAlign>(size); } \
+        EIGEN_TRY { return StormEigen::internal::conditional_aligned_malloc<NeedsToAlign>(size); } \
         EIGEN_CATCH (...) { return 0; } \
       }
   #define EIGEN_MAKE_ALIGNED_OPERATOR_NEW_IF(NeedsToAlign) \
       void *operator new(size_t size) { \
-        return Eigen::internal::conditional_aligned_malloc<NeedsToAlign>(size); \
+        return StormEigen::internal::conditional_aligned_malloc<NeedsToAlign>(size); \
       } \
       void *operator new[](size_t size) { \
-        return Eigen::internal::conditional_aligned_malloc<NeedsToAlign>(size); \
+        return StormEigen::internal::conditional_aligned_malloc<NeedsToAlign>(size); \
       } \
-      void operator delete(void * ptr) EIGEN_NO_THROW { Eigen::internal::conditional_aligned_free<NeedsToAlign>(ptr); } \
-      void operator delete[](void * ptr) EIGEN_NO_THROW { Eigen::internal::conditional_aligned_free<NeedsToAlign>(ptr); } \
-      void operator delete(void * ptr, std::size_t /* sz */) EIGEN_NO_THROW { Eigen::internal::conditional_aligned_free<NeedsToAlign>(ptr); } \
-      void operator delete[](void * ptr, std::size_t /* sz */) EIGEN_NO_THROW { Eigen::internal::conditional_aligned_free<NeedsToAlign>(ptr); } \
+      void operator delete(void * ptr) EIGEN_NO_THROW { StormEigen::internal::conditional_aligned_free<NeedsToAlign>(ptr); } \
+      void operator delete[](void * ptr) EIGEN_NO_THROW { StormEigen::internal::conditional_aligned_free<NeedsToAlign>(ptr); } \
+      void operator delete(void * ptr, std::size_t /* sz */) EIGEN_NO_THROW { StormEigen::internal::conditional_aligned_free<NeedsToAlign>(ptr); } \
+      void operator delete[](void * ptr, std::size_t /* sz */) EIGEN_NO_THROW { StormEigen::internal::conditional_aligned_free<NeedsToAlign>(ptr); } \
       /* in-place new and delete. since (at least afaik) there is no actual   */ \
       /* memory allocated we can safely let the default implementation handle */ \
       /* this particular case. */ \
@@ -757,7 +757,7 @@ template<typename T> void swap(scoped_array<T> &a,scoped_array<T> &b)
       /* nothrow-new (returns zero instead of std::bad_alloc) */ \
       EIGEN_MAKE_ALIGNED_OPERATOR_NEW_NOTHROW(NeedsToAlign) \
       void operator delete(void *ptr, const std::nothrow_t&) EIGEN_NO_THROW { \
-        Eigen::internal::conditional_aligned_free<NeedsToAlign>(ptr); \
+        StormEigen::internal::conditional_aligned_free<NeedsToAlign>(ptr); \
       } \
       typedef void eigen_aligned_operator_new_marker_type;
 #else
@@ -766,7 +766,7 @@ template<typename T> void swap(scoped_array<T> &a,scoped_array<T> &b)
 
 #define EIGEN_MAKE_ALIGNED_OPERATOR_NEW EIGEN_MAKE_ALIGNED_OPERATOR_NEW_IF(true)
 #define EIGEN_MAKE_ALIGNED_OPERATOR_NEW_IF_VECTORIZABLE_FIXED_SIZE(Scalar,Size) \
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW_IF(bool(((Size)!=Eigen::Dynamic) && ((sizeof(Scalar)*(Size))%EIGEN_MAX_ALIGN_BYTES==0)))
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW_IF(bool(((Size)!=StormEigen::Dynamic) && ((sizeof(Scalar)*(Size))%EIGEN_MAX_ALIGN_BYTES==0)))
 
 /****************************************************************************/
 
@@ -1049,6 +1049,6 @@ inline int queryTopLevelCacheSize()
 
 } // end namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_MEMORY_H

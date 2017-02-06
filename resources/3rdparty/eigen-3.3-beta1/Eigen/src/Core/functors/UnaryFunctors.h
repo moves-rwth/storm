@@ -10,7 +10,7 @@
 #ifndef EIGEN_UNARY_FUNCTORS_H
 #define EIGEN_UNARY_FUNCTORS_H
 
-namespace Eigen {
+namespace StormEigen {
 
 namespace internal {
 
@@ -773,6 +773,6 @@ struct functor_traits<scalar_sign_op<Scalar> >
 
 } // end namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_FUNCTORS_H

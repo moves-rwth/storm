@@ -19,40 +19,38 @@
 
 
 namespace storm {
-	namespace settings {
+    namespace settings {
+        
+        template <typename ValueType>
+        class ArgumentValidator;
         
         /*!
          * This class subclasses the argument base to actually implement the pure virtual functions. This construction
          * is necessary so that it becomes easy to store a vector of arguments later despite variing template types, by
          * keeping a vector of pointers to the base class.
          */
-            template<typename T>
-            class Argument : public ArgumentBase {
-		public:
-            // Introduce shortcuts for validation functions.
-            typedef std::function<bool (T const&)> userValidationFunction_t;
+        template<typename T>
+        class Argument : public ArgumentBase {
+        public:
+            /*!
+             * Creates a new argument with the given parameters.
+             *
+             * @param name The name of the argument.
+             * @param description The description of the argument.
+             * @param validators A vector of validators that are to be executed upon assigning a value to this argument.
+             * @param isOptional A flag indicating whether the argument is optional.
+             */
+            Argument(std::string const& name, std::string const& description, std::vector<std::shared_ptr<ArgumentValidator<T>>> const& validators);
             
             /*!
              * Creates a new argument with the given parameters.
              *
              * @param name The name of the argument.
              * @param description The description of the argument.
-             * @param validationFunctions A vector of validation functions that are to be executed upon assigning a value
-             * to this argument.
+             * @param validators A vector of validators that are to be executed upon assigning a value to this argument.
              * @param isOptional A flag indicating whether the argument is optional.
              */
-            Argument(std::string const& name, std::string const& description, std::vector<userValidationFunction_t> const& validationFunctions);
-            
-            /*!
-             * Creates a new argument with the given parameters.
-             *
-             * @param name The name of the argument.
-             * @param description The description of the argument.
-             * @param validationFunctions A vector of validation functions that are to be executed upon assigning a value
-             * to this argument.
-             * @param isOptional A flag indicating whether the argument is optional.
-             */
-            Argument(std::string const& name, std::string const& description, std::vector<userValidationFunction_t> const& validationFunctions, bool isOptional, T defaultValue);
+            Argument(std::string const& name, std::string const& description, std::vector<std::shared_ptr<ArgumentValidator<T>>> const& validators, bool isOptional, T defaultValue);
             
             virtual bool getIsOptional() const override;
             
@@ -82,22 +80,22 @@ namespace storm {
              * @return The value of the argument.
              */
             T const& getArgumentValue() const;
-
+            
             virtual bool getHasDefaultValue() const override;
             
             void setFromDefaultValue() override;
             
             virtual std::string getValueAsString() const override;
-			
+            
             virtual int_fast64_t getValueAsInteger() const override;
             
             virtual uint_fast64_t getValueAsUnsignedInteger() const override;
             
-            
             virtual double getValueAsDouble() const override;
             
-            
             virtual bool getValueAsBoolean() const override;
+            
+            virtual void printToStream(std::ostream& out) const override;
             
         private:
             // The value of the argument (in case it has been set).
@@ -107,7 +105,7 @@ namespace storm {
             ArgumentType argumentType;
             
             // The validation functions that were registered for this argument.
-            std::vector<userValidationFunction_t> validationFunctions;
+            std::vector<std::shared_ptr<ArgumentValidator<T>>> validators;
             
             // A flag indicating whether this argument is optional.
             bool isOptional;
@@ -124,7 +122,7 @@ namespace storm {
              * @param newDefault The new default value of the argument.
              */
             void setDefaultValue(T const& newDefault);
-                        
+            
             /*!
              * Applies all validation functions to the given value and therefore checks the validity of a value for this
              * argument.

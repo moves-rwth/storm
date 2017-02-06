@@ -76,6 +76,11 @@ namespace storm {
                  */
                 uint_fast64_t getPrintLengthOfLongestOption() const;
                 
+                /*!
+                 * Restores the default values for all arguments of all options.
+                 */
+                void restoreDefaults();
+                
             protected:
                 
                 /*!

@@ -5,7 +5,7 @@
 
 namespace storm {
     namespace prism {
-        Variable::Variable(storm::expressions::Variable const& variable, storm::expressions::Expression const& initialValueExpression, bool defaultInitialValue, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), variable(variable), initialValueExpression(initialValueExpression) {
+        Variable::Variable(storm::expressions::Variable const& variable, storm::expressions::Expression const& initialValueExpression, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), variable(variable), initialValueExpression(initialValueExpression) {
             // Nothing to do here.
         }
         

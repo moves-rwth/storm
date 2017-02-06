@@ -6,21 +6,8 @@
 
 namespace storm {
     namespace settings {
-        uint_fast64_t ArgumentBase::getPrintLength() const {
-            return this->getName().length() + 2;
-        }
-        
         std::ostream& operator<<(std::ostream& out, ArgumentBase const& argument) {
-            uint_fast64_t width = static_cast<uint_fast64_t>(out.width());
-            uint_fast64_t charactersPrinted = 0;
-            out << std::setw(0) << std::left << "<" << argument.getName() << "> ";
-            charactersPrinted += 2 + argument.getName().length();
-    
-            for (uint_fast64_t i = charactersPrinted; i < width; ++i) {
-                out << out.fill();
-            }
-            
-            out << "\t" << argument.getDescription();
+            argument.printToStream(out);
             return out;
         }
         

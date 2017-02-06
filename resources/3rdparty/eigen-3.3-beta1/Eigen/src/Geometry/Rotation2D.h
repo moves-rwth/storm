@@ -10,7 +10,7 @@
 #ifndef EIGEN_ROTATION2D_H
 #define EIGEN_ROTATION2D_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 /** \geometry_module \ingroup Geometry_Module
   *
@@ -194,6 +194,6 @@ Rotation2D<Scalar>::toRotationMatrix(void) const
   return (Matrix2() << cosA, -sinA, sinA, cosA).finished();
 }
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_ROTATION2D_H

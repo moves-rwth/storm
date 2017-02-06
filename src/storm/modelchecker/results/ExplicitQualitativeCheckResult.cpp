@@ -153,26 +153,45 @@ namespace storm {
         }
         
         std::ostream& ExplicitQualitativeCheckResult::writeToStream(std::ostream& out) const {
-            out << "[";
             if (this->isResultForAllStates()) {
-                out << boost::get<vector_type>(truthValues);
+                vector_type const& vector = boost::get<vector_type>(truthValues);
+                bool allTrue = vector.full();
+                bool allFalse = !allTrue && vector.empty();
+                if (allTrue) {
+                    out << "{true}";
+                } else if (allFalse) {
+                    out << "{false}";
+                } else {
+                    out << "{true, false}";
+                }
             } else {
                 std::ios::fmtflags oldflags(std::cout.flags());
                 out << std::boolalpha;
                 
                 map_type const& map = boost::get<map_type>(truthValues);
-                bool first = true;
-                for (auto const& element : map) {
-                    if (!first) {
-                        out << ", ";
-                    } else {
-                        first = false;
+                if (map.size() == 1) {
+                    out << map.begin()->second;
+                } else {
+                    bool allTrue = true;
+                    bool allFalse = true;
+                    for (auto const& entry : map) {
+                        if (entry.second) {
+                            allFalse = false;
+                        } else {
+                            allTrue = false;
+                        }
                     }
-                    out << element.second;
+                    if (allTrue) {
+                        out << "{true}";
+                    } else if (allFalse) {
+                        out << "{false}";
+                    } else {
+                        out << "{true, false}";
+                    }
                 }
+                
                 std::cout.flags(oldflags);
             }
-            out << "]";
             return out;
         }
         

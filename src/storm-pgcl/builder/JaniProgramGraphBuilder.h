@@ -19,15 +19,21 @@ namespace storm {
         };
         
         struct JaniProgramGraphBuilderSetting {
+            /// Method how to obtain domain for the variables; currently only unrestricted is supported
             JaniProgramGraphVariableDomainMethod variableDomainMethod = JaniProgramGraphVariableDomainMethod::Unrestricted;
+            /// If this is true, reward variables will be given special treatment, effectively removing them from the state space.
+            /// Disable in order to obtain full state space.
+            bool filterRewardVariables = true;
         };
         
         class JaniProgramGraphBuilder {
         public:
             static unsigned janiVersion;
             
-            JaniProgramGraphBuilder(storm::ppg::ProgramGraph const& pg) : programGraph(pg) {
-                rewards = programGraph.rewardVariables();
+            JaniProgramGraphBuilder(storm::ppg::ProgramGraph const& pg, JaniProgramGraphBuilderSetting const& pgbs = JaniProgramGraphBuilderSetting()) : programGraph(pg), pgbs(pgbs) {
+                if (pgbs.filterRewardVariables) {
+                    rewards = programGraph.rewardVariables();
+                }
                 constants = programGraph.constants();
                 auto boundedVars = programGraph.constantAssigned();
                 for(auto const& v : boundedVars) {
@@ -40,10 +46,6 @@ namespace storm {
                     delete var.second;
                 }
             }
-            
-            //void addVariableRestriction(storm::expressions::Variable const& var, storm::IntegerInterval const& interval ) {
-                
-            //}
             
         
             void restrictAllVariables(int64_t from, int64_t to) {
@@ -67,7 +69,7 @@ namespace storm {
             storm::jani::Model* build(std::string const& name = "program_graph") {
                 expManager = programGraph.getExpressionManager();
                 storm::jani::Model* model = new storm::jani::Model(name, storm::jani::ModelType::MDP, janiVersion, expManager);
-                storm::jani::Automaton mainAutomaton("main");
+                storm::jani::Automaton mainAutomaton("main", expManager->declareIntegerVariable("pc"));
                 addProcedureVariables(*model, mainAutomaton);
                 janiLocId = addProcedureLocations(*model, mainAutomaton);
                 addVariableOoBLocations(mainAutomaton);
@@ -88,13 +90,13 @@ namespace storm {
             
             storm::jani::OrderedAssignments buildOrderedAssignments(storm::jani::Automaton& automaton, storm::ppg::DeterministicProgramAction const& act) ;
             void addEdges(storm::jani::Automaton& automaton);
-            std::vector<storm::jani::EdgeDestination> buildDestinations(storm::jani::Automaton& automaton, storm::ppg::ProgramEdge const& edge );
+            std::vector<std::pair<uint64_t, storm::expressions::Expression>> buildDestinations(storm::jani::Automaton& automaton, storm::ppg::ProgramEdge const& edge, storm::jani::TemplateEdge& templateEdge);
             /**
              * Helper for probabilistic assignments
              */
-            std::vector<storm::jani::EdgeDestination> buildProbabilisticDestinations(storm::jani::Automaton& automaton, storm::ppg::ProgramEdge const& edge );
+            std::vector<std::pair<uint64_t, storm::expressions::Expression>> buildProbabilisticDestinations(storm::jani::Automaton& automaton, storm::ppg::ProgramEdge const& edge, storm::jani::TemplateEdge& templateEdge);
             
-            std::pair<std::vector<storm::jani::Edge>, storm::expressions::Expression> addVariableChecks(storm::ppg::ProgramEdge const& edge);
+            std::pair<std::vector<storm::jani::Edge>, storm::expressions::Expression> addVariableChecks(storm::jani::Automaton& automaton, storm::ppg::ProgramEdge const& edge);
             
             bool isUserRestrictedVariable(storm::ppg::ProgramVariableIdentifier i) const {
                 return userVariableRestrictions.count(i) == 1 && !isRewardVariable(i);
@@ -167,7 +169,7 @@ namespace storm {
             /// Restrictions on variables (provided by users)
             std::map<uint64_t, storm::storage::IntegerInterval> userVariableRestrictions;
             
-            /// Locations for variables that would have gone ot o
+            /// Locations for variables that would have gone out of bounds
             std::map<uint64_t, uint64_t> varOutOfBoundsLocations;
             std::map<storm::ppg::ProgramLocationIdentifier, uint64_t> janiLocId;
             std::map<storm::ppg::ProgramVariableIdentifier, storm::jani::Variable*> variables;
@@ -176,6 +178,8 @@ namespace storm {
             std::shared_ptr<storm::expressions::ExpressionManager> expManager;
             /// The program graph to be translated
             storm::ppg::ProgramGraph const& programGraph;
+            /// Settings
+            JaniProgramGraphBuilderSetting pgbs;
             
             
         };

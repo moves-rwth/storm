@@ -11,8 +11,8 @@
 
 #include <Eigen/CXX11/Tensor>
 
-using Eigen::Tensor;
-using Eigen::RowMajor;
+using StormEigen::Tensor;
+using StormEigen::RowMajor;
 
 static void test_1d()
 {
@@ -327,7 +327,7 @@ static void test_std_initializers_tensor() {
   VERIFY_IS_EQUAL(b(1, 1), 4);
   VERIFY_IS_EQUAL(b(1, 2), 5);
 
-  Eigen::Tensor<int, 3> c(3, 2, 4);
+  StormEigen::Tensor<int, 3> c(3, 2, 4);
   c.setValues({{{0, 1, 2, 3}, {4, 5, 6, 7}},
                {{10, 11, 12, 13}, {14, 15, 16, 17}},
                {{20, 21, 22, 23}, {24, 25, 26, 27}}});

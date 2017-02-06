@@ -60,14 +60,7 @@ namespace storm {
              * @return The number of (non-zero) transitions of the model.
              */
             virtual uint_fast64_t getNumberOfTransitions() const = 0;
-            
-            /*!
-             * Retrieves (an approximation of) the size of the model in bytes.
-             *
-             * @return The size of th model in bytes.
-             */
-            virtual std::size_t getSizeInBytes() const = 0;
-            
+                        
             /*!
              * Prints information about the model to the specified stream.
              *

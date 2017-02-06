@@ -10,6 +10,10 @@ namespace storm {
         
         class SymbolicModelDescription {
         public:
+            enum class ModelType {
+                DTMC, CTMC, MDP, MA
+            };
+            
             SymbolicModelDescription() = default;
             SymbolicModelDescription(storm::jani::Model const& model);
             SymbolicModelDescription(storm::prism::Program const& program);
@@ -20,18 +24,29 @@ namespace storm {
             bool hasModel() const;
             bool isJaniModel() const;
             bool isPrismProgram() const;
+            
+            ModelType getModelType() const;
+            storm::expressions::ExpressionManager& getManager() const;
 
             void setModel(storm::jani::Model const& model);
             void setModel(storm::prism::Program const& program);
             
             storm::jani::Model const& asJaniModel() const;
+            storm::jani::Model& asJaniModel();
             storm::prism::Program const& asPrismProgram() const;
+            storm::prism::Program& asPrismProgram();
             
             std::vector<std::string> getParameterNames() const;
             
             SymbolicModelDescription toJani(bool makeVariablesGlobal = true) const;
+            std::pair<SymbolicModelDescription, std::map<std::string, std::string>> toJaniWithLabelRenaming(bool makeVariablesGlobal = true) const;
             
             SymbolicModelDescription preprocess(std::string const& constantDefinitionString = "") const;
+            SymbolicModelDescription preprocess(std::map<storm::expressions::Variable, storm::expressions::Expression> const& constantDefinitions) const;
+            
+            std::map<storm::expressions::Variable, storm::expressions::Expression> parseConstantDefinitions(std::string const& constantDefinitionString) const;
+            
+            void requireNoUndefinedConstants() const;
             
         private:
             boost::optional<boost::variant<storm::jani::Model, storm::prism::Program>> modelDescription;

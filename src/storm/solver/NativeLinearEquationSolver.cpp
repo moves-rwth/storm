@@ -110,7 +110,7 @@ namespace storm {
         
         template<typename ValueType>
         bool NativeLinearEquationSolver<ValueType>::solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
-            if(!this->cachedRowVector) {
+            if (!this->cachedRowVector) {
                 this->cachedRowVector = std::make_unique<std::vector<ValueType>>(getMatrixRowCount());
             }
             
@@ -180,7 +180,7 @@ namespace storm {
                     std::swap(x, *currentX);
                 }
                 
-                if(!this->isCachingEnabled()) {
+                if (!this->isCachingEnabled()) {
                     clearCache();
                 }
                 
@@ -208,7 +208,7 @@ namespace storm {
                     result.swap(*this->cachedRowVector);
                 }
                 
-                if(!this->isCachingEnabled()) {
+                if (!this->isCachingEnabled()) {
                     clearCache();
                 }
             }

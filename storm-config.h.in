@@ -21,7 +21,7 @@
 #define STORM_BOOST_INCLUDE_DIR "@STORM_BOOST_INCLUDE_DIR@"
 
 // Carl include directory used during compilation.
-#define STORM_CARL_INCLUDE_DIR "@STORM_CARL_INCLUDE_DIR@"
+#define STORM_CARL_INCLUDE_DIR "@carl_INCLUDE_DIR@"
 
 // Whether Gurobi is available and to be used (define/undef)
 #cmakedefine STORM_HAVE_GUROBI
@@ -55,7 +55,7 @@
 
 #cmakedefine STORM_USE_CLN_NUMBERS
 
-#cmakedefine USE_XERCES
+#cmakedefine STORM_HAVE_XERCES
 
 // Whether smtrat is available and to be used. 
 #cmakedefine STORM_HAVE_SMTRAT

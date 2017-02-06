@@ -10,7 +10,7 @@
 #ifndef EIGEN_CXX11_TENSOR_TENSOR_IMAGE_PATCH_H
 #define EIGEN_CXX11_TENSOR_TENSOR_IMAGE_PATCH_H
 
-namespace Eigen {
+namespace StormEigen {
 
 /** \class TensorImagePatch
   * \ingroup CXX11_Tensor_Module
@@ -42,7 +42,7 @@ struct traits<TensorImagePatchOp<Rows, Cols, XprType> > : public traits<XprType>
 };
 
 template<DenseIndex Rows, DenseIndex Cols, typename XprType>
-struct eval<TensorImagePatchOp<Rows, Cols, XprType>, Eigen::Dense>
+struct eval<TensorImagePatchOp<Rows, Cols, XprType>, StormEigen::Dense>
 {
   typedef const TensorImagePatchOp<Rows, Cols, XprType>& type;
 };
@@ -59,14 +59,14 @@ template<DenseIndex Rows, DenseIndex Cols, typename XprType>
 class TensorImagePatchOp : public TensorBase<TensorImagePatchOp<Rows, Cols, XprType>, ReadOnlyAccessors>
 {
   public:
-  typedef typename Eigen::internal::traits<TensorImagePatchOp>::Scalar Scalar;
-  typedef typename Eigen::internal::traits<TensorImagePatchOp>::Packet Packet;
-  typedef typename Eigen::NumTraits<Scalar>::Real RealScalar;
+  typedef typename StormEigen::internal::traits<TensorImagePatchOp>::Scalar Scalar;
+  typedef typename StormEigen::internal::traits<TensorImagePatchOp>::Packet Packet;
+  typedef typename StormEigen::NumTraits<Scalar>::Real RealScalar;
   typedef typename XprType::CoeffReturnType CoeffReturnType;
   typedef typename XprType::PacketReturnType PacketReturnType;
-  typedef typename Eigen::internal::nested<TensorImagePatchOp>::type Nested;
-  typedef typename Eigen::internal::traits<TensorImagePatchOp>::StorageKind StorageKind;
-  typedef typename Eigen::internal::traits<TensorImagePatchOp>::Index Index;
+  typedef typename StormEigen::internal::nested<TensorImagePatchOp>::type Nested;
+  typedef typename StormEigen::internal::traits<TensorImagePatchOp>::StorageKind StorageKind;
+  typedef typename StormEigen::internal::traits<TensorImagePatchOp>::Index Index;
 
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TensorImagePatchOp(const XprType& expr, DenseIndex patch_rows, DenseIndex patch_cols,
                                                            DenseIndex row_strides, DenseIndex col_strides,
@@ -549,6 +549,6 @@ struct TensorEvaluator<const TensorImagePatchOp<Rows, Cols, ArgType>, Device>
 };
 
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_CXX11_TENSOR_TENSOR_IMAGE_PATCH_H

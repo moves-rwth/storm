@@ -12,7 +12,7 @@
 #ifndef KRONECKER_TENSOR_PRODUCT_H
 #define KRONECKER_TENSOR_PRODUCT_H
 
-namespace Eigen {
+namespace StormEigen {
 
 /*!
  * \ingroup KroneckerProduct_Module
@@ -159,8 +159,8 @@ void KroneckerProductSparse<Lhs,Rhs>::evalTo(Dest& dst) const
   const Rhs1 rhs1(m_B);
     
   // 2 - construct respective iterators
-  typedef Eigen::InnerIterator<Lhs1Cleaned> LhsInnerIterator;
-  typedef Eigen::InnerIterator<Rhs1Cleaned> RhsInnerIterator;
+  typedef StormEigen::InnerIterator<Lhs1Cleaned> LhsInnerIterator;
+  typedef StormEigen::InnerIterator<Rhs1Cleaned> RhsInnerIterator;
   
   // compute number of non-zeros per innervectors of dst
   {
@@ -300,6 +300,6 @@ KroneckerProductSparse<A,B> kroneckerProduct(const EigenBase<A>& a, const EigenB
   return KroneckerProductSparse<A,B>(a.derived(), b.derived());
 }
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // KRONECKER_TENSOR_PRODUCT_H

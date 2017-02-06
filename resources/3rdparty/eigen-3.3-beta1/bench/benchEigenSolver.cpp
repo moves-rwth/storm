@@ -14,7 +14,7 @@
 #include <Eigen/Core>
 #include <Eigen/QR>
 #include <bench/BenchUtil.h>
-using namespace Eigen;
+using namespace StormEigen;
 
 #ifndef REPEAT
 #define REPEAT 1000

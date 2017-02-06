@@ -3,7 +3,7 @@
 #include <Eigen/Geometry>
 #include <bench/BenchTimer.h>
 
-using namespace Eigen; 
+using namespace StormEigen; 
 
 template<typename Quat>
 EIGEN_DONT_INLINE void quatmul_default(const Quat& a, const Quat& b, Quat& c)

@@ -4,7 +4,7 @@
 using namespace std;
 int main()
 {
-  Eigen::Matrix2d mat;
+  StormEigen::Matrix2d mat;
   mat << 1, 2,
          3, 4;
   cout << "Here is mat.sum():       " << mat.sum()       << endl;

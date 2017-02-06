@@ -2,16 +2,16 @@
 
 #include "storm/logic/FormulaVisitor.h"
 
+#include "storm/utility/macros.h"
+#include "storm/exceptions/InvalidPropertyException.h"
+#include "storm/exceptions/InvalidOperationException.h"
+
 namespace storm {
     namespace logic {
-        CumulativeRewardFormula::CumulativeRewardFormula(uint_fast64_t timeBound) : timeBound(timeBound) {
+        CumulativeRewardFormula::CumulativeRewardFormula(TimeBound const& bound, TimeBoundType const& timeBoundType) : timeBoundType(timeBoundType), bound(bound) {
             // Intentionally left empty.
         }
-        
-        CumulativeRewardFormula::CumulativeRewardFormula(double timeBound) : timeBound(timeBound) {
-            // Intentionally left empty.
-        }
-        
+
         bool CumulativeRewardFormula::isCumulativeRewardFormula() const {
             return true;
         }
@@ -24,32 +24,52 @@ namespace storm {
             return visitor.visit(*this, data);
         }
         
-        bool CumulativeRewardFormula::hasDiscreteTimeBound() const {
-            return timeBound.which() == 0;
+        TimeBoundType const& CumulativeRewardFormula::getTimeBoundType() const {
+            return timeBoundType;
+        }
+
+        bool CumulativeRewardFormula::isStepBounded() const {
+            return timeBoundType == TimeBoundType::Steps;
         }
         
-        uint_fast64_t CumulativeRewardFormula::getDiscreteTimeBound() const {
-            return boost::get<uint_fast64_t>(timeBound);
+        bool CumulativeRewardFormula::isTimeBounded() const {
+            return timeBoundType == TimeBoundType::Time;
         }
         
-        bool CumulativeRewardFormula::hasContinuousTimeBound() const {
-            return timeBound.which() == 1;
+        bool CumulativeRewardFormula::isBoundStrict() const {
+            return bound.isStrict();
         }
         
-        double CumulativeRewardFormula::getContinuousTimeBound() const {
-            if (this->hasDiscreteTimeBound()) {
-                return this->getDiscreteTimeBound();
-            } else {
-                return boost::get<double>(timeBound);
-            }
+        bool CumulativeRewardFormula::hasIntegerBound() const {
+            return bound.getBound().hasIntegerType();
+        }
+        
+        storm::expressions::Expression const& CumulativeRewardFormula::getBound() const {
+            return bound.getBound();
+        }
+        
+        template <>
+        double CumulativeRewardFormula::getBound() const {
+            checkNoVariablesInBound(bound.getBound());
+            double value = bound.getBound().evaluateAsDouble();
+            STORM_LOG_THROW(value >= 0, storm::exceptions::InvalidPropertyException, "Time-bound must not evaluate to negative number.");
+            return value;
+        }
+
+        template <>
+        uint64_t CumulativeRewardFormula::getBound() const {
+            checkNoVariablesInBound(bound.getBound());
+            uint64_t value = bound.getBound().evaluateAsInt();
+            STORM_LOG_THROW(value >= 0, storm::exceptions::InvalidPropertyException, "Time-bound must not evaluate to negative number.");
+            return value;
+        }
+        
+        void CumulativeRewardFormula::checkNoVariablesInBound(storm::expressions::Expression const& bound) {
+            STORM_LOG_THROW(!bound.containsVariables(), storm::exceptions::InvalidOperationException, "Cannot evaluate time-bound '" << bound << "' as it contains undefined constants.");
         }
         
         std::ostream& CumulativeRewardFormula::writeToStream(std::ostream& out) const {
-            if (this->hasDiscreteTimeBound()) {
-                out << "C<=" << this->getDiscreteTimeBound();
-            } else {
-                out << "C<=" << this->getContinuousTimeBound();
-            }
+            out << "C<=" << this->getBound();
             return out;
         }
     }

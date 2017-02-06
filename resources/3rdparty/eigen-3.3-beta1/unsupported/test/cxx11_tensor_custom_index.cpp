@@ -14,7 +14,7 @@
 #include <Eigen/Dense>
 #include <Eigen/CXX11/Tensor>
 
-using Eigen::Tensor;
+using StormEigen::Tensor;
 
 
 template <int DataLayout>

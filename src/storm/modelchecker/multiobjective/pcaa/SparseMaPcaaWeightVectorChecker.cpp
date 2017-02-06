@@ -5,7 +5,6 @@
 #include "storm/adapters/CarlAdapter.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/transformer/EndComponentEliminator.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
 

@@ -1,6 +1,6 @@
 #include <Eigen/Core>
 #include <iostream>
-using namespace Eigen;
+using namespace StormEigen;
 using namespace std;
 
 // define a custom template binary functor

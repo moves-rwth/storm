@@ -12,6 +12,7 @@ namespace storm {
                     return "topological";
 
             }
+            return "invalid";
         }
         
         std::string toString(LpSolverType t) {
@@ -21,6 +22,7 @@ namespace storm {
                 case LpSolverType::Glpk:
                     return "Glpk";
             }
+            return "invalid";
         }
         
         std::string toString(EquationSolverType t) {
@@ -34,6 +36,7 @@ namespace storm {
                 case EquationSolverType::Elimination:
                     return "Elimination";
             }
+            return "invalid";
         }
         
         std::string toString(SmtSolverType t) {
@@ -43,6 +46,7 @@ namespace storm {
                 case SmtSolverType::Mathsat:
                     return "Mathsat";
             }
+            return "invalid";
         }
     }
 }

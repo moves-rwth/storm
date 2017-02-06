@@ -13,6 +13,7 @@
 #	define GetCurrentDir getcwd
 #elif defined TARGET_OS_MAC || defined __apple__ || defined __APPLE__
 #	define MACOSX
+#   define MACOS
 #   define NOEXCEPT noexcept
 #	define _DARWIN_USE_64_BIT_INODE
 #	include <sys/mman.h>

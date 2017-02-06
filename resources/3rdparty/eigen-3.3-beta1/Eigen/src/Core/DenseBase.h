@@ -11,7 +11,7 @@
 #ifndef EIGEN_DENSEBASE_H
 #define EIGEN_DENSEBASE_H
 
-namespace Eigen {
+namespace StormEigen {
 
 namespace internal {
   
@@ -52,15 +52,15 @@ template<typename Derived> class DenseBase
     /** Inner iterator type to iterate over the coefficients of a row or column.
       * \sa class InnerIterator
       */
-    typedef Eigen::InnerIterator<Derived> InnerIterator;
+    typedef StormEigen::InnerIterator<Derived> InnerIterator;
 
     typedef typename internal::traits<Derived>::StorageKind StorageKind;
 
     /**
       * \brief The type used to store indices
       * \details This typedef is relevant for types that store multiple indices such as
-      *          PermutationMatrix or Transpositions, otherwise it defaults to Eigen::Index
-      * \sa \ref TopicPreprocessorDirectives, Eigen::Index, SparseMatrixBase.
+      *          PermutationMatrix or Transpositions, otherwise it defaults to StormEigen::Index
+      * \sa \ref TopicPreprocessorDirectives, StormEigen::Index, SparseMatrixBase.
      */
     typedef typename internal::traits<Derived>::StorageIndex StorageIndex;
 
@@ -560,7 +560,7 @@ template<typename Derived> class DenseBase
     }
     EIGEN_DEVICE_FUNC void reverseInPlace();
 
-#define EIGEN_CURRENT_STORAGE_BASE_CLASS Eigen::DenseBase
+#define EIGEN_CURRENT_STORAGE_BASE_CLASS StormEigen::DenseBase
 #   include "../plugins/BlockMethods.h"
 #   ifdef EIGEN_DENSEBASE_PLUGIN
 #     include EIGEN_DENSEBASE_PLUGIN
@@ -596,6 +596,6 @@ template<typename Derived> class DenseBase
     template<typename OtherDerived> EIGEN_DEVICE_FUNC explicit DenseBase(const DenseBase<OtherDerived>&);
 };
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_DENSEBASE_H

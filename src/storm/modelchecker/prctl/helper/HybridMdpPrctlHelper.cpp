@@ -1,5 +1,7 @@
 #include "storm/modelchecker/prctl/helper/HybridMdpPrctlHelper.h"
 
+#include "storm/modelchecker/prctl/helper/SymbolicMdpPrctlHelper.h"
+
 #include "storm/storage/dd/DdManager.h"
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
@@ -95,8 +97,7 @@ namespace storm {
 
             template<storm::dd::DdType DdType, typename ValueType>
             std::unique_ptr<CheckResult> HybridMdpPrctlHelper<DdType, ValueType>::computeNextProbabilities(OptimizationDirection dir, storm::models::symbolic::NondeterministicModel<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Bdd<DdType> const& nextStates) {
-                storm::dd::Add<DdType, ValueType> result = transitionMatrix * nextStates.swapVariables(model.getRowColumnMetaVariablePairs()).template toAdd<ValueType>();
-                return std::unique_ptr<CheckResult>(new storm::modelchecker::SymbolicQuantitativeCheckResult<DdType>(model.getReachableStates(), result.sumAbstract(model.getColumnVariables())));
+                return SymbolicMdpPrctlHelper<DdType, ValueType>::computeNextProbabilities(dir, model, transitionMatrix, nextStates);
             }
 
             template<storm::dd::DdType DdType, typename ValueType>
@@ -211,9 +212,10 @@ namespace storm {
                 storm::dd::Bdd<DdType> infinityStates;
                 storm::dd::Bdd<DdType> transitionMatrixBdd = transitionMatrix.notZero();
                 if (dir == OptimizationDirection::Minimize) {
+                    STORM_LOG_WARN("Results of reward computation may be too low, because of zero-reward loops.");
                     infinityStates = storm::utility::graph::performProb1E(model, transitionMatrixBdd, model.getReachableStates(), targetStates, storm::utility::graph::performProbGreater0E(model, transitionMatrixBdd, model.getReachableStates(), targetStates));
                 } else {
-                    infinityStates = storm::utility::graph::performProb1A(model, transitionMatrixBdd, model.getReachableStates(), targetStates, storm::utility::graph::performProbGreater0A(model, transitionMatrixBdd, model.getReachableStates(), targetStates));
+                    infinityStates = storm::utility::graph::performProb1A(model, transitionMatrixBdd, targetStates, storm::utility::graph::performProbGreater0A(model, transitionMatrixBdd, model.getReachableStates(), targetStates));
                 }
                 infinityStates = !infinityStates && model.getReachableStates();
                 storm::dd::Bdd<DdType> maybeStates = (!targetStates && !infinityStates) && model.getReachableStates();
@@ -241,16 +243,21 @@ namespace storm {
                         
                         // Then compute the state reward vector to use in the computation.
                         storm::dd::Add<DdType, ValueType> subvector = rewardModel.getTotalRewardVector(maybeStatesAdd, submatrix, model.getColumnVariables());
+                        if (!rewardModel.hasStateActionRewards() && !rewardModel.hasTransitionRewards()) {
+                            // If the reward model neither has state-action nor transition rewards, we need to multiply
+                            // it with the legal nondetermism encodings in each state.
+                            subvector *= transitionMatrixBdd.existsAbstract(model.getColumnVariables()).template toAdd<ValueType>();
+                        }
                         
                         // Since we are cutting away target and infinity states, we need to account for this by giving
                         // choices the value infinity that have some successor contained in the infinity states.
                         storm::dd::Bdd<DdType> choicesWithInfinitySuccessor = (maybeStates && transitionMatrixBdd && infinityStates.swapVariables(model.getRowColumnMetaVariablePairs())).existsAbstract(model.getColumnVariables());
                         subvector = choicesWithInfinitySuccessor.ite(model.getManager().template getInfinity<ValueType>(), subvector);
-                        
+
                         // Before cutting the non-maybe columns, we need to compute the sizes of the row groups.
-                        storm::dd::Add<DdType, uint_fast64_t> stateActionAdd = (submatrix.notZero().existsAbstract(model.getColumnVariables()) || subvector.notZero()).template toAdd<uint_fast64_t>();
+                        storm::dd::Add<DdType, uint_fast64_t> stateActionAdd = submatrix.notZero().existsAbstract(model.getColumnVariables()).template toAdd<uint_fast64_t>();
                         std::vector<uint_fast64_t> rowGroupSizes = stateActionAdd.sumAbstract(model.getNondeterminismVariables()).toVector(odd);
-                        
+
                         // Finally cut away all columns targeting non-maybe states.
                         submatrix *= maybeStatesAdd.swapVariables(model.getRowColumnMetaVariablePairs());
                         
@@ -259,7 +266,7 @@ namespace storm {
                         
                         // Translate the symbolic matrix/vector to their explicit representations.
                         std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> explicitRepresentation = submatrix.toMatrixVector(subvector, std::move(rowGroupSizes), model.getNondeterminismVariables(), odd, odd);
-                                                
+                        
                         // Now solve the resulting equation system.
                         std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(std::move(explicitRepresentation.first));
                         solver->solveEquations(dir, x, explicitRepresentation.second);

@@ -207,17 +207,17 @@ namespace storm {
                 }    
             }
             
-            boost::any Z3ExpressionAdapter::visit(storm::expressions::BooleanLiteralExpression const& expression, boost::any const& data)  {
+            boost::any Z3ExpressionAdapter::visit(storm::expressions::BooleanLiteralExpression const& expression, boost::any const&)  {
                 return context.bool_val(expression.getValue());
             }
             
-            boost::any Z3ExpressionAdapter::visit(storm::expressions::RationalLiteralExpression const& expression, boost::any const& data)  {
+            boost::any Z3ExpressionAdapter::visit(storm::expressions::RationalLiteralExpression const& expression, boost::any const&)  {
                 std::stringstream fractionStream;
                 fractionStream << expression.getValue();
                 return context.real_val(fractionStream.str().c_str());
             }
             
-            boost::any Z3ExpressionAdapter::visit(storm::expressions::IntegerLiteralExpression const& expression, boost::any const& data)  {
+            boost::any Z3ExpressionAdapter::visit(storm::expressions::IntegerLiteralExpression const& expression, boost::any const&)  {
                 return context.int_val(static_cast<int>(expression.getValue()));
             }
             
@@ -261,7 +261,7 @@ namespace storm {
                 return z3::expr(context, Z3_mk_ite(context, conditionResult, thenResult, elseResult));
             }
             
-            boost::any Z3ExpressionAdapter::visit(storm::expressions::VariableExpression const& expression, boost::any const& data)  {
+            boost::any Z3ExpressionAdapter::visit(storm::expressions::VariableExpression const& expression, boost::any const&)  {
                 return this->translateExpression(expression.getVariable());
             }
 

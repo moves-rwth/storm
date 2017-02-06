@@ -13,7 +13,7 @@
 #include <GL/glu.h>
 
 #include "Eigen/LU"
-using namespace Eigen;
+using namespace StormEigen;
 
 Camera::Camera()
     : mViewIsUptodate(false), mProjIsUptodate(false)

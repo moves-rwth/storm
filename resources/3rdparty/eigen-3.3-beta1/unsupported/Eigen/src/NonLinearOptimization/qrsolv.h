@@ -1,4 +1,4 @@
-namespace Eigen { 
+namespace StormEigen { 
 
 namespace internal {
 
@@ -88,4 +88,4 @@ void qrsolv(
 
 } // end namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen

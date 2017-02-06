@@ -253,19 +253,19 @@ namespace storm {
             }
 
             template<typename ParametricSparseModelType, typename ConstantType>
-            bool SparseMdpRegionModelChecker<ParametricSparseModelType, ConstantType>::checkPoint(ParameterRegion<ParametricType>& region, std::map<VariableType, CoefficientType>const& point, bool favorViaFunction) {
-                if(this->checkFormulaOnSamplingPoint(point)){
-                    if (region.getCheckResult()!=RegionCheckResult::EXISTSSAT){
-                        region.setSatPoint(point);
-                        if(region.getCheckResult()==RegionCheckResult::EXISTSVIOLATED){
-                            region.setCheckResult(RegionCheckResult::EXISTSBOTH);
-                            return true;
-                        }
-                        region.setCheckResult(RegionCheckResult::EXISTSSAT);
-                    }
-                }
-                else{
-                    if (region.getCheckResult()!=RegionCheckResult::EXISTSVIOLATED){
+            bool SparseMdpRegionModelChecker<ParametricSparseModelType, ConstantType>::checkPoint(ParameterRegion<ParametricType>& region, std::map<VariableType, CoefficientType>const& point, bool /*favorViaFunction*/) {
+                            if(this->checkFormulaOnSamplingPoint(point)){
+                                if (region.getCheckResult()!=RegionCheckResult::EXISTSSAT){
+                                    region.setSatPoint(point);
+                                    if(region.getCheckResult()==RegionCheckResult::EXISTSVIOLATED){
+                                        region.setCheckResult(RegionCheckResult::EXISTSBOTH);
+                                        return true;
+                                    }
+                                    region.setCheckResult(RegionCheckResult::EXISTSSAT);
+                                }
+                            }
+                            else{
+                                if (region.getCheckResult()!=RegionCheckResult::EXISTSVIOLATED){
                         region.setViolatedPoint(point);
                         if(region.getCheckResult()==RegionCheckResult::EXISTSSAT){
                             region.setCheckResult(RegionCheckResult::EXISTSBOTH);
@@ -278,7 +278,7 @@ namespace storm {
             }
             
             template<typename ParametricSparseModelType, typename ConstantType>
-            bool SparseMdpRegionModelChecker<ParametricSparseModelType, ConstantType>::checkSmt(ParameterRegion<ParametricType>& region) {
+            bool SparseMdpRegionModelChecker<ParametricSparseModelType, ConstantType>::checkSmt(ParameterRegion<ParametricType>& /*region*/) {
                 STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "checkSmt invoked but smt solving has not been implemented for MDPs.");
             }
 

@@ -52,6 +52,11 @@ namespace storm {
              */
             int64_t getLevel() const;
             
+            /*!
+             * Checks the assignment for linearity.
+             */
+            bool isLinear() const;
+            
             friend std::ostream& operator<<(std::ostream& stream, Assignment const& assignment);
             
         private:

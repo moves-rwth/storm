@@ -23,19 +23,19 @@
 namespace storm {
     namespace solver {
 
-        SmtlibSmtSolver::SmtlibModelReference::SmtlibModelReference(storm::expressions::ExpressionManager const& manager, storm::adapters::Smt2ExpressionAdapter& expressionAdapter) : ModelReference(manager) {
+        SmtlibSmtSolver::SmtlibModelReference::SmtlibModelReference(storm::expressions::ExpressionManager const& manager) : ModelReference(manager) {
             // Intentionally left empty.
         }
 
-        bool SmtlibSmtSolver::SmtlibModelReference::getBooleanValue(storm::expressions::Variable const& variable) const {
+        bool SmtlibSmtSolver::SmtlibModelReference::getBooleanValue(storm::expressions::Variable const&) const {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "functionality not (yet) implemented");
         }
 
-        int_fast64_t SmtlibSmtSolver::SmtlibModelReference::getIntegerValue(storm::expressions::Variable const& variable) const {
+        int_fast64_t SmtlibSmtSolver::SmtlibModelReference::getIntegerValue(storm::expressions::Variable const&) const {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "functionality not (yet) implemented");
         }
 
-        double SmtlibSmtSolver::SmtlibModelReference::getRationalValue(storm::expressions::Variable const& variable) const {
+        double SmtlibSmtSolver::SmtlibModelReference::getRationalValue(storm::expressions::Variable const&) const {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "functionality not (yet) implemented");
         }
 
@@ -82,7 +82,7 @@ namespace storm {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "functionality not (yet) implemented");
         }
 
-        void SmtlibSmtSolver::add(storm::expressions::Expression const& assertion) {
+        void SmtlibSmtSolver::add(storm::expressions::Expression const&) {
             STORM_LOG_THROW(!useCarlExpressions, storm::exceptions::IllegalFunctionCallException, "This solver was initialized without allowing carl expressions");
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "functionality not (yet) implemented");
         }
@@ -172,13 +172,13 @@ namespace storm {
 #endif
         }
 
-        SmtSolver::CheckResult SmtlibSmtSolver::checkWithAssumptions(std::set<storm::expressions::Expression> const& assumptions) {
+        SmtSolver::CheckResult SmtlibSmtSolver::checkWithAssumptions(std::set<storm::expressions::Expression> const&) {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "functionality not (yet) implemented");
         }
 
 #ifndef WINDOWS
 
-        SmtSolver::CheckResult SmtlibSmtSolver::checkWithAssumptions(std::initializer_list<storm::expressions::Expression> const& assumptions) {
+        SmtSolver::CheckResult SmtlibSmtSolver::checkWithAssumptions(std::initializer_list<storm::expressions::Expression> const&) {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "functionality not (yet) implemented");
         }
 #endif

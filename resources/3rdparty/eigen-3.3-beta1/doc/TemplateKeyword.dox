@@ -1,4 +1,4 @@
-namespace Eigen {
+namespace StormEigen {
 
 /** \page TopicTemplateKeyword The template and typename keywords in C++
 

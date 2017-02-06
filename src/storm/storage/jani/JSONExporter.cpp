@@ -43,7 +43,7 @@ namespace storm {
                 return boost::any_cast<modernjson::json>(comp.accept(visitor, boost::none));
             }
             
-            virtual boost::any visit(AutomatonComposition const& composition, boost::any const& data) {
+            virtual boost::any visit(AutomatonComposition const& composition, boost::any const&) {
                 modernjson::json compDecl;
                 modernjson::json autDecl;
                 autDecl["automaton"] = composition.getAutomatonName();
@@ -63,7 +63,7 @@ namespace storm {
                         elemDecl["automaton"] = std::static_pointer_cast<AutomatonComposition>(subcomp)->getAutomatonName();
                     } else {
                         STORM_LOG_THROW(allowRecursion, storm::exceptions::InvalidJaniException, "Nesting composition " << *subcomp << " is not supported by JANI.");
-                        elemDecl = boost::any_cast<modernjson::json>(subcomp->accept(*this, boost::none));
+                        elemDecl = boost::any_cast<modernjson::json>(subcomp->accept(*this, data));
                     }
                     elems.push_back(elemDecl);
                 }
@@ -144,11 +144,11 @@ namespace storm {
             return boost::any_cast<modernjson::json>(formula.accept(translator));
         }
         
-        boost::any FormulaToJaniJson::visit(storm::logic::AtomicExpressionFormula const& f, boost::any const& data) const {
+        boost::any FormulaToJaniJson::visit(storm::logic::AtomicExpressionFormula const& f, boost::any const&) const {
             return ExpressionToJson::translate(f.getExpression());
         }
         
-        boost::any FormulaToJaniJson::visit(storm::logic::AtomicLabelFormula const& f, boost::any const& data) const {
+        boost::any FormulaToJaniJson::visit(storm::logic::AtomicLabelFormula const& f, boost::any const&) const {
             modernjson::json opDecl(f.getLabel());
             return opDecl;
         }
@@ -156,40 +156,40 @@ namespace storm {
             modernjson::json opDecl;
             storm::logic::BinaryBooleanStateFormula::OperatorType op = f.getOperator();
             opDecl["op"] = op == storm::logic::BinaryBooleanStateFormula::OperatorType::And ? "∧" : "∨";
-            opDecl["left"] = boost::any_cast<modernjson::json>(f.getLeftSubformula().accept(*this, boost::none));
-            opDecl["right"] = boost::any_cast<modernjson::json>(f.getRightSubformula().accept(*this, boost::none));
+            opDecl["left"] = boost::any_cast<modernjson::json>(f.getLeftSubformula().accept(*this, data));
+            opDecl["right"] = boost::any_cast<modernjson::json>(f.getRightSubformula().accept(*this, data));
             return opDecl;
         }
-        boost::any FormulaToJaniJson::visit(storm::logic::BooleanLiteralFormula const& f, boost::any const& data) const {
+        boost::any FormulaToJaniJson::visit(storm::logic::BooleanLiteralFormula const& f, boost::any const&) const {
             modernjson::json opDecl(f.isTrueFormula() ? true : false);
             return opDecl;
         }
         boost::any FormulaToJaniJson::visit(storm::logic::BoundedUntilFormula const& f, boost::any const& data) const {
             modernjson::json opDecl;
             opDecl["op"] = "U";
-            opDecl["left"] = boost::any_cast<modernjson::json>(f.getLeftSubformula().accept(*this, boost::none));
-            opDecl["right"] = boost::any_cast<modernjson::json>(f.getRightSubformula().accept(*this, boost::none));
-            if(f.hasDiscreteTimeBound()) {
-                opDecl["step-bounds"] = constructPropertyInterval(0, f.getDiscreteTimeBound());
+            opDecl["left"] = boost::any_cast<modernjson::json>(f.getLeftSubformula().accept(*this, data));
+            opDecl["right"] = boost::any_cast<modernjson::json>(f.getRightSubformula().accept(*this, data));
+            if(f.isStepBounded()) {
+                opDecl["step-bounds"] = constructPropertyInterval(0, f.getUpperBound<uint64_t>());
             } else {
-                opDecl["time-bounds"] = constructPropertyInterval(f.getIntervalBounds().first, f.getIntervalBounds().second);
+                opDecl["time-bounds"] = constructPropertyInterval(f.getLowerBound<double>(), f.getUpperBound<double>());
             }
             return opDecl;
         }
         
-        boost::any FormulaToJaniJson::visit(storm::logic::ConditionalFormula const& f, boost::any const& data) const {
+        boost::any FormulaToJaniJson::visit(storm::logic::ConditionalFormula const&, boost::any const&) const {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Jani currently does not support conditional formulae");
         }
         
-        boost::any FormulaToJaniJson::visit(storm::logic::CumulativeRewardFormula const& f, boost::any const& data) const {
+        boost::any FormulaToJaniJson::visit(storm::logic::CumulativeRewardFormula const&, boost::any const&) const {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm currently does not support translating  cummulative reward formulae");
         }
         
         boost::any FormulaToJaniJson::visit(storm::logic::EventuallyFormula const& f, boost::any const& data) const {
             modernjson::json opDecl;
             opDecl["op"] = "U";
-            opDecl["left"] = boost::any_cast<modernjson::json>(f.getTrueFormula()->accept(*this, boost::none));
-            opDecl["right"] = boost::any_cast<modernjson::json>(f.getSubformula().accept(*this, boost::none));
+            opDecl["left"] = boost::any_cast<modernjson::json>(f.getTrueFormula()->accept(*this, data));
+            opDecl["right"] = boost::any_cast<modernjson::json>(f.getSubformula().accept(*this, data));
             return opDecl;
         }
         
@@ -202,10 +202,10 @@ namespace storm {
                 opDecl["op"] = comparisonTypeToJani(bound.comparisonType);
                 if(f.hasOptimalityType()) {
                     opDecl["left"]["op"] = f.getOptimalityType() == storm::solver::OptimizationDirection::Minimize ? "Emin" : "Emax";
-                    opDecl["left"]["reach"] = boost::any_cast<modernjson::json>(f.getSubformula().accept(*this, boost::none));
+                    opDecl["left"]["reach"] = boost::any_cast<modernjson::json>(f.getSubformula().accept(*this, data));
                 } else {
                     opDecl["left"]["op"] = (bound.comparisonType == storm::logic::ComparisonType::Less || bound.comparisonType == storm::logic::ComparisonType::LessEqual) ? "Emax" : "Emin";
-                    opDecl["left"]["reach"] = boost::any_cast<modernjson::json>(f.getSubformula().accept(*this, boost::none));
+                    opDecl["left"]["reach"] = boost::any_cast<modernjson::json>(f.getSubformula().accept(*this, data));
                 }
                 opDecl["left"]["exp"] = modernjson::json(1);
                 opDecl["left"]["accumulate"] = modernjson::json(tvec);
@@ -213,12 +213,12 @@ namespace storm {
             } else {
                 if(f.hasOptimalityType()) {
                     opDecl["op"] = f.getOptimalityType() == storm::solver::OptimizationDirection::Minimize ? "Emin" : "Emax";
-                    opDecl["reach"] = boost::any_cast<modernjson::json>(f.getSubformula().accept(*this, boost::none));
+                    opDecl["reach"] = boost::any_cast<modernjson::json>(f.getSubformula().accept(*this, data));
                     
                 } else {
                     // TODO add checks
                     opDecl["op"] = "Emin";
-                    opDecl["reach"] = boost::any_cast<modernjson::json>(f.getSubformula().accept(*this, boost::none));
+                    opDecl["reach"] = boost::any_cast<modernjson::json>(f.getSubformula().accept(*this, data));
                 }
                 opDecl["exp"] = modernjson::json(1);
                 opDecl["accumulate"] = modernjson::json(tvec);
@@ -226,11 +226,11 @@ namespace storm {
             return opDecl;
         }
         
-        boost::any FormulaToJaniJson::visit(storm::logic::GloballyFormula const& f, boost::any const& data) const {
+        boost::any FormulaToJaniJson::visit(storm::logic::GloballyFormula const&, boost::any const&) const {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Jani currently does not support conversion of a globally formulae");
         }
         
-        boost::any FormulaToJaniJson::visit(storm::logic::InstantaneousRewardFormula const& f, boost::any const& data) const {
+        boost::any FormulaToJaniJson::visit(storm::logic::InstantaneousRewardFormula const&, boost::any const&) const {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Jani currently does not support conversion of an instanteneous reward formula");
         }
         
@@ -241,28 +241,28 @@ namespace storm {
                 opDecl["op"] = comparisonTypeToJani(bound.comparisonType);
                 if(f.hasOptimalityType()) {
                     opDecl["left"]["op"] = f.getOptimalityType() == storm::solver::OptimizationDirection::Minimize ? "Smin" : "Smax";
-                    opDecl["left"]["exp"] = boost::any_cast<modernjson::json>(f.getSubformula().accept(*this, boost::none));
+                    opDecl["left"]["exp"] = boost::any_cast<modernjson::json>(f.getSubformula().accept(*this, data));
                 } else {
                     opDecl["left"]["op"] = (bound.comparisonType == storm::logic::ComparisonType::Less || bound.comparisonType == storm::logic::ComparisonType::LessEqual) ? "Smax" : "Smin";
-                    opDecl["left"]["exp"] = boost::any_cast<modernjson::json>(f.getSubformula().accept(*this, boost::none));
+                    opDecl["left"]["exp"] = boost::any_cast<modernjson::json>(f.getSubformula().accept(*this, data));
                 }
                 opDecl["right"] = numberToJson(bound.threshold);
             } else {
                 if(f.hasOptimalityType()) {
                     opDecl["op"] = f.getOptimalityType() == storm::solver::OptimizationDirection::Minimize ? "Smin" : "Smax";
-                    opDecl["exp"] = boost::any_cast<modernjson::json>(f.getSubformula().accept(*this, boost::none));
+                    opDecl["exp"] = boost::any_cast<modernjson::json>(f.getSubformula().accept(*this, data));
                     
                 } else {
                     // TODO add checks
                     opDecl["op"] = "Pmin";
-                    opDecl["exp"] = boost::any_cast<modernjson::json>(f.getSubformula().accept(*this, boost::none));
+                    opDecl["exp"] = boost::any_cast<modernjson::json>(f.getSubformula().accept(*this, data));
                 }
             }
             return opDecl;
 
         }
         
-        boost::any FormulaToJaniJson::visit(storm::logic::LongRunAverageRewardFormula const& f, boost::any const& data) const {
+        boost::any FormulaToJaniJson::visit(storm::logic::LongRunAverageRewardFormula const&, boost::any const&) const {
 //            modernjson::json opDecl;
 //            if(f.()) {
 //                auto bound = f.getBound();
@@ -292,15 +292,15 @@ namespace storm {
         }
         
         
-        boost::any FormulaToJaniJson::visit(storm::logic::MultiObjectiveFormula const& f, boost::any const& data) const {
+        boost::any FormulaToJaniJson::visit(storm::logic::MultiObjectiveFormula const&, boost::any const&) const {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Jani currently does not support conversion of a multi-objective formula");
         }
         
         boost::any FormulaToJaniJson::visit(storm::logic::NextFormula const& f, boost::any const& data) const {
             modernjson::json opDecl;
             opDecl["op"] = "U";
-            opDecl["left"] = boost::any_cast<modernjson::json>(f.getTrueFormula()->accept(*this, boost::none));
-            opDecl["right"] = boost::any_cast<modernjson::json>(f.getSubformula().accept(*this, boost::none));
+            opDecl["left"] = boost::any_cast<modernjson::json>(f.getTrueFormula()->accept(*this, data));
+            opDecl["right"] = boost::any_cast<modernjson::json>(f.getSubformula().accept(*this, data));
             opDecl["step-bounds"] = constructPropertyInterval((uint64_t)1, (uint64_t)1);
             return opDecl;
         }
@@ -316,21 +316,21 @@ namespace storm {
                 opDecl["op"] = comparisonTypeToJani(bound.comparisonType);
                 if(f.hasOptimalityType()) {
                     opDecl["left"]["op"] = f.getOptimalityType() == storm::solver::OptimizationDirection::Minimize ? "Pmin" : "Pmax";
-                    opDecl["left"]["exp"] = boost::any_cast<modernjson::json>(f.getSubformula().accept(*this, boost::none));
+                    opDecl["left"]["exp"] = boost::any_cast<modernjson::json>(f.getSubformula().accept(*this, data));
                 } else {
                     opDecl["left"]["op"] = (bound.comparisonType == storm::logic::ComparisonType::Less || bound.comparisonType == storm::logic::ComparisonType::LessEqual) ? "Pmax" : "Pmin";
-                    opDecl["left"]["exp"] = boost::any_cast<modernjson::json>(f.getSubformula().accept(*this, boost::none));
+                    opDecl["left"]["exp"] = boost::any_cast<modernjson::json>(f.getSubformula().accept(*this, data));
                 }
                 opDecl["right"] = numberToJson(bound.threshold);
             } else {
                 if(f.hasOptimalityType()) {
                     opDecl["op"] = f.getOptimalityType() == storm::solver::OptimizationDirection::Minimize ? "Pmin" : "Pmax";
-                    opDecl["exp"] = boost::any_cast<modernjson::json>(f.getSubformula().accept(*this, boost::none));
+                    opDecl["exp"] = boost::any_cast<modernjson::json>(f.getSubformula().accept(*this, data));
                     
                 } else {
                     // TODO add checks
                     opDecl["op"] = "Pmin";
-                    opDecl["exp"] = boost::any_cast<modernjson::json>(f.getSubformula().accept(*this, boost::none));
+                    opDecl["exp"] = boost::any_cast<modernjson::json>(f.getSubformula().accept(*this, data));
                 }
             }
             return opDecl;
@@ -349,10 +349,10 @@ namespace storm {
                 opDecl["op"] = comparisonTypeToJani(bound.comparisonType);
                 if(f.hasOptimalityType()) {
                     opDecl["left"]["op"] = f.getOptimalityType() == storm::solver::OptimizationDirection::Minimize ? "Emin" : "Emax";
-                    opDecl["left"]["reach"] = boost::any_cast<modernjson::json>(f.getSubformula().asEventuallyFormula().getSubformula().accept(*this, boost::none));
+                    opDecl["left"]["reach"] = boost::any_cast<modernjson::json>(f.getSubformula().asEventuallyFormula().getSubformula().accept(*this, data));
                 } else {
                     opDecl["left"]["op"] = (bound.comparisonType == storm::logic::ComparisonType::Less || bound.comparisonType == storm::logic::ComparisonType::LessEqual) ? "Emax" : "Emin";
-                    opDecl["left"]["reach"] = boost::any_cast<modernjson::json>(f.getSubformula().asEventuallyFormula().getSubformula().accept(*this, boost::none));
+                    opDecl["left"]["reach"] = boost::any_cast<modernjson::json>(f.getSubformula().asEventuallyFormula().getSubformula().accept(*this, data));
                 }
                 STORM_LOG_THROW(f.hasRewardModelName(), storm::exceptions::NotSupportedException, "Reward name has to be specified for Jani-conversion");
                 opDecl["left"]["exp"] = f.getRewardModelName();
@@ -361,12 +361,12 @@ namespace storm {
             } else {
                 if(f.hasOptimalityType()) {
                     opDecl["op"] = f.getOptimalityType() == storm::solver::OptimizationDirection::Minimize ? "Emin" : "Emax";
-                    opDecl["reach"] = boost::any_cast<modernjson::json>(f.getSubformula().asEventuallyFormula().getSubformula().accept(*this, boost::none));
+                    opDecl["reach"] = boost::any_cast<modernjson::json>(f.getSubformula().asEventuallyFormula().getSubformula().accept(*this, data));
                     
                 } else {
                     // TODO add checks
                     opDecl["op"] = "Emin";
-                    opDecl["reach"] = boost::any_cast<modernjson::json>(f.getSubformula().asEventuallyFormula().getSubformula().accept(*this, boost::none));
+                    opDecl["reach"] = boost::any_cast<modernjson::json>(f.getSubformula().asEventuallyFormula().getSubformula().accept(*this, data));
                 }
                 STORM_LOG_THROW(f.hasRewardModelName(), storm::exceptions::NotSupportedException, "Reward name has to be specified for Jani-conversion");
                 opDecl["exp"] = f.getRewardModelName();
@@ -375,7 +375,7 @@ namespace storm {
             return opDecl;
         }
         
-        boost::any FormulaToJaniJson::visit(storm::logic::TotalRewardFormula const& f, boost::any const& data) const {
+        boost::any FormulaToJaniJson::visit(storm::logic::TotalRewardFormula const&, boost::any const&) const {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Jani currently does not support a total reward formula");
         }
 
@@ -385,15 +385,15 @@ namespace storm {
             storm::logic::UnaryBooleanStateFormula::OperatorType op = f.getOperator();
             assert(op == storm::logic::UnaryBooleanStateFormula::OperatorType::Not);
             opDecl["op"] = "¬";
-            opDecl["exp"] = boost::any_cast<modernjson::json>(f.getSubformula().accept(*this, boost::none));
+            opDecl["exp"] = boost::any_cast<modernjson::json>(f.getSubformula().accept(*this, data));
             return opDecl;
         }
         
         boost::any FormulaToJaniJson::visit(storm::logic::UntilFormula const& f, boost::any const& data) const {
             modernjson::json opDecl;
             opDecl["op"] = "U";
-            opDecl["left"] = boost::any_cast<modernjson::json>(f.getLeftSubformula().accept(*this, boost::none));
-            opDecl["right"] = boost::any_cast<modernjson::json>(f.getRightSubformula().accept(*this, boost::none));
+            opDecl["left"] = boost::any_cast<modernjson::json>(f.getLeftSubformula().accept(*this, data));
+            opDecl["right"] = boost::any_cast<modernjson::json>(f.getRightSubformula().accept(*this, data));
             return opDecl;
         }
         
@@ -459,54 +459,54 @@ namespace storm {
         boost::any ExpressionToJson::visit(storm::expressions::IfThenElseExpression const& expression, boost::any const& data) {
             modernjson::json opDecl;
             opDecl["op"] = "ite";
-            opDecl["if"] = boost::any_cast<modernjson::json>(expression.getCondition()->accept(*this, boost::none));
-            opDecl["then"] = boost::any_cast<modernjson::json>(expression.getThenExpression()->accept(*this, boost::none));
-            opDecl["else"] = boost::any_cast<modernjson::json>(expression.getElseExpression()->accept(*this, boost::none));
+            opDecl["if"] = boost::any_cast<modernjson::json>(expression.getCondition()->accept(*this, data));
+            opDecl["then"] = boost::any_cast<modernjson::json>(expression.getThenExpression()->accept(*this, data));
+            opDecl["else"] = boost::any_cast<modernjson::json>(expression.getElseExpression()->accept(*this, data));
             return opDecl;
         }
         boost::any ExpressionToJson::visit(storm::expressions::BinaryBooleanFunctionExpression const& expression, boost::any const& data) {
             modernjson::json opDecl;
             opDecl["op"] = operatorTypeToJaniString(expression.getOperator());
-            opDecl["left"] = boost::any_cast<modernjson::json>(expression.getOperand(0)->accept(*this, boost::none));
-            opDecl["right"] = boost::any_cast<modernjson::json>(expression.getOperand(1)->accept(*this, boost::none));
+            opDecl["left"] = boost::any_cast<modernjson::json>(expression.getOperand(0)->accept(*this, data));
+            opDecl["right"] = boost::any_cast<modernjson::json>(expression.getOperand(1)->accept(*this, data));
             return opDecl;
         }
         boost::any ExpressionToJson::visit(storm::expressions::BinaryNumericalFunctionExpression const& expression, boost::any const& data) {
             modernjson::json opDecl;
             opDecl["op"] = operatorTypeToJaniString(expression.getOperator());
-            opDecl["left"] = boost::any_cast<modernjson::json>(expression.getOperand(0)->accept(*this, boost::none));
-            opDecl["right"] = boost::any_cast<modernjson::json>(expression.getOperand(1)->accept(*this, boost::none));
+            opDecl["left"] = boost::any_cast<modernjson::json>(expression.getOperand(0)->accept(*this, data));
+            opDecl["right"] = boost::any_cast<modernjson::json>(expression.getOperand(1)->accept(*this, data));
             return opDecl;
         }
         boost::any ExpressionToJson::visit(storm::expressions::BinaryRelationExpression const& expression, boost::any const& data) {
             modernjson::json opDecl;
             opDecl["op"] = operatorTypeToJaniString(expression.getOperator());
-            opDecl["left"] = boost::any_cast<modernjson::json>(expression.getOperand(0)->accept(*this, boost::none));
-            opDecl["right"] = boost::any_cast<modernjson::json>(expression.getOperand(1)->accept(*this, boost::none));
+            opDecl["left"] = boost::any_cast<modernjson::json>(expression.getOperand(0)->accept(*this, data));
+            opDecl["right"] = boost::any_cast<modernjson::json>(expression.getOperand(1)->accept(*this, data));
             return opDecl;
         }
-        boost::any ExpressionToJson::visit(storm::expressions::VariableExpression const& expression, boost::any const& data) {
+        boost::any ExpressionToJson::visit(storm::expressions::VariableExpression const& expression, boost::any const&) {
             return modernjson::json(expression.getVariableName());
         }
         boost::any ExpressionToJson::visit(storm::expressions::UnaryBooleanFunctionExpression const& expression, boost::any const& data) {
             modernjson::json opDecl;
             opDecl["op"] = operatorTypeToJaniString(expression.getOperator());
-            opDecl["exp"] = boost::any_cast<modernjson::json>(expression.getOperand()->accept(*this, boost::none));
+            opDecl["exp"] = boost::any_cast<modernjson::json>(expression.getOperand()->accept(*this, data));
             return opDecl;
         }
         boost::any ExpressionToJson::visit(storm::expressions::UnaryNumericalFunctionExpression const& expression, boost::any const& data) {
             modernjson::json opDecl;
             opDecl["op"] = operatorTypeToJaniString(expression.getOperator());
-            opDecl["exp"] = boost::any_cast<modernjson::json>(expression.getOperand()->accept(*this, boost::none));
+            opDecl["exp"] = boost::any_cast<modernjson::json>(expression.getOperand()->accept(*this, data));
             return opDecl;
         }
-        boost::any ExpressionToJson::visit(storm::expressions::BooleanLiteralExpression const& expression, boost::any const& data) {
+        boost::any ExpressionToJson::visit(storm::expressions::BooleanLiteralExpression const& expression, boost::any const&) {
             return modernjson::json(expression.getValue());
         }
-        boost::any ExpressionToJson::visit(storm::expressions::IntegerLiteralExpression const& expression, boost::any const& data) {
+        boost::any ExpressionToJson::visit(storm::expressions::IntegerLiteralExpression const& expression, boost::any const&) {
             return modernjson::json(expression.getValue());
         }
-        boost::any ExpressionToJson::visit(storm::expressions::RationalLiteralExpression const& expression, boost::any const& data) {
+        boost::any ExpressionToJson::visit(storm::expressions::RationalLiteralExpression const& expression, boost::any const&) {
             return modernjson::json(expression.getValueAsDouble());
         }
         

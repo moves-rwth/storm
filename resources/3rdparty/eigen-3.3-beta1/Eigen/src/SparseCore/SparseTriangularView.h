@@ -11,7 +11,7 @@
 #ifndef EIGEN_SPARSE_TRIANGULARVIEW_H
 #define EIGEN_SPARSE_TRIANGULARVIEW_H
 
-namespace Eigen {
+namespace StormEigen {
 
 /** \ingroup SparseCore_Module
   *
@@ -284,6 +284,6 @@ SparseMatrixBase<Derived>::triangularView() const
   return TriangularView<const Derived, Mode>(derived());
 }
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_SPARSE_TRIANGULARVIEW_H

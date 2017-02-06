@@ -39,6 +39,7 @@ namespace storm {
             pctl.setUntilFormulasAllowed(true);
             pctl.setBoundedUntilFormulasAllowed(true);
             pctl.setStepBoundedUntilFormulasAllowed(true);
+            pctl.setTimeBoundedUntilFormulasAllowed(true);
             
             return pctl;
         }
@@ -97,6 +98,7 @@ namespace storm {
             multiObjective.setTotalRewardFormulasAllowed(true);
             multiObjective.setBoundedUntilFormulasAllowed(true);
             multiObjective.setStepBoundedUntilFormulasAllowed(true);
+            multiObjective.setTimeBoundedUntilFormulasAllowed(true);
 
             return multiObjective;
         }
@@ -322,7 +324,6 @@ namespace storm {
             this->longRunAverageRewardFormula = newValue;
             return *this;
         }
-        
         
         bool FragmentSpecification::areTotalRewardFormulasAllowed() const {
             return totalRewardFormula;

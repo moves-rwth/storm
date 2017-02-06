@@ -10,7 +10,7 @@
 #ifndef EIGEN_SPARSETRIANGULARSOLVER_H
 #define EIGEN_SPARSETRIANGULARSOLVER_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 namespace internal {
 
@@ -305,6 +305,6 @@ void TriangularViewImpl<ExpressionType,Mode,Sparse>::solveInPlace(SparseMatrixBa
 //     other = otherCopy;
 }
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_SPARSETRIANGULARSOLVER_H

@@ -17,6 +17,8 @@ namespace storm {
              */
             RealVariable(std::string const& name, storm::expressions::Variable const& variable, storm::expressions::Expression const& initValue, bool transient=false);
             
+            virtual std::unique_ptr<Variable> clone() const override;
+            
             virtual bool isRealVariable() const override;
         };
 

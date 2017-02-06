@@ -10,7 +10,7 @@
 #ifndef EIGEN_COMPLEX_NEON_H
 #define EIGEN_COMPLEX_NEON_H
 
-namespace Eigen {
+namespace StormEigen {
 
 namespace internal {
 
@@ -461,6 +461,6 @@ EIGEN_STRONG_INLINE void ptranspose(PacketBlock<Packet1cd,2>& kernel)
 
 } // end namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_COMPLEX_NEON_H

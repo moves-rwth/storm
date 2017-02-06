@@ -10,7 +10,7 @@
 #ifndef EIGEN_PRODUCT_H
 #define EIGEN_PRODUCT_H
 
-namespace Eigen {
+namespace StormEigen {
 
 template<typename Lhs, typename Rhs, int Option, typename StorageKind> class ProductImpl;
 
@@ -217,6 +217,6 @@ class ProductImpl<Lhs,Rhs,Option,Dense>
   
 };
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_PRODUCT_H

@@ -10,7 +10,7 @@
 #ifndef EIGEN_COREITERATORS_H
 #define EIGEN_COREITERATORS_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 /* This file contains the respective InnerIterator definition of the expressions defined in Eigen/Core
  */
@@ -122,6 +122,6 @@ public:
 
 } // end namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_COREITERATORS_H

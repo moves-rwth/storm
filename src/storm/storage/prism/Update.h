@@ -60,6 +60,13 @@ namespace storm {
             storm::prism::Assignment const& getAssignment(std::string const& variableName) const;
             
             /*!
+             * Creates a mapping representation of this update.
+             *
+             * @return A mapping from variables to expressions.
+             */
+            std::map<storm::expressions::Variable, storm::expressions::Expression> getAsVariableToExpressionMap() const;
+            
+            /*!
              * Retrieves the global index of the update, that is, a unique index over all modules.
              *
              * @return The global index of the update.
@@ -73,6 +80,7 @@ namespace storm {
              * @return The resulting update.
              */
             Update substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const;
+            
             /*!
              * Removes all assignments which do not change the variable. 
              * 

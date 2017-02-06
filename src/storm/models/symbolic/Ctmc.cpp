@@ -24,12 +24,33 @@ namespace storm {
                                         std::map<std::string, storm::expressions::Expression> labelToExpressionMap,
                                         std::unordered_map<std::string, RewardModelType> const& rewardModels)
             : DeterministicModel<Type, ValueType>(storm::models::ModelType::Ctmc, manager, reachableStates, initialStates, deadlockStates, transitionMatrix, rowVariables, rowExpressionAdapter, columnVariables, columnExpressionAdapter, rowColumnMetaVariablePairs, labelToExpressionMap, rewardModels) {
-                exitRates = this->getTransitionMatrix().sumAbstract(this->getColumnVariables());
+                // Intentionally left empty.
             }
-            
+
+            template<storm::dd::DdType Type, typename ValueType>
+            Ctmc<Type, ValueType>::Ctmc(std::shared_ptr<storm::dd::DdManager<Type>> manager,
+                                        storm::dd::Bdd<Type> reachableStates,
+                                        storm::dd::Bdd<Type> initialStates,
+                                        storm::dd::Bdd<Type> deadlockStates,
+                                        storm::dd::Add<Type, ValueType> transitionMatrix,
+                                        boost::optional<storm::dd::Add<Type, ValueType>> exitRateVector,
+                                        std::set<storm::expressions::Variable> const& rowVariables,
+                                        std::shared_ptr<storm::adapters::AddExpressionAdapter<Type, ValueType>> rowExpressionAdapter,
+                                        std::set<storm::expressions::Variable> const& columnVariables,
+                                        std::shared_ptr<storm::adapters::AddExpressionAdapter<Type, ValueType>> columnExpressionAdapter,
+                                        std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs,
+                                        std::map<std::string, storm::expressions::Expression> labelToExpressionMap,
+                                        std::unordered_map<std::string, RewardModelType> const& rewardModels)
+            : DeterministicModel<Type, ValueType>(storm::models::ModelType::Ctmc, manager, reachableStates, initialStates, deadlockStates, transitionMatrix, rowVariables, rowExpressionAdapter, columnVariables, columnExpressionAdapter, rowColumnMetaVariablePairs, labelToExpressionMap, rewardModels), exitRates(exitRateVector) {
+                // Intentionally left empty.
+            }
+
             template<storm::dd::DdType Type, typename ValueType>
             storm::dd::Add<Type, ValueType> const& Ctmc<Type, ValueType>::getExitRateVector() const {
-                return exitRates;
+                if (!exitRates) {
+                    exitRates = this->getTransitionMatrix().sumAbstract(this->getColumnVariables());
+                }
+                return exitRates.get();
             }
             
             // Explicitly instantiate the template class.

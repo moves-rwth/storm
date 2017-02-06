@@ -9,10 +9,11 @@
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/exceptions/OptionParserException.h"
+#include "storm/settings/modules/ResourceSettings.h"
 #include "storm/settings/modules/JaniExportSettings.h"
 
+#include "storm/utility/resources.h"
 #include "storm/utility/storm-version.h"
-
 
 
 // Includes for the linked libraries and versions header.
@@ -129,47 +130,23 @@ namespace storm {
         }
 
         void showTimeAndMemoryStatistics(uint64_t wallclockMilliseconds) {
-#ifndef WINDOWS
             struct rusage ru;
             getrusage(RUSAGE_SELF, &ru);
 
-            std::cout << "Performance statistics:" << std::endl;
-            std::cout << "  * peak memory usage: " << ru.ru_maxrss/1024/1024 << " mb" << std::endl;
-            std::cout << "  * CPU time: " << ru.ru_utime.tv_sec << "." << std::setw(3) << std::setfill('0') << ru.ru_utime.tv_usec/1000 << " seconds" << std::endl;
-            if (wallclockMilliseconds != 0) {
-                std::cout << "  * wallclock time: " << (wallclockMilliseconds/1000) << "." << std::setw(3) << std::setfill('0') << (wallclockMilliseconds % 1000) << " seconds" << std::endl;
-            }
-#else
-            HANDLE hProcess = GetCurrentProcess ();
-            FILETIME ftCreation, ftExit, ftUser, ftKernel;
-            PROCESS_MEMORY_COUNTERS pmc;
-            if (GetProcessMemoryInfo( hProcess, &pmc, sizeof(pmc))) {
-                std::cout << "Memory Usage: " << std::endl;
-                std::cout << "\tPageFaultCount: " << pmc.PageFaultCount << std::endl;
-                std::cout << "\tPeakWorkingSetSize: " << pmc.PeakWorkingSetSize << std::endl;
-                std::cout << "\tWorkingSetSize: " << pmc.WorkingSetSize << std::endl;
-                std::cout << "\tQuotaPeakPagedPoolUsage: " << pmc.QuotaPeakPagedPoolUsage << std::endl;
-                std::cout << "\tQuotaPagedPoolUsage: " << pmc.QuotaPagedPoolUsage << std::endl;
-                std::cout << "\tQuotaPeakNonPagedPoolUsage: " << pmc.QuotaPeakNonPagedPoolUsage << std::endl;
-                std::cout << "\tQuotaNonPagedPoolUsage: " << pmc.QuotaNonPagedPoolUsage << std::endl;
-                std::cout << "\tPagefileUsage:" << pmc.PagefileUsage << std::endl;
-                std::cout << "\tPeakPagefileUsage: " << pmc.PeakPagefileUsage << std::endl;
-            }
-
-            GetProcessTimes (hProcess, &ftCreation, &ftExit, &ftKernel, &ftUser);
-
-            ULARGE_INTEGER uLargeInteger;
-            uLargeInteger.LowPart = ftKernel.dwLowDateTime;
-            uLargeInteger.HighPart = ftKernel.dwHighDateTime;
-            double kernelTime = static_cast<double>(uLargeInteger.QuadPart) / 10000.0; // 100 ns Resolution to milliseconds
-            uLargeInteger.LowPart = ftUser.dwLowDateTime;
-            uLargeInteger.HighPart = ftUser.dwHighDateTime;
-            double userTime = static_cast<double>(uLargeInteger.QuadPart) / 10000.0;
-
-            std::cout << "CPU Time: " << std::endl;
-            std::cout << "\tKernel Time: " << std::setprecision(5) << kernelTime << "ms" << std::endl;
-            std::cout << "\tUser Time: " << std::setprecision(5) << userTime << "ms" << std::endl;
+            std::cout << std::endl << "Performance statistics:" << std::endl;
+#ifdef MACOS
+            // For Mac OS, this is returned in bytes.
+            uint64_t maximumResidentSizeInMegabytes = ru.ru_maxrss / 1024 / 1024;
 #endif
+#ifdef LINUX
+            // For Linux, this is returned in kilobytes.
+            uint64_t maximumResidentSizeInMegabytes = ru.ru_maxrss / 1024;
+#endif
+            std::cout << "  * peak memory usage: " << maximumResidentSizeInMegabytes << "MB" << std::endl;
+            std::cout << "  * CPU time: " << ru.ru_utime.tv_sec << "." << std::setw(3) << std::setfill('0') << ru.ru_utime.tv_usec/1000 << "s" << std::endl;
+            if (wallclockMilliseconds != 0) {
+                std::cout << "  * wallclock time: " << (wallclockMilliseconds/1000) << "." << std::setw(3) << std::setfill('0') << (wallclockMilliseconds % 1000) << "s" << std::endl;
+            }
         }
 
         bool parseOptions(const int argc, const char* argv[]) {
@@ -180,27 +157,35 @@ namespace storm {
                 throw e;
                 return false;
             }
-
-            if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isHelpSet()) {
+            
+            storm::settings::modules::GeneralSettings const& general = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
+            storm::settings::modules::ResourceSettings const& resources = storm::settings::getModule<storm::settings::modules::ResourceSettings>();
+            storm::settings::modules::DebugSettings const& debug = storm::settings::getModule<storm::settings::modules::DebugSettings>();
+            
+            if (general.isHelpSet()) {
                 storm::settings::manager().printHelp(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getHelpModuleName());
                 return false;
             }
-
-            if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isVersionSet()) {
+            // If we were given a time limit, we put it in place now.
+            if (resources.isTimeoutSet()) {
+                storm::utility::resources::setCPULimit(resources.getTimeoutInSeconds());
+            }
+            
+            if (general.isVersionSet()) {
                 storm::settings::manager().printVersion();
                 return false;
             }
-
-            if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isVerboseSet()) {
+            
+            if (general.isVerboseSet()) {
                 storm::utility::setLogLevel(l3pp::LogLevel::INFO);
             }
-            if (storm::settings::getModule<storm::settings::modules::DebugSettings>().isDebugSet()) {
+            if (debug.isDebugSet()) {
                 storm::utility::setLogLevel(l3pp::LogLevel::DEBUG);
             }
-            if (storm::settings::getModule<storm::settings::modules::DebugSettings>().isTraceSet()) {
+            if (debug.isTraceSet()) {
                  storm::utility::setLogLevel(l3pp::LogLevel::TRACE);
             }
-            if (storm::settings::getModule<storm::settings::modules::DebugSettings>().isLogfileSet()) {
+            if (debug.isLogfileSet()) {
                 storm::utility::initializeFileLogging();
             }
             return true;
@@ -212,16 +197,35 @@ namespace storm {
                 storm::utility::initializeFileLogging();
             }
 
+            boost::optional<std::set<std::string>> propertyFilter;
+            std::string propertyFilterString = storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPropertyFilter();
+            if (propertyFilterString != "all") {
+                propertyFilter = storm::parsePropertyFilter(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPropertyFilter());
+            }
+            
+            auto coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
+            auto generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
             auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
             if (ioSettings.isPrismOrJaniInputSet()) {
                 storm::storage::SymbolicModelDescription model;
                 std::vector<storm::jani::Property> properties;
                 
                 STORM_LOG_TRACE("Parsing symbolic input.");
+                boost::optional<std::map<std::string, std::string>> labelRenaming;
                 if (ioSettings.isPrismInputSet()) {
                     model = storm::parseProgram(ioSettings.getPrismInputFilename());
-                    if (ioSettings.isPrismToJaniSet()) {
-                        model = model.toJani(true);
+                    
+                    bool transformToJani = ioSettings.isPrismToJaniSet();
+                    bool transformToJaniForJit = coreSettings.getEngine() == storm::settings::modules::CoreSettings::Engine::Sparse && ioSettings.isJitSet();
+                    STORM_LOG_WARN_COND(transformToJani || !transformToJaniForJit, "The JIT-based model builder is only available for JANI models, automatically converting the PRISM input model.");
+                    transformToJani |= transformToJaniForJit;
+                    
+                    if (transformToJani) {
+                        auto modelAndRenaming = model.toJaniWithLabelRenaming(true);
+                        if (!modelAndRenaming.second.empty()) {
+                            labelRenaming = modelAndRenaming.second;
+                        }
+                        model = modelAndRenaming.first;
                     }
                 } else if (ioSettings.isJaniInputSet()) {
                     auto input = storm::parseJaniModel(ioSettings.getJaniInputFilename());
@@ -235,22 +239,33 @@ namespace storm {
                     
                 }
                 
+                // Get the string that assigns values to the unknown currently undefined constants in the model and formula.
+                std::string constantDefinitionString = ioSettings.getConstantDefinitionString();
+                std::map<storm::expressions::Variable, storm::expressions::Expression> constantDefinitions;
+
                 // Then proceed to parsing the properties (if given), since the model we are building may depend on the property.
                 STORM_LOG_TRACE("Parsing properties.");
-                uint64_t i = 0;
-                if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isPropertySet()) {
+                if (generalSettings.isPropertySet()) {
                     if (model.isJaniModel()) {
-                        for(auto const& formula : storm::parseFormulasForJaniModel(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getProperty(), model.asJaniModel())) {
-                            properties.emplace_back(std::to_string(i), formula);
-                            ++i;
+                        properties = storm::parsePropertiesForJaniModel(generalSettings.getProperty(), model.asJaniModel(), propertyFilter);
+                        
+                        if (labelRenaming) {
+                            std::vector<storm::jani::Property> amendedProperties;
+                            for (auto const& property : properties) {
+                                amendedProperties.emplace_back(property.substituteLabels(labelRenaming.get()));
+                            }
+                            properties = std::move(amendedProperties);
                         }
                     } else {
-                        for(auto const& formula :storm::parseFormulasForPrismProgram(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getProperty(), model.asPrismProgram())) {
-                            properties.emplace_back(std::to_string(i), formula);
-                            ++i;
-                        }
+                        properties = storm::parsePropertiesForPrismProgram(generalSettings.getProperty(), model.asPrismProgram(), propertyFilter);
                     }
+                    
+                    constantDefinitions = model.parseConstantDefinitions(constantDefinitionString);
+                    properties = substituteConstantsInProperties(properties, constantDefinitions);
+                } else {
+                    constantDefinitions = model.parseConstantDefinitions(constantDefinitionString);
                 }
+                model = model.preprocess(constantDefinitions);
                 
                 if (model.isJaniModel() && storm::settings::getModule<storm::settings::modules::JaniExportSettings>().isJaniFileSet()) {
                     exportJaniModel(model.asJaniModel(), properties, storm::settings::getModule<storm::settings::modules::JaniExportSettings>().getJaniFilename());
@@ -260,18 +275,14 @@ namespace storm {
                     return;
                 }
                 
-                // Get the string that assigns values to the unknown currently undefined constants in the model.
-                std::string constantDefinitionString = ioSettings.getConstantDefinitionString();
-                model = model.preprocess(constantDefinitionString);
-                
                 STORM_LOG_TRACE("Building and checking symbolic model.");
-                if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isParametricSet()) {
+                if (generalSettings.isParametricSet()) {
 #ifdef STORM_HAVE_CARL
                     buildAndCheckSymbolicModel<storm::RationalFunction>(model, properties, true);
 #else
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "No parameters are supported in this build.");
 #endif
-                } else if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isExactSet()) {
+                } else if (generalSettings.isExactSet()) {
 #ifdef STORM_HAVE_CARL
                     buildAndCheckSymbolicModel<storm::RationalNumber>(model, properties, true);
 #else
@@ -280,19 +291,14 @@ namespace storm {
                 } else {
                     buildAndCheckSymbolicModel<double>(model, properties, true);
                 }
-            } else if (storm::settings::getModule<storm::settings::modules::IOSettings>().isExplicitSet()) {
-                STORM_LOG_THROW(storm::settings::getModule<storm::settings::modules::CoreSettings>().getEngine() == storm::settings::modules::CoreSettings::Engine::Sparse, storm::exceptions::InvalidSettingsException, "Only the sparse engine supports explicit model input.");
+            } else if (ioSettings.isExplicitSet()) {
+                STORM_LOG_THROW(coreSettings.getEngine() == storm::settings::modules::CoreSettings::Engine::Sparse, storm::exceptions::InvalidSettingsException, "Only the sparse engine supports explicit model input.");
 
                 // If the model is given in an explicit format, we parse the properties without allowing expressions
                 // in formulas.
                 std::vector<storm::jani::Property> properties;
-                if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isPropertySet()) {
-                    uint64_t i = 0;
-                    for(auto const& formula : storm::parseFormulasForExplicit(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getProperty())) {
-                        properties.emplace_back(std::to_string(i), formula);
-                        ++i;
-                        
-                    }
+                if (generalSettings.isPropertySet()) {
+                    properties = storm::parsePropertiesForExplicit(generalSettings.getProperty(), propertyFilter);
                 }
 
                 buildAndCheckExplicitModel<double>(properties, true);

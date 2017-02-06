@@ -12,7 +12,7 @@
 #include <GL/glew.h>
 #include <Eigen/OpenGLSupport>
 #include <GL/glut.h>
-using namespace Eigen;
+using namespace StormEigen;
 
 
 

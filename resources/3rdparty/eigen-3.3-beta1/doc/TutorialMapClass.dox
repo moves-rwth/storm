@@ -1,4 +1,4 @@
-namespace Eigen {
+namespace StormEigen {
 
 /** \eigenManualPage TutorialMapClass Interfacing with raw buffers: the Map class
 

@@ -15,7 +15,7 @@
 #ifndef EIGEN_MATH_FUNCTIONS_SSE_H
 #define EIGEN_MATH_FUNCTIONS_SSE_H
 
-namespace Eigen {
+namespace StormEigen {
 
 namespace internal {
 
@@ -518,6 +518,6 @@ Packet2d prsqrt<Packet2d>(const Packet2d& x) {
 
 } // end namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_MATH_FUNCTIONS_SSE_H

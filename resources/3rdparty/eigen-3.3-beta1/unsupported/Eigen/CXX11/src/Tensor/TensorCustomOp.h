@@ -10,7 +10,7 @@
 #ifndef EIGEN_CXX11_TENSOR_TENSOR_CUSTOM_OP_H
 #define EIGEN_CXX11_TENSOR_TENSOR_CUSTOM_OP_H
 
-namespace Eigen {
+namespace StormEigen {
 
 /** \class TensorCustomUnaryOp
   * \ingroup CXX11_Tensor_Module
@@ -34,7 +34,7 @@ struct traits<TensorCustomUnaryOp<CustomUnaryFunc, XprType> >
 };
 
 template<typename CustomUnaryFunc, typename XprType>
-struct eval<TensorCustomUnaryOp<CustomUnaryFunc, XprType>, Eigen::Dense>
+struct eval<TensorCustomUnaryOp<CustomUnaryFunc, XprType>, StormEigen::Dense>
 {
   typedef const TensorCustomUnaryOp<CustomUnaryFunc, XprType>& type;
 };
@@ -55,7 +55,7 @@ class TensorCustomUnaryOp : public TensorBase<TensorCustomUnaryOp<CustomUnaryFun
   public:
   typedef typename internal::traits<TensorCustomUnaryOp>::Scalar Scalar;
   typedef typename internal::traits<TensorCustomUnaryOp>::Packet Packet;
-  typedef typename Eigen::NumTraits<Scalar>::Real RealScalar;
+  typedef typename StormEigen::NumTraits<Scalar>::Real RealScalar;
   typedef typename XprType::CoeffReturnType CoeffReturnType;
   typedef typename XprType::PacketReturnType PacketReturnType;
   typedef typename internal::nested<TensorCustomUnaryOp>::type Nested;
@@ -184,7 +184,7 @@ struct traits<TensorCustomBinaryOp<CustomBinaryFunc, LhsXprType, RhsXprType> >
 };
 
 template<typename CustomBinaryFunc, typename LhsXprType, typename RhsXprType>
-struct eval<TensorCustomBinaryOp<CustomBinaryFunc, LhsXprType, RhsXprType>, Eigen::Dense>
+struct eval<TensorCustomBinaryOp<CustomBinaryFunc, LhsXprType, RhsXprType>, StormEigen::Dense>
 {
   typedef const TensorCustomBinaryOp<CustomBinaryFunc, LhsXprType, RhsXprType>& type;
 };
@@ -205,7 +205,7 @@ class TensorCustomBinaryOp : public TensorBase<TensorCustomBinaryOp<CustomBinary
   public:
   typedef typename internal::traits<TensorCustomBinaryOp>::Scalar Scalar;
   typedef typename internal::traits<TensorCustomBinaryOp>::Packet Packet;
-  typedef typename Eigen::NumTraits<Scalar>::Real RealScalar;
+  typedef typename StormEigen::NumTraits<Scalar>::Real RealScalar;
   typedef typename internal::traits<TensorCustomBinaryOp>::CoeffReturnType CoeffReturnType;
   typedef typename internal::traits<TensorCustomBinaryOp>::PacketReturnType PacketReturnType;
   typedef typename internal::nested<TensorCustomBinaryOp>::type Nested;
@@ -305,6 +305,6 @@ struct TensorEvaluator<const TensorCustomBinaryOp<CustomBinaryFunc, LhsXprType, 
 };
 
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_CXX11_TENSOR_TENSOR_CUSTOM_OP_H

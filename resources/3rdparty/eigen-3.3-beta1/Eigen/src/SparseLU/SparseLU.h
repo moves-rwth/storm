@@ -11,7 +11,7 @@
 #ifndef EIGEN_SPARSE_LU_H
 #define EIGEN_SPARSE_LU_H
 
-namespace Eigen {
+namespace StormEigen {
 
 template <typename _MatrixType, typename _OrderingType = COLAMDOrdering<typename _MatrixType::StorageIndex> > class SparseLU;
 template <typename MappedSparseMatrixType> struct SparseLUMatrixLReturnType;
@@ -769,6 +769,6 @@ struct SparseLUMatrixUReturnType : internal::no_assignment_operator
   const MatrixUType& m_mapU;
 };
 
-} // End namespace Eigen 
+} // End namespace StormEigen 
 
 #endif

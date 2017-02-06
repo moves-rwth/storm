@@ -28,9 +28,11 @@ namespace storm {
                 
                 static std::unique_ptr<CheckResult> computeReachabilityRewards(storm::models::symbolic::Ctmc<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector, RewardModelType const& rewardModel, storm::dd::Bdd<DdType> const& targetStates, bool qualitative, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory);
                 
-                static std::unique_ptr<CheckResult> computeLongRunAverageProbabilities(storm::models::symbolic::Ctmc<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector, storm::dd::Bdd<DdType> const& psiStates, bool qualitative, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory);
+                static std::unique_ptr<CheckResult> computeLongRunAverageProbabilities(storm::models::symbolic::Ctmc<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector, storm::dd::Bdd<DdType> const& psiStates, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory);
                 
                 static std::unique_ptr<CheckResult> computeNextProbabilities(storm::models::symbolic::Ctmc<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector, storm::dd::Bdd<DdType> const& nextStates);
+
+                static std::unique_ptr<CheckResult> computeLongRunAverageRewards(storm::models::symbolic::Ctmc<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector, RewardModelType const& rewardModel, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory);
 
                 /*!
                  * Converts the given rate-matrix into a time-abstract probability matrix.
@@ -40,12 +42,11 @@ namespace storm {
                  * @param exitRateVector The exit rate vector of the model.
                  * @return The probability matrix.
                  */
-                static storm::dd::Add<DdType, ValueType> computeProbabilityMatrix(storm::models::symbolic::Ctmc<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector);
+                static storm::dd::Add<DdType, ValueType> computeProbabilityMatrix(storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector);
                 
                 /*!
                  * Computes the matrix representing the transitions of the uniformized CTMC.
                  *
-                 * @param model The symbolic model.
                  * @param transitionMatrix The matrix to uniformize.
                  * @param exitRateVector The exit rate vector.
                  * @param maybeStates The states that need to be considered.

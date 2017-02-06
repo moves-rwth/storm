@@ -10,7 +10,7 @@
 #ifndef EIGEN_CXX11_TENSOR_TENSOR_UINT128_H
 #define EIGEN_CXX11_TENSOR_TENSOR_UINT128_H
 
-namespace Eigen {
+namespace StormEigen {
 namespace internal {
 
 
@@ -227,7 +227,7 @@ static TensorUInt128<uint64_t, uint64_t> operator / (const TensorUInt128<HL, LL>
 
 
 }  // namespace internal
-}  // namespace Eigen
+}  // namespace StormEigen
 
 
 #endif  // EIGEN_CXX11_TENSOR_TENSOR_UINT128_H

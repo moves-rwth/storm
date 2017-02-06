@@ -12,7 +12,7 @@
 #ifndef EIGEN_LMPAR_H
 #define EIGEN_LMPAR_H
 
-namespace Eigen {
+namespace StormEigen {
 
 namespace internal {
   
@@ -155,6 +155,6 @@ namespace internal {
   }
 } // end namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_LMPAR_H

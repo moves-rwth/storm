@@ -11,6 +11,10 @@ namespace storm {
             // Intentionally left empty.
         }
         
+        std::unique_ptr<Variable> UnboundedIntegerVariable::clone() const {
+            return std::make_unique<UnboundedIntegerVariable>(*this);
+        }
+        
         bool UnboundedIntegerVariable::isUnboundedIntegerVariable() const {
             return true;
         }

@@ -213,6 +213,7 @@ public:
     BDD BiasedOverApprox(const BDD& bias, int numVars, int threshold = 0, 
                          double quality1 = 1.0, double quality0 = 1.0) const;
     BDD ExistAbstract(const BDD& cube, unsigned int limit = 0) const;
+    BDD ExistAbstractRepresentative(const BDD& cube) const;
     BDD XorExistAbstract(const BDD& g, const BDD& cube) const;
     BDD UnivAbstract(const BDD& cube) const;
     BDD BooleanDiff(int x) const;
@@ -333,7 +334,10 @@ public:
     ADD UnivAbstract(const ADD& cube) const;
     ADD OrAbstract(const ADD& cube) const;
     ADD MinAbstract(const ADD& cube) const;
+    ADD MinAbstractExcept0(const ADD& cube) const;
     ADD MaxAbstract(const ADD& cube) const;
+    BDD MinAbstractRepresentative(const ADD& cube) const;
+    BDD MaxAbstractRepresentative(const ADD& cube) const;
     ADD Plus(const ADD& g) const;
     ADD Times(const ADD& g) const;
     ADD Threshold(const ADD& g) const;
@@ -373,6 +377,12 @@ public:
     ADD LessThanOrEqual(const ADD& g) const;
     ADD GreaterThan(const ADD& g) const;
     ADD GreaterThanOrEqual(const ADD& g) const;
+    BDD EqualsBdd(const ADD& g) const;
+    BDD NotEqualsBdd(const ADD& g) const;
+    BDD LessThanBdd(const ADD& g) const;
+    BDD LessThanOrEqualBdd(const ADD& g) const;
+    BDD GreaterThanBdd(const ADD& g) const;
+    BDD GreaterThanOrEqualBdd(const ADD& g) const;
     BDD BddThreshold(CUDD_VALUE_TYPE value) const;
     BDD BddStrictThreshold(CUDD_VALUE_TYPE value) const;
     BDD BddInterval(CUDD_VALUE_TYPE lower, CUDD_VALUE_TYPE upper) const;

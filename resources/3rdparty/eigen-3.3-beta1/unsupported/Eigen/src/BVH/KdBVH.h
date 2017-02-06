@@ -10,7 +10,7 @@
 #ifndef KDBVH_H_INCLUDED
 #define KDBVH_H_INCLUDED
 
-namespace Eigen { 
+namespace StormEigen { 
 
 namespace internal {
 
@@ -217,6 +217,6 @@ private:
   ObjectList objects;
 };
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif //KDBVH_H_INCLUDED

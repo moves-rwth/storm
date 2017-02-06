@@ -10,7 +10,7 @@
 #ifndef EIGEN_CXX11_TENSOR_TENSOR_PADDING_H
 #define EIGEN_CXX11_TENSOR_TENSOR_PADDING_H
 
-namespace Eigen {
+namespace StormEigen {
 
 /** \class TensorPadding
   * \ingroup CXX11_Tensor_Module
@@ -35,7 +35,7 @@ struct traits<TensorPaddingOp<PaddingDimensions, XprType> > : public traits<XprT
 };
 
 template<typename PaddingDimensions, typename XprType>
-struct eval<TensorPaddingOp<PaddingDimensions, XprType>, Eigen::Dense>
+struct eval<TensorPaddingOp<PaddingDimensions, XprType>, StormEigen::Dense>
 {
   typedef const TensorPaddingOp<PaddingDimensions, XprType>& type;
 };
@@ -54,14 +54,14 @@ template<typename PaddingDimensions, typename XprType>
 class TensorPaddingOp : public TensorBase<TensorPaddingOp<PaddingDimensions, XprType>, ReadOnlyAccessors>
 {
   public:
-  typedef typename Eigen::internal::traits<TensorPaddingOp>::Scalar Scalar;
-  typedef typename Eigen::internal::traits<TensorPaddingOp>::Packet Packet;
-  typedef typename Eigen::NumTraits<Scalar>::Real RealScalar;
+  typedef typename StormEigen::internal::traits<TensorPaddingOp>::Scalar Scalar;
+  typedef typename StormEigen::internal::traits<TensorPaddingOp>::Packet Packet;
+  typedef typename StormEigen::NumTraits<Scalar>::Real RealScalar;
   typedef typename XprType::CoeffReturnType CoeffReturnType;
   typedef typename XprType::PacketReturnType PacketReturnType;
-  typedef typename Eigen::internal::nested<TensorPaddingOp>::type Nested;
-  typedef typename Eigen::internal::traits<TensorPaddingOp>::StorageKind StorageKind;
-  typedef typename Eigen::internal::traits<TensorPaddingOp>::Index Index;
+  typedef typename StormEigen::internal::nested<TensorPaddingOp>::type Nested;
+  typedef typename StormEigen::internal::traits<TensorPaddingOp>::StorageKind StorageKind;
+  typedef typename StormEigen::internal::traits<TensorPaddingOp>::Index Index;
 
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TensorPaddingOp(const XprType& expr, const PaddingDimensions& padding_dims)
       : m_xpr(expr), m_padding_dims(padding_dims) {}
@@ -365,6 +365,6 @@ struct TensorEvaluator<const TensorPaddingOp<PaddingDimensions, ArgType>, Device
 
 
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_CXX11_TENSOR_TENSOR_PADDING_H

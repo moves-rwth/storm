@@ -1,9 +1,9 @@
 #include "GreatSpnEditorProjectParser.h"
-#ifdef USE_XERCES
+#ifdef STORM_HAVE_XERCES
 
 #include <iostream>
 
-#include "storm/adapters/XercesAdapter.h"
+#include "storm-gspn/adapters/XercesAdapter.h"
 
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/exceptions/WrongFormatException.h"
@@ -13,8 +13,8 @@ namespace storm {
     namespace parser {
         storm::gspn::GSPN* GreatSpnEditorProjectParser::parse(xercesc::DOMElement const*  elementRoot) {
             if (storm::adapters::XMLtoString(elementRoot->getTagName()) == "project") {
-                GreatSpnEditorProjectParser p;
-                return p.parse(elementRoot);
+                traverseProjectElement(elementRoot);
+                return builder.buildGspn();
             } else {
                 // If the top-level node is not a "pnml" or "" node, then throw an exception.
                 STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Failed to identify the root element.\n");
@@ -311,11 +311,11 @@ namespace storm {
 
 
             if (kind.compare("INPUT") == 0) {
-                builder.addInputArc(head, tail, mult);
+                builder.addInputArc(tail, head, mult);
             } else if (kind.compare("INHIBITOR") == 0) {
-                builder.addInhibitionArc(head, tail, mult);
+                builder.addInhibitionArc(tail, head, mult);
             } else if (kind.compare("OUTPUT") == 0) {
-                builder.addOutputArc(head, tail, mult);
+                builder.addOutputArc(tail, head, mult);
             } else {
                 // TODO error!
             }

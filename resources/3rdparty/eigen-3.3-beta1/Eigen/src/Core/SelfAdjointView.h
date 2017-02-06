@@ -10,7 +10,7 @@
 #ifndef EIGEN_SELFADJOINTMATRIX_H
 #define EIGEN_SELFADJOINTMATRIX_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 /** \class SelfAdjointView
   * \ingroup Core_Module
@@ -269,6 +269,6 @@ MatrixBase<Derived>::selfadjointView()
   return typename SelfAdjointViewReturnType<UpLo>::Type(derived());
 }
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_SELFADJOINTMATRIX_H

@@ -12,6 +12,9 @@
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 
+#include "storm-config.h"
+#include "storm/adapters/CarlAdapter.h"
+
 namespace storm {
     namespace dd {
         template<DdType LibraryType, typename ValueType>
@@ -90,7 +93,6 @@ namespace storm {
         template<DdType LibraryType, typename ValueType>
         Bdd<LibraryType> Add<LibraryType, ValueType>::notEquals(Add<LibraryType, ValueType> const& other) const {
             return Bdd<LibraryType>(this->getDdManager(), internalAdd.notEquals(other), Dd<LibraryType>::joinMetaVariables(*this, other));
-
         }
         
         template<DdType LibraryType, typename ValueType>
@@ -101,7 +103,6 @@ namespace storm {
         template<DdType LibraryType, typename ValueType>
         Bdd<LibraryType> Add<LibraryType, ValueType>::lessOrEqual(Add<LibraryType, ValueType> const& other) const {
             return Bdd<LibraryType>(this->getDdManager(), internalAdd.lessOrEqual(other), Dd<LibraryType>::joinMetaVariables(*this, other));
-
         }
         
         template<DdType LibraryType, typename ValueType>
@@ -122,7 +123,6 @@ namespace storm {
         template<DdType LibraryType, typename ValueType>
         Add<LibraryType, ValueType> Add<LibraryType, ValueType>::mod(Add<LibraryType, ValueType> const& other) const {
             return Add<LibraryType, ValueType>(this->getDdManager(), internalAdd.mod(other), Dd<LibraryType>::joinMetaVariables(*this, other));
-
         }
         
         template<DdType LibraryType, typename ValueType>
@@ -161,11 +161,29 @@ namespace storm {
             Bdd<LibraryType> cube = Bdd<LibraryType>::getCube(this->getDdManager(), metaVariables);
             return Add<LibraryType, ValueType>(this->getDdManager(), internalAdd.minAbstract(cube), Dd<LibraryType>::subtractMetaVariables(*this, cube));
         }
+		
+		template<DdType LibraryType, typename ValueType>
+        Bdd<LibraryType> Add<LibraryType, ValueType>::minAbstractRepresentative(std::set<storm::expressions::Variable> const& metaVariables) const {
+            Bdd<LibraryType> cube = Bdd<LibraryType>::getCube(this->getDdManager(), metaVariables);
+            return Bdd<LibraryType>(this->getDdManager(), internalAdd.minAbstractRepresentative(cube), this->getContainedMetaVariables());
+        }
+        
+        template<DdType LibraryType, typename ValueType>
+        Add<LibraryType, ValueType> Add<LibraryType, ValueType>::minAbstractExcept0(std::set<storm::expressions::Variable> const& metaVariables) const {
+            Bdd<LibraryType> cube = Bdd<LibraryType>::getCube(this->getDdManager(), metaVariables);
+            return Add<LibraryType, ValueType>(this->getDdManager(), internalAdd.minAbstractExcept0(cube), Dd<LibraryType>::subtractMetaVariables(*this, cube));
+        }
         
         template<DdType LibraryType, typename ValueType>
         Add<LibraryType, ValueType> Add<LibraryType, ValueType>::maxAbstract(std::set<storm::expressions::Variable> const& metaVariables) const {
             Bdd<LibraryType> cube = Bdd<LibraryType>::getCube(this->getDdManager(), metaVariables);
             return Add<LibraryType, ValueType>(this->getDdManager(), internalAdd.maxAbstract(cube), Dd<LibraryType>::subtractMetaVariables(*this, cube));
+        }
+		
+		template<DdType LibraryType, typename ValueType>
+        Bdd<LibraryType> Add<LibraryType, ValueType>::maxAbstractRepresentative(std::set<storm::expressions::Variable> const& metaVariables) const {
+            Bdd<LibraryType> cube = Bdd<LibraryType>::getCube(this->getDdManager(), metaVariables);
+            return Bdd<LibraryType>(this->getDdManager(), internalAdd.maxAbstractRepresentative(cube), this->getContainedMetaVariables());
         }
 
         template<DdType LibraryType, typename ValueType>
@@ -353,6 +371,11 @@ namespace storm {
         }
         
         template<DdType LibraryType, typename ValueType>
+        uint_fast64_t Add<LibraryType, ValueType>::getLevel() const {
+            return internalAdd.getLevel();
+        }
+        
+        template<DdType LibraryType, typename ValueType>
         std::vector<ValueType> Add<LibraryType, ValueType>::toVector() const {
             return this->toVector(this->createOdd());
         }
@@ -430,12 +453,9 @@ namespace storm {
                 ++i;
             }
             
-            // Use the toMatrix function to compute the number of elements in each row. Using the flag, we prevent
-            // it from actually generating the entries in the entry vector.
-            internalAdd.toMatrixComponents(trivialRowGroupIndices, rowIndications, columnsAndValues, rowOdd, columnOdd, ddRowVariableIndices, ddColumnVariableIndices, false);
-            
-            // TODO: counting might be faster by just summing over the primed variables and then using the ODD to convert
-            // the resulting (DD) vector to an explicit vector.
+            // Count the number of elements in the rows.
+            rowIndications = this->notZero().template toAdd<uint_fast64_t>().sumAbstract(columnMetaVariables).toVector(rowOdd);
+            rowIndications.emplace_back();
             
             // Now that we computed the number of entries in each row, compute the corresponding offsets in the entry vector.
             uint_fast64_t tmp = 0;
@@ -530,7 +550,11 @@ namespace storm {
             
             // Next, we split the matrix into one for each group. Note that this only works if the group variables are
             // at the very top.
-            std::vector<InternalAdd<LibraryType, ValueType>> groups = internalAdd.splitIntoGroups(ddGroupVariableIndices);
+            std::vector<InternalAdd<LibraryType, ValueType>> internalAddGroups = internalAdd.splitIntoGroups(ddGroupVariableIndices);
+            std::vector<Add<LibraryType, ValueType>> groups;
+            for (auto const& internalAdd : internalAddGroups) {
+                groups.push_back(Add<LibraryType, ValueType>(this->getDdManager(), internalAdd, rowAndColumnMetaVariables));
+            }
             
             // Create the actual storage for the non-zero entries.
             std::vector<storm::storage::MatrixEntry<uint_fast64_t, ValueType>> columnsAndValues(this->getNonZeroCount());
@@ -541,17 +565,20 @@ namespace storm {
             std::vector<InternalAdd<LibraryType, uint_fast64_t>> statesWithGroupEnabled(groups.size());
             InternalAdd<LibraryType, uint_fast64_t> stateToRowGroupCount = this->getDdManager().template getAddZero<uint_fast64_t>();
             for (uint_fast64_t i = 0; i < groups.size(); ++i) {
-                auto const& dd = groups[i];
+                auto const& group = groups[i];
+                auto groupNotZero = group.notZero();
                 
-                dd.toMatrixComponents(rowGroupIndices, rowIndications, columnsAndValues, rowOdd, columnOdd, ddRowVariableIndices, ddColumnVariableIndices, false);
+                std::vector<uint64_t> tmpRowIndications = groupNotZero.template toAdd<uint_fast64_t>().sumAbstract(columnMetaVariables).toVector(rowOdd);
+                for (uint64_t offset = 0; offset < tmpRowIndications.size(); ++offset) {
+                    rowIndications[rowGroupIndices[offset]] += tmpRowIndications[offset];
+                }
                 
-                statesWithGroupEnabled[i] = dd.notZero().existsAbstract(columnVariableCube).template toAdd<uint_fast64_t>();
-                stateToRowGroupCount += statesWithGroupEnabled[i];
+                statesWithGroupEnabled[i] = groupNotZero.existsAbstract(columnMetaVariables).template toAdd<uint_fast64_t>();
                 statesWithGroupEnabled[i].composeWithExplicitVector(rowOdd, ddRowVariableIndices, rowGroupIndices, std::plus<uint_fast64_t>());
             }
             
             // Since we modified the rowGroupIndices, we need to restore the correct values.
-            stateToRowGroupCount.composeWithExplicitVector(rowOdd, ddRowVariableIndices, rowGroupIndices, std::minus<uint_fast64_t>());
+            stateToNumberOfChoices.internalAdd.composeWithExplicitVector(rowOdd, ddRowVariableIndices, rowGroupIndices, std::minus<uint_fast64_t>());
             
             // Now that we computed the number of entries in each row, compute the corresponding offsets in the entry vector.
             tmp = 0;
@@ -565,15 +592,15 @@ namespace storm {
             
             // Now actually fill the entry vector.
             for (uint_fast64_t i = 0; i < groups.size(); ++i) {
-                auto const& dd = groups[i];
+                auto const& group = groups[i];
                 
-                dd.toMatrixComponents(rowGroupIndices, rowIndications, columnsAndValues, rowOdd, columnOdd, ddRowVariableIndices, ddColumnVariableIndices, true);
+                group.internalAdd.toMatrixComponents(rowGroupIndices, rowIndications, columnsAndValues, rowOdd, columnOdd, ddRowVariableIndices, ddColumnVariableIndices, true);
                 
                 statesWithGroupEnabled[i].composeWithExplicitVector(rowOdd, ddRowVariableIndices, rowGroupIndices, std::plus<uint_fast64_t>());
             }
             
             // Since we modified the rowGroupIndices, we need to restore the correct values.
-            stateToRowGroupCount.composeWithExplicitVector(rowOdd, ddRowVariableIndices, rowGroupIndices, std::minus<uint_fast64_t>());
+            stateToNumberOfChoices.internalAdd.composeWithExplicitVector(rowOdd, ddRowVariableIndices, rowGroupIndices, std::minus<uint_fast64_t>());
             
             // Since the last call to toMatrixRec modified the rowIndications, we need to restore the correct values.
             for (uint_fast64_t i = rowIndications.size() - 1; i > 0; --i) {
@@ -654,7 +681,11 @@ namespace storm {
             std::vector<ValueType> explicitVector(rowGroupIndices.back());
             
             // Next, we split the matrix into one for each group. Note that this only works if the group variables are at the very top.
-            std::vector<std::pair<InternalAdd<LibraryType, ValueType>, InternalAdd<LibraryType, ValueType>>> groups = internalAdd.splitIntoGroups(vector, ddGroupVariableIndices);
+            std::vector<std::pair<InternalAdd<LibraryType, ValueType>, InternalAdd<LibraryType, ValueType>>> internalAddGroups = internalAdd.splitIntoGroups(vector, ddGroupVariableIndices);
+            std::vector<std::pair<Add<LibraryType, ValueType>, Add<LibraryType, ValueType>>> groups;
+            for (auto const& internalAdd : internalAddGroups) {
+                groups.push_back(std::make_pair(Add<LibraryType, ValueType>(this->getDdManager(), internalAdd.first, rowAndColumnMetaVariables), Add<LibraryType, ValueType>(this->getDdManager(), internalAdd.second, rowMetaVariables)));
+            }
 
             // Create the actual storage for the non-zero entries.
             std::vector<storm::storage::MatrixEntry<uint_fast64_t, ValueType>> columnsAndValues(this->getNonZeroCount());
@@ -665,12 +696,18 @@ namespace storm {
             std::vector<InternalAdd<LibraryType, uint_fast64_t>> statesWithGroupEnabled(groups.size());
             InternalAdd<LibraryType, uint_fast64_t> stateToRowGroupCount = this->getDdManager().template getAddZero<uint_fast64_t>();
             for (uint_fast64_t i = 0; i < groups.size(); ++i) {
-                std::pair<InternalAdd<LibraryType, ValueType>, InternalAdd<LibraryType, ValueType>> const& ddPair = groups[i];
+                std::pair<Add<LibraryType, ValueType>, Add<LibraryType, ValueType>> const& ddPair = groups[i];
+                Bdd<LibraryType> matrixDdNotZero = ddPair.first.notZero();
+                Bdd<LibraryType> vectorDdNotZero = ddPair.second.notZero();
+
+                std::vector<uint64_t> tmpRowIndications = matrixDdNotZero.template toAdd<uint_fast64_t>().sumAbstract(columnMetaVariables).toVector(rowOdd);
+                for (uint64_t offset = 0; offset < tmpRowIndications.size(); ++offset) {
+                    rowIndications[rowGroupIndices[offset]] += tmpRowIndications[offset];
+                }
+
+                ddPair.second.internalAdd.composeWithExplicitVector(rowOdd, ddRowVariableIndices, rowGroupIndices, explicitVector, std::plus<ValueType>());
                 
-                ddPair.first.toMatrixComponents(rowGroupIndices, rowIndications, columnsAndValues, rowOdd, columnOdd, ddRowVariableIndices, ddColumnVariableIndices, false);
-                ddPair.second.composeWithExplicitVector(rowOdd, ddRowVariableIndices, rowGroupIndices, explicitVector, std::plus<ValueType>());
-                
-                statesWithGroupEnabled[i] = (ddPair.first.notZero().existsAbstract(columnVariableCube) || ddPair.second.notZero()).template toAdd<uint_fast64_t>();
+                statesWithGroupEnabled[i] = (matrixDdNotZero.existsAbstract(columnMetaVariables) || vectorDdNotZero).template toAdd<uint_fast64_t>();
                 stateToRowGroupCount += statesWithGroupEnabled[i];
                 statesWithGroupEnabled[i].composeWithExplicitVector(rowOdd, ddRowVariableIndices, rowGroupIndices, std::plus<uint_fast64_t>());
             }
@@ -692,8 +729,7 @@ namespace storm {
             for (uint_fast64_t i = 0; i < groups.size(); ++i) {
                 auto const& dd = groups[i].first;
                 
-                dd.toMatrixComponents(rowGroupIndices, rowIndications, columnsAndValues, rowOdd, columnOdd, ddRowVariableIndices, ddColumnVariableIndices, true);
-                
+                dd.internalAdd.toMatrixComponents(rowGroupIndices, rowIndications, columnsAndValues, rowOdd, columnOdd, ddRowVariableIndices, ddColumnVariableIndices, true);
                 statesWithGroupEnabled[i].composeWithExplicitVector(rowOdd, ddRowVariableIndices, rowGroupIndices, std::plus<uint_fast64_t>());
             }
             
@@ -726,7 +762,7 @@ namespace storm {
         }
         
         template<DdType LibraryType, typename ValueType>
-        AddIterator<LibraryType, ValueType> Add<LibraryType, ValueType>::end(bool enumerateDontCareMetaVariables) const {
+        AddIterator<LibraryType, ValueType> Add<LibraryType, ValueType>::end() const {
             return internalAdd.end(this->getDdManager());
         }
         
@@ -761,10 +797,60 @@ namespace storm {
             return internalAdd;
         }
         
+#ifdef STORM_HAVE_CARL
+		template<DdType LibraryType, typename ValueType>
+        Add<LibraryType, ValueType> Add<LibraryType, ValueType>::replaceLeaves(std::map<storm::RationalFunctionVariable, std::pair<storm::expressions::Variable, std::pair<storm::RationalNumber, storm::RationalNumber>>> const&) const {
+			STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Not yet implemented: replaceLeaves");
+		}
+
+		template<>
+		Add<storm::dd::DdType::Sylvan, storm::RationalFunction> Add<storm::dd::DdType::Sylvan, storm::RationalFunction>::replaceLeaves(std::map<storm::RationalFunctionVariable, std::pair<storm::expressions::Variable, std::pair<storm::RationalNumber, storm::RationalNumber>>> const& replacementMap) const {
+			std::map<uint32_t, std::pair<storm::RationalFunctionVariable, std::pair<storm::RationalNumber, storm::RationalNumber>>> internalReplacementMap;
+			std::set<storm::expressions::Variable> containedMetaVariables = this->getContainedMetaVariables();
+			
+			uint32_t highestIndex = 0;
+			for (storm::expressions::Variable const& var: containedMetaVariables) {
+				uint32_t index = this->getDdManager().getMetaVariable(var).getDdVariables().at(0).getIndex();
+				if (index > highestIndex) {
+					highestIndex = index;
+				}
+			}
+			
+			std::map<storm::RationalFunctionVariable, std::pair<storm::expressions::Variable, std::pair<storm::RationalNumber, storm::RationalNumber>>>::const_iterator it = replacementMap.cbegin();
+			std::map<storm::RationalFunctionVariable, std::pair<storm::expressions::Variable, std::pair<storm::RationalNumber, storm::RationalNumber>>>::const_iterator end = replacementMap.cend();
+			
+			for (; it != end; ++it) {
+				DdMetaVariable<storm::dd::DdType::Sylvan> const& metaVariable = this->getDdManager().getMetaVariable(it->second.first);
+				STORM_LOG_THROW(metaVariable.getNumberOfDdVariables() == 1, storm::exceptions::InvalidArgumentException, "Cannot use MetaVariable with more then one internal DD variable.");
+				
+				auto const& ddVariable = metaVariable.getDdVariables().at(0);
+				STORM_LOG_ASSERT(ddVariable.getIndex() > highestIndex, "Can not replace leaves with DD variable that would not be at the bottom!");
+				
+				internalReplacementMap.insert(std::make_pair(ddVariable.getIndex(), std::make_pair(it->first, it->second.second)));
+				containedMetaVariables.insert(it->second.first);
+			}
+			
+			return Add<storm::dd::DdType::Sylvan, storm::RationalFunction>(this->getDdManager(), internalAdd.replaceLeaves(internalReplacementMap), containedMetaVariables);
+		}
+		
+		template<DdType LibraryType, typename ValueType>
+		Add<LibraryType, double> Add<LibraryType, ValueType>::toDouble() const {
+			STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Not yet implemented: replaceLeaves");
+		}
+
+		template<>
+		Add<storm::dd::DdType::Sylvan, double> Add<storm::dd::DdType::Sylvan, storm::RationalFunction>::toDouble() const {
+			return Add<storm::dd::DdType::Sylvan, double>(this->getDdManager(), internalAdd.toDouble(), this->getContainedMetaVariables());
+		}
+#endif
+		
         template class Add<storm::dd::DdType::CUDD, double>;
         template class Add<storm::dd::DdType::CUDD, uint_fast64_t>;
 
         template class Add<storm::dd::DdType::Sylvan, double>;
         template class Add<storm::dd::DdType::Sylvan, uint_fast64_t>;
+#ifdef STORM_HAVE_CARL
+		template class Add<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+#endif
     }
 }

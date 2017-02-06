@@ -90,14 +90,14 @@ template<typename MatrixType> void triangular_square(const MatrixType& m)
 
   // check M * inv(L) using in place API
   m4 = m3;
-  m1.transpose().template triangularView<Eigen::Upper>().solveInPlace(trm4);
-  VERIFY_IS_APPROX(m4 * m1.template triangularView<Eigen::Lower>(), m3);
+  m1.transpose().template triangularView<StormEigen::Upper>().solveInPlace(trm4);
+  VERIFY_IS_APPROX(m4 * m1.template triangularView<StormEigen::Lower>(), m3);
 
   // check M * inv(U) using in place API
   m3 = m1.template triangularView<Upper>();
   m4 = m3;
-  m3.transpose().template triangularView<Eigen::Lower>().solveInPlace(trm4);
-  VERIFY_IS_APPROX(m4 * m1.template triangularView<Eigen::Upper>(), m3);
+  m3.transpose().template triangularView<StormEigen::Lower>().solveInPlace(trm4);
+  VERIFY_IS_APPROX(m4 * m1.template triangularView<StormEigen::Upper>(), m3);
 
   // check solve with unit diagonal
   m3 = m1.template triangularView<UnitUpper>();

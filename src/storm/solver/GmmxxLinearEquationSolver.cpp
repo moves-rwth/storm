@@ -13,6 +13,7 @@
 #include "storm/solver/NativeLinearEquationSolver.h"
 
 #include "storm/utility/gmm.h"
+#include "storm/utility/vector.h"
 
 namespace storm {
     namespace solver {
@@ -138,7 +139,7 @@ namespace storm {
         bool GmmxxLinearEquationSolver<ValueType>::solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             auto method = this->getSettings().getSolutionMethod();
             auto preconditioner = this->getSettings().getPreconditioner();
-            STORM_LOG_INFO("Using method '" << method << "' with preconditioner '" << preconditioner << "' (max. " << this->getSettings().getMaximalNumberOfIterations() << " iterations).");
+            STORM_LOG_DEBUG("Using method '" << method << "' with preconditioner '" << preconditioner << "' (max. " << this->getSettings().getMaximalNumberOfIterations() << " iterations).");
             if (method == GmmxxLinearEquationSolverSettings<ValueType>::SolutionMethod::Jacobi && preconditioner != GmmxxLinearEquationSolverSettings<ValueType>::Preconditioner::None) {
                 STORM_LOG_WARN("Jacobi method currently does not support preconditioners. The requested preconditioner will be ignored.");
             }
@@ -187,13 +188,16 @@ namespace storm {
                     }
                 }
                 
-                if(!this->isCachingEnabled()) {
+                if (!this->isCachingEnabled()) {
                     clearCache();
                 }
                 
+                // Make sure that all results conform to the bounds.
+                storm::utility::vector::clip(x, this->lowerBound, this->upperBound);
+                
                 // Check if the solver converged and issue a warning otherwise.
                 if (iter.converged()) {
-                    STORM_LOG_INFO("Iterative solver converged after " << iter.get_iteration() << " iterations.");
+                    STORM_LOG_DEBUG("Iterative solver converged after " << iter.get_iteration() << " iterations.");
                     return true;
                 } else {
                     STORM_LOG_WARN("Iterative solver did not converge.");
@@ -202,9 +206,12 @@ namespace storm {
             } else if (method == GmmxxLinearEquationSolverSettings<ValueType>::SolutionMethod::Jacobi) {
                 uint_fast64_t iterations = solveLinearEquationSystemWithJacobi(x, b);
                 
+                // Make sure that all results conform to the bounds.
+                storm::utility::vector::clip(x, this->lowerBound, this->upperBound);
+                
                 // Check if the solver converged and issue a warning otherwise.
                 if (iterations < this->getSettings().getMaximalNumberOfIterations()) {
-                    STORM_LOG_INFO("Iterative solver converged after " << iterations << " iterations.");
+                    STORM_LOG_DEBUG("Iterative solver converged after " << iterations << " iterations.");
                     return true;
                 } else {
                     STORM_LOG_WARN("Iterative solver did not converge.");

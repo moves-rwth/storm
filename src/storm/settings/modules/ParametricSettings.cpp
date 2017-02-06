@@ -5,6 +5,8 @@
 #include "storm/settings/ArgumentBuilder.h"
 #include "storm/settings/Argument.h"
 
+#include "storm/utility/macros.h"
+#include "storm/exceptions/IllegalArgumentValueException.h"
 
 namespace storm {
     namespace settings {
@@ -23,7 +25,7 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("path", "the location.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportResultDestinationPathOptionName, true, "A path to a file where the smt2 encoding should be saved.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("path", "the location.").build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, derivativesOptionName, false, "Sets whether to generate the derivatives of the resulting rational function.").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, derivativesOptionName, true, "Sets whether to generate the derivatives of the resulting rational function.").build());
             }
             
             bool ParametricSettings::exportResultToFile() const {

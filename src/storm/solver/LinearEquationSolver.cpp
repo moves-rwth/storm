@@ -75,6 +75,22 @@ namespace storm {
         }
         
         template<typename ValueType>
+        void LinearEquationSolver<ValueType>::setLowerBound(ValueType const& value) {
+            lowerBound = value;
+        }
+
+        template<typename ValueType>
+        void LinearEquationSolver<ValueType>::setUpperBound(ValueType const& value) {
+            upperBound = value;
+        }
+        
+        template<typename ValueType>
+        void LinearEquationSolver<ValueType>::setBounds(ValueType const& lower, ValueType const& upper) {
+            setLowerBound(lower);
+            setUpperBound(upper);
+        }
+        
+        template<typename ValueType>
         std::unique_ptr<LinearEquationSolver<ValueType>> LinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType>&& matrix) const {
             return create(matrix);
         }

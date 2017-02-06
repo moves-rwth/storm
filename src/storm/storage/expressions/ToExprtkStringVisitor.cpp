@@ -166,7 +166,7 @@ namespace storm {
             return boost::any();
         }
         
-        boost::any ToExprtkStringVisitor::visit(VariableExpression const& expression, boost::any const& data) {
+        boost::any ToExprtkStringVisitor::visit(VariableExpression const& expression, boost::any const&) {
             stream << expression.getVariableName();
             return boost::any();
         }
@@ -202,18 +202,18 @@ namespace storm {
             return boost::any();
         }
         
-        boost::any ToExprtkStringVisitor::visit(BooleanLiteralExpression const& expression, boost::any const& data) {
+        boost::any ToExprtkStringVisitor::visit(BooleanLiteralExpression const& expression, boost::any const&) {
             stream << expression.getValue();
             return boost::any();
         }
         
-        boost::any ToExprtkStringVisitor::visit(IntegerLiteralExpression const& expression, boost::any const& data) {
+        boost::any ToExprtkStringVisitor::visit(IntegerLiteralExpression const& expression, boost::any const&) {
             stream << expression.getValue();
             return boost::any();
         }
         
-        boost::any ToExprtkStringVisitor::visit(RationalLiteralExpression const& expression, boost::any const& data) {
-            stream << expression.getValue();
+        boost::any ToExprtkStringVisitor::visit(RationalLiteralExpression const& expression, boost::any const&) {
+            stream << "(" << expression.getValue() << ")";
             return boost::any();
         }
     }

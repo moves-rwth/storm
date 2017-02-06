@@ -193,7 +193,7 @@ int main(int argc, char *argv[])
 
 EIGEN_DONT_INLINE Scalar* setinnerrand_eigen(const Coordinates& coords, const Values& vals)
 {
-  using namespace Eigen;
+  using namespace StormEigen;
   SparseMatrix<Scalar> mat(SIZE,SIZE);
   //mat.startFill(2000000/*coords.size()*/);
   for (int i=0; i<coords.size(); ++i)
@@ -207,7 +207,7 @@ EIGEN_DONT_INLINE Scalar* setinnerrand_eigen(const Coordinates& coords, const Va
 
 EIGEN_DONT_INLINE Scalar* setrand_eigen_dynamic(const Coordinates& coords, const Values& vals)
 {
-  using namespace Eigen;
+  using namespace StormEigen;
   DynamicSparseMatrix<Scalar> mat(SIZE,SIZE);
   mat.reserve(coords.size()/10);
   for (int i=0; i<coords.size(); ++i)
@@ -221,7 +221,7 @@ EIGEN_DONT_INLINE Scalar* setrand_eigen_dynamic(const Coordinates& coords, const
 
 EIGEN_DONT_INLINE Scalar* setrand_eigen_sumeq(const Coordinates& coords, const Values& vals)
 {
-  using namespace Eigen;
+  using namespace StormEigen;
   int n = coords.size()/KK;
   DynamicSparseMatrix<Scalar> mat(SIZE,SIZE);
   for (int j=0; j<KK; ++j)
@@ -240,7 +240,7 @@ EIGEN_DONT_INLINE Scalar* setrand_eigen_sumeq(const Coordinates& coords, const V
 
 EIGEN_DONT_INLINE Scalar* setrand_eigen_compact(const Coordinates& coords, const Values& vals)
 {
-  using namespace Eigen;
+  using namespace StormEigen;
   DynamicSparseMatrix<Scalar> setter(SIZE,SIZE);
   setter.reserve(coords.size()/10);
   for (int i=0; i<coords.size(); ++i)
@@ -254,7 +254,7 @@ EIGEN_DONT_INLINE Scalar* setrand_eigen_compact(const Coordinates& coords, const
 
 EIGEN_DONT_INLINE Scalar* setrand_eigen_gnu_hash(const Coordinates& coords, const Values& vals)
 {
-  using namespace Eigen;
+  using namespace StormEigen;
   SparseMatrix<Scalar> mat(SIZE,SIZE);
   {
     RandomSetter<SparseMatrix<Scalar>, StdMapTraits > setter(mat);
@@ -270,7 +270,7 @@ EIGEN_DONT_INLINE Scalar* setrand_eigen_gnu_hash(const Coordinates& coords, cons
 #ifndef NOGOOGLE
 EIGEN_DONT_INLINE Scalar* setrand_eigen_google_dense(const Coordinates& coords, const Values& vals)
 {
-  using namespace Eigen;
+  using namespace StormEigen;
   SparseMatrix<Scalar> mat(SIZE,SIZE);
   {
     RandomSetter<SparseMatrix<Scalar>, GoogleDenseHashMapTraits> setter(mat);
@@ -283,7 +283,7 @@ EIGEN_DONT_INLINE Scalar* setrand_eigen_google_dense(const Coordinates& coords, 
 
 EIGEN_DONT_INLINE Scalar* setrand_eigen_google_sparse(const Coordinates& coords, const Values& vals)
 {
-  using namespace Eigen;
+  using namespace StormEigen;
   SparseMatrix<Scalar> mat(SIZE,SIZE);
   {
     RandomSetter<SparseMatrix<Scalar>, GoogleSparseHashMapTraits> setter(mat);
@@ -404,7 +404,7 @@ void csr_sum_duplicates(const I n_row,
 
 EIGEN_DONT_INLINE Scalar* setrand_scipy(const Coordinates& coords, const Values& vals)
 {
-  using namespace Eigen;
+  using namespace StormEigen;
   SparseMatrix<Scalar> mat(SIZE,SIZE);
   mat.resizeNonZeros(coords.size());
 //   std::cerr << "setrand_scipy...\n";

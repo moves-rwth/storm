@@ -37,6 +37,16 @@ namespace storm {
             return this->getAssignments()[variableIndexPair->second];
         }
         
+        std::map<storm::expressions::Variable, storm::expressions::Expression> Update::getAsVariableToExpressionMap() const {
+            std::map<storm::expressions::Variable, storm::expressions::Expression> result;
+            
+            for (auto const& assignment : this->getAssignments()) {
+                result.emplace(assignment.getVariable(), assignment.getExpression());
+            }
+            
+            return result;
+        }
+        
         uint_fast64_t Update::getGlobalIndex() const {
             return this->globalIndex;
         }

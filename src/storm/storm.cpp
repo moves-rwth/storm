@@ -4,9 +4,10 @@
 #include "storm/utility/macros.h"
 #include "storm/cli/cli.h"
 #include "storm/utility/initialize.h"
+#include "storm/utility/Stopwatch.h"
 
 #include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/GeneralSettings.h"
+#include "storm/settings/modules/ResourceSettings.h"
 
 /*!
  * Main entry point of the executable storm.
@@ -14,7 +15,7 @@
 int main(const int argc, const char** argv) {
 
     try {
-        auto start = std::chrono::high_resolution_clock::now();
+        storm::utility::Stopwatch totalTimer(true);
         storm::utility::setUp();
         storm::cli::printHeader("Storm", argc, argv);
         storm::settings::initializeAll("Storm", "storm");
@@ -28,15 +29,17 @@ int main(const int argc, const char** argv) {
         
         // All operations have now been performed, so we clean up everything and terminate.
         storm::utility::cleanUp();
-        auto end = std::chrono::high_resolution_clock::now();
+        totalTimer.stop();
 
-        if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isPrintTimeAndMemorySet()) {
-            storm::cli::showTimeAndMemoryStatistics(std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count());
+        if (storm::settings::getModule<storm::settings::modules::ResourceSettings>().isPrintTimeAndMemorySet()) {
+            storm::cli::showTimeAndMemoryStatistics(totalTimer.getTimeInMilliseconds());
         }
         return 0;
     } catch (storm::exceptions::BaseException const& exception) {
         STORM_LOG_ERROR("An exception caused Storm to terminate. The message of the exception is: " << exception.what());
+        return 1;
     } catch (std::exception const& exception) {
         STORM_LOG_ERROR("An unexpected exception occurred and caused Storm to terminate. The message of this exception is: " << exception.what());
+        return 2;
     }
 }

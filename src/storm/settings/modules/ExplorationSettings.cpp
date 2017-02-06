@@ -6,6 +6,9 @@
 #include "storm/settings/Argument.h"
 #include "storm/settings/SettingsManager.h"
 
+#include "storm/utility/macros.h"
+#include "storm/exceptions/IllegalArgumentValueException.h"
+
 namespace storm {
     namespace settings {
         namespace modules {
@@ -20,15 +23,15 @@ namespace storm {
             
             ExplorationSettings::ExplorationSettings() : ModuleSettings(moduleName) {
                 std::vector<std::string> types = { "local", "global" };
-                    this->addOption(storm::settings::OptionBuilder(moduleName, precomputationTypeOptionName, true, "Sets the kind of precomputation used. Available are: { local, global }.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the type to use.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(types)).setDefaultValueString("global").build()).build());
+                    this->addOption(storm::settings::OptionBuilder(moduleName, precomputationTypeOptionName, true, "Sets the kind of precomputation used.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the type to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(types)).setDefaultValueString("global").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, numberOfExplorationStepsUntilPrecomputationOptionName, true, "Sets the number of exploration steps to perform until a precomputation is triggered.").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("count", "The number of exploration steps to perform.").setDefaultValueUnsignedInteger(100000).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, numberOfSampledPathsUntilPrecomputationOptionName, true, "If set, a precomputation is perfomed periodically after the given number of paths has been sampled.").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("count", "The number of paths to sample until a precomputation is triggered.").setDefaultValueUnsignedInteger(100000).build()).build());
                 
                 std::vector<std::string> nextStateHeuristics = { "probdiffs", "prob", "unif" };
-                this->addOption(storm::settings::OptionBuilder(moduleName, nextStateHeuristicOptionName, true, "Sets the next-state heuristic to use. Available are: { probdiffs, prob, unif } where 'prob' samples according to the probabilities in the system, 'probdiffs' takes into account probabilities and the differences between the current bounds and 'unif' samples uniformly.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the heuristic to use.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(nextStateHeuristics)).setDefaultValueString("probdiffs").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, nextStateHeuristicOptionName, true, "Sets the next-state heuristic to use.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the heuristic to use. 'prob' samples according to the probabilities in the system, 'probdiffs' takes into account probabilities and the differences between the current bounds and 'unif' samples uniformly.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(nextStateHeuristics)).setDefaultValueString("probdiffs").build()).build());
                 
-                this->addOption(storm::settings::OptionBuilder(moduleName, precisionOptionName, false, "The internally used precision.").setShortName(precisionOptionShortName)
-                                .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to use.").setDefaultValueDouble(1e-06).addValidationFunctionDouble(storm::settings::ArgumentValidators::doubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, precisionOptionName, false, "The precision to achieve.").setShortName(precisionOptionShortName)
+                                .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The value to use to determine convergence.").setDefaultValueDouble(1e-06).addValidatorDouble(ArgumentValidatorFactory::createDoubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
             }
             
             bool ExplorationSettings::isLocalPrecomputationSet() const {

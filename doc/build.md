@@ -23,9 +23,11 @@ Prerequisites:
 ## Instructions
 
 ### General
- 
-> mkdir build
 
+```bash
+mkdir build
+cd build
+``` 
 
 It is recommended to make an out-of-source build, meaning that the folder in which CMake generates its Cache, Makefiles and output files should not be the Project Root nor its Source Directory.
 A typical build layout is to create a folder "build" in the project root alongside the CMakeLists.txt file, change into this folder and execute "cmake .." as this will leave all source files untouched

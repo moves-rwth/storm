@@ -10,7 +10,7 @@
 #ifndef EIGEN_DETERMINANT_H
 #define EIGEN_DETERMINANT_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 namespace internal {
 
@@ -96,6 +96,6 @@ inline typename internal::traits<Derived>::Scalar MatrixBase<Derived>::determina
   return internal::determinant_impl<typename internal::remove_all<Nested>::type>::run(derived());
 }
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_DETERMINANT_H

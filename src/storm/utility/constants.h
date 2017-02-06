@@ -53,11 +53,17 @@ namespace storm {
         ValueType simplify(ValueType value);
 
         template<typename ValueType>
+        std::pair<ValueType, ValueType> minmax(std::vector<ValueType> const& values);
+
+        template<typename ValueType>
         ValueType minimum(std::vector<ValueType> const& values);
         
         template<typename ValueType>
         ValueType maximum(std::vector<ValueType> const& values);
-        
+
+        template< typename K, typename ValueType>
+        std::pair<ValueType, ValueType> minmax(std::map<K, ValueType> const& values);
+
         template< typename K, typename ValueType>
         ValueType minimum(std::map<K, ValueType> const& values);
         
@@ -79,7 +85,13 @@ namespace storm {
         
         template<typename ValueType>
         ValueType abs(ValueType const& number);
-        
+
+        template<typename ValueType>
+        ValueType floor(ValueType const& number);
+
+        template<typename ValueType>
+        ValueType ceil(ValueType const& number);
+
         template<typename ValueType>
         bool isInteger(ValueType const& number);
         

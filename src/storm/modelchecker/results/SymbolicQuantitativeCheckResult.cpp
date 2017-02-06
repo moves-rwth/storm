@@ -18,6 +18,11 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type, typename ValueType>
+        SymbolicQuantitativeCheckResult<Type, ValueType>::SymbolicQuantitativeCheckResult(storm::dd::Bdd<Type> const& reachableStates, storm::dd::Bdd<Type> const& states, storm::dd::Add<Type, ValueType> const& values) : reachableStates(reachableStates), states(states), values(values) {
+            // Intentionally left empty.
+        }
+        
+        template<storm::dd::DdType Type, typename ValueType>
         std::unique_ptr<CheckResult> SymbolicQuantitativeCheckResult<Type, ValueType>::compareAgainstBound(storm::logic::ComparisonType comparisonType, ValueType const& bound) const {
             storm::dd::Bdd<Type> states;
             if (comparisonType == storm::logic::ComparisonType::Less) {
@@ -54,21 +59,33 @@ namespace storm {
         
         template<storm::dd::DdType Type, typename ValueType>
         std::ostream& SymbolicQuantitativeCheckResult<Type, ValueType>::writeToStream(std::ostream& out) const {
-            out << "[";
-            if (this->values.isZero()) {
-                out << "0";
-            } else {
-                bool first = true;
-                for (auto valuationValuePair : this->values) {
-                    if (!first) {
-                        out << ", ";
-                    } else {
-                        first = false;
+            if (states.getNonZeroCount() == 1) {
+                out << this->values.getMax();
+            } else if (states.getNonZeroCount() < 10) {
+                out << "{";
+                if (this->values.isZero()) {
+                    out << "0";
+                } else {
+                    bool first = true;
+                    for (auto valuationValuePair : this->values) {
+                        if (!first) {
+                            out << ", ";
+                        } else {
+                            first = false;
+                        }
+                        out << valuationValuePair.second;
                     }
-                    out << valuationValuePair.second;
+                    if (states.getNonZeroCount() != this->values.getNonZeroCount()) {
+                        out << ", 0";
+                    }
                 }
+                out << "}";
+            } else {
+                ValueType min = this->getMin();
+                ValueType max = this->getMax();
+                
+                out << "[" << min << ", " << max << "] (range)";
             }
-            out << "]";
             return out;
         }
         

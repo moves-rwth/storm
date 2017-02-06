@@ -3,9 +3,11 @@
 
 #include <set>
 #include <unordered_map>
+#include <boost/optional.hpp>
 
 #include "storm/storage/dd/DdType.h"
 #include "storm/storage/dd/DdMetaVariable.h"
+#include "storm/storage/dd/MetaVariablePosition.h"
 #include "storm/storage/dd/Bdd.h"
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/AddIterator.h"
@@ -108,7 +110,7 @@ namespace storm {
             
             /*!
              * Retrieves the ADD representing the identity of the meta variable, i.e., a function that maps all legal
-             * values of the range of the meta variable to themselves.
+             * values of the range of the meta variable to the values themselves.
              *
              * @param variable The expression variable associated with the meta variable.
              * @return The identity of the meta variable.
@@ -117,20 +119,36 @@ namespace storm {
             Add<LibraryType, ValueType> getIdentity(storm::expressions::Variable const& variable) const;
             
             /*!
+             * Retrieves a BDD that is the cube of the variables representing the given meta variable.
+             *
+             * @param variable The expression variable associated with the meta variable.
+             * @return The cube of the meta variable.
+             */
+            Bdd<LibraryType> getCube(storm::expressions::Variable const& variable) const;
+
+            /*!
+             * Retrieves a BDD that is the cube of the variables representing the given meta variables.
+             *
+             * @param variables The expression variables associated with the meta variables.
+             * @return The cube of the meta variables.
+             */
+            Bdd<LibraryType> getCube(std::set<storm::expressions::Variable> const& variables) const;
+
+            /*!
              * Adds an integer meta variable with the given range.
              *
              * @param variableName The name of the new variable.
              * @param low The lowest value of the range of the variable.
              * @param high The highest value of the range of the variable.
              */
-            std::pair<storm::expressions::Variable, storm::expressions::Variable> addMetaVariable(std::string const& variableName, int_fast64_t low, int_fast64_t high);
+            std::pair<storm::expressions::Variable, storm::expressions::Variable> addMetaVariable(std::string const& variableName, int_fast64_t low, int_fast64_t high, boost::optional<std::pair<MetaVariablePosition, storm::expressions::Variable>> const& position = boost::none);
             
             /*!
              * Adds a boolean meta variable.
              *
              * @param variableName The name of the new variable.
              */
-            std::pair<storm::expressions::Variable, storm::expressions::Variable> addMetaVariable(std::string const& variableName);
+            std::pair<storm::expressions::Variable, storm::expressions::Variable> addMetaVariable(std::string const& variableName, boost::optional<std::pair<MetaVariablePosition, storm::expressions::Variable>> const& position = boost::none);
             
             /*!
              * Retrieves the names of all meta variables that have been added to the manager.
@@ -153,6 +171,22 @@ namespace storm {
              * @return True if the given meta variable name is managed by this manager.
              */
             bool hasMetaVariable(std::string const& variableName) const;
+			
+			/*!
+             * Retrieves the given meta variable by name.
+             *
+             * @param variableName The name of the variable.
+             * @return The meta variable.
+             */
+            storm::expressions::Variable getMetaVariable(std::string const& variableName) const;
+            
+            /*!
+             * Checks whether this manager supports the ordered insertion of variables, i.e. inserting variables at
+             * positions between already existing variables.
+             *
+             * @return True iff the manager supports ordered insertion.
+             */
+            bool supportsOrderedInsertion() const;
             
             /*!
              * Sets whether or not dynamic reordering is allowed for the DDs managed by this manager (if supported).

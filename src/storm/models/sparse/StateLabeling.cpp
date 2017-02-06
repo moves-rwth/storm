@@ -109,14 +109,6 @@ namespace storm {
                 this->labelings[nameToLabelingIndexMap.at(label)] = labeling;
             }
             
-            std::size_t StateLabeling::getSizeInBytes() const {
-                std::size_t result = sizeof(*this);
-                if (!labelings.empty()) {
-                    result += labelings.size() * labelings.front().getSizeInBytes();
-                }
-                return result;
-            }
-            
             void StateLabeling::printLabelingInformationToStream(std::ostream& out) const {
                 out << "Labels: \t" << this->getNumberOfLabels() << std::endl;
                 for (auto const& labelIndexPair : this->nameToLabelingIndexMap) {

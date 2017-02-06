@@ -10,7 +10,7 @@
 #ifndef EIGEN_RANDOM_H
 #define EIGEN_RANDOM_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 namespace internal {
 
@@ -178,6 +178,6 @@ PlainObjectBase<Derived>::setRandom(Index rows, Index cols)
   return setRandom();
 }
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_RANDOM_H

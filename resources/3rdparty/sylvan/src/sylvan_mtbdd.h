@@ -307,7 +307,7 @@ TASK_DECL_3(MTBDD, mtbdd_abstract_op_max, MTBDD, MTBDD, int);
  * <f> must be a Boolean MTBDD (or standard BDD).
  */
 TASK_DECL_3(MTBDD, mtbdd_ite, MTBDD, MTBDD, MTBDD);
-#define mtbdd_ite(f, g, h) CALL(mtbdd_ite, f, g, h);
+#define mtbdd_ite(f, g, h) CALL(mtbdd_ite, f, g, h)
 
 /**
  * Multiply <a> and <b>, and abstract variables <vars> using summation.

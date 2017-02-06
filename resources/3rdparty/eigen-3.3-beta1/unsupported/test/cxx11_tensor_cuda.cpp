@@ -19,12 +19,12 @@
 #include "main.h"
 #include <unsupported/Eigen/CXX11/Tensor>
 
-using Eigen::Tensor;
+using StormEigen::Tensor;
 
 void test_cuda_elementwise_small() {
-  Tensor<float, 1> in1(Eigen::array<int, 1>(2));
-  Tensor<float, 1> in2(Eigen::array<int, 1>(2));
-  Tensor<float, 1> out(Eigen::array<int, 1>(2));
+  Tensor<float, 1> in1(StormEigen::array<int, 1>(2));
+  Tensor<float, 1> in2(StormEigen::array<int, 1>(2));
+  Tensor<float, 1> out(StormEigen::array<int, 1>(2));
   in1.setRandom();
   in2.setRandom();
 
@@ -42,15 +42,15 @@ void test_cuda_elementwise_small() {
   cudaMemcpy(d_in1, in1.data(), in1_bytes, cudaMemcpyHostToDevice);
   cudaMemcpy(d_in2, in2.data(), in2_bytes, cudaMemcpyHostToDevice);
 
-  Eigen::CudaStreamDevice stream;
-  Eigen::GpuDevice gpu_device(&stream);
+  StormEigen::CudaStreamDevice stream;
+  StormEigen::GpuDevice gpu_device(&stream);
 
-  Eigen::TensorMap<Eigen::Tensor<float, 1>, Eigen::Aligned> gpu_in1(
-      d_in1, Eigen::array<int, 1>(2));
-  Eigen::TensorMap<Eigen::Tensor<float, 1>, Eigen::Aligned> gpu_in2(
-      d_in2, Eigen::array<int, 1>(2));
-  Eigen::TensorMap<Eigen::Tensor<float, 1>, Eigen::Aligned> gpu_out(
-      d_out, Eigen::array<int, 1>(2));
+  StormEigen::TensorMap<StormEigen::Tensor<float, 1>, Eigen::Aligned> gpu_in1(
+      d_in1, StormEigen::array<int, 1>(2));
+  StormEigen::TensorMap<StormEigen::Tensor<float, 1>, Eigen::Aligned> gpu_in2(
+      d_in2, StormEigen::array<int, 1>(2));
+  StormEigen::TensorMap<StormEigen::Tensor<float, 1>, Eigen::Aligned> gpu_out(
+      d_out, StormEigen::array<int, 1>(2));
 
   gpu_out.device(gpu_device) = gpu_in1 + gpu_in2;
 
@@ -60,17 +60,17 @@ void test_cuda_elementwise_small() {
 
   for (int i = 0; i < 2; ++i) {
     VERIFY_IS_APPROX(
-        out(Eigen::array<int, 1>(i)),
-        in1(Eigen::array<int, 1>(i)) + in2(Eigen::array<int, 1>(i)));
+        out(StormEigen::array<int, 1>(i)),
+        in1(StormEigen::array<int, 1>(i)) + in2(StormEigen::array<int, 1>(i)));
   }
 }
 
 void test_cuda_elementwise()
 {
-  Tensor<float, 3> in1(Eigen::array<int, 3>(72,53,97));
-  Tensor<float, 3> in2(Eigen::array<int, 3>(72,53,97));
-  Tensor<float, 3> in3(Eigen::array<int, 3>(72,53,97));
-  Tensor<float, 3> out(Eigen::array<int, 3>(72,53,97));
+  Tensor<float, 3> in1(StormEigen::array<int, 3>(72,53,97));
+  Tensor<float, 3> in2(StormEigen::array<int, 3>(72,53,97));
+  Tensor<float, 3> in3(StormEigen::array<int, 3>(72,53,97));
+  Tensor<float, 3> out(StormEigen::array<int, 3>(72,53,97));
   in1.setRandom();
   in2.setRandom();
   in3.setRandom();
@@ -93,13 +93,13 @@ void test_cuda_elementwise()
   cudaMemcpy(d_in2, in2.data(), in2_bytes, cudaMemcpyHostToDevice);
   cudaMemcpy(d_in3, in3.data(), in3_bytes, cudaMemcpyHostToDevice);
 
-  Eigen::CudaStreamDevice stream;
-  Eigen::GpuDevice gpu_device(&stream);
+  StormEigen::CudaStreamDevice stream;
+  StormEigen::GpuDevice gpu_device(&stream);
 
-  Eigen::TensorMap<Eigen::Tensor<float, 3> > gpu_in1(d_in1, Eigen::array<int, 3>(72,53,97));
-  Eigen::TensorMap<Eigen::Tensor<float, 3> > gpu_in2(d_in2, Eigen::array<int, 3>(72,53,97));
-  Eigen::TensorMap<Eigen::Tensor<float, 3> > gpu_in3(d_in3, Eigen::array<int, 3>(72,53,97));
-  Eigen::TensorMap<Eigen::Tensor<float, 3> > gpu_out(d_out, Eigen::array<int, 3>(72,53,97));
+  StormEigen::TensorMap<StormEigen::Tensor<float, 3> > gpu_in1(d_in1, Eigen::array<int, 3>(72,53,97));
+  StormEigen::TensorMap<StormEigen::Tensor<float, 3> > gpu_in2(d_in2, Eigen::array<int, 3>(72,53,97));
+  StormEigen::TensorMap<StormEigen::Tensor<float, 3> > gpu_in3(d_in3, Eigen::array<int, 3>(72,53,97));
+  StormEigen::TensorMap<StormEigen::Tensor<float, 3> > gpu_out(d_out, Eigen::array<int, 3>(72,53,97));
 
   gpu_out.device(gpu_device) = gpu_in1 + gpu_in2 * gpu_in3;
 
@@ -109,7 +109,7 @@ void test_cuda_elementwise()
   for (int i = 0; i < 72; ++i) {
     for (int j = 0; j < 53; ++j) {
       for (int k = 0; k < 97; ++k) {
-        VERIFY_IS_APPROX(out(Eigen::array<int, 3>(i,j,k)), in1(Eigen::array<int, 3>(i,j,k)) + in2(Eigen::array<int, 3>(i,j,k)) * in3(Eigen::array<int, 3>(i,j,k)));
+        VERIFY_IS_APPROX(out(StormEigen::array<int, 3>(i,j,k)), in1(StormEigen::array<int, 3>(i,j,k)) + in2(Eigen::array<int, 3>(i,j,k)) * in3(Eigen::array<int, 3>(i,j,k)));
       }
     }
   }
@@ -133,10 +133,10 @@ void test_cuda_reduction()
 
   cudaStream_t stream;
   assert(cudaStreamCreate(&stream) == cudaSuccess);
-  Eigen::GpuDevice gpu_device(&stream);
+  StormEigen::GpuDevice gpu_device(&stream);
 
-  Eigen::TensorMap<Eigen::Tensor<float, 4> > gpu_in1(d_in1, 72,53,97,113);
-  Eigen::TensorMap<Eigen::Tensor<float, 2> > gpu_out(d_out, 72,97);
+  StormEigen::TensorMap<StormEigen::Tensor<float, 4> > gpu_in1(d_in1, 72,53,97,113);
+  StormEigen::TensorMap<StormEigen::Tensor<float, 2> > gpu_out(d_out, 72,97);
 
   array<int, 2> reduction_axis;
   reduction_axis[0] = 1;
@@ -168,8 +168,8 @@ static void test_cuda_contraction()
   // more than 30 * 1024, which is the number of threads in blocks on
   // a 15 SM GK110 GPU
   Tensor<float, 4, DataLayout> t_left(6, 50, 3, 31);
-  Tensor<float, 5, DataLayout> t_right(Eigen::array<int, 5>(3, 31, 7, 20, 1));
-  Tensor<float, 5, DataLayout> t_result(Eigen::array<int, 5>(6, 50, 7, 20, 1));
+  Tensor<float, 5, DataLayout> t_right(StormEigen::array<int, 5>(3, 31, 7, 20, 1));
+  Tensor<float, 5, DataLayout> t_result(StormEigen::array<int, 5>(6, 50, 7, 20, 1));
 
   t_left.setRandom();
   t_right.setRandom();
@@ -191,19 +191,19 @@ static void test_cuda_contraction()
 
   cudaStream_t stream;
   assert(cudaStreamCreate(&stream) == cudaSuccess);
-  Eigen::GpuDevice gpu_device(&stream);
+  StormEigen::GpuDevice gpu_device(&stream);
 
-  Eigen::TensorMap<Eigen::Tensor<float, 4, DataLayout> > gpu_t_left(d_t_left, 6, 50, 3, 31);
-  Eigen::TensorMap<Eigen::Tensor<float, 5, DataLayout> > gpu_t_right(d_t_right, 3, 31, 7, 20, 1);
-  Eigen::TensorMap<Eigen::Tensor<float, 5, DataLayout> > gpu_t_result(d_t_result, 6, 50, 7, 20, 1);
+  StormEigen::TensorMap<StormEigen::Tensor<float, 4, DataLayout> > gpu_t_left(d_t_left, 6, 50, 3, 31);
+  StormEigen::TensorMap<StormEigen::Tensor<float, 5, DataLayout> > gpu_t_right(d_t_right, 3, 31, 7, 20, 1);
+  StormEigen::TensorMap<StormEigen::Tensor<float, 5, DataLayout> > gpu_t_result(d_t_result, 6, 50, 7, 20, 1);
 
-  typedef Eigen::Map<Eigen::Matrix<float, Dynamic, Dynamic, DataLayout> > MapXf;
+  typedef StormEigen::Map<StormEigen::Matrix<float, Dynamic, Dynamic, DataLayout> > MapXf;
   MapXf m_left(t_left.data(), 300, 93);
   MapXf m_right(t_right.data(), 93, 140);
-  Eigen::Matrix<float, Dynamic, Dynamic, DataLayout> m_result(300, 140);
+  StormEigen::Matrix<float, Dynamic, Dynamic, DataLayout> m_result(300, 140);
 
   typedef Tensor<float, 1>::DimensionPair DimPair;
-  Eigen::array<DimPair, 2> dims;
+  StormEigen::array<DimPair, 2> dims;
   dims[0] = DimPair(2, 0);
   dims[1] = DimPair(3, 1);
 
@@ -245,13 +245,13 @@ static void test_cuda_convolution_1d()
 
   cudaStream_t stream;
   assert(cudaStreamCreate(&stream) == cudaSuccess);
-  Eigen::GpuDevice gpu_device(&stream);
+  StormEigen::GpuDevice gpu_device(&stream);
 
-  Eigen::TensorMap<Eigen::Tensor<float, 4, DataLayout> > gpu_input(d_input, 74,37,11,137);
-  Eigen::TensorMap<Eigen::Tensor<float, 1, DataLayout> > gpu_kernel(d_kernel, 4);
-  Eigen::TensorMap<Eigen::Tensor<float, 4, DataLayout> > gpu_out(d_out, 74,34,11,137);
+  StormEigen::TensorMap<StormEigen::Tensor<float, 4, DataLayout> > gpu_input(d_input, 74,37,11,137);
+  StormEigen::TensorMap<StormEigen::Tensor<float, 1, DataLayout> > gpu_kernel(d_kernel, 4);
+  StormEigen::TensorMap<StormEigen::Tensor<float, 4, DataLayout> > gpu_out(d_out, 74,34,11,137);
 
-  Eigen::array<int, 1> dims(1);
+  StormEigen::array<int, 1> dims(1);
   gpu_out.device(gpu_device) = gpu_input.convolve(gpu_kernel, dims);
 
   assert(cudaMemcpyAsync(out.data(), d_out, out_bytes, cudaMemcpyDeviceToHost, gpu_device.stream()) == cudaSuccess);
@@ -295,13 +295,13 @@ static void test_cuda_convolution_inner_dim_col_major_1d()
 
   cudaStream_t stream;
   assert(cudaStreamCreate(&stream) == cudaSuccess);
-  Eigen::GpuDevice gpu_device(&stream);
+  StormEigen::GpuDevice gpu_device(&stream);
 
-  Eigen::TensorMap<Eigen::Tensor<float, 4, ColMajor> > gpu_input(d_input,74,9,11,7);
-  Eigen::TensorMap<Eigen::Tensor<float, 1, ColMajor> > gpu_kernel(d_kernel,4);
-  Eigen::TensorMap<Eigen::Tensor<float, 4, ColMajor> > gpu_out(d_out,71,9,11,7);
+  StormEigen::TensorMap<StormEigen::Tensor<float, 4, ColMajor> > gpu_input(d_input,74,9,11,7);
+  StormEigen::TensorMap<StormEigen::Tensor<float, 1, ColMajor> > gpu_kernel(d_kernel,4);
+  StormEigen::TensorMap<StormEigen::Tensor<float, 4, ColMajor> > gpu_out(d_out,71,9,11,7);
 
-  Eigen::array<int, 1> dims(0);
+  StormEigen::array<int, 1> dims(0);
   gpu_out.device(gpu_device) = gpu_input.convolve(gpu_kernel, dims);
 
   assert(cudaMemcpyAsync(out.data(), d_out, out_bytes, cudaMemcpyDeviceToHost, gpu_device.stream()) == cudaSuccess);
@@ -345,13 +345,13 @@ static void test_cuda_convolution_inner_dim_row_major_1d()
 
   cudaStream_t stream;
   assert(cudaStreamCreate(&stream) == cudaSuccess);
-  Eigen::GpuDevice gpu_device(&stream);
+  StormEigen::GpuDevice gpu_device(&stream);
 
-  Eigen::TensorMap<Eigen::Tensor<float, 4, RowMajor> > gpu_input(d_input, 7,9,11,74);
-  Eigen::TensorMap<Eigen::Tensor<float, 1, RowMajor> > gpu_kernel(d_kernel, 4);
-  Eigen::TensorMap<Eigen::Tensor<float, 4, RowMajor> > gpu_out(d_out, 7,9,11,71);
+  StormEigen::TensorMap<StormEigen::Tensor<float, 4, RowMajor> > gpu_input(d_input, 7,9,11,74);
+  StormEigen::TensorMap<StormEigen::Tensor<float, 1, RowMajor> > gpu_kernel(d_kernel, 4);
+  StormEigen::TensorMap<StormEigen::Tensor<float, 4, RowMajor> > gpu_out(d_out, 7,9,11,71);
 
-  Eigen::array<int, 1> dims(3);
+  StormEigen::array<int, 1> dims(3);
   gpu_out.device(gpu_device) = gpu_input.convolve(gpu_kernel, dims);
 
   assert(cudaMemcpyAsync(out.data(), d_out, out_bytes, cudaMemcpyDeviceToHost, gpu_device.stream()) == cudaSuccess);
@@ -396,13 +396,13 @@ static void test_cuda_convolution_2d()
 
   cudaStream_t stream;
   assert(cudaStreamCreate(&stream) == cudaSuccess);
-  Eigen::GpuDevice gpu_device(&stream);
+  StormEigen::GpuDevice gpu_device(&stream);
 
-  Eigen::TensorMap<Eigen::Tensor<float, 4, DataLayout> > gpu_input(d_input,74,37,11,137);
-  Eigen::TensorMap<Eigen::Tensor<float, 2, DataLayout> > gpu_kernel(d_kernel,3,4);
-  Eigen::TensorMap<Eigen::Tensor<float, 4, DataLayout> > gpu_out(d_out,74,35,8,137);
+  StormEigen::TensorMap<StormEigen::Tensor<float, 4, DataLayout> > gpu_input(d_input,74,37,11,137);
+  StormEigen::TensorMap<StormEigen::Tensor<float, 2, DataLayout> > gpu_kernel(d_kernel,3,4);
+  StormEigen::TensorMap<StormEigen::Tensor<float, 4, DataLayout> > gpu_out(d_out,74,35,8,137);
 
-  Eigen::array<int, 2> dims(1,2);
+  StormEigen::array<int, 2> dims(1,2);
   gpu_out.device(gpu_device) = gpu_input.convolve(gpu_kernel, dims);
 
   assert(cudaMemcpyAsync(out.data(), d_out, out_bytes, cudaMemcpyDeviceToHost, gpu_device.stream()) == cudaSuccess);
@@ -435,9 +435,9 @@ static void test_cuda_convolution_2d()
 template<int DataLayout>
 static void test_cuda_convolution_3d()
 {
-  Tensor<float, 5, DataLayout> input(Eigen::array<int, 5>(74,37,11,137,17));
+  Tensor<float, 5, DataLayout> input(StormEigen::array<int, 5>(74,37,11,137,17));
   Tensor<float, 3, DataLayout> kernel(3,4,2);
-  Tensor<float, 5, DataLayout> out(Eigen::array<int, 5>(74,35,8,136,17));
+  Tensor<float, 5, DataLayout> out(StormEigen::array<int, 5>(74,35,8,136,17));
   input = input.constant(10.0f) + input.random();
   kernel = kernel.constant(7.0f) + kernel.random();
 
@@ -457,13 +457,13 @@ static void test_cuda_convolution_3d()
 
   cudaStream_t stream;
   assert(cudaStreamCreate(&stream) == cudaSuccess);
-  Eigen::GpuDevice gpu_device(&stream);
+  StormEigen::GpuDevice gpu_device(&stream);
 
-  Eigen::TensorMap<Eigen::Tensor<float, 5, DataLayout> > gpu_input(d_input,74,37,11,137,17);
-  Eigen::TensorMap<Eigen::Tensor<float, 3, DataLayout> > gpu_kernel(d_kernel,3,4,2);
-  Eigen::TensorMap<Eigen::Tensor<float, 5, DataLayout> > gpu_out(d_out,74,35,8,136,17);
+  StormEigen::TensorMap<StormEigen::Tensor<float, 5, DataLayout> > gpu_input(d_input,74,37,11,137,17);
+  StormEigen::TensorMap<StormEigen::Tensor<float, 3, DataLayout> > gpu_kernel(d_kernel,3,4,2);
+  StormEigen::TensorMap<StormEigen::Tensor<float, 5, DataLayout> > gpu_out(d_out,74,35,8,136,17);
 
-  Eigen::array<int, 3> dims(1,2,3);
+  StormEigen::array<int, 3> dims(1,2,3);
   gpu_out.device(gpu_device) = gpu_input.convolve(gpu_kernel, dims);
 
   assert(cudaMemcpyAsync(out.data(), d_out, out_bytes, cudaMemcpyDeviceToHost, gpu_device.stream()) == cudaSuccess);
@@ -526,11 +526,11 @@ void test_cuda_lgamma(const Scalar stddev)
 
   cudaMemcpy(d_in, in.data(), bytes, cudaMemcpyHostToDevice);
 
-  Eigen::CudaStreamDevice stream;
-  Eigen::GpuDevice gpu_device(&stream);
+  StormEigen::CudaStreamDevice stream;
+  StormEigen::GpuDevice gpu_device(&stream);
 
-  Eigen::TensorMap<Eigen::Tensor<Scalar, 2> > gpu_in(d_in, 72, 97);
-  Eigen::TensorMap<Eigen::Tensor<Scalar, 2> > gpu_out(d_out, 72, 97);
+  StormEigen::TensorMap<StormEigen::Tensor<Scalar, 2> > gpu_in(d_in, 72, 97);
+  StormEigen::TensorMap<StormEigen::Tensor<Scalar, 2> > gpu_out(d_out, 72, 97);
 
   gpu_out.device(gpu_device) = gpu_in.lgamma();
 
@@ -562,11 +562,11 @@ void test_cuda_erf(const Scalar stddev)
 
   cudaMemcpy(d_in, in.data(), bytes, cudaMemcpyHostToDevice);
 
-  Eigen::CudaStreamDevice stream;
-  Eigen::GpuDevice gpu_device(&stream);
+  StormEigen::CudaStreamDevice stream;
+  StormEigen::GpuDevice gpu_device(&stream);
 
-  Eigen::TensorMap<Eigen::Tensor<Scalar, 2> > gpu_in(d_in, 72, 97);
-  Eigen::TensorMap<Eigen::Tensor<Scalar, 2> > gpu_out(d_out, 72, 97);
+  StormEigen::TensorMap<StormEigen::Tensor<Scalar, 2> > gpu_in(d_in, 72, 97);
+  StormEigen::TensorMap<StormEigen::Tensor<Scalar, 2> > gpu_out(d_out, 72, 97);
 
   gpu_out.device(gpu_device) = gpu_in.erf();
 
@@ -598,11 +598,11 @@ void test_cuda_erfc(const Scalar stddev)
 
   cudaMemcpy(d_in, in.data(), bytes, cudaMemcpyHostToDevice);
 
-  Eigen::CudaStreamDevice stream;
-  Eigen::GpuDevice gpu_device(&stream);
+  StormEigen::CudaStreamDevice stream;
+  StormEigen::GpuDevice gpu_device(&stream);
 
-  Eigen::TensorMap<Eigen::Tensor<Scalar, 2> > gpu_in(d_in, 72, 97);
-  Eigen::TensorMap<Eigen::Tensor<Scalar, 2> > gpu_out(d_out, 72, 97);
+  StormEigen::TensorMap<StormEigen::Tensor<Scalar, 2> > gpu_in(d_in, 72, 97);
+  StormEigen::TensorMap<StormEigen::Tensor<Scalar, 2> > gpu_out(d_out, 72, 97);
 
   gpu_out.device(gpu_device) = gpu_in.erfc();
 

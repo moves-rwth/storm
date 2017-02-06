@@ -12,7 +12,7 @@
 
 #include "SplineFwd.h"
 
-namespace Eigen
+namespace StormEigen
 {
     /**
      * \ingroup Splines_Module

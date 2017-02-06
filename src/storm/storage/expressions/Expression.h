@@ -66,6 +66,13 @@ namespace storm {
              */
             Expression(Variable const& variable);
             
+            /*!
+             * Creates an expression with the given underlying base expression.
+             *
+             * @param expressionPtr A pointer to the underlying base expression.
+             */
+            Expression(std::shared_ptr<BaseExpression const> const& expressionPtr);
+            
             // Instantiate constructors and assignments with their default implementations.
             Expression(Expression const& other) = default;
             Expression& operator=(Expression const& other) = default;
@@ -73,6 +80,11 @@ namespace storm {
             Expression(Expression&&) = default;
             Expression& operator=(Expression&&) = default;
 #endif
+            
+            /*!
+             * Converts the expression to an expression over the variables of the provided expression manager.
+             */
+            Expression changeManager(ExpressionManager const& newExpressionManager) const;
             
             /*!
              * Substitutes all occurrences of the variables according to the given map. Note that this substitution is
@@ -204,6 +216,14 @@ namespace storm {
             bool isFalse() const;
             
             /*!
+             * Checks whether the two expressions are the same. Note that this does not check for syntactical or even
+             * semantical equivalence, but only returns true if both are the very same expressions.
+             *
+             * @return True iff the two expressions are the same.
+             */
+            bool areSame(storm::expressions::Expression const& other) const;
+            
+            /*!
              * Retrieves whether this expression is a relation expression, i.e., an expression that has a relation
              * (equal, not equal, less, less or equal, etc.) as its top-level operator.
              *
@@ -233,6 +253,16 @@ namespace storm {
              */
             bool containsVariable(std::set<storm::expressions::Variable> const& variables) const;
             
+
+            /*!
+             * Retrieves whether the expression contains any of the given variables in the
+             * 'if' part of any sub-IfThenElseExpressions.
+             *
+             * @param variables The variables to search for.
+             * @return True iff any of the variables appear in the 'if' part of an ITE-expression.
+             */
+            bool containsVariableInITEGuard(std::set<storm::expressions::Variable> const& variables) const;
+
             /*!
              * Retrieves the base expression underlying this expression object. Note that prior to calling this, the
              * expression object must be properly initialized.
@@ -324,13 +354,6 @@ namespace storm {
             friend std::ostream& operator<<(std::ostream& stream, Expression const& expression);
 
         private:
-            /*!
-             * Creates an expression with the given underlying base expression.
-             *
-             * @param expressionPtr A pointer to the underlying base expression.
-             */
-            Expression(std::shared_ptr<BaseExpression const> const& expressionPtr);
-                        
             // A pointer to the underlying base expression.
             std::shared_ptr<BaseExpression const> expressionPtr;
         };
@@ -378,14 +401,27 @@ namespace storm {
     }
 }
 
-//specialize 
 namespace std {
-	template<>
-	struct less < storm::expressions::Expression > {
-		bool operator()(const storm::expressions::Expression& lhs, const storm::expressions::Expression& rhs) const {
+	template <>
+	struct less<storm::expressions::Expression> {
+		bool operator()(storm::expressions::Expression const& lhs, storm::expressions::Expression const& rhs) const {
 			return lhs.getBaseExpressionPointer() < rhs.getBaseExpressionPointer();
 		}
 	};
+
+    template <>
+    struct hash<storm::expressions::Expression> {
+        size_t operator()(storm::expressions::Expression const& e) const {
+            return reinterpret_cast<size_t>(e.getBaseExpressionPointer().get());
+        }
+    };
+
+    template <>
+    struct equal_to<storm::expressions::Expression> {
+        bool operator()(storm::expressions::Expression const& e1, storm::expressions::Expression const& e2) const {
+            return e1.areSame(e2);
+        }
+    };
 }
 
 #endif /* STORM_STORAGE_EXPRESSIONS_EXPRESSION_H_ */

@@ -8,6 +8,8 @@
 #include <unordered_set>
 #include <iostream>
 
+#include <boost/optional.hpp>
+
 #include "storm/storage/expressions/Variable.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/adapters/CarlAdapter.h"
@@ -71,16 +73,16 @@ namespace storm {
              */
             ExpressionManager();
             
-            // Explicitly delete copy construction/assignment, since the manager is supposed to be stored as a pointer
-            // of some sort. This is because the expression classes store a reference to the manager and it must
-            // therefore be guaranteed that they do not become invalid, because the manager has been copied.
-            ExpressionManager(ExpressionManager const& other) = delete;
-            ExpressionManager& operator=(ExpressionManager const& other) = delete;
-#ifndef WINDOWS
+            ~ExpressionManager();
+            
+            /*!
+             * Creates a new expression manager with the same set of variables.
+             */
+            std::shared_ptr<ExpressionManager> clone() const;
+            
             // Create default instantiations for the move construction/assignment.
             ExpressionManager(ExpressionManager&& other) = default;
             ExpressionManager& operator=(ExpressionManager&& other) = default;
-#endif
 
             /*!
              * Creates an expression that characterizes the given boolean literal.
@@ -147,7 +149,15 @@ namespace storm {
              * @return The rational type.
              */
             Type const& getRationalType() const;
-            
+
+            /*!
+             * Declares a variable that is a copy of the provided variable (i.e. has the same type).
+             *
+             * @param variable The variable of which to create a copy.
+             * @return The newly declared variable.
+             */
+            Variable declareVariableCopy(Variable const& variable);
+
             /*!
              * Declares a variable with a name that must not yet exist and its corresponding type. Note that the name
              * must not start with two underscores since these variables are reserved for internal use only.
@@ -217,6 +227,11 @@ namespace storm {
              * @param name The name of the variable to retrieve.
              */
             Variable getVariable(std::string const& name) const;
+            
+            /*!
+             * Retrieves the set of all variables known to this manager.
+             */
+            std::set<Variable> const& getVariables() const;
             
             /*!
              * Retrieves whether a variable with the given name is known to the manager.
@@ -361,6 +376,12 @@ namespace storm {
             friend std::ostream& operator<<(std::ostream& out, ExpressionManager const& manager);
             
         private:
+            // Explicitly make copy construction/assignment private, since the manager is supposed to be stored as a pointer
+            // of some sort. This is because the expression classes store a reference to the manager and it must
+            // therefore be guaranteed that they do not become invalid, because the manager has been copied.
+            ExpressionManager(ExpressionManager const& other) = default;
+            ExpressionManager& operator=(ExpressionManager const& other) = default;
+            
             /*!
              * Checks whether the given variable name is valid.
              *
@@ -405,6 +426,9 @@ namespace storm {
              */
             uint_fast64_t getNumberOfAuxiliaryVariables(storm::expressions::Type const& variableType) const;
             
+            // The set of all known variables.
+            std::set<Variable> variableSet;
+            
             // A mapping from all variable names (auxiliary + normal) to their indices.
             std::unordered_map<std::string, uint_fast64_t> nameToIndexMapping;
             
@@ -433,8 +457,11 @@ namespace storm {
             uint_fast64_t freshVariableCounter;
             
             // The types managed by this manager.
-            mutable std::unordered_set<Type> types;
-            
+            mutable boost::optional<Type> booleanType;
+            mutable boost::optional<Type> integerType;
+            mutable std::unordered_set<Type> bitvectorTypes;
+            mutable boost::optional<Type> rationalType;
+
             // A mask that can be used to query whether a variable is an auxiliary variable.
             static const uint64_t auxiliaryMask = (1ull << 50);
             

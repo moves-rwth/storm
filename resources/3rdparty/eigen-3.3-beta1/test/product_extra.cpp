@@ -103,7 +103,7 @@ template<typename MatrixType> void product_extra(const MatrixType& m)
 // Regression test for bug reported at http://forum.kde.org/viewtopic.php?f=74&t=96947
 void mat_mat_scalar_scalar_product()
 {
-  Eigen::Matrix2Xd dNdxy(2, 3);
+  StormEigen::Matrix2Xd dNdxy(2, 3);
   dNdxy << -0.5, 0.5, 0,
            -0.3, 0, 0.3;
   double det = 6.0, wt = 0.5;

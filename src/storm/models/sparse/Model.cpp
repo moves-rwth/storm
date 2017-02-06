@@ -167,6 +167,11 @@ namespace storm {
             boost::optional<std::vector<LabelSet>> const& Model<ValueType, RewardModelType>::getOptionalChoiceLabeling() const {
                 return choiceLabeling;
             }
+
+            template<typename ValueType, typename RewardModelType>
+            boost::optional<std::vector<LabelSet>>& Model<ValueType, RewardModelType>::getOptionalChoiceLabeling() {
+                return choiceLabeling;
+            }
             
             template<typename ValueType, typename RewardModelType>
             storm::models::sparse::StateLabeling const& Model<ValueType, RewardModelType>::getStateLabeling() const {
@@ -181,18 +186,6 @@ namespace storm {
             template<typename ValueType, typename RewardModelType>
             bool Model<ValueType, RewardModelType>::hasChoiceLabeling() const {
                 return static_cast<bool>(choiceLabeling);
-            }
-            
-            template<typename ValueType, typename RewardModelType>
-            std::size_t Model<ValueType, RewardModelType>::getSizeInBytes() const {
-                std::size_t result = transitionMatrix.getSizeInBytes() + stateLabeling.getSizeInBytes();
-                for (auto const& rewardModel : this->rewardModels) {
-                    result += rewardModel.second.getSizeInBytes();
-                }
-                if (hasChoiceLabeling()) {
-                    result += getChoiceLabeling().size() * sizeof(LabelSet);
-                }
-                return result;
             }
             
             template<typename ValueType, typename RewardModelType>
@@ -214,7 +207,6 @@ namespace storm {
                 this->printRewardModelsInformationToStream(out);
                 this->getStateLabeling().printLabelingInformationToStream(out);
                 out << "choice labels: \t" << (this->hasChoiceLabeling() ? "yes" : "no")  << std::noboolalpha << std::endl;
-                out << "Size in memory: " << (this->getSizeInBytes())/1024 << " kbytes" << std::endl;
                 out << "-------------------------------------------------------------- " << std::endl;
             }
             
@@ -233,7 +225,7 @@ namespace storm {
             }
             
             template<typename ValueType, typename RewardModelType>
-            void Model<ValueType, RewardModelType>::writeDotToStream(std::ostream& outStream, bool includeLabeling, storm::storage::BitVector const* subsystem, std::vector<ValueType> const* firstValue, std::vector<ValueType> const* secondValue, std::vector<uint_fast64_t> const* stateColoring, std::vector<std::string> const* colors, std::vector<uint_fast64_t>* scheduler, bool finalizeOutput) const {
+            void Model<ValueType, RewardModelType>::writeDotToStream(std::ostream& outStream, bool includeLabeling, storm::storage::BitVector const* subsystem, std::vector<ValueType> const* firstValue, std::vector<ValueType> const* secondValue, std::vector<uint_fast64_t> const* stateColoring, std::vector<std::string> const* colors, std::vector<uint_fast64_t>*, bool finalizeOutput) const {
                 outStream << "digraph model {" << std::endl;
                 
                 // Write all states to the stream.
@@ -359,6 +351,17 @@ namespace storm {
 #ifdef STORM_HAVE_CARL
             std::set<storm::RationalFunctionVariable> getProbabilityParameters(Model<storm::RationalFunction> const& model) {
                 return storm::storage::getVariables(model.getTransitionMatrix());
+            }
+
+
+
+            std::set<storm::RationalFunctionVariable> getRewardParameters(Model<storm::RationalFunction> const& model) {
+                std::set<storm::RationalFunctionVariable> result;
+                for(auto rewModel : model.getRewardModels()) {
+                    std::set<storm::RationalFunctionVariable> tmp = getRewardModelParameters(rewModel.second);
+                    result.insert(tmp.begin(), tmp.end());
+                }
+                return result;
             }
 #endif
             

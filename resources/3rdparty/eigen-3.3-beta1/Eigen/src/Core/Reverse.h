@@ -12,7 +12,7 @@
 #ifndef EIGEN_REVERSE_H
 #define EIGEN_REVERSE_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 /** \class Reverse
   * \ingroup Core_Module
@@ -206,6 +206,6 @@ void VectorwiseOp<ExpressionType,Direction>::reverseInPlace()
   internal::vectorwise_reverse_inplace_impl<Direction>::run(_expression().const_cast_derived());
 }
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_REVERSE_H

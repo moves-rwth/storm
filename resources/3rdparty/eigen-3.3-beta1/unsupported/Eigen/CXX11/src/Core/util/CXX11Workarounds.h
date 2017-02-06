@@ -37,7 +37,7 @@
 #error This library needs at least a C++11 compliant compiler. If you use g++/clang, please enable the -std=c++11 compiler flag. (-std=c++0x on older versions.)
 #endif
 
-namespace Eigen {
+namespace StormEigen {
 
 namespace internal {
 
@@ -77,7 +77,7 @@ template<std::size_t I, class T> constexpr inline T const& array_get(std::vector
 
 } // end namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_CXX11WORKAROUNDS_H
 

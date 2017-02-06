@@ -22,12 +22,12 @@ namespace storm {
             
             template<typename ValueType>
             void PrioritizedStateEliminator<ValueType>::updateValue(storm::storage::sparse::state_type const& state, ValueType const& loopProbability) {
-                stateValues[state] = storm::utility::simplify(loopProbability * stateValues[state]);
+                stateValues[state] = storm::utility::simplify((ValueType) (loopProbability * stateValues[state]));
             }
        
             template<typename ValueType>
             void PrioritizedStateEliminator<ValueType>::updatePredecessor(storm::storage::sparse::state_type const& predecessor, ValueType const& probability, storm::storage::sparse::state_type const& state) {
-                stateValues[predecessor] = storm::utility::simplify(stateValues[predecessor] + storm::utility::simplify(probability * stateValues[state]));
+                stateValues[predecessor] = storm::utility::simplify((ValueType) (stateValues[predecessor] + storm::utility::simplify((ValueType) (probability * stateValues[state]))));
             }
             
             template<typename ValueType>

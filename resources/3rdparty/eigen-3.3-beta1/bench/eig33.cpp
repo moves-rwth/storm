@@ -42,7 +42,7 @@
 #include <Eigen/Geometry>
 #include <bench/BenchTimer.h>
 
-using namespace Eigen;
+using namespace StormEigen;
 using namespace std;
 
 template<typename Matrix, typename Roots>
@@ -132,7 +132,7 @@ void eigen33(const Matrix& mat, Matrix& evecs, Vector& evals)
 //   evecs.col(2) = tmp.row(0).cross(tmp.row(1)).normalized();
   
   // a more stable version:
-  if((evals(2)-evals(0))<=Eigen::NumTraits<Scalar>::epsilon())
+  if((evals(2)-evals(0))<=StormEigen::NumTraits<Scalar>::epsilon())
   {
     evecs.setIdentity();
   }
@@ -147,7 +147,7 @@ void eigen33(const Matrix& mat, Matrix& evecs, Vector& evals)
     tmp.diagonal ().array () -= evals (1);
     evecs.col(1) = tmp.row (0).cross(tmp.row (1));
     Scalar n1 = evecs.col(1).norm();
-    if(n1<=Eigen::NumTraits<Scalar>::epsilon())
+    if(n1<=StormEigen::NumTraits<Scalar>::epsilon())
       evecs.col(1) = evecs.col(2).unitOrthogonal();
     else
       evecs.col(1) /= n1;

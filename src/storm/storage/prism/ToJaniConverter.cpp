@@ -12,7 +12,7 @@
 namespace storm {
     namespace prism {
         
-        storm::jani::Model ToJaniConverter::convert(storm::prism::Program const& program, bool allVariablesGlobal) const {
+        storm::jani::Model ToJaniConverter::convert(storm::prism::Program const& program, bool allVariablesGlobal) {
             std::shared_ptr<storm::expressions::ExpressionManager> manager = program.getManager().getSharedPointer();
                         
             // Start by creating an empty JANI model.
@@ -94,10 +94,23 @@ namespace storm {
                 }
             }
             
+            // Go through the labels and construct assignments to transient variables that are added to the loctions.
+            std::vector<storm::jani::Assignment> transientLocationAssignments;
+            for (auto const& label : program.getLabels()) {
+                bool renameLabel = manager->hasVariable(label.getName()) || program.hasRewardModel(label.getName());
+                std::string finalLabelName = renameLabel ? "label_" + label.getName() : label.getName();
+                if (renameLabel) {
+                    STORM_LOG_WARN_COND(!renameLabel, "Label '" << label.getName() << "' was renamed to '" << finalLabelName << "' in PRISM-to-JANI conversion, as another variable with that name already exists.");
+                    labelRenaming[label.getName()] = finalLabelName;
+                }
+                auto newExpressionVariable = manager->declareBooleanVariable(finalLabelName);
+                storm::jani::BooleanVariable const& newTransientVariable = janiModel.addVariable(storm::jani::BooleanVariable(newExpressionVariable.getName(), newExpressionVariable, manager->boolean(false), true));
+                transientLocationAssignments.emplace_back(newTransientVariable, label.getStatePredicateExpression());
+            }
+            
             // Go through the reward models and construct assignments to the transient variables that are to be added to
             // edges and transient assignments that are added to the locations.
             std::map<uint_fast64_t, std::vector<storm::jani::Assignment>> transientEdgeAssignments;
-            std::vector<storm::jani::Assignment> transientLocationAssignments;
             for (auto const& rewardModel : program.getRewardModels()) {
                 auto newExpressionVariable = manager->declareRationalVariable(rewardModel.getName().empty() ? "default" : rewardModel.getName());
                 storm::jani::RealVariable const& newTransientVariable = janiModel.addVariable(storm::jani::RealVariable(rewardModel.getName().empty() ? "default" : rewardModel.getName(), newExpressionVariable, manager->rational(0.0), true));
@@ -141,12 +154,13 @@ namespace storm {
             
             // Now create the separate JANI automata from the modules of the PRISM program. While doing so, we use the
             // previously built mapping to make variables global that are read by more than one module.
+            std::set<uint64_t> firstModules;
             bool firstModule = true;
             for (auto const& module : program.getModules()) {
                 // Keep track of the action indices contained in this module.
                 std::set<uint_fast64_t> actionIndicesOfModule;
 
-                storm::jani::Automaton automaton(module.getName());
+                storm::jani::Automaton automaton(module.getName(), manager->declareIntegerVariable("_loc_prism2jani_" + module.getName()));
                 for (auto const& variable : module.getIntegerVariables()) {
                     storm::jani::BoundedIntegerVariable newIntegerVariable = *storm::jani::makeBoundedIntegerVariable(variable.getName(), variable.getExpressionVariable(), variable.hasInitialValue() ? boost::make_optional(variable.getInitialValueExpression()) : boost::none, false, variable.getLowerBoundExpression(), variable.getUpperBoundExpression());
                     std::set<uint_fast64_t> const& accessingModuleIndices = variablesToAccessingModuleIndices[variable.getExpressionVariable()];
@@ -179,7 +193,7 @@ namespace storm {
                 uint64_t onlyLocationIndex = automaton.addLocation(storm::jani::Location("l"));
                 automaton.addInitialLocation(onlyLocationIndex);
                 
-                // If we are translating the first module, we need to add the transient assignments to the location.
+                // If we are translating the first module that has the action, we need to add the transient assignments to the location.
                 if (firstModule) {
                     storm::jani::Location& onlyLocation = automaton.getLocation(onlyLocationIndex);
                     for (auto const& assignment : transientLocationAssignments) {
@@ -188,10 +202,10 @@ namespace storm {
                 }
                 
                 for (auto const& command : module.getCommands()) {
-                    actionIndicesOfModule.insert(command.getActionIndex());
+                    std::shared_ptr<storm::jani::TemplateEdge> templateEdge = automaton.createTemplateEdge(command.getGuardExpression());
+                    actionIndicesOfModule.insert(janiModel.getActionIndex(command.getActionName()));
                     
                     boost::optional<storm::expressions::Expression> rateExpression;
-                    std::vector<storm::jani::EdgeDestination> destinations;
                     if (program.getModelType() == Program::ModelType::CTMC || program.getModelType() == Program::ModelType::CTMDP || (program.getModelType() == Program::ModelType::MA && command.isMarkovian())) {
                         for (auto const& update : command.getUpdates()) {
                             if (rateExpression) {
@@ -202,6 +216,7 @@ namespace storm {
                         }
                     }
                                         
+                    std::vector<std::pair<uint64_t, storm::expressions::Expression>> destinationLocationsAndProbabilities;
                     for (auto const& update : command.getUpdates()) {
                         std::vector<storm::jani::Assignment> assignments;
                         for (auto const& assignment : update.getAssignments()) {
@@ -209,18 +224,12 @@ namespace storm {
                         }
                         
                         if (rateExpression) {
-                            destinations.push_back(storm::jani::EdgeDestination(onlyLocationIndex, update.getLikelihoodExpression() / rateExpression.get(), assignments));
+                            destinationLocationsAndProbabilities.emplace_back(onlyLocationIndex, update.getLikelihoodExpression() / rateExpression.get());
                         } else {
-                            destinations.push_back(storm::jani::EdgeDestination(onlyLocationIndex, update.getLikelihoodExpression(), assignments));
+                            destinationLocationsAndProbabilities.emplace_back(onlyLocationIndex, update.getLikelihoodExpression());
                         }
-                    }
-                    
-                    // Create the edge object so we can add transient assignments.
-                    storm::jani::Edge newEdge;
-                    if (command.getActionName().empty()) {
-                        newEdge = storm::jani::Edge(onlyLocationIndex, storm::jani::Model::SILENT_ACTION_INDEX, rateExpression, command.getGuardExpression(), destinations);
-                    } else {
-                        newEdge = storm::jani::Edge(onlyLocationIndex, janiModel.getActionIndex(command.getActionName()), rateExpression, command.getGuardExpression(), destinations);
+                        
+                        templateEdge->addDestination(storm::jani::TemplateEdgeDestination(assignments));
                     }
                     
                     // Then add the transient assignments for the rewards. Note that we may do this only for the first
@@ -229,9 +238,16 @@ namespace storm {
                     auto transientEdgeAssignmentsToAdd = transientEdgeAssignments.find(janiModel.getActionIndex(command.getActionName()));
                     if (transientEdgeAssignmentsToAdd != transientEdgeAssignments.end()) {
                         for (auto const& assignment : transientEdgeAssignmentsToAdd->second) {
-                            newEdge.addTransientAssignment(assignment);
+                            templateEdge->addTransientAssignment(assignment);
                         }
-                        transientEdgeAssignments.erase(transientEdgeAssignmentsToAdd);
+                    }
+
+                    // Create the edge object.
+                    storm::jani::Edge newEdge;
+                    if (command.getActionName().empty()) {
+                        newEdge = storm::jani::Edge(onlyLocationIndex, storm::jani::Model::SILENT_ACTION_INDEX, rateExpression, templateEdge, destinationLocationsAndProbabilities);
+                    } else {
+                        newEdge = storm::jani::Edge(onlyLocationIndex, janiModel.getActionIndex(command.getActionName()), rateExpression, templateEdge, destinationLocationsAndProbabilities);
                     }
                     
                     // Finally add the constructed edge.
@@ -271,6 +287,14 @@ namespace storm {
             janiModel.finalize();
             
             return janiModel;
+        }
+        
+        bool ToJaniConverter::labelsWereRenamed() const {
+            return !labelRenaming.empty();
+        }
+        
+        std::map<std::string, std::string> const& ToJaniConverter::getLabelRenaming() const {
+            return labelRenaming;
         }
         
     }

@@ -18,7 +18,7 @@ namespace storm {
             // Intentionally left empty.
         }
         
-        double RationalLiteralExpression::evaluateAsDouble(Valuation const* valuation) const {
+        double RationalLiteralExpression::evaluateAsDouble(Valuation const*) const {
             return this->getValueAsDouble();
         }
         
@@ -26,7 +26,7 @@ namespace storm {
             return true;
         }
         
-        void RationalLiteralExpression::gatherVariables(std::set<storm::expressions::Variable>& variables) const {
+        void RationalLiteralExpression::gatherVariables(std::set<storm::expressions::Variable>&) const {
             return;
 		}
         

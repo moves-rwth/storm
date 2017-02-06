@@ -11,7 +11,7 @@
 #ifndef EIGEN_CWISE_BINARY_OP_H
 #define EIGEN_CWISE_BINARY_OP_H
 
-namespace Eigen {
+namespace StormEigen {
 
 /** \class CwiseBinaryOp
   * \ingroup Core_Module
@@ -178,7 +178,7 @@ MatrixBase<Derived>::operator+=(const MatrixBase<OtherDerived>& other)
   return derived();
 }
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_CWISE_BINARY_OP_H
 

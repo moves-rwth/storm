@@ -69,10 +69,13 @@ endif ()
 if ((NOT Boost_LIBRARY_DIRS) OR ("${Boost_LIBRARY_DIRS}" STREQUAL ""))
     set(Boost_LIBRARY_DIRS "${Boost_INCLUDE_DIRS}/stage/lib")
 endif ()
-link_directories(${Boost_LIBRARY_DIRS})
 
-include_directories(${Boost_INCLUDE_DIRS})
-list(APPEND STORM_LINK_LIBRARIES ${Boost_LIBRARIES})
+set(CNTVAR 1)
+foreach(BOOSTLIB ${Boost_LIBRARIES})
+    add_imported_library(target-boost-${CNTVAR} SHARED ${BOOSTLIB} ${Boost_INCLUDE_DIRS})
+    list(APPEND STORM_DEP_TARGETS target-boost-${CNTVAR}_SHARED)
+    MATH(EXPR CNTVAR "${CNTVAR}+1")
+endforeach()
 message(STATUS "Storm - Using boost ${Boost_VERSION} (library version ${Boost_LIB_VERSION}).")
 # set the information for the config header
 set(STORM_BOOST_INCLUDE_DIR "${Boost_INCLUDE_DIRS}")
@@ -131,8 +134,8 @@ set(STORM_HAVE_Z3 ${Z3_FOUND})
 
 if(Z3_FOUND)
     message (STATUS "Storm - Linking with Z3.")
-    include_directories(${Z3_INCLUDE_DIRS})
-    list(APPEND STORM_LINK_LIBRARIES ${Z3_LIBRARIES})
+    add_imported_library(z3 SHARED ${Z3_LIBRARIES} ${Z3_INCLUDE_DIRS})
+    list(APPEND STORM_DEP_TARGETS z3_SHARED)
 endif(Z3_FOUND)
 
 #############################################################
@@ -175,8 +178,6 @@ include(${STORM_3RDPARTY_SOURCE_DIR}/include_cudd.cmake)
 #############################################################
 include(${STORM_3RDPARTY_SOURCE_DIR}/include_cpptemplate.cmake)
 
-
-
 #############################################################
 ##
 ##      carl
@@ -185,23 +186,25 @@ include(${STORM_3RDPARTY_SOURCE_DIR}/include_cpptemplate.cmake)
 
 set(STORM_HAVE_CARL OFF)
 if(USE_CARL)
-    find_package(carl QUIET)
-    if(carl_FOUND)
+	if (NOT STORM_FORCE_SHIPPED_CARL)
+    	find_package(carl QUIET)
+	endif()
+    if(carl_FOUND AND NOT STORM_FORCE_SHIPPED_CARL)
+		set(STORM_SHIPPED_CARL OFF)
         set(STORM_HAVE_CARL ON)
         message(STATUS "Storm - Use system version of carl.")
         message(STATUS "Storm - Linking with carl ${carl_VERSION} (CARL_USE_CLN_NUMBERS: ${CARL_USE_CLN_NUMBERS}).")
         set(STORM_HAVE_CLN ${CARL_USE_CLN_NUMBERS})
     else()
+		set(STORM_SHIPPED_CARL ON)
 		# The first external project will be built at *configure stage*
 		message("START CARL CONFIG PROCESS")
 		file(MAKE_DIRECTORY ${STORM_3RDPARTY_BINARY_DIR}/carl_download) 
-			execute_process(
-			COMMAND ${CMAKE_COMMAND} ${STORM_3RDPARTY_SOURCE_DIR}/carl "-DSTORM_3RDPARTY_BINARY_DIR=${STORM_3RDPARTY_BINARY_DIR}"
-			WORKING_DIRECTORY ${STORM_3RDPARTY_BINARY_DIR}/carl_download
-			OUTPUT_VARIABLE carlconfig_out
-			RESULT_VARIABLE carlconfig_result
-					)
-		
+		execute_process(
+		COMMAND ${CMAKE_COMMAND} ${STORM_3RDPARTY_SOURCE_DIR}/carl "-DSTORM_3RDPARTY_BINARY_DIR=${STORM_3RDPARTY_BINARY_DIR}"
+		WORKING_DIRECTORY ${STORM_3RDPARTY_BINARY_DIR}/carl_download
+		OUTPUT_VARIABLE carlconfig_out
+		RESULT_VARIABLE carlconfig_result)
 								
 		if(NOT carlconfig_result)
 			message("${carlconfig_out}")
@@ -218,30 +221,34 @@ if(USE_CARL)
     	message("END CARL CONFIG PROCESS")
     	
         message(STATUS "Storm - Using shipped version of carl.")
-        set(CARL_BUILD_COMMAND make lib_carl)
         ExternalProject_Add(
                 carl
                 SOURCE_DIR ${STORM_3RDPARTY_BINARY_DIR}/carl
                 CONFIGURE_COMMAND ""
                 BUILD_IN_SOURCE 1
                 BUILD_COMMAND make lib_carl
-                INSTALL_COMMAND ""
+                INSTALL_COMMAND make install
                 LOG_BUILD ON
+		LOG_INSTALL ON
                 BUILD_BYPRODUCTS ${STORM_3RDPARTY_BINARY_DIR}/carl/lib/libcarl${DYNAMIC_EXT}
         )
         include(${STORM_3RDPARTY_BINARY_DIR}/carl/carlConfig.cmake)
         message("CARL_USE_CLN_NUMBERS: ${CARL_USE_CLN_NUMBERS}")
 		set(STORM_HAVE_CLN ${CARL_USE_CLN_NUMBERS})
 		add_dependencies(resources carl)
-        set(carl_INCLUDE_DIR "${STORM_3RDPARTY_BINARY_DIR}/carl/build/include")
+        set(carl_INCLUDE_DIR "${STORM_3RDPARTY_BINARY_DIR}/carl/include/")
+		set(carl_LIBRARIES ${STORM_3RDPARTY_BINARY_DIR}/carl/lib/libcarl${DYNAMIC_EXT})
         set(STORM_HAVE_CARL ON)
+        
+        # install the carl dynamic library if we build it
+        get_filename_component(STORM_CARL_DYLIB_FULL_PATH ${STORM_3RDPARTY_BINARY_DIR}/carl/lib/libcarl${DYNAMIC_EXT} REALPATH)
+        install(FILES ${STORM_CARL_DYLIB_FULL_PATH} DESTINATION lib)
     endif()
     if(STORM_USE_CLN_NUMBERS AND NOT STORM_HAVE_CLN)
 		message(FATAL_ERROR "Cannot use CLN numbers if carl is build without")
 	endif()
 	
 	list(APPEND STORM_DEP_IMP_TARGETS lib_carl) 
-    
 endif()
 
 
@@ -276,9 +283,8 @@ if(USE_HYPRO)
 	find_package(hypro QUIET REQUIRED)
 	if(hypro_FOUND)
 		set(STORM_HAVE_HYPRO ON)
-		message(STATUS "Storm - Linking with hypro ${hypro_VERSION_STRING}.")
+		message(STATUS "Storm - Linking with hypro.")
 		include_directories("${hypro_INCLUDE_DIR}")
-		link_directories( /Users/tim/hypro/build )
 		list(APPEND STORM_LINK_LIBRARIES ${hypro_LIBRARIES})
 	else()
 		message(FATAL_ERROR "StoRM - HyPro was requested but not found")
@@ -317,10 +323,11 @@ if (ENABLE_MSAT)
     list(APPEND STORM_LINK_LIBRARIES "mathsat")
     if(GMP_FOUND)
         include_directories("${GMP_INCLUDE_DIR}")
-        list(APPEND STORM_LINK_LIBRARIES "gmp")
+        list(APPEND STORM_LINK_LIBRARIES ${GMP_LIBRARY})
     elseif(MPIR_FOUND)
         include_directories("${GMP_INCLUDE_DIR}")
-        list(APPEND STORM_LINK_LIBRARIES "mpir" "mpirxx")
+        list(APPEND STORM_LINK_LIBRARIES ${GMP_MPIR_LIBRARY})
+        list(APPEND STORM_LINK_LIBRARIES ${GMP_MPIRXX_LIBRARY})
     else(GMP_FOUND)
         message(FATAL_ERROR "GMP is required for MathSAT, but was not found!")
     endif(GMP_FOUND)
@@ -345,7 +352,7 @@ ExternalProject_Add(
         DOWNLOAD_COMMAND ""
         PREFIX "sylvan"
         SOURCE_DIR ${STORM_3RDPARTY_SOURCE_DIR}/sylvan
-        CMAKE_ARGS -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DSYLVAN_BUILD_TEST=Off -DSYLVAN_BUILD_EXAMPLES=Off -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+        CMAKE_ARGS -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DSYLVAN_BUILD_TEST=Off -DSYLVAN_BUILD_EXAMPLES=Off -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DUSE_CARL=ON -Dcarl_INCLUDE_DIR=${carl_INCLUDE_DIR} -DSYLVAN_PORTABLE=${STORM_PORTABLE_RELEASE} -Dcarl_LIBRARIES=${carl_LIBRARIES}
         BINARY_DIR ${STORM_3RDPARTY_BINARY_DIR}/sylvan
         BUILD_IN_SOURCE 0
         INSTALL_COMMAND ""
@@ -362,16 +369,19 @@ message(STATUS "Storm - Using shipped version of sylvan.")
 message(STATUS "Storm - Linking with sylvan.")
 add_imported_library(sylvan STATIC ${Sylvan_LIBRARY} ${Sylvan_INCLUDE_DIR})
 add_dependencies(sylvan_STATIC sylvan)
+if(STORM_SHIPPED_CARL)
+	add_dependencies(sylvan carl)
+endif()
 list(APPEND STORM_DEP_TARGETS sylvan_STATIC)
 
-if(${OPERATING_SYSTEM} MATCHES "Linux")
-    find_package(Hwloc QUIET REQUIRED)
-    if(HWLOC_FOUND)
-        message(STATUS "Storm - Linking with hwloc ${HWLOC_VERSION}.")
-        add_imported_library(hwloc STATIC ${HWLOC_LIBRARIES} "")
-        list(APPEND STORM_DEP_TARGETS hwloc_STATIC)
-    else()
-        message(FATAL_ERROR "HWLOC is required but was not found.")
+find_package(Hwloc QUIET REQUIRED)
+if(HWLOC_FOUND)
+    message(STATUS "Storm - Linking with hwloc ${HWLOC_VERSION}.")
+    add_imported_library(hwloc STATIC ${HWLOC_LIBRARIES} "")
+    list(APPEND STORM_DEP_TARGETS hwloc_STATIC)
+else()
+    if(${OPERATING_SYSTEM} MATCHES "Linux")
+        message(FATAL_ERROR "HWLOC is required on Linux but was not found.")
     endif()
 endif()
 

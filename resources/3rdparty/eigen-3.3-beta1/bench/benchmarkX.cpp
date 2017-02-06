@@ -5,7 +5,7 @@
 #include <Eigen/Core>
 
 using namespace std;
-using namespace Eigen;
+using namespace StormEigen;
 
 #ifndef MATTYPE
 #define MATTYPE MatrixXLd

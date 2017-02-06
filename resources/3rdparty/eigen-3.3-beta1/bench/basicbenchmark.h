@@ -15,19 +15,19 @@ void benchBasic_loop(const MatrixType& I, MatrixType& m, int iterations)
     if (Mode==LazyEval)
     {
       asm("#begin_bench_loop LazyEval");
-      if (MatrixType::SizeAtCompileTime!=Eigen::Dynamic) asm("#fixedsize");
+      if (MatrixType::SizeAtCompileTime!=StormEigen::Dynamic) asm("#fixedsize");
       m = (I + 0.00005 * (m + m.lazy() * m)).eval();
     }
     else if (Mode==OmpEval)
     {
       asm("#begin_bench_loop OmpEval");
-      if (MatrixType::SizeAtCompileTime!=Eigen::Dynamic) asm("#fixedsize");
+      if (MatrixType::SizeAtCompileTime!=StormEigen::Dynamic) asm("#fixedsize");
       m = (I + 0.00005 * (m + m.lazy() * m)).evalOMP();
     }
     else
     {
       asm("#begin_bench_loop EarlyEval");
-      if (MatrixType::SizeAtCompileTime!=Eigen::Dynamic) asm("#fixedsize");
+      if (MatrixType::SizeAtCompileTime!=StormEigen::Dynamic) asm("#fixedsize");
       m = I + 0.00005 * (m + m * m);
     }
     asm("#end_bench_loop");
@@ -48,7 +48,7 @@ double benchBasic(const MatrixType& mat, int iterations, int tries)
 
   initMatrix_identity(I);
 
-  Eigen::BenchTimer timer;
+  StormEigen::BenchTimer timer;
   for(uint t=0; t<tries; ++t)
   {
     initMatrix_random(m);

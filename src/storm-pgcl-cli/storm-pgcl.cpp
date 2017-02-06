@@ -14,6 +14,7 @@
 #include "storm/exceptions/FileIoException.h"
 
 #include "storm/settings/modules/GeneralSettings.h"
+#include "storm/settings/modules/ResourceSettings.h"
 #include "storm/settings/modules/PGCLSettings.h"
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/settings/modules/DebugSettings.h"
@@ -28,6 +29,7 @@ void initializeSettings() {
     
     // Register all known settings modules.
     storm::settings::addModule<storm::settings::modules::GeneralSettings>();
+    storm::settings::addModule<storm::settings::modules::ResourceSettings>();
     storm::settings::addModule<storm::settings::modules::PGCLSettings>();
     storm::settings::addModule<storm::settings::modules::CoreSettings>();
     storm::settings::addModule<storm::settings::modules::DebugSettings>();
@@ -76,13 +78,16 @@ int main(const int argc, const char** argv) {
             programGraphToDotFile(*progGraph);
         }
         if (storm::settings::getModule<storm::settings::modules::PGCLSettings>().isToJaniSet()) {
-            storm::builder::JaniProgramGraphBuilder builder(*progGraph);
+            storm::builder::JaniProgramGraphBuilderSetting settings;
+            // To disable reward detection, uncomment the following line
+            // TODO add a setting for this.
+            // settings.filterRewardVariables = false;
+            storm::builder::JaniProgramGraphBuilder builder(*progGraph, settings);
             if (storm::settings::getModule<storm::settings::modules::PGCLSettings>().isProgramVariableRestrictionSet()) {
                 // TODO More fine grained control
                 storm::storage::IntegerInterval restr = storm::storage::parseIntegerInterval(storm::settings::getModule<storm::settings::modules::PGCLSettings>().getProgramVariableRestrictions());
                 builder.restrictAllVariables(restr);
             }
-            builder.restrictAllVariables(0, 120);
             storm::jani::Model* model = builder.build();
             delete progGraph;
             handleJani(*model);
@@ -90,13 +95,11 @@ int main(const int argc, const char** argv) {
         } else {
             
         }
-        
-        
-        
-        
     }catch (storm::exceptions::BaseException const& exception) {
         STORM_LOG_ERROR("An exception caused StoRM-PGCL to terminate. The message of the exception is: " << exception.what());
+        return 1;
     } catch (std::exception const& exception) {
         STORM_LOG_ERROR("An unexpected exception occurred and caused StoRM-PGCL to terminate. The message of this exception is: " << exception.what());
+        return 2;
     }
 }

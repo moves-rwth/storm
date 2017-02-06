@@ -10,6 +10,9 @@
 #include <algorithm>
 #include <functional>
 #include <numeric>
+#include <storm/adapters/CarlAdapter.h>
+
+#include <boost/optional.hpp>
 
 #include "storm/storage/BitVector.h"
 #include "storm/utility/constants.h"
@@ -20,6 +23,18 @@ namespace storm {
     namespace utility {
         namespace vector {
 
+            template<typename ValueType>
+            struct VectorHash {
+                size_t operator()(std::vector<ValueType> const& vec) const {
+                    std::hash<ValueType> hasher;
+                    std::size_t seed = 0;
+                    for (ValueType const& element : vec) {
+                        seed ^= hasher(element) + 0x9e3779b9 + (seed<<6) + (seed>>2);
+                    }
+                    return seed;
+                }
+            };
+            
             /*!
              * Finds the given element in the given vector.
              * If the vector does not contain the element, it is inserted (at the end of vector).
@@ -384,7 +399,7 @@ namespace storm {
              */
             template<class ValueType1, class ValueType2>
             void scaleVectorInPlace(std::vector<ValueType1>& target, ValueType2 const& factor) {
-                applyPointwise<ValueType1, ValueType2>(target, target, [&] (ValueType1 const& argument) -> ValueType1 { return argument * factor; });
+                applyPointwise<ValueType1, ValueType1>(target, target, [&] (ValueType1 const& argument) -> ValueType1 { return argument * factor; });
             }
             
             /*!
@@ -726,6 +741,20 @@ namespace storm {
             }
             
             /*!
+             * Takes the input vector and ensures that all entries conform to the bounds.
+             */
+            template <typename ValueType>
+            void clip(std::vector<ValueType>& x, boost::optional<ValueType> const& lowerBound, boost::optional<ValueType> const& upperBound) {
+                for (auto& entry : x) {
+                    if (lowerBound && entry < lowerBound.get()) {
+                        entry = lowerBound.get();
+                    } else if (upperBound && entry > upperBound.get()) {
+                        entry = upperBound.get();
+                    }
+                }
+            }
+            
+            /*!
              * Takes the given offset vector and applies the given contraint. That is, it produces another offset vector that contains
              * the relative offsets of the entries given by the constraint.
              *
@@ -810,6 +839,14 @@ namespace storm {
                 return std::any_of(v.begin(), v.end(), [](T value){return !storm::utility::isZero(value);});
             }
 
+            inline std::set<storm::RationalFunctionVariable> getVariables(std::vector<storm::RationalFunction> const& vector) {
+                std::set<storm::RationalFunctionVariable> result;
+                for(auto const& entry : vector) {
+                    entry.gatherVariables(result);
+                }
+                return result;
+            }
+
             /*!
              * Output vector as string.
              *
@@ -817,7 +854,7 @@ namespace storm {
              * @return String containing the representation of the vector.
              */
             template<typename ValueType>
-            std::string toString(std::vector<ValueType> vector) {
+            std::string toString(std::vector<ValueType> const& vector) {
                 std::stringstream stream;
                 stream << "vector (" << vector.size() << ") [ ";
                 if (!vector.empty()) {

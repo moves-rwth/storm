@@ -7,8 +7,6 @@
 #include "storm/settings/ArgumentBuilder.h"
 #include "storm/settings/Argument.h"
 
-#include "storm/exceptions/InvalidSettingsException.h"
-
 namespace storm {
     namespace settings {
         namespace modules {

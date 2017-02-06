@@ -1,11 +1,16 @@
 #ifndef STORM_STORAGE_DD_SYLVAN_INTERNALSYLVANDDMANAGER_H_
 #define STORM_STORAGE_DD_SYLVAN_INTERNALSYLVANDDMANAGER_H_
 
+#include <boost/optional.hpp>
+
 #include "storm/storage/dd/DdType.h"
 #include "storm/storage/dd/InternalDdManager.h"
 
 #include "storm/storage/dd/sylvan/InternalSylvanBdd.h"
 #include "storm/storage/dd/sylvan/InternalSylvanAdd.h"
+
+#include "storm/adapters/CarlAdapter.h"
+#include "storm-config.h"
 
 namespace storm {
     namespace dd {
@@ -74,9 +79,19 @@ namespace storm {
             /*!
              * Creates a new pair of DD variables and returns the two cubes as a result.
              *
+             * @param position An optional position at which to insert the new variable pair. This may only be given, if
+             * the manager supports ordered insertion.
              * @return The two cubes belonging to the DD variables.
              */
-            std::pair<InternalBdd<DdType::Sylvan>, InternalBdd<DdType::Sylvan>> createNewDdVariablePair();
+            std::pair<InternalBdd<DdType::Sylvan>, InternalBdd<DdType::Sylvan>> createNewDdVariablePair(boost::optional<uint_fast64_t> const& position = boost::none);
+            
+            /*!
+             * Checks whether this manager supports the ordered insertion of variables, i.e. inserting variables at
+             * positions between already existing variables.
+             *
+             * @return True iff the manager supports ordered insertion.
+             */
+            bool supportsOrderedInsertion() const;
             
             /*!
              * Sets whether or not dynamic reordering is allowed for the DDs managed by this manager.
@@ -97,6 +112,13 @@ namespace storm {
              */
             void triggerReordering();
             
+            /*!
+             * Retrieves the number of DD variables managed by this manager.
+             *
+             * @return The number of managed variables.
+             */
+            uint_fast64_t getNumberOfDdVariables() const;
+            
         private:
             // A counter for the number of instances of this class. This is used to determine when to initialize and
             // quit the sylvan. This is because Sylvan does not know the concept of managers but implicitly has a
@@ -114,11 +136,21 @@ namespace storm {
         template<>
         InternalAdd<DdType::Sylvan, uint_fast64_t> InternalDdManager<DdType::Sylvan>::getAddOne() const;
 
+#ifdef STORM_HAVE_CARL
+		template<>
+		InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalDdManager<DdType::Sylvan>::getAddOne() const;
+#endif
+
         template<>
         InternalAdd<DdType::Sylvan, double> InternalDdManager<DdType::Sylvan>::getAddZero() const;
         
         template<>
         InternalAdd<DdType::Sylvan, uint_fast64_t> InternalDdManager<DdType::Sylvan>::getAddZero() const;
+
+#ifdef STORM_HAVE_CARL
+		template<>
+		InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalDdManager<DdType::Sylvan>::getAddZero() const;
+#endif
 
         template<>
         InternalAdd<DdType::Sylvan, double> InternalDdManager<DdType::Sylvan>::getConstant(double const& value) const;
@@ -126,6 +158,10 @@ namespace storm {
         template<>
         InternalAdd<DdType::Sylvan, uint_fast64_t> InternalDdManager<DdType::Sylvan>::getConstant(uint_fast64_t const& value) const;
 
+#ifdef STORM_HAVE_CARL
+		template<>
+		InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalDdManager<DdType::Sylvan>::getConstant(storm::RationalFunction const& value) const;
+#endif
     }
 }
 

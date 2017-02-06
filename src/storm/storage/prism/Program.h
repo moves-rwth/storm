@@ -22,6 +22,7 @@
 namespace storm {
     namespace jani {
         class Model;
+        class Property;
     }
     
     namespace prism {
@@ -471,6 +472,14 @@ namespace storm {
             std::vector<Label> const& getLabels() const;
             
             /*!
+             * Retrieves all guards appearing in the program.
+             *
+             * @param negated A flag indicating whether the guards should be negated.
+             * @return All guards appearing in the program.
+             */
+            std::vector<storm::expressions::Expression> getAllGuards(bool negated = false) const;
+            
+            /*!
              * Retrieves the expression associated with the given label, if it exists.
              *
              * @param labelName The name of the label to retrieve.
@@ -557,7 +566,7 @@ namespace storm {
              * @param smtSolverFactory an SMT solver factory to use. If none is given, the default one is used.
              * @return The resulting program.
              */
-            Program flattenModules(std::unique_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory = std::unique_ptr<storm::utility::solver::SmtSolverFactory>(new storm::utility::solver::SmtSolverFactory())) const;
+            Program flattenModules(std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory = std::shared_ptr<storm::utility::solver::SmtSolverFactory>(new storm::utility::solver::SmtSolverFactory())) const;
             
             friend std::ostream& operator<<(std::ostream& stream, Program const& program);
             
@@ -567,7 +576,7 @@ namespace storm {
              * @return The manager responsible for the expressions of this program.
              */
             storm::expressions::ExpressionManager& getManager() const;
-
+            
             std::unordered_map<uint_fast64_t, std::string> buildCommandIndexToActionNameMap() const;
 
             std::unordered_map<uint_fast64_t, uint_fast64_t> buildCommandIndexToActionIndex() const;
@@ -578,6 +587,12 @@ namespace storm {
              * Converts the PRISM model into an equivalent JANI model.
              */
             storm::jani::Model toJani(bool allVariablesGlobal = false) const;
+            
+            /*!
+             * Converts the PRISM model into an equivalent JANI model and retrieves possible label renamings that had
+             * to be performed in the process.
+             */
+            std::pair<storm::jani::Model, std::map<std::string, std::string>> toJaniWithLabelRenaming(bool allVariablesGlobal = false) const;
             
         private:
             /*!

@@ -109,6 +109,13 @@ namespace storm {
                  * @return The manager responsible for the DDs that represent this model.
                  */
                 storm::dd::DdManager<Type>& getManager();
+
+                /*!
+                 * Retrieves the manager responsible for the DDs that represent this model.
+                 *
+                 * @return The manager responsible for the DDs that represent this model.
+                 */
+                std::shared_ptr<storm::dd::DdManager<Type>> const& getManagerAsSharedPointer() const;
                 
                 /*!
                  * Retrieves the reachable states of the model.
@@ -130,15 +137,15 @@ namespace storm {
                  * @param label The label for which to get the labeled states.
                  * @return The set of states labeled with the requested label in the form of a bit vector.
                  */
-                storm::dd::Bdd<Type> getStates(std::string const& label) const;
+                virtual storm::dd::Bdd<Type> getStates(std::string const& label) const;
                 
                 /*!
                  * Returns the set of states labeled satisfying the given expression (that must be of boolean type).
                  *
                  * @param expression The expression that needs to hold in the states.
-                 * @return The set of states labeled satisfying the given expression.
+                 * @return The set of states satisfying the given expression.
                  */
-                storm::dd::Bdd<Type> getStates(storm::expressions::Expression const& expression) const;
+                virtual storm::dd::Bdd<Type> getStates(storm::expressions::Expression const& expression) const;
                 
                 /*!
                  * Retrieves whether the given label is a valid label in this model.
@@ -146,7 +153,7 @@ namespace storm {
                  * @param label The label to be checked for validity.
                  * @return True if the given label is valid in this model.
                  */
-                bool hasLabel(std::string const& label) const;
+                virtual bool hasLabel(std::string const& label) const;
                 
                 /*!
                  * Retrieves the matrix representing the transitions of the model.
@@ -161,6 +168,14 @@ namespace storm {
                  * @return A matrix representing the transitions of the model.
                  */
                 storm::dd::Add<Type, ValueType>& getTransitionMatrix();
+
+                /*!
+                 * Retrieves the matrix qualitatively (i.e. without probabilities) representing the transitions of the
+                 * model.
+                 *
+                 * @return A matrix representing the qualitative transitions of the model.
+                 */
+                storm::dd::Bdd<Type> getQualitativeTransitionMatrix() const;
                 
                 /*!
                  * Retrieves the meta variables used to encode the rows of the transition matrix and the vector indices.
@@ -238,8 +253,6 @@ namespace storm {
                  * @return The number of reward models associated with this model.
                  */
                 uint_fast64_t getNumberOfRewardModels() const;
-                
-                virtual std::size_t getSizeInBytes() const override;
                 
                 virtual void printModelInformationToStream(std::ostream& out) const override;
                 

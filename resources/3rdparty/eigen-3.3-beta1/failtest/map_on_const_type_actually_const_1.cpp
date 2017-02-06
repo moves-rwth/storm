@@ -6,7 +6,7 @@
 #define CV_QUALIFIER
 #endif
 
-using namespace Eigen;
+using namespace StormEigen;
 
 void foo(float *ptr){
     Map<CV_QUALIFIER Vector3f>(ptr).coeffRef(0) = 1.0f;

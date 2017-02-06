@@ -8,6 +8,9 @@
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
 
+#include "storm-config.h"
+#include "storm/adapters/CarlAdapter.h"
+
 namespace storm {
     namespace adapters {
         
@@ -139,7 +142,7 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type, typename ValueType>
-        boost::any AddExpressionAdapter<Type, ValueType>::visit(storm::expressions::VariableExpression const& expression, boost::any const& data) {
+        boost::any AddExpressionAdapter<Type, ValueType>::visit(storm::expressions::VariableExpression const& expression, boost::any const&) {
             auto const& variablePair = variableMapping->find(expression.getVariable());
             STORM_LOG_THROW(variablePair != variableMapping->end(), storm::exceptions::InvalidArgumentException, "Cannot translate the given expression, because it contains the variable '" << expression.getVariableName() << "' for which no DD counterpart is known.");
             if (expression.hasBooleanType()) {
@@ -184,23 +187,25 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type, typename ValueType>
-        boost::any AddExpressionAdapter<Type, ValueType>::visit(storm::expressions::BooleanLiteralExpression const& expression, boost::any const& data) {
+        boost::any AddExpressionAdapter<Type, ValueType>::visit(storm::expressions::BooleanLiteralExpression const& expression, boost::any const&) {
             return expression.getValue() ? ddManager->getBddOne() : ddManager->getBddZero();
         }
         
         template<storm::dd::DdType Type, typename ValueType>
-        boost::any AddExpressionAdapter<Type, ValueType>::visit(storm::expressions::IntegerLiteralExpression const& expression, boost::any const& data) {
+        boost::any AddExpressionAdapter<Type, ValueType>::visit(storm::expressions::IntegerLiteralExpression const& expression, boost::any const&) {
             return ddManager->getConstant(static_cast<ValueType>(expression.getValue()));
         }
         
         template<storm::dd::DdType Type, typename ValueType>
-        boost::any AddExpressionAdapter<Type, ValueType>::visit(storm::expressions::RationalLiteralExpression const& expression, boost::any const& data) {
+        boost::any AddExpressionAdapter<Type, ValueType>::visit(storm::expressions::RationalLiteralExpression const& expression, boost::any const&) {
             return ddManager->getConstant(static_cast<ValueType>(expression.getValueAsDouble()));
         }
         
         // Explicitly instantiate the symbolic expression adapter
         template class AddExpressionAdapter<storm::dd::DdType::CUDD, double>;
         template class AddExpressionAdapter<storm::dd::DdType::Sylvan, double>;
-        
+#ifdef STORM_HAVE_CARL
+		template class AddExpressionAdapter<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+#endif
     } // namespace adapters
 } // namespace storm

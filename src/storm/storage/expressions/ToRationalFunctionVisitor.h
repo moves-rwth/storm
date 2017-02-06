@@ -1,10 +1,14 @@
 #ifndef STORM_STORAGE_EXPRESSIONS_TORATIONALFUNCTIONVISITOR_H_
 #define STORM_STORAGE_EXPRESSIONS_TORATIONALFUNCTIONVISITOR_H_
 
+#include <unordered_map>
+
 #include "storm/adapters/CarlAdapter.h"
+
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/Expressions.h"
 #include "storm/storage/expressions/ExpressionVisitor.h"
+#include "storm/storage/expressions/ExpressionEvaluatorBase.h"
 #include "storm/storage/expressions/Variable.h"
 
 namespace storm {
@@ -14,7 +18,7 @@ namespace storm {
         template<typename RationalFunctionType>
         class ToRationalFunctionVisitor : public ExpressionVisitor {
         public:
-            ToRationalFunctionVisitor();
+            ToRationalFunctionVisitor(ExpressionEvaluatorBase<RationalFunctionType> const& evaluator);
             
             RationalFunctionType toRationalFunction(Expression const& expression);
             
@@ -28,6 +32,8 @@ namespace storm {
             virtual boost::any visit(BooleanLiteralExpression const& expression, boost::any const& data) override;
             virtual boost::any visit(IntegerLiteralExpression const& expression, boost::any const& data) override;
             virtual boost::any visit(RationalLiteralExpression const& expression, boost::any const& data) override;
+            
+            void setMapping(storm::expressions::Variable const& variable, RationalFunctionType const& value);
             
         private:
             template<typename TP = typename RationalFunctionType::PolyType, carl::EnableIf<carl::needs_cache<TP>> = carl::dummy>
@@ -45,6 +51,12 @@ namespace storm {
             
             // The cache that is used in case the underlying type needs a cache.
             std::shared_ptr<carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>>> cache;
+            
+            // A mapping from variables to their values.
+            std::unordered_map<storm::expressions::Variable, RationalFunctionType> valueMapping;
+
+            // A reference to an expression evaluator (mainly for resolving the boolean condition in IfThenElse expressions)
+            ExpressionEvaluatorBase<RationalFunctionType> const& evaluator;
         };
 #endif
     }

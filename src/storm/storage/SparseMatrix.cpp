@@ -1274,7 +1274,7 @@ namespace storm {
         
 #ifdef STORM_HAVE_CARL
         template<>
-        void SparseMatrix<Interval>::performSuccessiveOverRelaxationStep(Interval omega, std::vector<Interval>& x, std::vector<Interval> const& b) const {
+        void SparseMatrix<Interval>::performSuccessiveOverRelaxationStep(Interval, std::vector<Interval>&, std::vector<Interval> const&) const {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This operation is not supported.");
         }
 #endif
@@ -1293,19 +1293,6 @@ namespace storm {
                 }
                 ++currentRow;
             }
-        }
-        
-        template<typename ValueType>
-        std::size_t SparseMatrix<ValueType>::getSizeInBytes() const {
-            uint_fast64_t size = sizeof(*this);
-            
-            // Add size of columns and values.
-            size += sizeof(MatrixEntry<index_type, ValueType>) * columnsAndValues.capacity();
-            
-            // Add row_indications size.
-            size += sizeof(uint_fast64_t) * rowIndications.capacity();
-            
-            return size;
         }
         
         template<typename ValueType>

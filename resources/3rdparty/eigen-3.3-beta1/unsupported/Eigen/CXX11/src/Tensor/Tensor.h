@@ -11,7 +11,7 @@
 #ifndef EIGEN_CXX11_TENSOR_TENSOR_H
 #define EIGEN_CXX11_TENSOR_TENSOR_H
 
-namespace Eigen {
+namespace StormEigen {
 
 /** \class Tensor
   * \ingroup CXX11_Tensor_Module
@@ -37,7 +37,7 @@ namespace Eigen {
   * You can access elements of tensors using normal subscripting:
   *
   * \code
-  * Eigen::Tensor<double, 4> t(10, 10, 10, 10);
+  * StormEigen::Tensor<double, 4> t(10, 10, 10, 10);
   * t(0, 1, 2, 3) = 42.0;
   * \endcode
   *
@@ -65,7 +65,7 @@ class Tensor : public TensorBase<Tensor<Scalar_, NumIndices_, Options_, IndexTyp
   public:
     typedef Tensor<Scalar_, NumIndices_, Options_, IndexType_> Self;
     typedef TensorBase<Tensor<Scalar_, NumIndices_, Options_, IndexType_> > Base;
-    typedef typename Eigen::internal::nested<Self>::type Nested;
+    typedef typename StormEigen::internal::nested<Self>::type Nested;
     typedef typename internal::traits<Self>::StorageKind StorageKind;
     typedef typename internal::traits<Self>::Index Index;
     typedef Scalar_ Scalar;
@@ -524,6 +524,6 @@ class Tensor : public TensorBase<Tensor<Scalar_, NumIndices_, Options_, IndexTyp
     }
 };
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_CXX11_TENSOR_TENSOR_H

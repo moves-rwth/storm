@@ -98,6 +98,21 @@ namespace storm {
             // Intentionally left empty.
         }
         
+        template<typename ValueType>
+        void MinMaxLinearEquationSolver<ValueType>::setLowerBound(ValueType const& value) {
+            lowerBound = value;
+        }
+        
+        template<typename ValueType>
+        void MinMaxLinearEquationSolver<ValueType>::setUpperBound(ValueType const& value) {
+            upperBound = value;
+        }
+        
+        template<typename ValueType>
+        void MinMaxLinearEquationSolver<ValueType>::setBounds(ValueType const& lower, ValueType const& upper) {
+            setLowerBound(lower);
+            setUpperBound(upper);
+        }
         
         template<typename ValueType>
         MinMaxLinearEquationSolverFactory<ValueType>::MinMaxLinearEquationSolverFactory(bool trackScheduler) : trackScheduler(trackScheduler) {

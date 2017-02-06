@@ -10,7 +10,7 @@
 #ifndef EIGEN_CXX11_TENSOR_TENSOR_FORCED_EVAL_H
 #define EIGEN_CXX11_TENSOR_TENSOR_FORCED_EVAL_H
 
-namespace Eigen {
+namespace StormEigen {
 
 /** \class TensorForcedEval
   * \ingroup CXX11_Tensor_Module
@@ -40,7 +40,7 @@ struct traits<TensorForcedEvalOp<XprType> >
 };
 
 template<typename XprType>
-struct eval<TensorForcedEvalOp<XprType>, Eigen::Dense>
+struct eval<TensorForcedEvalOp<XprType>, StormEigen::Dense>
 {
   typedef const TensorForcedEvalOp<XprType>& type;
 };
@@ -59,14 +59,14 @@ template<typename XprType>
 class TensorForcedEvalOp : public TensorBase<TensorForcedEvalOp<XprType> >
 {
   public:
-  typedef typename Eigen::internal::traits<TensorForcedEvalOp>::Scalar Scalar;
-  typedef typename Eigen::internal::traits<TensorForcedEvalOp>::Packet Packet;
-  typedef typename Eigen::NumTraits<Scalar>::Real RealScalar;
+  typedef typename StormEigen::internal::traits<TensorForcedEvalOp>::Scalar Scalar;
+  typedef typename StormEigen::internal::traits<TensorForcedEvalOp>::Packet Packet;
+  typedef typename StormEigen::NumTraits<Scalar>::Real RealScalar;
   typedef typename internal::remove_const<typename XprType::CoeffReturnType>::type CoeffReturnType;
   typedef typename internal::remove_const<typename XprType::PacketReturnType>::type PacketReturnType;
-  typedef typename Eigen::internal::nested<TensorForcedEvalOp>::type Nested;
-  typedef typename Eigen::internal::traits<TensorForcedEvalOp>::StorageKind StorageKind;
-  typedef typename Eigen::internal::traits<TensorForcedEvalOp>::Index Index;
+  typedef typename StormEigen::internal::nested<TensorForcedEvalOp>::type Nested;
+  typedef typename StormEigen::internal::traits<TensorForcedEvalOp>::StorageKind StorageKind;
+  typedef typename StormEigen::internal::traits<TensorForcedEvalOp>::Index Index;
 
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TensorForcedEvalOp(const XprType& expr)
       : m_xpr(expr) {}
@@ -147,6 +147,6 @@ struct TensorEvaluator<const TensorForcedEvalOp<ArgType>, Device>
 };
 
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_CXX11_TENSOR_TENSOR_FORCED_EVAL_H

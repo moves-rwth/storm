@@ -13,7 +13,7 @@
 // This file contains many lightweight helper classes used to
 // implement and control fast level 2 and level 3 BLAS-like routines.
 
-namespace Eigen {
+namespace StormEigen {
 
 namespace internal {
 
@@ -364,6 +364,6 @@ template<typename T> const typename T::Scalar* extract_data(const T& m)
 
 } // end namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_BLASUTIL_H

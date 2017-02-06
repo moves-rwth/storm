@@ -14,8 +14,8 @@
     StopBenchmarkTiming();                                                     \
     cudaStream_t stream;                                                       \
     cudaStreamCreate(&stream);                                                 \
-    Eigen::GpuDevice device(&stream);                                          \
-    BenchmarkSuite<Eigen::GpuDevice> suite(device, N);                         \
+    StormEigen::GpuDevice device(&stream);                                          \
+    BenchmarkSuite<StormEigen::GpuDevice> suite(device, N);                         \
     cudaDeviceSynchronize();                                                   \
     suite.FUNC(iters);                                                         \
     cudaStreamDestroy(stream);                                                 \
@@ -39,8 +39,8 @@ BM_FuncGPU(reduction);
     StopBenchmarkTiming();                                                     \
     cudaStream_t stream;                                                       \
     cudaStreamCreate(&stream);                                                 \
-    Eigen::GpuDevice device(&stream);                                          \
-    BenchmarkSuite<Eigen::GpuDevice> suite(device, D1, D2, D3);                \
+    StormEigen::GpuDevice device(&stream);                                          \
+    BenchmarkSuite<StormEigen::GpuDevice> suite(device, D1, D2, D3);                \
     cudaDeviceSynchronize();                                                   \
     suite.FUNC(iters);                                                         \
     cudaStreamDestroy(stream);                                                 \
@@ -59,8 +59,8 @@ BM_FuncWithInputDimsGPU(contraction, N, 64, N);
     StopBenchmarkTiming();                                                     \
     cudaStream_t stream;                                                       \
     cudaStreamCreate(&stream);                                                 \
-    Eigen::GpuDevice device(&stream);                                          \
-    BenchmarkSuite<Eigen::GpuDevice> suite(device, N);                         \
+    StormEigen::GpuDevice device(&stream);                                          \
+    BenchmarkSuite<StormEigen::GpuDevice> suite(device, N);                         \
     cudaDeviceSynchronize();                                                   \
     suite.FUNC(iters, DIM1, DIM2);                                             \
     cudaStreamDestroy(stream);                                                 \

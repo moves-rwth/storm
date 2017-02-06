@@ -10,11 +10,11 @@ namespace storm {
             return boost::any_cast<std::shared_ptr<Formula>>(result);
         }
         
-        boost::any CloneVisitor::visit(AtomicExpressionFormula const& f, boost::any const& data) const {
+        boost::any CloneVisitor::visit(AtomicExpressionFormula const& f, boost::any const&) const {
             return std::static_pointer_cast<Formula>(std::make_shared<AtomicExpressionFormula>(f));
         }
         
-        boost::any CloneVisitor::visit(AtomicLabelFormula const& f, boost::any const& data) const {
+        boost::any CloneVisitor::visit(AtomicLabelFormula const& f, boost::any const&) const {
             return std::static_pointer_cast<Formula>(std::make_shared<AtomicLabelFormula>(f));
         }
         
@@ -24,18 +24,14 @@ namespace storm {
             return std::static_pointer_cast<Formula>(std::make_shared<BinaryBooleanStateFormula>(f.getOperator(), left, right));
         }
         
-        boost::any CloneVisitor::visit(BooleanLiteralFormula const& f, boost::any const& data) const {
+        boost::any CloneVisitor::visit(BooleanLiteralFormula const& f, boost::any const&) const {
             return std::static_pointer_cast<Formula>(std::make_shared<BooleanLiteralFormula>(f));
         }
         
         boost::any CloneVisitor::visit(BoundedUntilFormula const& f, boost::any const& data) const {
             std::shared_ptr<Formula> left = boost::any_cast<std::shared_ptr<Formula>>(f.getLeftSubformula().accept(*this, data));
             std::shared_ptr<Formula> right = boost::any_cast<std::shared_ptr<Formula>>(f.getRightSubformula().accept(*this, data));
-            if (f.hasDiscreteTimeBound()) {
-                return std::static_pointer_cast<Formula>(std::make_shared<BoundedUntilFormula>(left, right, f.getDiscreteTimeBound()));
-            } else {
-                return std::static_pointer_cast<Formula>(std::make_shared<BoundedUntilFormula>(left, right, f.getIntervalBounds()));
-            }
+            return std::static_pointer_cast<Formula>(std::make_shared<BoundedUntilFormula>(f));
         }
         
         boost::any CloneVisitor::visit(ConditionalFormula const& f, boost::any const& data) const {
@@ -44,7 +40,7 @@ namespace storm {
             return std::static_pointer_cast<Formula>(std::make_shared<ConditionalFormula>(subformula, conditionFormula, f.getContext()));
         }
         
-        boost::any CloneVisitor::visit(CumulativeRewardFormula const& f, boost::any const& data) const {
+        boost::any CloneVisitor::visit(CumulativeRewardFormula const& f, boost::any const&) const {
             return std::static_pointer_cast<Formula>(std::make_shared<CumulativeRewardFormula>(f));
         }
         
@@ -63,7 +59,7 @@ namespace storm {
             return std::static_pointer_cast<Formula>(std::make_shared<GloballyFormula>(subformula));
         }
         
-        boost::any CloneVisitor::visit(InstantaneousRewardFormula const& f, boost::any const& data) const {
+        boost::any CloneVisitor::visit(InstantaneousRewardFormula const& f, boost::any const&) const {
             return std::static_pointer_cast<Formula>(std::make_shared<InstantaneousRewardFormula>(f));
         }
         
@@ -72,7 +68,7 @@ namespace storm {
             return std::static_pointer_cast<Formula>(std::make_shared<LongRunAverageOperatorFormula>(subformula, f.getOperatorInformation()));
         }
         
-        boost::any CloneVisitor::visit(LongRunAverageRewardFormula const& f, boost::any const& data) const {
+        boost::any CloneVisitor::visit(LongRunAverageRewardFormula const& f, boost::any const&) const {
             return std::static_pointer_cast<Formula>(std::make_shared<LongRunAverageRewardFormula>(f));
         }
         
@@ -99,7 +95,7 @@ namespace storm {
             return std::static_pointer_cast<Formula>(std::make_shared<RewardOperatorFormula>(subformula, f.getOptionalRewardModelName(), f.getOperatorInformation()));
         }
         
-        boost::any CloneVisitor::visit(TotalRewardFormula const& f, boost::any const& data) const {
+        boost::any CloneVisitor::visit(TotalRewardFormula const&, boost::any const&) const {
             return std::static_pointer_cast<Formula>(std::make_shared<TotalRewardFormula>());
         }
         

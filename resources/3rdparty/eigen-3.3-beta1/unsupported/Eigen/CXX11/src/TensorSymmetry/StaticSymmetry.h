@@ -10,7 +10,7 @@
 #ifndef EIGEN_CXX11_TENSORSYMMETRY_STATICSYMMETRY_H
 #define EIGEN_CXX11_TENSORSYMMETRY_STATICSYMMETRY_H
 
-namespace Eigen {
+namespace StormEigen {
 
 namespace internal {
 
@@ -227,7 +227,7 @@ class StaticSGroup
     }
 };
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_CXX11_TENSORSYMMETRY_STATICSYMMETRY_H
 

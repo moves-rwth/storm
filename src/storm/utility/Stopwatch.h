@@ -2,70 +2,79 @@
 #define STORM_UTILITY_STOPWATCH_H_
 
 #include <chrono>
-#include <math.h>
 
 #include "storm/utility/macros.h"
 
 namespace storm {
     namespace utility {
-        // A class that provides convenience operations to display run times.
+
+        /*!
+         * A class that provides convenience operations to display run times.
+         */
         class Stopwatch {
         public:
-            Stopwatch(double initialValueInSeconds = 0.0) : accumulatedSeconds(initialValueInSeconds), paused(false), startOfCurrentMeasurement(std::chrono::high_resolution_clock::now()) {
-                // Intentionally left empty
-            }
+            typedef decltype(std::chrono::duration_cast<std::chrono::seconds>(std::chrono::seconds::zero()).count()) SecondType;
+            typedef decltype(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::milliseconds::zero()).count()) MilisecondType;
+            typedef decltype(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::nanoseconds::zero()).count()) NanosecondType;
             
-            ~Stopwatch() = default;
-            
-            double getAccumulatedSeconds() const {
-                if(paused) {
-                    return accumulatedSeconds;
-                } else {
-                    return accumulatedSeconds + std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - startOfCurrentMeasurement).count();
-                }
-            }
-            
-            void addToAccumulatedSeconds(double value) {
-                accumulatedSeconds += value;
-            }
-            
-            void pause() {
-                if(paused) {
-                    STORM_LOG_WARN("Tried to pause a stopwatch that was already paused.");
-                } else {
-                    accumulatedSeconds = getAccumulatedSeconds();
-                    paused = true;
-                }
-            }
-        
-            void unpause() {
-                if(paused) {
-                    startOfCurrentMeasurement = std::chrono::high_resolution_clock::now();
-                    paused = false;
-                } else {
-                    STORM_LOG_WARN("Tried to unpause a stopwatch that was not paused.");
-                }
-            }
-            
-            // Note: Does NOT unpause if stopwatch is currently paused.
-            void reset() {
-                accumulatedSeconds = 0.0;
-                startOfCurrentMeasurement = std::chrono::high_resolution_clock::now();
-            }
+            /*!
+             * Constructor.
+             *
+             * @param startNow If true, the stopwatch starts right away.
+             */
+            Stopwatch(bool startNow = false);
 
-            friend std::ostream& operator<<(std::ostream& out, Stopwatch const& sw) {
-                out << (round(sw.getAccumulatedSeconds()*1000)/1000);
-                return out;
-            }
+            /*!
+             * Gets the measured time in seconds.
+             */
+            SecondType getTimeInSeconds() const;
+
+            /*!
+             * Gets the measured time in milliseconds.
+             */
+            MilisecondType getTimeInMilliseconds() const;
+
+            /*!
+             * Gets the measured time in nanoseconds.
+             */
+            NanosecondType getTimeInNanoseconds() const;
+
+            /*!
+             * Add given time to measured time.
+             *
+             * @param timeNanoseconds Additional time in nanoseconds.
+             */
+            void addToTime(std::chrono::nanoseconds timeNanoseconds);
+
+            /*!
+             * Stop stopwatch and add measured time to total time.
+             */
+            void stop();
+
+            /*!
+             * Start stopwatch (again) and start measuring time.
+             */
+            void start();
             
+            /*!
+             * Reset the stopwatch.
+             */
+            void reset();
+
+            friend std::ostream& operator<<(std::ostream& out, Stopwatch const& stopwatch);
             
         private:
-            double accumulatedSeconds;
-            bool paused;
+            // The time accumulated so far.
+            std::chrono::nanoseconds accumulatedTime;
+            
+            // A flag indicating if the stopwatch is stopped right now.
+            bool stopped;
+            
+            // The timepoint when the stopwatch was started the last time (if it's not stopped).
             std::chrono::high_resolution_clock::time_point startOfCurrentMeasurement;
-            
-            
         };
+        
+        std::ostream& operator<<(std::ostream& out, Stopwatch const& stopwatch);
     }
 }
 

@@ -67,7 +67,12 @@ namespace storm {
              * Retrieves the real variables in this set.
              */
             detail::ConstVariables<RealVariable> getRealVariables() const;
-            
+
+            /*!
+             * Adds the given variable to this set.
+             */
+            Variable const& addVariable(Variable const& variable);
+
             /*!
              * Adds the given boolean variable to this set.
              */
@@ -193,6 +198,11 @@ namespace storm {
              * variables contained in this variable set.
              */
             bool containsVariablesInBoundExpressionsOrInitialValues(std::set<storm::expressions::Variable> const& variables) const;
+            
+            /*!
+             * Retrieves a mapping from variable names to (references of) the variable objects.
+             */
+            std::map<std::string, std::reference_wrapper<Variable const>> getNameToVariableMap() const;
             
         private:
             /// The vector of all variables.

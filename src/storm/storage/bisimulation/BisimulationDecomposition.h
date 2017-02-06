@@ -83,10 +83,9 @@ namespace storm {
                 /*!
                  * Changes the options in a way that the given formula is preserved.
                  *
-                 * @param model The model for which to preserve the formula.
                  * @param formula The only formula to check.
                  */
-                void preserveFormula(ModelType const& model, storm::logic::Formula const& formula);
+                void preserveFormula(storm::logic::Formula const& formula);
                 
                 /**
                  * Sets the bisimulation type. If the bisimulation type is set to weak,

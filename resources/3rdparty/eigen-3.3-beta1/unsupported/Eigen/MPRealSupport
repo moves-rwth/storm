@@ -15,7 +15,7 @@
 #include <Eigen/Core>
 #include <mpreal.h>
 
-namespace Eigen {
+namespace StormEigen {
   
 /**
   * \defgroup MPRealSupport_Module MPFRC++ Support module
@@ -38,7 +38,7 @@ namespace Eigen {
 #include <Eigen/MPRealSupport>
 #include <Eigen/LU>
 using namespace mpfr;
-using namespace Eigen;
+using namespace StormEigen;
 int main()
 {
   // set precision to 256 bits (double has only 53 bits)

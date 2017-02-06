@@ -1,17 +1,16 @@
 #ifndef STORM_LOGIC_CUMULATIVEREWARDFORMULA_H_
 #define STORM_LOGIC_CUMULATIVEREWARDFORMULA_H_
 
-#include <boost/variant.hpp>
-
 #include "storm/logic/PathFormula.h"
+
+#include "storm/logic/TimeBound.h"
+#include "storm/logic/TimeBoundType.h"
 
 namespace storm {
     namespace logic {
         class CumulativeRewardFormula : public PathFormula {
         public:
-            CumulativeRewardFormula(uint_fast64_t timeBound);
-            
-            CumulativeRewardFormula(double timeBound);
+            CumulativeRewardFormula(TimeBound const& bound, TimeBoundType const& timeBoundType = TimeBoundType::Time);
             
             virtual ~CumulativeRewardFormula() {
                 // Intentionally left empty.
@@ -24,16 +23,23 @@ namespace storm {
 
             virtual std::ostream& writeToStream(std::ostream& out) const override;
             
-            bool hasDiscreteTimeBound() const;
+            TimeBoundType const& getTimeBoundType() const;
+            bool isStepBounded() const;
+            bool isTimeBounded() const;
             
-            uint_fast64_t getDiscreteTimeBound() const;
+            bool isBoundStrict() const;
+            bool hasIntegerBound() const;
             
-            bool hasContinuousTimeBound() const;
+            storm::expressions::Expression const& getBound() const;
             
-            double getContinuousTimeBound() const;
+            template <typename ValueType>
+            ValueType getBound() const;
             
         private:
-            boost::variant<uint_fast64_t, double> timeBound;
+            static void checkNoVariablesInBound(storm::expressions::Expression const& bound);
+
+            TimeBoundType timeBoundType;
+            TimeBound bound;
         };
     }
 }

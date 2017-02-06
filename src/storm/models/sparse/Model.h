@@ -239,6 +239,13 @@ namespace storm {
                  * @return The labels for the choices, if they're saved.
                  */
                 boost::optional<std::vector<LabelSet>> const&  getOptionalChoiceLabeling() const;
+
+                /*!
+                 * Retrieves an optional value that contains the choice labeling if there is one.
+                 *
+                 * @return The labels for the choices, if they're saved.
+                 */
+                boost::optional<std::vector<LabelSet>>&  getOptionalChoiceLabeling();
                 
                 /*!
                  * Returns the state labeling associated with this model.
@@ -268,14 +275,7 @@ namespace storm {
                  * properties, but it preserves expected rewards.
                  */
                 virtual void reduceToStateBasedRewards() = 0;
-                
-                /*!
-                 * Retrieves (an approximation of) the size of the model in bytes.
-                 *
-                 * @return The size of the internal representation of the model measured in bytes.
-                 */
-                virtual std::size_t getSizeInBytes() const override;
-                
+                                
                 /*!
                  * Prints information about the model to the specified stream.
                  *
@@ -374,6 +374,7 @@ namespace storm {
             
 #ifdef STORM_HAVE_CARL
             std::set<storm::RationalFunctionVariable> getProbabilityParameters(Model<storm::RationalFunction> const& model);
+            std::set<storm::RationalFunctionVariable> getRewardParameters(Model<storm::RationalFunction> const& model);
 #endif
         } // namespace sparse
     } // namespace models

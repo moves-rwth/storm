@@ -6,6 +6,9 @@
 
 #include "storm/models/symbolic/StandardRewardModel.h"
 
+#include "storm-config.h"
+#include "storm/adapters/CarlAdapter.h"
+
 namespace storm {
     namespace models {
         namespace symbolic {
@@ -26,8 +29,26 @@ namespace storm {
                                                                               std::set<storm::expressions::Variable> const& nondeterminismVariables,
                                                                               std::map<std::string, storm::expressions::Expression> labelToExpressionMap,
                                                                               std::unordered_map<std::string, RewardModelType> const& rewardModels)
-            : NondeterministicModel<Type>(storm::models::ModelType::S2pg, manager, reachableStates, initialStates, deadlockStates, transitionMatrix, rowVariables, rowExpressionAdapter, columnVariables, columnExpressionAdapter, rowColumnMetaVariablePairs, nondeterminismVariables, labelToExpressionMap, rewardModels), player1Variables(player1Variables), player2Variables(player2Variables) {
-                // Intentionally left empty.
+            : NondeterministicModel<Type, ValueType>(storm::models::ModelType::S2pg, manager, reachableStates, initialStates, deadlockStates, transitionMatrix, rowVariables, rowExpressionAdapter, columnVariables, columnExpressionAdapter, rowColumnMetaVariablePairs, nondeterminismVariables, labelToExpressionMap, rewardModels), player1Variables(player1Variables), player2Variables(player2Variables) {
+                
+                // Compute legal player 1 mask.
+                illegalPlayer1Mask = transitionMatrix.notZero().existsAbstract(this->getColumnVariables()).existsAbstract(this->getPlayer2Variables());
+                
+                // Correct the mask for player 2. This is necessary, because it is not yet restricted to the legal choices of player 1.
+                illegalPlayer2Mask = this->getIllegalMask() && illegalPlayer1Mask;
+                
+                // Then set the illegal mask for player 1 correctly.
+                illegalPlayer1Mask = !illegalPlayer1Mask && reachableStates;
+            }
+            
+            template<storm::dd::DdType Type, typename ValueType>
+            storm::dd::Bdd<Type> StochasticTwoPlayerGame<Type, ValueType>::getIllegalPlayer1Mask() const {
+                return illegalPlayer1Mask;
+            }
+            
+            template<storm::dd::DdType Type, typename ValueType>
+            storm::dd::Bdd<Type> StochasticTwoPlayerGame<Type, ValueType>::getIllegalPlayer2Mask() const {
+                return illegalPlayer2Mask;
             }
             
             template<storm::dd::DdType Type, typename ValueType>
@@ -41,8 +62,11 @@ namespace storm {
             }
             
             // Explicitly instantiate the template class.
-            template class StochasticTwoPlayerGame<storm::dd::DdType::CUDD, double>;
-            template class StochasticTwoPlayerGame<storm::dd::DdType::Sylvan, double>;
+			template class StochasticTwoPlayerGame<storm::dd::DdType::CUDD, double>;
+			template class StochasticTwoPlayerGame<storm::dd::DdType::Sylvan, double>;
+#ifdef STORM_HAVE_CARL
+			template class StochasticTwoPlayerGame<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+#endif
             
         } // namespace symbolic
     } // namespace models

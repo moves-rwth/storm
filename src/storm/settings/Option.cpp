@@ -76,6 +76,12 @@ namespace storm {
 				return *argumentIterator->second;
 			}
 
+            ArgumentBase& Option::getArgumentByName(std::string const& argumentName) {
+                auto argumentIterator = this->argumentNameMap.find(argumentName);
+                STORM_LOG_THROW(argumentIterator != this->argumentNameMap.end(), storm::exceptions::IllegalArgumentException, "Unable to retrieve argument with unknown name '" << argumentName << "'.");
+                return *argumentIterator->second;
+            }
+
 			std::string const& Option::getLongName() const {
 				return this->longName;
 			}
@@ -140,12 +146,13 @@ namespace storm {
                 length += this->getModuleName().length() + 1;
                 length += this->getLongName().length();
                 if (this->getHasShortName()) {
-                    length += 4;
-                    if (!this->getRequiresModulePrefix()) {
-                        length += 2;
+                    length += this->getShortName().length() + 3;
+                }
+                
+                if (this->getArgumentCount() > 0) {
+                    for (auto const& argument : this->getArguments()) {
+                        length += argument->getName().size() + 3;
                     }
-                    length += this->getModuleName().length() + 1;
-                    length += this->getShortName().length();
                 }
                 return length;
             }
@@ -164,7 +171,7 @@ namespace storm {
                 out << "[";
                 ++charactersPrinted;
             }
-            out <<  option.getModuleName() << ":";
+            out << option.getModuleName() << ":";
             charactersPrinted += option.getModuleName().length() + 1;
             if (!option.getRequiresModulePrefix()) {
                 out << "]";
@@ -173,42 +180,32 @@ namespace storm {
             out << option.getLongName();
             charactersPrinted += option.getLongName().length();
             if (option.getHasShortName()) {
-                out << " | -";
-                charactersPrinted += 4;
-                if (!option.getRequiresModulePrefix()) {
-                    out << "[";
-                    ++charactersPrinted;
+                out << " (" << option.getShortName() << ")";
+                charactersPrinted += option.getShortName().length() + 3;
+            }
+            
+            if (option.getArgumentCount() > 0) {
+                for (auto const& argument : option.getArguments()) {
+                    out << " <" << argument->getName() << ">";
+                    charactersPrinted += argument->getName().size() + 3;
                 }
-                out << option.getModuleName() << ":";
-                charactersPrinted += option.getModuleName().length() + 1;
-                if (!option.getRequiresModulePrefix()) {
-                    out << "]";
-                    ++charactersPrinted;
-                }
-                out << option.getShortName();
-                charactersPrinted += option.getShortName().length();
             }
             
             // Now fill the width.
             for (uint_fast64_t i = charactersPrinted; i < width; ++i) {
-                out << out.fill();
-            }
-            
-            out << "\t" << option.getDescription();
-            
-            if (option.getArgumentCount() > 0) {
-                // Start by determining the longest print length of the arguments.
-                uint_fast64_t maxLength = 0;
-                for (auto const& argument : option.getArguments()) {
-                    maxLength = std::max(maxLength, argument->getPrintLength());
-                }
-                
-                for (auto const& argument : option.getArguments()) {
-                    out << std::endl;
-                    out << "\t* " << std::setw(maxLength) << std::left << *argument;
+                if (i == charactersPrinted) {
+                    out << " ";
+                } else {
+                    out << ".";
                 }
             }
+
+            out << " " << option.getDescription();
             
+            for (auto const& argument : option.getArguments()) {
+                out << " " << *argument;
+            }
+
             return out;
         }
     }

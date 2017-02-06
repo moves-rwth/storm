@@ -1,6 +1,7 @@
 #include "storm/storage/dd/sylvan/InternalSylvanDdManager.h"
 
 #include <cmath>
+#include <iostream>
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/SylvanSettings.h"
@@ -8,6 +9,10 @@
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 #include "storm/exceptions/NotSupportedException.h"
+
+#include "storm/utility/sylvan.h"
+
+#include "storm-config.h"
 
 namespace storm {
     namespace dd {
@@ -28,8 +33,12 @@ namespace storm {
         
         InternalDdManager<DdType::Sylvan>::InternalDdManager() {
             if (numberOfInstances == 0) {
-                // Initialize lace: auto-detect number of workers.
-                lace_init(storm::settings::getModule<storm::settings::modules::SylvanSettings>().getNumberOfThreads(), 1000000);
+                storm::settings::modules::SylvanSettings const& settings = storm::settings::getModule<storm::settings::modules::SylvanSettings>();
+                if (settings.isNumberOfThreadsSet()) {
+                    lace_init(settings.getNumberOfThreads(), 1000000);
+                } else {
+                    lace_init(0, 1000000);
+                }
                 lace_startup(0, 0, 0);
                 
                 // Each node takes 24 bytes and the maximal memory is specified in megabytes.
@@ -71,6 +80,13 @@ namespace storm {
         InternalAdd<DdType::Sylvan, uint_fast64_t> InternalDdManager<DdType::Sylvan>::getAddOne() const {
             return InternalAdd<DdType::Sylvan, uint_fast64_t>(this, sylvan::Mtbdd::int64Terminal(storm::utility::one<uint_fast64_t>()));
         }
+
+#ifdef STORM_HAVE_CARL
+		template<>
+		InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalDdManager<DdType::Sylvan>::getAddOne() const {
+			return InternalAdd<DdType::Sylvan, storm::RationalFunction>(this, sylvan::Mtbdd::stormRationalFunctionTerminal(storm::utility::one<storm::RationalFunction>()));
+		}
+#endif
         
         InternalBdd<DdType::Sylvan> InternalDdManager<DdType::Sylvan>::getBddZero() const {
             return InternalBdd<DdType::Sylvan>(this, sylvan::Bdd::bddZero());
@@ -85,6 +101,13 @@ namespace storm {
         InternalAdd<DdType::Sylvan, uint_fast64_t> InternalDdManager<DdType::Sylvan>::getAddZero() const {
             return InternalAdd<DdType::Sylvan, uint_fast64_t>(this, sylvan::Mtbdd::int64Terminal(storm::utility::zero<uint_fast64_t>()));
         }
+
+#ifdef STORM_HAVE_CARL
+		template<>
+		InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalDdManager<DdType::Sylvan>::getAddZero() const {
+			return InternalAdd<DdType::Sylvan, storm::RationalFunction>(this, sylvan::Mtbdd::stormRationalFunctionTerminal(storm::utility::zero<storm::RationalFunction>()));
+		}
+#endif
         
         template<>
         InternalAdd<DdType::Sylvan, double> InternalDdManager<DdType::Sylvan>::getConstant(double const& value) const {
@@ -96,11 +119,24 @@ namespace storm {
             return InternalAdd<DdType::Sylvan, uint_fast64_t>(this, sylvan::Mtbdd::int64Terminal(value));
         }
         
-        std::pair<InternalBdd<DdType::Sylvan>, InternalBdd<DdType::Sylvan>> InternalDdManager<DdType::Sylvan>::createNewDdVariablePair() {
+#ifdef STORM_HAVE_CARL
+		template<>
+		InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalDdManager<DdType::Sylvan>::getConstant(storm::RationalFunction const& value) const {
+			return InternalAdd<DdType::Sylvan, storm::RationalFunction>(this, sylvan::Mtbdd::stormRationalFunctionTerminal(value));
+		}
+#endif
+
+        std::pair<InternalBdd<DdType::Sylvan>, InternalBdd<DdType::Sylvan>> InternalDdManager<DdType::Sylvan>::createNewDdVariablePair(boost::optional<uint_fast64_t> const& position) {
+            STORM_LOG_THROW(!position, storm::exceptions::NotSupportedException, "The manager does not support ordered insertion.");
+			
             InternalBdd<DdType::Sylvan> first = InternalBdd<DdType::Sylvan>(this, sylvan::Bdd::bddVar(nextFreeVariableIndex));
             InternalBdd<DdType::Sylvan> second = InternalBdd<DdType::Sylvan>(this, sylvan::Bdd::bddVar(nextFreeVariableIndex + 1));
             nextFreeVariableIndex += 2;
             return std::make_pair(first, second);
+        }
+        
+        bool InternalDdManager<DdType::Sylvan>::supportsOrderedInsertion() const {
+            return false;
         }
         
         void InternalDdManager<DdType::Sylvan>::allowDynamicReordering(bool) {
@@ -114,14 +150,27 @@ namespace storm {
         void InternalDdManager<DdType::Sylvan>::triggerReordering() {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation is not supported by sylvan.");
         }
-                
+        
+        uint_fast64_t InternalDdManager<DdType::Sylvan>::getNumberOfDdVariables() const {
+            return nextFreeVariableIndex;
+        }
+        
         template InternalAdd<DdType::Sylvan, double> InternalDdManager<DdType::Sylvan>::getAddOne() const;
         template InternalAdd<DdType::Sylvan, uint_fast64_t> InternalDdManager<DdType::Sylvan>::getAddOne() const;
+#ifdef STORM_HAVE_CARL
+		template InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalDdManager<DdType::Sylvan>::getAddOne() const;
+#endif
         
         template InternalAdd<DdType::Sylvan, double> InternalDdManager<DdType::Sylvan>::getAddZero() const;
         template InternalAdd<DdType::Sylvan, uint_fast64_t> InternalDdManager<DdType::Sylvan>::getAddZero() const;
+#ifdef STORM_HAVE_CARL
+		template InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalDdManager<DdType::Sylvan>::getAddZero() const;
+#endif
         
         template InternalAdd<DdType::Sylvan, double> InternalDdManager<DdType::Sylvan>::getConstant(double const& value) const;
         template InternalAdd<DdType::Sylvan, uint_fast64_t> InternalDdManager<DdType::Sylvan>::getConstant(uint_fast64_t const& value) const;
+#ifdef STORM_HAVE_CARL
+		template InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalDdManager<DdType::Sylvan>::getConstant(storm::RationalFunction const& value) const;
+#endif
     }
 }

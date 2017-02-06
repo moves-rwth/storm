@@ -18,7 +18,7 @@
   #define EIGEN_INTERNAL_DENSE_STORAGE_CTOR_PLUGIN
 #endif
 
-namespace Eigen {
+namespace StormEigen {
 
 namespace internal {
 
@@ -558,6 +558,6 @@ template<typename T, int _Cols, int _Options> class DenseStorage<T, Dynamic, Dyn
     EIGEN_DEVICE_FUNC T *data() { return m_data; }
 };
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_MATRIX_H

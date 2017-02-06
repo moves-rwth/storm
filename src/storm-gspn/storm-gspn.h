@@ -5,6 +5,7 @@
 #include "storm-gspn/builder/JaniGSPNBuilder.h"
 #include "storm-gspn/storage/gspn/GSPN.h"
 
+#include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GSPNExportSettings.h"
 
 namespace storm {

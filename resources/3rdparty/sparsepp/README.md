@@ -54,6 +54,12 @@ Since the full Sparsepp implementation is contained in a single header file `spa
 
 Optionally, a second header file `spp_utils.h` is provided, which implements only the spp::hash_combine() functionality. This is useful when we want to specify a hash function for a user-defined class in an header file, without including the full `sparsepp.h` header (this is demonstrated in [example 2](#example-2---providing-a-hash-function-for-a-user-defined-class) below).
 
+## Warning - iterator invalidation on erase/insert
+
+1. erasing elements is likely to invalidate iterators (for example when calling `erase()`)
+
+2. inserting new elements is likely to invalidate iterators (iterator invalidation can also happen with std::unordered_map if rehashing occurs due to the insertion)
+
 ## Usage
 
 As shown in the example above, you need to include the header file: `#include <sparsepp.h>`
@@ -80,17 +86,46 @@ namespace spp
 
 These classes provide the same interface as std::unordered_map and std::unordered_set, with the following differences:
 
-- Calls to erase() may invalidate iterators. However, conformant to the C++11 standard, the position and range erase functions return an iterator pointing to the position immediately following the last of the elements erased. This makes it easy to traverse a sparse hash table and delete elements matching a condition. For example to delete odd values:
-
-```c++
-        for (auto it = c.begin(); it != c.end(); )
-        if (it->first % 2 == 1)
-            it = c.erase(it);
-        else
-            ++it;
-```
+- Calls to `erase()` may invalidate iterators. However, conformant to the C++11 standard, the position and range erase functions return an iterator pointing to the position immediately following the last of the elements erased. This makes it easy to traverse a sparse hash table and delete elements matching a condition. For example to delete odd values:
+   
+   ```c++
+   for (auto it = c.begin(); it != c.end(); )
+       if (it->first % 2 == 1)
+          it = c.erase(it);
+       else
+          ++it;
+   ```
+   
+   As for std::unordered_map, the order of the elements that are not erased is preserved.
 
 - Since items are not grouped into buckets, Bucket APIs have been adapted: `max_bucket_count` is equivalent to `max_size`, and `bucket_count` returns the sparsetable size, which is normally at least twice the number of items inserted into the hash_map.
+
+## Integer keys, and other hash function considerations.
+
+1. For basic integer types, sparsepp provides a default hash function which does some mixing of the bits of the keys (see [Integer Hashing](http://burtleburtle.net/bob/hash/integer.html)). This prevents a pathological case where inserted keys are sequential (1, 2, 3, 4, ...), and the lookup on non-present keys becomes very slow. 
+
+   Of course, the user of sparsepp may provide its own hash function,  as shown below:
+   
+   ```c++
+   #include <sparsepp.h>
+   
+   struct Hash64 {
+       size_t operator()(uint64_t k) const { return (k ^ 14695981039346656037ULL) * 1099511628211ULL; }
+   };
+   
+   struct Hash32 {
+       size_t operator()(uint32_t k) const { return (k ^ 2166136261U)  * 16777619UL; }
+   };
+   
+   int main() 
+   {
+       spp::sparse_hash_map<uint64_t, double, Hash64> map;
+       ...
+   }
+   
+   ```
+
+2. When the user provides its own hash function, for example when inserting custom classes into a hash map, sometimes the resulting hash keys have similar low order bits and cause many collisions, decreasing the efficiency of the hash map. To address this use case, sparsepp provides an optional 'mixing' of the hash key (see [Integer Hash Function](https://gist.github.com/badboy/6267743) which can be enabled by defining the proprocessor macro: SPP_HASH_MIX. 
 
 ## Example 2 - providing a hash function for a user-defined class
 

@@ -12,7 +12,7 @@
 
 #include <Eigen/Eigenvalues>
 
-namespace Eigen { 
+namespace StormEigen { 
   
 template< typename _MatrixType,
           typename _Preconditioner = DiagonalPreconditioner<typename _MatrixType::Scalar> >
@@ -509,5 +509,5 @@ int DGMRES<_MatrixType, _Preconditioner>::dgmresApplyDeflation(const RhsType &x,
   return 0; 
 }
 
-} // end namespace Eigen
+} // end namespace StormEigen
 #endif 

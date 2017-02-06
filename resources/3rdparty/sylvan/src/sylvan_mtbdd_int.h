@@ -28,7 +28,7 @@ typedef struct __attribute__((packed)) mtbddnode {
     uint64_t a, b;
 } * mtbddnode_t; // 16 bytes
 
-#define GETNODE(mtbdd) ((mtbddnode_t)llmsset_index_to_ptr(nodes, mtbdd&0x000000ffffffffff))
+#define MTBDD_GETNODE(mtbdd) ((mtbddnode_t)llmsset_index_to_ptr(nodes, mtbdd&0x000000ffffffffff))
 
 /**
  * Complement handling macros

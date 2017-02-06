@@ -86,19 +86,12 @@ namespace storm {
                 std::string getProperty() const;
 
                 /*!
-                 * Retrieves whether the timeout option was set.
+                 * Retrieves the property filter.
                  *
-                 * @return True if the timeout option was set.
+                 * @return The property filter.
                  */
-                bool isTimeoutSet() const;
-
-                /*!
-                 * Retrieves the time after which the computation has to be aborted in case the timeout option was set.
-                 *
-                 * @return The number of seconds after which to timeout.
-                 */
-                uint_fast64_t getTimeoutInSeconds() const;
-
+                std::string getPropertyFilter() const;
+                
                 /*!
                  * Retrieves whether the option to perform bisimulation minimization is set.
                  *
@@ -112,7 +105,6 @@ namespace storm {
                  * @return True iff the option was set.
                  */
                 bool isParametricSet() const;
-
                 
                 /*!
                  * Retrieves whether the option enabling parametric region model checking is set.
@@ -128,13 +120,6 @@ namespace storm {
                  */
                 bool isMinMaxEquationSolvingTechniqueSet() const;
                 
-                /*!
-                 * Retrieves whether time and memory consumption shall be printed at the end of a run.
-                 *
-                 * @return True iff the option was set.
-                 */
-                bool isPrintTimeAndMemorySet() const;
-
                 /*!
                  * Retrieves whether the option enabling exact model checking is set.
                  *
@@ -163,8 +148,6 @@ namespace storm {
                 static const std::string configOptionShortName;
                 static const std::string propertyOptionName;
                 static const std::string propertyOptionShortName;
-                static const std::string timeoutOptionName;
-                static const std::string timeoutOptionShortName;
                 static const std::string bisimulationOptionName;
                 static const std::string bisimulationOptionShortName;
                 static const std::string parametricOptionName;

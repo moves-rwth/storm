@@ -15,7 +15,7 @@
 #include <Eigen/LevenbergMarquardt>
 
 using namespace std;
-using namespace Eigen;
+using namespace StormEigen;
 
 template <typename Scalar>
 struct sparseGaussianTest : SparseFunctor<Scalar, int>

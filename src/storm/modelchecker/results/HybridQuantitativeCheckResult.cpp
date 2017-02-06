@@ -92,33 +92,52 @@ namespace storm {
         
         template<storm::dd::DdType Type, typename ValueType>
         std::ostream& HybridQuantitativeCheckResult<Type, ValueType>::writeToStream(std::ostream& out) const {
-            out << "[";
-            bool first = true;
-            if (!this->symbolicStates.isZero()) {
-                if (this->symbolicValues.isZero()) {
-                    out << "0";
+            uint64_t totalNumberOfStates = this->symbolicStates.getNonZeroCount() + this->explicitStates.getNonZeroCount();
+            
+            if (totalNumberOfStates == 1) {
+                if (this->symbolicStates.isZero()) {
+                    out << *this->explicitValues.begin();
                 } else {
-                    for (auto valuationValuePair : this->symbolicValues) {
+                    out << this->symbolicValues.getMax();
+                }
+            } else if (totalNumberOfStates < 10) {
+                out << "{";
+                bool first = true;
+                if (!this->symbolicStates.isZero()) {
+                    if (this->symbolicValues.isZero()) {
+                        out << "0";
+                        first = false;
+                    } else {
+                        for (auto valuationValuePair : this->symbolicValues) {
+                            if (!first) {
+                                out << ", ";
+                            } else {
+                                first = false;
+                            }
+                            out << valuationValuePair.second;
+                        }
+                        if (symbolicStates.getNonZeroCount() != this->symbolicValues.getNonZeroCount()) {
+                            out << ", 0";
+                        }
+                    }
+                }
+                if (!this->explicitStates.isZero()) {
+                    for (auto const& element : this->explicitValues) {
                         if (!first) {
                             out << ", ";
                         } else {
                             first = false;
                         }
-                        out << valuationValuePair.second;
+                        out << element;
                     }
                 }
+                out << "}";
+            } else {
+                ValueType min = this->getMin();
+                ValueType max = this->getMax();
+                
+                out << "[" << min << ", " << max << "] (range)";
             }
-            if (!this->explicitStates.isZero()) {
-                for (auto const& element : this->explicitValues) {
-                    if (!first) {
-                        out << ", ";
-                    } else {
-                        first = false;
-                    }
-                    out << element;
-                }
-            }
-            out << "]";
             return out;
         }
         

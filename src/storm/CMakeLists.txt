@@ -28,6 +28,9 @@ if (ADDITIONAL_LINK_DIRS)
 	link_directories(${ADDITIONAL_LINK_DIRS})
 endif(ADDITIONAL_LINK_DIRS)
 
+# Disable Debug compiler flags for PrismParser to lessen memory consumption during compilation
+SET_SOURCE_FILES_PROPERTIES(${PROJECT_SOURCE_DIR}/src/storm/parser/PrismParser.cpp PROPERTIES COMPILE_FLAGS -g0)
+
 ###############################################################################
 ##                                                                            
 ##	Binary creation (All link_directories() calls must be made before this point.)
@@ -48,7 +51,6 @@ add_executable(storm-main ${STORM_MAIN_SOURCES} ${STORM_MAIN_HEADERS})
 target_link_libraries(storm-main storm)
 set_target_properties(storm-main PROPERTIES OUTPUT_NAME "storm")
 
-
 # Install storm headers to include directory.
 foreach(HEADER ${STORM_LIB_HEADERS})
 	string(REGEX REPLACE "${PROJECT_SOURCE_DIR}/src/?" "" RELATIVE_HEADER_PATH ${HEADER})
@@ -66,3 +68,5 @@ add_custom_target(copy_storm_headers DEPENDS ${STORM_OUTPUT_HEADERS} ${STORM_LIB
 add_dependencies(storm copy_storm_headers)
 add_dependencies(storm copy_resources_headers)
 
+# install command
+install(TARGETS storm-main storm RUNTIME DESTINATION bin LIBRARY DESTINATION lib OPTIONAL)

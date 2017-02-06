@@ -14,7 +14,7 @@
 #include <GL/gl.h>
 #include <vector>
 
-using namespace Eigen;
+using namespace StormEigen;
 
 typedef Vector4f Color;
 
@@ -48,11 +48,11 @@ class GpuHelper
         \sa Matrix, multMatrix(), forceMatrixMode()
     */
     template<typename Scalar, int _Flags>
-    void loadMatrix(const Eigen::Matrix<Scalar,4,4, _Flags, 4,4>& mat, GLenum matrixTarget);
+    void loadMatrix(const StormEigen::Matrix<Scalar,4,4, _Flags, 4,4>& mat, GLenum matrixTarget);
 
     template<typename Scalar, typename Derived>
     void loadMatrix(
-        const Eigen::CwiseNullaryOp<Eigen::internal::scalar_identity_op<Scalar>,Derived>&,
+        const StormEigen::CwiseNullaryOp<StormEigen::internal::scalar_identity_op<Scalar>,Derived>&,
         GLenum matrixTarget);
 
     /** Make the matrix \a matrixTarget the current OpenGL matrix target.
@@ -71,7 +71,7 @@ class GpuHelper
 
     template<typename Scalar, typename Derived>
     void pushMatrix(
-        const Eigen::CwiseNullaryOp<Eigen::internal::scalar_identity_op<Scalar>,Derived>&,
+        const StormEigen::CwiseNullaryOp<StormEigen::internal::scalar_identity_op<Scalar>,Derived>&,
         GLenum matrixTarget);
 
     /** Push and clone the OpenGL matrix \a matrixTarget
@@ -141,12 +141,12 @@ template<typename Scalar, int _Flags>
 void GpuHelper::multMatrix(const Matrix<Scalar,4,4, _Flags, 4,4>& mat, GLenum matrixTarget)
 {
     setMatrixTarget(matrixTarget);
-    GlMatrixHelper<_Flags&Eigen::RowMajorBit, _Flags>::multMatrix(mat);
+    GlMatrixHelper<_Flags&StormEigen::RowMajorBit, _Flags>::multMatrix(mat);
 }
 
 template<typename Scalar, typename Derived>
 void GpuHelper::loadMatrix(
-    const Eigen::CwiseNullaryOp<Eigen::internal::scalar_identity_op<Scalar>,Derived>&,
+    const StormEigen::CwiseNullaryOp<StormEigen::internal::scalar_identity_op<Scalar>,Derived>&,
     GLenum matrixTarget)
 {
     setMatrixTarget(matrixTarget);
@@ -154,10 +154,10 @@ void GpuHelper::loadMatrix(
 }
 
 template<typename Scalar, int _Flags>
-void GpuHelper::loadMatrix(const Eigen::Matrix<Scalar,4,4, _Flags, 4,4>& mat, GLenum matrixTarget)
+void GpuHelper::loadMatrix(const StormEigen::Matrix<Scalar,4,4, _Flags, 4,4>& mat, GLenum matrixTarget)
 {
     setMatrixTarget(matrixTarget);
-    GlMatrixHelper<(_Flags&Eigen::RowMajorBit)!=0, _Flags>::loadMatrix(mat);
+    GlMatrixHelper<(_Flags&StormEigen::RowMajorBit)!=0, _Flags>::loadMatrix(mat);
 }
 
 inline void GpuHelper::pushMatrix(GLenum matrixTarget)
@@ -170,12 +170,12 @@ template<typename Scalar, int _Flags>
 inline void GpuHelper::pushMatrix(const Matrix<Scalar,4,4, _Flags, 4,4>& mat, GLenum matrixTarget)
 {
     pushMatrix(matrixTarget);
-    GlMatrixHelper<_Flags&Eigen::RowMajorBit,_Flags>::loadMatrix(mat);
+    GlMatrixHelper<_Flags&StormEigen::RowMajorBit,_Flags>::loadMatrix(mat);
 }
 
 template<typename Scalar, typename Derived>
 void GpuHelper::pushMatrix(
-    const Eigen::CwiseNullaryOp<Eigen::internal::scalar_identity_op<Scalar>,Derived>&,
+    const StormEigen::CwiseNullaryOp<StormEigen::internal::scalar_identity_op<Scalar>,Derived>&,
     GLenum matrixTarget)
 {
     pushMatrix(matrixTarget);

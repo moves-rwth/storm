@@ -32,6 +32,8 @@ namespace storm {
     namespace builder {
         namespace jit {
             
+            static const std::string JIT_VARIABLE_EXTENSION = "_jit_";
+            
 #ifdef LINUX
             static const std::string DYLIB_EXTENSION = ".so";
 #endif
@@ -50,7 +52,13 @@ namespace storm {
                 if (settings.isCompilerSet()) {
                     compiler = settings.getCompiler();
                 } else {
-                    compiler = "c++";
+                    const char* cxxEnv = std::getenv("CXX");
+                    if (cxxEnv != nullptr) {
+                        compiler = std::string(cxxEnv);
+                    }
+                    if (compiler.empty()) {
+                        compiler = "c++";
+                    }
                 }
                 if (settings.isCompilerFlagsSet()) {
                     compilerFlags = settings.getCompilerFlags();
@@ -95,11 +103,6 @@ namespace storm {
                         STORM_LOG_THROW(composition->isAutomatonComposition(), storm::exceptions::WrongFormatException, "Expected flat parallel composition.");
                         parallelAutomata.push_back(this->model.getAutomaton(composition->asAutomatonComposition().getAutomatonName()));
                     }
-                }
-                
-                // Create location variables for all the automata that we put in parallel.
-                for (auto const& automaton : parallelAutomata) {
-                    automatonToLocationVariable.emplace(automaton.get().getName(), this->model.getManager().declareFreshIntegerVariable(false, automaton.get().getName() + "_"));
                 }
                 
                 // If the program still contains undefined constants and we are not in a parametric setting, assemble an appropriate error message.
@@ -923,19 +926,19 @@ namespace storm {
                     
                     if (hasLocationRewards) {
                         cpptempl::data_map locationReward;
-                        locationReward["variable"] = variable.getName();
+                        locationReward["variable"] = variable.getName() + JIT_VARIABLE_EXTENSION;
                         locationRewards.push_back(locationReward);
                     }
                     if (hasEdgeRewards) {
                         cpptempl::data_map edgeReward;
-                        edgeReward["variable"] = variable.getName();
+                        edgeReward["variable"] = variable.getName() + JIT_VARIABLE_EXTENSION;
                         edgeReward["index"] = asString(rewardModelIndex);
                         edgeRewards.push_back(edgeReward);
                     }
                     if (hasDestinationRewards) {
                         cpptempl::data_map destinationReward;
                         destinationReward["index"] = asString(rewardModelIndex);
-                        destinationReward["variable"] = variable.getName();
+                        destinationReward["variable"] = variable.getName() + JIT_VARIABLE_EXTENSION;
                         destinationRewards.push_back(destinationReward);
                     }
                     ++rewardModelIndex;
@@ -1514,7 +1517,7 @@ namespace storm {
                         if (this->options.isBuildAllLabelsSet() || this->options.getLabelNames().find(variable.getName()) != this->options.getLabelNames().end()) {
                             cpptempl::data_map label;
                             label["name"] = variable.getName();
-                            label["predicate"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(model.getLabelExpression(variable.asBooleanVariable(), automatonToLocationVariable)), storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName));
+                            label["predicate"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(model.getLabelExpression(variable.asBooleanVariable(), parallelAutomata)), storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName, storm::expressions::ToCppTranslationMode::CastDouble));
                             labels.push_back(label);
                         }
                     }
@@ -1523,7 +1526,7 @@ namespace storm {
                 for (auto const& expression : this->options.getExpressionLabels()) {
                     cpptempl::data_map label;
                     label["name"] = expression.toString();
-                    label["predicate"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(expression), storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName));
+                    label["predicate"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(expression), storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName, storm::expressions::ToCppTranslationMode::CastDouble));
                     labels.push_back(label);
                 }
                     
@@ -1542,8 +1545,8 @@ namespace storm {
                         auto const& variable = variables.getVariable(labelOrExpression.getLabel());
                         STORM_LOG_THROW(variable.isBooleanVariable(), storm::exceptions::WrongFormatException, "Terminal label refers to non-boolean variable '" << variable.getName() << ".");
                         STORM_LOG_THROW(variable.isTransient(), storm::exceptions::WrongFormatException, "Terminal label refers to non-transient variable '" << variable.getName() << ".");
-                        auto labelExpression = model.getLabelExpression(variable.asBooleanVariable(), automatonToLocationVariable);
-                        if (terminalEntry.second) {
+                        auto labelExpression = model.getLabelExpression(variable.asBooleanVariable(), parallelAutomata);
+                        if (!terminalEntry.second) {
                             labelExpression = !labelExpression;
                         }
                         terminalExpressions.push_back(expressionTranslator.translate(shiftVariablesWrtLowerBound(labelExpression), storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName)));
@@ -1577,7 +1580,7 @@ namespace storm {
             template <typename ValueType, typename RewardModelType>
             std::string const& ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::registerVariable(storm::expressions::Variable const& variable, bool transient) {
                 // Since the variable name might be illegal as a C++ identifier, we need to prepare it a bit.
-                variableToName[variable] = variable.getName() + "_jit_";
+                variableToName[variable] = variable.getName() + JIT_VARIABLE_EXTENSION;
                 if (transient) {
                     transientVariables.insert(variable);
                     variablePrefixes[variable] = "transientIn.";
@@ -1590,7 +1593,7 @@ namespace storm {
                 
             template <typename ValueType, typename RewardModelType>
             storm::expressions::Variable const& ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::getLocationVariable(storm::jani::Automaton const& automaton) const {
-                return automatonToLocationVariable.at(automaton.getName());
+                return automaton.getLocationExpressionVariable();
             }
             
             template <typename ValueType, typename RewardModelType>
@@ -2347,7 +2350,7 @@ namespace storm {
                                 }
                                 
                                 void addStateBehaviour(IndexType const& stateId, StateBehaviour<IndexType, ValueType>& behaviour) {
-                                    if (behaviour.empty()) {
+                                    if (behaviour.empty() && behaviour.isExpanded()) {
                                         deadlockStates.push_back(stateId);
                                     }
                                     
@@ -2405,12 +2408,12 @@ namespace storm {
             }
                 
             template<typename RationalFunctionType, typename TP = typename RationalFunctionType::PolyType, carl::DisableIf<carl::needs_cache<TP>> = carl::dummy>
-            RationalFunctionType convertVariableToPolynomial(carl::Variable const& variable, std::shared_ptr<carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>>> cache) {
+            RationalFunctionType convertVariableToPolynomial(carl::Variable const& variable, std::shared_ptr<carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>>>) {
                 return RationalFunctionType(variable);
             }
             
             template<typename ValueType>
-            std::vector<storm::RationalFunction> getParameters(storm::jani::Model const& model, std::shared_ptr<carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>>> cache) {
+            std::vector<storm::RationalFunction> getParameters(storm::jani::Model const&, std::shared_ptr<carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>>>) {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidStateException, "This function must not be called for this type.");
             }
                 

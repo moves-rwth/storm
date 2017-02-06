@@ -28,7 +28,7 @@
 #ifndef SPARSELU_RELAX_SNODE_H
 #define SPARSELU_RELAX_SNODE_H
 
-namespace Eigen {
+namespace StormEigen {
 
 namespace internal {
  
@@ -79,5 +79,5 @@ void SparseLUImpl<Scalar,StorageIndex>::relax_snode (const Index n, IndexVector&
 
 } // end namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 #endif

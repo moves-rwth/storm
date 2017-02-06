@@ -259,6 +259,20 @@ namespace storm {
              * @param cube The cube from which to abstract.
              */
             InternalAdd<DdType::CUDD, ValueType> minAbstract(InternalBdd<DdType::CUDD> const& cube) const;
+
+            /*!
+             * Min-abstracts from the given cube, but treats 0 as the largest possible value.
+             *
+             * @param cube The cube from which to abstract.
+             */
+            InternalAdd<DdType::CUDD, ValueType> minAbstractExcept0(InternalBdd<DdType::CUDD> const& cube) const;
+
+			/*!
+             * Min-abstracts from the given cube and returns a representative.
+             *
+             * @param cube The cube from which to abstract.
+             */
+            InternalBdd<DdType::CUDD> minAbstractRepresentative(InternalBdd<DdType::CUDD> const& cube) const;
             
             /*!
              * Max-abstracts from the given cube.
@@ -266,6 +280,13 @@ namespace storm {
              * @param cube The cube from which to abstract.
              */
             InternalAdd<DdType::CUDD, ValueType> maxAbstract(InternalBdd<DdType::CUDD> const& cube) const;
+			
+			/*!
+             * Max-abstracts from the given cube and returns a representative.
+             *
+             * @param cube The cube from which to abstract.
+             */
+            InternalBdd<DdType::CUDD> maxAbstractRepresentative(InternalBdd<DdType::CUDD> const& cube) const;
             
             /*!
              * Checks whether the current and the given ADD represent the same function modulo some given precision.
@@ -434,11 +455,18 @@ namespace storm {
             bool isConstant() const;
             
             /*!
-             * Retrieves the index of the topmost variable in the DD.
+             * Retrieves the index of the topmost variable in the ADD.
              *
-             * @return The index of the topmost variable in DD.
+             * @return The index of the topmost variable in ADD.
              */
-            virtual uint_fast64_t getIndex() const;
+            uint_fast64_t getIndex() const;
+            
+            /*!
+             * Retrieves the level of the topmost variable in the ADD.
+             *
+             * @return The level of the topmost variable in ADD.
+             */
+            uint_fast64_t getLevel() const;
             
             /*!
              * Exports the DD to the given file in the dot format.

@@ -50,7 +50,7 @@ namespace storm {
                 /*!
                  * Returns the vertices of this polytope.
                  */
-                virtual std::vector<Point> getVertices() const;
+                virtual std::vector<Point> getVertices() const = 0;
                 
                 /*!
                  * Returns the vertices of this 2D-polytope in clockwise order.
@@ -61,43 +61,43 @@ namespace storm {
                 /*!
                  * Returns the halfspaces of this polytope.
                  */
-                virtual std::vector<Halfspace<ValueType>> getHalfspaces() const;
+                virtual std::vector<Halfspace<ValueType>> getHalfspaces() const = 0;
                 
                 /*!
                  * Returns whether this polytope is the empty set.
                  */
-                virtual bool isEmpty() const;
+                virtual bool isEmpty() const = 0;
                 
                 /*!
                  * Returns whether this polytope is universal (i.e., equals R^n).
                  */
-                virtual bool isUniversal() const;
+                virtual bool isUniversal() const = 0;
                 
                 /*!
                  * Returns true iff the given point is inside of the polytope.
                  */
-                virtual bool contains(Point const& point) const;
+                virtual bool contains(Point const& point) const = 0;
                 
                 /*!
                  * Returns true iff the given polytope is a subset of this polytope.
                  */
-                virtual bool contains(std::shared_ptr<Polytope<ValueType>> const& other) const;
+                virtual bool contains(std::shared_ptr<Polytope<ValueType>> const& other) const = 0;
                 
                 /*!
                  * Intersects this polytope with rhs and returns the result.
                  */
-                virtual std::shared_ptr<Polytope<ValueType>> intersection(std::shared_ptr<Polytope<ValueType>> const& rhs) const;
-                virtual std::shared_ptr<Polytope<ValueType>> intersection(Halfspace<ValueType> const& halfspace) const;
+                virtual std::shared_ptr<Polytope<ValueType>> intersection(std::shared_ptr<Polytope<ValueType>> const& rhs) const = 0;
+                virtual std::shared_ptr<Polytope<ValueType>> intersection(Halfspace<ValueType> const& halfspace) const = 0;
                 
                 /*!
                  * Returns the convex union of this polytope and rhs.
                  */
-                virtual std::shared_ptr<Polytope<ValueType>> convexUnion(std::shared_ptr<Polytope<ValueType>> const& rhs) const;
+                virtual std::shared_ptr<Polytope<ValueType>> convexUnion(std::shared_ptr<Polytope<ValueType>> const& rhs) const = 0;
         
                 /*!
                  * Returns the minkowskiSum of this polytope and rhs.
                  */
-                virtual std::shared_ptr<Polytope<ValueType>> minkowskiSum(std::shared_ptr<Polytope<ValueType>> const& rhs) const;
+                virtual std::shared_ptr<Polytope<ValueType>> minkowskiSum(std::shared_ptr<Polytope<ValueType>> const& rhs) const = 0;
         
                 /*!
                  * Returns the affine transformation of this polytope P w.r.t. the given matrix A and vector b.
@@ -106,7 +106,7 @@ namespace storm {
                  * @param matrix the transformation matrix, given as vector of rows
                  * @param vector the transformation offset
                  */
-                virtual std::shared_ptr<Polytope<ValueType>> affineTransformation(std::vector<Point> const& matrix, Point const& vector) const;
+                virtual std::shared_ptr<Polytope<ValueType>> affineTransformation(std::vector<Point> const& matrix, Point const& vector) const = 0;
                 
                 /*!
                  * Returns the downward closure of this, i.e., the set { x | ex. y \in P : x<=y} where P is this Polytope.
@@ -120,7 +120,7 @@ namespace storm {
                  * - The polytope is empty
                  * - The polytope is not bounded in the given direction
                  */
-                virtual std::pair<Point, bool> optimize(Point const& direction) const;
+                virtual std::pair<Point, bool> optimize(Point const& direction) const = 0;
                 
                 /*!
                  * converts the intern number representation of the polytope to the given target type
@@ -129,12 +129,11 @@ namespace storm {
                 std::shared_ptr<Polytope<TargetType>> convertNumberRepresentation() const;
                 
                 /*
-                 * Returns a string repre/Users/tim/storm/src/storage/geometry/Polytope.h:129:17: 'virtual' cannot be specified on member function templatessentation of this polytope.
-                 * If the given flag is true, the occurring numbers are converted to double before printing to increase readability
+                 * Returns a string representation of this polytope.
+                 * @param numbersAsDouble If true, the occurring numbers are converted to double before printing to increase readability.
                  */
                 virtual std::string toString(bool numbersAsDouble = false) const;
                
-                
                 virtual bool isHyproPolytope() const;
                 
             protected:

@@ -15,7 +15,7 @@
 #include <bench/BenchTimer.h>
 #include <unsupported/Eigen/IterativeSolvers>
 using namespace std;
-using namespace Eigen;
+using namespace StormEigen;
 
 int main(int argc, char **args)
 {

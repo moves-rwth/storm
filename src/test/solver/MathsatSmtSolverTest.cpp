@@ -179,10 +179,10 @@ TEST(MathsatSmtSolver, AllSat) {
     std::vector<storm::expressions::SimpleValuation> valuations = s.allSat({x,y});
     
     ASSERT_TRUE(valuations.size() == 3);
-    for (int i = 0; i < valuations.size(); ++i) {
+    for (uint64_t i = 0; i < valuations.size(); ++i) {
         ASSERT_FALSE(valuations[i].getBooleanValue(x) && valuations[i].getBooleanValue(y));
         
-        for (int j = i+1; j < valuations.size(); ++j) {
+        for (uint64_t j = i+1; j < valuations.size(); ++j) {
             ASSERT_TRUE((valuations[i].getBooleanValue(x) != valuations[j].getBooleanValue(x)) || (valuations[i].getBooleanValue(y) != valuations[j].getBooleanValue(y)));
         }
     }
@@ -206,7 +206,7 @@ TEST(MathsatSmtSolver, UnsatAssumptions) {
     result = s.checkWithAssumptions({ f2 });
     ASSERT_TRUE(result == storm::solver::SmtSolver::CheckResult::Unsat);
     std::vector<storm::expressions::Expression> unsatCore = s.getUnsatAssumptions();
-    ASSERT_EQ(unsatCore.size(), 1);
+    ASSERT_EQ(1ull, unsatCore.size());
     ASSERT_TRUE(unsatCore[0].isVariable());
     ASSERT_STREQ("f2", unsatCore[0].getIdentifier().c_str());
 }

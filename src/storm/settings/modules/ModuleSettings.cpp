@@ -77,6 +77,16 @@ namespace storm {
                 return length;
             }
             
+            void ModuleSettings::restoreDefaults() {
+                for (auto& option : options) {
+                    for (auto& argument : option->getArguments()) {
+                        if (argument->getHasDefaultValue()) {
+                            argument->setFromDefaultValue();
+                        }
+                    }
+                }
+            }
+            
         } // namespace modules
     } // namespace settings
 } // namespace storm

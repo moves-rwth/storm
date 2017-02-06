@@ -1,5 +1,6 @@
 #include "storm/modelchecker/prctl/helper/HybridDtmcPrctlHelper.h"
 
+#include "storm/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
 
 #include "storm/solver/LinearEquationSolver.h"
 
@@ -72,6 +73,7 @@ namespace storm {
                         std::vector<ValueType> b = subvector.toVector(odd);
                         
                         std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(std::move(explicitSubmatrix));
+                        solver->setBounds(storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
                         solver->solveEquations(x, b);
                         
                         // Return a hybrid check result that stores the numerical values explicitly.
@@ -139,7 +141,6 @@ namespace storm {
                 }
             }
 
-            
             template<storm::dd::DdType DdType, typename ValueType>
             std::unique_ptr<CheckResult> HybridDtmcPrctlHelper<DdType, ValueType>::computeInstantaneousRewards(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, RewardModelType const& rewardModel, uint_fast64_t stepBound, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
                 // Only compute the result if the model has at least one reward this->getModel().
@@ -237,6 +238,7 @@ namespace storm {
                         
                         // Now solve the resulting equation system.
                         std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(std::move(explicitSubmatrix));
+                        solver->setLowerBound(storm::utility::zero<ValueType>());
                         solver->solveEquations(x, b);
                         
                         // Return a hybrid check result that stores the numerical values explicitly.
@@ -247,6 +249,26 @@ namespace storm {
                 }
             }
 
+            template<storm::dd::DdType DdType, typename ValueType>
+            std::unique_ptr<CheckResult> HybridDtmcPrctlHelper<DdType, ValueType>::computeLongRunAverageProbabilities(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Bdd<DdType> const& targetStates, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+                // Create ODD for the translation.
+                storm::dd::Odd odd = model.getReachableStates().createOdd();
+                storm::storage::SparseMatrix<ValueType> explicitProbabilityMatrix = model.getTransitionMatrix().toMatrix(odd, odd);
+
+                std::vector<ValueType> result = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeLongRunAverageProbabilities(explicitProbabilityMatrix, targetStates.toVector(odd), linearEquationSolverFactory);
+                return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType>(model.getReachableStates(), model.getManager().getBddZero(), model.getManager().template getAddZero<ValueType>(), model.getReachableStates(), std::move(odd), std::move(result)));
+            }
+
+            template<storm::dd::DdType DdType, typename ValueType>
+            std::unique_ptr<CheckResult> HybridDtmcPrctlHelper<DdType, ValueType>::computeLongRunAverageRewards(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, RewardModelType const& rewardModel, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+                // Create ODD for the translation.
+                storm::dd::Odd odd = model.getReachableStates().createOdd();
+                storm::storage::SparseMatrix<ValueType> explicitProbabilityMatrix = model.getTransitionMatrix().toMatrix(odd, odd);
+                
+                std::vector<ValueType> result = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeLongRunAverageRewards(explicitProbabilityMatrix, rewardModel.getTotalRewardVector(model.getTransitionMatrix(), model.getColumnVariables()).toVector(odd), linearEquationSolverFactory);
+                return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType>(model.getReachableStates(), model.getManager().getBddZero(), model.getManager().template getAddZero<ValueType>(), model.getReachableStates(), std::move(odd), std::move(result)));
+            }
+            
             template class HybridDtmcPrctlHelper<storm::dd::DdType::CUDD, double>;
             template class HybridDtmcPrctlHelper<storm::dd::DdType::Sylvan, double>;
         }

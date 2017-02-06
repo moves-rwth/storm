@@ -1,7 +1,7 @@
 
 // This file strutures pages and modules into a convenient hierarchical structure.
 
-namespace Eigen {
+namespace StormEigen {
 
 /** \page UserManual_Generalities General topics
   - \subpage Eigen2ToEigen3

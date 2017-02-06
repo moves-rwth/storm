@@ -256,14 +256,14 @@ namespace storm {
                         if(!accTime && !accSteps) {
                             if (rewExpr.isVariable()) {
                                 std::string rewardName = rewExpr.getVariables().begin()->getName();
-                                return std::make_shared<storm::logic::RewardOperatorFormula>(std::make_shared<storm::logic::InstantaneousRewardFormula>(static_cast<uint64_t>(stepInstant)), rewardName, opInfo);
+                                return std::make_shared<storm::logic::RewardOperatorFormula>(std::make_shared<storm::logic::InstantaneousRewardFormula>(stepInstantExpr, storm::logic::TimeBoundType::Steps), rewardName, opInfo);
                             } else {
                                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Only simple reward expressions are currently supported");
                             }
                         } else {
                             if (rewExpr.isVariable()) {
                                 std::string rewardName = rewExpr.getVariables().begin()->getName();
-                                return std::make_shared<storm::logic::RewardOperatorFormula>(std::make_shared<storm::logic::CumulativeRewardFormula>(static_cast<uint64_t>(stepInstant)), rewardName, opInfo);
+                                return std::make_shared<storm::logic::RewardOperatorFormula>(std::make_shared<storm::logic::CumulativeRewardFormula>(storm::logic::TimeBound(false, stepInstantExpr), storm::logic::TimeBoundType::Steps), rewardName, opInfo);
                             } else {
                                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Only simple reward expressions are currently supported");
                             }
@@ -276,14 +276,14 @@ namespace storm {
                         if(!accTime && !accSteps) {
                             if (rewExpr.isVariable()) {
                                 std::string rewardName = rewExpr.getVariables().begin()->getName();
-                                return std::make_shared<storm::logic::RewardOperatorFormula>(std::make_shared<storm::logic::InstantaneousRewardFormula>(timeInstant), rewardName, opInfo);
+                                return std::make_shared<storm::logic::RewardOperatorFormula>(std::make_shared<storm::logic::InstantaneousRewardFormula>(timeInstantExpr, storm::logic::TimeBoundType::Time), rewardName, opInfo);
                             } else {
                                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Only simple reward expressions are currently supported");
                             }
                         } else {
                             if (rewExpr.isVariable()) {
                                 std::string rewardName = rewExpr.getVariables().begin()->getName();
-                                return std::make_shared<storm::logic::RewardOperatorFormula>(std::make_shared<storm::logic::CumulativeRewardFormula>(timeInstant), rewardName, opInfo);
+                                return std::make_shared<storm::logic::RewardOperatorFormula>(std::make_shared<storm::logic::CumulativeRewardFormula>(storm::logic::TimeBound(false, timeInstantExpr), storm::logic::TimeBoundType::Time), rewardName, opInfo);
                             } else {
                                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Only simple reward expressions are currently supported");
                             }
@@ -345,7 +345,7 @@ namespace storm {
                             upperBound--;
                         }
                         STORM_LOG_THROW(upperBound >= 0, storm::exceptions::InvalidJaniException, "Step-bounds cannot be negative");
-                        return std::make_shared<storm::logic::BoundedUntilFormula const>(args[0], args[1], upperBound);
+                        return std::make_shared<storm::logic::BoundedUntilFormula const>(args[0], args[1], storm::logic::TimeBound(pi.lowerBoundStrict, pi.lowerBound), storm::logic::TimeBound(pi.upperBoundStrict, pi.upperBound), storm::logic::TimeBoundType::Steps);
                     } else if (propertyStructure.count("time-bounds") > 0) {
                         storm::jani::PropertyInterval pi = parsePropertyInterval(propertyStructure.at("time-bounds"));
                         STORM_LOG_THROW(pi.hasUpperBound(), storm::exceptions::NotSupportedException, "Storm only supports time-bounded until with an upper bound.");
@@ -356,7 +356,7 @@ namespace storm {
                         double upperBound = pi.upperBound.evaluateAsDouble();
                         STORM_LOG_THROW(lowerBound >= 0, storm::exceptions::InvalidJaniException, "(Lower) time-bounds cannot be negative");
                         STORM_LOG_THROW(upperBound >= 0, storm::exceptions::InvalidJaniException, "(Upper) time-bounds cannot be negative");
-                        return std::make_shared<storm::logic::BoundedUntilFormula const>(args[0], args[1], upperBound);
+                        return std::make_shared<storm::logic::BoundedUntilFormula const>(args[0], args[1], storm::logic::TimeBound(pi.lowerBoundStrict, pi.lowerBound), storm::logic::TimeBound(pi.upperBoundStrict, pi.upperBound), storm::logic::TimeBoundType::Time);
                         
                     } else if (propertyStructure.count("reward-bounds") > 0 ) {
                         STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Reward bounded properties are not supported by Storm");
@@ -939,6 +939,8 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "No supported operator declaration found for complex expressions as " << expressionStructure.dump() << " in  " << scopeDescription << ".");
             }
             assert(false);
+            // Silly warning suppression.
+            return storm::expressions::Expression();
 
         }
 
@@ -958,7 +960,7 @@ namespace storm {
         storm::jani::Automaton JaniParser::parseAutomaton(json const &automatonStructure, storm::jani::Model const& parentModel) {
             STORM_LOG_THROW(automatonStructure.count("name") == 1, storm::exceptions::InvalidJaniException, "Each automaton must have a name");
             std::string name = getString(automatonStructure.at("name"), " the name field for automaton");
-            storm::jani::Automaton automaton(name);
+            storm::jani::Automaton automaton(name, expressionManager->declareIntegerVariable("_loc_" + name));
             STORM_LOG_THROW(automatonStructure.count("locations") > 0, storm::exceptions::InvalidJaniException, "Automaton '" << name << "' does not have locations.");
             std::unordered_map<std::string, uint64_t> locIds;
             for(auto const& locEntry : automatonStructure.at("locations")) {
@@ -1036,8 +1038,11 @@ namespace storm {
                     STORM_LOG_THROW(guardExpr.hasBooleanType(), storm::exceptions::InvalidJaniException, "Guard " << guardExpr << " does not have Boolean type.");
                 }
                 assert(guardExpr.isInitialized());
+                
+                std::shared_ptr<storm::jani::TemplateEdge> templateEdge = automaton.createTemplateEdge(guardExpr);
+                
                 STORM_LOG_THROW(edgeEntry.count("destinations") == 1, storm::exceptions::InvalidJaniException, "A single list of destinations must be given in edge from '" << sourceLoc << "' in automaton '" << name << "'");
-                std::vector<storm::jani::EdgeDestination> edgeDestinations;
+                std::vector<std::pair<uint64_t, storm::expressions::Expression>> destinationLocationsAndProbabilities;
                 for(auto const& destEntry : edgeEntry.at("destinations")) {
                     // target location
                     STORM_LOG_THROW(edgeEntry.count("location") == 1, storm::exceptions::InvalidJaniException, "Each destination in edge from '" << sourceLoc << "' in automaton '" << name << "' must have a target location");
@@ -1072,9 +1077,10 @@ namespace storm {
                             assignments.emplace_back(lhs, assignmentExpr);
                         }
                     }
-                    edgeDestinations.emplace_back(locIds.at(targetLoc), probExpr, assignments);
+                    destinationLocationsAndProbabilities.emplace_back(locIds.at(targetLoc), probExpr);
+                    templateEdge->addDestination(storm::jani::TemplateEdgeDestination(assignments));
                 }
-                automaton.addEdge(storm::jani::Edge(locIds.at(sourceLoc), parentModel.getActionIndex(action), rateExpr.isInitialized() ? boost::optional<storm::expressions::Expression>(rateExpr) : boost::none, guardExpr, edgeDestinations));
+                automaton.addEdge(storm::jani::Edge(locIds.at(sourceLoc), parentModel.getActionIndex(action), rateExpr.isInitialized() ? boost::optional<storm::expressions::Expression>(rateExpr) : boost::none, templateEdge, destinationLocationsAndProbabilities));
             }
 
             return automaton;

@@ -13,6 +13,7 @@ namespace storm {
         public:
             SymbolicQualitativeCheckResult() = default;
             SymbolicQualitativeCheckResult(storm::dd::Bdd<Type> const& reachableStates, storm::dd::Bdd<Type> const& truthValues);
+            SymbolicQualitativeCheckResult(storm::dd::Bdd<Type> const& reachableStates, storm::dd::Bdd<Type> const& states, storm::dd::Bdd<Type> const& truthValues);
             
             SymbolicQualitativeCheckResult(SymbolicQualitativeCheckResult const& other) = default;
             SymbolicQualitativeCheckResult& operator=(SymbolicQualitativeCheckResult const& other) = default;

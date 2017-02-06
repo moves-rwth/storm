@@ -45,10 +45,10 @@ namespace storm {
             CompiledExpressionType& getCompiledExpression(storm::expressions::Expression const& expression) const;
             
             // The parser used.
-            mutable exprtk::parser<ValueType> parser;
+            mutable std::unique_ptr<exprtk::parser<ValueType>> parser;
             
             // The symbol table used.
-            mutable exprtk::symbol_table<ValueType> symbolTable;
+            mutable std::unique_ptr<exprtk::symbol_table<ValueType>> symbolTable;
             
             // The actual data that is fed into the expression.
             std::vector<ValueType> booleanValues;

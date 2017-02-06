@@ -1,4 +1,4 @@
-namespace Eigen {
+namespace StormEigen {
 
 /** \page TopicInsideEigenExample What happens inside Eigen, on a simple example
 
@@ -16,7 +16,7 @@ int main()
 {
   int size = 50;
   // VectorXf is a vector of floats, with dynamic size.
-  Eigen::VectorXf u(size), v(size), w(size);
+  StormEigen::VectorXf u(size), v(size), w(size);
   u = v + w;
 }
 \endcode
@@ -66,7 +66,7 @@ So let us look line by line at our example program, and let's follow Eigen as it
 Let's analyze the first line:
 
 \code
-  Eigen::VectorXf u(size), v(size), w(size);
+  StormEigen::VectorXf u(size), v(size), w(size);
 \endcode
 
 First of all, VectorXf is the following typedef:
@@ -80,7 +80,7 @@ The Matrix class inherits a base class, MatrixBase. Don't worry about it, for no
 
 When we do
 \code
-  Eigen::VectorXf u(size);
+  StormEigen::VectorXf u(size);
 \endcode
 the constructor that is called is Matrix::Matrix(int), in src/Core/Matrix.h. Besides some assertions, all it does is to construct the \a m_storage member, which is of type DenseStorage\<float, Dynamic, Dynamic, 1\>.
 

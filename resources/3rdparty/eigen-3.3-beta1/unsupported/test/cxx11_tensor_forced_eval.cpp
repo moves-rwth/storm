@@ -12,8 +12,8 @@
 #include <Eigen/Core>
 #include <Eigen/CXX11/Tensor>
 
-using Eigen::MatrixXf;
-using Eigen::Tensor;
+using StormEigen::MatrixXf;
+using StormEigen::Tensor;
 
 static void test_simple()
 {
@@ -29,7 +29,7 @@ static void test_simple()
   mat3 = mat1;
 
   typedef Tensor<float, 1>::DimensionPair DimPair;
-  Eigen::array<DimPair, 1> dims({{DimPair(1, 0)}});
+  StormEigen::array<DimPair, 1> dims({{DimPair(1, 0)}});
 
   mat3 = mat3.contract(mat2, dims).eval();
 
@@ -52,12 +52,12 @@ static void test_const()
   MatrixXf output = input;
   output.rowwise() -= input.colwise().maxCoeff();
 
-  Eigen::array<int, 1> depth_dim;
+  StormEigen::array<int, 1> depth_dim;
   depth_dim[0] = 0;
   Tensor<float, 2>::Dimensions dims2d;
   dims2d[0] = 1;
   dims2d[1] = 3;
-  Eigen::array<int, 2> bcast;
+  StormEigen::array<int, 2> bcast;
   bcast[0] = 3;
   bcast[1] = 1;
   const TensorMap<Tensor<const float, 2>> input_tensor(input.data(), 3, 3);

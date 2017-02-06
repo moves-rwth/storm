@@ -843,11 +843,12 @@ Cudd_EqualSupNormRel(
     /* Check terminal cases. */
     if (f == g) return(1);
     if (Cudd_IsConstant(f) && Cudd_IsConstant(g)) {
-        if (ddAbs((cuddV(f) - cuddV(g))/cuddV(f)) < tolerance) {
+        CUDD_VALUE_TYPE absDiff = ddAbs((cuddV(f) - cuddV(g)));
+        if (absDiff/cuddV(f) < tolerance || absDiff < Cudd_ReadEpsilon(dd)) {
             return(1);
         } else {
             if (pr>0) {
-                (void) fprintf(dd->out,"Offending nodes:\n");
+                (void) fprintf(dd->out,"Offending nodes (wrt. precision %0.30f) with diff %0.30f:\n", Cudd_ReadEpsilon(dd), absDiff);
                 (void) fprintf(dd->out,
                                "f: address = %p\t value = %40.30f\n",
                                (void *) f, cuddV(f));

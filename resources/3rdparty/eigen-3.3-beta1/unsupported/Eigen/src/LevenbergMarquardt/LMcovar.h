@@ -12,7 +12,7 @@
 #ifndef EIGEN_LMCOVAR_H
 #define EIGEN_LMCOVAR_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 namespace internal {
 
@@ -79,6 +79,6 @@ void covar(
 
 } // end namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_LMCOVAR_H

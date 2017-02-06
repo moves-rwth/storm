@@ -4,9 +4,9 @@ include(InstallRequiredSystemLibraries)
 # http://www.cmake.org/Wiki/CMake:CPackConfiguration
 
 ### general settings
-set(CPACK_PACKAGE_NAME "StoRM")
-set(CPACK_PACKAGE_VENDOR "i2 RWTH Aachen University")
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Stochastic Reward Model Checker - An extensible model checker written in C++.")
+set(CPACK_PACKAGE_NAME "Storm")
+set(CPACK_PACKAGE_VENDOR "RWTH Aachen University")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Storm - A probabilistic model checker written in C++.")
 
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE")
 

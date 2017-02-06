@@ -10,7 +10,7 @@
 #ifndef EIGEN_MISC_KERNEL_H
 #define EIGEN_MISC_KERNEL_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 namespace internal {
 
@@ -67,13 +67,13 @@ template<typename _DecompositionType> struct kernel_retval_base
   typedef typename DecompositionType::MatrixType MatrixType; \
   typedef typename MatrixType::Scalar Scalar; \
   typedef typename MatrixType::RealScalar RealScalar; \
-  typedef Eigen::internal::kernel_retval_base<DecompositionType> Base; \
+  typedef StormEigen::internal::kernel_retval_base<DecompositionType> Base; \
   using Base::dec; \
   using Base::rank; \
   using Base::rows; \
   using Base::cols; \
   kernel_retval(const DecompositionType& dec) : Base(dec) {}
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_MISC_KERNEL_H

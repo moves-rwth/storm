@@ -846,13 +846,6 @@ namespace storm {
              * @out The stream to output to.
              */
             void printAsMatlabMatrix(std::ostream& out) const;
-
-            /*!
-             * Returns the size of the matrix in memory measured in bytes.
-             *
-             * @return The size of the matrix in memory measured in bytes.
-             */
-            std::size_t getSizeInBytes() const;
             
             /*!
              * Calculates a hash value over all values contained in the matrix.

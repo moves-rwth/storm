@@ -9,15 +9,15 @@
 namespace storm {
     namespace expressions {
         template<typename RationalType>
-        ExprtkExpressionEvaluatorBase<RationalType>::ExprtkExpressionEvaluatorBase(storm::expressions::ExpressionManager const& manager) : ExpressionEvaluatorBase<RationalType>(manager), booleanValues(manager.getNumberOfBooleanVariables()), integerValues(manager.getNumberOfIntegerVariables()), rationalValues(manager.getNumberOfRationalVariables()) {
+        ExprtkExpressionEvaluatorBase<RationalType>::ExprtkExpressionEvaluatorBase(storm::expressions::ExpressionManager const& manager) : ExpressionEvaluatorBase<RationalType>(manager), parser(std::make_unique<exprtk::parser<ValueType>>()), symbolTable(std::make_unique<exprtk::symbol_table<ValueType>>()), booleanValues(manager.getNumberOfBooleanVariables()), integerValues(manager.getNumberOfIntegerVariables()), rationalValues(manager.getNumberOfRationalVariables()) {
 
             for (auto const& variableTypePair : manager) {
                 if (variableTypePair.second.isBooleanType()) {
-                    symbolTable.add_variable(variableTypePair.first.getName(), this->booleanValues[variableTypePair.first.getOffset()]);
+                    symbolTable->add_variable(variableTypePair.first.getName(), this->booleanValues[variableTypePair.first.getOffset()]);
                 } else if (variableTypePair.second.isIntegerType()) {
-                    symbolTable.add_variable(variableTypePair.first.getName(), this->integerValues[variableTypePair.first.getOffset()]);
+                    symbolTable->add_variable(variableTypePair.first.getName(), this->integerValues[variableTypePair.first.getOffset()]);
                 } else if (variableTypePair.second.isRationalType()) {
-                    symbolTable.add_variable(variableTypePair.first.getName(), this->rationalValues[variableTypePair.first.getOffset()]);
+                    symbolTable->add_variable(variableTypePair.first.getName(), this->rationalValues[variableTypePair.first.getOffset()]);
                 }
             }
         }
@@ -48,9 +48,9 @@ namespace storm {
         typename ExprtkExpressionEvaluatorBase<RationalType>::CompiledExpressionType& ExprtkExpressionEvaluatorBase<RationalType>::getCompiledExpression(storm::expressions::Expression const& expression) const {
             std::pair<CacheType::iterator, bool> result = this->compiledExpressions.emplace(expression.getBaseExpressionPointer(), CompiledExpressionType());
             CompiledExpressionType& compiledExpression = result.first->second;
-            compiledExpression.register_symbol_table(symbolTable);
-            bool parsingOk = parser.compile(ToExprtkStringVisitor().toString(expression), compiledExpression);
-            STORM_LOG_THROW(parsingOk, storm::exceptions::UnexpectedException, "Expression was not properly parsed by ExprTk: " << expression << ". (Returned error: " << parser.error() << ")");
+            compiledExpression.register_symbol_table(*symbolTable);
+            bool parsingOk = parser->compile(ToExprtkStringVisitor().toString(expression), compiledExpression);
+            STORM_LOG_THROW(parsingOk, storm::exceptions::UnexpectedException, "Expression was not properly parsed by ExprTk: " << expression << ". (Returned error: " << parser->error() << ")");
             return compiledExpression;
         }
         

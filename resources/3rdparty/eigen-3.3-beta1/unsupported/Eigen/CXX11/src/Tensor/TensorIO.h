@@ -10,7 +10,7 @@
 #ifndef EIGEN_CXX11_TENSOR_TENSOR_IO_H
 #define EIGEN_CXX11_TENSOR_TENSOR_IO_H
 
-namespace Eigen {
+namespace StormEigen {
 
 namespace internal {
 template<>
@@ -40,7 +40,7 @@ std::ostream& operator << (std::ostream& os, const TensorBase<T, ReadOnlyAccesso
     Map<const Array<Scalar, Dynamic, 1> > array(const_cast<Scalar*>(tensor.data()), total_size);
     os << array;
   } else {
-    const Index first_dim = Eigen::internal::array_get<0>(tensor.dimensions());
+    const Index first_dim = StormEigen::internal::array_get<0>(tensor.dimensions());
     static const int layout = TensorEvaluator<const TensorForcedEvalOp<const T>, DefaultDevice>::Layout;
     Map<const Array<Scalar, Dynamic, Dynamic, layout> > matrix(const_cast<Scalar*>(tensor.data()), first_dim, total_size/first_dim);
     os << matrix;
@@ -51,6 +51,6 @@ std::ostream& operator << (std::ostream& os, const TensorBase<T, ReadOnlyAccesso
   return os;
 }
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_CXX11_TENSOR_TENSOR_IO_H

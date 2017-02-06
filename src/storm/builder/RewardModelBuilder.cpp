@@ -16,7 +16,7 @@ namespace storm {
         }
         
         template <typename ValueType>
-        storm::models::sparse::StandardRewardModel<ValueType> RewardModelBuilder<ValueType>::build(uint_fast64_t rowCount, uint_fast64_t columnCount, uint_fast64_t rowGroupCount) {
+        storm::models::sparse::StandardRewardModel<ValueType> RewardModelBuilder<ValueType>::build(uint_fast64_t rowCount, uint_fast64_t, uint_fast64_t rowGroupCount) {
             boost::optional<std::vector<ValueType>> optionalStateRewardVector;
             if (hasStateRewards()) {
                 stateRewardVector.resize(rowGroupCount);

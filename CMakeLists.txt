@@ -23,7 +23,9 @@ include(imported)
 #############################################################
 option(STORM_DEVELOPER "Sets whether the development mode is used." OFF)
 option(STORM_ALLWARNINGS "Compile with even more warnings" OFF)
-option(STORM_PORTABLE_RELEASE "Sets whether a release build needs to be portable to another machine. This is only effective for release builds in non-development mode." OFF)
+option(STORM_USE_LTO "Sets whether link-time optimizations are enabled." ON)
+MARK_AS_ADVANCED(STORM_USE_LTO)
+option(STORM_PORTABLE_RELEASE "Sets whether a release build needs to be portable to another machine." OFF)
 MARK_AS_ADVANCED(STORM_PORTABLE_RELEASE)
 option(STORM_USE_POPCNT "Sets whether the popcnt instruction is going to be used." ON)
 MARK_AS_ADVANCED(STORM_USE_POPCNT)
@@ -31,12 +33,13 @@ option(USE_BOOST_STATIC_LIBRARIES "Sets whether the Boost libraries should be li
 option(STORM_USE_INTELTBB "Sets whether the Intel TBB libraries should be used." OFF)
 option(STORM_USE_GUROBI "Sets whether Gurobi should be used." OFF)
 option(USE_CARL "Sets whether carl should be included." ON)
+option(STORM_FORCE_SHIPPED_CARL "Sets whether the shipped version of carl is to be used no matter whether carl is found or not." OFF)
+MARK_AS_ADVANCED(STORM_FORCE_SHIPPED_CARL)
 option(USE_SMTRAT "Sets whether SMT-RAT should be included." OFF)
 option(USE_HYPRO "Sets whether HyPro should be included." OFF)
 option(XML_SUPPORT "Sets whether xml based format parsing should be included." ON)
 option(FORCE_COLOR "Force color output" OFF)
 mark_as_advanced(FORCE_COLOR)
-option(STORM_PYTHON "Build the API for Python" OFF)
 option(STORM_COMPILE_WITH_CCACHE "Compile using CCache [if found]" ON)
 mark_as_advanced(STORM_COMPILE_WITH_CCACHE)
 option(STORM_LOG_DISABLE_DEBUG "Disable log and trace message support" OFF)
@@ -78,6 +81,8 @@ message("CMAKE_INSTALL_DIR: ${CMAKE_INSTALL_DIR}")
 if (STORM_DEVELOPER)
     set(CMAKE_BUILD_TYPE "DEBUG")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSTORM_DEV")
+else()
+    set(STORM_LOG_DISABLE_DEBUG ON)
 endif()
 message(STATUS "Storm - Building ${CMAKE_BUILD_TYPE} version.")
 
@@ -131,11 +136,6 @@ elseif (WIN32)
 endif()
 message(STATUS "Assuming extension for shared libraries: ${DYNAMIC_EXT}")
 message(STATUS "Assuming extension for static libraries: ${STATIC_EXT}")
-
-# Python bindings need shared library
-if(STORM_PYTHON)
-    set(BUILD_SHARED_LIBS ON CACHE BOOL "Build the Storm library dynamically" FORCE)
-endif()
 
 if(BUILD_SHARED_LIBS)
     set(LIB_EXT ${DYNAMIC_EXT})
@@ -219,7 +219,7 @@ if (STORM_COMPILER_CLANG OR STORM_COMPILER_APPLECLANG)
     endif()
     
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -stdlib=${CLANG_STDLIB} -ftemplate-depth=1024")
-    set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -flto -ffast-math -fno-finite-math-only")
+    set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -ffast-math -fno-finite-math-only")
     set (CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-export_dynamic")
     set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-export_dynamic")
 elseif (STORM_COMPILER_GCC)
@@ -228,6 +228,10 @@ elseif (STORM_COMPILER_GCC)
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -rdynamic")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -rdynamic")
 endif ()
+
+if (STORM_USE_LTO)
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -flto")
+endif()
 
 # In release mode, we turn on even more optimizations if we do not have to provide a portable binary.
 if (NOT STORM_PORTABLE_RELEASE)
@@ -263,6 +267,25 @@ if (STORM_DEVELOPER)
 else()
 	set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fomit-frame-pointer")
 endif()
+
+#############################################################
+##
+##	RPATH settings
+##
+#############################################################
+
+# don't skip the full RPATH for the build tree
+SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
+
+# when building, don't use the install RPATH already (but only when installing)
+SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+
+# the RPATH to be used when installing
+SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+
+# don't add the automatically determined parts of the RPATH
+# which point to directories outside the build tree to the install RPATH
+SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 #############################################################
 ##
@@ -360,12 +383,15 @@ set(STORM_GENERATED_SOURCES "${PROJECT_BINARY_DIR}/src/storm/utility/storm-versi
 include_directories("${PROJECT_BINARY_DIR}/include")
 
 include(CTest)
+# Compiles all tests
+add_custom_target(tests)
+# Compiles and runs all tests
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND})
 set(CMAKE_CTEST_COMMAND_VERBOSE ${CMAKE_CTEST_COMMAND} -V)
 add_custom_target(check-verbose COMMAND ${CMAKE_CTEST_COMMAND_VERBOSE})
+add_dependencies(check tests)
+add_dependencies(check-verbose tests)
 
-
-# Python bindings for storm
 set(STORM_TARGETS "")
 add_subdirectory(src)
 

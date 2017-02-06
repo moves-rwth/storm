@@ -11,7 +11,7 @@
 
 #include <Eigen/Core>
 
-namespace Eigen {
+namespace StormEigen {
 
 /**
   * \defgroup MoreVectorization More vectorization module

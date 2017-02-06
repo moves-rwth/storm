@@ -5,13 +5,17 @@
 
 #include "storm/parser/SpiritParserDefinitions.h"
 #include "storm/parser/ExpressionParser.h"
-#include "storm/logic/Formulas.h"
+#include "storm/storage/jani/Property.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
     namespace prism {
         class Program;
+    }
+    
+    namespace logic {
+        class Formula;
     }
     
     namespace parser {
@@ -23,7 +27,9 @@ namespace storm {
         public:
             FormulaParser();
             explicit FormulaParser(std::shared_ptr<storm::expressions::ExpressionManager const> const& manager);
+            explicit FormulaParser(std::shared_ptr<storm::expressions::ExpressionManager> const& manager);
             explicit FormulaParser(storm::prism::Program const& program);
+            explicit FormulaParser(storm::prism::Program& program);
             
             FormulaParser(FormulaParser const& other);
             FormulaParser& operator=(FormulaParser const& other);
@@ -37,20 +43,20 @@ namespace storm {
             std::shared_ptr<storm::logic::Formula const> parseSingleFormulaFromString(std::string const& formulaString) const;
             
             /*!
-             * Parses the formula given by the provided string.
+             * Parses the property given by the provided string.
              *
-             * @param formulaString The formula as a string.
-             * @return The contained formulas.
+             * @param propertyString The formula as a string.
+             * @return The contained properties.
              */
-            std::vector<std::shared_ptr<storm::logic::Formula const>> parseFromString(std::string const& formulaString) const;
+            std::vector<storm::jani::Property> parseFromString(std::string const& propertyString) const;
             
             /*!
-             * Parses the formulas in the given file.
+             * Parses the properties in the given file.
              *
              * @param filename The name of the file to parse.
-             * @return The contained formulas.
+             * @return The contained properties.
              */
-            std::vector<std::shared_ptr<storm::logic::Formula const>> parseFromFile(std::string const& filename) const;
+            std::vector<storm::jani::Property> parseFromFile(std::string const& filename) const;
             
             /*!
              * Adds an identifier and the expression it is supposed to be replaced with. This can, for example be used
@@ -62,6 +68,8 @@ namespace storm {
             void addIdentifierExpression(std::string const& identifier, storm::expressions::Expression const& expression);
             
         private:
+            void addFormulasAsIdentifiers(storm::prism::Program const& program);
+            
             // The manager used to parse expressions.
             std::shared_ptr<storm::expressions::ExpressionManager const> manager;
             

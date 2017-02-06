@@ -13,6 +13,7 @@
 #include "storm/settings/modules/MinMaxEquationSolverSettings.h"
 #include "storm/settings/modules/NativeEquationSolverSettings.h"
 #include "storm/settings/modules/EliminationSettings.h"
+#include "storm/settings/modules/ResourceSettings.h"
 
 #include "storm-dft/parser/DFTGalileoParser.h"
 #include "storm-dft/parser/DFTJsonParser.h"
@@ -47,7 +48,7 @@ void analyzeDFT(std::string filename, std::string property, bool symred, bool al
 
     storm::parser::DFTGalileoParser<ValueType> parser;
     storm::storage::DFT<ValueType> dft = parser.parseDFT(filename);
-    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::parseFormulasForExplicit(property);
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::extractFormulasFromProperties(storm::parsePropertiesForExplicit(property));
     STORM_LOG_ASSERT(formulas.size() == 1, "Wrong number of formulas.");
 
     storm::modelchecker::DFTModelChecker<ValueType> modelChecker;
@@ -98,6 +99,7 @@ void initializeSettings() {
     //storm::settings::addModule<storm::settings::modules::TopologicalValueIterationEquationSolverSettings>();
     //storm::settings::addModule<storm::settings::modules::ParametricSettings>();
     storm::settings::addModule<storm::settings::modules::EliminationSettings>();
+    storm::settings::addModule<storm::settings::modules::ResourceSettings>();
     
     // For translation into JANI via GSPN.
     storm::settings::addModule<storm::settings::modules::GSPNSettings>();
@@ -164,7 +166,7 @@ int main(const int argc, const char** argv) {
 
             storm::expressions::Expression targetExpression = exprManager->integer(1) == topfailedVar.getExpressionVariable().getExpression();
             auto evtlFormula = std::make_shared<storm::logic::AtomicExpressionFormula>(targetExpression);
-            auto tbFormula = std::make_shared<storm::logic::BoundedUntilFormula>(std::make_shared<storm::logic::BooleanLiteralFormula>(true), evtlFormula, 0.0, 10.0);
+            auto tbFormula = std::make_shared<storm::logic::BoundedUntilFormula>(std::make_shared<storm::logic::BooleanLiteralFormula>(true), evtlFormula, storm::logic::TimeBound(false, exprManager->integer(0)), storm::logic::TimeBound(false, exprManager->integer(10)), storm::logic::TimeBoundType::Time);
             auto tbUntil = std::make_shared<storm::logic::ProbabilityOperatorFormula>(tbFormula);
             
             auto evFormula = std::make_shared<storm::logic::EventuallyFormula>(evtlFormula, storm::logic::FormulaContext::Time);
@@ -258,7 +260,9 @@ int main(const int argc, const char** argv) {
         return 0;
     } catch (storm::exceptions::BaseException const& exception) {
         STORM_LOG_ERROR("An exception caused StoRM-DyFTeE to terminate. The message of the exception is: " << exception.what());
+        return 1;
     } catch (std::exception const& exception) {
         STORM_LOG_ERROR("An unexpected exception occurred and caused StoRM-DyFTeE to terminate. The message of this exception is: " << exception.what());
+        return 2;
     }
 }

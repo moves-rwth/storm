@@ -56,6 +56,7 @@ namespace storm {
             
             virtual ValueType getMin() const override;
             virtual ValueType getMax() const override;
+            virtual std::pair<ValueType, ValueType> getMinMax() const;
             virtual ValueType average() const override;
             virtual ValueType sum() const override;
             

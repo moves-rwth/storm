@@ -11,7 +11,7 @@
 #ifndef EIGEN_GEOMETRY_SSE_H
 #define EIGEN_GEOMETRY_SSE_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 namespace internal {
 
@@ -136,6 +136,6 @@ struct quat_conj<Architecture::SSE, Derived, double, Alignment>
 
 } // end namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_GEOMETRY_SSE_H

@@ -11,7 +11,7 @@
 #ifndef EIGEN_MATRIX_H
 #define EIGEN_MATRIX_H
 
-namespace Eigen {
+namespace StormEigen {
 
 /** \class Matrix
   * \ingroup Core_Module
@@ -54,13 +54,13 @@ namespace Eigen {
   * You can access elements of vectors and matrices using normal subscripting:
   *
   * \code
-  * Eigen::VectorXd v(10);
+  * StormEigen::VectorXd v(10);
   * v[0] = 0.1;
   * v[1] = 0.2;
   * v(0) = 0.3;
   * v(1) = 0.4;
   *
-  * Eigen::MatrixXi m(10, 10);
+  * StormEigen::MatrixXi m(10, 10);
   * m(0, 1) = 1;
   * m(0, 2) = 2;
   * m(0, 3) = 3;
@@ -105,7 +105,7 @@ namespace Eigen {
   * <tr><td>\code Matrix<T,Dynamic,Dynamic> \endcode</td><td>\code
   * struct {
   *   T *data;                  // with (size_t(data)%EIGEN_MAX_ALIGN_BYTES)==0
-  *   Eigen::Index rows, cols;
+  *   StormEigen::Index rows, cols;
   *  };
   * \endcode</td></tr>
   * <tr class="alt"><td>\code
@@ -113,7 +113,7 @@ namespace Eigen {
   * Matrix<T,1,Dynamic> \endcode</td><td>\code
   * struct {
   *   T *data;                  // with (size_t(data)%EIGEN_MAX_ALIGN_BYTES)==0
-  *   Eigen::Index size;
+  *   StormEigen::Index size;
   *  };
   * \endcode</td></tr>
   * <tr><td>\code Matrix<T,Rows,Cols> \endcode</td><td>\code
@@ -124,7 +124,7 @@ namespace Eigen {
   * <tr class="alt"><td>\code Matrix<T,Dynamic,Dynamic,0,MaxRows,MaxCols> \endcode</td><td>\code
   * struct {
   *   T data[MaxRows*MaxCols];  // with (size_t(data)%A(MaxRows*MaxCols*sizeof(T)))==0
-  *   Eigen::Index rows, cols;
+  *   StormEigen::Index rows, cols;
   *  };
   * \endcode</td></tr>
   * </table>
@@ -155,7 +155,7 @@ private:
 public:
   typedef _Scalar Scalar;
   typedef Dense StorageKind;
-  typedef Eigen::Index StorageIndex;
+  typedef StormEigen::Index StorageIndex;
   typedef MatrixXpr XprKind;
   enum {
     RowsAtCompileTime = _Rows,
@@ -456,6 +456,6 @@ EIGEN_MAKE_TYPEDEFS_ALL_SIZES(std::complex<double>, cd)
 #undef EIGEN_MAKE_TYPEDEFS
 #undef EIGEN_MAKE_FIXED_TYPEDEFS
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_MATRIX_H

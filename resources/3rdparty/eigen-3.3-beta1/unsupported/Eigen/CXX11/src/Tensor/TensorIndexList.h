@@ -14,7 +14,7 @@
 
 #define EIGEN_HAS_INDEX_LIST
 
-namespace Eigen {
+namespace StormEigen {
 
 /** \internal
   *
@@ -347,14 +347,14 @@ struct indices_statically_known_to_increase_impl {
 template <typename FirstType, typename... OtherTypes>
   struct indices_statically_known_to_increase_impl<IndexList<FirstType, OtherTypes...> > {
   static constexpr bool run() {
-    return Eigen::IndexList<FirstType, OtherTypes...>().values_statically_known_to_increase();
+    return StormEigen::IndexList<FirstType, OtherTypes...>().values_statically_known_to_increase();
   }
 };
 
 template <typename FirstType, typename... OtherTypes>
   struct indices_statically_known_to_increase_impl<const IndexList<FirstType, OtherTypes...> > {
   static constexpr bool run() {
-    return Eigen::IndexList<FirstType, OtherTypes...>().values_statically_known_to_increase();
+    return StormEigen::IndexList<FirstType, OtherTypes...>().values_statically_known_to_increase();
   }
 };
 
@@ -456,11 +456,11 @@ struct index_statically_lt_impl<const IndexList<FirstType, OtherTypes...> > {
 };
 
 }  // end namespace internal
-}  // end namespace Eigen
+}  // end namespace StormEigen
 
 #else
 
-namespace Eigen {
+namespace StormEigen {
 namespace internal {
 
 template <typename T>
@@ -513,12 +513,12 @@ struct index_statically_lt_impl {
 };
 
 }  // end namespace internal
-}  // end namespace Eigen
+}  // end namespace StormEigen
 
 #endif
 
 
-namespace Eigen {
+namespace StormEigen {
 namespace internal {
 template <typename T>
 static EIGEN_DEVICE_FUNC EIGEN_CONSTEXPR bool index_known_statically(DenseIndex i) {
@@ -556,7 +556,7 @@ static EIGEN_DEVICE_FUNC EIGEN_CONSTEXPR bool index_statically_lt(DenseIndex i, 
 }
 
 }  // end namespace internal
-}  // end namespace Eigen
+}  // end namespace StormEigen
 
 
 #endif // EIGEN_CXX11_TENSOR_TENSOR_INDEX_LIST_H

@@ -2,11 +2,13 @@
 
 #include <string>
 #include <cstdint>
+#include <vector>
 #include <unordered_map>
 #include <boost/container/flat_set.hpp>
 
 #include "storm/storage/jani/VariableSet.h"
 #include "storm/storage/jani/Edge.h"
+#include "storm/storage/jani/TemplateEdge.h"
 #include "storm/storage/jani/Location.h"
 
 namespace storm {
@@ -93,7 +95,12 @@ namespace storm {
             /*!
              * Creates an empty automaton.
              */
-            Automaton(std::string const& name);
+            Automaton(std::string const& name, storm::expressions::Variable const& locationExpressionVariable);
+            
+            Automaton(Automaton const& other) = default;
+            Automaton& operator=(Automaton const& other) = default;
+            Automaton(Automaton&& other) = default;
+            Automaton& operator=(Automaton&& other) = default;
             
             /*!
              * Retrieves the name of the automaton.
@@ -134,6 +141,13 @@ namespace storm {
              * Retrieves the variables of this automaton.
              */
             VariableSet const& getVariables() const;
+            
+            /*!
+             * Retrieves all expression variables used by this automaton.
+             *
+             * @return The set of expression variables used by this automaton.
+             */
+            std::set<storm::expressions::Variable> getAllExpressionVariables() const;
             
             /*!
              * Retrieves whether this automaton has a transient variable.
@@ -199,6 +213,11 @@ namespace storm {
             std::map<uint64_t, std::string> buildIdToLocationNameMap() const;
             
             /*!
+             * Retrieves the expression variable that represents the location of this automaton.
+             */
+            storm::expressions::Variable const& getLocationExpressionVariable() const;
+            
+            /*!
              * Retrieves the edges of the location with the given name.
              */
             Edges getEdgesFromLocation(std::string const& name);
@@ -229,6 +248,11 @@ namespace storm {
             ConstEdges getEdgesFromLocation(uint64_t locationIndex, uint64_t actionIndex) const;
             
             /*!
+             * Creates a new template edge that can be used to create new edges.
+             */
+            std::shared_ptr<TemplateEdge> createTemplateEdge(storm::expressions::Expression const& guard);
+            
+            /*!
              * Adds an edge to the automaton.
              */
             void addEdge(Edge const& edge);
@@ -242,7 +266,7 @@ namespace storm {
              * Retrieves the edges of the automaton.
              */
             std::vector<Edge> const& getEdges() const;
-
+            
             /*!
              * Retrieves the set of action indices that are labels of edges of this automaton.
              */
@@ -299,6 +323,11 @@ namespace storm {
             void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution);
             
             /*!
+             * Changes all variables in assignments based on the given mapping.
+             */
+            void changeAssignmentVariables(std::map<Variable const*, std::reference_wrapper<Variable const>> const& remapping);
+            
+            /*!
              * Finalizes the building of this automaton. Subsequent changes to the automaton require another call to this
              * method. Note that this method is invoked by a call to <code>finalize</code> to the containing model.
              */
@@ -335,9 +364,17 @@ namespace storm {
              */
             bool usesAssignmentLevels() const;
             
+            /*!
+             * Checks the automaton for linearity.
+             */
+            bool isLinear() const;
+            
         private:
             /// The name of the automaton.
             std::string name;
+            
+            /// The expression variable representing the location of this automaton.
+            storm::expressions::Variable locationExpressionVariable;
 
             /// The set of variables of this automaton.
             VariableSet variables;
@@ -350,6 +387,9 @@ namespace storm {
             
             /// All edges of the automaton
             std::vector<Edge> edges;
+            
+            /// The templates for the contained edges.
+            std::vector<std::shared_ptr<TemplateEdge>> templateEdges;
             
             /// A mapping from location indices to the starting indices. If l is mapped to i, it means that the edges
             /// leaving location l start at index i of the edges vector.

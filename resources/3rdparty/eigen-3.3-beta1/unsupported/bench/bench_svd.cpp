@@ -17,7 +17,7 @@
 #include <unsupported/Eigen/SVD>
 
 
-using namespace Eigen;
+using namespace StormEigen;
 using namespace std;
 
 // number of computations of each algorithm before the print of the time

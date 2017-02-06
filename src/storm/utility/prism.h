@@ -20,11 +20,11 @@ namespace storm {
     namespace utility {
         namespace prism {
             
-            std::map<storm::expressions::Variable, storm::expressions::Expression> parseConstantDefinitionString(storm::prism::Program const& program, std::string const& constantDefinitionString);
-
             storm::prism::Program preprocess(storm::prism::Program const& program, std::map<storm::expressions::Variable, storm::expressions::Expression> const& constantDefinitions);
             
             storm::prism::Program preprocess(storm::prism::Program const& program, std::string const& constantDefinitionString);
+            
+            void requireNoUndefinedConstants(storm::prism::Program const& program);
             
         } // namespace prism
     } // namespace utility

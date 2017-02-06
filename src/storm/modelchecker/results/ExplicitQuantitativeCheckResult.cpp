@@ -84,7 +84,7 @@ namespace storm {
         
         template<typename ValueType>
         ValueType ExplicitQuantitativeCheckResult<ValueType>::getMin() const {
-            STORM_LOG_THROW(!values.empty(),storm::exceptions::InvalidOperationException, "Minimum of empty set is not defined");
+            STORM_LOG_THROW(!values.empty(), storm::exceptions::InvalidOperationException, "Minimum of empty set is not defined.");
             
             if (this->isResultForAllStates()) {
                 return storm::utility::minimum(boost::get<vector_type>(values));
@@ -93,15 +93,25 @@ namespace storm {
             }
         }
         
-        
         template<typename ValueType>
         ValueType ExplicitQuantitativeCheckResult<ValueType>::getMax() const {
-            STORM_LOG_THROW(!values.empty(),storm::exceptions::InvalidOperationException, "Minimum of empty set is not defined");
+            STORM_LOG_THROW(!values.empty(), storm::exceptions::InvalidOperationException, "Minimum of empty set is not defined.");
             
             if (this->isResultForAllStates()) {
                 return storm::utility::maximum(boost::get<vector_type>(values));
             } else {
                 return storm::utility::maximum(boost::get<map_type>(values));
+            }
+        }
+        
+        template<typename ValueType>
+        std::pair<ValueType, ValueType> ExplicitQuantitativeCheckResult<ValueType>::getMinMax() const {
+            STORM_LOG_THROW(!values.empty(), storm::exceptions::InvalidOperationException, "Minimum/maximum of empty set is not defined.");
+            
+            if (this->isResultForAllStates()) {
+                return storm::utility::minmax(boost::get<vector_type>(values));
+            } else {
+                return storm::utility::minmax(boost::get<map_type>(values));
             }
         }
         
@@ -112,10 +122,12 @@ namespace storm {
             ValueType sum = storm::utility::zero<ValueType>();
             if (this->isResultForAllStates()) {
                 for (auto& element : boost::get<vector_type>(values)) {
+                    STORM_LOG_THROW(element != storm::utility::infinity<ValueType>(), storm::exceptions::InvalidOperationException, "Cannot compute the sum of values containing infinity.");
                     sum += element;
                 }
             } else {
                 for (auto& element : boost::get<map_type>(values)) {
+                    STORM_LOG_THROW(element.second != storm::utility::infinity<ValueType>(), storm::exceptions::InvalidOperationException, "Cannot compute the sum of values containing infinity.");
                     sum += element.second;
                 }
             }
@@ -129,11 +141,13 @@ namespace storm {
             ValueType sum = storm::utility::zero<ValueType>();
             if (this->isResultForAllStates()) {
                 for (auto& element : boost::get<vector_type>(values)) {
+                    STORM_LOG_THROW(element != storm::utility::infinity<ValueType>(), storm::exceptions::InvalidOperationException, "Cannot compute the average of values containing infinity.");
                     sum += element;
                 }
                 return sum / boost::get<vector_type>(values).size();
             } else {
                 for (auto& element : boost::get<map_type>(values)) {
+                    STORM_LOG_THROW(element.second != storm::utility::infinity<ValueType>(), storm::exceptions::InvalidOperationException, "Cannot compute the average of values containing infinity.");
                     sum += element.second;
                 }
                 return sum / boost::get<map_type>(values).size();
@@ -157,32 +171,100 @@ namespace storm {
         }
         
         template<typename ValueType>
-        std::ostream& ExplicitQuantitativeCheckResult<ValueType>::writeToStream(std::ostream& out) const {
+        void print(std::ostream& out, ValueType const& value) {
+            if (value == storm::utility::infinity<ValueType>()) {
+                out << "inf";
+            } else {
+                out << value;
+                if (std::is_same<ValueType, storm::RationalNumber>::value) {
+                    out << " (approx. " << storm::utility::convertNumber<double>(value) << ")";
+                }
+            }
+        }
+        
+        template<typename ValueType>
+        void printRange(std::ostream& out, ValueType const& min, ValueType const& max) {
             out << "[";
+            if (min == storm::utility::infinity<ValueType>()) {
+                out << "inf";
+            } else {
+                out << min;
+            }
+            out << ", ";
+            if (max == storm::utility::infinity<ValueType>()) {
+                out << "inf";
+            } else {
+                out << max;
+            }
+            out << "]";
+            if (std::is_same<ValueType, storm::RationalNumber>::value) {
+                out << " (approx. [";
+                if (min == storm::utility::infinity<ValueType>()) {
+                    out << "inf";
+                } else {
+                    out << storm::utility::convertNumber<double>(min);
+                }
+                out << ", ";
+                if (max == storm::utility::infinity<ValueType>()) {
+                    out << "inf";
+                } else {
+                    out << storm::utility::convertNumber<double>(max);
+                }
+                out << "])";
+            }
+            out << " (range)";
+        }
+        
+        template<typename ValueType>
+        std::ostream& ExplicitQuantitativeCheckResult<ValueType>::writeToStream(std::ostream& out) const {
+            bool minMaxSupported = std::is_same<ValueType, double>::value || std::is_same<ValueType, storm::RationalNumber>::value;
+            bool printAsRange = false;
+            
             if (this->isResultForAllStates()) {
                 vector_type const& valuesAsVector = boost::get<vector_type>(values);
-                bool first = true;
-                for (auto const& element : valuesAsVector) {
-                    if (!first) {
-                        out << ", ";
-                    } else {
-                        first = false;
+                if (valuesAsVector.size() >= 10 && minMaxSupported) {
+                    printAsRange = true;
+                } else {
+                    out << "{";
+                    bool first = true;
+                    for (auto const& element : valuesAsVector) {
+                        if (!first) {
+                            out << ", ";
+                        } else {
+                            first = false;
+                        }
+                        print(out, element);
                     }
-                    out << element;
+                    out << "}";
                 }
             } else {
                 map_type const& valuesAsMap = boost::get<map_type>(values);
-                bool first = true;
-                for (auto const& element : valuesAsMap) {
-                    if (!first) {
-                        out << ", ";
+                if (valuesAsMap.size() >= 10 && minMaxSupported) {
+                    printAsRange = true;
+                } else {
+                    if (valuesAsMap.size() == 1) {
+                        print(out, valuesAsMap.begin()->second);
                     } else {
-                        first = false;
+                        out << "{";
+                        bool first = true;
+                        for (auto const& element : valuesAsMap) {
+                            if (!first) {
+                                out << ", ";
+                            } else {
+                                first = false;
+                            }
+                            print(out, element.second);
+                        }
+                        out << "}";
                     }
-                    out << element.second;
                 }
             }
-            out << "]";
+            
+            if (printAsRange) {
+                std::pair<ValueType, ValueType> minmax = this->getMinMax();
+                printRange(out, minmax.first, minmax.second);
+            }
+            
             return out;
         }
         

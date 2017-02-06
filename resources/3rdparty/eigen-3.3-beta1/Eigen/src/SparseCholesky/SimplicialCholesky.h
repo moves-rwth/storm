@@ -10,7 +10,7 @@
 #ifndef EIGEN_SIMPLICIAL_CHOLESKY_H
 #define EIGEN_SIMPLICIAL_CHOLESKY_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 enum SimplicialCholeskyMode {
   SimplicialCholeskyLLT,
@@ -279,8 +279,8 @@ template<typename _MatrixType, int _UpLo, typename _Ordering> struct traits<Simp
   typedef typename MatrixType::Scalar                         Scalar;
   typedef typename MatrixType::StorageIndex                   StorageIndex;
   typedef SparseMatrix<Scalar, ColMajor, StorageIndex>        CholMatrixType;
-  typedef TriangularView<const CholMatrixType, Eigen::Lower>  MatrixL;
-  typedef TriangularView<const typename CholMatrixType::AdjointReturnType, Eigen::Upper>   MatrixU;
+  typedef TriangularView<const CholMatrixType, StormEigen::Lower>  MatrixL;
+  typedef TriangularView<const typename CholMatrixType::AdjointReturnType, StormEigen::Upper>   MatrixU;
   static inline MatrixL getL(const MatrixType& m) { return MatrixL(m); }
   static inline MatrixU getU(const MatrixType& m) { return MatrixU(m.adjoint()); }
 };
@@ -293,8 +293,8 @@ template<typename _MatrixType,int _UpLo, typename _Ordering> struct traits<Simpl
   typedef typename MatrixType::Scalar                             Scalar;
   typedef typename MatrixType::StorageIndex                       StorageIndex;
   typedef SparseMatrix<Scalar, ColMajor, StorageIndex>            CholMatrixType;
-  typedef TriangularView<const CholMatrixType, Eigen::UnitLower>  MatrixL;
-  typedef TriangularView<const typename CholMatrixType::AdjointReturnType, Eigen::UnitUpper> MatrixU;
+  typedef TriangularView<const CholMatrixType, StormEigen::UnitLower>  MatrixL;
+  typedef TriangularView<const typename CholMatrixType::AdjointReturnType, StormEigen::UnitUpper> MatrixU;
   static inline MatrixL getL(const MatrixType& m) { return MatrixL(m); }
   static inline MatrixU getU(const MatrixType& m) { return MatrixU(m.adjoint()); }
 };
@@ -686,6 +686,6 @@ void SimplicialCholeskyBase<Derived>::ordering(const MatrixType& a, ConstCholMat
   }  
 }
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_SIMPLICIAL_CHOLESKY_H

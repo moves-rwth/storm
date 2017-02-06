@@ -1,4 +1,4 @@
-namespace Eigen {
+namespace StormEigen {
 
 /** \eigenManualPage TopicPassingByValue Passing Eigen objects by value to functions
 
@@ -9,13 +9,13 @@ With Eigen, this is even more important: passing \ref TopicFixedSizeVectorizable
 So for example, a function like this, where v is passed by value:
 
 \code
-void my_function(Eigen::Vector2d v);
+void my_function(StormEigen::Vector2d v);
 \endcode
 
 needs to be rewritten as follows, passing v by reference:
 
 \code
-void my_function(const Eigen::Vector2d& v);
+void my_function(const StormEigen::Vector2d& v);
 \endcode
 
 Likewise if you have a class having a Eigen object as member:
@@ -23,7 +23,7 @@ Likewise if you have a class having a Eigen object as member:
 \code
 struct Foo
 {
-  Eigen::Vector2d v;
+  StormEigen::Vector2d v;
 };
 void my_function(Foo v);
 \endcode

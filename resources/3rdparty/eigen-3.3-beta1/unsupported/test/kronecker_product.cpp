@@ -186,11 +186,11 @@ void test_kronecker_product()
   
   for(int i = 0; i < g_repeat; i++)
   {
-    double density = Eigen::internal::random<double>(0.01,0.5);
-    int ra = Eigen::internal::random<int>(1,50);
-    int ca = Eigen::internal::random<int>(1,50);
-    int rb = Eigen::internal::random<int>(1,50);
-    int cb = Eigen::internal::random<int>(1,50);
+    double density = StormEigen::internal::random<double>(0.01,0.5);
+    int ra = StormEigen::internal::random<int>(1,50);
+    int ca = StormEigen::internal::random<int>(1,50);
+    int rb = StormEigen::internal::random<int>(1,50);
+    int cb = StormEigen::internal::random<int>(1,50);
     SparseMatrix<float,ColMajor> sA(ra,ca), sB(rb,cb), sC;
     SparseMatrix<float,RowMajor> sC2;
     MatrixXf dA(ra,ca), dB(rb,cb), dC;

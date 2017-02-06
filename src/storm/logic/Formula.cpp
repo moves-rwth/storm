@@ -443,6 +443,11 @@ namespace storm {
             return visitor.substitute(*this);
         }
         
+        std::shared_ptr<Formula> Formula::substitute(std::map<std::string, std::string> const& labelSubstitution) const {
+            LabelSubstitutionVisitor visitor(labelSubstitution);
+            return visitor.substitute(*this);
+        }
+        
         storm::expressions::Expression Formula::toExpression(storm::expressions::ExpressionManager const& manager, std::map<std::string, storm::expressions::Expression> const& labelToExpressionMapping) const {
             ToExpressionVisitor visitor;
             if (labelToExpressionMapping.empty()) {
@@ -460,15 +465,15 @@ namespace storm {
             return this->shared_from_this();
         }
         
-        void Formula::gatherAtomicExpressionFormulas(std::vector<std::shared_ptr<AtomicExpressionFormula const>>& atomicExpressionFormulas) const {
+        void Formula::gatherAtomicExpressionFormulas(std::vector<std::shared_ptr<AtomicExpressionFormula const>>&) const {
             return;
         }
         
-        void Formula::gatherAtomicLabelFormulas(std::vector<std::shared_ptr<AtomicLabelFormula const>>& atomicLabelFormulas) const {
+        void Formula::gatherAtomicLabelFormulas(std::vector<std::shared_ptr<AtomicLabelFormula const>>&) const {
             return;
         }
         
-        void Formula::gatherReferencedRewardModels(std::set<std::string>& referencedRewardModels) const {
+        void Formula::gatherReferencedRewardModels(std::set<std::string>&) const {
             return;
         }
                 

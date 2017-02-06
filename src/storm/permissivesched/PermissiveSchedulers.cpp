@@ -21,7 +21,7 @@ namespace storm {
             auto backwardTransitions = mdp.getBackwardTransitions();
             storm::storage::BitVector goalstates = propMC.check(safeProp.getSubformula().asEventuallyFormula().getSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
             goalstates = storm::utility::graph::performProb1A(mdp, backwardTransitions, storm::storage::BitVector(goalstates.size(), true), goalstates);
-            storm::storage::BitVector sinkstates = storm::utility::graph::performProb0A(mdp,backwardTransitions, storm::storage::BitVector(goalstates.size(), true), goalstates);
+            storm::storage::BitVector sinkstates = storm::utility::graph::performProb0A(backwardTransitions, storm::storage::BitVector(goalstates.size(), true), goalstates);
             
             auto solver = storm::utility::solver::getLpSolver("Gurobi", storm::solver::LpSolverTypeSelection::Gurobi);
             MilpPermissiveSchedulerComputation<storm::models::sparse::StandardRewardModel<double>> comp(*solver, mdp, goalstates, sinkstates);
@@ -48,7 +48,7 @@ namespace storm {
             auto backwardTransitions = mdp.getBackwardTransitions();
             storm::storage::BitVector goalstates = propMC.check(safeProp.getSubformula().asEventuallyFormula().getSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
             goalstates = storm::utility::graph::performProb1A(mdp, backwardTransitions, storm::storage::BitVector(goalstates.size(), true), goalstates);
-            storm::storage::BitVector sinkstates = storm::utility::graph::performProb0A(mdp, backwardTransitions, storm::storage::BitVector(goalstates.size(), true), goalstates);
+            storm::storage::BitVector sinkstates = storm::utility::graph::performProb0A(backwardTransitions, storm::storage::BitVector(goalstates.size(), true), goalstates);
             
             std::shared_ptr<storm::expressions::ExpressionManager> expressionManager = std::make_shared<storm::expressions::ExpressionManager>();
             auto solver = storm::utility::solver::getSmtSolver(*expressionManager);

@@ -67,7 +67,7 @@ namespace storm {
                  * 
                  * @return true if an violated point as well as a sat point has been found, i.e., the check result is changed to EXISTSOTH
                  */
-                virtual bool checkPoint(ParameterRegion<ParametricType>& region, std::map<VariableType, CoefficientType>const& point, bool favorViaFunction=false);
+                virtual bool checkPoint(ParameterRegion<ParametricType>& region, std::map<VariableType, CoefficientType>const& point, bool /*favorViaFunction*/);
                 
                 /*!
                  * Starts the SMTSolver to get the result.
@@ -77,7 +77,7 @@ namespace storm {
                  * A Sat- or Violated point is set, if the solver has found one (not yet implemented!).
                  * The region checkResult of the given region is changed accordingly.
                  */
-                virtual bool checkSmt(ParameterRegion<ParametricType>& region); 
+                virtual bool checkSmt(ParameterRegion<ParametricType>& /*region*/);
 
             };
         } //namespace region

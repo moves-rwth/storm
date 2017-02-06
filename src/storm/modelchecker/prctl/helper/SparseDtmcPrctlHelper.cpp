@@ -88,13 +88,13 @@ namespace storm {
                             storm::utility::vector::selectVectorValues(x, maybeStates, resultHint.get());
                         }
 
-                        
                         // Prepare the right-hand side of the equation system. For entry i this corresponds to
                         // the accumulated probability of going from state i to some 'yes' state.
                         std::vector<ValueType> b = transitionMatrix.getConstrainedRowSumVector(maybeStates, statesWithProbability1);
                         
                         // Now solve the created system of linear equations.
                         std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(std::move(submatrix));
+                        solver->setBounds(storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
                         solver->solveEquations(x, b);
                         
                         // Set values of resulting vector according to result.
@@ -169,7 +169,7 @@ namespace storm {
             std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeReachabilityRewards(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& totalStateRewardVector, storm::storage::BitVector const& targetStates, bool qualitative, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory, boost::optional<std::vector<ValueType>> resultHint) {
 
                 return computeReachabilityRewards(transitionMatrix, backwardTransitions,
-                                                  [&] (uint_fast64_t numberOfRows, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& maybeStates) {
+                                                  [&] (uint_fast64_t numberOfRows, storm::storage::SparseMatrix<ValueType> const&, storm::storage::BitVector const& maybeStates) {
                                                       std::vector<ValueType> result(numberOfRows);
                                                       storm::utility::vector::selectVectorValues(result, maybeStates, totalStateRewardVector);
                                                       return result;
@@ -218,6 +218,7 @@ namespace storm {
                         
                         // Now solve the resulting equation system.
                         std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(std::move(submatrix));
+                        solver->setLowerBound(storm::utility::zero<ValueType>());
                         solver->solveEquations(x, b);
                         
                         // Set values of resulting vector according to result.
@@ -232,8 +233,18 @@ namespace storm {
             }
             
             template<typename ValueType, typename RewardModelType>
-            std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeLongRunAverageProbabilities(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& psiStates, bool qualitative, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
-                return SparseCtmcCslHelper::computeLongRunAverageProbabilities<ValueType>(transitionMatrix, psiStates, nullptr, qualitative, linearEquationSolverFactory);
+            std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeLongRunAverageProbabilities(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& psiStates, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+                return SparseCtmcCslHelper::computeLongRunAverageProbabilities<ValueType>(transitionMatrix, psiStates, nullptr, linearEquationSolverFactory);
+            }
+            
+            template<typename ValueType, typename RewardModelType>
+            std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeLongRunAverageRewards(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, RewardModelType const& rewardModel, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+                return SparseCtmcCslHelper::computeLongRunAverageRewards<ValueType, RewardModelType>(transitionMatrix, rewardModel, nullptr, linearEquationSolverFactory);
+            }
+            
+            template<typename ValueType, typename RewardModelType>
+            std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeLongRunAverageRewards(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& stateRewards, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+                return SparseCtmcCslHelper::computeLongRunAverageRewards<ValueType>(transitionMatrix, stateRewards, nullptr, linearEquationSolverFactory);
             }
             
             template<typename ValueType, typename RewardModelType>

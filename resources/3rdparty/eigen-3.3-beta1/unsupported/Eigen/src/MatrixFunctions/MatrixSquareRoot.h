@@ -10,7 +10,7 @@
 #ifndef EIGEN_MATRIX_SQUARE_ROOT
 #define EIGEN_MATRIX_SQUARE_ROOT
 
-namespace Eigen { 
+namespace StormEigen { 
 
 namespace internal {
 
@@ -366,6 +366,6 @@ const MatrixSquareRootReturnValue<Derived> MatrixBase<Derived>::sqrt() const
   return MatrixSquareRootReturnValue<Derived>(derived());
 }
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_MATRIX_FUNCTION

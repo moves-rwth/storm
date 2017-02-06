@@ -25,7 +25,7 @@ namespace storm {
         class GlobalProgramInformation {
         public:
             // Default construct the header information.
-            GlobalProgramInformation() : modelType(), constants(), formulas(), globalBooleanVariables(), globalIntegerVariables(), moduleToIndexMap(), actionIndices(), modules(), rewardModels(), labels(), hasInitialConstruct(false), initialConstruct(), systemCompositionConstruct(boost::none), currentCommandIndex(0), currentUpdateIndex(0) {
+            GlobalProgramInformation() : modelType(storm::prism::Program::ModelType::UNDEFINED), constants(), formulas(), globalBooleanVariables(), globalIntegerVariables(), moduleToIndexMap(), actionIndices(), modules(), rewardModels(), labels(), hasInitialConstruct(false), initialConstruct(), systemCompositionConstruct(boost::none), currentCommandIndex(0), currentUpdateIndex(0) {
                 // Map the empty action to index 0.
                 actionIndices.emplace("", 0);
             }
@@ -117,7 +117,7 @@ namespace storm {
                 }
                 
                 template<typename Entity, typename First, typename Last>
-                result_type operator()(Entity& entity, First f, Last l) const {
+                result_type operator()(Entity& entity, First f, Last) const {
                     entity.setLineNumber(get_line(f));
                 }
             private:
@@ -245,7 +245,7 @@ namespace storm {
             bool isValidIdentifier(std::string const& identifier);
             bool addInitialStatesConstruct(storm::expressions::Expression const& initialStatesExpression, GlobalProgramInformation& globalProgramInformation);
             bool addSystemCompositionConstruct(std::shared_ptr<storm::prism::Composition> const& composition, GlobalProgramInformation& globalProgramInformation);
-            
+            void setModelType(GlobalProgramInformation& globalProgramInformation, storm::prism::Program::ModelType const& modelType);
             
             std::shared_ptr<storm::prism::Composition> createModuleComposition(std::string const& moduleName) const;
             std::shared_ptr<storm::prism::Composition> createRenamingComposition(std::shared_ptr<storm::prism::Composition> const& subcomposition, std::map<std::string, std::string> const& renaming) const;
@@ -269,7 +269,7 @@ namespace storm {
             storm::prism::Assignment createAssignment(std::string const& variableName, storm::expressions::Expression assignedExpression) const;
             storm::prism::Update createUpdate(storm::expressions::Expression likelihoodExpression, std::vector<storm::prism::Assignment> const& assignments, GlobalProgramInformation& globalProgramInformation) const;
             storm::prism::Command createCommand(bool markovianCommand, boost::optional<std::string> const& actionName, storm::expressions::Expression guardExpression, std::vector<storm::prism::Update> const& updates, GlobalProgramInformation& globalProgramInformation) const;
-            storm::prism::Command createCommand(boost::optional<std::string> const& actionName, GlobalProgramInformation& globalProgramInformation) const;
+            storm::prism::Command createDummyCommand(boost::optional<std::string> const& actionName, GlobalProgramInformation& globalProgramInformation) const;
             storm::prism::BooleanVariable createBooleanVariable(std::string const& variableName, storm::expressions::Expression initialValueExpression) const;
             storm::prism::IntegerVariable createIntegerVariable(std::string const& variableName, storm::expressions::Expression lowerBoundExpression, storm::expressions::Expression upperBoundExpression, storm::expressions::Expression initialValueExpression) const;
             storm::prism::Module createModule(std::string const& moduleName, std::vector<storm::prism::BooleanVariable> const& booleanVariables, std::vector<storm::prism::IntegerVariable> const& integerVariables, std::vector<storm::prism::Command> const& commands, GlobalProgramInformation& globalProgramInformation) const;

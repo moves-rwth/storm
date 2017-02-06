@@ -2,6 +2,11 @@
 
 #include "storm/storage/expressions/Expressions.h"
 
+#include "storm/adapters/CarlAdapter.h"
+
+#include "storm/utility/macros.h"
+#include "storm/exceptions/NotSupportedException.h"
+
 namespace storm {
     namespace expressions {
         
@@ -251,6 +256,7 @@ namespace storm {
         }
         
         boost::any ToCppVisitor::visit(UnaryNumericalFunctionExpression const& expression, boost::any const& data) {
+            ToCppTranslationOptions const& options = boost::any_cast<ToCppTranslationOptions const&>(data);
             switch (expression.getOperatorType()) {
                 case UnaryNumericalFunctionExpression::OperatorType::Minus:
                     stream << "-(";
@@ -258,12 +264,24 @@ namespace storm {
                     stream << ")";
                     break;
                 case UnaryNumericalFunctionExpression::OperatorType::Floor:
-                    stream << "std::floor(";
+                    STORM_LOG_THROW(options.getMode() != ToCppTranslationMode::CastRationalFunction, storm::exceptions::NotSupportedException, "Floor is not supported by rational functions.");
+                    if (options.getMode() != ToCppTranslationMode::CastRationalNumber) {
+                        stream << "std::floor";
+                    } else {
+                        stream << "carl::floor";
+                    }
+                    stream << "(";
                     expression.getOperand()->accept(*this, data);
                     stream << ")";
                     break;
                 case UnaryNumericalFunctionExpression::OperatorType::Ceil:
-                    stream << "std::ceil(";
+                    STORM_LOG_THROW(options.getMode() != ToCppTranslationMode::CastRationalFunction, storm::exceptions::NotSupportedException, "Ceil is not supported by rational functions.");
+                    if (options.getMode() != ToCppTranslationMode::CastRationalNumber) {
+                        stream << "std::ceil";
+                    } else {
+                        stream << "carl::ceil";
+                    }
+                    stream << "(";
                     expression.getOperand()->accept(*this, data);
                     stream << ")";
                     break;
@@ -271,7 +289,7 @@ namespace storm {
             return boost::none;
         }
         
-        boost::any ToCppVisitor::visit(BooleanLiteralExpression const& expression, boost::any const& data) {
+        boost::any ToCppVisitor::visit(BooleanLiteralExpression const& expression, boost::any const&) {
             stream << std::boolalpha << expression.getValue();
             return boost::none;
         }
@@ -299,7 +317,7 @@ namespace storm {
             ToCppTranslationOptions const& options = boost::any_cast<ToCppTranslationOptions const&>(data);
             switch (options.getMode()) {
                 case ToCppTranslationMode::KeepType:
-                    stream << expression.getValue();
+                    stream << "(static_cast<double>(" << carl::getNum(expression.getValue()) << ")/" << carl::getDenom(expression.getValue()) << ")";
                     break;
                 case ToCppTranslationMode::CastDouble:
                     stream << "static_cast<double>(" << expression.getValueAsDouble() << ")";

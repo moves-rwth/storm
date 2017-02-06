@@ -3,6 +3,7 @@
 #include "storm-gspn/storage/gspn/GSPN.h"
 #include "storm-gspn/storage/gspn/GspnBuilder.h"
 #include "storm-gspn/builder/JaniGSPNBuilder.h"
+#include "storm-gspn/storm-gspn.h"
 
 #include "storm/exceptions/BaseException.h"
 #include "storm/exceptions/WrongFormatException.h"
@@ -30,6 +31,7 @@
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/settings/modules/DebugSettings.h"
 #include "storm/settings/modules/JaniExportSettings.h"
+#include "storm/settings/modules/ResourceSettings.h"
 
 /*!
  * Initialize the settings manager.
@@ -44,6 +46,7 @@ void initializeSettings() {
     storm::settings::addModule<storm::settings::modules::CoreSettings>();
     storm::settings::addModule<storm::settings::modules::DebugSettings>();
     storm::settings::addModule<storm::settings::modules::JaniExportSettings>();
+    storm::settings::addModule<storm::settings::modules::ResourceSettings>();
 }
 
 
@@ -65,11 +68,6 @@ std::unordered_map<std::string, uint64_t> parseCapacitiesList(std::string const&
     
 }
 
-void handleJani(storm::gspn::GSPN const& gspn) {
-
-    storm::jani::JsonExporter::toFile(*model, {}, storm::settings::getModule<storm::settings::modules::JaniExportSettings>().getJaniFilename());
-    delete model;
-}
 
 int main(const int argc, const char **argv) {
     try {
@@ -98,19 +96,16 @@ int main(const int argc, const char **argv) {
             auto capacities = parseCapacitiesList(storm::settings::getModule<storm::settings::modules::GSPNSettings>().getCapacitiesFilename());
             gspn->setCapacities(capacities);
         }
-      
-        
-        if(storm::settings::getModule<storm::settings::modules::GSPNExportSettings>().isWriteToDotSet()) {
-            std::ofstream file;
-            file.open(storm::settings::getModule<storm::settings::modules::GSPNExportSettings>().getWriteToDotFilename());
-            gspn->writeDotToStream(file);
-        }
+
+        storm::handleGSPNExportSettings(*gspn);
         
         if(storm::settings::getModule<storm::settings::modules::JaniExportSettings>().isJaniFileSet()) {
-            handleJani(*gspn);
+            storm::jani::Model* model = storm::buildJani(*gspn);
+            storm::exportJaniModel(*model, {}, storm::settings::getModule<storm::settings::modules::JaniExportSettings>().getJaniFilename());
+            delete model;
         }
-        
-        
+
+        delete gspn;
         return 0;
         
 //
@@ -142,7 +137,9 @@ int main(const int argc, const char **argv) {
         return 0;
     } catch (storm::exceptions::BaseException const& exception) {
         STORM_LOG_ERROR("An exception caused StoRM to terminate. The message of the exception is: " << exception.what());
+        return 1;
     } catch (std::exception const& exception) {
         STORM_LOG_ERROR("An unexpected exception occurred and caused StoRM to terminate. The message of this exception is: " << exception.what());
+        return 2;
     }
 }

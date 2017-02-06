@@ -16,10 +16,10 @@
 
 template<typename T> void test_pastix_T()
 {
-  PastixLLT< SparseMatrix<T, ColMajor>, Eigen::Lower > pastix_llt_lower;
-  PastixLDLT< SparseMatrix<T, ColMajor>, Eigen::Lower > pastix_ldlt_lower;
-  PastixLLT< SparseMatrix<T, ColMajor>, Eigen::Upper > pastix_llt_upper;
-  PastixLDLT< SparseMatrix<T, ColMajor>, Eigen::Upper > pastix_ldlt_upper;
+  PastixLLT< SparseMatrix<T, ColMajor>, StormEigen::Lower > pastix_llt_lower;
+  PastixLDLT< SparseMatrix<T, ColMajor>, StormEigen::Lower > pastix_ldlt_lower;
+  PastixLLT< SparseMatrix<T, ColMajor>, StormEigen::Upper > pastix_llt_upper;
+  PastixLDLT< SparseMatrix<T, ColMajor>, StormEigen::Upper > pastix_ldlt_upper;
   PastixLU< SparseMatrix<T, ColMajor> > pastix_lu;
 
   check_sparse_spd_solving(pastix_llt_lower);

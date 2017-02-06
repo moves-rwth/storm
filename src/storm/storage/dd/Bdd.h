@@ -8,6 +8,7 @@
 
 #include "storm/storage/dd/cudd/InternalCuddBdd.h"
 #include "storm/storage/dd/sylvan/InternalSylvanBdd.h"
+#include "storm/storage/PairHash.h"
 
 namespace storm {
     namespace logic {
@@ -34,7 +35,7 @@ namespace storm {
             Bdd& operator=(Bdd<LibraryType> const& other) = default;
             Bdd(Bdd<LibraryType>&& other) = default;
             Bdd& operator=(Bdd<LibraryType>&& other) = default;
-            
+
             /*!
              * Constructs a BDD representation of all encodings that are in the requested relation with the given value.
              *
@@ -163,6 +164,15 @@ namespace storm {
             Bdd<LibraryType> existsAbstract(std::set<storm::expressions::Variable> const& metaVariables) const;
             
             /*!
+             * Similar to <code>existsAbstract</code>, but does not abstract from the variables but rather picks a
+             * valuation of each of the meta variables "to abstract from" such that for this valuation, there exists a
+             * valuation (of the other variables) that that make the function evaluate to true.
+             *
+             * @param metaVariables The meta variables from which to abstract.
+             */
+            Bdd<LibraryType> existsAbstractRepresentative(std::set<storm::expressions::Variable> const& metaVariables) const;
+
+            /*!
              * Universally abstracts from the given meta variables.
              *
              * @param metaVariables The meta variables from which to abstract.
@@ -275,6 +285,15 @@ namespace storm {
              */
             storm::storage::BitVector toVector(storm::dd::Odd const& rowOdd) const;
             
+            /*!
+             * Translates the function the BDD is representing to a set of expressions that characterize the function.
+             *
+             * @param manager The manager that is used to build the expression and, in particular, create new variables in.
+             * @return A list of expressions representing the function of the BDD and a mapping of DD variable indices to
+             * the variables that represent these variables in the expressions.
+             */
+            std::pair<std::vector<storm::expressions::Expression>, std::unordered_map<uint_fast64_t, storm::expressions::Variable>> toExpression(storm::expressions::ExpressionManager& manager) const;
+            
             virtual Bdd<LibraryType> getSupport() const override;
             
             virtual uint_fast64_t getNonZeroCount() const override;
@@ -284,6 +303,8 @@ namespace storm {
             virtual uint_fast64_t getNodeCount() const override;
             
             virtual uint_fast64_t getIndex() const override;
+            
+            virtual uint_fast64_t getLevel() const override;
             
             virtual void exportToDot(std::string const& filename) const override;
             
@@ -311,6 +332,8 @@ namespace storm {
              */
             template<typename ValueType>
             std::vector<ValueType> filterExplicitVector(Odd const& odd, std::vector<ValueType> const& values) const;
+            
+            friend struct std::hash<storm::dd::Bdd<LibraryType>>;
             
         private:
             /*!
@@ -344,6 +367,15 @@ namespace storm {
             InternalBdd<LibraryType> internalBdd;
         };
     }
+}
+
+namespace std {
+    template<storm::dd::DdType LibraryType>
+    struct hash<storm::dd::Bdd<LibraryType>> {
+        std::size_t operator()(storm::dd::Bdd<LibraryType> const& key) const {
+            return std::hash<storm::dd::InternalBdd<LibraryType>>().operator()(key.internalBdd);
+        }
+    };
 }
 
 #endif /* STORM_STORAGE_DD_BDD_H_ */

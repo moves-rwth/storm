@@ -12,7 +12,7 @@
 
 #include "SkylineUtil.h"
 
-namespace Eigen { 
+namespace StormEigen { 
 
 /** \ingroup Skyline_Module
  *
@@ -207,6 +207,6 @@ protected:
     bool m_isRValue;
 };
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_SkylineMatrixBase_H

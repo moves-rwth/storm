@@ -1,11 +1,11 @@
-#ifndef STORM_MODELS_SPARSE_STANDARDREWARDMODEL_H_
-#define STORM_MODELS_SPARSE_STANDARDREWARDMODEL_H_
+#pragma once
 
 #include <vector>
 #include <boost/optional.hpp>
 
 #include "storm/storage/SparseMatrix.h"
 #include "storm/utility/OsDetection.h"
+#include "storm/adapters/CarlAdapter.h"
 
 namespace storm {
     namespace models {
@@ -198,11 +198,13 @@ namespace storm {
                  * transition-based rewards in the reward model.
                  *
                  * @param transitionMatrix The matrix that is used to weight the values of the transition reward matrix.
-                 * @param weights A vector used for scaling the entries of the state-action rewards (if present).
+                 * @param weights A vector used for scaling the entries of transition and/or state-action rewards (if present).
+                 * @param scaleTransAndActions If true both transition rewards and state-action rewards are scaled by the
+                 * weights. Otherwise, only the state-action rewards are scaled.
                  * @return The full state-action reward vector.
                  */
                 template<typename MatrixValueType>
-                std::vector<ValueType> getTotalRewardVector(storm::storage::SparseMatrix<MatrixValueType> const& transitionMatrix, std::vector<MatrixValueType> const& weights) const;
+                std::vector<ValueType> getTotalRewardVector(storm::storage::SparseMatrix<MatrixValueType> const& transitionMatrix, std::vector<MatrixValueType> const& weights, bool scaleTransAndActions) const;
                 
                 /*!
                  * Creates a vector representing the complete reward vector based on the state-, state-action- and
@@ -215,28 +217,19 @@ namespace storm {
                  */
                 template<typename MatrixValueType>
                 std::vector<ValueType> getTotalRewardVector(uint_fast64_t numberOfRows, storm::storage::SparseMatrix<MatrixValueType> const& transitionMatrix, storm::storage::BitVector const& filter) const;
-                
+
                 /*!
-                 * Creates a vector representing the complete state action reward vector based on the state-, state-action-
-                 * and transition-based rewards in the reward model.
+                 * Creates a vector representing the complete action-based rewards, i.e., state-action- and
+                 * transition-based rewards
                  *
                  * @param numberOfRows The total number of rows of the resulting vector.
-                 * @param rowGroupIndices The starting indices of the row groups.
-                 * @return The full state-action reward vector.
+                 * @param transitionMatrix The matrix that is used to weight the values of the transition reward matrix.
+                 * @return The state-action reward vector that considers state-action rewards and transition rewards of this reward model.
                  */
-                std::vector<ValueType> getTotalStateActionRewardVector(uint_fast64_t numberOfRows, std::vector<uint_fast64_t> const& rowGroupIndices) const;
-                
-                /*!
-                 * Creates a vector representing the complete state action reward vector based on the state- and
-                 * state-action rewards in the reward model.
-                 *
-                 * @param numberOfRows The total number of rows of the resulting vector.
-                 * @param rowGroupIndices The starting indices of the row groups.
-                 * @param filter A bit vector indicating which row groups to select.
-                 * @return The full state-action reward vector.
-                 */
-                std::vector<ValueType> getTotalStateActionRewardVector(uint_fast64_t numberOfRows, std::vector<uint_fast64_t> const& rowGroupIndices, storm::storage::BitVector const& filter) const;
-                
+
+                template<typename MatrixValueType>
+                std::vector<ValueType> getTotalActionRewardVector(storm::storage::SparseMatrix<MatrixValueType> const& transitionMatrix,  std::vector<MatrixValueType> const& stateRewardWeights) const;
+
                 /*!
                  * Sets the given value in the state-action reward vector at the given row. This assumes that the reward
                  * model has state-action rewards.
@@ -272,13 +265,6 @@ namespace storm {
                  * @param nrChoices The number of choices in the model
                  */
                 bool isCompatible(uint_fast64_t nrStates, uint_fast64_t nrChoices) const;
-
-                /*!
-                 * Retrieves (an approximation of) the size of the model in bytes.
-                 *
-                 * @return The size of the internal representation of the model measured in bytes.
-                 */
-                std::size_t getSizeInBytes() const;
                 
                 template <typename ValueTypePrime>
                 friend std::ostream& operator<<(std::ostream& out, StandardRewardModel<ValueTypePrime> const& rewardModel);
@@ -296,8 +282,8 @@ namespace storm {
             
             template <typename ValueType>
             std::ostream& operator<<(std::ostream& out, StandardRewardModel<ValueType> const& rewardModel);
+
+            std::set<storm::RationalFunctionVariable> getRewardModelParameters(StandardRewardModel<storm::RationalFunction> const& rewModel);
         }
     }
 }
-
-#endif /* STORM_MODELS_SPARSE_STANDARDREWARDMODEL_H_ */

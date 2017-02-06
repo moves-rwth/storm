@@ -42,7 +42,7 @@
 
 #include <Eigen/Core>
 
-namespace Eigen {
+namespace StormEigen {
 
 /**
   * \defgroup AdolcForward_Module Adolc forward module
@@ -50,7 +50,7 @@ namespace Eigen {
   * ADOL-C is a C++ automatic differentiation library,
   * see https://projects.coin-or.org/ADOL-C for more information.
   * It mainly consists in:
-  *  - a struct Eigen::NumTraits<adtl::adouble> specialization
+  *  - a struct StormEigen::NumTraits<adtl::adouble> specialization
   *  - overloads of internal::* math function for adtl::adouble type.
   *
   * Note that the maximal number of directions is controlled by
@@ -62,7 +62,7 @@ namespace Eigen {
   */
   //@{
 
-} // namespace Eigen
+} // namespace StormEigen
 
 // Eigen's require a few additional functions which must be defined in the same namespace
 // than the custom scalar type own namespace
@@ -76,7 +76,7 @@ inline adouble abs2(const adouble& x)  { return x*x; }
 
 }
 
-namespace Eigen {
+namespace StormEigen {
 
 template<> struct NumTraits<adtl::adouble>
     : NumTraits<double>

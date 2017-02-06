@@ -58,7 +58,7 @@ namespace storm {
                         
                         // Solve the equation system.
                         std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, ValueType>> solver = linearEquationSolverFactory.create(submatrix, maybeStates, model.getRowVariables(), model.getColumnVariables(), model.getRowColumnMetaVariablePairs());
-                        storm::dd::Add<DdType, ValueType> result = solver->solveEquations(model.getManager().getConstant(0.5) * maybeStatesAdd, subvector);
+                        storm::dd::Add<DdType, ValueType> result = solver->solveEquations(model.getManager().getConstant(0.0), subvector);
                         
                         return statesWithProbability01.second.template toAdd<ValueType>() + result;
                     } else {
@@ -166,16 +166,16 @@ namespace storm {
                         storm::dd::Add<DdType, ValueType> submatrix = transitionMatrix * maybeStatesAdd;
                         
                         // Then compute the state reward vector to use in the computation.
-                        storm::dd::Add<DdType, ValueType> subvector = rewardModel.getTotalRewardVector(submatrix, model.getColumnVariables());
+                        storm::dd::Add<DdType, ValueType> subvector = rewardModel.getTotalRewardVector(maybeStatesAdd, submatrix, model.getColumnVariables());
                         
                         // Finally cut away all columns targeting non-maybe states and convert the matrix into the matrix needed
                         // for solving the equation system (i.e. compute (I-A)).
                         submatrix *= maybeStatesAdd.swapVariables(model.getRowColumnMetaVariablePairs());
                         submatrix = (model.getRowColumnIdentity() * maybeStatesAdd) - submatrix;
-
+                        
                         // Solve the equation system.
                         std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, ValueType>> solver = linearEquationSolverFactory.create(submatrix, maybeStates, model.getRowVariables(), model.getColumnVariables(), model.getRowColumnMetaVariablePairs());
-                        storm::dd::Add<DdType, ValueType> result = solver->solveEquations(model.getManager().getConstant(0.5) * maybeStatesAdd, subvector);
+                        storm::dd::Add<DdType, ValueType> result = solver->solveEquations(model.getManager().getConstant(0.0), subvector);
                         
                         return infinityStates.ite(model.getManager().getConstant(storm::utility::infinity<ValueType>()), result);
                     } else {

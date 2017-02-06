@@ -16,7 +16,7 @@
 #include <math_constants.h>
 #endif
 
-namespace Eigen {
+namespace StormEigen {
 
 namespace internal {
 
@@ -385,6 +385,6 @@ T div_ceil(const T &a, const T &b)
 
 } // end namespace numext
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_META_H

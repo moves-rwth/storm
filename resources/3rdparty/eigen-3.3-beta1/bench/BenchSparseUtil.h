@@ -4,8 +4,8 @@
 #include <set>
 
 using namespace std;
-using namespace Eigen;
-using namespace Eigen;
+using namespace StormEigen;
+using namespace StormEigen;
 
 #ifndef SIZE
 #define SIZE 1024

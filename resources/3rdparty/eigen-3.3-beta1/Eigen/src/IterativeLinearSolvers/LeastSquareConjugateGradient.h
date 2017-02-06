@@ -10,7 +10,7 @@
 #ifndef EIGEN_LEAST_SQUARE_CONJUGATE_GRADIENT_H
 #define EIGEN_LEAST_SQUARE_CONJUGATE_GRADIENT_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 namespace internal {
 
@@ -211,6 +211,6 @@ public:
 
 };
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_LEAST_SQUARE_CONJUGATE_GRADIENT_H

@@ -33,12 +33,13 @@
 #include "storm/settings/modules/RegionSettings.h"
 #include "storm/settings/modules/TopologicalValueIterationEquationSolverSettings.h"
 #include "storm/settings/modules/ExplorationSettings.h"
+#include "storm/settings/modules/ResourceSettings.h"
+#include "storm/settings/modules/AbstractionSettings.h"
 #include "storm/settings/modules/JaniExportSettings.h"
 #include "storm/settings/modules/JitBuilderSettings.h"
 #include "storm/settings/modules/MultiObjectiveSettings.h"
 #include "storm/utility/macros.h"
 #include "storm/settings/Option.h"
-
 
 namespace storm {
     namespace settings {
@@ -348,6 +349,7 @@ namespace storm {
         
         void SettingsManager::setOptionArguments(std::string const& optionName, std::shared_ptr<Option> option, std::vector<std::string> const& argumentCache) {
             STORM_LOG_THROW(argumentCache.size() <= option->getArgumentCount(), storm::exceptions::OptionParserException, "Too many arguments for option '" << optionName << "'.");
+            STORM_LOG_THROW(!option->getHasOptionBeenSet(), storm::exceptions::OptionParserException, "Option '" << optionName << "' is set multiple times.");
             
             // Now set the provided argument values one by one.
             for (uint_fast64_t i = 0; i < argumentCache.size(); ++i) {
@@ -503,6 +505,10 @@ namespace storm {
             return dynamic_cast<storm::settings::modules::IOSettings&>(mutableManager().getModule(storm::settings::modules::IOSettings::moduleName));
         }
         
+        storm::settings::modules::AbstractionSettings& mutableAbstractionSettings() {
+            return dynamic_cast<storm::settings::modules::AbstractionSettings&>(mutableManager().getModule(storm::settings::modules::AbstractionSettings::moduleName));
+        }
+        
         void initializeAll(std::string const& name, std::string const& executableName) {
             storm::settings::mutableManager().setName(name, executableName);
 
@@ -527,6 +533,8 @@ namespace storm {
             storm::settings::addModule<storm::settings::modules::RegionSettings>();
             storm::settings::addModule<storm::settings::modules::Smt2SmtSolverSettings>();
             storm::settings::addModule<storm::settings::modules::ExplorationSettings>();
+            storm::settings::addModule<storm::settings::modules::ResourceSettings>();
+            storm::settings::addModule<storm::settings::modules::AbstractionSettings>();
             storm::settings::addModule<storm::settings::modules::JaniExportSettings>();
             storm::settings::addModule<storm::settings::modules::JitBuilderSettings>();
             storm::settings::addModule<storm::settings::modules::MultiObjectiveSettings>();

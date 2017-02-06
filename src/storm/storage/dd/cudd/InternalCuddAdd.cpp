@@ -9,6 +9,7 @@
 
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
+#include "storm/exceptions/NotImplementedException.h"
 
 namespace storm {
     namespace dd {
@@ -16,7 +17,7 @@ namespace storm {
         InternalAdd<DdType::CUDD, ValueType>::InternalAdd(InternalDdManager<DdType::CUDD> const* ddManager, cudd::ADD cuddAdd) : ddManager(ddManager), cuddAdd(cuddAdd) {
             // Intentionally left empty.
         }
-        
+                
         template<typename ValueType>
         bool InternalAdd<DdType::CUDD, ValueType>::operator==(InternalAdd<DdType::CUDD, ValueType> const& other) const {
             return this->getCuddAdd() == other.getCuddAdd();
@@ -73,32 +74,32 @@ namespace storm {
         
         template<typename ValueType>
         InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::equals(InternalAdd<DdType::CUDD, ValueType> const& other) const {
-            return InternalBdd<DdType::CUDD>(ddManager, this->getCuddAdd().Equals(other.getCuddAdd()).BddPattern());
+            return InternalBdd<DdType::CUDD>(ddManager, this->getCuddAdd().EqualsBdd(other.getCuddAdd()));
         }
         
         template<typename ValueType>
         InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::notEquals(InternalAdd<DdType::CUDD, ValueType> const& other) const {
-            return InternalBdd<DdType::CUDD>(ddManager, this->getCuddAdd().NotEquals(other.getCuddAdd()).BddPattern());
+            return InternalBdd<DdType::CUDD>(ddManager, this->getCuddAdd().NotEqualsBdd(other.getCuddAdd()));
         }
         
         template<typename ValueType>
         InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::less(InternalAdd<DdType::CUDD, ValueType> const& other) const {
-            return InternalBdd<DdType::CUDD>(ddManager, this->getCuddAdd().LessThan(other.getCuddAdd()).BddPattern());
+            return InternalBdd<DdType::CUDD>(ddManager, this->getCuddAdd().LessThanBdd(other.getCuddAdd()));
         }
         
         template<typename ValueType>
         InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::lessOrEqual(InternalAdd<DdType::CUDD, ValueType> const& other) const {
-            return InternalBdd<DdType::CUDD>(ddManager, this->getCuddAdd().LessThanOrEqual(other.getCuddAdd()).BddPattern());
+            return InternalBdd<DdType::CUDD>(ddManager, this->getCuddAdd().LessThanOrEqualBdd(other.getCuddAdd()));
         }
         
         template<typename ValueType>
         InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::greater(InternalAdd<DdType::CUDD, ValueType> const& other) const {
-            return InternalBdd<DdType::CUDD>(ddManager, this->getCuddAdd().GreaterThan(other.getCuddAdd()).BddPattern());
+            return InternalBdd<DdType::CUDD>(ddManager, this->getCuddAdd().GreaterThanBdd(other.getCuddAdd()));
         }
         
         template<typename ValueType>
         InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::greaterOrEqual(InternalAdd<DdType::CUDD, ValueType> const& other) const {
-            return InternalBdd<DdType::CUDD>(ddManager, this->getCuddAdd().GreaterThanOrEqual(other.getCuddAdd()).BddPattern());
+            return InternalBdd<DdType::CUDD>(ddManager, this->getCuddAdd().GreaterThanOrEqualBdd(other.getCuddAdd()));
         }
         
         template<typename ValueType>
@@ -145,10 +146,25 @@ namespace storm {
         InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::minAbstract(InternalBdd<DdType::CUDD> const& cube) const {
             return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd().MinAbstract(cube.toAdd<ValueType>().getCuddAdd()));
         }
+		
+		template<typename ValueType>
+        InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::minAbstractRepresentative(InternalBdd<DdType::CUDD> const& cube) const {
+			return InternalBdd<DdType::CUDD>(ddManager, this->getCuddAdd().MinAbstractRepresentative(cube.toAdd<ValueType>().getCuddAdd()));
+        }
+        
+        template<typename ValueType>
+        InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::minAbstractExcept0(InternalBdd<DdType::CUDD> const& cube) const {
+            return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd().MinAbstractExcept0(cube.toAdd<ValueType>().getCuddAdd()));
+        }
         
         template<typename ValueType>
         InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::maxAbstract(InternalBdd<DdType::CUDD> const& cube) const {
             return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd().MaxAbstract(cube.toAdd<ValueType>().getCuddAdd()));
+        }
+		
+		template<typename ValueType>
+        InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::maxAbstractRepresentative(InternalBdd<DdType::CUDD> const& cube) const {
+			return InternalBdd<DdType::CUDD>(ddManager, this->getCuddAdd().MaxAbstractRepresentative(cube.toAdd<ValueType>().getCuddAdd()));
         }
         
         template<typename ValueType>
@@ -281,6 +297,11 @@ namespace storm {
         }
         
         template<typename ValueType>
+        uint_fast64_t InternalAdd<DdType::CUDD, ValueType>::getLevel() const {
+            return static_cast<uint_fast64_t>(ddManager->getCuddManager().ReadPerm(this->getIndex()));
+        }
+        
+        template<typename ValueType>
         void InternalAdd<DdType::CUDD, ValueType>::exportToDot(std::string const& filename, std::vector<std::string> const& ddVariableNamesAsStrings) const {
             // Build the name input of the DD.
             std::vector<char*> ddNames;
@@ -311,7 +332,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        AddIterator<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::begin(DdManager<DdType::CUDD> const& fullDdManager, InternalBdd<DdType::CUDD> const& variableCube, uint_fast64_t numberOfDdVariables, std::set<storm::expressions::Variable> const& metaVariables, bool enumerateDontCareMetaVariables) const {
+        AddIterator<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::begin(DdManager<DdType::CUDD> const& fullDdManager, InternalBdd<DdType::CUDD> const&, uint_fast64_t, std::set<storm::expressions::Variable> const& metaVariables, bool enumerateDontCareMetaVariables) const {
             int* cube;
             double value;
             DdGen* generator = this->getCuddAdd().FirstCube(&cube, &value);
@@ -365,13 +386,17 @@ namespace storm {
                         thenOffset = 1;
                     }
                     
-                    return std::make_shared<Odd>(nullptr, elseOffset, nullptr, thenOffset);
+                    auto oddNode = std::make_shared<Odd>(nullptr, elseOffset, nullptr, thenOffset);
+                    uniqueTableForLevels[currentLevel].emplace(dd, oddNode);
+                    return oddNode;
                 } else if (ddVariableIndices[currentLevel] < Cudd_NodeReadIndex(dd)) {
                     // If we skipped the level in the DD, we compute the ODD just for the else-successor and use the same
                     // node for the then-successor as well.
                     std::shared_ptr<Odd> elseNode = createOddRec(dd, manager, currentLevel + 1, maxLevel, ddVariableIndices, uniqueTableForLevels);
                     std::shared_ptr<Odd> thenNode = elseNode;
-                    return std::make_shared<Odd>(elseNode, elseNode->getElseOffset() + elseNode->getThenOffset(), thenNode, thenNode->getElseOffset() + thenNode->getThenOffset());
+                    auto oddNode = std::make_shared<Odd>(elseNode, elseNode->getElseOffset() + elseNode->getThenOffset(), thenNode, thenNode->getElseOffset() + thenNode->getThenOffset());
+                    uniqueTableForLevels[currentLevel].emplace(dd, oddNode);
+                    return oddNode;
                 } else {
                     // Otherwise, we compute the ODDs for both the then- and else successors.
                     std::shared_ptr<Odd> elseNode = createOddRec(Cudd_E(dd), manager, currentLevel + 1, maxLevel, ddVariableIndices, uniqueTableForLevels);
@@ -380,7 +405,9 @@ namespace storm {
                     uint_fast64_t totalElseOffset = elseNode->getElseOffset() + elseNode->getThenOffset();
                     uint_fast64_t totalThenOffset = thenNode->getElseOffset() + thenNode->getThenOffset();
 
-                    return std::make_shared<Odd>(elseNode, totalElseOffset, thenNode, totalThenOffset);
+                    auto oddNode = std::make_shared<Odd>(elseNode, totalElseOffset, thenNode, totalThenOffset);
+                    uniqueTableForLevels[currentLevel].emplace(dd, oddNode);
+                    return oddNode;
                 }
             }
         }

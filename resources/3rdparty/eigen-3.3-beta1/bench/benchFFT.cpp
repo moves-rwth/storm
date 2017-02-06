@@ -16,7 +16,7 @@
 
 #include <unsupported/Eigen/FFT>
 
-using namespace Eigen;
+using namespace StormEigen;
 using namespace std;
 
 
@@ -38,7 +38,7 @@ template <> string nameof<long double>() {return "long double";}
 #define NDATA 1000000
 #endif
 
-using namespace Eigen;
+using namespace StormEigen;
 
 template <typename T>
 void bench(int nfft,bool fwd,bool unscaled=false, bool halfspec=false)

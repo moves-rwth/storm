@@ -1,9 +1,13 @@
 #pragma once
 
+#include <unordered_map>
+
 #include "storm/adapters/CarlAdapter.h"
+
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/Expressions.h"
 #include "storm/storage/expressions/ExpressionVisitor.h"
+#include "storm/storage/expressions/ExpressionEvaluatorBase.h"
 #include "storm/storage/expressions/Variable.h"
 
 namespace storm {
@@ -12,7 +16,7 @@ namespace storm {
         template<typename RationalNumberType>
         class ToRationalNumberVisitor : public ExpressionVisitor {
         public:
-            ToRationalNumberVisitor();
+            ToRationalNumberVisitor(ExpressionEvaluatorBase<RationalNumberType> const& evaluator);
             
             RationalNumberType toRationalNumber(Expression const& expression);
             
@@ -26,6 +30,14 @@ namespace storm {
             virtual boost::any visit(BooleanLiteralExpression const& expression, boost::any const& data) override;
             virtual boost::any visit(IntegerLiteralExpression const& expression, boost::any const& data) override;
             virtual boost::any visit(RationalLiteralExpression const& expression, boost::any const& data) override;
+            
+            void setMapping(storm::expressions::Variable const& variable, RationalNumberType const& value);
+            
+        private:
+            std::unordered_map<storm::expressions::Variable, RationalNumberType> valueMapping;
+
+            // A reference to an expression evaluator (mainly for resolving the boolean condition in IfThenElse expressions)
+            ExpressionEvaluatorBase<RationalNumberType> const& evaluator;
         };
     }
 }

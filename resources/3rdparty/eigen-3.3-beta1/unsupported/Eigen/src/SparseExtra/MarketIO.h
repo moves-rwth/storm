@@ -13,7 +13,7 @@
 
 #include <iostream>
 
-namespace Eigen { 
+namespace StormEigen { 
 
 namespace internal 
 {
@@ -269,6 +269,6 @@ bool saveMarketVector (const VectorType& vec, const std::string& filename)
   return true; 
 }
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_SPARSE_MARKET_IO_H

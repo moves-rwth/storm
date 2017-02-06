@@ -10,7 +10,7 @@
 #ifndef EIGEN_SPECIAL_FUNCTIONS_H
 #define EIGEN_SPECIAL_FUNCTIONS_H
 
-namespace Eigen {
+namespace StormEigen {
 namespace internal {
 
 /****************************************************************************
@@ -155,6 +155,6 @@ inline EIGEN_MATHFUNC_RETVAL(erfc, Scalar) erfc(const Scalar& x)
 
 }  // end namespace numext
 
-}  // end namespace Eigen
+}  // end namespace StormEigen
 
 #endif  // EIGEN_SPECIAL_FUNCTIONS_H

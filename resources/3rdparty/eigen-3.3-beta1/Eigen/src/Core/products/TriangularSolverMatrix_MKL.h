@@ -33,7 +33,7 @@
 #ifndef EIGEN_TRIANGULAR_SOLVER_MATRIX_MKL_H
 #define EIGEN_TRIANGULAR_SOLVER_MATRIX_MKL_H
 
-namespace Eigen {
+namespace StormEigen {
 
 namespace internal {
 
@@ -150,6 +150,6 @@ EIGEN_MKL_TRSM_R(scomplex, MKL_Complex8, c)
 
 } // end namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_TRIANGULAR_SOLVER_MATRIX_MKL_H

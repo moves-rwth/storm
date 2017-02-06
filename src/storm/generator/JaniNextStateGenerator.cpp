@@ -9,6 +9,7 @@
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/solver.h"
+#include "storm/utility/combinatorics.h"
 #include "storm/exceptions/InvalidSettingsException.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
@@ -22,7 +23,7 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
-        JaniNextStateGenerator<ValueType, StateType>::JaniNextStateGenerator(storm::jani::Model const& model, NextStateGeneratorOptions const& options, bool flag) : NextStateGenerator<ValueType, StateType>(model.getExpressionManager(), options), model(model), rewardVariables(), hasStateActionRewards(false) {
+        JaniNextStateGenerator<ValueType, StateType>::JaniNextStateGenerator(storm::jani::Model const& model, NextStateGeneratorOptions const& options, bool) : NextStateGenerator<ValueType, StateType>(model.getExpressionManager(), options), model(model), rewardVariables(), hasStateActionRewards(false) {
             STORM_LOG_THROW(model.hasStandardComposition(), storm::exceptions::WrongFormatException, "The explicit next-state generator currently does not support custom system compositions.");
             STORM_LOG_THROW(!model.hasNonGlobalTransientVariable(), storm::exceptions::InvalidSettingsException, "The explicit next-state generator currently does not support automata-local transient variables.");
             STORM_LOG_THROW(!model.usesAssignmentLevels(), storm::exceptions::InvalidSettingsException, "The explicit next-state generator currently does not support assignment levels.");
@@ -79,11 +80,9 @@ namespace storm {
             
             // If there are terminal states we need to handle, we now need to translate all labels to expressions.
             if (this->options.hasTerminalStates()) {
-                std::map<std::string, storm::expressions::Variable> locationVariables;
-                auto locationVariableIt = this->variableInformation.locationVariables.begin();
+                std::vector<std::reference_wrapper<storm::jani::Automaton const>> composedAutomata;
                 for (auto const& automaton : this->model.getAutomata()) {
-                    locationVariables[automaton.getName()] = locationVariableIt->variable;
-                    ++locationVariableIt;
+                    composedAutomata.emplace_back(automaton);
                 }
                 
                 for (auto const& expressionOrLabelAndBool : this->options.getTerminalStates()) {
@@ -99,7 +98,7 @@ namespace storm {
                             STORM_LOG_THROW(variable.isBooleanVariable(), storm::exceptions::InvalidSettingsException, "Terminal states refer to non-boolean variable '" << expressionOrLabelAndBool.first.getLabel() << "'.");
                             STORM_LOG_THROW(variable.isTransient(), storm::exceptions::InvalidSettingsException, "Terminal states refer to non-transient variable '" << expressionOrLabelAndBool.first.getLabel() << "'.");
                             
-                            this->terminalStates.push_back(std::make_pair(this->model.getLabelExpression(variable.asBooleanVariable(), locationVariables), expressionOrLabelAndBool.second));
+                            this->terminalStates.push_back(std::make_pair(this->model.getLabelExpression(variable.asBooleanVariable(), composedAutomata), expressionOrLabelAndBool.second));
                         }
                     }
                 }
@@ -200,41 +199,18 @@ namespace storm {
                 }
                 
                 // Gather iterators to the initial locations of all the automata.
-                std::vector<std::set<uint64_t>::const_iterator> initialLocationsIterators;
-                uint64_t currentLocationVariable = 0;
-                for (auto const& automaton : this->model.getAutomata()) {
-                    initialLocationsIterators.push_back(automaton.getInitialLocationIndices().cbegin());
-                    
-                    // Initialize the locations to the first possible combination.
-                    setLocation(initialState, this->variableInformation.locationVariables[currentLocationVariable], *initialLocationsIterators.back());
-                    ++currentLocationVariable;
+                std::vector<std::set<uint64_t>::const_iterator> initialLocationsIts;
+                std::vector<std::set<uint64_t>::const_iterator> initialLocationsItes;
+                for (auto const& automaton : allAutomata) {
+                    initialLocationsIts.push_back(automaton.get().getInitialLocationIndices().cbegin());
+                    initialLocationsItes.push_back(automaton.get().getInitialLocationIndices().cend());
                 }
-                
-                // Now iterate through all combinations of initial locations.
-                while (true) {
+                storm::utility::combinatorics::forEach(initialLocationsIts, initialLocationsItes, [this,&initialState] (uint64_t index, uint64_t value) { setLocation(initialState, this->variableInformation.locationVariables[index], value); }, [&stateToIdCallback,&initialStateIndices,&initialState] () {
                     // Register initial state.
                     StateType id = stateToIdCallback(initialState);
                     initialStateIndices.push_back(id);
-                    
-                    uint64_t index = 0;
-                    for (; index < initialLocationsIterators.size(); ++index) {
-                        ++initialLocationsIterators[index];
-                        if (initialLocationsIterators[index] == this->model.getAutomata()[index].getInitialLocationIndices().cend()) {
-                            initialLocationsIterators[index] = this->model.getAutomata()[index].getInitialLocationIndices().cbegin();
-                        } else {
-                            break;
-                        }
-                    }
-                    
-                    // If we are at the end, leave the loop. Otherwise, create the next initial state.
-                    if (index == initialLocationsIterators.size()) {
-                        break;
-                    } else {
-                        for (uint64_t j = 0; j <= index; ++j) {
-                            setLocation(initialState, this->variableInformation.locationVariables[j], *initialLocationsIterators[j]);
-                        }
-                    }
-                }
+                    return true;
+                });
                 
                 // Block the current initial state to search for the next one.
                 if (!blockingExpression.isInitialized()) {
@@ -491,6 +467,9 @@ namespace storm {
                                     // If the new state was already found as a successor state, update the probability
                                     // and otherwise insert it.
                                     auto probability = stateProbabilityPair.second * this->evaluator->asRational(destination.getProbability());
+                                    if (edge.hasRate()) {
+                                        probability *= this->evaluator->asRational(edge.getRate());
+                                    }
                                     if (probability != storm::utility::zero<ValueType>()) {
                                         auto targetStateIt = newTargetStates->find(newTargetState);
                                         if (targetStateIt != newTargetStates->end()) {
@@ -617,7 +596,7 @@ namespace storm {
                         
                         auto index = std::distance(enabledEdges.begin(), edgeSetIt);
                         if (it != writtenGlobalVariables.end()) {
-                            STORM_LOG_THROW(it->second == index, storm::exceptions::WrongFormatException, "Multiple writes to global variable '" << globalVariable.getName() << "' in synchronizing edges.");
+                            STORM_LOG_THROW(it->second == static_cast<uint64_t>(index), storm::exceptions::WrongFormatException, "Multiple writes to global variable '" << globalVariable.getName() << "' in synchronizing edges.");
                         } else {
                             writtenGlobalVariables.emplace(globalVariable, index);
                         }
@@ -640,11 +619,9 @@ namespace storm {
         storm::models::sparse::StateLabeling JaniNextStateGenerator<ValueType, StateType>::label(storm::storage::BitVectorHashMap<StateType> const& states, std::vector<StateType> const& initialStateIndices, std::vector<StateType> const& deadlockStateIndices) {
             
             // Prepare a mapping from automata names to the location variables.
-            std::map<std::string, storm::expressions::Variable> locationVariables;
-            auto locationVariableIt = this->variableInformation.locationVariables.begin();
+            std::vector<std::reference_wrapper<storm::jani::Automaton const>> composedAutomata;
             for (auto const& automaton : model.getAutomata()) {
-                locationVariables[automaton.getName()] = locationVariableIt->variable;
-                ++locationVariableIt;
+                composedAutomata.emplace_back(automaton);
             }
             
             // As in JANI we can use transient boolean variable assignments in locations to identify states, we need to
@@ -653,7 +630,7 @@ namespace storm {
             for (auto const& variable : model.getGlobalVariables().getTransientVariables()) {
                 if (variable.isBooleanVariable()) {
                     if (this->options.isBuildAllLabelsSet() || this->options.getLabelNames().find(variable.getName()) != this->options.getLabelNames().end()) {
-                        transientVariableToExpressionMap[variable.getExpressionVariable()] = model.getLabelExpression(variable.asBooleanVariable(), locationVariables);
+                        transientVariableToExpressionMap[variable.getExpressionVariable()] = model.getLabelExpression(variable.asBooleanVariable(), composedAutomata);
                     }
                 }
             }

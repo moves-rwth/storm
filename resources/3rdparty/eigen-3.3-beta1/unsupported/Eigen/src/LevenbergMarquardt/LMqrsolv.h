@@ -15,7 +15,7 @@
 #ifndef EIGEN_LMQRSOLV_H
 #define EIGEN_LMQRSOLV_H
 
-namespace Eigen { 
+namespace StormEigen { 
 
 namespace internal {
 
@@ -183,6 +183,6 @@ void lmqrsolv(
 }
 } // end namespace internal
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_LMQRSOLV_H

@@ -117,7 +117,7 @@ namespace storm {
             
             template <class SparseModelType>
             void SparsePcaaWeightVectorChecker<SparseModelType>::unboundedWeightedPhase(std::vector<ValueType> const& weightedRewardVector) {
-                if(this->objectivesWithNoUpperTimeBound.empty()) {
+                if(this->objectivesWithNoUpperTimeBound.empty() || !storm::utility::vector::hasNonZeroEntry(weightedRewardVector)) {
                     this->weightedResult = std::vector<ValueType>(model.getNumberOfStates(), storm::utility::zero<ValueType>());
                     this->scheduler = storm::storage::TotalScheduler(model.getNumberOfStates());
                     return;
@@ -133,7 +133,7 @@ namespace storm {
                         nonZeroRewardStates.set(state);
                     }
                 }
-                storm::storage::BitVector subsystemStates = storm::utility::graph::performProbGreater0E(model.getTransitionMatrix(), model.getTransitionMatrix().getRowGroupIndices(), model.getTransitionMatrix().transpose(true), storm::storage::BitVector(model.getNumberOfStates(), true), nonZeroRewardStates);
+                storm::storage::BitVector subsystemStates = storm::utility::graph::performProbGreater0E(model.getTransitionMatrix().transpose(true), storm::storage::BitVector(model.getNumberOfStates(), true), nonZeroRewardStates);
                 
                 // Remove neutral end components, i.e., ECs in which no reward is earned.
                 auto ecEliminatorResult = storm::transformer::EndComponentEliminator<ValueType>::transform(model.getTransitionMatrix(), subsystemStates, ecActions & zeroRewardActions, possiblyRecurrentStates);

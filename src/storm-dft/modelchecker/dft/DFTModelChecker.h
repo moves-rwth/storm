@@ -3,10 +3,9 @@
 #include "storm/logic/Formula.h"
 #include "storm/modelchecker/results/CheckResult.h"
 #include "storm/utility/storm.h" // TODO this should not be included here.
+#include "storm/utility/Stopwatch.h"
 
 #include "storm-dft/storage/dft/DFT.h"
-
-#include <chrono>
 
 
 namespace storm {
@@ -57,12 +56,11 @@ namespace storm {
         private:
 
             // Timing values
-            std::chrono::duration<double> buildingTime = std::chrono::duration<double>::zero();
-            std::chrono::duration<double> explorationTime = std::chrono::duration<double>::zero();
-            std::chrono::duration<double> bisimulationTime = std::chrono::duration<double>::zero();
-            std::chrono::duration<double> modelCheckingTime = std::chrono::duration<double>::zero();
-            std::chrono::duration<double> totalTime = std::chrono::duration<double>::zero();
-            std::chrono::high_resolution_clock::time_point totalStart;
+            storm::utility::Stopwatch buildingTimer;
+            storm::utility::Stopwatch explorationTimer;
+            storm::utility::Stopwatch bisimulationTimer;
+            storm::utility::Stopwatch modelCheckingTimer;
+            storm::utility::Stopwatch totalTimer;
 
             // Model checking result
             dft_result checkResult;

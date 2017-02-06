@@ -10,7 +10,7 @@
 #ifndef EIGEN_CWISE_NULLARY_OP_H
 #define EIGEN_CWISE_NULLARY_OP_H
 
-namespace Eigen {
+namespace StormEigen {
 
 /** \class CwiseNullaryOp
   * \ingroup Core_Module
@@ -866,6 +866,6 @@ template<typename Derived>
 EIGEN_STRONG_INLINE const typename MatrixBase<Derived>::BasisReturnType MatrixBase<Derived>::UnitW()
 { return Derived::Unit(3); }
 
-} // end namespace Eigen
+} // end namespace StormEigen
 
 #endif // EIGEN_CWISE_NULLARY_OP_H

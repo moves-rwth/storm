@@ -1,38 +1,41 @@
 #ifndef STORM_ENTRYPOINTS_H_H
 #define STORM_ENTRYPOINTS_H_H
 
+#include <type_traits>
+
 #include "storm/utility/storm.h"
 
 #include "storm/storage/SymbolicModelDescription.h"
 #include "storm/utility/ExplicitExporter.h"
+#include "storm/utility/Stopwatch.h"
 
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/InvalidSettingsException.h"
 #include "storm/exceptions/UnexpectedException.h"
+#include "storm/exceptions/InvalidTypeException.h"
 
 namespace storm {
     namespace cli {
 
         template<typename ValueType>
         void applyFilterFunctionAndOutput(std::unique_ptr<storm::modelchecker::CheckResult> const& result, storm::modelchecker::FilterType ft) {
-            
-            if(result->isQuantitative()) {
-                switch(ft) {
+            if (result->isQuantitative()) {
+                switch (ft) {
                     case storm::modelchecker::FilterType::VALUES:
-                        std::cout << *result << std::endl;
-                        return;
+                        STORM_PRINT_AND_LOG(*result);
+                        break;
                     case storm::modelchecker::FilterType::SUM:
-                        std::cout << result->asQuantitativeCheckResult<ValueType>().sum();
-                        return;
+                        STORM_PRINT_AND_LOG(result->asQuantitativeCheckResult<ValueType>().sum());
+                        break;
                     case storm::modelchecker::FilterType::AVG:
-                        std::cout << result->asQuantitativeCheckResult<ValueType>().average();
-                        return;
+                        STORM_PRINT_AND_LOG(result->asQuantitativeCheckResult<ValueType>().average());
+                        break;
                     case storm::modelchecker::FilterType::MIN:
-                        std::cout << result->asQuantitativeCheckResult<ValueType>().getMin();
-                        return;
+                        STORM_PRINT_AND_LOG(result->asQuantitativeCheckResult<ValueType>().getMin());
+                        break;
                     case storm::modelchecker::FilterType::MAX:
-                        std::cout << result->asQuantitativeCheckResult<ValueType>().getMax();
-                        return;
+                        STORM_PRINT_AND_LOG(result->asQuantitativeCheckResult<ValueType>().getMax());
+                        break;
                     case storm::modelchecker::FilterType::ARGMIN:
                     case storm::modelchecker::FilterType::ARGMAX:
                         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Outputting states is not supported");
@@ -42,19 +45,19 @@ namespace storm {
                         STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "FilterType only defined for qualitative results");
                 }
             } else {
-                switch(ft) {
+                switch (ft) {
                     case storm::modelchecker::FilterType::VALUES:
-                        std::cout << *result << std::endl;
-                        return;
+                        STORM_PRINT_AND_LOG(*result << std::endl);
+                        break;
                     case storm::modelchecker::FilterType::EXISTS:
-                        std::cout << result->asQualitativeCheckResult().existsTrue();
-                        return;
+                        STORM_PRINT_AND_LOG(result->asQualitativeCheckResult().existsTrue());
+                        break;
                     case storm::modelchecker::FilterType::FORALL:
-                        std::cout << result->asQualitativeCheckResult().forallTrue();
-                        return;
+                        STORM_PRINT_AND_LOG(result->asQualitativeCheckResult().forallTrue());
+                        break;
                     case storm::modelchecker::FilterType::COUNT:
-                        std::cout << result->asQualitativeCheckResult().count();
-                        return;
+                        STORM_PRINT_AND_LOG(result->asQualitativeCheckResult().count());
+                        break;
                         
                     case storm::modelchecker::FilterType::ARGMIN:
                     case storm::modelchecker::FilterType::ARGMAX:
@@ -65,23 +68,25 @@ namespace storm {
                     case storm::modelchecker::FilterType::MAX:
                         STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "FilterType only defined for quantitative results");
                 }
-                
             }
+            STORM_PRINT_AND_LOG(std::endl);
         }
         
         template<typename ValueType>
         void verifySparseModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> model, std::vector<storm::jani::Property> const& properties, bool onlyInitialStatesRelevant = false) {
             for (auto const& property : properties) {
-                std::cout << std::endl << "Model checking property: " << property << " ...";
+                STORM_PRINT_AND_LOG(std::endl << "Model checking property " << *property.getRawFormula() << " ..." << std::endl);
+                std::cout.flush();
+                storm::utility::Stopwatch modelCheckingWatch(true);
                 std::unique_ptr<storm::modelchecker::CheckResult> result(storm::verifySparseModel(model, property.getFilter().getFormula(), onlyInitialStatesRelevant));
+                modelCheckingWatch.stop();
                 if (result) {
-                    std::cout << " done." << std::endl;
-                    std::cout << "Result (initial states): ";
+                    STORM_PRINT_AND_LOG("Result (initial states): ");
                     result->filter(storm::modelchecker::ExplicitQualitativeCheckResult(model->getInitialStates()));
                     applyFilterFunctionAndOutput<ValueType>(result, property.getFilter().getFilterType());
-                    std::cout << std::endl;
+                    STORM_PRINT_AND_LOG("Time for model checking: " << modelCheckingWatch << "." << std::endl);
                 } else {
-                    std::cout << " skipped, because the modelling formalism is currently unsupported." << std::endl;
+                    STORM_PRINT_AND_LOG(" skipped, because the modelling formalism is currently unsupported." << std::endl);
                 }
             }
         }
@@ -92,16 +97,18 @@ namespace storm {
 
             for (auto const& property : properties) {
                 STORM_LOG_THROW(model->getType() == storm::models::ModelType::Dtmc || model->getType() == storm::models::ModelType::Ctmc, storm::exceptions::InvalidSettingsException, "Currently parametric verification is only available for DTMCs and CTMCs.");
-                std::cout << std::endl << "Model checking property: " << property << " ...";
+                STORM_PRINT_AND_LOG(std::endl << "Model checking property " << *property.getRawFormula() << " ..." << std::endl);
+                std::cout.flush();
+                storm::utility::Stopwatch modelCheckingWatch(true);
                 std::unique_ptr<storm::modelchecker::CheckResult> result(storm::verifySparseModel(model, property.getFilter().getFormula(), onlyInitialStatesRelevant));
+                modelCheckingWatch.stop();
                 if (result) {
-                    std::cout << " done." << std::endl;
-                    std::cout << "Result (initial states): ";
+                    STORM_PRINT_AND_LOG("Result (initial states): ");
                     result->filter(storm::modelchecker::ExplicitQualitativeCheckResult(model->getInitialStates()));
                     applyFilterFunctionAndOutput<storm::RationalFunction>(result, property.getFilter().getFilterType());
-                    std::cout << std::endl;
+                    STORM_PRINT_AND_LOG("Time for model checking: " << modelCheckingWatch << "." << std::endl);
                 } else {
-                    std::cout << " skipped, because the modelling formalism is currently unsupported." << std::endl;
+                    STORM_PRINT_AND_LOG(" skipped, because the modelling formalism is currently unsupported." << std::endl);
                 }
 
                 if (storm::settings::getModule<storm::settings::modules::ParametricSettings>().exportResultToFile()) {
@@ -112,8 +119,22 @@ namespace storm {
 #endif
 
         template<storm::dd::DdType DdType>
-        void verifySymbolicModelWithAbstractionRefinementEngine(storm::storage::SymbolicModelDescription const& model, std::vector<storm::jani::Property> const& formulas, bool onlyInitialStatesRelevant = false) {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Abstraction Refinement is not yet implemented.");
+        void verifySymbolicModelWithAbstractionRefinementEngine(storm::storage::SymbolicModelDescription const& model, std::vector<storm::jani::Property> const& properties, bool onlyInitialStatesRelevant = false) {
+            typedef double ValueType;
+            for (auto const& property : properties) {
+                STORM_PRINT_AND_LOG(std::endl << "Model checking property " << *property.getRawFormula() << " ..." << std::endl);
+                std::cout.flush();
+                storm::utility::Stopwatch modelCheckingWatch(true);
+                std::unique_ptr<storm::modelchecker::CheckResult> result(storm::verifySymbolicModelWithAbstractionRefinementEngine<DdType, ValueType>(model, property.getFilter().getFormula(), onlyInitialStatesRelevant));
+                modelCheckingWatch.stop();
+                if (result) {
+                    STORM_PRINT_AND_LOG("Result (initial states): ");
+                    STORM_PRINT_AND_LOG(*result << std::endl);
+                    STORM_PRINT_AND_LOG("Time for model checking: " << modelCheckingWatch << "." << std::endl);
+                } else {
+                    STORM_PRINT_AND_LOG(" skipped, because the modelling formalism is currently unsupported." << std::endl);
+                }
+            }
         }
         
         template<typename ValueType>
@@ -123,17 +144,22 @@ namespace storm {
             STORM_LOG_THROW(program.getModelType() == storm::prism::Program::ModelType::DTMC || program.getModelType() == storm::prism::Program::ModelType::MDP, storm::exceptions::InvalidSettingsException, "Currently exploration-based verification is only available for DTMCs and MDPs.");
 
             for (auto const& property : formulas) {
-                std::cout << std::endl << "Model checking property: " << property << " ...";
+                STORM_PRINT_AND_LOG(std::endl << "Model checking property " << *property.getRawFormula() << " ..." << std::endl);
+                std::cout.flush();
                 bool formulaSupported = false;
                 std::unique_ptr<storm::modelchecker::CheckResult> result;
 
+                storm::utility::Stopwatch modelCheckingWatch(false);
+                
                 if (program.getModelType() == storm::prism::Program::ModelType::DTMC) {
                     storm::modelchecker::SparseExplorationModelChecker<storm::models::sparse::Dtmc<ValueType>> checker(program);
                     storm::modelchecker::CheckTask<storm::logic::Formula> task(*property.getFilter().getFormula(), onlyInitialStatesRelevant);
 
                     formulaSupported = checker.canHandle(task);
                     if (formulaSupported) {
+                        modelCheckingWatch.start();
                         result = checker.check(task);
+                        modelCheckingWatch.stop();
                     }
                 } else if (program.getModelType() == storm::prism::Program::ModelType::MDP) {
                     storm::modelchecker::SparseExplorationModelChecker<storm::models::sparse::Mdp<ValueType>> checker(program);
@@ -141,23 +167,24 @@ namespace storm {
 
                     formulaSupported = checker.canHandle(task);
                     if (formulaSupported) {
+                        modelCheckingWatch.start();
                         result = checker.check(task);
+                        modelCheckingWatch.stop();
                     }
                 } else {
                     // Should be catched before.
                     assert(false);
                 }
                 if (!formulaSupported) {
-                    std::cout << " skipped, because the formula cannot be handled by the selected engine/method." << std::endl;
+                    STORM_PRINT_AND_LOG(" skipped, because the formula cannot be handled by the selected engine/method." << std::endl);
                 }
 
                 if (result) {
-                    std::cout << " done." << std::endl;
-                    std::cout << "Result (initial states): ";
+                    STORM_PRINT_AND_LOG("Result (initial states): ");
                     applyFilterFunctionAndOutput<ValueType>(result, property.getFilter().getFilterType());
-                    std::cout << std::endl;
+                    STORM_PRINT_AND_LOG("Time for model checking: " << modelCheckingWatch << "." << std::endl);
                 } else {
-                    std::cout << " skipped, because the modelling formalism is currently unsupported." << std::endl;
+                    STORM_PRINT_AND_LOG(" skipped, because the modelling formalism is currently unsupported." << std::endl);
                 }
             }
         }
@@ -172,17 +199,20 @@ namespace storm {
         template<storm::dd::DdType DdType>
         void verifySymbolicModelWithHybridEngine(std::shared_ptr<storm::models::symbolic::Model<DdType>> model, std::vector<storm::jani::Property> const& formulas, bool onlyInitialStatesRelevant = false) {
             for (auto const& property : formulas) {
-                std::cout << std::endl << "Model checking property: " << property << " ...";
+                STORM_PRINT_AND_LOG(std::endl << "Model checking property " << *property.getRawFormula() << " ..." << std::endl);
+                std::cout.flush();
+                
+                storm::utility::Stopwatch modelCheckingWatch(true);
                 std::unique_ptr<storm::modelchecker::CheckResult> result(storm::verifySymbolicModelWithHybridEngine(model, property.getFilter().getFormula(), onlyInitialStatesRelevant));
+                modelCheckingWatch.stop();
 
                 if (result) {
-                    std::cout << " done." << std::endl;
-                    std::cout << "Result (initial states): ";
+                    STORM_PRINT_AND_LOG("Result (initial states): ");
                     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<DdType>(model->getReachableStates(), model->getInitialStates()));
                     applyFilterFunctionAndOutput<double>(result, property.getFilter().getFilterType());
-                    std::cout << std::endl;
+                    STORM_PRINT_AND_LOG("Time for model checking: " << modelCheckingWatch << "." << std::endl);
                 } else {
-                    std::cout << " skipped, because the modelling formalism is currently unsupported." << std::endl;
+                    STORM_PRINT_AND_LOG(" skipped, because the modelling formalism is currently unsupported." << std::endl);
                 }
             }
         }
@@ -190,16 +220,19 @@ namespace storm {
         template<storm::dd::DdType DdType>
         void verifySymbolicModelWithDdEngine(std::shared_ptr<storm::models::symbolic::Model<DdType>> model, std::vector<storm::jani::Property> const& formulas, bool onlyInitialStatesRelevant = false) {
             for (auto const& property : formulas) {
-                std::cout << std::endl << "Model checking property: " << property << " ...";
+                STORM_PRINT_AND_LOG(std::endl << "Model checking property " << *property.getRawFormula() << " ..." << std::endl);
+                std::cout.flush();
+                
+                storm::utility::Stopwatch modelCheckingWatch(true);
                 std::unique_ptr<storm::modelchecker::CheckResult> result(storm::verifySymbolicModelWithDdEngine(model, property.getFilter().getFormula(), onlyInitialStatesRelevant));
+                modelCheckingWatch.stop();
                 if (result) {
-                    std::cout << " done." << std::endl;
-                    std::cout << "Result (initial states): ";
+                    STORM_PRINT_AND_LOG("Result (initial states): ");
                     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<DdType>(model->getReachableStates(), model->getInitialStates()));
                     applyFilterFunctionAndOutput<double>(result, property.getFilter().getFilterType());
-                    std::cout << std::endl;
+                    STORM_PRINT_AND_LOG("Time for model checking: " << modelCheckingWatch << "." << std::endl);
                 } else {
-                    std::cout << " skipped, because the modelling formalism is currently unsupported." << std::endl;
+                    STORM_PRINT_AND_LOG(" skipped, because the modelling formalism is currently unsupported." << std::endl);
                 }
             }
         }
@@ -247,7 +280,10 @@ namespace storm {
         template<storm::dd::DdType LibraryType>
         void buildAndCheckSymbolicModelWithSymbolicEngine(bool hybrid, storm::storage::SymbolicModelDescription const& model, std::vector<storm::jani::Property> const& properties, bool onlyInitialStatesRelevant = false) {
             // Start by building the model.
-            auto markovModel = buildSymbolicModel<double, LibraryType>(model, formulasInProperties(properties));
+            storm::utility::Stopwatch modelBuildingWatch(true);
+            auto markovModel = buildSymbolicModel<double, LibraryType>(model, extractFormulasFromProperties(properties));
+            modelBuildingWatch.stop();
+            STORM_PRINT_AND_LOG("Time for model construction: " << modelBuildingWatch << "." << std::endl << std::endl);
             
             // Print some information about the model.
             markovModel->printModelInformationToStream(std::cout);
@@ -262,9 +298,12 @@ namespace storm {
         
         template<typename ValueType>
         void buildAndCheckSymbolicModelWithSparseEngine(storm::storage::SymbolicModelDescription const& model, std::vector<storm::jani::Property> const& properties, bool onlyInitialStatesRelevant = false) {
-            auto formulas = formulasInProperties(properties);
+            auto formulas = extractFormulasFromProperties(properties);
             // Start by building the model.
+            storm::utility::Stopwatch modelBuildingWatch(true);
             std::shared_ptr<storm::models::ModelBase> markovModel = buildSparseModel<ValueType>(model, formulas);
+            modelBuildingWatch.stop();
+            STORM_PRINT_AND_LOG("Time for model construction: " << modelBuildingWatch << "." << std::endl << std::endl);
 
             STORM_LOG_THROW(markovModel, storm::exceptions::UnexpectedException, "The model was not successfully built.");
             
@@ -295,6 +334,7 @@ namespace storm {
         template<typename ValueType>
         void buildAndCheckSymbolicModel(storm::storage::SymbolicModelDescription const& model, std::vector<storm::jani::Property> const& formulas, bool onlyInitialStatesRelevant = false) {
             if (storm::settings::getModule<storm::settings::modules::CoreSettings>().getEngine() == storm::settings::modules::CoreSettings::Engine::AbstractionRefinement) {
+                STORM_LOG_THROW((std::is_same<double, ValueType>::value), storm::exceptions::InvalidTypeException, "The value type is not supported by abstraction refinement.");
                 auto ddlib = storm::settings::getModule<storm::settings::modules::CoreSettings>().getDdLibraryType();
                 if (ddlib == storm::dd::DdType::CUDD) {
                     verifySymbolicModelWithAbstractionRefinementEngine<storm::dd::DdType::CUDD>(model, formulas, onlyInitialStatesRelevant);
@@ -338,10 +378,14 @@ namespace storm {
             storm::settings::modules::IOSettings const& settings = storm::settings::getModule<storm::settings::modules::IOSettings>();
 
             STORM_LOG_THROW(settings.isExplicitSet(), storm::exceptions::InvalidStateException, "Unable to build explicit model without model files.");
+
+            storm::utility::Stopwatch modelBuildingWatch(true);
             std::shared_ptr<storm::models::ModelBase> model = buildExplicitModel<ValueType>(settings.getTransitionFilename(), settings.getLabelingFilename(), settings.isStateRewardsSet() ? boost::optional<std::string>(settings.getStateRewardsFilename()) : boost::none, settings.isTransitionRewardsSet() ? boost::optional<std::string>(settings.getTransitionRewardsFilename()) : boost::none, settings.isChoiceLabelingSet() ? boost::optional<std::string>(settings.getChoiceLabelingFilename()) : boost::none);
+            modelBuildingWatch.stop();
+            STORM_PRINT_AND_LOG("Time for model construction: " << modelBuildingWatch << "." << std::endl);
             
             // Preprocess the model if needed.
-            BRANCH_ON_MODELTYPE(model, model, ValueType, storm::dd::DdType::CUDD, preprocessModel, formulasInProperties(properties));
+            BRANCH_ON_MODELTYPE(model, model, ValueType, storm::dd::DdType::CUDD, preprocessModel, extractFormulasFromProperties(properties));
 
             // Print some information about the model.
             model->printModelInformationToStream(std::cout);

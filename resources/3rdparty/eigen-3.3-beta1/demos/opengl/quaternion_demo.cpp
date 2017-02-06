@@ -25,7 +25,7 @@
 #include <QPushButton>
 #include <QGroupBox>
 
-using namespace Eigen;
+using namespace StormEigen;
 
 class FancySpheres
 {
@@ -293,7 +293,7 @@ void RenderingWidget::animate()
     if (mLerpMode==LerpEulerAngles)
       currentFrame = ::lerpFrame<EulerAngles<float> >(s, lo->second, hi->second);
     else if (mLerpMode==LerpQuaternion)
-      currentFrame = ::lerpFrame<Eigen::Quaternionf>(s, lo->second, hi->second);
+      currentFrame = ::lerpFrame<StormEigen::Quaternionf>(s, lo->second, hi->second);
     else
     {
       std::cerr << "Invalid rotation interpolation mode (abort)\n";

@@ -15,7 +15,7 @@
 #include "main.h"
 #include <Eigen/LevenbergMarquardt>
 using namespace std;
-using namespace Eigen;
+using namespace StormEigen;
 
 template<typename Scalar>
 struct DenseLM : DenseFunctor<Scalar>

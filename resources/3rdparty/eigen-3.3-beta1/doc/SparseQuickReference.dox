@@ -1,4 +1,4 @@
-namespace Eigen {
+namespace StormEigen {
 /** \eigenManualPage SparseQuickRefPage Quick reference guide for sparse matrices
 \eigenAutoToc
 
@@ -59,7 +59,7 @@ i.e either row major or column major. The default is column major. Most arithmet
 <td> Batch insertion</td>
 <td>
 \code
-  std::vector< Eigen::Triplet<double> > tripletList;
+  std::vector< StormEigen::Triplet<double> > tripletList;
   tripletList.reserve(estimation_of_entries);
   // -- Fill tripletList with nonzero elements...
   sm1.setFromTriplets(TripletList.begin(), TripletList.end());
