@@ -420,4 +420,4 @@ add_subdirectory(src)
 
 include(export)
 
-include(stormCPackConfig.cmake)
+include(StormCPackConfig.cmake)
