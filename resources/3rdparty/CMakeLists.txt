@@ -229,7 +229,7 @@ if(USE_CARL)
                 BUILD_COMMAND make lib_carl
                 INSTALL_COMMAND make install
                 LOG_BUILD ON
-		LOG_INSTALL ON
+				LOG_INSTALL ON
                 BUILD_BYPRODUCTS ${STORM_3RDPARTY_BINARY_DIR}/carl/lib/libcarl${DYNAMIC_EXT}
         )
         include(${STORM_3RDPARTY_BINARY_DIR}/carl/carlConfig.cmake)
@@ -241,8 +241,7 @@ if(USE_CARL)
         set(STORM_HAVE_CARL ON)
         
         # install the carl dynamic library if we build it
-        get_filename_component(STORM_CARL_DYLIB_FULL_PATH ${STORM_3RDPARTY_BINARY_DIR}/carl/lib/libcarl${DYNAMIC_EXT} REALPATH)
-        install(FILES ${STORM_CARL_DYLIB_FULL_PATH} DESTINATION lib)
+        install(FILES ${STORM_3RDPARTY_BINARY_DIR}/carl/lib/libcarl.1.0.0${DYNAMIC_EXT} DESTINATION lib)
     endif()
     if(STORM_USE_CLN_NUMBERS AND NOT STORM_HAVE_CLN)
 		message(FATAL_ERROR "Cannot use CLN numbers if carl is build without")
@@ -267,7 +266,7 @@ if(USE_SMTRAT)
     	include_directories("${smtrat_INCLUDE_DIR}")
     	list(APPEND STORM_LINK_LIBRARIES ${smtrat_LIBRARIES})
 	else()
-		message(FATAL_ERROR "StoRM - SMT-RAT was requested but not found")
+		message(FATAL_ERROR "storm - SMT-RAT was requested but not found")
 	endif()
 endif()
 
@@ -287,7 +286,7 @@ if(USE_HYPRO)
 		include_directories("${hypro_INCLUDE_DIR}")
 		list(APPEND STORM_LINK_LIBRARIES ${hypro_LIBRARIES})
 	else()
-		message(FATAL_ERROR "StoRM - HyPro was requested but not found")
+		message(FATAL_ERROR "storm - HyPro was requested but not found")
 	endif()
 endif()
 
@@ -493,7 +492,7 @@ if(ENABLE_CUDA)
     if(NOT STORM_CUDA_COMPILE_RESULT_TYPEALIGNMENT)
         message(FATAL_ERROR "storm (CudaPlugin) - Could not test type alignment, there was an Error while compiling the file ${PROJECT_SOURCE_DIR}/cuda/CMakeAlignmentCheck.cpp: ${OUTPUT_TEST_VAR}")
     elseif(STORM_CUDA_RUN_RESULT_TYPEALIGNMENT EQUAL 0)
-        message(STATUS "StoRM (CudaPlugin) - Result of Type Alignment Check: OK.")
+        message(STATUS "storm (CudaPlugin) - Result of Type Alignment Check: OK.")
     else()
         message(FATAL_ERROR "storm (CudaPlugin) - Result of Type Alignment Check: FAILED (Code ${STORM_CUDA_RUN_RESULT_TYPEALIGNMENT})")
     endif()

@@ -55,7 +55,7 @@ namespace storm {
                     sstream << " build from revision " << gitRevisionHash.get();
                 }
                 if (dirty && dirty.get() == 1) {
-                    sstream << " (DIRTY)";
+                    sstream << " (dirty)";
                 }
                 sstream << "." << std::endl;
                 return sstream.str();

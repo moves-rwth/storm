@@ -355,15 +355,15 @@ endif(DOXYGEN_FOUND)
 # If storm is built from an archive, we need to skip the version detection based on git.
 if (STORM_SOURCE STREQUAL "archive")
 	if (NOT DEFINED STORM_VERSION_MAJOR OR NOT DEFINED STORM_VERSION_MINOR OR NOT DEFINED STORM_VERSION_PATCH)
-		message(FATAL_ERROR "storm - Building from archive requires setting a version via cmake.")
+		message(FATAL_ERROR "storm - building from archive requires setting a version via cmake.")
 	endif()
-	message(STATUS "storm - Version is ${STORM_VERSION_MAJOR}.${STORM_VERSION_MINOR}.${STORM_VERSION_PATCH} (building from archive).")
+	message(STATUS "storm - version is ${STORM_VERSION_MAJOR}.${STORM_VERSION_MINOR}.${STORM_VERSION_PATCH} (building from archive).")
 	set(STORM_VERSION_COMMITS_AHEAD boost::none)
 	set(STORM_VERSION_GIT_HASH boost::none)
 	set(STORM_VERSION_DIRTY boost::none)
 else()
 	if (DEFINED STORM_VERSION_MAJOR OR DEFINED STORM_VERSION_MINOR OR DEFINED STORM_VERSION_PATCH)
-		message(FATAL_ERROR "storm - Building from git does not support setting a version via cmake.")
+		message(FATAL_ERROR "storm - building from git does not support setting a version via cmake.")
 	endif()
 	
 	# Make a version file containing the current version from git.
