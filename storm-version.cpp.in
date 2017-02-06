@@ -8,9 +8,9 @@ namespace storm {
         const unsigned StormVersion::versionMajor = @STORM_CPP_VERSION_MAJOR@;
         const unsigned StormVersion::versionMinor = @STORM_CPP_VERSION_MINOR@;
         const unsigned StormVersion::versionPatch = @STORM_CPP_VERSION_PATCH@;
-        const std::string StormVersion::gitRevisionHash = "@STORM_CPP_VERSION_HASH@";
-        const unsigned StormVersion::commitsAhead = @STORM_CPP_VERSION_COMMITS_AHEAD@;
-        const unsigned StormVersion::dirty = @STORM_CPP_VERSION_DIRTY@;
+        const boost::optional<std::string> StormVersion::gitRevisionHash = @STORM_CPP_GIT_HASH@;
+        const boost::optional<unsigned> StormVersion::commitsAhead = @STORM_CPP_VERSION_COMMITS_AHEAD@;
+        const boost::optional<unsigned> StormVersion::dirty = @STORM_CPP_VERSION_DIRTY@;
         const std::string StormVersion::systemName = "@CMAKE_SYSTEM_NAME@";
         const std::string StormVersion::systemVersion = "@CMAKE_SYSTEM_VERSION@";
         const std::string StormVersion::cxxCompiler = "@STORM_COMPILER_ID@ @CMAKE_CXX_COMPILER_VERSION@";
