@@ -127,6 +127,7 @@ int main(const int argc, const char** argv) {
         
         storm::settings::modules::DFTSettings const& dftSettings = storm::settings::getModule<storm::settings::modules::DFTSettings>();
         storm::settings::modules::GeneralSettings const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
+        storm::settings::modules::IOSettings const& ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
         if (!dftSettings.isDftFileSet() && !dftSettings.isDftJsonFileSet()) {
             STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "No input model.");
         }
@@ -147,9 +148,9 @@ int main(const int argc, const char** argv) {
             uint64_t toplevelFailedPlace = gspnTransformator.toplevelFailedPlaceId();
             
             storm::handleGSPNExportSettings(*gspn);
-            
-            std::shared_ptr<storm::expressions::ExpressionManager> exprManager(new storm::expressions::ExpressionManager());
-            storm::builder::JaniGSPNBuilder builder(*gspn, exprManager);
+
+            std::shared_ptr<storm::expressions::ExpressionManager> const& exprManager = gspn->getExpressionManager();
+            storm::builder::JaniGSPNBuilder builder(*gspn);
             storm::jani::Model* model =  builder.build();
             storm::jani::Variable const& topfailedVar = builder.getPlaceVariable(toplevelFailedPlace);
             
@@ -203,9 +204,9 @@ int main(const int argc, const char** argv) {
         std::string operatorType = "";
         std::string targetFormula = "";
         
-        if (generalSettings.isPropertySet()) {
+        if (ioSettings.isPropertySet()) {
             STORM_LOG_THROW(!dftSettings.usePropExpectedTime() && !dftSettings.usePropProbability() && !dftSettings.usePropTimebound(), storm::exceptions::InvalidSettingsException, "More than one property given.");
-            pctlFormula = generalSettings.getProperty();
+            pctlFormula = ioSettings.getProperty();
         } else if (dftSettings.usePropExpectedTime()) {
             STORM_LOG_THROW(!dftSettings.usePropProbability() && !dftSettings.usePropTimebound(), storm::exceptions::InvalidSettingsException, "More than one property given.");
             operatorType = "T";

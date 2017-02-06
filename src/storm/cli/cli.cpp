@@ -198,9 +198,9 @@ namespace storm {
             }
 
             boost::optional<std::set<std::string>> propertyFilter;
-            std::string propertyFilterString = storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPropertyFilter();
+            std::string propertyFilterString = storm::settings::getModule<storm::settings::modules::IOSettings>().getPropertyFilter();
             if (propertyFilterString != "all") {
-                propertyFilter = storm::parsePropertyFilter(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPropertyFilter());
+                propertyFilter = storm::parsePropertyFilter(storm::settings::getModule<storm::settings::modules::IOSettings>().getPropertyFilter());
             }
             
             auto coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
@@ -245,9 +245,9 @@ namespace storm {
 
                 // Then proceed to parsing the properties (if given), since the model we are building may depend on the property.
                 STORM_LOG_TRACE("Parsing properties.");
-                if (generalSettings.isPropertySet()) {
+                if (ioSettings.isPropertySet()) {
                     if (model.isJaniModel()) {
-                        properties = storm::parsePropertiesForJaniModel(generalSettings.getProperty(), model.asJaniModel(), propertyFilter);
+                        properties = storm::parsePropertiesForJaniModel(ioSettings.getProperty(), model.asJaniModel(), propertyFilter);
                         
                         if (labelRenaming) {
                             std::vector<storm::jani::Property> amendedProperties;
@@ -257,7 +257,7 @@ namespace storm {
                             properties = std::move(amendedProperties);
                         }
                     } else {
-                        properties = storm::parsePropertiesForPrismProgram(generalSettings.getProperty(), model.asPrismProgram(), propertyFilter);
+                        properties = storm::parsePropertiesForPrismProgram(ioSettings.getProperty(), model.asPrismProgram(), propertyFilter);
                     }
                     
                     constantDefinitions = model.parseConstantDefinitions(constantDefinitionString);
@@ -297,8 +297,8 @@ namespace storm {
                 // If the model is given in an explicit format, we parse the properties without allowing expressions
                 // in formulas.
                 std::vector<storm::jani::Property> properties;
-                if (generalSettings.isPropertySet()) {
-                    properties = storm::parsePropertiesForExplicit(generalSettings.getProperty(), propertyFilter);
+                if (ioSettings.isPropertySet()) {
+                    properties = storm::parsePropertiesForExplicit(ioSettings.getProperty(), propertyFilter);
                 }
 
                 buildAndCheckExplicitModel<double>(properties, true);

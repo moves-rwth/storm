@@ -70,27 +70,6 @@ namespace storm {
                  * @return The name of the file that is to be scanned for settings.
                  */
                 std::string getConfigFilename() const;
-
-                /*!
-                 * Retrieves whether the property option was set.
-                 *
-                 * @return True if the property option was set.
-                 */
-                bool isPropertySet() const;
-
-                /*!
-                 * Retrieves the property specified with the property option.
-                 *
-                 * @return The property specified with the property option.
-                 */
-                std::string getProperty() const;
-
-                /*!
-                 * Retrieves the property filter.
-                 *
-                 * @return The property filter.
-                 */
-                std::string getPropertyFilter() const;
                 
                 /*!
                  * Retrieves whether the option to perform bisimulation minimization is set.
@@ -146,8 +125,6 @@ namespace storm {
                 static const std::string precisionOptionShortName;
                 static const std::string configOptionName;
                 static const std::string configOptionShortName;
-                static const std::string propertyOptionName;
-                static const std::string propertyOptionShortName;
                 static const std::string bisimulationOptionName;
                 static const std::string bisimulationOptionShortName;
                 static const std::string parametricOptionName;
