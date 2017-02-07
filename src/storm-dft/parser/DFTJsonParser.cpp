@@ -66,6 +66,8 @@ namespace storm {
             parsedJson << file;
             file.close();
 
+            std::string toplevelName = "";
+
             // Start by building mapping from ids to names
             std::map<std::string, std::string> nameMapping;
             for (auto& element: parsedJson) {
@@ -74,11 +76,13 @@ namespace storm {
                     std::string id = data.at("id");
                     std::string name = data.at("name");
                     nameMapping[id] = name;
+                    if (data.count("toplevel") > 0) {
+                        STORM_LOG_ASSERT(toplevelName.empty(), "Toplevel element already defined.");
+                        toplevelName = name;
+                    }
                 }
             }
-
-            // TODO: avoid hack
-            std::string toplevelId = nameMapping["1"];
+            std::cout << toplevelName << std::endl;
 
             for (auto& element : parsedJson) {
                 bool success = true;
@@ -130,7 +134,7 @@ namespace storm {
                 STORM_LOG_THROW(success, storm::exceptions::FileIoException, "Error while adding element '" << element << "'.");
             }
 
-            if(!builder.setTopLevel(toplevelId)) {
+            if(!builder.setTopLevel(toplevelName)) {
                 STORM_LOG_THROW(false, storm::exceptions::FileIoException, "Top level id unknown.");
             }
         }
