@@ -75,9 +75,12 @@ namespace storm {
                     json data = element.at("data");
                     std::string id = data.at("id");
                     // Append to id to distinguish elements with the same name
+                    std::string name = data.at("name");
+                    std::replace(name.begin(), name.end(), ' ', '_');
                     std::stringstream stream;
-                    stream << data.at("name").get<std::string>() << "-" << id;
-                    std::string name = stream.str();
+                    stream << name << "_" << data.at("id").get<std::string>();
+                    name = stream.str();
+
                     nameMapping[id] = name;
                 }
             }
@@ -90,9 +93,11 @@ namespace storm {
                     continue;
                 }
                 json data = element.at("data");
+                std::string name = data.at("name");
+                std::replace(name.begin(), name.end(), ' ', '_');
                 std::stringstream stream;
-                stream << data.at("name").get<std::string>() << "-" << data.at("id").get<std::string>();
-                std::string name = stream.str();
+                stream << name << "_" << data.at("id").get<std::string>();
+                name = stream.str();
                 if (data.count("toplevel") > 0) {
                     STORM_LOG_ASSERT(toplevelName.empty(), "Toplevel element already defined.");
                     toplevelName = name;
