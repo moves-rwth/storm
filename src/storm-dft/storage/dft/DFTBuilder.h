@@ -103,7 +103,7 @@ namespace storm {
                 //TODO Matthias: collect constraints for SMT solving
                 //0 <= probability <= 1
                 if (binaryDependencies && !storm::utility::isOne(probability) && children.size() > 2) {
-                    // Introduce additional element for first capturing the proabilistic dependency
+                    // Introduce additional element for first capturing the probabilistic dependency
                     std::string nameAdditional = name + "_additional";
                     addBasicElement(nameAdditional, storm::utility::zero<ValueType>(), storm::utility::zero<ValueType>());
                     // First consider probabilistic dependency

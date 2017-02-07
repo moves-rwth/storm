@@ -159,7 +159,7 @@ namespace storm {
 
         template<typename ValueType>
         bool DFTBuilder<ValueType>::addStandardGate(std::string const& name, std::vector<std::string> const& children, DFTElementType tp) {
-            STORM_LOG_ASSERT(children.size() > 0, "No child.");
+            STORM_LOG_ASSERT(children.size() > 0, "No child for " << name);
             if(mElements.count(name) != 0) {
                 // Element with that name already exists.
                 return false;

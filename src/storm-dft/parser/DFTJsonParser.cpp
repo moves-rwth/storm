@@ -74,27 +74,33 @@ namespace storm {
                 if (element.at("classes") != "") {
                     json data = element.at("data");
                     std::string id = data.at("id");
-                    std::string name = data.at("name");
+                    // Append to id to distinguish elements with the same name
+                    std::stringstream stream;
+                    stream << data.at("name").get<std::string>() << "-" << id;
+                    std::string name = stream.str();
                     nameMapping[id] = name;
-                    if (data.count("toplevel") > 0) {
-                        STORM_LOG_ASSERT(toplevelName.empty(), "Toplevel element already defined.");
-                        toplevelName = name;
-                    }
                 }
             }
             std::cout << toplevelName << std::endl;
 
             for (auto& element : parsedJson) {
+                STORM_LOG_TRACE("Parsing: " << element);
                 bool success = true;
                 if (element.at("classes") == "") {
                     continue;
                 }
                 json data = element.at("data");
-                std::string name = data.at("name");
+                std::stringstream stream;
+                stream << data.at("name").get<std::string>() << "-" << data.at("id").get<std::string>();
+                std::string name = stream.str();
+                if (data.count("toplevel") > 0) {
+                    STORM_LOG_ASSERT(toplevelName.empty(), "Toplevel element already defined.");
+                    toplevelName = name;
+                }
                 std::vector<std::string> childNames;
                 if (data.count("children") > 0) {
-                    for (auto& child : data.at("children")) {
-                        childNames.push_back(nameMapping[child]);
+                    for (json& child : data.at("children")) {
+                        childNames.push_back(nameMapping[child.get<std::string>()]);
                     }
                 }
 
@@ -126,11 +132,16 @@ namespace storm {
                     success = false;
                 }
 
-                // Set layout positions
-                json position = element.at("position");
-                double x = position.at("x");
-                double y = position.at("y");
-                builder.addLayoutInfo(name, x / 7, y / 7);
+                // Do not set layout for dependencies
+                // This does not work because dependencies might be splitted
+                // TODO: do splitting later in rewriting step
+                if (type != "fdep" && type != "pdep") {
+                    // Set layout positions
+                    json position = element.at("position");
+                    double x = position.at("x");
+                    double y = position.at("y");
+                    builder.addLayoutInfo(name, x / 7, y / 7);
+                }
                 STORM_LOG_THROW(success, storm::exceptions::FileIoException, "Error while adding element '" << element << "'.");
             }
 
