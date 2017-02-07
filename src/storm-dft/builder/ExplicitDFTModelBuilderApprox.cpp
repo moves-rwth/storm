@@ -169,7 +169,7 @@ namespace storm {
             modelComponents.deterministicModel = generator.isDeterministicModel();
 
             // Fix the entries in the transition matrix according to the mapping of ids to row group indices
-            STORM_LOG_ASSERT(matrixBuilder.stateRemapping[initialStateIndex] == initialStateIndex, "Initial state should not be remapped.");
+            STORM_LOG_ASSERT(matrixBuilder.getRemapping(initialStateIndex) == initialStateIndex, "Initial state should not be remapped.");
             // TODO Matthias: do not consider all rows?
             STORM_LOG_TRACE("Remap matrix: " << matrixBuilder.stateRemapping << ", offset: " << matrixBuilder.mappingOffset);
             matrixBuilder.remap();
@@ -230,7 +230,7 @@ namespace storm {
             StateType skippedIndex = nrExpandedStates;
             std::map<StateType, std::pair<DFTStatePointer, ExplorationHeuristicPointer>> skippedStatesNew;
             for (size_t id = 0; id < matrixBuilder.stateRemapping.size(); ++id) {
-                StateType index = matrixBuilder.stateRemapping[id];
+                StateType index = matrixBuilder.getRemapping(id);
                 auto itFind = skippedStates.find(index);
                 if (itFind != skippedStates.end()) {
                     // Set new mapping for skipped state
@@ -405,6 +405,7 @@ namespace storm {
             modelComponents.stateLabeling = storm::models::sparse::StateLabeling(modelComponents.transitionMatrix.getRowGroupCount());
             // Initial state
             modelComponents.stateLabeling.addLabel("init");
+            STORM_LOG_ASSERT(matrixBuilder.getRemapping(initialStateIndex) == initialStateIndex, "Initial state should not be remapped.");
             modelComponents.stateLabeling.addLabelToState("init", initialStateIndex);
             // Label all states corresponding to their status (failed, failsafe, failed BE)
             if(labelOpts.buildFailLabel) {
@@ -428,7 +429,7 @@ namespace storm {
             }
             for (auto const& stateIdPair : stateStorage.stateToId) {
                 storm::storage::BitVector state = stateIdPair.first;
-                size_t stateId = stateIdPair.second;
+                size_t stateId = matrixBuilder.getRemapping(stateIdPair.second);
                 if (!mergeFailedStates && labelOpts.buildFailLabel && dft.hasFailed(state, *stateGenerationInfo)) {
                     modelComponents.stateLabeling.addLabelToState("failed", stateId);
                 }

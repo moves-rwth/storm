@@ -116,6 +116,18 @@ namespace storm {
                     return currentRowGroup;
                 }
 
+                /*!
+                 * Get the remapped state for the given id.
+                 *
+                 * @param id State.
+                 *
+                 * @return Remapped index.
+                 */
+                StateType getRemapping(StateType id) {
+                    STORM_LOG_ASSERT(id < stateRemapping.size(), "Invalid index for remapping.");
+                    return stateRemapping[id];
+                }
+
                 // Matrix builder.
                 storm::storage::SparseMatrixBuilder<ValueType> builder;
 
@@ -287,7 +299,7 @@ namespace storm {
             bool enableDC = true;
 
             //TODO Matthias: make changeable
-            const bool mergeFailedStates = true;
+            const bool mergeFailedStates = false;
 
             // Heuristic used for approximation
             storm::builder::ApproximationHeuristic usedHeuristic;
