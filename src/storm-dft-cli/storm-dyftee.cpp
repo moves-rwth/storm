@@ -87,6 +87,7 @@ void initializeSettings() {
     storm::settings::addModule<storm::settings::modules::DFTSettings>();
     storm::settings::addModule<storm::settings::modules::CoreSettings>();
     storm::settings::addModule<storm::settings::modules::DebugSettings>();
+    storm::settings::addModule<storm::settings::modules::IOSettings>();
     //storm::settings::addModule<storm::settings::modules::CounterexampleGeneratorSettings>();
     //storm::settings::addModule<storm::settings::modules::CuddSettings>();
     //storm::settings::addModule<storm::settings::modules::SylvanSettings>();
