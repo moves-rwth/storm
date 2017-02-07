@@ -31,7 +31,7 @@ namespace storm {
                 exitRates = sparseModel->template as<storm::models::sparse::MarkovAutomaton<ValueType>>()->getExitRates();
             }
             
-            os << "// Exported by Storm" << std::endl;
+            os << "// Exported by storm" << std::endl;
             os << "// Original model type: " << sparseModel->getType() << std::endl;
             os << "@type: mdp" << std::endl;
             os << "@parameters" << std::endl;

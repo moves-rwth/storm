@@ -47,92 +47,95 @@ namespace storm {
             char temp[512];
             return (GetCurrentDir(temp, 512 - 1) ? std::string(temp) : std::string(""));
         }
-
-        void printHeader(const std::string name, const int argc, const char* argv[]) {
-            std::cout << name << std::endl;
-            std::cout << "---------------" << std::endl << std::endl;
-
-
-            std::cout << storm::utility::StormVersion::longVersionString() << std::endl;
-#ifdef STORM_HAVE_INTELTBB
-            std::cout << "Linked with Intel Threading Building Blocks v" << TBB_VERSION_MAJOR << "." << TBB_VERSION_MINOR << " (Interface version " << TBB_INTERFACE_VERSION << ")." << std::endl;
-#endif
-#ifdef STORM_HAVE_GLPK
-            std::cout << "Linked with GNU Linear Programming Kit v" << GLP_MAJOR_VERSION << "." << GLP_MINOR_VERSION << "." << std::endl;
-#endif
-#ifdef STORM_HAVE_GUROBI
-            std::cout << "Linked with Gurobi Optimizer v" << GRB_VERSION_MAJOR << "." << GRB_VERSION_MINOR << "." << GRB_VERSION_TECHNICAL << "." << std::endl;
-#endif
-#ifdef STORM_HAVE_Z3
-            unsigned int z3Major, z3Minor, z3BuildNumber, z3RevisionNumber;
-            Z3_get_version(&z3Major, &z3Minor, &z3BuildNumber, &z3RevisionNumber);
-            std::cout << "Linked with Microsoft Z3 Optimizer v" << z3Major << "." << z3Minor << " Build " << z3BuildNumber << " Rev " << z3RevisionNumber << "." << std::endl;
-#endif
-#ifdef STORM_HAVE_MSAT
-            char* msatVersion = msat_get_version();
-            std::cout << "Linked with " << msatVersion << "." << std::endl;
-            msat_free(msatVersion);
-#endif
-#ifdef STORM_HAVE_SMTRAT
-            std::cout << "Linked with SMT-RAT " << SMTRAT_VERSION << "." << std::endl;
-#endif
-#ifdef STORM_HAVE_CARL
-            std::cout << "Linked with CARL." << std::endl;
-            // TODO get version string
-#endif
-
-#ifdef STORM_HAVE_CUDA
-            int deviceCount = 0;
-            cudaError_t error_id = cudaGetDeviceCount(&deviceCount);
-
-            if (error_id == cudaSuccess)
-            {
-                std::cout << "Compiled with CUDA support, ";
-                // This function call returns 0 if there are no CUDA capable devices.
-                if (deviceCount == 0)
-                {
-                    std::cout<< "but there are no available device(s) that support CUDA." << std::endl;
-                } else
-                {
-                    std::cout << "detected " << deviceCount << " CUDA Capable device(s):" << std::endl;
-                }
-
-                int dev, driverVersion = 0, runtimeVersion = 0;
-
-                for (dev = 0; dev < deviceCount; ++dev)
-                {
-                    cudaSetDevice(dev);
-                    cudaDeviceProp deviceProp;
-                    cudaGetDeviceProperties(&deviceProp, dev);
-
-                    std::cout << "CUDA Device " << dev << ": \"" << deviceProp.name << "\"" << std::endl;
-
-                    // Console log
-                    cudaDriverGetVersion(&driverVersion);
-                    cudaRuntimeGetVersion(&runtimeVersion);
-                    std::cout << "  CUDA Driver Version / Runtime Version          " << driverVersion / 1000 << "." << (driverVersion % 100) / 10 << " / " << runtimeVersion / 1000 << "." << (runtimeVersion % 100) / 10 << std::endl;
-                    std::cout << "  CUDA Capability Major/Minor version number:    " << deviceProp.major<<"."<<deviceProp.minor <<std::endl;
-                }
-                std::cout << std::endl;
-            }
-            else {
-                std::cout << "Compiled with CUDA support, but an error occured trying to find CUDA devices." << std::endl;
-            }
-#endif
-
-            // "Compute" the command line argument string with which STORM was invoked.
+        
+        void printHeader(std::string const& name, const int argc, const char* argv[]) {
+            STORM_PRINT(name << " " << storm::utility::StormVersion::shortVersionString() << std::endl << std::endl);
+            
+            // "Compute" the command line argument string with which storm was invoked.
             std::stringstream commandStream;
             for (int i = 1; i < argc; ++i) {
                 commandStream << argv[i] << " ";
             }
-            std::cout << "Command line arguments: " << commandStream.str() << std::endl;
-            std::cout << "Current working directory: " << getCurrentWorkingDirectory() << std::endl << std::endl;
+            
+            std::string command = commandStream.str();
+            
+            if (!command.empty()) {
+                STORM_PRINT("Command line arguments: " << commandStream.str() << std::endl);
+                STORM_PRINT("Current working directory: " << getCurrentWorkingDirectory() << std::endl << std::endl);
+            }
         }
-
+        
+        void printVersion(std::string const& name) {
+            STORM_PRINT(storm::utility::StormVersion::longVersionString() << std::endl);
+            STORM_PRINT(storm::utility::StormVersion::buildInfo() << std::endl);
+            
+#ifdef STORM_HAVE_INTELTBB
+            STORM_PRINT("Linked with Intel Threading Building Blocks v" << TBB_VERSION_MAJOR << "." << TBB_VERSION_MINOR << " (Interface version " << TBB_INTERFACE_VERSION << ")." << std::endl);
+#endif
+#ifdef STORM_HAVE_GLPK
+            STORM_PRINT("Linked with GNU Linear Programming Kit v" << GLP_MAJOR_VERSION << "." << GLP_MINOR_VERSION << "." << std::endl);
+#endif
+#ifdef STORM_HAVE_GUROBI
+            STORM_PRINT("Linked with Gurobi Optimizer v" << GRB_VERSION_MAJOR << "." << GRB_VERSION_MINOR << "." << GRB_VERSION_TECHNICAL << "." << std::endl);
+#endif
+#ifdef STORM_HAVE_Z3
+            unsigned int z3Major, z3Minor, z3BuildNumber, z3RevisionNumber;
+            Z3_get_version(&z3Major, &z3Minor, &z3BuildNumber, &z3RevisionNumber);
+            STORM_PRINT("Linked with Microsoft Z3 Optimizer v" << z3Major << "." << z3Minor << " Build " << z3BuildNumber << " Rev " << z3RevisionNumber << "." << std::endl);
+#endif
+#ifdef STORM_HAVE_MSAT
+            char* msatVersion = msat_get_version();
+            STORM_PRINT("Linked with " << msatVersion << "." << std::endl);
+            msat_free(msatVersion);
+#endif
+#ifdef STORM_HAVE_SMTRAT
+            STORM_PRINT("Linked with SMT-RAT " << SMTRAT_VERSION << "." << std::endl);
+#endif
+#ifdef STORM_HAVE_CARL
+            // TODO get version string
+            STORM_PRINT("Linked with CARL." << std::endl);
+#endif
+            
+#ifdef STORM_HAVE_CUDA
+            int deviceCount = 0;
+            cudaError_t error_id = cudaGetDeviceCount(&deviceCount);
+            
+            if (error_id == cudaSuccess) {
+                STORM_PRINT("Compiled with CUDA support, ");
+                // This function call returns 0 if there are no CUDA capable devices.
+                if (deviceCount == 0){
+                    STORM_PRINT("but there are no available device(s) that support CUDA." << std::endl);
+                } else {
+                    STORM_PRINT("detected " << deviceCount << " CUDA capable device(s):" << std::endl);
+                }
+                
+                int dev, driverVersion = 0, runtimeVersion = 0;
+                
+                for (dev = 0; dev < deviceCount; ++dev) {
+                    cudaSetDevice(dev);
+                    cudaDeviceProp deviceProp;
+                    cudaGetDeviceProperties(&deviceProp, dev);
+                    
+                    STORM_PRINT("CUDA device " << dev << ": \"" << deviceProp.name << "\"" << std::endl);
+                    
+                    // Console log
+                    cudaDriverGetVersion(&driverVersion);
+                    cudaRuntimeGetVersion(&runtimeVersion);
+                    STORM_PRINT("  CUDA Driver Version / Runtime Version          " << driverVersion / 1000 << "." << (driverVersion % 100) / 10 << " / " << runtimeVersion / 1000 << "." << (runtimeVersion % 100) / 10 << std::endl);
+                    STORM_PRINT("  CUDA Capability Major/Minor version number:    " << deviceProp.major << "." << deviceProp.minor << std::endl);
+                }
+                STORM_PRINT(std::endl);
+            }
+            else {
+                STORM_PRINT("Compiled with CUDA support, but an error occured trying to find CUDA devices." << std::endl);
+            }
+#endif
+        }
+        
         void showTimeAndMemoryStatistics(uint64_t wallclockMilliseconds) {
             struct rusage ru;
             getrusage(RUSAGE_SELF, &ru);
-
+            
             std::cout << std::endl << "Performance statistics:" << std::endl;
 #ifdef MACOS
             // For Mac OS, this is returned in bytes.
@@ -148,7 +151,7 @@ namespace storm {
                 std::cout << "  * wallclock time: " << (wallclockMilliseconds/1000) << "." << std::setw(3) << std::setfill('0') << (wallclockMilliseconds % 1000) << "s" << std::endl;
             }
         }
-
+        
         bool parseOptions(const int argc, const char* argv[]) {
             try {
                 storm::settings::mutableManager().setFromCommandLine(argc, argv);
@@ -172,7 +175,7 @@ namespace storm {
             }
             
             if (general.isVersionSet()) {
-                storm::settings::manager().printVersion();
+                printVersion("storm");
                 return false;
             }
             
@@ -183,20 +186,20 @@ namespace storm {
                 storm::utility::setLogLevel(l3pp::LogLevel::DEBUG);
             }
             if (debug.isTraceSet()) {
-                 storm::utility::setLogLevel(l3pp::LogLevel::TRACE);
+                storm::utility::setLogLevel(l3pp::LogLevel::TRACE);
             }
             if (debug.isLogfileSet()) {
                 storm::utility::initializeFileLogging();
             }
             return true;
         }
-
+        
         void processOptions() {
             STORM_LOG_TRACE("Processing options.");
             if (storm::settings::getModule<storm::settings::modules::DebugSettings>().isLogfileSet()) {
                 storm::utility::initializeFileLogging();
             }
-
+            
             boost::optional<std::set<std::string>> propertyFilter;
             std::string propertyFilterString = storm::settings::getModule<storm::settings::modules::IOSettings>().getPropertyFilter();
             if (propertyFilterString != "all") {
@@ -242,7 +245,7 @@ namespace storm {
                 // Get the string that assigns values to the unknown currently undefined constants in the model and formula.
                 std::string constantDefinitionString = ioSettings.getConstantDefinitionString();
                 std::map<storm::expressions::Variable, storm::expressions::Expression> constantDefinitions;
-
+                
                 // Then proceed to parsing the properties (if given), since the model we are building may depend on the property.
                 STORM_LOG_TRACE("Parsing properties.");
                 if (ioSettings.isPropertySet()) {
@@ -293,19 +296,19 @@ namespace storm {
                 }
             } else if (ioSettings.isExplicitSet()) {
                 STORM_LOG_THROW(coreSettings.getEngine() == storm::settings::modules::CoreSettings::Engine::Sparse, storm::exceptions::InvalidSettingsException, "Only the sparse engine supports explicit model input.");
-
+                
                 // If the model is given in an explicit format, we parse the properties without allowing expressions
                 // in formulas.
                 std::vector<storm::jani::Property> properties;
                 if (ioSettings.isPropertySet()) {
                     properties = storm::parsePropertiesForExplicit(ioSettings.getProperty(), propertyFilter);
                 }
-
+                
                 buildAndCheckExplicitModel<double>(properties, true);
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "No input model.");
             }
         }
-
+        
     }
 }

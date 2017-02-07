@@ -257,11 +257,6 @@ namespace storm {
             STORM_PRINT(std::endl);
         }
         
-        void SettingsManager::printVersion() const {
-            STORM_PRINT(storm::utility::StormVersion::shortVersionString());
-            STORM_PRINT(std::endl);
-        }
-        
         uint_fast64_t SettingsManager::getPrintLengthOfLongestOption() const {
             uint_fast64_t length = 0;
             for (auto const& moduleName : this->moduleNames) {

@@ -245,12 +245,12 @@ namespace storm {
                             }
                         }
                     }
-                    STORM_LOG_THROW(!(accTime && accSteps), storm::exceptions::NotSupportedException, "Storm does not allow to accumulate over both time and steps");
+                    STORM_LOG_THROW(!(accTime && accSteps), storm::exceptions::NotSupportedException, "storm does not allow to accumulate over both time and steps");
                     
                     
                     if (propertyStructure.count("step-instant") > 0) {
                         storm::expressions::Expression stepInstantExpr = parseExpression(propertyStructure.at("step-instant"), "Step instant in " + context);
-                        STORM_LOG_THROW(!stepInstantExpr.containsVariables(), storm::exceptions::NotSupportedException, "Storm only allows constant step-instants");
+                        STORM_LOG_THROW(!stepInstantExpr.containsVariables(), storm::exceptions::NotSupportedException, "storm only allows constant step-instants");
                         int64_t stepInstant = stepInstantExpr.evaluateAsInt();
                         STORM_LOG_THROW(stepInstant >= 0, storm::exceptions::InvalidJaniException, "Only non-negative step-instants are allowed");
                         if(!accTime && !accSteps) {
@@ -270,7 +270,7 @@ namespace storm {
                         }
                     } else if (propertyStructure.count("time-instant") > 0) {
                         storm::expressions::Expression timeInstantExpr = parseExpression(propertyStructure.at("time-instant"), "time instant in " + context);
-                        STORM_LOG_THROW(!timeInstantExpr.containsVariables(), storm::exceptions::NotSupportedException, "Storm only allows constant time-instants");
+                        STORM_LOG_THROW(!timeInstantExpr.containsVariables(), storm::exceptions::NotSupportedException, "storm only allows constant time-instants");
                         double timeInstant = timeInstantExpr.evaluateAsDouble();
                         STORM_LOG_THROW(timeInstant >= 0, storm::exceptions::InvalidJaniException, "Only non-negative time-instants are allowed");
                         if(!accTime && !accSteps) {
@@ -292,7 +292,7 @@ namespace storm {
                         STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Instant/Cumul. Reward for reward constraints not supported currently.");
                     }
                     
-                    //STORM_LOG_THROW(!accTime && !accSteps, storm::exceptions::NotSupportedException, "Storm only allows accumulation if a step- or time-bound is given.");
+                    //STORM_LOG_THROW(!accTime && !accSteps, storm::exceptions::NotSupportedException, "storm only allows accumulation if a step- or time-bound is given.");
                     
                     if (rewExpr.isVariable()) {
                         std::string rewardName = rewExpr.getVariables().begin()->getName();
@@ -336,9 +336,9 @@ namespace storm {
                     }
                     if (propertyStructure.count("step-bounds") > 0) {
                         storm::jani::PropertyInterval pi = parsePropertyInterval(propertyStructure.at("step-bounds"));
-                        STORM_LOG_THROW(pi.hasUpperBound(), storm::exceptions::NotSupportedException, "Storm only supports step-bounded until with an upper bound");
+                        STORM_LOG_THROW(pi.hasUpperBound(), storm::exceptions::NotSupportedException, "storm only supports step-bounded until with an upper bound");
                         if(pi.hasLowerBound()) {
-                            STORM_LOG_THROW(pi.lowerBound.evaluateAsInt() == 0, storm::exceptions::NotSupportedException, "Storm only supports step-bounded until without a (non-trivial) lower-bound");
+                            STORM_LOG_THROW(pi.lowerBound.evaluateAsInt() == 0, storm::exceptions::NotSupportedException, "storm only supports step-bounded until without a (non-trivial) lower-bound");
                         }
                         int64_t upperBound = pi.upperBound.evaluateAsInt();
                         if(pi.upperBoundStrict) {
@@ -348,7 +348,7 @@ namespace storm {
                         return std::make_shared<storm::logic::BoundedUntilFormula const>(args[0], args[1], storm::logic::TimeBound(pi.lowerBoundStrict, pi.lowerBound), storm::logic::TimeBound(pi.upperBoundStrict, pi.upperBound), storm::logic::TimeBoundType::Steps);
                     } else if (propertyStructure.count("time-bounds") > 0) {
                         storm::jani::PropertyInterval pi = parsePropertyInterval(propertyStructure.at("time-bounds"));
-                        STORM_LOG_THROW(pi.hasUpperBound(), storm::exceptions::NotSupportedException, "Storm only supports time-bounded until with an upper bound.");
+                        STORM_LOG_THROW(pi.hasUpperBound(), storm::exceptions::NotSupportedException, "storm only supports time-bounded until with an upper bound.");
                         double lowerBound = 0.0;
                         if(pi.hasLowerBound()) {
                             lowerBound = pi.lowerBound.evaluateAsDouble();
@@ -359,7 +359,7 @@ namespace storm {
                         return std::make_shared<storm::logic::BoundedUntilFormula const>(args[0], args[1], storm::logic::TimeBound(pi.lowerBoundStrict, pi.lowerBound), storm::logic::TimeBound(pi.upperBoundStrict, pi.upperBound), storm::logic::TimeBoundType::Time);
                         
                     } else if (propertyStructure.count("reward-bounds") > 0 ) {
-                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Reward bounded properties are not supported by Storm");
+                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Reward bounded properties are not supported by storm");
                     }
                     if (args[0]->isTrueFormula()) {
                         return std::make_shared<storm::logic::EventuallyFormula const>(args[1], storm::logic::FormulaContext::Reward);
@@ -372,9 +372,9 @@ namespace storm {
                     if (propertyStructure.count("step-bounds") > 0) {
                         STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Globally and step-bounds are not supported currently");
                     } else if (propertyStructure.count("time-bounds") > 0) {
-                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Globally and time bounds are not supported by Storm");
+                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Globally and time bounds are not supported by storm");
                     } else if (propertyStructure.count("reward-bounds") > 0 ) {
-                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Reward bounded properties are not supported by Storm");
+                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Reward bounded properties are not supported by storm");
                     }
                     return std::make_shared<storm::logic::GloballyFormula const>(args[1]);
 

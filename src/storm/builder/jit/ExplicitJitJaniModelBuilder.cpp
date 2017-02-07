@@ -324,7 +324,7 @@ namespace storm {
             template <typename ValueType, typename RewardModelType>
             bool ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::checkStormHeadersAvailable() const {
                 bool result = true;
-                std::string problem = "Unable to compile program using Storm headers. Is Storm's include directory '" + stormIncludeDirectory + "' set correctly? Does the directory contain all the headers (in particular 'storm-config.h'?";
+                std::string problem = "Unable to compile program using storm headers. Is storm's include directory '" + stormIncludeDirectory + "' set correctly? Does the directory contain all the headers (in particular 'storm-config.h')?";
                 try {
                     std::string program = R"(
 #include "storm/builder/RewardModelInformation.h"

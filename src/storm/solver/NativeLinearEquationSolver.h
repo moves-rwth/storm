@@ -38,7 +38,7 @@ namespace storm {
         };
         
         /*!
-         * A class that uses Storm's native matrix operations to implement the LinearEquationSolver interface.
+         * A class that uses storm's native matrix operations to implement the LinearEquationSolver interface.
          */
         template<typename ValueType>
         class NativeLinearEquationSolver : public LinearEquationSolver<ValueType> {

@@ -41,13 +41,13 @@ namespace storm {
 
             static std::string shortVersionString() {
                 std::stringstream sstream;
-                sstream << "Storm " << versionMajor << "." << versionMinor << "." << versionPatch;
+                sstream << versionMajor << "." << versionMinor << "." << versionPatch;
                 return sstream.str();
             }
             
             static std::string longVersionString() {
                 std::stringstream sstream;
-                sstream << "version: " << versionMajor << "." <<  versionMinor << "." << versionPatch;
+                sstream << "Version " << versionMajor << "." <<  versionMinor << "." << versionPatch;
                 if (commitsAhead && commitsAhead.get() > 0) {
                     sstream << " (+" << commitsAhead.get() << " commits)";
                 }
@@ -57,7 +57,6 @@ namespace storm {
                 if (dirty && dirty.get() == 1) {
                     sstream << " (dirty)";
                 }
-                sstream << "." << std::endl;
                 return sstream.str();
             }
             
