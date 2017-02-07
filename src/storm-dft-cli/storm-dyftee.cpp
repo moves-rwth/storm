@@ -36,23 +36,31 @@
 /*!
  * Load DFT from filename, build corresponding Model and check against given property.
  *
- * @param filename Path to DFT file in Galileo format.
  * @param property PCTC formula capturing the property to check.
  * @param symred Flag whether symmetry reduction should be used.
  * @param allowModularisation Flag whether modularisation should be applied if possible.
  * @param enableDC Flag whether Don't Care propagation should be used.
  */
 template <typename ValueType>
-void analyzeDFT(std::string filename, std::string property, bool symred, bool allowModularisation, bool enableDC, double approximationError) {
-    std::cout << "Running DFT analysis on file " << filename << " with property " << property << std::endl;
+void analyzeDFT(std::string property, bool symred, bool allowModularisation, bool enableDC, double approximationError) {
+    storm::settings::modules::DFTSettings const& dftSettings = storm::settings::getModule<storm::settings::modules::DFTSettings>();
 
-    storm::parser::DFTGalileoParser<ValueType> parser;
-    storm::storage::DFT<ValueType> dft = parser.parseDFT(filename);
+    std::shared_ptr<storm::storage::DFT<ValueType>> dft;
+    if (dftSettings.isDftJsonFileSet()) {
+        storm::parser::DFTJsonParser<ValueType> parser;
+        std::cout << "Running DFT analysis on file " << dftSettings.getDftJsonFilename() << " with property " << property << std::endl;
+        dft = std::make_shared<storm::storage::DFT<ValueType>>(parser.parseJson(dftSettings.getDftJsonFilename()));
+    } else {
+        storm::parser::DFTGalileoParser<ValueType> parser;
+        std::cout << "Running DFT analysis on file " << dftSettings.getDftFilename() << " with property " << property << std::endl;
+        dft = std::make_shared<storm::storage::DFT<ValueType>>(parser.parseDFT(dftSettings.getDftFilename()));
+    }
+
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::extractFormulasFromProperties(storm::parsePropertiesForExplicit(property));
     STORM_LOG_ASSERT(formulas.size() == 1, "Wrong number of formulas.");
 
     storm::modelchecker::DFTModelChecker<ValueType> modelChecker;
-    modelChecker.check(dft, formulas[0], symred, allowModularisation, enableDC, approximationError);
+    modelChecker.check(*dft, formulas[0], symred, allowModularisation, enableDC, approximationError);
     modelChecker.printTimings();
     modelChecker.printResult();
 }
@@ -247,12 +255,12 @@ int main(const int argc, const char** argv) {
         // From this point on we are ready to carry out the actual computations.
         if (parametric) {
 #ifdef STORM_HAVE_CARL
-            analyzeDFT<storm::RationalFunction>(dftSettings.getDftFilename(), pctlFormula, dftSettings.useSymmetryReduction(), dftSettings.useModularisation(), !dftSettings.isDisableDC(), approximationError);
+            analyzeDFT<storm::RationalFunction>(pctlFormula, dftSettings.useSymmetryReduction(), dftSettings.useModularisation(), !dftSettings.isDisableDC(), approximationError);
 #else
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Parameters are not supported in this build.");
 #endif
         } else {
-            analyzeDFT<double>(dftSettings.getDftFilename(), pctlFormula, dftSettings.useSymmetryReduction(), dftSettings.useModularisation(), !dftSettings.isDisableDC(), approximationError);
+            analyzeDFT<double>(pctlFormula, dftSettings.useSymmetryReduction(), dftSettings.useModularisation(), !dftSettings.isDisableDC(), approximationError);
         }
         
         // All operations have now been performed, so we clean up everything and terminate.
