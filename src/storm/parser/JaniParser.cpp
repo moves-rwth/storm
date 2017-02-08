@@ -734,9 +734,9 @@ namespace storm {
                         STORM_LOG_THROW(expressionStructure.count("if") == 1, storm::exceptions::InvalidJaniException, "If operator required");
                         STORM_LOG_THROW(expressionStructure.count("else") == 1, storm::exceptions::InvalidJaniException, "Else operator required");
                         STORM_LOG_THROW(expressionStructure.count("then") == 1, storm::exceptions::InvalidJaniException, "If operator required");
-                        arguments.push_back(parseExpression(expressionStructure.at("if"), "if-formula in " + scopeDescription));
-                        arguments.push_back(parseExpression(expressionStructure.at("then"), "then-formula in " + scopeDescription));
-                        arguments.push_back(parseExpression(expressionStructure.at("else"), "else-formula in " + scopeDescription));
+                        arguments.push_back(parseExpression(expressionStructure.at("if"), "if-formula in " + scopeDescription, localVars, returnNoneInitializedOnUnknownOperator));
+                        arguments.push_back(parseExpression(expressionStructure.at("then"), "then-formula in " + scopeDescription, localVars, returnNoneInitializedOnUnknownOperator));
+                        arguments.push_back(parseExpression(expressionStructure.at("else"), "else-formula in " + scopeDescription, localVars, returnNoneInitializedOnUnknownOperator));
                         ensureNumberOfArguments(3, arguments.size(), opstring, scopeDescription);
                         assert(arguments.size() == 3);
                                             ensureBooleanType(arguments[0], opstring, 0, scopeDescription);
