@@ -89,7 +89,7 @@ namespace storm {
              * Substitutes all variables in all expressions according to the given substitution.
              */
             virtual void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution);
-            
+
         private:
             // The name of the variable.
             std::string name;
@@ -103,6 +103,9 @@ namespace storm {
             /// Expression for initial values
             boost::optional<storm::expressions::Expression> init;
         };
+
+        bool operator==(Variable const& lhs, Variable const& rhs);
+        bool operator!=(Variable const& lhs, Variable const& rhs);
         
     }
 }
