@@ -4,6 +4,7 @@
 
 #include "storm/storage/expressions/BooleanLiteralExpression.h"
 #include "storm/utility/macros.h"
+#include "storm/utility/constants.h"
 #include "storm/exceptions/InvalidTypeException.h"
 #include "storm/storage/expressions/ExpressionVisitor.h"
 
@@ -48,28 +49,28 @@ namespace storm {
             std::shared_ptr<BaseExpression const> secondOperandSimplified = this->getSecondOperand()->simplify();
             
             if (firstOperandSimplified->isLiteral() && secondOperandSimplified->isLiteral()) {
-                boost::variant<int_fast64_t, double> firstOperandEvaluation;
-                boost::variant<int_fast64_t, double> secondOperandEvaluation;
-                
+                storm::RationalNumber firstOperandEvaluation;
+                storm::RationalNumber secondOperandEvaluation;
+
                 if (firstOperandSimplified->hasIntegerType()) {
-                    firstOperandEvaluation = firstOperandSimplified->evaluateAsInt();
+                    firstOperandEvaluation = storm::utility::convertNumber<storm::RationalNumber>(firstOperandSimplified->evaluateAsInt());
                 } else {
-                    firstOperandEvaluation = firstOperandSimplified->evaluateAsDouble();
+                    firstOperandEvaluation = firstOperandSimplified->evaluateAsRational();
                 }
                 if (secondOperandSimplified->hasIntegerType()) {
-                    secondOperandEvaluation = secondOperandSimplified->evaluateAsInt();
+                    secondOperandEvaluation = storm::utility::convertNumber<storm::RationalNumber>(secondOperandSimplified->evaluateAsInt());
                 } else {
-                    secondOperandEvaluation = secondOperandSimplified->evaluateAsDouble();
+                    secondOperandEvaluation = secondOperandSimplified->evaluateAsRational();
                 }
-                
+
                 bool truthValue = false;
                 switch (this->getRelationType()) {
-                    case RelationType::Equal: truthValue = (firstOperandSimplified->hasIntegerType() ? boost::get<int_fast64_t>(firstOperandEvaluation) : boost::get<double>(firstOperandEvaluation)) == (secondOperandSimplified->hasIntegerType() ? boost::get<int_fast64_t>(secondOperandEvaluation) : boost::get<double>(secondOperandEvaluation)); break;
-                    case RelationType::NotEqual: truthValue = (firstOperandSimplified->hasIntegerType() ? boost::get<int_fast64_t>(firstOperandEvaluation) : boost::get<double>(firstOperandEvaluation)) != (secondOperandSimplified->hasIntegerType() ? boost::get<int_fast64_t>(secondOperandEvaluation) : boost::get<double>(secondOperandEvaluation)); break;
-                    case RelationType::Greater: truthValue = (firstOperandSimplified->hasIntegerType() ? boost::get<int_fast64_t>(firstOperandEvaluation) : boost::get<double>(firstOperandEvaluation)) > (secondOperandSimplified->hasIntegerType() ? boost::get<int_fast64_t>(secondOperandEvaluation) : boost::get<double>(secondOperandEvaluation)); break;
-                    case RelationType::GreaterOrEqual: truthValue = (firstOperandSimplified->hasIntegerType() ? boost::get<int_fast64_t>(firstOperandEvaluation) : boost::get<double>(firstOperandEvaluation)) >= (secondOperandSimplified->hasIntegerType() ? boost::get<int_fast64_t>(secondOperandEvaluation) : boost::get<double>(secondOperandEvaluation)); break;
-                    case RelationType::Less: truthValue = (firstOperandSimplified->hasIntegerType() ? boost::get<int_fast64_t>(firstOperandEvaluation) : boost::get<double>(firstOperandEvaluation)) < (secondOperandSimplified->hasIntegerType() ? boost::get<int_fast64_t>(secondOperandEvaluation) : boost::get<double>(secondOperandEvaluation)); break;
-                    case RelationType::LessOrEqual: truthValue = (firstOperandSimplified->hasIntegerType() ? boost::get<int_fast64_t>(firstOperandEvaluation) : boost::get<double>(firstOperandEvaluation)) <= (secondOperandSimplified->hasIntegerType() ? boost::get<int_fast64_t>(secondOperandEvaluation) : boost::get<double>(secondOperandEvaluation)); break;
+                    case RelationType::Equal: truthValue = firstOperandEvaluation == secondOperandEvaluation; break;
+                    case RelationType::NotEqual: truthValue = firstOperandEvaluation != secondOperandEvaluation; break;
+                    case RelationType::Greater: truthValue = firstOperandEvaluation > secondOperandEvaluation; break;
+                    case RelationType::GreaterOrEqual: truthValue = firstOperandEvaluation >= secondOperandEvaluation; break;
+                    case RelationType::Less: truthValue = firstOperandEvaluation < secondOperandEvaluation; break;
+                    case RelationType::LessOrEqual: truthValue = firstOperandEvaluation <= secondOperandEvaluation; break;
                 }
                 return std::shared_ptr<BaseExpression>(new BooleanLiteralExpression(this->getManager(), truthValue));
             }

@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cmath>
 
+#include "storm/adapters/NumberAdapter.h"
 #include "storm/storage/expressions/BinaryNumericalFunctionExpression.h"
 #include "storm/storage/expressions/IntegerLiteralExpression.h"
 #include "storm/storage/expressions/RationalLiteralExpression.h"
@@ -90,16 +91,21 @@ namespace storm {
                     }
                     return std::shared_ptr<BaseExpression>(new IntegerLiteralExpression(this->getManager(), newValue));
                 } else if (this->hasRationalType()) {
-                    double firstOperandEvaluation = firstOperandSimplified->evaluateAsDouble();
-                    double secondOperandEvaluation = secondOperandSimplified->evaluateAsDouble();
-                    double newValue = 0;
+                    storm::RationalNumber firstOperandEvaluation = firstOperandSimplified->evaluateAsRational();
+                    storm::RationalNumber secondOperandEvaluation = secondOperandSimplified->evaluateAsRational();
+                    storm::RationalNumber newValue = 0;
                     switch (this->getOperatorType()) {
                         case OperatorType::Plus: newValue = firstOperandEvaluation + secondOperandEvaluation; break;
                         case OperatorType::Minus: newValue = firstOperandEvaluation - secondOperandEvaluation; break;
                         case OperatorType::Times: newValue = firstOperandEvaluation * secondOperandEvaluation; break;
                         case OperatorType::Min: newValue = std::min(firstOperandEvaluation, secondOperandEvaluation); break;
                         case OperatorType::Max: newValue = std::max(firstOperandEvaluation, secondOperandEvaluation); break;
-                        case OperatorType::Power: newValue = std::pow(firstOperandEvaluation, secondOperandEvaluation); break;
+                        case OperatorType::Power: {
+                            STORM_LOG_THROW(carl::isInteger(secondOperandEvaluation), storm::exceptions::InvalidStateException, "Can not simplify pow() with fractional exponent.");
+                            std::size_t exponent = carl::toInt<carl::uint>(secondOperandEvaluation);
+                            newValue = carl::pow(firstOperandEvaluation, exponent);
+                            break;
+                        }
                         case OperatorType::Divide: STORM_LOG_THROW(false, storm::exceptions::InvalidStateException, "Unable to simplify division."); break;
                     }
                     return std::shared_ptr<BaseExpression>(new RationalLiteralExpression(this->getManager(), newValue));
