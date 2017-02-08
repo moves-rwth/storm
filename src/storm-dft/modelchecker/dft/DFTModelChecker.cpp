@@ -224,7 +224,6 @@ namespace storm {
                         // Apply bisimulation
                         bisimulationTimer.start();
                         composedModel =  storm::performDeterministicSparseBisimulationMinimization<storm::models::sparse::Ctmc<ValueType>>(composedModel, {formula}, storm::storage::BisimulationType::Weak)->template as<storm::models::sparse::Ctmc<ValueType>>();
-                        std::chrono::high_resolution_clock::time_point bisimulationEnd = std::chrono::high_resolution_clock::now();
                         bisimulationTimer.stop();
 
                         STORM_LOG_INFO("No. states (Composed): " << composedModel->getNumberOfStates());
@@ -412,11 +411,11 @@ namespace storm {
         template<typename ValueType>
         void DFTModelChecker<ValueType>::printTimings(std::ostream& os) {
             os << "Times:" << std::endl;
-            os << "Exploration:\t" << explorationTimer.getTimeInSeconds() << "s" << std::endl;
-            os << "Building:\t" << buildingTimer.getTimeInSeconds() << "s" << std::endl;
-            os << "Bisimulation:\t" << bisimulationTimer.getTimeInSeconds() << "s" << std::endl;
-            os << "Modelchecking:\t" << modelCheckingTimer.getTimeInSeconds() << "s" << std::endl;
-            os << "Total:\t\t" << totalTimer.getTimeInSeconds() << "s" << std::endl;
+            os << "Exploration:\t" << explorationTimer.getTimeInMilliseconds() / 1000.0 << "s" << std::endl;
+            os << "Building:\t" << buildingTimer.getTimeInMilliseconds() / 1000.0 << "s" << std::endl;
+            os << "Bisimulation:\t" << bisimulationTimer.getTimeInMilliseconds() / 1000.0 << "s" << std::endl;
+            os << "Modelchecking:\t" << modelCheckingTimer.getTimeInMilliseconds() / 1000.0 << "s" << std::endl;
+            os << "Total:\t\t" << totalTimer.getTimeInMilliseconds() / 1000.0 << "s" << std::endl;
         }
 
         template<typename ValueType>

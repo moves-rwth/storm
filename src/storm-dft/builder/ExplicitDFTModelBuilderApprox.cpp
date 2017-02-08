@@ -563,6 +563,10 @@ namespace storm {
                         if (storm::utility::isZero<ValueType>(rate)) {
                             // Get active failure rate for cold BE
                             rate = dft.getBasicElement(id)->activeFailureRate();
+                            if (storm::utility::isZero<ValueType>(rate)) {
+                                // Ignore BE which cannot fail
+                                continue;
+                            }
                             // Mark BE as cold
                             coldBEs.set(i, true);
                         }

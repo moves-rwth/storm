@@ -77,6 +77,7 @@ namespace storm {
                     // Append to id to distinguish elements with the same name
                     std::string name = data.at("name");
                     std::replace(name.begin(), name.end(), ' ', '_');
+                    std::replace(name.begin(), name.end(), '-', '_');
                     std::stringstream stream;
                     stream << name << "_" << data.at("id").get<std::string>();
                     name = stream.str();
@@ -95,6 +96,7 @@ namespace storm {
                 json data = element.at("data");
                 std::string name = data.at("name");
                 std::replace(name.begin(), name.end(), ' ', '_');
+                std::replace(name.begin(), name.end(), '-', '_');
                 std::stringstream stream;
                 stream << name << "_" << data.at("id").get<std::string>();
                 name = stream.str();
