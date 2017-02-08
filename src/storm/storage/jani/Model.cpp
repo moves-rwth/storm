@@ -1132,7 +1132,14 @@ namespace storm {
             
             return result;
         }
-        
+
+        bool Model::reusesActionsInComposition() const {
+            if(composition->isParallelComposition()) {
+                return composition->asParallelComposition().areActionsReused();
+            }
+            return false;
+        }
+
         Model Model::createModelFromAutomaton(Automaton const& automaton) const {
             // Copy the full model
             Model newModel(*this);
