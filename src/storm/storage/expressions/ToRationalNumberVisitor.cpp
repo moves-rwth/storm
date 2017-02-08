@@ -7,6 +7,11 @@
 
 namespace storm {
     namespace expressions {
+    template<typename RationalNumberType>
+        ToRationalNumberVisitor<RationalNumberType>::ToRationalNumberVisitor() : ExpressionVisitor() {
+            // Intentionally left empty.
+        }
+
         template<typename RationalNumberType>
         ToRationalNumberVisitor<RationalNumberType>::ToRationalNumberVisitor(ExpressionEvaluatorBase<RationalNumberType> const& evaluator) : ExpressionVisitor(), evaluator(evaluator) {
             // Intentionally left empty.
@@ -19,7 +24,13 @@ namespace storm {
         
         template<typename RationalNumberType>
         boost::any ToRationalNumberVisitor<RationalNumberType>::visit(IfThenElseExpression const& expression, boost::any const& data) {
-            bool conditionValue = evaluator.asBool(expression.getCondition());
+            bool conditionValue;
+            if (evaluator) {
+            	conditionValue = evaluator->asBool(expression.getCondition());
+            } else {
+            	// no evaluator, fall back to evaluateBool
+            	conditionValue = expression.getCondition()->evaluateAsBool();
+            }
             if (conditionValue) {
                 return expression.getThenExpression()->accept(*this, data);
             } else {
