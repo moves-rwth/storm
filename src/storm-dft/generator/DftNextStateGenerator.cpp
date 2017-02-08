@@ -52,10 +52,10 @@ namespace storm {
             bool hasDependencies = state->nrFailableDependencies() > 0;
             size_t failableCount = hasDependencies ? state->nrFailableDependencies() : state->nrFailableBEs();
             size_t currentFailable = 0;
-            Choice<ValueType, StateType> choice(0, !hasDependencies);
 
             // Check for absorbing state
             if (mDft.hasFailed(state) || mDft.isFailsafe(state) || failableCount == 0) {
+                Choice<ValueType, StateType> choice(0, true);
                 // Add self loop
                 choice.addProbability(state->getId(), storm::utility::one<ValueType>());
                 STORM_LOG_TRACE("Added self loop for " << state->getId());
@@ -64,6 +64,8 @@ namespace storm {
                 result.setExpanded();
                 return result;
             }
+
+            Choice<ValueType, StateType> choice(0, !hasDependencies);
 
             // Let BE fail
             while (currentFailable < failableCount) {
