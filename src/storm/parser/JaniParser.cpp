@@ -1074,7 +1074,12 @@ namespace storm {
                             STORM_LOG_THROW(assignmentEntry.count("value") == 1, storm::exceptions::InvalidJaniException, "Assignment in edge from '" << sourceLoc << "' to '" << targetLoc << "' in automaton '" << name << "'  must have one value field");
                             storm::expressions::Expression assignmentExpr = parseExpression(assignmentEntry.at("value"), "assignment in edge from '" + sourceLoc + "' to '" + targetLoc + "' in automaton '" + name + "'", localVars);
                             // TODO check types
-                            assignments.emplace_back(lhs, assignmentExpr);
+                            // index
+                            uint64_t assignmentIndex = 0; // default.
+                            if(assignmentEntry.count("index") > 0) {
+                                assignmentIndex = getUnsignedInt(assignmentEntry.at("index"), "assignment index in edge from '" + sourceLoc + "' to '" + targetLoc + "' in automaton '" + name + "'");
+                            }
+                            assignments.emplace_back(lhs, assignmentExpr, assignmentIndex);
                         }
                     }
                     destinationLocationsAndProbabilities.emplace_back(locIds.at(targetLoc), probExpr);
