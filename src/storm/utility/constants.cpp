@@ -397,7 +397,7 @@ namespace storm {
         template<>
         RationalFunction convertNumber(int_fast64_t const& number){
             STORM_LOG_ASSERT(static_cast<carl::sint>(number) == number, "Rationalizing failed, because the number is too large.");
-            return RationalFunction(carl::rationalize<RationalNumber>(static_cast<carl::uint>(number)));
+            return RationalFunction(carl::rationalize<RationalNumber>(static_cast<carl::sint>(number)));
         }
 
         template<>
