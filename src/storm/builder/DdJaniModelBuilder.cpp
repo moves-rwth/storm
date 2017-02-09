@@ -1814,7 +1814,8 @@ namespace storm {
             }
             
             STORM_LOG_THROW(!model.usesAssignmentLevels(), storm::exceptions::InvalidSettingsException, "The symbolic JANI model builder currently does not support assignment levels.");
-            
+            STORM_LOG_THROW(!model.reusesActionsInComposition(), storm::exceptions::InvalidSettingsException, "The symbolic JANI model builder currently does not support reusing actions in parallel composition");
+
             storm::jani::Model preparedModel = model;
             
             // Lift the transient edge destinations. We can do so, as we know that there are no assignment levels (because that's not supported anyway).

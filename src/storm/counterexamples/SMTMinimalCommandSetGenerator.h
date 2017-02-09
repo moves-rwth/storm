@@ -1745,7 +1745,7 @@ namespace storm {
                 
                 return commandSet;
 #else
-                throw storm::exceptions::NotImplementedException() << "This functionality is unavailable since StoRM has been compiled without support for Z3.";
+                throw storm::exceptions::NotImplementedException() << "This functionality is unavailable since storm has been compiled without support for Z3.";
 #endif
             }
             
@@ -1801,7 +1801,7 @@ namespace storm {
                 std::cout << std::endl << "-------------------------------------------" << std::endl;
                 
 #else
-                throw storm::exceptions::NotImplementedException() << "This functionality is unavailable since StoRM has been compiled without support for Z3.";
+                throw storm::exceptions::NotImplementedException() << "This functionality is unavailable since storm has been compiled without support for Z3.";
 #endif
             }
             

@@ -12,6 +12,8 @@
 #include <numeric>
 #include <storm/adapters/CarlAdapter.h>
 
+#include <boost/optional.hpp>
+
 #include "storm/storage/BitVector.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
@@ -736,6 +738,20 @@ namespace storm {
                 }
                 
                 return true;
+            }
+            
+            /*!
+             * Takes the input vector and ensures that all entries conform to the bounds.
+             */
+            template <typename ValueType>
+            void clip(std::vector<ValueType>& x, boost::optional<ValueType> const& lowerBound, boost::optional<ValueType> const& upperBound) {
+                for (auto& entry : x) {
+                    if (lowerBound && entry < lowerBound.get()) {
+                        entry = lowerBound.get();
+                    } else if (upperBound && entry > upperBound.get()) {
+                        entry = upperBound.get();
+                    }
+                }
             }
             
             /*!

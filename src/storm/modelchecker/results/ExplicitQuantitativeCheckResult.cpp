@@ -122,10 +122,12 @@ namespace storm {
             ValueType sum = storm::utility::zero<ValueType>();
             if (this->isResultForAllStates()) {
                 for (auto& element : boost::get<vector_type>(values)) {
+                    STORM_LOG_THROW(element != storm::utility::infinity<ValueType>(), storm::exceptions::InvalidOperationException, "Cannot compute the sum of values containing infinity.");
                     sum += element;
                 }
             } else {
                 for (auto& element : boost::get<map_type>(values)) {
+                    STORM_LOG_THROW(element.second != storm::utility::infinity<ValueType>(), storm::exceptions::InvalidOperationException, "Cannot compute the sum of values containing infinity.");
                     sum += element.second;
                 }
             }
@@ -139,11 +141,13 @@ namespace storm {
             ValueType sum = storm::utility::zero<ValueType>();
             if (this->isResultForAllStates()) {
                 for (auto& element : boost::get<vector_type>(values)) {
+                    STORM_LOG_THROW(element != storm::utility::infinity<ValueType>(), storm::exceptions::InvalidOperationException, "Cannot compute the average of values containing infinity.");
                     sum += element;
                 }
                 return sum / boost::get<vector_type>(values).size();
             } else {
                 for (auto& element : boost::get<map_type>(values)) {
+                    STORM_LOG_THROW(element.second != storm::utility::infinity<ValueType>(), storm::exceptions::InvalidOperationException, "Cannot compute the average of values containing infinity.");
                     sum += element.second;
                 }
                 return sum / boost::get<map_type>(values).size();
@@ -168,17 +172,47 @@ namespace storm {
         
         template<typename ValueType>
         void print(std::ostream& out, ValueType const& value) {
-            out << value;
-            if (std::is_same<ValueType, storm::RationalNumber>::value) {
-                out << " (approx. " << storm::utility::convertNumber<double>(value) << ")";
+            if (value == storm::utility::infinity<ValueType>()) {
+                out << "inf";
+            } else {
+                out << value;
+                if (std::is_same<ValueType, storm::RationalNumber>::value) {
+                    out << " (approx. " << storm::utility::convertNumber<double>(value) << ")";
+                }
             }
         }
         
         template<typename ValueType>
-        void printApproxRange(std::ostream& out, ValueType const& min, ValueType const& max) {
-            if (std::is_same<ValueType, storm::RationalNumber>::value) {
-                out << " (approx. [" << storm::utility::convertNumber<double>(min) << ", " << storm::utility::convertNumber<double>(max) << "])";
+        void printRange(std::ostream& out, ValueType const& min, ValueType const& max) {
+            out << "[";
+            if (min == storm::utility::infinity<ValueType>()) {
+                out << "inf";
+            } else {
+                out << min;
             }
+            out << ", ";
+            if (max == storm::utility::infinity<ValueType>()) {
+                out << "inf";
+            } else {
+                out << max;
+            }
+            out << "]";
+            if (std::is_same<ValueType, storm::RationalNumber>::value) {
+                out << " (approx. [";
+                if (min == storm::utility::infinity<ValueType>()) {
+                    out << "inf";
+                } else {
+                    out << storm::utility::convertNumber<double>(min);
+                }
+                out << ", ";
+                if (max == storm::utility::infinity<ValueType>()) {
+                    out << "inf";
+                } else {
+                    out << storm::utility::convertNumber<double>(max);
+                }
+                out << "])";
+            }
+            out << " (range)";
         }
         
         template<typename ValueType>
@@ -228,9 +262,7 @@ namespace storm {
             
             if (printAsRange) {
                 std::pair<ValueType, ValueType> minmax = this->getMinMax();
-                out << "[" << minmax.first << ", " << minmax.second << "]";
-                printApproxRange(out, minmax.first, minmax.second);
-                out << " (range)";
+                printRange(out, minmax.first, minmax.second);
             }
             
             return out;

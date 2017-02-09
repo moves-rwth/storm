@@ -139,7 +139,7 @@ namespace storm {
         bool TemplateEdge::isLinear() const {
             storm::expressions::LinearityCheckVisitor linearityChecker;
             
-            bool result = linearityChecker.check(this->getGuard());
+            bool result = linearityChecker.check(this->getGuard(), true);
             for (auto const& destination : destinations) {
                 result &= destination.isLinear();
             }

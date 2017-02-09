@@ -6,6 +6,8 @@
 #include <memory>
 #include <unordered_map>
 
+#include "storm/storage/expressions/ExpressionManager.h"
+
 #include "storm-gspn/storage/gspn/ImmediateTransition.h"
 #include "storm-gspn/storage/gspn/Marking.h"
 #include "storm-gspn/storage/gspn/Place.h"
@@ -30,7 +32,7 @@ namespace storm {
             
             
             GSPN(std::string const& name, std::vector<Place> const& places, std::vector<ImmediateTransition<WeightType>> const& itransitions,
-                 std::vector<TimedTransition<RateType>> const& ttransitions, std::vector<TransitionPartition> const& partitions);
+                 std::vector<TimedTransition<RateType>> const& ttransitions, std::vector<TransitionPartition> const& partitions, std::shared_ptr<storm::expressions::ExpressionManager> const& exprManager);
             
             /*!
              * Returns the number of places in this gspn.
@@ -135,7 +137,13 @@ namespace storm {
              * @return The name.
              */
             std::string const& getName() const;
-            
+
+            /*!
+             * Obtain the expression manager used for expressions over GSPNs.
+             *
+             * @return
+             */
+            std::shared_ptr<storm::expressions::ExpressionManager> const& getExpressionManager() const;
             
             /**
              *  Set Capacities according to name->capacity map.
@@ -197,7 +205,10 @@ namespace storm {
             std::vector<storm::gspn::TimedTransition<RateType>> timedTransitions;
 
             std::vector<storm::gspn::TransitionPartition> partitions;
-            
+
+            std::shared_ptr<storm::expressions::ExpressionManager> exprManager;
+
+            // Layout information
             mutable std::map<uint64_t, LayoutInfo> placeLayout;
             mutable std::map<uint64_t, LayoutInfo> transitionLayout;
             

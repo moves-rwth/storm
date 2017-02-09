@@ -1124,7 +1124,7 @@ namespace storm {
             bool result = true;
             
             storm::expressions::LinearityCheckVisitor linearityChecker;
-            result &= linearityChecker.check(this->getInitialStatesExpression());
+            result &= linearityChecker.check(this->getInitialStatesExpression(), true);
             
             for (auto const& automaton : this->getAutomata()) {
                 result &= automaton.isLinear();
@@ -1132,7 +1132,14 @@ namespace storm {
             
             return result;
         }
-        
+
+        bool Model::reusesActionsInComposition() const {
+            if(composition->isParallelComposition()) {
+                return composition->asParallelComposition().areActionsReused();
+            }
+            return false;
+        }
+
         Model Model::createModelFromAutomaton(Automaton const& automaton) const {
             // Copy the full model
             Model newModel(*this);

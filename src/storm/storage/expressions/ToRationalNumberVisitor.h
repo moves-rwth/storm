@@ -7,6 +7,7 @@
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/Expressions.h"
 #include "storm/storage/expressions/ExpressionVisitor.h"
+#include "storm/storage/expressions/ExpressionEvaluatorBase.h"
 #include "storm/storage/expressions/Variable.h"
 
 namespace storm {
@@ -15,7 +16,7 @@ namespace storm {
         template<typename RationalNumberType>
         class ToRationalNumberVisitor : public ExpressionVisitor {
         public:
-            ToRationalNumberVisitor();
+            ToRationalNumberVisitor(ExpressionEvaluatorBase<RationalNumberType> const& evaluator);
             
             RationalNumberType toRationalNumber(Expression const& expression);
             
@@ -34,6 +35,9 @@ namespace storm {
             
         private:
             std::unordered_map<storm::expressions::Variable, RationalNumberType> valueMapping;
+
+            // A reference to an expression evaluator (mainly for resolving the boolean condition in IfThenElse expressions)
+            ExpressionEvaluatorBase<RationalNumberType> const& evaluator;
         };
     }
 }

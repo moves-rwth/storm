@@ -1,26 +1,22 @@
-#ifndef STORM_STORAGE_EXPRESSIONS_LINEARITYCHECKVISITOR_H_
-#define STORM_STORAGE_EXPRESSIONS_LINEARITYCHECKVISITOR_H_
+#pragma once
 
-#include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/ExpressionVisitor.h"
+#include <set>
 
 namespace storm {
     namespace expressions {
-        class LinearityCheckVisitor : public ExpressionVisitor {
+
+        class Expression;
+        class Variable;
+
+        // Visits all sub-expressions and returns true if any of them is an IfThenElseExpression
+        // where the 'if' part depends on one of the variables in the set passed in the constructor.
+        class CheckIfThenElseGuardVisitor : public ExpressionVisitor {
         public:
-            /*!
-             * Creates a linearity check visitor.
-             */
-            LinearityCheckVisitor();
-            
-            /*!
-             * Checks that the given expression is linear.
-             *
-             * @param expression The expression to check for linearity.
-             * @param booleanIsLinear A flag indicating whether boolean components are considered linear.
-             */
-            bool check(Expression const& expression, bool booleanIsLinear = false);
-            
+            CheckIfThenElseGuardVisitor(std::set<storm::expressions::Variable> const& variables);
+
+            bool check(storm::expressions::Expression const& expression);
+
             virtual boost::any visit(IfThenElseExpression const& expression, boost::any const& data) override;
             virtual boost::any visit(BinaryBooleanFunctionExpression const& expression, boost::any const& data) override;
             virtual boost::any visit(BinaryNumericalFunctionExpression const& expression, boost::any const& data) override;
@@ -31,11 +27,10 @@ namespace storm {
             virtual boost::any visit(BooleanLiteralExpression const& expression, boost::any const& data) override;
             virtual boost::any visit(IntegerLiteralExpression const& expression, boost::any const& data) override;
             virtual boost::any visit(RationalLiteralExpression const& expression, boost::any const& data) override;
-            
+
         private:
-            enum class LinearityStatus { NonLinear, LinearContainsVariables, LinearWithoutVariables };
+            std::set<storm::expressions::Variable> const& variables;
         };
+
     }
 }
-
-#endif /* STORM_STORAGE_EXPRESSIONS_LINEARITYCHECKVISITOR_H_ */

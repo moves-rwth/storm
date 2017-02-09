@@ -70,7 +70,7 @@ namespace storm {
             
             /*!
              * Sets whether some of the generated data during solver calls should be cached.
-             * This possibly decreases the runtime of subsequent calls but also increases memory consumption.
+             * This possibly increases the runtime of subsequent calls but also increases memory consumption.
              */
             void setCachingEnabled(bool value) const;
             
@@ -83,11 +83,32 @@ namespace storm {
              * Clears the currently cached data that has been stored during previous calls of the solver.
              */
             virtual void clearCache() const;
+            
+            /*!
+             * Sets a lower bound for the solution that can potentially used by the solver.
+             */
+            void setLowerBound(ValueType const& value);
+
+            /*!
+             * Sets an upper bound for the solution that can potentially used by the solver.
+             */
+            void setUpperBound(ValueType const& value);
+
+            /*!
+             * Sets bounds for the solution that can potentially used by the solver.
+             */
+            void setBounds(ValueType const& lower, ValueType const& upper);
 
         protected:
             // auxiliary storage. If set, this vector has getMatrixRowCount() entries.
             mutable std::unique_ptr<std::vector<ValueType>> cachedRowVector;
-          
+            
+            // A lower bound if one was set.
+            boost::optional<ValueType> lowerBound;
+
+            // An upper bound if one was set.
+            boost::optional<ValueType> upperBound;
+
         private:
             /*!
              * Retrieves the row count of the matrix associated with this solver.
@@ -101,7 +122,6 @@ namespace storm {
             
             /// Whether some of the generated data during solver calls should be cached.
             mutable bool cachingEnabled;
-
         };
         
         template<typename ValueType>

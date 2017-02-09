@@ -131,7 +131,8 @@ namespace storm {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The input model contains undefined constants that influence the graph structure of the underlying model, which is not allowed.");
                 }
 #endif
-                    
+                STORM_LOG_THROW(!model.reusesActionsInComposition(), storm::exceptions::InvalidArgumentException, "The jit JANI model builder currently does not support reusing actions in parallel composition");
+
                 // Comment this in to print the JANI model for debugging purposes. 
                 // this->model.makeStandardJaniCompliant();
                 // storm::jani::JsonExporter::toStream(this->model, std::vector<std::shared_ptr<storm::logic::Formula const>>(), std::cout, false);
@@ -324,7 +325,7 @@ namespace storm {
             template <typename ValueType, typename RewardModelType>
             bool ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::checkStormHeadersAvailable() const {
                 bool result = true;
-                std::string problem = "Unable to compile program using Storm headers. Is Storm's include directory '" + stormIncludeDirectory + "' set correctly? Does the directory contain all the headers (in particular 'storm-config.h'?";
+                std::string problem = "Unable to compile program using storm headers. Is storm's include directory '" + stormIncludeDirectory + "' set correctly? Does the directory contain all the headers (in particular 'storm-config.h')?";
                 try {
                     std::string program = R"(
 #include "storm/builder/RewardModelInformation.h"

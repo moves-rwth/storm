@@ -124,7 +124,8 @@ namespace storm {
             virtual boost::any accept(CompositionVisitor& visitor, boost::any const& data) const override;
             
             virtual void write(std::ostream& stream) const override;
-            
+
+            bool areActionsReused() const;
         private:
             /*!
              * Checks the synchronization vectors for validity.

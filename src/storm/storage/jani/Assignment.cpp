@@ -9,7 +9,7 @@ namespace storm  {
     namespace jani {
         
         Assignment::Assignment(storm::jani::Variable const& variable, storm::expressions::Expression const& expression, uint64_t level) : variable(variable), expression(expression), level(level) {
-            STORM_LOG_THROW(level == 0, storm::exceptions::NotImplementedException, "Assignment levels other than 0 are currently not supported.");
+
         }
         
         bool Assignment::operator==(Assignment const& other) const {
@@ -46,7 +46,7 @@ namespace storm  {
         
         bool Assignment::isLinear() const {
             storm::expressions::LinearityCheckVisitor linearityChecker;
-            return linearityChecker.check(this->getAssignedExpression());
+            return linearityChecker.check(this->getAssignedExpression(), true);
         }
         
         std::ostream& operator<<(std::ostream& stream, Assignment const& assignment) {

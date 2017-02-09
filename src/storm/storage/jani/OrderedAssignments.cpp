@@ -26,7 +26,7 @@ namespace storm {
             auto it = lowerBound(assignment, allAssignments);
 
             if (it != allAssignments.end()) {
-                STORM_LOG_THROW(assignment.getExpressionVariable() != (*it)->getExpressionVariable(), storm::exceptions::InvalidArgumentException, "Cannot add assignment as an assignment to this variable already exists.");
+                STORM_LOG_THROW(assignment.getExpressionVariable() != (*it)->getExpressionVariable(), storm::exceptions::InvalidArgumentException, "Cannot add assignment ('" << assignment.getAssignedExpression() << "') as an assignment ('" << (*it)->getAssignedExpression()  << "') to variable '" <<  (*it)->getVariable().getName() << "' already exists.");
             }
             
             // Finally, insert the new element in the correct vectors.

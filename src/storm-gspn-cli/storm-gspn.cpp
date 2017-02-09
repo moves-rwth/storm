@@ -14,6 +14,8 @@
 #include "utility/storm.h"
 #include "storm/cli/cli.h"
 
+#include "storm/parser/FormulaParser.h"
+
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/JSONExporter.h"
@@ -33,11 +35,12 @@
 #include "storm/settings/modules/JaniExportSettings.h"
 #include "storm/settings/modules/ResourceSettings.h"
 
+
 /*!
  * Initialize the settings manager.
  */
 void initializeSettings() {
-    storm::settings::mutableManager().setName("StoRM-GSPN", "storm-gspn");
+    storm::settings::mutableManager().setName("storm-GSPN", "storm-gspn");
     
     // Register all known settings modules.
     storm::settings::addModule<storm::settings::modules::GeneralSettings>();
@@ -72,7 +75,7 @@ std::unordered_map<std::string, uint64_t> parseCapacitiesList(std::string const&
 int main(const int argc, const char **argv) {
     try {
         storm::utility::setUp();
-        storm::cli::printHeader("StoRM-GSPN", argc, argv);
+        storm::cli::printHeader("storm-GSPN", argc, argv);
         initializeSettings();
         
         bool optionsCorrect = storm::cli::parseOptions(argc, argv);
@@ -88,6 +91,14 @@ int main(const int argc, const char **argv) {
         auto parser = storm::parser::GspnParser();
         auto gspn = parser.parse(storm::settings::getModule<storm::settings::modules::GSPNSettings>().getGspnFilename());
 
+        std::string formulaString = "";
+        if (!storm::settings::getModule<storm::settings::modules::IOSettings>().isPropertySet()) {
+            formulaString = storm::settings::getModule<storm::settings::modules::IOSettings>().getProperty();
+        }
+        boost::optional<std::set<std::string>> propertyFilter;
+        storm::parser::FormulaParser formulaParser(gspn->getExpressionManager());
+        std::vector<storm::jani::Property> properties  = storm::parseProperties(formulaParser, formulaString, propertyFilter);
+
         if (!gspn->isValid()) {
             STORM_LOG_ERROR("The gspn is not valid.");
         }
@@ -101,7 +112,7 @@ int main(const int argc, const char **argv) {
         
         if(storm::settings::getModule<storm::settings::modules::JaniExportSettings>().isJaniFileSet()) {
             storm::jani::Model* model = storm::buildJani(*gspn);
-            storm::exportJaniModel(*model, {}, storm::settings::getModule<storm::settings::modules::JaniExportSettings>().getJaniFilename());
+            storm::exportJaniModel(*model, properties, storm::settings::getModule<storm::settings::modules::JaniExportSettings>().getJaniFilename());
             delete model;
         }
 
@@ -136,10 +147,10 @@ int main(const int argc, const char **argv) {
         storm::utility::cleanUp();
         return 0;
     } catch (storm::exceptions::BaseException const& exception) {
-        STORM_LOG_ERROR("An exception caused StoRM to terminate. The message of the exception is: " << exception.what());
+        STORM_LOG_ERROR("An exception caused storm to terminate. The message of the exception is: " << exception.what());
         return 1;
     } catch (std::exception const& exception) {
-        STORM_LOG_ERROR("An unexpected exception occurred and caused StoRM to terminate. The message of this exception is: " << exception.what());
+        STORM_LOG_ERROR("An unexpected exception occurred and caused storm to terminate. The message of this exception is: " << exception.what());
         return 2;
     }
 }

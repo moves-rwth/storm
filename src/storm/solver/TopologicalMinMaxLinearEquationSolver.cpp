@@ -112,8 +112,8 @@ namespace storm {
 					STORM_LOG_WARN("Iterative solver did not converged after " << globalIterations << " iterations.");
 				}
 #else
-				STORM_LOG_ERROR("The useGpu Flag of a SCC was set, but this version of StoRM does not support CUDA acceleration. Internal Error!");
-				throw storm::exceptions::InvalidStateException() << "The useGpu Flag of a SCC was set, but this version of StoRM does not support CUDA acceleration. Internal Error!";
+				STORM_LOG_ERROR("The useGpu Flag of a SCC was set, but this version of storm does not support CUDA acceleration. Internal Error!");
+				throw storm::exceptions::InvalidStateException() << "The useGpu Flag of a SCC was set, but this version of storm does not support CUDA acceleration. Internal Error!";
 #endif
 			} else {
 				storm::storage::BitVector fullSystem(this->A.getRowGroupCount(), true);
@@ -213,8 +213,8 @@ namespace storm {
 						}
 						globalIterations += localIterations;
 #else
-						STORM_LOG_ERROR("The useGpu Flag of a SCC was set, but this version of StoRM does not support CUDA acceleration. Internal Error!");
-						throw storm::exceptions::InvalidStateException() << "The useGpu Flag of a SCC was set, but this version of StoRM does not support CUDA acceleration. Internal Error!";
+						STORM_LOG_ERROR("The useGpu Flag of a SCC was set, but this version of storm does not support CUDA acceleration. Internal Error!");
+						throw storm::exceptions::InvalidStateException() << "The useGpu Flag of a SCC was set, but this version of storm does not support CUDA acceleration. Internal Error!";
 #endif
 					} else {
 						//std::cout << "WARNING: Using CPU based TopoSolver! (double)" << std::endl;

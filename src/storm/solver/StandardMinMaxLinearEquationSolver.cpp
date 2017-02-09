@@ -112,6 +112,12 @@ namespace storm {
 
             // Create a solver that we will use throughout the procedure. We will modify the matrix in each iteration.
             auto solver = linearEquationSolverFactory->create(std::move(submatrix));
+            if (this->lowerBound) {
+                solver->setLowerBound(this->lowerBound.get());
+            }
+            if (this->upperBound) {
+                solver->setUpperBound(this->upperBound.get());
+            }
             solver->setCachingEnabled(true);
             
             Status status = Status::InProgress;

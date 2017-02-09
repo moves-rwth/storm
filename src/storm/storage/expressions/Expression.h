@@ -253,6 +253,16 @@ namespace storm {
              */
             bool containsVariable(std::set<storm::expressions::Variable> const& variables) const;
             
+
+            /*!
+             * Retrieves whether the expression contains any of the given variables in the
+             * 'if' part of any sub-IfThenElseExpressions.
+             *
+             * @param variables The variables to search for.
+             * @return True iff any of the variables appear in the 'if' part of an ITE-expression.
+             */
+            bool containsVariableInITEGuard(std::set<storm::expressions::Variable> const& variables) const;
+
             /*!
              * Retrieves the base expression underlying this expression object. Note that prior to calling this, the
              * expression object must be properly initialized.

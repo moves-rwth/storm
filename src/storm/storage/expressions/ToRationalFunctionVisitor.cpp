@@ -11,7 +11,7 @@ namespace storm {
 
 #ifdef STORM_HAVE_CARL
         template<typename RationalFunctionType>
-        ToRationalFunctionVisitor<RationalFunctionType>::ToRationalFunctionVisitor() : ExpressionVisitor(), cache(new carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>>()) {
+        ToRationalFunctionVisitor<RationalFunctionType>::ToRationalFunctionVisitor(ExpressionEvaluatorBase<RationalFunctionType> const& evaluator) : ExpressionVisitor(), cache(new carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>>()), evaluator(evaluator) {
             // Intentionally left empty.
         }
         
@@ -21,8 +21,13 @@ namespace storm {
         }
         
         template<typename RationalFunctionType>
-        boost::any ToRationalFunctionVisitor<RationalFunctionType>::visit(IfThenElseExpression const&, boost::any const&) {
-            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression cannot be translated into a rational function.");
+        boost::any ToRationalFunctionVisitor<RationalFunctionType>::visit(IfThenElseExpression const& expression, boost::any const& data) {
+            bool conditionValue = evaluator.asBool(expression.getCondition());
+            if (conditionValue) {
+                return expression.getThenExpression()->accept(*this, data);
+            } else {
+                return expression.getElseExpression()->accept(*this, data);
+            }
         }
         
         template<typename RationalFunctionType>

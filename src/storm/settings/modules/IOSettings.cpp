@@ -40,6 +40,8 @@ namespace storm {
             const std::string IOSettings::fullModelBuildOptionName = "buildfull";
             const std::string IOSettings::janiPropertyOptionName = "janiproperty";
             const std::string IOSettings::janiPropertyOptionShortName = "jprop";
+            const std::string IOSettings::propertyOptionName = "prop";
+            const std::string IOSettings::propertyOptionShortName = "prop";
 
             
             IOSettings::IOSettings() : ModuleSettings(moduleName) {
@@ -59,7 +61,10 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, jitOptionName, false, "If set, the model is built using the JIT model builder.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, fullModelBuildOptionName, false, "If set, include all rewards and labels.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, noBuildOptionName, false, "If set, do not build the model.").build());
-
+                this->addOption(storm::settings::OptionBuilder(moduleName, propertyOptionName, false, "Specifies the properties to be checked on the model.").setShortName(propertyOptionShortName)
+                                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("property or filename", "The formula or the file containing the formulas.").build())
+                                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filter", "The names of the properties to check.").setDefaultValueString("all").build())
+                                        .build());
                 std::vector<std::string> explorationOrders = {"dfs", "bfs"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, explorationOrderOptionName, false, "Sets which exploration order to use.").setShortName(explorationOrderOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the exploration order to choose.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(explorationOrders)).setDefaultValueString("bfs").build()).build());
@@ -205,6 +210,18 @@ namespace storm {
             
             bool IOSettings::isNoBuildModelSet() const {
                 return this->getOption(noBuildOptionName).getHasOptionBeenSet();
+            }
+
+            bool IOSettings::isPropertySet() const {
+                return this->getOption(propertyOptionName).getHasOptionBeenSet();
+            }
+
+            std::string IOSettings::getProperty() const {
+                return this->getOption(propertyOptionName).getArgumentByName("property or filename").getValueAsString();
+            }
+
+            std::string IOSettings::getPropertyFilter() const {
+                return this->getOption(propertyOptionName).getArgumentByName("filter").getValueAsString();
             }
 
 			void IOSettings::finalize() {

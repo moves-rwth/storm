@@ -145,6 +145,20 @@ namespace storm {
              */
             virtual void clearCache() const;
 
+            /*!
+             * Sets a lower bound for the solution that can potentially used by the solver.
+             */
+            void setLowerBound(ValueType const& value);
+            
+            /*!
+             * Sets an upper bound for the solution that can potentially used by the solver.
+             */
+            void setUpperBound(ValueType const& value);
+            
+            /*!
+             * Sets bounds for the solution that can potentially used by the solver.
+             */
+            void setBounds(ValueType const& lower, ValueType const& upper);
 
         protected:
             /// The optimization direction to use for calls to functions that do not provide it explicitly. Can also be unset.
@@ -155,6 +169,12 @@ namespace storm {
 
             /// The scheduler (if it could be successfully generated).
             mutable boost::optional<std::unique_ptr<storm::storage::TotalScheduler>> scheduler;
+            
+            // A lower bound if one was set.
+            boost::optional<ValueType> lowerBound;
+            
+            // An upper bound if one was set.
+            boost::optional<ValueType> upperBound;
             
         private:
             /// Whether some of the generated data during solver calls should be cached.

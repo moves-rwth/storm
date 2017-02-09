@@ -80,13 +80,14 @@ void analyzeWithSMT(std::string filename) {
  * Initialize the settings manager.
  */
 void initializeSettings() {
-    storm::settings::mutableManager().setName("StoRM-DyFTeE", "storm-dft");
+    storm::settings::mutableManager().setName("storm-DyFTeE", "storm-dft");
     
     // Register all known settings modules.
     storm::settings::addModule<storm::settings::modules::GeneralSettings>();
     storm::settings::addModule<storm::settings::modules::DFTSettings>();
     storm::settings::addModule<storm::settings::modules::CoreSettings>();
     storm::settings::addModule<storm::settings::modules::DebugSettings>();
+    storm::settings::addModule<storm::settings::modules::IOSettings>();
     //storm::settings::addModule<storm::settings::modules::CounterexampleGeneratorSettings>();
     //storm::settings::addModule<storm::settings::modules::CuddSettings>();
     //storm::settings::addModule<storm::settings::modules::SylvanSettings>();
@@ -117,7 +118,7 @@ void initializeSettings() {
 int main(const int argc, const char** argv) {
     try {
         storm::utility::setUp();
-        storm::cli::printHeader("StoRM-DyFTeE", argc, argv);
+        storm::cli::printHeader("storm-DyFTeE", argc, argv);
         initializeSettings();
         
         bool optionsCorrect = storm::cli::parseOptions(argc, argv);
@@ -127,6 +128,7 @@ int main(const int argc, const char** argv) {
         
         storm::settings::modules::DFTSettings const& dftSettings = storm::settings::getModule<storm::settings::modules::DFTSettings>();
         storm::settings::modules::GeneralSettings const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
+        storm::settings::modules::IOSettings const& ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
         if (!dftSettings.isDftFileSet() && !dftSettings.isDftJsonFileSet()) {
             STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "No input model.");
         }
@@ -147,9 +149,9 @@ int main(const int argc, const char** argv) {
             uint64_t toplevelFailedPlace = gspnTransformator.toplevelFailedPlaceId();
             
             storm::handleGSPNExportSettings(*gspn);
-            
-            std::shared_ptr<storm::expressions::ExpressionManager> exprManager(new storm::expressions::ExpressionManager());
-            storm::builder::JaniGSPNBuilder builder(*gspn, exprManager);
+
+            std::shared_ptr<storm::expressions::ExpressionManager> const& exprManager = gspn->getExpressionManager();
+            storm::builder::JaniGSPNBuilder builder(*gspn);
             storm::jani::Model* model =  builder.build();
             storm::jani::Variable const& topfailedVar = builder.getPlaceVariable(toplevelFailedPlace);
             
@@ -203,9 +205,9 @@ int main(const int argc, const char** argv) {
         std::string operatorType = "";
         std::string targetFormula = "";
         
-        if (generalSettings.isPropertySet()) {
+        if (ioSettings.isPropertySet()) {
             STORM_LOG_THROW(!dftSettings.usePropExpectedTime() && !dftSettings.usePropProbability() && !dftSettings.usePropTimebound(), storm::exceptions::InvalidSettingsException, "More than one property given.");
-            pctlFormula = generalSettings.getProperty();
+            pctlFormula = ioSettings.getProperty();
         } else if (dftSettings.usePropExpectedTime()) {
             STORM_LOG_THROW(!dftSettings.usePropProbability() && !dftSettings.usePropTimebound(), storm::exceptions::InvalidSettingsException, "More than one property given.");
             operatorType = "T";
@@ -249,10 +251,10 @@ int main(const int argc, const char** argv) {
         storm::utility::cleanUp();
         return 0;
     } catch (storm::exceptions::BaseException const& exception) {
-        STORM_LOG_ERROR("An exception caused StoRM-DyFTeE to terminate. The message of the exception is: " << exception.what());
+        STORM_LOG_ERROR("An exception caused storm-DyFTeE to terminate. The message of the exception is: " << exception.what());
         return 1;
     } catch (std::exception const& exception) {
-        STORM_LOG_ERROR("An unexpected exception occurred and caused StoRM-DyFTeE to terminate. The message of this exception is: " << exception.what());
+        STORM_LOG_ERROR("An unexpected exception occurred and caused storm-DyFTeE to terminate. The message of this exception is: " << exception.what());
         return 2;
     }
 }

@@ -662,10 +662,11 @@ namespace storm {
             storm::dd::Add<DdType, ValueType> EdgeAbstractor<DdType, ValueType>::getEdgeDecoratorAdd(boost::optional<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& locationVariables) const {
                 storm::dd::Add<DdType, ValueType> result = this->getAbstractionInformation().getDdManager().template getAddZero<ValueType>();
                 for (uint_fast64_t destinationIndex = 0; destinationIndex < edge.get().getNumberOfDestinations(); ++destinationIndex) {
-                    result += this->getAbstractionInformation().encodeAux(destinationIndex, 0, this->getAbstractionInformation().getAuxVariableCount()).template toAdd<ValueType>() * this->getAbstractionInformation().getDdManager().getConstant(evaluator.asRational(edge.get().getDestination(destinationIndex).getProbability()));
+                    storm::dd::Add<DdType, ValueType> tmp = this->getAbstractionInformation().encodeAux(destinationIndex, 0, this->getAbstractionInformation().getAuxVariableCount()).template toAdd<ValueType>() * this->getAbstractionInformation().getDdManager().getConstant(evaluator.asRational(edge.get().getDestination(destinationIndex).getProbability()));
                     if (locationVariables) {
-                        result *= this->getAbstractionInformation().encodeLocation(locationVariables.get().second, edge.get().getDestination(destinationIndex).getLocationIndex()).template toAdd<ValueType>();
+                        tmp *= this->getAbstractionInformation().encodeLocation(locationVariables.get().second, edge.get().getDestination(destinationIndex).getLocationIndex()).template toAdd<ValueType>();
                     }
+                    result += tmp;
                 }
                 
                 storm::dd::Add<DdType, ValueType> tmp = this->getAbstractionInformation().getDdManager().template getAddOne<ValueType>();
@@ -675,6 +676,7 @@ namespace storm {
                 tmp *= this->getAbstractionInformation().encodePlayer1Choice(edgeId, this->getAbstractionInformation().getPlayer1VariableCount()).template toAdd<ValueType>();
                 
                 result *= tmp;
+                
                 return result;
             }
             

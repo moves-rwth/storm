@@ -27,8 +27,8 @@ namespace storm {
             return tId;
         }
         
-        GSPN::GSPN(std::string const& name, std::vector<Place> const& places, std::vector<ImmediateTransition<WeightType>> const& itransitions, std::vector<TimedTransition<RateType>> const& ttransitions, std::vector<TransitionPartition> const& partitions)
-        : name(name), places(places), immediateTransitions(itransitions), timedTransitions(ttransitions), partitions(partitions)
+        GSPN::GSPN(std::string const& name, std::vector<Place> const& places, std::vector<ImmediateTransition<WeightType>> const& itransitions, std::vector<TimedTransition<RateType>> const& ttransitions, std::vector<TransitionPartition> const& partitions, std::shared_ptr<storm::expressions::ExpressionManager> const& exprManager)
+        : name(name), places(places), immediateTransitions(itransitions), timedTransitions(ttransitions), partitions(partitions), exprManager(exprManager)
         {
             
         }
@@ -134,8 +134,13 @@ namespace storm {
 
             return getImmediateTransition(id);
         }
-        
-        void GSPN::setCapacities(std::unordered_map<std::string, uint64_t> const& mapping) {
+
+
+    std::shared_ptr<storm::expressions::ExpressionManager> const& GSPN::getExpressionManager() const {
+        return exprManager;
+    }
+
+    void GSPN::setCapacities(std::unordered_map<std::string, uint64_t> const& mapping) {
             for(auto const& entry : mapping) {
                 storm::gspn::Place* place = getPlace(entry.first);
                 STORM_LOG_THROW(place != nullptr, storm::exceptions::InvalidArgumentException, "No place with name " << entry.first);

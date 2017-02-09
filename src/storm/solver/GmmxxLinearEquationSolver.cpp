@@ -13,6 +13,7 @@
 #include "storm/solver/NativeLinearEquationSolver.h"
 
 #include "storm/utility/gmm.h"
+#include "storm/utility/vector.h"
 
 namespace storm {
     namespace solver {
@@ -191,6 +192,9 @@ namespace storm {
                     clearCache();
                 }
                 
+                // Make sure that all results conform to the bounds.
+                storm::utility::vector::clip(x, this->lowerBound, this->upperBound);
+                
                 // Check if the solver converged and issue a warning otherwise.
                 if (iter.converged()) {
                     STORM_LOG_DEBUG("Iterative solver converged after " << iter.get_iteration() << " iterations.");
@@ -201,6 +205,9 @@ namespace storm {
                 }
             } else if (method == GmmxxLinearEquationSolverSettings<ValueType>::SolutionMethod::Jacobi) {
                 uint_fast64_t iterations = solveLinearEquationSystemWithJacobi(x, b);
+                
+                // Make sure that all results conform to the bounds.
+                storm::utility::vector::clip(x, this->lowerBound, this->upperBound);
                 
                 // Check if the solver converged and issue a warning otherwise.
                 if (iterations < this->getSettings().getMaximalNumberOfIterations()) {
