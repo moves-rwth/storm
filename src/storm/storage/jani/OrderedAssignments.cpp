@@ -106,7 +106,30 @@ namespace storm {
                 return false;
             }
         }
-        
+
+        OrderedAssignments OrderedAssignments::simplifyLevels(bool synchronous, VariableSet const& localVars) const {
+            if (!synchronous) {
+                bool changed = false;
+                std::vector<Assignment> newAssignments;
+                for (auto const& assignment : allAssignments) {
+                    newAssignments.push_back(*assignment);
+                    if (!isReadBeforeAssignment(assignment->getVariable(), upperBound(assignment->getLevel() - 1))) {
+                        if (!isWrittenBeforeAssignment(assignment->getVariable(), upperBound(assignment->getLevel()-1))) {
+                            newAssignments.back().setLevel(0);
+                            changed = true;
+                        }
+                    }
+                }
+                if (changed) {
+                    return OrderedAssignments(newAssignments).simplifyLevels(synchronous, localVars);
+                } else {
+                    return *this;
+                }
+            } else {
+                return *this;
+            }
+        }
+
         detail::ConstAssignments OrderedAssignments::getAllAssignments() const {
             return detail::ConstAssignments(allAssignments.begin(), allAssignments.end());
         }
@@ -156,7 +179,33 @@ namespace storm {
         std::vector<std::shared_ptr<Assignment>>::const_iterator OrderedAssignments::lowerBound(Assignment const& assignment, std::vector<std::shared_ptr<Assignment>> const& assignments) {
             return std::lower_bound(assignments.begin(), assignments.end(), assignment, storm::jani::AssignmentPartialOrderByLevelAndVariable());
         }
-        
+
+        bool OrderedAssignments::isReadBeforeAssignment(Variable const& var, uint64_t assignmentNumber, uint64_t start) const {
+            for (uint64_t i = start; i < assignmentNumber; i++) {
+                if (allAssignments.at(i)->getAssignedExpression().containsVariable(var.getExpressionVariable())) {
+                    return true;
+                }
+            }
+        }
+
+        bool OrderedAssignments::isWrittenBeforeAssignment(Variable const& var, uint64_t assignmentNumber, uint64_t start) const {
+            for (uint64_t i = start; i < assignmentNumber; i++) {
+                if (allAssignments.at(i)->getVariable() == var) {
+                    return true;
+                }
+            }
+        }
+
+        uint64_t OrderedAssignments::upperBound(int64_t index) const {
+            uint64_t  result = 0;
+            for(auto const& assignment : allAssignments) {
+                if(assignment->getLevel() > index) {
+                    return result;
+                }
+                ++result;
+            }
+        }
+
         bool OrderedAssignments::areLinear() const {
             bool result = true;
             for (auto const& assignment : getAllAssignments()) {
