@@ -44,7 +44,7 @@ namespace storm  {
             return level;
         }
 
-        void Assignment::setLevel(int64_t level) const {
+        void Assignment::setLevel(int64_t level)  {
             this->level = level;
         }
 
