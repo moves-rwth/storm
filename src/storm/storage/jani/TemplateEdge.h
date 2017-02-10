@@ -16,7 +16,9 @@ namespace storm {
         class TemplateEdge {
         public:
             TemplateEdge() = default;
+            TemplateEdge(TemplateEdge const&) = default;
             TemplateEdge(storm::expressions::Expression const& guard);
+            TemplateEdge(storm::expressions::Expression const& guard, OrderedAssignments const& assignments, std::vector<TemplateEdgeDestination> const& destinations);
 
             storm::expressions::Expression const& getGuard() const;
 
@@ -88,6 +90,13 @@ namespace storm {
              * Checks the template edge for linearity.
              */
             bool isLinear() const;
+
+            bool hasEdgeDestinationAssignments() const;
+
+            /*!
+             * Simplify Indexed Assignments
+             */
+            TemplateEdge simplifyIndexedAssignments(bool syncronized, VariableSet const& localVars) const;
             
         private:
             // The guard of the template edge.

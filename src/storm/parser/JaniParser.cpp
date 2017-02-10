@@ -138,6 +138,7 @@ namespace storm {
                     }
                 }
             }
+            model.finalize();
             return {model, properties};
         }
 
@@ -1039,7 +1040,7 @@ namespace storm {
                 }
                 assert(guardExpr.isInitialized());
                 
-                std::shared_ptr<storm::jani::TemplateEdge> templateEdge = automaton.createTemplateEdge(guardExpr);
+                std::shared_ptr<storm::jani::TemplateEdge> templateEdge = std::make_shared<storm::jani::TemplateEdge>(guardExpr);
                 
                 STORM_LOG_THROW(edgeEntry.count("destinations") == 1, storm::exceptions::InvalidJaniException, "A single list of destinations must be given in edge from '" << sourceLoc << "' in automaton '" << name << "'");
                 std::vector<std::pair<uint64_t, storm::expressions::Expression>> destinationLocationsAndProbabilities;

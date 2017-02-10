@@ -10,6 +10,11 @@ namespace storm {
         TemplateEdge::TemplateEdge(storm::expressions::Expression const& guard) : guard(guard) {
             // Intentionally left empty.
         }
+
+        TemplateEdge::TemplateEdge(storm::expressions::Expression const& guard, OrderedAssignments const& assignments, std::vector<TemplateEdgeDestination> const& destinations)
+                : guard(guard), assignments(assignments), destinations(destinations) {
+            // Intentionally left empty.
+        }
         
         void TemplateEdge::addDestination(TemplateEdgeDestination const& destination) {
             destinations.emplace_back(destination);
@@ -135,6 +140,16 @@ namespace storm {
             }
             return false;
         }
+
+
+        bool TemplateEdge::hasEdgeDestinationAssignments() const {
+            for (auto const& destination : destinations) {
+                if (destination.hasAssignments()) {
+                    return true;
+                }
+            }
+            return false;
+        }
         
         bool TemplateEdge::isLinear() const {
             storm::expressions::LinearityCheckVisitor linearityChecker;
@@ -145,6 +160,21 @@ namespace storm {
             }
             return result;
         }
-        
+
+        TemplateEdge TemplateEdge::simplifyIndexedAssignments(bool syncronized, VariableSet const& localVars) const {
+            // We currently only support cases where we have EITHER edge assignments or destination assignments.
+            if (assignments.empty()) {
+                // Only edge destination assignments:
+                TemplateEdge simplifiedTemplateEdge(guard);
+                for(auto const& dest : destinations) {
+                    simplifiedTemplateEdge.addDestination(dest.simplifyIndexedAssignments(syncronized, localVars));
+                }
+                return simplifiedTemplateEdge;
+            } else if(!hasEdgeDestinationAssignments()) {
+                return TemplateEdge(guard, assignments.simplifyLevels(syncronized, localVars), destinations);
+            } else {
+                return TemplateEdge(*this);
+            }
+        }
     }
 }

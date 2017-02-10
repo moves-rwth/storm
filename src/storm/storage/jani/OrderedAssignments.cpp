@@ -92,10 +92,12 @@ namespace storm {
         }
         
         int_fast64_t OrderedAssignments::getLowestLevel() const {
+            assert(!allAssignments.empty());
             return allAssignments.front()->getLevel();
         }
         
         int_fast64_t OrderedAssignments::getHighestLevel() const {
+            assert(!allAssignments.empty());
             return allAssignments.back()->getLevel();
         }
         
@@ -109,26 +111,29 @@ namespace storm {
         }
 
         OrderedAssignments OrderedAssignments::simplifyLevels(bool synchronous, VariableSet const& localVars) const {
-            if (!synchronous) {
-                bool changed = false;
-                std::vector<Assignment> newAssignments;
-                for (auto const& assignment : allAssignments) {
-                    newAssignments.push_back(*assignment);
-                    if (!isReadBeforeAssignment(assignment->getVariable(), upperBound(assignment->getLevel() - 1))) {
-                        if (!isWrittenBeforeAssignment(assignment->getVariable(), upperBound(assignment->getLevel()-1))) {
-                            newAssignments.back().setLevel(0);
-                            changed = true;
-                        }
+            bool changed = false;
+            std::vector<Assignment> newAssignments;
+            for (auto const& assignment : allAssignments) {
+                newAssignments.push_back(*assignment);
+                if (synchronous && !localVars.hasVariable(assignment->getVariable())) {
+                    continue;
+                }
+                if (assignment->getLevel() == 0) {
+                    continue;
+                }
+                if (!isReadBeforeAssignment(assignment->getVariable(), upperBound(assignment->getLevel() - 1))) {
+                    if (!isWrittenBeforeAssignment(assignment->getVariable(), upperBound(assignment->getLevel()-1))) {
+                        newAssignments.back().setLevel(0);
+                        changed = true;
                     }
                 }
-                if (changed) {
-                    return OrderedAssignments(newAssignments).simplifyLevels(synchronous, localVars);
-                } else {
-                    return *this;
-                }
+            }
+            if (changed) {
+                return OrderedAssignments(newAssignments).simplifyLevels(synchronous, localVars);
             } else {
                 return *this;
             }
+
         }
 
         detail::ConstAssignments OrderedAssignments::getAllAssignments() const {
@@ -183,10 +188,11 @@ namespace storm {
 
         bool OrderedAssignments::isReadBeforeAssignment(Variable const& var, uint64_t assignmentNumber, uint64_t start) const {
             for (uint64_t i = start; i < assignmentNumber; i++) {
-                if (allAssignments.at(i)->getAssignedExpression().containsVariable(var.getExpressionVariable())) {
+                if (allAssignments.at(i)->getAssignedExpression().containsVariable({ var.getExpressionVariable() })) {
                     return true;
                 }
             }
+            return false;
         }
 
         bool OrderedAssignments::isWrittenBeforeAssignment(Variable const& var, uint64_t assignmentNumber, uint64_t start) const {
@@ -195,6 +201,7 @@ namespace storm {
                     return true;
                 }
             }
+            return false;
         }
 
         uint64_t OrderedAssignments::upperBound(int64_t index) const {
@@ -205,6 +212,7 @@ namespace storm {
                 }
                 ++result;
             }
+            return result;
         }
 
         bool OrderedAssignments::areLinear() const {
@@ -218,7 +226,11 @@ namespace storm {
         std::ostream& operator<<(std::ostream& stream, OrderedAssignments const& assignments) {
             stream << "[";
             for(auto const& e : assignments.allAssignments) {
-                stream << *e << std::endl;
+                stream << *e;
+                if (e->getLevel() != 0) {
+                    stream << " @" << e->getLevel();
+                }
+                stream << std::endl;
             }
             stream << "]";
             return stream;

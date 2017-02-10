@@ -38,11 +38,21 @@ namespace storm {
              * Retrieves whether the edge uses an assignment level other than zero.
              */
             bool usesAssignmentLevels() const;
-            
+
+            /*!
+             * Checks whether the templ. edge destination contains one or more assignments
+             * @return True iff assignments exist
+             */
+            bool hasAssignments() const;
             /*!
              * Checks the template edge destination for linearity.
              */
             bool isLinear() const;
+
+            /*!
+             * Simplify Indexed Assignments
+             */
+            TemplateEdgeDestination simplifyIndexedAssignments(bool syncronized, VariableSet const& localVars) const;
             
         private:
             // The (ordered) assignments to make when choosing this destination.

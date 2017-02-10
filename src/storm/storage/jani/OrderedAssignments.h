@@ -150,7 +150,7 @@ namespace storm {
              * @param index The index we are interested in
              * @return
              */
-            uint64_t upperBound(int64_t index);
+            uint64_t upperBound(int64_t index) const;
 
             static std::vector<std::shared_ptr<Assignment>>::const_iterator lowerBound(Assignment const& assignment, std::vector<std::shared_ptr<Assignment>> const& assignments);
                         

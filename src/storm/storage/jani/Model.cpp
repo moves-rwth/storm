@@ -127,7 +127,9 @@ namespace storm {
         
         ConditionalMetaEdge createSynchronizedMetaEdge(Automaton& automaton, std::vector<std::reference_wrapper<Edge const>> const& edgesToSynchronize) {
             ConditionalMetaEdge result;
-            result.templateEdge = automaton.createTemplateEdge(createSynchronizedGuard(edgesToSynchronize));
+
+            result.templateEdge = std::make_shared<TemplateEdge>(createSynchronizedGuard(edgesToSynchronize));
+            automaton.registerTemplateEdge(result.templateEdge);
             
             for (auto const& edge : edgesToSynchronize) {
                 result.condition.push_back(edge.get().getSourceLocationIndex());
@@ -482,7 +484,8 @@ namespace storm {
                         conditionalMetaEdges.emplace_back();
                         ConditionalMetaEdge& conditionalMetaEdge = conditionalMetaEdges.back();
                         
-                        conditionalMetaEdge.templateEdge = newAutomaton.createTemplateEdge(edge.getGuard());
+                        conditionalMetaEdge.templateEdge = std::make_shared<TemplateEdge>(edge.getGuard());
+                        newAutomaton.registerTemplateEdge(conditionalMetaEdge.templateEdge);
                         conditionalMetaEdge.actionIndex = edge.getActionIndex();
                         conditionalMetaEdge.components.emplace_back(static_cast<uint64_t>(i));
                         conditionalMetaEdge.condition.emplace_back(edge.getSourceLocationIndex());

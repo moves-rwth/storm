@@ -50,5 +50,13 @@ namespace storm {
         bool TemplateEdgeDestination::isLinear() const {
             return assignments.areLinear();
         }
+
+        bool TemplateEdgeDestination::hasAssignments() const {
+            return !(assignments.empty());
+        }
+
+        TemplateEdgeDestination TemplateEdgeDestination::simplifyIndexedAssignments(bool syncronized, VariableSet const& localVars) const {
+            return TemplateEdgeDestination(assignments.simplifyLevels(syncronized, localVars));
+        }
     }
 }

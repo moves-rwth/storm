@@ -202,7 +202,8 @@ namespace storm {
                 }
                 
                 for (auto const& command : module.getCommands()) {
-                    std::shared_ptr<storm::jani::TemplateEdge> templateEdge = automaton.createTemplateEdge(command.getGuardExpression());
+                    std::shared_ptr<storm::jani::TemplateEdge> templateEdge = std::make_shared<storm::jani::TemplateEdge>(command.getGuardExpression());
+                    automaton.registerTemplateEdge(templateEdge);
                     actionIndicesOfModule.insert(janiModel.getActionIndex(command.getActionName()));
                     
                     boost::optional<storm::expressions::Expression> rateExpression;
