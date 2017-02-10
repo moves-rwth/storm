@@ -1165,7 +1165,7 @@ namespace storm {
             
             return result;
         }
-        
+
         template<typename ValueType>
         void SparseMatrix<ValueType>::multiplyWithVector(std::vector<ValueType> const& vector, std::vector<ValueType>& result) const {
 #ifdef STORM_HAVE_INTELTBB
@@ -1178,59 +1178,60 @@ namespace storm {
             return multiplyWithVectorSequential(vector, result);
 #endif
         }
-        
+
         template<typename ValueType>
         void SparseMatrix<ValueType>::multiplyWithVectorSequential(std::vector<ValueType> const& vector, std::vector<ValueType>& result) const {
-            const_iterator it = this->begin();
-            const_iterator ite;
-            std::vector<index_type>::const_iterator rowIterator = rowIndications.begin();
-            typename std::vector<ValueType>::iterator resultIterator = result.begin();
-            typename std::vector<ValueType>::iterator resultIteratorEnd = result.end();
-            
-            // If the vector to multiply with and the target vector are actually the same, we need an auxiliary variable
-            // to store the intermediate result.
             if (&vector == &result) {
-                for (; resultIterator != resultIteratorEnd; ++rowIterator, ++resultIterator) {
-                    ValueType tmpValue = storm::utility::zero<ValueType>();
-                    
-                    for (ite = this->begin() + *(rowIterator + 1); it != ite; ++it) {
-                        tmpValue += it->getValue() * vector[it->getColumn()];
-                    }
-                    *resultIterator = tmpValue;
-                }
+                STORM_LOG_WARN("Matrix-vector-multiplication invoked but the target vector uses the same memory as the input vector. This requires to allocate auxiliary memory.");
+                std::vector<ValueType> tmpVector(this->getRowCount());
+                multiplyWithVectorSequential(vector, tmpVector);
+                result = std::move(tmpVector);
             } else {
+                const_iterator it = this->begin();
+                const_iterator ite;
+                std::vector<index_type>::const_iterator rowIterator = rowIndications.begin();
+                typename std::vector<ValueType>::iterator resultIterator = result.begin();
+                typename std::vector<ValueType>::iterator resultIteratorEnd = result.end();
+
                 for (; resultIterator != resultIteratorEnd; ++rowIterator, ++resultIterator) {
                     *resultIterator = storm::utility::zero<ValueType>();
-                    
+
                     for (ite = this->begin() + *(rowIterator + 1); it != ite; ++it) {
                         *resultIterator += it->getValue() * vector[it->getColumn()];
                     }
                 }
             }
         }
-        
+
 #ifdef STORM_HAVE_INTELTBB
         template<typename ValueType>
         void SparseMatrix<ValueType>::multiplyWithVectorParallel(std::vector<ValueType> const& vector, std::vector<ValueType>& result) const {
-            tbb::parallel_for(tbb::blocked_range<index_type>(0, result.size(), 10),
-                              [&] (tbb::blocked_range<index_type> const& range) {
-                                  index_type startRow = range.begin();
-                                  index_type endRow = range.end();
-                                  const_iterator it = this->begin(startRow);
-                                  const_iterator ite;
-                                  std::vector<index_type>::const_iterator rowIterator = this->rowIndications.begin() + startRow;
-                                  std::vector<index_type>::const_iterator rowIteratorEnd = this->rowIndications.begin() + endRow;
-                                  typename std::vector<ValueType>::iterator resultIterator = result.begin() + startRow;
-                                  typename std::vector<ValueType>::iterator resultIteratorEnd = result.begin() + endRow;
-                                  
-                                  for (; resultIterator != resultIteratorEnd; ++rowIterator, ++resultIterator) {
-                                      *resultIterator = storm::utility::zero<ValueType>();
-                                      
-                                      for (ite = this->begin() + *(rowIterator + 1); it != ite; ++it) {
-                                          *resultIterator += it->getValue() * vector[it->getColumn()];
+            if (&vector == &result) {
+                STORM_LOG_WARN("Matrix-vector-multiplication invoked but the target vector uses the same memory as the input vector. This requires to allocate auxiliary memory.");
+                std::vector<ValueType> tmpVector(this->getRowCount());
+                multiplyWithVectorParallel(vector, tmpVector);
+                result = std::move(tmpVector);
+            } else {
+                tbb::parallel_for(tbb::blocked_range<index_type>(0, result.size(), 10),
+                                  [&] (tbb::blocked_range<index_type> const& range) {
+                                      index_type startRow = range.begin();
+                                      index_type endRow = range.end();
+                                      const_iterator it = this->begin(startRow);
+                                      const_iterator ite;
+                                      std::vector<index_type>::const_iterator rowIterator = this->rowIndications.begin() + startRow;
+                                      std::vector<index_type>::const_iterator rowIteratorEnd = this->rowIndications.begin() + endRow;
+                                      typename std::vector<ValueType>::iterator resultIterator = result.begin() + startRow;
+                                      typename std::vector<ValueType>::iterator resultIteratorEnd = result.begin() + endRow;
+
+                                      for (; resultIterator != resultIteratorEnd; ++rowIterator, ++resultIterator) {
+                                          *resultIterator = storm::utility::zero<ValueType>();
+
+                                          for (ite = this->begin() + *(rowIterator + 1); it != ite; ++it) {
+                                              *resultIterator += it->getValue() * vector[it->getColumn()];
+                                          }
                                       }
-                                  }
-                              });
+                                  });
+            }
         }
 #endif
         
