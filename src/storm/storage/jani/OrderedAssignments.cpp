@@ -2,6 +2,7 @@
 
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/storage/jani/VariableSet.h"
 
 namespace storm {
     namespace jani {

@@ -3,14 +3,16 @@
 #include <memory>
 
 #include <boost/optional.hpp>
+#include <boost/container/flat_set.hpp>
 
-#include "storm/storage/jani/TemplateEdge.h"
 #include "storm/storage/jani/EdgeDestination.h"
 #include "storm/storage/jani/OrderedAssignments.h"
 
 namespace storm {
     namespace jani {
-        
+
+        class TemplateEdge;
+
         class Edge {
         public:
             Edge() = default;

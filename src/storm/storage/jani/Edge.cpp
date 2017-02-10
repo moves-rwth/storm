@@ -5,6 +5,8 @@
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 
+#include "storm/storage/jani/TemplateEdge.h"
+
 namespace storm {
     namespace jani {
         
