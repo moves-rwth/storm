@@ -112,7 +112,11 @@ namespace storm {
         bool VariableSet::hasVariable(std::string const& name) const {
             return nameToVariable.find(name) != nameToVariable.end();
         }
-        
+
+        bool VariableSet::hasVariable(Variable const& var) const {
+            return hasVariable(var.getName());
+        }
+
         Variable const& VariableSet::getVariable(std::string const& name) const {
             auto it = nameToVariable.find(name);
             STORM_LOG_THROW(it != nameToVariable.end(), storm::exceptions::InvalidArgumentException, "Unable to retrieve unknown variable '" << name << "'.");

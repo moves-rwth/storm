@@ -104,6 +104,10 @@ namespace storm {
             Variable const& getVariable(std::string const& name) const;
 
             /*!
+             * Retrieves whether this variable set contains a given variable.
+             */
+            bool hasVariable(storm::jani::Variable const& variable) const;
+            /*!
              * Retrieves whether this variable set contains a variable with the expression variable.
              */
             bool hasVariable(storm::expressions::Variable const& variable) const;
