@@ -358,14 +358,10 @@ namespace storm {
                 // compute a choice vector for the probabilistic states that is optimal w.r.t. the weighted reward vector
                 minMax.solver->solveEquations(PS.weightedSolutionVector, minMax.b);
                 auto newScheduler = minMax.solver->getScheduler();
-                if(consideredObjectives.getNumberOfSetBits() == 1 && !storm::utility::isZero(weightVector[*consideredObjectives.begin()])) {
+                if(consideredObjectives.getNumberOfSetBits() == 1 && storm::utility::isOne(weightVector[*consideredObjectives.begin()])) {
                     // In this case there is no need to perform the computation on the individual objectives
                     optimalChoicesAtCurrentEpoch = newScheduler->getChoices();
-                    auto objIndex = *consideredObjectives.begin();
-                    PS.objectiveSolutionVectors[objIndex] = PS.weightedSolutionVector;
-                    if(!storm::utility::isOne(weightVector[objIndex])) {
-                        storm::utility::vector::scaleVectorInPlace(PS.objectiveSolutionVectors[objIndex], storm::utility::one<ValueType>()/weightVector[objIndex]);
-                    }
+                    PS.objectiveSolutionVectors[*consideredObjectives.begin()] = PS.weightedSolutionVector;
                 } else {
                     // check whether the linEqSolver needs to be updated, i.e., whether the scheduler has changed
                     if(linEq.solver == nullptr || newScheduler->getChoices() != optimalChoicesAtCurrentEpoch) {
@@ -407,13 +403,9 @@ namespace storm {
                 storm::utility::vector::addVectors(MS.weightedRewardVector, MS.auxChoiceValues, MS.weightedSolutionVector);
                 MS.toPS.multiplyWithVector(PS.weightedSolutionVector, MS.auxChoiceValues);
                 storm::utility::vector::addVectors(MS.weightedSolutionVector, MS.auxChoiceValues, MS.weightedSolutionVector);
-                if(consideredObjectives.getNumberOfSetBits() == 1 && !storm::utility::isZero(weightVector[*consideredObjectives.begin()])) {
+                if(consideredObjectives.getNumberOfSetBits() == 1 && storm::utility::isOne(weightVector[*consideredObjectives.begin()])) {
                     // In this case there is no need to perform the computation on the individual objectives
-                    auto objIndex = *consideredObjectives.begin();
-                    MS.objectiveSolutionVectors[objIndex] = MS.weightedSolutionVector;
-                    if(!storm::utility::isOne(weightVector[objIndex])) {
-                        storm::utility::vector::scaleVectorInPlace(MS.objectiveSolutionVectors[objIndex], storm::utility::one<ValueType>()/weightVector[objIndex]);
-                    }
+                    MS.objectiveSolutionVectors[*consideredObjectives.begin()] = MS.weightedSolutionVector;
                 } else {
                     for(auto objIndex : consideredObjectives) {
                         MS.toMS.multiplyWithVector(MS.objectiveSolutionVectors[objIndex], MS.auxChoiceValues);
