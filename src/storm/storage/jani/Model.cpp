@@ -2,8 +2,17 @@
 
 #include "storm/storage/expressions/ExpressionManager.h"
 
-#include "storm/storage/jani/Compositions.h"
+
+#include "storm/storage/jani/Edge.h"
+#include "storm/storage/jani/TemplateEdge.h"
+#include "storm/storage/jani/EdgeDestination.h"
+#include "storm/storage/jani/Model.h"
+#include "storm/storage/jani/Automaton.h"
+#include "storm/storage/jani/Location.h"
+#include "storm/storage/jani/AutomatonComposition.h"
+#include "storm/storage/jani/ParallelComposition.h"
 #include "storm/storage/jani/CompositionInformationVisitor.h"
+#include "storm/storage/jani/Compositions.h"
 
 #include "storm/storage/expressions/LinearityCheckVisitor.h"
 
@@ -22,7 +31,11 @@ namespace storm {
         
         const std::string Model::SILENT_ACTION_NAME = "";
         const uint64_t Model::SILENT_ACTION_INDEX = 0;
-        
+
+
+        Model::Model(Model&& other) = default;
+        Model& Model::operator=(Model&& other) = default;
+
         Model::Model() {
             // Intentionally left empty.
         }

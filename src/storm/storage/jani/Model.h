@@ -2,11 +2,18 @@
 
 #include <memory>
 
+
+#include <boost/container/flat_set.hpp>
+
+#include "storm/storage/jani/VariableSet.h"
 #include "storm/storage/jani/Action.h"
 #include "storm/storage/jani/ModelType.h"
 #include "storm/storage/jani/Automaton.h"
 #include "storm/storage/jani/Constant.h"
 #include "storm/storage/jani/Composition.h"
+#include "storm/storage/jani/Edge.h"
+#include "storm/storage/jani/Location.h"
+#include "storm/storage/jani/TemplateEdge.h"
 
 #include "storm/utility/solver.h"
 #include "storm/utility/vector.h"
@@ -17,7 +24,13 @@ namespace storm {
     }
     
     namespace jani {
-        
+
+        class Variable;
+        class BooleanVariable;
+        class BoundedIntegerVariable;
+        class UnboundedIntegerVariable;
+        class RealVariable;
+        class Automaton;
         class Exporter;
         class SynchronizationVector;
         
@@ -45,8 +58,8 @@ namespace storm {
              */
             Model& operator=(Model const& other);
             
-            Model(Model&& other) = default;
-            Model& operator=(Model&& other) = default;
+            Model(Model&& other);
+            Model& operator=(Model&& other);
             
             /*!
              * Retrieves the expression manager responsible for the expressions in the model.

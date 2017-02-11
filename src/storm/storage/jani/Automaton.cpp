@@ -1,5 +1,9 @@
 #include "storm/storage/jani/Automaton.h"
 
+#include "storm/storage/jani/Edge.h"
+#include "storm/storage/jani/TemplateEdge.h"
+#include "storm/storage/jani/Location.h"
+
 #include "storm/utility/macros.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/exceptions/InvalidArgumentException.h"

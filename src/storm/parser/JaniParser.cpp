@@ -1,8 +1,15 @@
 #include "JaniParser.h"
+
+#include "storm/storage/jani/Edge.h"
+#include "storm/storage/jani/TemplateEdge.h"
+#include "storm/storage/jani/EdgeDestination.h"
 #include "storm/storage/jani/Model.h"
+#include "storm/storage/jani/Automaton.h"
+#include "storm/storage/jani/Location.h"
 #include "storm/storage/jani/Property.h"
 #include "storm/storage/jani/AutomatonComposition.h"
 #include "storm/storage/jani/ParallelComposition.h"
+#include "storm/storage/jani/CompositionInformationVisitor.h"
 #include "storm/exceptions/FileIoException.h"
 #include "storm/exceptions/InvalidJaniException.h"
 

@@ -7,14 +7,15 @@
 #include <boost/container/flat_set.hpp>
 
 #include "storm/storage/jani/VariableSet.h"
-#include "storm/storage/jani/Edge.h"
-#include "storm/storage/jani/TemplateEdge.h"
-#include "storm/storage/jani/Location.h"
+
 
 namespace storm {
     namespace jani {
 
         class Automaton;
+        class Edge;
+        class TemplateEdge;
+        class Location;
         
         namespace detail {
             class Edges {

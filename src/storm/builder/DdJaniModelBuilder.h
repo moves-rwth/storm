@@ -6,7 +6,6 @@
 
 #include "storm/logic/Formula.h"
 
-#include "storm/storage/jani/Model.h"
 
 namespace storm {
     namespace models {
@@ -14,6 +13,9 @@ namespace storm {
             template <storm::dd::DdType Type, typename ValueType>
             class Model;
         }
+    }
+    namespace jani {
+        class Model;
     }
     
     namespace builder {

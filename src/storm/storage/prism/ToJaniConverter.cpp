@@ -5,6 +5,7 @@
 #include "storm/storage/prism/Program.h"
 #include "storm/storage/prism/CompositionToJaniVisitor.h"
 #include "storm/storage/jani/Model.h"
+#include "storm/storage/jani/TemplateEdge.h"
 
 #include "storm/utility/macros.h"
 #include "storm/exceptions/NotImplementedException.h"
