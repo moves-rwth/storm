@@ -50,7 +50,7 @@ namespace storm {
              * @param localVars
              * @return
              */
-            OrderedAssignments simplifyLevels(bool synchronous, VariableSet const& localVars) const;
+            OrderedAssignments simplifyLevels(bool synchronous, VariableSet const& localVars, bool first = true) const;
             
             /*!
              * Retrieves whether this set of assignments is empty.
@@ -142,8 +142,8 @@ namespace storm {
             friend std::ostream& operator<<(std::ostream& stream, OrderedAssignments const& assignments);
             
         private:
-            bool isReadBeforeAssignment(Variable const& var, uint64_t assignmentNumber, uint64_t start = 0) const;
-            bool isWrittenBeforeAssignment(Variable const& var, uint64_t assignmentNumber, uint64_t start = 0) const;
+            uint64_t isReadBeforeAssignment(Variable const& var, uint64_t assignmentNumber, uint64_t start = 0) const;
+            uint64_t isWrittenBeforeAssignment(Variable const& var, uint64_t assignmentNumber, uint64_t start = 0) const;
 
             /*!
              * Gets the number of  assignments number with an assignment not higher than index.
