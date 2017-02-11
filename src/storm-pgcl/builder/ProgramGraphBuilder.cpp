@@ -55,22 +55,23 @@ namespace storm {
             builder.storeNextLocation(builder.nextLoc());
             storm::ppg::ProgramLocation* bodyStart = builder.newLocation();
             builder.buildBlock(*s.getLeftBranch());
-            beforeStatementLocation->addProgramEdgeToAllGroups(builder.noAction(), builder.nextLocId());
+            beforeStatementLocation->addProgramEdgeToAllGroups(builder.noAction(), bodyStart->id());
             builder.storeNextLocation(builder.nextLoc());
             bodyStart = builder.newLocation();
-            beforeStatementLocation->addProgramEdgeToAllGroups(builder.noAction(), builder.nextLocId());
+            beforeStatementLocation->addProgramEdgeToAllGroups(builder.noAction(), bodyStart->id());
             builder.buildBlock(*s.getRightBranch());
 
         }
         void ProgramGraphBuilderVisitor::visit(storm::pgcl::ProbabilisticBranch const& s) {
             storm::ppg::ProgramLocation* beforeStatementLocation = builder.currentLoc();
-            builder.storeNextLocation(builder.nextLoc());
+            storm::ppg::ProgramLocation* afterStatementLocation = builder.nextLoc();
+            builder.storeNextLocation(afterStatementLocation);
             storm::ppg::ProgramLocation* bodyStart = builder.newLocation();
-            beforeStatementLocation->addProgramEdgeGroup(s.getProbability())->addEdge(builder.nextLocId(), builder.noAction());
+            beforeStatementLocation->addProgramEdgeGroup(s.getProbability())->addEdge(builder.noAction(), bodyStart->id());
             builder.buildBlock(*s.getLeftBranch());
-            builder.storeNextLocation(builder.nextLoc());
+            builder.storeNextLocation(afterStatementLocation);
             bodyStart = builder.newLocation();
-            beforeStatementLocation->addProgramEdgeGroup(1 - s.getProbability())->addEdge(builder.nextLocId(), builder.noAction());
+            beforeStatementLocation->addProgramEdgeGroup(1 - s.getProbability())->addEdge(builder.noAction(), bodyStart->id());
             builder.buildBlock(*s.getRightBranch());
         }
     }
