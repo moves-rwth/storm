@@ -138,7 +138,7 @@ namespace storm {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The input model contains undefined constants that influence the graph structure of the underlying model, which is not allowed.");
                 }
 #endif
-                STORM_LOG_THROW(!model.reusesActionsInComposition(), storm::exceptions::InvalidArgumentException, "The jit JANI model builder currently does not support reusing actions in parallel composition");
+                //STORM_LOG_THROW(!model.reusesActionsInComposition(), storm::exceptions::InvalidArgumentException, "The jit JANI model builder currently does not support reusing actions in parallel composition");
 
                 // Comment this in to print the JANI model for debugging purposes. 
                 // this->model.makeStandardJaniCompliant();
@@ -1014,6 +1014,7 @@ namespace storm {
                     ++position;
                 }
                 bool generateLevelCode = lowestLevel != highestLevel;
+
                 
                 uint64_t indentLevel = 4;
                 indent(vectorSource, indentLevel - 4) << "void performSynchronizedDestinations_" << synchronizationVectorIndex << "(StateType const& in, StateBehaviour<IndexType, ValueType>& behaviour, StateSet<StateType>& statesToExplore, ";
@@ -1078,11 +1079,11 @@ namespace storm {
                     indent(vectorSource, indentLevel + 1 + index) << "for (auto const& destination" << index << " : edge" << index << ") {" << std::endl;
                     if (generateLevelCode) {
                         if (index == 0) {
-                            indent(vectorSource, indentLevel + 2 + index) << "lowestLevel = edge0.lowestLevel();" << std::endl;
-                            indent(vectorSource, indentLevel + 2 + index) << "highestLevel = edge0.highestLevel();" << std::endl;
+                            indent(vectorSource, indentLevel + 2 + index) << "lowestLevel = destination" << index << ".lowestLevel();" << std::endl;
+                            indent(vectorSource, indentLevel + 2 + index) << "highestLevel = destination" << index << ".highestLevel();" << std::endl;
                         } else {
-                            indent(vectorSource, indentLevel + 2 + index) << "lowestLevel = std::min(lowestLevel, edge0.lowestLevel());" << std::endl;
-                            indent(vectorSource, indentLevel + 2 + index) << "highestLevel = std::max(highestLevel, edge0.highestLevel());" << std::endl;
+                            indent(vectorSource, indentLevel + 2 + index) << "lowestLevel = std::min(lowestLevel, destination" << index << ".lowestLevel());" << std::endl;
+                            indent(vectorSource, indentLevel + 2 + index) << "highestLevel = std::max(highestLevel, destination" << index << ".highestLevel());" << std::endl;
                         }
                     }
                 }
