@@ -588,7 +588,9 @@ namespace storm {
             for(auto const& variable : varSet) {
                 modernjson::json varEntry;
                 varEntry["name"] = variable.getName();
-                varEntry["transient"] = variable.isTransient();
+                if (variable.isTransient()) {
+                    varEntry["transient"] = variable.isTransient();
+                }
                 modernjson::json typeDesc;
                 if(variable.isBooleanVariable()) {
                     typeDesc = "bool";
@@ -635,7 +637,9 @@ namespace storm {
                 modernjson::json locEntry;
                 locEntry["name"] = location.getName();
                 // TODO support invariants?
-                locEntry["transient-values"] = buildAssignmentArray(location.getAssignments());
+                if (!location.getAssignments().empty()) {
+                    locEntry["transient-values"] = buildAssignmentArray(location.getAssignments());
+                }
                 locationDeclarations.push_back(locEntry);
             }
             return modernjson::json(locationDeclarations);
@@ -655,8 +659,18 @@ namespace storm {
             for(auto const& destination : destinations) {
                 modernjson::json destEntry;
                 destEntry["location"] = locationNames.at(destination.getLocationIndex());
-                destEntry["probability"]["exp"] = buildExpression(destination.getProbability());
-                destEntry["assignments"] = buildAssignmentArray(destination.getOrderedAssignments());
+                bool prob1 = false;
+                if(destination.getProbability().isLiteral()) {
+                    if(destination.getProbability().evaluateAsDouble() == 1) {
+                        prob1 = true;
+                    }
+                }
+                if (!prob1) {
+                    destEntry["probability"]["exp"] = buildExpression(destination.getProbability());
+                }
+                if (!destination.getOrderedAssignments().empty()) {
+                    destEntry["assignments"] = buildAssignmentArray(destination.getOrderedAssignments());
+                }
                 destDeclarations.push_back(destEntry);
             }
             return modernjson::json(destDeclarations);
@@ -677,8 +691,13 @@ namespace storm {
                 if(edge.hasRate()) {
                     edgeEntry["rate"]["exp"] = buildExpression(edge.getRate());
                 }
-                edgeEntry["guard"]["exp"] = buildExpression(edge.getGuard());
+                if (!edge.getGuard().isTrue()) {
+                    edgeEntry["guard"]["exp"] = buildExpression(edge.getGuard());
+                }
                 edgeEntry["destinations"] = buildDestinations(edge.getDestinations(), locationNames);
+                if (!edge.getAssignments().empty()) {
+                    edgeEntry["assignments"] = buildAssignmentArray(edge.getAssignments());
+                }
                 
                 edgeDeclarations.push_back(edgeEntry);
             }
