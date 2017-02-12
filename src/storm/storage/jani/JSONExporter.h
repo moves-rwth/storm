@@ -18,7 +18,7 @@ namespace storm {
         class ExpressionToJson : public storm::expressions::ExpressionVisitor {
             
         public:
-            static modernjson::json translate(storm::expressions::Expression const& expr);
+            static modernjson::json translate(storm::expressions::Expression const& expr, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables);
             
             virtual boost::any visit(storm::expressions::IfThenElseExpression const& expression, boost::any const& data);
             virtual boost::any visit(storm::expressions::BinaryBooleanFunctionExpression const& expression, boost::any const& data);
@@ -30,7 +30,11 @@ namespace storm {
             virtual boost::any visit(storm::expressions::BooleanLiteralExpression const& expression, boost::any const& data);
             virtual boost::any visit(storm::expressions::IntegerLiteralExpression const& expression, boost::any const& data);
             virtual boost::any visit(storm::expressions::RationalLiteralExpression const& expression, boost::any const& data);
-            
+        private:
+            ExpressionToJson(std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables) : constants(constants), globalVariables(globalVariables), localVariables(localVariables) {}
+            std::vector<storm::jani::Constant> const& constants;
+            VariableSet const& globalVariables;
+            VariableSet const& localVariables;
         };
         
         class FormulaToJaniJson : public storm::logic::FormulaVisitor {
