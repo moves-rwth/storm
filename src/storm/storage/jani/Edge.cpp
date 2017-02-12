@@ -107,6 +107,7 @@ namespace storm {
             if(usesAssignmentLevels()) {
                 templateEdge = std::make_shared<TemplateEdge>(templateEdge->simplifyIndexedAssignments(!hasSilentAction(), localVars));
                 std::vector<EdgeDestination> newdestinations;
+                assert(templateEdge->getNumberOfDestinations() == destinations.size());
                 for (uint64_t i = 0; i < templateEdge->getNumberOfDestinations(); ++i) {
                     auto const& templateDestination = templateEdge->getDestination(i);
                     newdestinations.emplace_back(destinations[i].getLocationIndex(), destinations[i].getProbability(), templateDestination);

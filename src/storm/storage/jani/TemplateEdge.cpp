@@ -133,6 +133,9 @@ namespace storm {
         }
         
         bool TemplateEdge::usesAssignmentLevels() const {
+            if (assignments.hasMultipleLevels()) {
+                return true;
+            }
             for (auto const& destination : this->getDestinations()) {
                 if (destination.usesAssignmentLevels()) {
                     return true;

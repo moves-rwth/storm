@@ -74,7 +74,7 @@ namespace storm {
             if (allAssignments.empty()) {
                 return false;
             }
-            return getLowestLevel() != getHighestLevel();
+            return getLowestLevel() != 0 || getHighestLevel() != 0;
         }
         
         bool OrderedAssignments::empty() const {
