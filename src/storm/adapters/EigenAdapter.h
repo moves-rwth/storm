@@ -17,6 +17,12 @@ namespace storm {
              */
             template<class ValueType>
             static std::unique_ptr<StormEigen::SparseMatrix<ValueType>> toEigenSparseMatrix(storm::storage::SparseMatrix<ValueType> const& matrix);
+
+            template <typename ValueType>
+            static std::vector<ValueType> toStdVector(StormEigen::Matrix<ValueType, StormEigen::Dynamic, 1> const& v);
+
+            template <typename ValueType>
+            static StormEigen::Matrix<ValueType, StormEigen::Dynamic, 1> toEigenVector(std::vector<ValueType> const& v);
         };
         
     }
