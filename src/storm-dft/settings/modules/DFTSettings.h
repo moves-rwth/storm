@@ -110,7 +110,28 @@ namespace storm {
                  * @return True iff the option was set.
                  */
                 bool usePropTimebound() const;
-                
+
+                /*!
+                 * Retrieves the timebound for the timebound property.
+                 *
+                 * @return The timebound.
+                 */
+                double getPropTimebound() const;
+
+                /*!
+                 * Retrieves whether the property timepoints should be used.
+                 *
+                 * @return True iff the option was set.
+                 */
+                bool usePropTimepoints() const;
+
+                /*!
+                 * Retrieves the settings for the timepoints property.
+                 *
+                 * @return The timepoints.
+                 */
+                std::vector<double> getPropTimepoints() const;
+
                 /*!
                  * Retrieves whether the minimal value should be computed for non-determinism.
                  *
@@ -124,13 +145,6 @@ namespace storm {
                  * @return True iff the option was set.
                  */
                 bool isComputeMaximalValue() const;
-                
-                /*!
-                 * Retrieves the timebound for the timebound property.
-                 *
-                 * @return The timebound.
-                 */
-                double getPropTimebound() const;
 
                 /*!
                  * Retrieves whether the DFT should be transformed into a GSPN.
@@ -184,7 +198,8 @@ namespace storm {
                 static const std::string propExpectedTimeOptionName;
                 static const std::string propExpectedTimeOptionShortName;
                 static const std::string propProbabilityOptionName;
-                static const std::string propTimeBoundOptionName;
+                static const std::string propTimeboundOptionName;
+                static const std::string propTimepointsOptionName;
                 static const std::string minValueOptionName;
                 static const std::string maxValueOptionName;
 #ifdef STORM_HAVE_Z3
