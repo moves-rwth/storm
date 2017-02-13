@@ -107,14 +107,11 @@ namespace storm {
             // The actual solver object.
             std::unique_ptr<z3::optimize> solver;
 
-            // The result of the most recent check
-            mutable z3::check_result z3CheckResult;
-
-            // The handle for the most recent optimization call
-            mutable z3::optimize::handle z3Handle;
-
-            // The model for the most recent optimization call
-            mutable std::unique_ptr<z3::model> z3Model;
+            // The results of the most recent check
+            mutable bool lastCheckInfeasible;
+            mutable bool lastCheckUnbounded;
+            mutable std::unique_ptr<z3::expr> lastCheckObjectiveValue;
+            mutable std::unique_ptr<z3::model> lastCheckModel;
 
             // An expression adapter that is used for translating the expression into Z3's format.
             std::unique_ptr<storm::adapters::Z3ExpressionAdapter> expressionAdapter;
@@ -123,9 +120,6 @@ namespace storm {
             storm::expressions::Expression optimizationFunction;
 
 #endif
-
-            // The name of the solver
-            std::string name;
         };
 
     }

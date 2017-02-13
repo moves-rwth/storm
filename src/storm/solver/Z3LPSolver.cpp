@@ -23,7 +23,7 @@ namespace storm {
     namespace solver {
         
 #ifdef STORM_HAVE_Z3
-        Z3LpSolver::Z3LpSolver(std::string const& name, OptimizationDirection const& optDir) : LpSolver(optDir), z3CheckResult(z3::unknown), z3Handle(0) {
+        Z3LpSolver::Z3LpSolver(std::string const& name, OptimizationDirection const& optDir) : LpSolver(optDir) {
             STORM_LOG_WARN_COND(name != "", "Z3 does not support names for solvers");
             z3::config config;
             config.set("model", true);
@@ -50,8 +50,9 @@ namespace storm {
         }
         
         void Z3LpSolver::update() const {
-            // Since the model changed, we erase the optimality flag and reset the current model.
-            this->z3Model.reset(nullptr);
+            // Since the model changed, we erase the optimality flag.
+            lastCheckObjectiveValue.reset(nullptr);
+            lastCheckModel.reset(nullptr);
             this->currentModelHasBeenOptimized = false;
         }
         
@@ -110,7 +111,8 @@ namespace storm {
         }
         
         storm::expressions::Variable Z3LpSolver::addBinaryVariable(std::string const& name, double objectiveFunctionCoefficient) {
-            storm::expressions::Variable newVariable = this->manager->declareVariable(name, manager->getBooleanType());
+            storm::expressions::Variable newVariable = this->manager->declareVariable(name, manager->getIntegerType());
+            solver->add(expressionAdapter->translateExpression((newVariable.getExpression() >= this->manager->rational(storm::utility::one<double>())) && (newVariable.getExpression() <= this->manager->rational(storm::utility::one<double>()))));
             optimizationFunction = optimizationFunction + this->manager->rational(objectiveFunctionCoefficient) * newVariable;
             return newVariable;
         }
@@ -130,31 +132,49 @@ namespace storm {
             solver->push();
 
             // Solve the optimization problem depending on the optimization direction
-            z3Handle = this->getOptimizationDirection() == OptimizationDirection::Minimize ? solver->minimize(expressionAdapter->translateExpression(optimizationFunction)) :  solver->maximize(expressionAdapter->translateExpression(optimizationFunction));
-            z3CheckResult = solver->check();
-            STORM_LOG_THROW(z3CheckResult != z3::unknown, storm::exceptions::InvalidStateException, "Unable to solve LP problem with Z3: Check result is unknown.");
+            z3::optimize::handle optFuncHandle = this->getOptimizationDirection() == OptimizationDirection::Minimize ? solver->minimize(expressionAdapter->translateExpression(optimizationFunction)) :  solver->maximize(expressionAdapter->translateExpression(optimizationFunction));
+            z3::check_result chkRes = solver->check();
+            STORM_LOG_THROW(chkRes != z3::unknown, storm::exceptions::InvalidStateException, "Unable to solve LP problem with Z3: Check result is unknown. Reason: " << Z3_optimize_get_reason_unknown(*context, *solver));
 
-            this->currentModelHasBeenOptimized = true;
+            // We need to store the resulting information at this point. Otherwise, the information would be lost after calling pop() ...
+
+            // Check feasibility
+            lastCheckInfeasible = (chkRes == z3::unsat);
+            if(lastCheckInfeasible) {
+                lastCheckUnbounded = false;
+            } else {
+                // Get objective result
+                lastCheckObjectiveValue = std::make_unique<z3::expr>(solver->upper(optFuncHandle));
+                // Check boundedness
+                STORM_LOG_ASSERT(lastCheckObjectiveValue->is_app(), "Failed to convert Z3 expression. Encountered unknown expression type.");
+                lastCheckUnbounded = (lastCheckObjectiveValue->decl().decl_kind() != Z3_OP_ANUM);
+                if(lastCheckUnbounded) {
+                    lastCheckObjectiveValue.reset(nullptr);
+                } else {
+                    // Assert that the upper approximation equals the lower one
+                    STORM_LOG_ASSERT(std::string(Z3_get_numeral_string(*context, *lastCheckObjectiveValue)) == std::string(Z3_get_numeral_string(*context, solver->lower(optFuncHandle))), "Lower and Upper Approximation of z3LPSolver result do not match.");
+                    lastCheckModel = std::make_unique<z3::model>(solver->get_model());
+                }
+            }
+
             solver->pop(); // removes current optimization function
-
+            this->currentModelHasBeenOptimized = true;
         }
         
         bool Z3LpSolver::isInfeasible() const {
             STORM_LOG_THROW(this->currentModelHasBeenOptimized, storm::exceptions::InvalidStateException, "Illegal call to Z3LpSolver::isInfeasible: model has not been optimized.");
-            return z3CheckResult == z3::unsat;
+            return lastCheckInfeasible;
         }
         
         bool Z3LpSolver::isUnbounded() const {
-            STORM_LOG_THROW(this->currentModelHasBeenOptimized, storm::exceptions::InvalidStateException, "Illegal call to Z3LpSolver::isInfeasible: model has not been optimized.");
-            z3::expr expr = solver->upper(z3Handle);
-            STORM_LOG_THROW(expr.is_app(), storm::exceptions::ExpressionEvaluationException, "Failed to convert Z3 expression. Encountered unknown expression type.");
-            return expr.decl().decl_kind() != Z3_OP_ANUM;
+            STORM_LOG_THROW(this->currentModelHasBeenOptimized, storm::exceptions::InvalidStateException, "Illegal call to Z3LpSolver::isUnbounded: model has not been optimized.");
+            return lastCheckUnbounded;
         }
         
         bool Z3LpSolver::isOptimal() const {
-            return !this->isInfeasible() && !this->isUnbounded();
+            STORM_LOG_THROW(this->currentModelHasBeenOptimized, storm::exceptions::InvalidStateException, "Illegal call to Z3LpSolver::isOptimal: model has not been optimized.");
+            return !lastCheckInfeasible && !lastCheckUnbounded;
         }
-
 
         storm::expressions::Expression Z3LpSolver::getValue(storm::expressions::Variable const& variable) const {
             STORM_LOG_ASSERT(variable.getManager() == this->getManager(), "Requested variable is managed by a different manager.");
@@ -163,11 +183,10 @@ namespace storm {
                 STORM_LOG_THROW(!this->isUnbounded(), storm::exceptions::InvalidAccessException, "Unable to get Z3 solution from unbounded model.");
                 STORM_LOG_THROW(false, storm::exceptions::InvalidAccessException, "Unable to get Z3 solution from unoptimized model.");
             }
-            if(!this->z3Model) {
-                z3Model = std::unique_ptr<z3::model>(new z3::model(solver->get_model()));
-            }
+            STORM_LOG_ASSERT(lastCheckModel, "Model has not been stored.");
+
             z3::expr z3Var = this->expressionAdapter->translateExpression(variable);
-			return this->expressionAdapter->translateExpression(z3Model->eval(z3Var, true));
+			return this->expressionAdapter->translateExpression(lastCheckModel->eval(z3Var, true));
         }
 
         double Z3LpSolver::getContinuousValue(storm::expressions::Variable const& variable) const {
@@ -179,7 +198,9 @@ namespace storm {
         }
         
         bool Z3LpSolver::getBinaryValue(storm::expressions::Variable const& variable) const {
-           return getValue(variable).evaluateAsBool();
+            int_fast64_t val = getValue(variable).evaluateAsInt();
+            STORM_LOG_THROW((val==0 || val==1), storm::exceptions::InvalidAccessException, "Tried to get a binary value for a variable that is neither 0 nor 1.");
+            return val==1;
         }
         
         double Z3LpSolver::getObjectiveValue() const {
@@ -188,9 +209,9 @@ namespace storm {
                 STORM_LOG_THROW(!this->isUnbounded(), storm::exceptions::InvalidAccessException, "Unable to get Z3 solution from unbounded model.");
                 STORM_LOG_THROW(false, storm::exceptions::InvalidAccessException, "Unable to get Z3 solution from unoptimized model.");
             }
-            z3::expr expr = solver->upper(z3Handle);
-            STORM_LOG_THROW(expr == solver->lower(z3Handle), storm::exceptions::InvalidAccessException, "Lower and Upper Approximation of z3LPSolver result do not match."); // TODO: make this an assertion
-            return this->expressionAdapter->translateExpression(expr).evaluateAsDouble();
+            STORM_LOG_ASSERT(lastCheckObjectiveValue, "Objective value has not been stored.");
+
+            return this->expressionAdapter->translateExpression(*lastCheckObjectiveValue).evaluateAsDouble();
         }
         
         void Z3LpSolver::writeModelToFile(std::string const& filename) const {
@@ -199,19 +220,19 @@ namespace storm {
 
 #else 
             Z3LpSolver::Z3LpSolver(std::string const&, OptimizationDirection const&) {
-                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support. Please choose a version of support with Z3 support.";
+                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support.";
             }
             
             Z3LpSolver::Z3LpSolver(std::string const&) {
-                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support. Please choose a version of support with Z3 support.";
+                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support.";
             }
             
             Z3LpSolver::Z3LpSolver(OptimizationDirection const&) {
-                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support. Please choose a version of support with Z3 support.";
+                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support.";
             }
             
             Z3LpSolver::Z3LpSolver() {
-                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support. Please choose a version of support with Z3 support.";
+                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support.";
             }
             
             Z3LpSolver::~Z3LpSolver() { 
@@ -219,86 +240,86 @@ namespace storm {
             }
             
             storm::expressions::Variable Z3LpSolver::addBoundedContinuousVariable(std::string const&, double, double, double) {
-                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support. Please choose a version of support with Z3 support.";
+                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support.";
             }
             
             storm::expressions::Variable Z3LpSolver::addLowerBoundedContinuousVariable(std::string const&, double, double ) {
-                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support. Please choose a version of support with Z3 support.";            }
+                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support.";            }
             
             storm::expressions::Variable Z3LpSolver::addUpperBoundedContinuousVariable(std::string const&, double, double ) {
-                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support. Please choose a version of support with Z3 support.";
+                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support.";
             }
             
             storm::expressions::Variable Z3LpSolver::addUnboundedContinuousVariable(std::string const&, double ) {
-                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support. Please choose a version of support with Z3 support.";
+                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support.";
             }
             
             storm::expressions::Variable Z3LpSolver::addBoundedIntegerVariable(std::string const&, double, double, double) {
-                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support. Please choose a version of support with Z3 support.";
+                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support.";
             }
             
             storm::expressions::Variable Z3LpSolver::addLowerBoundedIntegerVariable(std::string const&, double, double) {
-                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support. Please choose a version of support with Z3 support.";
+                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support.";
             }
             
             storm::expressions::Variable Z3LpSolver::addUpperBoundedIntegerVariable(std::string const&, double, double) {
-                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support. Please choose a version of support with Z3 support.";
+                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support.";
             }
             
             storm::expressions::Variable Z3LpSolver::addUnboundedIntegerVariable(std::string const&, double) {
-                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support. Please choose a version of support with Z3 support.";
+                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support.";
             }
             
             storm::expressions::Variable Z3LpSolver::addBinaryVariable(std::string const&, double) {
-                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support. Please choose a version of support with Z3 support.";
+                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support.";
             }
             
             void Z3LpSolver::update() const {
-                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support. Please choose a version of support with Z3 support.";
+                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support.";
             }
             
             void Z3LpSolver::addConstraint(std::string const&, storm::expressions::Expression const&) {
-                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support. Please choose a version of support with Z3 support.";
+                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support.";
             }
             
             void Z3LpSolver::optimize() const {
-                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support. Please choose a version of support with Z3 support.";
+                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support.";
             }
             
             bool Z3LpSolver::isInfeasible() const {
-                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support. Please choose a version of support with Z3 support.";
+                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support.";
             }
             
             bool Z3LpSolver::isUnbounded() const {
-                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support. Please choose a version of support with Z3 support.";
+                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support.";
             }
             
             bool Z3LpSolver::isOptimal() const {
-                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support. Please choose a version of support with Z3 support.";
+                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support.";
             }
             
             double Z3LpSolver::getContinuousValue(storm::expressions::Variable const&) const {
-                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support. Please choose a version of support with Z3 support.";
+                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support.";
             }
             
             int_fast64_t Z3LpSolver::getIntegerValue(storm::expressions::Variable const&) const {
-                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support. Please choose a version of support with Z3 support.";
+                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support.";
             }
             
             bool Z3LpSolver::getBinaryValue(storm::expressions::Variable const&) const {
-                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support. Please choose a version of support with Z3 support.";
+                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support.";
             }
             
             double Z3LpSolver::getObjectiveValue() const {
-                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support. Please choose a version of support with Z3 support.";
+                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support.";
             }
             
             void Z3LpSolver::writeModelToFile(std::string const&) const {
-                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support. Please choose a version of support with Z3 support.";
+                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support.";
             }
 
             void Z3LpSolver::toggleOutput(bool) const {
-                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support. Please choose a version of support with Z3 support.";
+                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support.";
             }
 
 #endif        
