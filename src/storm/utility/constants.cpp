@@ -402,7 +402,7 @@ namespace storm {
 
         template<>
         RationalNumber convertNumber(std::string const& number) {
-            return carl::rationalize<RationalNumber>(number);
+            return carl::parse<RationalNumber>(number);
         }
 
         template<>
