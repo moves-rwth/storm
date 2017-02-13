@@ -153,9 +153,17 @@ namespace storm {
         public:
             // A structure holding the labeling options.
             struct LabelOptions {
-                bool buildFailLabel = true;
-                bool buildFailSafeLabel = false;
-                std::set<std::string> beLabels = {};
+                // Constructor
+                LabelOptions(std::vector<std::shared_ptr<storm::logic::Formula const>> properties);
+
+                // Flag indicating if the general fail label should be included.
+                bool buildFailLabel;
+
+                // Flag indicating if the general failsafe label should be included.
+                bool buildFailSafeLabel;
+
+                // Set of element names whose fail label to include.
+                std::set<std::string> elementLabels;
             };
 
             /*!

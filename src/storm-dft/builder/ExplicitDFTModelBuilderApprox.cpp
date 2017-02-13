@@ -9,7 +9,7 @@
 #include "storm/utility/bitoperations.h"
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/settings/SettingsManager.h"
-
+#include "storm/logic/AtomicLabelFormula.h"
 #include "storm-dft/settings/modules/DFTSettings.h"
 
 
@@ -25,6 +25,29 @@ namespace storm {
         ExplicitDFTModelBuilderApprox<ValueType, StateType>::MatrixBuilder::MatrixBuilder(bool canHaveNondeterminism) : mappingOffset(0), stateRemapping(), currentRowGroup(0), currentRow(0), canHaveNondeterminism((canHaveNondeterminism)) {
             // Create matrix builder
             builder = storm::storage::SparseMatrixBuilder<ValueType>(0, 0, 0, false, canHaveNondeterminism, 0);
+        }
+
+        template<typename ValueType, typename StateType>
+        ExplicitDFTModelBuilderApprox<ValueType, StateType>::LabelOptions::LabelOptions(std::vector<std::shared_ptr<const storm::logic::Formula>> properties) : buildFailLabel(true), buildFailSafeLabel(false) {
+            // Get necessary labels from properties
+            std::vector<std::shared_ptr<storm::logic::AtomicLabelFormula const>> atomicLabels;
+            for (auto property : properties) {
+                property->gatherAtomicLabelFormulas(atomicLabels);
+            }
+            // Set usage of necessary labels
+            for (auto atomic : atomicLabels) {
+                std::string label = atomic->getLabel();
+                std::size_t foundIndex = label.find("_fail");
+                if (foundIndex != std::string::npos) {
+                    elementLabels.insert(label.substr(0, foundIndex));
+                } else if (label.compare("failed") == 0) {
+                    buildFailLabel = true;
+                } else if (label.compare("failsafe") == 0) {
+                    buildFailSafeLabel = true;
+                } else {
+                    STORM_LOG_WARN("Label '" << label << "' not known.");
+                }
+            }
         }
 
         template<typename ValueType, typename StateType>
@@ -415,16 +438,16 @@ namespace storm {
                 modelComponents.stateLabeling.addLabel("failsafe");
             }
 
-            // Collect labels for all BE
-            std::vector<std::shared_ptr<storage::DFTBE<ValueType>>> basicElements = dft.getBasicElements();
-            for (std::shared_ptr<storage::DFTBE<ValueType>> elem : basicElements) {
-                if(labelOpts.beLabels.count(elem->name()) > 0) {
-                    modelComponents.stateLabeling.addLabel(elem->name() + "_fail");
+            // Collect labels for all necessary elements
+            for (size_t id = 0; id < dft.nrElements(); ++id) {
+                std::shared_ptr<storage::DFTElement<ValueType> const> element = dft.getElement(id);
+                if (labelOpts.elementLabels.count(element->name()) > 0) {
+                    modelComponents.stateLabeling.addLabel(element->name() + "_fail");
                 }
             }
 
             // Set labels to states
-            if(mergeFailedStates) {
+            if (mergeFailedStates) {
                 modelComponents.stateLabeling.addLabelToState("failed", failedStateId);
             }
             for (auto const& stateIdPair : stateStorage.stateToId) {
@@ -435,14 +458,17 @@ namespace storm {
                 }
                 if (labelOpts.buildFailSafeLabel && dft.isFailsafe(state, *stateGenerationInfo)) {
                     modelComponents.stateLabeling.addLabelToState("failsafe", stateId);
-                };
-                // Set fail status for each BE
-                for (std::shared_ptr<storage::DFTBE<ValueType>> elem : basicElements) {
-                    if (labelOpts.beLabels.count(elem->name()) > 0 && storm::storage::DFTState<ValueType>::hasFailed(state, stateGenerationInfo->getStateIndex(elem->id())) ) {
-                        modelComponents.stateLabeling.addLabelToState(elem->name() + "_fail", stateId);
+                }
+                // Set fail status for each necessary element
+                for (size_t id = 0; id < dft.nrElements(); ++id) {
+                    std::shared_ptr<storage::DFTElement<ValueType> const> element = dft.getElement(id);
+                    if (labelOpts.elementLabels.count(element->name()) > 0 && storm::storage::DFTState<ValueType>::hasFailed(state, stateGenerationInfo->getStateIndex(element->id()))) {
+                        modelComponents.stateLabeling.addLabelToState(element->name() + "_fail", stateId);
                     }
                 }
             }
+
+            STORM_LOG_TRACE(modelComponents.stateLabeling);
         }
 
         template<typename ValueType, typename StateType>

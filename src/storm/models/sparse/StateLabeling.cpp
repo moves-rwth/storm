@@ -115,6 +115,23 @@ namespace storm {
                     out << "   * " << labelIndexPair.first << " -> " << this->labelings[labelIndexPair.second].getNumberOfSetBits() << " state(s)" << std::endl;
                 }
             }
+
+            void StateLabeling::printCompleteLabelingInformationToStream(std::ostream& out) const {
+                out << "Labels: \t" << this->getNumberOfLabels() << std::endl;
+                for (auto label : nameToLabelingIndexMap) {
+                    out << "Label '" << label.first << "': ";
+                    for (auto index : this->labelings[label.second]) {
+                        out << index << " ";
+                    }
+                    out << std::endl;
+                }
+            }
+
+            std::ostream& operator<<(std::ostream& out, StateLabeling const& labeling) {
+                labeling.printLabelingInformationToStream(out);
+                return out;
+            }
+
         }
     }
 }

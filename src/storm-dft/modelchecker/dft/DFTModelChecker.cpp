@@ -191,7 +191,7 @@ namespace storm {
                     // Build a single CTMC
                     STORM_LOG_INFO("Building Model...");
                     storm::builder::ExplicitDFTModelBuilderApprox<ValueType> builder(ft, symmetries, enableDC);
-                    typename storm::builder::ExplicitDFTModelBuilderApprox<ValueType>::LabelOptions labeloptions; // TODO initialize this with the formula
+                    typename storm::builder::ExplicitDFTModelBuilderApprox<ValueType>::LabelOptions labeloptions(properties);
                     builder.buildModel(labeloptions, 0, 0.0);
                     std::shared_ptr<storm::models::sparse::Model<ValueType>> model = builder.getModel();
                     //model->printModelInformationToStream(std::cout);
@@ -246,7 +246,7 @@ namespace storm {
 
 
                 storm::builder::ExplicitDFTModelBuilderApprox<ValueType> builder(dft, symmetries, enableDC);
-                typename storm::builder::ExplicitDFTModelBuilderApprox<ValueType>::LabelOptions labeloptions; // TODO initialize this with the formula
+                typename storm::builder::ExplicitDFTModelBuilderApprox<ValueType>::LabelOptions labeloptions(properties);
                 builder.buildModel(labeloptions, 0, 0.0);
                 std::shared_ptr<storm::models::sparse::Model<ValueType>> model = builder.getModel();
                 //model->printModelInformationToStream(std::cout);
@@ -280,7 +280,7 @@ namespace storm {
                 std::shared_ptr<storm::models::sparse::Model<ValueType>> model;
                 std::vector<ValueType> newResult;
                 storm::builder::ExplicitDFTModelBuilderApprox<ValueType> builder(dft, symmetries, enableDC);
-                typename storm::builder::ExplicitDFTModelBuilderApprox<ValueType>::LabelOptions labeloptions; // TODO initialize this with the formula
+                typename storm::builder::ExplicitDFTModelBuilderApprox<ValueType>::LabelOptions labeloptions(properties);
 
                 // TODO Matthias: compute approximation for all properties simultaneously?
                 std::shared_ptr<const storm::logic::Formula> property = properties[0];
@@ -348,12 +348,12 @@ namespace storm {
                 // TODO Matthias: use only one builder if everything works again
                 if (storm::settings::getModule<storm::settings::modules::DFTSettings>().isApproximationErrorSet()) {
                     storm::builder::ExplicitDFTModelBuilderApprox<ValueType> builder(dft, symmetries, enableDC);
-                    typename storm::builder::ExplicitDFTModelBuilderApprox<ValueType>::LabelOptions labeloptions; // TODO initialize this with the formula
+                    typename storm::builder::ExplicitDFTModelBuilderApprox<ValueType>::LabelOptions labeloptions(properties);
                     builder.buildModel(labeloptions, 0, 0.0);
                     model = builder.getModel();
                 } else {
                     storm::builder::ExplicitDFTModelBuilder<ValueType> builder(dft, symmetries, enableDC);
-                    typename storm::builder::ExplicitDFTModelBuilder<ValueType>::LabelOptions labeloptions; // TODO initialize this with the formula
+                    typename storm::builder::ExplicitDFTModelBuilder<ValueType>::LabelOptions labeloptions;
                     model = builder.buildModel(labeloptions);
                 }
                 //model->printModelInformationToStream(std::cout);

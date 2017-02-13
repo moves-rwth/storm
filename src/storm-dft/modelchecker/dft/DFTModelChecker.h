@@ -19,7 +19,7 @@ namespace storm {
 
             typedef std::pair<ValueType, ValueType> approximation_result;
             typedef std::vector<boost::variant<ValueType, approximation_result>> dft_results;
-            typedef std::vector<std::shared_ptr<const storm::logic::Formula>> property_vector;
+            typedef std::vector<std::shared_ptr<storm::logic::Formula const>> property_vector;
 
         public:
 
