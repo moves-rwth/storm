@@ -572,6 +572,9 @@ namespace storm {
 
         template<typename ValueType, typename StateType>
         ValueType ExplicitDFTModelBuilderApprox<ValueType, StateType>::getUpperBound(DFTStatePointer const& state) const {
+            if (state->hasFailed(dft.getTopLevelIndex())) {
+                return storm::utility::zero<ValueType>();
+            }
             // Get the upper bound by considering the failure of all BEs
             ValueType upperBound = storm::utility::one<ValueType>();
             ValueType rateSum = storm::utility::zero<ValueType>();
