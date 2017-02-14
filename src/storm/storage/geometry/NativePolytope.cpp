@@ -1,11 +1,15 @@
+#include <storm/exceptions/NotImplementedException.h>
 #include "storm/storage/geometry/NativePolytope.h"
 
-#ifdef STasdf
-
 #include "storm/utility/macros.h"
+#include "storm/utility/solver.h"
+#include "storm/solver/Z3LPSolver.h"
+#include "storm/storage/geometry/nativepolytopeconversion/QuickHull.h"
+#include "storm/storage/geometry/nativepolytopeconversion/HyperplaneEnumeration.h"
+
+
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/UnexpectedException.h"
-#include "storm/utility/solver.h"
 
 namespace storm {
     namespace storage {
@@ -41,15 +45,16 @@ namespace storm {
                         eigenPoints.emplace_back(storm::adapters::EigenAdapter<ValueType>::toEigenVector(p));
                     }
 
-                    // todo: quickhull(eigenPoints)
-
+                    storm::storage::geometry::QuickHull<ValueType> qh;
+                    qh.generateHalfspacesFromPoints(eigenPoints, false);
+                    A = std::move(qh.getResultMatrix());
+                    b = std::move(qh.getResultVector());
                     emptyStatus = EmptyStatus::Nonempty;
                 }
             }
             
             template <typename ValueType>
-            std::shared_ptr<Polytope<ValueType>> NativePolytope<ValueType>::create(boost::optional<std::vector<Halfspace<ValueType>>> const& halfspaces,
-                                                                             boost::optional<std::vector<Point>> const& points) {
+            std::shared_ptr<Polytope<ValueType>> NativePolytope<ValueType>::create(boost::optional<std::vector<Halfspace<ValueType>>> const& halfspaces, boost::optional<std::vector<Point>> const& points) {
                 if(halfspaces) {
                     STORM_LOG_WARN_COND(!points, "Creating a NativePolytope where halfspaces AND points are given. The points will be ignored.");
                     return std::make_shared<NativePolytope<ValueType>>(*halfspaces);
@@ -197,52 +202,126 @@ namespace storm {
                     return std::make_shared<NativePolytope<ValueType>>(dynamic_cast<NativePolytope<ValueType> const&>(*rhs));
                 } else if (rhs->isEmpty()) {
                     return std::make_shared<NativePolytope<ValueType>>(*this);
-                }
-                if(this->isUniversal() || rhs->isUniversal) {
-                    return std::make_shared<NativePolytope<ValueType>>(*this);
+                } else if (this->isUniversal() || rhs->isUniversal) {
+                    return std::make_shared<NativePolytope<ValueType>>(std::vector<Halfspace<ValueType>>());
                 }
 
-                STORM_LOG_WARN("Implementation of convex union of two polytopes only works if the polytopes are bounded.");
+                STORM_LOG_WARN("Implementation of convex union of two polytopes only works if the polytopes are bounded. This is not checked.");
 
                 std::vector<EigenVector> rhsVertices = dynamic_cast<NativePolytope<ValueType> const&>(*rhs).getEigenVertices();
                 std::vector<EigenVector> resultVertices = this->getEigenVertices();
                 resultVertices.insert(resultVertices.end(), std::make_move_iterator(rhsVertices.begin()), std::make_move_iterator(rhsVertices.end()));
 
-                // todo invoke quickhull
-
-                return nullptr;
+                storm::storage::geometry::QuickHull<ValueType> qh;
+                qh.generateHalfspacesFromPoints(resultVertices, false);
+                return std::make_shared<NativePolytope<ValueType>>(EmptyStatus::Nonempty, std::move(qh.getResultMatrix()), std::move(qh.getResultVector()));
             }
             
             template <typename ValueType>
-            std::shared_ptr<Polytope<ValueType>> NativePolytope<ValueType>::minkowskiSum(std::shared_ptr<Polytope<ValueType>> const& rhs) const{
+            std::shared_ptr<Polytope<ValueType>> NativePolytope<ValueType>::minkowskiSum(std::shared_ptr<Polytope<ValueType>> const& rhs) const {
                 STORM_LOG_THROW(rhs->isNativePolytope(), storm::exceptions::InvalidArgumentException, "Invoked operation between a NativePolytope and a different polytope implementation. This is not supported");
                 NativePolytope<ValueType> const& nativeRhs = dynamic_cast<NativePolytope<ValueType> const&>(*rhs);
 
-                return std::make_shared<NativePolytope<ValueType>>(internPolytope.minkowskiSum(dynamic_cast<NativePolytope<ValueType> const&>(*rhs).internPolytope));
+                if(this->isEmpty() || nativeRhs.isEmpty()) {
+                    return std::make_shared<NativePolytope<ValueType>>(std::vector<Point>());
+                }
+
+                std::vector<std::pair<EigenVector, ValueType>> resultConstraints;
+                resultConstraints.reserve(A.rows() + nativeRhs.A.rows());
+
+                // evaluation of rhs in directions of lhs
+                for (uint_fast64_t i = 0; i < A.rows(); ++i) {
+                    auto optimizationRes = nativeRhs.optimize(A.row(i));
+                    if ( optimizationRes.second ) {
+                        resultConstraints.emplace_back(A.row(i), b(i) + (A.row(i) * optimizationRes.first)(0));
+                    }
+                    // If optimizationRes.second is false, it means that rhs is unbounded in this direction, i.e., the current constraint is not inserted
+                }
+
+                // evaluation of lhs in directions of rhs
+                for (uint_fast64_t i = 0; i < nativeRhs.A.rows(); ++i) {
+                    auto optimizationRes = optimize(nativeRhs.A.row(i));
+                    if ( optimizationRes.second ) {
+                        resultConstraints.emplace_back(nativeRhs.A.row(i), nativeRhs.b(i) + (nativeRhs.A.row(i) * optimizationRes.first)(0));
+                    }
+                    // If optimizationRes.second is false, it means that rhs is unbounded in this direction, i.e., the current constraint is not inserted
+                }
+
+                if(resultConstraints.empty()) {
+                    return std::make_shared<NativePolytope<ValueType>>(std::vector<Halfspace<ValueType>>());
+                } else {
+                    EigenMatrix newA(resultConstraints.size(), resultConstraints.front().first.rows());
+                    EigenVector newb(resultConstraints.size());
+                    for(uint_fast64_t i = 0; i < newA.rows(); ++i) {
+                        newA.row(i) = resultConstraints[i].first;
+                        newb(i) = resultConstraints[i].second;
+                    }
+                    return std::make_shared<NativePolytope<ValueType>>(EmptyStatus::Nonempty, std::move(newA), std::move(newb));
+                }
             }
             
             template <typename ValueType>
-            std::shared_ptr<Polytope<ValueType>> NativePolytope<ValueType>::affineTransformation(std::vector<Point> const& matrix, Point const& vector) const{
+            std::shared_ptr<Polytope<ValueType>> NativePolytope<ValueType>::affineTransformation(std::vector<Point> const& matrix, Point const& vector) const {
                 STORM_LOG_THROW(!matrix.empty(), storm::exceptions::InvalidArgumentException, "Invoked affine transformation with a matrix without rows.");
-                hypro::matrix_t<ValueType> hyproMatrix(matrix.size(), matrix.front().size());
+
+                EigenMatrix eigenMatrix(matrix.size(), matrix.front().size());
                 for(uint_fast64_t row = 0; row < matrix.size(); ++row) {
-                    hyproMatrix.row(row) = storm::adapters::toNative(matrix[row]);
+                    eigenMatrix.row(row) = storm::adapters::EigenAdapter::toEigenVector(matrix[row]);
                 }
-                return std::make_shared<NativePolytope<ValueType>>(internPolytope.affineTransformation(std::move(hyproMatrix), storm::adapters::toNative(vector)));
+                EigenVector eigenVector = storm::adapters::EigenAdapter::toEigenVector(vector);
+
+                Eigen::FullPivLU<EigenMatrix> luMatrix( eigenMatrix );
+                STORM_LOG_THROW(luMatrix.isInvertible(), storm::exceptions::NotImplementedException, "Affine Transformation of native polytope only implemented if the transformation matrix is invertable");
+                EigenMatrix newA = A * luMatrix.inverse();
+                EigenVector newb = b + (newA * eigenVector);
+                return std::make_shared<NativePolytope<ValueType>>(emptyStatus, std::move(newA), std::move(newb));
             }
             
             template <typename ValueType>
             std::pair<typename NativePolytope<ValueType>::Point, bool> NativePolytope<ValueType>::optimize(Point const& direction) const {
-                hypro::EvaluationResult<ValueType> evalRes = internPolytope.evaluate(storm::adapters::toNative(direction));
-                switch (evalRes.errorCode) {
-                    case hypro::SOLUTION::FEAS:
-                        return std::make_pair(storm::adapters::fromNative(evalRes.optimumValue), true);
-                    case hypro::SOLUTION::UNKNOWN:
-                        STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected eror code for Polytope evaluation");
-                        return std::make_pair(Point(), false);
-                    default:
-                        //solution is infinity or infeasible
-                        return std::make_pair(Point(), false);
+                storm::solver::Z3LpSolver solver(storm::solver::OptimizationDirection::Maximize);
+                std::vector<storm::expressions::Variable> variables;
+                variables.reserve(A.rows());
+                for (uint_fast64_t i = 0; i < A.rows(); ++i) {
+                    variables.push_back(solver.addUnboundedContinuousVariable("x" + std::to_string(i), direction(i)));
+                }
+                solver.addConstraint("", getConstraints(solver.getManager(), variables));
+                solver.update();
+                solver.optimize();
+                if (solver.isOptimal()) {
+                    auto result = std::make_pair(Point(), true);
+                    result.first.reserve(variables.size());
+                    for (auto const& var : variables) {
+                        result.first.push_back(solver.getContinuousValue(var));
+                    }
+                    return result;
+                } else {
+                    //solution is infinity or infeasible
+                    return std::make_pair(Point(), false);
+                }
+            }
+
+            template <typename ValueType>
+            std::pair<typename NativePolytope<ValueType>::EigenVector, bool> NativePolytope<ValueType>::optimize(EigenVector const& direction) const {
+
+                storm::solver::Z3LpSolver solver(storm::solver::OptimizationDirection::Maximize);
+                std::vector<storm::expressions::Variable> variables;
+                variables.reserve(A.rows());
+                for (uint_fast64_t i = 0; i < A.rows(); ++i) {
+                    variables.push_back(solver.addUnboundedContinuousVariable("x" + std::to_string(i), direction(i)));
+                }
+                solver.addConstraint("", getConstraints(solver.getManager(), variables));
+                solver.update();
+                solver.optimize();
+                if (solver.isOptimal()) {
+                    auto result = std::make_pair(EigenVector(variables.size()), true);
+                    for (uint_fast64_t i = 0; i < variables.size(); ++i) {
+                        result.first(i) = solver.getContinuousValue(variables[i]);
+                    }
+                    return result;
+                } else {
+                    //solution is infinity or infeasible
+                    return std::make_pair(EigenVector(), false);
                 }
             }
             
@@ -252,8 +331,9 @@ namespace storm {
             }
             template <typename ValueType>
             std::vector<typename NativePolytope::ValueType>::EigenVector> NativePolytope<ValueType>::getEigenVertices() const {
-                // todo: invoke conversion
-                return std::vector<EigenVector>();
+                storm::storage::geometry::HyperplaneEnumeration he;
+                he.generateVerticesFromConstraints(A, b, false);
+                return he.getResultVertices();
             }
 
             template <typename ValueType>
@@ -267,9 +347,9 @@ namespace storm {
             }
 
             template <typename ValueType>
-            storm::expressions::Expression NativePolytope<ValueType>::getConstraints(storm::expressions::ExpressionManager& manager, std::vector<storm::expressions::Variable> const& variables) cons {
+            storm::expressions::Expression NativePolytope<ValueType>::getConstraints(storm::expressions::ExpressionManager const& manager, std::vector<storm::expressions::Variable> const& variables) const {
                 storm::expressions::Expression result = manager.boolean(true);
-                for(uint_fast64_t row=0; row < A.rows(); ++row) {
+                for(uint_fast64_t row = 0; row < A.rows(); ++row) {
                     storm::expressions::Expression lhs = manager.rational(A(row,0)) * variables[0].getExpression();
                     for(uint_fast64_t col=1; col < A.cols(); ++col) {
                         lhs = lhs + manager.rational(A(row,col)) * variables[col].getExpression();
@@ -287,4 +367,3 @@ namespace storm {
         }
     }
 }
-#endif

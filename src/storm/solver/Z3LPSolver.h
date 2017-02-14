@@ -87,13 +87,28 @@ namespace storm {
             virtual bool isOptimal() const override;
             
             // Methods to retrieve values of variables and the objective function in the optimal solutions.
-            virtual double getContinuousValue(storm::expressions::Variable const& name) const override;
-            virtual int_fast64_t getIntegerValue(storm::expressions::Variable const& name) const override;
-            virtual bool getBinaryValue(storm::expressions::Variable const& name) const override;
+            virtual double getContinuousValue(storm::expressions::Variable const& variable) const override;
+            virtual int_fast64_t getIntegerValue(storm::expressions::Variable const& variable) const override;
+            virtual bool getBinaryValue(storm::expressions::Variable const& variable) const override;
             virtual double getObjectiveValue() const override;
             
             // Methods to print the LP problem to a file.
             virtual void writeModelToFile(std::string const& filename) const override;
+
+            // Methods for exact solving
+            virtual storm::expressions::Variable addBoundedContinuousVariable(std::string const& name, storm::RationalNumber const& lowerBound, storm::RationalNumber const& upperBound, storm::RationalNumber const& objectiveFunctionCoefficient = 0) override;
+            virtual storm::expressions::Variable addLowerBoundedContinuousVariable(std::string const& name, storm::RationalNumber const& lowerBound, storm::RationalNumber const& objectiveFunctionCoefficient = 0) override;
+            virtual storm::expressions::Variable addUpperBoundedContinuousVariable(std::string const& name, storm::RationalNumber const& upperBound, storm::RationalNumber const& objectiveFunctionCoefficient = 0) override;
+            virtual storm::expressions::Variable addUnboundedContinuousVariable(std::string const& name, storm::RationalNumber const& objectiveFunctionCoefficient = 0) override;
+            virtual storm::expressions::Variable addBoundedIntegerVariable(std::string const& name, storm::RationalNumber const& lowerBound, storm::RationalNumber const& upperBound, storm::RationalNumber const& objectiveFunctionCoefficient = 0) override;
+            virtual storm::expressions::Variable addLowerBoundedIntegerVariable(std::string const& name, storm::RationalNumber const& lowerBound, storm::RationalNumber const& objectiveFunctionCoefficient = 0) override;
+            virtual storm::expressions::Variable addUpperBoundedIntegerVariable(std::string const& name, storm::RationalNumber const& upperBound, storm::RationalNumber const& objectiveFunctionCoefficient = 0) override;
+            virtual storm::expressions::Variable addUnboundedIntegerVariable(std::string const& name, storm::RationalNumber const& objectiveFunctionCoefficient = 0) override;
+            virtual storm::expressions::Variable addBinaryVariable(std::string const& name, storm::RationalNumber const& objectiveFunctionCoefficient = 0) override;
+            storm::RationalNumber getExactContinuousValue(storm::expressions::Variable const& variable) const;
+            storm::RationalNumber getExactObjectiveValue() const;
+
+
 
         private:
              virtual storm::expressions::Expression getValue(storm::expressions::Variable const& name) const;

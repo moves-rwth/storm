@@ -1,505 +1,532 @@
 #include "storm/storage/geometry/nativepolytopeconversion/QuickHull.h"
 
 #include <algorithm>
+#include <unordered_map>
+#include <storm/adapters/NumberAdapter.h>
 
 #include "storm/utility/macros.h"
+#include "storm/utility/constants.h"
+#include "storm/utility/vector.h"
 
 #include "storm/storage/geometry/nativepolytopeconversion/SubsetEnumerator.h"
 #include "storm/storage/geometry/nativepolytopeconversion/HyperplaneCollector.h"
 
-namespace hypro {
-    namespace pterm{
-        
-        template<typename ValueType>
-        void QuickHull<Number>::generateHalfspacesFromVertices(std::vector<EigenVector> const& points, bool generateRelevantVerticesAndVertexSets){
-            STORM_LOG_ASSERT(!points.empty(), "Invoked QuickHull with empty set of points.");
-            STORM_LOG_DEBUG("Invoked QuickHull on " << points.size() << " points");
-            const uint_fast64_t dimension = points.front().rows();
+#include "storm/exceptions/UnexpectedException.h"
 
-            // Generate initial set of d+1 affine independent points (if such a set exists)
-            std::vector<uint_fast64_t> vertexIndices;
-            uint_fast64_t minMaxVertexNumber;
-            if(!this->findInitialVertices(points, vertexIndices, minMaxVertexNumber)) {
-                // todo deal with this
-                std::cout << "QuickHull: Could not find d+1 affine independend points. TODO: implement this case (we get some degenerated thing here)" << std::endl;
+namespace storm {
+    namespace storage {
+        namespace geometry {
+
+            template<typename ValueType>
+            void QuickHull<ValueType>::generateHalfspacesFromPoints(std::vector<EigenVector>& points, bool generateRelevantVerticesAndVertexSets){
+                STORM_LOG_ASSERT(!points.empty(), "Invoked QuickHull with empty set of points.");
+                STORM_LOG_DEBUG("Invoked QuickHull on " << points.size() << " points");
+                const uint_fast64_t dimension = points.front().rows();
+
+                if(dimension == 1) {
+                    handle1DPoints(points, generateRelevantVerticesAndVertexSets);
+                } else {
+                    // Generate initial set of d+1 affine independent points (if such a set exists)
+                    std::vector<uint_fast64_t> vertexIndices;
+                    uint_fast64_t minMaxVertexNumber;
+                    if(this->findInitialVertices(points, vertexIndices, minMaxVertexNumber)) {
+                        // compute point inside initial facet
+                        EigenVector insidePoint(EigenVector::Zero(dimension));
+                        for(uint_fast64_t vertexIndex : vertexIndices){
+                            insidePoint += points[vertexIndex];
+                        }
+                        insidePoint /= storm::utility::convertNumber<ValueType>((uint_fast64_t) vertexIndices.size());
+
+                        // Create the initial facets from the found vertices.
+                        std::vector<Facet> facets = computeInitialFacets(points, vertexIndices, insidePoint);
+
+                        // Enlarge the mesh by adding by first considering all points that are min (or max) in at least one dimension
+                        storm::storage::BitVector currentFacets(facets.size(), true);
+                        storm::storage::BitVector consideredPoints(points.size(), false);
+                        for(uint_fast64_t i = 0; i < minMaxVertexNumber; ++i) {
+                                consideredPoints.set(i);
+                        }
+                        this->extendMesh(points,  consideredPoints, facets, currentFacets, insidePoint);
+                        for(auto & facet : facets){
+                            facet.maxOutsidePointIndex = 0;
+                            facet.outsideSet.clear();
+                        }
+
+                        // Now consider all points
+                        consideredPoints = storm::storage::BitVector(points.size(), true);
+                        this->extendMesh(points, consideredPoints, facets, currentFacets, insidePoint);
+
+                        // Finally retrieve the resulting constrants
+                        this->getPolytopeFromMesh(points, facets, currentFacets, generateRelevantVerticesAndVertexSets);
+                        STORM_LOG_DEBUG("QuickHull invokation yielded " << resultMatrix.rows() << " constraints");
+                    } else {
+                        // The points are affine dependent. This special case needs to be handled accordingly.
+                        handleAffineDependentPoints(points, generateRelevantVerticesAndVertexSets);
+                    }
+                }
             }
 
-            // compute point inside initial facet
-            EigenVector insidePoint(EigenVector::Zero(dimension));
-            for(uint_fast64_t vertexIndex : vertexIndices){
-                insidePoint += points[vertexIndex];
-            }
-            insidePoint /= storm::utility::convertNumber<ValueType>(vertexIndices.size());
-
-            // Create the initial facets from the found vertices.
-            std::vector<Facet> facets = computeInitialFacets(vertexIndices, insidePoint);
-
-            // Enlarge the mesh by adding by first considering all points that are min (or max) in at least one dimension
-            storm::storage::BitVector currentFacets(facets.size(), true);
-            storm::storage::BitVector consideredPoints(points.size(), false);
-            uint_fast64_t currentNumOfVertices = vertexIndices.size();
-            for(uint_fast64_t i = 0; i < minMaxVertexNumber; ++i) {
-                    consideredPoints.set(i);
-            }
-            this->extendMesh(points,  consideredPoints, facets, currentFacets, insidePoint, currentNumOfVertices);
-            for(auto & facet : facets){
-                facet.maxOutsidePointIndex = 0;
-                facet.outsideSet.clear();
+            template<typename ValueType>
+            typename QuickHull<ValueType>::EigenMatrix& QuickHull<ValueType>::getResultMatrix() {
+                return this->resultMatrix;
             }
 
-            consideredPoints = storm::storage::BitVector(points.size(), true);
-            this->extendMesh(points, consideredPoints, facets, currentFacets, insidePoint, currentNumOfVertices);
-            this->getPolytopeFromMesh(points, facets, currentFacets, success && generateRelevantVerticesAndVertexSets);
-            
-            return true;
-        }
-        
-        
-        template<typename ValueType>
-        void QuickHull<Number>::extendMesh(std::vector<EigenVector>& points,
-                storm::storage::BitVector& consideredPoints,
-                std::vector<Facet>& facets,
-                storm::storage::BitVector& currentFacets,
-                vector_t<Number>& insidePoint,
-                uint_fast64_t& currentNumOfVertices) const {
-            
-            storm::storage::BitVector currentOutsidePoints = consideredPoints;
-            // Compute initial outside Sets
-            for(uint_fast64_t facetIndex : currentFacets){
-                computeOutsideSetOfFacet(facets[facetIndex], currentOutsidePoints, points);
+            template<typename ValueType>
+            typename QuickHull<ValueType>::EigenVector& QuickHull<ValueType>::getResultVector() {
+                return this->resultVector;
             }
 
-            for(uint_fast64_t facetCount = currentFacets.getNextSetIndex(0); facetCount != currentFacets.size(); facetCount = currentFacets.getNextSetIndex(facetCount+1)) {
-                // set all points to false to get rid of points that lie within the polytope after each iteration
-                currentOutsidePoints.reset();
-                // Find a facet with a non-empty outside set 
-                if(!facets[facetCount].outsideSet.empty()) {
-                    uint_fast64_t numberOfNewFacets = 0;
-                    // Now we compute the enlarged mesh
-                    uint_fast64_t farAwayPointIndex = facets[facetCount].maxOutsidePointIndex;
-                    assert(consideredPoints.get(farAwayPointIndex));
-                    // get Visible set from maxOutsidePoint of the current facet
-                    std::set<uint_fast64_t> visibleSet = getVisibleSet(facets, facetCount, points[farAwayPointIndex]);
-                    std::set<uint_fast64_t> invisibleSet = getInvisibleNeighbors(facets, visibleSet);
-                    for(auto invisFacetIt = invisibleSet.begin(); invisFacetIt != invisibleSet.end(); ++invisFacetIt) {
-                        for(auto visFacetIt = visibleSet.begin(); visFacetIt != visibleSet.end(); ++visFacetIt) {
-                            if (facetHasNeighborWithIndex(facets[*invisFacetIt], *visFacetIt)) {
-                                Facet newFacet;
-                                // Set points of Facet
-                                newFacet.points = getCommonPoints(facets[*invisFacetIt], facets[*visFacetIt]);
-                                 // replace old facet index by new facet index in the current neighbor
-                                newFacet.points.push_back(farAwayPointIndex);
-                                replaceFacetNeighbor(facets, *visFacetIt, facets.size(), *invisFacetIt);
-                                newFacet.neighbors.push_back(*invisFacetIt);
-                                // get new hyperplane from common points and new point
-                                std::vector<EigenVector> vectorSet;
-                                vectorSet.reserve(points[0].dimension());
-                                EigenVector refPoint(points[farAwayPointIndex].rawCoordinates());
-                                for (uint_fast64_t pointCount = 0; pointCount + 1 < points[0].dimension(); ++pointCount){
-                                    vectorSet.emplace_back(points[newFacet.points[pointCount]].rawCoordinates() - refPoint);
-                                }
-                                assert(linearDependenciesFilter(vectorSet));
-                                newFacet.hyperplane = Hyperplane<Number>(std::move(refPoint), std::move(vectorSet));
-                                // check orientation of hyperplane
-                                // To avoid multiple matrix multiplications we need a point that is known to lie well within the polytope
-                                if (!newFacet.hyperplane.holds(insidePoint)){
-                                    newFacet.hyperplane.invert();
-                                }
-                                facets.push_back(newFacet);
-                                // avoid using replaced facets and add new ones
-                                currentFacets.push_back(true);
-                                // Set Points in outsideSet free
-                                // increase Number Of new Facets
-                                ++numberOfNewFacets;
+            template<typename ValueType>
+            std::vector<typename QuickHull<ValueType>::EigenVector>& QuickHull<ValueType>::getRelevantVertices() {
+                return this->relevantVertices;
+            }
+
+            template<typename ValueType>
+            std::vector<std::vector<uint_fast64_t>>& QuickHull<ValueType>::getVertexSets() {
+                return this->vertexSets;
+            }
+
+            template<typename ValueType>
+            void QuickHull<ValueType>::handle1DPoints(std::vector<EigenVector>& points, bool generateRelevantVerticesAndVertexSets) {
+                ValueType minValue = points.front()(0);
+                ValueType maxValue = points.front()(0);
+                uint_fast64_t minIndex = 0;
+                uint_fast64_t maxIndex = 0;
+                for(uint_fast64_t pointIndex = 1; pointIndex < points.size(); ++pointIndex) {
+                    ValueType const& pointValue = points[pointIndex](0);
+                    if(pointValue < minValue) {
+                        minValue = pointValue;
+                        minIndex = pointIndex;
+                    }
+                    if(pointValue > maxValue) {
+                        maxValue = pointValue;
+                        maxIndex = pointIndex;
+                    }
+                }
+                resultMatrix = EigenMatrix(2,1);
+                resultMatrix(0,0) = -storm::utility::one<ValueType>();
+                resultMatrix(1,0) = storm::utility::one<ValueType>();
+                resultVector = EigenVector(2);
+                resultVector(0) = -minValue;
+                resultVector(1) = maxValue;
+                if(generateRelevantVerticesAndVertexSets) {
+                    relevantVertices.push_back(points[minIndex]);
+                    std::vector<uint_fast64_t> minVertexSet(1,0);
+                    vertexSets.push_back(std::move(minVertexSet));
+                    if(minIndex != maxIndex && points[minIndex] != points[maxIndex]) {
+                        relevantVertices.push_back(points[maxIndex]);
+                        std::vector<uint_fast64_t> maxVertexSet(1,1);
+                        vertexSets.push_back(std::move(maxVertexSet));
+                    } else {
+                        vertexSets.push_back(vertexSets.front());
+                    }
+                }
+            }
+
+            template <typename ValueType>
+            bool QuickHull<ValueType>::affineFilter(std::vector<uint_fast64_t> const& subset, uint_fast64_t const& item, std::vector<EigenVector> const& points){
+                EigenMatrix vectorMatrix(points[item].rows()+1, subset.size() + 1);
+                for (uint_fast64_t i = 0; i < subset.size(); ++i){
+                    vectorMatrix.col(i) << points[subset[i]], storm::utility::one<ValueType>();
+                }
+                vectorMatrix.col(subset.size()) << points[item], storm::utility::one<ValueType>();
+                return (vectorMatrix.fullPivLu().rank() > subset.size());
+            }
+
+            template<typename ValueType>
+            void QuickHull<ValueType>::handleAffineDependentPoints(std::vector<EigenVector>& points, bool generateRelevantVerticesAndVertexSets) {
+                bool pointsAffineDependent = true;
+                std::vector<std::pair<EigenVector, ValueType>> additionalConstraints;
+                while(pointsAffineDependent) {
+                    // get one hyperplane that holds all points
+                    const uint_fast64_t dimension = points.front().rows();
+                    EigenVector refPoint(points.front());
+                    EigenMatrix constraints(points.size() - 1, dimension);
+                    for(unsigned row = 1; row < points.size(); ++row) {
+                        constraints.row(row) = points[row] - refPoint;
+                    }
+                    EigenVector normal = constraints.fullPivLu().kernel().col(0);
+
+                    // Eigen returns the column vector 0...0 if the kernel is empty (i.e., there is no such hyperplane)
+                    if(normal.isZero()) {
+                        pointsAffineDependent = false;
+                    } else {
+                        points.push_back(refPoint + normal);
+                        ValueType offset = normal.dot(refPoint);
+                        additionalConstraints.emplace_back(std::move(normal),std::move(offset));
+                    }
+                }
+                // Now the points are affine independent so we can relaunch the procedure
+                generateHalfspacesFromPoints(points, generateRelevantVerticesAndVertexSets);
+
+                // Add the constraints obtained above
+                uint_fast64_t numOfAdditionalConstraints = additionalConstraints.size();
+                uint_fast64_t numOfRegularConstraints = resultMatrix.rows();
+                resultMatrix.resize(numOfRegularConstraints + numOfAdditionalConstraints, StormEigen::NoChange);
+                resultVector.resize(numOfRegularConstraints + numOfAdditionalConstraints, StormEigen::NoChange);
+                for(uint_fast64_t row = numOfRegularConstraints; row < numOfRegularConstraints + numOfAdditionalConstraints; ++row) {
+                    resultMatrix.row(row) = std::move(additionalConstraints[row].first);
+                    resultVector(row) = additionalConstraints[row].second;
+                }
+
+                // clear the additionally added points. Note that the order of the points might have changed
+                storm::storage::BitVector keptPoints(points.size(), true);
+                for(uint_fast64_t pointIndex = 0; pointIndex < points.size(); ++pointIndex) {
+                    for(uint_fast64_t row = 0; row < resultMatrix.rows(); ++row) {
+                        if((resultMatrix.row(row) * points[pointIndex])(0) > resultVector(row)) {
+                            keptPoints.set(pointIndex, false);
+                            break;
+                        }
+                    }
+                }
+                points = storm::utility::vector::filterVector(points, keptPoints);
+
+                if(generateRelevantVerticesAndVertexSets) {
+                    storm::storage::BitVector keptVertices(relevantVertices.size(), true);
+                    for(uint_fast64_t vertexIndex = 0; vertexIndex < relevantVertices.size(); ++vertexIndex) {
+                        for(uint_fast64_t row = 0; row < resultMatrix.rows(); ++row) {
+                            if((resultMatrix.row(row) * relevantVertices[vertexIndex])(0) > resultVector(row)) {
+                                keptVertices.set(vertexIndex, false);
+                                break;
                             }
                         }
                     }
-                    
-                    for(auto visFacetIt = visibleSet.begin(); visFacetIt != visibleSet.end(); ++visFacetIt){
-                        for(uint_fast64_t m = 0; m < facets[*visFacetIt].outsideSet.size(); ++m){
-                            currentOutsidePoints.set(facets[*visFacetIt].outsideSet[m], true);
+                    relevantVertices = storm::utility::vector::filterVector(relevantVertices, keptVertices);
+
+                    STORM_LOG_WARN("Can not retrieve vertex sets for degenerated polytope (not implemented)");
+                    vertexSets.clear();
+                }
+            }
+
+            template<typename ValueType>
+            bool QuickHull<ValueType>::findInitialVertices(std::vector<EigenVector>& points, std::vector<uint_fast64_t>& verticesOfInitialPolytope, uint_fast64_t& minMaxVertices) const{
+                const uint_fast64_t dimension = points.front().rows();
+                if(points.size() < dimension + 1){
+                    //not enough points to obtain a (non-degenerated) polytope
+                    return false;
+                }
+                const uint_fast64_t candidatesToFind = std::min(2*dimension, (uint_fast64_t) points.size());
+                uint_fast64_t candidatesFound = 0;
+                storm::storage::BitVector consideredPoints(points.size(), true);
+                while(candidatesFound < candidatesToFind && !consideredPoints.empty()) {
+                    for(uint_fast64_t currDim=0; currDim<dimension; ++currDim) {
+                        uint_fast64_t minIndex = *consideredPoints.begin();
+                        uint_fast64_t maxIndex = minIndex;
+                        for(uint_fast64_t pointIndex : consideredPoints){
+                            //Check if the current point is a new minimum or maximum at the current dimension
+                            if(points[minIndex](currDim) > points[pointIndex](currDim)){
+                                minIndex = pointIndex;
+                            }
+                            if(points[maxIndex](currDim) < points[pointIndex](currDim)){
+                                maxIndex = pointIndex;
+                            }
+                        }
+                        consideredPoints.set(minIndex, false);
+                        consideredPoints.set(maxIndex, false);
+                    }
+                    //Found candidates. Now swap them to the front.
+                    consideredPoints = ~consideredPoints;
+                    const uint_fast64_t newNumberOfCandidates = consideredPoints.getNumberOfSetBits();
+                    assert(newNumberOfCandidates > 0);
+                    if(newNumberOfCandidates < points.size()){
+                        uint_fast64_t nextPointToMove = consideredPoints.getNextSetIndex(newNumberOfCandidates);
+                        for(uint_fast64_t indexAtFront = candidatesFound; indexAtFront < newNumberOfCandidates; ++indexAtFront){
+                            if(!consideredPoints.get(indexAtFront)) {
+                                assert(nextPointToMove != consideredPoints.size());
+                                std::swap(points[indexAtFront], points[nextPointToMove]);
+                                nextPointToMove = consideredPoints.getNextSetIndex(nextPointToMove+1);
+                                consideredPoints.set(indexAtFront);
+                            }
+                        }
+                        assert(nextPointToMove == consideredPoints.size());
+                    }
+                    if(candidatesFound==0){
+                        //We are in the first iteration. It holds that the first newNumberOfCandidates points will be vertices of the final polytope
+                        minMaxVertices = newNumberOfCandidates;
+                    }
+                    candidatesFound = newNumberOfCandidates;
+                    consideredPoints = ~consideredPoints;
+                }
+
+                storm::storage::geometry::SubsetEnumerator<std::vector<EigenVector>> subsetEnum(points.size(), dimension+1, points, affineFilter);
+                if(subsetEnum.setToFirstSubset()){
+                    verticesOfInitialPolytope = subsetEnum.getCurrentSubset();
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+
+            template<typename ValueType>
+            std::vector<typename QuickHull<ValueType>::Facet> QuickHull<ValueType>::computeInitialFacets(std::vector<EigenVector> const& points, std::vector<uint_fast64_t> const& verticesOfInitialPolytope, EigenVector const& insidePoint) const {
+                const uint_fast64_t dimension = points.front().rows();
+                assert(verticesOfInitialPolytope.size() == dimension + 1);
+                std::vector<Facet> result;
+                result.reserve(dimension + 1);
+                storm::storage::geometry::SubsetEnumerator<> subsetEnum(verticesOfInitialPolytope.size(), dimension);
+                if(!subsetEnum.setToFirstSubset()){
+                    STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Could not find an initial subset.");
+                }
+                do{
+                    Facet newFacet;
+                    // set the points that lie on the new facet
+                    std::vector<uint_fast64_t> const& subset(subsetEnum.getCurrentSubset());
+                    newFacet.points.reserve(subset.size());
+                    for(uint_fast64_t i : subset){
+                        newFacet.points.push_back(verticesOfInitialPolytope[i]);
+                    }
+                    //neighbors: these are always the remaining facets
+                    newFacet.neighbors.reserve(dimension);
+                    for(uint_fast64_t i = 0; i < dimension+1; ++i){
+                        if(i != result.size()){  //initFacets.size() will be the index of this new facet!
+                            newFacet.neighbors.push_back(i);
                         }
                     }
-                    for(auto visFacetIt = visibleSet.begin(); visFacetIt != visibleSet.end(); ++visFacetIt){
-                        currentFacets.set(*visFacetIt, false);
-                    }
-                    // compute new outside sets
-                    for(uint_fast64_t fIndex = facets.size()-numberOfNewFacets; fIndex != facets.size(); ++fIndex){
-                        computeOutsideSetOfFacet(facets[fIndex], currentOutsidePoints, points);
-                    }
-                    
-                    ++currentNumOfVertices;
-                    
-#ifdef PTERM_DEBUG_OUTPUT
-                    numOfIncludedPoints += currentOutsidePoints.count();
-                    PTERM_DEBUG("Mesh currently contains " << numOfIncludedPoints << " of " << consideredPoints.count() << "points");
-#endif
-                    
-                    // find neighbors in new facets
-                    setNeighborhoodOfNewFacets(facets, facets.size() - numberOfNewFacets, points[0].dimension());
-                    
+                    // normal and offset:
+                    computeNormalAndOffsetOfFacet(points, insidePoint, newFacet);
+
+                    result.push_back(std::move(newFacet));
+                } while(subsetEnum.incrementSubset());
+                assert(result.size()==dimension+1);
+                return result;
+            }
+
+            template<typename ValueType>
+            void QuickHull<ValueType>::computeNormalAndOffsetOfFacet(std::vector<EigenVector> const& points, EigenVector const& insidePoint, Facet& facet) const {
+                const uint_fast64_t dimension = points.front().rows();
+                assert(facet.points.size() == dimension);
+                EigenVector refPoint(facet.points.back());
+                EigenMatrix constraints(dimension-1, dimension);
+                for(unsigned row = 0; row < dimension-1; ++row) {
+                    constraints.row(row) = points[facet.points[row]] - refPoint;
+                }
+                facet.normal = constraints.fullPivLu().kernel().col(0);
+                facet.offset = facet.normal.dot(refPoint);
+
+                // invert the plane if the insidePoint is not contained in it
+                if(facet.normal.dot(insidePoint) > facet.offset) {
+                    facet.normal = -facet.normal;
+                    facet.offset = -facet.offset;
                 }
             }
-            return true;
-        }
-    
-        template<typename ValueType>
-        void QuickHull<Number>::getPolytopeFromMesh(std::vector<EigenVector> const& points, std::vector<Facet> const& facets, storm::storage::BitVector const& currentFacets, bool generateRelevantVerticesAndVertexSets){
-            
-            hypro::pterm::HyperplaneCollector<Number> hyperplaneCollector;
-            for(uint_fast64_t facetCount = 0; facetCount < facets.size(); ++facetCount){
-                if(currentFacets[facetCount]){
-                    hyperplaneCollector.insert(std::move(facets[facetCount].hyperplane), generateRelevantVerticesAndVertexSets ? &facets[facetCount].points : nullptr);
+
+
+            template<typename ValueType>
+            void QuickHull<ValueType>::extendMesh(std::vector<EigenVector>& points,
+                                                  storm::storage::BitVector& consideredPoints,
+                                                  std::vector<Facet>& facets,
+                                                  storm::storage::BitVector& currentFacets,
+                                                  EigenVector& insidePoint) const {
+
+                storm::storage::BitVector currentOutsidePoints = consideredPoints;
+                // Compute initial outside Sets
+                for(uint_fast64_t facetIndex : currentFacets){
+                    computeOutsideSetOfFacet(facets[facetIndex], currentOutsidePoints, points);
+                }
+
+                for(uint_fast64_t facetCount = currentFacets.getNextSetIndex(0); facetCount != currentFacets.size(); facetCount = currentFacets.getNextSetIndex(facetCount+1)) {
+                    // set all points to false to get rid of points that lie within the polytope after each iteration
+                    currentOutsidePoints.clear();
+                    // Find a facet with a non-empty outside set
+                    if(!facets[facetCount].outsideSet.empty()) {
+                        uint_fast64_t numberOfNewFacets = 0;
+                        // Now we compute the enlarged mesh
+                        uint_fast64_t farAwayPointIndex = facets[facetCount].maxOutsidePointIndex;
+                        assert(consideredPoints.get(farAwayPointIndex));
+                        // get Visible set from maxOutsidePoint of the current facet
+                        std::set<uint_fast64_t> visibleSet = getVisibleSet(facets, facetCount, points[farAwayPointIndex]);
+                        std::set<uint_fast64_t> invisibleSet = getInvisibleNeighbors(facets, visibleSet);
+                        for(auto invisFacetIt = invisibleSet.begin(); invisFacetIt != invisibleSet.end(); ++invisFacetIt) {
+                            for(auto visFacetIt = visibleSet.begin(); visFacetIt != visibleSet.end(); ++visFacetIt) {
+                                if (std::find(facets[*invisFacetIt].neighbors.begin(), facets[*invisFacetIt].neighbors.end(), *visFacetIt) != facets[*invisFacetIt].neighbors.end()) {
+                                    Facet newFacet;
+                                    // Set points of Facet
+                                    newFacet.points = getCommonPoints(facets[*invisFacetIt], facets[*visFacetIt]);
+                                    newFacet.points.push_back(farAwayPointIndex);
+                                    // replace old facet index by new facet index in the current neighbor
+                                    replaceFacetNeighbor(facets, *visFacetIt, facets.size(), *invisFacetIt);
+                                    newFacet.neighbors.push_back(*invisFacetIt);
+                                    // Compute the normal and the offset
+                                    computeNormalAndOffsetOfFacet(points, insidePoint, newFacet);
+
+                                    //   add new facet
+                                    facets.push_back(newFacet);
+                                    currentFacets.resize(currentFacets.size() + 1, true);
+                                    // increase Number Of new Facets
+                                    ++numberOfNewFacets;
+                                }
+                            }
+                        }
+
+                        for(auto visibleFacet : visibleSet){
+                            for(uint_fast64_t outsidePoint : facets[visibleFacet].outsideSet){
+                                currentOutsidePoints.set(outsidePoint, true);
+                            }
+                            currentFacets.set(visibleFacet, false);
+                        }
+                        // compute new outside sets
+                        for(uint_fast64_t facetIndex : currentFacets){
+                            computeOutsideSetOfFacet(facets[facetIndex], currentOutsidePoints, points);
+                        }
+
+                        // find neighbors in new facets
+                        setNeighborhoodOfNewFacets(facets, facets.size() - numberOfNewFacets, points.front().rows());
+                    }
                 }
             }
-            
-            if(generateRelevantVerticesAndVertexSets){
-                //Get the mapping from a hyperplane to the set of vertices that lie on that plane, erase the duplicates, and count for each vertex the number of hyperplanes on which that vertex lies
-                this->mVertexSets = hyperplaneCollector.getIndexLists();
-                std::vector<uint_fast64_t> hyperplanesOnVertexCounter(points.size(), 0);
-                for(auto& vertexVector : this->mVertexSets){
-                    std::set<uint_fast64_t> vertexSet;
-                    for(auto const& i : vertexVector){
-                        if(vertexSet.insert(i).second){
-                            ++hyperplanesOnVertexCounter[i];
+
+            template<typename ValueType>
+            void QuickHull<ValueType>::getPolytopeFromMesh(std::vector<EigenVector> const& points, std::vector<Facet> const& facets, storm::storage::BitVector const& currentFacets, bool generateRelevantVerticesAndVertexSets) {
+
+                storm::storage::geometry::HyperplaneCollector<ValueType> hyperplaneCollector;
+                for(auto facet : currentFacets) {
+                    hyperplaneCollector.insert(std::move(facets[facet].normal), std::move(facets[facet].offset), generateRelevantVerticesAndVertexSets ? &facets[facet].points : nullptr);
+                }
+
+                if(generateRelevantVerticesAndVertexSets){
+                    //Get the mapping from a hyperplane to the set of vertices that lie on that plane, erase the duplicates, and count for each vertex the number of hyperplanes on which that vertex lies
+                    vertexSets = hyperplaneCollector.getIndexLists();
+                    std::vector<uint_fast64_t> hyperplanesOnVertexCounter(points.size(), 0);
+                    for(auto& vertexVector : vertexSets){
+                        std::set<uint_fast64_t> vertexSet;
+                        for(auto const& i : vertexVector){
+                            if(vertexSet.insert(i).second){
+                                ++hyperplanesOnVertexCounter[i];
+                            }
+                        }
+                        vertexVector.assign( vertexSet.begin(), vertexSet.end());
+                    }
+                    //Now, we can erase all vertices which do not lie on at least dimension hyperplanes.
+                    //Note that the indices of the HyperplaneToVerticesMapping needs to be refreshed according to the new set of vertices
+                    //Therefore, we additionally store the old indices for every vertex to be able to translate from old to new indices
+                    std::unordered_map<EigenVector, std::vector<uint_fast64_t>> relevantVerticesMap;
+                    relevantVerticesMap.reserve(points.size());
+                    for(uint_fast64_t vertexIndex = 0; vertexIndex < hyperplanesOnVertexCounter.size(); ++vertexIndex){
+                        if(hyperplanesOnVertexCounter[vertexIndex] >= points.front().rows()){
+                            auto mapEntry = relevantVerticesMap.insert(typename std::unordered_map<EigenVector, std::vector<uint_fast64_t>>::value_type(points[vertexIndex], std::vector<uint_fast64_t>())).first;
+                            mapEntry->second.push_back(vertexIndex);
                         }
                     }
-                    vertexVector.assign( vertexSet.begin(), vertexSet.end());
-                }
-                //Now, we can erase all vertices which do not lie on at least dimension() hyperplanes.
-                //Note that the indices of the HyperplaneToVerticesMapping needs to be refreshed according to the new set of vertices
-                //Therefore, we additionally store the old indices for every vertex to be able to translate from old to new indices
-                std::unordered_map<hypro::EigenVector, std::vector<uint_fast64_t>> relevantVerticesMap;
-                relevantVerticesMap.reserve(points.size());
-                for(uint_fast64_t vertexIndex = 0; vertexIndex < hyperplanesOnVertexCounter.size(); ++vertexIndex){
-                    if(hyperplanesOnVertexCounter[vertexIndex] >= points[0].dimension()){
-                        auto mapEntry = relevantVerticesMap.insert(typename std::unordered_map<hypro::EigenVector, std::vector<uint_fast64_t>>::value_type(points[vertexIndex], std::vector<uint_fast64_t>())).first;
-                        mapEntry->second.push_back(vertexIndex);
+                    //Fill in the relevant vertices and create a translation map from old to new indices
+                    std::vector<uint_fast64_t> oldToNewIndexMapping (points.size(), points.size()); //Initialize with some illegal value
+                    relevantVertices.clear();
+                    relevantVertices.reserve(relevantVerticesMap.size());
+                    for(auto const& mapEntry : relevantVerticesMap){
+                        for(auto const& oldIndex : mapEntry.second){
+                            oldToNewIndexMapping[oldIndex] = relevantVertices.size();
+                        }
+                        relevantVertices.push_back(mapEntry.first);
                     }
-                }
-                //Fill in the relevant vertices and create a translation map from old to new indices
-                std::vector<uint_fast64_t> oldToNewIndexMapping (points.size(), points.size()); //Initialize with some illegal value
-                this->mRelevantVertices.clear();
-                this->mRelevantVertices.reserve(relevantVerticesMap.size());
-                for(auto const& mapEntry : relevantVerticesMap){
-                    for(auto const& oldIndex : mapEntry.second){
-                        oldToNewIndexMapping[oldIndex] = this->mRelevantVertices.size();
+                    //Actually translate and erase duplicates
+                    for(auto& vertexVector : vertexSets){
+                        std::set<uint_fast64_t> vertexSet;
+                        for(auto const& oldIndex : vertexVector){
+                            if(hyperplanesOnVertexCounter[oldIndex] >= points.front().rows()){
+                                vertexSet.insert(oldToNewIndexMapping[oldIndex]);
+                            }
+                        }
+                        vertexVector.assign( vertexSet.begin(), vertexSet.end());
                     }
-                    this->mRelevantVertices.push_back(mapEntry.first);
+                } else {
+                    relevantVertices.clear();
+                    vertexSets.clear();
                 }
-                //Actually translate and erase duplicates
-                for(auto& vertexVector : this->mVertexSets){
-                    std::set<uint_fast64_t> vertexSet;
-                    for(auto const& oldIndex : vertexVector){
-                        if(hyperplanesOnVertexCounter[oldIndex] >= points[0].dimension()){
-                            vertexSet.insert(oldToNewIndexMapping[oldIndex]);
+                auto matrixVector = hyperplaneCollector.getCollectedHyperplanesAsMatrixVector();
+                resultMatrix = std::move(matrixVector.first);
+                resultVector = std::move(matrixVector.second);
+            }
+
+            template<typename ValueType>
+            std::set<uint_fast64_t> QuickHull<ValueType>::getVisibleSet(std::vector<Facet> const& facets, uint_fast64_t const& startIndex, EigenVector const& point) const {
+                std::set<uint_fast64_t> facetsToCheck;
+                std::set<uint_fast64_t> facetsChecked;
+                std::set<uint_fast64_t> visibleSet;
+                facetsChecked.insert(startIndex);
+                visibleSet.insert(startIndex);
+                for(uint_fast64_t i = 0; i < facets[startIndex].neighbors.size(); ++i){
+                    facetsToCheck.insert(facets[startIndex].neighbors[i]);
+                }
+                while (!facetsToCheck.empty()){
+                    auto elementIt = facetsToCheck.begin();
+                    if ( point.dot(facets[*elementIt].normal) > facets[*elementIt].offset) {
+                        visibleSet.insert(*elementIt);
+                        for(uint_fast64_t i = 0; i < facets[*elementIt].neighbors.size(); ++i){
+                            if (facetsChecked.find(facets[*elementIt].neighbors[i]) == facetsChecked.end()){
+                                facetsToCheck.insert(facets[*elementIt].neighbors[i]);
+                            }
                         }
                     }
-                    vertexVector.assign( vertexSet.begin(), vertexSet.end());
+                    facetsChecked.insert(*elementIt);
+                    facetsToCheck.erase(elementIt);
                 }
-            } else {
-                this->mRelevantVertices.clear();
-                this->mVertexSets.clear();
+                return visibleSet;
             }
-            auto matrixVector = hyperplaneCollector.getCollectedHyperplanesAsMatrixVector();
-            this->mResultMatrix = std::move(matrixVector.first);
-            this->mResultVector = std::move(matrixVector.second);
-            
-            PTERM_DEBUG("Computed H representation from  " << points.size() << " vertices and " << this->mResultVector.rows() << " hyperplanes and " << this->mRelevantVertices.size() << " relevant vertices. Dimension is " << points[0].dimension());
-            PTERM_DEBUG("Total number of considered facets: " << facets.size() << " where " << currentFacets.count() << " are enabled.");
-        }
 
-        template <typename ValueType>
-        bool QuickHull<ValueType>::affineFilter(std::vector<uint_fast64_t> const& subset, uint_fast64_t const& item, std::vector<EigenVector<ValueType>> const& points){
-            EigenMatrix vectorMatrix(vertices[item].dimension()+1, subset.size() + 1);
-            for (uint_fast64_t i = 0; i < subset.size(); ++i){
-                vectorMatrix.col(i) << vertices[subset[i]], storm::utility::one<ValueType>();
-            }
-            vectorMatrix.col(subset.size()) << vertices[item], storm::utility::one<ValueType>();
-            return (vectorMatrix.fullPivLu().rank() > subset.size());
-        }
-            
-        
-        template<typename ValueType>
-        bool QuickHull<Number>::findInitialVertices(std::vector<hypro::EigenVector>& points, std::vector<uint_fast64_t>& verticesOfInitialPolytope, uint_fast64_t& minMaxVertices) const{
-            const uint_fast64_t dimension = points[0].dimension();
-            if(points.size() < dimension + 1){
-                //not enough points to obtain a (non-degenerated) polytope
-                return false;
-            }
-            const uint_fast64_t candidatesToFind = std::min(2*dimension, points.size());
-            uint_fast64_t candidatesFound = 0;
-            storm::storage::BitVector consideredPoints(points.size(), true);
-            while(candidatesFound < candidatesToFind && !consideredPoints.empty()) {
-                for(uint_fast64_t currDim=0; currDim<dimension; ++currDim) {
-                    uint_fast64_t minIndex = *consideredPoints.begin();
-                    uint_fast64_t maxIndex = minIndex;
-                    for(uint_fast64_t pointIndex : consideredPoints){
-                        //Check if the current point is a new minimum or maximum at the current dimension
-                        if(points[minIndex](currDim) > points[pointIndex](currDim)){
-                            minIndex = pointIndex;
-                        }
-                        if(points[maxIndex](currDim) < points[pointIndex](currDim)){
-                            maxIndex = pointIndex;
-                        }
-                    }
-                    consideredPoints.set(minIndex, false);
-                    consideredPoints.set(maxIndex, false);
-                }
-                //Found candidates. Now swap them to the front.
-                consideredPoints = ~consideredPoints;
-                const uint_fast64_t newNumberOfCandidates = consideredPoints.getNumberOfSetBits();
-                assert(newNumberOfCandidates > 0);
-                if(newNumberOfCandidates < points.size()){
-                    uint_fast64_t nextPointToMove = consideredPoints.getNextSetIndex(newNumberOfCandidates);
-                    for(uint_fast64_t indexAtFront = candidatesFound; indexAtFront < newNumberOfCandidates; ++indexAtFront){
-                        if(!consideredPoints.get(indexAtFront)) {
-                            assert(nextPointToMove != consideredPoints.size());
-                            std::swap(points[indexAtFront], points[nextPointToMove]);
-                            nextPointToMove = consideredPoints.getNextSetIndex(nextPointToMove+1);
-                            consideredPoints.set(indexAtFront);
-                        }
-                    }
-                    assert(nextPointToMove == consideredPoints.size());
-                }
-                if(candidatesFound==0){
-                    //We are in the first iteration. It holds that the first newNumberOfCandidates points will be vertices of the final polytope
-                    minMaxVertices = newNumberOfCandidates;
-                }
-                candidatesFound = newNumberOfCandidates;
-                consideredPoints = ~consideredPoints;
-            }
-            
-            storm::storage::geometry::SubsetEnumerator<std::vector<EigenVector<ValueType>>> subsetEnum(points.size(), dimension+1, points, affineFilter);
-            if(subsetEnum.setToFirstSubset()){
-                verticesOfInitialPolytope = subsetEnum.getCurrentSubset();
-                return true;
-            } else {
-                return false;
-            }
-        }
-
-        template<typename ValueType>
-        std::vector<typename QuickHull<ValueType>::Facet> computeInitialFacets(std::vector<EigenVector> const& points, std::vector<uint_fast64_t> const& verticesOfInitialPolytope, EigenVector const& insidePoint) const {
-            const uint_fast64_t dimension = points.front().rows();
-            assert(verticesOfInitialPolytope.size() == dimension + 1);
-            std::vector<Facet> result;
-            result.reserve(dimension + 1);
-            storm::storage::geometry::SubsetEnumerator<> subsetEnum(verticesOfInitialPolytope.size(), dimension);
-            if(!subsetEnum.setToFirstSubset()){
-                STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Could not find an initial subset.");
-            }
-            do{
-                Facet newFacet;
-                // set the points that lie on the new facet
-                std::vector<uint_fast64_t> const& subset(subsetEnum.getCurrentSubset());
-                newFacet.points.reserve(subset.size());
-                for(uint_fast64_t i : subset){
-                    newFacet.points.push_back(verticesOfInitialPolytope[i]);
-                }
-                //neighbors: these are always the remaining facets
-                newFacet.neighbors.reserve(dimension);
-                for(uint_fast64_t i = 0; i < dimension+1; ++i){
-                    if(i != facets.size()){  //initFacets.size() will be the index of this new facet!
-                        newFacet.neighbors.push_back(i);
-                    }
-                }
-                // normal and offset:
-                computeNormalAndOffsetOfFacet(points, insidePoint, newFacet);
-
-                facets.push_back(std::move(newFacet));
-            } while(subsetEnum.incrementSubset());
-            assert(facets.size()==dimension+1);
-        }
-
-        template<typename ValueType>
-        void computeNormalAndOffsetOfFacet(std::vector<EigenVector> const& points, EigenVector const& insidePoint, Facet& facet) const {
-            const uint_fast64_t dimension = points.front().rows()
-            assert(facet.points.size() == dimension);
-            EigenVector refPoint(facet.points.back());
-            EigenMatrix constraints(dimension-1, dimension);
-            for(unsigned row = 0; row < dimension-1; ++row) {
-                constraints.row(row) = points[facet.points[row]] - refPoint;
-            }
-            facet.normal = constraints.fullPivLu().kernel();
-            facet.offset = facet.normal.dot(refPoint);
-
-            // invert the plane if the insidePoint is not contained in it
-            if(facet.normal.dot(insidePoint) > facet.offset) {
-                facet.normal = -facet.normal;
-                facet.offset = -facet.offset;
-            }
-        }
-
-
-        template<typename ValueType>
-        std::set<uint_fast64_t> QuickHull<Number>::getVisibleSet(std::vector<Facet> const& facets, uint_fast64_t const& startIndex, EigenVector const& point) const {
-            std::set<uint_fast64_t> facetsToCheck;
-            std::set<uint_fast64_t> facetsChecked;
-            std::set<uint_fast64_t> visibleSet;
-            facetsChecked.insert(startIndex);
-            visibleSet.insert(startIndex);
-            for(uint_fast64_t i = 0; i < facets[startIndex].neighbors.size(); ++i){
-                facetsToCheck.insert(facets[startIndex].neighbors[i]);
-            }
-            while (!facetsToCheck.empty()){
-                auto elementIt = facetsToCheck.begin();
-                if ( point.dot(facets[*elementIt].normal) > facets[*elementIt].offset) {
-                    visibleSet.insert(*elementIt);
-                    for(uint_fast64_t i = 0; i < facets[*elementIt].neighbors.size(); ++i){
-                        if (facetsChecked.find(facets[*elementIt].neighbors[i]) == facetsChecked.end()){
-                            facetsToCheck.insert(facets[*elementIt].neighbors[i]);
+            template<typename ValueType>
+            void QuickHull<ValueType>::setNeighborhoodOfNewFacets(std::vector<Facet>& facets, uint_fast64_t firstNewFacet, uint_fast64_t dimension) const{
+                for(uint_fast64_t currentFacet = firstNewFacet; currentFacet < facets.size(); ++currentFacet){
+                    for(uint_fast64_t otherFacet = currentFacet + 1; otherFacet < facets.size(); ++otherFacet){
+                        if (getCommonPoints(facets[currentFacet], facets[otherFacet]).size() >= dimension-1) {
+                            facets[currentFacet].neighbors.push_back(otherFacet);
+                            facets[otherFacet].neighbors.push_back(currentFacet);
                         }
                     }
                 }
-                facetsChecked.insert(*elementIt);
-                facetsToCheck.erase(elementIt);
             }
-            return visibleSet;
-        }
-         
-        template<typename ValueType>
-        void QuickHull<Number>::setNeighborhoodOfNewFacets(std::vector<Facet>& facets, uint_fast64_t firstNewFacet, uint_fast64_t dimension) const{
-            for(uint_fast64_t currentFacet = firstNewFacet; currentFacet < facets.size(); ++currentFacet){
-                for(uint_fast64_t otherFacet = currentFacet + 1; otherFacet < facets.size(); ++otherFacet){
-                    std::vector<uint_fast64_t> commonPoints = getCommonPoints(facets[currentFacet], facets[otherFacet]); 
-                    if (commonPoints.size() >= dimension-1){
-                        facets[currentFacet].neighbors.push_back(otherFacet);
-                        facets[otherFacet].neighbors.push_back(currentFacet);
+
+            template<typename ValueType>
+            void QuickHull<ValueType>::replaceFacetNeighbor(std::vector<Facet>& facets, uint_fast64_t oldFacetIndex, uint_fast64_t newFacetIndex, uint_fast64_t neighborIndex) const {
+                auto facetInNeighborListIt = std::find(facets[neighborIndex].neighbors.begin(), facets[neighborIndex].neighbors.end(), oldFacetIndex);
+                if (facetInNeighborListIt != facets[neighborIndex].neighbors.end()){
+                    *facetInNeighborListIt = newFacetIndex;
+                }
+            }
+
+            template<typename ValueType>
+            void QuickHull<ValueType>::computeOutsideSetOfFacet(Facet& facet, storm::storage::BitVector& currentOutsidePoints, std::vector<EigenVector> const& points) const {
+                ValueType maxMultiplicationResult = facet.offset;
+                for(uint_fast64_t pointIndex : currentOutsidePoints) {
+                    ValueType multiplicationResult = points[pointIndex].dot(facet.normal);
+                    if( multiplicationResult > facet.offset ) {
+                        currentOutsidePoints.set(pointIndex, false); // we already know that the point lies outside so it can be ignored for future facets
+                        facet.outsideSet.push_back(pointIndex);
+                        if (multiplicationResult > maxMultiplicationResult) {
+                            maxMultiplicationResult = multiplicationResult;
+                            facet.maxOutsidePointIndex = pointIndex;
+                        }
                     }
                 }
             }
-        }
-        
-        template<typename ValueType>
-        void QuickHull<Number>::replaceFacetNeighbor(std::vector<Facet>& facets, uint_fast64_t oldFacetIndex, uint_fast64_t newFacetIndex, uint_fast64_t neighborIndex) const {
-            uint_fast64_t index = 0; 
-            while(facets[neighborIndex].neighbors[index] != oldFacetIndex && index < facets[neighborIndex].neighbors.size()){ 
-                ++index;
-            }
-            if (index < facets[neighborIndex].neighbors.size()){
-                facets[neighborIndex].neighbors[index] = newFacetIndex;
-            }
-        }
-        
-        template<typename ValueType>
-        void QuickHull<Number>::computeOutsideSetOfFacet(Facet& facet, storm::storage::BitVector& currentOutsidePoints, std::vector<EigenVector> const& points) const {
-            Number maxMultiplicationResult = facet.hyperplane.offset();
-            for(uint_fast64_t pointIndex = currentOutsidePoints) {
-                ValueType multiplicationResult = points[pointIndex].dot(facet.normal);
-                if( multiplicationResult > facet.hyperplane.offset() ) {
-                    currentOutsidePoints.set(pointIndex, false); // we already know that the point lies outside so it can be ignored for future facets
-                    facet.outsideSet.push_back(pointIndex);
-                    if (multiplicationResult > maxMultiplicationResult) {
-                        maxMultiplicationResult = multiplicationResult;
-                        facet.maxOutsidePointIndex = pointIndex;
+
+            template<typename ValueType>
+            std::vector<uint_fast64_t> QuickHull<ValueType>::getCommonPoints(Facet const& lhs, Facet const& rhs) const {
+                std::vector<uint_fast64_t> commonPoints;
+                for(uint_fast64_t lhsPoint : lhs.points){
+                    for(uint_fast64_t rhsPoint : rhs.points){
+                        if (lhsPoint == rhsPoint){
+                            commonPoints.push_back(lhsPoint);
+                        }
                     }
                 }
+                return commonPoints;
             }
-        }
 
-        template<typename ValueType>
-        std::vector<uint_fast64_t> QuickHull<Number>::getCommonPoints(Facet const& lhs, Facet const& rhs) const{
-            std::vector<uint_fast64_t> commonPoints;
-            for(uint_fast64_t refPoint = 0; refPoint < lhs.points.size(); ++refPoint){
-                for(uint_fast64_t currentPoint = 0; currentPoint < rhs.points.size(); ++currentPoint){
-                    if (lhs.points[refPoint] == rhs.points[currentPoint]){
-                        commonPoints.push_back(lhs.points[refPoint]);
+            template<typename ValueType>
+            std::set<uint_fast64_t> QuickHull<ValueType>::getInvisibleNeighbors( std::vector<Facet>& facets, std::set<uint_fast64_t> const& visibleSet) const {
+                std::set<uint_fast64_t> invisibleNeighbors;
+                for(auto currentFacetIt = visibleSet.begin(); currentFacetIt != visibleSet.end(); ++currentFacetIt){
+                    for(uint_fast64_t currentNeighbor = 0; currentNeighbor < facets[*currentFacetIt].neighbors.size(); ++currentNeighbor){
+                        if (visibleSet.find(facets[*currentFacetIt].neighbors[currentNeighbor]) == visibleSet.end()){
+                            invisibleNeighbors.insert(facets[*currentFacetIt].neighbors[currentNeighbor]);
+                        }
                     }
                 }
-            }
-            return commonPoints;
-        }
- 
-        template<typename ValueType>
-        std::set<uint_fast64_t> QuickHull<Number>::getInvisibleNeighbors( std::vector<Facet>& facets, std::set<uint_fast64_t> const& visibleSet) const {
-            std::set<uint_fast64_t> invisibleNeighbors;
-            for(auto currentFacetIt = visibleSet.begin(); currentFacetIt != visibleSet.end(); ++currentFacetIt){
-                for(uint_fast64_t currentNeighbor = 0; currentNeighbor < facets[*currentFacetIt].neighbors.size(); ++currentNeighbor){
-                    if (visibleSet.find(facets[*currentFacetIt].neighbors[currentNeighbor]) == visibleSet.end()){
-                        invisibleNeighbors.insert(facets[*currentFacetIt].neighbors[currentNeighbor]);
-                    }
-                }
-            }
-            return invisibleNeighbors;
-        }
-
-        template<typename ValueType>
-        void QuickHull<Number>::enlargeIncompleteResult(std::vector<Facet> const& facets, storm::storage::BitVector const& currentFacets, std::vector<EigenVector> const& points,  bool generateRelevantVerticesAndVertexSets){
-            PTERM_TRACE("Enlarging incomplete Result of QuickHull");
-            //Obtain the set of outside points
-            std::vector<uint_fast64_t> outsidePoints;
-            for(uint_fast64_t facetIndex = currentFacets.find_first(); facetIndex != currentFacets.npos; facetIndex = currentFacets.find_next(facetIndex)){
-                outsidePoints.insert(outsidePoints.end(), facets[facetIndex].outsideSet.begin(), facets[facetIndex].outsideSet.end());
-            }
-            
-            //Now adjust the offsets of all the hyperplanes such that they contain each outside point
-            for(uint_fast64_t planeIndex=0; planeIndex < this->mResultMatrix.rows(); ++planeIndex){
-                Number maxValue = this->mResultVector(planeIndex);
-                for (uint_fast64_t outsidePointIndex : outsidePoints){
-                    Number currValue = this->mResultMatrix.row(planeIndex) * (points[outsidePointIndex].rawCoordinates());
-                    maxValue = std::max(maxValue, currValue);
-                }
-                if (pterm::Settings::instance().getQuickHullRoundingMode() != pterm::Settings::QuickHullRoundingMode::NONE) {
-                    maxValue = NumberReduction<Number>::instance().roundUp(maxValue);
-                }
-                this->mResultVector(planeIndex) = maxValue;
+                return invisibleNeighbors;
             }
 
-            if(generateRelevantVerticesAndVertexSets){
-                /* Note: The adjustment of the offset might introduce redundant halfspaces.
-                 * It is also not clear if it suffices to consider intersection points of hyperplanes that intersected in the original polytope
-                 * 
-                 * Our solution is to convert the resulting h polytope back to a v poly
-                 */
+            template class QuickHull<double>;
+            template class QuickHull<storm::RationalNumber>;
 
-                PTermHPolytope<Number> enlargedPoly(std::move(this->mResultMatrix), std::move(this->mResultVector));
-                HyperplaneEnumeration<Number> he;
-                if(!he.generateVerticesFromHalfspaces(enlargedPoly, true)){
-                    PTERM_ERROR("Could not find the vertices of the enlarged Polytope");
-                }
-                this->mResultMatrix = std::move(he.getRelevantMatrix());
-                this->mResultVector = std::move(he.getRelevantVector());
-                this->mRelevantVertices = std::move(he.getResultVertices());
-                this->mVertexSets = std::move(he.getVertexSets());
-
-            }
         }
     }
 }
-
-/* 
- * File:   AbstractVtoHConverter.tpp
- * Author: tim quatmann
- *
- * Created on Februrary 2, 2016, 1:06 PM
- */
-
-#include "AbstractVtoHConverter.h"
-
-namespace hypro {
-    namespace pterm{
-        
-        template<typename ValueType>
-        EigenMatrix& AbstractVtoHConverter<Number>::getResultMatrix() {
-            return this->mResultMatrix;
-        }
-        
-        template<typename ValueType>
-        EigenVector& AbstractVtoHConverter<Number>::getResultVector() {
-            return this->mResultVector;
-        }
-        
-        template<typename ValueType>
-        std::vector<EigenVector>& AbstractVtoHConverter<Number>::getRelevantVertices() {
-            return this->mRelevantVertices;
-        }
-        
-        template<typename ValueType>
-        std::vector<std::vector<uint_fast64_t>>& AbstractVtoHConverter<Number>::getVertexSets() {
-            return this->mVertexSets;
-        }
-        
-    }
-}
-

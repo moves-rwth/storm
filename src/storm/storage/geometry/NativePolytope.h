@@ -3,9 +3,7 @@
 
 #include "storm/storage/geometry/Polytope.h"
 #include "storm/storage/expressions/Expressions.h"
-#include "storm/utility/eigen.h"
-
-#ifdef asdf
+#include "storm/adapters/EigenAdapter.h"
 
 namespace storm {
     namespace storage {
@@ -115,7 +113,7 @@ namespace storm {
                  * - The polytope is not bounded in the given direction
                  */
                 virtual std::pair<Point, bool> optimize(Point const& direction) const override;
-            
+
                 virtual bool isNativePolytope() const override;
                 
             private:
@@ -125,11 +123,15 @@ namespace storm {
                 // returns the vertices of this polytope as EigenVectors
                 std::vector<EigenVector> getEigenVertices() const;
 
+                // As optimize(..) but with EigenVectors
+                std::pair<EigenVector, bool> optimize(EigenVector const& direction) const;
+
+
                 // declares one variable for each constraint and returns the obtained variables.
                 std::vector<storm::expressions::Variable> declareVariables(storm::expressions::ExpressionManager& manager, std::string const& namePrefix) const;
 
                 // returns the constrains defined by this polytope as an expresseion
-                storm::expressions::Expression getConstraints(storm::expressions::ExpressionManager& manager, std::vector<storm::expressions::Variable> const& variables) const;
+                storm::expressions::Expression getConstraints(storm::expressions::ExpressionManager const& manager, std::vector<storm::expressions::Variable> const& variables) const;
 
 
                 enum class EmptyStatus{
@@ -151,7 +153,5 @@ namespace storm {
         }
     }
 }
-
-#endif /* asdfsafO */
 
 #endif /* STORM_STORAGE_GEOMETRY_NATIVEPOLYTOPE_H_ */

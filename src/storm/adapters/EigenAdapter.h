@@ -27,3 +27,17 @@ namespace storm {
         
     }
 }
+
+
+namespace std {
+    template<class ValueType>
+    struct hash<StormEigen::Matrix<ValueType, StormEigen::Dynamic, 1>> {
+        std::size_t operator()(StormEigen::Matrix<ValueType, StormEigen::Dynamic, 1> const &vector) const {
+            size_t seed = 0;
+            for (uint_fast64_t i = 0; i < vector.rows(); ++i) {
+                carl::hash_add(seed,  std::hash<ValueType>()(vector(i)));
+            }
+            return seed;
+        }
+    };
+}

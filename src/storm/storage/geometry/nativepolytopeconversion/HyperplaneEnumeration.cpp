@@ -1,147 +1,158 @@
-/* 
- * File:   HyperplaneEnumeration.tpp
- * Author: tim quatmann
- * Author: phillip florian
- *
- * Created on December 28, 2015, 1:06 PM
- */
+#include "storm/storage/geometry/nativepolytopeconversion/HyperplaneEnumeration.h"
 
-#include "HyperplaneEnumeration.h"
+#include "storm/utility/macros.h"
+#include "storm/storage/geometry/nativepolytopeconversion/SubsetEnumerator.h"
+#include "storm/storage/geometry/nativepolytopeconversion/HyperplaneCollector.h"
 
-#include "../SubsetEnumerator.h"
-#include "../HyperplaneCollector.h"
+namespace storm {
+    namespace storage {
+        namespace geometry{
 
-namespace hypro {
-    namespace pterm{
-     
-        template<typename Number>
-        bool HyperplaneEnumeration<Number>::generateVerticesFromHalfspaces(PTermHPolytope<Number> const& hPoly, bool generateRelevantHyperplanesAndVertexSets){
-            PTERM_DEBUG("Invoked generateVerticesFromHalfspaces with " << hPoly.getMatrix().rows() << " hyperplanes. Dimension is " << hPoly.dimension());
-            std::unordered_map<Point<Number>, std::set<std::size_t>> vertexCollector;
-            hypro::pterm::SubsetEnumerator<hypro::matrix_t<Number>> subsetEnum(hPoly.getMatrix().rows(), hPoly.dimension(), hPoly.getMatrix(), this->linearDependenciesFilter);
-            if(subsetEnum.setToFirstSubset()){
-                do{
-                    std::vector<std::size_t> const& subset = subsetEnum.getCurrentSubset();
-                    std::pair<hypro::matrix_t<Number>, hypro::vector_t<Number>> subHPolytope(hPoly.getSubHPolytope(subset));
-                    Point<Number> point(subHPolytope.first.fullPivLu().solve(subHPolytope.second));
-                    //Point<Number> point(hypro::gauss(subHPolytope.first, subHPolytope.second));
-                    if(hPoly.contains(point)){
-                        //Note that the map avoids duplicates.
-                        auto hyperplaneIndices = vertexCollector.insert(typename std::unordered_map<Point<Number>, std::set<std::size_t>>::value_type(std::move(point), std::set<std::size_t>())).first;
-                        if(generateRelevantHyperplanesAndVertexSets){
-                            hyperplaneIndices->second.insert(subset.begin(), subset.end());
+            template<typename ValueType>
+            void HyperplaneEnumeration<ValueType>::generateVerticesFromConstraints(EigenMatrix const& constraintMatrix, EigenVector const& constraintVector, bool generateRelevantHyperplanesAndVertexSets) {
+                STORM_LOG_DEBUG("Invoked Hyperplane enumeration with " << constraintMatrix.rows() << " constraints.");
+                const uint_fast64_t dimension = constraintMatrix.cols();
+                if(dimension == 0) {
+                    // No halfspaces means no vertices
+                    resultVertices.clear();
+                    relevantMatrix = constraintMatrix;
+                    relevantVector = constraintVector;
+                    vertexSets.clear();
+                    return;
+                }
+                std::unordered_map<EigenVector, std::set<uint_fast64_t>> vertexCollector;
+                storm::storage::geometry::SubsetEnumerator<EigenMatrix> subsetEnum(constraintMatrix.rows(), dimension, constraintMatrix, this->linearDependenciesFilter);
+                if(subsetEnum.setToFirstSubset()){
+                    do{
+                        std::vector<uint_fast64_t> const& subset = subsetEnum.getCurrentSubset();
+
+                        EigenMatrix subMatrix(dimension, dimension);
+                        EigenVector subVector(dimension);
+                        for (uint_fast64_t i : subset){
+                            subMatrix.row(i) = constraintMatrix.row(subset[i]);
+                            subVector.row(i) = constraintVector.row(subset[i]);
+                        }
+
+                        EigenVector point = subMatrix.fullPivLu().solve(subVector);
+                        bool pointContained = true;
+                        for(uint_fast64_t row=0; row < constraintMatrix.rows(); ++row){
+                            if((constraintMatrix.row(row) * point)(0) > constraintVector(row)){
+                                pointContained = false;
+                                break;
+                            }
+                        }
+                        if(pointContained) {
+                            //Note that the map avoids duplicates.
+                            auto hyperplaneIndices = vertexCollector.insert(typename std::unordered_map<EigenVector, std::set<uint_fast64_t>>::value_type(std::move(point), std::set<uint_fast64_t>())).first;
+                            if(generateRelevantHyperplanesAndVertexSets){
+                                hyperplaneIndices->second.insert(subset.begin(), subset.end());
+                            }
+                        }
+                    } while (subsetEnum.incrementSubset());
+                }
+
+                if(generateRelevantHyperplanesAndVertexSets){
+                    //For each hyperplane, get the number of (unique) vertices that lie on it.
+                    std::vector<uint_fast64_t> verticesOnHyperplaneCounter(constraintMatrix.rows(), 0);
+                    for(auto const& mapEntry : vertexCollector){
+                        for(auto const& hyperplaneIndex : mapEntry.second){
+                            ++verticesOnHyperplaneCounter[hyperplaneIndex];
                         }
                     }
-                } while (subsetEnum.incrementSubset());
-            } else {
-                std::cout << "Could not generate any vertex while converting from H Polytope. TODO: implement this case (we get some unbounded thing here)" << std::endl;
-                return false;
-            }
-            if(generateRelevantHyperplanesAndVertexSets){
-                //For each hyperplane, get the number of (unique) vertices that lie on it.
-                std::vector<std::size_t> verticesOnHyperplaneCounter(hPoly.getMatrix().rows(), 0);
-                for(auto const& mapEntry : vertexCollector){
-                    for(auto const& hyperplaneIndex : mapEntry.second){
-                        ++verticesOnHyperplaneCounter[hyperplaneIndex];
-                    }
-                }
-                
-                //Only keep the hyperplanes on which at least dimension() vertices lie.
-                //Note that this will change the indices of the Hyperplanes.
-                //Therefore, we additionally store the old indices for every hyperplane to be able to translate from old to new indices
-                hypro::pterm::HyperplaneCollector<Number> hyperplaneCollector;
-                for(std::size_t hyperplaneIndex = 0; hyperplaneIndex < verticesOnHyperplaneCounter.size(); ++hyperplaneIndex){
-                    if(verticesOnHyperplaneCounter[hyperplaneIndex] >= hPoly.dimension()){
-                        std::vector<std::size_t> oldIndex;
-                        oldIndex.push_back(hyperplaneIndex);
-                        hyperplaneCollector.insert(hPoly.getMatrix().row(hyperplaneIndex), hPoly.getVector()(hyperplaneIndex), &oldIndex);
-                    }
-                }
-                auto matrixVector = hyperplaneCollector.getCollectedHyperplanesAsMatrixVector();
-                this->mRelevantMatrix = std::move(matrixVector.first);
-                this->mRelevantVector = std::move(matrixVector.second);
-                
-                //Get the mapping from old to new indices
-                std::vector<std::size_t> oldToNewIndexMapping (hPoly.getMatrix().rows(), hPoly.getMatrix().rows()); //Initialize with some illegal value
-                std::vector<std::vector<std::size_t>> newToOldIndexMapping(hyperplaneCollector.getIndexLists());
-                for(std::size_t newIndex = 0; newIndex < newToOldIndexMapping.size(); ++newIndex){
-                    for(auto const& oldIndex : newToOldIndexMapping[newIndex]){
-                        oldToNewIndexMapping[oldIndex] = newIndex;
-                    }
-                }
-                
-                //Insert the resulting vertices and get the set of vertices that lie on each hyperplane
-                std::vector<std::set<std::size_t>> vertexSets(this->mRelevantMatrix.rows());
-                this->mResultVertices.clear();
-                this->mResultVertices.reserve(vertexCollector.size());
-                for(auto const& mapEntry : vertexCollector){
-                    for(auto const& oldHyperplaneIndex : mapEntry.second){
-                        //ignore the hyperplanes which are redundant, i.e. for which there is no new index
-                        if(oldToNewIndexMapping[oldHyperplaneIndex] < this->mRelevantVector.rows()){
-                            vertexSets[oldToNewIndexMapping[oldHyperplaneIndex]].insert(this->mResultVertices.size());
+
+                    //Only keep the hyperplanes on which at least dimension() vertices lie.
+                    //Note that this will change the indices of the Hyperplanes.
+                    //Therefore, we additionally store the old indices for every hyperplane to be able to translate from old to new indices
+                    storm::storage::geometry::HyperplaneCollector<ValueType> hyperplaneCollector;
+                    for(uint_fast64_t hyperplaneIndex = 0; hyperplaneIndex < verticesOnHyperplaneCounter.size(); ++hyperplaneIndex){
+                        if(verticesOnHyperplaneCounter[hyperplaneIndex] >= dimension){
+                            std::vector<uint_fast64_t> oldIndex;
+                            oldIndex.push_back(hyperplaneIndex);
+                            hyperplaneCollector.insert(constraintMatrix.row(hyperplaneIndex), constraintVector(hyperplaneIndex), &oldIndex);
                         }
                     }
-                    this->mResultVertices.push_back(mapEntry.first);
-                }
-                this->mVertexSets.clear();
-                this->mVertexSets.reserve(vertexSets.size());
-                for(auto const& vertexSet : vertexSets){
-                    this->mVertexSets.emplace_back(vertexSet.begin(), vertexSet.end());
-                }
-                
-            } else {
-                this->mResultVertices.clear();
-                this->mResultVertices.reserve(vertexCollector.size());
-                for(auto const& mapEntry : vertexCollector){
-                    this->mResultVertices.push_back(mapEntry.first);
-                }
-                this->mVertexSets.clear();
-                this->mRelevantMatrix = hypro::matrix_t<Number>();
-                this->mRelevantVector = hypro::vector_t<Number>();
-            }
-            PTERM_DEBUG("Invoked generateVerticesFromHalfspaces with " << hPoly.getMatrix().rows() << " hyperplanes and " << this->mResultVertices.size() << " vertices and " << this->mRelevantMatrix.rows() << " relevant hyperplanes. Dimension is " << hPoly.dimension());
-            return true;
-        }
-            
+                    auto matrixVector = hyperplaneCollector.getCollectedHyperplanesAsMatrixVector();
+                    relevantMatrix = std::move(matrixVector.first);
+                    relevantVector = std::move(matrixVector.second);
 
-    template <typename Number>
-    bool HyperplaneEnumeration<Number>::linearDependenciesFilter(std::vector<std::size_t> const& subset, std::size_t const& item, hypro::matrix_t<Number> const& A) {
-        hypro::matrix_t<Number> subMatrix(subset.size() +1, A.cols());
-        for (std::size_t i = 0; i < subset.size(); ++i){
-            subMatrix.row(i) = A.row(subset[i]);
+                    //Get the mapping from old to new indices
+                    std::vector<uint_fast64_t> oldToNewIndexMapping (constraintMatrix.rows(), constraintMatrix.rows()); //Initialize with some illegal value
+                    std::vector<std::vector<uint_fast64_t>> newToOldIndexMapping(hyperplaneCollector.getIndexLists());
+                    for(uint_fast64_t newIndex = 0; newIndex < newToOldIndexMapping.size(); ++newIndex){
+                        for(auto const& oldIndex : newToOldIndexMapping[newIndex]){
+                            oldToNewIndexMapping[oldIndex] = newIndex;
+                        }
+                    }
+
+                    //Insert the resulting vertices and get the set of vertices that lie on each hyperplane
+                    std::vector<std::set<uint_fast64_t>> vertexSets(relevantMatrix.rows());
+                    resultVertices.clear();
+                    resultVertices.reserve(vertexCollector.size());
+                    for(auto const& mapEntry : vertexCollector){
+                        for(auto const& oldHyperplaneIndex : mapEntry.second){
+                            //ignore the hyperplanes which are redundant, i.e. for which there is no new index
+                            if(oldToNewIndexMapping[oldHyperplaneIndex] < relevantVector.rows()){
+                                vertexSets[oldToNewIndexMapping[oldHyperplaneIndex]].insert(resultVertices.size());
+                            }
+                        }
+                        resultVertices.push_back(mapEntry.first);
+                    }
+                    this->vertexSets.clear();
+                    this->vertexSets.reserve(vertexSets.size());
+                    for(auto const& vertexSet : vertexSets){
+                        this->vertexSets.emplace_back(vertexSet.begin(), vertexSet.end());
+                    }
+
+                } else {
+                    resultVertices.clear();
+                    resultVertices.reserve(vertexCollector.size());
+                    for(auto const& mapEntry : vertexCollector){
+                        resultVertices.push_back(mapEntry.first);
+                    }
+                    this->vertexSets.clear();
+                    relevantMatrix = EigenMatrix();
+                    relevantVector = EigenVector();
+                }
+                STORM_LOG_DEBUG("Invoked generateVerticesFromHalfspaces with " << hPoly.getMatrix().rows() << " hyperplanes and " << resultVertices.size() << " vertices and " << relevantMatrix.rows() << " relevant hyperplanes. Dimension is " << hPoly.dimension());
+            }
+
+
+            template <typename ValueType>
+            bool HyperplaneEnumeration<ValueType>::linearDependenciesFilter(std::vector<uint_fast64_t> const& subset, uint_fast64_t const& item, EigenMatrix const& A) {
+                EigenMatrix subMatrix(subset.size() +1, A.cols());
+                for (uint_fast64_t i = 0; i < subset.size(); ++i){
+                    subMatrix.row(i) = A.row(subset[i]);
+                }
+                subMatrix.row(subset.size()) = A.row(item);
+                StormEigen::FullPivLU<EigenMatrix> lUMatrix( subMatrix );
+                if (lUMatrix.rank() < subMatrix.rows()){
+                    //Linear dependent!
+                    return false;
+                } else {
+                    return true;
+                }
+            }
+
+            template<typename ValueType>
+            std::vector<typename HyperplaneEnumeration<ValueType>::EigenVector>& HyperplaneEnumeration<ValueType>::getResultVertices() {
+                return resultVertices;
+            }
+
+            template<typename ValueType>
+            typename HyperplaneEnumeration<ValueType>::EigenMatrix& HyperplaneEnumeration<ValueType>::getRelevantMatrix() {
+                return relevantMatrix;
+            }
+
+            template<typename ValueType>
+            typename HyperplaneEnumeration<ValueType>::EigenVector& HyperplaneEnumeration<ValueType>::getRelevantVector() {
+                return relevantVector;
+            }
+
+            template<typename ValueType>
+            std::vector<std::vector<uint_fast64_t>>& HyperplaneEnumeration<ValueType>::getVertexSets() {
+                return this->vertexSets;
+            }
         }
-        subMatrix.row(subset.size()) = A.row(item);
-        Eigen::FullPivLU<matrix_t<Number>> lUMatrix( subMatrix );
-       // std::cout << "The rank is " << lUMatrix.rank() << " and the matrix has " << subMatrix.rows() << " rows" << std::endl;
-        if (lUMatrix.rank() < subMatrix.rows()){
-            //Linear dependent!
-            return false;
-        } else {
-            return true;
-        }
-    }
-    
-        
-        template<typename Number>
-        std::vector<Point<Number>>& HyperplaneEnumeration<Number>::getResultVertices() {
-            return this->mResultVertices;
-        }
-        
-        template<typename Number>
-        hypro::matrix_t<Number>& HyperplaneEnumeration<Number>::getRelevantMatrix() {
-            return this->mRelevantMatrix;
-        }
-        
-        template<typename Number>
-        hypro::vector_t<Number>& HyperplaneEnumeration<Number>::getRelevantVector() {
-            return this->mRelevantVector;
-        }
-        
-        template<typename Number>
-        std::vector<std::vector<std::size_t>>& HyperplaneEnumeration<Number>::getVertexSets() {
-            return this->mVertexSets;
-        }
-        
     }
 }
 

@@ -1,6 +1,7 @@
 #include "SubsetEnumerator.h"
 
 
+#include "storm/adapters/CarlAdapter.h"
 #include "storm/utility/eigen.h"
 
 namespace storm {
@@ -87,7 +88,9 @@ namespace storm {
                 return true;
             }
 
-            template class SubsetEnumerator<StormEigen::Matrix<ValueType, StormEigen::Dynamic, 1>;
+            template class SubsetEnumerator<std::nullptr_t>;
+            template class SubsetEnumerator<std::vector<StormEigen::Matrix<double, StormEigen::Dynamic, 1>>>;
+            template class SubsetEnumerator<std::vector<StormEigen::Matrix<storm::RationalNumber, StormEigen::Dynamic, 1>>>;
         }
     }
 }

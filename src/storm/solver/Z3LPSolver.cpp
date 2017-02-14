@@ -30,7 +30,7 @@ namespace storm {
             context = std::unique_ptr<z3::context>(new z3::context(config));
             solver = std::unique_ptr<z3::optimize>(new z3::optimize(*context));
             expressionAdapter = std::unique_ptr<storm::adapters::Z3ExpressionAdapter>(new storm::adapters::Z3ExpressionAdapter(*this->manager, *context));
-            optimizationFunction = this->getManager().rational(storm::utility::zero<double>());
+            optimizationFunction = this->getManager().rational(storm::utility::zero<storm::RationalNumber>());
         }
         
         Z3LpSolver::Z3LpSolver(std::string const& name) : Z3LpSolver(name, OptimizationDirection::Minimize) {
@@ -112,7 +112,7 @@ namespace storm {
         
         storm::expressions::Variable Z3LpSolver::addBinaryVariable(std::string const& name, double objectiveFunctionCoefficient) {
             storm::expressions::Variable newVariable = this->manager->declareVariable(name, manager->getIntegerType());
-            solver->add(expressionAdapter->translateExpression((newVariable.getExpression() >= this->manager->rational(storm::utility::one<double>())) && (newVariable.getExpression() <= this->manager->rational(storm::utility::one<double>()))));
+            solver->add(expressionAdapter->translateExpression((newVariable.getExpression() >= this->manager->rational(storm::utility::one<storm::RationalNumber>())) && (newVariable.getExpression() <= this->manager->rational(storm::utility::one<storm::RationalNumber>()))));
             optimizationFunction = optimizationFunction + this->manager->rational(objectiveFunctionCoefficient) * newVariable;
             return newVariable;
         }
@@ -218,6 +218,82 @@ namespace storm {
                 STORM_LOG_THROW(!this->isUnbounded(), storm::exceptions::NotImplementedException, "Exporting LP Problems to a file is not implemented for z3.");
         }
 
+        storm::expressions::Variable Z3LpSolver::addBoundedContinuousVariable(std::string const& name, storm::RationalNumber const& lowerBound, storm::RationalNumber const& upperBound, storm::RationalNumber const& objectiveFunctionCoefficient) {
+            storm::expressions::Variable newVariable = this->manager->declareVariable(name, manager->getRationalType());
+            solver->add(expressionAdapter->translateExpression((newVariable.getExpression() >= this->manager->rational(lowerBound)) && (newVariable.getExpression() <= this->manager->rational(upperBound))));
+            optimizationFunction = optimizationFunction + this->manager->rational(objectiveFunctionCoefficient) * newVariable;
+            return newVariable;
+        }
+
+        storm::expressions::Variable Z3LpSolver::addLowerBoundedContinuousVariable(std::string const& name, storm::RationalNumber const& lowerBound, storm::RationalNumber const& objectiveFunctionCoefficient) {
+            storm::expressions::Variable newVariable = this->manager->declareVariable(name, manager->getRationalType());
+            solver->add(expressionAdapter->translateExpression(newVariable.getExpression() >= this->manager->rational(lowerBound)));
+            optimizationFunction = optimizationFunction + this->manager->rational(objectiveFunctionCoefficient) * newVariable;
+            return newVariable;
+        }
+
+        storm::expressions::Variable Z3LpSolver::addUpperBoundedContinuousVariable(std::string const& name, storm::RationalNumber const& upperBound, storm::RationalNumber const& objectiveFunctionCoefficient) {
+            storm::expressions::Variable newVariable = this->manager->declareVariable(name, manager->getRationalType());
+            solver->add(expressionAdapter->translateExpression(newVariable.getExpression() <= this->manager->rational(upperBound)));
+            optimizationFunction = optimizationFunction + this->manager->rational(objectiveFunctionCoefficient) * newVariable;
+            return newVariable;
+        }
+
+        storm::expressions::Variable Z3LpSolver::addUnboundedContinuousVariable(std::string const& name, storm::RationalNumber const& objectiveFunctionCoefficient) {
+            storm::expressions::Variable newVariable = this->manager->declareVariable(name, manager->getRationalType());
+            optimizationFunction = optimizationFunction + this->manager->rational(objectiveFunctionCoefficient) * newVariable;
+            return newVariable;
+        }
+
+        storm::expressions::Variable Z3LpSolver::addBoundedIntegerVariable(std::string const& name, storm::RationalNumber const& lowerBound, storm::RationalNumber const& upperBound, storm::RationalNumber const& objectiveFunctionCoefficient) {
+            storm::expressions::Variable newVariable = this->manager->declareVariable(name, manager->getIntegerType());
+            solver->add(expressionAdapter->translateExpression((newVariable.getExpression() >= this->manager->rational(lowerBound)) && (newVariable.getExpression() <= this->manager->rational(upperBound))));
+            optimizationFunction = optimizationFunction + this->manager->rational(objectiveFunctionCoefficient) * newVariable;
+            return newVariable;
+        }
+
+        storm::expressions::Variable Z3LpSolver::addLowerBoundedIntegerVariable(std::string const& name, storm::RationalNumber const& lowerBound, storm::RationalNumber const& objectiveFunctionCoefficient) {
+            storm::expressions::Variable newVariable = this->manager->declareVariable(name, manager->getIntegerType());
+            solver->add(expressionAdapter->translateExpression(newVariable.getExpression() >= this->manager->rational(lowerBound)));
+            optimizationFunction = optimizationFunction + this->manager->rational(objectiveFunctionCoefficient) * newVariable;
+            return newVariable;
+        }
+
+        storm::expressions::Variable Z3LpSolver::addUpperBoundedIntegerVariable(std::string const& name, storm::RationalNumber const& upperBound, storm::RationalNumber const& objectiveFunctionCoefficient) {
+            storm::expressions::Variable newVariable = this->manager->declareVariable(name, manager->getIntegerType());
+            solver->add(expressionAdapter->translateExpression(newVariable.getExpression() <= this->manager->rational(upperBound)));
+            optimizationFunction = optimizationFunction + this->manager->rational(objectiveFunctionCoefficient) * newVariable;
+            return newVariable;
+        }
+
+        storm::expressions::Variable Z3LpSolver::addUnboundedIntegerVariable(std::string const& name, storm::RationalNumber const& objectiveFunctionCoefficient) {
+            storm::expressions::Variable newVariable = this->manager->declareVariable(name, manager->getIntegerType());
+            optimizationFunction = optimizationFunction + this->manager->rational(objectiveFunctionCoefficient) * newVariable;
+            return newVariable;
+        }
+
+        storm::expressions::Variable Z3LpSolver::addBinaryVariable(std::string const& name, storm::RationalNumber const& objectiveFunctionCoefficient) {
+            storm::expressions::Variable newVariable = this->manager->declareVariable(name, manager->getIntegerType());
+            solver->add(expressionAdapter->translateExpression((newVariable.getExpression() >= this->manager->rational(storm::utility::one<storm::RationalNumber>())) && (newVariable.getExpression() <= this->manager->rational(storm::utility::one<storm::RationalNumber>()))));
+            optimizationFunction = optimizationFunction + this->manager->rational(objectiveFunctionCoefficient) * newVariable;
+            return newVariable;
+        }
+
+        storm::RationalNumber Z3LpSolver::getExactContinuousValue(storm::expressions::Variable const& variable) const {
+            return getValue(variable).evaluateAsDouble();
+        }
+
+        storm::RationalNumber Z3LpSolver::getExactObjectiveValue() const {
+            if (!this->isOptimal()) {
+                STORM_LOG_THROW(!this->isInfeasible(), storm::exceptions::InvalidAccessException, "Unable to get Z3 solution from infeasible model.");
+                STORM_LOG_THROW(!this->isUnbounded(), storm::exceptions::InvalidAccessException, "Unable to get Z3 solution from unbounded model.");
+                STORM_LOG_THROW(false, storm::exceptions::InvalidAccessException, "Unable to get Z3 solution from unoptimized model.");
+            }
+            STORM_LOG_ASSERT(lastCheckObjectiveValue, "Objective value has not been stored.");
+
+            return this->expressionAdapter->translateExpression(*lastCheckObjectiveValue).evaluateAsDouble();
+        }
+
 #else 
             Z3LpSolver::Z3LpSolver(std::string const&, OptimizationDirection const&) {
                 throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support.";
@@ -318,9 +394,51 @@ namespace storm {
                 throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support.";
             }
 
-            void Z3LpSolver::toggleOutput(bool) const {
+            storm::expressions::Variable Z3LpSolver::addBoundedContinuousVariable(std::string const& name, storm::RationalNumber const& lowerBound, storm::RationalNumber const& upperBound, storm::RationalNumber const& objectiveFunctionCoefficient) {
                 throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support.";
             }
+
+            storm::expressions::Variable Z3LpSolver::addLowerBoundedContinuousVariable(std::string const& name, storm::RationalNumber const& lowerBound, storm::RationalNumber const& objectiveFunctionCoefficient) {
+                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support.";
+
+            }
+
+            storm::expressions::Variable Z3LpSolver::addUpperBoundedContinuousVariable(std::string const& name, storm::RationalNumber const& upperBound, storm::RationalNumber const& objectiveFunctionCoefficient) {
+                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support.";
+            }
+
+            storm::expressions::Variable Z3LpSolver::addUnboundedContinuousVariable(std::string const& name, storm::RationalNumber const& objectiveFunctionCoefficient) {
+                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support.";
+            }
+
+            storm::expressions::Variable Z3LpSolver::addBoundedIntegerVariable(std::string const& name, storm::RationalNumber const& lowerBound, storm::RationalNumber const& upperBound, storm::RationalNumber const& objectiveFunctionCoefficient) {
+                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support.";
+            }
+
+            storm::expressions::Variable Z3LpSolver::addLowerBoundedIntegerVariable(std::string const& name, storm::RationalNumber const& lowerBound, storm::RationalNumber const& objectiveFunctionCoefficient) {
+                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support.";
+            }
+
+            storm::expressions::Variable Z3LpSolver::addUpperBoundedIntegerVariable(std::string const& name, storm::RationalNumber const& upperBound, storm::RationalNumber const& objectiveFunctionCoefficient) {
+                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support.";
+            }
+
+            storm::expressions::Variable Z3LpSolver::addUnboundedIntegerVariable(std::string const& name, storm::RationalNumber const& objectiveFunctionCoefficient) {
+                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support.";
+            }
+
+            storm::expressions::Variable Z3LpSolver::addBinaryVariable(std::string const& name, storm::RationalNumber const& objectiveFunctionCoefficient) {
+                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support.";
+            }
+
+            storm::RationalNumber Z3LpSolver::getExactContinuousValue(storm::expressions::Variable const& variable) const {
+                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support.";
+            }
+
+            storm::RationalNumber Z3LpSolver::getExactObjectiveValue() const {
+                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Z3. Yet, a method was called that requires this support.";
+            }
+
 
 #endif        
     }
