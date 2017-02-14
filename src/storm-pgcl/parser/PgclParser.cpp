@@ -1,6 +1,7 @@
 #include "PgclParser.h"
 // If the parser fails due to ill-formed data, this exception is thrown.
 #include "storm/exceptions/WrongFormatException.h"
+#include "storm/utility/file.h"
 
 namespace storm {
     namespace parser {
@@ -9,8 +10,8 @@ namespace storm {
             storm::pgcl::PgclProgram result;
 
             // Open file and initialize result.
-            std::ifstream inputFileStream(filename, std::ios::in);
-            STORM_LOG_THROW(inputFileStream.good(), storm::exceptions::WrongFormatException, "Unable to read from file '" << filename << "'.");
+            std::ifstream inputFileStream;
+            storm::utility::openFile(filename, inputFileStream);
             
             // Now try to parse the contents of the file.
             try {
@@ -18,12 +19,12 @@ namespace storm {
                 result = parseFromString(fileContent, filename);
             } catch(std::exception& e) {
                 // In case of an exception properly close the file before passing exception.
-                inputFileStream.close();
+                storm::utility::closeFile(inputFileStream);
                 throw e;
             }
             
             // Close the stream in case everything went smoothly and return result.
-            inputFileStream.close();
+            storm::utility::closeFile(inputFileStream);
             return result;
         }
         

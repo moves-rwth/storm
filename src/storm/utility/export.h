@@ -12,7 +12,7 @@
 #include <boost/optional.hpp>
 
 #include "storm/utility/macros.h"
-#include "storm/exceptions/FileIoException.h"
+#include "storm/utility/file.h"
 
 //#include "storm/storage/parameters.h"
 //#include "storm/settings/modules/ParametricSettings.h"
@@ -40,19 +40,11 @@ namespace storm {
             filestream.close();
         }
         */
-            
-        inline void exportStringToFile(std::string const& str, std::string filepath) {
-            std::ofstream filestream;
-            filestream.open(filepath);
-            STORM_LOG_THROW(filestream.is_open(), storm::exceptions::FileIoException , "Could not open file " << filepath << ".");
-            filestream << str;
-        }
         
         template <typename ValueType>
         inline void exportDataToCSVFile(std::string filepath, std::vector<std::vector<ValueType>> const& data, boost::optional<std::vector<std::string>> const& columnHeaders) {
             std::ofstream filestream;
-            filestream.open(filepath);
-            STORM_LOG_THROW(filestream.is_open(), storm::exceptions::FileIoException , "Could not open file " << filepath << ".");
+            storm::utility::openFile(filepath, filestream);
             
             if(columnHeaders) {
                 for(auto columnIt = columnHeaders->begin(); columnIt != columnHeaders->end(); ++columnIt) {
@@ -73,10 +65,9 @@ namespace storm {
                 }
                 filestream << std::endl;
             }
+            storm::utility::closeFile(filestream);
         }
     }
 }
-
-
 
 #endif

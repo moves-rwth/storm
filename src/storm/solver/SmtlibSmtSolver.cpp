@@ -16,9 +16,10 @@
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/exceptions/IllegalFunctionCallException.h"
-#include "utility/macros.h"
-#include "adapters/CarlAdapter.h"
-#include "exceptions/UnexpectedException.h"
+#include "storm/utility/macros.h"
+#include "storm/utility/file.h"
+#include "storm/adapters/CarlAdapter.h"
+#include "storm/exceptions/UnexpectedException.h"
 
 namespace storm {
     namespace solver {
@@ -245,9 +246,9 @@ namespace storm {
 
             if (storm::settings::getModule<storm::settings::modules::Smt2SmtSolverSettings>().isExportSmtLibScriptSet()){
                 STORM_LOG_DEBUG("The SMT-LIBv2 commands are exportet to the given file");
-                commandFile.open(storm::settings::getModule<storm::settings::modules::Smt2SmtSolverSettings>().getExportSmtLibScriptPath(), std::ios::trunc);
-                isCommandFileOpen=commandFile.is_open();
-                STORM_LOG_THROW(isCommandFileOpen, storm::exceptions::InvalidArgumentException, "The file where the smt2commands should be written to could not be opened");
+                storm::utility::openFile(storm::settings::getModule<storm::settings::modules::Smt2SmtSolverSettings>().getExportSmtLibScriptPath(), commandFile);
+                isCommandFileOpen = true;
+                // TODO also close file
             }
 
             //some initial commands

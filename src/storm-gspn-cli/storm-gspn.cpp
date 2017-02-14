@@ -56,19 +56,19 @@ void initializeSettings() {
 std::unordered_map<std::string, uint64_t> parseCapacitiesList(std::string const& filename) {
     std::unordered_map<std::string, uint64_t> map;
     
-    std::ifstream ifs;
-    ifs.open(filename);
+    std::ifstream stream;
+    storm::utility::openFile(filename, stream);
     
     std::string line;
-    while( std::getline(ifs, line) ) {
+    while ( std::getline(stream, line) ) {
         std::vector<std::string> strs;
         boost::split(strs, line, boost::is_any_of("\t "));
         STORM_LOG_THROW(strs.size() == 2, storm::exceptions::WrongFormatException, "Expect key value pairs");
         std::cout << std::stoll(strs[1]) << std::endl;
         map[strs[0]] = std::stoll(strs[1]);
     }
+    storm::utility::closeFile(stream);
     return map;
-    
 }
 
 

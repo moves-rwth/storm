@@ -39,11 +39,6 @@ namespace storm {
             // Enforce locale where decimal point is '.'.
             setlocale(LC_NUMERIC, "C");
 
-            if (!MappedFile::fileExistsAndIsReadable(filename.c_str())) {
-                STORM_LOG_ERROR("Error while parsing " << filename << ": File does not exist or is not readable.");
-                throw storm::exceptions::FileIoException() << "Error while parsing " << filename << ": File does not exist or is not readable.";
-            }
-
             // Open file.
             MappedFile file(filename.c_str());
             char const* buf = file.getData();

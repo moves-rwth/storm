@@ -24,11 +24,6 @@ namespace storm {
 		storm::models::sparse::StateLabeling AtomicPropositionLabelingParser::parseAtomicPropositionLabeling(uint_fast64_t stateCount, std::string const & filename) {
 
 			// Open the given file.
-			if (!MappedFile::fileExistsAndIsReadable(filename.c_str())) {
-				STORM_LOG_ERROR("Error while parsing " << filename << ": The supplied Labeling input file does not exist or is not readable by this process.");
-				throw storm::exceptions::FileIoException() << "Error while parsing " << filename << ": The supplied Labeling input file does not exist or is not readable by this process.";
-			}
-
 			MappedFile file(filename.c_str());
 			char const* buf = file.getData();
 
