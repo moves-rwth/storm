@@ -5,6 +5,7 @@
 #include "storm/exceptions/InvalidAccessException.h"
 
 #include "storm/storage/expressions/Expressions.h"
+#include "storm/storage/expressions/ToRationalNumberVisitor.h"
 
 namespace storm {
     namespace expressions {        
@@ -51,7 +52,12 @@ namespace storm {
         double BaseExpression::evaluateAsDouble(Valuation const*) const {
             STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Unable to evaluate expression as double.");
         }
-        
+
+        storm::RationalNumber BaseExpression::evaluateAsRational() const {
+            ToRationalNumberVisitor<storm::RationalNumber> v;
+            return v.toRationalNumber(this->toExpression());
+        }
+
         uint_fast64_t BaseExpression::getArity() const {
             return 0;
         }

@@ -7,6 +7,7 @@
 #include <map>
 #include <iostream>
 
+#include "storm/adapters/NumberAdapter.h"
 #include "storm/storage/expressions/Type.h"
 #include "storm/utility/OsDetection.h"
 #include <boost/any.hpp>
@@ -89,6 +90,15 @@ namespace storm {
              * @return The double value of the expression under the given valuation.
              */
             virtual double evaluateAsDouble(Valuation const* valuation = nullptr) const;
+
+            /*!
+             * Evaluates the expression and returns the resulting rational number.
+             * If the return type of the expression is not a rational number
+             * or the expression could not be evaluated, an exception is thrown.
+             *
+             * @return The rational number value of the expression.
+             */
+            virtual storm::RationalNumber evaluateAsRational() const;
 
             /*!
              * Returns the arity of the expression.
