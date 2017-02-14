@@ -2,6 +2,8 @@
 
 #include <unordered_map>
 
+#include <boost/optional.hpp>
+
 #include "storm/adapters/CarlAdapter.h"
 
 #include "storm/storage/expressions/Expression.h"

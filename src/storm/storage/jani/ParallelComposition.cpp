@@ -195,13 +195,15 @@ namespace storm {
                 for (auto const& vector : synchronizationVectors) {
                     std::string const& action = vector.getInput(inputIndex);
                     if (action != SynchronizationVector::NO_ACTION_INPUT) {
-                        return true;
+                        if (actions.find(action) != actions.end()) {
+                            return true;
+                        }
                         actions.insert(action);
                     }
                 }
                 // And check recursively, in case we have nested parallel composition
                 if (subcompositions.at(inputIndex)->isParallelComposition()) {
-                    if(subcompositions.at(inputIndex)->asParallelComposition().areActionsReused()) {
+                    if (subcompositions.at(inputIndex)->asParallelComposition().areActionsReused()) {
                         return true;
                     }
                 }
