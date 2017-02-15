@@ -7,6 +7,7 @@
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
 #include "storm/utility/dd.h"
+#include "storm/utility/file.h"
 
 #include "storm-config.h"
 #include "storm/adapters/CarlAdapter.h"
@@ -47,7 +48,8 @@ namespace storm {
         template <storm::dd::DdType DdType, typename ValueType>
         void MenuGameAbstractor<DdType, ValueType>::exportToDot(storm::abstraction::MenuGame<DdType, ValueType> const& currentGame, std::string const& filename, storm::dd::Bdd<DdType> const& highlightStatesBdd, storm::dd::Bdd<DdType> const& filter) const {
 
-            std::ofstream out(filename);
+            std::ofstream out;
+            storm::utility::openFile(filename, out);
             AbstractionInformation<DdType> const& abstractionInformation = this->getAbstractionInformation();
             
             storm::dd::Add<DdType, ValueType> filteredTransitions = filter.template toAdd<ValueType>() * currentGame.getTransitionMatrix();
@@ -130,6 +132,7 @@ namespace storm {
             }
             
             out << "}" << std::endl;
+            storm::utility::closeFile(out);
         }
         
         template class MenuGameAbstractor<storm::dd::DdType::CUDD, double>;

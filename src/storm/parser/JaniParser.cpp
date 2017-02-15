@@ -25,6 +25,7 @@
 #include <boost/lexical_cast.hpp>
 
 #include "storm/utility/macros.h"
+#include "storm/utility/file.h"
 
 namespace storm {
     namespace parser {
@@ -71,18 +72,9 @@ namespace storm {
 
         void JaniParser::readFile(std::string const &path) {
             std::ifstream file;
-            file.exceptions ( std::ifstream::failbit );
-            try {
-                file.open(path);
-            }
-            catch (std::ifstream::failure e) {
-                STORM_LOG_THROW(false, storm::exceptions::FileIoException, "Exception during file opening on " << path << ".");
-                return;
-            }
-            file.exceptions( std::ifstream::goodbit );
-
+            storm::utility::openFile(path, file);
             parsedStructure << file;
-            file.close();
+            storm::utility::closeFile(file);
         }
 
         std::pair<storm::jani::Model, std::map<std::string, storm::jani::Property>> JaniParser::parseModel(bool parseProperties) {

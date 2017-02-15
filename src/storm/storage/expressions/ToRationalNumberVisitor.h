@@ -2,6 +2,8 @@
 
 #include <unordered_map>
 
+#include <boost/optional.hpp>
+
 #include "storm/adapters/CarlAdapter.h"
 
 #include "storm/storage/expressions/Expression.h"
@@ -16,7 +18,8 @@ namespace storm {
         template<typename RationalNumberType>
         class ToRationalNumberVisitor : public ExpressionVisitor {
         public:
-            ToRationalNumberVisitor(ExpressionEvaluatorBase<RationalNumberType> const& evaluator);
+        	ToRationalNumberVisitor();
+        	ToRationalNumberVisitor(ExpressionEvaluatorBase<RationalNumberType> const& evaluator);
             
             RationalNumberType toRationalNumber(Expression const& expression);
             
@@ -36,8 +39,8 @@ namespace storm {
         private:
             std::unordered_map<storm::expressions::Variable, RationalNumberType> valueMapping;
 
-            // A reference to an expression evaluator (mainly for resolving the boolean condition in IfThenElse expressions)
-            ExpressionEvaluatorBase<RationalNumberType> const& evaluator;
+            // An optional reference to an expression evaluator (mainly for resolving the boolean condition in IfThenElse expressions)
+            boost::optional<ExpressionEvaluatorBase<RationalNumberType> const&> evaluator;
         };
     }
 }

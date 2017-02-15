@@ -17,6 +17,8 @@
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/IOSettings.h"
 
+#include "storm/exceptions/InvalidSettingsException.h"
+
 TEST(DdJaniModelBuilderTest_Sylvan, Dtmc) {
     storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm");
     storm::jani::Model janiModel = modelDescription.toJani(true).preprocess().asJaniModel();
@@ -363,7 +365,9 @@ TEST(DdJaniModelBuilderTest_Cudd, SynchronizationVectors) {
     inputVector.push_back("c");
     inputVector.push_back("b");
     synchronizationVectors.push_back(storm::jani::SynchronizationVector(inputVector, "e"));
-    EXPECT_THROW(newComposition = std::make_shared<storm::jani::ParallelComposition>(automataCompositions, synchronizationVectors), storm::exceptions::WrongFormatException);
+    newComposition = std::make_shared<storm::jani::ParallelComposition>(automataCompositions, synchronizationVectors);
+    janiModel.setSystemComposition(newComposition);
+    EXPECT_THROW(model = builder.build(janiModel), storm::exceptions::InvalidSettingsException);
 }
 
 TEST(DdJaniModelBuilderTest_Sylvan, SynchronizationVectors) {
@@ -419,7 +423,9 @@ TEST(DdJaniModelBuilderTest_Sylvan, SynchronizationVectors) {
     inputVector.push_back("c");
     inputVector.push_back("b");
     synchronizationVectors.push_back(storm::jani::SynchronizationVector(inputVector, "e"));
-    EXPECT_THROW(newComposition = std::make_shared<storm::jani::ParallelComposition>(automataCompositions, synchronizationVectors), storm::exceptions::WrongFormatException);
+    newComposition = std::make_shared<storm::jani::ParallelComposition>(automataCompositions, synchronizationVectors);
+    janiModel.setSystemComposition(newComposition);
+    EXPECT_THROW(model = builder.build(janiModel), storm::exceptions::InvalidSettingsException);
 }
 
 TEST(DdJaniModelBuilderTest_Sylvan, Composition) {

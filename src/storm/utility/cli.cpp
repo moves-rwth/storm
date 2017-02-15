@@ -1,6 +1,7 @@
 #include "storm/utility/cli.h"
 
 #include "storm/utility/macros.h"
+#include "storm/utility/constants.h"
 #include "storm/exceptions/WrongFormatException.h"
 
 namespace storm {
@@ -52,8 +53,12 @@ namespace storm {
                                 int_fast64_t integerValue = std::stoi(value);
                                 constantDefinitions[variable] = manager.integer(integerValue);
                             } else if (variable.hasRationalType()) {
-                                double doubleValue = std::stod(value);
-                                constantDefinitions[variable] = manager.rational(doubleValue);
+                                try {
+                                    storm::RationalNumber rationalValue = storm::utility::convertNumber<storm::RationalNumber>(value);
+                                    constantDefinitions[variable] = manager.rational(rationalValue);
+                                } catch (std::exception& e) {
+                                    STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Illegal constant definition string '" << constantName << "=" << value << "': " << e.what());
+                                }
                             }
                         } else {
                             STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Illegal constant definition string: unknown undefined constant '" << constantName << "'.");

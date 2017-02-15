@@ -97,6 +97,7 @@
 #include "storm/exceptions/NotSupportedException.h"
 
 #include "storm/utility/Stopwatch.h"
+#include "storm/utility/file.h"
 
 namespace storm {
 
@@ -434,7 +435,7 @@ namespace storm {
 
     inline void exportParametricResultToFile(storm::RationalFunction const& result, storm::models::sparse::Dtmc<storm::RationalFunction>::ConstraintCollector const& constraintCollector, std::string const& path) {
         std::ofstream filestream;
-        filestream.open(path);
+        storm::utility::openFile(path, filestream);
         // TODO: add checks.
         filestream << "!Parameters: ";
         std::set<storm::RationalFunctionVariable> vars = result.gatherVariables();
@@ -445,7 +446,7 @@ namespace storm {
         std::copy(constraintCollector.getWellformedConstraints().begin(), constraintCollector.getWellformedConstraints().end(), std::ostream_iterator<storm::ArithConstraint<storm::RationalFunction>>(filestream, "\n"));
         filestream << "!Graph-preserving Constraints: " << std::endl;
         std::copy(constraintCollector.getGraphPreservingConstraints().begin(), constraintCollector.getGraphPreservingConstraints().end(), std::ostream_iterator<storm::ArithConstraint<storm::RationalFunction>>(filestream, "\n"));
-        filestream.close();
+        storm::utility::closeFile(filestream);
     }
 
     template<>
@@ -623,10 +624,10 @@ namespace storm {
     template<typename ValueType>
     void exportMatrixToFile(std::shared_ptr<storm::models::sparse::Model<ValueType>> model, std::string const& filepath) {
         STORM_LOG_THROW(model->getType() != storm::models::ModelType::Ctmc, storm::exceptions::NotImplementedException, "This functionality is not yet implemented." );
-        std::ofstream ofs;
-        ofs.open (filepath, std::ofstream::out);
-        model->getTransitionMatrix().printAsMatlabMatrix(ofs);
-        ofs.close();
+        std::ofstream stream;
+        storm::utility::openFile(filepath, stream);
+        model->getTransitionMatrix().printAsMatlabMatrix(stream);
+        storm::utility::closeFile(stream);
     }
         
 }

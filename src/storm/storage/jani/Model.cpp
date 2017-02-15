@@ -1150,7 +1150,7 @@ namespace storm {
         }
 
         bool Model::reusesActionsInComposition() const {
-            if(composition->isParallelComposition()) {
+            if (composition->isParallelComposition()) {
                 return composition->asParallelComposition().areActionsReused();
             }
             return false;

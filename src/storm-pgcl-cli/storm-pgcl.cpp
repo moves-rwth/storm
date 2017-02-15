@@ -47,13 +47,10 @@ void handleJani(storm::jani::Model& model) {
 
 void programGraphToDotFile(storm::ppg::ProgramGraph const& prog) {
     std::string filepath = storm::settings::getModule<storm::settings::modules::PGCLSettings>().getProgramGraphDotOutputFilename();
-    std::ofstream ofs;
-    ofs.open(filepath, std::ofstream::out );
-    if (ofs.is_open()) {
-        prog.printDot(ofs);
-    } else {
-        STORM_LOG_THROW(false, storm::exceptions::FileIoException, "Cannot open " << filepath);
-    }
+    std::ofstream stream;
+    storm::utility::openFile(filepath, stream);
+    prog.printDot(stream);
+    storm::utility::closeFile(stream);
 }
 
 int main(const int argc, const char** argv) {

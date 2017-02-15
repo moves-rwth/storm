@@ -2,11 +2,13 @@
 
 #include <boost/variant.hpp>
 
+#include "storm/adapters/NumberAdapter.h"
 #include "storm/storage/expressions/UnaryNumericalFunctionExpression.h"
 #include "storm/storage/expressions/IntegerLiteralExpression.h"
 #include "storm/storage/expressions/RationalLiteralExpression.h"
 #include "ExpressionVisitor.h"
 #include "storm/utility/macros.h"
+#include "storm/utility/constants.h"
 #include "storm/exceptions/InvalidTypeException.h"
 #include "storm/exceptions/InvalidOperationException.h"
 
@@ -65,14 +67,13 @@ namespace storm {
             std::shared_ptr<BaseExpression const> operandSimplified = this->getOperand()->simplify();
             
             if (operandSimplified->isLiteral()) {
-                boost::variant<int_fast64_t, double> operandEvaluation;
+                boost::variant<int_fast64_t, storm::RationalNumber> operandEvaluation;
                 if (operandSimplified->hasIntegerType()) {
                     operandEvaluation = operandSimplified->evaluateAsInt();
                 } else {
-                    operandEvaluation = operandSimplified->evaluateAsDouble();
+                    operandEvaluation = operandSimplified->evaluateAsRational();
                 }
                 
-                boost::variant<int_fast64_t, double> result;
                 if (operandSimplified->hasIntegerType()) {
                     int_fast64_t value = 0;
                     switch (this->getOperatorType()) {
@@ -82,11 +83,11 @@ namespace storm {
                     }
                     return std::shared_ptr<BaseExpression>(new IntegerLiteralExpression(this->getManager(), value));
                 } else {
-                    double value = 0;
+                    storm::RationalNumber value = storm::utility::zero<storm::RationalNumber>();
                     switch (this->getOperatorType()) {
-                        case OperatorType::Minus: value = -boost::get<double>(operandEvaluation); break;
-                        case OperatorType::Floor: value = std::floor(boost::get<double>(operandEvaluation)); break;
-                        case OperatorType::Ceil: value = std::ceil(boost::get<double>(operandEvaluation)); break;
+                        case OperatorType::Minus: value = -boost::get<storm::RationalNumber>(operandEvaluation); break;
+                        case OperatorType::Floor: value = carl::floor(boost::get<storm::RationalNumber>(operandEvaluation)); break;
+                        case OperatorType::Ceil: value = carl::ceil(boost::get<storm::RationalNumber>(operandEvaluation)); break;
                     }
                     return std::shared_ptr<BaseExpression>(new RationalLiteralExpression(this->getManager(), value));
                 }
