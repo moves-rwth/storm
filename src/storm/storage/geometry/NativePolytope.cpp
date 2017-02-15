@@ -4,9 +4,10 @@
 #include "storm/utility/macros.h"
 #include "storm/utility/solver.h"
 #include "storm/solver/Z3LPSolver.h"
+#include "storm/solver/SmtSolver.h"
 #include "storm/storage/geometry/nativepolytopeconversion/QuickHull.h"
 #include "storm/storage/geometry/nativepolytopeconversion/HyperplaneEnumeration.h"
-
+#include "storm/storage/expressions/ExpressionManager.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/UnexpectedException.h"
@@ -26,9 +27,9 @@ namespace storm {
                     A = EigenMatrix(maxRow, maxCol);
                     b = EigenVector(maxRow);
                     for ( uint_fast64_t row = 0; row < maxRow; ++row ){
-                        assert(halfspaces[row].normal().rows() == maxCol);
+                        assert(halfspaces[row].normalVector().size() == maxCol);
                         b(row) = halfspaces[row].offset();
-                        A(row) = storm::adapters::EigenAdapter<ValueType>::toEigenVector(halfspaces[row].normal());
+                        A.row(row) = storm::adapters::EigenAdapter::toEigenVector(halfspaces[row].normalVector());
                     }
                     emptyStatus = EmptyStatus::Unknown;
                 }
@@ -42,7 +43,7 @@ namespace storm {
                     std::vector<EigenVector> eigenPoints;
                     eigenPoints.reserve(points.size());
                     for(auto const& p : points){
-                        eigenPoints.emplace_back(storm::adapters::EigenAdapter<ValueType>::toEigenVector(p));
+                        eigenPoints.emplace_back(storm::adapters::EigenAdapter::toEigenVector(p));
                     }
 
                     storm::storage::geometry::QuickHull<ValueType> qh;
@@ -92,11 +93,11 @@ namespace storm {
             
             template <typename ValueType>
             std::vector<typename Polytope<ValueType>::Point> NativePolytope<ValueType>::getVertices() const {
-                std::vector<hypro::Point<ValueType>> eigenVertices = getEigenVertices();
+                std::vector<EigenVector> eigenVertices = getEigenVertices();
                 std::vector<Point> result;
                 result.reserve(eigenVertices.size());
                 for(auto const& p : eigenVertices) {
-                    result.push_back(storm::adapters::EigenAdapter<ValueType>::toStdVector(p));
+                    result.push_back(storm::adapters::EigenAdapter::toStdVector(p));
                 }
                 return result;
             }
@@ -107,30 +108,31 @@ namespace storm {
                 result.reserve(A.rows());
 
                 for(uint_fast64_t row=0; row < A.rows(); ++row){
-                    result.emplace_back(storm::adapters::EigenAdapter<ValueType>::toStdVector(A.row(row)), b.row(row));
+                    result.emplace_back(storm::adapters::EigenAdapter::toStdVector(EigenVector(A.row(row))), b(row));
                 }
+                return result;
             }
 
             template <typename ValueType>
             bool NativePolytope<ValueType>::isEmpty() const {
-                if(emptyStatus == emptyStatus::Unknown) {
+                if(emptyStatus == EmptyStatus::Unknown) {
                     storm::expressions::ExpressionManager manager;
                     std::unique_ptr<storm::solver::SmtSolver> solver = storm::utility::solver::SmtSolverFactory().create(manager);
                     storm::expressions::Expression constraints = getConstraints(manager, declareVariables(manager, "x"));
                     solver->add(constraints);
                     switch(solver->check()) {
                     case storm::solver::SmtSolver::CheckResult::Sat:
-                        emptyStatus = emptyStatus::Nonempty;
+                        emptyStatus = EmptyStatus::Nonempty;
                         break;
                     case storm::solver::SmtSolver::CheckResult::Unsat:
-                        emptyStatus = emptyStatus::Empty;
+                        emptyStatus = EmptyStatus::Empty;
                         break;
                     default:
                         STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected result of SMT solver during emptyness-check of Polytope.");
                         break;
                     }
                 }
-                return emptyStatus == emptyStatus::Empty;
+                return emptyStatus == EmptyStatus::Empty;
             }
             
             template <typename ValueType>
@@ -140,7 +142,7 @@ namespace storm {
             
             template <typename ValueType>
             bool NativePolytope<ValueType>::contains(Point const& point) const{
-                EigenVector x = storm::adapters::EigenAdapter<ValueType>::toEigenVector(point);
+                EigenVector x = storm::adapters::EigenAdapter::toEigenVector(point);
                 for(uint_fast64_t row=0; row < A.rows(); ++row){
                     if((A.row(row) * x)(0) > b(row)){
                         return false;
@@ -181,18 +183,17 @@ namespace storm {
                 EigenVector resultb(resultA.rows());
                 resultb << b,
                            nativeRhs.b;
-                return std::make_shared<NativePolytope<ValueType>>(std::move(resultA), std::move(resultb));
+                return std::make_shared<NativePolytope<ValueType>>(EmptyStatus::Unknown, std::move(resultA), std::move(resultb));
             }
             
             template <typename ValueType>
             std::shared_ptr<Polytope<ValueType>> NativePolytope<ValueType>::intersection(Halfspace<ValueType> const& halfspace) const{
                 EigenMatrix resultA(A.rows() + 1, A.cols());
-                resultA << A,
-                           storm::adapters::EigenAdapter<ValueType>::toEigenVector(halfspace.normal());
+                resultA << A, storm::adapters::EigenAdapter::toEigenVector(halfspace.normalVector());
                 EigenVector resultb(resultA.rows());
                 resultb << b,
                            halfspace.offset();
-                return std::make_shared<NativePolytope<ValueType>>(std::move(resultA), std::move(resultb));
+                return std::make_shared<NativePolytope<ValueType>>(EmptyStatus::Unknown, std::move(resultA), std::move(resultb));
             }
             
             template <typename ValueType>
@@ -202,7 +203,7 @@ namespace storm {
                     return std::make_shared<NativePolytope<ValueType>>(dynamic_cast<NativePolytope<ValueType> const&>(*rhs));
                 } else if (rhs->isEmpty()) {
                     return std::make_shared<NativePolytope<ValueType>>(*this);
-                } else if (this->isUniversal() || rhs->isUniversal) {
+                } else if (this->isUniversal() || rhs->isUniversal()) {
                     return std::make_shared<NativePolytope<ValueType>>(std::vector<Halfspace<ValueType>>());
                 }
 
@@ -270,7 +271,7 @@ namespace storm {
                 }
                 EigenVector eigenVector = storm::adapters::EigenAdapter::toEigenVector(vector);
 
-                Eigen::FullPivLU<EigenMatrix> luMatrix( eigenMatrix );
+                StormEigen::FullPivLU<EigenMatrix> luMatrix( eigenMatrix );
                 STORM_LOG_THROW(luMatrix.isInvertible(), storm::exceptions::NotImplementedException, "Affine Transformation of native polytope only implemented if the transformation matrix is invertable");
                 EigenMatrix newA = A * luMatrix.inverse();
                 EigenVector newb = b + (newA * eigenVector);
@@ -283,7 +284,7 @@ namespace storm {
                 std::vector<storm::expressions::Variable> variables;
                 variables.reserve(A.rows());
                 for (uint_fast64_t i = 0; i < A.rows(); ++i) {
-                    variables.push_back(solver.addUnboundedContinuousVariable("x" + std::to_string(i), direction(i)));
+                    variables.push_back(solver.addUnboundedContinuousVariable("x" + std::to_string(i), direction[i]));
                 }
                 solver.addConstraint("", getConstraints(solver.getManager(), variables));
                 solver.update();
@@ -292,7 +293,7 @@ namespace storm {
                     auto result = std::make_pair(Point(), true);
                     result.first.reserve(variables.size());
                     for (auto const& var : variables) {
-                        result.first.push_back(solver.getContinuousValue(var));
+                        result.first.push_back(storm::utility::convertNumber<ValueType>((solver.getExactContinuousValue(var))));
                     }
                     return result;
                 } else {
@@ -316,7 +317,7 @@ namespace storm {
                 if (solver.isOptimal()) {
                     auto result = std::make_pair(EigenVector(variables.size()), true);
                     for (uint_fast64_t i = 0; i < variables.size(); ++i) {
-                        result.first(i) = solver.getContinuousValue(variables[i]);
+                        result.first(i) = storm::utility::convertNumber<ValueType>(solver.getExactContinuousValue(variables[i]));
                     }
                     return result;
                 } else {
@@ -330,8 +331,8 @@ namespace storm {
                 return true;
             }
             template <typename ValueType>
-            std::vector<typename NativePolytope::ValueType>::EigenVector> NativePolytope<ValueType>::getEigenVertices() const {
-                storm::storage::geometry::HyperplaneEnumeration he;
+            std::vector<typename NativePolytope<ValueType>::EigenVector> NativePolytope<ValueType>::getEigenVertices() const {
+                storm::storage::geometry::HyperplaneEnumeration<ValueType> he;
                 he.generateVerticesFromConstraints(A, b, false);
                 return he.getResultVertices();
             }
@@ -341,7 +342,7 @@ namespace storm {
                 std::vector<storm::expressions::Variable> result;
                 result.reserve(A.cols());
                 for(uint_fast64_t col=0; col < A.cols(); ++col){
-                    result.push_back(manager->declareVariable(namePrefix + std::to_string(col), manager->getRationalType()));
+                    result.push_back(manager.declareVariable(namePrefix + std::to_string(col), manager.getRationalType()));
                 }
                 return result;
             }

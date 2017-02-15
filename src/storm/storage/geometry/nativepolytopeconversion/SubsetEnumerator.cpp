@@ -91,6 +91,8 @@ namespace storm {
             template class SubsetEnumerator<std::nullptr_t>;
             template class SubsetEnumerator<std::vector<StormEigen::Matrix<double, StormEigen::Dynamic, 1>>>;
             template class SubsetEnumerator<std::vector<StormEigen::Matrix<storm::RationalNumber, StormEigen::Dynamic, 1>>>;
+            template class SubsetEnumerator<StormEigen::Matrix<double, StormEigen::Dynamic, StormEigen::Dynamic>>;
+            template class SubsetEnumerator<StormEigen::Matrix<storm::RationalNumber, StormEigen::Dynamic, StormEigen::Dynamic>>;
         }
     }
 }

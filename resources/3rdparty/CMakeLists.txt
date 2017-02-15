@@ -133,7 +133,26 @@ find_package(Z3 QUIET)
 set(STORM_HAVE_Z3 ${Z3_FOUND})
 
 if(Z3_FOUND)
-    message (STATUS "storm - Linking with Z3.")
+    # Check whether the version of z3 supports optimization
+    if (Z3_EXEC)
+        execute_process (COMMAND ${Z3_EXEC} -version
+                OUTPUT_VARIABLE z3_version_output
+                ERROR_QUIET
+                OUTPUT_STRIP_TRAILING_WHITESPACE)
+        if (z3_version_output MATCHES "([0-9]*\\.[0-9]*\\.[0-9]*)")
+            set(Z3_VERSION "${CMAKE_MATCH_1}")
+            if(NOT "${Z3_VERSION}" VERSION_LESS "4.4.1")
+                set(STORM_HAVE_Z3_OPTIMIZE ON)
+            endif()
+        endif()
+    endif()
+
+    if(STORM_HAVE_Z3_OPTIMIZE)
+        message (STATUS "storm - Linking with Z3. (Z3 version supports optimization)")
+    else()
+        message (STATUS "storm - Linking with Z3. (Z3 version does not support optimization)")
+    endif()
+
     add_imported_library(z3 SHARED ${Z3_LIBRARIES} ${Z3_INCLUDE_DIRS})
     list(APPEND STORM_DEP_TARGETS z3_SHARED)
 endif(Z3_FOUND)

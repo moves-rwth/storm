@@ -152,6 +152,10 @@ namespace storm {
             std::vector<std::vector<uint_fast64_t>>& HyperplaneEnumeration<ValueType>::getVertexSets() {
                 return this->vertexSets;
             }
+
+            template class HyperplaneEnumeration<double>;
+            template class HyperplaneEnumeration<storm::RationalNumber>;
+
         }
     }
 }

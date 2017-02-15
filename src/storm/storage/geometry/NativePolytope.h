@@ -12,7 +12,17 @@ namespace storm {
             template <typename ValueType>
             class NativePolytope : public Polytope<ValueType> {
             public:
-                
+
+                typedef StormEigen::Matrix<ValueType, StormEigen::Dynamic, StormEigen::Dynamic> EigenMatrix;
+                typedef StormEigen::Matrix<ValueType, StormEigen::Dynamic, 1> EigenVector;
+
+                enum class EmptyStatus{
+                    Unknown, //It is unknown whether the polytope is empty or not
+                    Empty, //The polytope is empty
+                    Nonempty //the polytope is not empty
+                };
+
+
                 typedef typename Polytope<ValueType>::Point Point;
 
 
@@ -40,13 +50,14 @@ namespace storm {
                  */
                 NativePolytope(NativePolytope<ValueType> const& other);
                 NativePolytope(NativePolytope<ValueType>&& other);
-                
+
                 /*!
-                 * Construction from intern data
-                 */
+                * Construction from intern data
+                */
                 NativePolytope(EmptyStatus const& emptyStatus, EigenMatrix const& halfspaceMatrix, EigenVector const& halfspaceVector);
                 NativePolytope(EmptyStatus&& emptyStatus, EigenMatrix&& halfspaceMatrix, EigenVector&& halfspaceVector);
                 
+
                 ~NativePolytope();
 
                 /*!
@@ -117,8 +128,6 @@ namespace storm {
                 virtual bool isNativePolytope() const override;
                 
             private:
-                typedef StormEigen::Matrix<ValueType, StormEigen::Dynamic, StormEigen::Dynamic> EigenMatrix;
-                typedef StormEigen::Matrix<ValueType, StormEigen::Dynamic, 1> EigenVector;
 
                 // returns the vertices of this polytope as EigenVectors
                 std::vector<EigenVector> getEigenVertices() const;
@@ -134,11 +143,6 @@ namespace storm {
                 storm::expressions::Expression getConstraints(storm::expressions::ExpressionManager const& manager, std::vector<storm::expressions::Variable> const& variables) const;
 
 
-                enum class EmptyStatus{
-                      Unknown, //It is unknown whether the polytope is empty or not
-                      Empty, //The polytope is empty
-                      Nonempty //the polytope is not empty
-                };
                 //Stores whether the polytope is empty or not
                 mutable EmptyStatus emptyStatus;
 

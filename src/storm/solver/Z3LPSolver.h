@@ -9,7 +9,7 @@
 #include "storm/adapters/Z3ExpressionAdapter.h"
 
 
-#ifdef STORM_HAVE_Z3
+#ifdef STORM_HAVE_Z3_OPTIMIZE
     #include "z3++.h"
     #include "z3.h"
 #endif
@@ -96,25 +96,24 @@ namespace storm {
             virtual void writeModelToFile(std::string const& filename) const override;
 
             // Methods for exact solving
-            virtual storm::expressions::Variable addBoundedContinuousVariable(std::string const& name, storm::RationalNumber const& lowerBound, storm::RationalNumber const& upperBound, storm::RationalNumber const& objectiveFunctionCoefficient = 0) override;
-            virtual storm::expressions::Variable addLowerBoundedContinuousVariable(std::string const& name, storm::RationalNumber const& lowerBound, storm::RationalNumber const& objectiveFunctionCoefficient = 0) override;
-            virtual storm::expressions::Variable addUpperBoundedContinuousVariable(std::string const& name, storm::RationalNumber const& upperBound, storm::RationalNumber const& objectiveFunctionCoefficient = 0) override;
-            virtual storm::expressions::Variable addUnboundedContinuousVariable(std::string const& name, storm::RationalNumber const& objectiveFunctionCoefficient = 0) override;
-            virtual storm::expressions::Variable addBoundedIntegerVariable(std::string const& name, storm::RationalNumber const& lowerBound, storm::RationalNumber const& upperBound, storm::RationalNumber const& objectiveFunctionCoefficient = 0) override;
-            virtual storm::expressions::Variable addLowerBoundedIntegerVariable(std::string const& name, storm::RationalNumber const& lowerBound, storm::RationalNumber const& objectiveFunctionCoefficient = 0) override;
-            virtual storm::expressions::Variable addUpperBoundedIntegerVariable(std::string const& name, storm::RationalNumber const& upperBound, storm::RationalNumber const& objectiveFunctionCoefficient = 0) override;
-            virtual storm::expressions::Variable addUnboundedIntegerVariable(std::string const& name, storm::RationalNumber const& objectiveFunctionCoefficient = 0) override;
-            virtual storm::expressions::Variable addBinaryVariable(std::string const& name, storm::RationalNumber const& objectiveFunctionCoefficient = 0) override;
+            storm::expressions::Variable addBoundedContinuousVariable(std::string const& name, storm::RationalNumber const& lowerBound, storm::RationalNumber const& upperBound, storm::RationalNumber const& objectiveFunctionCoefficient = 0);
+            storm::expressions::Variable addLowerBoundedContinuousVariable(std::string const& name, storm::RationalNumber const& lowerBound, storm::RationalNumber const& objectiveFunctionCoefficient = 0);
+            storm::expressions::Variable addUpperBoundedContinuousVariable(std::string const& name, storm::RationalNumber const& upperBound, storm::RationalNumber const& objectiveFunctionCoefficient = 0);
+            storm::expressions::Variable addUnboundedContinuousVariable(std::string const& name, storm::RationalNumber const& objectiveFunctionCoefficient = 0);
+            storm::expressions::Variable addBoundedIntegerVariable(std::string const& name, storm::RationalNumber const& lowerBound, storm::RationalNumber const& upperBound, storm::RationalNumber const& objectiveFunctionCoefficient = 0);
+            storm::expressions::Variable addLowerBoundedIntegerVariable(std::string const& name, storm::RationalNumber const& lowerBound, storm::RationalNumber const& objectiveFunctionCoefficient = 0);
+            storm::expressions::Variable addUpperBoundedIntegerVariable(std::string const& name, storm::RationalNumber const& upperBound, storm::RationalNumber const& objectiveFunctionCoefficient = 0);
+            storm::expressions::Variable addUnboundedIntegerVariable(std::string const& name, storm::RationalNumber const& objectiveFunctionCoefficient = 0);
+            storm::expressions::Variable addBinaryVariable(std::string const& name, storm::RationalNumber const& objectiveFunctionCoefficient = 0);
             storm::RationalNumber getExactContinuousValue(storm::expressions::Variable const& variable) const;
             storm::RationalNumber getExactObjectiveValue() const;
 
 
-
         private:
-             virtual storm::expressions::Expression getValue(storm::expressions::Variable const& name) const;
+             virtual storm::expressions::Expression getValue(storm::expressions::Variable const& variable) const;
 
 
-#ifdef STORM_HAVE_Z3
+#ifdef STORM_HAVE_Z3_OPTIMIZE
 
             // The context used by the solver.
             std::unique_ptr<z3::context> context;

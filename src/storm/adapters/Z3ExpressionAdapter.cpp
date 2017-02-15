@@ -3,6 +3,7 @@
 #include "storm/storage/expressions/Expressions.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/utility/macros.h"
+#include "storm/utility/constants.h"
 #include "storm/exceptions/ExpressionEvaluationException.h"
 #include "storm/exceptions/InvalidTypeException.h"
 #include "storm/exceptions/NotImplementedException.h"
@@ -122,9 +123,9 @@ namespace storm {
                                     long long num;
                                     long long den;
                                     if (Z3_get_numeral_rational_int64(expr.ctx(), expr, &num, &den)) {
-                                        return manager.rational(static_cast<double>(num) / static_cast<double>(den));
+                                        return manager.rational(storm::utility::convertNumber<storm::RationalNumber>(num) / storm::utility::convertNumber<storm::RationalNumber>(den));
                                     } else {
-                                        STORM_LOG_THROW(false, storm::exceptions::ExpressionEvaluationException, "Failed to convert Z3 expression. Expression is constant real and value does not fit into a fraction with 64-bit integer numerator and denominator.");
+                                        manager.rational(storm::utility::convertNumber<storm::RationalNumber>(std::string(Z3_get_numeral_string(expr.ctx(), expr))));
                                     }
                                 }
                             case Z3_OP_UNINTERPRETED:
