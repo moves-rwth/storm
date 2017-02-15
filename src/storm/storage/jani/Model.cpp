@@ -758,10 +758,7 @@ namespace storm {
                     ++i;
                 }
                 
-                // Only add the synchronization vector if there is more than one participating automaton.
-                if (numberOfParticipatingAutomata > 1) {
-                    synchVectors.push_back(storm::jani::SynchronizationVector(synchVectorInputs, actionName));
-                }
+                synchVectors.push_back(storm::jani::SynchronizationVector(synchVectorInputs, actionName));
             }
             
             return std::make_shared<ParallelComposition>(subcompositions, synchVectors);
