@@ -37,6 +37,10 @@ namespace storm {
         boost::any RationalLiteralExpression::accept(ExpressionVisitor& visitor, boost::any const& data) const {
             return visitor.visit(*this, data);
         }
+
+        bool RationalLiteralExpression::isRationalLiteralExpression() const {
+            return true;
+        }
         
         double RationalLiteralExpression::getValueAsDouble() const {
             return storm::utility::convertNumber<double>(this->value);
