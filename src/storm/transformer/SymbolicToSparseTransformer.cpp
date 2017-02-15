@@ -34,7 +34,7 @@ namespace storm {
             }
             storm::models::sparse::StateLabeling labelling;
 
-            labelling.addLabel("initial", symbolicMdp.getInitialStates().toVector(odd));
+            labelling.addLabel("init", symbolicMdp.getInitialStates().toVector(odd));
             labelling.addLabel("deadlock", symbolicMdp.getDeadlockStates().toVector(odd));
             for(auto const& label : symbolicMdp.getLabels()) {
                 labelling.addLabel(label, symbolicMdp.getStates(label).toVector(odd));
