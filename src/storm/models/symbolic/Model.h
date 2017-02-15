@@ -259,6 +259,8 @@ namespace storm {
                 virtual void printModelInformationToStream(std::ostream& out) const override;
                 
                 virtual bool isSymbolicModel() const override;
+
+                std::vector<std::string> getLabels() const;
                 
             protected:
                 

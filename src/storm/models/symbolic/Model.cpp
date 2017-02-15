@@ -203,6 +203,15 @@ namespace storm {
                 this->printModelInformationHeaderToStream(out);
                 this->printModelInformationFooterToStream(out);
             }
+
+            template<storm::dd::DdType Type, typename ValueType>
+            std::vector<std::string> Model<Type, ValueType>::getLabels() const {
+                std::vector<std::string> labels;
+                for(auto const& entry : labelToExpressionMap) {
+                    labels.push_back(entry.first);
+                }
+                return labels;
+            }
             
             template<storm::dd::DdType Type, typename ValueType>
             void Model<Type, ValueType>::printModelInformationHeaderToStream(std::ostream& out) const {
