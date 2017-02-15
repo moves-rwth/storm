@@ -103,7 +103,11 @@ namespace storm {
         boost::any UnaryNumericalFunctionExpression::accept(ExpressionVisitor& visitor, boost::any const& data) const {
             return visitor.visit(*this, data);
         }
-        
+
+        bool UnaryNumericalFunctionExpression::isUnaryNumericalFunctionExpression() const {
+            return true;
+        }
+
         void UnaryNumericalFunctionExpression::printToStream(std::ostream& stream) const {
             switch (this->getOperatorType()) {
                 case OperatorType::Minus: stream << "-("; break;

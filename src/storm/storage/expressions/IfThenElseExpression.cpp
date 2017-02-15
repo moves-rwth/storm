@@ -91,6 +91,10 @@ namespace storm {
         boost::any IfThenElseExpression::accept(ExpressionVisitor& visitor, boost::any const& data) const {
             return visitor.visit(*this, data);
         }
+
+        bool IfThenElseExpression::isIfThenElseExpression() const {
+            return true;
+        }
         
         std::shared_ptr<BaseExpression const> IfThenElseExpression::getCondition() const {
             return this->condition;
