@@ -71,6 +71,11 @@ namespace storm {
             storm::dd::Bdd<Type> const& Model<Type, ValueType>::getInitialStates() const {
                 return initialStates;
             }
+
+            template<storm::dd::DdType Type, typename ValueType>
+            storm::dd::Bdd<Type> const& Model<Type, ValueType>::getDeadlockStates() const {
+                return deadlockStates;
+            }
             
             template<storm::dd::DdType Type, typename ValueType>
             storm::dd::Bdd<Type> Model<Type, ValueType>::getStates(std::string const& label) const {

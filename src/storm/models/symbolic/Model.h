@@ -130,7 +130,12 @@ namespace storm {
                  * @return The initial states of the model.
                  */
                 storm::dd::Bdd<Type> const& getInitialStates() const;
-                
+
+                /*
+                 * Retrieves the deadlock states of the model.
+                 */
+                storm::dd::Bdd<Type> const& getDeadlockStates() const;
+
                 /*!
                  * Returns the sets of states labeled with the given label.
                  *
