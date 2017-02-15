@@ -329,6 +329,14 @@ namespace storm {
                 storm::exporter::explicitExportSparseModel(stream, sparseModel, model.getParameterNames());
                 storm::utility::closeFile(stream);
             }
+
+            // And export DOT if required.
+            if(storm::settings::getModule<storm::settings::modules::IOSettings>().isExportDotSet()) {
+                std::ofstream stream;
+                storm::utility::openFile(storm::settings::getModule<storm::settings::modules::IOSettings>().getExportDotFilename(), stream);
+                sparseModel->writeDotToStream(stream);
+                storm::utility::closeFile(stream);
+            }
         }
         
         template<typename ValueType>
