@@ -122,7 +122,11 @@ namespace storm {
         boost::any BinaryBooleanFunctionExpression::accept(ExpressionVisitor& visitor, boost::any const& data) const {
             return visitor.visit(*this, data);
         }
-        
+
+        bool BinaryBooleanFunctionExpression::isBinaryBooleanFunctionExpression() const {
+            return true;
+        }
+
         void BinaryBooleanFunctionExpression::printToStream(std::ostream& stream) const {
             stream << "(" << *this->getFirstOperand();
             switch (this->getOperatorType()) {
