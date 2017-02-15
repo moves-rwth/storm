@@ -116,10 +116,12 @@ namespace storm {
             template <typename ValueType>
             bool NativePolytope<ValueType>::isEmpty() const {
                 if(emptyStatus == EmptyStatus::Unknown) {
-                    storm::expressions::ExpressionManager manager;
-                    std::unique_ptr<storm::solver::SmtSolver> solver = storm::utility::solver::SmtSolverFactory().create(manager);
-                    storm::expressions::Expression constraints = getConstraints(manager, declareVariables(manager, "x"));
-                    solver->add(constraints);
+                    std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
+                    std::unique_ptr<storm::solver::SmtSolver> solver = storm::utility::solver::SmtSolverFactory().create(*manager);
+                    std::vector<storm::expressions::Expression> constraints = getConstraints(*manager, declareVariables(*manager, "x"));
+                    for (auto const& constraint : constraints) {
+                        solver->add(constraint);
+                    }
                     switch(solver->check()) {
                     case storm::solver::SmtSolver::CheckResult::Sat:
                         emptyStatus = EmptyStatus::Nonempty;
@@ -154,25 +156,37 @@ namespace storm {
             template <typename ValueType>
             bool NativePolytope<ValueType>::contains(std::shared_ptr<Polytope<ValueType>> const& other) const {
                 STORM_LOG_THROW(other->isNativePolytope(), storm::exceptions::InvalidArgumentException, "Invoked operation between a NativePolytope and a different polytope implementation. This is not supported");
+                if (this->isUniversal()) {
+                    return true;
+                } else if (other->isUniversal()) {
+                    return false;
+                } else {
                     // Check whether there is one point in other that is not in this
-                    storm::expressions::ExpressionManager manager;
-                    std::unique_ptr<storm::solver::SmtSolver> solver = storm::utility::solver::SmtSolverFactory().create(manager);
-                    storm::expressions::Expression constraintsThis = this->getConstraints(manager, declareVariables(manager, "x"));
-                    solver->add(!constraintsThis);
-                    storm::expressions::Expression constraintsOther = dynamic_cast<NativePolytope<ValueType> const&>(*other).getConstraints(manager, declareVariables(manager, "y"));
-                    solver->add(constraintsOther);
-
-                    switch(solver->check()) {
-                    case storm::solver::SmtSolver::CheckResult::Sat:
-                        return false;
-                    case storm::solver::SmtSolver::CheckResult::Unsat:
-                        return true;
-                    default:
-                        STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected result of SMT solver during containment check of two polytopes.");
-                        return false;
+                    std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
+                    std::unique_ptr<storm::solver::SmtSolver> solver = storm::utility::solver::SmtSolverFactory().create(*manager);
+                    std::vector<storm::expressions::Variable> variables = declareVariables(*manager, "x");
+                    std::vector<storm::expressions::Expression> constraints = getConstraints(*manager, variables);
+                    storm::expressions::Expression constraintsThis = manager->boolean(true);
+                    for (auto const& constraint : constraints) {
+                        constraintsThis = constraintsThis && constraint;
                     }
+                    solver->add(!constraintsThis);
+                    constraints = dynamic_cast<NativePolytope<ValueType> const&>(*other).getConstraints(*manager, variables);
+                    for (auto const& constraint : constraints) {
+                        solver->add(constraint);
+                    }
+                    switch(solver->check()) {
+                        case storm::solver::SmtSolver::CheckResult::Sat:
+                            return false;
+                        case storm::solver::SmtSolver::CheckResult::Unsat:
+                            return true;
+                        default:
+                            STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected result of SMT solver during containment check of two polytopes.");
+                            return false;
+                    }
+                }
             }
-            
+
             template <typename ValueType>
             std::shared_ptr<Polytope<ValueType>> NativePolytope<ValueType>::intersection(std::shared_ptr<Polytope<ValueType>> const& rhs) const{
                 STORM_LOG_THROW(rhs->isNativePolytope(), storm::exceptions::InvalidArgumentException, "Invoked operation between a NativePolytope and a different polytope implementation. This is not supported");
@@ -188,8 +202,15 @@ namespace storm {
             
             template <typename ValueType>
             std::shared_ptr<Polytope<ValueType>> NativePolytope<ValueType>::intersection(Halfspace<ValueType> const& halfspace) const{
+                if(A.rows() == 0) {
+                    // No constraints yet
+                    EigenMatrix resultA = storm::adapters::EigenAdapter::toEigenVector(halfspace.normalVector()).transpose();
+                    EigenVector resultb(1);
+                    resultb(0) = halfspace.offset();
+                    return std::make_shared<NativePolytope<ValueType>>(EmptyStatus::Unknown, std::move(resultA), std::move(resultb));
+                }
                 EigenMatrix resultA(A.rows() + 1, A.cols());
-                resultA << A, storm::adapters::EigenAdapter::toEigenVector(halfspace.normalVector());
+                resultA << A, storm::adapters::EigenAdapter::toEigenVector(halfspace.normalVector()).transpose();
                 EigenVector resultb(resultA.rows());
                 resultb << b,
                            halfspace.offset();
@@ -280,13 +301,20 @@ namespace storm {
             
             template <typename ValueType>
             std::pair<typename NativePolytope<ValueType>::Point, bool> NativePolytope<ValueType>::optimize(Point const& direction) const {
+                if(isUniversal()) {
+                    return std::make_pair(Point(), false);
+                }
+
                 storm::solver::Z3LpSolver solver(storm::solver::OptimizationDirection::Maximize);
                 std::vector<storm::expressions::Variable> variables;
-                variables.reserve(A.rows());
-                for (uint_fast64_t i = 0; i < A.rows(); ++i) {
+                variables.reserve(A.cols());
+                for (uint_fast64_t i = 0; i < A.cols(); ++i) {
                     variables.push_back(solver.addUnboundedContinuousVariable("x" + std::to_string(i), direction[i]));
                 }
-                solver.addConstraint("", getConstraints(solver.getManager(), variables));
+                std::vector<storm::expressions::Expression> constraints = getConstraints(solver.getManager(), variables);
+                for (auto const&  constraint : constraints) {
+                    solver.addConstraint("", constraint);
+                }
                 solver.update();
                 solver.optimize();
                 if (solver.isOptimal()) {
@@ -304,14 +332,20 @@ namespace storm {
 
             template <typename ValueType>
             std::pair<typename NativePolytope<ValueType>::EigenVector, bool> NativePolytope<ValueType>::optimize(EigenVector const& direction) const {
+                if(isUniversal()) {
+                    return std::make_pair(EigenVector(), false);
+                }
 
                 storm::solver::Z3LpSolver solver(storm::solver::OptimizationDirection::Maximize);
                 std::vector<storm::expressions::Variable> variables;
-                variables.reserve(A.rows());
-                for (uint_fast64_t i = 0; i < A.rows(); ++i) {
+                variables.reserve(A.cols());
+                for (uint_fast64_t i = 0; i < A.cols(); ++i) {
                     variables.push_back(solver.addUnboundedContinuousVariable("x" + std::to_string(i), direction(i)));
                 }
-                solver.addConstraint("", getConstraints(solver.getManager(), variables));
+                std::vector<storm::expressions::Expression> constraints = getConstraints(solver.getManager(), variables);
+                for (auto const&  constraint: constraints) {
+                    solver.addConstraint("", constraint);
+                }
                 solver.update();
                 solver.optimize();
                 if (solver.isOptimal()) {
@@ -348,14 +382,14 @@ namespace storm {
             }
 
             template <typename ValueType>
-            storm::expressions::Expression NativePolytope<ValueType>::getConstraints(storm::expressions::ExpressionManager const& manager, std::vector<storm::expressions::Variable> const& variables) const {
-                storm::expressions::Expression result = manager.boolean(true);
+            std::vector<storm::expressions::Expression> NativePolytope<ValueType>::getConstraints(storm::expressions::ExpressionManager const& manager, std::vector<storm::expressions::Variable> const& variables) const {
+                std::vector<storm::expressions::Expression> result;
                 for(uint_fast64_t row = 0; row < A.rows(); ++row) {
                     storm::expressions::Expression lhs = manager.rational(A(row,0)) * variables[0].getExpression();
                     for(uint_fast64_t col=1; col < A.cols(); ++col) {
                         lhs = lhs + manager.rational(A(row,col)) * variables[col].getExpression();
                     }
-                    result = result && (lhs <= manager.rational(b(row)));
+                    result.push_back(lhs <= manager.rational(b(row)));
                 }
                 return result;
             }

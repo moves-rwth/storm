@@ -28,9 +28,9 @@ namespace storm {
 
                         EigenMatrix subMatrix(dimension, dimension);
                         EigenVector subVector(dimension);
-                        for (uint_fast64_t i : subset){
+                        for (uint_fast64_t i = 0; i < dimension; ++i){
                             subMatrix.row(i) = constraintMatrix.row(subset[i]);
-                            subVector.row(i) = constraintVector.row(subset[i]);
+                            subVector(i) = constraintVector(subset[i]);
                         }
 
                         EigenVector point = subMatrix.fullPivLu().solve(subVector);

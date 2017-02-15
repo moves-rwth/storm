@@ -125,7 +125,7 @@ namespace storm {
                                     if (Z3_get_numeral_rational_int64(expr.ctx(), expr, &num, &den)) {
                                         return manager.rational(storm::utility::convertNumber<storm::RationalNumber>(num) / storm::utility::convertNumber<storm::RationalNumber>(den));
                                     } else {
-                                        manager.rational(storm::utility::convertNumber<storm::RationalNumber>(std::string(Z3_get_numeral_string(expr.ctx(), expr))));
+                                        return manager.rational(storm::utility::convertNumber<storm::RationalNumber>(std::string(Z3_get_numeral_string(expr.ctx(), expr))));
                                     }
                                 }
                             case Z3_OP_UNINTERPRETED:

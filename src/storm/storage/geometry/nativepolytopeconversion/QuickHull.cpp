@@ -28,8 +28,7 @@ namespace storm {
                 } else {
                     // Generate initial set of d+1 affine independent points (if such a set exists)
                     std::vector<uint_fast64_t> vertexIndices;
-                    uint_fast64_t minMaxVertexNumber;
-                    if(this->findInitialVertices(points, vertexIndices, minMaxVertexNumber)) {
+                    if(this->findInitialVertices(points, vertexIndices)) {
                         // compute point inside initial facet
                         EigenVector insidePoint(EigenVector::Zero(dimension));
                         for(uint_fast64_t vertexIndex : vertexIndices){
@@ -40,21 +39,9 @@ namespace storm {
                         // Create the initial facets from the found vertices.
                         std::vector<Facet> facets = computeInitialFacets(points, vertexIndices, insidePoint);
 
-                        // Enlarge the mesh by adding by first considering all points that are min (or max) in at least one dimension
+                        // Enlarge the mesh
                         storm::storage::BitVector currentFacets(facets.size(), true);
-                        storm::storage::BitVector consideredPoints(points.size(), false);
-                        for(uint_fast64_t i = 0; i < minMaxVertexNumber; ++i) {
-                                consideredPoints.set(i);
-                        }
-                        this->extendMesh(points,  consideredPoints, facets, currentFacets, insidePoint);
-                        for(auto & facet : facets){
-                            facet.maxOutsidePointIndex = 0;
-                            facet.outsideSet.clear();
-                        }
-
-                        // Now consider all points
-                        consideredPoints = storm::storage::BitVector(points.size(), true);
-                        this->extendMesh(points, consideredPoints, facets, currentFacets, insidePoint);
+                        this->extendMesh(points, facets, currentFacets, insidePoint);
 
                         // Finally retrieve the resulting constrants
                         this->getPolytopeFromMesh(points, facets, currentFacets, generateRelevantVerticesAndVertexSets);
@@ -140,10 +127,10 @@ namespace storm {
                 while(pointsAffineDependent) {
                     // get one hyperplane that holds all points
                     const uint_fast64_t dimension = points.front().rows();
-                    EigenVector refPoint(points.front());
+                    EigenVector refPoint = points.front();
                     EigenMatrix constraints(points.size() - 1, dimension);
                     for(unsigned row = 1; row < points.size(); ++row) {
-                        constraints.row(row) = points[row] - refPoint;
+                        constraints.row(row - 1) = points[row] - refPoint;
                     }
                     EigenVector normal = constraints.fullPivLu().kernel().col(0);
 
@@ -162,12 +149,19 @@ namespace storm {
                 // Add the constraints obtained above
                 uint_fast64_t numOfAdditionalConstraints = additionalConstraints.size();
                 uint_fast64_t numOfRegularConstraints = resultMatrix.rows();
-                resultMatrix.resize(numOfRegularConstraints + numOfAdditionalConstraints, StormEigen::NoChange);
-                resultVector.resize(numOfRegularConstraints + numOfAdditionalConstraints, StormEigen::NoChange);
-                for(uint_fast64_t row = numOfRegularConstraints; row < numOfRegularConstraints + numOfAdditionalConstraints; ++row) {
-                    resultMatrix.row(row) = std::move(additionalConstraints[row].first);
-                    resultVector(row) = additionalConstraints[row].second;
+                EigenMatrix newA(numOfRegularConstraints + numOfAdditionalConstraints, resultMatrix.cols());
+                EigenVector newb(numOfRegularConstraints + numOfAdditionalConstraints);
+                uint_fast64_t row = 0;
+                for (; row < numOfRegularConstraints; ++ row) {
+                    newA.row(row) = resultMatrix.row(row);
+                    newb(row) = resultVector(row);
                 }
+                for(; row < numOfRegularConstraints + numOfAdditionalConstraints; ++row) {
+                    newA.row(row) = std::move(additionalConstraints[row - numOfRegularConstraints].first);
+                    newb(row) = additionalConstraints[row - numOfRegularConstraints].second;
+                }
+                resultMatrix = std::move(newA);
+                resultVector = std::move(newb);
 
                 // clear the additionally added points. Note that the order of the points might have changed
                 storm::storage::BitVector keptPoints(points.size(), true);
@@ -199,53 +193,42 @@ namespace storm {
             }
 
             template<typename ValueType>
-            bool QuickHull<ValueType>::findInitialVertices(std::vector<EigenVector>& points, std::vector<uint_fast64_t>& verticesOfInitialPolytope, uint_fast64_t& minMaxVertices) const{
+            bool QuickHull<ValueType>::findInitialVertices(std::vector<EigenVector>& points, std::vector<uint_fast64_t>& verticesOfInitialPolytope) const{
                 const uint_fast64_t dimension = points.front().rows();
                 if(points.size() < dimension + 1){
                     //not enough points to obtain a (non-degenerated) polytope
                     return false;
                 }
-                const uint_fast64_t candidatesToFind = std::min(2*dimension, (uint_fast64_t) points.size());
-                uint_fast64_t candidatesFound = 0;
-                storm::storage::BitVector consideredPoints(points.size(), true);
-                while(candidatesFound < candidatesToFind && !consideredPoints.empty()) {
-                    for(uint_fast64_t currDim=0; currDim<dimension; ++currDim) {
-                        uint_fast64_t minIndex = *consideredPoints.begin();
-                        uint_fast64_t maxIndex = minIndex;
-                        for(uint_fast64_t pointIndex : consideredPoints){
-                            //Check if the current point is a new minimum or maximum at the current dimension
-                            if(points[minIndex](currDim) > points[pointIndex](currDim)){
+
+                // We first find some good candidates to get a (hopefully) large initial mesh.
+                storm::storage::BitVector notGoodCandidates(points.size(), true);
+                for(uint_fast64_t dim = 0; dim < dimension; ++dim) {
+                    if(!notGoodCandidates.empty()) {
+                        uint_fast64_t minIndex = *notGoodCandidates.begin();
+                        uint_fast64_t maxIndex = *notGoodCandidates.begin();
+                        for(uint_fast64_t pointIndex : notGoodCandidates) {
+                            if(points[minIndex](dim) > points[pointIndex](dim)){
                                 minIndex = pointIndex;
                             }
-                            if(points[maxIndex](currDim) < points[pointIndex](currDim)){
+                            if(points[maxIndex](dim) < points[pointIndex](dim)){
                                 maxIndex = pointIndex;
                             }
                         }
-                        consideredPoints.set(minIndex, false);
-                        consideredPoints.set(maxIndex, false);
+                        notGoodCandidates.set(minIndex, false);
+                        notGoodCandidates.set(maxIndex, false);
                     }
-                    //Found candidates. Now swap them to the front.
-                    consideredPoints = ~consideredPoints;
-                    const uint_fast64_t newNumberOfCandidates = consideredPoints.getNumberOfSetBits();
-                    assert(newNumberOfCandidates > 0);
-                    if(newNumberOfCandidates < points.size()){
-                        uint_fast64_t nextPointToMove = consideredPoints.getNextSetIndex(newNumberOfCandidates);
-                        for(uint_fast64_t indexAtFront = candidatesFound; indexAtFront < newNumberOfCandidates; ++indexAtFront){
-                            if(!consideredPoints.get(indexAtFront)) {
-                                assert(nextPointToMove != consideredPoints.size());
-                                std::swap(points[indexAtFront], points[nextPointToMove]);
-                                nextPointToMove = consideredPoints.getNextSetIndex(nextPointToMove+1);
-                                consideredPoints.set(indexAtFront);
-                            }
-                        }
-                        assert(nextPointToMove == consideredPoints.size());
+                }
+                storm::storage::BitVector goodCandidates = ~notGoodCandidates;
+
+                //Found candidates. Now swap them to the front.
+                const uint_fast64_t numOfGoodCandidates = goodCandidates.getNumberOfSetBits();
+                for( auto const& goodCandidate : goodCandidates) {
+                    if(goodCandidate >= numOfGoodCandidates) {
+                        uint_fast64_t notGoodCandidate = *notGoodCandidates.begin();
+                        assert(notGoodCandidate < numOfGoodCandidates);
+                        std::swap(points[notGoodCandidate], points[goodCandidate]);
+                        notGoodCandidates.set(notGoodCandidate, false);
                     }
-                    if(candidatesFound==0){
-                        //We are in the first iteration. It holds that the first newNumberOfCandidates points will be vertices of the final polytope
-                        minMaxVertices = newNumberOfCandidates;
-                    }
-                    candidatesFound = newNumberOfCandidates;
-                    consideredPoints = ~consideredPoints;
                 }
 
                 storm::storage::geometry::SubsetEnumerator<std::vector<EigenVector>> subsetEnum(points.size(), dimension+1, points, affineFilter);
@@ -295,10 +278,10 @@ namespace storm {
             void QuickHull<ValueType>::computeNormalAndOffsetOfFacet(std::vector<EigenVector> const& points, EigenVector const& insidePoint, Facet& facet) const {
                 const uint_fast64_t dimension = points.front().rows();
                 assert(facet.points.size() == dimension);
-                EigenVector refPoint(facet.points.back());
+                EigenVector const& refPoint = points[facet.points.back()];
                 EigenMatrix constraints(dimension-1, dimension);
                 for(unsigned row = 0; row < dimension-1; ++row) {
-                    constraints.row(row) = points[facet.points[row]] - refPoint;
+                    constraints.row(row) = (points[facet.points[row]] - refPoint);
                 }
                 facet.normal = constraints.fullPivLu().kernel().col(0);
                 facet.offset = facet.normal.dot(refPoint);
@@ -313,14 +296,13 @@ namespace storm {
 
             template<typename ValueType>
             void QuickHull<ValueType>::extendMesh(std::vector<EigenVector>& points,
-                                                  storm::storage::BitVector& consideredPoints,
                                                   std::vector<Facet>& facets,
                                                   storm::storage::BitVector& currentFacets,
                                                   EigenVector& insidePoint) const {
 
-                storm::storage::BitVector currentOutsidePoints = consideredPoints;
+                storm::storage::BitVector currentOutsidePoints(points.size(), true);
                 // Compute initial outside Sets
-                for(uint_fast64_t facetIndex : currentFacets){
+                for (uint_fast64_t facetIndex : currentFacets) {
                     computeOutsideSetOfFacet(facets[facetIndex], currentOutsidePoints, points);
                 }
 
@@ -332,7 +314,6 @@ namespace storm {
                         uint_fast64_t numberOfNewFacets = 0;
                         // Now we compute the enlarged mesh
                         uint_fast64_t farAwayPointIndex = facets[facetCount].maxOutsidePointIndex;
-                        assert(consideredPoints.get(farAwayPointIndex));
                         // get Visible set from maxOutsidePoint of the current facet
                         std::set<uint_fast64_t> visibleSet = getVisibleSet(facets, facetCount, points[farAwayPointIndex]);
                         std::set<uint_fast64_t> invisibleSet = getInvisibleNeighbors(facets, visibleSet);

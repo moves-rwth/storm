@@ -88,10 +88,9 @@ namespace storm {
                  *
                  * @param points The set of points from which vertices are picked. Note that the order of the points might be changed when calling this!!
                  * @param verticesOfInitialPolytope Will be  set to the resulting vertices (represented by indices w.r.t. the given points)
-                 * @param minMaxVertices after calling this, the first 'minMaxVertices' points will have an extreme value in at least one dimension
                  * @return true if the method was successful. False if the given points are affine dependend, i.e. the polytope is degenerated.
                  */
-                bool findInitialVertices(std::vector<EigenVector>& points, std::vector<uint_fast64_t>& verticesOfInitialPolytope, uint_fast64_t& minMaxVertices) const;
+                bool findInitialVertices(std::vector<EigenVector>& points, std::vector<uint_fast64_t>& verticesOfInitialPolytope) const;
 
                 /*!
                  * Computes the initial facets out of the given dimension+1 initial vertices
@@ -107,10 +106,8 @@ namespace storm {
                  * Extends the given mesh using the QuickHull-algorithm
                  * For optimization reasons a point thats inside of the initial polytope but on none of the facets has to be provided.
 
-                 * @return true iff all consideredPoints are now contained by the mesh
                  */
                 void extendMesh(std::vector<EigenVector>& points,
-                        storm::storage::BitVector& consideredPoints,
                         std::vector<Facet>& facets,
                         storm::storage::BitVector& currentFacets,
                         EigenVector& insidePoint) const;

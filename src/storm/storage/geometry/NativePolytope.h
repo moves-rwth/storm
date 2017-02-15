@@ -140,7 +140,7 @@ namespace storm {
                 std::vector<storm::expressions::Variable> declareVariables(storm::expressions::ExpressionManager& manager, std::string const& namePrefix) const;
 
                 // returns the constrains defined by this polytope as an expresseion
-                storm::expressions::Expression getConstraints(storm::expressions::ExpressionManager const& manager, std::vector<storm::expressions::Variable> const& variables) const;
+                std::vector<storm::expressions::Expression> getConstraints(storm::expressions::ExpressionManager const& manager, std::vector<storm::expressions::Variable> const& variables) const;
 
 
                 //Stores whether the polytope is empty or not

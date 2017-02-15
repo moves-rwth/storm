@@ -95,7 +95,7 @@ TEST(SparseMaPcaaModelCheckerTest, jobscheduler_pareto_3Obj) {
     std::vector<double> j23 = {1.333333333,0.1978235137,0.1};
 
     // we do our checks with rationals to avoid numerical issues when doing polytope computations...
-    auto expectedAchievableValues = storm::storage::geometry::Polytope<storm::RationalNumber>::createDownwardClosure(
+    auto expectedAchievableValues = storm::storage::geometry::Polytope<storm::RationalNumber>::create(
             std::vector<std::vector<storm::RationalNumber>>({storm::utility::vector::convertNumericVector<storm::RationalNumber>(j12),
                                                              storm::utility::vector::convertNumericVector<storm::RationalNumber>(j13),
                                                              storm::utility::vector::convertNumericVector<storm::RationalNumber>(j23)}));
@@ -104,9 +104,7 @@ TEST(SparseMaPcaaModelCheckerTest, jobscheduler_pareto_3Obj) {
     std::vector<storm::RationalNumber> lb(3,-eps), ub(3,eps);
     auto bloatingBox = storm::storage::geometry::Hyperrectangle<storm::RationalNumber>(lb,ub).asPolytope();
 
-    EXPECT_TRUE(expectedAchievableValues->minkowskiSum(bloatingBox)->contains(result->asParetoCurveCheckResult<double>().getUnderApproximation()->convertNumberRepresentation<storm::RationalNumber>()));
     EXPECT_TRUE(result->asParetoCurveCheckResult<double>().getOverApproximation()->convertNumberRepresentation<storm::RationalNumber>()->minkowskiSum(bloatingBox)->contains(expectedAchievableValues));
-
 }
 
 TEST(SparseMaPcaaModelCheckerTest, jobscheduler_achievability_3Obj) {
@@ -170,7 +168,7 @@ TEST(SparseMaPcaaModelCheckerTest, jobscheduler_pareto_2Obj) {
     std::vector<double> j23 = {0.3934717664, 0.01948095743};
 
     // we do our checks with rationals to avoid numerical issues when doing polytope computations...
-    auto expectedAchievableValues = storm::storage::geometry::Polytope<storm::RationalNumber>::createDownwardClosure(
+    auto expectedAchievableValues = storm::storage::geometry::Polytope<storm::RationalNumber>::create(
             std::vector<std::vector<storm::RationalNumber>>({storm::utility::vector::convertNumericVector<storm::RationalNumber>(j12),
                                                              storm::utility::vector::convertNumericVector<storm::RationalNumber>(j13),
                                                              storm::utility::vector::convertNumericVector<storm::RationalNumber>(j23)}));
@@ -179,7 +177,6 @@ TEST(SparseMaPcaaModelCheckerTest, jobscheduler_pareto_2Obj) {
     std::vector<storm::RationalNumber> lb(2,-eps), ub(2,eps);
     auto bloatingBox = storm::storage::geometry::Hyperrectangle<storm::RationalNumber>(lb,ub).asPolytope();
 
-    EXPECT_TRUE(expectedAchievableValues->minkowskiSum(bloatingBox)->contains(result->asParetoCurveCheckResult<double>().getUnderApproximation()->convertNumberRepresentation<storm::RationalNumber>()));
     EXPECT_TRUE(result->asParetoCurveCheckResult<double>().getOverApproximation()->convertNumberRepresentation<storm::RationalNumber>()->minkowskiSum(bloatingBox)->contains(expectedAchievableValues));
 
 }
