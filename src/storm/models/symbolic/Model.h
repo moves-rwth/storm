@@ -130,7 +130,12 @@ namespace storm {
                  * @return The initial states of the model.
                  */
                 storm::dd::Bdd<Type> const& getInitialStates() const;
-                
+
+                /*
+                 * Retrieves the deadlock states of the model.
+                 */
+                storm::dd::Bdd<Type> const& getDeadlockStates() const;
+
                 /*!
                  * Returns the sets of states labeled with the given label.
                  *
@@ -246,6 +251,8 @@ namespace storm {
                  * @return True iff the model has a reward model.
                  */
                 bool hasRewardModel() const;
+
+                std::unordered_map<std::string, RewardModelType> const& getRewardModels() const;
                 
                 /*!
                  * Retrieves the number of reward models associated with this model.
@@ -257,6 +264,8 @@ namespace storm {
                 virtual void printModelInformationToStream(std::ostream& out) const override;
                 
                 virtual bool isSymbolicModel() const override;
+
+                std::vector<std::string> getLabels() const;
                 
             protected:
                 

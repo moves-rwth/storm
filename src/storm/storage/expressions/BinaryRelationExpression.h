@@ -38,6 +38,7 @@ namespace storm {
             virtual bool evaluateAsBool(Valuation const* valuation = nullptr) const override;
             virtual std::shared_ptr<BaseExpression const> simplify() const override;
             virtual boost::any accept(ExpressionVisitor& visitor, boost::any const& data) const override;
+            virtual bool isBinaryRelationExpression() const override;
 
             /*!
              * Retrieves the relation associated with the expression.

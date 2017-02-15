@@ -6,6 +6,7 @@
 
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/utility/file.h"
 
 namespace storm {
     namespace dd {
@@ -86,7 +87,7 @@ namespace storm {
         
         void Odd::exportToDot(std::string const& filename) const {
             std::ofstream dotFile;
-            dotFile.open (filename);
+            storm::utility::openFile(filename, dotFile);
             
             // Print header.
             dotFile << "digraph \"ODD\" {" << std::endl << "center=true;" << std::endl << "edge [dir = none];" << std::endl;
@@ -129,8 +130,7 @@ namespace storm {
             }
             
             dotFile << "}" << std::endl;
-            
-            dotFile.close();
+            storm::utility::closeFile(dotFile);
         }
         
         void Odd::addToLevelToOddNodesMap(std::map<uint_fast64_t, std::vector<std::reference_wrapper<storm::dd::Odd const>>>& levelToOddNodesMap, uint_fast64_t level) const {

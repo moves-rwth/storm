@@ -7,7 +7,8 @@
 #include "storm/settings/modules/RegionSettings.h"
 #include "storm/exceptions/InvalidSettingsException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
-#include "utility/constants.h"
+#include "storm/utility/constants.h"
+#include "storm/utility/file.h"
 
 namespace storm {
     namespace modelchecker {
@@ -283,7 +284,7 @@ namespace storm {
                     }
                     else{
                         //if we reach this point we can assume that the region is given as a file.
-                        STORM_LOG_THROW(storm::parser::MappedFile::fileExistsAndIsReadable(storm::settings::getModule<storm::settings::modules::RegionSettings>().getRegionFilePath().c_str()), storm::exceptions::InvalidSettingsException, "The path to the file in which the regions are specified is not valid.");
+                        STORM_LOG_THROW(storm::utility::fileExistsAndIsReadable(storm::settings::getModule<storm::settings::modules::RegionSettings>().getRegionFilePath()), storm::exceptions::InvalidSettingsException, "The path to the file in which the regions are specified is not valid.");
                         storm::parser::MappedFile mf(storm::settings::getModule<storm::settings::modules::RegionSettings>().getRegionFilePath().c_str());
                         regionsString = std::string(mf.getData(),mf.getDataSize());
                     }

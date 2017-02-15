@@ -15,10 +15,14 @@
 
 #include "storm/exceptions/FileIoException.h"
 #include "storm/utility/macros.h"
+#include "storm/utility/file.h"
+
 namespace storm {
 	namespace parser {
 
 		MappedFile::MappedFile(const char* filename) {
+            STORM_LOG_THROW(storm::utility::fileExistsAndIsReadable(filename), storm::exceptions::FileIoException, "Error while reading " << filename << ": The file does not exist or is not readable.");
+
 		#if defined LINUX || defined MACOSX
 
 			// Do file mapping for reasonable systems.
@@ -29,15 +33,11 @@ namespace storm {
 		#else
 			if (stat64(filename, &(this->st)) != 0) {
 		#endif
-				STORM_LOG_ERROR("Error in stat(" << filename << "): Probably, this file does not exist.");
-				throw exceptions::FileIoException() << "MappedFile Error in stat(): Probably, this file does not exist.";
+				STORM_LOG_THROW(false, storm::exceptions::FileIoException, "Error in stat(" << filename << "): Probably, this file does not exist.");
 			}
 			this->file = open(filename, O_RDONLY);
 
-			if (this->file < 0) {
-				STORM_LOG_ERROR("Error in open(" << filename << "): Probably, we may not read this file.");
-				throw exceptions::FileIoException() << "MappedFile Error in open(): Probably, we may not read this file.";
-			}
+            STORM_LOG_THROW(this->file >= 0, storm::exceptions::FileIoException, "Error in open(" << filename << "): Probably, we may not read this file.");
             
 			this->data = static_cast<char*>(mmap(NULL, this->st.st_size, PROT_READ, MAP_PRIVATE, this->file, 0));
 			if (this->data == MAP_FAILED) {
@@ -88,12 +88,6 @@ namespace storm {
 			CloseHandle(this->mapping);
 			CloseHandle(this->file);
 		#endif
-		}
-
-		bool MappedFile::fileExistsAndIsReadable(const char* filename) {
-			// Test by opening an input file stream and testing the stream flags.
-			std::ifstream fin(filename);
-			return fin.good();
 		}
 
 		char const* MappedFile::getData() const {

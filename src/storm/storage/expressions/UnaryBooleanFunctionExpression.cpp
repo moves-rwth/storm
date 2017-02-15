@@ -52,7 +52,11 @@ namespace storm {
         boost::any UnaryBooleanFunctionExpression::accept(ExpressionVisitor& visitor, boost::any const& data) const {
             return visitor.visit(*this, data);
         }
-        
+
+        bool UnaryBooleanFunctionExpression::isUnaryBooleanFunctionExpression() const {
+            return true;
+        }
+
         void UnaryBooleanFunctionExpression::printToStream(std::ostream& stream) const {
             stream << "!(" << *this->getOperand() << ")";
         }

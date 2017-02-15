@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "storm/utility/macros.h"
+#include "storm/utility/file.h"
 #include "storm/exceptions/FileIoException.h"
 #include "storm/exceptions/NotSupportedException.h"
 
@@ -510,20 +511,11 @@ namespace storm {
             return modernjson::json(expression.getValueAsDouble());
         }
         
-        
-        
-        
-        
-        
-        
         void JsonExporter::toFile(storm::jani::Model const& janiModel, std::vector<storm::jani::Property> const& formulas, std::string const& filepath, bool checkValid) {
-            std::ofstream ofs;
-            ofs.open (filepath, std::ofstream::out );
-            if(ofs.is_open()) {
-                toStream(janiModel, formulas, ofs, checkValid);
-            } else {
-                STORM_LOG_THROW(false, storm::exceptions::FileIoException, "Cannot open " << filepath);
-            }
+            std::ofstream stream;
+            storm::utility::openFile(filepath, stream);
+            toStream(janiModel, formulas, stream, checkValid);
+            storm::utility::closeFile(stream);
         }
         
         void JsonExporter::toStream(storm::jani::Model const& janiModel,  std::vector<storm::jani::Property> const& formulas, std::ostream& os, bool checkValid) {

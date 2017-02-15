@@ -10,9 +10,14 @@
 
 #include "storm/logic/FragmentSpecification.h"
 
+#include "storm/modelchecker/multiobjective/pcaa.h"
+
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 
 #include "storm/settings/modules/GeneralSettings.h"
+
+#include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/transformer/SymbolicToSparseTransformer.h"
 
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
@@ -32,7 +37,15 @@ namespace storm {
         template<typename ModelType>
         bool HybridMdpPrctlModelChecker<ModelType>::canHandle(CheckTask<storm::logic::Formula, ValueType> const& checkTask) const {
             storm::logic::Formula const& formula = checkTask.getFormula();
-            return formula.isInFragment(storm::logic::prctl().setLongRunAverageRewardFormulasAllowed(false));
+            if(formula.isInFragment(storm::logic::prctl().setLongRunAverageRewardFormulasAllowed(false))) {
+                return true;
+            } else {
+                // Check whether we consider a multi-objective formula
+                // For multi-objective model checking, each state requires an individual scheduler (in contrast to single-objective model checking). Let's exclude that all states are considered.
+                if(!checkTask.isOnlyInitialStatesRelevantSet()) return false;
+                return formula.isInFragment(storm::logic::multiObjective().setCumulativeRewardFormulasAllowed(true));
+            }
+
         }
                 
         template<typename ModelType>
@@ -102,6 +115,11 @@ namespace storm {
             return storm::modelchecker::helper::HybridMdpPrctlHelper<DdType, ValueType>::computeReachabilityRewards(checkTask.getOptimizationDirection(), this->getModel(), this->getModel().getTransitionMatrix(), checkTask.isRewardModelSet() ? this->getModel().getRewardModel(checkTask.getRewardModel()) : this->getModel().getRewardModel(""), subResult.getTruthValuesVector(), checkTask.isQualitativeSet(), *this->linearEquationSolverFactory);
         }
 
+        template<typename ModelType>
+        std::unique_ptr<CheckResult> HybridMdpPrctlModelChecker<ModelType>::checkMultiObjectiveFormula(CheckTask<storm::logic::MultiObjectiveFormula, ValueType> const& checkTask) {
+            auto sparseModel = storm::transformer::SymbolicMdpToSparseMdpTransformer<DdType, ValueType>::translate(this->getModel());
+			return multiobjective::performPcaa(*sparseModel, checkTask.getFormula());
+        }
 
         template class HybridMdpPrctlModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD, double>>;
         template class HybridMdpPrctlModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan, double>>;

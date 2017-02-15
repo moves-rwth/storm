@@ -8,6 +8,8 @@
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GSPNExportSettings.h"
 
+#include "storm/utility/file.h"
+
 namespace storm {
     /**
      *    Builds JANI model from GSPN.
@@ -21,23 +23,23 @@ namespace storm {
         storm::settings::modules::GSPNExportSettings const& exportSettings = storm::settings::getModule<storm::settings::modules::GSPNExportSettings>();
         if (exportSettings.isWriteToDotSet()) {
             std::ofstream fs;
-            fs.open(exportSettings.getWriteToDotFilename());
+            storm::utility::openFile(exportSettings.getWriteToDotFilename(), fs);
             gspn.writeDotToStream(fs);
-            fs.close();
+            storm::utility::closeFile(fs);
         }
         
         if (exportSettings.isWriteToPnproSet()) {
             std::ofstream fs;
-            fs.open(exportSettings.getWriteToPnproFilename());
+            storm::utility::openFile(exportSettings.getWriteToPnproFilename(), fs);
             gspn.toPnpro(fs);
-            fs.close();
+            storm::utility::closeFile(fs);
         }
         
         if (exportSettings.isWriteToPnmlSet()) {
             std::ofstream fs;
-            fs.open(exportSettings.getWriteToPnmlFilename());
+            storm::utility::openFile(exportSettings.getWriteToPnmlFilename(), fs);
             gspn.toPnml(fs);
-            fs.close();
+            storm::utility::closeFile(fs);
         }
         
         if (exportSettings.isDisplayStatsSet()) {
@@ -48,9 +50,9 @@ namespace storm {
         
         if (exportSettings.isWriteStatsToFileSet()) {
             std::ofstream fs;
-            fs.open(exportSettings.getWriteStatsFilename());
+            storm::utility::openFile(exportSettings.getWriteStatsFilename(), fs);
             gspn.writeStatsToStream(fs);
-            fs.close();
+            storm::utility::closeFile(fs);
         }
         
         

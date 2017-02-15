@@ -71,6 +71,11 @@ namespace storm {
             storm::dd::Bdd<Type> const& Model<Type, ValueType>::getInitialStates() const {
                 return initialStates;
             }
+
+            template<storm::dd::DdType Type, typename ValueType>
+            storm::dd::Bdd<Type> const& Model<Type, ValueType>::getDeadlockStates() const {
+                return deadlockStates;
+            }
             
             template<storm::dd::DdType Type, typename ValueType>
             storm::dd::Bdd<Type> Model<Type, ValueType>::getStates(std::string const& label) const {
@@ -192,11 +197,25 @@ namespace storm {
             bool Model<Type, ValueType>::hasRewardModel() const {
                 return !this->rewardModels.empty();
             }
+
+            template<storm::dd::DdType Type, typename ValueType>
+            std::unordered_map<std::string, typename Model<Type, ValueType>::RewardModelType> const& Model<Type, ValueType>::getRewardModels() const {
+                return this->rewardModels;
+            }
             
             template<storm::dd::DdType Type, typename ValueType>
             void Model<Type, ValueType>::printModelInformationToStream(std::ostream& out) const {
                 this->printModelInformationHeaderToStream(out);
                 this->printModelInformationFooterToStream(out);
+            }
+
+            template<storm::dd::DdType Type, typename ValueType>
+            std::vector<std::string> Model<Type, ValueType>::getLabels() const {
+                std::vector<std::string> labels;
+                for(auto const& entry : labelToExpressionMap) {
+                    labels.push_back(entry.first);
+                }
+                return labels;
             }
             
             template<storm::dd::DdType Type, typename ValueType>

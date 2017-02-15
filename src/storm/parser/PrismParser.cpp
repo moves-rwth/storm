@@ -7,6 +7,7 @@
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidTypeException.h"
 #include "storm/utility/macros.h"
+#include "storm/utility/file.h"
 #include "storm/exceptions/WrongFormatException.h"
 
 #include "storm/storage/expressions/ExpressionManager.h"
@@ -17,9 +18,8 @@ namespace storm {
     namespace parser {
         storm::prism::Program PrismParser::parse(std::string const& filename) {
             // Open file and initialize result.
-            std::ifstream inputFileStream(filename);
-            STORM_LOG_THROW(inputFileStream.good(), storm::exceptions::WrongFormatException, "Unable to read from file '" << filename << "'.");
-            
+            std::ifstream inputFileStream;
+            storm::utility::openFile(filename, inputFileStream);
             storm::prism::Program result;
             
             // Now try to parse the contents of the file.
@@ -28,12 +28,12 @@ namespace storm {
                 result = parseFromString(fileContent, filename);
             } catch(std::exception& e) {
                 // In case of an exception properly close the file before passing exception.
-                inputFileStream.close();
+                storm::utility::closeFile(inputFileStream);
                 throw e;
             }
             
             // Close the stream in case everything went smoothly and return result.
-            inputFileStream.close();
+            storm::utility::closeFile(inputFileStream);
             return result;
         }
         

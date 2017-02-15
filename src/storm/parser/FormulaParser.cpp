@@ -15,6 +15,7 @@
 #include "storm/storage/expressions/ExpressionEvaluator.h"
 #include "FormulaParserGrammar.h"
 #include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/utility/file.h"
 
 namespace storm {
     namespace parser {
@@ -65,8 +66,8 @@ namespace storm {
         
         std::vector<storm::jani::Property> FormulaParser::parseFromFile(std::string const& filename) const {
             // Open file and initialize result.
-            std::ifstream inputFileStream(filename, std::ios::in);
-            STORM_LOG_THROW(inputFileStream.good(), storm::exceptions::WrongFormatException, "Unable to read from file '" << filename << "'.");
+            std::ifstream inputFileStream;
+            storm::utility::openFile(filename, inputFileStream);
             
             std::vector<storm::jani::Property> properties;
             
@@ -76,12 +77,12 @@ namespace storm {
                 properties = parseFromString(fileContent);
             } catch(std::exception& e) {
                 // In case of an exception properly close the file before passing exception.
-                inputFileStream.close();
+                storm::utility::closeFile(inputFileStream);
                 throw e;
             }
             
             // Close the stream in case everything went smoothly and return result.
-            inputFileStream.close();
+            storm::utility::closeFile(inputFileStream);
             return properties;
         }
         
