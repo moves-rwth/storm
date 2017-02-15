@@ -192,6 +192,11 @@ namespace storm {
             bool Model<Type, ValueType>::hasRewardModel() const {
                 return !this->rewardModels.empty();
             }
+
+            template<storm::dd::DdType Type, typename ValueType>
+            std::unordered_map<std::string, typename Model<Type, ValueType>::RewardModelType> const& Model<Type, ValueType>::getRewardModels() const {
+                return this->rewardModels;
+            }
             
             template<storm::dd::DdType Type, typename ValueType>
             void Model<Type, ValueType>::printModelInformationToStream(std::ostream& out) const {

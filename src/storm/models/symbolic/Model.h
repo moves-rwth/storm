@@ -246,6 +246,8 @@ namespace storm {
                  * @return True iff the model has a reward model.
                  */
                 bool hasRewardModel() const;
+
+                std::unordered_map<std::string, RewardModelType> const& getRewardModels() const;
                 
                 /*!
                  * Retrieves the number of reward models associated with this model.
