@@ -7,10 +7,10 @@
 // Public License v. 2.0. If a copy of the MPL was not distributed
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-#ifndef EIGEN_TRACKBALL_H
-#define EIGEN_TRACKBALL_H
+#ifndef STORMEIGEN_TRACKBALL_H
+#define STORMEIGEN_TRACKBALL_H
 
-#include <Eigen/Geometry>
+#include <StormEigen/Geometry>
 
 class Camera;
 
@@ -39,4 +39,4 @@ class Trackball
 
 };
 
-#endif // EIGEN_TRACKBALL_H
+#endif // STORMEIGEN_TRACKBALL_H

@@ -18,18 +18,21 @@ namespace storm {
         template <typename ValueType>
         class ExplicitQuantitativeCheckResult;
         
+        template <typename ValueType>
+        class ExplicitParetoCurveCheckResult;
+
         template <storm::dd::DdType Type>
         class SymbolicQualitativeCheckResult;
-        
+
         template <storm::dd::DdType Type, typename ValueType>
         class SymbolicQuantitativeCheckResult;
-        
+
         template <storm::dd::DdType Type, typename ValueType>
         class HybridQuantitativeCheckResult;
-        
-        template <typename ValueType>
-        class ParetoCurveCheckResult;
-        
+
+        template <storm::dd::DdType Type, typename ValueType>
+        class SymbolicParetoCurveCheckResult;
+
         // The base class of all check results.
         class CheckResult {
         public:
@@ -49,12 +52,14 @@ namespace storm {
             virtual bool isHybrid() const;
             virtual bool isQuantitative() const;
             virtual bool isQualitative() const;
+            virtual bool isParetoCurveCheckResult() const;
             virtual bool isExplicitQualitativeCheckResult() const;
             virtual bool isExplicitQuantitativeCheckResult() const;
+            virtual bool isExplicitParetoCurveCheckResult() const;
             virtual bool isSymbolicQualitativeCheckResult() const;
             virtual bool isSymbolicQuantitativeCheckResult() const;
+            virtual bool isSymbolicParetoCurveCheckResult() const;
             virtual bool isHybridQuantitativeCheckResult() const;
-            virtual bool isParetoCurveCheckResult() const;
             virtual bool isResultForAllStates() const;
             
             QualitativeCheckResult& asQualitativeCheckResult();
@@ -78,6 +83,12 @@ namespace storm {
 
             template<typename ValueType>
             ExplicitQuantitativeCheckResult<ValueType> const& asExplicitQuantitativeCheckResult() const;
+
+            template <typename ValueType>
+            ExplicitParetoCurveCheckResult<ValueType>& asExplicitParetoCurveCheckResult();
+
+            template <typename ValueType>
+            ExplicitParetoCurveCheckResult<ValueType> const& asExplicitParetoCurveCheckResult() const;
             
             template <storm::dd::DdType Type>
             SymbolicQualitativeCheckResult<Type>& asSymbolicQualitativeCheckResult();
@@ -97,11 +108,11 @@ namespace storm {
             template <storm::dd::DdType Type, typename ValueType>
             HybridQuantitativeCheckResult<Type, ValueType> const& asHybridQuantitativeCheckResult() const;
 
-            template <typename ValueType>
-            ParetoCurveCheckResult<ValueType>& asParetoCurveCheckResult();
-            
-            template <typename ValueType>
-            ParetoCurveCheckResult<ValueType> const& asParetoCurveCheckResult() const;
+            template <storm::dd::DdType Type, typename ValueType>
+            SymbolicParetoCurveCheckResult<Type, ValueType>& asSymbolicParetoCurveCheckResult();
+
+            template <storm::dd::DdType Type, typename ValueType>
+            SymbolicParetoCurveCheckResult<Type, ValueType> const& asSymbolicParetoCurveCheckResult() const;
             
             virtual std::ostream& writeToStream(std::ostream& out) const = 0;
         };

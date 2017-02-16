@@ -1,4 +1,4 @@
-#include <unsupported/Eigen/MatrixFunctions>
+#include <unsupported/StormEigen/MatrixFunctions>
 #include <iostream>
 
 using namespace StormEigen;

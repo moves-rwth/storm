@@ -7,10 +7,10 @@
 // Public License v. 2.0. If a copy of the MPL was not distributed
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-#ifndef EIGEN_GPUHELPER_H
-#define EIGEN_GPUHELPER_H
+#ifndef STORMEIGEN_GPUHELPER_H
+#define STORMEIGEN_GPUHELPER_H
 
-#include <Eigen/Geometry>
+#include <StormEigen/Geometry>
 #include <GL/gl.h>
 #include <vector>
 
@@ -204,4 +204,4 @@ inline void GpuHelper::draw(GLenum mode, uint start, uint end)
     glDrawArrays(mode, start, end-start);
 }
 
-#endif // EIGEN_GPUHELPER_H
+#endif // STORMEIGEN_GPUHELPER_H

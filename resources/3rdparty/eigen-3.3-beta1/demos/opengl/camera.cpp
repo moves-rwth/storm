@@ -12,7 +12,7 @@
 #include "gpuhelper.h"
 #include <GL/glu.h>
 
-#include "Eigen/LU"
+#include "StormEigen/LU"
 using namespace StormEigen;
 
 Camera::Camera()

@@ -11,7 +11,7 @@
 //
 
 #include <iostream>
-#include <Eigen/Core>
+#include <StormEigen/Core>
 #include <bench/BenchTimer.h>
 
 using namespace std;
@@ -40,7 +40,7 @@ typedef Matrix<RealScalar,Dynamic,Dynamic> M;
 #ifdef HAVE_BLAS
 
 extern "C" {
-  #include <Eigen/src/misc/blas.h>
+  #include <StormEigen/src/misc/blas.h>
 }
 
 static float fone = 1;
@@ -69,7 +69,7 @@ void blas_gemm(const MatrixXf& a, const MatrixXf& b, MatrixXf& c)
          c.data(),&ldc);
 }
 
-EIGEN_DONT_INLINE void blas_gemm(const MatrixXd& a, const MatrixXd& b, MatrixXd& c)
+STORMEIGEN_DONT_INLINE void blas_gemm(const MatrixXd& a, const MatrixXd& b, MatrixXd& c)
 {
   int M = c.rows(); int N = c.cols(); int K = a.cols();
   int lda = a.rows(); int ldb = b.rows(); int ldc = c.rows();
@@ -127,7 +127,7 @@ void matlab_cplx_real(const M& ar, const M& ai, const M& b, M& cr, M& ci)
 }
 
 template<typename A, typename B, typename C>
-EIGEN_DONT_INLINE void gemm(const A& a, const B& b, C& c)
+STORMEIGEN_DONT_INLINE void gemm(const A& a, const B& b, C& c)
 {
  c.noalias() += a * b;
 }
@@ -203,7 +203,7 @@ int main(int argc, char ** argv)
     return 1;
   }
 
-#if EIGEN_VERSION_AT_LEAST(3,2,90)
+#if STORMEIGEN_VERSION_AT_LEAST(3,2,90)
   if(cache_size1>0)
     setCpuCacheSizes(cache_size1,cache_size2,cache_size3);
 #endif
@@ -221,7 +221,7 @@ int main(int argc, char ** argv)
   C r = c;
 
   // check the parallel product is correct
-  #if defined EIGEN_HAS_OPENMP
+  #if defined STORMEIGEN_HAS_OPENMP
   StormEigen::initParallel();
   int procs = omp_get_max_threads();
   if(procs>1)
@@ -269,7 +269,7 @@ int main(int argc, char ** argv)
   std::cout << "eigen cpu         " << tmt.best(CPU_TIMER)/rep  << "s  \t" << (double(m)*n*p*rep*2/tmt.best(CPU_TIMER))*1e-9  <<  " GFLOPS \t(" << tmt.total(CPU_TIMER)  << "s)\n";
   std::cout << "eigen real        " << tmt.best(REAL_TIMER)/rep << "s  \t" << (double(m)*n*p*rep*2/tmt.best(REAL_TIMER))*1e-9 <<  " GFLOPS \t(" << tmt.total(REAL_TIMER) << "s)\n";
 
-  #ifdef EIGEN_HAS_OPENMP
+  #ifdef STORMEIGEN_HAS_OPENMP
   if(procs>1)
   {
     BenchTimer tmono;

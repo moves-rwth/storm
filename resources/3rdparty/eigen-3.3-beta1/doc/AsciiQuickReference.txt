@@ -1,7 +1,7 @@
 // A simple quickref for Eigen. Add anything that's missing.
 // Main author: Keir Mierle
 
-#include <Eigen/Dense>
+#include <StormEigen/Dense>
 
 Matrix<double, 3, 3> A;               // Fixed rows and cols. Same as Matrix3d.
 Matrix<double, 3, Dynamic> B;         // Fixed rows, dynamic cols.
@@ -161,7 +161,7 @@ R.rowwise().any()         // any(R, 2)
 x.norm()                  // norm(x).    Note that norm(R) doesn't work in Eigen.
 x.squaredNorm()           // dot(x, x)   Note the equivalence is not true for complex
 x.dot(y)                  // dot(x, y)
-x.cross(y)                // cross(x, y) Requires #include <Eigen/Geometry>
+x.cross(y)                // cross(x, y) Requires #include <StormEigen/Geometry>
 
 //// Type conversion
 // Eigen                           // Matlab
@@ -186,11 +186,11 @@ Matrix2i::Map(data) = 2*mat2x2;           // overwrite elements of data with 2*m
 MatrixXi::Map(data, 2, 2) += mat2x2;      // adds mat2x2 to elements of data (alternative syntax if size is not know at compile time)
 
 // Solve Ax = b. Result stored in x. Matlab: x = A \ b.
-x = A.ldlt().solve(b));  // A sym. p.s.d.    #include <Eigen/Cholesky>
-x = A.llt() .solve(b));  // A sym. p.d.      #include <Eigen/Cholesky>
-x = A.lu()  .solve(b));  // Stable and fast. #include <Eigen/LU>
-x = A.qr()  .solve(b));  // No pivoting.     #include <Eigen/QR>
-x = A.svd() .solve(b));  // Stable, slowest. #include <Eigen/SVD>
+x = A.ldlt().solve(b));  // A sym. p.s.d.    #include <StormEigen/Cholesky>
+x = A.llt() .solve(b));  // A sym. p.d.      #include <StormEigen/Cholesky>
+x = A.lu()  .solve(b));  // Stable and fast. #include <StormEigen/LU>
+x = A.qr()  .solve(b));  // No pivoting.     #include <StormEigen/QR>
+x = A.svd() .solve(b));  // Stable, slowest. #include <StormEigen/SVD>
 // .ldlt() -> .matrixL() and .matrixD()
 // .llt()  -> .matrixL()
 // .lu()   -> .matrixL() and .matrixU()

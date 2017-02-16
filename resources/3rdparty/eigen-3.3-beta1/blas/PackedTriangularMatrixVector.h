@@ -7,8 +7,8 @@
 // Public License v. 2.0. If a copy of the MPL was not distributed
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-#ifndef EIGEN_PACKED_TRIANGULAR_MATRIX_VECTOR_H
-#define EIGEN_PACKED_TRIANGULAR_MATRIX_VECTOR_H
+#ifndef STORMEIGEN_PACKED_TRIANGULAR_MATRIX_VECTOR_H
+#define STORMEIGEN_PACKED_TRIANGULAR_MATRIX_VECTOR_H
 
 namespace internal {
 
@@ -35,7 +35,7 @@ struct packed_triangular_matrix_vector_product<Index,Mode,LhsScalar,ConjLhs,RhsS
     {
       Index s = IsLower&&(HasUnitDiag||HasZeroDiag) ? 1 : 0;
       Index r = IsLower ? size-i: i+1;
-      if (EIGEN_IMPLIES(HasUnitDiag||HasZeroDiag, (--r)>0))
+      if (STORMEIGEN_IMPLIES(HasUnitDiag||HasZeroDiag, (--r)>0))
 	ResMap(res+(IsLower ? s+i : 0),r) += alpha * cj(rhs[i]) * ConjLhsType(LhsMap(lhs+s,r));
       if (HasUnitDiag)
 	res[i] += alpha * cj(rhs[i]);
@@ -65,7 +65,7 @@ struct packed_triangular_matrix_vector_product<Index,Mode,LhsScalar,ConjLhs,RhsS
     {
       Index s = !IsLower&&(HasUnitDiag||HasZeroDiag) ? 1 : 0;
       Index r = IsLower ? i+1 : size-i;
-      if (EIGEN_IMPLIES(HasUnitDiag||HasZeroDiag, (--r)>0))
+      if (STORMEIGEN_IMPLIES(HasUnitDiag||HasZeroDiag, (--r)>0))
 	res[i] += alpha * (ConjLhsType(LhsMap(lhs+s,r)).cwiseProduct(ConjRhsType(RhsMap(rhs+(IsLower ? 0 : s+i),r)))).sum();
       if (HasUnitDiag)
 	res[i] += alpha * cj(rhs[i]);
@@ -76,4 +76,4 @@ struct packed_triangular_matrix_vector_product<Index,Mode,LhsScalar,ConjLhs,RhsS
 
 } // end namespace internal
 
-#endif // EIGEN_PACKED_TRIANGULAR_MATRIX_VECTOR_H
+#endif // STORMEIGEN_PACKED_TRIANGULAR_MATRIX_VECTOR_H

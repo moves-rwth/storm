@@ -19,7 +19,7 @@ You can query the number of threads that will be used with:
 \code
 n = StormEigen::nbThreads( );
 \endcode
-You can disable Eigen's multi threading at compile time by defining the EIGEN_DONT_PARALLELIZE preprocessor token.
+You can disable Eigen's multi threading at compile time by defining the STORMEIGEN_DONT_PARALLELIZE preprocessor token.
 
 Currently, the following algorithms can make use of multi-threading:
  - general dense matrix - matrix products
@@ -33,7 +33,7 @@ Currently, the following algorithms can make use of multi-threading:
 
 In the case your own application is multithreaded, and multiple threads make calls to Eigen, then you have to initialize Eigen by calling the following routine \b before creating the threads:
 \code
-#include <Eigen/Core>
+#include <StormEigen/Core>
 
 int main(int argc, char** argv)
 {

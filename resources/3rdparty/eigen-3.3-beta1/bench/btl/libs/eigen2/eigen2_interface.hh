@@ -15,13 +15,13 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //
-#ifndef EIGEN2_INTERFACE_HH
-#define EIGEN2_INTERFACE_HH
+#ifndef STORMEIGEN2_INTERFACE_HH
+#define STORMEIGEN2_INTERFACE_HH
 // #include <cblas.h>
-#include <Eigen/Core>
-#include <Eigen/Cholesky>
-#include <Eigen/LU>
-#include <Eigen/QR>
+#include <StormEigen/Core>
+#include <StormEigen/Cholesky>
+#include <StormEigen/LU>
+#include <StormEigen/QR>
 #include <vector>
 #include "btl.hh"
 
@@ -45,9 +45,9 @@ public :
 
   static inline std::string name( void )
   {
-    #if defined(EIGEN_VECTORIZE_SSE)
+    #if defined(STORMEIGEN_VECTORIZE_SSE)
     if (SIZE==Dynamic) return "eigen2"; else return "tiny_eigen2";
-    #elif defined(EIGEN_VECTORIZE_ALTIVEC) || defined(EIGEN_VECTORIZE_VSX)
+    #elif defined(STORMEIGEN_VECTORIZE_ALTIVEC) || defined(STORMEIGEN_VECTORIZE_VSX)
     if (SIZE==Dynamic) return "eigen2"; else return "tiny_eigen2";
     #else
     if (SIZE==Dynamic) return "eigen2_novec"; else return "tiny_eigen2_novec";

@@ -8,7 +8,7 @@
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "main.h"
-#include <Eigen/QR>
+#include <StormEigen/QR>
 
 template<typename Derived1, typename Derived2>
 bool areNotApprox(const MatrixBase<Derived1>& m1, const MatrixBase<Derived2>& m2, typename Derived1::RealScalar epsilon = NumTraits<typename Derived1::RealScalar>::dummy_precision())

@@ -10,8 +10,8 @@
 
 #include "main.h"
 #include <limits>
-#include <Eigen/Eigenvalues>
-#include <Eigen/LU>
+#include <StormEigen/Eigenvalues>
+#include <StormEigen/LU>
 
 template<typename MatrixType> bool find_pivot(typename MatrixType::Scalar tol, MatrixType &diffs, Index col=0)
 {
@@ -149,14 +149,14 @@ void test_eigensolver_complex()
   int s = 0;
   for(int i = 0; i < g_repeat; i++) {
     CALL_SUBTEST_1( eigensolver(Matrix4cf()) );
-    s = internal::random<int>(1,EIGEN_TEST_MAX_SIZE/4);
+    s = internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE/4);
     CALL_SUBTEST_2( eigensolver(MatrixXcd(s,s)) );
     CALL_SUBTEST_3( eigensolver(Matrix<std::complex<float>, 1, 1>()) );
     CALL_SUBTEST_4( eigensolver(Matrix3f()) );
     TEST_SET_BUT_UNUSED_VARIABLE(s)
   }
   CALL_SUBTEST_1( eigensolver_verify_assert(Matrix4cf()) );
-  s = internal::random<int>(1,EIGEN_TEST_MAX_SIZE/4);
+  s = internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE/4);
   CALL_SUBTEST_2( eigensolver_verify_assert(MatrixXcd(s,s)) );
   CALL_SUBTEST_3( eigensolver_verify_assert(Matrix<std::complex<float>, 1, 1>()) );
   CALL_SUBTEST_4( eigensolver_verify_assert(Matrix3f()) );

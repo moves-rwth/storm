@@ -3,12 +3,12 @@ project(EigenLapack CXX)
 
 include("../cmake/language_support.cmake")
 
-workaround_9220(Fortran EIGEN_Fortran_COMPILER_WORKS)
+workaround_9220(Fortran STORMEIGEN_Fortran_COMPILER_WORKS)
 
-if(EIGEN_Fortran_COMPILER_WORKS)
+if(STORMEIGEN_Fortran_COMPILER_WORKS)
   enable_language(Fortran OPTIONAL)
   if(NOT CMAKE_Fortran_COMPILER)
-    set(EIGEN_Fortran_COMPILER_WORKS OFF)
+    set(STORMEIGEN_Fortran_COMPILER_WORKS OFF)
   endif()
 endif()
 
@@ -19,7 +19,7 @@ set(EigenLapack_SRCS
 single.cpp double.cpp complex_single.cpp complex_double.cpp ../blas/xerbla.cpp
 )
 
-if(EIGEN_Fortran_COMPILER_WORKS)
+if(STORMEIGEN_Fortran_COMPILER_WORKS)
 
 set(EigenLapack_SRCS  ${EigenLapack_SRCS}
   slarft.f  dlarft.f  clarft.f  zlarft.f
@@ -35,9 +35,9 @@ set(EigenLapack_SRCS  ${EigenLapack_SRCS}
   second_NONE.f dsecnd_NONE.f
 )
 
-option(EIGEN_ENABLE_LAPACK_TESTS OFF "Enbale the Lapack unit tests")
+option(STORMEIGEN_ENABLE_LAPACK_TESTS OFF "Enbale the Lapack unit tests")
 
-if(EIGEN_ENABLE_LAPACK_TESTS)
+if(STORMEIGEN_ENABLE_LAPACK_TESTS)
 
   get_filename_component(eigen_full_path_to_reference_lapack "./reference/" ABSOLUTE)
   if(NOT EXISTS ${eigen_full_path_to_reference_lapack})
@@ -60,7 +60,7 @@ if(EIGEN_ENABLE_LAPACK_TESTS)
       execute_process(COMMAND tar xzf  "lapack_addons_3.4.1.tgz" WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
     else()
       message(STATUS "Download of lapack_addons_3.4.1.tgz failed, LAPACK unit tests wont be enabled")
-      set(EIGEN_ENABLE_LAPACK_TESTS false)
+      set(STORMEIGEN_ENABLE_LAPACK_TESTS false)
     endif()
                   
   endif()
@@ -86,18 +86,18 @@ if(EIGEN_ENABLE_LAPACK_TESTS)
   endif()
   
   
-endif(EIGEN_ENABLE_LAPACK_TESTS)
+endif(STORMEIGEN_ENABLE_LAPACK_TESTS)
 
-endif(EIGEN_Fortran_COMPILER_WORKS)
+endif(STORMEIGEN_Fortran_COMPILER_WORKS)
 
 add_library(eigen_lapack_static ${EigenLapack_SRCS} ${ReferenceLapack_SRCS})
 add_library(eigen_lapack SHARED ${EigenLapack_SRCS})
 
 target_link_libraries(eigen_lapack  eigen_blas)
 
-if(EIGEN_STANDARD_LIBRARIES_TO_LINK_TO)
-  target_link_libraries(eigen_lapack_static ${EIGEN_STANDARD_LIBRARIES_TO_LINK_TO})
-  target_link_libraries(eigen_lapack        ${EIGEN_STANDARD_LIBRARIES_TO_LINK_TO})
+if(STORMEIGEN_STANDARD_LIBRARIES_TO_LINK_TO)
+  target_link_libraries(eigen_lapack_static ${STORMEIGEN_STANDARD_LIBRARIES_TO_LINK_TO})
+  target_link_libraries(eigen_lapack        ${STORMEIGEN_STANDARD_LIBRARIES_TO_LINK_TO})
 endif()
 
 add_dependencies(lapack eigen_lapack eigen_lapack_static)

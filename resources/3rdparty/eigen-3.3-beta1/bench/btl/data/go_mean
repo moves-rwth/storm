@@ -15,7 +15,7 @@ if [ $# > 3 ]; then
   prefix=$3
 fi
 
-EIGENDIR=`cat eigen_root_dir.txt`
+STORMEIGENDIR=`cat eigen_root_dir.txt`
 
 webpagefilename=$1/index.html
 meanstatsfilename=$1/mean.html
@@ -27,7 +27,7 @@ echo '<ul>'\
   '<li>' `cat /proc/cpuinfo | grep "model name" | head -n 1`\
   '  (' `uname -m` ')</li>'\
   '<li> compiler: ' `cat compiler_version.txt` '</li>'\
-  '<li> eigen3: ' `hg identify -i $EIGENDIR` '</li>'\
+  '<li> eigen3: ' `hg identify -i $STORMEIGENDIR` '</li>'\
   '</ul>' \
   '</p>'  >> $webpagefilename
 

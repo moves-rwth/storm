@@ -17,11 +17,11 @@
 
 bool eigen_use_specific_block_size;
 int eigen_block_size_k, eigen_block_size_m, eigen_block_size_n;
-#define EIGEN_TEST_SPECIFIC_BLOCKING_SIZES eigen_use_specific_block_size
-#define EIGEN_TEST_SPECIFIC_BLOCKING_SIZE_K eigen_block_size_k
-#define EIGEN_TEST_SPECIFIC_BLOCKING_SIZE_M eigen_block_size_m
-#define EIGEN_TEST_SPECIFIC_BLOCKING_SIZE_N eigen_block_size_n
-#include <Eigen/Core>
+#define STORMEIGEN_TEST_SPECIFIC_BLOCKING_SIZES eigen_use_specific_block_size
+#define STORMEIGEN_TEST_SPECIFIC_BLOCKING_SIZE_K eigen_block_size_k
+#define STORMEIGEN_TEST_SPECIFIC_BLOCKING_SIZE_M eigen_block_size_m
+#define STORMEIGEN_TEST_SPECIFIC_BLOCKING_SIZE_N eigen_block_size_n
+#include <StormEigen/Core>
 
 #include <bench/BenchTimer.h>
 

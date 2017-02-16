@@ -1,8 +1,8 @@
-#include "../Eigen/Sparse"
+#include "../StormEigen/Sparse"
 
 using namespace StormEigen;
 
-#ifdef EIGEN_SHOULD_FAIL_TO_BUILD
+#ifdef STORMEIGEN_SHOULD_FAIL_TO_BUILD
 void call_ref(Ref<SparseMatrix<float> > a) { }
 #else
 void call_ref(const Ref<const SparseMatrix<float> > &a) { }

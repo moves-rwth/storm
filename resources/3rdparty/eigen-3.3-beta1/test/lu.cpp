@@ -8,7 +8,7 @@
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "main.h"
-#include <Eigen/LU>
+#include <StormEigen/LU>
 using namespace std;
 
 template<typename MatrixType> void lu_non_invertible()
@@ -21,7 +21,7 @@ template<typename MatrixType> void lu_non_invertible()
   Index rows, cols, cols2;
   if(MatrixType::RowsAtCompileTime==Dynamic)
   {
-    rows = internal::random<Index>(2,EIGEN_TEST_MAX_SIZE);
+    rows = internal::random<Index>(2,STORMEIGEN_TEST_MAX_SIZE);
   }
   else
   {
@@ -29,8 +29,8 @@ template<typename MatrixType> void lu_non_invertible()
   }
   if(MatrixType::ColsAtCompileTime==Dynamic)
   {
-    cols = internal::random<Index>(2,EIGEN_TEST_MAX_SIZE);
-    cols2 = internal::random<int>(2,EIGEN_TEST_MAX_SIZE);
+    cols = internal::random<Index>(2,STORMEIGEN_TEST_MAX_SIZE);
+    cols2 = internal::random<int>(2,STORMEIGEN_TEST_MAX_SIZE);
   }
   else
   {
@@ -122,7 +122,7 @@ template<typename MatrixType> void lu_invertible()
   typedef typename NumTraits<typename MatrixType::Scalar>::Real RealScalar;
   Index size = MatrixType::RowsAtCompileTime;
   if( size==Dynamic)
-    size = internal::random<Index>(1,EIGEN_TEST_MAX_SIZE);
+    size = internal::random<Index>(1,STORMEIGEN_TEST_MAX_SIZE);
 
   MatrixType m1(size, size), m2(size, size), m3(size, size);
   FullPivLU<MatrixType> lu;

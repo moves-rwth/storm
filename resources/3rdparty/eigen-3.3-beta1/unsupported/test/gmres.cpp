@@ -9,7 +9,7 @@
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "../../test/sparse_solver.h"
-#include <Eigen/IterativeSolvers>
+#include <StormEigen/IterativeSolvers>
 
 template<typename T> void test_gmres_T()
 {

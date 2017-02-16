@@ -9,7 +9,7 @@
 
 #include "main.h"
 
-#include <Eigen/CXX11/Tensor>
+#include <StormEigen/CXX11/Tensor>
 
 static void test_default()
 {
@@ -51,7 +51,7 @@ struct MyGenerator {
   typename internal::packet_traits<int>::type packetOp(
       StormEigen::DenseIndex packet_location, StormEigen::DenseIndex /*unused*/ = 0) const {
     const int packetSize = internal::packet_traits<int>::size;
-    EIGEN_ALIGN_MAX int values[packetSize];
+    STORMEIGEN_ALIGN_MAX int values[packetSize];
     for (int i = 0; i < packetSize; ++i) {
       values[i] = static_cast<int>(3 * (packet_location + i));
     }

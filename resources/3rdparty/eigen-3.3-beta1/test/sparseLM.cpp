@@ -12,7 +12,7 @@
 #include <iomanip>
 
 #include "main.h"
-#include <Eigen/LevenbergMarquardt>
+#include <StormEigen/LevenbergMarquardt>
 
 using namespace std;
 using namespace StormEigen;

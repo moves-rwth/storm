@@ -1,11 +1,11 @@
-#include <Eigen/Core>
+#include <StormEigen/Core>
 #include <iostream>
 using namespace StormEigen;
 using namespace std;
 
 // define a custom template binary functor
 template<typename Scalar> struct MakeComplexOp {
-  EIGEN_EMPTY_STRUCT_CTOR(MakeComplexOp)
+  STORMEIGEN_EMPTY_STRUCT_CTOR(MakeComplexOp)
   typedef complex<Scalar> result_type;
   complex<Scalar> operator()(const Scalar& a, const Scalar& b) const { return complex<Scalar>(a,b); }
 };

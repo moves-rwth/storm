@@ -1,6 +1,6 @@
-#include "../Eigen/Eigenvalues"
+#include "../StormEigen/Eigenvalues"
 
-#ifdef EIGEN_SHOULD_FAIL_TO_BUILD
+#ifdef STORMEIGEN_SHOULD_FAIL_TO_BUILD
 #define SCALAR std::complex<double>
 #else
 #define SCALAR float

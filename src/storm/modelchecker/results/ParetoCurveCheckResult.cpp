@@ -1,47 +1,29 @@
 #include "storm/modelchecker/results/ParetoCurveCheckResult.h"
 
 #include "storm/adapters/CarlAdapter.h"
-#include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
-#include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
-
-#include "storm/exceptions/InvalidOperationException.h"
 
 namespace storm {
     namespace modelchecker {
+
         template<typename ValueType>
         ParetoCurveCheckResult<ValueType>::ParetoCurveCheckResult() {
             // Intentionally left empty.
         }
-        
+
         template<typename ValueType>
-        ParetoCurveCheckResult<ValueType>::ParetoCurveCheckResult(storm::storage::sparse::state_type const& state, std::vector<point_type> const& points, polytope_type const& underApproximation, polytope_type const& overApproximation) : state(state), points(points), underApproximation(underApproximation), overApproximation(overApproximation) {
+        ParetoCurveCheckResult<ValueType>::ParetoCurveCheckResult(std::vector<point_type> const& points, polytope_type const& underApproximation, polytope_type const& overApproximation) : points(points), underApproximation(underApproximation), overApproximation(overApproximation) {
             // Intentionally left empty.
         }
-        
+
         template<typename ValueType>
-        ParetoCurveCheckResult<ValueType>::ParetoCurveCheckResult(storm::storage::sparse::state_type const& state, std::vector<point_type>&& points, polytope_type&& underApproximation, polytope_type&& overApproximation) : state(state), points(points), underApproximation(underApproximation), overApproximation(overApproximation) {
+        ParetoCurveCheckResult<ValueType>::ParetoCurveCheckResult(std::vector<point_type>&& points, polytope_type&& underApproximation, polytope_type&& overApproximation) : points(points), underApproximation(underApproximation), overApproximation(overApproximation) {
             // Intentionally left empty.
         }
-        
+
         template<typename ValueType>
         bool ParetoCurveCheckResult<ValueType>::isParetoCurveCheckResult() const {
             return true;
-        }
-        
-        template<typename ValueType>
-        void ParetoCurveCheckResult<ValueType>::filter(QualitativeCheckResult const& filter) {
-            STORM_LOG_THROW(filter.isExplicitQualitativeCheckResult(), storm::exceptions::InvalidOperationException, "Cannot filter explicit check result with non-explicit filter.");
-            STORM_LOG_THROW(filter.isResultForAllStates(), storm::exceptions::InvalidOperationException, "Cannot filter check result with non-complete filter.");
-            ExplicitQualitativeCheckResult const& explicitFilter = filter.asExplicitQualitativeCheckResult();
-            ExplicitQualitativeCheckResult::vector_type const& filterTruthValues = explicitFilter.getTruthValuesVector();
-            
-            STORM_LOG_THROW(filterTruthValues.getNumberOfSetBits() == 1 && filterTruthValues.get(state), storm::exceptions::InvalidOperationException, "The check result fails to contain some results referred to by the filter.");
-        }
-        
-        template<typename ValueType>
-        storm::storage::sparse::state_type const& ParetoCurveCheckResult<ValueType>:: getState() const {
-            return state;
         }
         
         template<typename ValueType>

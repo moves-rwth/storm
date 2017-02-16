@@ -9,16 +9,16 @@
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 // discard stack allocation as that too bypasses malloc
-#define EIGEN_STACK_ALLOCATION_LIMIT 0
+#define STORMEIGEN_STACK_ALLOCATION_LIMIT 0
 // heap allocation will raise an assert if enabled at runtime
-#define EIGEN_RUNTIME_NO_MALLOC
+#define STORMEIGEN_RUNTIME_NO_MALLOC
 
 #include "main.h"
-#include <Eigen/Cholesky>
-#include <Eigen/Eigenvalues>
-#include <Eigen/LU>
-#include <Eigen/QR>
-#include <Eigen/SVD>
+#include <StormEigen/Cholesky>
+#include <StormEigen/Eigenvalues>
+#include <StormEigen/LU>
+#include <StormEigen/QR>
+#include <StormEigen/SVD>
 
 template<typename MatrixType> void nomalloc(const MatrixType& m)
 {

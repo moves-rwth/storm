@@ -1,7 +1,7 @@
 // g++ -O3 -DNDEBUG benchmarkX.cpp -o benchmarkX && time ./benchmarkX
 
 #include <iostream>
-#include <Eigen/Core>
+#include <StormEigen/Core>
 
 using namespace std;
 using namespace StormEigen;

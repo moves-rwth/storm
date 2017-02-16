@@ -35,9 +35,9 @@ if (TENSOR_FOUND)
     btl_add_bench(btl_tensor_novec_linear main_linear.cpp OFF)
     btl_add_bench(btl_tensor_novec_vecmat main_vecmat.cpp OFF)
     btl_add_bench(btl_tensor_novec_matmat main_matmat.cpp OFF)
-    btl_add_target_property(btl_tensor_novec_linear COMPILE_FLAGS "-fno-exceptions -DEIGEN_DONT_VECTORIZE -DBTL_PREFIX=tensor_novec")
-    btl_add_target_property(btl_tensor_novec_vecmat COMPILE_FLAGS "-fno-exceptions -DEIGEN_DONT_VECTORIZE -DBTL_PREFIX=tensor_novec")
-    btl_add_target_property(btl_tensor_novec_matmat COMPILE_FLAGS "-fno-exceptions -DEIGEN_DONT_VECTORIZE -DBTL_PREFIX=tensor_novec")
+    btl_add_target_property(btl_tensor_novec_linear COMPILE_FLAGS "-fno-exceptions -DSTORMEIGEN_DONT_VECTORIZE -DBTL_PREFIX=tensor_novec")
+    btl_add_target_property(btl_tensor_novec_vecmat COMPILE_FLAGS "-fno-exceptions -DSTORMEIGEN_DONT_VECTORIZE -DBTL_PREFIX=tensor_novec")
+    btl_add_target_property(btl_tensor_novec_matmat COMPILE_FLAGS "-fno-exceptions -DSTORMEIGEN_DONT_VECTORIZE -DBTL_PREFIX=tensor_novec")
 
   endif(NOT BTL_NOVEC)
 

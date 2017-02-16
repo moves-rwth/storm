@@ -10,67 +10,67 @@
 
 #include <iostream>
 #include <fstream>
-#include <Eigen/SparseCore>
+#include <StormEigen/SparseCore>
 #include <bench/BenchTimer.h>
 #include <cstdlib>
 #include <string>
-#include <Eigen/Cholesky>
-#include <Eigen/Jacobi>
-#include <Eigen/Householder>
-#include <Eigen/IterativeLinearSolvers>
-#include <unsupported/Eigen/IterativeSolvers>
-#include <Eigen/LU>
-#include <unsupported/Eigen/SparseExtra>
-#include <Eigen/SparseLU>
+#include <StormEigen/Cholesky>
+#include <StormEigen/Jacobi>
+#include <StormEigen/Householder>
+#include <StormEigen/IterativeLinearSolvers>
+#include <unsupported/StormEigen/IterativeSolvers>
+#include <StormEigen/LU>
+#include <unsupported/StormEigen/SparseExtra>
+#include <StormEigen/SparseLU>
 
 #include "spbenchstyle.h"
 
-#ifdef EIGEN_METIS_SUPPORT
-#include <Eigen/MetisSupport>
+#ifdef STORMEIGEN_METIS_SUPPORT
+#include <StormEigen/MetisSupport>
 #endif
 
-#ifdef EIGEN_CHOLMOD_SUPPORT
-#include <Eigen/CholmodSupport>
+#ifdef STORMEIGEN_CHOLMOD_SUPPORT
+#include <StormEigen/CholmodSupport>
 #endif
 
-#ifdef EIGEN_UMFPACK_SUPPORT
-#include <Eigen/UmfPackSupport>
+#ifdef STORMEIGEN_UMFPACK_SUPPORT
+#include <StormEigen/UmfPackSupport>
 #endif
 
-#ifdef EIGEN_PARDISO_SUPPORT
-#include <Eigen/PardisoSupport>
+#ifdef STORMEIGEN_PARDISO_SUPPORT
+#include <StormEigen/PardisoSupport>
 #endif
 
-#ifdef EIGEN_SUPERLU_SUPPORT
-#include <Eigen/SuperLUSupport>
+#ifdef STORMEIGEN_SUPERLU_SUPPORT
+#include <StormEigen/SuperLUSupport>
 #endif
 
-#ifdef EIGEN_PASTIX_SUPPORT
-#include <Eigen/PaStiXSupport>
+#ifdef STORMEIGEN_PASTIX_SUPPORT
+#include <StormEigen/PaStiXSupport>
 #endif
 
 // CONSTANTS
-#define EIGEN_UMFPACK  10
-#define EIGEN_SUPERLU  20
-#define EIGEN_PASTIX  30
-#define EIGEN_PARDISO  40
-#define EIGEN_SPARSELU_COLAMD 50
-#define EIGEN_SPARSELU_METIS 51
-#define EIGEN_BICGSTAB  60
-#define EIGEN_BICGSTAB_ILUT  61
-#define EIGEN_GMRES 70
-#define EIGEN_GMRES_ILUT 71
-#define EIGEN_SIMPLICIAL_LDLT  80
-#define EIGEN_CHOLMOD_LDLT  90
-#define EIGEN_PASTIX_LDLT  100
-#define EIGEN_PARDISO_LDLT  110
-#define EIGEN_SIMPLICIAL_LLT  120
-#define EIGEN_CHOLMOD_SUPERNODAL_LLT  130
-#define EIGEN_CHOLMOD_SIMPLICIAL_LLT  140
-#define EIGEN_PASTIX_LLT  150
-#define EIGEN_PARDISO_LLT  160
-#define EIGEN_CG  170
-#define EIGEN_CG_PRECOND  180
+#define STORMEIGEN_UMFPACK  10
+#define STORMEIGEN_SUPERLU  20
+#define STORMEIGEN_PASTIX  30
+#define STORMEIGEN_PARDISO  40
+#define STORMEIGEN_SPARSELU_COLAMD 50
+#define STORMEIGEN_SPARSELU_METIS 51
+#define STORMEIGEN_BICGSTAB  60
+#define STORMEIGEN_BICGSTAB_ILUT  61
+#define STORMEIGEN_GMRES 70
+#define STORMEIGEN_GMRES_ILUT 71
+#define STORMEIGEN_SIMPLICIAL_LDLT  80
+#define STORMEIGEN_CHOLMOD_LDLT  90
+#define STORMEIGEN_PASTIX_LDLT  100
+#define STORMEIGEN_PARDISO_LDLT  110
+#define STORMEIGEN_SIMPLICIAL_LLT  120
+#define STORMEIGEN_CHOLMOD_SUPERNODAL_LLT  130
+#define STORMEIGEN_CHOLMOD_SIMPLICIAL_LLT  140
+#define STORMEIGEN_PASTIX_LLT  150
+#define STORMEIGEN_PARDISO_LLT  160
+#define STORMEIGEN_CG  170
+#define STORMEIGEN_CG_PRECOND  180
 
 using namespace StormEigen;
 using namespace std; 
@@ -103,106 +103,106 @@ void printStatheader(std::ofstream& out)
   printBenchStyle(out); 
   // List all available solvers 
   out << " <AVAILSOLVER> \n";
-#ifdef EIGEN_UMFPACK_SUPPORT
-  out <<"  <SOLVER ID='" << EIGEN_UMFPACK << "'>\n"; 
+#ifdef STORMEIGEN_UMFPACK_SUPPORT
+  out <<"  <SOLVER ID='" << STORMEIGEN_UMFPACK << "'>\n"; 
   out << "   <TYPE> LU </TYPE> \n";
   out << "   <PACKAGE> UMFPACK </PACKAGE> \n"; 
   out << "  </SOLVER> \n"; 
 #endif
-#ifdef EIGEN_SUPERLU_SUPPORT
-  out <<"  <SOLVER ID='" << EIGEN_SUPERLU << "'>\n"; 
+#ifdef STORMEIGEN_SUPERLU_SUPPORT
+  out <<"  <SOLVER ID='" << STORMEIGEN_SUPERLU << "'>\n"; 
   out << "   <TYPE> LU </TYPE> \n";
   out << "   <PACKAGE> SUPERLU </PACKAGE> \n"; 
   out << "  </SOLVER> \n"; 
 #endif
-#ifdef EIGEN_CHOLMOD_SUPPORT
-  out <<"  <SOLVER ID='" << EIGEN_CHOLMOD_SIMPLICIAL_LLT << "'>\n"; 
+#ifdef STORMEIGEN_CHOLMOD_SUPPORT
+  out <<"  <SOLVER ID='" << STORMEIGEN_CHOLMOD_SIMPLICIAL_LLT << "'>\n"; 
   out << "   <TYPE> LLT SP</TYPE> \n";
   out << "   <PACKAGE> CHOLMOD </PACKAGE> \n";
   out << "  </SOLVER> \n"; 
   
-  out <<"  <SOLVER ID='" << EIGEN_CHOLMOD_SUPERNODAL_LLT << "'>\n"; 
+  out <<"  <SOLVER ID='" << STORMEIGEN_CHOLMOD_SUPERNODAL_LLT << "'>\n"; 
   out << "   <TYPE> LLT</TYPE> \n";
   out << "   <PACKAGE> CHOLMOD </PACKAGE> \n";
   out << "  </SOLVER> \n";
   
-  out <<"  <SOLVER ID='" << EIGEN_CHOLMOD_LDLT << "'>\n"; 
+  out <<"  <SOLVER ID='" << STORMEIGEN_CHOLMOD_LDLT << "'>\n"; 
   out << "   <TYPE> LDLT </TYPE> \n";
   out << "   <PACKAGE> CHOLMOD </PACKAGE> \n";  
   out << "  </SOLVER> \n"; 
 #endif
-#ifdef EIGEN_PARDISO_SUPPORT
-  out <<"  <SOLVER ID='" << EIGEN_PARDISO << "'>\n"; 
+#ifdef STORMEIGEN_PARDISO_SUPPORT
+  out <<"  <SOLVER ID='" << STORMEIGEN_PARDISO << "'>\n"; 
   out << "   <TYPE> LU </TYPE> \n";
   out << "   <PACKAGE> PARDISO </PACKAGE> \n"; 
   out << "  </SOLVER> \n"; 
   
-  out <<"  <SOLVER ID='" << EIGEN_PARDISO_LLT << "'>\n"; 
+  out <<"  <SOLVER ID='" << STORMEIGEN_PARDISO_LLT << "'>\n"; 
   out << "   <TYPE> LLT </TYPE> \n";
   out << "   <PACKAGE> PARDISO </PACKAGE> \n"; 
   out << "  </SOLVER> \n"; 
   
-  out <<"  <SOLVER ID='" << EIGEN_PARDISO_LDLT << "'>\n"; 
+  out <<"  <SOLVER ID='" << STORMEIGEN_PARDISO_LDLT << "'>\n"; 
   out << "   <TYPE> LDLT </TYPE> \n";
   out << "   <PACKAGE> PARDISO </PACKAGE> \n"; 
   out << "  </SOLVER> \n"; 
 #endif
-#ifdef EIGEN_PASTIX_SUPPORT
-  out <<"  <SOLVER ID='" << EIGEN_PASTIX << "'>\n"; 
+#ifdef STORMEIGEN_PASTIX_SUPPORT
+  out <<"  <SOLVER ID='" << STORMEIGEN_PASTIX << "'>\n"; 
   out << "   <TYPE> LU </TYPE> \n";
   out << "   <PACKAGE> PASTIX </PACKAGE> \n"; 
   out << "  </SOLVER> \n"; 
   
-  out <<"  <SOLVER ID='" << EIGEN_PASTIX_LLT << "'>\n"; 
+  out <<"  <SOLVER ID='" << STORMEIGEN_PASTIX_LLT << "'>\n"; 
   out << "   <TYPE> LLT </TYPE> \n";
   out << "   <PACKAGE> PASTIX </PACKAGE> \n"; 
   out << "  </SOLVER> \n"; 
   
-  out <<"  <SOLVER ID='" << EIGEN_PASTIX_LDLT << "'>\n"; 
+  out <<"  <SOLVER ID='" << STORMEIGEN_PASTIX_LDLT << "'>\n"; 
   out << "   <TYPE> LDLT </TYPE> \n";
   out << "   <PACKAGE> PASTIX </PACKAGE> \n"; 
   out << "  </SOLVER> \n"; 
 #endif
   
-  out <<"  <SOLVER ID='" << EIGEN_BICGSTAB << "'>\n"; 
+  out <<"  <SOLVER ID='" << STORMEIGEN_BICGSTAB << "'>\n"; 
   out << "   <TYPE> BICGSTAB </TYPE> \n";
-  out << "   <PACKAGE> EIGEN </PACKAGE> \n"; 
+  out << "   <PACKAGE> STORMEIGEN </PACKAGE> \n"; 
   out << "  </SOLVER> \n"; 
   
-  out <<"  <SOLVER ID='" << EIGEN_BICGSTAB_ILUT << "'>\n"; 
+  out <<"  <SOLVER ID='" << STORMEIGEN_BICGSTAB_ILUT << "'>\n"; 
   out << "   <TYPE> BICGSTAB_ILUT </TYPE> \n";
-  out << "   <PACKAGE> EIGEN </PACKAGE> \n"; 
+  out << "   <PACKAGE> STORMEIGEN </PACKAGE> \n"; 
   out << "  </SOLVER> \n"; 
   
-  out <<"  <SOLVER ID='" << EIGEN_GMRES_ILUT << "'>\n"; 
+  out <<"  <SOLVER ID='" << STORMEIGEN_GMRES_ILUT << "'>\n"; 
   out << "   <TYPE> GMRES_ILUT </TYPE> \n";
-  out << "   <PACKAGE> EIGEN </PACKAGE> \n"; 
+  out << "   <PACKAGE> STORMEIGEN </PACKAGE> \n"; 
   out << "  </SOLVER> \n"; 
   
-  out <<"  <SOLVER ID='" << EIGEN_SIMPLICIAL_LDLT << "'>\n"; 
+  out <<"  <SOLVER ID='" << STORMEIGEN_SIMPLICIAL_LDLT << "'>\n"; 
   out << "   <TYPE> LDLT </TYPE> \n";
-  out << "   <PACKAGE> EIGEN </PACKAGE> \n"; 
+  out << "   <PACKAGE> STORMEIGEN </PACKAGE> \n"; 
   out << "  </SOLVER> \n"; 
   
-  out <<"  <SOLVER ID='" << EIGEN_SIMPLICIAL_LLT << "'>\n"; 
+  out <<"  <SOLVER ID='" << STORMEIGEN_SIMPLICIAL_LLT << "'>\n"; 
   out << "   <TYPE> LLT </TYPE> \n";
-  out << "   <PACKAGE> EIGEN </PACKAGE> \n"; 
+  out << "   <PACKAGE> STORMEIGEN </PACKAGE> \n"; 
   out << "  </SOLVER> \n"; 
   
-  out <<"  <SOLVER ID='" << EIGEN_CG << "'>\n"; 
+  out <<"  <SOLVER ID='" << STORMEIGEN_CG << "'>\n"; 
   out << "   <TYPE> CG </TYPE> \n";
-  out << "   <PACKAGE> EIGEN </PACKAGE> \n"; 
+  out << "   <PACKAGE> STORMEIGEN </PACKAGE> \n"; 
   out << "  </SOLVER> \n"; 
   
-  out <<"  <SOLVER ID='" << EIGEN_SPARSELU_COLAMD << "'>\n"; 
+  out <<"  <SOLVER ID='" << STORMEIGEN_SPARSELU_COLAMD << "'>\n"; 
   out << "   <TYPE> LU_COLAMD </TYPE> \n";
-  out << "   <PACKAGE> EIGEN </PACKAGE> \n"; 
+  out << "   <PACKAGE> STORMEIGEN </PACKAGE> \n"; 
   out << "  </SOLVER> \n"; 
   
-#ifdef EIGEN_METIS_SUPPORT
-  out <<"  <SOLVER ID='" << EIGEN_SPARSELU_METIS << "'>\n"; 
+#ifdef STORMEIGEN_METIS_SUPPORT
+  out <<"  <SOLVER ID='" << STORMEIGEN_SPARSELU_METIS << "'>\n"; 
   out << "   <TYPE> LU_METIS </TYPE> \n";
-  out << "   <PACKAGE> EIGEN </PACKAGE> \n"; 
+  out << "   <PACKAGE> STORMEIGEN </PACKAGE> \n"; 
   out << "  </SOLVER> \n"; 
 #endif
   out << " </AVAILSOLVER> \n"; 
@@ -309,50 +309,50 @@ void SelectSolvers(const SparseMatrix<Scalar>&A, unsigned int sym, Matrix<Scalar
   best_time_id = 0; 
   best_time_val = 0.0;
   //UMFPACK
-  #ifdef EIGEN_UMFPACK_SUPPORT
+  #ifdef STORMEIGEN_UMFPACK_SUPPORT
   {
     cout << "Solving with UMFPACK LU ... \n"; 
     UmfPackLU<SpMat> solver; 
-    call_directsolver(solver, EIGEN_UMFPACK, A, b, refX,statFile); 
+    call_directsolver(solver, STORMEIGEN_UMFPACK, A, b, refX,statFile); 
   }
   #endif
     //SuperLU
-  #ifdef EIGEN_SUPERLU_SUPPORT
+  #ifdef STORMEIGEN_SUPERLU_SUPPORT
   {
     cout << "\nSolving with SUPERLU ... \n"; 
     SuperLU<SpMat> solver;
-    call_directsolver(solver, EIGEN_SUPERLU, A, b, refX,statFile); 
+    call_directsolver(solver, STORMEIGEN_SUPERLU, A, b, refX,statFile); 
   }
   #endif
     
    // PaStix LU
-  #ifdef EIGEN_PASTIX_SUPPORT
+  #ifdef STORMEIGEN_PASTIX_SUPPORT
   {
     cout << "\nSolving with PASTIX LU ... \n"; 
     PastixLU<SpMat> solver; 
-    call_directsolver(solver, EIGEN_PASTIX, A, b, refX,statFile) ;
+    call_directsolver(solver, STORMEIGEN_PASTIX, A, b, refX,statFile) ;
   }
   #endif
 
    //PARDISO LU
-  #ifdef EIGEN_PARDISO_SUPPORT
+  #ifdef STORMEIGEN_PARDISO_SUPPORT
   {
     cout << "\nSolving with PARDISO LU ... \n"; 
     PardisoLU<SpMat>  solver; 
-    call_directsolver(solver, EIGEN_PARDISO, A, b, refX,statFile);
+    call_directsolver(solver, STORMEIGEN_PARDISO, A, b, refX,statFile);
   }
   #endif
   
   // Eigen SparseLU METIS
   cout << "\n Solving with Sparse LU AND COLAMD ... \n";
   SparseLU<SpMat, COLAMDOrdering<int> >   solver;
-  call_directsolver(solver, EIGEN_SPARSELU_COLAMD, A, b, refX, statFile); 
+  call_directsolver(solver, STORMEIGEN_SPARSELU_COLAMD, A, b, refX, statFile); 
   // Eigen SparseLU METIS
-  #ifdef EIGEN_METIS_SUPPORT
+  #ifdef STORMEIGEN_METIS_SUPPORT
   {
     cout << "\n Solving with Sparse LU AND METIS ... \n";
     SparseLU<SpMat, MetisOrdering<int> >   solver;
-    call_directsolver(solver, EIGEN_SPARSELU_METIS, A, b, refX, statFile); 
+    call_directsolver(solver, STORMEIGEN_SPARSELU_METIS, A, b, refX, statFile); 
   }
   #endif
   
@@ -360,13 +360,13 @@ void SelectSolvers(const SparseMatrix<Scalar>&A, unsigned int sym, Matrix<Scalar
   {
     cout << "\nSolving with BiCGSTAB ... \n"; 
     BiCGSTAB<SpMat> solver; 
-    call_itersolver(solver, EIGEN_BICGSTAB, A, b, refX,statFile);
+    call_itersolver(solver, STORMEIGEN_BICGSTAB, A, b, refX,statFile);
   }
   //BiCGSTAB+ILUT
   {
     cout << "\nSolving with BiCGSTAB and ILUT ... \n"; 
     BiCGSTAB<SpMat, IncompleteLUT<Scalar> > solver; 
-    call_itersolver(solver, EIGEN_BICGSTAB_ILUT, A, b, refX,statFile); 
+    call_itersolver(solver, STORMEIGEN_BICGSTAB_ILUT, A, b, refX,statFile); 
   }
   
    
@@ -374,13 +374,13 @@ void SelectSolvers(const SparseMatrix<Scalar>&A, unsigned int sym, Matrix<Scalar
 //   {
 //     cout << "\nSolving with GMRES ... \n"; 
 //     GMRES<SpMat> solver; 
-//     call_itersolver(solver, EIGEN_GMRES, A, b, refX,statFile); 
+//     call_itersolver(solver, STORMEIGEN_GMRES, A, b, refX,statFile); 
 //   }
   //GMRES+ILUT
   {
     cout << "\nSolving with GMRES and ILUT ... \n"; 
     GMRES<SpMat, IncompleteLUT<Scalar> > solver; 
-    call_itersolver(solver, EIGEN_GMRES_ILUT, A, b, refX,statFile);
+    call_itersolver(solver, STORMEIGEN_GMRES_ILUT, A, b, refX,statFile);
   }
   
   // Hermitian and not necessarily positive-definites
@@ -390,34 +390,34 @@ void SelectSolvers(const SparseMatrix<Scalar>&A, unsigned int sym, Matrix<Scalar
     {
       cout << "\nSolving with Simplicial LDLT ... \n"; 
       SimplicialLDLT<SpMat, Lower> solver;
-      call_directsolver(solver, EIGEN_SIMPLICIAL_LDLT, A, b, refX,statFile); 
+      call_directsolver(solver, STORMEIGEN_SIMPLICIAL_LDLT, A, b, refX,statFile); 
     }
     
     // CHOLMOD
-    #ifdef EIGEN_CHOLMOD_SUPPORT
+    #ifdef STORMEIGEN_CHOLMOD_SUPPORT
     {
       cout << "\nSolving with CHOLMOD LDLT ... \n"; 
       CholmodDecomposition<SpMat, Lower> solver;
       solver.setMode(CholmodLDLt);
-       call_directsolver(solver,EIGEN_CHOLMOD_LDLT, A, b, refX,statFile);
+       call_directsolver(solver,STORMEIGEN_CHOLMOD_LDLT, A, b, refX,statFile);
     }
     #endif
     
     //PASTIX LLT
-    #ifdef EIGEN_PASTIX_SUPPORT
+    #ifdef STORMEIGEN_PASTIX_SUPPORT
     {
       cout << "\nSolving with PASTIX LDLT ... \n"; 
       PastixLDLT<SpMat, Lower> solver; 
-      call_directsolver(solver,EIGEN_PASTIX_LDLT, A, b, refX,statFile); 
+      call_directsolver(solver,STORMEIGEN_PASTIX_LDLT, A, b, refX,statFile); 
     }
     #endif
     
     //PARDISO LLT
-    #ifdef EIGEN_PARDISO_SUPPORT
+    #ifdef STORMEIGEN_PARDISO_SUPPORT
     {
       cout << "\nSolving with PARDISO LDLT ... \n"; 
       PardisoLDLT<SpMat, Lower> solver; 
-      call_directsolver(solver,EIGEN_PARDISO_LDLT, A, b, refX,statFile); 
+      call_directsolver(solver,STORMEIGEN_PARDISO_LDLT, A, b, refX,statFile); 
     }
     #endif
   }
@@ -430,39 +430,39 @@ void SelectSolvers(const SparseMatrix<Scalar>&A, unsigned int sym, Matrix<Scalar
     {
       cout << "\nSolving with SIMPLICIAL LLT ... \n"; 
       SimplicialLLT<SpMat, Lower> solver; 
-      call_directsolver(solver,EIGEN_SIMPLICIAL_LLT, A, b, refX,statFile); 
+      call_directsolver(solver,STORMEIGEN_SIMPLICIAL_LLT, A, b, refX,statFile); 
     }
     
     // CHOLMOD
-    #ifdef EIGEN_CHOLMOD_SUPPORT
+    #ifdef STORMEIGEN_CHOLMOD_SUPPORT
     {
       // CholMOD SuperNodal LLT
       cout << "\nSolving with CHOLMOD LLT (Supernodal)... \n"; 
       CholmodDecomposition<SpMat, Lower> solver;
       solver.setMode(CholmodSupernodalLLt);
-       call_directsolver(solver,EIGEN_CHOLMOD_SUPERNODAL_LLT, A, b, refX,statFile);
+       call_directsolver(solver,STORMEIGEN_CHOLMOD_SUPERNODAL_LLT, A, b, refX,statFile);
       // CholMod Simplicial LLT
       cout << "\nSolving with CHOLMOD LLT (Simplicial) ... \n"; 
       solver.setMode(CholmodSimplicialLLt);
-      call_directsolver(solver,EIGEN_CHOLMOD_SIMPLICIAL_LLT, A, b, refX,statFile);
+      call_directsolver(solver,STORMEIGEN_CHOLMOD_SIMPLICIAL_LLT, A, b, refX,statFile);
     }
     #endif
     
     //PASTIX LLT
-    #ifdef EIGEN_PASTIX_SUPPORT
+    #ifdef STORMEIGEN_PASTIX_SUPPORT
     {
       cout << "\nSolving with PASTIX LLT ... \n"; 
       PastixLLT<SpMat, Lower> solver; 
-      call_directsolver(solver,EIGEN_PASTIX_LLT, A, b, refX,statFile);
+      call_directsolver(solver,STORMEIGEN_PASTIX_LLT, A, b, refX,statFile);
     }
     #endif
     
     //PARDISO LLT
-    #ifdef EIGEN_PARDISO_SUPPORT
+    #ifdef STORMEIGEN_PARDISO_SUPPORT
     {
       cout << "\nSolving with PARDISO LLT ... \n"; 
       PardisoLLT<SpMat, Lower> solver; 
-      call_directsolver(solver,EIGEN_PARDISO_LLT, A, b, refX,statFile); 
+      call_directsolver(solver,STORMEIGEN_PARDISO_LLT, A, b, refX,statFile); 
     }
     #endif
     
@@ -470,13 +470,13 @@ void SelectSolvers(const SparseMatrix<Scalar>&A, unsigned int sym, Matrix<Scalar
     {
       cout << "\nSolving with CG ... \n"; 
       ConjugateGradient<SpMat, Lower> solver; 
-      call_itersolver(solver,EIGEN_CG, A, b, refX,statFile);
+      call_itersolver(solver,STORMEIGEN_CG, A, b, refX,statFile);
     }
     //CG+IdentityPreconditioner
 //     {
 //       cout << "\nSolving with CG and IdentityPreconditioner ... \n"; 
 //       ConjugateGradient<SpMat, Lower, IdentityPreconditioner> solver; 
-//       call_itersolver(solver,EIGEN_CG_PRECOND, A, b, refX,statFile);
+//       call_itersolver(solver,STORMEIGEN_CG_PRECOND, A, b, refX,statFile);
 //     }
   } // End SPD matrices 
 }

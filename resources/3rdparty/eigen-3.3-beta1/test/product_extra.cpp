@@ -234,7 +234,7 @@ void unaligned_objects()
 }
 
 template<typename T>
-EIGEN_DONT_INLINE
+STORMEIGEN_DONT_INLINE
 Index test_compute_block_size(Index m, Index n, Index k)
 {
   Index mc(m), nc(n), kc(k);
@@ -259,12 +259,12 @@ Index compute_block_size()
 void test_product_extra()
 {
   for(int i = 0; i < g_repeat; i++) {
-    CALL_SUBTEST_1( product_extra(MatrixXf(internal::random<int>(1,EIGEN_TEST_MAX_SIZE), internal::random<int>(1,EIGEN_TEST_MAX_SIZE))) );
-    CALL_SUBTEST_2( product_extra(MatrixXd(internal::random<int>(1,EIGEN_TEST_MAX_SIZE), internal::random<int>(1,EIGEN_TEST_MAX_SIZE))) );
+    CALL_SUBTEST_1( product_extra(MatrixXf(internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE), internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE))) );
+    CALL_SUBTEST_2( product_extra(MatrixXd(internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE), internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE))) );
     CALL_SUBTEST_2( mat_mat_scalar_scalar_product() );
-    CALL_SUBTEST_3( product_extra(MatrixXcf(internal::random<int>(1,EIGEN_TEST_MAX_SIZE/2), internal::random<int>(1,EIGEN_TEST_MAX_SIZE/2))) );
-    CALL_SUBTEST_4( product_extra(MatrixXcd(internal::random<int>(1,EIGEN_TEST_MAX_SIZE/2), internal::random<int>(1,EIGEN_TEST_MAX_SIZE/2))) );
-    CALL_SUBTEST_1( zero_sized_objects(MatrixXf(internal::random<int>(1,EIGEN_TEST_MAX_SIZE), internal::random<int>(1,EIGEN_TEST_MAX_SIZE))) );
+    CALL_SUBTEST_3( product_extra(MatrixXcf(internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE/2), internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE/2))) );
+    CALL_SUBTEST_4( product_extra(MatrixXcd(internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE/2), internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE/2))) );
+    CALL_SUBTEST_1( zero_sized_objects(MatrixXf(internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE), internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE))) );
   }
   CALL_SUBTEST_5( bug_127<0>() );
   CALL_SUBTEST_5( bug_817<0>() );

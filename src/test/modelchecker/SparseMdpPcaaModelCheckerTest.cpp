@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
-#ifdef STORM_HAVE_HYPRO
+#if defined STORM_HAVE_HYPRO || defined STORM_HAVE_Z3_OPTIMIZE
 
 #include "storm/modelchecker/multiobjective/pcaa.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
@@ -110,4 +110,4 @@ TEST(SparseMdpPcaaModelCheckerTest, dpm) {
 
 
 
-#endif /* STORM_HAVE_HYPRO */
+#endif /* STORM_HAVE_HYPRO || defined STORM_HAVE_Z3_OPTIMIZE */

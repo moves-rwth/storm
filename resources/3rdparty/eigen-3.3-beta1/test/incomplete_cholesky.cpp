@@ -6,11 +6,11 @@
 // This Source Code Form is subject to the terms of the Mozilla
 // Public License v. 2.0. If a copy of the MPL was not distributed
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
-// #define EIGEN_DONT_VECTORIZE
-// #define EIGEN_MAX_ALIGN_BYTES 0
+// #define STORMEIGEN_DONT_VECTORIZE
+// #define STORMEIGEN_MAX_ALIGN_BYTES 0
 #include "sparse_solver.h"
-#include <Eigen/IterativeLinearSolvers>
-#include <unsupported/Eigen/IterativeSolvers>
+#include <StormEigen/IterativeLinearSolvers>
+#include <unsupported/StormEigen/IterativeSolvers>
 
 template<typename T, typename I> void test_incomplete_cholesky_T()
 {

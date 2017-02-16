@@ -23,7 +23,7 @@ struct general_matrix_vector_product_wrapper
   }
 };
 
-int EIGEN_BLAS_FUNC(gemv)(char *opa, int *m, int *n, RealScalar *palpha, RealScalar *pa, int *lda, RealScalar *pb, int *incb, RealScalar *pbeta, RealScalar *pc, int *incc)
+int STORMEIGEN_BLAS_FUNC(gemv)(char *opa, int *m, int *n, RealScalar *palpha, RealScalar *pa, int *lda, RealScalar *pb, int *incb, RealScalar *pbeta, RealScalar *pc, int *incc)
 {
   typedef void (*functype)(int, int, const Scalar *, int, const Scalar *, int , Scalar *, int, Scalar);
   static functype func[4];
@@ -87,7 +87,7 @@ int EIGEN_BLAS_FUNC(gemv)(char *opa, int *m, int *n, RealScalar *palpha, RealSca
   return 1;
 }
 
-int EIGEN_BLAS_FUNC(trsv)(char *uplo, char *opa, char *diag, int *n, RealScalar *pa, int *lda, RealScalar *pb, int *incb)
+int STORMEIGEN_BLAS_FUNC(trsv)(char *uplo, char *opa, char *diag, int *n, RealScalar *pa, int *lda, RealScalar *pb, int *incb)
 {
   typedef void (*functype)(int, const Scalar *, int, Scalar *);
   static functype func[16];
@@ -142,7 +142,7 @@ int EIGEN_BLAS_FUNC(trsv)(char *uplo, char *opa, char *diag, int *n, RealScalar 
 
 
 
-int EIGEN_BLAS_FUNC(trmv)(char *uplo, char *opa, char *diag, int *n, RealScalar *pa, int *lda, RealScalar *pb, int *incb)
+int STORMEIGEN_BLAS_FUNC(trmv)(char *uplo, char *opa, char *diag, int *n, RealScalar *pa, int *lda, RealScalar *pb, int *incb)
 {
   typedef void (*functype)(int, int, const Scalar *, int, const Scalar *, int, Scalar *, int, const Scalar&);
   static functype func[16];
@@ -211,7 +211,7 @@ int EIGEN_BLAS_FUNC(trmv)(char *uplo, char *opa, char *diag, int *n, RealScalar 
   *  where alpha and beta are scalars, x and y are vectors and A is an
   *  m by n band matrix, with kl sub-diagonals and ku super-diagonals.
   */
-int EIGEN_BLAS_FUNC(gbmv)(char *trans, int *m, int *n, int *kl, int *ku, RealScalar *palpha, RealScalar *pa, int *lda,
+int STORMEIGEN_BLAS_FUNC(gbmv)(char *trans, int *m, int *n, int *kl, int *ku, RealScalar *palpha, RealScalar *pa, int *lda,
                           RealScalar *px, int *incx, RealScalar *pbeta, RealScalar *py, int *incy)
 {
   Scalar* a = reinterpret_cast<Scalar*>(pa);
@@ -281,7 +281,7 @@ int EIGEN_BLAS_FUNC(gbmv)(char *trans, int *m, int *n, int *kl, int *ku, RealSca
   *  where x is an n element vector and  A is an n by n unit, or non-unit,
   *  upper or lower triangular band matrix, with ( k + 1 ) diagonals.
   */
-int EIGEN_BLAS_FUNC(tbmv)(char *uplo, char *opa, char *diag, int *n, int *k, RealScalar *pa, int *lda, RealScalar *px, int *incx)
+int STORMEIGEN_BLAS_FUNC(tbmv)(char *uplo, char *opa, char *diag, int *n, int *k, RealScalar *pa, int *lda, RealScalar *px, int *incx)
 {
   Scalar* a = reinterpret_cast<Scalar*>(pa);
   Scalar* x = reinterpret_cast<Scalar*>(px);
@@ -343,7 +343,7 @@ int EIGEN_BLAS_FUNC(tbmv)(char *uplo, char *opa, char *diag, int *n, int *k, Rea
   *  No test for singularity or near-singularity is included in this
   *  routine. Such tests must be performed before calling this routine.
   */
-int EIGEN_BLAS_FUNC(tbsv)(char *uplo, char *op, char *diag, int *n, int *k, RealScalar *pa, int *lda, RealScalar *px, int *incx)
+int STORMEIGEN_BLAS_FUNC(tbsv)(char *uplo, char *op, char *diag, int *n, int *k, RealScalar *pa, int *lda, RealScalar *px, int *incx)
 {
   typedef void (*functype)(int, int, const Scalar *, int, Scalar *);
   static functype func[16];
@@ -413,7 +413,7 @@ int EIGEN_BLAS_FUNC(tbsv)(char *uplo, char *op, char *diag, int *n, int *k, Real
   *  where x is an n element vector and  A is an n by n unit, or non-unit,
   *  upper or lower triangular matrix, supplied in packed form.
   */
-int EIGEN_BLAS_FUNC(tpmv)(char *uplo, char *opa, char *diag, int *n, RealScalar *pap, RealScalar *px, int *incx)
+int STORMEIGEN_BLAS_FUNC(tpmv)(char *uplo, char *opa, char *diag, int *n, RealScalar *pap, RealScalar *px, int *incx)
 {
   typedef void (*functype)(int, const Scalar*, const Scalar*, Scalar*, Scalar);
   static functype func[16];
@@ -484,7 +484,7 @@ int EIGEN_BLAS_FUNC(tpmv)(char *uplo, char *opa, char *diag, int *n, RealScalar 
   *  No test for singularity or near-singularity is included in this
   *  routine. Such tests must be performed before calling this routine.
   */
-int EIGEN_BLAS_FUNC(tpsv)(char *uplo, char *opa, char *diag, int *n, RealScalar *pap, RealScalar *px, int *incx)
+int STORMEIGEN_BLAS_FUNC(tpsv)(char *uplo, char *opa, char *diag, int *n, RealScalar *pap, RealScalar *px, int *incx)
 {
   typedef void (*functype)(int, const Scalar*, Scalar*);
   static functype func[16];

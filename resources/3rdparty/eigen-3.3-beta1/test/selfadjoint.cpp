@@ -39,14 +39,14 @@ template<typename MatrixType> void selfadjoint(const MatrixType& m)
 void bug_159()
 {
   Matrix3d m = Matrix3d::Random().selfadjointView<Lower>();
-  EIGEN_UNUSED_VARIABLE(m)
+  STORMEIGEN_UNUSED_VARIABLE(m)
 }
 
 void test_selfadjoint()
 {
   for(int i = 0; i < g_repeat ; i++)
   {
-    int s = internal::random<int>(1,EIGEN_TEST_MAX_SIZE);
+    int s = internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE);
 
     CALL_SUBTEST_1( selfadjoint(Matrix<float, 1, 1>()) );
     CALL_SUBTEST_2( selfadjoint(Matrix<float, 2, 2>()) );

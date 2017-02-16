@@ -9,10 +9,10 @@
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 // discard stack allocation as that too bypasses malloc
-#define EIGEN_STACK_ALLOCATION_LIMIT 0
-#define EIGEN_RUNTIME_NO_MALLOC
+#define STORMEIGEN_STACK_ALLOCATION_LIMIT 0
+#define STORMEIGEN_RUNTIME_NO_MALLOC
 #include "main.h"
-#include <Eigen/SVD>
+#include <StormEigen/SVD>
 
 #define SVD_DEFAULT(M) JacobiSVD<M>
 #define SVD_FOR_MIN_NORM(M) JacobiSVD<M,ColPivHouseholderQRPreconditioner>
@@ -103,8 +103,8 @@ void test_jacobisvd()
     CALL_SUBTEST_10( (svd_inf_nan<JacobiSVD<MatrixXd>, MatrixXd>()) );
   }
 
-  CALL_SUBTEST_7(( jacobisvd<MatrixXf>(MatrixXf(internal::random<int>(EIGEN_TEST_MAX_SIZE/4, EIGEN_TEST_MAX_SIZE/2), internal::random<int>(EIGEN_TEST_MAX_SIZE/4, EIGEN_TEST_MAX_SIZE/2))) ));
-  CALL_SUBTEST_8(( jacobisvd<MatrixXcd>(MatrixXcd(internal::random<int>(EIGEN_TEST_MAX_SIZE/4, EIGEN_TEST_MAX_SIZE/3), internal::random<int>(EIGEN_TEST_MAX_SIZE/4, EIGEN_TEST_MAX_SIZE/3))) ));
+  CALL_SUBTEST_7(( jacobisvd<MatrixXf>(MatrixXf(internal::random<int>(STORMEIGEN_TEST_MAX_SIZE/4, STORMEIGEN_TEST_MAX_SIZE/2), internal::random<int>(STORMEIGEN_TEST_MAX_SIZE/4, STORMEIGEN_TEST_MAX_SIZE/2))) ));
+  CALL_SUBTEST_8(( jacobisvd<MatrixXcd>(MatrixXcd(internal::random<int>(STORMEIGEN_TEST_MAX_SIZE/4, STORMEIGEN_TEST_MAX_SIZE/3), internal::random<int>(STORMEIGEN_TEST_MAX_SIZE/4, STORMEIGEN_TEST_MAX_SIZE/3))) ));
 
   // test matrixbase method
   CALL_SUBTEST_1(( jacobisvd_method<Matrix2cd>() ));

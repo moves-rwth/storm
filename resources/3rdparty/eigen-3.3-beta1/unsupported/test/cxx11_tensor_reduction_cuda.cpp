@@ -7,13 +7,13 @@
 // Public License v. 2.0. If a copy of the MPL was not distributed
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-#define EIGEN_TEST_NO_LONGDOUBLE
-#define EIGEN_TEST_NO_COMPLEX
-#define EIGEN_TEST_FUNC cxx11_tensor_reduction_cuda
-#define EIGEN_USE_GPU
+#define STORMEIGEN_TEST_NO_LONGDOUBLE
+#define STORMEIGEN_TEST_NO_COMPLEX
+#define STORMEIGEN_TEST_FUNC cxx11_tensor_reduction_cuda
+#define STORMEIGEN_USE_GPU
 
 #include "main.h"
-#include <unsupported/Eigen/CXX11/Tensor>
+#include <unsupported/StormEigen/CXX11/Tensor>
 
 
 template<int DataLayout>

@@ -1,5 +1,5 @@
 #include <iostream>
-#include <Eigen/Dense>
+#include <StormEigen/Dense>
 
 using namespace StormEigen;
 using namespace std;

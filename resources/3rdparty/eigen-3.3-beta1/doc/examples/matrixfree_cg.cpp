@@ -1,8 +1,8 @@
 #include <iostream>
-#include <Eigen/Core>
-#include <Eigen/Dense>
-#include <Eigen/IterativeLinearSolvers>
-#include <unsupported/Eigen/IterativeSolvers>
+#include <StormEigen/Core>
+#include <StormEigen/Dense>
+#include <StormEigen/IterativeLinearSolvers>
+#include <unsupported/StormEigen/IterativeSolvers>
 
 class MatrixReplacement;
 using StormEigen::SparseMatrix;

@@ -10,32 +10,32 @@ if(CMAKE_COMPILER_IS_GNUCXX)
   endif(CMAKE_SYSTEM_NAME MATCHES Linux)
 endif(CMAKE_COMPILER_IS_GNUCXX)
 
-option(EIGEN_INTERNAL_DOCUMENTATION "Build internal documentation" OFF)
+option(STORMEIGEN_INTERNAL_DOCUMENTATION "Build internal documentation" OFF)
 
 
 # Set some Doxygen flags
-set(EIGEN_DOXY_PROJECT_NAME             "Eigen")
-set(EIGEN_DOXY_OUTPUT_DIRECTORY_SUFFIX  "")
-set(EIGEN_DOXY_INPUT                    "\"${Eigen_SOURCE_DIR}/Eigen\" \"${Eigen_SOURCE_DIR}/doc\"")
-set(EIGEN_DOXY_HTML_COLORSTYLE_HUE      "220")
-set(EIGEN_DOXY_TAGFILES                 "")
-if(EIGEN_INTERNAL_DOCUMENTATION)
-  set(EIGEN_DOXY_INTERNAL                 "YES")
-else(EIGEN_INTERNAL_DOCUMENTATION)
-  set(EIGEN_DOXY_INTERNAL                 "NO")
-endif(EIGEN_INTERNAL_DOCUMENTATION)
+set(STORMEIGEN_DOXY_PROJECT_NAME             "Eigen")
+set(STORMEIGEN_DOXY_OUTPUT_DIRECTORY_SUFFIX  "")
+set(STORMEIGEN_DOXY_INPUT                    "\"${Eigen_SOURCE_DIR}/Eigen\" \"${Eigen_SOURCE_DIR}/doc\"")
+set(STORMEIGEN_DOXY_HTML_COLORSTYLE_HUE      "220")
+set(STORMEIGEN_DOXY_TAGFILES                 "")
+if(STORMEIGEN_INTERNAL_DOCUMENTATION)
+  set(STORMEIGEN_DOXY_INTERNAL                 "YES")
+else(STORMEIGEN_INTERNAL_DOCUMENTATION)
+  set(STORMEIGEN_DOXY_INTERNAL                 "NO")
+endif(STORMEIGEN_INTERNAL_DOCUMENTATION)
 
 configure_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in
   ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
 )
 
-set(EIGEN_DOXY_PROJECT_NAME             "Eigen-unsupported")
-set(EIGEN_DOXY_OUTPUT_DIRECTORY_SUFFIX  "/unsupported")
-set(EIGEN_DOXY_INPUT                    "\"${Eigen_SOURCE_DIR}/unsupported/Eigen\" \"${Eigen_SOURCE_DIR}/unsupported/doc\"")
-set(EIGEN_DOXY_HTML_COLORSTYLE_HUE      "0")
-# set(EIGEN_DOXY_TAGFILES                 "\"${Eigen_BINARY_DIR}/doc/eigen.doxytags =../\"")
-set(EIGEN_DOXY_TAGFILES                 "")
+set(STORMEIGEN_DOXY_PROJECT_NAME             "Eigen-unsupported")
+set(STORMEIGEN_DOXY_OUTPUT_DIRECTORY_SUFFIX  "/unsupported")
+set(STORMEIGEN_DOXY_INPUT                    "\"${Eigen_SOURCE_DIR}/unsupported/Eigen\" \"${Eigen_SOURCE_DIR}/unsupported/doc\"")
+set(STORMEIGEN_DOXY_HTML_COLORSTYLE_HUE      "0")
+# set(STORMEIGEN_DOXY_TAGFILES                 "\"${Eigen_BINARY_DIR}/doc/eigen.doxytags =../\"")
+set(STORMEIGEN_DOXY_TAGFILES                 "")
 
 configure_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in
@@ -65,7 +65,7 @@ configure_file(
 set(examples_targets "")
 set(snippets_targets "")
 
-add_definitions("-DEIGEN_MAKING_DOCS")
+add_definitions("-DSTORMEIGEN_MAKING_DOCS")
 add_custom_target(all_examples)
 
 add_subdirectory(examples)

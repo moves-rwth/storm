@@ -9,7 +9,7 @@
 
 #include "main.h"
 
-#include <Eigen/CXX11/Tensor>
+#include <StormEigen/CXX11/Tensor>
 
 using StormEigen::Tensor;
 using StormEigen::RowMajor;
@@ -286,7 +286,7 @@ static void test_compound_assign()
 }
 
 static void test_std_initializers_tensor() {
-#ifdef EIGEN_HAS_VARIADIC_TEMPLATES
+#ifdef STORMEIGEN_HAS_VARIADIC_TEMPLATES
   Tensor<int, 1> a(3);
   a.setValues({0, 1, 2});
   VERIFY_IS_EQUAL(a(0), 0);
@@ -355,7 +355,7 @@ static void test_std_initializers_tensor() {
   VERIFY_IS_EQUAL(c(2, 1, 1), 25);
   VERIFY_IS_EQUAL(c(2, 1, 2), 26);
   VERIFY_IS_EQUAL(c(2, 1, 3), 27);
-#endif  // EIGEN_HAS_VARIADIC_TEMPLATES
+#endif  // STORMEIGEN_HAS_VARIADIC_TEMPLATES
 }
 
 void test_cxx11_tensor_assign()

@@ -9,7 +9,7 @@
 
 #include "main.h"
 
-#include <Eigen/CXX11/Tensor>
+#include <StormEigen/CXX11/Tensor>
 
 using StormEigen::Tensor;
 using StormEigen::RowMajor;
@@ -233,8 +233,8 @@ static void test_from_tensor()
 
 static int f(const TensorMap<Tensor<int, 3> >& tensor) {
   //  Size<0> empty;
-  EIGEN_STATIC_ASSERT((internal::array_size<Sizes<>>::value == 0), YOU_MADE_A_PROGRAMMING_MISTAKE);
-  EIGEN_STATIC_ASSERT((internal::array_size<DSizes<int, 0>>::value == 0), YOU_MADE_A_PROGRAMMING_MISTAKE);
+  STORMEIGEN_STATIC_ASSERT((internal::array_size<Sizes<>>::value == 0), YOU_MADE_A_PROGRAMMING_MISTAKE);
+  STORMEIGEN_STATIC_ASSERT((internal::array_size<DSizes<int, 0>>::value == 0), YOU_MADE_A_PROGRAMMING_MISTAKE);
   Tensor<int, 0> result = tensor.sum();
   return result();
 }

@@ -7,7 +7,7 @@
 // Public License v. 2.0. If a copy of the MPL was not distributed
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-#define EIGEN_NO_STATIC_ASSERT
+#define STORMEIGEN_NO_STATIC_ASSERT
 
 #include "main.h"
 
@@ -180,7 +180,7 @@ template<typename MatrixType> void basicStuffComplex(const MatrixType& m)
   VERIFY(!static_cast<const MatrixType&>(cm).imag().isZero());
 }
 
-#ifdef EIGEN_TEST_PART_2
+#ifdef STORMEIGEN_TEST_PART_2
 void casting()
 {
   Matrix4f m = Matrix4f::Random(), m2;
@@ -259,14 +259,14 @@ void test_basicstuff()
   for(int i = 0; i < g_repeat; i++) {
     CALL_SUBTEST_1( basicStuff(Matrix<float, 1, 1>()) );
     CALL_SUBTEST_2( basicStuff(Matrix4d()) );
-    CALL_SUBTEST_3( basicStuff(MatrixXcf(internal::random<int>(1,EIGEN_TEST_MAX_SIZE), internal::random<int>(1,EIGEN_TEST_MAX_SIZE))) );
-    CALL_SUBTEST_4( basicStuff(MatrixXi(internal::random<int>(1,EIGEN_TEST_MAX_SIZE), internal::random<int>(1,EIGEN_TEST_MAX_SIZE))) );
-    CALL_SUBTEST_5( basicStuff(MatrixXcd(internal::random<int>(1,EIGEN_TEST_MAX_SIZE), internal::random<int>(1,EIGEN_TEST_MAX_SIZE))) );
+    CALL_SUBTEST_3( basicStuff(MatrixXcf(internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE), internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE))) );
+    CALL_SUBTEST_4( basicStuff(MatrixXi(internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE), internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE))) );
+    CALL_SUBTEST_5( basicStuff(MatrixXcd(internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE), internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE))) );
     CALL_SUBTEST_6( basicStuff(Matrix<float, 100, 100>()) );
-    CALL_SUBTEST_7( basicStuff(Matrix<long double,Dynamic,Dynamic>(internal::random<int>(1,EIGEN_TEST_MAX_SIZE),internal::random<int>(1,EIGEN_TEST_MAX_SIZE))) );
+    CALL_SUBTEST_7( basicStuff(Matrix<long double,Dynamic,Dynamic>(internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE),internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE))) );
 
-    CALL_SUBTEST_3( basicStuffComplex(MatrixXcf(internal::random<int>(1,EIGEN_TEST_MAX_SIZE), internal::random<int>(1,EIGEN_TEST_MAX_SIZE))) );
-    CALL_SUBTEST_5( basicStuffComplex(MatrixXcd(internal::random<int>(1,EIGEN_TEST_MAX_SIZE), internal::random<int>(1,EIGEN_TEST_MAX_SIZE))) );
+    CALL_SUBTEST_3( basicStuffComplex(MatrixXcf(internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE), internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE))) );
+    CALL_SUBTEST_5( basicStuffComplex(MatrixXcd(internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE), internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE))) );
   }
 
   CALL_SUBTEST_1(fixedSizeMatrixConstruction<unsigned char>());

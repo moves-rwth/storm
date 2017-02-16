@@ -7,8 +7,8 @@
 // Public License v. 2.0. If a copy of the MPL was not distributed
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-#ifndef EIGEN_SELFADJOINT_PACKED_PRODUCT_H
-#define EIGEN_SELFADJOINT_PACKED_PRODUCT_H
+#ifndef STORMEIGEN_SELFADJOINT_PACKED_PRODUCT_H
+#define STORMEIGEN_SELFADJOINT_PACKED_PRODUCT_H
 
 namespace internal {
 
@@ -50,4 +50,4 @@ struct selfadjoint_packed_rank1_update<Scalar,Index,RowMajor,UpLo,ConjLhs,ConjRh
 
 } // end namespace internal
 
-#endif // EIGEN_SELFADJOINT_PACKED_PRODUCT_H
+#endif // STORMEIGEN_SELFADJOINT_PACKED_PRODUCT_H

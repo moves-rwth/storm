@@ -8,21 +8,21 @@
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "main.h"
-#include <unsupported/Eigen/AutoDiff>
+#include <unsupported/StormEigen/AutoDiff>
 
 template<typename Scalar>
-EIGEN_DONT_INLINE Scalar foo(const Scalar& x, const Scalar& y)
+STORMEIGEN_DONT_INLINE Scalar foo(const Scalar& x, const Scalar& y)
 {
   using namespace std;
 //   return x+std::sin(y);
-  EIGEN_ASM_COMMENT("mybegin");
+  STORMEIGEN_ASM_COMMENT("mybegin");
   return static_cast<Scalar>(x*2 - pow(x,2) + 2*sqrt(y*y) - 4 * sin(x) + 2 * cos(y) - exp(-0.5*x*x));
   //return x+2*y*x;//x*2 -std::pow(x,2);//(2*y/x);// - y*2;
-  EIGEN_ASM_COMMENT("myend");
+  STORMEIGEN_ASM_COMMENT("myend");
 }
 
 template<typename Vector>
-EIGEN_DONT_INLINE typename Vector::Scalar foo(const Vector& p)
+STORMEIGEN_DONT_INLINE typename Vector::Scalar foo(const Vector& p)
 {
   typedef typename Vector::Scalar Scalar;
   return (p-Vector(Scalar(-1),Scalar(1.))).norm() + (p.array() * p.array()).sum() + p.dot(p);

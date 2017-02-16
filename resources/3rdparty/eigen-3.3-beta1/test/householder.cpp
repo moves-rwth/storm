@@ -8,7 +8,7 @@
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "main.h"
-#include <Eigen/QR>
+#include <StormEigen/QR>
 
 template<typename MatrixType> void householder(const MatrixType& m)
 {
@@ -31,7 +31,7 @@ template<typename MatrixType> void householder(const MatrixType& m)
 
   typedef Matrix<Scalar, MatrixType::ColsAtCompileTime, MatrixType::RowsAtCompileTime> TMatrixType;
   
-  Matrix<Scalar, EIGEN_SIZE_MAX(MatrixType::RowsAtCompileTime,MatrixType::ColsAtCompileTime), 1> _tmp((std::max)(rows,cols));
+  Matrix<Scalar, STORMEIGEN_SIZE_MAX(MatrixType::RowsAtCompileTime,MatrixType::ColsAtCompileTime), 1> _tmp((std::max)(rows,cols));
   Scalar* tmp = &_tmp.coeffRef(0,0);
 
   Scalar beta;
@@ -130,9 +130,9 @@ void test_householder()
     CALL_SUBTEST_2( householder(Matrix<float,2,3>()) );
     CALL_SUBTEST_3( householder(Matrix<double,3,5>()) );
     CALL_SUBTEST_4( householder(Matrix<float,4,4>()) );
-    CALL_SUBTEST_5( householder(MatrixXd(internal::random<int>(1,EIGEN_TEST_MAX_SIZE),internal::random<int>(1,EIGEN_TEST_MAX_SIZE))) );
-    CALL_SUBTEST_6( householder(MatrixXcf(internal::random<int>(1,EIGEN_TEST_MAX_SIZE),internal::random<int>(1,EIGEN_TEST_MAX_SIZE))) );
-    CALL_SUBTEST_7( householder(MatrixXf(internal::random<int>(1,EIGEN_TEST_MAX_SIZE),internal::random<int>(1,EIGEN_TEST_MAX_SIZE))) );
+    CALL_SUBTEST_5( householder(MatrixXd(internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE),internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE))) );
+    CALL_SUBTEST_6( householder(MatrixXcf(internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE),internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE))) );
+    CALL_SUBTEST_7( householder(MatrixXf(internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE),internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE))) );
     CALL_SUBTEST_8( householder(Matrix<double,1,1>()) );
   }
 }

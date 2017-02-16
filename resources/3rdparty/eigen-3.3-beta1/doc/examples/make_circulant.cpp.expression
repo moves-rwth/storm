@@ -5,7 +5,7 @@ public:
   Circulant(const ArgType& arg)
     : m_arg(arg)
   { 
-    EIGEN_STATIC_ASSERT(ArgType::ColsAtCompileTime == 1,
+    STORMEIGEN_STATIC_ASSERT(ArgType::ColsAtCompileTime == 1,
                         YOU_TRIED_CALLING_A_VECTOR_METHOD_ON_A_MATRIX);
   }
 

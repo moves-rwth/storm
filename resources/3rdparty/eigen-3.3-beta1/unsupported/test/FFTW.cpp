@@ -8,7 +8,7 @@
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "main.h"
-#include <unsupported/Eigen/FFT>
+#include <unsupported/StormEigen/FFT>
 
 template <typename T> 
 std::complex<T> RandomCpx() { return std::complex<T>( (T)(rand()/(T)RAND_MAX - .5), (T)(rand()/(T)RAND_MAX - .5) ); }
@@ -244,7 +244,7 @@ void test_FFTW()
   CALL_SUBTEST( test_scalar<float>(256) ); CALL_SUBTEST( test_scalar<double>(256) ); 
   CALL_SUBTEST( test_scalar<float>(2*3*4*5*7) ); CALL_SUBTEST( test_scalar<double>(2*3*4*5*7) ); 
   
-  #ifdef EIGEN_HAS_FFTWL
+  #ifdef STORMEIGEN_HAS_FFTWL
   CALL_SUBTEST( test_complex<long double>(32) );
   CALL_SUBTEST( test_complex<long double>(256) );
   CALL_SUBTEST( test_complex<long double>(3*8) );

@@ -1,5 +1,5 @@
-#include <Eigen/StdVector>
-#include <unsupported/Eigen/BVH>
+#include <StormEigen/StdVector>
+#include <unsupported/StormEigen/BVH>
 #include <iostream>
 
 using namespace StormEigen;

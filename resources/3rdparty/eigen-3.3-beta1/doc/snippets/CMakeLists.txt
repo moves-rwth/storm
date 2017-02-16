@@ -11,8 +11,8 @@ foreach(snippet_src ${snippets_SRCS})
                  ${CMAKE_CURRENT_BINARY_DIR}/${compile_snippet_src})
   add_executable(${compile_snippet_target}
                  ${CMAKE_CURRENT_BINARY_DIR}/${compile_snippet_src})
-  if(EIGEN_STANDARD_LIBRARIES_TO_LINK_TO)
-    target_link_libraries(${compile_snippet_target} ${EIGEN_STANDARD_LIBRARIES_TO_LINK_TO})
+  if(STORMEIGEN_STANDARD_LIBRARIES_TO_LINK_TO)
+    target_link_libraries(${compile_snippet_target} ${STORMEIGEN_STANDARD_LIBRARIES_TO_LINK_TO})
   endif()
   add_custom_command(
     TARGET ${compile_snippet_target}
@@ -25,4 +25,4 @@ foreach(snippet_src ${snippets_SRCS})
                               PROPERTIES OBJECT_DEPENDS ${snippet_src})
 endforeach(snippet_src)
 
-ei_add_target_property(compile_tut_arithmetic_transpose_aliasing COMPILE_FLAGS -DEIGEN_NO_DEBUG)
+ei_add_target_property(compile_tut_arithmetic_transpose_aliasing COMPILE_FLAGS -DSTORMEIGEN_NO_DEBUG)

@@ -1,5 +1,5 @@
 
-#include <Eigen/Sparse>
+#include <StormEigen/Sparse>
 #include <bench/BenchTimer.h>
 #include <set>
 

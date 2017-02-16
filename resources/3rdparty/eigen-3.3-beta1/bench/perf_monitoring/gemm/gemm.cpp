@@ -1,7 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
-#include <Eigen/Core>
+#include <StormEigen/Core>
 #include "../../BenchTimer.h"
 using namespace StormEigen;
 
@@ -13,13 +13,13 @@ typedef SCALAR Scalar;
 
 typedef Matrix<Scalar,Dynamic,Dynamic> Mat;
 
-EIGEN_DONT_INLINE
+STORMEIGEN_DONT_INLINE
 void gemm(const Mat &A, const Mat &B, Mat &C)
 {
   C.noalias() += A * B;
 }
 
-EIGEN_DONT_INLINE
+STORMEIGEN_DONT_INLINE
 double bench(long m, long n, long k)
 {
   Mat A(m,k);

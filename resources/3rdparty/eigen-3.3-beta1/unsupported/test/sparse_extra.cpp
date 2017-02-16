@@ -9,10 +9,10 @@
 
 
 // import basic and product tests for deprectaed DynamicSparseMatrix
-#define EIGEN_NO_DEPRECATED_WARNING
+#define STORMEIGEN_NO_DEPRECATED_WARNING
 #include "sparse_basic.cpp"
 #include "sparse_product.cpp"
-#include <Eigen/SparseExtra>
+#include <StormEigen/SparseExtra>
 
 template<typename SetterType,typename DenseType, typename Scalar, int Options>
 bool test_random_setter(SparseMatrix<Scalar,Options>& sm, const DenseType& ref, const std::vector<Vector2i>& nonzeroCoords)
@@ -101,7 +101,7 @@ template<typename SparseMatrixType> void sparse_extra(const SparseMatrixType& re
 //   VERIFY_IS_APPROX(m, refMat);
 
     VERIFY(( test_random_setter<RandomSetter<SparseMatrixType, StdMapTraits> >(m,refMat,nonzeroCoords) ));
-    #ifdef EIGEN_UNORDERED_MAP_SUPPORT
+    #ifdef STORMEIGEN_UNORDERED_MAP_SUPPORT
     VERIFY(( test_random_setter<RandomSetter<SparseMatrixType, StdUnorderedMapTraits> >(m,refMat,nonzeroCoords) ));
     #endif
     #ifdef _DENSE_HASH_MAP_H_

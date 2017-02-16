@@ -1,9 +1,9 @@
 
 // g++ -I.. sparse_lu.cpp -O3 -g0 -I /usr/include/superlu/ -lsuperlu -lgfortran -DSIZE=1000 -DDENSITY=.05 && ./a.out
 
-#define EIGEN_SUPERLU_SUPPORT
-#define EIGEN_UMFPACK_SUPPORT
-#include <Eigen/Sparse>
+#define STORMEIGEN_SUPERLU_SUPPORT
+#define STORMEIGEN_UMFPACK_SUPPORT
+#include <StormEigen/Sparse>
 
 #define NOGMM
 #define NOMTL
@@ -40,7 +40,7 @@
 
 typedef Matrix<Scalar,Dynamic,1> VectorX;
 
-#include <Eigen/LU>
+#include <StormEigen/LU>
 
 template<int Backend>
 void doEigen(const char* name, const EigenSparseMatrix& sm1, const VectorX& b, VectorX& x, int flags = 0)
@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
       timer.start();
       FullPivLU<DenseMatrix> lu(m1);
       timer.stop();
-      std::cout << "Eigen/dense:\t" << timer.value() << endl;
+      std::cout << "StormEigen/dense:\t" << timer.value() << endl;
 
       timer.reset();
       timer.start();
@@ -112,17 +112,17 @@ int main(int argc, char *argv[])
     }
     #endif
 
-    #ifdef EIGEN_UMFPACK_SUPPORT
+    #ifdef STORMEIGEN_UMFPACK_SUPPORT
     x.setZero();
-    doEigen<StormEigen::UmfPack>("Eigen/UmfPack (auto)", sm1, b, x, 0);
+    doEigen<StormEigen::UmfPack>("StormEigen/UmfPack (auto)", sm1, b, x, 0);
     #endif
 
-    #ifdef EIGEN_SUPERLU_SUPPORT
+    #ifdef STORMEIGEN_SUPERLU_SUPPORT
     x.setZero();
-    doEigen<StormEigen::SuperLU>("Eigen/SuperLU (nat)", sm1, b, x, StormEigen::NaturalOrdering);
-//     doEigen<StormEigen::SuperLU>("Eigen/SuperLU (MD AT+A)", sm1, b, x, StormEigen::MinimumDegree_AT_PLUS_A);
-//     doEigen<StormEigen::SuperLU>("Eigen/SuperLU (MD ATA)", sm1, b, x, StormEigen::MinimumDegree_ATA);
-    doEigen<StormEigen::SuperLU>("Eigen/SuperLU (COLAMD)", sm1, b, x, StormEigen::ColApproxMinimumDegree);
+    doEigen<StormEigen::SuperLU>("StormEigen/SuperLU (nat)", sm1, b, x, StormEigen::NaturalOrdering);
+//     doEigen<StormEigen::SuperLU>("StormEigen/SuperLU (MD AT+A)", sm1, b, x, StormEigen::MinimumDegree_AT_PLUS_A);
+//     doEigen<StormEigen::SuperLU>("StormEigen/SuperLU (MD ATA)", sm1, b, x, StormEigen::MinimumDegree_ATA);
+    doEigen<StormEigen::SuperLU>("StormEigen/SuperLU (COLAMD)", sm1, b, x, StormEigen::ColApproxMinimumDegree);
     #endif
 
   }

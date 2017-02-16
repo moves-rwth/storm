@@ -9,11 +9,11 @@
 
 #include "main.h"
 
-#include <Eigen/Core>
-#include <Eigen/Geometry>
+#include <StormEigen/Core>
+#include <StormEigen/Geometry>
 
-#include <Eigen/LU> // required for MatrixBase::determinant
-#include <Eigen/SVD> // required for SVD
+#include <StormEigen/LU> // required for MatrixBase::determinant
+#include <StormEigen/SVD> // required for SVD
 
 using namespace StormEigen;
 

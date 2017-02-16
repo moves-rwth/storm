@@ -1,18 +1,18 @@
 #include <iostream>
-#include <Eigen/Core>
-#include <Eigen/Geometry>
+#include <StormEigen/Core>
+#include <StormEigen/Geometry>
 #include <bench/BenchTimer.h>
 
 using namespace StormEigen; 
 
 template<typename Quat>
-EIGEN_DONT_INLINE void quatmul_default(const Quat& a, const Quat& b, Quat& c)
+STORMEIGEN_DONT_INLINE void quatmul_default(const Quat& a, const Quat& b, Quat& c)
 {
   c = a * b;
 }
 
 template<typename Quat>
-EIGEN_DONT_INLINE void quatmul_novec(const Quat& a, const Quat& b, Quat& c)
+STORMEIGEN_DONT_INLINE void quatmul_novec(const Quat& a, const Quat& b, Quat& c)
 {
   c = internal::quat_product<0, Quat, Quat, typename Quat::Scalar, Aligned>::run(a,b);
 }
