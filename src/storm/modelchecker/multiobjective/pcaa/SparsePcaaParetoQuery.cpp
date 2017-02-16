@@ -81,6 +81,7 @@ namespace storm {
                         return;
                     }
                     STORM_LOG_DEBUG("Current precision of the approximation of the pareto curve is ~" << storm::utility::convertNumber<double>(farestDistance));
+                    std::cout << "Current precision of the approximation of the pareto curve is ~" << storm::utility::convertNumber<double>(farestDistance) << std::endl;
                     WeightVector direction = underApproxHalfspaces[farestHalfspaceIndex].normalVector();
                     this->performRefinementStep(std::move(direction));
                 }

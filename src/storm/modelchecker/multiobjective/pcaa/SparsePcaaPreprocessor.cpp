@@ -27,7 +27,7 @@ namespace storm {
                 
                 //Invoke preprocessing on the individual objectives
                 for(auto const& subFormula : originalFormula.getSubformulas()){
-                    STORM_LOG_DEBUG("Preprocessing objective " << *subFormula<< ".");
+                    STORM_LOG_INFO("Preprocessing objective " << *subFormula<< ".");
                     result.objectives.emplace_back();
                     PcaaObjective<ValueType>& currentObjective = result.objectives.back();
                     currentObjective.originalFormula = subFormula;
@@ -37,7 +37,6 @@ namespace storm {
                         STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "Could not preprocess the subformula " << *subFormula << " of " << originalFormula << " because it is not supported");
                     }
                 }
-                
                 // Set the query type. In case of a quantitative query, also set the index of the objective to be optimized.
                 // Note: If there are only zero (or one) objectives left, we should not consider a pareto query!
                 storm::storage::BitVector objectivesWithoutThreshold(result.objectives.size());
@@ -55,13 +54,13 @@ namespace storm {
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "The number of objectives without threshold is not valid. It should be either 0 (achievability query), 1 (quantitative query), or " << result.objectives.size() << " (Pareto Query). Got " << numOfObjectivesWithoutThreshold << " instead.");
                 }
-                
+
                 //We can remove the original reward models to save some memory
                 std::set<std::string> origRewardModels = originalFormula.getReferencedRewardModels();
                 for (auto const& rewModel : origRewardModels){
                     result.preprocessedModel.removeRewardModel(rewModel);
                 }
-                
+
                 //Get actions to which a positive or negative reward is assigned for at least one objective
                 result.actionsWithPositiveReward = storm::storage::BitVector(result.preprocessedModel.getNumberOfChoices(), false);
                 result.actionsWithNegativeReward = storm::storage::BitVector(result.preprocessedModel.getNumberOfChoices(), false);
@@ -74,11 +73,16 @@ namespace storm {
                         }
                     }
                 }
-                
-                auto backwardTransitions = result.preprocessedModel.getBackwardTransitions();
-                analyzeEndComponents(result, backwardTransitions);
-                ensureRewardFiniteness(result, backwardTransitions);
-                
+
+                // Analyze End components and ensure reward finiteness.
+                // Note that this is only necessary if there is at least one objective with no upper time bound
+                for (auto const& obj : result.objectives) {
+                    if(!obj.upperTimeBound) {
+                        auto backwardTransitions = result.preprocessedModel.getBackwardTransitions();
+                        analyzeEndComponents(result, backwardTransitions);
+                        ensureRewardFiniteness(result, backwardTransitions);
+                    }
+                }
                 return result;
             }
             
