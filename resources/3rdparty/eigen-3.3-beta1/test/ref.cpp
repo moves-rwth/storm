@@ -7,9 +7,9 @@
 // Public License v. 2.0. If a copy of the MPL was not distributed
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-// This unit test cannot be easily written to work with EIGEN_DEFAULT_TO_ROW_MAJOR
-#ifdef EIGEN_DEFAULT_TO_ROW_MAJOR
-#undef EIGEN_DEFAULT_TO_ROW_MAJOR
+// This unit test cannot be easily written to work with STORMEIGEN_DEFAULT_TO_ROW_MAJOR
+#ifdef STORMEIGEN_DEFAULT_TO_ROW_MAJOR
+#undef STORMEIGEN_DEFAULT_TO_ROW_MAJOR
 #endif
 
 #define TEST_ENABLE_TEMPORARY_TRACKING
@@ -19,9 +19,9 @@
 // test Ref.h
 
 // Deal with i387 extended precision
-#if EIGEN_ARCH_i386 && !(EIGEN_ARCH_x86_64)
+#if STORMEIGEN_ARCH_i386 && !(STORMEIGEN_ARCH_x86_64)
 
-#if EIGEN_COMP_GNUC_STRICT && EIGEN_GNUC_AT_LEAST(4,4)
+#if STORMEIGEN_COMP_GNUC_STRICT && STORMEIGEN_GNUC_AT_LEAST(4,4)
 #pragma GCC optimize ("-ffloat-store")
 #else
 #undef VERIFY_IS_EQUAL
@@ -150,19 +150,19 @@ template<typename PlainObjectType> void check_const_correctness(const PlainObjec
 }
 
 template<typename B>
-EIGEN_DONT_INLINE void call_ref_1(Ref<VectorXf> a, const B &b) { VERIFY_IS_EQUAL(a,b); }
+STORMEIGEN_DONT_INLINE void call_ref_1(Ref<VectorXf> a, const B &b) { VERIFY_IS_EQUAL(a,b); }
 template<typename B>
-EIGEN_DONT_INLINE void call_ref_2(const Ref<const VectorXf>& a, const B &b) { VERIFY_IS_EQUAL(a,b); }
+STORMEIGEN_DONT_INLINE void call_ref_2(const Ref<const VectorXf>& a, const B &b) { VERIFY_IS_EQUAL(a,b); }
 template<typename B>
-EIGEN_DONT_INLINE void call_ref_3(Ref<VectorXf,0,InnerStride<> > a, const B &b) { VERIFY_IS_EQUAL(a,b); }
+STORMEIGEN_DONT_INLINE void call_ref_3(Ref<VectorXf,0,InnerStride<> > a, const B &b) { VERIFY_IS_EQUAL(a,b); }
 template<typename B>
-EIGEN_DONT_INLINE void call_ref_4(const Ref<const VectorXf,0,InnerStride<> >& a, const B &b) { VERIFY_IS_EQUAL(a,b); }
+STORMEIGEN_DONT_INLINE void call_ref_4(const Ref<const VectorXf,0,InnerStride<> >& a, const B &b) { VERIFY_IS_EQUAL(a,b); }
 template<typename B>
-EIGEN_DONT_INLINE void call_ref_5(Ref<MatrixXf,0,OuterStride<> > a, const B &b) { VERIFY_IS_EQUAL(a,b); }
+STORMEIGEN_DONT_INLINE void call_ref_5(Ref<MatrixXf,0,OuterStride<> > a, const B &b) { VERIFY_IS_EQUAL(a,b); }
 template<typename B>
-EIGEN_DONT_INLINE void call_ref_6(const Ref<const MatrixXf,0,OuterStride<> >& a, const B &b) { VERIFY_IS_EQUAL(a,b); }
+STORMEIGEN_DONT_INLINE void call_ref_6(const Ref<const MatrixXf,0,OuterStride<> >& a, const B &b) { VERIFY_IS_EQUAL(a,b); }
 template<typename B>
-EIGEN_DONT_INLINE void call_ref_7(Ref<Matrix<float,Dynamic,3> > a, const B &b) { VERIFY_IS_EQUAL(a,b); }
+STORMEIGEN_DONT_INLINE void call_ref_7(Ref<Matrix<float,Dynamic,3> > a, const B &b) { VERIFY_IS_EQUAL(a,b); }
 
 void call_ref()
 {

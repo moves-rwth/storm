@@ -9,7 +9,7 @@
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #define TEST_ENABLE_TEMPORARY_TRACKING
-#define EIGEN_NO_STATIC_ASSERT
+#define STORMEIGEN_NO_STATIC_ASSERT
 
 #include "main.h"
 
@@ -243,7 +243,7 @@ void test_vectorwiseop()
   CALL_SUBTEST_3( vectorwiseop_array(ArrayXXf(3, 4)) );
   CALL_SUBTEST_4( vectorwiseop_matrix(Matrix4cf()) );
   CALL_SUBTEST_5( vectorwiseop_matrix(Matrix<float,4,5>()) );
-  CALL_SUBTEST_6( vectorwiseop_matrix(MatrixXd(internal::random<int>(1,EIGEN_TEST_MAX_SIZE), internal::random<int>(1,EIGEN_TEST_MAX_SIZE))) );
-  CALL_SUBTEST_7( vectorwiseop_matrix(VectorXd(internal::random<int>(1,EIGEN_TEST_MAX_SIZE))) );
-  CALL_SUBTEST_7( vectorwiseop_matrix(RowVectorXd(internal::random<int>(1,EIGEN_TEST_MAX_SIZE))) );
+  CALL_SUBTEST_6( vectorwiseop_matrix(MatrixXd(internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE), internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE))) );
+  CALL_SUBTEST_7( vectorwiseop_matrix(VectorXd(internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE))) );
+  CALL_SUBTEST_7( vectorwiseop_matrix(RowVectorXd(internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE))) );
 }

@@ -7,8 +7,8 @@
 // Public License v. 2.0. If a copy of the MPL was not distributed
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-#ifndef EIGEN_GENERAL_RANK1UPDATE_H
-#define EIGEN_GENERAL_RANK1UPDATE_H
+#ifndef STORMEIGEN_GENERAL_RANK1UPDATE_H
+#define STORMEIGEN_GENERAL_RANK1UPDATE_H
 
 namespace internal {
 
@@ -41,4 +41,4 @@ struct general_rank1_update<Scalar,Index,RowMajor,ConjLhs,ConjRhs>
 
 } // end namespace internal
 
-#endif // EIGEN_GENERAL_RANK1UPDATE_H
+#endif // STORMEIGEN_GENERAL_RANK1UPDATE_H

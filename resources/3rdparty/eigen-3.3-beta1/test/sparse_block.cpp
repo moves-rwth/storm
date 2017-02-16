@@ -232,7 +232,7 @@ void test_sparse_block()
     if(StormEigen::internal::random<int>(0,4) == 0) {
       r = c; // check square matrices in 25% of tries
     }
-    EIGEN_UNUSED_VARIABLE(r+c);
+    STORMEIGEN_UNUSED_VARIABLE(r+c);
     CALL_SUBTEST_1(( sparse_block(SparseMatrix<double>(1, 1)) ));
     CALL_SUBTEST_1(( sparse_block(SparseMatrix<double>(8, 8)) ));
     CALL_SUBTEST_1(( sparse_block(SparseMatrix<double>(r, c)) ));

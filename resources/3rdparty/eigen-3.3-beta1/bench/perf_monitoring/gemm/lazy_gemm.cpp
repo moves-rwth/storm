@@ -1,7 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
-#include <Eigen/Core>
+#include <StormEigen/Core>
 #include "../../BenchTimer.h"
 using namespace StormEigen;
 
@@ -21,7 +21,7 @@ inline void lazy_gemm(const MatA &A, const MatB &B, MatC &C)
 }
 
 template<int m, int n, int k, int TA>
-EIGEN_DONT_INLINE
+STORMEIGEN_DONT_INLINE
 double bench()
 {
   typedef Matrix<Scalar,m,k,TA> MatA;
@@ -58,7 +58,7 @@ double bench_t(int t)
     return bench<m,n,k,0>();
 }
 
-EIGEN_DONT_INLINE
+STORMEIGEN_DONT_INLINE
 double bench_mnk(int m, int n, int k, int t)
 {
   int id = m*10000 + n*100 + k;

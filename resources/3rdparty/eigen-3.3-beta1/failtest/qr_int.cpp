@@ -1,6 +1,6 @@
-#include "../Eigen/QR"
+#include "../StormEigen/QR"
 
-#ifdef EIGEN_SHOULD_FAIL_TO_BUILD
+#ifdef STORMEIGEN_SHOULD_FAIL_TO_BUILD
 #define SCALAR int
 #else
 #define SCALAR float

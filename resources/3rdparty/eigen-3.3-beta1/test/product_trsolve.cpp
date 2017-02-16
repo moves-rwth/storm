@@ -78,16 +78,16 @@ void test_product_trsolve()
   for(int i = 0; i < g_repeat ; i++)
   {
     // matrices
-    CALL_SUBTEST_1((trsolve<float,Dynamic,Dynamic>(internal::random<int>(1,EIGEN_TEST_MAX_SIZE),internal::random<int>(1,EIGEN_TEST_MAX_SIZE))));
-    CALL_SUBTEST_2((trsolve<double,Dynamic,Dynamic>(internal::random<int>(1,EIGEN_TEST_MAX_SIZE),internal::random<int>(1,EIGEN_TEST_MAX_SIZE))));
-    CALL_SUBTEST_3((trsolve<std::complex<float>,Dynamic,Dynamic>(internal::random<int>(1,EIGEN_TEST_MAX_SIZE/2),internal::random<int>(1,EIGEN_TEST_MAX_SIZE/2))));
-    CALL_SUBTEST_4((trsolve<std::complex<double>,Dynamic,Dynamic>(internal::random<int>(1,EIGEN_TEST_MAX_SIZE/2),internal::random<int>(1,EIGEN_TEST_MAX_SIZE/2))));
+    CALL_SUBTEST_1((trsolve<float,Dynamic,Dynamic>(internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE),internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE))));
+    CALL_SUBTEST_2((trsolve<double,Dynamic,Dynamic>(internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE),internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE))));
+    CALL_SUBTEST_3((trsolve<std::complex<float>,Dynamic,Dynamic>(internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE/2),internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE/2))));
+    CALL_SUBTEST_4((trsolve<std::complex<double>,Dynamic,Dynamic>(internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE/2),internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE/2))));
 
     // vectors
-    CALL_SUBTEST_5((trsolve<float,Dynamic,1>(internal::random<int>(1,EIGEN_TEST_MAX_SIZE))));
-    CALL_SUBTEST_6((trsolve<double,Dynamic,1>(internal::random<int>(1,EIGEN_TEST_MAX_SIZE))));
-    CALL_SUBTEST_7((trsolve<std::complex<float>,Dynamic,1>(internal::random<int>(1,EIGEN_TEST_MAX_SIZE))));
-    CALL_SUBTEST_8((trsolve<std::complex<double>,Dynamic,1>(internal::random<int>(1,EIGEN_TEST_MAX_SIZE))));
+    CALL_SUBTEST_5((trsolve<float,Dynamic,1>(internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE))));
+    CALL_SUBTEST_6((trsolve<double,Dynamic,1>(internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE))));
+    CALL_SUBTEST_7((trsolve<std::complex<float>,Dynamic,1>(internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE))));
+    CALL_SUBTEST_8((trsolve<std::complex<double>,Dynamic,1>(internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE))));
     
     // meta-unrollers
     CALL_SUBTEST_9((trsolve<float,4,1>()));

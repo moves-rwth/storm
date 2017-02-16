@@ -9,15 +9,15 @@
 
 // TODO(mdevin): Free the cuda memory.
 
-#define EIGEN_TEST_NO_LONGDOUBLE
-#define EIGEN_TEST_NO_COMPLEX
-#define EIGEN_TEST_FUNC cxx11_tensor_cuda
-#define EIGEN_DEFAULT_DENSE_INDEX_TYPE int
-#define EIGEN_USE_GPU
+#define STORMEIGEN_TEST_NO_LONGDOUBLE
+#define STORMEIGEN_TEST_NO_COMPLEX
+#define STORMEIGEN_TEST_FUNC cxx11_tensor_cuda
+#define STORMEIGEN_DEFAULT_DENSE_INDEX_TYPE int
+#define STORMEIGEN_USE_GPU
 
 
 #include "main.h"
-#include <unsupported/Eigen/CXX11/Tensor>
+#include <unsupported/StormEigen/CXX11/Tensor>
 
 using StormEigen::Tensor;
 

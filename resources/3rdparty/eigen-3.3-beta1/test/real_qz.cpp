@@ -9,7 +9,7 @@
 
 #include "main.h"
 #include <limits>
-#include <Eigen/Eigenvalues>
+#include <StormEigen/Eigenvalues>
 
 template<typename MatrixType> void real_qz(const MatrixType& m)
 {
@@ -67,7 +67,7 @@ void test_real_qz()
   int s = 0;
   for(int i = 0; i < g_repeat; i++) {
     CALL_SUBTEST_1( real_qz(Matrix4f()) );
-    s = internal::random<int>(1,EIGEN_TEST_MAX_SIZE/4);
+    s = internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE/4);
     CALL_SUBTEST_2( real_qz(MatrixXd(s,s)) );
 
     // some trivial but implementation-wise tricky cases

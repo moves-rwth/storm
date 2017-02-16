@@ -1,6 +1,6 @@
 
-#ifndef EIGEN_TEST_CUDA_COMMON_H
-#define EIGEN_TEST_CUDA_COMMON_H
+#ifndef STORMEIGEN_TEST_CUDA_COMMON_H
+#define STORMEIGEN_TEST_CUDA_COMMON_H
 
 #include <cuda.h>
 #include <cuda_runtime.h>
@@ -98,4 +98,4 @@ void ei_test_init_cuda()
   std::cout << "  computeMode:                 " << deviceProp.computeMode << "\n";
 }
 
-#endif // EIGEN_TEST_CUDA_COMMON_H
+#endif // STORMEIGEN_TEST_CUDA_COMMON_H

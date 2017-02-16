@@ -1,4 +1,4 @@
-#include <Eigen/Dense>
+#include <StormEigen/Dense>
 #include <iostream>
 
 using namespace StormEigen;

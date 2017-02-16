@@ -8,7 +8,7 @@
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "main.h"
-#include <unsupported/Eigen/MatrixFunctions>
+#include <unsupported/StormEigen/MatrixFunctions>
 
 // Variant of VERIFY_IS_APPROX which uses absolute error instead of
 // relative error.

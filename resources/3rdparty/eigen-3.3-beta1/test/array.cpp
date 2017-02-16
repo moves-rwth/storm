@@ -217,11 +217,11 @@ template<typename ArrayType> void array_real(const ArrayType& m)
   VERIFY_IS_APPROX(m1.sinh(), sinh(m1));
   VERIFY_IS_APPROX(m1.cosh(), cosh(m1));
   VERIFY_IS_APPROX(m1.tanh(), tanh(m1));
-#ifdef EIGEN_HAS_C99_MATH
+#ifdef STORMEIGEN_HAS_C99_MATH
   VERIFY_IS_APPROX(m1.lgamma(), lgamma(m1));
   VERIFY_IS_APPROX(m1.erf(), erf(m1));
   VERIFY_IS_APPROX(m1.erfc(), erfc(m1));
-#endif  // EIGEN_HAS_C99_MATH
+#endif  // STORMEIGEN_HAS_C99_MATH
   VERIFY_IS_APPROX(m1.arg(), arg(m1));
   VERIFY_IS_APPROX(m1.round(), round(m1));
   VERIFY_IS_APPROX(m1.floor(), floor(m1));
@@ -380,16 +380,16 @@ template<typename ArrayType> void array_complex(const ArrayType& m)
 
   std::complex<RealScalar> zero(0.0,0.0);
   VERIFY((StormEigen::isnan)(m1*zero/zero).all());
-#if EIGEN_COMP_MSVC
+#if STORMEIGEN_COMP_MSVC
   // msvc complex division is not robust
   VERIFY((StormEigen::isinf)(m4/RealScalar(0)).all());
 #else
-#if EIGEN_COMP_CLANG
+#if STORMEIGEN_COMP_CLANG
   // clang's complex division is notoriously broken too
   if((numext::isinf)(m4(0,0)/RealScalar(0))) {
 #endif
     VERIFY((StormEigen::isinf)(m4/zero).all());
-#if EIGEN_COMP_CLANG
+#if STORMEIGEN_COMP_CLANG
   }
   else
   {
@@ -459,32 +459,32 @@ void test_array()
     CALL_SUBTEST_1( array(Array<float, 1, 1>()) );
     CALL_SUBTEST_2( array(Array22f()) );
     CALL_SUBTEST_3( array(Array44d()) );
-    CALL_SUBTEST_4( array(ArrayXXcf(internal::random<int>(1,EIGEN_TEST_MAX_SIZE), internal::random<int>(1,EIGEN_TEST_MAX_SIZE))) );
-    CALL_SUBTEST_5( array(ArrayXXf(internal::random<int>(1,EIGEN_TEST_MAX_SIZE), internal::random<int>(1,EIGEN_TEST_MAX_SIZE))) );
-    CALL_SUBTEST_6( array(ArrayXXi(internal::random<int>(1,EIGEN_TEST_MAX_SIZE), internal::random<int>(1,EIGEN_TEST_MAX_SIZE))) );
+    CALL_SUBTEST_4( array(ArrayXXcf(internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE), internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE))) );
+    CALL_SUBTEST_5( array(ArrayXXf(internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE), internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE))) );
+    CALL_SUBTEST_6( array(ArrayXXi(internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE), internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE))) );
   }
   for(int i = 0; i < g_repeat; i++) {
     CALL_SUBTEST_1( comparisons(Array<float, 1, 1>()) );
     CALL_SUBTEST_2( comparisons(Array22f()) );
     CALL_SUBTEST_3( comparisons(Array44d()) );
-    CALL_SUBTEST_5( comparisons(ArrayXXf(internal::random<int>(1,EIGEN_TEST_MAX_SIZE), internal::random<int>(1,EIGEN_TEST_MAX_SIZE))) );
-    CALL_SUBTEST_6( comparisons(ArrayXXi(internal::random<int>(1,EIGEN_TEST_MAX_SIZE), internal::random<int>(1,EIGEN_TEST_MAX_SIZE))) );
+    CALL_SUBTEST_5( comparisons(ArrayXXf(internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE), internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE))) );
+    CALL_SUBTEST_6( comparisons(ArrayXXi(internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE), internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE))) );
   }
   for(int i = 0; i < g_repeat; i++) {
     CALL_SUBTEST_1( min_max(Array<float, 1, 1>()) );
     CALL_SUBTEST_2( min_max(Array22f()) );
     CALL_SUBTEST_3( min_max(Array44d()) );
-    CALL_SUBTEST_5( min_max(ArrayXXf(internal::random<int>(1,EIGEN_TEST_MAX_SIZE), internal::random<int>(1,EIGEN_TEST_MAX_SIZE))) );
-    CALL_SUBTEST_6( min_max(ArrayXXi(internal::random<int>(1,EIGEN_TEST_MAX_SIZE), internal::random<int>(1,EIGEN_TEST_MAX_SIZE))) );
+    CALL_SUBTEST_5( min_max(ArrayXXf(internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE), internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE))) );
+    CALL_SUBTEST_6( min_max(ArrayXXi(internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE), internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE))) );
   }
   for(int i = 0; i < g_repeat; i++) {
     CALL_SUBTEST_1( array_real(Array<float, 1, 1>()) );
     CALL_SUBTEST_2( array_real(Array22f()) );
     CALL_SUBTEST_3( array_real(Array44d()) );
-    CALL_SUBTEST_5( array_real(ArrayXXf(internal::random<int>(1,EIGEN_TEST_MAX_SIZE), internal::random<int>(1,EIGEN_TEST_MAX_SIZE))) );
+    CALL_SUBTEST_5( array_real(ArrayXXf(internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE), internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE))) );
   }
   for(int i = 0; i < g_repeat; i++) {
-    CALL_SUBTEST_4( array_complex(ArrayXXcf(internal::random<int>(1,EIGEN_TEST_MAX_SIZE), internal::random<int>(1,EIGEN_TEST_MAX_SIZE))) );
+    CALL_SUBTEST_4( array_complex(ArrayXXcf(internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE), internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE))) );
   }
 
   VERIFY((internal::is_same< internal::global_math_functions_filtering_base<int>::type, int >::value));

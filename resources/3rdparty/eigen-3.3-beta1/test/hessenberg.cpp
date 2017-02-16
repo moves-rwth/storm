@@ -9,7 +9,7 @@
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "main.h"
-#include <Eigen/Eigenvalues>
+#include <StormEigen/Eigenvalues>
 
 template<typename Scalar,int Size> void hessenberg(int size = Size)
 {
@@ -54,8 +54,8 @@ void test_hessenberg()
   CALL_SUBTEST_1(( hessenberg<std::complex<double>,1>() ));
   CALL_SUBTEST_2(( hessenberg<std::complex<double>,2>() ));
   CALL_SUBTEST_3(( hessenberg<std::complex<float>,4>() ));
-  CALL_SUBTEST_4(( hessenberg<float,Dynamic>(internal::random<int>(1,EIGEN_TEST_MAX_SIZE)) ));
-  CALL_SUBTEST_5(( hessenberg<std::complex<double>,Dynamic>(internal::random<int>(1,EIGEN_TEST_MAX_SIZE)) ));
+  CALL_SUBTEST_4(( hessenberg<float,Dynamic>(internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE)) ));
+  CALL_SUBTEST_5(( hessenberg<std::complex<double>,Dynamic>(internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE)) ));
 
   // Test problem size constructors
   CALL_SUBTEST_6(HessenbergDecomposition<MatrixXf>(10));

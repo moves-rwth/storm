@@ -1,6 +1,6 @@
 
 #include <iostream>
-#include <Eigen/Core>
+#include <StormEigen/Core>
 #include <bench/BenchTimer.h>
 
 using namespace StormEigen;
@@ -36,13 +36,13 @@ void print_mode(int mode)
 }
 
 template<int Mode, typename Lhs, typename Rhs, typename Res>
-EIGEN_DONT_INLINE void prod(const Lhs& a, const Rhs& b, Res& c)
+STORMEIGEN_DONT_INLINE void prod(const Lhs& a, const Rhs& b, Res& c)
 {
   c.noalias() += typename ProductReturnType<Lhs,Rhs,Mode>::Type(a,b);
 }
 
 template<int M, int N, int K, typename Scalar, int Mode>
-EIGEN_DONT_INLINE void bench_prod()
+STORMEIGEN_DONT_INLINE void bench_prod()
 {
   typedef Matrix<Scalar,M,K> Lhs; Lhs a; a.setRandom();
   typedef Matrix<Scalar,K,N> Rhs; Rhs b; b.setRandom();

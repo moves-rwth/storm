@@ -1,4 +1,4 @@
-#include <Eigen/Core>
+#include <StormEigen/Core>
 #include <iostream>
 
 class MyVectorType : public StormEigen::VectorXd

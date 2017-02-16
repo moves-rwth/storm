@@ -16,7 +16,7 @@
   *  where alpha and beta are scalars, x and y are n element vectors and
   *  A is an n by n hermitian matrix.
   */
-int EIGEN_BLAS_FUNC(hemv)(char *uplo, int *n, RealScalar *palpha, RealScalar *pa, int *lda, RealScalar *px, int *incx, RealScalar *pbeta, RealScalar *py, int *incy)
+int STORMEIGEN_BLAS_FUNC(hemv)(char *uplo, int *n, RealScalar *palpha, RealScalar *pa, int *lda, RealScalar *px, int *incx, RealScalar *pbeta, RealScalar *py, int *incy)
 {
   typedef void (*functype)(int, const Scalar*, int, const Scalar*, Scalar*, Scalar);
   static functype func[2];
@@ -83,7 +83,7 @@ int EIGEN_BLAS_FUNC(hemv)(char *uplo, int *n, RealScalar *palpha, RealScalar *pa
   *  where alpha and beta are scalars, x and y are n element vectors and
   *  A is an n by n hermitian band matrix, with k super-diagonals.
   */
-// int EIGEN_BLAS_FUNC(hbmv)(char *uplo, int *n, int *k, RealScalar *alpha, RealScalar *a, int *lda,
+// int STORMEIGEN_BLAS_FUNC(hbmv)(char *uplo, int *n, int *k, RealScalar *alpha, RealScalar *a, int *lda,
 //                           RealScalar *x, int *incx, RealScalar *beta, RealScalar *y, int *incy)
 // {
 //   return 1;
@@ -96,7 +96,7 @@ int EIGEN_BLAS_FUNC(hemv)(char *uplo, int *n, RealScalar *palpha, RealScalar *pa
   *  where alpha and beta are scalars, x and y are n element vectors and
   *  A is an n by n hermitian matrix, supplied in packed form.
   */
-// int EIGEN_BLAS_FUNC(hpmv)(char *uplo, int *n, RealScalar *alpha, RealScalar *ap, RealScalar *x, int *incx, RealScalar *beta, RealScalar *y, int *incy)
+// int STORMEIGEN_BLAS_FUNC(hpmv)(char *uplo, int *n, RealScalar *alpha, RealScalar *ap, RealScalar *x, int *incx, RealScalar *beta, RealScalar *y, int *incy)
 // {
 //   return 1;
 // }
@@ -108,7 +108,7 @@ int EIGEN_BLAS_FUNC(hemv)(char *uplo, int *n, RealScalar *palpha, RealScalar *pa
   *  where alpha is a real scalar, x is an n element vector and A is an
   *  n by n hermitian matrix, supplied in packed form.
   */
-int EIGEN_BLAS_FUNC(hpr)(char *uplo, int *n, RealScalar *palpha, RealScalar *px, int *incx, RealScalar *pap)
+int STORMEIGEN_BLAS_FUNC(hpr)(char *uplo, int *n, RealScalar *palpha, RealScalar *px, int *incx, RealScalar *pap)
 {
   typedef void (*functype)(int, Scalar*, const Scalar*, RealScalar);
   static functype func[2];
@@ -159,7 +159,7 @@ int EIGEN_BLAS_FUNC(hpr)(char *uplo, int *n, RealScalar *palpha, RealScalar *px,
   *  where alpha is a scalar, x and y are n element vectors and A is an
   *  n by n hermitian matrix, supplied in packed form.
   */
-int EIGEN_BLAS_FUNC(hpr2)(char *uplo, int *n, RealScalar *palpha, RealScalar *px, int *incx, RealScalar *py, int *incy, RealScalar *pap)
+int STORMEIGEN_BLAS_FUNC(hpr2)(char *uplo, int *n, RealScalar *palpha, RealScalar *px, int *incx, RealScalar *py, int *incy, RealScalar *pap)
 {
   typedef void (*functype)(int, Scalar*, const Scalar*, const Scalar*, Scalar);
   static functype func[2];
@@ -214,7 +214,7 @@ int EIGEN_BLAS_FUNC(hpr2)(char *uplo, int *n, RealScalar *palpha, RealScalar *px
   *  where alpha is a real scalar, x is an n element vector and A is an
   *  n by n hermitian matrix.
   */
-int EIGEN_BLAS_FUNC(her)(char *uplo, int *n, RealScalar *palpha, RealScalar *px, int *incx, RealScalar *pa, int *lda)
+int STORMEIGEN_BLAS_FUNC(her)(char *uplo, int *n, RealScalar *palpha, RealScalar *px, int *incx, RealScalar *pa, int *lda)
 {
   typedef void (*functype)(int, Scalar*, int, const Scalar*, const Scalar*, const Scalar&);
   static functype func[2];
@@ -268,7 +268,7 @@ int EIGEN_BLAS_FUNC(her)(char *uplo, int *n, RealScalar *palpha, RealScalar *px,
   *  where alpha is a scalar, x and y are n element vectors and A is an n
   *  by n hermitian matrix.
   */
-int EIGEN_BLAS_FUNC(her2)(char *uplo, int *n, RealScalar *palpha, RealScalar *px, int *incx, RealScalar *py, int *incy, RealScalar *pa, int *lda)
+int STORMEIGEN_BLAS_FUNC(her2)(char *uplo, int *n, RealScalar *palpha, RealScalar *px, int *incx, RealScalar *py, int *incy, RealScalar *pa, int *lda)
 {
   typedef void (*functype)(int, Scalar*, int, const Scalar*, const Scalar*, Scalar);
   static functype func[2];
@@ -326,7 +326,7 @@ int EIGEN_BLAS_FUNC(her2)(char *uplo, int *n, RealScalar *palpha, RealScalar *px
   *  where alpha is a scalar, x is an m element vector, y is an n element
   *  vector and A is an m by n matrix.
   */
-int EIGEN_BLAS_FUNC(geru)(int *m, int *n, RealScalar *palpha, RealScalar *px, int *incx, RealScalar *py, int *incy, RealScalar *pa, int *lda)
+int STORMEIGEN_BLAS_FUNC(geru)(int *m, int *n, RealScalar *palpha, RealScalar *px, int *incx, RealScalar *py, int *incy, RealScalar *pa, int *lda)
 {
   Scalar* x = reinterpret_cast<Scalar*>(px);
   Scalar* y = reinterpret_cast<Scalar*>(py);
@@ -363,7 +363,7 @@ int EIGEN_BLAS_FUNC(geru)(int *m, int *n, RealScalar *palpha, RealScalar *px, in
   *  where alpha is a scalar, x is an m element vector, y is an n element
   *  vector and A is an m by n matrix.
   */
-int EIGEN_BLAS_FUNC(gerc)(int *m, int *n, RealScalar *palpha, RealScalar *px, int *incx, RealScalar *py, int *incy, RealScalar *pa, int *lda)
+int STORMEIGEN_BLAS_FUNC(gerc)(int *m, int *n, RealScalar *palpha, RealScalar *px, int *incx, RealScalar *py, int *incy, RealScalar *pa, int *lda)
 {
   Scalar* x = reinterpret_cast<Scalar*>(px);
   Scalar* y = reinterpret_cast<Scalar*>(py);

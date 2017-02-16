@@ -12,13 +12,13 @@ endmacro(ei_add_property)
 macro(ei_add_test_internal testname testname_with_suffix)
   set(targetname ${testname_with_suffix})
   
-  if(EIGEN_ADD_TEST_FILENAME_EXTENSION)
-    set(filename ${testname}.${EIGEN_ADD_TEST_FILENAME_EXTENSION})
+  if(STORMEIGEN_ADD_TEST_FILENAME_EXTENSION)
+    set(filename ${testname}.${STORMEIGEN_ADD_TEST_FILENAME_EXTENSION})
   else()
     set(filename ${testname}.cpp)
   endif()
   
-  if(EIGEN_ADD_TEST_FILENAME_EXTENSION STREQUAL cu)
+  if(STORMEIGEN_ADD_TEST_FILENAME_EXTENSION STREQUAL cu)
     cuda_add_executable(${targetname} ${filename})
   else()
     add_executable(${targetname} ${filename})
@@ -31,19 +31,19 @@ macro(ei_add_test_internal testname testname_with_suffix)
     add_dependencies(buildtests ${targetname})
   endif()
 
-  if(EIGEN_NO_ASSERTION_CHECKING)
-    ei_add_target_property(${targetname} COMPILE_FLAGS "-DEIGEN_NO_ASSERTION_CHECKING=1")
-  else(EIGEN_NO_ASSERTION_CHECKING)
-    if(EIGEN_DEBUG_ASSERTS)
-      ei_add_target_property(${targetname} COMPILE_FLAGS "-DEIGEN_DEBUG_ASSERTS=1")
-    endif(EIGEN_DEBUG_ASSERTS)
-  endif(EIGEN_NO_ASSERTION_CHECKING)
+  if(STORMEIGEN_NO_ASSERTION_CHECKING)
+    ei_add_target_property(${targetname} COMPILE_FLAGS "-DSTORMEIGEN_NO_ASSERTION_CHECKING=1")
+  else(STORMEIGEN_NO_ASSERTION_CHECKING)
+    if(STORMEIGEN_DEBUG_ASSERTS)
+      ei_add_target_property(${targetname} COMPILE_FLAGS "-DSTORMEIGEN_DEBUG_ASSERTS=1")
+    endif(STORMEIGEN_DEBUG_ASSERTS)
+  endif(STORMEIGEN_NO_ASSERTION_CHECKING)
   
-  ei_add_target_property(${targetname} COMPILE_FLAGS "-DEIGEN_TEST_MAX_SIZE=${EIGEN_TEST_MAX_SIZE}")
+  ei_add_target_property(${targetname} COMPILE_FLAGS "-DSTORMEIGEN_TEST_MAX_SIZE=${STORMEIGEN_TEST_MAX_SIZE}")
 
-  ei_add_target_property(${targetname} COMPILE_FLAGS "-DEIGEN_TEST_FUNC=${testname}")
+  ei_add_target_property(${targetname} COMPILE_FLAGS "-DSTORMEIGEN_TEST_FUNC=${testname}")
   
-  if(MSVC AND NOT EIGEN_SPLIT_LARGE_TESTS)
+  if(MSVC AND NOT STORMEIGEN_SPLIT_LARGE_TESTS)
     ei_add_target_property(${targetname} COMPILE_FLAGS "/bigobj")
   endif()  
 
@@ -52,18 +52,18 @@ macro(ei_add_test_internal testname testname_with_suffix)
     ei_add_target_property(${targetname} COMPILE_FLAGS "${ARGV2}")
   endif(${ARGC} GREATER 2)
   
-  if(EIGEN_TEST_CUSTOM_CXX_FLAGS)
-    ei_add_target_property(${targetname} COMPILE_FLAGS "${EIGEN_TEST_CUSTOM_CXX_FLAGS}")
+  if(STORMEIGEN_TEST_CUSTOM_CXX_FLAGS)
+    ei_add_target_property(${targetname} COMPILE_FLAGS "${STORMEIGEN_TEST_CUSTOM_CXX_FLAGS}")
   endif()
 
-  if(EIGEN_STANDARD_LIBRARIES_TO_LINK_TO)
-    target_link_libraries(${targetname} ${EIGEN_STANDARD_LIBRARIES_TO_LINK_TO})
+  if(STORMEIGEN_STANDARD_LIBRARIES_TO_LINK_TO)
+    target_link_libraries(${targetname} ${STORMEIGEN_STANDARD_LIBRARIES_TO_LINK_TO})
   endif()
   if(EXTERNAL_LIBS)
     target_link_libraries(${targetname} ${EXTERNAL_LIBS})
   endif()
-  if(EIGEN_TEST_CUSTOM_LINKER_FLAGS)
-    target_link_libraries(${targetname} ${EIGEN_TEST_CUSTOM_LINKER_FLAGS})
+  if(STORMEIGEN_TEST_CUSTOM_LINKER_FLAGS)
+    target_link_libraries(${targetname} ${STORMEIGEN_TEST_CUSTOM_LINKER_FLAGS})
   endif()
 
   if(${ARGC} GREATER 3)
@@ -81,8 +81,8 @@ macro(ei_add_test_internal testname testname_with_suffix)
 
   add_test(${testname_with_suffix} "${targetname}")
   
-  # Specify target and test labels accoirding to EIGEN_CURRENT_SUBPROJECT
-  get_property(current_subproject GLOBAL PROPERTY EIGEN_CURRENT_SUBPROJECT)  
+  # Specify target and test labels accoirding to STORMEIGEN_CURRENT_SUBPROJECT
+  get_property(current_subproject GLOBAL PROPERTY STORMEIGEN_CURRENT_SUBPROJECT)  
   if ((current_subproject) AND (NOT (current_subproject STREQUAL "")))
     set_property(TARGET ${targetname} PROPERTY LABELS "Build${current_subproject}")
     add_dependencies("Build${current_subproject}" ${targetname})
@@ -116,17 +116,17 @@ endmacro(ei_add_test_internal)
 # B. Multi-part behavior
 #
 # If the source file matches the regexp
-#    CALL_SUBTEST_[0-9]+|EIGEN_TEST_PART_[0-9]+
+#    CALL_SUBTEST_[0-9]+|STORMEIGEN_TEST_PART_[0-9]+
 # then it is interpreted as a multi-part test. The behavior then depends on the
-# CMake option EIGEN_SPLIT_LARGE_TESTS, which is ON by default.
+# CMake option STORMEIGEN_SPLIT_LARGE_TESTS, which is ON by default.
 #
-# If EIGEN_SPLIT_LARGE_TESTS is OFF, the behavior is the same as in A (the multi-part
+# If STORMEIGEN_SPLIT_LARGE_TESTS is OFF, the behavior is the same as in A (the multi-part
 # aspect is ignored).
 #
-# If EIGEN_SPLIT_LARGE_TESTS is ON, the test is split into multiple executables
+# If STORMEIGEN_SPLIT_LARGE_TESTS is ON, the test is split into multiple executables
 #   test_<testname>_<N>
 # where N runs from 1 to the greatest occurence found in the source file. Each of these
-# executables is built passing -DEIGEN_TEST_PART_N. This allows to split large tests
+# executables is built passing -DSTORMEIGEN_TEST_PART_N. This allows to split large tests
 # into smaller executables.
 #
 # Moreover, targets <testname> are still generated, they
@@ -134,46 +134,46 @@ endmacro(ei_add_test_internal)
 #
 # Again, ctest -R allows to run all matching tests.
 macro(ei_add_test testname)
-  get_property(EIGEN_TESTS_LIST GLOBAL PROPERTY EIGEN_TESTS_LIST)
-  set(EIGEN_TESTS_LIST "${EIGEN_TESTS_LIST}${testname}\n")
-  set_property(GLOBAL PROPERTY EIGEN_TESTS_LIST "${EIGEN_TESTS_LIST}")
+  get_property(STORMEIGEN_TESTS_LIST GLOBAL PROPERTY STORMEIGEN_TESTS_LIST)
+  set(STORMEIGEN_TESTS_LIST "${STORMEIGEN_TESTS_LIST}${testname}\n")
+  set_property(GLOBAL PROPERTY STORMEIGEN_TESTS_LIST "${STORMEIGEN_TESTS_LIST}")
 
-  if(EIGEN_ADD_TEST_FILENAME_EXTENSION)
-    set(filename ${testname}.${EIGEN_ADD_TEST_FILENAME_EXTENSION})
+  if(STORMEIGEN_ADD_TEST_FILENAME_EXTENSION)
+    set(filename ${testname}.${STORMEIGEN_ADD_TEST_FILENAME_EXTENSION})
   else()
     set(filename ${testname}.cpp)
   endif()
   
   file(READ "${filename}" test_source)
   set(parts 0)
-  string(REGEX MATCHALL "CALL_SUBTEST_[0-9]+|EIGEN_TEST_PART_[0-9]+|EIGEN_SUFFIXES(;[0-9]+)+"
+  string(REGEX MATCHALL "CALL_SUBTEST_[0-9]+|STORMEIGEN_TEST_PART_[0-9]+|STORMEIGEN_SUFFIXES(;[0-9]+)+"
          occurences "${test_source}")
-  string(REGEX REPLACE "CALL_SUBTEST_|EIGEN_TEST_PART_|EIGEN_SUFFIXES" "" suffixes "${occurences}")
+  string(REGEX REPLACE "CALL_SUBTEST_|STORMEIGEN_TEST_PART_|STORMEIGEN_SUFFIXES" "" suffixes "${occurences}")
   list(REMOVE_DUPLICATES suffixes)
-  if(EIGEN_SPLIT_LARGE_TESTS AND suffixes)
+  if(STORMEIGEN_SPLIT_LARGE_TESTS AND suffixes)
     add_custom_target(${testname})
     foreach(suffix ${suffixes})
       ei_add_test_internal(${testname} ${testname}_${suffix}
-        "${ARGV1} -DEIGEN_TEST_PART_${suffix}=1" "${ARGV2}")
+        "${ARGV1} -DSTORMEIGEN_TEST_PART_${suffix}=1" "${ARGV2}")
       add_dependencies(${testname} ${testname}_${suffix})
     endforeach(suffix)
-  else(EIGEN_SPLIT_LARGE_TESTS AND suffixes)
+  else(STORMEIGEN_SPLIT_LARGE_TESTS AND suffixes)
     set(symbols_to_enable_all_parts "")
     foreach(suffix ${suffixes})
       set(symbols_to_enable_all_parts
-        "${symbols_to_enable_all_parts} -DEIGEN_TEST_PART_${suffix}=1")
+        "${symbols_to_enable_all_parts} -DSTORMEIGEN_TEST_PART_${suffix}=1")
     endforeach(suffix)
     ei_add_test_internal(${testname} ${testname} "${ARGV1} ${symbols_to_enable_all_parts}" "${ARGV2}")
-  endif(EIGEN_SPLIT_LARGE_TESTS AND suffixes)
+  endif(STORMEIGEN_SPLIT_LARGE_TESTS AND suffixes)
 endmacro(ei_add_test)
 
 
 # adds a failtest, i.e. a test that succeed if the program fails to compile
-# note that the test runner for these is CMake itself, when passed -DEIGEN_FAILTEST=ON
+# note that the test runner for these is CMake itself, when passed -DSTORMEIGEN_FAILTEST=ON
 # so here we're just running CMake commands immediately, we're not adding any targets.
 macro(ei_add_failtest testname)
-  get_property(EIGEN_FAILTEST_FAILURE_COUNT GLOBAL PROPERTY EIGEN_FAILTEST_FAILURE_COUNT)
-  get_property(EIGEN_FAILTEST_COUNT GLOBAL PROPERTY EIGEN_FAILTEST_COUNT)
+  get_property(STORMEIGEN_FAILTEST_FAILURE_COUNT GLOBAL PROPERTY STORMEIGEN_FAILTEST_FAILURE_COUNT)
+  get_property(STORMEIGEN_FAILTEST_COUNT GLOBAL PROPERTY STORMEIGEN_FAILTEST_COUNT)
 
   message(STATUS "Checking failtest: ${testname}")
   set(filename "${testname}.cpp")
@@ -182,7 +182,7 @@ macro(ei_add_failtest testname)
   try_compile(succeeds_when_it_should_fail
               "${CMAKE_CURRENT_BINARY_DIR}"
               "${CMAKE_CURRENT_SOURCE_DIR}/${filename}"
-              COMPILE_DEFINITIONS "-DEIGEN_SHOULD_FAIL_TO_BUILD")
+              COMPILE_DEFINITIONS "-DSTORMEIGEN_SHOULD_FAIL_TO_BUILD")
   if (succeeds_when_it_should_fail)
     message(STATUS "FAILED: ${testname} build succeeded when it should have failed")
   endif()
@@ -196,13 +196,13 @@ macro(ei_add_failtest testname)
   endif()
 
   if (succeeds_when_it_should_fail OR NOT succeeds_when_it_should_succeed)
-    math(EXPR EIGEN_FAILTEST_FAILURE_COUNT ${EIGEN_FAILTEST_FAILURE_COUNT}+1)
+    math(EXPR STORMEIGEN_FAILTEST_FAILURE_COUNT ${STORMEIGEN_FAILTEST_FAILURE_COUNT}+1)
   endif()
 
-  math(EXPR EIGEN_FAILTEST_COUNT ${EIGEN_FAILTEST_COUNT}+1)
+  math(EXPR STORMEIGEN_FAILTEST_COUNT ${STORMEIGEN_FAILTEST_COUNT}+1)
 
-  set_property(GLOBAL PROPERTY EIGEN_FAILTEST_FAILURE_COUNT ${EIGEN_FAILTEST_FAILURE_COUNT})
-  set_property(GLOBAL PROPERTY EIGEN_FAILTEST_COUNT ${EIGEN_FAILTEST_COUNT})
+  set_property(GLOBAL PROPERTY STORMEIGEN_FAILTEST_FAILURE_COUNT ${STORMEIGEN_FAILTEST_FAILURE_COUNT})
+  set_property(GLOBAL PROPERTY STORMEIGEN_FAILTEST_COUNT ${STORMEIGEN_FAILTEST_COUNT})
 endmacro(ei_add_failtest)
 
 # print a summary of the different options
@@ -214,93 +214,93 @@ macro(ei_testing_print_summary)
   message(STATUS "Build type:        ${CMAKE_BUILD_TYPE}")
   message(STATUS "Build site:        ${SITE}")
   message(STATUS "Build string:      ${BUILDNAME}")
-  get_property(EIGEN_TESTING_SUMMARY GLOBAL PROPERTY EIGEN_TESTING_SUMMARY)
-  get_property(EIGEN_TESTED_BACKENDS GLOBAL PROPERTY EIGEN_TESTED_BACKENDS)
-  get_property(EIGEN_MISSING_BACKENDS GLOBAL PROPERTY EIGEN_MISSING_BACKENDS)
-  message(STATUS "Enabled backends:  ${EIGEN_TESTED_BACKENDS}")
-  message(STATUS "Disabled backends: ${EIGEN_MISSING_BACKENDS}")
+  get_property(STORMEIGEN_TESTING_SUMMARY GLOBAL PROPERTY STORMEIGEN_TESTING_SUMMARY)
+  get_property(STORMEIGEN_TESTED_BACKENDS GLOBAL PROPERTY STORMEIGEN_TESTED_BACKENDS)
+  get_property(STORMEIGEN_MISSING_BACKENDS GLOBAL PROPERTY STORMEIGEN_MISSING_BACKENDS)
+  message(STATUS "Enabled backends:  ${STORMEIGEN_TESTED_BACKENDS}")
+  message(STATUS "Disabled backends: ${STORMEIGEN_MISSING_BACKENDS}")
 
-  if(EIGEN_DEFAULT_TO_ROW_MAJOR)
+  if(STORMEIGEN_DEFAULT_TO_ROW_MAJOR)
     message(STATUS "Default order:     Row-major")
   else()
     message(STATUS "Default order:     Column-major")
   endif()
 
-  if(EIGEN_TEST_NO_EXPLICIT_ALIGNMENT)
+  if(STORMEIGEN_TEST_NO_EXPLICIT_ALIGNMENT)
     message(STATUS "Explicit alignment (hence vectorization) disabled")
-  elseif(EIGEN_TEST_NO_EXPLICIT_VECTORIZATION)
+  elseif(STORMEIGEN_TEST_NO_EXPLICIT_VECTORIZATION)
     message(STATUS "Explicit vectorization disabled (alignment kept enabled)")
   else()
   
-  message(STATUS "Maximal matrix/vector size: ${EIGEN_TEST_MAX_SIZE}")
+  message(STATUS "Maximal matrix/vector size: ${STORMEIGEN_TEST_MAX_SIZE}")
 
-    if(EIGEN_TEST_SSE2)
+    if(STORMEIGEN_TEST_SSE2)
       message(STATUS "SSE2:              ON")
     else()
       message(STATUS "SSE2:              Using architecture defaults")
     endif()
 
-    if(EIGEN_TEST_SSE3)
+    if(STORMEIGEN_TEST_SSE3)
       message(STATUS "SSE3:              ON")
     else()
       message(STATUS "SSE3:              Using architecture defaults")
     endif()
 
-    if(EIGEN_TEST_SSSE3)
+    if(STORMEIGEN_TEST_SSSE3)
       message(STATUS "SSSE3:             ON")
     else()
       message(STATUS "SSSE3:             Using architecture defaults")
     endif()
 
-    if(EIGEN_TEST_SSE4_1)
+    if(STORMEIGEN_TEST_SSE4_1)
       message(STATUS "SSE4.1:            ON")
     else()
       message(STATUS "SSE4.1:            Using architecture defaults")
     endif()
 
-    if(EIGEN_TEST_SSE4_2)
+    if(STORMEIGEN_TEST_SSE4_2)
       message(STATUS "SSE4.2:            ON")
     else()
       message(STATUS "SSE4.2:            Using architecture defaults")
     endif()
 
-    if(EIGEN_TEST_AVX)
+    if(STORMEIGEN_TEST_AVX)
       message(STATUS "AVX:               ON")
     else()
       message(STATUS "AVX:               Using architecture defaults")
     endif()
 
-   if(EIGEN_TEST_FMA)
+   if(STORMEIGEN_TEST_FMA)
       message(STATUS "FMA:               ON")
     else()
       message(STATUS "FMA:               Using architecture defaults")
     endif()
 
-    if(EIGEN_TEST_ALTIVEC)
+    if(STORMEIGEN_TEST_ALTIVEC)
       message(STATUS "Altivec:           ON")
     else()
       message(STATUS "Altivec:           Using architecture defaults")
     endif()
 
-    if(EIGEN_TEST_VSX)
+    if(STORMEIGEN_TEST_VSX)
       message(STATUS "VSX:               ON")
     else()
       message(STATUS "VSX:               Using architecture defaults")
     endif()
 
-    if(EIGEN_TEST_NEON)
+    if(STORMEIGEN_TEST_NEON)
       message(STATUS "ARM NEON:          ON")
     else()
       message(STATUS "ARM NEON:          Using architecture defaults")
     endif()
 
-    if(EIGEN_TEST_NEON64)
+    if(STORMEIGEN_TEST_NEON64)
       message(STATUS "ARMv8 NEON:        ON")
     else()
       message(STATUS "ARMv8 NEON:        Using architecture defaults")
     endif()
     
-    if(EIGEN_TEST_CXX11)
+    if(STORMEIGEN_TEST_CXX11)
       message(STATUS "C++11:             ON")
     else()
       message(STATUS "C++11:             OFF")
@@ -308,28 +308,28 @@ macro(ei_testing_print_summary)
 
   endif() # vectorization / alignment options
 
-  message(STATUS "\n${EIGEN_TESTING_SUMMARY}")
+  message(STATUS "\n${STORMEIGEN_TESTING_SUMMARY}")
 
   message(STATUS "************************************************************")
 endmacro(ei_testing_print_summary)
 
 macro(ei_init_testing)
-  define_property(GLOBAL PROPERTY EIGEN_CURRENT_SUBPROJECT BRIEF_DOCS " " FULL_DOCS " ")
-  define_property(GLOBAL PROPERTY EIGEN_TESTED_BACKENDS BRIEF_DOCS " " FULL_DOCS " ")
-  define_property(GLOBAL PROPERTY EIGEN_MISSING_BACKENDS BRIEF_DOCS " " FULL_DOCS " ")
-  define_property(GLOBAL PROPERTY EIGEN_TESTING_SUMMARY BRIEF_DOCS " " FULL_DOCS " ")
-  define_property(GLOBAL PROPERTY EIGEN_TESTS_LIST BRIEF_DOCS " " FULL_DOCS " ")
+  define_property(GLOBAL PROPERTY STORMEIGEN_CURRENT_SUBPROJECT BRIEF_DOCS " " FULL_DOCS " ")
+  define_property(GLOBAL PROPERTY STORMEIGEN_TESTED_BACKENDS BRIEF_DOCS " " FULL_DOCS " ")
+  define_property(GLOBAL PROPERTY STORMEIGEN_MISSING_BACKENDS BRIEF_DOCS " " FULL_DOCS " ")
+  define_property(GLOBAL PROPERTY STORMEIGEN_TESTING_SUMMARY BRIEF_DOCS " " FULL_DOCS " ")
+  define_property(GLOBAL PROPERTY STORMEIGEN_TESTS_LIST BRIEF_DOCS " " FULL_DOCS " ")
 
-  set_property(GLOBAL PROPERTY EIGEN_TESTED_BACKENDS "")
-  set_property(GLOBAL PROPERTY EIGEN_MISSING_BACKENDS "")
-  set_property(GLOBAL PROPERTY EIGEN_TESTING_SUMMARY "")
-  set_property(GLOBAL PROPERTY EIGEN_TESTS_LIST "")
+  set_property(GLOBAL PROPERTY STORMEIGEN_TESTED_BACKENDS "")
+  set_property(GLOBAL PROPERTY STORMEIGEN_MISSING_BACKENDS "")
+  set_property(GLOBAL PROPERTY STORMEIGEN_TESTING_SUMMARY "")
+  set_property(GLOBAL PROPERTY STORMEIGEN_TESTS_LIST "")
 
-  define_property(GLOBAL PROPERTY EIGEN_FAILTEST_FAILURE_COUNT BRIEF_DOCS " " FULL_DOCS " ")
-  define_property(GLOBAL PROPERTY EIGEN_FAILTEST_COUNT BRIEF_DOCS " " FULL_DOCS " ")
+  define_property(GLOBAL PROPERTY STORMEIGEN_FAILTEST_FAILURE_COUNT BRIEF_DOCS " " FULL_DOCS " ")
+  define_property(GLOBAL PROPERTY STORMEIGEN_FAILTEST_COUNT BRIEF_DOCS " " FULL_DOCS " ")
 
-  set_property(GLOBAL PROPERTY EIGEN_FAILTEST_FAILURE_COUNT "0")
-  set_property(GLOBAL PROPERTY EIGEN_FAILTEST_COUNT "0")
+  set_property(GLOBAL PROPERTY STORMEIGEN_FAILTEST_FAILURE_COUNT "0")
+  set_property(GLOBAL PROPERTY STORMEIGEN_FAILTEST_COUNT "0")
   
   # uncomment anytime you change the ei_get_compilerver_from_cxx_version_string macro
   # ei_test_get_compilerver_from_cxx_version_string()
@@ -368,12 +368,12 @@ macro(ei_get_compilerver VAR)
     # supporting a "--version" or "/version" flag
     
     if(WIN32 AND ${CMAKE_CXX_COMPILER_ID} EQUAL "Intel")
-      set(EIGEN_CXX_FLAG_VERSION "/version")
+      set(STORMEIGEN_CXX_FLAG_VERSION "/version")
     else()
-      set(EIGEN_CXX_FLAG_VERSION "--version")
+      set(STORMEIGEN_CXX_FLAG_VERSION "--version")
     endif()
     
-    execute_process(COMMAND ${CMAKE_CXX_COMPILER} ${EIGEN_CXX_FLAG_VERSION}
+    execute_process(COMMAND ${CMAKE_CXX_COMPILER} ${STORMEIGEN_CXX_FLAG_VERSION}
                     OUTPUT_VARIABLE eigen_cxx_compiler_version_string OUTPUT_STRIP_TRAILING_WHITESPACE)
     string(REGEX REPLACE "[\n\r].*"  ""  eigen_cxx_compiler_version_string  ${eigen_cxx_compiler_version_string})
     
@@ -433,31 +433,31 @@ endmacro(ei_get_compilerver_from_cxx_version_string)
 macro(ei_get_cxxflags VAR)
   set(${VAR} "")
   ei_is_64bit_env(IS_64BIT_ENV)
-  if(EIGEN_TEST_NEON)
+  if(STORMEIGEN_TEST_NEON)
     set(${VAR} NEON)
-  elseif(EIGEN_TEST_NEON64)
+  elseif(STORMEIGEN_TEST_NEON64)
     set(${VAR} NEON)
-  elseif(EIGEN_TEST_VSX)
+  elseif(STORMEIGEN_TEST_VSX)
     set(${VAR} VSX)
-  elseif(EIGEN_TEST_ALTIVEC)
+  elseif(STORMEIGEN_TEST_ALTIVEC)
     set(${VAR} ALVEC)
-  elseif(EIGEN_TEST_FMA)
+  elseif(STORMEIGEN_TEST_FMA)
     set(${VAR} FMA)
-  elseif(EIGEN_TEST_AVX)
+  elseif(STORMEIGEN_TEST_AVX)
     set(${VAR} AVX)
-  elseif(EIGEN_TEST_SSE4_2)
+  elseif(STORMEIGEN_TEST_SSE4_2)
     set(${VAR} SSE42)
-  elseif(EIGEN_TEST_SSE4_1)
+  elseif(STORMEIGEN_TEST_SSE4_1)
     set(${VAR} SSE41)
-  elseif(EIGEN_TEST_SSSE3)
+  elseif(STORMEIGEN_TEST_SSSE3)
     set(${VAR} SSSE3)
-  elseif(EIGEN_TEST_SSE3)
+  elseif(STORMEIGEN_TEST_SSE3)
     set(${VAR} SSE3)
-  elseif(EIGEN_TEST_SSE2 OR IS_64BIT_ENV)
+  elseif(STORMEIGEN_TEST_SSE2 OR IS_64BIT_ENV)
     set(${VAR} SSE2)  
   endif()
 
-  if(EIGEN_TEST_OPENMP)
+  if(STORMEIGEN_TEST_OPENMP)
     if (${VAR} STREQUAL "")
 	  set(${VAR} OMP)
 	else()
@@ -465,7 +465,7 @@ macro(ei_get_cxxflags VAR)
 	endif()
   endif()
   
-  if(EIGEN_DEFAULT_TO_ROW_MAJOR)
+  if(STORMEIGEN_DEFAULT_TO_ROW_MAJOR)
     if (${VAR} STREQUAL "")
 	  set(${VAR} ROW)
 	else()
@@ -494,12 +494,12 @@ macro(ei_set_build_string)
     set(TMP_BUILD_STRING ${TMP_BUILD_STRING}-64bit)
   endif()
   
-  if(EIGEN_TEST_CXX11)
+  if(STORMEIGEN_TEST_CXX11)
     set(TMP_BUILD_STRING ${TMP_BUILD_STRING}-cxx11)
   endif()
   
-  if(EIGEN_BUILD_STRING_SUFFIX)
-    set(TMP_BUILD_STRING ${TMP_BUILD_STRING}-${EIGEN_BUILD_STRING_SUFFIX})
+  if(STORMEIGEN_BUILD_STRING_SUFFIX)
+    set(TMP_BUILD_STRING ${TMP_BUILD_STRING}-${STORMEIGEN_BUILD_STRING_SUFFIX})
   endif()
 
   string(TOLOWER ${TMP_BUILD_STRING} BUILDNAME)

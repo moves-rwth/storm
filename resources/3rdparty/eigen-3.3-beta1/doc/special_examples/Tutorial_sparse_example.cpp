@@ -1,4 +1,4 @@
-#include <Eigen/Sparse>
+#include <StormEigen/Sparse>
 #include <vector>
 
 typedef StormEigen::SparseMatrix<double> SpMat; // declares a column-major sparse matrix type of double

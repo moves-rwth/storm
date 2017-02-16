@@ -10,7 +10,7 @@
 #include <main.h>
 #include <iostream>
 #include <GL/glew.h>
-#include <Eigen/OpenGLSupport>
+#include <StormEigen/OpenGLSupport>
 #include <GL/glut.h>
 using namespace StormEigen;
 
@@ -34,7 +34,7 @@ using namespace StormEigen;
     int loc = glGetUniformLocation(prg_id, #NAME); \
     VERIFY((loc!=-1) && "uniform not found"); \
     glUniform(loc,value); \
-    EIGEN_CAT(glGetUniform,SUFFIX)(prg_id,loc,data.data()); \
+    STORMEIGEN_CAT(glGetUniform,SUFFIX)(prg_id,loc,data.data()); \
     if(!value.isApprox(data)) { \
       std::cerr << "Expected:\n" << value << "\n" << "got\n" << data << "\n\n"; \
     } \

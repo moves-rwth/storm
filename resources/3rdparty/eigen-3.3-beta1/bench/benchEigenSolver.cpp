@@ -3,7 +3,7 @@
 // options:
 //  -DBENCH_GMM
 //  -DBENCH_GSL -lgsl /usr/lib/libcblas.so.3
-//  -DEIGEN_DONT_VECTORIZE
+//  -DSTORMEIGEN_DONT_VECTORIZE
 //  -msse2
 //  -DREPEAT=100
 //  -DTRIES=10
@@ -11,8 +11,8 @@
 
 #include <iostream>
 
-#include <Eigen/Core>
-#include <Eigen/QR>
+#include <StormEigen/Core>
+#include <StormEigen/QR>
 #include <bench/BenchUtil.h>
 using namespace StormEigen;
 

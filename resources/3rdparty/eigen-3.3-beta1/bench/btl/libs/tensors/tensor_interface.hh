@@ -9,7 +9,7 @@
 #ifndef TENSOR_INTERFACE_HH
 #define TENSOR_INTERFACE_HH
 
-#include <unsupported/Eigen/CXX11/Tensor>
+#include <unsupported/StormEigen/CXX11/Tensor>
 #include <vector>
 #include "btl.hh"
 
@@ -31,7 +31,7 @@ public :
 
   static inline std::string name( void )
   {
-    return EIGEN_MAKESTRING(BTL_PREFIX);
+    return STORMEIGEN_MAKESTRING(BTL_PREFIX);
   }
 
   static void free_matrix(gene_matrix & /*A*/, int /*N*/) {}
@@ -93,11 +93,11 @@ public :
     Y = X.constant(a)*X + Y.constant(b)*Y;
   }
 
-  static EIGEN_DONT_INLINE void copy_matrix(const gene_matrix & source, gene_matrix & cible, int  /*N*/){
+  static STORMEIGEN_DONT_INLINE void copy_matrix(const gene_matrix & source, gene_matrix & cible, int  /*N*/){
     cible = source;
   }
 
-  static EIGEN_DONT_INLINE void copy_vector(const gene_vector & source, gene_vector & cible, int  /*N*/){
+  static STORMEIGEN_DONT_INLINE void copy_vector(const gene_vector & source, gene_vector & cible, int  /*N*/){
     cible = source;
   }
 };

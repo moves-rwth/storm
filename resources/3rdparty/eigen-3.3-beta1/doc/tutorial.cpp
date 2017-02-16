@@ -1,4 +1,4 @@
-#include <Eigen/Array>
+#include <StormEigen/Array>
 
 int main(int argc, char *argv[])
 {

@@ -13,7 +13,7 @@ template<typename T>
 int get_random_size()
 {
   const int factor = NumTraits<T>::ReadCost;
-  const int max_test_size = EIGEN_TEST_MAX_SIZE>2*factor ? EIGEN_TEST_MAX_SIZE/factor : EIGEN_TEST_MAX_SIZE;
+  const int max_test_size = STORMEIGEN_TEST_MAX_SIZE>2*factor ? STORMEIGEN_TEST_MAX_SIZE/factor : STORMEIGEN_TEST_MAX_SIZE;
   return internal::random<int>(1,max_test_size);
 }
 
@@ -81,35 +81,35 @@ void trmm(int rows=get_random_size<Scalar>(), int cols=get_random_size<Scalar>()
 }
 
 #define CALL_ALL_ORDERS(NB,SCALAR,MODE)                                             \
-  EIGEN_CAT(CALL_SUBTEST_,NB)((trmm<SCALAR, MODE, ColMajor,ColMajor,ColMajor>()));  \
-  EIGEN_CAT(CALL_SUBTEST_,NB)((trmm<SCALAR, MODE, ColMajor,ColMajor,RowMajor>()));  \
-  EIGEN_CAT(CALL_SUBTEST_,NB)((trmm<SCALAR, MODE, ColMajor,RowMajor,ColMajor>()));  \
-  EIGEN_CAT(CALL_SUBTEST_,NB)((trmm<SCALAR, MODE, ColMajor,RowMajor,RowMajor>()));  \
-  EIGEN_CAT(CALL_SUBTEST_,NB)((trmm<SCALAR, MODE, RowMajor,ColMajor,ColMajor>()));  \
-  EIGEN_CAT(CALL_SUBTEST_,NB)((trmm<SCALAR, MODE, RowMajor,ColMajor,RowMajor>()));  \
-  EIGEN_CAT(CALL_SUBTEST_,NB)((trmm<SCALAR, MODE, RowMajor,RowMajor,ColMajor>()));  \
-  EIGEN_CAT(CALL_SUBTEST_,NB)((trmm<SCALAR, MODE, RowMajor,RowMajor,RowMajor>()));  \
+  STORMEIGEN_CAT(CALL_SUBTEST_,NB)((trmm<SCALAR, MODE, ColMajor,ColMajor,ColMajor>()));  \
+  STORMEIGEN_CAT(CALL_SUBTEST_,NB)((trmm<SCALAR, MODE, ColMajor,ColMajor,RowMajor>()));  \
+  STORMEIGEN_CAT(CALL_SUBTEST_,NB)((trmm<SCALAR, MODE, ColMajor,RowMajor,ColMajor>()));  \
+  STORMEIGEN_CAT(CALL_SUBTEST_,NB)((trmm<SCALAR, MODE, ColMajor,RowMajor,RowMajor>()));  \
+  STORMEIGEN_CAT(CALL_SUBTEST_,NB)((trmm<SCALAR, MODE, RowMajor,ColMajor,ColMajor>()));  \
+  STORMEIGEN_CAT(CALL_SUBTEST_,NB)((trmm<SCALAR, MODE, RowMajor,ColMajor,RowMajor>()));  \
+  STORMEIGEN_CAT(CALL_SUBTEST_,NB)((trmm<SCALAR, MODE, RowMajor,RowMajor,ColMajor>()));  \
+  STORMEIGEN_CAT(CALL_SUBTEST_,NB)((trmm<SCALAR, MODE, RowMajor,RowMajor,RowMajor>()));  \
   \
-  EIGEN_CAT(CALL_SUBTEST_1,NB)((trmv<SCALAR, MODE, ColMajor>()));                   \
-  EIGEN_CAT(CALL_SUBTEST_1,NB)((trmv<SCALAR, MODE, RowMajor>()));
+  STORMEIGEN_CAT(CALL_SUBTEST_1,NB)((trmv<SCALAR, MODE, ColMajor>()));                   \
+  STORMEIGEN_CAT(CALL_SUBTEST_1,NB)((trmv<SCALAR, MODE, RowMajor>()));
 
   
 #define CALL_ALL(NB,SCALAR)                 \
-  CALL_ALL_ORDERS(EIGEN_CAT(1,NB),SCALAR,Upper)          \
-  CALL_ALL_ORDERS(EIGEN_CAT(2,NB),SCALAR,UnitUpper)      \
-  CALL_ALL_ORDERS(EIGEN_CAT(3,NB),SCALAR,StrictlyUpper)  \
-  CALL_ALL_ORDERS(EIGEN_CAT(1,NB),SCALAR,Lower)          \
-  CALL_ALL_ORDERS(EIGEN_CAT(2,NB),SCALAR,UnitLower)      \
-  CALL_ALL_ORDERS(EIGEN_CAT(3,NB),SCALAR,StrictlyLower)
+  CALL_ALL_ORDERS(STORMEIGEN_CAT(1,NB),SCALAR,Upper)          \
+  CALL_ALL_ORDERS(STORMEIGEN_CAT(2,NB),SCALAR,UnitUpper)      \
+  CALL_ALL_ORDERS(STORMEIGEN_CAT(3,NB),SCALAR,StrictlyUpper)  \
+  CALL_ALL_ORDERS(STORMEIGEN_CAT(1,NB),SCALAR,Lower)          \
+  CALL_ALL_ORDERS(STORMEIGEN_CAT(2,NB),SCALAR,UnitLower)      \
+  CALL_ALL_ORDERS(STORMEIGEN_CAT(3,NB),SCALAR,StrictlyLower)
   
 
 void test_product_trmm()
 {
   for(int i = 0; i < g_repeat ; i++)
   {
-    CALL_ALL(1,float);                //  EIGEN_SUFFIXES;11;111;21;121;31;131
-    CALL_ALL(2,double);               //  EIGEN_SUFFIXES;12;112;22;122;32;132
-    CALL_ALL(3,std::complex<float>);  //  EIGEN_SUFFIXES;13;113;23;123;33;133
-    CALL_ALL(4,std::complex<double>); //  EIGEN_SUFFIXES;14;114;24;124;34;134
+    CALL_ALL(1,float);                //  STORMEIGEN_SUFFIXES;11;111;21;121;31;131
+    CALL_ALL(2,double);               //  STORMEIGEN_SUFFIXES;12;112;22;122;32;132
+    CALL_ALL(3,std::complex<float>);  //  STORMEIGEN_SUFFIXES;13;113;23;123;33;133
+    CALL_ALL(4,std::complex<double>); //  STORMEIGEN_SUFFIXES;14;114;24;124;34;134
   }
 }

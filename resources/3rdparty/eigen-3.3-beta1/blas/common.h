@@ -7,11 +7,11 @@
 // Public License v. 2.0. If a copy of the MPL was not distributed
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-#ifndef EIGEN_BLAS_COMMON_H
-#define EIGEN_BLAS_COMMON_H
+#ifndef STORMEIGEN_BLAS_COMMON_H
+#define STORMEIGEN_BLAS_COMMON_H
 
-#include <Eigen/Core>
-#include <Eigen/Jacobi>
+#include <StormEigen/Core>
+#include <StormEigen/Jacobi>
 
 #include <complex>
 
@@ -19,7 +19,7 @@
 #error the token SCALAR must be defined to compile this file
 #endif
 
-#include <Eigen/src/misc/blas.h>
+#include <StormEigen/src/misc/blas.h>
 
 
 #define NOTR    0
@@ -139,6 +139,6 @@ T* copy_back(T* x_cpy, T* x, int n, int incx)
   return x_cpy;
 }
 
-#define EIGEN_BLAS_FUNC(X) EIGEN_CAT(SCALAR_SUFFIX,X##_)
+#define STORMEIGEN_BLAS_FUNC(X) STORMEIGEN_CAT(SCALAR_SUFFIX,X##_)
 
-#endif // EIGEN_BLAS_COMMON_H
+#endif // STORMEIGEN_BLAS_COMMON_H

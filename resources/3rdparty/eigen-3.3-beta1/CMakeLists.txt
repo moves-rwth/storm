@@ -27,31 +27,31 @@ endif()
 #############################################################################
 
 # automatically parse the version number
-file(READ "${PROJECT_SOURCE_DIR}/Eigen/src/Core/util/Macros.h" _eigen_version_header)
-string(REGEX MATCH "define[ \t]+EIGEN_WORLD_VERSION[ \t]+([0-9]+)" _eigen_world_version_match "${_eigen_version_header}")
-set(EIGEN_WORLD_VERSION "${CMAKE_MATCH_1}")
-string(REGEX MATCH "define[ \t]+EIGEN_MAJOR_VERSION[ \t]+([0-9]+)" _eigen_major_version_match "${_eigen_version_header}")
-set(EIGEN_MAJOR_VERSION "${CMAKE_MATCH_1}")
-string(REGEX MATCH "define[ \t]+EIGEN_MINOR_VERSION[ \t]+([0-9]+)" _eigen_minor_version_match "${_eigen_version_header}")
-set(EIGEN_MINOR_VERSION "${CMAKE_MATCH_1}")
-set(EIGEN_VERSION_NUMBER ${EIGEN_WORLD_VERSION}.${EIGEN_MAJOR_VERSION}.${EIGEN_MINOR_VERSION})
+file(READ "${PROJECT_SOURCE_DIR}/StormEigen/src/Core/util/Macros.h" _eigen_version_header)
+string(REGEX MATCH "define[ \t]+STORMEIGEN_WORLD_VERSION[ \t]+([0-9]+)" _eigen_world_version_match "${_eigen_version_header}")
+set(STORMEIGEN_WORLD_VERSION "${CMAKE_MATCH_1}")
+string(REGEX MATCH "define[ \t]+STORMEIGEN_MAJOR_VERSION[ \t]+([0-9]+)" _eigen_major_version_match "${_eigen_version_header}")
+set(STORMEIGEN_MAJOR_VERSION "${CMAKE_MATCH_1}")
+string(REGEX MATCH "define[ \t]+STORMEIGEN_MINOR_VERSION[ \t]+([0-9]+)" _eigen_minor_version_match "${_eigen_version_header}")
+set(STORMEIGEN_MINOR_VERSION "${CMAKE_MATCH_1}")
+set(STORMEIGEN_VERSION_NUMBER ${STORMEIGEN_WORLD_VERSION}.${STORMEIGEN_MAJOR_VERSION}.${STORMEIGEN_MINOR_VERSION})
 
-# if the mercurial program is absent, this will leave the EIGEN_HG_CHANGESET string empty,
+# if the mercurial program is absent, this will leave the STORMEIGEN_HG_CHANGESET string empty,
 # but won't stop CMake.
-execute_process(COMMAND hg tip -R ${CMAKE_SOURCE_DIR} OUTPUT_VARIABLE EIGEN_HGTIP_OUTPUT)
-execute_process(COMMAND hg branch -R ${CMAKE_SOURCE_DIR} OUTPUT_VARIABLE EIGEN_BRANCH_OUTPUT)
+execute_process(COMMAND hg tip -R ${CMAKE_SOURCE_DIR} OUTPUT_VARIABLE STORMEIGEN_HGTIP_OUTPUT)
+execute_process(COMMAND hg branch -R ${CMAKE_SOURCE_DIR} OUTPUT_VARIABLE STORMEIGEN_BRANCH_OUTPUT)
 
 # if this is the default (aka development) branch, extract the mercurial changeset number from the hg tip output...
-if(EIGEN_BRANCH_OUTPUT MATCHES "default")
-string(REGEX MATCH "^changeset: *[0-9]*:([0-9;a-f]+).*" EIGEN_HG_CHANGESET_MATCH "${EIGEN_HGTIP_OUTPUT}")
-set(EIGEN_HG_CHANGESET "${CMAKE_MATCH_1}")
-endif(EIGEN_BRANCH_OUTPUT MATCHES "default")
+if(STORMEIGEN_BRANCH_OUTPUT MATCHES "default")
+string(REGEX MATCH "^changeset: *[0-9]*:([0-9;a-f]+).*" STORMEIGEN_HG_CHANGESET_MATCH "${STORMEIGEN_HGTIP_OUTPUT}")
+set(STORMEIGEN_HG_CHANGESET "${CMAKE_MATCH_1}")
+endif(STORMEIGEN_BRANCH_OUTPUT MATCHES "default")
 #...and show it next to the version number
-if(EIGEN_HG_CHANGESET)
-  set(EIGEN_VERSION "${EIGEN_VERSION_NUMBER} (mercurial changeset ${EIGEN_HG_CHANGESET})")
-else(EIGEN_HG_CHANGESET)
-  set(EIGEN_VERSION "${EIGEN_VERSION_NUMBER}")
-endif(EIGEN_HG_CHANGESET)
+if(STORMEIGEN_HG_CHANGESET)
+  set(STORMEIGEN_VERSION "${STORMEIGEN_VERSION_NUMBER} (mercurial changeset ${STORMEIGEN_HG_CHANGESET})")
+else(STORMEIGEN_HG_CHANGESET)
+  set(STORMEIGEN_VERSION "${STORMEIGEN_VERSION_NUMBER}")
+endif(STORMEIGEN_HG_CHANGESET)
 
 
 include(CheckCXXCompilerFlag)
@@ -66,10 +66,10 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 find_package(StandardMathLibrary)
 
 
-set(EIGEN_TEST_CUSTOM_LINKER_FLAGS  "" CACHE STRING "Additional linker flags when linking unit tests.")
-set(EIGEN_TEST_CUSTOM_CXX_FLAGS     "" CACHE STRING "Additional compiler flags when compiling unit tests.")
+set(STORMEIGEN_TEST_CUSTOM_LINKER_FLAGS  "" CACHE STRING "Additional linker flags when linking unit tests.")
+set(STORMEIGEN_TEST_CUSTOM_CXX_FLAGS     "" CACHE STRING "Additional compiler flags when compiling unit tests.")
 
-set(EIGEN_STANDARD_LIBRARIES_TO_LINK_TO "")
+set(STORMEIGEN_STANDARD_LIBRARIES_TO_LINK_TO "")
 
 if(NOT STANDARD_MATH_LIBRARY_FOUND)
 
@@ -78,35 +78,35 @@ if(NOT STANDARD_MATH_LIBRARY_FOUND)
 
 else()
 
-  if(EIGEN_STANDARD_LIBRARIES_TO_LINK_TO)
-    set(EIGEN_STANDARD_LIBRARIES_TO_LINK_TO "${EIGEN_STANDARD_LIBRARIES_TO_LINK_TO} ${STANDARD_MATH_LIBRARY}")
+  if(STORMEIGEN_STANDARD_LIBRARIES_TO_LINK_TO)
+    set(STORMEIGEN_STANDARD_LIBRARIES_TO_LINK_TO "${STORMEIGEN_STANDARD_LIBRARIES_TO_LINK_TO} ${STANDARD_MATH_LIBRARY}")
   else()
-    set(EIGEN_STANDARD_LIBRARIES_TO_LINK_TO "${STANDARD_MATH_LIBRARY}")
+    set(STORMEIGEN_STANDARD_LIBRARIES_TO_LINK_TO "${STANDARD_MATH_LIBRARY}")
   endif()
 
 endif()
 
-if(EIGEN_STANDARD_LIBRARIES_TO_LINK_TO)
-  message(STATUS "Standard libraries to link to explicitly: ${EIGEN_STANDARD_LIBRARIES_TO_LINK_TO}")
+if(STORMEIGEN_STANDARD_LIBRARIES_TO_LINK_TO)
+  message(STATUS "Standard libraries to link to explicitly: ${STORMEIGEN_STANDARD_LIBRARIES_TO_LINK_TO}")
 else()
   message(STATUS "Standard libraries to link to explicitly: none")
 endif()
 
-option(EIGEN_BUILD_BTL "Build benchmark suite" OFF)
+option(STORMEIGEN_BUILD_BTL "Build benchmark suite" OFF)
 if(NOT WIN32)
-  option(EIGEN_BUILD_PKGCONFIG "Build pkg-config .pc file for Eigen" ON)
+  option(STORMEIGEN_BUILD_PKGCONFIG "Build pkg-config .pc file for Eigen" ON)
 endif(NOT WIN32)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-option(EIGEN_SPLIT_LARGE_TESTS "Split large tests into smaller executables" ON)
+option(STORMEIGEN_SPLIT_LARGE_TESTS "Split large tests into smaller executables" ON)
 
-option(EIGEN_DEFAULT_TO_ROW_MAJOR "Use row-major as default matrix storage order" OFF)
-if(EIGEN_DEFAULT_TO_ROW_MAJOR)
-  add_definitions("-DEIGEN_DEFAULT_TO_ROW_MAJOR")
+option(STORMEIGEN_DEFAULT_TO_ROW_MAJOR "Use row-major as default matrix storage order" OFF)
+if(STORMEIGEN_DEFAULT_TO_ROW_MAJOR)
+  add_definitions("-DSTORMEIGEN_DEFAULT_TO_ROW_MAJOR")
 endif()
 
-set(EIGEN_TEST_MAX_SIZE "320" CACHE STRING "Maximal matrix/vector size, default is 320")
+set(STORMEIGEN_TEST_MAX_SIZE "320" CACHE STRING "Maximal matrix/vector size, default is 320")
 
 macro(ei_add_cxx_compiler_flag FLAG)
   string(REGEX REPLACE "-" "" SFLAG1 ${FLAG})
@@ -179,63 +179,63 @@ if(NOT MSVC)
   
   set(CMAKE_REQUIRED_FLAGS "")
 
-  option(EIGEN_TEST_SSE2 "Enable/Disable SSE2 in tests/examples" OFF)
-  if(EIGEN_TEST_SSE2)
+  option(STORMEIGEN_TEST_SSE2 "Enable/Disable SSE2 in tests/examples" OFF)
+  if(STORMEIGEN_TEST_SSE2)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse2")
     message(STATUS "Enabling SSE2 in tests/examples")
   endif()
 
-  option(EIGEN_TEST_SSE3 "Enable/Disable SSE3 in tests/examples" OFF)
-  if(EIGEN_TEST_SSE3)
+  option(STORMEIGEN_TEST_SSE3 "Enable/Disable SSE3 in tests/examples" OFF)
+  if(STORMEIGEN_TEST_SSE3)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse3")
     message(STATUS "Enabling SSE3 in tests/examples")
   endif()
 
-  option(EIGEN_TEST_SSSE3 "Enable/Disable SSSE3 in tests/examples" OFF)
-  if(EIGEN_TEST_SSSE3)
+  option(STORMEIGEN_TEST_SSSE3 "Enable/Disable SSSE3 in tests/examples" OFF)
+  if(STORMEIGEN_TEST_SSSE3)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mssse3")
     message(STATUS "Enabling SSSE3 in tests/examples")
   endif()
 
-  option(EIGEN_TEST_SSE4_1 "Enable/Disable SSE4.1 in tests/examples" OFF)
-  if(EIGEN_TEST_SSE4_1)
+  option(STORMEIGEN_TEST_SSE4_1 "Enable/Disable SSE4.1 in tests/examples" OFF)
+  if(STORMEIGEN_TEST_SSE4_1)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4.1")
     message(STATUS "Enabling SSE4.1 in tests/examples")
   endif()
 
-  option(EIGEN_TEST_SSE4_2 "Enable/Disable SSE4.2 in tests/examples" OFF)
-  if(EIGEN_TEST_SSE4_2)
+  option(STORMEIGEN_TEST_SSE4_2 "Enable/Disable SSE4.2 in tests/examples" OFF)
+  if(STORMEIGEN_TEST_SSE4_2)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4.2")
     message(STATUS "Enabling SSE4.2 in tests/examples")
   endif()
 
-  option(EIGEN_TEST_AVX "Enable/Disable AVX in tests/examples" OFF)
-  if(EIGEN_TEST_AVX)
+  option(STORMEIGEN_TEST_AVX "Enable/Disable AVX in tests/examples" OFF)
+  if(STORMEIGEN_TEST_AVX)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx")
     message(STATUS "Enabling AVX in tests/examples")
   endif()
 
-  option(EIGEN_TEST_FMA "Enable/Disable FMA in tests/examples" OFF)
-  if(EIGEN_TEST_FMA AND NOT EIGEN_TEST_NEON)
+  option(STORMEIGEN_TEST_FMA "Enable/Disable FMA in tests/examples" OFF)
+  if(STORMEIGEN_TEST_FMA AND NOT STORMEIGEN_TEST_NEON)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mfma")
     message(STATUS "Enabling FMA in tests/examples")
   endif()
 
-  option(EIGEN_TEST_ALTIVEC "Enable/Disable AltiVec in tests/examples" OFF)
-  if(EIGEN_TEST_ALTIVEC)
+  option(STORMEIGEN_TEST_ALTIVEC "Enable/Disable AltiVec in tests/examples" OFF)
+  if(STORMEIGEN_TEST_ALTIVEC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -maltivec -mabi=altivec")
     message(STATUS "Enabling AltiVec in tests/examples")
   endif()
 
-  option(EIGEN_TEST_VSX "Enable/Disable VSX in tests/examples" OFF)
-  if(EIGEN_TEST_VSX)
+  option(STORMEIGEN_TEST_VSX "Enable/Disable VSX in tests/examples" OFF)
+  if(STORMEIGEN_TEST_VSX)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m64 -mvsx")
     message(STATUS "Enabling VSX in tests/examples")
   endif()
 
-  option(EIGEN_TEST_NEON "Enable/Disable Neon in tests/examples" OFF)
-  if(EIGEN_TEST_NEON)
-    if(EIGEN_TEST_FMA)
+  option(STORMEIGEN_TEST_NEON "Enable/Disable Neon in tests/examples" OFF)
+  if(STORMEIGEN_TEST_NEON)
+    if(STORMEIGEN_TEST_FMA)
       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mfpu=neon-vfpv4")
     else()
       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mfpu=neon")
@@ -244,8 +244,8 @@ if(NOT MSVC)
     message(STATUS "Enabling NEON in tests/examples")
   endif()
 
-  option(EIGEN_TEST_NEON64 "Enable/Disable Neon in tests/examples" OFF)
-  if(EIGEN_TEST_NEON64)
+  option(STORMEIGEN_TEST_NEON64 "Enable/Disable Neon in tests/examples" OFF)
+  if(STORMEIGEN_TEST_NEON64)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
     message(STATUS "Enabling NEON in tests/examples")
   endif()
@@ -254,8 +254,8 @@ if(NOT MSVC)
 
   check_cxx_compiler_flag("-fopenmp" COMPILER_SUPPORT_OPENMP)
   if(COMPILER_SUPPORT_OPENMP)
-    option(EIGEN_TEST_OPENMP "Enable/Disable OpenMP in tests/examples" OFF)
-    if(EIGEN_TEST_OPENMP)
+    option(STORMEIGEN_TEST_OPENMP "Enable/Disable OpenMP in tests/examples" OFF)
+    if(STORMEIGEN_TEST_OPENMP)
       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
       message(STATUS "Enabling OpenMP in tests/examples")
     endif()
@@ -277,74 +277,74 @@ else(NOT MSVC)
 
   check_cxx_compiler_flag("/openmp" COMPILER_SUPPORT_OPENMP)
   if(COMPILER_SUPPORT_OPENMP)
-    option(EIGEN_TEST_OPENMP "Enable/Disable OpenMP in tests/examples" OFF)
-    if(EIGEN_TEST_OPENMP)
+    option(STORMEIGEN_TEST_OPENMP "Enable/Disable OpenMP in tests/examples" OFF)
+    if(STORMEIGEN_TEST_OPENMP)
       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /openmp")
       message(STATUS "Enabling OpenMP in tests/examples")
     endif()
   endif()
 
-  option(EIGEN_TEST_SSE2 "Enable/Disable SSE2 in tests/examples" OFF)
-  if(EIGEN_TEST_SSE2)
+  option(STORMEIGEN_TEST_SSE2 "Enable/Disable SSE2 in tests/examples" OFF)
+  if(STORMEIGEN_TEST_SSE2)
     if(NOT CMAKE_CL_64)
       # arch is not supported on 64 bit systems, SSE is enabled automatically.
       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /arch:SSE2")
     endif(NOT CMAKE_CL_64)
     message(STATUS "Enabling SSE2 in tests/examples")
-  endif(EIGEN_TEST_SSE2)
+  endif(STORMEIGEN_TEST_SSE2)
 endif(NOT MSVC)
 
-option(EIGEN_TEST_NO_EXPLICIT_VECTORIZATION "Disable explicit vectorization in tests/examples" OFF)
-option(EIGEN_TEST_X87 "Force using X87 instructions. Implies no vectorization." OFF)
-option(EIGEN_TEST_32BIT "Force generating 32bit code." OFF)
+option(STORMEIGEN_TEST_NO_EXPLICIT_VECTORIZATION "Disable explicit vectorization in tests/examples" OFF)
+option(STORMEIGEN_TEST_X87 "Force using X87 instructions. Implies no vectorization." OFF)
+option(STORMEIGEN_TEST_32BIT "Force generating 32bit code." OFF)
 
-if(EIGEN_TEST_X87)
-  set(EIGEN_TEST_NO_EXPLICIT_VECTORIZATION ON)
+if(STORMEIGEN_TEST_X87)
+  set(STORMEIGEN_TEST_NO_EXPLICIT_VECTORIZATION ON)
   if(CMAKE_COMPILER_IS_GNUCXX)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mfpmath=387")
     message(STATUS "Forcing use of x87 instructions in tests/examples")
   else()
-    message(STATUS "EIGEN_TEST_X87 ignored on your compiler")
+    message(STATUS "STORMEIGEN_TEST_X87 ignored on your compiler")
   endif()
 endif()
 
-if(EIGEN_TEST_32BIT)
+if(STORMEIGEN_TEST_32BIT)
   if(CMAKE_COMPILER_IS_GNUCXX)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m32")
     message(STATUS "Forcing generation of 32-bit code in tests/examples")
   else()
-    message(STATUS "EIGEN_TEST_32BIT ignored on your compiler")
+    message(STATUS "STORMEIGEN_TEST_32BIT ignored on your compiler")
   endif()
 endif()
 
-if(EIGEN_TEST_NO_EXPLICIT_VECTORIZATION)
-  add_definitions(-DEIGEN_DONT_VECTORIZE=1)
+if(STORMEIGEN_TEST_NO_EXPLICIT_VECTORIZATION)
+  add_definitions(-DSTORMEIGEN_DONT_VECTORIZE=1)
   message(STATUS "Disabling vectorization in tests/examples")
 endif()
 
-option(EIGEN_TEST_NO_EXPLICIT_ALIGNMENT "Disable explicit alignment (hence vectorization) in tests/examples" OFF)
-if(EIGEN_TEST_NO_EXPLICIT_ALIGNMENT)
-  add_definitions(-DEIGEN_DONT_ALIGN=1)
+option(STORMEIGEN_TEST_NO_EXPLICIT_ALIGNMENT "Disable explicit alignment (hence vectorization) in tests/examples" OFF)
+if(STORMEIGEN_TEST_NO_EXPLICIT_ALIGNMENT)
+  add_definitions(-DSTORMEIGEN_DONT_ALIGN=1)
   message(STATUS "Disabling alignment in tests/examples")
 endif()
 
-option(EIGEN_TEST_NO_EXCEPTIONS "Disables C++ exceptions" OFF)
-if(EIGEN_TEST_NO_EXCEPTIONS)
+option(STORMEIGEN_TEST_NO_EXCEPTIONS "Disables C++ exceptions" OFF)
+if(STORMEIGEN_TEST_NO_EXCEPTIONS)
   ei_add_cxx_compiler_flag("-fno-exceptions")
   message(STATUS "Disabling exceptions in tests/examples")
 endif()
 
-option(EIGEN_TEST_CXX11 "Enable testing with C++11 and C++11 features (e.g. Tensor module)." OFF)
+option(STORMEIGEN_TEST_CXX11 "Enable testing with C++11 and C++11 features (e.g. Tensor module)." OFF)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 
-# Backward compatibility support for EIGEN_INCLUDE_INSTALL_DIR
-if(EIGEN_INCLUDE_INSTALL_DIR)
-  message(WARNING "EIGEN_INCLUDE_INSTALL_DIR is deprecated. Use INCLUDE_INSTALL_DIR instead.")
+# Backward compatibility support for STORMEIGEN_INCLUDE_INSTALL_DIR
+if(STORMEIGEN_INCLUDE_INSTALL_DIR)
+  message(WARNING "STORMEIGEN_INCLUDE_INSTALL_DIR is deprecated. Use INCLUDE_INSTALL_DIR instead.")
 endif()
 
-if(EIGEN_INCLUDE_INSTALL_DIR AND NOT INCLUDE_INSTALL_DIR)
-  set(INCLUDE_INSTALL_DIR ${EIGEN_INCLUDE_INSTALL_DIR}
+if(STORMEIGEN_INCLUDE_INSTALL_DIR AND NOT INCLUDE_INSTALL_DIR)
+  set(INCLUDE_INSTALL_DIR ${STORMEIGEN_INCLUDE_INSTALL_DIR}
       CACHE PATH "The directory relative to CMAKE_PREFIX_PATH where Eigen header files are installed")
 else()
   set(INCLUDE_INSTALL_DIR
@@ -378,12 +378,12 @@ install(FILES
   DESTINATION ${INCLUDE_INSTALL_DIR} COMPONENT Devel
   )
 
-if(EIGEN_BUILD_PKGCONFIG)
+if(STORMEIGEN_BUILD_PKGCONFIG)
     configure_file(eigen3.pc.in eigen3.pc @ONLY)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/eigen3.pc
         DESTINATION ${PKGCONFIG_INSTALL_DIR}
         )
-endif(EIGEN_BUILD_PKGCONFIG)
+endif(STORMEIGEN_BUILD_PKGCONFIG)
 
 add_subdirectory(Eigen)
 
@@ -395,13 +395,13 @@ include(EigenConfigureTesting)
 enable_testing() # must be called from the root CMakeLists, see man page
 
 
-if(EIGEN_LEAVE_TEST_IN_ALL_TARGET)
+if(STORMEIGEN_LEAVE_TEST_IN_ALL_TARGET)
   add_subdirectory(test) # can't do EXCLUDE_FROM_ALL here, breaks CTest
 else()
   add_subdirectory(test EXCLUDE_FROM_ALL)
 endif()
 
-if(EIGEN_LEAVE_TEST_IN_ALL_TARGET)
+if(STORMEIGEN_LEAVE_TEST_IN_ALL_TARGET)
   add_subdirectory(blas)
   add_subdirectory(lapack)
 else()
@@ -416,10 +416,10 @@ add_subdirectory(demos EXCLUDE_FROM_ALL)
 # must be after test and unsupported, for configuring buildtests.in
 add_subdirectory(scripts EXCLUDE_FROM_ALL)
 
-# TODO: consider also replacing EIGEN_BUILD_BTL by a custom target "make btl"?
-if(EIGEN_BUILD_BTL)
+# TODO: consider also replacing STORMEIGEN_BUILD_BTL by a custom target "make btl"?
+if(STORMEIGEN_BUILD_BTL)
   add_subdirectory(bench/btl EXCLUDE_FROM_ALL)
-endif(EIGEN_BUILD_BTL)
+endif(STORMEIGEN_BUILD_BTL)
 
 if(NOT WIN32)
   add_subdirectory(bench/spbench EXCLUDE_FROM_ALL)
@@ -430,11 +430,11 @@ configure_file(scripts/cdashtesting.cmake.in cdashtesting.cmake @ONLY)
 ei_testing_print_summary()
 
 message(STATUS "")
-message(STATUS "Configured Eigen ${EIGEN_VERSION_NUMBER}")
+message(STATUS "Configured Eigen ${STORMEIGEN_VERSION_NUMBER}")
 message(STATUS "")
 
-option(EIGEN_FAILTEST "Enable failtests." OFF)
-if(EIGEN_FAILTEST)
+option(STORMEIGEN_FAILTEST "Enable failtests." OFF)
+if(STORMEIGEN_FAILTEST)
   add_subdirectory(failtest)
 endif()
 
@@ -467,14 +467,14 @@ endif()
 message(STATUS "")
 
 
-set ( EIGEN_VERSION_STRING ${EIGEN_VERSION_NUMBER} )
-set ( EIGEN_VERSION_MAJOR  ${EIGEN_WORLD_VERSION} )
-set ( EIGEN_VERSION_MINOR  ${EIGEN_MAJOR_VERSION} )
-set ( EIGEN_VERSION_PATCH  ${EIGEN_MINOR_VERSION} )
-set ( EIGEN_DEFINITIONS "")
-set ( EIGEN_INCLUDE_DIR "${CMAKE_INSTALL_PREFIX}/${INCLUDE_INSTALL_DIR}" )
-set ( EIGEN_INCLUDE_DIRS ${EIGEN_INCLUDE_DIR} )
-set ( EIGEN_ROOT_DIR ${CMAKE_INSTALL_PREFIX} )
+set ( STORMEIGEN_VERSION_STRING ${STORMEIGEN_VERSION_NUMBER} )
+set ( STORMEIGEN_VERSION_MAJOR  ${STORMEIGEN_WORLD_VERSION} )
+set ( STORMEIGEN_VERSION_MINOR  ${STORMEIGEN_MAJOR_VERSION} )
+set ( STORMEIGEN_VERSION_PATCH  ${STORMEIGEN_MINOR_VERSION} )
+set ( STORMEIGEN_DEFINITIONS "")
+set ( STORMEIGEN_INCLUDE_DIR "${CMAKE_INSTALL_PREFIX}/${INCLUDE_INSTALL_DIR}" )
+set ( STORMEIGEN_INCLUDE_DIRS ${STORMEIGEN_INCLUDE_DIR} )
+set ( STORMEIGEN_ROOT_DIR ${CMAKE_INSTALL_PREFIX} )
 
 configure_file ( ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Eigen3Config.cmake.in
                  ${CMAKE_CURRENT_BINARY_DIR}/Eigen3Config.cmake

@@ -8,14 +8,14 @@
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "main.h"
-#include <Eigen/Geometry>
-#include <Eigen/LU>
-#include <Eigen/QR>
+#include <StormEigen/Geometry>
+#include <StormEigen/LU>
+#include <StormEigen/QR>
 
 #include<iostream>
 using namespace std;
 
-template<typename T> EIGEN_DONT_INLINE
+template<typename T> STORMEIGEN_DONT_INLINE
 void kill_extra_precision(T& x) { eigen_assert((void*)(&x) != (void*)0); }
 
 

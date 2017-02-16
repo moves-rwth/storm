@@ -12,9 +12,9 @@
 #include <bench/BenchUtil.h>
 #include <complex>
 #include <vector>
-#include <Eigen/Core>
+#include <StormEigen/Core>
 
-#include <unsupported/Eigen/FFT>
+#include <unsupported/StormEigen/FFT>
 
 using namespace StormEigen;
 using namespace std;

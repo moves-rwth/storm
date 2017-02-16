@@ -10,7 +10,7 @@ struct Foo
 
   Foo()
   {
-#ifdef EIGEN_EXCEPTIONS
+#ifdef STORMEIGEN_EXCEPTIONS
     // TODO: Is this the correct way to handle this?
     if (Foo::object_count > Foo::object_limit) { std::cout << "\nThrow!\n"; throw Foo::Fail(); }
 #endif
@@ -30,8 +30,8 @@ struct Foo
 Index Foo::object_count = 0;
 Index Foo::object_limit = 0;
 
-#undef EIGEN_TEST_MAX_SIZE
-#define EIGEN_TEST_MAX_SIZE 3
+#undef STORMEIGEN_TEST_MAX_SIZE
+#define STORMEIGEN_TEST_MAX_SIZE 3
 
 void test_ctorleak()
 {
@@ -39,16 +39,16 @@ void test_ctorleak()
   typedef Matrix<Foo, Dynamic, 1> VectorX;
   Foo::object_count = 0;
   for(int i = 0; i < g_repeat; i++) {
-    Index rows = internal::random<Index>(2,EIGEN_TEST_MAX_SIZE), cols = internal::random<Index>(2,EIGEN_TEST_MAX_SIZE);
+    Index rows = internal::random<Index>(2,STORMEIGEN_TEST_MAX_SIZE), cols = internal::random<Index>(2,STORMEIGEN_TEST_MAX_SIZE);
     Foo::object_limit = internal::random<Index>(0, rows*cols - 2);
     std::cout << "object_limit =" << Foo::object_limit << std::endl;
-#ifdef EIGEN_EXCEPTIONS
+#ifdef STORMEIGEN_EXCEPTIONS
     try
     {
 #endif
     	std::cout <<       "\nMatrixX m(" << rows << ", " << cols << ");\n";
       MatrixX m(rows, cols);
-#ifdef EIGEN_EXCEPTIONS
+#ifdef STORMEIGEN_EXCEPTIONS
       VERIFY(false);  // not reached if exceptions are enabled
     }
     catch (const Foo::Fail&) { /* ignore */ }

@@ -11,7 +11,7 @@
 #include "main.h"
 #include "svd_fill.h"
 #include <limits>
-#include <Eigen/Eigenvalues>
+#include <StormEigen/Eigenvalues>
 
 
 template<typename MatrixType> void selfadjointeigensolver_essential_check(const MatrixType& m)
@@ -196,7 +196,7 @@ void test_eigensolver_selfadjoint()
     CALL_SUBTEST_13( selfadjointeigensolver(Matrix3d()) );
     CALL_SUBTEST_2( selfadjointeigensolver(Matrix4d()) );
     
-    s = internal::random<int>(1,EIGEN_TEST_MAX_SIZE/4);
+    s = internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE/4);
     CALL_SUBTEST_3( selfadjointeigensolver(MatrixXf(s,s)) );
     CALL_SUBTEST_4( selfadjointeigensolver(MatrixXd(s,s)) );
     CALL_SUBTEST_5( selfadjointeigensolver(MatrixXcd(s,s)) );
@@ -214,7 +214,7 @@ void test_eigensolver_selfadjoint()
   CALL_SUBTEST_13( bug_1014() );
 
   // Test problem size constructors
-  s = internal::random<int>(1,EIGEN_TEST_MAX_SIZE/4);
+  s = internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE/4);
   CALL_SUBTEST_8(SelfAdjointEigenSolver<MatrixXf> tmp1(s));
   CALL_SUBTEST_8(Tridiagonalization<MatrixXf> tmp2(s));
   

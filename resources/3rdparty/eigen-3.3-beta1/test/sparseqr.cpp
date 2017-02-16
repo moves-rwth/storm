@@ -7,7 +7,7 @@
 // This Source Code Form is subject to the terms of the Mozilla
 // Public License v. 2.0. If a copy of the MPL was not distributed
 #include "sparse.h"
-#include <Eigen/SparseQR>
+#include <StormEigen/SparseQR>
 
 template<typename MatrixType,typename DenseMat>
 int generate_sparse_rectangular_problem(MatrixType& A, DenseMat& dA, int maxRows = 300, int maxCols = 150)

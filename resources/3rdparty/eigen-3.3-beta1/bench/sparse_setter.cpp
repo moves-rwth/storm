@@ -24,7 +24,7 @@
 #endif
 
 #ifndef NOGOOGLE
-#define EIGEN_GOOGLEHASH_SUPPORT
+#define STORMEIGEN_GOOGLEHASH_SUPPORT
 #include <google/sparse_hash_map>
 #endif
 
@@ -44,19 +44,19 @@
 typedef std::vector<Vector2i> Coordinates;
 typedef std::vector<float> Values;
 
-EIGEN_DONT_INLINE Scalar* setinnerrand_eigen(const Coordinates& coords, const Values& vals);
-EIGEN_DONT_INLINE Scalar* setrand_eigen_dynamic(const Coordinates& coords, const Values& vals);
-EIGEN_DONT_INLINE Scalar* setrand_eigen_compact(const Coordinates& coords, const Values& vals);
-EIGEN_DONT_INLINE Scalar* setrand_eigen_sumeq(const Coordinates& coords, const Values& vals);
-EIGEN_DONT_INLINE Scalar* setrand_eigen_gnu_hash(const Coordinates& coords, const Values& vals);
-EIGEN_DONT_INLINE Scalar* setrand_eigen_google_dense(const Coordinates& coords, const Values& vals);
-EIGEN_DONT_INLINE Scalar* setrand_eigen_google_sparse(const Coordinates& coords, const Values& vals);
-EIGEN_DONT_INLINE Scalar* setrand_scipy(const Coordinates& coords, const Values& vals);
-EIGEN_DONT_INLINE Scalar* setrand_ublas_mapped(const Coordinates& coords, const Values& vals);
-EIGEN_DONT_INLINE Scalar* setrand_ublas_coord(const Coordinates& coords, const Values& vals);
-EIGEN_DONT_INLINE Scalar* setrand_ublas_compressed(const Coordinates& coords, const Values& vals);
-EIGEN_DONT_INLINE Scalar* setrand_ublas_genvec(const Coordinates& coords, const Values& vals);
-EIGEN_DONT_INLINE Scalar* setrand_mtl(const Coordinates& coords, const Values& vals);
+STORMEIGEN_DONT_INLINE Scalar* setinnerrand_eigen(const Coordinates& coords, const Values& vals);
+STORMEIGEN_DONT_INLINE Scalar* setrand_eigen_dynamic(const Coordinates& coords, const Values& vals);
+STORMEIGEN_DONT_INLINE Scalar* setrand_eigen_compact(const Coordinates& coords, const Values& vals);
+STORMEIGEN_DONT_INLINE Scalar* setrand_eigen_sumeq(const Coordinates& coords, const Values& vals);
+STORMEIGEN_DONT_INLINE Scalar* setrand_eigen_gnu_hash(const Coordinates& coords, const Values& vals);
+STORMEIGEN_DONT_INLINE Scalar* setrand_eigen_google_dense(const Coordinates& coords, const Values& vals);
+STORMEIGEN_DONT_INLINE Scalar* setrand_eigen_google_sparse(const Coordinates& coords, const Values& vals);
+STORMEIGEN_DONT_INLINE Scalar* setrand_scipy(const Coordinates& coords, const Values& vals);
+STORMEIGEN_DONT_INLINE Scalar* setrand_ublas_mapped(const Coordinates& coords, const Values& vals);
+STORMEIGEN_DONT_INLINE Scalar* setrand_ublas_coord(const Coordinates& coords, const Values& vals);
+STORMEIGEN_DONT_INLINE Scalar* setrand_ublas_compressed(const Coordinates& coords, const Values& vals);
+STORMEIGEN_DONT_INLINE Scalar* setrand_ublas_genvec(const Coordinates& coords, const Values& vals);
+STORMEIGEN_DONT_INLINE Scalar* setrand_mtl(const Coordinates& coords, const Values& vals);
 
 int main(int argc, char *argv[])
 {
@@ -191,7 +191,7 @@ int main(int argc, char *argv[])
   return 0;
 }
 
-EIGEN_DONT_INLINE Scalar* setinnerrand_eigen(const Coordinates& coords, const Values& vals)
+STORMEIGEN_DONT_INLINE Scalar* setinnerrand_eigen(const Coordinates& coords, const Values& vals)
 {
   using namespace StormEigen;
   SparseMatrix<Scalar> mat(SIZE,SIZE);
@@ -205,7 +205,7 @@ EIGEN_DONT_INLINE Scalar* setinnerrand_eigen(const Coordinates& coords, const Va
   return 0;
 }
 
-EIGEN_DONT_INLINE Scalar* setrand_eigen_dynamic(const Coordinates& coords, const Values& vals)
+STORMEIGEN_DONT_INLINE Scalar* setrand_eigen_dynamic(const Coordinates& coords, const Values& vals)
 {
   using namespace StormEigen;
   DynamicSparseMatrix<Scalar> mat(SIZE,SIZE);
@@ -219,7 +219,7 @@ EIGEN_DONT_INLINE Scalar* setrand_eigen_dynamic(const Coordinates& coords, const
   return &mat.coeffRef(coords[0].x(), coords[0].y());
 }
 
-EIGEN_DONT_INLINE Scalar* setrand_eigen_sumeq(const Coordinates& coords, const Values& vals)
+STORMEIGEN_DONT_INLINE Scalar* setrand_eigen_sumeq(const Coordinates& coords, const Values& vals)
 {
   using namespace StormEigen;
   int n = coords.size()/KK;
@@ -238,7 +238,7 @@ EIGEN_DONT_INLINE Scalar* setrand_eigen_sumeq(const Coordinates& coords, const V
   return &mat.coeffRef(coords[0].x(), coords[0].y());
 }
 
-EIGEN_DONT_INLINE Scalar* setrand_eigen_compact(const Coordinates& coords, const Values& vals)
+STORMEIGEN_DONT_INLINE Scalar* setrand_eigen_compact(const Coordinates& coords, const Values& vals)
 {
   using namespace StormEigen;
   DynamicSparseMatrix<Scalar> setter(SIZE,SIZE);
@@ -252,7 +252,7 @@ EIGEN_DONT_INLINE Scalar* setrand_eigen_compact(const Coordinates& coords, const
   return &mat.coeffRef(coords[0].x(), coords[0].y());
 }
 
-EIGEN_DONT_INLINE Scalar* setrand_eigen_gnu_hash(const Coordinates& coords, const Values& vals)
+STORMEIGEN_DONT_INLINE Scalar* setrand_eigen_gnu_hash(const Coordinates& coords, const Values& vals)
 {
   using namespace StormEigen;
   SparseMatrix<Scalar> mat(SIZE,SIZE);
@@ -268,7 +268,7 @@ EIGEN_DONT_INLINE Scalar* setrand_eigen_gnu_hash(const Coordinates& coords, cons
 }
 
 #ifndef NOGOOGLE
-EIGEN_DONT_INLINE Scalar* setrand_eigen_google_dense(const Coordinates& coords, const Values& vals)
+STORMEIGEN_DONT_INLINE Scalar* setrand_eigen_google_dense(const Coordinates& coords, const Values& vals)
 {
   using namespace StormEigen;
   SparseMatrix<Scalar> mat(SIZE,SIZE);
@@ -281,7 +281,7 @@ EIGEN_DONT_INLINE Scalar* setrand_eigen_google_dense(const Coordinates& coords, 
   return &mat.coeffRef(coords[0].x(), coords[0].y());
 }
 
-EIGEN_DONT_INLINE Scalar* setrand_eigen_google_sparse(const Coordinates& coords, const Values& vals)
+STORMEIGEN_DONT_INLINE Scalar* setrand_eigen_google_sparse(const Coordinates& coords, const Values& vals)
 {
   using namespace StormEigen;
   SparseMatrix<Scalar> mat(SIZE,SIZE);
@@ -402,7 +402,7 @@ void csr_sum_duplicates(const I n_row,
     }
 }
 
-EIGEN_DONT_INLINE Scalar* setrand_scipy(const Coordinates& coords, const Values& vals)
+STORMEIGEN_DONT_INLINE Scalar* setrand_scipy(const Coordinates& coords, const Values& vals)
 {
   using namespace StormEigen;
   SparseMatrix<Scalar> mat(SIZE,SIZE);
@@ -422,7 +422,7 @@ EIGEN_DONT_INLINE Scalar* setrand_scipy(const Coordinates& coords, const Values&
 
 
 #ifndef NOUBLAS
-EIGEN_DONT_INLINE Scalar* setrand_ublas_mapped(const Coordinates& coords, const Values& vals)
+STORMEIGEN_DONT_INLINE Scalar* setrand_ublas_mapped(const Coordinates& coords, const Values& vals)
 {
   using namespace boost;
   using namespace boost::numeric;
@@ -436,7 +436,7 @@ EIGEN_DONT_INLINE Scalar* setrand_ublas_mapped(const Coordinates& coords, const 
   compressed_matrix<Scalar> mat(aux);
   return 0;// &mat(coords[0].x(), coords[0].y());
 }
-/*EIGEN_DONT_INLINE Scalar* setrand_ublas_coord(const Coordinates& coords, const Values& vals)
+/*STORMEIGEN_DONT_INLINE Scalar* setrand_ublas_coord(const Coordinates& coords, const Values& vals)
 {
   using namespace boost;
   using namespace boost::numeric;
@@ -449,7 +449,7 @@ EIGEN_DONT_INLINE Scalar* setrand_ublas_mapped(const Coordinates& coords, const 
   compressed_matrix<Scalar> mat(aux);
   return 0;//&mat(coords[0].x(), coords[0].y());
 }
-EIGEN_DONT_INLINE Scalar* setrand_ublas_compressed(const Coordinates& coords, const Values& vals)
+STORMEIGEN_DONT_INLINE Scalar* setrand_ublas_compressed(const Coordinates& coords, const Values& vals)
 {
   using namespace boost;
   using namespace boost::numeric;
@@ -461,7 +461,7 @@ EIGEN_DONT_INLINE Scalar* setrand_ublas_compressed(const Coordinates& coords, co
   }
   return 0;//&mat(coords[0].x(), coords[0].y());
 }*/
-EIGEN_DONT_INLINE Scalar* setrand_ublas_genvec(const Coordinates& coords, const Values& vals)
+STORMEIGEN_DONT_INLINE Scalar* setrand_ublas_genvec(const Coordinates& coords, const Values& vals)
 {
   using namespace boost;
   using namespace boost::numeric;
@@ -480,6 +480,6 @@ EIGEN_DONT_INLINE Scalar* setrand_ublas_genvec(const Coordinates& coords, const 
 #endif
 
 #ifndef NOMTL
-EIGEN_DONT_INLINE void setrand_mtl(const Coordinates& coords, const Values& vals);
+STORMEIGEN_DONT_INLINE void setrand_mtl(const Coordinates& coords, const Values& vals);
 #endif
 

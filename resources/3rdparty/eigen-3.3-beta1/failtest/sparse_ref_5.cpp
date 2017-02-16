@@ -1,4 +1,4 @@
-#include "../Eigen/Sparse"
+#include "../StormEigen/Sparse"
 
 using namespace StormEigen;
 
@@ -8,7 +8,7 @@ int main()
 {
   SparseMatrix<float> a(10,10);
   SparseMatrixBase<SparseMatrix<float> > &ac(a);
-#ifdef EIGEN_SHOULD_FAIL_TO_BUILD
+#ifdef STORMEIGEN_SHOULD_FAIL_TO_BUILD
   call_ref(ac);
 #else
   call_ref(ac.derived());

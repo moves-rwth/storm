@@ -12,9 +12,9 @@ and gives tips to help porting your application from Eigen2 to Eigen3.
 Up to version 3.2 %Eigen provides <a href="http://eigen.tuxfamily.org/dox/Eigen2SupportModes.html">Eigen2 support modes</a>. These are removed now, because they were barely used anymore and became hard to maintain after internal re-designs.
 You can still use them by first <a href="http://eigen.tuxfamily.org/dox/Eigen2ToEigen3.html">porting your code to Eigen 3.2</a>.
 
-\section Using The USING_PART_OF_NAMESPACE_EIGEN macro
+\section Using The USING_PART_OF_NAMESPACE_STORMEIGEN macro
 
-The USING_PART_OF_NAMESPACE_EIGEN macro has been removed. In Eigen 3, just do:
+The USING_PART_OF_NAMESPACE_STORMEIGEN macro has been removed. In Eigen 3, just do:
 \code
 using namespace StormEigen;
 \endcode
@@ -184,7 +184,7 @@ Some of Eigen 2's matrix decompositions have been renamed in Eigen 3, while some
   </tr>
   <tr>
     <td>EigenSolver and friends</td>
-    <td>\code #include<Eigen/Eigenvalues> \endcode </td>
+    <td>\code #include<StormEigen/Eigenvalues> \endcode </td>
     <td class="alt">Moved to separate module</td>
   </tr>
 </table>
@@ -259,9 +259,9 @@ use it unless you are sure of what you are doing, i.e., you have rigourosly meas
 
 \section AlignMacros Alignment-related macros
 
-The EIGEN_ALIGN_128 macro has been renamed to EIGEN_ALIGN16. Don't be surprised, it's just that we switched to counting in bytes ;-)
+The STORMEIGEN_ALIGN_128 macro has been renamed to STORMEIGEN_ALIGN16. Don't be surprised, it's just that we switched to counting in bytes ;-)
 
-The EIGEN_DONT_ALIGN option still exists in Eigen 3, but it has a new cousin: EIGEN_DONT_ALIGN_STATICALLY. It allows to get rid of all static alignment issues while keeping alignment of dynamic-size heap-allocated arrays, thus keeping vectorization for dynamic-size objects.
+The STORMEIGEN_DONT_ALIGN option still exists in Eigen 3, but it has a new cousin: STORMEIGEN_DONT_ALIGN_STATICALLY. It allows to get rid of all static alignment issues while keeping alignment of dynamic-size heap-allocated arrays, thus keeping vectorization for dynamic-size objects.
 
 \section AlignedMap Aligned Map objects
 
@@ -278,7 +278,7 @@ result = Vector4f::MapAligned(some_aligned_array);
 
 \section StdContainers STL Containers
 
-In Eigen2, <tt>\#include\<Eigen/StdVector\></tt> tweaked std::vector to automatically align elements. The problem was that that was quite invasive. In Eigen3, we only override standard behavior if you use StormEigen::aligned_allocator<T> as your allocator type. So for example, if you use std::vector<Matrix4f>, you need to do the following change (note that aligned_allocator is under namespace StormEigen):
+In Eigen2, <tt>\#include\<StormEigen/StdVector\></tt> tweaked std::vector to automatically align elements. The problem was that that was quite invasive. In Eigen3, we only override standard behavior if you use StormEigen::aligned_allocator<T> as your allocator type. So for example, if you use std::vector<Matrix4f>, you need to do the following change (note that aligned_allocator is under namespace StormEigen):
 
 <table class="manual">
 <tr><th>Eigen 2</th><th>Eigen 3</th></tr>

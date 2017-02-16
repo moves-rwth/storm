@@ -11,8 +11,8 @@ FOREACH(snippet_src ${snippets_SRCS})
                  ${CMAKE_CURRENT_BINARY_DIR}/${compile_snippet_src})
   ADD_EXECUTABLE(${compile_snippet_target}
                  ${CMAKE_CURRENT_BINARY_DIR}/${compile_snippet_src})
-  if(EIGEN_STANDARD_LIBRARIES_TO_LINK_TO)
-    target_link_libraries(${compile_snippet_target} ${EIGEN_STANDARD_LIBRARIES_TO_LINK_TO})
+  if(STORMEIGEN_STANDARD_LIBRARIES_TO_LINK_TO)
+    target_link_libraries(${compile_snippet_target} ${STORMEIGEN_STANDARD_LIBRARIES_TO_LINK_TO})
   endif()
   ADD_CUSTOM_COMMAND(
     TARGET ${compile_snippet_target}

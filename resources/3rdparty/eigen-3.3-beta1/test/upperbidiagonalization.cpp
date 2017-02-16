@@ -8,7 +8,7 @@
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "main.h"
-#include <Eigen/SVD>
+#include <StormEigen/SVD>
 
 template<typename MatrixType> void upperbidiag(const MatrixType& m)
 {

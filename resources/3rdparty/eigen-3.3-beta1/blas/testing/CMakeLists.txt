@@ -8,8 +8,8 @@ macro(ei_add_blas_test testname)
 
   target_link_libraries(${targetname} eigen_blas)
 
-  if(EIGEN_STANDARD_LIBRARIES_TO_LINK_TO)
-    target_link_libraries(${targetname} ${EIGEN_STANDARD_LIBRARIES_TO_LINK_TO})
+  if(STORMEIGEN_STANDARD_LIBRARIES_TO_LINK_TO)
+    target_link_libraries(${targetname} ${STORMEIGEN_STANDARD_LIBRARIES_TO_LINK_TO})
   endif()
 
   target_link_libraries(${targetname} ${EXTERNAL_LIBS})

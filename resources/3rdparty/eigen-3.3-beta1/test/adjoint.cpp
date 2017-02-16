@@ -7,7 +7,7 @@
 // Public License v. 2.0. If a copy of the MPL was not distributed
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-#define EIGEN_NO_STATIC_ASSERT
+#define STORMEIGEN_NO_STATIC_ASSERT
 
 #include "main.h"
 
@@ -142,9 +142,9 @@ void test_adjoint()
     CALL_SUBTEST_2( adjoint(Matrix3d()) );
     CALL_SUBTEST_3( adjoint(Matrix4f()) );
     
-    CALL_SUBTEST_4( adjoint(MatrixXcf(internal::random<int>(1,EIGEN_TEST_MAX_SIZE/2), internal::random<int>(1,EIGEN_TEST_MAX_SIZE/2))) );
-    CALL_SUBTEST_5( adjoint(MatrixXi(internal::random<int>(1,EIGEN_TEST_MAX_SIZE), internal::random<int>(1,EIGEN_TEST_MAX_SIZE))) );
-    CALL_SUBTEST_6( adjoint(MatrixXf(internal::random<int>(1,EIGEN_TEST_MAX_SIZE), internal::random<int>(1,EIGEN_TEST_MAX_SIZE))) );
+    CALL_SUBTEST_4( adjoint(MatrixXcf(internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE/2), internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE/2))) );
+    CALL_SUBTEST_5( adjoint(MatrixXi(internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE), internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE))) );
+    CALL_SUBTEST_6( adjoint(MatrixXf(internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE), internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE))) );
     
     // Complement for 128 bits vectorization:
     CALL_SUBTEST_8( adjoint(Matrix2d()) );
@@ -158,7 +158,7 @@ void test_adjoint()
   // test a large static matrix only once
   CALL_SUBTEST_7( adjoint(Matrix<float, 100, 100>()) );
 
-#ifdef EIGEN_TEST_PART_4
+#ifdef STORMEIGEN_TEST_PART_4
   {
     MatrixXcf a(10,10), b(10,10);
     VERIFY_RAISES_ASSERT(a = a.transpose());

@@ -10,7 +10,7 @@
 #include "common.h"
 
 // y = alpha*A*x + beta*y
-int EIGEN_BLAS_FUNC(symv) (char *uplo, int *n, RealScalar *palpha, RealScalar *pa, int *lda, RealScalar *px, int *incx, RealScalar *pbeta, RealScalar *py, int *incy)
+int STORMEIGEN_BLAS_FUNC(symv) (char *uplo, int *n, RealScalar *palpha, RealScalar *pa, int *lda, RealScalar *px, int *incx, RealScalar *pbeta, RealScalar *py, int *incy)
 {
   typedef void (*functype)(int, const Scalar*, int, const Scalar*, Scalar*, Scalar);
   static functype func[2];
@@ -68,7 +68,7 @@ int EIGEN_BLAS_FUNC(symv) (char *uplo, int *n, RealScalar *palpha, RealScalar *p
 }
 
 // C := alpha*x*x' + C
-int EIGEN_BLAS_FUNC(syr)(char *uplo, int *n, RealScalar *palpha, RealScalar *px, int *incx, RealScalar *pc, int *ldc)
+int STORMEIGEN_BLAS_FUNC(syr)(char *uplo, int *n, RealScalar *palpha, RealScalar *px, int *incx, RealScalar *pc, int *ldc)
 {
 
 //   typedef void (*functype)(int, const Scalar *, int, Scalar *, int, Scalar);
@@ -129,7 +129,7 @@ int EIGEN_BLAS_FUNC(syr)(char *uplo, int *n, RealScalar *palpha, RealScalar *px,
 }
 
 // C := alpha*x*y' + alpha*y*x' + C
-int EIGEN_BLAS_FUNC(syr2)(char *uplo, int *n, RealScalar *palpha, RealScalar *px, int *incx, RealScalar *py, int *incy, RealScalar *pc, int *ldc)
+int STORMEIGEN_BLAS_FUNC(syr2)(char *uplo, int *n, RealScalar *palpha, RealScalar *px, int *incx, RealScalar *py, int *incy, RealScalar *pc, int *ldc)
 {
 //   typedef void (*functype)(int, const Scalar *, int, const Scalar *, int, Scalar *, int, Scalar);
 //   static functype func[2];
@@ -204,7 +204,7 @@ int EIGEN_BLAS_FUNC(syr2)(char *uplo, int *n, RealScalar *palpha, RealScalar *px
   *  where alpha and beta are scalars, x and y are n element vectors and
   *  A is an n by n symmetric band matrix, with k super-diagonals.
   */
-// int EIGEN_BLAS_FUNC(sbmv)( char *uplo, int *n, int *k, RealScalar *alpha, RealScalar *a, int *lda,
+// int STORMEIGEN_BLAS_FUNC(sbmv)( char *uplo, int *n, int *k, RealScalar *alpha, RealScalar *a, int *lda,
 //                            RealScalar *x, int *incx, RealScalar *beta, RealScalar *y, int *incy)
 // {
 //   return 1;
@@ -219,7 +219,7 @@ int EIGEN_BLAS_FUNC(syr2)(char *uplo, int *n, RealScalar *palpha, RealScalar *px
   *  A is an n by n symmetric matrix, supplied in packed form.
   *
   */
-// int EIGEN_BLAS_FUNC(spmv)(char *uplo, int *n, RealScalar *alpha, RealScalar *ap, RealScalar *x, int *incx, RealScalar *beta, RealScalar *y, int *incy)
+// int STORMEIGEN_BLAS_FUNC(spmv)(char *uplo, int *n, RealScalar *alpha, RealScalar *ap, RealScalar *x, int *incx, RealScalar *beta, RealScalar *y, int *incy)
 // {
 //   return 1;
 // }
@@ -231,7 +231,7 @@ int EIGEN_BLAS_FUNC(syr2)(char *uplo, int *n, RealScalar *palpha, RealScalar *px
   *  where alpha is a real scalar, x is an n element vector and A is an
   *  n by n symmetric matrix, supplied in packed form.
   */
-int EIGEN_BLAS_FUNC(spr)(char *uplo, int *n, Scalar *palpha, Scalar *px, int *incx, Scalar *pap)
+int STORMEIGEN_BLAS_FUNC(spr)(char *uplo, int *n, Scalar *palpha, Scalar *px, int *incx, Scalar *pap)
 {
   typedef void (*functype)(int, Scalar*, const Scalar*, Scalar);
   static functype func[2];
@@ -282,7 +282,7 @@ int EIGEN_BLAS_FUNC(spr)(char *uplo, int *n, Scalar *palpha, Scalar *px, int *in
   *  where alpha is a scalar, x and y are n element vectors and A is an
   *  n by n symmetric matrix, supplied in packed form.
   */
-int EIGEN_BLAS_FUNC(spr2)(char *uplo, int *n, RealScalar *palpha, RealScalar *px, int *incx, RealScalar *py, int *incy, RealScalar *pap)
+int STORMEIGEN_BLAS_FUNC(spr2)(char *uplo, int *n, RealScalar *palpha, RealScalar *px, int *incx, RealScalar *py, int *incy, RealScalar *pap)
 {
   typedef void (*functype)(int, Scalar*, const Scalar*, const Scalar*, Scalar);
   static functype func[2];
@@ -337,7 +337,7 @@ int EIGEN_BLAS_FUNC(spr2)(char *uplo, int *n, RealScalar *palpha, RealScalar *px
   *  where alpha is a scalar, x is an m element vector, y is an n element
   *  vector and A is an m by n matrix.
   */
-int EIGEN_BLAS_FUNC(ger)(int *m, int *n, Scalar *palpha, Scalar *px, int *incx, Scalar *py, int *incy, Scalar *pa, int *lda)
+int STORMEIGEN_BLAS_FUNC(ger)(int *m, int *n, Scalar *palpha, Scalar *px, int *incx, Scalar *py, int *incy, Scalar *pa, int *lda)
 {
   Scalar* x = reinterpret_cast<Scalar*>(px);
   Scalar* y = reinterpret_cast<Scalar*>(py);

@@ -1,4 +1,4 @@
-#define EIGEN_USE_GPU
+#define STORMEIGEN_USE_GPU
 
 #include <cuda.h>
 #include <cuda_runtime.h>

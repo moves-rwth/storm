@@ -1,6 +1,6 @@
 
-#ifndef EIGEN_BENCH_BASICBENCH_H
-#define EIGEN_BENCH_BASICBENCH_H
+#ifndef STORMEIGEN_BENCH_BASICBENCH_H
+#define STORMEIGEN_BENCH_BASICBENCH_H
 
 enum {LazyEval, EarlyEval, OmpEval};
 
@@ -60,4 +60,4 @@ double benchBasic(const MatrixType& mat, int iterations, int tries)
   return timer.value();
 };
 
-#endif // EIGEN_BENCH_BASICBENCH_H
+#endif // STORMEIGEN_BENCH_BASICBENCH_H

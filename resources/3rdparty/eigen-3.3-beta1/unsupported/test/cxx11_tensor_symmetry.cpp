@@ -9,8 +9,8 @@
 
 #include "main.h"
 
-#include <Eigen/CXX11/Tensor>
-#include <Eigen/CXX11/TensorSymmetry>
+#include <StormEigen/CXX11/Tensor>
+#include <StormEigen/CXX11/TensorSymmetry>
 
 #include <map>
 #include <set>

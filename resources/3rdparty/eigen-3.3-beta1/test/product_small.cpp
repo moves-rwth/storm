@@ -7,9 +7,9 @@
 // Public License v. 2.0. If a copy of the MPL was not distributed
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-#define EIGEN_NO_STATIC_ASSERT
+#define STORMEIGEN_NO_STATIC_ASSERT
 #include "product.h"
-#include <Eigen/LU>
+#include <StormEigen/LU>
 
 // regression test for bug 447
 void product1x1()
@@ -204,7 +204,7 @@ void test_product_small()
     CALL_SUBTEST_43( test_lazy_l3<std::complex<double> >() );
   }
 
-#ifdef EIGEN_TEST_PART_6
+#ifdef STORMEIGEN_TEST_PART_6
   {
     // test compilation of (outer_product) * vector
     Vector3f v = Vector3f::Random();

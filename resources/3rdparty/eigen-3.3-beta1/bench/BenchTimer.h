@@ -8,17 +8,17 @@
 // Public License v. 2.0. If a copy of the MPL was not distributed
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-#ifndef EIGEN_BENCH_TIMERR_H
-#define EIGEN_BENCH_TIMERR_H
+#ifndef STORMEIGEN_BENCH_TIMERR_H
+#define STORMEIGEN_BENCH_TIMERR_H
 
 #if defined(_WIN32) || defined(__CYGWIN__)
 # ifndef NOMINMAX
 #   define NOMINMAX
-#   define EIGEN_BT_UNDEF_NOMINMAX
+#   define STORMEIGEN_BT_UNDEF_NOMINMAX
 # endif
 # ifndef WIN32_LEAN_AND_MEAN
 #   define WIN32_LEAN_AND_MEAN
-#   define EIGEN_BT_UNDEF_WIN32_LEAN_AND_MEAN
+#   define STORMEIGEN_BT_UNDEF_WIN32_LEAN_AND_MEAN
 # endif
 # include <windows.h>
 #elif defined(__APPLE__)
@@ -36,7 +36,7 @@ static void clobber() {
   asm volatile("" : : : "memory");
 }
 
-#include <Eigen/Core>
+#include <StormEigen/Core>
 
 namespace StormEigen
 {
@@ -84,7 +84,7 @@ public:
   {
     m_times[CPU_TIMER] = getCpuTime() - m_starts[CPU_TIMER];
     m_times[REAL_TIMER] = getRealTime() - m_starts[REAL_TIMER];
-    #if EIGEN_VERSION_AT_LEAST(2,90,0)
+    #if STORMEIGEN_VERSION_AT_LEAST(2,90,0)
     m_bests = m_bests.cwiseMin(m_times);
     m_worsts = m_worsts.cwiseMax(m_times);
     #else
@@ -165,7 +165,7 @@ protected:
   Vector2d m_totals;
 
 public:
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+  STORMEIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 
 #define BENCH(TIMER,TRIES,REP,CODE) { \
@@ -183,14 +183,14 @@ public:
 }
 
 // clean #defined tokens
-#ifdef EIGEN_BT_UNDEF_NOMINMAX
-# undef EIGEN_BT_UNDEF_NOMINMAX
+#ifdef STORMEIGEN_BT_UNDEF_NOMINMAX
+# undef STORMEIGEN_BT_UNDEF_NOMINMAX
 # undef NOMINMAX
 #endif
 
-#ifdef EIGEN_BT_UNDEF_WIN32_LEAN_AND_MEAN
-# undef EIGEN_BT_UNDEF_WIN32_LEAN_AND_MEAN
+#ifdef STORMEIGEN_BT_UNDEF_WIN32_LEAN_AND_MEAN
+# undef STORMEIGEN_BT_UNDEF_WIN32_LEAN_AND_MEAN
 # undef WIN32_LEAN_AND_MEAN
 #endif
 
-#endif // EIGEN_BENCH_TIMERR_H
+#endif // STORMEIGEN_BENCH_TIMERR_H

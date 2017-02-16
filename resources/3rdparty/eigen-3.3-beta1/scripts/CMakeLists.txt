@@ -1,4 +1,4 @@
-get_property(EIGEN_TESTS_LIST GLOBAL PROPERTY EIGEN_TESTS_LIST)
+get_property(STORMEIGEN_TESTS_LIST GLOBAL PROPERTY STORMEIGEN_TESTS_LIST)
 configure_file(buildtests.in ${CMAKE_BINARY_DIR}/buildtests.sh @ONLY)
 
 configure_file(check.in ${CMAKE_BINARY_DIR}/check.sh COPYONLY)
