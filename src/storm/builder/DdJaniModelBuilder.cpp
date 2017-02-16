@@ -1908,7 +1908,7 @@ namespace storm {
             // Cut transitions to reachable states.
             storm::dd::Add<Type, ValueType> reachableStatesAdd = modelComponents.reachableStates.template toAdd<ValueType>();
             modelComponents.transitionMatrix = system.transitions * reachableStatesAdd;
-            
+
             // Fix deadlocks if existing.
             modelComponents.deadlockStates = fixDeadlocks(preparedModel.getModelType(), modelComponents.transitionMatrix, transitionMatrixBdd, modelComponents.reachableStates, variables);
             
