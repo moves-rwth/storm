@@ -123,7 +123,7 @@ namespace storm {
                                     long long num;
                                     long long den;
                                     if (Z3_get_numeral_rational_int64(expr.ctx(), expr, &num, &den)) {
-                                        return manager.rational(storm::utility::convertNumber<storm::RationalNumber>(num) / storm::utility::convertNumber<storm::RationalNumber>(den));
+                                        return manager.rational(storm::utility::convertNumber<storm::RationalNumber>((int_fast64_t) num) / storm::utility::convertNumber<storm::RationalNumber>((int_fast64_t) den));
                                     } else {
                                         return manager.rational(storm::utility::convertNumber<storm::RationalNumber>(std::string(Z3_get_numeral_string(expr.ctx(), expr))));
                                     }

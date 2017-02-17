@@ -6,7 +6,7 @@
 #include "storm/modelchecker/multiobjective/pcaa.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
-#include "storm/modelchecker/results/ParetoCurveCheckResult.h"
+#include "storm/modelchecker/results/ExplicitParetoCurveCheckResult.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/storage/geometry/Polytope.h"
 #include "storm/storage/geometry/Hyperrectangle.h"
@@ -33,7 +33,7 @@ TEST(SparseMaPcaaModelCheckerTest, serverRationalNumbers) {
     storm::modelchecker::SparseMarkovAutomatonCslModelChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>> checker(*ma);
     
     std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(storm::modelchecker::CheckTask<storm::logic::Formula>(*formulas[0], true));
-    ASSERT_TRUE(result->isParetoCurveCheckResult());
+    ASSERT_TRUE(result->isExplicitParetoCurveCheckResult());
     
     storm::RationalNumber p1 = storm::utility::convertNumber<storm::RationalNumber>(11.0); p1 /= storm::utility::convertNumber<storm::RationalNumber>(6.0);
     storm::RationalNumber p2 = storm::utility::convertNumber<storm::RationalNumber>(1.0); p2 /= storm::utility::convertNumber<storm::RationalNumber>(2.0);
@@ -42,8 +42,8 @@ TEST(SparseMaPcaaModelCheckerTest, serverRationalNumbers) {
     storm::RationalNumber q2 = storm::utility::convertNumber<storm::RationalNumber>(2.0); q2 /= storm::utility::convertNumber<storm::RationalNumber>(3.0);
     std::vector<storm::RationalNumber> q = {q1, q2};
     auto expectedAchievableValues = storm::storage::geometry::Polytope<storm::RationalNumber>::createDownwardClosure(std::vector<std::vector<storm::RationalNumber>>({p,q}));
-    EXPECT_TRUE(expectedAchievableValues->contains(result->asParetoCurveCheckResult<storm::RationalNumber>().getUnderApproximation()));
-    EXPECT_TRUE(result->asParetoCurveCheckResult<storm::RationalNumber>().getOverApproximation()->contains(expectedAchievableValues));
+    EXPECT_TRUE(expectedAchievableValues->contains(result->asExplicitParetoCurveCheckResult<storm::RationalNumber>().getUnderApproximation()));
+    EXPECT_TRUE(result->asExplicitParetoCurveCheckResult<storm::RationalNumber>().getOverApproximation()->contains(expectedAchievableValues));
     
 }*/
 
@@ -59,7 +59,7 @@ TEST(SparseMaPcaaModelCheckerTest, server) {
     std::shared_ptr<storm::models::sparse::MarkovAutomaton<double>> ma = storm::buildSparseModel<double>(program, formulas)->as<storm::models::sparse::MarkovAutomaton<double>>();
 
     std::unique_ptr<storm::modelchecker::CheckResult> result = storm::modelchecker::multiobjective::performPcaa(*ma, formulas[0]->asMultiObjectiveFormula());
-    ASSERT_TRUE(result->isParetoCurveCheckResult());
+    ASSERT_TRUE(result->isExplicitParetoCurveCheckResult());
     
     // we do our checks with rationals to avoid numerical issues when doing polytope computations...
     std::vector<double> p = {11.0/6.0, 1.0/2.0};
@@ -72,8 +72,8 @@ TEST(SparseMaPcaaModelCheckerTest, server) {
     std::vector<storm::RationalNumber> lb(2,-eps), ub(2,eps);
     auto bloatingBox = storm::storage::geometry::Hyperrectangle<storm::RationalNumber>(lb,ub).asPolytope();
 
-    EXPECT_TRUE(expectedAchievableValues->minkowskiSum(bloatingBox)->contains(result->asParetoCurveCheckResult<double>().getUnderApproximation()->convertNumberRepresentation<storm::RationalNumber>()));
-    EXPECT_TRUE(result->asParetoCurveCheckResult<double>().getOverApproximation()->convertNumberRepresentation<storm::RationalNumber>()->minkowskiSum(bloatingBox)->contains(expectedAchievableValues));
+    EXPECT_TRUE(expectedAchievableValues->minkowskiSum(bloatingBox)->contains(result->asExplicitParetoCurveCheckResult<double>().getUnderApproximation()->convertNumberRepresentation<storm::RationalNumber>()));
+    EXPECT_TRUE(result->asExplicitParetoCurveCheckResult<double>().getOverApproximation()->convertNumberRepresentation<storm::RationalNumber>()->minkowskiSum(bloatingBox)->contains(expectedAchievableValues));
 
 }
 
@@ -88,7 +88,7 @@ TEST(SparseMaPcaaModelCheckerTest, jobscheduler_pareto_3Obj) {
     std::shared_ptr<storm::models::sparse::MarkovAutomaton<double>> ma = storm::buildSparseModel<double>(program, formulas)->as<storm::models::sparse::MarkovAutomaton<double>>();
 
     std::unique_ptr<storm::modelchecker::CheckResult> result = storm::modelchecker::multiobjective::performPcaa(*ma, formulas[0]->asMultiObjectiveFormula());
-    ASSERT_TRUE(result->isParetoCurveCheckResult());
+    ASSERT_TRUE(result->isExplicitParetoCurveCheckResult());
 
     std::vector<double> j12 = {1.266666667,0.1617571721,0.5};
     std::vector<double> j13 = {1.283333333,0.1707737575,0.25};
@@ -104,7 +104,7 @@ TEST(SparseMaPcaaModelCheckerTest, jobscheduler_pareto_3Obj) {
     std::vector<storm::RationalNumber> lb(3,-eps), ub(3,eps);
     auto bloatingBox = storm::storage::geometry::Hyperrectangle<storm::RationalNumber>(lb,ub).asPolytope();
 
-    EXPECT_TRUE(result->asParetoCurveCheckResult<double>().getOverApproximation()->convertNumberRepresentation<storm::RationalNumber>()->minkowskiSum(bloatingBox)->contains(expectedAchievableValues));
+    EXPECT_TRUE(result->asExplicitParetoCurveCheckResult<double>().getOverApproximation()->convertNumberRepresentation<storm::RationalNumber>()->minkowskiSum(bloatingBox)->contains(expectedAchievableValues));
 }
 
 TEST(SparseMaPcaaModelCheckerTest, jobscheduler_achievability_3Obj) {
@@ -161,7 +161,7 @@ TEST(SparseMaPcaaModelCheckerTest, jobscheduler_pareto_2Obj) {
     std::shared_ptr<storm::models::sparse::MarkovAutomaton<double>> ma = storm::buildSparseModel<double>(program, formulas)->as<storm::models::sparse::MarkovAutomaton<double>>();
 
     std::unique_ptr<storm::modelchecker::CheckResult> result = storm::modelchecker::multiobjective::performPcaa(*ma, formulas[0]->asMultiObjectiveFormula());
-    ASSERT_TRUE(result->isParetoCurveCheckResult());
+    ASSERT_TRUE(result->isExplicitParetoCurveCheckResult());
 
     std::vector<double> j12 = {0.2591835573, 0.01990529674};
     std::vector<double> j13 = {0.329682099, 0.01970194998};
@@ -177,7 +177,7 @@ TEST(SparseMaPcaaModelCheckerTest, jobscheduler_pareto_2Obj) {
     std::vector<storm::RationalNumber> lb(2,-eps), ub(2,eps);
     auto bloatingBox = storm::storage::geometry::Hyperrectangle<storm::RationalNumber>(lb,ub).asPolytope();
 
-    EXPECT_TRUE(result->asParetoCurveCheckResult<double>().getOverApproximation()->convertNumberRepresentation<storm::RationalNumber>()->minkowskiSum(bloatingBox)->contains(expectedAchievableValues));
+    EXPECT_TRUE(result->asExplicitParetoCurveCheckResult<double>().getOverApproximation()->convertNumberRepresentation<storm::RationalNumber>()->minkowskiSum(bloatingBox)->contains(expectedAchievableValues));
 
 }
 

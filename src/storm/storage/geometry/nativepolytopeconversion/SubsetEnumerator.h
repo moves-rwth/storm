@@ -2,7 +2,7 @@
 #define STORM_STORAGE_GEOMETRY_NATIVEPOLYTOPECONVERSION_SUBSETENUMERATOR_H_
 
 #include <vector>
-
+#include <cstdint>
 
 namespace storm {
     namespace storage {

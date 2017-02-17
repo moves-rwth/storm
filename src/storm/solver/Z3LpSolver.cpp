@@ -134,7 +134,7 @@ namespace storm {
             // Solve the optimization problem depending on the optimization direction
             z3::optimize::handle optFuncHandle = this->getOptimizationDirection() == OptimizationDirection::Minimize ? solver->minimize(expressionAdapter->translateExpression(optimizationFunction)) :  solver->maximize(expressionAdapter->translateExpression(optimizationFunction));
             z3::check_result chkRes = solver->check();
-            STORM_LOG_THROW(chkRes != z3::unknown, storm::exceptions::InvalidStateException, "Unable to solve LP problem with Z3: Check result is unknown. Reason: " << Z3_optimize_get_reason_unknown(*context, *solver));
+            STORM_LOG_THROW(chkRes != z3::unknown, storm::exceptions::InvalidStateException, "Unable to solve LP problem with Z3: Check result is unknown.");
 
             // We need to store the resulting information at this point. Otherwise, the information would be lost after calling pop() ...
 
