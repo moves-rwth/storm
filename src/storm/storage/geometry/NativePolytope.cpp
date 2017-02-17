@@ -3,7 +3,7 @@
 
 #include "storm/utility/macros.h"
 #include "storm/utility/solver.h"
-#include "storm/solver/Z3LPSolver.h"
+#include "storm/solver/Z3LpSolver.h"
 #include "storm/solver/SmtSolver.h"
 #include "storm/storage/geometry/nativepolytopeconversion/QuickHull.h"
 #include "storm/storage/geometry/nativepolytopeconversion/HyperplaneEnumeration.h"
