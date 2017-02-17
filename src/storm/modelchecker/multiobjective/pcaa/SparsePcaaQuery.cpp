@@ -121,7 +121,6 @@ namespace storm {
                 }
                 overApproximation = overApproximation->intersection(h);
                 STORM_LOG_DEBUG("Updated OverApproximation to " << overApproximation->toString(true));
-                std::cout << "Updated OverApproximation to " << overApproximation->toString(true) << std::endl;
             }
             
             template <class SparseModelType, typename GeometryValueType>
@@ -133,7 +132,6 @@ namespace storm {
                 }
                 underApproximation = storm::storage::geometry::Polytope<GeometryValueType>::createDownwardClosure(paretoPoints);
                 STORM_LOG_DEBUG("Updated UnderApproximation to " << underApproximation->toString(true));
-                std::cout << "Updated UnderApproximation to " << underApproximation->toString(true) << std::endl;
             }
             
             template <class SparseModelType, typename GeometryValueType>

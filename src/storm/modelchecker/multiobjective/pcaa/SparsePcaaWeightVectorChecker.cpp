@@ -146,9 +146,7 @@ namespace storm {
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = solverFactory.create(ecEliminatorResult.matrix);
                 solver->setOptimizationDirection(storm::solver::OptimizationDirection::Maximize);
                 solver->setTrackScheduler(true);
-                std::cout << "invoked minmaxsolver" << std::endl;
                 solver->solveEquations(subResult, subRewardVector);
-                std::cout << "minmaxsolver done" << std::endl;
 
                 this->weightedResult = std::vector<ValueType>(model.getNumberOfStates());
                 std::vector<uint_fast64_t> optimalChoices(model.getNumberOfStates());
