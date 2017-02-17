@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
-#ifdef STORM_HAVE_Z3
+#ifdef STORM_HAVE_Z3_OPTIMIZE
 #include "storm/storage/expressions/Variable.h"
 #include "storm/solver/Z3LpSolver.h"
 #include "storm/exceptions/InvalidStateException.h"
