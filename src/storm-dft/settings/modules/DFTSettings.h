@@ -147,6 +147,13 @@ namespace storm {
                 bool isComputeMaximalValue() const;
 
                 /*!
+                 * Retrieves whether the non-determinism should be avoided by always taking the first possible dependency.
+                 *
+                 * @return True iff the option was set.
+                 */
+                bool isTakeFirstDependency() const;
+
+                /*!
                  * Retrieves whether the DFT should be transformed into a GSPN.
                  *
                  * @return True iff the option was set.
@@ -202,6 +209,7 @@ namespace storm {
                 static const std::string propTimepointsOptionName;
                 static const std::string minValueOptionName;
                 static const std::string maxValueOptionName;
+                static const std::string firstDependencyOptionName;
 #ifdef STORM_HAVE_Z3
                 static const std::string solveWithSmtOptionName;
 #endif

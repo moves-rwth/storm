@@ -3,6 +3,8 @@
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 #include "storm/exceptions/NotImplementedException.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm-dft/settings/modules/DFTSettings.h"
 
 namespace storm {
     namespace generator {
@@ -69,6 +71,10 @@ namespace storm {
 
             // Let BE fail
             while (currentFailable < failableCount) {
+                if (storm::settings::getModule<storm::settings::modules::DFTSettings>().isTakeFirstDependency() && hasDependencies && currentFailable > 0) {
+                    // We discard further exploration as we already chose one dependent event
+                    break;
+                }
                 STORM_LOG_ASSERT(!mDft.hasFailed(state), "Dft has failed.");
 
                 // Construct new state as copy from original one

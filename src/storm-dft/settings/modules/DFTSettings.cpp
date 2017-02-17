@@ -33,6 +33,7 @@ namespace storm {
             const std::string DFTSettings::propTimepointsOptionName = "timepoints";
             const std::string DFTSettings::minValueOptionName = "min";
             const std::string DFTSettings::maxValueOptionName = "max";
+            const std::string DFTSettings::firstDependencyOptionName = "firstdep";
             const std::string DFTSettings::transformToGspnOptionName = "gspn";
             const std::string DFTSettings::exportToJsonOptionName = "export-json";
 #ifdef STORM_HAVE_Z3
@@ -47,6 +48,7 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, symmetryReductionOptionName, false, "Exploit symmetric structure of model.").setShortName(symmetryReductionOptionShortName).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, modularisationOptionName, false, "Use modularisation (not applicable for expected time).").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, disableDCOptionName, false, "Disable Dont Care propagation.").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, firstDependencyOptionName, false, "Avoid non-determinism by always taking the first possible dependency.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, approximationErrorOptionName, false, "Approximation error allowed.").setShortName(approximationErrorOptionShortName).addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("error", "The relative approximation error to use.").addValidatorDouble(ArgumentValidatorFactory::createDoubleGreaterEqualValidator(0.0)).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, approximationHeuristicOptionName, false, "Set the heuristic used for approximation.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("heuristic", "Sets which heuristic is used for approximation. Must be in {depth, probability}. Default is").setDefaultValueString("depth").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator({"depth", "rateratio"})).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, propExpectedTimeOptionName, false, "Compute expected time of system failure.").setShortName(propExpectedTimeOptionShortName).build());
@@ -151,6 +153,10 @@ namespace storm {
                 return this->getOption(maxValueOptionName).getHasOptionBeenSet();
             }
             
+            bool DFTSettings::isTakeFirstDependency() const {
+                return this->getOption(firstDependencyOptionName).getHasOptionBeenSet();
+            }
+
 #ifdef STORM_HAVE_Z3
             bool DFTSettings::solveWithSMT() const {
                 return this->getOption(solveWithSmtOptionName).getHasOptionBeenSet();
