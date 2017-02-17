@@ -24,27 +24,11 @@ namespace storm {
         }
 
         template<typename ValueType>
-        std::string DFTJsonParser<ValueType>::stripQuotsFromName(std::string const& name) {
-            size_t firstQuots = name.find("\"");
-            size_t secondQuots = name.find("\"", firstQuots+1);
-            
-            if(firstQuots == std::string::npos) {
-                return name;
-            } else {
-                STORM_LOG_THROW(secondQuots != std::string::npos, storm::exceptions::FileIoException, "No ending quotation mark found in " << name);
-                return name.substr(firstQuots+1,secondQuots-1);
-            }
-        }
-
-        template<typename ValueType>
-        std::string DFTJsonParser<ValueType>::getString(json const& structure, std::string const& errorInfo) {
-            STORM_LOG_THROW(structure.is_string(), storm::exceptions::FileIoException, "Expected a string in " << errorInfo << ", got '" << structure.dump() << "'");
-            return structure.front();
-        }
-
-        template<typename ValueType>
-        std::string DFTJsonParser<ValueType>::parseNodeIdentifier(std::string const& name) {
-            return boost::replace_all_copy(name, "'", "__prime__");
+        std::string DFTJsonParser<ValueType>::generateUniqueName(std::string const& id, std::string const& name) {
+            std::string newId = name;
+            std::replace(newId.begin(), newId.end(), ' ', '_');
+            std::replace(newId.begin(), newId.end(), '-', '_');
+            return newId + "_" + id;
         }
 
         template<typename ValueType>
@@ -66,52 +50,33 @@ namespace storm {
             parsedJson << file;
             file.close();
 
-            std::string toplevelName = "";
+            storm::expressions::Variable var = manager->declareRationalVariable("x");
+            identifierMapping.emplace(var.getName(), var);
+            parser.setIdentifierMapping(identifierMapping);
 
-            // Start by building mapping from ids to names
+            json nodes = parsedJson.at("nodes");
+
+            // Start by building mapping from ids to their unique names
             std::map<std::string, std::string> nameMapping;
-            for (auto& element: parsedJson) {
-                if (element.at("classes") != "") {
-                    json data = element.at("data");
-                    std::string id = data.at("id");
-                    // Append to id to distinguish elements with the same name
-                    std::string name = data.at("name");
-                    std::replace(name.begin(), name.end(), ' ', '_');
-                    std::replace(name.begin(), name.end(), '-', '_');
-                    std::stringstream stream;
-                    stream << name << "_" << data.at("id").get<std::string>();
-                    name = stream.str();
-
-                    nameMapping[id] = name;
-                }
+            for (auto& element: nodes) {
+                json data = element.at("data");
+                std::string id = data.at("id");
+                nameMapping[id] = generateUniqueName(id, data.at("name"));
             }
-            std::cout << toplevelName << std::endl;
 
-            for (auto& element : parsedJson) {
+            for (auto& element : nodes) {
                 STORM_LOG_TRACE("Parsing: " << element);
                 bool success = true;
-                if (element.at("classes") == "") {
-                    continue;
-                }
                 json data = element.at("data");
-                std::string name = data.at("name");
-                std::replace(name.begin(), name.end(), ' ', '_');
-                std::replace(name.begin(), name.end(), '-', '_');
-                std::stringstream stream;
-                stream << name << "_" << data.at("id").get<std::string>();
-                name = stream.str();
-                if (data.count("toplevel") > 0) {
-                    STORM_LOG_ASSERT(toplevelName.empty(), "Toplevel element already defined.");
-                    toplevelName = name;
-                }
+                std::string name = generateUniqueName(data.at("id"), data.at("name"));
                 std::vector<std::string> childNames;
                 if (data.count("children") > 0) {
-                    for (json& child : data.at("children")) {
-                        childNames.push_back(nameMapping[child.get<std::string>()]);
+                    for (std::string const& child : data.at("children")) {
+                        childNames.push_back(nameMapping[child]);
                     }
                 }
 
-                std::string type = getString(element.at("classes"), "classes");
+                std::string type = data.at("type");
 
                 if(type == "and") {
                     success = builder.addAndElement(name, childNames);
@@ -152,6 +117,7 @@ namespace storm {
                 STORM_LOG_THROW(success, storm::exceptions::FileIoException, "Error while adding element '" << element << "'.");
             }
 
+            std::string toplevelName = nameMapping[parsedJson.at("toplevel")];
             if(!builder.setTopLevel(toplevelName)) {
                 STORM_LOG_THROW(false, storm::exceptions::FileIoException, "Top level id unknown.");
             }

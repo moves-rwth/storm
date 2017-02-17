@@ -38,9 +38,7 @@ namespace storm {
         private:
             void readFile(std::string const& filename);
 
-            std::string stripQuotsFromName(std::string const& name);
-            std::string parseNodeIdentifier(std::string const& name);
-            std::string getString(json const& structure, std::string const& errorInfo);
+            std::string generateUniqueName(std::string const& id, std::string const& name);
 
             ValueType parseRationalExpression(std::string const& expr);
         };
