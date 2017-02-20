@@ -5,10 +5,11 @@
 
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "storm/modelchecker/results/ExplicitParetoCurveCheckResult.h"
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
 #include "storm/modelchecker/results/SymbolicQuantitativeCheckResult.h"
+#include "storm/modelchecker/results/SymbolicParetoCurveCheckResult.h"
 #include "storm/modelchecker/results/HybridQuantitativeCheckResult.h"
-#include "storm/modelchecker/results/ParetoCurveCheckResult.h"
 
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidOperationException.h"
@@ -34,7 +35,11 @@ namespace storm {
         bool CheckResult::isQualitative() const {
             return false;
         }
-        
+
+        bool CheckResult::isParetoCurveCheckResult() const {
+            return false;
+        }
+
         bool CheckResult::isResultForAllStates() const {
             return false;
         }
@@ -51,7 +56,11 @@ namespace storm {
         bool CheckResult::isExplicitQuantitativeCheckResult() const {
             return false;
         }
-        
+
+        bool CheckResult::isExplicitParetoCurveCheckResult() const {
+            return false;
+        }
+
         bool CheckResult::isSymbolicQualitativeCheckResult() const {
             return false;
         }
@@ -59,12 +68,12 @@ namespace storm {
         bool CheckResult::isSymbolicQuantitativeCheckResult() const {
             return false;
         }
-        
-        bool CheckResult::isHybridQuantitativeCheckResult() const {
+
+        bool CheckResult::isSymbolicParetoCurveCheckResult() const {
             return false;
         }
-        
-        bool CheckResult::isParetoCurveCheckResult() const {
+
+        bool CheckResult::isHybridQuantitativeCheckResult() const {
             return false;
         }
         
@@ -84,6 +93,16 @@ namespace storm {
         template<typename ValueType>
         ExplicitQuantitativeCheckResult<ValueType> const& CheckResult::asExplicitQuantitativeCheckResult() const {
             return dynamic_cast<ExplicitQuantitativeCheckResult<ValueType> const&>(*this);
+        }
+
+        template<typename ValueType>
+        ExplicitParetoCurveCheckResult<ValueType>& CheckResult::asExplicitParetoCurveCheckResult() {
+            return dynamic_cast<ExplicitParetoCurveCheckResult<ValueType>&>(*this);
+        }
+
+        template<typename ValueType>
+        ExplicitParetoCurveCheckResult<ValueType> const& CheckResult::asExplicitParetoCurveCheckResult() const {
+            return dynamic_cast<ExplicitParetoCurveCheckResult<ValueType> const&>(*this);
         }
         
         QualitativeCheckResult& CheckResult::asQualitativeCheckResult() {
@@ -124,25 +143,29 @@ namespace storm {
         HybridQuantitativeCheckResult<Type, ValueType> const& CheckResult::asHybridQuantitativeCheckResult() const {
             return dynamic_cast<HybridQuantitativeCheckResult<Type, ValueType> const&>(*this);
         }
-        
-        template<typename ValueType>
-        ParetoCurveCheckResult<ValueType>& CheckResult::asParetoCurveCheckResult() {
-            return dynamic_cast<ParetoCurveCheckResult<ValueType>&>(*this);
+
+        template <storm::dd::DdType Type, typename ValueType>
+        SymbolicParetoCurveCheckResult<Type, ValueType>& CheckResult::asSymbolicParetoCurveCheckResult() {
+            return dynamic_cast<SymbolicParetoCurveCheckResult<Type, ValueType>&>(*this);
         }
-        
-        template<typename ValueType>
-        ParetoCurveCheckResult<ValueType> const& CheckResult::asParetoCurveCheckResult() const {
-            return dynamic_cast<ParetoCurveCheckResult<ValueType> const&>(*this);
+
+        template <storm::dd::DdType Type, typename ValueType>
+        SymbolicParetoCurveCheckResult<Type, ValueType> const& CheckResult::asSymbolicParetoCurveCheckResult() const {
+            return dynamic_cast<SymbolicParetoCurveCheckResult<Type, ValueType> const&>(*this);
         }
         
         // Explicitly instantiate the template functions.
         template ExplicitQuantitativeCheckResult<double>& CheckResult::asExplicitQuantitativeCheckResult();
         template ExplicitQuantitativeCheckResult<double> const& CheckResult::asExplicitQuantitativeCheckResult() const;
+        template ExplicitParetoCurveCheckResult<double>& CheckResult::asExplicitParetoCurveCheckResult();
+        template ExplicitParetoCurveCheckResult<double> const& CheckResult::asExplicitParetoCurveCheckResult() const;
 
         template SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>& CheckResult::asSymbolicQualitativeCheckResult();
         template SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD> const& CheckResult::asSymbolicQualitativeCheckResult() const;
         template SymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD, double>& CheckResult::asSymbolicQuantitativeCheckResult();
         template SymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD, double> const& CheckResult::asSymbolicQuantitativeCheckResult() const;
+        template SymbolicParetoCurveCheckResult<storm::dd::DdType::CUDD, double>& CheckResult::asSymbolicParetoCurveCheckResult();
+        template SymbolicParetoCurveCheckResult<storm::dd::DdType::CUDD, double> const& CheckResult::asSymbolicParetoCurveCheckResult() const;
         template HybridQuantitativeCheckResult<storm::dd::DdType::CUDD, double>& CheckResult::asHybridQuantitativeCheckResult();
         template HybridQuantitativeCheckResult<storm::dd::DdType::CUDD, double> const& CheckResult::asHybridQuantitativeCheckResult() const;
 
@@ -150,11 +173,11 @@ namespace storm {
         template SymbolicQualitativeCheckResult<storm::dd::DdType::Sylvan> const& CheckResult::asSymbolicQualitativeCheckResult() const;
         template SymbolicQuantitativeCheckResult<storm::dd::DdType::Sylvan, double>& CheckResult::asSymbolicQuantitativeCheckResult();
         template SymbolicQuantitativeCheckResult<storm::dd::DdType::Sylvan, double> const& CheckResult::asSymbolicQuantitativeCheckResult() const;
+        template SymbolicParetoCurveCheckResult<storm::dd::DdType::Sylvan, double>& CheckResult::asSymbolicParetoCurveCheckResult();
+        template SymbolicParetoCurveCheckResult<storm::dd::DdType::Sylvan, double> const& CheckResult::asSymbolicParetoCurveCheckResult() const;
         template HybridQuantitativeCheckResult<storm::dd::DdType::Sylvan, double>& CheckResult::asHybridQuantitativeCheckResult();
         template HybridQuantitativeCheckResult<storm::dd::DdType::Sylvan, double> const& CheckResult::asHybridQuantitativeCheckResult() const;
-        
-        template ParetoCurveCheckResult<double>& CheckResult::asParetoCurveCheckResult();
-        template ParetoCurveCheckResult<double> const& CheckResult::asParetoCurveCheckResult() const;
+
 
 #ifdef STORM_HAVE_CARL
         template ExplicitQuantitativeCheckResult<storm::RationalNumber>& CheckResult::asExplicitQuantitativeCheckResult();
@@ -163,8 +186,8 @@ namespace storm {
         template ExplicitQuantitativeCheckResult<storm::RationalFunction>& CheckResult::asExplicitQuantitativeCheckResult();
         template ExplicitQuantitativeCheckResult<storm::RationalFunction> const& CheckResult::asExplicitQuantitativeCheckResult() const;
 
-        template ParetoCurveCheckResult<storm::RationalNumber>& CheckResult::asParetoCurveCheckResult();
-        template ParetoCurveCheckResult<storm::RationalNumber> const& CheckResult::asParetoCurveCheckResult() const;
+        template ExplicitParetoCurveCheckResult<storm::RationalNumber>& CheckResult::asExplicitParetoCurveCheckResult();
+        template ExplicitParetoCurveCheckResult<storm::RationalNumber> const& CheckResult::asExplicitParetoCurveCheckResult() const;
 #endif
     }
 }

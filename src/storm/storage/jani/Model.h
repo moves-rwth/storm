@@ -429,6 +429,12 @@ namespace storm {
             bool isLinear() const;
             
             void makeStandardJaniCompliant();
+
+            /*!
+             * Checks whether in the composition, actions are reused: That is, if the model is put in parallel composition and the same action potentially leads to multiple edges from the same state.
+             * @return
+             */
+            bool reusesActionsInComposition() const;
             
             /// The name of the silent action.
             static const std::string SILENT_ACTION_NAME;

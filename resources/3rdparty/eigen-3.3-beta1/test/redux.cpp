@@ -149,7 +149,7 @@ template<typename VectorType> void vectorRedux(const VectorType& w)
 void test_redux()
 {
   // the max size cannot be too large, otherwise reduxion operations obviously generate large errors.
-  int maxsize = (std::min)(100,EIGEN_TEST_MAX_SIZE);
+  int maxsize = (std::min)(100,STORMEIGEN_TEST_MAX_SIZE);
   TEST_SET_BUT_UNUSED_VARIABLE(maxsize);
   for(int i = 0; i < g_repeat; i++) {
     CALL_SUBTEST_1( matrixRedux(Matrix<float, 1, 1>()) );

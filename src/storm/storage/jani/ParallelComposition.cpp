@@ -188,17 +188,33 @@ namespace storm {
         std::size_t ParallelComposition::getNumberOfSynchronizationVectors() const {
             return synchronizationVectors.size();
         }
-        
-        void ParallelComposition::checkSynchronizationVectors() const {
+
+        bool ParallelComposition::areActionsReused() const {
             for (uint_fast64_t inputIndex = 0; inputIndex < subcompositions.size(); ++ inputIndex) {
                 std::set<std::string> actions;
                 for (auto const& vector : synchronizationVectors) {
-                    STORM_LOG_THROW(vector.size() == this->subcompositions.size(), storm::exceptions::WrongFormatException, "Synchronization vectors must match parallel composition size.");
                     std::string const& action = vector.getInput(inputIndex);
                     if (action != SynchronizationVector::NO_ACTION_INPUT) {
-                        STORM_LOG_THROW(actions.find(action) == actions.end(), storm::exceptions::WrongFormatException, "Cannot use the same action ('" << action << "') multiple times as input for index " << inputIndex << " in synchronization vectors.");
+                        if (actions.find(action) != actions.end()) {
+                            return true;
+                        }
                         actions.insert(action);
                     }
+                }
+                // And check recursively, in case we have nested parallel composition
+                if (subcompositions.at(inputIndex)->isParallelComposition()) {
+                    if (subcompositions.at(inputIndex)->asParallelComposition().areActionsReused()) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+        
+        void ParallelComposition::checkSynchronizationVectors() const {
+            for (uint_fast64_t inputIndex = 0; inputIndex < subcompositions.size(); ++ inputIndex) {
+                for (auto const& vector : synchronizationVectors) {
+                    STORM_LOG_THROW(vector.size() == this->subcompositions.size(), storm::exceptions::WrongFormatException, "Synchronization vectors must match parallel composition size.");
                 }
             }
             

@@ -38,7 +38,8 @@ namespace storm {
             virtual double evaluateAsDouble(Valuation const* valuation = nullptr) const override;
             virtual std::shared_ptr<BaseExpression const> simplify() const override;
             virtual boost::any accept(ExpressionVisitor& visitor, boost::any const& data) const override;
-     
+            virtual bool isUnaryNumericalFunctionExpression() const override;
+
             /*!
              * Retrieves the operator associated with this expression.
              *

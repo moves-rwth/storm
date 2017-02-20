@@ -6,7 +6,7 @@
 #include <stdio.h>
 
 #include "main.h"
-#include <unsupported/Eigen/NumericalDiff>
+#include <unsupported/StormEigen/NumericalDiff>
     
 // Generic functor
 template<typename _Scalar, int NX=Dynamic, int NY=Dynamic>

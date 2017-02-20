@@ -7,8 +7,8 @@
 // Public License v. 2.0. If a copy of the MPL was not distributed
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-#ifndef EIGEN_QUATERNION_DEMO_H
-#define EIGEN_QUATERNION_DEMO_H
+#ifndef STORMEIGEN_QUATERNION_DEMO_H
+#define STORMEIGEN_QUATERNION_DEMO_H
 
 #include "gpuhelper.h"
 #include "camera.h"
@@ -94,7 +94,7 @@ class RenderingWidget : public QGLWidget
     //--------------------------------------------------------------------------------
 
   public: 
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    STORMEIGEN_MAKE_ALIGNED_OPERATOR_NEW
     
     RenderingWidget();
     ~RenderingWidget() { }
@@ -111,4 +111,4 @@ class QuaternionDemo : public QMainWindow
     RenderingWidget* mRenderingWidget;
 };
 
-#endif // EIGEN_QUATERNION_DEMO_H
+#endif // STORMEIGEN_QUATERNION_DEMO_H

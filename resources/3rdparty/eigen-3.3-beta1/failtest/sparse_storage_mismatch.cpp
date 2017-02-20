@@ -1,8 +1,8 @@
-#include "../Eigen/Sparse"
+#include "../StormEigen/Sparse"
 using namespace StormEigen;
 
 typedef SparseMatrix<double,ColMajor> Mat1;
-#ifdef EIGEN_SHOULD_FAIL_TO_BUILD
+#ifdef STORMEIGEN_SHOULD_FAIL_TO_BUILD
 typedef SparseMatrix<double,RowMajor> Mat2;
 #else
 typedef SparseMatrix<double,ColMajor> Mat2;

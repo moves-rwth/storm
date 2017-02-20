@@ -10,7 +10,7 @@
 #include "main.h"
 #include <sstream>
 #include <string>
-#include <Eigen/CXX11/Tensor>
+#include <StormEigen/CXX11/Tensor>
 
 
 template<int DataLayout>

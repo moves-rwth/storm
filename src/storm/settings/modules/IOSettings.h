@@ -211,10 +211,38 @@ namespace storm {
                  * @return The string that defines the constants of a symbolic model.
                  */
                 std::string getConstantDefinitionString() const;
-                
+
+                /*!
+                 * Retrieves whether the jani-property option was set
+                 * @return
+                 */
                 bool isJaniPropertiesSet() const;
-                
+
+                /*!
+                 * @return  The names of the jani properties to check
+                 */
                 std::vector<std::string> getJaniProperties() const;
+
+                /*!
+                 * Retrieves whether the property option was set.
+                 *
+                 * @return True if the property option was set.
+                 */
+                bool isPropertySet() const;
+
+                /*!
+                 * Retrieves the property specified with the property option.
+                 *
+                 * @return The property specified with the property option.
+                 */
+                std::string getProperty() const;
+
+                /*!
+                 * Retrieves the property filter.
+                 *
+                 * @return The property filter.
+                 */
+                std::string getPropertyFilter() const;
 
                 /*!
                  * Retrieves whether the PRISM compatibility mode was enabled.
@@ -266,6 +294,8 @@ namespace storm {
                 static const std::string noBuildOptionName;
                 static const std::string janiPropertyOptionName;
                 static const std::string janiPropertyOptionShortName;
+                static const std::string propertyOptionName;
+                static const std::string propertyOptionShortName;
             };
 
         } // namespace modules

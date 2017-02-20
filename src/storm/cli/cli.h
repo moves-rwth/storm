@@ -8,7 +8,9 @@ namespace storm {
             
         std::string getCurrentWorkingDirectory();
             
-        void printHeader(std::string name, const int argc, const char* argv[]);
+        void printHeader(std::string const& name, const int argc, const char* argv[]);
+        
+        void printVersion(std::string const& name);
             
         void showTimeAndMemoryStatistics(uint64_t wallclockMilliseconds = 0);
         

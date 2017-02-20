@@ -26,8 +26,6 @@ namespace storm {
             const std::string GeneralSettings::precisionOptionShortName = "eps";
             const std::string GeneralSettings::configOptionName = "config";
             const std::string GeneralSettings::configOptionShortName = "c";
-            const std::string GeneralSettings::propertyOptionName = "prop";
-            const std::string GeneralSettings::propertyOptionShortName = "prop";
             const std::string GeneralSettings::bisimulationOptionName = "bisimulation";
             const std::string GeneralSettings::bisimulationOptionShortName = "bisim";
             const std::string GeneralSettings::parametricOptionName = "parametric";
@@ -43,11 +41,6 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to use.").setDefaultValueDouble(1e-06).addValidatorDouble(ArgumentValidatorFactory::createDoubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, configOptionName, false, "If given, this file will be read and parsed for additional configuration settings.").setShortName(configOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file from which to read the configuration.").addValidatorString(ArgumentValidatorFactory::createExistingFileValidator()).build()).build());
-
-                this->addOption(storm::settings::OptionBuilder(moduleName, propertyOptionName, false, "Specifies the properties to be checked on the model.").setShortName(propertyOptionShortName)
-                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("property or filename", "The formula or the file containing the formulas.").build())
-                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filter", "The names of the properties to check.").setDefaultValueString("all").build())
-                                .build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, parametricRegionOptionName, false, "Sets whether to use the parametric Region engine.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, bisimulationOptionName, false, "Sets whether to perform bisimulation minimization.").setShortName(bisimulationOptionShortName).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, parametricOptionName, false, "Sets whether to enable parametric model checking.").build());
@@ -81,18 +74,7 @@ namespace storm {
             std::string GeneralSettings::getConfigFilename() const {
                 return this->getOption(configOptionName).getArgumentByName("filename").getValueAsString();
             }
-            
-            bool GeneralSettings::isPropertySet() const {
-                return this->getOption(propertyOptionName).getHasOptionBeenSet();
-            }
-            
-            std::string GeneralSettings::getProperty() const {
-                return this->getOption(propertyOptionName).getArgumentByName("property or filename").getValueAsString();
-            }
 
-            std::string GeneralSettings::getPropertyFilter() const {
-                return this->getOption(propertyOptionName).getArgumentByName("filter").getValueAsString();
-            }
 
             bool GeneralSettings::isBisimulationSet() const {
                 return this->getOption(bisimulationOptionName).getHasOptionBeenSet();

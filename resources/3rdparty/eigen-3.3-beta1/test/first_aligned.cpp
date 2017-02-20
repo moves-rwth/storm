@@ -19,8 +19,8 @@ void test_first_aligned_helper(Scalar *array, int size)
 template<typename Scalar>
 void test_none_aligned_helper(Scalar *array, int size)
 {
-  EIGEN_UNUSED_VARIABLE(array);
-  EIGEN_UNUSED_VARIABLE(size);
+  STORMEIGEN_UNUSED_VARIABLE(array);
+  STORMEIGEN_UNUSED_VARIABLE(size);
   VERIFY(internal::packet_traits<Scalar>::size == 1 || internal::first_default_aligned(array, size) == size);
 }
 
@@ -28,7 +28,7 @@ struct some_non_vectorizable_type { float x; };
 
 void test_first_aligned()
 {
-  EIGEN_ALIGN16 float array_float[100];
+  STORMEIGEN_ALIGN16 float array_float[100];
   test_first_aligned_helper(array_float, 50);
   test_first_aligned_helper(array_float+1, 50);
   test_first_aligned_helper(array_float+2, 50);
@@ -36,7 +36,7 @@ void test_first_aligned()
   test_first_aligned_helper(array_float+4, 50);
   test_first_aligned_helper(array_float+5, 50);
   
-  EIGEN_ALIGN16 double array_double[100];
+  STORMEIGEN_ALIGN16 double array_double[100];
   test_first_aligned_helper(array_double, 50);
   test_first_aligned_helper(array_double+1, 50);
   test_first_aligned_helper(array_double+2, 50);

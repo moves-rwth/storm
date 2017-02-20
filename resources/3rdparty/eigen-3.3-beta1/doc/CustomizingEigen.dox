@@ -10,18 +10,18 @@ Eigen can be extended in several ways, for instance, by defining global methods,
 
 In this section we will see how to add custom methods to MatrixBase. Since all expressions and matrix types inherit MatrixBase, adding a method to MatrixBase make it immediately available to all expressions ! A typical use case is, for instance, to make Eigen compatible with another API.
 
-You certainly know that in C++ it is not possible to add methods to an existing class. So how that's possible ? Here the trick is to include in the declaration of MatrixBase a file defined by the preprocessor token \c EIGEN_MATRIXBASE_PLUGIN:
+You certainly know that in C++ it is not possible to add methods to an existing class. So how that's possible ? Here the trick is to include in the declaration of MatrixBase a file defined by the preprocessor token \c STORMEIGEN_MATRIXBASE_PLUGIN:
 \code
 class MatrixBase {
   // ...
-  #ifdef EIGEN_MATRIXBASE_PLUGIN
-  #include EIGEN_MATRIXBASE_PLUGIN
+  #ifdef STORMEIGEN_MATRIXBASE_PLUGIN
+  #include STORMEIGEN_MATRIXBASE_PLUGIN
   #endif
 };
 \endcode
-Therefore to extend MatrixBase with your own methods you just have to create a file with your method declaration and define EIGEN_MATRIXBASE_PLUGIN before you include any Eigen's header file.
+Therefore to extend MatrixBase with your own methods you just have to create a file with your method declaration and define STORMEIGEN_MATRIXBASE_PLUGIN before you include any Eigen's header file.
 
-You can extend many of the other classes used in Eigen by defining similarly named preprocessor symbols. For instance, define \c EIGEN_ARRAYBASE_PLUGIN if you want to extend the ArrayBase class. A full list of classes that can be extended in this way and the corresponding preprocessor symbols can be found on our page \ref TopicPreprocessorDirectives.
+You can extend many of the other classes used in Eigen by defining similarly named preprocessor symbols. For instance, define \c STORMEIGEN_ARRAYBASE_PLUGIN if you want to extend the ArrayBase class. A full list of classes that can be extended in this way and the corresponding preprocessor symbols can be found on our page \ref TopicPreprocessorDirectives.
 
 Here is an example of an extension file for adding methods to MatrixBase: \n
 \b MatrixBaseAddons.h
@@ -67,13 +67,13 @@ operator+(const Scalar& scalar, const MatrixBase<Derived>& mat)
 
 Then one can the following declaration in the config.h or whatever prerequisites header file of his project:
 \code
-#define EIGEN_MATRIXBASE_PLUGIN "MatrixBaseAddons.h"
+#define STORMEIGEN_MATRIXBASE_PLUGIN "MatrixBaseAddons.h"
 \endcode
 
 \section InheritingFromMatrix Inheriting from Matrix
 
 Before inheriting from Matrix, be really, I mean REALLY, sure that using
-EIGEN_MATRIX_PLUGIN is not what you really want (see previous section).
+STORMEIGEN_MATRIX_PLUGIN is not what you really want (see previous section).
 If you just need to add few members to Matrix, this is the way to go.
 
 An example of when you actually need to inherit Matrix, is when you
@@ -108,7 +108,7 @@ In order to add support for a custom type \c T you need:
 -# make sure the common operator (+,-,*,/,etc.) are supported by the type \c T
 -# add a specialization of struct StormEigen::NumTraits<T> (see \ref NumTraits)
 -# define the math functions that makes sense for your type. This includes standard ones like sqrt, pow, sin, tan, conj, real, imag, etc, as well as abs2 which is Eigen specific.
-     (see the file Eigen/src/Core/MathFunctions.h)
+     (see the file StormEigen/src/Core/MathFunctions.h)
 
 The math function should be defined in the same namespace than \c T, or in the \c std namespace though that second approach is not recommended.
 
@@ -120,7 +120,7 @@ Here is a concrete example adding support for the Adolc's \c adouble type. <a hr
 
 #define ADOLC_TAPELESS
 #include <adolc/adouble.h>
-#include <Eigen/Core>
+#include <StormEigen/Core>
 
 namespace StormEigen {
 
@@ -161,7 +161,7 @@ This other example adds support for the \c mpq_class type from <a href="https://
 
 \code
 #include <gmpxx.h>
-#include <Eigen/Core>
+#include <StormEigen/Core>
 #include <boost/operators.hpp>
 
 namespace StormEigen {

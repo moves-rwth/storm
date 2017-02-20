@@ -25,7 +25,7 @@
  * Initialize the settings manager.
  */
 void initializeSettings() {
-    storm::settings::mutableManager().setName("StoRM-PGCL", "storm-pgcl");
+    storm::settings::mutableManager().setName("storm-PGCL", "storm-pgcl");
     
     // Register all known settings modules.
     storm::settings::addModule<storm::settings::modules::GeneralSettings>();
@@ -47,19 +47,16 @@ void handleJani(storm::jani::Model& model) {
 
 void programGraphToDotFile(storm::ppg::ProgramGraph const& prog) {
     std::string filepath = storm::settings::getModule<storm::settings::modules::PGCLSettings>().getProgramGraphDotOutputFilename();
-    std::ofstream ofs;
-    ofs.open(filepath, std::ofstream::out );
-    if (ofs.is_open()) {
-        prog.printDot(ofs);
-    } else {
-        STORM_LOG_THROW(false, storm::exceptions::FileIoException, "Cannot open " << filepath);
-    }
+    std::ofstream stream;
+    storm::utility::openFile(filepath, stream);
+    prog.printDot(stream);
+    storm::utility::closeFile(stream);
 }
 
 int main(const int argc, const char** argv) {
     try {
         storm::utility::setUp();
-        storm::cli::printHeader("StoRM-PGCL", argc, argv);
+        storm::cli::printHeader("storm-PGCL", argc, argv);
         initializeSettings();
         
         bool optionsCorrect = storm::cli::parseOptions(argc, argv);
@@ -96,10 +93,10 @@ int main(const int argc, const char** argv) {
             
         }
     }catch (storm::exceptions::BaseException const& exception) {
-        STORM_LOG_ERROR("An exception caused StoRM-PGCL to terminate. The message of the exception is: " << exception.what());
+        STORM_LOG_ERROR("An exception caused storm-PGCL to terminate. The message of the exception is: " << exception.what());
         return 1;
     } catch (std::exception const& exception) {
-        STORM_LOG_ERROR("An unexpected exception occurred and caused StoRM-PGCL to terminate. The message of this exception is: " << exception.what());
+        STORM_LOG_ERROR("An unexpected exception occurred and caused storm-PGCL to terminate. The message of this exception is: " << exception.what());
         return 2;
     }
 }

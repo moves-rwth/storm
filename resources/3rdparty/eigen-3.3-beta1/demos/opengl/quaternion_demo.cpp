@@ -10,9 +10,9 @@
 #include "quaternion_demo.h"
 #include "icosphere.h"
 
-#include <Eigen/Geometry>
-#include <Eigen/QR>
-#include <Eigen/LU>
+#include <StormEigen/Geometry>
+#include <StormEigen/QR>
+#include <StormEigen/LU>
 
 #include <iostream>
 #include <QEvent>
@@ -30,7 +30,7 @@ using namespace StormEigen;
 class FancySpheres
 {
   public:
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    STORMEIGEN_MAKE_ALIGNED_OPERATOR_NEW
     
     FancySpheres()
     {

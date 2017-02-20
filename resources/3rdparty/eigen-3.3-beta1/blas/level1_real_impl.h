@@ -11,7 +11,7 @@
 
 // computes the sum of magnitudes of all vector elements or, for a complex vector x, the sum
 // res = |Rex1| + |Imx1| + |Rex2| + |Imx2| + ... + |Rexn| + |Imxn|, where x is a vector of order n
-RealScalar EIGEN_BLAS_FUNC(asum)(int *n, RealScalar *px, int *incx)
+RealScalar STORMEIGEN_BLAS_FUNC(asum)(int *n, RealScalar *px, int *incx)
 {
 //   std::cerr << "_asum " << *n << " " << *incx << "\n";
 
@@ -24,7 +24,7 @@ RealScalar EIGEN_BLAS_FUNC(asum)(int *n, RealScalar *px, int *incx)
 }
 
 // computes a vector-vector dot product.
-Scalar EIGEN_BLAS_FUNC(dot)(int *n, RealScalar *px, int *incx, RealScalar *py, int *incy)
+Scalar STORMEIGEN_BLAS_FUNC(dot)(int *n, RealScalar *px, int *incx, RealScalar *py, int *incy)
 {
 //   std::cerr << "_dot " << *n << " " << *incx << " " << *incy << "\n";
 
@@ -43,7 +43,7 @@ Scalar EIGEN_BLAS_FUNC(dot)(int *n, RealScalar *px, int *incx, RealScalar *py, i
 
 // computes the Euclidean norm of a vector.
 // FIXME
-Scalar EIGEN_BLAS_FUNC(nrm2)(int *n, RealScalar *px, int *incx)
+Scalar STORMEIGEN_BLAS_FUNC(nrm2)(int *n, RealScalar *px, int *incx)
 {
 //   std::cerr << "_nrm2 " << *n << " " << *incx << "\n";
   if(*n<=0) return 0;
@@ -54,7 +54,7 @@ Scalar EIGEN_BLAS_FUNC(nrm2)(int *n, RealScalar *px, int *incx)
   else          return make_vector(x,*n,std::abs(*incx)).stableNorm();
 }
 
-int EIGEN_BLAS_FUNC(rot)(int *n, RealScalar *px, int *incx, RealScalar *py, int *incy, RealScalar *pc, RealScalar *ps)
+int STORMEIGEN_BLAS_FUNC(rot)(int *n, RealScalar *px, int *incx, RealScalar *py, int *incy, RealScalar *pc, RealScalar *ps)
 {
 //   std::cerr << "_rot " << *n << " " << *incx << " " << *incy << "\n";
   if(*n<=0) return 0;
@@ -80,7 +80,7 @@ int EIGEN_BLAS_FUNC(rot)(int *n, RealScalar *px, int *incx, RealScalar *py, int 
 
 /*
 // performs rotation of points in the modified plane.
-int EIGEN_BLAS_FUNC(rotm)(int *n, RealScalar *px, int *incx, RealScalar *py, int *incy, RealScalar *param)
+int STORMEIGEN_BLAS_FUNC(rotm)(int *n, RealScalar *px, int *incx, RealScalar *py, int *incy, RealScalar *param)
 {
   Scalar* x = reinterpret_cast<Scalar*>(px);
   Scalar* y = reinterpret_cast<Scalar*>(py);
@@ -91,7 +91,7 @@ int EIGEN_BLAS_FUNC(rotm)(int *n, RealScalar *px, int *incx, RealScalar *py, int
 }
 
 // computes the modified parameters for a Givens rotation.
-int EIGEN_BLAS_FUNC(rotmg)(RealScalar *d1, RealScalar *d2, RealScalar *x1, RealScalar *x2, RealScalar *param)
+int STORMEIGEN_BLAS_FUNC(rotmg)(RealScalar *d1, RealScalar *d2, RealScalar *x1, RealScalar *x2, RealScalar *param)
 {
   // TODO
 

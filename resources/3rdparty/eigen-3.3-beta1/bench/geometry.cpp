@@ -1,6 +1,6 @@
 
 #include <iostream>
-#include <Eigen/Geometry>
+#include <StormEigen/Geometry>
 #include <bench/BenchTimer.h>
 
 using namespace std;
@@ -22,20 +22,20 @@ typedef Matrix<Scalar,Dynamic,Dynamic> C;
 typedef Matrix<RealScalar,Dynamic,Dynamic> M;
 
 template<typename Transformation, typename Data>
-EIGEN_DONT_INLINE void transform(const Transformation& t, Data& data)
+STORMEIGEN_DONT_INLINE void transform(const Transformation& t, Data& data)
 {
-  EIGEN_ASM_COMMENT("begin");
+  STORMEIGEN_ASM_COMMENT("begin");
   data = t * data;
-  EIGEN_ASM_COMMENT("end");
+  STORMEIGEN_ASM_COMMENT("end");
 }
 
 template<typename Scalar, typename Data>
-EIGEN_DONT_INLINE void transform(const Quaternion<Scalar>& t, Data& data)
+STORMEIGEN_DONT_INLINE void transform(const Quaternion<Scalar>& t, Data& data)
 {
-  EIGEN_ASM_COMMENT("begin quat");
+  STORMEIGEN_ASM_COMMENT("begin quat");
   for(int i=0;i<data.cols();++i)
     data.col(i) = t * data.col(i);
-  EIGEN_ASM_COMMENT("end quat");
+  STORMEIGEN_ASM_COMMENT("end quat");
 }
 
 template<typename T> struct ToRotationMatrixWrapper
@@ -47,15 +47,15 @@ template<typename T> struct ToRotationMatrixWrapper
 };
 
 template<typename QType, typename Data>
-EIGEN_DONT_INLINE void transform(const ToRotationMatrixWrapper<QType>& t, Data& data)
+STORMEIGEN_DONT_INLINE void transform(const ToRotationMatrixWrapper<QType>& t, Data& data)
 {
-  EIGEN_ASM_COMMENT("begin quat via mat");
+  STORMEIGEN_ASM_COMMENT("begin quat via mat");
   data = t.object.toRotationMatrix() * data;
-  EIGEN_ASM_COMMENT("end quat via mat");
+  STORMEIGEN_ASM_COMMENT("end quat via mat");
 }
 
 template<typename Scalar, int Dim, typename Data>
-EIGEN_DONT_INLINE void transform(const Transform<Scalar,Dim,Projective>& t, Data& data)
+STORMEIGEN_DONT_INLINE void transform(const Transform<Scalar,Dim,Projective>& t, Data& data)
 {
   data = (t * data.colwise().homogeneous()).template block<Dim,Data::ColsAtCompileTime>(0,0);
 }
@@ -67,7 +67,7 @@ struct get_dim<Matrix<S,R,C,O,MR,MC> > { enum { Dim = R }; };
 template<typename Transformation, int N>
 struct bench_impl
 {
-  static EIGEN_DONT_INLINE void run(const Transformation& t)
+  static STORMEIGEN_DONT_INLINE void run(const Transformation& t)
   {
     Matrix<typename Transformation::Scalar,get_dim<Transformation>::Dim,N> data;
     data.setRandom();
@@ -83,11 +83,11 @@ struct bench_impl
 template<typename Transformation>
 struct bench_impl<Transformation,0>
 {
-  static EIGEN_DONT_INLINE void run(const Transformation&) {}
+  static STORMEIGEN_DONT_INLINE void run(const Transformation&) {}
 };
 
 template<typename Transformation>
-EIGEN_DONT_INLINE void bench(const std::string& msg, const Transformation& t)
+STORMEIGEN_DONT_INLINE void bench(const std::string& msg, const Transformation& t)
 {
   cout << msg << " ";
   bench_impl<Transformation,SIZE>::run(t);

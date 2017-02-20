@@ -37,9 +37,9 @@
 // DEALINGS IN THE SOFTWARE.
 
 #include <iostream>
-#include <Eigen/Core>
-#include <Eigen/Eigenvalues>
-#include <Eigen/Geometry>
+#include <StormEigen/Core>
+#include <StormEigen/Eigenvalues>
+#include <StormEigen/Geometry>
 #include <bench/BenchTimer.h>
 
 using namespace StormEigen;

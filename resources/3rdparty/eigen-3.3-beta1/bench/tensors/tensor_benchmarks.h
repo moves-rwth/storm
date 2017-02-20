@@ -1,10 +1,10 @@
-#ifndef THIRD_PARTY_EIGEN3_TENSOR_BENCHMARKS_H_
-#define THIRD_PARTY_EIGEN3_TENSOR_BENCHMARKS_H_
+#ifndef THIRD_PARTY_STORMEIGEN3_TENSOR_BENCHMARKS_H_
+#define THIRD_PARTY_STORMEIGEN3_TENSOR_BENCHMARKS_H_
 
 typedef int TensorIndex;
-#define EIGEN_DEFAULT_DENSE_INDEX_TYPE int
+#define STORMEIGEN_DEFAULT_DENSE_INDEX_TYPE int
 
-#include "third_party/eigen3/unsupported/Eigen/CXX11/Tensor"
+#include "third_party/eigen3/unsupported/StormEigen/CXX11/Tensor"
 #include "testing/base/public/benchmark.h"
 
 using StormEigen::Tensor;
@@ -284,7 +284,7 @@ template <typename Device> class BenchmarkSuite {
   }
 
   inline void finalizeBenchmark(int64 num_items) {
-#if defined(EIGEN_USE_GPU) && defined(__CUDACC__)
+#if defined(STORMEIGEN_USE_GPU) && defined(__CUDACC__)
     if (StormEigen::internal::is_same<Device, StormEigen::GpuDevice>::value) {
       device_.synchronize();
     }
@@ -302,4 +302,4 @@ template <typename Device> class BenchmarkSuite {
   float* c_;
   Device device_;
 };
-#endif  // THIRD_PARTY_EIGEN3_TENSOR_BENCHMARKS_H_
+#endif  // THIRD_PARTY_STORMEIGEN3_TENSOR_BENCHMARKS_H_

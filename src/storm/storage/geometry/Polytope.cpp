@@ -5,6 +5,7 @@
 #include "storm/adapters/CarlAdapter.h"
 #include "storm/adapters/HyproAdapter.h"
 #include "storm/storage/geometry/HyproPolytope.h"
+#include "storm/storage/geometry/NativePolytope.h"
 #include "storm/utility/macros.h"
 
 #include "storm/exceptions/NotImplementedException.h"
@@ -39,9 +40,9 @@ namespace storm {
                                                                              boost::optional<std::vector<Point>> const& points) {
 #ifdef STORM_HAVE_HYPRO
                 return HyproPolytope<ValueType>::create(halfspaces, points);
+#else
+                return NativePolytope<ValueType>::create(halfspaces, points);
 #endif
-                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "No polytope implementation specified.");
-                return nullptr;
             }
             
             template <typename ValueType>
@@ -188,6 +189,11 @@ namespace storm {
             
             template <typename ValueType>
             bool Polytope<ValueType>::isHyproPolytope() const {
+                return false;
+            }
+
+            template <typename ValueType>
+            bool Polytope<ValueType>::isNativePolytope() const {
                 return false;
             }
             

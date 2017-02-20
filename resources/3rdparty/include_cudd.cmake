@@ -17,7 +17,7 @@ endif()
 set(CUDD_LIB_DIR ${STORM_3RDPARTY_BINARY_DIR}/cudd-3.0.0/lib)
 
 set(STORM_CUDD_FLAGS "CFLAGS=-O3 -w -DPIC -DHAVE_IEEE_754 -fno-common -ffast-math -fno-finite-math-only")
-if (NOT STORM_PORTABLE_RELEASE)
+if (NOT STORM_PORTABLE)
 	set(STORM_CUDD_FLAGS "${STORM_CUDD_FLAGS} -march=native")
 endif()
 
@@ -54,4 +54,4 @@ else()
     list(APPEND STORM_DEP_TARGETS cudd_STATIC)
 endif()
 
-message(STATUS "Storm - Linking with CUDD ${CUDD_VERSION_STRING}.")
+message(STATUS "storm - Linking with CUDD ${CUDD_VERSION_STRING}.")

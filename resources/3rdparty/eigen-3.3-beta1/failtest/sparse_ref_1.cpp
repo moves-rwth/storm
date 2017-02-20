@@ -1,6 +1,6 @@
-#include "../Eigen/Sparse"
+#include "../StormEigen/Sparse"
 
-#ifdef EIGEN_SHOULD_FAIL_TO_BUILD
+#ifdef STORMEIGEN_SHOULD_FAIL_TO_BUILD
 #define CV_QUALIFIER const
 #else
 #define CV_QUALIFIER

@@ -17,13 +17,13 @@ ExternalProject_Add(
         INSTALL_COMMAND ""
         BUILD_IN_SOURCE 0
         LOG_BUILD ON
-        BUILD_BYPRODUCTS ${CPPTEMPLATE_LIB_DIR}/cpptemplate${DYNAMIC_EXT} ${CPPTEMPLATE_LIB_DIR}/cpptemplate${STATIC_EXT}
+        BUILD_BYPRODUCTS ${CPPTEMPLATE_LIB_DIR}/cpptemplate${STATIC_EXT}
 )
 
 set(CPPTEMPLATE_INCLUDE_DIR ${STORM_3RDPARTY_SOURCE_DIR}/cpptemplate)
 set(CPPTEMPLATE_STATIC_LIBRARY ${STORM_3RDPARTY_BINARY_DIR}/cpptemplate/cpptemplate${STATIC_EXT})
 add_dependencies(resources cpptemplate)
 
-message(STATUS "Storm - Linking with cpptemplate.")
+message(STATUS "storm - Linking with cpptemplate.")
 add_imported_library(cpptempl STATIC ${CPPTEMPLATE_STATIC_LIBRARY} ${CPPTEMPLATE_INCLUDE_DIR})
 list(APPEND STORM_DEP_TARGETS cpptempl_STATIC)

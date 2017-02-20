@@ -7,7 +7,7 @@
 // Public License v. 2.0. If a copy of the MPL was not distributed
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-#define EIGEN_NO_STATIC_ASSERT
+#define STORMEIGEN_NO_STATIC_ASSERT
 #include "main.h"
 
 template<typename T>
@@ -82,7 +82,7 @@ template<typename MatrixType> void swap(const MatrixType& m)
 
 void test_swap()
 {
-  int s = internal::random<int>(1,EIGEN_TEST_MAX_SIZE);
+  int s = internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE);
   CALL_SUBTEST_1( swap(Matrix3f()) ); // fixed size, no vectorization 
   CALL_SUBTEST_2( swap(Matrix4d()) ); // fixed size, possible vectorization 
   CALL_SUBTEST_3( swap(MatrixXd(s,s)) ); // dyn size, no vectorization 

@@ -7,14 +7,14 @@
 // Public License v. 2.0. If a copy of the MPL was not distributed
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-#ifndef EIGEN_TESTSPARSE_H
-#define EIGEN_TESTSPARSE_H
+#ifndef STORMEIGEN_TESTSPARSE_H
+#define STORMEIGEN_TESTSPARSE_H
 
-#define EIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET
+#define STORMEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET
 
 #include "main.h"
 
-#if EIGEN_GNUC_AT_LEAST(4,0) && !defined __ICC && !defined(__clang__)
+#if STORMEIGEN_GNUC_AT_LEAST(4,0) && !defined __ICC && !defined(__clang__)
 
 #ifdef min
 #undef min
@@ -25,19 +25,19 @@
 #endif
 
 #include <tr1/unordered_map>
-#define EIGEN_UNORDERED_MAP_SUPPORT
+#define STORMEIGEN_UNORDERED_MAP_SUPPORT
 namespace std {
   using std::tr1::unordered_map;
 }
 #endif
 
-#ifdef EIGEN_GOOGLEHASH_SUPPORT
+#ifdef STORMEIGEN_GOOGLEHASH_SUPPORT
   #include <google/sparse_hash_map>
 #endif
 
-#include <Eigen/Cholesky>
-#include <Eigen/LU>
-#include <Eigen/Sparse>
+#include <StormEigen/Cholesky>
+#include <StormEigen/LU>
+#include <StormEigen/Sparse>
 
 enum {
   ForceNonZeroDiag = 1,
@@ -206,5 +206,5 @@ initSparse(double density,
 }
 
 
-#include <unsupported/Eigen/SparseExtra>
-#endif // EIGEN_TESTSPARSE_H
+#include <unsupported/StormEigen/SparseExtra>
+#endif // STORMEIGEN_TESTSPARSE_H

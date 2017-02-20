@@ -9,7 +9,7 @@
 
 #include "main.h"
 #include <limits>
-#include <Eigen/Eigenvalues>
+#include <StormEigen/Eigenvalues>
 
 template<typename MatrixType> void generalized_eigensolver_real(const MatrixType& m)
 {
@@ -54,7 +54,7 @@ void test_eigensolver_generalized_real()
   for(int i = 0; i < g_repeat; i++) {
     int s = 0;
     CALL_SUBTEST_1( generalized_eigensolver_real(Matrix4f()) );
-    s = internal::random<int>(1,EIGEN_TEST_MAX_SIZE/4);
+    s = internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE/4);
     CALL_SUBTEST_2( generalized_eigensolver_real(MatrixXd(s,s)) );
 
     // some trivial but implementation-wise tricky cases

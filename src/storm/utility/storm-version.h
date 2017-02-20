@@ -3,8 +3,9 @@
 #include <string>
 #include <sstream>
 
-namespace storm
-{
+#include <boost/optional.hpp>
+
+namespace storm {
     namespace utility {
         
         struct StormVersion {
@@ -18,13 +19,13 @@ namespace storm
             const static unsigned versionPatch;
             
             /// The short hash of the git commit this build is based on
-            const static std::string gitRevisionHash;
+            const static boost::optional<std::string> gitRevisionHash;
             
             /// How many commits passed since the tag was last set.
-            const static unsigned commitsAhead;
+            const static boost::optional<unsigned> commitsAhead;
             
             /// 0 iff there no files were modified in the checkout, 1 otherwise.
-            const static unsigned dirty;
+            const static boost::optional<unsigned> dirty;
             
             /// The system which has compiled Storm.
             const static std::string systemName;
@@ -40,21 +41,22 @@ namespace storm
 
             static std::string shortVersionString() {
                 std::stringstream sstream;
-                sstream << "Storm " << versionMajor << "." << versionMinor << "." << versionPatch;
+                sstream << versionMajor << "." << versionMinor << "." << versionPatch;
                 return sstream.str();
             }
             
             static std::string longVersionString() {
                 std::stringstream sstream;
-                sstream << "version: " << versionMajor << "." <<  versionMinor << "." << versionPatch;
-                if (commitsAhead != 0) {
-                    sstream << " (+" << commitsAhead << " commits)";
+                sstream << "Version " << versionMajor << "." <<  versionMinor << "." << versionPatch;
+                if (commitsAhead && commitsAhead.get() > 0) {
+                    sstream << " (+" << commitsAhead.get() << " commits)";
                 }
-                sstream << " build from revision " << gitRevisionHash;
-                if (dirty == 1) {
-                    sstream << " (DIRTY)";
+                if (gitRevisionHash) {
+                    sstream << " build from revision " << gitRevisionHash.get();
                 }
-                sstream << "." << std::endl;
+                if (dirty && dirty.get() == 1) {
+                    sstream << " (dirty)";
+                }
                 return sstream.str();
             }
             

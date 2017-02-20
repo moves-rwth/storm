@@ -9,7 +9,7 @@
 
 #include "main.h"
 
-#include <Eigen/CXX11/Tensor>
+#include <StormEigen/CXX11/Tensor>
 
 using StormEigen::Tensor;
 
@@ -115,7 +115,7 @@ static void test_static_broadcasting()
   Tensor<float, 3, DataLayout> tensor(8,3,5);
   tensor.setRandom();
 
-#ifdef EIGEN_HAS_CONSTEXPR
+#ifdef STORMEIGEN_HAS_CONSTEXPR
   StormEigen::IndexList<StormEigen::type2index<2>, Eigen::type2index<3>, Eigen::type2index<4>> broadcasts;
 #else
   StormEigen::array<int, 3> broadcasts;

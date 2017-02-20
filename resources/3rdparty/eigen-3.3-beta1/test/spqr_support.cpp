@@ -6,9 +6,9 @@
 // This Source Code Form is subject to the terms of the Mozilla
 // Public License v. 2.0. If a copy of the MPL was not distributed
 
-#define EIGEN_NO_DEBUG_SMALL_PRODUCT_BLOCKS
+#define STORMEIGEN_NO_DEBUG_SMALL_PRODUCT_BLOCKS
 #include "sparse.h"
-#include <Eigen/SPQRSupport>
+#include <StormEigen/SPQRSupport>
 
 
 template<typename MatrixType,typename DenseMat>

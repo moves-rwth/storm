@@ -17,11 +17,6 @@ namespace storm {
         template<typename ValueType>
         std::vector<ValueType> SparseStateRewardParser<ValueType>::parseSparseStateReward(uint_fast64_t stateCount, std::string const& filename) {
             // Open file.
-            if (!MappedFile::fileExistsAndIsReadable(filename.c_str())) {
-                STORM_LOG_ERROR("Error while parsing " << filename << ": File does not exist or is not readable.");
-                throw storm::exceptions::FileIoException() << "Error while parsing " << filename << ": File does not exist or is not readable.";
-            }
-
             MappedFile file(filename.c_str());
             char const* buf = file.getData();
 

@@ -9,7 +9,7 @@
 
 #include "main.h"
 #include <limits>
-#include <Eigen/CXX11/Tensor>
+#include <StormEigen/CXX11/Tensor>
 
 using StormEigen::Tensor;
 
@@ -340,7 +340,7 @@ static void test_static_dims() {
   Tensor<float, 2, DataLayout> out(72, 97);
   in.setRandom();
 
-#ifndef EIGEN_HAS_CONSTEXPR 
+#ifndef STORMEIGEN_HAS_CONSTEXPR 
   array<int, 2> reduction_axis;
   reduction_axis[0] = 1;
   reduction_axis[1] = 3;
@@ -370,7 +370,7 @@ static void test_innermost_last_dims() {
   in.setRandom();
 
 // Reduce on the innermost dimensions.
-#ifndef EIGEN_HAS_CONSTEXPR
+#ifndef STORMEIGEN_HAS_CONSTEXPR
   array<int, 2> reduction_axis;
   reduction_axis[0] = 0;
   reduction_axis[1] = 1;
@@ -401,7 +401,7 @@ static void test_innermost_first_dims() {
   in.setRandom();
 
 // Reduce on the innermost dimensions.
-#ifndef EIGEN_HAS_CONSTEXPR
+#ifndef STORMEIGEN_HAS_CONSTEXPR
   array<int, 2> reduction_axis;
   reduction_axis[0] = 2;
   reduction_axis[1] = 3;
@@ -432,7 +432,7 @@ static void test_reduce_middle_dims() {
   in.setRandom();
 
 // Reduce on the innermost dimensions.
-#ifndef EIGEN_HAS_CONSTEXPR
+#ifndef STORMEIGEN_HAS_CONSTEXPR
   array<int, 2> reduction_axis;
   reduction_axis[0] = 1;
   reduction_axis[1] = 2;

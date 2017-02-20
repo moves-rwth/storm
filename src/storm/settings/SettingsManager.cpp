@@ -39,6 +39,7 @@
 #include "storm/settings/modules/JitBuilderSettings.h"
 #include "storm/settings/modules/MultiObjectiveSettings.h"
 #include "storm/utility/macros.h"
+#include "storm/utility/file.h"
 #include "storm/settings/Option.h"
 
 namespace storm {
@@ -257,11 +258,6 @@ namespace storm {
             STORM_PRINT(std::endl);
         }
         
-        void SettingsManager::printVersion() const {
-            STORM_PRINT(storm::utility::StormVersion::shortVersionString());
-            STORM_PRINT(std::endl);
-        }
-        
         uint_fast64_t SettingsManager::getPrintLengthOfLongestOption() const {
             uint_fast64_t length = 0;
             for (auto const& moduleName : this->moduleNames) {
@@ -399,8 +395,8 @@ namespace storm {
         std::map<std::string, std::vector<std::string>> SettingsManager::parseConfigFile(std::string const& filename) const {
             std::map<std::string, std::vector<std::string>> result;
             
-            std::ifstream input(filename);
-            STORM_LOG_THROW(input.good(), storm::exceptions::OptionParserException, "Could not read from config file '" << filename << "'.");
+            std::ifstream input;
+            storm::utility::openFile(filename, input);
 
             bool globalScope = true;
             std::string activeModule = "";
@@ -485,7 +481,8 @@ namespace storm {
                     }
                 }
             }
-            
+
+            storm::utility::closeFile(input);
             return result;
         }
         

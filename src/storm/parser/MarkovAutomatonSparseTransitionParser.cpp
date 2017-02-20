@@ -294,11 +294,6 @@ namespace storm {
             // Set the locale to correctly recognize floating point numbers.
             setlocale(LC_NUMERIC, "C");
 
-            if (!MappedFile::fileExistsAndIsReadable(filename.c_str())) {
-                STORM_LOG_ERROR("Error while parsing " << filename << ": File does not exist or is not readable.");
-                throw storm::exceptions::FileIoException() << "Error while parsing " << filename << ": File does not exist or is not readable.";
-            }
-
             // Open file and prepare pointer to buffer.
             MappedFile file(filename.c_str());
             char const* buf = file.getData();

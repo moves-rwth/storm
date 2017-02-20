@@ -11,7 +11,7 @@
 
 struct scalar_norm1_op {
   typedef RealScalar result_type;
-  EIGEN_EMPTY_STRUCT_CTOR(scalar_norm1_op)
+  STORMEIGEN_EMPTY_STRUCT_CTOR(scalar_norm1_op)
   inline RealScalar operator() (const Scalar& a) const { return numext::norm1(a); }
 };
 namespace StormEigen {
@@ -25,7 +25,7 @@ namespace StormEigen {
 
 // computes the sum of magnitudes of all vector elements or, for a complex vector x, the sum
 // res = |Rex1| + |Imx1| + |Rex2| + |Imx2| + ... + |Rexn| + |Imxn|, where x is a vector of order n
-RealScalar EIGEN_CAT(EIGEN_CAT(REAL_SCALAR_SUFFIX,SCALAR_SUFFIX),asum_)(int *n, RealScalar *px, int *incx)
+RealScalar STORMEIGEN_CAT(STORMEIGEN_CAT(REAL_SCALAR_SUFFIX,SCALAR_SUFFIX),asum_)(int *n, RealScalar *px, int *incx)
 {
 //   std::cerr << "__asum " << *n << " " << *incx << "\n";
   Complex* x = reinterpret_cast<Complex*>(px);
@@ -37,7 +37,7 @@ RealScalar EIGEN_CAT(EIGEN_CAT(REAL_SCALAR_SUFFIX,SCALAR_SUFFIX),asum_)(int *n, 
 }
 
 // computes a dot product of a conjugated vector with another vector.
-int EIGEN_BLAS_FUNC(dotcw)(int *n, RealScalar *px, int *incx, RealScalar *py, int *incy, RealScalar* pres)
+int STORMEIGEN_BLAS_FUNC(dotcw)(int *n, RealScalar *px, int *incx, RealScalar *py, int *incy, RealScalar* pres)
 {
 //   std::cerr << "_dotc " << *n << " " << *incx << " " << *incy << "\n";
   Scalar* res = reinterpret_cast<Scalar*>(pres);
@@ -60,7 +60,7 @@ int EIGEN_BLAS_FUNC(dotcw)(int *n, RealScalar *px, int *incx, RealScalar *py, in
 }
 
 // computes a vector-vector dot product without complex conjugation.
-int EIGEN_BLAS_FUNC(dotuw)(int *n, RealScalar *px, int *incx, RealScalar *py, int *incy, RealScalar* pres)
+int STORMEIGEN_BLAS_FUNC(dotuw)(int *n, RealScalar *px, int *incx, RealScalar *py, int *incy, RealScalar* pres)
 {
   Scalar* res = reinterpret_cast<Scalar*>(pres);
 
@@ -81,7 +81,7 @@ int EIGEN_BLAS_FUNC(dotuw)(int *n, RealScalar *px, int *incx, RealScalar *py, in
   return 0;
 }
 
-RealScalar EIGEN_CAT(EIGEN_CAT(REAL_SCALAR_SUFFIX,SCALAR_SUFFIX),nrm2_)(int *n, RealScalar *px, int *incx)
+RealScalar STORMEIGEN_CAT(STORMEIGEN_CAT(REAL_SCALAR_SUFFIX,SCALAR_SUFFIX),nrm2_)(int *n, RealScalar *px, int *incx)
 {
 //   std::cerr << "__nrm2 " << *n << " " << *incx << "\n";
   if(*n<=0) return 0;
@@ -94,7 +94,7 @@ RealScalar EIGEN_CAT(EIGEN_CAT(REAL_SCALAR_SUFFIX,SCALAR_SUFFIX),nrm2_)(int *n, 
   return make_vector(x,*n,*incx).stableNorm();
 }
 
-int EIGEN_CAT(EIGEN_CAT(SCALAR_SUFFIX,REAL_SCALAR_SUFFIX),rot_)(int *n, RealScalar *px, int *incx, RealScalar *py, int *incy, RealScalar *pc, RealScalar *ps)
+int STORMEIGEN_CAT(STORMEIGEN_CAT(SCALAR_SUFFIX,REAL_SCALAR_SUFFIX),rot_)(int *n, RealScalar *px, int *incx, RealScalar *py, int *incy, RealScalar *pc, RealScalar *ps)
 {
   if(*n<=0) return 0;
 
@@ -117,7 +117,7 @@ int EIGEN_CAT(EIGEN_CAT(SCALAR_SUFFIX,REAL_SCALAR_SUFFIX),rot_)(int *n, RealScal
   return 0;
 }
 
-int EIGEN_CAT(EIGEN_CAT(SCALAR_SUFFIX,REAL_SCALAR_SUFFIX),scal_)(int *n, RealScalar *palpha, RealScalar *px, int *incx)
+int STORMEIGEN_CAT(STORMEIGEN_CAT(SCALAR_SUFFIX,REAL_SCALAR_SUFFIX),scal_)(int *n, RealScalar *palpha, RealScalar *px, int *incx)
 {
   if(*n<=0) return 0;
 

@@ -17,6 +17,8 @@
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/IOSettings.h"
 
+#include "storm/exceptions/InvalidSettingsException.h"
+
 TEST(DdJaniModelBuilderTest_Sylvan, Dtmc) {
     storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm");
     storm::jani::Model janiModel = modelDescription.toJani(true).preprocess().asJaniModel();
@@ -326,9 +328,42 @@ TEST(DdJaniModelBuilderTest_Cudd, SynchronizationVectors) {
     automataCompositions.push_back(std::make_shared<storm::jani::AutomatonComposition>("one"));
     automataCompositions.push_back(std::make_shared<storm::jani::AutomatonComposition>("two"));
     automataCompositions.push_back(std::make_shared<storm::jani::AutomatonComposition>("three"));
-    
+
     // First, make all actions non-synchronizing.
     std::vector<storm::jani::SynchronizationVector> synchronizationVectors;
+
+    std::vector<std::string> inputVector;
+    inputVector.push_back("a");
+    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
+    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
+    synchronizationVectors.emplace_back(inputVector);
+    inputVector.clear();
+    inputVector.push_back("c");
+    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
+    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
+    synchronizationVectors.emplace_back(inputVector);
+    inputVector.clear();
+    inputVector.push_back("d");
+    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
+    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
+    synchronizationVectors.emplace_back(inputVector);
+    inputVector.clear();
+    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
+    inputVector.push_back("b");
+    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
+    synchronizationVectors.emplace_back(inputVector);
+    inputVector.clear();
+    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
+    inputVector.push_back("c");
+    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
+    synchronizationVectors.emplace_back(inputVector);
+    inputVector.clear();
+    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
+    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
+    inputVector.push_back("c");
+    synchronizationVectors.emplace_back(inputVector);
+    inputVector.clear();
+    
     std::shared_ptr<storm::jani::Composition> newComposition = std::make_shared<storm::jani::ParallelComposition>(automataCompositions, synchronizationVectors);
     janiModel.setSystemComposition(newComposition);
     model = builder.build(janiModel);
@@ -336,34 +371,91 @@ TEST(DdJaniModelBuilderTest_Cudd, SynchronizationVectors) {
     EXPECT_EQ(48ul, model->getNumberOfTransitions());
     
     // Then, make only a, b and c synchronize.
-    std::vector<std::string> inputVector;
+    synchronizationVectors.clear();
+    inputVector.clear();
     inputVector.push_back("a");
     inputVector.push_back("b");
     inputVector.push_back("c");
-    synchronizationVectors.push_back(storm::jani::SynchronizationVector(inputVector, "d"));
+    synchronizationVectors.emplace_back(inputVector, "d");
+    inputVector.clear();
+    inputVector.push_back("c");
+    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
+    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
+    synchronizationVectors.emplace_back(inputVector);
+    inputVector.clear();
+    inputVector.push_back("d");
+    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
+    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
+    synchronizationVectors.emplace_back(inputVector);
+    inputVector.clear();
+    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
+    inputVector.push_back("c");
+    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
+    synchronizationVectors.emplace_back(inputVector);
+    
     newComposition = std::make_shared<storm::jani::ParallelComposition>(automataCompositions, synchronizationVectors);
     janiModel.setSystemComposition(newComposition);
     model = builder.build(janiModel);
     EXPECT_EQ(7ul, model->getNumberOfStates());
     EXPECT_EQ(10ul, model->getNumberOfTransitions());
 
+    synchronizationVectors.clear();
+    inputVector.clear();
+    inputVector.push_back("a");
+    inputVector.push_back("b");
+    inputVector.push_back("c");
+    synchronizationVectors.emplace_back(inputVector, "d");
     inputVector.clear();
     inputVector.push_back("c");
     inputVector.push_back("c");
     inputVector.push_back("a");
-    synchronizationVectors.push_back(storm::jani::SynchronizationVector(inputVector, "d"));
+    synchronizationVectors.emplace_back(inputVector, "d");
+    inputVector.clear();
+    inputVector.push_back("d");
+    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
+    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
+    synchronizationVectors.emplace_back(inputVector);
     newComposition = std::make_shared<storm::jani::ParallelComposition>(automataCompositions, synchronizationVectors);
     janiModel.setSystemComposition(newComposition);
     model = builder.build(janiModel);
     EXPECT_EQ(3ul, model->getNumberOfStates());
     EXPECT_EQ(3ul, model->getNumberOfTransitions());
     
+    synchronizationVectors.clear();
+    inputVector.clear();
+    inputVector.push_back("a");
+    inputVector.push_back("b");
+    inputVector.push_back("c");
+    synchronizationVectors.emplace_back(inputVector, "d");
+    inputVector.clear();
+    inputVector.push_back("c");
+    inputVector.push_back("c");
+    inputVector.push_back("a");
+    synchronizationVectors.emplace_back(inputVector, "d");
+    inputVector.clear();
+    inputVector.push_back("d");
+    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
+    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
+    synchronizationVectors.emplace_back(inputVector);
+    inputVector.clear();
+    inputVector.push_back("d");
+    inputVector.push_back("c");
+    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
+    synchronizationVectors.emplace_back(inputVector, "b");
+    newComposition = std::make_shared<storm::jani::ParallelComposition>(automataCompositions, synchronizationVectors);
+    janiModel.setSystemComposition(newComposition);
+    model = builder.build(janiModel);
+    EXPECT_EQ(4ul, model->getNumberOfStates());
+    EXPECT_EQ(5ul, model->getNumberOfTransitions());
+    
     inputVector.clear();
     inputVector.push_back("b");
     inputVector.push_back("c");
     inputVector.push_back("b");
     synchronizationVectors.push_back(storm::jani::SynchronizationVector(inputVector, "e"));
-    EXPECT_THROW(newComposition = std::make_shared<storm::jani::ParallelComposition>(automataCompositions, synchronizationVectors), storm::exceptions::WrongFormatException);
+    newComposition = std::make_shared<storm::jani::ParallelComposition>(automataCompositions, synchronizationVectors);
+    janiModel.setSystemComposition(newComposition);
+    EXPECT_THROW(model = builder.build(janiModel), storm::exceptions::WrongFormatException);
 }
 
 TEST(DdJaniModelBuilderTest_Sylvan, SynchronizationVectors) {
@@ -385,6 +477,39 @@ TEST(DdJaniModelBuilderTest_Sylvan, SynchronizationVectors) {
     
     // First, make all actions non-synchronizing.
     std::vector<storm::jani::SynchronizationVector> synchronizationVectors;
+    
+    std::vector<std::string> inputVector;
+    inputVector.push_back("a");
+    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
+    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
+    synchronizationVectors.emplace_back(inputVector);
+    inputVector.clear();
+    inputVector.push_back("c");
+    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
+    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
+    synchronizationVectors.emplace_back(inputVector);
+    inputVector.clear();
+    inputVector.push_back("d");
+    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
+    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
+    synchronizationVectors.emplace_back(inputVector);
+    inputVector.clear();
+    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
+    inputVector.push_back("b");
+    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
+    synchronizationVectors.emplace_back(inputVector);
+    inputVector.clear();
+    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
+    inputVector.push_back("c");
+    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
+    synchronizationVectors.emplace_back(inputVector);
+    inputVector.clear();
+    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
+    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
+    inputVector.push_back("c");
+    synchronizationVectors.emplace_back(inputVector);
+    inputVector.clear();
+    
     std::shared_ptr<storm::jani::Composition> newComposition = std::make_shared<storm::jani::ParallelComposition>(automataCompositions, synchronizationVectors);
     janiModel.setSystemComposition(newComposition);
     model = builder.build(janiModel);
@@ -392,34 +517,91 @@ TEST(DdJaniModelBuilderTest_Sylvan, SynchronizationVectors) {
     EXPECT_EQ(48ul, model->getNumberOfTransitions());
     
     // Then, make only a, b and c synchronize.
-    std::vector<std::string> inputVector;
+    synchronizationVectors.clear();
+    inputVector.clear();
     inputVector.push_back("a");
     inputVector.push_back("b");
     inputVector.push_back("c");
-    synchronizationVectors.push_back(storm::jani::SynchronizationVector(inputVector, "d"));
+    synchronizationVectors.emplace_back(inputVector, "d");
+    inputVector.clear();
+    inputVector.push_back("c");
+    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
+    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
+    synchronizationVectors.emplace_back(inputVector);
+    inputVector.clear();
+    inputVector.push_back("d");
+    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
+    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
+    synchronizationVectors.emplace_back(inputVector);
+    inputVector.clear();
+    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
+    inputVector.push_back("c");
+    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
+    synchronizationVectors.emplace_back(inputVector);
+    
     newComposition = std::make_shared<storm::jani::ParallelComposition>(automataCompositions, synchronizationVectors);
     janiModel.setSystemComposition(newComposition);
     model = builder.build(janiModel);
     EXPECT_EQ(7ul, model->getNumberOfStates());
     EXPECT_EQ(10ul, model->getNumberOfTransitions());
     
+    synchronizationVectors.clear();
+    inputVector.clear();
+    inputVector.push_back("a");
+    inputVector.push_back("b");
+    inputVector.push_back("c");
+    synchronizationVectors.emplace_back(inputVector, "d");
     inputVector.clear();
     inputVector.push_back("c");
     inputVector.push_back("c");
     inputVector.push_back("a");
-    synchronizationVectors.push_back(storm::jani::SynchronizationVector(inputVector, "d"));
+    synchronizationVectors.emplace_back(inputVector, "d");
+    inputVector.clear();
+    inputVector.push_back("d");
+    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
+    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
+    synchronizationVectors.emplace_back(inputVector);
     newComposition = std::make_shared<storm::jani::ParallelComposition>(automataCompositions, synchronizationVectors);
     janiModel.setSystemComposition(newComposition);
     model = builder.build(janiModel);
     EXPECT_EQ(3ul, model->getNumberOfStates());
     EXPECT_EQ(3ul, model->getNumberOfTransitions());
+
+    synchronizationVectors.clear();
+    inputVector.clear();
+    inputVector.push_back("a");
+    inputVector.push_back("b");
+    inputVector.push_back("c");
+    synchronizationVectors.emplace_back(inputVector, "d");
+    inputVector.clear();
+    inputVector.push_back("c");
+    inputVector.push_back("c");
+    inputVector.push_back("a");
+    synchronizationVectors.emplace_back(inputVector, "d");
+    inputVector.clear();
+    inputVector.push_back("d");
+    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
+    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
+    synchronizationVectors.emplace_back(inputVector);
+    inputVector.clear();
+    inputVector.push_back("d");
+    inputVector.push_back("c");
+    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
+    synchronizationVectors.emplace_back(inputVector, "b");
+    newComposition = std::make_shared<storm::jani::ParallelComposition>(automataCompositions, synchronizationVectors);
+    janiModel.setSystemComposition(newComposition);
+    model = builder.build(janiModel);
+    EXPECT_EQ(4ul, model->getNumberOfStates());
+    EXPECT_EQ(5ul, model->getNumberOfTransitions());
     
     inputVector.clear();
     inputVector.push_back("b");
     inputVector.push_back("c");
     inputVector.push_back("b");
     synchronizationVectors.push_back(storm::jani::SynchronizationVector(inputVector, "e"));
-    EXPECT_THROW(newComposition = std::make_shared<storm::jani::ParallelComposition>(automataCompositions, synchronizationVectors), storm::exceptions::WrongFormatException);
+    newComposition = std::make_shared<storm::jani::ParallelComposition>(automataCompositions, synchronizationVectors);
+    janiModel.setSystemComposition(newComposition);
+    EXPECT_THROW(model = builder.build(janiModel), storm::exceptions::WrongFormatException);
 }
 
 TEST(DdJaniModelBuilderTest_Sylvan, Composition) {
@@ -427,24 +609,11 @@ TEST(DdJaniModelBuilderTest_Sylvan, Composition) {
     storm::jani::Model janiModel = modelDescription.toJani(true).preprocess().asJaniModel();
     
     storm::builder::DdJaniModelBuilder<storm::dd::DdType::Sylvan, double> builder;
-    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = builder.build(janiModel);
-    
-    EXPECT_TRUE(model->getType() == storm::models::ModelType::Mdp);
-    std::shared_ptr<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan>> mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan>>();
-    
-    EXPECT_EQ(21ul, mdp->getNumberOfStates());
-    EXPECT_EQ(61ul, mdp->getNumberOfTransitions());
-    EXPECT_EQ(61ul, mdp->getNumberOfChoices());
-    
+    EXPECT_THROW(std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = builder.build(janiModel), storm::exceptions::WrongFormatException);
+
     modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/system_composition2.nm");
     janiModel = modelDescription.toJani(true).preprocess().asJaniModel();
-    model = builder.build(janiModel);
-    EXPECT_TRUE(model->getType() == storm::models::ModelType::Mdp);
-    mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan>>();
-    
-    EXPECT_EQ(8ul, mdp->getNumberOfStates());
-    EXPECT_EQ(21ul, mdp->getNumberOfTransitions());
-    EXPECT_EQ(21ul, mdp->getNumberOfChoices());
+    EXPECT_THROW(std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = builder.build(janiModel), storm::exceptions::WrongFormatException);
 }
 
 TEST(DdJaniModelBuilderTest_Cudd, Composition) {
@@ -452,24 +621,11 @@ TEST(DdJaniModelBuilderTest_Cudd, Composition) {
     storm::jani::Model janiModel = modelDescription.toJani(true).preprocess().asJaniModel();
     
     storm::builder::DdJaniModelBuilder<storm::dd::DdType::CUDD, double> builder;
-    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = builder.build(janiModel);
-    
-    EXPECT_TRUE(model->getType() == storm::models::ModelType::Mdp);
-    std::shared_ptr<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>> mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>();
-    
-    EXPECT_EQ(21ul, mdp->getNumberOfStates());
-    EXPECT_EQ(61ul, mdp->getNumberOfTransitions());
-    EXPECT_EQ(61ul, mdp->getNumberOfChoices());
-    
+    EXPECT_THROW(std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = builder.build(janiModel), storm::exceptions::WrongFormatException);
+
     modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/system_composition2.nm");
     janiModel = modelDescription.toJani(true).preprocess().asJaniModel();
-    model = builder.build(janiModel);
-    EXPECT_TRUE(model->getType() == storm::models::ModelType::Mdp);
-    mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>();
-    
-    EXPECT_EQ(8ul, mdp->getNumberOfStates());
-    EXPECT_EQ(21ul, mdp->getNumberOfTransitions());
-    EXPECT_EQ(21ul, mdp->getNumberOfChoices());
+    EXPECT_THROW(std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = builder.build(janiModel), storm::exceptions::WrongFormatException);
 }
 
 TEST(DdJaniModelBuilderTest_Cudd, InputEnabling) {
@@ -490,12 +646,17 @@ TEST(DdJaniModelBuilderTest_Cudd, InputEnabling) {
     inputVector.push_back("a");
     inputVector.push_back("b");
     inputVector.push_back("c");
-    synchronizationVectors.push_back(storm::jani::SynchronizationVector(inputVector, "d"));
+    synchronizationVectors.emplace_back(inputVector, "d");
     inputVector.clear();
     inputVector.push_back("c");
     inputVector.push_back("c");
     inputVector.push_back("a");
-    synchronizationVectors.push_back(storm::jani::SynchronizationVector(inputVector, "d"));
+    synchronizationVectors.emplace_back(inputVector, "d");
+    inputVector.clear();
+    inputVector.push_back("d");
+    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
+    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
+    synchronizationVectors.emplace_back(inputVector);
     
     std::shared_ptr<storm::jani::Composition> newComposition = std::make_shared<storm::jani::ParallelComposition>(automataCompositions, synchronizationVectors);
     janiModel.setSystemComposition(newComposition);
@@ -522,12 +683,17 @@ TEST(DdJaniModelBuilderTest_Sylvan, InputEnabling) {
     inputVector.push_back("a");
     inputVector.push_back("b");
     inputVector.push_back("c");
-    synchronizationVectors.push_back(storm::jani::SynchronizationVector(inputVector, "d"));
+    synchronizationVectors.emplace_back(inputVector, "d");
     inputVector.clear();
     inputVector.push_back("c");
     inputVector.push_back("c");
     inputVector.push_back("a");
-    synchronizationVectors.push_back(storm::jani::SynchronizationVector(inputVector, "d"));
+    synchronizationVectors.emplace_back(inputVector, "d");
+    inputVector.clear();
+    inputVector.push_back("d");
+    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
+    inputVector.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
+    synchronizationVectors.emplace_back(inputVector);
     
     std::shared_ptr<storm::jani::Composition> newComposition = std::make_shared<storm::jani::ParallelComposition>(automataCompositions, synchronizationVectors);
     janiModel.setSystemComposition(newComposition);

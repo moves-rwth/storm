@@ -19,10 +19,10 @@ namespace storm {
                 storm::jani::Variable* janiVar = nullptr;
                 if (!place.hasRestrictedCapacity()) {
                     // Effectively no capacity limit known
-                    janiVar = new storm::jani::UnboundedIntegerVariable(place.getName(), expressionManager->declareIntegerVariable(place.getName()), expressionManager->integer(place.getNumberOfInitialTokens()));
+                    janiVar = new storm::jani::UnboundedIntegerVariable(place.getName(), expressionManager->getVariable(place.getName()), expressionManager->integer(place.getNumberOfInitialTokens()));
                 } else {
                     assert(place.hasRestrictedCapacity());
-                    janiVar = new storm::jani::BoundedIntegerVariable(place.getName(), expressionManager->declareIntegerVariable(place.getName()), expressionManager->integer(place.getNumberOfInitialTokens()), expressionManager->integer(0), expressionManager->integer(place.getCapacity()));
+                    janiVar = new storm::jani::BoundedIntegerVariable(place.getName(), expressionManager->getVariable(place.getName()), expressionManager->integer(place.getNumberOfInitialTokens()), expressionManager->integer(0), expressionManager->integer(place.getCapacity()));
                 }
                 assert(janiVar != nullptr);
                 assert(vars.count(place.getID()) == 0);

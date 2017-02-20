@@ -35,7 +35,11 @@ namespace storm {
         boost::any BooleanLiteralExpression::accept(ExpressionVisitor& visitor, boost::any const& data) const {
             return visitor.visit(*this, data);
         }
-        
+
+        bool BooleanLiteralExpression::isBooleanLiteralExpression() const {
+            return true;
+        }
+
         bool BooleanLiteralExpression::getValue() const {
             return this->value;
         }

@@ -8,12 +8,12 @@
 // Public License v. 2.0. If a copy of the MPL was not distributed
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-#define EIGEN_WORK_AROUND_QT_BUG_CALLING_WRONG_OPERATOR_NEW_FIXED_IN_QT_4_5
+#define STORMEIGEN_WORK_AROUND_QT_BUG_CALLING_WRONG_OPERATOR_NEW_FIXED_IN_QT_4_5
 
 #include "main.h"
 #include <QtCore/QVector>
-#include <Eigen/Geometry>
-#include <Eigen/QtAlignedMalloc>
+#include <StormEigen/Geometry>
+#include <StormEigen/QtAlignedMalloc>
 
 template<typename MatrixType>
 void check_qtvector_matrix(const MatrixType& m)

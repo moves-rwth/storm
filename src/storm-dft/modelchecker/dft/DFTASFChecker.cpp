@@ -1,5 +1,6 @@
 #include "DFTASFChecker.h"
 #include <string>
+#include "storm/utility/file.h"
 
 namespace storm {
     
@@ -394,24 +395,22 @@ namespace storm {
                 }
                 
                 void DFTASFChecker::toFile(std::string const& filename) {
-                    std::ofstream ofs;
-                    std::cout << "Writing to " << filename << std::endl;
-                    ofs.open(filename);
-                    ofs << "; time point variables" << std::endl;
+                    std::ofstream stream;
+                    storm::utility::openFile(filename, stream);
+                    stream << "; time point variables" << std::endl;
                     for (auto const& timeVarEntry : timePointVariables) {
-                        ofs << "(declare-fun " << varNames[timeVarEntry.second] << "()  Int)" << std::endl;
+                        stream << "(declare-fun " << varNames[timeVarEntry.second] << "()  Int)" << std::endl;
                     }
-                    ofs << "; claim variables" << std::endl;
+                    stream << "; claim variables" << std::endl;
                     for (auto const& claimVarEntry : claimVariables) {
-                        ofs << "(declare-fun " << varNames[claimVarEntry.second] << "() Int)" << std::endl;
+                        stream << "(declare-fun " << varNames[claimVarEntry.second] << "() Int)" << std::endl;
                     }
                     for (auto const& constraint : constraints) {
-                        ofs << "; " << constraint->description() << std::endl;
-                        ofs << "(assert " << constraint->toSmtlib2(varNames) << ")" << std::endl;
+                        stream << "; " << constraint->description() << std::endl;
+                        stream << "(assert " << constraint->toSmtlib2(varNames) << ")" << std::endl;
                     }
-                    ofs << "(check-sat)" << std::endl;
-                    ofs.close();
-                    
+                    stream << "(check-sat)" << std::endl;
+                    storm::utility::closeFile(stream);
                 }
     }
 }

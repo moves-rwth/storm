@@ -7,8 +7,8 @@
 // Public License v. 2.0. If a copy of the MPL was not distributed
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-#ifndef EIGEN_RANK2UPDATE_H
-#define EIGEN_RANK2UPDATE_H
+#ifndef STORMEIGEN_RANK2UPDATE_H
+#define STORMEIGEN_RANK2UPDATE_H
 
 namespace internal {
 
@@ -54,4 +54,4 @@ struct packed_rank2_update_selector
 
 } // end namespace internal
 
-#endif // EIGEN_RANK2UPDATE_H
+#endif // STORMEIGEN_RANK2UPDATE_H

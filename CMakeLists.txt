@@ -18,15 +18,15 @@ include(imported)
 
 #############################################################
 ##
-##	CMake options of Storm
+##	CMake options of storm
 ##
 #############################################################
 option(STORM_DEVELOPER "Sets whether the development mode is used." OFF)
 option(STORM_ALLWARNINGS "Compile with even more warnings" OFF)
 option(STORM_USE_LTO "Sets whether link-time optimizations are enabled." ON)
 MARK_AS_ADVANCED(STORM_USE_LTO)
-option(STORM_PORTABLE_RELEASE "Sets whether a release build needs to be portable to another machine." OFF)
-MARK_AS_ADVANCED(STORM_PORTABLE_RELEASE)
+option(STORM_PORTABLE "Sets whether a build needs to be portable." OFF)
+MARK_AS_ADVANCED(STORM_PORTABLE)
 option(STORM_USE_POPCNT "Sets whether the popcnt instruction is going to be used." ON)
 MARK_AS_ADVANCED(STORM_USE_POPCNT)
 option(USE_BOOST_STATIC_LIBRARIES "Sets whether the Boost libraries should be linked statically." OFF)
@@ -44,7 +44,7 @@ option(STORM_COMPILE_WITH_CCACHE "Compile using CCache [if found]" ON)
 mark_as_advanced(STORM_COMPILE_WITH_CCACHE)
 option(STORM_LOG_DISABLE_DEBUG "Disable log and trace message support" OFF)
 option(STORM_USE_CLN_NUMBERS "Sets whether CLN or GMP numbers should be used" ON)
-option(BUILD_SHARED_LIBS "Build the Storm library dynamically" OFF)
+option(BUILD_SHARED_LIBS "Build the storm library dynamically" OFF)
 set(BOOST_ROOT "" CACHE STRING "A hint to the root directory of Boost (optional).")
 set(GUROBI_ROOT "" CACHE STRING "A hint to the root directory of Gurobi (optional).")
 set(Z3_ROOT "" CACHE STRING "A hint to the root directory of Z3 (optional).")
@@ -54,6 +54,11 @@ set(ADDITIONAL_INCLUDE_DIRS "" CACHE STRING "Additional directories added to the
 set(ADDITIONAL_LINK_DIRS "" CACHE STRING "Additional directories added to the link directories.")
 set(USE_XERCESC ${XML_SUPPORT})
 mark_as_advanced(USE_XERCESC)
+
+# Sets the source from which storm is obtained. Can be either "git" or "archive". This
+# influences, among other things, the version information.
+set(STORM_SOURCE "git" CACHE STRING "The source from which storm is obtained: either 'git' or 'archive'.")
+mark_as_advanced(STORM_SOURCE)
 
 # Set some CMAKE Variables as advanced
 mark_as_advanced(CMAKE_OSX_ARCHITECTURES)
@@ -84,17 +89,17 @@ if (STORM_DEVELOPER)
 else()
     set(STORM_LOG_DISABLE_DEBUG ON)
 endif()
-message(STATUS "Storm - Building ${CMAKE_BUILD_TYPE} version.")
+message(STATUS "storm - Building ${CMAKE_BUILD_TYPE} version.")
 
 if(STORM_COMPILE_WITH_CCACHE)
 	find_program(CCACHE_FOUND ccache)
 	mark_as_advanced(CCACHE_FOUND)
 	if(CCACHE_FOUND)
-		message(STATUS "Storm - Using ccache")
+		message(STATUS "storm - Using ccache")
 		set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
 		set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
 	else()
-		message(STATUS "Storm - Could not find ccache.")
+		message(STATUS "storm - Could not find ccache.")
 	endif()
 endif()
 
@@ -120,7 +125,7 @@ else()
     set(OPERATING_SYSTEM "Linux")
     set(LINUX 1)
 ENDIF()
-message(STATUS "Storm - Detected operating system ${OPERATING_SYSTEM}.")
+message(STATUS "storm - Detected operating system ${OPERATING_SYSTEM}.")
 
 set(DYNAMIC_EXT ".so")
 set(STATIC_EXT ".a")
@@ -234,7 +239,7 @@ if (STORM_USE_LTO)
 endif()
 
 # In release mode, we turn on even more optimizations if we do not have to provide a portable binary.
-if (NOT STORM_PORTABLE_RELEASE)
+if (NOT STORM_PORTABLE)
 	set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -march=native")
 endif ()
 
@@ -298,12 +303,12 @@ if ("${CMAKE_GENERATOR}" STREQUAL "Xcode")
 endif()
 
 # Display information about build configuration.
-message(STATUS "Storm - Using compiler configuration ${STORM_COMPILER_ID} ${STORM_COMPILER_VERSION}.")
+message(STATUS "storm - Using compiler configuration ${STORM_COMPILER_ID} ${STORM_COMPILER_VERSION}.")
 if (STORM_DEVELOPER)
-	message(STATUS "Storm - CXX Flags: ${CMAKE_CXX_FLAGS}")
-	message(STATUS "Storm - CXX Debug Flags: ${CMAKE_CXX_FLAGS_DEBUG}")
-	message(STATUS "Storm - CXX Release Flags: ${CMAKE_CXX_FLAGS_RELEASE}")
-	message(STATUS "Storm - Build type: ${CMAKE_BUILD_TYPE}")
+	message(STATUS "storm - CXX Flags: ${CMAKE_CXX_FLAGS}")
+	message(STATUS "storm - CXX Debug Flags: ${CMAKE_CXX_FLAGS_DEBUG}")
+	message(STATUS "storm - CXX Release Flags: ${CMAKE_CXX_FLAGS_RELEASE}")
+	message(STATUS "storm - Build type: ${CMAKE_BUILD_TYPE}")
 endif()
 
 #############################################################
@@ -343,27 +348,51 @@ endif(DOXYGEN_FOUND)
 
 #############################################################
 ##
-##	CMake-generated Config File for Storm
+##	CMake-generated Config File for storm
 ##
 #############################################################
 
-# Make a version file containing the current version from git.
-include(GetGitRevisionDescription)
-git_describe_checkout(STORM_GIT_VERSION_STRING)
-message(STATUS "Storm -- Git version string is ${STORM_GIT_VERSION_STRING}.")
-# Parse the git Tag into variables
-string(REGEX REPLACE "^([0-9]+)\\..*" "\\1" STORM_CPP_VERSION_MAJOR "${STORM_GIT_VERSION_STRING}")
-string(REGEX REPLACE "^[0-9]+\\.([0-9]+).*" "\\1" STORM_CPP_VERSION_MINOR "${STORM_GIT_VERSION_STRING}")
-string(REGEX REPLACE "^[0-9]+\\.[0-9]+\\.([0-9]+).*" "\\1" STORM_CPP_VERSION_PATCH "${STORM_GIT_VERSION_STRING}")
-string(REGEX REPLACE "^[0-9]+\\.[0-9]+\\.[0-9]+\\-([0-9]+)\\-.*" "\\1" STORM_CPP_VERSION_COMMITS_AHEAD "${STORM_GIT_VERSION_STRING}")
-string(REGEX REPLACE "^[0-9]+\\.[0-9]+\\.[0-9]+\\-[0-9]+\\-([a-z0-9]+).*" "\\1" STORM_CPP_VERSION_HASH "${STORM_GIT_VERSION_STRING}")
-string(REGEX REPLACE "^[0-9]+\\.[0-9]+\\.[0-9]+\\-[0-9]+\\-[a-z0-9]+\\-(.*)" "\\1" STORM_CPP_VERSION_APPENDIX "${STORM_GIT_VERSION_STRING}")
-if ("${STORM_CPP_VERSION_APPENDIX}" MATCHES "^.*dirty.*$")
-	set(STORM_CPP_VERSION_DIRTY 1)
+# If storm is built from an archive, we need to skip the version detection based on git.
+if (STORM_SOURCE STREQUAL "archive")
+	if (NOT DEFINED STORM_VERSION_MAJOR OR NOT DEFINED STORM_VERSION_MINOR OR NOT DEFINED STORM_VERSION_PATCH)
+		message(FATAL_ERROR "storm - building from archive requires setting a version via cmake.")
+	endif()
+	message(STATUS "storm - version is ${STORM_VERSION_MAJOR}.${STORM_VERSION_MINOR}.${STORM_VERSION_PATCH} (building from archive).")
+	set(STORM_VERSION_COMMITS_AHEAD boost::none)
+	set(STORM_VERSION_GIT_HASH boost::none)
+	set(STORM_VERSION_DIRTY boost::none)
 else()
-	set(STORM_CPP_VERSION_DIRTY 0)
+	if (DEFINED STORM_VERSION_MAJOR OR DEFINED STORM_VERSION_MINOR OR DEFINED STORM_VERSION_PATCH)
+		message(FATAL_ERROR "storm - building from git does not support setting a version via cmake.")
+	endif()
+	
+	# Make a version file containing the current version from git.
+	include(GetGitRevisionDescription)
+	get_git_head_revision(STORM_VERSION_REFSPEC STORM_VERSION_GIT_HASH)
+
+	git_describe_checkout(STORM_GIT_VERSION_STRING)
+	# Parse the git Tag into variables
+	string(REGEX REPLACE "^([0-9]+)\\..*" "\\1" STORM_VERSION_MAJOR "${STORM_GIT_VERSION_STRING}")
+	string(REGEX REPLACE "^[0-9]+\\.([0-9]+).*" "\\1" STORM_VERSION_MINOR "${STORM_GIT_VERSION_STRING}")
+	string(REGEX REPLACE "^[0-9]+\\.[0-9]+\\.([0-9]+).*" "\\1" STORM_VERSION_PATCH "${STORM_GIT_VERSION_STRING}")
+	string(REGEX REPLACE "^[0-9]+\\.[0-9]+\\.[0-9]+\\-([0-9]+)\\-.*" "\\1" STORM_VERSION_COMMITS_AHEAD "${STORM_GIT_VERSION_STRING}")
+	string(REGEX REPLACE "^[0-9]+\\.[0-9]+\\.[0-9]+\\-[0-9]+\\-([a-z0-9]+).*" "\\1" STORM_VERSION_TAG_HASH "${STORM_GIT_VERSION_STRING}")
+	string(REGEX REPLACE "^[0-9]+\\.[0-9]+\\.[0-9]+\\-[0-9]+\\-[a-z0-9]+\\-(.*)" "\\1" STORM_VERSION_APPENDIX "${STORM_GIT_VERSION_STRING}")
+	if ("${STORM_VERSION_APPENDIX}" MATCHES "^.*dirty.*$")
+		set(STORM_VERSION_DIRTY 1)
+	else()
+		set(STORM_VERSION_DIRTY 0)
+	endif()
+	if (STORM_VERSION_DIRTY)
+		set(STORM_VERSION_DIRTY_STR "yes")
+	else()
+		set(STORM_VERSION_DIRTY_STR "no")
+	endif()
+	message(STATUS "storm - version is ${STORM_VERSION_MAJOR}.${STORM_VERSION_MINOR}.${STORM_VERSION_PATCH} (${STORM_VERSION_COMMITS_AHEAD} commits ahead of tag), building from git: ${STORM_VERSION_GIT_HASH} (dirty: ${STORM_VERSION_DIRTY_STR}).")
+
+	# proper type conversion so we can assign it to an optional
+	set(STORM_VERSION_GIT_HASH "std::string(\"${STORM_VERSION_GIT_HASH}\")")
 endif()
-message(STATUS "Storm - Version is ${STORM_CPP_VERSION_MAJOR}.${STORM_CPP_VERSION_MINOR}.${STORM_CPP_VERSION_PATCH} (${STORM_CPP_VERSION_COMMITS_AHEAD} commits ahead of Tag) build from ${STORM_CPP_VERSION_HASH} (Dirty: ${STORM_CPP_VERSION_DIRTY}).")
 
 # Configure a header file to pass some of the CMake settings to the source code
 configure_file (

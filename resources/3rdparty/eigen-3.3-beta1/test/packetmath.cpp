@@ -19,7 +19,7 @@ template<typename T> T negate(const T& x) { return -x; }
 }
 
 // NOTE: we disbale inlining for this function to workaround a GCC issue when using -O3 and the i387 FPU.
-template<typename Scalar> EIGEN_DONT_INLINE
+template<typename Scalar> STORMEIGEN_DONT_INLINE
 bool isApproxAbs(const Scalar& a, const Scalar& b, const typename NumTraits<Scalar>::Real& refvalue)
 {
   return internal::isMuchSmallerThan(a-b, refvalue);
@@ -109,10 +109,10 @@ template<typename Scalar> void packetmath()
 
   const int max_size = PacketSize > 4 ? PacketSize : 4;
   const int size = PacketSize*max_size;
-  EIGEN_ALIGN_MAX Scalar data1[size];
-  EIGEN_ALIGN_MAX Scalar data2[size];
-  EIGEN_ALIGN_MAX Packet packets[PacketSize*2];
-  EIGEN_ALIGN_MAX Scalar ref[size];
+  STORMEIGEN_ALIGN_MAX Scalar data1[size];
+  STORMEIGEN_ALIGN_MAX Scalar data2[size];
+  STORMEIGEN_ALIGN_MAX Packet packets[PacketSize*2];
+  STORMEIGEN_ALIGN_MAX Scalar ref[size];
   RealScalar refvalue = 0;
   for (int i=0; i<size; ++i)
   {
@@ -272,13 +272,13 @@ template<typename Scalar> void packetmath()
   if (PacketTraits::HasBlend) {
     Packet thenPacket = internal::pload<Packet>(data1);
     Packet elsePacket = internal::pload<Packet>(data2);
-    EIGEN_ALIGN_MAX internal::Selector<PacketSize> selector;
+    STORMEIGEN_ALIGN_MAX internal::Selector<PacketSize> selector;
     for (int i = 0; i < PacketSize; ++i) {
       selector.select[i] = i;
     }
 
     Packet blend = internal::pblend(selector, thenPacket, elsePacket);
-    EIGEN_ALIGN_MAX Scalar result[size];
+    STORMEIGEN_ALIGN_MAX Scalar result[size];
     internal::pstore(result, blend);
     for (int i = 0; i < PacketSize; ++i) {
       VERIFY(isApproxAbs(result[i], (selector.select[i] ? data1[i] : data2[i]), refvalue));
@@ -294,9 +294,9 @@ template<typename Scalar> void packetmath_real()
   const int PacketSize = PacketTraits::size;
 
   const int size = PacketSize*4;
-  EIGEN_ALIGN_MAX Scalar data1[PacketTraits::size*4];
-  EIGEN_ALIGN_MAX Scalar data2[PacketTraits::size*4];
-  EIGEN_ALIGN_MAX Scalar ref[PacketTraits::size*4];
+  STORMEIGEN_ALIGN_MAX Scalar data1[PacketTraits::size*4];
+  STORMEIGEN_ALIGN_MAX Scalar data2[PacketTraits::size*4];
+  STORMEIGEN_ALIGN_MAX Scalar ref[PacketTraits::size*4];
 
   for (int i=0; i<size; ++i)
   {
@@ -353,7 +353,7 @@ template<typename Scalar> void packetmath_real()
     VERIFY_IS_EQUAL(std::exp(-std::numeric_limits<Scalar>::denorm_min()), data2[1]);
   }
 
-#ifdef EIGEN_HAS_C99_MATH
+#ifdef STORMEIGEN_HAS_C99_MATH
   {
     data1[0] = std::numeric_limits<Scalar>::quiet_NaN();
     packet_helper<internal::packet_traits<Scalar>::HasLGamma,Packet> h;
@@ -372,7 +372,7 @@ template<typename Scalar> void packetmath_real()
     h.store(data2, internal::perfc(h.load(data1)));
     VERIFY((numext::isnan)(data2[0]));
   }
-#endif  // EIGEN_HAS_C99_MATH
+#endif  // STORMEIGEN_HAS_C99_MATH
 
   for (int i=0; i<size; ++i)
   {
@@ -384,7 +384,7 @@ template<typename Scalar> void packetmath_real()
     data1[internal::random<int>(0, PacketSize)] = 0;
   CHECK_CWISE1_IF(PacketTraits::HasSqrt, std::sqrt, internal::psqrt);
   CHECK_CWISE1_IF(PacketTraits::HasLog, std::log, internal::plog);
-#if defined(EIGEN_HAS_C99_MATH) && (__cplusplus > 199711L)
+#if defined(STORMEIGEN_HAS_C99_MATH) && (__cplusplus > 199711L)
   CHECK_CWISE1_IF(internal::packet_traits<Scalar>::HasLGamma, std::lgamma, internal::plgamma);
   CHECK_CWISE1_IF(internal::packet_traits<Scalar>::HasErf, std::erf, internal::perf);
   CHECK_CWISE1_IF(internal::packet_traits<Scalar>::HasErfc, std::erfc, internal::perfc);
@@ -420,7 +420,7 @@ template<typename Scalar> void packetmath_real()
     data1[0] = -1.0f;
     h.store(data2, internal::plog(h.load(data1)));
     VERIFY((numext::isnan)(data2[0]));
-#if !EIGEN_FAST_MATH
+#if !STORMEIGEN_FAST_MATH
     h.store(data2, internal::psqrt(h.load(data1)));
     VERIFY((numext::isnan)(data2[0]));
     VERIFY((numext::isnan)(data2[1]));
@@ -435,9 +435,9 @@ template<typename Scalar> void packetmath_notcomplex()
   typedef typename PacketTraits::type Packet;
   const int PacketSize = PacketTraits::size;
 
-  EIGEN_ALIGN_MAX Scalar data1[PacketTraits::size*4];
-  EIGEN_ALIGN_MAX Scalar data2[PacketTraits::size*4];
-  EIGEN_ALIGN_MAX Scalar ref[PacketTraits::size*4];
+  STORMEIGEN_ALIGN_MAX Scalar data1[PacketTraits::size*4];
+  STORMEIGEN_ALIGN_MAX Scalar data2[PacketTraits::size*4];
+  STORMEIGEN_ALIGN_MAX Scalar ref[PacketTraits::size*4];
   
   Array<Scalar,Dynamic,1>::Map(data1, PacketTraits::size*4).setRandom();
 
@@ -500,10 +500,10 @@ template<typename Scalar> void packetmath_complex()
   const int PacketSize = PacketTraits::size;
 
   const int size = PacketSize*4;
-  EIGEN_ALIGN_MAX Scalar data1[PacketSize*4];
-  EIGEN_ALIGN_MAX Scalar data2[PacketSize*4];
-  EIGEN_ALIGN_MAX Scalar ref[PacketSize*4];
-  EIGEN_ALIGN_MAX Scalar pval[PacketSize*4];
+  STORMEIGEN_ALIGN_MAX Scalar data1[PacketSize*4];
+  STORMEIGEN_ALIGN_MAX Scalar data2[PacketSize*4];
+  STORMEIGEN_ALIGN_MAX Scalar ref[PacketSize*4];
+  STORMEIGEN_ALIGN_MAX Scalar pval[PacketSize*4];
 
   for (int i=0; i<size; ++i)
   {
@@ -530,7 +530,7 @@ template<typename Scalar> void packetmath_scatter_gather()
   typedef typename PacketTraits::type Packet;
   typedef typename NumTraits<Scalar>::Real RealScalar;
   const int PacketSize = PacketTraits::size;
-  EIGEN_ALIGN_MAX Scalar data1[PacketSize];
+  STORMEIGEN_ALIGN_MAX Scalar data1[PacketSize];
   RealScalar refvalue = 0;
   for (int i=0; i<PacketSize; ++i) {
     data1[i] = internal::random<Scalar>()/RealScalar(PacketSize);
@@ -538,7 +538,7 @@ template<typename Scalar> void packetmath_scatter_gather()
   
   int stride = internal::random<int>(1,20);
   
-  EIGEN_ALIGN_MAX Scalar buffer[PacketSize*20];
+  STORMEIGEN_ALIGN_MAX Scalar buffer[PacketSize*20];
   memset(buffer, 0, 20*sizeof(Packet));
   Packet packet = internal::pload<Packet>(data1);
   internal::pscatter<Scalar, Packet>(buffer, packet, stride);

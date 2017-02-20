@@ -80,11 +80,6 @@ namespace storm {
              * @param maxLength The maximal length of an option name (necessary for proper alignment).
              */
             void printHelpForModule(std::string const& moduleName, uint_fast64_t maxLength = 30) const;
-            
-			/*!
-			 * This function prints the version string to the command line.
-			 */
-			void printVersion() const;
 			
             /*!
              * Retrieves the only existing instance of a settings manager.

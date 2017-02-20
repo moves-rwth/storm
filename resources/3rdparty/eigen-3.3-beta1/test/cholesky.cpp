@@ -7,15 +7,15 @@
 // Public License v. 2.0. If a copy of the MPL was not distributed
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-#ifndef EIGEN_NO_ASSERTION_CHECKING
-#define EIGEN_NO_ASSERTION_CHECKING
+#ifndef STORMEIGEN_NO_ASSERTION_CHECKING
+#define STORMEIGEN_NO_ASSERTION_CHECKING
 #endif
 
 #define TEST_ENABLE_TEMPORARY_TRACKING
 
 #include "main.h"
-#include <Eigen/Cholesky>
-#include <Eigen/QR>
+#include <StormEigen/Cholesky>
+#include <StormEigen/QR>
 
 template<typename MatrixType,template <typename,int> class CholType> void test_chol_update(const MatrixType& symm)
 {
@@ -385,11 +385,11 @@ void test_cholesky()
     CALL_SUBTEST_4( cholesky(Matrix3f()) );
     CALL_SUBTEST_5( cholesky(Matrix4d()) );
     
-    s = internal::random<int>(1,EIGEN_TEST_MAX_SIZE);    
+    s = internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE);    
     CALL_SUBTEST_2( cholesky(MatrixXd(s,s)) );
     TEST_SET_BUT_UNUSED_VARIABLE(s)
     
-    s = internal::random<int>(1,EIGEN_TEST_MAX_SIZE/2);
+    s = internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE/2);
     CALL_SUBTEST_6( cholesky_cplx(MatrixXcd(s,s)) );
     TEST_SET_BUT_UNUSED_VARIABLE(s)
   }

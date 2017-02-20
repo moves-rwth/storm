@@ -210,12 +210,12 @@ template<typename MatrixType> void triangular_rect(const MatrixType& m)
 void bug_159()
 {
   Matrix3d m = Matrix3d::Random().triangularView<Lower>();
-  EIGEN_UNUSED_VARIABLE(m)
+  STORMEIGEN_UNUSED_VARIABLE(m)
 }
 
 void test_triangular()
 {
-  int maxsize = (std::min)(EIGEN_TEST_MAX_SIZE,20);
+  int maxsize = (std::min)(STORMEIGEN_TEST_MAX_SIZE,20);
   for(int i = 0; i < g_repeat ; i++)
   {
     int r = internal::random<int>(2,maxsize); TEST_SET_BUT_UNUSED_VARIABLE(r)

@@ -8,11 +8,11 @@
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "lapack_common.h"
-#include <Eigen/SVD>
+#include <StormEigen/SVD>
 
 // computes the singular values/vectors a general M-by-N matrix A using divide-and-conquer
-EIGEN_LAPACK_FUNC(gesdd,(char *jobz, int *m, int* n, Scalar* a, int *lda, RealScalar *s, Scalar *u, int *ldu, Scalar *vt, int *ldvt, Scalar* /*work*/, int* lwork,
-                         EIGEN_LAPACK_ARG_IF_COMPLEX(RealScalar */*rwork*/) int * /*iwork*/, int *info))
+STORMEIGEN_LAPACK_FUNC(gesdd,(char *jobz, int *m, int* n, Scalar* a, int *lda, RealScalar *s, Scalar *u, int *ldu, Scalar *vt, int *ldvt, Scalar* /*work*/, int* lwork,
+                         STORMEIGEN_LAPACK_ARG_IF_COMPLEX(RealScalar */*rwork*/) int * /*iwork*/, int *info))
 {
   // TODO exploit the work buffer
   bool query_size = *lwork==-1;
@@ -82,8 +82,8 @@ EIGEN_LAPACK_FUNC(gesdd,(char *jobz, int *m, int* n, Scalar* a, int *lda, RealSc
 }
 
 // computes the singular values/vectors a general M-by-N matrix A using two sided jacobi algorithm
-EIGEN_LAPACK_FUNC(gesvd,(char *jobu, char *jobv, int *m, int* n, Scalar* a, int *lda, RealScalar *s, Scalar *u, int *ldu, Scalar *vt, int *ldvt, Scalar* /*work*/, int* lwork,
-                         EIGEN_LAPACK_ARG_IF_COMPLEX(RealScalar */*rwork*/) int *info))
+STORMEIGEN_LAPACK_FUNC(gesvd,(char *jobu, char *jobv, int *m, int* n, Scalar* a, int *lda, RealScalar *s, Scalar *u, int *ldu, Scalar *vt, int *ldvt, Scalar* /*work*/, int* lwork,
+                         STORMEIGEN_LAPACK_ARG_IF_COMPLEX(RealScalar */*rwork*/) int *info))
 {
   // TODO exploit the work buffer
   bool query_size = *lwork==-1;

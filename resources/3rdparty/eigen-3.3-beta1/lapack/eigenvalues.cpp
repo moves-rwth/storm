@@ -8,10 +8,10 @@
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "lapack_common.h"
-#include <Eigen/Eigenvalues>
+#include <StormEigen/Eigenvalues>
 
 // computes eigen values and vectors of a general N-by-N matrix A
-EIGEN_LAPACK_FUNC(syev,(char *jobz, char *uplo, int* n, Scalar* a, int *lda, Scalar* w, Scalar* /*work*/, int* lwork, int *info))
+STORMEIGEN_LAPACK_FUNC(syev,(char *jobz, char *uplo, int* n, Scalar* a, int *lda, Scalar* w, Scalar* /*work*/, int* lwork, int *info))
 {
   // TODO exploit the work buffer
   bool query_size = *lwork==-1;

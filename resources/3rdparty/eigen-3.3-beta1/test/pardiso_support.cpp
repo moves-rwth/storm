@@ -3,7 +3,7 @@
 */
 
 #include "sparse_solver.h"
-#include <Eigen/PardisoSupport>
+#include <StormEigen/PardisoSupport>
 
 template<typename T> void test_pardiso_T()
 {

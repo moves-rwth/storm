@@ -1,0 +1,6 @@
+FILE(GLOB Eigen_BVH_SRCS "*.h")
+
+INSTALL(FILES
+  ${Eigen_BVH_SRCS}
+  DESTINATION ${INCLUDE_INSTALL_DIR}/unsupported/StormEigen/src/BVH COMPONENT Devel
+  )

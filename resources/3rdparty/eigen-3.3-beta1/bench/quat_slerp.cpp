@@ -1,6 +1,6 @@
 
 #include <iostream>
-#include <Eigen/Geometry>
+#include <StormEigen/Geometry>
 #include <bench/BenchTimer.h>
 using namespace StormEigen;
 using namespace std;
@@ -8,19 +8,19 @@ using namespace std;
 
 
 template<typename Q>
-EIGEN_DONT_INLINE Q nlerp(const Q& a, const Q& b, typename Q::Scalar t)
+STORMEIGEN_DONT_INLINE Q nlerp(const Q& a, const Q& b, typename Q::Scalar t)
 {
   return Q((a.coeffs() * (1.0-t) + b.coeffs() * t).normalized());
 }
 
 template<typename Q>
-EIGEN_DONT_INLINE Q slerp_eigen(const Q& a, const Q& b, typename Q::Scalar t)
+STORMEIGEN_DONT_INLINE Q slerp_eigen(const Q& a, const Q& b, typename Q::Scalar t)
 {
   return a.slerp(t,b);
 }
 
 template<typename Q>
-EIGEN_DONT_INLINE Q slerp_legacy(const Q& a, const Q& b, typename Q::Scalar t)
+STORMEIGEN_DONT_INLINE Q slerp_legacy(const Q& a, const Q& b, typename Q::Scalar t)
 {
   typedef typename Q::Scalar Scalar;
   static const Scalar one = Scalar(1) - dummy_precision<Scalar>();
@@ -42,7 +42,7 @@ EIGEN_DONT_INLINE Q slerp_legacy(const Q& a, const Q& b, typename Q::Scalar t)
 }
 
 template<typename Q>
-EIGEN_DONT_INLINE Q slerp_legacy_nlerp(const Q& a, const Q& b, typename Q::Scalar t)
+STORMEIGEN_DONT_INLINE Q slerp_legacy_nlerp(const Q& a, const Q& b, typename Q::Scalar t)
 {
   typedef typename Q::Scalar Scalar;
   static const Scalar one = Scalar(1) - epsilon<Scalar>();
@@ -82,7 +82,7 @@ inline T sin_over_x(T x)
 }
 
 template<typename Q>
-EIGEN_DONT_INLINE Q slerp_rw(const Q& a, const Q& b, typename Q::Scalar t)
+STORMEIGEN_DONT_INLINE Q slerp_rw(const Q& a, const Q& b, typename Q::Scalar t)
 {
   typedef typename Q::Scalar Scalar;
   
@@ -106,7 +106,7 @@ EIGEN_DONT_INLINE Q slerp_rw(const Q& a, const Q& b, typename Q::Scalar t)
 }
 
 template<typename Q>
-EIGEN_DONT_INLINE Q slerp_gael(const Q& a, const Q& b, typename Q::Scalar t)
+STORMEIGEN_DONT_INLINE Q slerp_gael(const Q& a, const Q& b, typename Q::Scalar t)
 {
   typedef typename Q::Scalar Scalar;
   

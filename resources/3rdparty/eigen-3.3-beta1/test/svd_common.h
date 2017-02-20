@@ -267,10 +267,10 @@ void svd_test_all_computation_options(const MatrixType& m, bool full_only)
 // work around stupid msvc error when constructing at compile time an expression that involves
 // a division by zero, even if the numeric type has floating point
 template<typename Scalar>
-EIGEN_DONT_INLINE Scalar zero() { return Scalar(0); }
+STORMEIGEN_DONT_INLINE Scalar zero() { return Scalar(0); }
 
 // workaround aggressive optimization in ICC
-template<typename T> EIGEN_DONT_INLINE  T sub(T a, T b) { return a - b; }
+template<typename T> STORMEIGEN_DONT_INLINE  T sub(T a, T b) { return a - b; }
 
 // all this function does is verify we don't iterate infinitely on nan/inf values
 template<typename SvdType, typename MatrixType>

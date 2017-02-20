@@ -1,36 +1,36 @@
 #include <typeinfo>
 #include <iostream>
-#include <Eigen/Core>
+#include <StormEigen/Core>
 #include "BenchTimer.h"
 using namespace StormEigen;
 using namespace std;
 
 template<typename T>
-EIGEN_DONT_INLINE typename T::Scalar sqsumNorm(T& v)
+STORMEIGEN_DONT_INLINE typename T::Scalar sqsumNorm(T& v)
 {
   return v.norm();
 }
 
 template<typename T>
-EIGEN_DONT_INLINE typename T::Scalar stableNorm(T& v)
+STORMEIGEN_DONT_INLINE typename T::Scalar stableNorm(T& v)
 {
   return v.stableNorm();
 }
 
 template<typename T>
-EIGEN_DONT_INLINE typename T::Scalar hypotNorm(T& v)
+STORMEIGEN_DONT_INLINE typename T::Scalar hypotNorm(T& v)
 {
   return v.hypotNorm();
 }
 
 template<typename T>
-EIGEN_DONT_INLINE typename T::Scalar blueNorm(T& v)
+STORMEIGEN_DONT_INLINE typename T::Scalar blueNorm(T& v)
 {
   return v.blueNorm();
 }
 
 template<typename T>
-EIGEN_DONT_INLINE typename T::Scalar lapackNorm(T& v)
+STORMEIGEN_DONT_INLINE typename T::Scalar lapackNorm(T& v)
 {
   typedef typename T::Scalar Scalar;
   int n = v.size();
@@ -53,7 +53,7 @@ EIGEN_DONT_INLINE typename T::Scalar lapackNorm(T& v)
 }
 
 template<typename T>
-EIGEN_DONT_INLINE typename T::Scalar twopassNorm(T& v)
+STORMEIGEN_DONT_INLINE typename T::Scalar twopassNorm(T& v)
 {
   typedef typename T::Scalar Scalar;
   Scalar s = v.array().abs().maxCoeff();
@@ -61,13 +61,13 @@ EIGEN_DONT_INLINE typename T::Scalar twopassNorm(T& v)
 }
 
 template<typename T>
-EIGEN_DONT_INLINE typename T::Scalar bl2passNorm(T& v)
+STORMEIGEN_DONT_INLINE typename T::Scalar bl2passNorm(T& v)
 {
   return v.stableNorm();
 }
 
 template<typename T>
-EIGEN_DONT_INLINE typename T::Scalar divacNorm(T& v)
+STORMEIGEN_DONT_INLINE typename T::Scalar divacNorm(T& v)
 {
   int n =v.size() / 2;
   for (int i=0;i<n;++i)
@@ -84,7 +84,7 @@ EIGEN_DONT_INLINE typename T::Scalar divacNorm(T& v)
 
 namespace StormEigen {
 namespace internal {
-#ifdef EIGEN_VECTORIZE
+#ifdef STORMEIGEN_VECTORIZE
 Packet4f plt(const Packet4f& a, Packet4f& b) { return _mm_cmplt_ps(a,b); }
 Packet2d plt(const Packet2d& a, Packet2d& b) { return _mm_cmplt_pd(a,b); }
 
@@ -95,9 +95,9 @@ Packet2d pandnot(const Packet2d& a, Packet2d& b) { return _mm_andnot_pd(a,b); }
 }
 
 template<typename T>
-EIGEN_DONT_INLINE typename T::Scalar pblueNorm(const T& v)
+STORMEIGEN_DONT_INLINE typename T::Scalar pblueNorm(const T& v)
 {
-  #ifndef EIGEN_VECTORIZE
+  #ifndef STORMEIGEN_VECTORIZE
   return v.blueNorm();
   #else
   typedef typename T::Scalar Scalar;

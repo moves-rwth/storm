@@ -2,14 +2,15 @@
 
 #include "storm-gspn/storage/gspn/GSPN.h"
 #include "storm/storage/jani/Model.h"
+#include "storm/storage/jani/Property.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 
 namespace storm {
     namespace builder {
         class JaniGSPNBuilder {
         public:
-            JaniGSPNBuilder(storm::gspn::GSPN const& gspn, std::shared_ptr<storm::expressions::ExpressionManager> const& expManager)
-                    : gspn(gspn), expressionManager(expManager) {
+            JaniGSPNBuilder(storm::gspn::GSPN const& gspn)
+                    : gspn(gspn), expressionManager(gspn.getExpressionManager()) {
                 
             }
             
@@ -26,8 +27,6 @@ namespace storm {
 
             
         private:
-
-
             void addVariables(storm::jani::Model* model);
 
             uint64_t addLocation(storm::jani::Automaton& automaton);

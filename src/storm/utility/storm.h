@@ -97,8 +97,13 @@
 #include "storm/exceptions/NotSupportedException.h"
 
 #include "storm/utility/Stopwatch.h"
+#include "storm/utility/file.h"
 
 namespace storm {
+
+    namespace parser {
+        class FormulaParser;
+    }
 
     template<typename ValueType>
     std::shared_ptr<storm::models::sparse::Model<ValueType>> buildExplicitModel(std::string const& transitionsFile, std::string const& labelingFile, boost::optional<std::string> const& stateRewardsFile = boost::none, boost::optional<std::string> const& transitionRewardsFile = boost::none, boost::optional<std::string> const& choiceLabelingFile = boost::none) {
@@ -109,6 +114,7 @@ namespace storm {
     std::pair<storm::jani::Model, std::map<std::string, storm::jani::Property>> parseJaniModel(std::string const& path);
     storm::prism::Program parseProgram(std::string const& path);
     std::vector<storm::jani::Property> substituteConstantsInProperties(std::vector<storm::jani::Property> const& properties, std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution);
+    std::vector<storm::jani::Property> parseProperties(storm::parser::FormulaParser& formulaParser, std::string const& inputString, boost::optional<std::set<std::string>> const& propertyFilter = boost::none);
     std::vector<storm::jani::Property> parsePropertiesForExplicit(std::string const& inputString, boost::optional<std::set<std::string>> const& propertyFilter = boost::none);
     std::vector<storm::jani::Property> parsePropertiesForPrismProgram(std::string const& inputString, storm::prism::Program const& program, boost::optional<std::set<std::string>> const& propertyFilter = boost::none);
     std::vector<storm::jani::Property> parsePropertiesForJaniModel(std::string const& inputString, storm::jani::Model const& model, boost::optional<std::set<std::string>> const& propertyFilter = boost::none);
@@ -429,7 +435,7 @@ namespace storm {
 
     inline void exportParametricResultToFile(storm::RationalFunction const& result, storm::models::sparse::Dtmc<storm::RationalFunction>::ConstraintCollector const& constraintCollector, std::string const& path) {
         std::ofstream filestream;
-        filestream.open(path);
+        storm::utility::openFile(path, filestream);
         // TODO: add checks.
         filestream << "!Parameters: ";
         std::set<storm::RationalFunctionVariable> vars = result.gatherVariables();
@@ -440,7 +446,7 @@ namespace storm {
         std::copy(constraintCollector.getWellformedConstraints().begin(), constraintCollector.getWellformedConstraints().end(), std::ostream_iterator<storm::ArithConstraint<storm::RationalFunction>>(filestream, "\n"));
         filestream << "!Graph-preserving Constraints: " << std::endl;
         std::copy(constraintCollector.getGraphPreservingConstraints().begin(), constraintCollector.getGraphPreservingConstraints().end(), std::ostream_iterator<storm::ArithConstraint<storm::RationalFunction>>(filestream, "\n"));
-        filestream.close();
+        storm::utility::closeFile(filestream);
     }
 
     template<>
@@ -618,10 +624,10 @@ namespace storm {
     template<typename ValueType>
     void exportMatrixToFile(std::shared_ptr<storm::models::sparse::Model<ValueType>> model, std::string const& filepath) {
         STORM_LOG_THROW(model->getType() != storm::models::ModelType::Ctmc, storm::exceptions::NotImplementedException, "This functionality is not yet implemented." );
-        std::ofstream ofs;
-        ofs.open (filepath, std::ofstream::out);
-        model->getTransitionMatrix().printAsMatlabMatrix(ofs);
-        ofs.close();
+        std::ofstream stream;
+        storm::utility::openFile(filepath, stream);
+        model->getTransitionMatrix().printAsMatlabMatrix(stream);
+        storm::utility::closeFile(stream);
     }
         
 }

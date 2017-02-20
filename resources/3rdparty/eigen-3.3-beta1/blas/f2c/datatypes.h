@@ -2,8 +2,8 @@
    for use by the Eigen BLAS C-only implementation.
 */
 
-#ifndef __EIGEN_DATATYPES_H__
-#define __EIGEN_DATATYPES_H__
+#ifndef __STORMEIGEN_DATATYPES_H__
+#define __STORMEIGEN_DATATYPES_H__
 
 typedef int integer;
 typedef unsigned int uinteger;

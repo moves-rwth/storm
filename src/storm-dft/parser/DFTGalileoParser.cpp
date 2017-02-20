@@ -10,6 +10,7 @@
 #include "storm/exceptions/FileIoException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/utility/macros.h"
+#include "storm/utility/file.h"
 
 namespace storm {
     namespace parser {
@@ -49,18 +50,10 @@ namespace storm {
             std::string parametricToken = "param";
 
             std::ifstream file;
-            file.exceptions ( std::ifstream::failbit );
-            try {
-                file.open(filename);
-            }
-            catch (std::ifstream::failure e) {
-                STORM_LOG_THROW(false, storm::exceptions::FileIoException, "Exception during file opening on " << filename << ".");
-                return;
-            }
-            file.exceptions( std::ifstream::goodbit );
-
+            storm::utility::openFile(filename, file);
             std::string line;
-            while(std::getline(file, line)) {
+
+            while (std::getline(file, line)) {
                 bool success = true;
                 STORM_LOG_TRACE("Parsing: " << line);
                 size_t commentstarts = line.find("//");
@@ -143,7 +136,7 @@ namespace storm {
             if(!builder.setTopLevel(toplevelId)) {
                 STORM_LOG_THROW(false, storm::exceptions::FileIoException, "Top level id unknown.");
             }
-            file.close();
+            storm::utility::closeFile(file);
         }
 
         template<typename ValueType>

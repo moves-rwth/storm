@@ -9,8 +9,8 @@
 
 #include "main.h"
 
-#if EIGEN_MAX_ALIGN_BYTES>0
-#define ALIGNMENT EIGEN_MAX_ALIGN_BYTES
+#if STORMEIGEN_MAX_ALIGN_BYTES>0
+#define ALIGNMENT STORMEIGEN_MAX_ALIGN_BYTES
 #else
 #define ALIGNMENT 1
 #endif
@@ -68,7 +68,7 @@ void check_aligned_stack_alloc()
 // test compilation with both a struct and a class...
 struct MyStruct
 {
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+  STORMEIGEN_MAKE_ALIGNED_OPERATOR_NEW
   char dummychar;
   Vector8f avec;
 };
@@ -76,7 +76,7 @@ struct MyStruct
 class MyClassA
 {
   public:
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    STORMEIGEN_MAKE_ALIGNED_OPERATOR_NEW
     char dummychar;
     Vector8f avec;
 };
@@ -106,7 +106,7 @@ template<typename T> void check_custom_new_delete()
     delete[] t;
   }
   
-#if EIGEN_MAX_ALIGN_BYTES>0
+#if STORMEIGEN_MAX_ALIGN_BYTES>0
   {
     T* t = static_cast<T *>((T::operator new)(sizeof(T)));
     (T::operator delete)(t, sizeof(T));
@@ -136,7 +136,7 @@ void test_dynalloc()
   }
   
   // check static allocation, who knows ?
-  #if EIGEN_MAX_STATIC_ALIGN_BYTES
+  #if STORMEIGEN_MAX_STATIC_ALIGN_BYTES
   for (int i=0; i<g_repeat*100; ++i)
   {
     CALL_SUBTEST(check_dynaligned<Vector4f>() );

@@ -10,6 +10,7 @@
 #include "storm/solver/TopologicalMinMaxLinearEquationSolver.h"
 
 #include "storm/solver/GurobiLpSolver.h"
+#include "storm/solver/Z3LpSolver.h"
 #include "storm/solver/GlpkLpSolver.h"
 
 #include "storm/solver/Z3SmtSolver.h"
@@ -54,6 +55,7 @@ namespace storm {
                 switch (t) {
                     case storm::solver::LpSolverType::Gurobi: return std::unique_ptr<storm::solver::LpSolver>(new storm::solver::GurobiLpSolver(name));
                     case storm::solver::LpSolverType::Glpk: return std::unique_ptr<storm::solver::LpSolver>(new storm::solver::GlpkLpSolver(name));
+                    case storm::solver::LpSolverType::Z3: return std::unique_ptr<storm::solver::LpSolver>(new storm::solver::Z3LpSolver(name));
                 }
                 return nullptr;
             }
@@ -68,6 +70,10 @@ namespace storm {
             
             std::unique_ptr<storm::solver::LpSolver> GurobiLpSolverFactory::create(std::string const& name) const {
                 return LpSolverFactory::create(name, storm::solver::LpSolverTypeSelection::Gurobi);
+            }
+
+            std::unique_ptr<storm::solver::LpSolver> Z3LpSolverFactory::create(std::string const& name) const {
+                return LpSolverFactory::create(name, storm::solver::LpSolverTypeSelection::Z3);
             }
             
             std::unique_ptr<storm::solver::LpSolver> getLpSolver(std::string const& name, storm::solver::LpSolverTypeSelection solvType) {

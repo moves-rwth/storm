@@ -6,19 +6,19 @@
   #undef _GLIBCXX_USE_INT128
 #endif
 
-#define EIGEN_TEST_NO_LONGDOUBLE
-#define EIGEN_TEST_NO_COMPLEX
-#define EIGEN_TEST_FUNC cuda_basic
-#define EIGEN_DEFAULT_DENSE_INDEX_TYPE int
+#define STORMEIGEN_TEST_NO_LONGDOUBLE
+#define STORMEIGEN_TEST_NO_COMPLEX
+#define STORMEIGEN_TEST_FUNC cuda_basic
+#define STORMEIGEN_DEFAULT_DENSE_INDEX_TYPE int
 
 #include <math_constants.h>
 #include "main.h"
 #include "cuda_common.h"
 
-#include <Eigen/Eigenvalues>
+#include <StormEigen/Eigenvalues>
 
 // struct Foo{
-//   EIGEN_DEVICE_FUNC
+//   STORMEIGEN_DEVICE_FUNC
 //   void operator()(int i, const float* mats, float* vecs) const {
 //     using namespace StormEigen;
 //   //   Matrix3f M(data);
@@ -35,7 +35,7 @@
 
 template<typename T>
 struct coeff_wise {
-  EIGEN_DEVICE_FUNC
+  STORMEIGEN_DEVICE_FUNC
   void operator()(int i, const typename T::Scalar* in, typename T::Scalar* out) const
   {
     using namespace StormEigen;
@@ -50,7 +50,7 @@ struct coeff_wise {
 
 template<typename T>
 struct replicate {
-  EIGEN_DEVICE_FUNC
+  STORMEIGEN_DEVICE_FUNC
   void operator()(int i, const typename T::Scalar* in, typename T::Scalar* out) const
   {
     using namespace StormEigen;
@@ -67,7 +67,7 @@ struct replicate {
 
 template<typename T>
 struct redux {
-  EIGEN_DEVICE_FUNC
+  STORMEIGEN_DEVICE_FUNC
   void operator()(int i, const typename T::Scalar* in, typename T::Scalar* out) const
   {
     using namespace StormEigen;
@@ -87,7 +87,7 @@ struct redux {
 
 template<typename T1, typename T2>
 struct prod_test {
-  EIGEN_DEVICE_FUNC
+  STORMEIGEN_DEVICE_FUNC
   void operator()(int i, const typename T1::Scalar* in, typename T1::Scalar* out) const
   {
     using namespace StormEigen;
@@ -101,7 +101,7 @@ struct prod_test {
 
 template<typename T1, typename T2>
 struct diagonal {
-  EIGEN_DEVICE_FUNC
+  STORMEIGEN_DEVICE_FUNC
   void operator()(int i, const typename T1::Scalar* in, typename T1::Scalar* out) const
   {
     using namespace StormEigen;
@@ -113,7 +113,7 @@ struct diagonal {
 
 template<typename T>
 struct eigenvalues {
-  EIGEN_DEVICE_FUNC
+  STORMEIGEN_DEVICE_FUNC
   void operator()(int i, const typename T::Scalar* in, typename T::Scalar* out) const
   {
     using namespace StormEigen;

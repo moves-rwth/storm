@@ -7,9 +7,9 @@
 // Public License v. 2.0. If a copy of the MPL was not distributed
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-// This unit test cannot be easily written to work with EIGEN_DEFAULT_TO_ROW_MAJOR
-#ifdef EIGEN_DEFAULT_TO_ROW_MAJOR
-#undef EIGEN_DEFAULT_TO_ROW_MAJOR
+// This unit test cannot be easily written to work with STORMEIGEN_DEFAULT_TO_ROW_MAJOR
+#ifdef STORMEIGEN_DEFAULT_TO_ROW_MAJOR
+#undef STORMEIGEN_DEFAULT_TO_ROW_MAJOR
 #endif
 
 static long int nb_temporaries;
@@ -19,10 +19,10 @@ inline void on_temporary_creation() {
   nb_temporaries++;
 }
 
-#define EIGEN_SPARSE_CREATE_TEMPORARY_PLUGIN { on_temporary_creation(); }
+#define STORMEIGEN_SPARSE_CREATE_TEMPORARY_PLUGIN { on_temporary_creation(); }
 
 #include "main.h"
-#include <Eigen/SparseCore>
+#include <StormEigen/SparseCore>
 
 #define VERIFY_EVALUATION_COUNT(XPR,N) {\
     nb_temporaries = 0; \
@@ -42,22 +42,22 @@ template<typename PlainObjectType> void check_const_correctness(const PlainObjec
 }
 
 template<typename B>
-EIGEN_DONT_INLINE void call_ref_1(Ref<SparseMatrix<float> > a, const B &b) { VERIFY_IS_EQUAL(a.toDense(),b.toDense()); }
+STORMEIGEN_DONT_INLINE void call_ref_1(Ref<SparseMatrix<float> > a, const B &b) { VERIFY_IS_EQUAL(a.toDense(),b.toDense()); }
 
 template<typename B>
-EIGEN_DONT_INLINE void call_ref_2(const Ref<const SparseMatrix<float> >& a, const B &b) { VERIFY_IS_EQUAL(a.toDense(),b.toDense()); }
+STORMEIGEN_DONT_INLINE void call_ref_2(const Ref<const SparseMatrix<float> >& a, const B &b) { VERIFY_IS_EQUAL(a.toDense(),b.toDense()); }
 
 template<typename B>
-EIGEN_DONT_INLINE void call_ref_3(const Ref<const SparseMatrix<float>, StandardCompressedFormat>& a, const B &b) {
+STORMEIGEN_DONT_INLINE void call_ref_3(const Ref<const SparseMatrix<float>, StandardCompressedFormat>& a, const B &b) {
   VERIFY(a.isCompressed());
   VERIFY_IS_EQUAL(a.toDense(),b.toDense());
 }
 
 template<typename B>
-EIGEN_DONT_INLINE void call_ref_4(Ref<SparseVector<float> > a, const B &b) { VERIFY_IS_EQUAL(a.toDense(),b.toDense()); }
+STORMEIGEN_DONT_INLINE void call_ref_4(Ref<SparseVector<float> > a, const B &b) { VERIFY_IS_EQUAL(a.toDense(),b.toDense()); }
 
 template<typename B>
-EIGEN_DONT_INLINE void call_ref_5(const Ref<const SparseVector<float> >& a, const B &b) { VERIFY_IS_EQUAL(a.toDense(),b.toDense()); }
+STORMEIGEN_DONT_INLINE void call_ref_5(const Ref<const SparseVector<float> >& a, const B &b) { VERIFY_IS_EQUAL(a.toDense(),b.toDense()); }
 
 void call_ref()
 {

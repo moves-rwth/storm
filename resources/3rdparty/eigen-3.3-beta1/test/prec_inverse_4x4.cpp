@@ -8,7 +8,7 @@
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "main.h"
-#include <Eigen/LU>
+#include <StormEigen/LU>
 #include <algorithm>
 
 template<typename MatrixType> void inverse_permutation_4x4()
@@ -20,7 +20,7 @@ template<typename MatrixType> void inverse_permutation_4x4()
     MatrixType m = PermutationMatrix<4>(indices);
     MatrixType inv = m.inverse();
     double error = double( (m*inv-MatrixType::Identity()).norm() / NumTraits<Scalar>::epsilon() );
-    EIGEN_DEBUG_VAR(error)
+    STORMEIGEN_DEBUG_VAR(error)
     VERIFY(error == 0.0);
     std::next_permutation(indices.data(),indices.data()+4);
   }
@@ -47,8 +47,8 @@ template<typename MatrixType> void inverse_general_4x4(int repeat)
   }
   std::cerr << "inverse_general_4x4, Scalar = " << type_name<Scalar>() << std::endl;
   double error_avg = error_sum / repeat;
-  EIGEN_DEBUG_VAR(error_avg);
-  EIGEN_DEBUG_VAR(error_max);
+  STORMEIGEN_DEBUG_VAR(error_avg);
+  STORMEIGEN_DEBUG_VAR(error_max);
    // FIXME that 1.25 used to be a 1.0 until the NumTraits changes on 28 April 2010, what's going wrong??
    // FIXME that 1.25 used to be 1.2 until we tested gcc 4.1 on 30 June 2010 and got 1.21.
   VERIFY(error_avg < (NumTraits<Scalar>::IsComplex ? 8.0 : 1.25));

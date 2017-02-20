@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-#include <Eigen/Core>
+#include <StormEigen/Core>
 
 using namespace std;
 using namespace StormEigen;

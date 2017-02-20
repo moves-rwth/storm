@@ -138,7 +138,7 @@ namespace storm {
                  * 
                  * The resulting values represent the rewards at probabilistic states that are obtained at the current time epoch.
                  */
-                void performPSStep(SubModel& PS, SubModel const& MS, MinMaxSolverData& minMax, LinEqSolverData& linEq, std::vector<uint_fast64_t>& optimalChoicesAtCurrentEpoch,  storm::storage::BitVector const& consideredObjectives) const;
+                void performPSStep(SubModel& PS, SubModel const& MS, MinMaxSolverData& minMax, LinEqSolverData& linEq, std::vector<uint_fast64_t>& optimalChoicesAtCurrentEpoch,  storm::storage::BitVector const& consideredObjectives, std::vector<ValueType> const& weightVector) const;
                 
                 /*
                  * Performs a step for the Markovian states, that is
@@ -146,7 +146,7 @@ namespace storm {
                  *
                  * The resulting values represent the rewards at Markovian states that are obtained after one (digitized) time unit has passed.
                  */
-                void performMSStep(SubModel& MS, SubModel const& PS, storm::storage::BitVector const& consideredObjectives) const;
+                void performMSStep(SubModel& MS, SubModel const& PS, storm::storage::BitVector const& consideredObjectives, std::vector<ValueType> const& weightVector) const;
                 
             };
             

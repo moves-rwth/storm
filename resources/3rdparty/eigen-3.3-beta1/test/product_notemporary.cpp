@@ -133,12 +133,12 @@ void test_product_notemporary()
 {
   int s;
   for(int i = 0; i < g_repeat; i++) {
-    s = internal::random<int>(16,EIGEN_TEST_MAX_SIZE);
+    s = internal::random<int>(16,STORMEIGEN_TEST_MAX_SIZE);
     CALL_SUBTEST_1( product_notemporary(MatrixXf(s, s)) );
     CALL_SUBTEST_2( product_notemporary(MatrixXd(s, s)) );
     TEST_SET_BUT_UNUSED_VARIABLE(s)
     
-    s = internal::random<int>(16,EIGEN_TEST_MAX_SIZE/2);
+    s = internal::random<int>(16,STORMEIGEN_TEST_MAX_SIZE/2);
     CALL_SUBTEST_3( product_notemporary(MatrixXcf(s,s)) );
     CALL_SUBTEST_4( product_notemporary(MatrixXcd(s,s)) );
     TEST_SET_BUT_UNUSED_VARIABLE(s)

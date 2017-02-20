@@ -61,14 +61,14 @@ namespace storm {
             
             void StateLabeling::addLabel(std::string const& label, storage::BitVector const& labeling) {
                 STORM_LOG_THROW(!this->containsLabel(label), storm::exceptions::InvalidArgumentException, "Label '" << label << "' already exists.");
-                STORM_LOG_THROW(labeling.size() == stateCount, storm::exceptions::InvalidArgumentException, "Labeling vector has invalid size.");
+                STORM_LOG_THROW(labeling.size() == stateCount, storm::exceptions::InvalidArgumentException, "Labeling vector has invalid size. Expected: " << stateCount << " Actual: " << labeling.size());
                 nameToLabelingIndexMap.emplace(label, labelings.size());
                 labelings.push_back(labeling);
             }
             
             void StateLabeling::addLabel(std::string const& label, storage::BitVector&& labeling) {
                 STORM_LOG_THROW(!this->containsLabel(label), storm::exceptions::InvalidArgumentException, "Label '" << label << "' already exists.");
-                STORM_LOG_THROW(labeling.size() == stateCount, storm::exceptions::InvalidArgumentException, "Labeling vector has invalid size.");
+                STORM_LOG_THROW(labeling.size() == stateCount, storm::exceptions::InvalidArgumentException, "Labeling vector has invalid size. Expected: " << stateCount << " Actual: " << labeling.size());
                 nameToLabelingIndexMap.emplace(label, labelings.size());
                 labelings.emplace_back(std::move(labeling));
             }

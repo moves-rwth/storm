@@ -9,7 +9,7 @@
 
 #include "common.h"
 
-int EIGEN_BLAS_FUNC(axpy)(int *n, RealScalar *palpha, RealScalar *px, int *incx, RealScalar *py, int *incy)
+int STORMEIGEN_BLAS_FUNC(axpy)(int *n, RealScalar *palpha, RealScalar *px, int *incx, RealScalar *py, int *incy)
 {
   Scalar* x = reinterpret_cast<Scalar*>(px);
   Scalar* y = reinterpret_cast<Scalar*>(py);
@@ -26,7 +26,7 @@ int EIGEN_BLAS_FUNC(axpy)(int *n, RealScalar *palpha, RealScalar *px, int *incx,
   return 0;
 }
 
-int EIGEN_BLAS_FUNC(copy)(int *n, RealScalar *px, int *incx, RealScalar *py, int *incy)
+int STORMEIGEN_BLAS_FUNC(copy)(int *n, RealScalar *px, int *incx, RealScalar *py, int *incy)
 {
   if(*n<=0) return 0;
 
@@ -51,7 +51,7 @@ int EIGEN_BLAS_FUNC(copy)(int *n, RealScalar *px, int *incx, RealScalar *py, int
   return 0;
 }
 
-int EIGEN_CAT(EIGEN_CAT(i,SCALAR_SUFFIX),amax_)(int *n, RealScalar *px, int *incx)
+int STORMEIGEN_CAT(STORMEIGEN_CAT(i,SCALAR_SUFFIX),amax_)(int *n, RealScalar *px, int *incx)
 {
   if(*n<=0) return 0;
   Scalar* x = reinterpret_cast<Scalar*>(px);
@@ -62,7 +62,7 @@ int EIGEN_CAT(EIGEN_CAT(i,SCALAR_SUFFIX),amax_)(int *n, RealScalar *px, int *inc
   return int(ret)+1;
 }
 
-int EIGEN_CAT(EIGEN_CAT(i,SCALAR_SUFFIX),amin_)(int *n, RealScalar *px, int *incx)
+int STORMEIGEN_CAT(STORMEIGEN_CAT(i,SCALAR_SUFFIX),amin_)(int *n, RealScalar *px, int *incx)
 {
   if(*n<=0) return 0;
   Scalar* x = reinterpret_cast<Scalar*>(px);
@@ -73,7 +73,7 @@ int EIGEN_CAT(EIGEN_CAT(i,SCALAR_SUFFIX),amin_)(int *n, RealScalar *px, int *inc
   return int(ret)+1;
 }
 
-int EIGEN_BLAS_FUNC(rotg)(RealScalar *pa, RealScalar *pb, RealScalar *pc, RealScalar *ps)
+int STORMEIGEN_BLAS_FUNC(rotg)(RealScalar *pa, RealScalar *pb, RealScalar *pc, RealScalar *ps)
 {
   using std::sqrt;
   using std::abs;
@@ -136,7 +136,7 @@ int EIGEN_BLAS_FUNC(rotg)(RealScalar *pa, RealScalar *pb, RealScalar *pc, RealSc
   return 0;
 }
 
-int EIGEN_BLAS_FUNC(scal)(int *n, RealScalar *palpha, RealScalar *px, int *incx)
+int STORMEIGEN_BLAS_FUNC(scal)(int *n, RealScalar *palpha, RealScalar *px, int *incx)
 {
   if(*n<=0) return 0;
 
@@ -149,7 +149,7 @@ int EIGEN_BLAS_FUNC(scal)(int *n, RealScalar *palpha, RealScalar *px, int *incx)
   return 0;
 }
 
-int EIGEN_BLAS_FUNC(swap)(int *n, RealScalar *px, int *incx, RealScalar *py, int *incy)
+int STORMEIGEN_BLAS_FUNC(swap)(int *n, RealScalar *px, int *incx, RealScalar *py, int *incy)
 {
   if(*n<=0) return 0;
 

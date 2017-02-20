@@ -9,13 +9,13 @@
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "main.h"
-#include <Eigen/QR>
+#include <StormEigen/QR>
 
 template<typename MatrixType> void qr()
 {
   typedef typename MatrixType::Index Index;
 
-  Index rows = internal::random<Index>(2,EIGEN_TEST_MAX_SIZE), cols = internal::random<Index>(2,EIGEN_TEST_MAX_SIZE), cols2 = internal::random<Index>(2,EIGEN_TEST_MAX_SIZE);
+  Index rows = internal::random<Index>(2,STORMEIGEN_TEST_MAX_SIZE), cols = internal::random<Index>(2,STORMEIGEN_TEST_MAX_SIZE), cols2 = internal::random<Index>(2,STORMEIGEN_TEST_MAX_SIZE);
   Index rank = internal::random<Index>(1, (std::min)(rows, cols)-1);
 
   typedef typename MatrixType::Scalar Scalar;

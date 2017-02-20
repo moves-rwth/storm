@@ -10,6 +10,7 @@
 #include "storm/exceptions/FileIoException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/utility/macros.h"
+#include "storm/utility/file.h"
 
 namespace storm {
     namespace parser {
@@ -36,19 +37,10 @@ namespace storm {
             STORM_LOG_DEBUG("Parsing from JSON");
 
             std::ifstream file;
-            file.exceptions ( std::ifstream::failbit );
-            try {
-                file.open(filename);
-            }
-            catch (std::ifstream::failure e) {
-                STORM_LOG_THROW(false, storm::exceptions::FileIoException, "Exception during file opening on " << filename << ".");
-                return;
-            }
-            file.exceptions( std::ifstream::goodbit );
-
+            storm::utility::openFile(filename, file);
             json parsedJson;
             parsedJson << file;
-            file.close();
+            storm::utility::closeFile(file);
 
             storm::expressions::Variable var = manager->declareRationalVariable("x");
             identifierMapping.emplace(var.getName(), var);
